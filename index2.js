@@ -54,11 +54,20 @@ function element_from_response(obj)
         var s;
         if (v.length === 0) {
             s = "[]";
-        } else if (v.length < 10) {
+        } else if (v.length <= 10) {
             s = "[" + String(v[0]);
             for (var i=1; i<v.length; ++i) {
                 s = s + ", " + v[i];
             }
+            s = s + "]";
+        } else {
+            s = "[" + String(v[0]);
+            for (var i=1; i<5; ++i) {
+                s = s + ", " + v[i];
+            }
+            s = s + ", ... ";
+            for (i=v.length-5; i<v.length; ++i)
+                s = s + ", " + v[i];
             s = s + "]";
         }
         div.html(s);
