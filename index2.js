@@ -1,12 +1,43 @@
 var socket = new WebSocket("ws://localhost:9999/rtalk");
 socket.binaryType = 'arraybuffer';
 _debug = true;
+_capturing_answers = false;
+_capturing_callback = undefined;
+
+function capture_answers(how_many, callback)
+{
+    if (_capturing_answers) {
+        throw "Still waiting for previous answers...";
+    }
+    _capturing_answers = true;
+    var result = [];
+    function blip(msg) {
+        result.push(parse(msg));
+        how_many--;
+        if (how_many === 0) {
+            _capturing_answers = false;
+            _capturing_callback = undefined;
+            callback(result);
+        }
+    }
+    _capturing_callback = blip;
+}
 
 socket.onmessage = function(msg) {
-    if (typeof msg.data === 'string') {
-        post_response(msg.data);
+    if (_capturing_answers) {
+        try {
+            _capturing_callback(msg.data);
+        } catch (e) {
+            _capturing_answers = false;
+            _capturing_callback = undefined;
+            throw e;
+        }
     } else {
-        post_binary_response(msg.data);
+        if (typeof msg.data === 'string') {
+            post_response(msg.data);
+        } else {
+            post_binary_response(msg.data);
+        }
     }
 };
 
@@ -22,28 +53,13 @@ function post_sent_command(msg)
 
 function post_binary_response(msg)
 {
-    var view = new Uint8Array(msg);
     if (_debug) {
+        var view = new Uint8Array(msg);
         var x = Array.prototype.join.call(view, ",");
         post_response(x);
     }
 
-    var header = new Int32Array(msg, 0, 4);
-    if (header[0] !== Rsrv.RESP_OK) {
-        var status_code = header[0] >> 24;
-        post_error("ERROR FROM R SERVER: " + (Rsrv.status_codes[status_code] || 
-                                              status_code)); // not too helpful, but better than undefined
-        return;
-    }
-    
-    var payload = my_ArrayBufferView(msg, 16, msg.byteLength - 16);
-    var result = parse(buffer_from_msg(payload));
-
-    if (result.type !== "sexp") {
-        post_error("Bogus reply from RServe for eval, type not sexp");
-        return;
-    }
-    display_response(result.value);
+    display_response(parse(msg));
 }
 
 function display_response(result)

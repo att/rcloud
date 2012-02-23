@@ -79,7 +79,29 @@ function buffer_from_msg(m)
     };
 }
 
-function parse(buffer)
+function parse(msg)
+{
+    var header = new Int32Array(msg, 0, 4);
+    if (header[0] !== Rsrv.RESP_OK) {
+        var status_code = header[0] >> 24;
+        throw("ERROR FROM R SERVER: " + (Rsrv.status_codes[status_code] || 
+                                         status_code)
+              + " " + header[0] + " " + header[1] + " " + header[2] + " " + header[3]
+              + " " + msg.byteLength
+              + " " + msg
+             ); // not too helpful, but better than undefined
+    }
+    
+    var payload = my_ArrayBufferView(msg, 16, msg.byteLength - 16);
+    var result = parse_payload(buffer_from_msg(payload));
+
+    if (result.type !== "sexp") {
+        throw "Bogus reply from RServe for eval, type not sexp";
+    }
+    return result.value;
+}
+
+function parse_payload(buffer)
 {
     var d = buffer.read_int();
     var _ = Rsrv.par_parse(d);
