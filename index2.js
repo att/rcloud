@@ -1,5 +1,6 @@
 var socket = new WebSocket("ws://localhost:9999/rtalk");
 socket.binaryType = 'arraybuffer';
+_debug = true;
 
 socket.onmessage = function(msg) {
     if (typeof msg.data === 'string') {
@@ -11,7 +12,7 @@ socket.onmessage = function(msg) {
 
 socket.onclose = function() {
     post_response("Socket was closed. Goodbye!");
-}
+};
 
 function post_sent_command(msg)
 {
@@ -22,8 +23,10 @@ function post_sent_command(msg)
 function post_binary_response(msg)
 {
     var view = new Uint8Array(msg);
-    // var x = Array.prototype.join.call(view, ",");
-    // post_response(x);
+    if (_debug) {
+        var x = Array.prototype.join.call(view, ",");
+        post_response(x);
+    }
 
     var header = new Int32Array(msg, 0, 4);
     if (header[0] !== Rsrv.RESP_OK) {
@@ -43,78 +46,11 @@ function post_binary_response(msg)
     display_response(result.value);
 }
 
-function element_from_response(obj)
-{
-    return obj.html_element();
-
-    // var result = $("<div class='obj'></div>");
-
-    // if (obj.type === 'double_array') {
-    //     var div = $("<div class='string-value'></div>");
-    //     var v = obj.value;
-    //     var s;
-    //     if (v.length === 0) {
-    //         s = "[]";
-    //     } else if (v.length <= 10) {
-    //         s = "[" + String(v[0]);
-    //         for (var i=1; i<v.length; ++i) {
-    //             s = s + ", " + v[i];
-    //         }
-    //         s = s + "]";
-    //     } else {
-    //         s = "[" + String(v[0]);
-    //         for (var i=1; i<5; ++i) {
-    //             s = s + ", " + v[i];
-    //         }
-    //         s = s + ", ... ";
-    //         for (i=v.length-5; i<v.length; ++i)
-    //             s = s + ", " + v[i];
-    //         s = s + "]";
-    //     }
-    //     div.html(s);
-    //     result.append(div);
-    //     return result;
-    // } else {
-    //     for (var key in obj) {
-    //         var pair = $("<div></div>");
-    //         result.append(pair);
-    //         pair.append($("<div class='key'></div>").html(key+ ": "));
-    //         var v = obj[key];
-    //         if (typeof v === 'string')
-    //             pair.append($("<div class='string-value'></div>").html(v));
-    //         else if (v.constructor) {
-    //             var n = v.constructor.name;
-    //             switch (n) {
-    //             case "Float32Array":
-    //             case "Float64Array":
-    //             case "Int32Array":
-    //             case "Int64Array":
-    //                 result.append($("<div class='string-value'></div>").html(n + ": " + Array.prototype.join.call(v, ", ")));
-    //                 break;
-    //             case "Object":
-    //                 pair.append(element_from_response(v));
-    //                 break;
-    //             case "Array":
-    //                 for (var i=0; i<v.length; ++i)
-    //                     pair.append(element_from_response(v[i]));
-    //                 break;
-    //             default:
-    //                 console.log("Unrecognized object: ", n);
-    //             }
-    //         } else
-    //             console.log("Unrecognized object: ", n);
-    //     }
-    // }
-
-    // return result;
-}
-
 function display_response(result)
 {
-    $("#output").append(element_from_response(result));
+    $("#output").append(result.html_element());
     window.scrollTo(0, document.body.scrollHeight);
 }
-
 
 function post_error(msg)
 {
@@ -134,7 +70,7 @@ $('#term_demo').terminal(function(command, term) {
     if (command !== '') {
         term.clear();
         post_sent_command(command);
-        socket.send(command);
+        interpret_command(command);
     }
 }, {
     exit: false,

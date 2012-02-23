@@ -1,3 +1,5 @@
+var _is_little_endian = true;
+
 // WTF bad spec, ArrayBufferView is useful but is not exposed?
 // http://code.google.com/p/chromium/issues/detail?id=60449
 function my_ArrayBufferView(b, o, l)
@@ -11,9 +13,20 @@ function my_ArrayBufferView(b, o, l)
         make: function(ctor, new_offset, new_length) { 
             new_offset = new_offset || 0;
             new_length = new_length || this.length;
-            return new ctor(this.buffer, 
-                            this.offset + new_offset, 
-                            new_length / (ctor.BYTES_PER_ELEMENT || 1));
+            var element_size = ctor.BYTES_PER_ELEMENT || 1;
+            var n_els = new_length / element_size;
+            if ((this.offset + new_offset) % element_size != 0) {
+                var view = new DataView(this.buffer, this.offset + new_offset, new_length);
+                var new_array = new ctor(new ArrayBuffer(new_length));
+                for (var i=0; i < n_els; ++i) {
+                    new_array[i] = view.getFloat64(i * element_size, _is_little_endian);
+                }
+                return new_array;
+            } else {
+                return new ctor(this.buffer, 
+                                this.offset + new_offset, 
+                                n_els);
+            }
         },
         view: function(new_offset, new_length) {
             // FIXME Needs bounds checking
@@ -22,43 +35,46 @@ function my_ArrayBufferView(b, o, l)
     };
 }
 
-function buffer_from_msg(msg)
+function buffer_from_msg(m)
 {
-    var offset = 0;
-    var data_view = msg.make(DataView); // new DataView(msg);
+    // var offset = 0;
+    // var data_view = msg.make(DataView); // new DataView(msg);
 
     return {
+        offset: 0,
+        data_view: m.make(DataView),
+        msg: m,
         read_int: function() {
-            var old_offset = offset;
-            offset += 4;
-            return data_view.getInt32(old_offset, true);
+            var old_offset = this.offset;
+            this.offset += 4;
+            return this.data_view.getInt32(old_offset, _is_little_endian);
         },
         read_string: function(length) {
             // FIXME SLOW
             var result = "";
             while (length--) {
-                var c = data_view.getInt8(offset++);
+                var c = this.data_view.getInt8(this.offset++);
                 if (c) result = result + String.fromCharCode(c);
             }
             return result;
         },
         read_stream: function(length) {
-            var old_offset = offset;
-            offset += length;
+            var old_offset = this.offset;
+            this.offset += length;
             // return new ArrayBufferView(msg, old_offset, length);
-            return msg.view(old_offset, length);
+            return this.msg.view(old_offset, length);
         },
         read_int_vector: function(length) {
-            var old_offset = offset;
-            offset += length;
+            var old_offset = this.offset;
+            this.offset += length;
             // return new Int32Array(msg, old_offset, length / 4);
-            return msg.make(Int32Array, old_offset, length);
+            return this.msg.make(Int32Array, old_offset, length);
         },
         read_double_vector: function(length) {
-            var old_offset = offset;
-            offset += length;
+            var old_offset = this.offset;
+            this.offset += length;
             // return new Float64Array(msg, old_offset, length / 8);
-            return msg.make(Float64Array, old_offset, length);
+            return this.msg.make(Float64Array, old_offset, length);
         }
     };
 }

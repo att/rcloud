@@ -1,16 +1,16 @@
 function make_basic(type, proto) {
     return function(v, attrs) {
-        function ctor() {
+        function r_object() {
             this.type = type;
             this.value = v;
             this.attributes = attrs;
         }
-        ctor.prototype = proto || {
+        r_object.prototype = proto || {
             html_element: function() {
                 return $("<div class='obj'></div>").append($("<div class='key'></div>").html(type));
             }
         };
-        return new ctor();
+        return new r_object();
     };
 }
 
