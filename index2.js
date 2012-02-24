@@ -3,6 +3,7 @@ socket.binaryType = 'arraybuffer';
 _debug = false;
 _capturing_answers = false;
 _capturing_callback = undefined;
+_received_handshake = false;
 
 function capture_answers(how_many, callback)
 {
@@ -23,6 +24,23 @@ function capture_answers(how_many, callback)
     _capturing_callback = blip;
 }
 
+function hand_shake(msg)
+{
+    msg = msg.data;
+    if (typeof msg !== 'string') {
+        post_error("bad handshake: not a string response");
+    } else if (msg.substr(0,4) !== 'Rsrv') {
+        post_error("server is not an RServe instance");
+    } else if (msg.substr(4, 4) !== '0103') {
+        post_error("sorry, I can only use the 0103 version of the R server protocol");
+    } else if (msg.substr(8, 4) !== 'QAP1') {
+        post_error("sorry, I only speak QAP1");
+    } else {
+        _received_handshake = true;
+        post_response("Welcome to R-on-the-browser!");
+    }
+}
+
 socket.onmessage = function(msg) {
     if (_capturing_answers) {
         try {
@@ -33,10 +51,14 @@ socket.onmessage = function(msg) {
             throw e;
         }
     } else {
-        if (typeof msg.data === 'string') {
-            post_response(msg.data);
-        } else {
-            post_binary_response(msg.data);
+        if (!_received_handshake)
+            hand_shake(msg);
+        else {
+            if (typeof msg.data === 'string') {
+                post_response(msg.data);
+            } else {
+                post_binary_response(msg.data);
+            }
         }
     }
 };
@@ -47,7 +69,7 @@ socket.onclose = function() {
 
 function post_sent_command(msg)
 {
-    var d = $("<pre></pre>").html('> ' + msg);
+    var d = $('<pre class="r-sent-command"></pre>').html('> ' + msg);
     $("#output").append(d);
 }
 
@@ -56,6 +78,12 @@ function post_debug_message(msg)
     var view = new Uint8Array(msg);
     var x = Array.prototype.join.call(view, ",");
     post_response(x);
+}
+
+function post_div(msg)
+{
+    $("#output").append(msg);
+    window.scrollTo(0, document.body.scrollHeight);
 }
 
 function post_binary_response(msg)

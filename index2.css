@@ -14,8 +14,28 @@
     margin: 0.5em;
 }
 
+.r-sent-command {
+    font-family: "Monaco", "Courier New", monospace;
+    color: #000;
+}
+
 .error-message {
     font-family: monospace;
     font-weight: bold;
     color: #800;
+}
+
+.rule-text {
+    font: 10px sans-serif;
+}
+
+.x line, .y line {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+path.dot {
+  fill: black;
+  stroke-width: 1.5px;
+  stroke: white;
 }

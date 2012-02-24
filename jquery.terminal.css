@@ -25,10 +25,9 @@
 }
 .terminal, .terminal .terminal-output, .terminal .terminal-output div,
 .terminal .terminal-output div div, .cmd, .terminal .cmd span, .terminal .cmd div {
-    font-family: monospace;
+    font-family: "Monaco", "Courier New", monospace;
     color: #000;
     background-color: #fff;
-    font-size: 12px;
 }
 /* This works only in Safari and Google Chrome */
 @media screen and (-webkit-min-device-pixel-ratio:0) {
