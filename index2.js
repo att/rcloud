@@ -1,6 +1,6 @@
-var socket = new WebSocket("ws://localhost:9999/rtalk");
+var socket = new WebSocket("ws://localhost:8080/");
 socket.binaryType = 'arraybuffer';
-_debug = true;
+_debug = false;
 _capturing_answers = false;
 _capturing_callback = undefined;
 
@@ -51,15 +51,24 @@ function post_sent_command(msg)
     $("#output").append(d);
 }
 
+function post_debug_message(msg)
+{
+    var view = new Uint8Array(msg);
+    var x = Array.prototype.join.call(view, ",");
+    post_response(x);
+}
+
 function post_binary_response(msg)
 {
     if (_debug) {
-        var view = new Uint8Array(msg);
-        var x = Array.prototype.join.call(view, ",");
-        post_response(x);
+        post_debug_message(msg);
     }
 
-    display_response(parse(msg));
+    try {
+        display_response(parse(msg));
+    } catch (e) {
+        post_error("Uncaught exception: " + e);
+    }
 }
 
 function display_response(result)
