@@ -27,9 +27,10 @@ function capture_answers(how_many, callback)
 function hand_shake(msg)
 {
     msg = msg.data;
-    if (typeof msg !== 'string') {
-        post_error("bad handshake: not a string response");
-    } else if (msg.substr(0,4) !== 'Rsrv') {
+    // console.log(msg.data);
+    // msg = _.map(new Uint8Array(msg.data), function(c) { return String.fromCharCode(c); }).join("");
+
+    if (msg.substr(0,4) !== 'Rsrv') {
         post_error("server is not an RServe instance");
     } else if (msg.substr(4, 4) !== '0103') {
         post_error("sorry, I can only use the 0103 version of the R server protocol");
