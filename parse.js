@@ -1,40 +1,3 @@
-var _is_little_endian = true;
-
-// WTF bad spec, ArrayBufferView is useful but is not exposed?
-// http://code.google.com/p/chromium/issues/detail?id=60449
-function my_ArrayBufferView(b, o, l)
-{
-    o = o || 0;
-    l = l || b.byteLength;
-    return {
-        buffer: b,
-        offset: o,
-        length: l,
-        make: function(ctor, new_offset, new_length) { 
-            new_offset = new_offset || 0;
-            new_length = new_length || this.length;
-            var element_size = ctor.BYTES_PER_ELEMENT || 1;
-            var n_els = new_length / element_size;
-            if ((this.offset + new_offset) % element_size != 0) {
-                var view = new DataView(this.buffer, this.offset + new_offset, new_length);
-                var new_array = new ctor(new ArrayBuffer(new_length));
-                for (var i=0; i < n_els; ++i) {
-                    new_array[i] = view.getFloat64(i * element_size, _is_little_endian);
-                }
-                return new_array;
-            } else {
-                return new ctor(this.buffer, 
-                                this.offset + new_offset, 
-                                n_els);
-            }
-        },
-        view: function(new_offset, new_length) {
-            // FIXME Needs bounds checking
-            return my_ArrayBufferView(this.buffer, this.offset + new_offset, new_length);
-        }
-    };
-}
-
 function buffer_from_msg(m)
 {
     // var offset = 0;
@@ -42,12 +5,12 @@ function buffer_from_msg(m)
 
     return {
         offset: 0,
-        data_view: m.make(DataView),
+        data_view: m.make(EndianAwareDataView),
         msg: m,
         read_int: function() {
             var old_offset = this.offset;
             this.offset += 4;
-            return this.data_view.getInt32(old_offset, _is_little_endian);
+            return this.data_view.getInt32(old_offset);
         },
         read_string: function(length) {
             // FIXME SLOW
@@ -61,19 +24,16 @@ function buffer_from_msg(m)
         read_stream: function(length) {
             var old_offset = this.offset;
             this.offset += length;
-            // return new ArrayBufferView(msg, old_offset, length);
             return this.msg.view(old_offset, length);
         },
         read_int_vector: function(length) {
             var old_offset = this.offset;
             this.offset += length;
-            // return new Int32Array(msg, old_offset, length / 4);
             return this.msg.make(Int32Array, old_offset, length);
         },
         read_double_vector: function(length) {
             var old_offset = this.offset;
             this.offset += length;
-            // return new Float64Array(msg, old_offset, length / 8);
             return this.msg.make(Float64Array, old_offset, length);
         }
     };
