@@ -44,10 +44,7 @@ check_little_endian();
             })(original_array, byte_array);
         }
         
-        throw "ASDKJAhDKLAJhDAS";
-        
         function MyDataView(buffer, byteOffset, byteLength) {
-            alert("DIE DIE DIE");
             this.buffer = buffer;
             this.byteOffset = byteOffset || 0;
             this.byteLength = byteLength || buffer.byteLength;
@@ -65,16 +62,16 @@ check_little_endian();
             var setter = 'set' + data_types[i];
             var sz = this[data_types[i] + 'Array'].BYTES_PER_ELEMENT;
             proto[setter] = (function(sz, name) {
-                return function(ix, v) {
+                return function(byteOffset, v) {
                     console.log(name);
                     console.log(helpers);
-                    helpers[name](this.byte_array, sz, sz*ix, v);
+                    helpers[name](this.byte_array, sz, byteOffset, v);
                 };
             })(sz, data_types[i]);
         }
 
         proto.setUint8 = function(ix, v) {
-            this.byte_array[i] = v;
+            this.byte_array[ix] = v;
         };
         proto.setInt8 = function(ix, v) {
             if (v < 0) v += 256;
@@ -103,13 +100,16 @@ check_little_endian();
         for (var i=0; i<setters.length; ++i) {
             var name = setters[i];
             proto[name]= (function(name) {
-                return function(i, v) { return this.view[name](i, v, _is_little_endian); };
+                return function(byteOffset, value) { 
+                    return this.view[name](byteOffset, value, _is_little_endian); };
             })(name);
         }
         for (i=0; i<getters.length; ++i) {
             var name = getters[i];
             proto[name]= (function(name) {
-                return function(i) { return this.view[name](i, _is_little_endian); };
+                return function(byteOffset) { 
+                    return this.view[name](byteOffset, _is_little_endian); 
+                };
             })(name);
         }
         
