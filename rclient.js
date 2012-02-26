@@ -118,24 +118,16 @@ var RClient = {
             binary_send: function(command) {
                 var buffer = new ArrayBuffer(command.length + 21);
                 var view = new EndianAwareDataView(buffer);
-                console.log(_.toArray(new Uint8Array(buffer)).join(","));
                 view.setInt32(0,  3);
-                console.log(_.toArray(new Uint8Array(buffer)).join(","));
                 view.setInt32(4,  5 + command.length);
-                console.log(_.toArray(new Uint8Array(buffer)).join(","));
                 view.setInt32(8,  0);
-                console.log(_.toArray(new Uint8Array(buffer)).join(","));
                 view.setInt32(12, 0);
-                console.log(_.toArray(new Uint8Array(buffer)).join(","));
                 view.setInt32(16, 4 + ((1 + command.length) << 8));
-                console.log(_.toArray(new Uint8Array(buffer)).join(","));
                 for (var i=0; i<command.length; ++i) {
                     view.setUint8(20 + i, command.charCodeAt(i));
-                    console.log(i, _.toArray(new Uint8Array(buffer)).join(","));
                 }
                 view.setUint8(buffer.byteLength - 1, 0);
 
-                console.log(_.toArray(new Uint8Array(buffer)).join(","));
                 socket.send(buffer);
             }
         };
