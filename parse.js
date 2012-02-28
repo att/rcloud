@@ -1,4 +1,4 @@
-function buffer_from_msg(m)
+function reader(m)
 {
     var handlers = {};
     var _;
@@ -69,47 +69,11 @@ function buffer_from_msg(m)
 
         //////////////////////////////////////////////////////////////////////
 
-        // read_list: function(attributes, length) {
-        //     var result = [];
-        //     var old_length = length;
-        //     var total_read = 0;
-        //     while (length > 0) {
-        //         _ = this.read_sexp();
-        //         var sexp = _[0], read_t = _[1];
-        //         result.push(sexp);
-        //         length = length - read_t;
-        //         total_read = total_read + read_t;
-        //     }
-        //     if (total_read !== old_length)
-        //         throw "length mismatch";
-        //     return [result, total_read];
-        // },
-
         read_null: lift(function(a, l) { return Robj.null(a); }),
 
         //////////////////////////////////////////////////////////////////////
         // and these return full R objects as well.
 
-        read_list_tag: function(attributes, length) {
-            var result = {};
-            var old_length = length;
-            var total_read = 0;
-            while (length > 0) {
-                _ = this.read_sexp();
-                var value = _[0], read_t_1 = _[1];
-                _ = this.read_sexp();
-                var tag = _[0], read_t_2 = _[1];
-                length = length - read_t_1 - read_t_2;
-                total_read = total_read + read_t_1 + read_t_2;
-                if (tag.type !== "symbol") {
-                    throw "Unexpected type " + tag.type + "as tag for tagged_list";
-                }
-                result[tag.value] = value;
-            }
-            if (old_length !== total_read)
-                throw "total read mismatch";
-            return [Robj.tagged_list(result, attributes), total_read];
-        },
         read_string_array: function(attributes, length) {
             var a = this.read_stream(length).make(Uint8Array);
             var result = [];
@@ -163,21 +127,18 @@ function buffer_from_msg(m)
     });
 
     that.read_list = unfold(that.read_sexp);
-    // CURRENTLY BROKEN
-    // 
-    // that.read_list_tag = bind(that.read_list, function(lst) {
-    //     return function(attributes, length) {
-    //         console.log(lst);
-    //         var result = {};
-    //         for (var i=0; i<lst.length; i+=2) {
-    //             var value = lst[i], tag = lst[i+1];
-    //             if (tag.type !== "symbol")
-    //                 throw "Unexpected type " + tag.type + " as tag for tagged_list";
-    //             result[tag.value] = value;
-    //         }
-    //         return [result, 0];
-    //     };
-    // });
+    that.read_list_tag = bind(that.read_list, function(lst) {
+        return lift(function(attributes, length) {
+            var result = {};
+            for (var i=0; i<lst.length; i+=2) {
+                var value = lst[i], tag = lst[i+1];
+                if (tag.type !== "symbol")
+                    throw "Unexpected type " + tag.type + " as tag for tagged_list";
+                result[tag.value] = value;
+            }
+            return Robj.tagged_list(result, attributes);
+        }, 0);
+    });
 
     function xf(f, g) { return bind(f, function(t) { 
         return lift(function(a, l) { return g(t, a); }, 0); 
@@ -224,7 +185,7 @@ function parse(msg)
     }
     
     var payload = my_ArrayBufferView(msg, 16, msg.byteLength - 16);
-    var result = parse_payload(buffer_from_msg(payload));
+    var result = parse_payload(reader(payload));
 
     if (result.type !== "sexp") {
         throw "Bogus reply from RServe for eval, type not sexp";
@@ -232,19 +193,19 @@ function parse(msg)
     return result.value;
 }
 
-function parse_payload(buffer)
+function parse_payload(reader)
 {
-    var d = buffer.read_int();
+    var d = reader.read_int();
     var _ = Rsrv.par_parse(d);
     var t = _[0], l = _[1];
     if (t === Rsrv.DT_INT) {
-        return { type: "int", value: buffer.read_int() };
+        return { type: "int", value: reader.read_int() };
     } else if (t === Rsrv.DT_STRING) {
-        return { type: "string", value: buffer.read_string(l) };
+        return { type: "string", value: reader.read_string(l) };
     } else if (t === Rsrv.DT_BYTESTREAM) { // NB this returns a my_ArrayBufferView()
-        return { type: "stream", value: buffer.read_stream(l) };
+        return { type: "stream", value: reader.read_stream(l) };
     } else if (t === Rsrv.DT_SEXP) {
-        _ = buffer.read_sexp();
+        _ = reader.read_sexp();
         var sexp = _[0], l2 = _[1];
         return { type: "sexp", value: sexp };
     } else

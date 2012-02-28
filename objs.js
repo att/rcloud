@@ -57,7 +57,7 @@ function pprint_array_as_div(formatter) {
 }
 
 Robj = {
-    null: function(attributes) {
+    "null": function(attributes) {
         return { 
             type: "null", 
             value: null,
@@ -89,7 +89,27 @@ Robj = {
         };
     },
 
-    vector: make_basic("vector"),
+    vector: make_basic("vector", {
+        html_element: function () {
+            var div = $("<div class='obj'></div>");
+            console.log(this.value);
+            if (!this.attributes) {
+                for (var i=0; i<this.value.length; ++i) {
+                    div.append(this.value[i].html_element());
+                }
+            } else {
+                console.log(this.attributes);
+                var names = this.attributes.value.names.value;
+                var pair = $("<div></div>");
+                for (var i=0; i<this.value.length; ++i) {
+                    pair.append($("<span class='key'></span>").append(names[i] + ": "));
+                    pair.append(this.value[i].html_element());
+                }
+                div.append(pair);
+            }
+            return div;
+        }
+    }),
     symbol: make_basic("symbol"),
     list: make_basic("list"),
     lang: make_basic("lang"),
