@@ -35,6 +35,18 @@ function buffer_from_msg(m)
             var old_offset = this.offset;
             this.offset += length;
             return this.msg.make(Float64Array, old_offset, length);
+        },
+        read_list: function(length) {
+            var result = [];
+            var total_read = 0;
+            while (length > 0) {
+                _ = parse_sexp(this);
+                var sexp = _[0], read_t = _[1];
+                result.push(sexp);
+                length = length - read_t;
+                total_read = total_read + read_t;
+            }
+            return [result, total_read];
         }
     };
 }
@@ -80,19 +92,6 @@ function parse_payload(buffer)
         throw "Bad type for parse? " + t + " " + l;
 }
 
-function parse_list(buffer, l, total_read)
-{
-    var result = [];
-    while (l > 0) {
-        _ = parse_sexp(buffer);
-        var sexp = _[0], read_t = _[1];
-        result.push(sexp);
-        l = l - read_t;
-        total_read = total_read + read_t;
-    }
-    return [result, total_read];
-}
-
 function parse_sexp(buffer)
 {
     var d = buffer.read_int();
@@ -108,23 +107,29 @@ function parse_sexp(buffer)
         l -= attr_result[1];
     }
 
-    if (t === Rsrv.XT_NULL) {
-        return [Robjs.null(attributes), total_read];
-    } else if (t === Rsrv.XT_VECTOR) {
-        var result = parse_list(buffer, l, total_read);
-        return [Robjs.vector(result[0], attributes), result[1]];
-    } else if (t === Rsrv.XT_CLOS) {
+    var handlers = {};
+    handlers[Rsrv.XT_NULL] = function() {
+        return [Robj.null(attributes), total_read];
+    };
+    handlers[Rsrv.XT_VECTOR] = function() {
+        var result = buffer.read_list(l);
+        return [Robj.vector(result[0], attributes), total_read + result[1]];
+    };
+    handlers[Rsrv.XT_CLOS] = function() {
         _ = parse_sexp(buffer);
         var formals = _[0], read_1 = _[1];
         _ = parse_sexp(buffer);
         var body = _[0], read_2 = _[1];
         return [Robj.clos(formals, body, attributes), total_read + read_1 + read_2];
-    } else if (t === Rsrv.XT_SYMNAME) {
+    };
+    handlers[Rsrv.XT_SYMNAME] = function() {
         return [Robj.symbol(buffer.read_string(l), attributes), total_read + l];
-    } else if (t === Rsrv.XT_LIST_NOTAG) {
-        var result = parse_list(buffer, l, total_read);
-        return [Robj.list(result[0], attributes), result[1]];
-    } else if (t === Rsrv.XT_LIST_TAG) {
+    };
+    handlers[Rsrv.XT_LIST_NO_TAG] = function() {
+        var result = buffer.read_list(l);
+        return [Robj.list(result[0], attributes), result[1] + total_read];
+    };
+    handlers[Rsrv.XT_LIST_TAG] = function() {
         var result = {};
         while (l > 0) {
             _ = parse_sexp(buffer);
@@ -137,19 +142,22 @@ function parse_sexp(buffer)
                 throw "Unexpected type " + tag.type + "as tag for tagged_list";
             }
             result[tag.value] = value;
-            // result.push([tag, value]);
         }
         return [Robj.tagged_list(result, attributes), total_read];
-    } else if (t === Rsrv.XT_VECTOR_EXP) {
-        var result = parse_list(buffer, l, total_read);
-        return [Robj.vector_exp(result[0], attributes), result[1]];
-    } else if (t === Rsrv.XT_ARRAY_INT) {
+    };
+    handlers[Rsrv.XT_VECTOR_EXP] = function() {
+        var result = buffer.read_list(l);
+        return [Robj.vector_exp(result[0], attributes), result[1] + total_read];
+    };
+    handlers[Rsrv.XT_ARRAY_INT] = function() {
         var a = buffer.read_int_vector(l);
         return [Robj.int_array(a, attributes), l + total_read];
-    } else if (t === Rsrv.XT_ARRAY_DOUBLE) {
+    };
+    handlers[Rsrv.XT_ARRAY_DOUBLE] = function() {
         var a = buffer.read_double_vector(l);
         return [Robj.double_array(a, attributes), l + total_read];
-    } else if (t === Rsrv.XT_ARRAY_STR) {
+    };
+    handlers[Rsrv.XT_ARRAY_STR] = function() {
         var a = buffer.read_stream(l).make(Uint8Array);
         var result = [];
         var current_str = "";
@@ -161,13 +169,19 @@ function parse_sexp(buffer)
                 current_str = current_str + String.fromCharCode(a[i]);
             }
         return [Robj.string_array(result, attributes), l + total_read];
-    } else if (t === Rsrv.XT_ARRAY_BOOL) {
+    };
+    handlers[Rsrv.XT_ARRAY_BOOL] = function() {
         var l2 = buffer.read_int();
         var a = new Uint8Array(buffer.read_stream(l), 0, l2);
         var result = [];
         for (var i=0; i<a.length; ++i)
             result[i] = !!a[i];
         return [Robj.bool_array(result, attributes), l + total_read];
-    } else
-        throw "Unimplemented " + t;
+    };
+
+    if (handlers[t] === undefined) {
+        throw "Unimplemented " + t;        
+    } else {
+        return handlers[t]();
+    }
 };

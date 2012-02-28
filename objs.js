@@ -32,6 +32,8 @@ function pprint_array_as_div(formatter) {
         };
         if (v.length === 0) {
             s = "[]";
+        } else if (v.length === 1) {
+            s = element(0);
         } else if (v.length <= 10) {
             s = "[" + element(0);
             for (var i=1; i<v.length; ++i) {
@@ -51,7 +53,7 @@ function pprint_array_as_div(formatter) {
         div.html(s);
         result.append(div);
         return result;
-    }
+    };
 }
 
 Robj = {
