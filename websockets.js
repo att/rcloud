@@ -1,5 +1,4 @@
 (function(global) {
-    console.log(global);
     if (global.WebSocket === undefined) {
         if (global.MozWebSocket)
             global.WebSocket = global.MozWebSocket;
