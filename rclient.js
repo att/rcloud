@@ -71,12 +71,13 @@ var RClient = {
             post_binary_response: function(msg) {
                 if (_debug) {
                     this.post_debug_message(msg);
-                }
-
-                try {
                     this.display_response(parse(msg));
-                } catch (e) {
-                    this.post_error("Uncaught exception: " + e);
+                } else {
+                    try {
+                        this.display_response(parse(msg));
+                    } catch (e) {
+                        this.post_error("Uncaught exception: " + e);
+                    }
                 }
             },
 

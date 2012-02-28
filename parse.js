@@ -106,11 +106,12 @@ function buffer_from_msg(m)
             return [Robj.vector_exp(result[0], attributes), result[1]];
         },
         read_int_array: function(attributes, length) {
+            console.log("HERE!");
             var a = this.read_int_vector(length);
             return [Robj.int_array(a, attributes), length];
         },
         read_double_array: function(attributes, length) {
-            var a = this.read_int_vector(length);
+            var a = this.read_double_vector(length);
             return [Robj.double_array(a, attributes), length];
         },
         read_string_array: function(attributes, length) {
@@ -150,82 +151,23 @@ function buffer_from_msg(m)
                 l -= attr_result[1];
             }
             var handlers = {};
-            handlers[Rsrv.XT_NULL] = function() {
-                console.log("NULL!", l);
-                return [Robj.null(attributes), total_read];
-            };
-            handlers[Rsrv.XT_VECTOR] = function() {
-                var result = that.read_list(l);
-                return [Robj.vector(result[0], attributes), total_read + result[1]];
-            };
-            handlers[Rsrv.XT_CLOS] = function() {
-                _ = that.read_sexp();
-                var formals = _[0], read_1 = _[1];
-                _ = that.read_sexp();
-                var body = _[0], read_2 = _[1];
-                return [Robj.clos(formals, body, attributes), total_read + read_1 + read_2];
-            };
-            handlers[Rsrv.XT_SYMNAME] = function() {
-                return [Robj.symbol(that.read_string(l), attributes), total_read + l];
-            };
-            handlers[Rsrv.XT_LIST_NO_TAG] = function() {
-                var result = that.read_list(l);
-                return [Robj.list(result[0], attributes), result[1] + total_read];
-            };
-            handlers[Rsrv.XT_LIST_TAG] = function() {
-                var result = {};
-                while (l > 0) {
-                    _ = that.read_sexp();
-                    var value = _[0], read_t_1 = _[1];
-                    _ = that.read_sexp();
-                    var tag = _[0], read_t_2 = _[1];
-                    l = l - read_t_1 - read_t_2;
-                    total_read = total_read + read_t_1 + read_t_2;
-                    if (tag.type !== "symbol") {
-                        throw "Unexpected type " + tag.type + "as tag for tagged_list";
-                    }
-                    result[tag.value] = value;
-                }
-                return [Robj.tagged_list(result, attributes), total_read];
-            };
-            handlers[Rsrv.XT_VECTOR_EXP] = function() {
-                var result = that.read_list(l);
-                return [Robj.vector_exp(result[0], attributes), result[1] + total_read];
-            };
-            handlers[Rsrv.XT_ARRAY_INT] = function() {
-                var a = that.read_int_vector(l);
-                return [Robj.int_array(a, attributes), l + total_read];
-            };
-            handlers[Rsrv.XT_ARRAY_DOUBLE] = function() {
-                var a = that.read_double_vector(l);
-                return [Robj.double_array(a, attributes), l + total_read];
-            };
-            handlers[Rsrv.XT_ARRAY_STR] = function() {
-                var a = that.read_stream(l).make(Uint8Array);
-                var result = [];
-                var current_str = "";
-                for (var i=0; i<a.length; ++i)
-                    if (a[i] === 0) {
-                        result.push(current_str);
-                        current_str = "";
-                    } else {
-                        current_str = current_str + String.fromCharCode(a[i]);
-                    }
-                return [Robj.string_array(result, attributes), l + total_read];
-            };
-            handlers[Rsrv.XT_ARRAY_BOOL] = function() {
-                var l2 = that.read_int();
-                var a = new Uint8Array(buffer.read_stream(l), 0, l2);
-                var result = [];
-                for (var i=0; i<a.length; ++i)
-                    result[i] = !!a[i];
-                return [Robj.bool_array(result, attributes), l + total_read];
-            };
+            handlers[Rsrv.XT_NULL] = this.read_null;
+            handlers[Rsrv.XT_VECTOR] = this.read_vector;
+            handlers[Rsrv.XT_CLOS] = this.read_clos;
+            handlers[Rsrv.XT_SYMNAME] = this.read_symname;
+            handlers[Rsrv.XT_LIST_NO_TAG] = this.read_list_no_tag;
+            handlers[Rsrv.XT_LIST_TAG] = this.read_list_tag;
+            handlers[Rsrv.XT_VECTOR_EXP] = this.read_vector_exp;
+            handlers[Rsrv.XT_ARRAY_INT] = this.read_int_array;
+            handlers[Rsrv.XT_ARRAY_DOUBLE] = this.read_double_array;
+            handlers[Rsrv.XT_ARRAY_STR] = this.read_string_array;
+            handlers[Rsrv.XT_ARRAY_BOOL] = this.read_bool_array;
             
             if (handlers[t] === undefined) {
                 throw "Unimplemented " + t;        
             } else {
-                return handlers[t]();
+                var result = handlers[t].call(this, attributes, l);
+                return [result[0], total_read + result[1]];
             }
         }
     };
