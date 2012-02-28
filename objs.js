@@ -92,7 +92,9 @@ Robj = {
     vector: make_basic("vector"),
     symbol: make_basic("symbol"),
     list: make_basic("list"),
+    lang: make_basic("lang"),
     tagged_list: make_basic("tagged_list"),
+    tagged_lang: make_basic("tagged_lang"),
     vector_exp: make_basic("vector_exp"),
     int_array: make_basic("int_array", {
         html_element: pprint_array_as_div()

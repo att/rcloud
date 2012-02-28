@@ -2,7 +2,7 @@ var RClient = {
     create: function(host) {
         var socket = new WebSocket(host);
 
-        var _debug = false;
+        var _debug = true;
         var _capturing_answers = false;
         var _capturing_callback = undefined;
         var _received_handshake = false;
