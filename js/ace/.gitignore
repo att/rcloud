@@ -1,0 +1,29 @@
+# Junk that could exist anywhere:
+.DS_Store
+*.swp
+*.tmp
+
+# Project files that should not be in the repo
+.project
+.settings/
+.settings.xml
+.c9settings.xml
+.settings.xml.old
+.*.gz
+
+# A handy place to put stuff that git should ignore:
+/ignore/
+node_modules/htmlparser/
+node_modules/amd-loader/
+node_modules/asyncjs/
+node_modules/jsdom/
+node_modules/libxml/
+node_modules/mime/
+node_modules/dryice/
+node_modules/uglify-js/
+node_modules/.bin/
+
+
+.git-ref
+npm-debug.log
+deps/

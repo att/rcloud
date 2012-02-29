@@ -1,3 +1,7 @@
+body {
+    font-family: Helvetica Neue, Verdana, Helvetica, Arial, sans-serif;
+}
+
 .key {
     font-family: monospace;
     color: #008;
