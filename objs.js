@@ -92,13 +92,11 @@ Robj = {
     vector: make_basic("vector", {
         html_element: function () {
             var div = $("<div class='obj'></div>");
-            console.log(this.value);
             if (!this.attributes) {
                 for (var i=0; i<this.value.length; ++i) {
                     div.append(this.value[i].html_element());
                 }
             } else {
-                console.log(this.attributes);
                 var names = this.attributes.value.names.value;
                 var pair = $("<div></div>");
                 for (var i=0; i<this.value.length; ++i) {

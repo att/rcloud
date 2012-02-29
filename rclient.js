@@ -27,7 +27,6 @@ var RClient = {
         }
 
         socket.onmessage = function(msg) {
-            console.log(_capturing_answers);
             if (_capturing_answers) {
                 try {
                     _capturing_callback(result.eval(parse(msg.data)));
@@ -136,7 +135,7 @@ var RClient = {
                 _capturing_answers = true;
                 var result = [];
                 function blip(msg) {
-                    result.push(parse(msg));
+                    result.push(msg);
                     how_many--;
                     if (how_many === 0) {
                         _capturing_answers = false;
