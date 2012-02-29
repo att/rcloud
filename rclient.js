@@ -27,9 +27,10 @@ var RClient = {
         }
 
         socket.onmessage = function(msg) {
+            console.log(_capturing_answers);
             if (_capturing_answers) {
                 try {
-                    _capturing_callback(msg.data);
+                    _capturing_callback(result.eval(parse(msg.data)));
                 } catch (e) {
                     _capturing_answers = false;
                     _capturing_callback = undefined;
@@ -38,11 +39,13 @@ var RClient = {
             } else {
                 if (!_received_handshake) {
                     hand_shake(msg);
-                } else {
-                    if (typeof msg.data === 'string')
-                        result.post_response(msg.data);
-                    else
-                        result.post_binary_response(msg.data);
+                    return;
+                }
+                if (typeof msg.data === 'string')
+                    result.post_response(msg.data);
+                else {
+                    var data = result.eval(parse(msg.data));
+                    result.display_response(data);
                 }
             }
         };
@@ -52,6 +55,34 @@ var RClient = {
         };
 
         result = {
+            eval: function(data) {
+                var that = this;
+                if (data.type !== "sexp") {
+                    return this.post_error("Bad protocol, should always be sexp.");
+                }
+                data = data.value;
+                if (data.type === "string_array") {
+                    return this.post_error(data.value[0]);
+                }
+                if (data.type !== "vector") {
+                    return this.post_error("Protocol error, unexpected value of type " + data.type);
+                }
+                if (data.value[0].type !== "string_array" ||
+                    data.value[0].value.length !== 1) {
+                    return this.post_error("Protocol error, expected first element to be a single string");
+                }
+                var cmd = data.value[0].value[0];
+                var cmds = {
+                    "eval": function(v) {
+                        return v;
+                    }
+                };
+                if (cmds[cmd] === undefined) {
+                    return this.post_error("Unknown command " + cmd);
+                }
+                return cmds[cmd](data.value[1]);
+            },
+
             post_sent_command: function (msg) {
                 var d = $('<pre class="r-sent-command"></pre>').html('> ' + msg);
                 $("#output").append(d);
@@ -116,7 +147,15 @@ var RClient = {
                 _capturing_callback = blip;
             },
 
+            wrap_command: function(command) {
+                // FIXME code injection? notice that this is already eval, so
+                // what _additional_ harm would exist?
+
+                return "try(list(\"eval\", {" + command + "}), silent=TRUE)";
+            },
+
             binary_send: function(command) {
+                command = this.wrap_command(command);
                 var buffer = new ArrayBuffer(command.length + 21);
                 var view = new EndianAwareDataView(buffer);
                 view.setInt32(0,  3);
