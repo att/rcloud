@@ -1,40 +1,63 @@
 <html>
   <head>
-    <script src="websockets.js"></script>
-    <script src="jquery-1.7.1.min.js"></script>
-    <script src="underscore-min.js"></script>
-    <script src="jquery.terminal-0.4.7.js"></script>
-    <script src="peg-0.6.2.min.js"></script>
-    <script src="d3.v2.js"></script>
+    <link type="text/css" href="css/custom-theme/jquery-ui-1.8.18.custom.css" rel="Stylesheet" />
+    <script type="text/javascript" src="js/jquery-1.7.1.min.js"></script>
+    <script type="text/javascript" src="js/jquery-ui-1.8.18.custom.min.js"></script>
+    <script type="text/javascript" src="underscore-min.js"></script>
+    <script type="text/javascript" src="jquery.terminal-0.4.7.js"></script>
+    <script type="text/javascript" src="peg-0.6.2.min.js"></script>
+    <script type="text/javascript" src="d3.v2.js"></script>
+    <script type="text/javascript" src="jDataView.js"></script>
 
-    <script src="plot.js"></script>
+    <script type="text/javascript" src="plot.js"></script>
 
-    <script src="jDataView.js"></script>
-    <script src="rclient.js"></script>
-    <script src="buffer.js"></script>
-    <script src="interpreter.js"></script>
-    <script src="parse.js"></script>
-    <script src="peg_parser.js"></script>
-    <script src="objs.js"></script>
-    <script src="Rsrv.js"></script>
+    <script type="text/javascript" src="websockets.js"></script>
+    <script type="text/javascript" src="rclient.js"></script>
+    <script type="text/javascript" src="buffer.js"></script>
+    <script type="text/javascript" src="interpreter.js"></script>
+    <script type="text/javascript" src="parse.js"></script>
+    <script type="text/javascript" src="peg_parser.js"></script>
+    <script type="text/javascript" src="objs.js"></script>
+    <script type="text/javascript" src="Rsrv.js"></script>
 
     <link rel="stylesheet" href="jquery.terminal.css"/>
     <link rel="stylesheet" href="index.css"/>
   </head>
 <body>
-<div id="output">
+<div id="tabs" style="position: absolute; width:100%; height:100%;
+		      left: 0px; top: 0px;
+		      padding: 0px; margin: 0px;"
+     class="ui-tabs">
+<ul id="tabs-header" style="width:100%;">
+  <li><a href="#tabs-1">Shell</a></li>
+  <li><a href="#tabs-2">Editor</a></li>
+</ul>
+<div id="tabs-1" style="width: 100%;" class="ui-tabs-hide">
+  <div id="fixeddiv" 
+       style="position:absolute; bottom: 0px; left: 0px; width:100%;
+	      background:#FFFFFF; border:1px solid #DDDDDD">
+    <div id="term_demo"></div>
+  </div>
+  <div id="output" style="margin:0.5em; margin-top:2em;">
+    <h1>R Interaction</h1>
+  </div>
+  <div style="padding:2em;"></div>
 </div>
-<div style="margin:45px"></div>
-<div id="fixeddiv" style="position:absolute;
-			  bottom: 0px;
-			  left: 0px;
-			  width:100%;
-    background:#FFFFFF;
-    border:1px solid #DDDDDD">
-  <div id="term_demo"></div>
-</div>
-
+<div id="tabs-2" style="width: 100%;" class="ui-tabs-hide">
+  <div style="margin:0.5em; margin-top:2em;">
+    <h1>R Script Editor</h1>
+    <div id="editor" 
+	 style="position:relative; width:100%; height:50%; left:0px;"
+># this is an honest-to-goodness R editor
+# select some stuff here and hit shift-enter!
+add <- function(x, y) {
+  x + y
+}</div>
+  </div>
+</div></div>
 <script src="index.js"></script>
+<script src="js/ace/build/src/ace-uncompressed.js" type="text/javascript" charset="utf-8"></script>
+<script src="js/ace/build/src/theme-twilight.js" type="text/javascript" charset="utf-8"></script>
+<script src="onload.js"></script>
 <script src="fixedmenu.js"></script>
-
 </body></html>
