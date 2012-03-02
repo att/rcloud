@@ -1,4 +1,4 @@
-client = RClient.create("ws://localhost:8080/");
+client = RClient.create("ws://gis.research.att.com:8081/");
 
 var terminal = $('#term_demo').terminal(function(command, term) {
     if (command !== '') {
