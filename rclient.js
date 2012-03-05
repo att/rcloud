@@ -23,6 +23,7 @@ var RClient = {
             } else {
                 _received_handshake = true;
                 result.post_response("Welcome to R-on-the-browser!");
+		result.binary_send(".session.init()", false);
             }
         }
 
@@ -74,11 +75,28 @@ var RClient = {
                 var cmds = {
                     "eval": function(v) {
                         return v;
-                    }
+                    },
+		    // FIXME: I couldn't get this.post_* to work from here so this is just to avoid the error ... it's nonsensical, obviously
+		    "img.url.update": function(v) { v },
+		    "img.url.final": function(v) { v },
+		    // the following two are unused - they were supposed to enable the "check graphics" flag, but we do that in R now ...
+		    "dev.new": function(v) { "" },
+		    "dev.close": function(v) { "" }
                 };
                 if (cmds[cmd] === undefined) {
                     return this.post_error("Unknown command " + cmd);
                 }
+		if (cmd == "img.url.update" || cmd == "img.url.final") {
+		    // FIXME: this is a bad hack storing in the window - do something more reasonable ;)
+		    var ix = window.devImgIndex;
+		    if (!ix) window.devImgIndex = ix = 1;
+		    if (cmd == "img.url.final") window.devImgIndex++;
+		    var div = document.getElementById("dimg"+ix);
+		    if (div) // FIXME: we may want to move the div down as well -- maybe just remove the old one and add a new one?
+			div.innerHTML = "<img src="+data.value[1].value[0]+">";
+		    else
+			this.post_div("<div id=dimg"+ix+"><img src="+data.value[1].value[0]+"></div>");
+		}
                 return cmds[cmd](data.value[1]);
             },
 
@@ -112,7 +130,7 @@ var RClient = {
             },
 
             display_response: function (result) {
-                $("#output").append(result.html_element());
+                if (result) $("#output").append(result.html_element());
                 window.scrollTo(0, document.body.scrollHeight);
             },
 
@@ -150,11 +168,11 @@ var RClient = {
                 // FIXME code injection? notice that this is already eval, so
                 // what _additional_ harm would exist?
 
-                return "try(list(\"eval\", {" + command + "}), silent=TRUE)";
+                return ".session.eval({" + command + "})";
             },
 
-            binary_send: function(command) {
-                command = this.wrap_command(command);
+            binary_send: function(command, wrap) {
+                if (wrap !== false) command = this.wrap_command(command);
                 var buffer = new ArrayBuffer(command.length + 21);
                 var view = new EndianAwareDataView(buffer);
                 view.setInt32(0,  3);
