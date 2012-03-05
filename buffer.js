@@ -76,7 +76,7 @@
             this.byte_array[ix] = v;
         };
         proto.getInt8 = function(ix) { return this.view.GetInt8(ix); };
-        proto.getUint8 = function(ix) { return this.view.GetUint8(ix); };
+        proto.getUint8 = function(ix) { /* return this.view.GetUint8(ix); // <-- doesn't work in FF! */ this.byte_array[ix]; };
 
         global.DataView = MyDataView;
     }
