@@ -99,7 +99,8 @@ var RClient = {
 			this.post_div("<div id=dimg"+ix+"><img src="+data.value[1].value[0]+"></div>");
 		}
 		if (cmd == "scatterplot") {
-		    return this.post_div(create_scatterplot(data.value[1], data.value[2]))
+		    // FIXME: eventually we should use named arguments ... 
+		    return this.post_div(create_scatterplot(data.value[1], data.value[2], data.value[3].value[0], data.value[3].value[1]))
 		}
                 return cmds[cmd](data.value[1]);
             },
