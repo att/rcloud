@@ -79,6 +79,7 @@ var RClient = {
 		    // FIXME: I couldn't get this.post_* to work from here so this is just to avoid the error ... it's nonsensical, obviously
 		    "img.url.update": function(v) { v },
 		    "img.url.final": function(v) { v },
+		    "scatterplot": function(v) { v },
 		    // the following two are unused - they were supposed to enable the "check graphics" flag, but we do that in R now ...
 		    "dev.new": function(v) { "" },
 		    "dev.close": function(v) { "" }
@@ -96,6 +97,9 @@ var RClient = {
 			div.innerHTML = "<img src="+data.value[1].value[0]+">";
 		    else
 			this.post_div("<div id=dimg"+ix+"><img src="+data.value[1].value[0]+"></div>");
+		}
+		if (cmd == "scatterplot") {
+		    return this.post_div(create_scatterplot(data.value[1], data.value[2]))
 		}
                 return cmds[cmd](data.value[1]);
             },
