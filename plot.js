@@ -3,12 +3,14 @@ function svg_translate(dx, dy)
     return "translate(" + dx + "," + dy + ")";
 }
 
-function create_scatterplot(x, y)
+function create_scatterplot(x, y, width, height)
 {
     x = x.value;
     y = y.value;
     var output_div = $("<div></div>")[0];
-    var width = 480, height = 480, padding = 20;
+    if (!width) width = 480
+    if (!height) height = 480
+    var padding = 20;
 
     var x_scale = d3.scale.linear().domain([_.min(x), _.max(x)]).range([0, width]),
         y_scale = d3.scale.linear().domain([_.min(y), _.max(y)]).range([height, 0]);
