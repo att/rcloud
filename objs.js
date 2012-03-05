@@ -23,7 +23,7 @@ function pprint_array_as_div(formatter) {
         var that = this;
         formatter = formatter || function(v) { return v; };
 
-        var element = this.attributes ?
+        var element = (this.attributes && that.attributes.value.names) ?
             function(i) {
                 return that.attributes.value.names.value[i] + ": " + formatter(String(v[i]));
             }:
