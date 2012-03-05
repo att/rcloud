@@ -174,7 +174,7 @@ function reader(m)
 function parse(msg)
 {
     var header = new Int32Array(msg, 0, 4);
-    if (header[0] !== Rsrv.RESP_OK) {
+    if (header[0] !== Rsrv.RESP_OK && header[0] !== Rsrv.OOB_SEND) {
         var status_code = header[0] >> 24;
         throw("ERROR FROM R SERVER: " + (Rsrv.status_codes[status_code] || 
                                          status_code)

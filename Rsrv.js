@@ -37,6 +37,7 @@ Rsrv = {
     CMD_RESP           : 0x10000,
     RESP_OK            : 0x10000 | 0x0001,
     RESP_ERR           : 0x10000 | 0x0002,
+    OOB_SEND           : 0x30000 | 0x1000,
     ERR_auth_failed    : 0x41,
     ERR_conn_broken    : 0x42,
     ERR_inv_cmd        : 0x43,
