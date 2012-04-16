@@ -2,11 +2,13 @@
 
 rm -f pids.txt
 
-R --vanilla --slave -e 'library(Rserve); .Call("run_WSS",8080)'&
+# R --vanilla --slave -e 'library(Rserve); .Call("run_WSS",8080)'&
 # R --vanilla --slave -e 'library(Rserve); run.Rserve(websockets.port=8080)'&
-RPID=$!
-echo "R $RPID" > pids.txt
-
 python -m SimpleHTTPServer 8000&
 PYTHONPID=$!
-echo "Python $PYTHONPID" >> pids.txt
+echo "$PYTHONPID" >> pids.txt
+
+/Library/Frameworks/R.framework/Resources/bin/R CMD Rserve.dbg --RS-conf conf/mbp-cscheid/Rserve.conf --no-save --vanilla
+# RPID=$!
+# echo "$RPID" > pids.txt
+

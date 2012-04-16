@@ -1,4 +1,5 @@
-client = RClient.create("ws://gis.research.att.com:8081/");
+// client = RClient.create("ws://gis.research.att.com:8081/");
+client = RClient.create("ws://localhost:8081/");
 
 var terminal = $('#term_demo').terminal(function(command, term) {
     if (command !== '') {
