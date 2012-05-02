@@ -55,6 +55,15 @@ var RClient = {
         };
 
         result = {
+            handlers: {
+                "eval": function(v) { return v.value[1]; },
+		// FIXME: I couldn't get this.post_* to work from here so this is just to avoid the error ... it's nonsensical, obviously
+		"img.url.update": function(v) { return v.value[1]; },
+		"img.url.final": function(v) { return v.value[1]; },
+		"dev.new": function(v) { return ""; },
+		"dev.close": function(v) { return ""; }
+            },
+
             eval: function(data) {
                 var that = this;
                 if (data.type !== "sexp") {
@@ -72,18 +81,7 @@ var RClient = {
                     return this.post_error("Protocol error, expected first element to be a single string");
                 }
                 var cmd = data.value[0].value[0];
-                var cmds = {
-                    "eval": function(v) {
-                        return v;
-                    },
-		    // FIXME: I couldn't get this.post_* to work from here so this is just to avoid the error ... it's nonsensical, obviously
-		    "img.url.update": function(v) { v },
-		    "img.url.final": function(v) { v },
-		    "scatterplot": function(v) { v },
-		    // the following two are unused - they were supposed to enable the "check graphics" flag, but we do that in R now ...
-		    "dev.new": function(v) { "" },
-		    "dev.close": function(v) { "" }
-                };
+                 var cmds = this.handlers;
                 if (cmds[cmd] === undefined) {
                     return this.post_error("Unknown command " + cmd);
                 }
@@ -98,11 +96,11 @@ var RClient = {
 		    else
 			this.post_div("<div id=dimg"+ix+"><img src="+data.value[1].value[0]+"></div>");
 		}
-		if (cmd == "scatterplot") {
-		    // FIXME: eventually we should use named arguments ... 
-		    return this.post_div(create_scatterplot(data.value[1], data.value[2], data.value[3].value[0], data.value[3].value[1]))
-		}
-                return cmds[cmd](data.value[1]);
+                return cmds[cmd].call(this, data);
+            },
+
+            register_handler: function(cmd, callback) {
+                this.handlers[cmd] = callback;
             },
 
             post_sent_command: function (msg) {
