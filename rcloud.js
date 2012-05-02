@@ -7,6 +7,16 @@ rcloud.username = function()
 
 rcloud.get_initial_file_list = function()
 {
-    rclient.binary_send("rcloud.list.initial.filenames(\"" + this.username() + "\")", false);
-    // rclient.binary_send("wplot(c(1,2,3,4))", false);
+    rclient.send_and_callback(
+        "rcloud.list.initial.filenames(\"" + this.username() + "\")",
+        function(data) {
+            var filenames = data.value;
+            var userfiles_float = d3.select("#internals-user-files");
+            userfiles_float.append("h3").text("User files");
+            userfiles_float.append("ul")
+                .selectAll("li")
+                .data(filenames)
+                .enter()
+                .append("li").text(function(i) { return i; });
+        });
 }; 

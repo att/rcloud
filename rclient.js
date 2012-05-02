@@ -8,6 +8,7 @@ var RClient = {
         var _received_handshake = false;
 
         var result;
+        var command_counter = 0;
         
         socket.binaryType = 'arraybuffer';
 
@@ -23,7 +24,7 @@ var RClient = {
             } else {
                 _received_handshake = true;
                 result.post_response("Welcome to R-on-the-browser!");
-		result.binary_send(".session.init()", false);
+		result.send(".session.init()", false);
                 onconnect && onconnect();
             }
         }
@@ -45,8 +46,7 @@ var RClient = {
                 if (typeof msg.data === 'string')
                     result.post_response(msg.data);
                 else {
-                    var data = result.eval(parse(msg.data));
-                    result.display_response(data);
+                    result.eval(parse(msg.data));
                 }
             }
         };
@@ -57,7 +57,20 @@ var RClient = {
 
         result = {
             handlers: {
-                "eval": function(v) { return v.value[1]; },
+                "eval": function(v) {
+                    if (v.value.length === 3) {
+                        var command_id = v.value[2].value[0];
+                        var cb = this.result_handlers[command_id];
+                        // if there's a callback attached, call it.
+                        // otherwise, display it.
+                        if (cb) {
+                            cb(command_id, v.value[1]);
+                        } else {
+                            result.display_response(v.value[1]);
+                        }
+                    }
+                    return v.value[1]; 
+                },
 		// FIXME: I couldn't get this.post_* to work from here so this is just to avoid the error ... it's nonsensical, obviously
 		"img.url.update": function(v) { return v.value[1]; },
 		"img.url.final": function(v) { return v.value[1]; },
@@ -65,6 +78,7 @@ var RClient = {
 		"dev.close": function(v) { return ""; },
                 "internal_cmd": function(v) { return ""; }
             },
+            result_handlers: {},
 
             eval: function(data) {
                 var that = this;
@@ -83,7 +97,7 @@ var RClient = {
                     return this.post_error("Protocol error, expected first element to be a single string");
                 }
                 var cmd = data.value[0].value[0];
-                 var cmds = this.handlers;
+                var cmds = this.handlers;
                 if (cmds[cmd] === undefined) {
                     return this.post_error("Unknown command " + cmd);
                 }
@@ -169,15 +183,21 @@ var RClient = {
                 _capturing_callback = blip;
             },
 
-            wrap_command: function(command) {
+            wrap_command: function(command, silent) {
                 // FIXME code injection? notice that this is already eval, so
                 // what _additional_ harm would exist?
-
-                return ".session.eval({" + command + "})";
+                var this_command = command_counter++;
+                if (silent === undefined) {
+                    silent = false;
+                }
+                return [ ".session.eval({" + command + "}, "
+                         + this_command + ", "
+                         + (silent?"TRUE":"FALSE") + ")",
+                         this_command ];
             },
 
-            binary_send: function(command, wrap) {
-                if (wrap !== false) command = this.wrap_command(command);
+            send: function(command, wrap) {
+                if (wrap !== false) command = this.wrap_command(command)[0];
                 var buffer = new ArrayBuffer(command.length + 21);
                 var view = new EndianAwareDataView(buffer);
                 view.setInt32(0,  3);
@@ -191,6 +211,19 @@ var RClient = {
                 view.setUint8(buffer.byteLength - 1, 0);
 
                 socket.send(buffer);
+            },
+
+            send_and_callback: function(command, callback) {
+                var t = this.wrap_command(command, true);
+                var command_id = t[1];
+                command = t[0];
+                console.log(t);
+                var that = this;
+                this.result_handlers[command_id] = function(id, data) {
+                    delete that.result_handlers[id];
+                    callback(data);
+                };
+                this.send(command, false);
             }
         };
         return result;
