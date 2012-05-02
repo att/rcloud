@@ -30,7 +30,7 @@ window.onload = function() {
         exec: function(editor, args, request) {
             var selection = editor.getSelection();
             var text = ace_selection_text(selection);
-            client.post_sent_command(text);
+            rclient.post_sent_command(text);
             interpret_command(text);
         }
     });

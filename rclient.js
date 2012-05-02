@@ -1,5 +1,5 @@
 var RClient = {
-    create: function(host) {
+    create: function(host, onconnect) {
         var socket = new WebSocket(host);
 
         var _debug = true;
@@ -24,6 +24,7 @@ var RClient = {
                 _received_handshake = true;
                 result.post_response("Welcome to R-on-the-browser!");
 		result.binary_send(".session.init()", false);
+                onconnect && onconnect();
             }
         }
 
@@ -61,7 +62,8 @@ var RClient = {
 		"img.url.update": function(v) { return v.value[1]; },
 		"img.url.final": function(v) { return v.value[1]; },
 		"dev.new": function(v) { return ""; },
-		"dev.close": function(v) { return ""; }
+		"dev.close": function(v) { return ""; },
+                "internal_cmd": function(v) { return ""; }
             },
 
             eval: function(data) {
