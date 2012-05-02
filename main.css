@@ -2,6 +2,21 @@ body {
     font-family: Helvetica Neue, Verdana, Helvetica, Arial, sans-serif;
 }
 
+.tab-div {
+    margin: 0.5em;
+    margin-top: 2em;
+}
+
+.internals-float {
+    float: left;
+    background-color: #eee;
+    border-color: #ccc;
+    border-style: solid;
+    border-width: 1px;
+    padding-right: 2em;
+    padding-left: 2em;
+}
+
 .key {
     font-family: monospace;
     color: #008;
@@ -43,3 +58,5 @@ path.dot {
   stroke-width: 1.5px;
   stroke: white;
 }
+
+. 

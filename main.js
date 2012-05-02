@@ -17,3 +17,24 @@ var terminal = $('#term_demo').terminal(function(command, term) {
 $('#output').click(function(x) {
     terminal.disable();
 });
+
+//////////////////////////////////////////////////////////////////////////////
+
+function cookie_float(container)
+{
+    var cookie_div = container.append("div").attr("class", "internals-float");
+    cookie_div.append("h3").text("Cookie info");
+    cookie_div.append("ul")
+        .selectAll("li")
+        .data(['user', 'sessid'])
+        .enter()
+        .append("li").text(function (i) { return i + ": " + $.cookies.get(i); });
+}
+
+function init_debug_internals()
+{
+    var container = d3.select("#internals-infocontainer");
+    cookie_float(container);
+}
+
+init_debug_internals();

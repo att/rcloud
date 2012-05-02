@@ -32,6 +32,7 @@
 <ul id="tabs-header" style="width:100%;">
   <li><a href="#tabs-1">Shell</a></li>
   <li><a href="#tabs-2">Editor</a></li>
+  <li><a href="#tabs-3">Internals</a></li>
 </ul>
 <div id="tabs-1" style="width: 100%;" class="ui-tabs-hide">
   <div id="fixeddiv" 
@@ -39,13 +40,13 @@
 	      background:#FFFFFF; border:1px solid #DDDDDD">
     <div id="term_demo"></div>
   </div>
-  <div id="output" style="margin:0.5em; margin-top:2em;">
+  <div id="output" class="tab-div">
     <h1>R Interaction</h1>
   </div>
   <div style="padding:2em;"></div>
 </div>
 <div id="tabs-2" style="width: 100%;" class="ui-tabs-hide">
-  <div style="margin:0.5em; margin-top:2em;">
+  <div class="tab-div">
     <h1>R Script Editor</h1>
     <div id="editor" 
 	 style="position:relative; width:100%; height:50%; left:0px;"
@@ -55,7 +56,15 @@ add <- function(x, y) {
   x + y
 }</div>
   </div>
-</div></div>
+</div>
+<div id="tabs-3" style="width: 100%;" class="ui-tabs-hide">
+  <div class="tab-div">
+    <h1>system internals</h1>
+    <div id="internals-infocontainer"></div>
+    </div>
+  </div>
+</div>
+</div>
 <script src="main.js"></script>
 <script src="js/ace/build/src/ace-uncompressed.js" type="text/javascript" charset="utf-8"></script>
 <script src="js/ace/build/src/theme-twilight.js" type="text/javascript" charset="utf-8"></script>

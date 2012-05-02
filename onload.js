@@ -1,13 +1,4 @@
-function shell_tab()
-{
-    terminal.enable();
-}
-
-function editor_tab()
-{
-    terminal.disable();
-}
-
+// given a selection object, returns the contents of the selection as a string.
 function ace_selection_text(selection)
 {
     var mn, mx;
@@ -45,7 +36,8 @@ window.onload = function() {
     });
     var map = {
         0: shell_tab,
-        1: editor_tab
+        1: editor_tab,
+        2: internals_tab
     };
     $("#tabs").tabs({
         select: function(event, ui) {
@@ -56,3 +48,20 @@ window.onload = function() {
     });
     $("#tabs").tabs("select", "#tabs-1");
 };
+
+//////////////////////////////////////////////////////////////////////////////
+
+function shell_tab()
+{
+    terminal.enable();
+}
+
+function editor_tab()
+{
+    terminal.disable();
+}
+
+function internals_tab()
+{
+    terminal.disable();
+}
