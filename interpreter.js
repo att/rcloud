@@ -1,10 +1,10 @@
 var interpreter = {
     'plot': function(cmd) {
-        client.capture_answers(cmd.ps.length, function(result) {
-            client.post_div(create_scatterplot.apply(result));
+        rclient.capture_answers(cmd.ps.length, function(result) {
+            rclient.post_div(create_scatterplot.apply(result));
         });
         for (var i=0; i<cmd.ps.length; ++i) {
-            client.binary_send(cmd.ps[i]);
+            rclient.binary_send(cmd.ps[i]);
         }
     },
     'logout': function(cmd) {
@@ -20,6 +20,6 @@ function interpret_command(command)
         var cmd = parser.parse(command);
         interpreter[cmd.id](cmd);
     } else {
-        client.binary_send(command);
+        rclient.binary_send(command);
     }
 }
