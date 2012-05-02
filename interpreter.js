@@ -1,6 +1,9 @@
 var interpreter = {
     'plot': function(x, y) {
         client.post_div(create_scatterplot(x, y));
+    },
+    'logout': function(x, y) {
+        
     }
 };
 
