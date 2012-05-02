@@ -1,9 +1,16 @@
 var interpreter = {
-    'plot': function(x, y) {
-        client.post_div(create_scatterplot(x, y));
+    'plot': function(cmd) {
+        client.capture_answers(cmd.ps.length, function(result) {
+            client.post_div(create_scatterplot.apply(result));
+        });
+        for (var i=0; i<cmd.ps.length; ++i) {
+            client.binary_send(cmd.ps[i]);
+        }
     },
-    'logout': function(x, y) {
-        
+    'logout': function(cmd) {
+        $.cookies.set('user', null);
+        $.cookies.set('sessid', null);
+        window.location.href = '/login.html';
     }
 };
 
@@ -11,12 +18,7 @@ function interpret_command(command)
 {
     if (command[0] === '@') {
         var cmd = parser.parse(command);
-        client.capture_answers(cmd.ps.length, function(result) {
-            interpreter[cmd.id].apply(interpreter, result);
-        });
-        for (var i=0; i<cmd.ps.length; ++i) {
-            client.binary_send(cmd.ps[i]);
-        }
+        interpreter[cmd.id](cmd);
     } else {
         client.binary_send(command);
     }

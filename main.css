@@ -13,8 +13,8 @@ body {
     border-color: #ccc;
     border-style: solid;
     border-width: 1px;
-    padding-right: 2em;
     padding-left: 2em;
+    padding-right: 2em;
 }
 
 .key {
@@ -58,5 +58,3 @@ path.dot {
   stroke-width: 1.5px;
   stroke: white;
 }
-
-. 
