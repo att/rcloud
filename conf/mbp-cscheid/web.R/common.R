@@ -27,6 +27,7 @@ wplot <- function(x, y, width=480, height, ...) {
 
 .session.eval <- function(x) {
   val <- try(x, silent=TRUE)
+  if (!inherits(val, "try-error")) print(val)
   if (.Device == "Cairo") {
     sn <- Cairo.serial()
     if (sn != old.sn) {
