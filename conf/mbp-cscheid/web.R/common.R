@@ -15,9 +15,9 @@ onSave <- function(dev, page, cmd="img.url.final") {
     TRUE
 }
 
-.session.eval <- function(x) {
+.session.eval <- function(x, command_id, silent) {
   val <- try(x, silent=TRUE)
-  if (!inherits(val, "try-error")) print(val)
+  if (!inherits(val, "try-error") && !silent) print(val)
   if (.Device == "Cairo") {
     sn <- Cairo.serial()
     if (sn != old.sn) {
@@ -25,7 +25,11 @@ onSave <- function(dev, page, cmd="img.url.final") {
       onSave(dev.cur(), 0L, "img.url.update")
     }
   }
-  list("eval", val)
+  if (missing(command_id)) {
+    list("eval", val)
+  } else {
+    list("eval", val, command_id)
+  }
 }
 
 wplot <- function(x, y, width=480, height, ...) {
@@ -38,12 +42,10 @@ wplot <- function(x, y, width=480, height, ...) {
 }
 
 ################################################################################
-# rcloud_status oob messaging stuff goes here
+# rcloud_status stuff goes here
 
 rcloud.list.initial.filenames <- function(user) {
-  ## invisible(self.oobSend(list("rcloud_status", "ok")))
-  invisible(self.oobSend(list("rcloud_status", "initial_filenames", list.files(path=paste("..","userfiles", user, sep='/')))))
-  list("internal_cmd", "ok")
+  list.files(path=paste("..","userfiles", user, sep='/'))
 }
 
 ################################################################################

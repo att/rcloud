@@ -12,20 +12,6 @@ rclient.register_handler("scatterplot", function(data) {
 });
 
 //////////////////////////////////////////////////////////////////////////////
-// rcloud environment (file list, etc)
-
-rclient.register_handler("rcloud_status", function(data) {
-    var filenames = data.value[2].value;
-    var userfiles_float = d3.select("#internals-user-files");
-    userfiles_float.append("h3").text("User files");
-    userfiles_float.append("ul")
-        .selectAll("li")
-        .data(filenames)
-        .enter()
-        .append("li").text(function(i) { return i; });
-});
-
-//////////////////////////////////////////////////////////////////////////////
 
 var terminal = $('#term_demo').terminal(function(command, term) {
     if (command !== '') {
