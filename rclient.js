@@ -214,16 +214,34 @@ var RClient = {
             },
 
             send_and_callback: function(command, callback) {
+                if (_.isUndefined(callback))
+                    callback = _.identity;
                 var t = this.wrap_command(command, true);
                 var command_id = t[1];
                 command = t[0];
-                console.log(t);
                 var that = this;
                 this.result_handlers[command_id] = function(id, data) {
                     delete that.result_handlers[id];
                     callback(data);
                 };
                 this.send(command, false);
+            },
+
+            // FIXME this needs hardening
+            r_funcall: function(function_name) {
+                var result = [function_name, "("];
+                for (var i=1; i<arguments.length; ++i) {
+                    var t = typeof arguments[i];
+                    if (t === "string") {
+                        result.push("\"" + arguments[i].replace(/"/g, "\\\"") + "\"");
+                    } else
+                        result.push(String(arguments[i]));
+                    if (i < arguments.length-1)
+                        result.push(",");
+                }
+                result.push(")");
+                var s = result.join("");
+                return s;
             }
         };
         return result;
