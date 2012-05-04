@@ -1,7 +1,7 @@
 // rclient = RClient.create("ws://gis.research.att.com:8081/");
 
 rclient = RClient.create("ws://localhost:8081/", function() {
-    rcloud.get_initial_file_list();
+    rcloud.init_client_side_data();
 });
 
 //////////////////////////////////////////////////////////////////////////////

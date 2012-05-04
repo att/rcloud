@@ -48,6 +48,15 @@ rcloud.list.initial.filenames <- function(user) {
   list.files(path=paste("..","userfiles", user, sep='/'))
 }
 
+rcloud.load.user.file <- function(user, filename) {
+  readLines(paste("..","userfiles",user,filename,sep='/'))
+}
+
+rcloud.save.to.user.file <- function(user, filename, content) {
+  filename <- paste("..","userfiles",user,filename,sep='/');
+  invisible(write(content, filename))
+}
+
 ################################################################################
 # setup the r-side environment
 
