@@ -44,17 +44,30 @@ wplot <- function(x, y, width=480, height, ...) {
 ################################################################################
 # rcloud_status stuff goes here
 
+rcloud.user.file.name <- function(user, filename) {
+  paste("..","userfiles",user,filename,sep='/')
+}
+
 rcloud.list.initial.filenames <- function(user) {
   list.files(path=paste("..","userfiles", user, sep='/'))
 }
 
 rcloud.load.user.file <- function(user, filename) {
-  readLines(paste("..","userfiles",user,filename,sep='/'))
+  readLines(rcloud.user.file.name(user, filename))
 }
 
 rcloud.save.to.user.file <- function(user, filename, content) {
-  filename <- paste("..","userfiles",user,filename,sep='/');
+  filename <- rcloud.user.file.name(user, filename)
   invisible(write(content, filename))
+}
+
+rcloud.create.user.file <- function(user, filename) {
+  internal_filename <- rcloud.user.file.name(user, filename)
+  if (!file.exists(internal_filename)) {
+    file.create(internal_filename);
+    TRUE
+  } else
+    FALSE
 }
 
 ################################################################################

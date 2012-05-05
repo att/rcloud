@@ -1,18 +1,3 @@
-// rclient = RClient.create("ws://gis.research.att.com:8081/");
-
-rclient = RClient.create("ws://localhost:8081/", function() {
-    rcloud.init_client_side_data();
-});
-
-//////////////////////////////////////////////////////////////////////////////
-// plotting
-
-rclient.register_handler("scatterplot", function(data) {
-    this.post_div(create_scatterplot(data.value[1], data.value[2], data.value[3].value[0], data.value[3].value[1]));
-});
-
-//////////////////////////////////////////////////////////////////////////////
-
 var terminal = $('#term_demo').terminal(function(command, term) {
     if (command !== '') {
         term.clear();

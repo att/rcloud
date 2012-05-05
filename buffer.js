@@ -44,8 +44,8 @@
         
         function MyDataView(buffer, byteOffset, byteLength) {
             this.buffer = buffer;
-            this.byteOffset = byteOffset || 0;
-            this.byteLength = byteLength || buffer.byteLength;
+            this.byteOffset = _.isUndefined(byteOffset) ? 0 : byteOffset;
+            this.byteLength = _.isUndefined(byteLength) ? buffer.byteLength : byteLength;
             this.view = new jDataView(buffer, byteOffset, byteLength, _is_little_endian);
             this.byte_array = new Uint8Array(buffer);
         }
@@ -123,15 +123,15 @@
     })();
 
     global.my_ArrayBufferView = function(b, o, l) {
-        o = o || 0;
-        l = l || b.byteLength;
+        o = _.isUndefined(o) ? 0 : o;
+        l = _.isUndefined(l) ? b.byteLength : l;
         return {
             buffer: b,
             offset: o,
             length: l,
             make: function(ctor, new_offset, new_length) { 
-                new_offset = new_offset || 0;
-                new_length = new_length || this.length;
+                new_offset = _.isUndefined(new_offset) ? 0 : new_offset;
+                new_length = _.isUndefined(new_length) ? this.length : new_length;
                 var element_size = ctor.BYTES_PER_ELEMENT || 1;
                 var n_els = new_length / element_size;
                 if ((this.offset + new_offset) % element_size != 0) {
