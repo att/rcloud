@@ -6,7 +6,6 @@ var editor = {
         var that = this;
         rcloud.get_user_filenames(function(data) {
             data = data.value;
-            console.log(data);
             var lst = d3.select("#editor-file-list-ul");
             lst.selectAll("li").remove();
             lst.style("list-style-type", "none");
@@ -40,7 +39,6 @@ var editor = {
                     var filename = prompt("please enter the filename","[new filename]");
                     if (!validate_filename(filename))
                         alert("Invalid filename");
-                    console.log("new file!");
                     that.new_file(filename);
                 });
         });
@@ -80,10 +78,7 @@ var editor = {
     },
     new_file: function(filename) {
         var that = this;
-        console.log("new_file!");
         rcloud.create_user_file(filename, function(result) {
-            console.log("new_file!");
-            console.log(result);
             that.current_filename = filename;
             that.current_user = rcloud.username();
             that.clear();
