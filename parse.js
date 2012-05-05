@@ -89,9 +89,10 @@ function reader(m)
         },
         read_bool_array: function(attributes, length) {
             var l2 = this.read_int();
-            var a = new Uint8Array(this.read_stream(length), 0, l2);
+            var s = this.read_stream(length-4);
+            var a = s.make(Uint8Array); // new Uint8Array(s, 0, l2);
             var result = [];
-            for (var i=0; i<a.length; ++i)
+            for (var i=0; i<l2; ++i)
                 result[i] = !!a[i];
             return [Robj.bool_array(result, attributes), length];
         },
