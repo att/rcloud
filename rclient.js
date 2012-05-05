@@ -58,7 +58,6 @@ var RClient = {
         result = {
             handlers: {
                 "eval": function(v) {
-                    console.log("Got result!", v);
                     if (v.value.length === 3) {
                         var command_id = v.value[2].value[0];
                         var cb = this.result_handlers[command_id];
@@ -215,20 +214,16 @@ var RClient = {
             },
 
             send_and_callback: function(command, callback) {
-                console.log(command, callback);
                 if (_.isUndefined(callback))
                     callback = _.identity;
-                console.log(command, callback);
                 var t = this.wrap_command(command, true);
                 var command_id = t[1];
                 command = t[0];
                 var that = this;
                 this.result_handlers[command_id] = function(id, data) {
-                    console.log("back from ", command, that.result_handlers);
                     delete that.result_handlers[id];
                     callback(data);
                 };
-                console.log("sending ", command, this.result_handlers);
                 this.send(command, false);
             },
 

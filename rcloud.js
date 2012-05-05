@@ -47,7 +47,6 @@ rcloud.save_to_user_file = function(user, filename, content, k)
 
 rcloud.create_user_file = function(filename, k)
 {
-    console.log(filename, k);
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.create.user.file", rcloud.username(), filename), k);
 };

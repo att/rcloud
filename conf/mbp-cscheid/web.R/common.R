@@ -32,13 +32,27 @@ onSave <- function(dev, page, cmd="img.url.final") {
   }
 }
 
-wplot <- function(x, y, width=480, height, ...) {
+wplot <- function(x, y, ...) {
+  opts <- list(...)
   if (missing(y)) {
     y <- x
     x <- seq.int(y)
   }
-  if (missing(height)) height <- width
-  invisible(self.oobSend(list("scatterplot",x,y,c(width,height))))
+  if (is.null(opts$width)) {
+    width <- 480
+  } else {
+    width <- opts$width
+  }
+  if (is.null(opts$height)) {
+    height <- opts$width
+  } else {
+    height <- opts$height
+  }
+  if (!is.null(opts$kind)) {
+    invisible(self.oobSend(list("scatterplot",x,y,opts$kind,c(width,height))))
+  } else {
+    invisible(self.oobSend(list("scatterplot",x,y,c(width,height))))
+  }
 }
 
 ################################################################################

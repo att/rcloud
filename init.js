@@ -14,11 +14,38 @@ function internals_tab()
     terminal.disable();
 }
 
+function transpose(ar) {
+    return _.map(_.range(ar[0].length), function(i) {
+        return _.map(ar, function(lst) { return lst[i]; });
+    });
+}
+
 function main_init() {
     rclient = RClient.create("ws://localhost:8081/", function() {
         rcloud.init_client_side_data();
         rclient.register_handler("scatterplot", function(data) {
-            this.post_div(create_scatterplot(data.value[1], data.value[2], data.value[3].value[0], data.value[3].value[1]));
+            var opts = {
+                x: function(d) { return d[0]; },
+                y: function(d) { return d[1]; }
+            };
+            var row_based_data;
+
+            if (data.value.length === 5) {
+                row_based_data = transpose([data.value[1].value, data.value[2].value, data.value[3].value]);
+                var color = d3.scale.category10();
+                opts.fill = function(d) { return color(d[2]); };
+                opts.width = data.value[4].value[0];
+                opts.height = data.value[4].value[1];
+            } else {
+                row_based_data = transpose([data.value[1].value, data.value[2].value]);
+                opts.width = data.value[3].value[0];
+                opts.height = data.value[3].value[1];
+            }
+            var data_model = Chart.data_model(row_based_data);
+            opts.data = data_model;
+
+            var plot = Chart.scatterplot(opts);
+            this.post_div(plot.plot);
         });
     editor.init();
 
