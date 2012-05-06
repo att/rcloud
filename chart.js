@@ -88,6 +88,11 @@ Chart.scatterplot = function(opts)
         .append("g")
            .attr("transform", svg_translate(padding, padding));
 
+    var brush = d3.svg.brush()
+        .on("brushstart", brushstart)
+        .on("brush", brushevt)
+        .on("brushend", brushend);
+
     vis.append("rect")
         .attr("width", width)
         .attr("height", height)
@@ -131,10 +136,7 @@ Chart.scatterplot = function(opts)
         .data(_.range(data.length))
         .enter().append("path");
 
-    dots.on("click", function(i) {
-        model.selection()[i] = !model.selection()[i];
-        update_selection(d3.select(this));
-    });
+    vis.call(brush.x(x_scale).y(y_scale));
 
     function update_selection(selection) {
         (_.isUndefined(selection)?dots:selection).style("fill", selection_color);
@@ -166,6 +168,23 @@ Chart.scatterplot = function(opts)
             })
             .style("fill", selection_color)
         ;
+    }
+
+    function brushstart(p) {}
+    function brushevt(p) {
+        var e = brush.extent();
+        var selection = model.selection();
+        dots.style("fill", function(d) {
+            var v = data[d];
+            var b = (e[0][0] <= opts.x(v) && opts.x(v) <= e[1][0] &&
+                     e[0][1] <= opts.y(v) && opts.y(v) <= e[1][1]);
+            selection[d] = b;
+            return selection_color(d);
+        });
+    }
+    function brushend() {
+        if (brush.empty())
+            update_selection(dots);
     }
 
     style_dots(dots);
