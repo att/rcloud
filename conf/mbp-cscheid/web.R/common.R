@@ -44,7 +44,7 @@ wplot <- function(x, y, ...) {
     width <- opts$width
   }
   if (is.null(opts$height)) {
-    height <- opts$width
+    height <- width
   } else {
     height <- opts$height
   }
