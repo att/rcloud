@@ -58,3 +58,15 @@ path.dot {
   stroke-width: 1.5px;
   stroke: white;
 }
+
+rect.extent {
+    fill: #000;
+    fill-opacity: .1;
+    stroke: #fff;
+}
+
+rect.frame {
+  fill: #fff;
+  fill-opacity: .7;
+  stroke: #aaa;
+}
