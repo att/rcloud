@@ -13,25 +13,53 @@ function array_remove(array, from, to) {
     return array.push.apply(array, rest);
 };
 
-Chart.data_model = function(data) 
+var models = {};
+var selections = {};
+function add_data_model(model, group_id)
+{
+    if (_.isUndefined(models[group_id])) {
+        var selection = new Uint8Array(model.data().length);
+        selections[group_id] = selection;
+        models[group_id] = [model];
+    } else {
+        models[group_id].push(model);
+    }
+}
+
+Chart.data_model = function(data, group_id)
 {
     var l = data.length;
-    var views = {};
     // I use typed arrays because this might be useful in Facet eventually
-    var selection = new Uint8Array(data.length);
-    return {
+    var result = {
+        views: {},
+        group_id: group_id,
         data: function() { return data; },
-        selection: function() { return selection; },
+        selection: function() { return selections[this.group_id]; },
 
         // toggle_selection: function(
-        register_view: function(v) { views[v._view_index] = v; },
-        deregister_view: function(v) { delete views[v._view_index]; },
+        register_view: function(v) { this.views[v._view_index] = v; },
+        deregister_view: function(v) { delete this.views[v._view_index]; },
         notify: function() {
-            _.each(views, function(v) {
-                v.selection_changed();
+            _.each(models[this.group_id], function(model) {
+                _.each(model.views, function(v) {
+                    v.selection_changed();
+                });
+            });
+        },
+        clear_brushes: function(active_view) {
+            _.each(models[this.group_id], function(model) {
+                _.each(model.views, function(v) {
+                    if (v._view_index !== active_view._view_index) {
+                        console.log("clearing brush on view", v._view_index, v, active_view);
+                        v.clear_brush();
+                    }
+                });
             });
         }
     };
+    add_data_model(result, group_id);
+
+    return result;
 };
 
 var view_counter = 0;
@@ -78,8 +106,15 @@ Chart.scatterplot = function(opts)
     var result = {
         _view_index: ++view_counter,
         opts: opts,
-        plot: output_div
+        plot: output_div,
+        clear_brush: function() {
+            vis.call(brush.clear());
+        }, selection_changed: function() {
+            update_selection();
+        }
     };
+
+    model.register_view(result);
     
     var vis = d3.select(output_div)
         .append("svg")
@@ -170,17 +205,20 @@ Chart.scatterplot = function(opts)
         ;
     }
 
-    function brushstart(p) {}
+    function brushstart(p) {
+        model.clear_brushes(result);
+    }
+
     function brushevt(p) {
         var e = brush.extent();
         var selection = model.selection();
-        dots.style("fill", function(d) {
+        dots.each(function(d) {
             var v = data[d];
             var b = (e[0][0] <= opts.x(v) && opts.x(v) <= e[1][0] &&
                      e[0][1] <= opts.y(v) && opts.y(v) <= e[1][1]);
             selection[d] = b;
-            return selection_color(d);
         });
+        model.notify();
     }
     function brushend() {
         if (brush.empty())
