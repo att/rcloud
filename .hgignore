@@ -2,5 +2,6 @@ syntax:glob
 *~
 *.pyc
 pids.txt
-conf/mbp-cscheid/tmp
+tmp
+userfiles
 
