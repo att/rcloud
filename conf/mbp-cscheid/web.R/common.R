@@ -49,9 +49,9 @@ wplot <- function(x, y, ...) {
     height <- opts$height
   }
   if (!is.null(opts$kind)) {
-    invisible(self.oobSend(list("scatterplot",x,y,opts$kind,c(width,height))))
+    invisible(self.oobSend(list("scatterplot",x,y,opts$kind,c(width,height),opts$group)))
   } else {
-    invisible(self.oobSend(list("scatterplot",x,y,c(width,height))))
+    invisible(self.oobSend(list("scatterplot",x,y,c(width,height),opts$group)))
   }
 }
 

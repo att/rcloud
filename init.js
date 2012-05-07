@@ -28,20 +28,22 @@ function main_init() {
                 x: function(d) { return d[0]; },
                 y: function(d) { return d[1]; }
             };
-            var row_based_data;
+            var row_based_data, group;
 
-            if (data.value.length === 5) {
+            if (data.value.length === 6) {
                 row_based_data = transpose([data.value[1].value, data.value[2].value, data.value[3].value]);
                 var color = d3.scale.category10();
                 opts.fill = function(d) { return color(d[2]); };
                 opts.width = data.value[4].value[0];
                 opts.height = data.value[4].value[1];
+                group = data.value[5].value[0];
             } else {
                 row_based_data = transpose([data.value[1].value, data.value[2].value]);
                 opts.width = data.value[3].value[0];
                 opts.height = data.value[3].value[1];
+                group = data.value[4].value[0];
             }
-            var data_model = Chart.data_model(row_based_data);
+            var data_model = Chart.data_model(row_based_data, group);
             opts.data = data_model;
 
             var plot = Chart.scatterplot(opts);
