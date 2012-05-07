@@ -82,12 +82,16 @@ Chart.scatterplot = function(opts)
         n_yticks: 10,
         stroke: "white",
         stroke_width: "1.5px",
-        fill: "black"
+        fill: "black",
+        stroke_opacity: 1.0,
+        fill_opacity: 1.0
     });
 
     opts.stroke = enforce_function(opts.stroke);
+    opts.stroke_opacity = enforce_function(opts.stroke_opacity);
     opts.stroke_width = enforce_function(opts.stroke_width);
     opts.fill = enforce_function(opts.fill);
+    opts.fill_opacity = enforce_function(opts.fill_opacity);
 
     var width = opts.width, height = opts.height, padding = opts.padding;
     var model = opts.data;
@@ -173,18 +177,30 @@ Chart.scatterplot = function(opts)
 
     vis.call(brush.x(x_scale).y(y_scale));
 
-    function update_selection(selection) {
-        (_.isUndefined(selection)?dots:selection).style("fill", selection_color);
-    };
-
-    var selection_color = (function(selection) {
+    function sel_function(if_true, if_false) {
+        var selection = model.selection();
         return function(i) {
             if (selection[i]) {
-                return "red";
-            } else
-                return result.opts.fill(data[i]);
+                return if_true(data[i]);
+            } else {
+                return if_false(data[i]);
+            }
         };
-    })(model.selection());
+    }
+
+    var selection_fill = sel_function(function() { return "red"; }, result.opts.fill);
+    var selection_stroke = sel_function(function() { return "red"; }, result.opts.stroke);
+    var selection_fill_opacity = sel_function(function() { return 1.0; }, result.opts.fill_opacity);
+    var selection_stroke_opacity = sel_function(function() { return 1.0; }, result.opts.stroke_opacity);
+
+    function update_selection(selection) {
+        (_.isUndefined(selection)?dots:selection)
+            .style("fill", selection_fill)
+            .style("stroke", selection_stroke)
+            .style("fill-opacity", selection_fill_opacity)
+            .style("stroke-opacity", selection_stroke_opacity)
+        ;
+    };
 
     function style_dots(selection) {
         selection
@@ -200,9 +216,8 @@ Chart.scatterplot = function(opts)
             })
             .style("stroke-width", function(d) { 
                 return result.opts.stroke_width(data[d]);
-            })
-            .style("fill", selection_color)
-        ;
+            });
+        update_selection(selection);
     }
 
     function brushstart(p) {
