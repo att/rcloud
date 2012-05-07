@@ -10,7 +10,7 @@ WSdev <- function(...) {
 onSave <- function(dev, page, cmd="img.url.final") {
     fn <- paste(tmpfile, page, "png", sep='.')
     writePNG(Cairo.capture(dev), fn)
-    self.oobSend(list(cmd , sprintf("http://localhost/cgi-bin/R/ws.tmp?mime=image/png&cc=%.8f&file=%s",runif(1),fn,sep='')))
+    self.oobSend(list(cmd , sprintf("http://%s/cgi-bin/R/ws.tmp?mime=image/png&cc=%.8f&file=%s",.host,runif(1),fn,sep='')))
     if (dev != dev.cur()) self.oobSend(list("dev.close", as.integer(dev))) else old.sn <<- Cairo.serial()
     TRUE
 }
@@ -78,6 +78,8 @@ rcloud.save.to.user.file <- function(user, filename, content) {
 rcloud.create.user.file <- function(user, filename) {
   internal_filename <- rcloud.user.file.name(user, filename)
   if (!file.exists(internal_filename)) {
+    if (!file.exists(dir <- dirname(internal_filename)))
+      dir.create(dir, F, T, "0770")
     file.create(internal_filename);
     TRUE
   } else
