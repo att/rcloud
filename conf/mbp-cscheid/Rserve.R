@@ -9,6 +9,8 @@ pkgs <- c("XML", "Cairo", "Rserve", "Matrix", "snippets", "FastRWeb", "RMySQL")
 host <- tolower(system("hostname -s", TRUE))
 cat("Starting Rserve on", host,"\n")
 
+.host <- "localhost"
+
 cat("Loading packages...\n")
 for (pkg in pkgs) cat(pkg, ": ",require(pkg, quietly=TRUE, character.only=TRUE),"\n",sep='')
 

@@ -21,7 +21,7 @@ function transpose(ar) {
 }
 
 function main_init() {
-    rclient = RClient.create("ws://localhost:8081/", function() {
+    rclient = RClient.create("ws://"+location.hostname+":8081/", function() {
         rcloud.init_client_side_data();
         rclient.register_handler("scatterplot", function(data) {
             var opts = {
