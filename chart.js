@@ -119,11 +119,13 @@ Chart.scatterplot = function(opts)
     };
 
     model.register_view(result);
-    
-    var vis = d3.select(output_div)
+
+    var svg = d3.select(output_div)
         .append("svg")
            .attr("width", width + 2 * padding)
-           .attr("height", height + 2 * padding)
+           .attr("height", height + 2 * padding);
+
+    var vis = svg
         .append("g")
            .attr("transform", svg_translate(padding, padding));
 
@@ -239,6 +241,10 @@ Chart.scatterplot = function(opts)
         if (brush.empty())
             update_selection(dots);
     }
+
+    svg.on("keydown", function(e) {
+        console.log(e);
+    });
 
     style_dots(dots);
     return result;
