@@ -1,17 +1,17 @@
 
 function shell_tab()
 {
-    terminal.enable();
+    shell.terminal.enable();
 }
 
 function editor_tab()
 {
-    terminal.disable();
+    shell.terminal.disable();
 }
 
 function internals_tab()
 {
-    terminal.disable();
+    shell.terminal.disable();
 }
 
 function transpose(ar) {
@@ -47,7 +47,11 @@ function main_init() {
             opts.data = data_model;
 
             var plot = Chart.scatterplot(opts);
-            this.post_div(plot.plot);
+            var detachable_div = this.post_div(plot.plot);
+            detachable_div.on_remove(function() {
+                plot.deleted();
+            });
+            
         });
     editor.init();
 

@@ -115,6 +115,8 @@ Chart.scatterplot = function(opts)
             vis.call(brush.clear());
         }, selection_changed: function() {
             update_selection();
+        }, deleted: function() {
+            model.deregister_view(this);
         }
     };
 
@@ -177,34 +179,39 @@ Chart.scatterplot = function(opts)
         .data(_.range(data.length))
         .enter().append("path");
 
+    var selected_dots = vis.selectAll("pathasdkf.dot")
+        .data(_.range(data.length))
+        .enter().append("path");
+
+    var d = function(d) { return data[d]; };
+
+    dots.style("fill", _.compose(opts.fill, d))
+        .style("stroke", _.compose(opts.stroke, d))
+        .style("fill-opacity", _.compose(opts.fill_opacity, d))
+        .style("stroke-opacity", _.compose(opts.stroke_opacity, d));
+
     vis.call(brush.x(x_scale).y(y_scale));
 
-    function sel_function(if_true, if_false) {
+    var selection_fill = function() { return "red"; };
+    var selection_stroke = function() { return "red"; };
+    var selection_fill_opacity = function() { return 1.0; };
+    var selection_stroke_opacity = function() { return 1.0; };
+
+    selected_dots.style("fill", _.compose(selection_fill, d))
+        .style("stroke", _.compose(selection_stroke, d))
+        .style("fill-opacity", _.compose(selection_fill_opacity, d))
+        .style("stroke-opacity", _.compose(selection_stroke_opacity, d));
+
+    function update_selection() {
         var selection = model.selection();
-        return function(i) {
-            if (selection[i]) {
-                return if_true(data[i]);
-            } else {
-                return if_false(data[i]);
-            }
-        };
-    }
-
-    var selection_fill = sel_function(function() { return "red"; }, result.opts.fill);
-    var selection_stroke = sel_function(function() { return "red"; }, result.opts.stroke);
-    var selection_fill_opacity = sel_function(function() { return 1.0; }, result.opts.fill_opacity);
-    var selection_stroke_opacity = sel_function(function() { return 1.0; }, result.opts.stroke_opacity);
-
-    function update_selection(selection) {
-        (_.isUndefined(selection)?dots:selection)
-            .style("fill", selection_fill)
-            .style("stroke", selection_stroke)
-            .style("fill-opacity", selection_fill_opacity)
-            .style("stroke-opacity", selection_stroke_opacity)
+        selected_dots
+            .attr("display", function(d) {
+                return selection[d]?null:"none"; 
+            })
         ;
     };
 
-    function style_dots(selection) {
+    function place_dots(selection) {
         selection
             .attr("d", d3.svg.symbol().type("circle"))
             .attr("size", 5)
@@ -213,13 +220,9 @@ Chart.scatterplot = function(opts)
                 return svg_translate(x_scale(opts.x(d)), 
                                      y_scale(opts.y(d))); 
             })
-            .style("stroke", function(d) { 
-                return result.opts.stroke(data[d]);
-            })
             .style("stroke-width", function(d) { 
                 return result.opts.stroke_width(data[d]);
             });
-        update_selection(selection);
     }
 
     function brushstart(p) {
@@ -246,7 +249,9 @@ Chart.scatterplot = function(opts)
         console.log(e);
     });
 
-    style_dots(dots);
+    place_dots(dots);
+    place_dots(selected_dots);
+    update_selection();
     return result;
 };
 
