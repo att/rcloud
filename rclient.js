@@ -131,8 +131,10 @@ var RClient = {
             },
 
             post_div: function (msg) {
-                $("#output").append(msg);
+                var div = shell.detachable_div(msg);
+                $("#output").append(div);
                 window.scrollTo(0, document.body.scrollHeight);
+                return div;
             },
 
             post_binary_response: function(msg) {

@@ -1,6 +1,11 @@
-function make_fixed_menu(fixedMenuId) {
+function make_fixed_menu(fixedMenuId, force_load) {
 
+    var element = (typeof fixedMenuId === 'string') ? 
+        document.getElementById(fixedMenuId) :
+        fixedMenuId;
+    
     // var fixedMenuId = 'fixeddiv';
+    console.log("make fixed menu!", fixedMenuId);
 
     var fixedMenu = 
         {
@@ -8,7 +13,7 @@ function make_fixed_menu(fixedMenuId) {
             hasElement: document.documentElement != null
                 && document.documentElement.clientWidth,
 
-            menu: document.getElementById(fixedMenuId)
+            menu: element
         };
 
     fixedMenu.computeShifts = function()
@@ -157,9 +162,13 @@ function make_fixed_menu(fixedMenuId) {
             fixedMenu.addEvent(window, 'onscroll', fixedMenu.moveMenu);
             fixedMenu.floatMenu();
         }
+        fixedMenu.menu.style.zIndex = 2;
     };
 
     fixedMenu.addEvent(window, 'onload', fixedMenu.init);
+    if (force_load) {
+        fixedMenu.init();
+    }
 }
 
 make_fixed_menu('fixeddiv');
