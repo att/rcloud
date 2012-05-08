@@ -25,7 +25,7 @@ var RClient = {
                 _received_handshake = true;
                 result.post_response("Welcome to R-on-the-browser!");
 		result.send(".session.init()", false);
-                onconnect && onconnect();
+                onconnect && onconnect.call(result);
             }
         }
 
@@ -131,10 +131,7 @@ var RClient = {
             },
 
             post_div: function (msg) {
-                var div = shell.detachable_div(msg);
-                $("#output").append(div);
-                window.scrollTo(0, document.body.scrollHeight);
-                return div;
+                return shell.post_div(msg);
             },
 
             post_binary_response: function(msg) {
