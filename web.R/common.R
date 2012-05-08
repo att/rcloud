@@ -55,6 +55,16 @@ wplot <- function(x, y, ...) {
   }
 }
 
+fplot <- function()
+{
+  invisible(self.oobSend(list("iframe", "http://cscheid.github.com/facet/demos/osm/osm.html", c(960, 600))))
+}
+
+wplot.geo.dots <- function(lats, lons)
+{
+  invisible(self.oobSend(list("facet_osm_plot", lats, lons, c(960, 600))))
+}
+
 ################################################################################
 # rcloud_status stuff goes here
 

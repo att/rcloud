@@ -4,9 +4,6 @@ function make_fixed_menu(fixedMenuId, force_load) {
         document.getElementById(fixedMenuId) :
         fixedMenuId;
     
-    // var fixedMenuId = 'fixeddiv';
-    console.log("make fixed menu!", fixedMenuId);
-
     var fixedMenu = 
         {
             hasInner: typeof(window.innerWidth) == 'number',

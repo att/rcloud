@@ -1,3 +1,5 @@
+// bare-bones d3 charting facilities
+
 (function() {
 
 function svg_translate(dx, dy)
