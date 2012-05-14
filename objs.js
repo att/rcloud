@@ -15,21 +15,28 @@ function make_basic(type, proto) {
 }
 
 function pprint_array_as_div(formatter) {
-    return function() {
+    function plain_array() {
         var result = $("<div class='obj'></div>");
         var div = $("<div class='string-value'></div>");
         var v = this.value;
         var s;
         var that = this;
         formatter = formatter || function(v) { return v; };
-
-        var element = (this.attributes && that.attributes.value.names) ?
-            function(i) {
+        var element;
+        if (this.attributes && this.attributes.value.names) {
+            element = function(i) {
                 return that.attributes.value.names.value[i] + ": " + formatter(String(v[i]));
-            }:
-        function(i) {
-            return formatter(String(v[i]));
-        };
+            };
+        } else if (this.attributes && this.attributes.value.levels) {
+            element = function(i) {
+                return that.attributes.value.levels.value[v[i]-1];
+            };
+        } else {
+            element = function(i) {
+                return formatter(String(v[i]));
+            };
+        }
+        
         if (v.length === 0) {
             s = "[]";
         } else if (v.length === 1) {
@@ -53,6 +60,56 @@ function pprint_array_as_div(formatter) {
         div.html(s);
         result.append(div);
         return result;
+    }
+    function matrix() {
+        var result = document.createElement("table");
+        var header = document.createElement("tr");
+        result.appendChild(header);
+        var dims = this.attributes.value.dim.value;
+        var values = this.value;
+        var that = this;
+        d3.select(header)
+            .selectAll("td")
+            .data(_.range(dims[1]+1))
+            .enter().append("td").text(function(i) {
+                if (i === 0) return "";
+                return "[," + i + "]";
+            });
+        d3.select(result)
+            .selectAll("tr-data")
+            .data(_.range(dims[0]))
+            .enter().append("tr")
+                    .selectAll("td")
+                    .data(function(i) { return _.map(_.range(dims[1]+1),
+                                                     function(j) {
+                                                         return [i,j];
+                                                     });
+                                      })
+                    .enter()
+                    .append("td")
+                    .text(function(d) {
+                        var row = d[0], col = d[1];
+                        if (col === 0) {
+                            return "[" + (row+1) + ",]";
+                        };
+                        var v = values[(col-1) * dims[0] + row];
+                        if (that.attributes &&
+                            that.attributes.value.levels) {
+                            return that.attributes.value.levels.value[v-1];
+                        } else {
+                            return v;
+                        }
+                    });
+        return result;
+    }
+    
+    return function() {
+        if (this.attributes &&
+            this.attributes.value.dim) {
+            return matrix.call(this);
+        } else
+            return plain_array.call(this);
+
     };
 }
 
@@ -97,13 +154,50 @@ Robj = {
                     div.append(this.value[i].html_element());
                 }
             } else {
+                var lengths = _.map(this.value, function(v) { return v.value.length; });
                 var names = this.attributes.value.names.value;
-                var pair = $("<div></div>");
-                for (var i=0; i<this.value.length; ++i) {
-                    pair.append($("<span class='key'></span>").append(names[i] + ": "));
-                    pair.append(this.value[i].html_element());
+                if (_.all(lengths, function(i) { return i === lengths[0]; })) {
+                    // it's a dataframe
+                    var result = document.createElement("table");
+                    var th = document.createElement("tr");
+                    var values = this.value;
+                    result.appendChild(th);
+                    d3.select(th)
+                        .selectAll("th")
+                        .data(_.range(lengths.length))
+                        .enter().append("th").text(function(i) {
+                            return names[i];
+                        });
+                    d3.select(result)
+                        .selectAll("tr-data")
+                        .data(_.range(lengths[0]))
+                        .enter().append("tr")
+                                .selectAll("td")
+                                .data(function(i) { return _.map(_.range(lengths.length),
+                                                                 function(j) {
+                                                                     return [i,j]; 
+                                                                 });
+                                                  })
+                                .enter()
+                                .append("td")
+                                .text(function(d) {
+                                    var row = d[0], col = d[1];
+                                    var v = values[col].value[row];
+                                    if (values[col].attributes) {
+                                        return values[col].attributes.value.levels.value[v-1];
+                                    } else {
+                                        return v;
+                                    }
+                                });
+                    div.append(result);
+                } else {
+                    var pair = $("<div></div>");
+                    for (var i=0; i<this.value.length; ++i) {
+                        pair.append($("<span class='key'></span>").append(names[i] + ": "));
+                        pair.append(this.value[i].html_element());
+                    }
+                    div.append(pair);
                 }
-                div.append(pair);
             }
             return div;
         }
@@ -158,5 +252,7 @@ Robj = {
             return o + '"';
         })
     }),
-    bool_array: make_basic("bool_array")
+    bool_array: make_basic("bool_array", {
+        html_element: pprint_array_as_div()
+    })
 };
