@@ -119,12 +119,17 @@ function make_fixed_menu(fixedMenuId, force_load) {
 
     fixedMenu.supportsFixed = function()
     {
-        var testDiv = document.createElement("div");
-        testDiv.id = "testingPositionFixed";
-        testDiv.style.position = "fixed";
-        testDiv.style.top = "0px";
-        testDiv.style.right = "0px";
-        document.body.appendChild(testDiv);
+        var testDiv;
+        testDiv = document.getElementById("testingPositionFixed");
+        if (testDiv === null) {
+            testDiv = document.createElement("div");
+            testDiv.id = "testingPositionFixed";
+            testDiv.style.position = "fixed";
+            testDiv.style.top = "0px";
+            testDiv.style.right = "0px";
+            document.body.appendChild(testDiv);
+        }
+            
         var offset = 1;
         if (typeof testDiv.offsetTop == "number"
             && testDiv.offsetTop != null 

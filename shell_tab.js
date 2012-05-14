@@ -58,9 +58,10 @@ var shell = (function() {
     function handle_facet_osm_plot(data) {
         var lats = data.value[1].value,
             lons = data.value[2].value,
-            width = data.value[3].value[0],
-            height = data.value[3].value[1];
-        this.post_div(FacetChart.facet_osm_plot(lats, lons, width, height));
+            color = data.value[3].value,
+            width = data.value[4].value[0],
+            height = data.value[4].value[1];
+        this.post_div(FacetChart.facet_osm_plot(lats, lons, color, width, height));
     }
 
     var handlers = {
