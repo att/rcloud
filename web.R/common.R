@@ -15,6 +15,8 @@ onSave <- function(dev, page, cmd="img.url.final") {
     TRUE
 }
 
+.session <- new.env(parent=emptyenv())
+
 .session.eval <- function(x, command_id, silent) {
   val <- try(x, silent=TRUE)
   if (!inherits(val, "try-error") && !silent) print(val)
@@ -48,6 +50,19 @@ wplot <- function(x, y, ...) {
   } else {
     height <- opts$height
   }
+
+  if (is.null(opts$group)) {
+    if (is.null(.session$group)) {
+      .session$group <- 1L
+      .session$group.len <- length(x)
+    } else {
+      if (.session$group.len != length(x)) {
+        .session$group <- .session$group + 1L
+        .session$group.len <- length(x)
+      }
+    }
+    opts$group <- .session$group
+  }
   if (!is.null(opts$kind)) {
     invisible(self.oobSend(list("scatterplot",x,y,opts$kind,c(width,height),opts$group)))
   } else {
@@ -60,9 +75,12 @@ fplot <- function()
   invisible(self.oobSend(list("iframe", "http://cscheid.github.com/facet/demos/osm/osm.html", c(960, 600))))
 }
 
-wplot.geo.dots <- function(lats, lons)
+wplot.geo.dots <- function(lats, lons, color)
 {
-  invisible(self.oobSend(list("facet_osm_plot", lats, lons, c(960, 600))))
+  if (missing(color)) {
+    color <- rep(0, length(lats) * 3);
+  }
+  invisible(self.oobSend(list("facet_osm_plot", lats, lons, color, c(960, 600))))
 }
 
 ################################################################################
