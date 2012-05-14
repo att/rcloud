@@ -34,6 +34,14 @@ onSave <- function(dev, page, cmd="img.url.final") {
   }
 }
 
+.session.log <- function(user, v) {
+  vs <- strsplit(v, "\n")
+  for (i in 1:length(vs[[1]])) {
+    cat(paste(paste(Sys.time(), user, vs[[1]][i], sep="|"),"\n"),
+        file="../history/main_log.txt", append=TRUE)
+  }
+}
+
 wplot <- function(x, y, ...) {
   opts <- list(...)
   if (missing(y)) {
