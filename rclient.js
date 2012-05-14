@@ -89,6 +89,9 @@ var RClient = {
                 if (data.type === "string_array") {
                     return this.post_error(data.value[0]);
                 }
+                if (data.type === "null") {
+                    return null;
+                }
                 if (data.type !== "vector") {
                     return this.post_error("Protocol error, unexpected value of type " + data.type);
                 }
@@ -193,6 +196,14 @@ var RClient = {
                          + this_command + ", "
                          + (silent?"TRUE":"FALSE") + ")",
                          this_command ];
+            },
+
+            log: function(command) {
+                command = ".session.log(\"" + rcloud.username() + "\", \"" +
+                    command.replace(/\\/g,"\\\\").replace(/"/g,"\\\"")
+                + "\")";
+                console.log(command);
+                this.send(command, false);
             },
 
             send: function(command, wrap) {
