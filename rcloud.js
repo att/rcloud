@@ -32,6 +32,14 @@ rcloud.get_user_filenames = function(k)
         rclient.r_funcall("rcloud.list.initial.filenames", this.username()), k);
 }; 
 
+rcloud.get_all_user_filenames = function(k)
+{
+    var that = this;
+    if (_.isUndefined(k)) k = _.identity;
+    rclient.send_and_callback(
+        rclient.r_funcall("rcloud.list.all.initial.filenames"), k);
+}; 
+
 rcloud.load_user_file = function(user, filename, k)
 {
     rclient.send_and_callback(

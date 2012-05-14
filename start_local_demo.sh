@@ -1,5 +1,6 @@
 #!/bin/bash
 
+kill -9 `cat pids.txt`
 rm -f pids.txt
 
 # R --vanilla --slave -e 'library(Rserve); .Call("run_WSS",8080)'&
