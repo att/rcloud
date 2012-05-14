@@ -45,7 +45,7 @@ var editor = {
     },
     init: function() {
         var widget = ace.edit("editor");
-        widget.setTheme("ace/theme/twilight");
+        widget.setTheme("ace/theme/chrome");
         widget.commands.addCommand({
             name: 'sendToR',
             bindKey: {
@@ -61,6 +61,10 @@ var editor = {
         });
         this.widget = widget;
         var that = this;
+        var RMode = require("mode/r").Mode;
+        var session = this.widget.getSession();
+        var doc = session.doc;
+        this.widget.getSession().setMode(new RMode(false, doc, session));
         this.current_user = rcloud.username();
         this.populate_file_list();
     },
