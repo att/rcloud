@@ -77,6 +77,8 @@ var editor = {
         });
     },
     init: function() {
+        d3.select("#input-text-source-results-title").style("display", "none");
+        d3.select("#input-text-history-results-title").style("display", "none");
         var widget = ace.edit("editor");
         widget.setTheme("ace/theme/chrome");
         widget.commands.addCommand({
@@ -100,6 +102,14 @@ var editor = {
         this.widget.getSession().setMode(new RMode(false, doc, session));
         this.populate_file_list();
         $("#editor-title-header").text(rcloud.username() + " | [untitled]");
+        var old_text = "";
+        window.setInterval(function() {
+            var new_text = $("#input-text-search").val();
+            if (new_text !== old_text) {
+                old_text = new_text;
+                that.search(new_text);
+            }
+        }, 500);
     },
     save_file: function(user, filename, k) {
         rcloud.save_to_user_file(user, filename, this.widget.getSession().getValue(), k);
@@ -119,6 +129,125 @@ var editor = {
             } else {
                 $("#editor-title-header").text(user + " | " + filename + " | Read Only");
             }
+        });
+    },
+    search: function(search_string) {
+        var that = this;
+        function split_source_search_lines(line) {
+            var r = /:/g;
+            var r2 = /\/([^/]+)\/([^/]+)/;
+            var result = [];
+            while (r.exec(line) !== null) {
+                result.push(r.lastIndex);
+                if (result.length === 2) {
+                    var path = line.substring(0, result[0]-1);
+                    var t = path.match(r2);
+                    return [t[1], t[2],
+                            line.substring(result[0], result[1]-1),
+                            line.substring(result[1])];
+                }
+            }
+            throw "shouldn't get here";
+        };
+        function split_history_search_lines(line) {
+            var t = line.indexOf(':');
+            var r = /\|/g;
+            var line_number = line.substring(0, t);
+            line = line.substring(t+1);
+            var result = [];
+            while (r.exec(line) !== null) {
+                result.push(r.lastIndex);
+                if (result.length === 2) {
+                    return [line_number, 
+                            line.substring(0, result[0]-1),
+                            line.substring(result[0], result[1]-1),
+                            line.substring(result[1])];
+                }
+            }
+            throw "shouldn't get here";
+        };
+
+        function update_source_search(result) {
+            d3.select("#input-text-source-results-title")
+                .style("display", (result.value !== null && result.value.length > 1)?null:"none");
+            var data = _.map(result.value, split_source_search_lines);
+            d3.select("#input-text-source-results-table")
+                .selectAll("tr").remove();
+            var td_classes = ["user", "filename", "linenumber", "loc"];
+            d3.select("#input-text-source-results-table")
+                .selectAll("tr")
+                .data(data)
+                .enter().append("tr")
+                        .selectAll("td")
+                        .data(function(d,i) { 
+                            return _.map(d, function(v, k) {
+                                return [v, i];
+                            });
+                        })
+                        .enter()
+                        .append("td")
+                        .text(function(d, i) { 
+                            if (i === 2) { 
+                                return d[0] + ":"; 
+                            } else {
+                                return d[0];
+                            }
+                        })
+                        .attr("class", function(d, i) {
+                            var j = d[1];
+                            d = d[0];
+                            if (j === 0 || data[j-1][i] !== d)
+                                return "text-result-table-" + td_classes[i];
+                            else
+                                return "text-result-table-same-" + td_classes[i];
+                        })
+                        .on("click", function(d, i) {
+                            if (i !== 1 && i !== 3)
+                                return;
+                            var j = d[1];
+                            var user = data[j][0], filename = data[j][1];
+                            that.load_file(user, filename);
+                        })
+                ;
+        };
+        function update_history_search(result) {
+            d3.select("#input-text-history-results-title")
+                .style("display", (result.value !== null && result.value.length > 1)?null:"none");
+            var data = _.map(result.value, split_history_search_lines);
+            d3.select("#input-text-history-results-table")
+                .selectAll("tr").remove();
+            var td_classes = ["date", "user", "loc"];
+            d3.select("#input-text-history-results-table")
+                .selectAll("tr")
+                .data(data)
+                .enter().append("tr")
+                        .selectAll("td")
+                        .data(function(d,i) { 
+                            return _.map(d.slice(1), function(v, k) {
+                                return [v, i];
+                            });
+                        })
+                        .enter()
+                        .append("td")
+                        .text(function(d) { 
+                            return d[0];
+                        })
+                        .attr("class", function(d, i) {
+                            var j = d[1];
+                            d = d[0];
+                            if (j === 0 || data[j-1][i+1] !== d)
+                                return "text-result-table-" + td_classes[i];
+                            else
+                                return "text-result-table-same-" + td_classes[i];
+                        })
+                        .on("click", function(d, i) {
+                        })
+                ;
+        };
+        rcloud.search(search_string, function(result) {
+            console.log("all", result);
+            update_source_search(result.value[0]);
+            update_history_search(result.value[1]);
         });
     },
     new_file: function(filename) {

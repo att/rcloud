@@ -90,3 +90,74 @@ rect.frame {
 .figure-icon {
     color: #ddd;
 }
+
+.left-pane-header {
+    width:100%; 
+    background-color:#ddd;
+}
+
+.text-result-table-date {
+    font-size: 11px;
+}
+
+.text-result-table-same-date {
+    font-size: 11px;
+    color: #ddd;
+}
+
+.text-result-table-user {
+    font-size: 11px;
+}
+
+.text-result-table-same-user {
+    font-size: 11px;
+    color: #ddd;
+}
+
+.text-result-table-filename {
+    font-size: 11px;
+}
+
+.text-result-table-same-filename {
+    font-size: 11px;
+    color: #ddd;
+}
+
+.text-result-table-filename:hover {
+    font-size: 11px;
+    text-decoration: underline;
+    cursor: pointer;
+    color: blue;
+}
+
+.text-result-table-linenumber {
+    font-size: 11px;
+    padding-left: 3em;
+}
+
+.text-result-table-same-linenumber {
+    font-size: 11px;
+    padding-left: 3em;
+}
+
+.text-result-table-loc {
+    font-family: "Monaco", "Courier New", monospace;
+    font-size: 12px;
+}
+
+.text-result-table-loc:hover {
+    text-decoration: underline;
+    cursor: pointer;
+    color: blue;
+}
+
+.text-result-table-same-loc {
+    font-family: "Monaco", "Courier New", monospace;
+    font-size: 12px;
+}
+
+.text-result-table-same-loc:hover {
+    text-decoration: underline;
+    cursor: pointer;
+    color: blue;
+}

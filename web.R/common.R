@@ -98,8 +98,15 @@ rcloud.user.file.name <- function(user, filename) {
   paste("..","userfiles",user,filename,sep='/')
 }
 
+rcloud.list.all.initial.filenames <- function() {
+  users <- list.files(path=paste("..", "userfiles", sep='/'));
+  lapply(users, function(user) {
+    list(user, list.files(path=paste("..", "userfiles", user, sep='/')))
+  });
+}
+
 rcloud.list.initial.filenames <- function(user) {
-  list.files(path=paste("..","userfiles", user, sep='/'))
+  list.files(path=paste("..", "userfiles", user, sep='/'))
 }
 
 rcloud.load.user.file <- function(user, filename) {
@@ -120,6 +127,21 @@ rcloud.create.user.file <- function(user, filename) {
     TRUE
   } else
     FALSE
+}
+
+rcloud.search <- function(search.string) {
+  if (nchar(search.string) == 0) {
+    list(NULL, NULL);
+  } else {
+    cmd <- paste("find ../userfiles -type f -exec grep -iHn ",
+                 search.string,
+                 " {} \\; | sed 's/^..\\/userfiles//'");
+    source.results <- system(cmd, intern=TRUE);
+
+    cmd <- paste("grep -in ", search.string, " ../history/main_log.txt");
+    history.results <- rev(system(cmd, intern=TRUE));
+    list(source.results, history.results);
+  }
 }
 
 ################################################################################
