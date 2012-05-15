@@ -58,19 +58,38 @@
 </div>
 <div id="tabs-2" style="width: 100%;" class="ui-tabs-hide">
   <div class="tab-div">
-    <h2 id="editor-title-header">Editor - [unnamed]</h2>
-    <div id="editor" 
-	 style="position:relative; width:100%; height:50%; left:0px;"
+    <table width=100% height=60% style="padding:0; margin:0;">
+      <tr>
+	<td width="20%" valign="top">
+	  <div class="left-pane-header">
+	    <h3 id="editor-title-header">Editor - [unnamed]</h3>
+	  </div>
+	  <div class="left-pane-header">
+	    <h3 id="editor-file-list-title">File list</h3>
+	  </div>
+	  <div id="editor-file-tree"></div>
+	</td>
+	<td width="80%" valign="top">
+	  <div id="editor" 
+	       style="position:relative; width:100%; height: 100%; left:0px;"
 ># this is an honest-to-goodness R editor
 # select some stuff here and hit shift-enter!
 add <- function(x, y) {
   x + y
-}</div>
-    <div id="editor-file-list">
-      <h3 id="editor-file-list-title">User Files</h3>
-      <ul id="editor-file-list-ul">
-      </ul>
-      <div id="editor-file-tree"></div>
+}</div>	</td>
+      </tr>
+    </table>
+    <div width="100%" style="margin-top: 0; padding-top: 0;">
+      <div class="left-pane-header">
+	<h3>Search</h3>
+      </div>
+      <div>Full-text search for <input type="text" value="" id="input-text-search"></input></div>
+      <h4 id="input-text-source-results-title" style="padding-bottom: 0; margin-bottom: 0">Source results</h4>
+      <table id="input-text-source-results-table">
+      </table>
+      <h4 id="input-text-history-results-title" style="padding-bottom: 0; margin-bottom: 0">History results</h4>
+      <table id="input-text-history-results-table">
+      </table>
     </div>
   </div>
 </div>
