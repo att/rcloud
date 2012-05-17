@@ -9,7 +9,10 @@ python -m SimpleHTTPServer 8000&
 PYTHONPID=$!
 echo "$PYTHONPID" >> pids.txt
 
-/Library/Frameworks/R.framework/Resources/bin/R CMD Rserve.dbg --RS-conf conf/mbp-cscheid/Rserve.conf --no-save --vanilla
+/Library/Frameworks/R.framework/Resources/bin/R CMD Rserve --RS-conf conf/mbp-cscheid/Rserve.conf --no-save --vanilla
+
+# /Library/Frameworks/R.framework/Resources/bin/R CMD Rserve.dbg --RS-conf conf/mbp-cscheid/Rserve.conf --no-save --vanilla
+
 # RPID=$!
 # echo "$RPID" > pids.txt
 

@@ -1,21 +1,37 @@
-var shell = (function() {
-    var terminal = $('#term_demo').terminal(function(command, term) {
-        if (command !== '') {
-            term.clear();
-            // $("#output").append($("<div></div>").text(command));
-            rclient.post_sent_command(command);
-            interpret_command(command);
+function getURLParameter(name) {
+    return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+}
+
+// FIXME shell has a ton of repeated code... this is horribly horribly ugly
+function share_init() {
+    rclient = RClient.create("ws://"+location.hostname+":8081/", function() {
+        rcloud.init_client_side_data();
+        var that = this;
+        var shell_objtypes = ["scatterplot", "iframe", "facet_osm_plot", "facet_tour_plot"];
+        for (var i=0; i<shell_objtypes.length; ++i) {
+            (function(objtype) {
+                that.register_handler(objtype, function(data) {
+                    shell.handle(objtype, data);
+                });
+            })(shell_objtypes[i]);
         }
-    }, {
-        exit: false,
-        greetings: false
-    });
-    
-    // hacky workaround, but whatever.
-    $('#output').click(function(x) {
-        terminal.disable();
+        rclient.send(
+            rclient.r_funcall("rcloud.exec.user.file",
+                              getURLParameter("user"),
+                              getURLParameter("filename")));
     });
 
+};
+
+window.onload = share_init;
+
+function transpose(ar) {
+    return _.map(_.range(ar[0].length), function(i) {
+        return _.map(ar, function(lst) { return lst[i]; });
+    });
+}
+
+var shell = (function() {
     function handle_scatterplot(data) {
         var opts = {
             x: function(d) { return d[0]; },
@@ -77,7 +93,6 @@ var shell = (function() {
     };
 
     return {
-        terminal: terminal,
         post_div: function(msg) {
             var div = this.detachable_div(msg);
             $("#output").append(div);
@@ -119,3 +134,4 @@ var shell = (function() {
         }
     };
 })();
+

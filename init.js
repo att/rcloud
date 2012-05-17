@@ -23,7 +23,7 @@ function main_init() {
     rclient = RClient.create("ws://"+location.hostname+":8081/", function() {
         rcloud.init_client_side_data();
         var that = this;
-        var shell_objtypes = ["scatterplot", "iframe", "facet_osm_plot"];
+        var shell_objtypes = ["scatterplot", "iframe", "facet_osm_plot", "facet_tour_plot"];
         for (var i=0; i<shell_objtypes.length; ++i) {
             (function(objtype) {
                 that.register_handler(objtype, function(data) {
