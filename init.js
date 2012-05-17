@@ -48,6 +48,13 @@ function main_init() {
             }
         });
         $("#tabs").tabs("select", "#tabs-1");
+        if (location.search.length > 0) {
+            function getURLParameter(name) {
+                return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+            }
+            editor.load_file(getURLParameter("user"), getURLParameter("filename"));
+            $("#tabs").tabs("select", "#tabs-2");
+        }
     });
 }
 

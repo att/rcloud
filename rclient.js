@@ -23,7 +23,7 @@ var RClient = {
                 result.post_error("sorry, I only speak QAP1");
             } else {
                 _received_handshake = true;
-                result.post_response("Welcome to R-on-the-browser!");
+                // result.post_response("Welcome to R-on-the-browser!");
 		result.send(".session.init()", false);
                 onconnect && onconnect.call(result);
             }

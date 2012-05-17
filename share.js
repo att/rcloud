@@ -4,6 +4,9 @@ function getURLParameter(name) {
 
 // FIXME shell has a ton of repeated code... this is horribly horribly ugly
 function share_init() {
+    $("#instashare-view-source").click(function() {
+        document.location = "/main.html" + location.search;
+    });
     rclient = RClient.create("ws://"+location.hostname+":8081/", function() {
         rcloud.init_client_side_data();
         var that = this;
@@ -15,12 +18,12 @@ function share_init() {
                 });
             })(shell_objtypes[i]);
         }
+        var user = getURLParameter("user"), 
+            filename = getURLParameter("filename");
+        $("#instashare-title").text("Instashare: " + user + "/" + filename);
         rclient.send(
-            rclient.r_funcall("rcloud.exec.user.file",
-                              getURLParameter("user"),
-                              getURLParameter("filename")));
+            rclient.r_funcall("rcloud.exec.user.file", user, filename));
     });
-
 };
 
 window.onload = share_init;
