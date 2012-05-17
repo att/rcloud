@@ -1,6 +1,6 @@
 FacetChart = {};
 
-FacetChart.facet_osm_plot = function(lats, lons, width, height)
+FacetChart.facet_osm_plot = function(lats, lons, color, width, height)
 {
     var canvas = $("<canvas width='" + width + "' height='" + height + "'></canvas>")[0];
     var gl = Facet.init(canvas, {
