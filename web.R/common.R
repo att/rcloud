@@ -1,6 +1,12 @@
+.session <- new.env(parent=emptyenv())
+.session$WSdev.width <- 400
+.session$WSdev.height <- 400
+
 # create a new device constructor
 WSdev <- function(...) {
-   dev <- Cairo(400, 400, type='raster', bg='white', ...)
+   dev <- Cairo(.session$WSdev.width,
+                .session$WSdev.height
+                , type='raster', bg='white', ...)
    Cairo.onSave(dev, onSave)
    old.sn <<- Cairo.serial()
    self.oobSend(list("dev.new",as.integer(dev)))
@@ -14,8 +20,6 @@ onSave <- function(dev, page, cmd="img.url.final") {
     if (dev != dev.cur()) self.oobSend(list("dev.close", as.integer(dev))) else old.sn <<- Cairo.serial()
     TRUE
 }
-
-.session <- new.env(parent=emptyenv())
 
 .session.eval <- function(x, command_id, silent) {
   val <- try(x, silent=TRUE)

@@ -168,9 +168,17 @@ Robj = {
                         .enter().append("th").text(function(i) {
                             return names[i];
                         });
+                    var rows;
+                        // rows = _.range(lengths[0]);
+                    if (lengths[0] < 11) {
+                        rows = _.range(lengths[0]);
+                    } else {
+                        rows = [0,1,2,3,4,5];
+                        rows.push.apply(rows, _.range(lengths[0] - 5, lengths[0]));
+                    }
                     d3.select(result)
                         .selectAll("tr-data")
-                        .data(_.range(lengths[0]))
+                        .data(rows)
                         .enter().append("tr")
                                 .selectAll("td")
                                 .data(function(i) { return _.map(_.range(lengths.length),
@@ -180,8 +188,10 @@ Robj = {
                                                   })
                                 .enter()
                                 .append("td")
-                                .text(function(d) {
+                                .text(function(d, i) {
                                     var row = d[0], col = d[1];
+                                    if (lengths[0] >= 11 && row === 5)
+                                        return "...";
                                     var v = values[col].value[row];
                                     if (values[col].attributes) {
                                         return values[col].attributes.value.levels.value[v-1];

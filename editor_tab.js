@@ -89,7 +89,18 @@ var editor = {
                 sender: 'editor'
             },
             exec: function(widget, args, request) {
-                var text = widget.getSession().doc.getTextRange(widget.getSelectionRange());
+                var range = widget.getSelectionRange();
+                if (range.start.column === range.end.column &&
+                    range.start.row    === range.end.row) {
+                    // FIXME check EOF here.
+                    range = {start: {column: 0, row: range.start.row},
+                             end: {column: 0, row: range.start.row+1}};
+                    var cursor = widget.getSession().getSelection().getCursor();
+                    widget.gotoLine(cursor.row+2);
+                };
+                if (text === "")
+                    return;
+                var text = widget.getSession().doc.getTextRange(range);
                 rclient.post_sent_command(text);
                 interpret_command(text);
             }
@@ -122,7 +133,7 @@ var editor = {
             that.current_file_owner = user;
             that.current_filename = filename;
             var ro = user !== rcloud.username();
-            that.widget.setReadOnly(ro);
+            that.widget.setReadOnly(false);
             if (!ro) {
                 that.widget.focus();
                 $("#editor-title-header").text(user + " | " + filename);
@@ -169,7 +180,7 @@ var editor = {
 
         function update_source_search(result) {
             d3.select("#input-text-source-results-title")
-                .style("display", (result.value !== null && result.value.length > 1)?null:"none");
+                .style("display", (result.value !== null && result.value.length >= 1)?null:"none");
             var data = _.map(result.value, split_source_search_lines);
             d3.select("#input-text-source-results-table")
                 .selectAll("tr").remove();
@@ -212,7 +223,7 @@ var editor = {
         };
         function update_history_search(result) {
             d3.select("#input-text-history-results-title")
-                .style("display", (result.value !== null && result.value.length > 1)?null:"none");
+                .style("display", (result.value !== null && result.value.length >= 1)?null:"none");
             var data = _.map(result.value, split_history_search_lines);
             d3.select("#input-text-history-results-table")
                 .selectAll("tr").remove();
@@ -245,7 +256,6 @@ var editor = {
                 ;
         };
         rcloud.search(search_string, function(result) {
-            console.log("all", result);
             update_source_search(result.value[0]);
             update_history_search(result.value[1]);
         });
