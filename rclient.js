@@ -202,7 +202,6 @@ var RClient = {
                 command = ".session.log(\"" + rcloud.username() + "\", \"" +
                     command.replace(/\\/g,"\\\\").replace(/"/g,"\\\"")
                 + "\")";
-                console.log(command);
                 this.send(command, false);
             },
 

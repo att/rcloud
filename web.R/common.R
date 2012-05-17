@@ -95,8 +95,20 @@ wplot.geo.dots <- function(lats, lons, color)
   invisible(self.oobSend(list("facet_osm_plot", lats, lons, color, c(960, 600))))
 }
 
+wtour <- function(...)
+{
+  opts <- list(...)
+  invisible(self.oobSend(list("facet_tour_plot", opts)))
+}
+
 ################################################################################
 # rcloud_status stuff goes here
+
+rcloud.exec.user.file <- function(user, filename)
+{
+  .session.eval(eval(parse(text=readLines(rcloud.user.file.name(user, filename)))),
+                silent=TRUE)
+}
 
 rcloud.user.file.name <- function(user, filename) {
   paste("..","userfiles",user,filename,sep='/')
