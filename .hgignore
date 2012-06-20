@@ -4,4 +4,4 @@ syntax:glob
 pids.txt
 tmp
 userfiles
-
+lib/node_modules

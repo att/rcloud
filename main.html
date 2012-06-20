@@ -1,27 +1,34 @@
 <html>
   <head>
-    <title>R Web</title>
-    <script type="text/javascript" src="js/jquery-1.7.1.min.js"></script>
-    <script type="text/javascript" src="js/jquery.cookies.2.2.0.js"></script>
-    <script type="text/javascript" src="js/tree.jquery.js"></script>
-    <script type="text/javascript" src="test_cookies.js"></script>
-    <link type="text/css" href="css/custom-theme/jquery-ui-1.8.18.custom.css" rel="Stylesheet" />
-    <link rel="stylesheet" href="css/jquery.terminal.css"/>
-    <link rel="stylesheet" href="css/font-awesome.css"/>
-    <link rel="stylesheet" href="css/jqtree.css"/>
-    <link rel="stylesheet" href="css/rmarkdown.css"/>
-    <link rel="stylesheet" href="main.css"/>
+    <title>RCloud</title>
+    <link rel="stylesheet" type="text/css" href="css/custom-theme/jquery-ui-1.8.18.custom.css" />
+    <link rel="stylesheet" type="text/css" href="css/jquery.terminal.css"/>
+    <link rel="stylesheet" type="text/css" href="css/font-awesome.css"/>
+    <link rel="stylesheet" type="text/css" href="css/jqtree.css"/>
+    <link rel="stylesheet" type="text/css" href="css/rmarkdown.css"/>
+    <link rel="stylesheet" type="text/css" href="css/main.css"/>
 
-    <script type="text/javascript" src="js/jquery-ui-1.8.18.custom.min.js"></script>
-    <script type="text/javascript" src="js/underscore-min.js"></script>
-    <script type="text/javascript" src="js/jquery.terminal-0.4.7.js"></script>
-    <script type="text/javascript" src="js/d3.v2.js"></script>
-    <script type="text/javascript" src="js/facet.js"></script>
-    <script type="text/javascript" src="js/colorbrewer.js"></script>
-    <script type="text/javascript" src="js/jDataView.js"></script>
-    <script type="text/javascript" src="js/hl.min.js"></script>
+    <!-- We bundle all dependencies to make maintenance of different
+    pages easier, and to cut down on the number of requests.
 
-    <script type="text/javascript" 
+    jquery,                             http://jquery.com
+    jquery-ui,                          http://jqueryui.com
+    jquery.cookies,			http://code.google.com/p/cookies/wiki/License
+    tree.jquery.js,			http://mbraak.github.com/jqTree/
+    underscore.js,                      http://underscorejs.org
+    jquery.terminal,			http://terminal.jcubic.pl/
+    d3 (and its colorbrewer colormaps), http://d3js.org
+    facet,				http://cscheid.github.com/facet
+    jDataView,				http://github.com/vjeux/jDataView
+
+    Indirectly, RCloud also depends on hljs, the syntax highlighter
+    Javascript library used by knitr. It also depends on MathJax
+    through knitr and rmarkdown.
+
+    -->
+    <script type="text/javascript" src="lib/dependencies_bundle.min.js"></script>
+
+    <script type="text/javascript"
         src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
     </script>
     <script type="text/javascript">MathJax.Hub.Config({tex2jax: {processEscapes: true, 
@@ -30,10 +37,10 @@
         "HTML-CSS": { minScaleAdjust: 125 } });
     </script>
 
+    <script type="text/javascript" src="test_cookies.js"></script>
     <script type="text/javascript" src="plot.js"></script>
     <script type="text/javascript" src="chart.js"></script>
     <script type="text/javascript" src="facet_chart.js"></script>
-
     <script type="text/javascript" src="websockets.js"></script>
     <script type="text/javascript" src="rclient.js"></script>
     <script type="text/javascript" src="buffer.js"></script>
@@ -42,9 +49,9 @@
     <script type="text/javascript" src="peg_parser.js"></script>
     <script type="text/javascript" src="objs.js"></script>
     <script type="text/javascript" src="Rsrv.js"></script>
+    <script type="text/javascript" src="rcloud.js"></script>
 
     <script type="text/javascript" src="init.js"></script>
-    <script type="text/javascript" src="rcloud.js"></script>
   </head>
 <body>
 <div id="tabs" style="position: absolute; width:100%; height:100%;
@@ -81,13 +88,8 @@
 	  <div id="editor-file-tree"></div>
 	</td>
 	<td width="80%" valign="top">
-	  <div id="editor" 
-	       style="position:relative; width:100%; height: 100%; left:0px;"
-># this is an honest-to-goodness R editor
-# select some stuff here and hit shift-enter!
-add <- function(x, y) {
-  x + y
-}</div>	</td>
+	  <div id="editor" style="position:relative; width:100%; height: 100%; left:0px;"></div>
+	</td>
       </tr>
     </table>
     <div width="100%" style="margin-top: 0; padding-top: 0;">
@@ -115,15 +117,9 @@ add <- function(x, y) {
 <script src="main.js"></script>
 <script src="editor_tab.js"></script>
 <script src="shell_tab.js"></script>
-<script src="js/ace/ace-uncompressed.js" type="text/javascript" charset="utf-8"></script>
-<script src="js/ace/themes/theme-chrome.js" type="text/javascript" charset="utf-8"></script>
-<script src="js/ace/acesupport/acemode/r.js" type="text/javascript" charset="utf-8"></script>
-<script src="js/ace/acesupport/acemode/r_background_highlighter.js" type="text/javascript" charset="utf-8"></script>
-<script src="js/ace/acesupport/acemode/r_code_model.js" type="text/javascript" charset="utf-8"></script>
-<script src="js/ace/acesupport/acemode/r_highlight_rules.js" type="text/javascript" charset="utf-8"></script>
-<script src="js/ace/acesupport/acemode/r_scope_tree.js" type="text/javascript" charset="utf-8"></script>
-<script src="js/ace/acesupport/acemode/tex.js" type="text/javascript" charset="utf-8"></script>
-<script src="js/ace/acesupport/acemode/tex_highlight_rules.js" type="text/javascript" charset="utf-8"></script>
-<script src="js/ace/acesupport/acemode/auto_brace_insert.js" type="text/javascript" charset="utf-8"></script>
+
+<!-- For some bizarre reason, line numbering has garbage characters on --
+  -- the minified version, so we use the unminified version instead. -->
+<script src="lib/ace_bundle.js" charset="utf-8"></script>
 <script src="fixedmenu.js"></script>
 </body></html>
