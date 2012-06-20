@@ -20,7 +20,7 @@ function interpret_command(command)
         var cmd = parser.parse(command);
         interpreter[cmd.id](cmd);
     } else {
-        rclient.log(command);
-        rclient.send(command);
+        // rclient.log(command);
+        rclient.send_markdown(command);
     }
 }

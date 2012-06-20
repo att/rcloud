@@ -71,6 +71,20 @@ var RClient = {
                     }
                     return v.value[1]; 
                 },
+                "markdown.eval": function(v) {
+                    if (v.value.length === 3) {
+                        var command_id = v.value[2].value[0];
+                        var cb = this.result_handlers[command_id];
+                        // if there's a callback attached, call it.
+                        // otherwise, display it.
+                        if (cb) {
+                            cb(command_id, v.value[1]);
+                        } else {
+                            result.display_markdown_response(v.value[1]);
+                        }
+                    }
+                    return v.value[1]; 
+                },
 		// FIXME: I couldn't get this.post_* to work from here so this is just to avoid the error ... it's nonsensical, obviously
 		"img.url.update": function(v) { return v.value[1]; },
 		"img.url.final": function(v) { return v.value[1]; },
@@ -155,6 +169,19 @@ var RClient = {
                 window.scrollTo(0, document.body.scrollHeight);
             },
 
+            display_markdown_response: function(result) {
+                if (result) {
+                    $("#output")
+                        .append($("<div></div>")
+                        .html(result.value[0]))
+                        .find("pre code")
+                        .each(function(i, e) { 
+                            hljs.highlightBlock(e); 
+                        });
+                    MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+                }
+            },
+
             post_error: function (msg) {
                 var d = $("<div class='error-message'></div>").html(msg);
                 $("#output").append(d);
@@ -198,11 +225,36 @@ var RClient = {
                          this_command ];
             },
 
+            markdown_wrap_command: function(command, silent) {
+                var this_command = command_counter++;
+                return [ ".session.markdown.eval({markdownToHTML(text=knit(text=" + this.escape_r_literal_string(command+'\n') + "), fragment=TRUE)}, "
+                         + this_command + ", "
+                         + (silent?"TRUE":"FALSE") + ")",
+                         this_command ];
+            },
+
             log: function(command) {
                 command = ".session.log(\"" + rcloud.username() + "\", \"" +
                     command.replace(/\\/g,"\\\\").replace(/"/g,"\\\"")
                 + "\")";
                 this.send(command, false);
+            },
+
+            send_markdown: function(command, wrap) {
+                if (wrap !== false) command = this.markdown_wrap_command(command)[0];
+                var buffer = new ArrayBuffer(command.length + 21);
+                var view = new EndianAwareDataView(buffer);
+                view.setInt32(0,  3);
+                view.setInt32(4,  5 + command.length);
+                view.setInt32(8,  0);
+                view.setInt32(12, 0);
+                view.setInt32(16, 4 + ((1 + command.length) << 8));
+                for (var i=0; i<command.length; ++i) {
+                    view.setUint8(20 + i, command.charCodeAt(i));
+                }
+                view.setUint8(buffer.byteLength - 1, 0);
+
+                socket.send(buffer);
             },
 
             send: function(command, wrap) {
@@ -236,13 +288,19 @@ var RClient = {
                 this.send(command, false);
             },
 
+            // takes a string and returns the appropriate r literal string with escapes.
+            escape_r_literal_string: function(s) {
+                return "\"" + s.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\"";
+                // return "\"" + s.replace(/"/g, "\\\"") + "\"";
+            },
+
             // FIXME this needs hardening
             r_funcall: function(function_name) {
                 var result = [function_name, "("];
                 for (var i=1; i<arguments.length; ++i) {
                     var t = typeof arguments[i];
                     if (t === "string") {
-                        result.push("\"" + arguments[i].replace(/"/g, "\\\"") + "\"");
+                        result.push(this.escape_r_literal_string(arguments[i]));
                     } else
                         result.push(String(arguments[i]));
                     if (i < arguments.length-1)

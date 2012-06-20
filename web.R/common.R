@@ -1,3 +1,6 @@
+library(knitr)
+library(markdown)
+
 .session <- new.env(parent=emptyenv())
 .session$WSdev.width <- 400
 .session$WSdev.height <- 400
@@ -35,6 +38,23 @@ onSave <- function(dev, page, cmd="img.url.final") {
     list("eval", val)
   } else {
     list("eval", val, command_id)
+  }
+}
+
+.session.markdown.eval <- function(x, command_id, silent) {
+  val <- try(x, silent=TRUE)
+  if (!inherits(val, "try-error") && !silent) print(val)
+  if (.Device == "Cairo") {
+    sn <- Cairo.serial()
+    if (sn != old.sn) {
+      old.sn <<- sn
+      onSave(dev.cur(), 0L, "img.url.update")
+    }
+  }
+  if (missing(command_id)) {
+    list("markdown.eval", val)
+  } else {
+    list("markdown.eval", val, command_id)
   }
 }
 
