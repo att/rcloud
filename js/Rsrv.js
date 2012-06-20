@@ -1,30 +1,3 @@
-// import struct
-// class phdr:
-//     def __init__(self, *args):
-//         if len(args) == 1:
-//             self._init_from_str(args[0])
-//         else:
-//             self._init_from_values(*args)
-//     def _init_from_str(self, s):
-//         self.cmd, self.len, self.dof, self.res = struct.unpack('iiii', s)
-//     def _init_from_values(self, cmd=0, len=0, dof=0, res=0):
-//         self.cmd = cmd
-//         self.len = len
-//         self.dof = dof
-//         self.res = res
-//     def ptoi(self):
-//         self.cmd = ptoi(self.cmd)
-//         self.len = ptoi(self.len)
-//         self.dof = ptoi(self.dof)
-//         self.res = ptoi(self.res)
-//     def itop(self):
-//         self.cmd = itop(self.cmd)
-//         self.len = itop(self.len)
-//         self.dof = itop(self.dof)
-//         self.res = itop(self.res)
-//     def buf(self):
-//         return struct.pack('iiii', self.cmd, self.len, self.dof, self.res)
-
 Rsrv = {
     PAR_TYPE: function(x) { return x & 255; },
     PAR_LEN: function(x) { return x >> 8; },
