@@ -38,18 +38,19 @@
     </script>
 
     <script type="text/javascript" src="test_cookies.js"></script>
-    <script type="text/javascript" src="plot.js"></script>
-    <script type="text/javascript" src="chart.js"></script>
-    <script type="text/javascript" src="facet_chart.js"></script>
-    <script type="text/javascript" src="websockets.js"></script>
-    <script type="text/javascript" src="rclient.js"></script>
-    <script type="text/javascript" src="buffer.js"></script>
-    <script type="text/javascript" src="interpreter.js"></script>
-    <script type="text/javascript" src="parse.js"></script>
-    <script type="text/javascript" src="peg_parser.js"></script>
-    <script type="text/javascript" src="objs.js"></script>
-    <script type="text/javascript" src="Rsrv.js"></script>
-    <script type="text/javascript" src="rcloud.js"></script>
+
+    <script type="text/javascript" src="js/plot.js"></script>
+    <script type="text/javascript" src="js/chart.js"></script>
+    <script type="text/javascript" src="js/facet_chart.js"></script>
+    <script type="text/javascript" src="js/websockets.js"></script>
+    <script type="text/javascript" src="js/rclient.js"></script>
+    <script type="text/javascript" src="js/buffer.js"></script>
+    <script type="text/javascript" src="js/interpreter.js"></script>
+    <script type="text/javascript" src="js/parse.js"></script>
+    <script type="text/javascript" src="js/peg_parser.js"></script>
+    <script type="text/javascript" src="js/objs.js"></script>
+    <script type="text/javascript" src="js/Rsrv.js"></script>
+    <script type="text/javascript" src="js/rcloud.js"></script>
 
     <script type="text/javascript" src="init.js"></script>
   </head>
@@ -119,7 +120,14 @@
 <script src="shell_tab.js"></script>
 
 <!-- For some bizarre reason, line numbering has garbage characters on --
-  -- the minified version, so we use the unminified version instead. -->
+  -- the minified version, so we use the unminified version instead.
+
+  -- We use a bundle version of ace and the bindings from RStudio
+  -- to reduce the number of HTTP requests
+  -- going out. Shouldn't be an issue when SPDY becomes the new
+  -- standard, but until then...
+
+  -->
 <script src="lib/ace_bundle.js" charset="utf-8"></script>
 <script src="fixedmenu.js"></script>
 </body></html>
