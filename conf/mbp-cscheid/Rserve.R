@@ -1,7 +1,7 @@
 Sys.setlocale(,"en_US.UTF-8")
 
 root = Sys.getenv("ROOT")
-if (is.null(root) || nchar(root) == 0) root = "/Users/cscheid/code/rwebsockets_test"
+if (is.null(root) || nchar(root) == 0) root = "/Users/cscheid/code/rcloud"
 setwd(paste(root,"conf","mbp-cscheid","tmp",sep='/'))
 
 pkgs <- c("XML", "Cairo", "Rserve", "Matrix", "snippets", "FastRWeb", "RMySQL")
