@@ -1,0 +1,10 @@
+# Building
+
+The javascript files required by RCloud are now bundled together to
+reduce bugs (``I forgot to add the new .js file again'') and to reduce
+the number of HTTP requests. 
+
+This means that you will have to recompile the bundles every time the
+javascript has changed. Currently the HTML sources are using the
+un-minified javascript, so all that is needed is to go into js/ and
+type make.
