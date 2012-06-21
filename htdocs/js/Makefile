@@ -13,7 +13,8 @@ rcloud_bundle.js: \
 	peg_parser.js \
 	objs.js \
 	Rsrv.js \
-	rcloud.js
+	rcloud.js \
+	notebook.js
 
 rcloud_bundle.min.js: rcloud_bundle.js Makefile
 	@rm -f $@

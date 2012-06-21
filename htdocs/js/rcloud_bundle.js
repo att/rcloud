@@ -931,7 +931,7 @@ RClient = {
                 if (result) {
                     $("#output")
                         .append($("<div></div>")
-                        .html(result.value[0]))
+                                .html(result.value[0]))
                         .find("pre code")
                         .each(function(i, e) { 
                             hljs.highlightBlock(e); 
@@ -1044,6 +1044,13 @@ RClient = {
                 result.push(")");
                 var s = result.join("");
                 return s;
+            },
+
+            send_as_notebook_cell: function(command) {
+                var cell = Notebook.new_cell(command, "markdown");
+                $("#output").append(cell.div());
+                // this.post_sent_command(command);
+                // this.send(command, this.markdown_wrap_command);
             }
         };
         return result;
@@ -2486,4 +2493,36 @@ rcloud.create_user_file = function(filename, k)
 {
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.create.user.file", rcloud.username(), filename), k);
+};
+Notebook = {};
+
+Notebook.new_cell = function(content, type)
+{
+    var sent_command_div = $('<pre class="r-sent-command"></pre>').html('> ' + content);
+    var wrapper_div = $("<div></div>");
+    wrapper_div.append(sent_command_div);
+    
+    if (type === 'markdown') {
+        var wrapped_command = rclient.markdown_wrap_command(content);
+        console.log(wrapped_command);
+        rclient.send_and_callback(wrapped_command[0], function(r) {
+            console.log(r.value[1].value[0]);
+            var result_div = wrapper_div.append(
+                $("<div></div>")
+                    .html(r.value[1].value[0]))
+                    .find("pre code")
+                    .each(function(i, e) {
+                        hljs.highlightBlock(e);
+                    });
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+            // wrapper_div.append(
+        });
+    } else
+        alert("Can only do markdown for now!");
+
+    return {
+        div: function() {
+            return wrapper_div;
+        }
+    };
 };
