@@ -8,3 +8,34 @@ This means that you will have to recompile the bundles every time the
 javascript has changed. Currently the HTML sources are using the
 un-minified javascript, so all that is needed is to go into js/ and
 type make.
+
+# Directory structure
+
+- Rserve_py: a bare-bones python Rserve client. Previously used for
+  testing, now there mostly for archival. Will disappear soon.
+
+- attic: junk. Will disappear soon.
+
+- code: Rserve configuration, and R source files used server-side.
+
+- conf: old configuration, will disappear soon.
+
+- doc: documentation
+
+- htdocs: static content served by RServe's HTTP server.
+
+- userdata: this is where all user-generated content will be stored
+  (right now only contains userdata/userfiles and userdata/history, as
+  described below)
+
+- userdata/userfiles: this is where the user's content is stored. Right now
+  it's trivial file-system-backed storage, but could become more
+  complicated as we dip our toes into versioning waters.
+
+- userdata/history: currently holds history buffers for users, but this will go
+  into userfiles in the future as user's interactions become more
+  structured.
+
+- tmp: temporary directory required by the runtime (used by rmarkdown
+  to get data urls)
+

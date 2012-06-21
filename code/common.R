@@ -62,7 +62,7 @@ onSave <- function(dev, page, cmd="img.url.final") {
   vs <- strsplit(v, "\n")
   for (i in 1:length(vs[[1]])) {
     cat(paste(paste(Sys.time(), user, vs[[1]][i], sep="|"),"\n"),
-        file="../history/main_log.txt", append=TRUE)
+        file=paste(data.root,"history","main_log.txt",sep='/'), append=TRUE)
   }
 }
 
@@ -137,18 +137,18 @@ rcloud.exec.user.file <- function(user, filename)
 }
 
 rcloud.user.file.name <- function(user, filename) {
-  paste("..","userfiles",user,filename,sep='/')
+  paste(data.root,"userfiles",user,filename,sep='/')
 }
 
 rcloud.list.all.initial.filenames <- function() {
-  users <- list.files(path=paste("..", "userfiles", sep='/'));
+  users <- list.files(path=paste(data.root, "userfiles", sep='/'));
   lapply(users, function(user) {
-    list(user, list.files(path=paste("..", "userfiles", user, sep='/')))
+    list(user, list.files(path=paste(data.root, "userfiles", user, sep='/')))
   });
 }
 
 rcloud.list.initial.filenames <- function(user) {
-  list.files(path=paste("..", "userfiles", user, sep='/'))
+  list.files(path=paste(data.root, "userfiles", user, sep='/'))
 }
 
 rcloud.load.user.file <- function(user, filename) {
