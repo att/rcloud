@@ -69,11 +69,18 @@ var shell = (function() {
         this.post_div(FacetChart.facet_tour_plot(lst));
     }
 
+    function handle_select(data) {
+        var group = data.value[1].value[0];
+        var sel = data.value[2].value;
+        Chart.set_selections(group, sel);
+    }
+
     var handlers = {
         "scatterplot": handle_scatterplot,
         "iframe": handle_iframe,
         "facet_osm_plot": handle_facet_osm_plot,
-        "facet_tour_plot": handle_facet_tour_plot
+        "facet_tour_plot": handle_facet_tour_plot,
+	"select": handle_select
     };
 
     return {

@@ -136,7 +136,7 @@ var editor = {
             that.widget.setReadOnly(false);
             if (!ro) {
                 that.widget.focus();
-                $("#editor-title-header").html(user + " | " + "<a href=\"/share.html?user="+user+"&filename="+filename+"\">" + filename + "</a>");
+                $("#editor-title-header").html(user + " | " + "<a href=\"share.html?user="+user+"&filename="+filename+"\">" + filename + "</a>");
             } else {
                 $("#editor-title-header").text(user + " | " + filename + " | Read Only");
             }

@@ -28,6 +28,20 @@ function add_data_model(model, group_id)
     }
 }
 
+Chart.get_selections = function(group_id) {
+    return selections[this.group_id];
+}
+
+Chart.set_selections = function(group_id, sel) {
+    for (var i = 0; i < sel.length; i++)
+	selections[group_id][i] = sel[i];
+    _.each(models[group_id], function(model) {
+        _.each(model.views, function(v) {
+            v.selection_changed();
+        });
+    });
+}
+
 Chart.data_model = function(data, group_id)
 {
     var l = data.length;
