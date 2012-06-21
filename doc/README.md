@@ -9,6 +9,13 @@ javascript has changed. Currently the HTML sources are using the
 un-minified javascript, so all that is needed is to go into js/ and
 type make.
 
+# Running
+
+The following starts a pretty basic instance of RCloud serving on port 8080:
+
+    $ cd $RCLOUD_ROOT
+    $ ROOT=`pwd`/htdocs DATAROOT=`pwd`/userdata CONFROOT=`pwd`/code code/start -d
+
 # Directory structure
 
 - Rserve_py: a bare-bones python Rserve client. Previously used for
