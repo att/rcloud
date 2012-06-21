@@ -101,8 +101,7 @@ var editor = {
                 if (text === "")
                     return;
                 var text = widget.getSession().doc.getTextRange(range);
-                rclient.post_sent_command(text);
-                interpret_command(text);
+                rclient.send_as_notebook_cell(text);
             }
         });
         this.widget = widget;

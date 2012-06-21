@@ -181,7 +181,7 @@ RClient = {
                 if (result) {
                     $("#output")
                         .append($("<div></div>")
-                        .html(result.value[0]))
+                                .html(result.value[0]))
                         .find("pre code")
                         .each(function(i, e) { 
                             hljs.highlightBlock(e); 
@@ -294,6 +294,13 @@ RClient = {
                 result.push(")");
                 var s = result.join("");
                 return s;
+            },
+
+            send_as_notebook_cell: function(command) {
+                var cell = Notebook.new_cell(command, "markdown");
+                $("#output").append(cell.div());
+                // this.post_sent_command(command);
+                // this.send(command, this.markdown_wrap_command);
             }
         };
         return result;
