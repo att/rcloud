@@ -18,9 +18,6 @@ The following starts a pretty basic instance of RCloud serving on port 8080:
 
 # Directory structure
 
-- Rserve_py: a bare-bones python Rserve client. Previously used for
-  testing, now there mostly for archival. Will disappear soon.
-
 - code: Rserve configuration, and R source files used server-side.
 
 - doc: documentation
