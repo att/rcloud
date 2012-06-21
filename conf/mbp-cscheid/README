@@ -1,3 +1,0 @@
-Because I'm likely to forget this again, all cgi-bin scripts are
-hardlinked at /Library/WebServer/CGI-Executables
-

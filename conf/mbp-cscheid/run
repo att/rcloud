@@ -1,4 +1,0 @@
-#!/bin/sh
-
-nohup R CMD Rserve --RS-conf /data/users/rserve/conf/Rserve.conf --no-save --vanilla &
-
