@@ -4,7 +4,7 @@ var interpreter = {
             rclient.post_div(create_scatterplot.apply(result));
         });
         for (var i=0; i<cmd.ps.length; ++i) {
-            rclient.send(cmd.ps[i]);
+            rclient.send(cmd.ps[i], rclient.wrap_command);
         }
     },
     'logout': function(cmd) {
@@ -21,7 +21,7 @@ function interpret_command(command)
         interpreter[cmd.id](cmd);
     } else {
         // rclient.log(command);
-        rclient.send_markdown(command);
+        rclient.send(command, rclient.markdown_wrap_command);
     }
 }
 

@@ -107,6 +107,20 @@ function add_data_model(model, group_id)
     }
 }
 
+Chart.get_selections = function(group_id) {
+    return selections[this.group_id];
+}
+
+Chart.set_selections = function(group_id, sel) {
+    for (var i = 0; i < sel.length; i++)
+	selections[group_id][i] = sel[i];
+    _.each(models[group_id], function(model) {
+        _.each(model.views, function(v) {
+            v.selection_changed();
+        });
+    });
+}
+
 Chart.data_model = function(data, group_id)
 {
     var l = data.length;
@@ -734,7 +748,15 @@ FacetChart.facet_osm_plot = function(lats, lons, color, width, height)
         }
     }
 })(this);
-var RClient = {
+(function() {
+
+// takes a string and returns the appropriate r literal string with escapes.
+function escape_r_literal_string(s) {
+    return "\"" + s.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\"";
+    // return "\"" + s.replace(/"/g, "\\\"") + "\"";
+}
+
+RClient = {
     create: function(host, onconnect) {
         var socket = new WebSocket(host);
 
@@ -760,7 +782,7 @@ var RClient = {
             } else {
                 _received_handshake = true;
                 // result.post_response("Welcome to R-on-the-browser!");
-		result.send(".session.init()", false);
+		result.send(".session.init()");
                 onconnect && onconnect.call(result);
             }
         }
@@ -963,7 +985,7 @@ var RClient = {
 
             markdown_wrap_command: function(command, silent) {
                 var this_command = command_counter++;
-                return [ ".session.markdown.eval({markdownToHTML(text=knit(text=" + this.escape_r_literal_string(command+'\n') + "), fragment=TRUE)}, "
+                return [ ".session.markdown.eval({markdownToHTML(text=knit(text=" + escape_r_literal_string(command+'\n') + "), fragment=TRUE)}, "
                          + this_command + ", "
                          + (silent?"TRUE":"FALSE") + ")",
                          this_command ];
@@ -973,28 +995,11 @@ var RClient = {
                 command = ".session.log(\"" + rcloud.username() + "\", \"" +
                     command.replace(/\\/g,"\\\\").replace(/"/g,"\\\"")
                 + "\")";
-                this.send(command, false);
-            },
-
-            send_markdown: function(command, wrap) {
-                if (wrap !== false) command = this.markdown_wrap_command(command)[0];
-                var buffer = new ArrayBuffer(command.length + 21);
-                var view = new EndianAwareDataView(buffer);
-                view.setInt32(0,  3);
-                view.setInt32(4,  5 + command.length);
-                view.setInt32(8,  0);
-                view.setInt32(12, 0);
-                view.setInt32(16, 4 + ((1 + command.length) << 8));
-                for (var i=0; i<command.length; ++i) {
-                    view.setUint8(20 + i, command.charCodeAt(i));
-                }
-                view.setUint8(buffer.byteLength - 1, 0);
-
-                socket.send(buffer);
+                this.send(command);
             },
 
             send: function(command, wrap) {
-                if (wrap !== false) command = this.wrap_command(command)[0];
+                if (!_.isUndefined(wrap)) command = wrap(command)[0];
                 var buffer = new ArrayBuffer(command.length + 21);
                 var view = new EndianAwareDataView(buffer);
                 view.setInt32(0,  3);
@@ -1021,13 +1026,7 @@ var RClient = {
                     delete that.result_handlers[id];
                     callback(data);
                 };
-                this.send(command, false);
-            },
-
-            // takes a string and returns the appropriate r literal string with escapes.
-            escape_r_literal_string: function(s) {
-                return "\"" + s.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\"";
-                // return "\"" + s.replace(/"/g, "\\\"") + "\"";
+                this.send(command);
             },
 
             // FIXME this needs hardening
@@ -1036,7 +1035,7 @@ var RClient = {
                 for (var i=1; i<arguments.length; ++i) {
                     var t = typeof arguments[i];
                     if (t === "string") {
-                        result.push(this.escape_r_literal_string(arguments[i]));
+                        result.push(escape_r_literal_string(arguments[i]));
                     } else
                         result.push(String(arguments[i]));
                     if (i < arguments.length-1)
@@ -1050,6 +1049,8 @@ var RClient = {
         return result;
     }
 };
+
+})();
 (function(global) {
     var _is_little_endian;
 
