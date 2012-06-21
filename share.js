@@ -5,12 +5,12 @@ function getURLParameter(name) {
 // FIXME shell has a ton of repeated code... this is horribly horribly ugly
 function share_init() {
     $("#instashare-view-source").click(function() {
-        document.location = "/main.html" + location.search;
+        document.location = "main.html" + location.search;
     });
     rclient = RClient.create("ws://"+location.hostname+":8081/", function() {
         rcloud.init_client_side_data();
         var that = this;
-        var shell_objtypes = ["scatterplot", "iframe", "facet_osm_plot", "facet_tour_plot"];
+        var shell_objtypes = ["scatterplot", "iframe", "facet_osm_plot", "facet_tour_plot", "select"];
         for (var i=0; i<shell_objtypes.length; ++i) {
             (function(objtype) {
                 that.register_handler(objtype, function(data) {
@@ -88,8 +88,15 @@ var shell = (function() {
         this.post_div(FacetChart.facet_tour_plot(lst));
     }
 
+    function handle_select(data) {
+	var group = data.value[1].value[0];
+	var sel = data.value[2].value;
+	Chart.set_selections(group, sel);
+    }
+
     var handlers = {
         "scatterplot": handle_scatterplot,
+	"select": handle_select,
         "iframe": handle_iframe,
         "facet_osm_plot": handle_facet_osm_plot,
         "facet_tour_plot": handle_facet_tour_plot

@@ -2,14 +2,14 @@ library(knitr)
 library(markdown)
 
 .session <- new.env(parent=emptyenv())
-.session$WSdev.width <- 400
-.session$WSdev.height <- 400
+.session$WSdev.width <- 300
+.session$WSdev.height <- 300
 
 # create a new device constructor
-WSdev <- function(...) {
-   dev <- Cairo(.session$WSdev.width,
-                .session$WSdev.height
-                , type='raster', bg='white', ...)
+WSdev <- function(width, height, ...) {
+  if (missing(width)) width <- .session$WSdev.width
+  if (missing(height)) height <- .session$WSdev.height
+   dev <- Cairo(width, height, type='raster', bg='white', ...)
    Cairo.onSave(dev, onSave)
    old.sn <<- Cairo.serial()
    self.oobSend(list("dev.new",as.integer(dev)))
@@ -73,7 +73,7 @@ wplot <- function(x, y, ...) {
     x <- seq.int(y)
   }
   if (is.null(opts$width)) {
-    width <- 480
+    width <- 300
   } else {
     width <- opts$width
   }
@@ -102,17 +102,23 @@ wplot <- function(x, y, ...) {
   }
 }
 
+select <- function(what, group) {
+  if (missing(group)) group <- .session$group
+  if (is.numeric(what)) what <- seq.int(.session$group.len) %in% what 
+  invisible(self.oobSend(list("select", as.integer(group), as.integer(what))))
+}
+
 fplot <- function()
 {
   invisible(self.oobSend(list("iframe", "http://cscheid.github.com/facet/demos/osm/osm.html", c(960, 600))))
 }
 
-wplot.geo.dots <- function(lats, lons, color)
+wgeoplot <- function(lats, lons, col=1L)
 {
-  if (missing(color)) {
-    color <- rep(0, length(lats) * 3);
-  }
-  invisible(self.oobSend(list("facet_osm_plot", lats, lons, color, c(960, 600))))
+  if (is.null(dim(col))) col <- col2rgb(col) / 255
+  #col <- rep(col, length.out = 3 * length(lats))
+  col <- as.double(col)
+  invisible(self.oobSend(list("facet_osm_plot", lats, lons, col, c(960, 600))))
 }
 
 wtour <- function(...)
