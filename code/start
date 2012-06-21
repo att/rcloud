@@ -10,6 +10,7 @@ if [ -z "$ROOT" ]; then ## some auto-detection if ROOT is not set...
 	fi
     done
 fi
+
 if [ -z "$ROOT" ]; then
     echo '' >&2
     echo ' ERROR: cannot determine ROOT - please set accordingly' >&2
@@ -17,6 +18,18 @@ if [ -z "$ROOT" ]; then
     exit 1
 fi
 export ROOT
+
+if [ -z "$CONFROOT" ]; then
+    echo "WARNING: assuming CONFROOT is $ROOT. Probably the wrong assumption!!" >&2
+    CONFROOT=$ROOT
+fi
+export CONFROOT
+
+if [ -z "$DATAROOT" ]; then
+    echo "WARNING: assuming DATAROOT is $CONFROOT/.. . Probably the wrong assumption!!" >&2
+    DATAROOT=$CONFROOT/..
+fi
+export DATAROOT
 
 RBIN=R
 
@@ -30,5 +43,5 @@ if [ "$1" = -d ]; then
   PX=.dbg
 fi
 
-echo $RBIN CMD ${PRE}Rserve$PX --RS-conf $ROOT/code/rserve.conf --RS-source $ROOT/code/rserve.R --vanilla --no-save
-$RBIN CMD ${PRE}Rserve$PX --RS-conf $ROOT/code/rserve.conf --RS-source $ROOT/code/rserve.R --vanilla --no-save
+echo $RBIN CMD ${PRE}Rserve$PX --RS-conf $CONFROOT/rserve.conf --RS-source $CONFROOT/rserve.R --vanilla --no-save
+$RBIN CMD ${PRE}Rserve$PX --RS-conf $CONFROOT/rserve.conf --RS-source $CONFROOT/rserve.R --vanilla --no-save

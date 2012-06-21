@@ -14,6 +14,12 @@ Sys.setlocale(,"en_US.UTF-8")
 root <- Sys.getenv("ROOT")
 if (is.null(root) || nchar(root) == 0) root <- "/var/FastRWeb"
 
+configuration.root <- Sys.getenv("CONFROOT")
+if (is.null(configuration.root) || nchar(configuration.root) == 0) configuration.root <- "/var/FastRWeb/code"
+
+data.root <- Sys.getenv("DATAROOT")
+if (is.null(data.root) || nchar(data.root) == 0) configuration.root <- "/var/FastRWeb"
+
 ## run the server in the "tmp" directory of the root in
 ## case some files need to be created
 tmp.dir <- paste(root,"tmp",sep='/')
@@ -44,10 +50,10 @@ if (isTRUE(file.exists(data.fn))) {
 .session.init <- function() {
     set.seed(Sys.getpid()) # we want different seeds so we get different file names
     tmpfile <<- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
-    x <- paste(root,"/code/common.R",sep='')
+    x <- paste(configuration.root,"/common.R",sep='')
     if (file.exists(x))
       source(x)$value
-    else R.version.string
+    else "ERROR: Could not open common.R!" # R.version.string
 }
 
 .http.request <- function(url, query, body, headers, ...) {
