@@ -1,2 +1,8 @@
-* Bugfixes
-**  'c(a=1, b=2, d=3)' is broken
+* TODO for presentation
+** fix new file bug
+** test search
+** fix interactive shell commands
+** add interactive plots
+** Save button (actually a 5s timeout between saves or something like that would be better)
+* Backup plan!
+** find and rollback previous version
