@@ -161,3 +161,17 @@ rect.frame {
     cursor: pointer;
     color: blue;
 }
+
+/* .markdown-div { */
+/*     background-color: red; */
+/* } */
+
+/* .r-result-div { */
+/*     background-color: green; */
+/* } */
+
+.notebook-cell {
+    border-width: 1px;
+    border-color: #ddd;
+    border-style: solid;
+}
