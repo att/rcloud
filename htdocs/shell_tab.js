@@ -3,8 +3,9 @@ var shell = (function() {
         if (command !== '') {
             term.clear();
             // $("#output").append($("<div></div>").text(command));
-            rclient.post_sent_command(command);
-            interpret_command(command);
+            rclient.send_as_interactive_cell(command, "interactive");
+            // rclient.post_sent_command(command);
+            // interpret_command(command);
         }
     }, {
         exit: false,
