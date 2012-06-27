@@ -171,6 +171,8 @@ rect.frame {
 /* } */
 
 .notebook-cell {
+    position:relative;
+    width:100%;
     border-width: 1px;
     border-color: #ddd;
     border-style: solid;
