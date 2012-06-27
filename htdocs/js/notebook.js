@@ -3,10 +3,9 @@ Notebook = {};
 Notebook.new_cell = function(content, type)
 {
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
-    var inner_div = $("<div></div>");
-    var clear_div = $("<div style='clear:both;'></div>");
-    notebook_cell_div.append(inner_div);
-    notebook_cell_div.append(clear_div);
+
+    //////////////////////////////////////////////////////////////////////////
+    // button bar
     var source_button = $("<span class='fontawesome-button'><i class='icon-edit' alt='Show Source'></i></span>");
     var result_button = $("<span class='fontawesome-button'><i class='icon-picture' alt='Show Result'></i></span>");
     var hide_button   = $("<span class='fontawesome-button'><i class='icon-resize-small' alt='Hide cell'></i></span>");
@@ -35,15 +34,33 @@ Notebook.new_cell = function(content, type)
         if (!$(e.currentTarget).hasClass("button-disabled"))
             result.remove_self();
     });
-    var button_float = $("<div style='float: right'></div>");
-    inner_div.append(button_float);
+
+    // Ace sets its z-index to be 1000; 
+    // "and thus began the great z-index arms race of 2012"
+    var button_float = $("<div style='margin:0.5em; position:relative; float: right; z-index:10000'></div>");
     button_float.append(source_button);
     button_float.append(result_button);
-    button_float.append(remove_button);
     button_float.append(hide_button);
+    button_float.append(remove_button);
+    notebook_cell_div.append(button_float);
 
-    var markdown_div = $('<pre class="r-sent-command markdown-div"></pre>').html('> ' + content);
+    //////////////////////////////////////////////////////////////////////////
+
+    var inner_div = $("<div></div>");
+    var clear_div = $("<div style='clear:both;'></div>");
+    notebook_cell_div.append(inner_div);
+    notebook_cell_div.append(clear_div);
+
+
+    var markdown_div = $('<div style="position: relative; width:100%; height:20%"></div>');
+    var ace_div = $('<div style="width:100%; height:100%"></div>');
     inner_div.append(markdown_div);
+    markdown_div.append(ace_div);
+    var widget = ace.edit(ace_div[0]);
+    widget.setTheme("ace/theme/chrome");
+    widget.getSession().setValue(content);
+    widget.getSession().setUseWrapMode(true);
+    widget.resize();
 
     var r_result_div = $('<div class="r-result-div">Computing...</div>');
     inner_div.append(r_result_div);
@@ -82,6 +99,7 @@ Notebook.new_cell = function(content, type)
             enable(remove_button);
 
             markdown_div.show();
+            widget.resize();
             r_result_div.hide();
         },
         show_result: function() {
