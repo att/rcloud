@@ -175,3 +175,12 @@ rect.frame {
     border-color: #ddd;
     border-style: solid;
 }
+
+.fontawesome-button {
+    margin: 0.25em;
+    cursor: pointer;
+}
+.button-disabled {
+    color: #ddd;
+    cursor: default;
+}
