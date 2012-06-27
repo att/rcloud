@@ -2550,7 +2550,7 @@ Notebook.new_cell = function(content, type)
     notebook_cell_div.append(clear_div);
 
 
-    var markdown_div = $('<div style="position: relative; width:100%; height:20%"></div>');
+    var markdown_div = $('<div style="position: relative; width:100%; height:100%"></div>');
     var ace_div = $('<div style="width:100%; height:100%"></div>');
     inner_div.append(markdown_div);
     markdown_div.append(ace_div);
@@ -2591,6 +2591,7 @@ Notebook.new_cell = function(content, type)
 
     var result = {
         show_source: function() {
+            notebook_cell_div.css({'height': '70%'});
             disable(source_button);
             enable(result_button);
             enable(hide_button);
@@ -2601,6 +2602,7 @@ Notebook.new_cell = function(content, type)
             r_result_div.hide();
         },
         show_result: function() {
+            notebook_cell_div.css({'height': ''});
             enable(source_button);
             disable(result_button);
             enable(hide_button);
