@@ -1015,10 +1015,15 @@ RClient = {
                 socket.send(buffer);
             },
 
-            send_and_callback: function(command, callback) {
+            send_and_callback: function(command, callback, wrap) {
                 if (_.isUndefined(callback))
                     callback = _.identity;
-                var t = this.wrap_command(command, true);
+                var t;
+                if (wrap) {
+                    t = wrap(command);
+                } else {
+                    t = this.wrap_command(command, true);
+                }
                 var command_id = t[1];
                 command = t[0];
                 var that = this;
@@ -1026,6 +1031,7 @@ RClient = {
                     delete that.result_handlers[id];
                     callback(data);
                 };
+                console.log(command);
                 this.send(command);
             },
 
@@ -2448,6 +2454,9 @@ rcloud.init_client_side_data = function()
             .enter()
             .append("li").text(function(i) { return i; });
     });
+    rclient.send_and_callback("wplot.uuid", function(data) {
+        that.wplot_uuid = data.value[0];
+    });
 };
 
 rcloud.username = function()
@@ -2495,6 +2504,12 @@ rcloud.create_user_file = function(filename, k)
 {
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.create.user.file", rcloud.username(), filename), k);
+};
+
+rcloud.resolve_deferred_result = function(uuid, k)
+{
+    var cmd = rclient.r_funcall("rcloud.fetch.deferred.result", uuid);
+    rclient.send_and_callback(cmd, k);
 };
 Notebook = {};
 
@@ -2577,32 +2592,47 @@ Notebook.new_cell = function(content, type)
     
     var result = {
         execute: function(value) {
+            var that = this;
+            function callback(r) {
+                r_result_div.html(r.value[0]);
+
+                // There's a list of things that we need to do to the output:
+                var uuid = rcloud.wplot_uuid;
+
+                // capture interactive graphics
+                inner_div.find("pre code")
+                    .contents()
+                    .filter(function() {
+                        return this.nodeValue.indexOf(uuid) !== -1;
+                    }).parent().parent()
+                    .each(function() {
+                        var uuids = this.childNodes[0].childNodes[0].data.substr(8,73).split("|");
+                        var that = this;
+                        rcloud.resolve_deferred_result(uuids[1], function(data) {
+                            $(that).replaceWith(function() {
+                                return shell.handle(data.value[0].value[0], data);
+                            });
+                        });
+                    });
+                // highlight R
+                inner_div
+                    .find("pre code")
+                    .each(function(i, e) {
+                        hljs.highlightBlock(e);
+                    });
+
+                // typeset the math
+                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+                
+                that.show_result();
+            }
+            widget.getSession().setValue(value);
             if (type === 'markdown') {
-                widget.getSession().setValue(value);
                 var wrapped_command = rclient.markdown_wrap_command(value);
-                rclient.send_and_callback(wrapped_command[0], function(r) {
-                    r_result_div.html(r.value[1].value[0]);
-                    inner_div
-                        .find("pre code")
-                        .each(function(i, e) {
-                            hljs.highlightBlock(e);
-                        });
-                    MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
-                    this.show_result();
-                });
+                rclient.send_and_callback(wrapped_command, callback, _.identity);
             } else if (type === 'interactive') {
-                widget.getSession().setValue(value);
                 var wrapped_command = rclient.markdown_wrap_command("```{r}\n" + value + "\n```\n");
-                rclient.send_and_callback(wrapped_command[0], function(r) {
-                    r_result_div.html(r.value[1].value[0]);
-                    inner_div
-                        .find("pre code")
-                        .each(function(i, e) {
-                            hljs.highlightBlock(e);
-                        });
-                    MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
-                    this.show_result();
-                });
+                rclient.send_and_callback(wrapped_command, callback, _.identity);
             } else alert("Can only do markdown or interactive for now!");
         },
         show_source: function() {

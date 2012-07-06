@@ -17,6 +17,9 @@ rcloud.init_client_side_data = function()
             .enter()
             .append("li").text(function(i) { return i; });
     });
+    rclient.send_and_callback("wplot.uuid", function(data) {
+        that.wplot_uuid = data.value[0];
+    });
 };
 
 rcloud.username = function()
@@ -64,4 +67,10 @@ rcloud.create_user_file = function(filename, k)
 {
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.create.user.file", rcloud.username(), filename), k);
+};
+
+rcloud.resolve_deferred_result = function(uuid, k)
+{
+    var cmd = rclient.r_funcall("rcloud.fetch.deferred.result", uuid);
+    rclient.send_and_callback(cmd, k);
 };

@@ -54,7 +54,9 @@ function main_init() {
         for (var i=0; i<shell_objtypes.length; ++i) {
             (function(objtype) {
                 that.register_handler(objtype, function(data) {
-                    shell.handle(objtype, data);
+                    var div = shell.handle(objtype, data);
+                    shell.post_div(div);
+                    // shell.handle(objtype, data);
                 });
             })(shell_objtypes[i]);
         }

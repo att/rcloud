@@ -1,5 +1,6 @@
 library(knitr)
 library(markdown)
+library(hash)
 
 .session <- new.env(parent=emptyenv())
 .session$WSdev.width <- 300
@@ -96,9 +97,9 @@ wplot <- function(x, y, ...) {
     opts$group <- .session$group
   }
   if (!is.null(opts$kind)) {
-    invisible(self.oobSend(list("scatterplot",x,y,opts$kind,c(width,height),opts$group)))
+    deferred.rcloud.result(list("scatterplot",x,y,opts$kind,c(width,height),opts$group))
   } else {
-    invisible(self.oobSend(list("scatterplot",x,y,c(width,height),opts$group)))
+    deferred.rcloud.result(list("scatterplot",x,y,c(width,height),opts$group))
   }
 }
 
@@ -110,7 +111,7 @@ select <- function(what, group) {
 
 fplot <- function()
 {
-  invisible(self.oobSend(list("iframe", "http://cscheid.github.com/facet/demos/osm/osm.html", c(960, 600))))
+  deferred.rcloud.result(list("iframe", "http://cscheid.github.com/facet/demos/osm/osm.html", c(960, 600)))
 }
 
 wgeoplot <- function(lats, lons, col=1L)
@@ -118,13 +119,13 @@ wgeoplot <- function(lats, lons, col=1L)
   if (is.null(dim(col))) col <- col2rgb(col) / 255
   #col <- rep(col, length.out = 3 * length(lats))
   col <- as.double(col)
-  invisible(self.oobSend(list("facet_osm_plot", lats, lons, col, c(960, 600))))
+  deferred.rcloud.result(list("facet_osm_plot", lats, lons, col, c(960, 600)))
 }
 
 wtour <- function(...)
 {
   opts <- list(...)
-  invisible(self.oobSend(list("facet_tour_plot", opts)))
+  deferred.rcloud.result((list("facet_tour_plot", opts)))
 }
 
 ################################################################################
@@ -183,6 +184,63 @@ rcloud.search <- function(search.string) {
     cmd <- paste("grep -in ", search.string, " ../history/main_log.txt");
     history.results <- rev(system(cmd, intern=TRUE));
     list(source.results, history.results);
+  }
+}
+
+################################################################################
+# setup the UUID-string based injection hack
+
+# FIXME should use libuuid directly
+generate.uuid <- function() system("uuidgen -r", intern=TRUE);
+
+wplot.uuid <- generate.uuid();
+global.result.hash <- hash();
+
+stash.result <- function(value) {
+  new.hash <- generate.uuid();
+  global.result.hash[[new.hash]] <- value;
+  new.hash;
+}
+
+deferred.rcloud.result <- function(value) {
+  uuid <- stash.result(value);
+  paste(wplot.uuid, uuid, sep="|");
+}
+
+rcloud.fetch.deferred.result <- function(key) {
+  v <- global.result.hash[[key]]
+  del(key, global.result.hash)
+  v
+}
+
+wplot2 <- function(x, y, ...) {
+  opts <- list(...)
+  if (missing(y)) {
+    y <- x
+    x <- seq.int(y)
+  }
+  if (is.null(opts$width)) {
+    width <- 300
+  } else {
+    width <- opts$width
+  }
+  if (is.null(opts$height)) {
+    height <- width
+  } else {
+    height <- opts$height
+  }
+
+  if (is.null(opts$group)) {
+    if (is.null(.session$group)) {
+      .session$group <- 1L
+      .session$group.len <- length(x)
+    } else {
+      if (.session$group.len != length(x)) {
+        .session$group <- .session$group + 1L
+        .session$group.len <- length(x)
+      }
+    }
+    opts$group <- .session$group
   }
 }
 

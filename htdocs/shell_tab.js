@@ -41,18 +41,22 @@ var shell = (function() {
         opts.data = data_model;
 
         var plot = Chart.scatterplot(opts);
-        var detachable_div = this.post_div(plot.plot);
-        detachable_div.on_remove(function() {
-            plot.deleted();
-        });
+        // FIXME deleted plot observers need to be notified
+        // 
+        // var detachable_div = this.post_div(plot.plot);
+        // detachable_div.on_remove(function() {
+        //     plot.deleted();
+        // });
+
+        return plot.plot;
     }
 
     function handle_iframe(data) {
-        console.log(this, data);
         var div = $("<iframe src='"
                     + data.value[1].value[0] + "' width='" 
                     + data.value[2].value[0] + "' height='"
                     + data.value[2].value[1] + "' frameborder=0></iframe>");
+        return div;
         this.post_div(div);
     }
 
@@ -62,12 +66,14 @@ var shell = (function() {
             color = data.value[3].value,
             width = data.value[4].value[0],
             height = data.value[4].value[1];
-        this.post_div(FacetChart.facet_osm_plot(lats, lons, color, width, height));
+        return FacetChart.facet_osm_plot(lats, lons, color, width, height);
+        // this.post_div();
     }
 
     function handle_facet_tour_plot(data) {
         var lst = data.value[1];
-        this.post_div(FacetChart.facet_tour_plot(lst));
+        return FacetChart.facet_tour_plot(lst);
+        // this.post_div();
     }
 
     function handle_select(data) {
@@ -122,8 +128,9 @@ var shell = (function() {
         }, handle: function(objtype, data) {
             if (_.isUndefined(handlers[objtype])) {
                 console.log("Shell can't handle object of type", objtype);
+                return undefined;
             } else
-                handlers[objtype].call(this, data);
+                return handlers[objtype].call(this, data);
         }
     };
 })();
