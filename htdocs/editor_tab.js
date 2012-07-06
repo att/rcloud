@@ -2,6 +2,42 @@ var editor = {
     widget: undefined,
     current_file_owner: undefined,
     current_filename: undefined,
+    create_file_tree_widget: function() { 
+        var that = this;
+        var $tree = $("#editor-file-tree");
+        $tree.tree({
+            autoOpen: 1
+        });
+        $tree.bind(
+            'tree.click', function(event) {
+                if (event.node.id === "newfile") {
+                    function validate_filename(n) {
+                        if (/\.\./.test(n))
+                            return false;
+                        if (/[^0-9a-zA-Z_.]/.test(n))
+                            return false;
+                        return true;
+                    }
+                    var filename = prompt("please enter a filename", "[new filename]");
+                    if (!validate_filename(filename)) {
+                        alert("Invalid filename");
+                        return;
+                    }
+                    that.new_file(filename);
+                } else if (!_.isUndefined(event.node.file_type)) {
+                    if (that.current_filename && 
+                        (that.current_file_owner === rcloud.username())) {
+                        that.save_file(rcloud.username(), that.current_filename, function() {
+                            that.load_file(event.node.user_name, event.node.file_name);
+                        });
+                    } else {
+                        that.load_file(event.node.user_name, event.node.file_name);
+                    }
+                }
+            }
+        );
+        
+    },
     populate_file_list: function() {
         var that = this;
         rcloud.get_all_user_filenames(function(data) {
@@ -39,38 +75,7 @@ var editor = {
                 children: result 
             } ];
             var $tree = $("#editor-file-tree");
-            $tree.tree({
-                data: tree_data,
-                autoOpen: 0
-            });
-            $tree.bind(
-                'tree.click', function(event) {
-                    if (event.node.id === "newfile") {
-                        function validate_filename(n) {
-                            if (/\.\./.test(n))
-                                return false;
-                            if (/[^0-9a-zA-Z_.]/.test(n))
-                                return false;
-                            return true;
-                        }
-                        var filename = prompt("please enter a filename", "[new filename]");
-                        if (!validate_filename(filename)) {
-                            alert("Invalid filename");
-                            return;
-                        }
-                        that.new_file(filename);
-                    } else if (!_.isUndefined(event.node.file_type)) {
-                        if (that.current_filename && 
-                            (that.current_file_owner === rcloud.username())) {
-                            that.save_file(rcloud.username(), that.current_filename, function() {
-                                that.load_file(event.node.user_name, event.node.file_name);
-                            });
-                        } else {
-                            that.load_file(event.node.user_name, event.node.file_name);
-                        }
-                    }
-                }
-            );
+            $tree.tree("loadData", tree_data);
             var folder = $tree.tree('getNodeById', "/" + rcloud.username());
             $(folder.element).parent().prepend(folder.element);
             $tree.tree('openNode', folder);
@@ -110,6 +115,7 @@ var editor = {
         var session = this.widget.getSession();
         var doc = session.doc;
         this.widget.getSession().setMode(new RMode(false, doc, session));
+        this.create_file_tree_widget();
         this.populate_file_list();
         $("#editor-title-header").text(rcloud.username() + " | [untitled]");
         var old_text = "";
