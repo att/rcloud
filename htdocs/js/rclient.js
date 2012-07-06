@@ -265,10 +265,15 @@ RClient = {
                 socket.send(buffer);
             },
 
-            send_and_callback: function(command, callback) {
+            send_and_callback: function(command, callback, wrap) {
                 if (_.isUndefined(callback))
                     callback = _.identity;
-                var t = this.wrap_command(command, true);
+                var t;
+                if (wrap) {
+                    t = wrap(command);
+                } else {
+                    t = this.wrap_command(command, true);
+                }
                 var command_id = t[1];
                 command = t[0];
                 var that = this;
@@ -276,6 +281,7 @@ RClient = {
                     delete that.result_handlers[id];
                     callback(data);
                 };
+                console.log(command);
                 this.send(command);
             },
 
