@@ -6,7 +6,7 @@ var shell = (function() {
     var terminal = $('#term_demo').terminal(function(command, term) {
         if (command !== '') {
             term.clear();
-            result.new_interactive_cell(command);
+            result.new_interactive_cell(command).execute();
         }
     }, {
         exit: false,
@@ -141,9 +141,9 @@ var shell = (function() {
             } else
                 return handlers[objtype].call(this, data);
         }, new_markdown_cell: function(content) {
-            notebook_controller.append_cell(content, "markdown");
+            return notebook_controller.append_cell(content, "markdown");
         }, new_interactive_cell: function(content) {
-            notebook_controller.append_cell(content, "interactive");
+            return notebook_controller.append_cell(content, "interactive");
         }
     };
     return result;

@@ -1,20 +1,20 @@
-Notebook.Cell.create_controller = function(model)
+Notebook.Cell.create_controller = function(cell_model)
 {
     var result = {
         execute: function() {
             var that = this;
-            var type = model.type();
+            var type = cell_model.type();
             function callback(r) {
-                _.each(model.views, function(view) {
+                _.each(cell_model.views, function(view) {
                     view.result_updated(r);
                 });
             }
             
             if (type === 'markdown') {
-                var wrapped_command = rclient.markdown_wrap_command(model.content());
+                var wrapped_command = rclient.markdown_wrap_command(cell_model.content());
                 rclient.send_and_callback(wrapped_command, callback, _.identity);
             } else if (type === 'interactive') {
-                var wrapped_command = rclient.markdown_wrap_command("```{r}\n" + model.content() + "\n```\n");
+                var wrapped_command = rclient.markdown_wrap_command("```{r}\n" + cell_model.content() + "\n```\n");
                 rclient.send_and_callback(wrapped_command, callback, _.identity);
             } else alert("Can only do markdown or interactive for now!");
         }

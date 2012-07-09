@@ -2509,7 +2509,7 @@ Notebook = {};
 // roughly a MVC-kinda-thing per cell, plus a MVC for all the cells
 // 
 Notebook.Cell = {};
-Notebook.Cell.create_html_view = function(model)
+Notebook.Cell.create_html_view = function(cell_model)
 {
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
 
@@ -2521,6 +2521,9 @@ Notebook.Cell.create_html_view = function(model)
     var remove_button = $("<span class='fontawesome-button'><i class='icon-trash' alt='Remove cell'></i></span>");
     var run_md_button = $("<span class='fontawesome-button'><i class='icon-repeat' alt='Re-execute'></i></span>");
 
+    function update_model() {
+        cell_model.content(widget.getSession().getValue());
+    }
     function enable(el) {
         el.removeClass("button-disabled");
     }
@@ -2542,12 +2545,12 @@ Notebook.Cell.create_html_view = function(model)
     });
     remove_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled"))
-            result.remove_self();
+            cell_model.parent_model.remove_cell(cell_model);
     });
     run_md_button.click(function(e) {
         r_result_div.html("Computing...");
-        result.execute(widget.getSession().getValue());
-        result.show_result();
+        update_model();
+        cell_model.controller.execute();
     });
 
     // Ace sets its z-index to be 1000; 
@@ -2586,8 +2589,15 @@ Notebook.Cell.create_html_view = function(model)
     inner_div.append(r_result_div);
     
     var result = {
+
+        //////////////////////////////////////////////////////////////////////
+        // pubsub event handlers
+
         content_updated: function() {
-            widget.getSession().setValue(model.contents());
+            widget.getSession().setValue(cell_model.content());
+        },
+        self_removed: function() {
+            notebook_cell_div.remove();
         },
         result_updated: function(r) {
             r_result_div.html(r.value[0]);
@@ -2622,50 +2632,9 @@ Notebook.Cell.create_html_view = function(model)
                 
             this.show_result();
         },
-        execute: function(value) {
-            var that = this;
-            function callback(r) {
-                r_result_div.html(r.value[0]);
 
-                // There's a list of things that we need to do to the output:
-                var uuid = rcloud.wplot_uuid;
+        //////////////////////////////////////////////////////////////////////
 
-                // capture interactive graphics
-                inner_div.find("pre code")
-                    .contents()
-                    .filter(function() {
-                        return this.nodeValue.indexOf(uuid) !== -1;
-                    }).parent().parent()
-                    .each(function() {
-                        var uuids = this.childNodes[0].childNodes[0].data.substr(8,73).split("|");
-                        var that = this;
-                        rcloud.resolve_deferred_result(uuids[1], function(data) {
-                            $(that).replaceWith(function() {
-                                return shell.handle(data.value[0].value[0], data);
-                            });
-                        });
-                    });
-                // highlight R
-                inner_div
-                    .find("pre code")
-                    .each(function(i, e) {
-                        hljs.highlightBlock(e);
-                    });
-
-                // typeset the math
-                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
-                
-                that.show_result();
-            }
-            widget.getSession().setValue(value);
-            if (type === 'markdown') {
-                var wrapped_command = rclient.markdown_wrap_command(value);
-                rclient.send_and_callback(wrapped_command, callback, _.identity);
-            } else if (type === 'interactive') {
-                var wrapped_command = rclient.markdown_wrap_command("```{r}\n" + value + "\n```\n");
-                rclient.send_and_callback(wrapped_command, callback, _.identity);
-            } else alert("Can only do markdown or interactive for now!");
-        },
         show_source: function() {
             notebook_cell_div.css({'height': '70%'});
             disable(source_button);
@@ -2701,6 +2670,7 @@ Notebook.Cell.create_html_view = function(model)
             r_result_div.hide();
         },
         remove_self: function() {
+            cell_model.parent_model.remove_cell(cell_model);            
             notebook_cell_div.remove();
         },
         div: function() {
@@ -2739,23 +2709,23 @@ Notebook.Cell.create_model = function(content, type)
     }
     return result;
 };
-Notebook.Cell.create_controller = function(model)
+Notebook.Cell.create_controller = function(cell_model)
 {
     var result = {
         execute: function() {
             var that = this;
-            var type = model.type();
+            var type = cell_model.type();
             function callback(r) {
-                _.each(model.views, function(view) {
+                _.each(cell_model.views, function(view) {
                     view.result_updated(r);
                 });
             }
             
             if (type === 'markdown') {
-                var wrapped_command = rclient.markdown_wrap_command(model.content());
+                var wrapped_command = rclient.markdown_wrap_command(cell_model.content());
                 rclient.send_and_callback(wrapped_command, callback, _.identity);
             } else if (type === 'interactive') {
-                var wrapped_command = rclient.markdown_wrap_command("```{r}\n" + model.content() + "\n```\n");
+                var wrapped_command = rclient.markdown_wrap_command("```{r}\n" + cell_model.content() + "\n```\n");
                 rclient.send_and_callback(wrapped_command, callback, _.identity);
             } else alert("Can only do markdown or interactive for now!");
         }
@@ -2768,9 +2738,15 @@ Notebook.create_html_view = function(model, root_div)
     var result = {
         model: model,
         cell_appended: function(cell_model) {
-            var cell = Notebook.Cell.create_html_view(cell_model);
-            root_div.append(cell.div());
-            return cell;
+            var cell_view = Notebook.Cell.create_html_view(cell_model);
+            cell_model.views.push(cell_view);
+            root_div.append(cell_view.div());
+            return cell_view;
+        },
+        cell_removed: function(cell_model, cell_index) {
+            _.each(cell_model.views, function(view) {
+                view.self_removed();
+            });
         }
     };
     model.views.push(result);
@@ -2782,10 +2758,27 @@ Notebook.create_model = function()
         notebook: [],
         views: [], // sub list for pubsub
         append_cell: function(cell_model) {
+            cell_model.parent_model = this;
             this.notebook.push(cell_model);
             _.each(this.views, function(view) {
                 view.cell_appended(cell_model);
             });
+        },
+        json: function() {
+            return _.map(this.notebook, function(cell_model) {
+                return cell_model.json();
+            });
+        },
+        remove_cell: function(cell_model) {
+            var cell_index = this.notebook.indexOf(cell_model);
+            if (cell_index === -1) {
+                throw "cell_model not in notebook model?!";
+            }
+            _.each(this.views, function(view) {
+                view.cell_removed(cell_model, cell_index);
+            });
+            this.notebook.splice(cell_index, 1);
+            // delete this.notebook[cell_index];
         }
     };
 };
@@ -2794,7 +2787,10 @@ Notebook.create_controller = function(model)
     return {
         append_cell: function(content, type) {
             var cell_model = Notebook.Cell.create_model(content, type);
-            return model.append_cell(cell_model);
+            var cell_controller = Notebook.Cell.create_controller(cell_model);
+            cell_model.controller = cell_controller;
+            model.append_cell(cell_model);
+            return cell_controller;
         }
     };
 };
