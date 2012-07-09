@@ -68,13 +68,11 @@ var shell = (function() {
             width = data.value[4].value[0],
             height = data.value[4].value[1];
         return FacetChart.facet_osm_plot(lats, lons, color, width, height);
-        // this.post_div();
     }
 
     function handle_facet_tour_plot(data) {
         var lst = data.value[1];
         return FacetChart.facet_tour_plot(lst);
-        // this.post_div();
     }
 
     function handle_select(data) {

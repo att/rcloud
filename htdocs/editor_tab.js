@@ -106,7 +106,7 @@ var editor = {
                 if (text === "")
                     return;
                 var text = widget.getSession().doc.getTextRange(range);
-                shell.new_markdown_cell(text);
+                shell.new_markdown_cell(text).execute();
             }
         });
         this.widget = widget;
