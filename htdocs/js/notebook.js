@@ -1,6 +1,13 @@
+(function() {
+
 Notebook = {};
 
-Notebook.new_cell = function(content, type)
+//
+// roughly a MVC-kinda-thing
+// 
+//////////////////////////////////////////////////////////////////////////////
+
+Notebook.new_cell = function(content, type, do_not_execute)
 {
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
 
@@ -63,7 +70,6 @@ Notebook.new_cell = function(content, type)
     var clear_div = $("<div style='clear:both;'></div>");
     notebook_cell_div.append(inner_div);
     notebook_cell_div.append(clear_div);
-
 
     var markdown_div = $('<div style="position: relative; width:100%; height:100%"></div>');
     var ace_div = $('<div style="width:100%; height:100%"></div>');
@@ -164,8 +170,70 @@ Notebook.new_cell = function(content, type)
         }
     };
 
-    result.execute(content);
-    result.show_result();
+    if (!_.isUndefined(do_not_execute)) {
+        result.execute(content);
+        result.show_result();
+    }
 
-    return result;    
+    return result;
 };
+
+//////////////////////////////////////////////////////////////////////////////
+
+Notebook.create_model = function()
+{
+    return {
+        notebook: [],
+        views: [], // sub list for pubsub
+        load_from_file: function(user, filename) {
+            var that = this;
+            rcloud.load_user_file(user, filename, function(file_lines) {
+                var data = JSON.parse(file_lines.join("\n"));
+                // FIXME validate JSON
+                this.notebook = data;
+            });
+        },
+        append_cell: function(obj) {
+            this.notebook.push(obj);
+            _.each(this.views, function(view) {
+                view.cell_appended(obj);                
+            });
+        }
+    };
+};
+
+var global_model = Notebook.create_model();
+
+//////////////////////////////////////////////////////////////////////////////
+
+Notebook.create_html_view = function(model, root_div)
+{
+    var result = {
+        model: model,
+        cell_appended: function(obj) {
+            var cell = Notebook.new_cell(obj.command, obj.type, true);
+            root_div.append(cell.div());
+            return cell;
+        }
+    };
+    model.views.push(result);
+    return result;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+// Controller
+
+Notebook.create_controller = function(model)
+{
+    return {
+        append_cell: function(command, type) {
+            var json_rep = {
+                command: command,
+                type: type
+            };
+            model.append_cell(json_rep);
+        }
+    };
+};
+
+})();

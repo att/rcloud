@@ -1,11 +1,12 @@
+// FIXME this is about to become the most important object, 
+// so lots of little things are temporarily being moved here
+//////////////////////////////////////////////////////////////////////////////
+
 var shell = (function() {
     var terminal = $('#term_demo').terminal(function(command, term) {
         if (command !== '') {
             term.clear();
-            // $("#output").append($("<div></div>").text(command));
-            rclient.send_as_interactive_cell(command, "interactive");
-            // rclient.post_sent_command(command);
-            // interpret_command(command);
+            result.new_interactive_cell(command);
         }
     }, {
         exit: false,
@@ -90,7 +91,17 @@ var shell = (function() {
 	"select": handle_select
     };
 
-    return {
+    var notebook_model = Notebook.create_model();
+    var notebook_view = Notebook.create_html_view(notebook_model, $("#output"));
+    var notebook_controller = Notebook.create_controller(notebook_model);
+
+    var result = {
+        notebook: {
+            // very convenient for debugging
+            model: notebook_model,
+            view: notebook_view,
+            controller: notebook_controller
+        },
         terminal: terminal,
         post_div: function(msg) {
             var div = this.detachable_div(msg);
@@ -131,6 +142,11 @@ var shell = (function() {
                 return undefined;
             } else
                 return handlers[objtype].call(this, data);
+        }, new_markdown_cell: function(content) {
+            notebook_controller.append_cell(content, "markdown");
+        }, new_interactive_cell: function(content) {
+            notebook_controller.append_cell(content, "interactive");
         }
     };
+    return result;
 })();

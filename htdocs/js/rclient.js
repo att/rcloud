@@ -300,15 +300,6 @@ RClient = {
                 result.push(")");
                 var s = result.join("");
                 return s;
-            },
-
-            send_as_notebook_cell: function(command) {
-                var cell = Notebook.new_cell(command, "markdown");
-                $("#output").append(cell.div());
-            },
-            send_as_interactive_cell: function(command) {
-                var cell = Notebook.new_cell(command, "interactive");
-                $("#output").append(cell.div());
             }
         };
         return result;

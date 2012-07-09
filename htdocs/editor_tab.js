@@ -106,7 +106,7 @@ var editor = {
                 if (text === "")
                     return;
                 var text = widget.getSession().doc.getTextRange(range);
-                rclient.send_as_notebook_cell(text);
+                shell.new_markdown_cell(text);
             }
         });
         this.widget = widget;
