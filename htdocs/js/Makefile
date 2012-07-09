@@ -14,7 +14,14 @@ rcloud_bundle.js: \
 	objs.js \
 	Rsrv.js \
 	rcloud.js \
-	notebook.js
+	notebook/_begin.js \
+	notebook/cell/_begin.js \
+	notebook/cell/create_html_view.js \
+	notebook/cell/create_model.js \
+	notebook/cell/create_controller.js \
+	notebook/create_html_view.js \
+	notebook/create_model.js \
+	notebook/create_controller.js
 
 rcloud_bundle.min.js: rcloud_bundle.js Makefile
 	@rm -f $@

@@ -2502,16 +2502,14 @@ rcloud.resolve_deferred_result = function(uuid, k)
     var cmd = rclient.r_funcall("rcloud.fetch.deferred.result", uuid);
     rclient.send_and_callback(cmd, k);
 };
-(function() {
-
 Notebook = {};
 
-//
-// roughly a MVC-kinda-thing
-// 
 //////////////////////////////////////////////////////////////////////////////
-
-Notebook.new_cell = function(content, type, do_not_execute)
+//
+// roughly a MVC-kinda-thing per cell, plus a MVC for all the cells
+// 
+Notebook.Cell = {};
+Notebook.Cell.create_html_view = function(model)
 {
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
 
@@ -2588,6 +2586,42 @@ Notebook.new_cell = function(content, type, do_not_execute)
     inner_div.append(r_result_div);
     
     var result = {
+        content_updated: function() {
+            widget.getSession().setValue(model.contents());
+        },
+        result_updated: function(r) {
+            r_result_div.html(r.value[0]);
+
+            // There's a list of things that we need to do to the output:
+            var uuid = rcloud.wplot_uuid;
+
+            // capture interactive graphics
+            inner_div.find("pre code")
+                .contents()
+                .filter(function() {
+                    return this.nodeValue.indexOf(uuid) !== -1;
+                }).parent().parent()
+                .each(function() {
+                    var uuids = this.childNodes[0].childNodes[0].data.substr(8,73).split("|");
+                    var that = this;
+                    rcloud.resolve_deferred_result(uuids[1], function(data) {
+                        $(that).replaceWith(function() {
+                            return shell.handle(data.value[0].value[0], data);
+                        });
+                    });
+                });
+            // highlight R
+            inner_div
+                .find("pre code")
+                .each(function(i, e) {
+                    hljs.highlightBlock(e);
+                });
+            
+            // typeset the math
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+                
+            this.show_result();
+        },
         execute: function(value) {
             var that = this;
             function callback(r) {
@@ -2674,48 +2708,67 @@ Notebook.new_cell = function(content, type, do_not_execute)
         }
     };
 
-    if (!_.isUndefined(do_not_execute)) {
-        result.execute(content);
-        result.show_result();
+    result.content_updated();
+    return result;
+};
+Notebook.Cell.create_model = function(content, type)
+{
+    var result = {
+        views: [], // sub list for pubsub
+        type: function() {
+            return type;
+        },
+        content: function(new_content) {
+            if (!_.isUndefined(new_content)) {
+                content = new_content;
+                notify_views();
+            }
+            return content;
+        },
+        json: function() {
+            return {
+                content: content,
+                type: type
+            };
+        }
+    };
+    function notify_views() {
+        _.each(result.views, function(view) {
+            view.content_updated();
+        });
     }
+    return result;
+};
+Notebook.Cell.create_controller = function(model)
+{
+    var result = {
+        execute: function() {
+            var that = this;
+            var type = model.type();
+            function callback(r) {
+                _.each(model.views, function(view) {
+                    view.result_updated(r);
+                });
+            }
+            
+            if (type === 'markdown') {
+                var wrapped_command = rclient.markdown_wrap_command(model.content());
+                rclient.send_and_callback(wrapped_command, callback, _.identity);
+            } else if (type === 'interactive') {
+                var wrapped_command = rclient.markdown_wrap_command("```{r}\n" + model.content() + "\n```\n");
+                rclient.send_and_callback(wrapped_command, callback, _.identity);
+            } else alert("Can only do markdown or interactive for now!");
+        }
+    };
 
     return result;
 };
-
-//////////////////////////////////////////////////////////////////////////////
-
-Notebook.create_model = function()
-{
-    return {
-        notebook: [],
-        views: [], // sub list for pubsub
-        load_from_file: function(user, filename) {
-            var that = this;
-            rcloud.load_user_file(user, filename, function(file_lines) {
-                var data = JSON.parse(file_lines.join("\n"));
-                // FIXME validate JSON
-                this.notebook = data;
-            });
-        },
-        append_cell: function(obj) {
-            this.notebook.push(obj);
-            _.each(this.views, function(view) {
-                view.cell_appended(obj);                
-            });
-        }
-    };
-};
-
-var global_model = Notebook.create_model();
-
-//////////////////////////////////////////////////////////////////////////////
-
 Notebook.create_html_view = function(model, root_div)
 {
     var result = {
         model: model,
-        cell_appended: function(obj) {
-            var cell = Notebook.new_cell(obj.command, obj.type, true);
+        cell_appended: function(cell_model) {
+            var cell = Notebook.Cell.create_html_view(cell_model);
             root_div.append(cell.div());
             return cell;
         }
@@ -2723,21 +2776,25 @@ Notebook.create_html_view = function(model, root_div)
     model.views.push(result);
     return result;
 };
-
-//////////////////////////////////////////////////////////////////////////////
-// Controller
-
-Notebook.create_controller = function(model)
+Notebook.create_model = function()
 {
     return {
-        append_cell: function(command, type) {
-            var json_rep = {
-                command: command,
-                type: type
-            };
-            model.append_cell(json_rep);
+        notebook: [],
+        views: [], // sub list for pubsub
+        append_cell: function(cell_model) {
+            this.notebook.push(cell_model);
+            _.each(this.views, function(view) {
+                view.cell_appended(cell_model);
+            });
         }
     };
 };
-
-})();
+Notebook.create_controller = function(model)
+{
+    return {
+        append_cell: function(content, type) {
+            var cell_model = Notebook.Cell.create_model(content, type);
+            return model.append_cell(cell_model);
+        }
+    };
+};
