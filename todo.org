@@ -1,8 +1,5 @@
-* TODO for presentation
-** fix new file bug
+* TODO
 ** test search
-** fix interactive shell commands
-** add interactive plots
 ** Save button (actually a 5s timeout between saves or something like that would be better)
-* Backup plan!
-** find and rollback previous version
+* Ideas
+** saved cells could contain an image of the output! (if we save the HTML content before sending, we can display it on search results...)

@@ -48,6 +48,9 @@ function transpose(ar) {
 
 function main_init() {
     rclient = RClient.create("ws://"+location.hostname+":8081/", function() {
+        $("#new-md-cell-button").click(function() {
+            shell.new_markdown_cell("", "markdown");
+        });
         rcloud.init_client_side_data();
         var that = this;
         var shell_objtypes = ["scatterplot", "iframe", "facet_osm_plot", "facet_tour_plot"];
