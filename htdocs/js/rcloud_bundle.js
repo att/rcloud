@@ -782,6 +782,7 @@ RClient = {
             } else {
                 _received_handshake = true;
                 // result.post_response("Welcome to R-on-the-browser!");
+                result.running = true;
 		result.send(".session.init()");
                 onconnect && onconnect.call(result);
             }
@@ -848,8 +849,12 @@ RClient = {
 		"img.url.final": function(v) { return v.value[1]; },
 		"dev.new": function(v) { return ""; },
 		"dev.close": function(v) { return ""; },
-                "internal_cmd": function(v) { return ""; }
+                "internal_cmd": function(v) { return ""; },
+                "boot.failure": function(v) { 
+                    result.running = false;
+                }
             },
+            running: false,
             result_handlers: {},
 
             eval: function(data) {
@@ -999,6 +1004,10 @@ RClient = {
             },
 
             send: function(command, wrap) {
+                if (!result.running) {
+                    alert("Init failed, cannot communicate with R process");
+                    return;
+                }
                 if (!_.isUndefined(wrap)) command = wrap(command)[0];
                 var buffer = new ArrayBuffer(command.length + 21);
                 var view = new EndianAwareDataView(buffer);
@@ -2586,7 +2595,7 @@ Notebook.Cell.create_html_view = function(cell_model)
         // this is truly the wrong way to go about things
         var base_index = notebook_cell_div.index();
         var model_index = base_index - 2;
-        shell.insert_markdown_cell_before_index(model_index);
+        shell.insert_markdown_cell_before(model_index);
     });
     
     var ace_div = $('<div style="width:100%; height:100%"></div>');
@@ -2597,7 +2606,7 @@ Notebook.Cell.create_html_view = function(cell_model)
     widget.getSession().setUseWrapMode(true);
     widget.resize();
 
-    var r_result_div = $('<div class="r-result-div">Computing...</div>');
+    var r_result_div = $('<div class="r-result-div"></div>');
     inner_div.append(r_result_div);
 
     var result = {
@@ -2759,8 +2768,10 @@ Notebook.create_html_view = function(model, root_div)
         cell_inserted: function(cell_model, cell_index) {
             var cell_view = Notebook.Cell.create_html_view(cell_model);
             cell_model.views.push(cell_view);
-            $(root_div).insertBefore(append(cell_view.div());
-            return cell_view;
+            root_div.append(cell_view.div());
+            $(cell_view.div()).insertBefore(root_div.children()[cell_index+2]);
+            cell_view.show_source();
+            // $(root_div.children()[cell_index+2]).insertBefore();
         },
         cell_removed: function(cell_model, cell_index) {
             _.each(cell_model.views, function(view) {

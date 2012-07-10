@@ -145,7 +145,7 @@ var shell = (function() {
         }, new_interactive_cell: function(content) {
             return notebook_controller.append_cell(content, "interactive");
         }, insert_markdown_cell_before: function(index) {
-            
+            return notebook_controller.insert_cell("", "markdown", index);
         }
     };
     return result;
