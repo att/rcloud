@@ -174,4 +174,3 @@ function make_fixed_menu(fixedMenuId, force_load) {
 }
 
 make_fixed_menu('fixeddiv');
-make_fixed_menu('tabs-header');

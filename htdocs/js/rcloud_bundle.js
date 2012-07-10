@@ -2550,6 +2550,7 @@ Notebook.Cell.create_html_view = function(cell_model)
     run_md_button.click(function(e) {
         r_result_div.html("Computing...");
         update_model();
+        result.show_result();
         cell_model.controller.execute();
     });
 
@@ -2577,6 +2578,17 @@ Notebook.Cell.create_html_view = function(cell_model)
     notebook_cell_div.append(clear_div);
 
     var markdown_div = $('<div style="position: relative; width:100%; height:100%"></div>');
+    var cell_buttons_div = $('<div style="position: absolute; right:-0.5em; top:-0.5em"></div>');
+    var insert_cell_button = $('<span class="fontawesome-button"><i class="icon-plus-sign"></i>');
+    inner_div.append(cell_buttons_div);
+    cell_buttons_div.append(insert_cell_button);
+    insert_cell_button.click(function(e) {
+        // this is truly the wrong way to go about things
+        var base_index = notebook_cell_div.index();
+        var model_index = base_index - 2;
+        shell.insert_markdown_cell_before_index(model_index);
+    });
+    
     var ace_div = $('<div style="width:100%; height:100%"></div>');
     inner_div.append(markdown_div);
     markdown_div.append(ace_div);
@@ -2587,7 +2599,7 @@ Notebook.Cell.create_html_view = function(cell_model)
 
     var r_result_div = $('<div class="r-result-div">Computing...</div>');
     inner_div.append(r_result_div);
-    
+
     var result = {
 
         //////////////////////////////////////////////////////////////////////
@@ -2678,6 +2690,7 @@ Notebook.Cell.create_html_view = function(cell_model)
         }
     };
 
+    result.show_result();
     result.content_updated();
     return result;
 };
@@ -2743,6 +2756,12 @@ Notebook.create_html_view = function(model, root_div)
             root_div.append(cell_view.div());
             return cell_view;
         },
+        cell_inserted: function(cell_model, cell_index) {
+            var cell_view = Notebook.Cell.create_html_view(cell_model);
+            cell_model.views.push(cell_view);
+            $(root_div).insertBefore(append(cell_view.div());
+            return cell_view;
+        },
         cell_removed: function(cell_model, cell_index) {
             _.each(cell_model.views, function(view) {
                 view.self_removed();
@@ -2762,6 +2781,13 @@ Notebook.create_model = function()
             this.notebook.push(cell_model);
             _.each(this.views, function(view) {
                 view.cell_appended(cell_model);
+            });
+        },
+        insert_cell: function(cell_model, index) {
+            cell_model.parent_model = this;
+            this.notebook.splice(index, 0, cell_model);
+            _.each(this.views, function(view) {
+                view.cell_inserted(cell_model, index);
             });
         },
         json: function() {
@@ -2790,6 +2816,12 @@ Notebook.create_controller = function(model)
             var cell_controller = Notebook.Cell.create_controller(cell_model);
             cell_model.controller = cell_controller;
             model.append_cell(cell_model);
+            return cell_controller;
+        }, insert_cell: function(content, type, index) {
+            var cell_model = Notebook.Cell.create_model(content, type);
+            var cell_controller = Notebook.Cell.create_controller(cell_model);
+            cell_model.controller = cell_controller;
+            model.insert_cell(cell_model, index);
             return cell_controller;
         }
     };

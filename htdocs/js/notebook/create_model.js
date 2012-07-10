@@ -10,6 +10,13 @@ Notebook.create_model = function()
                 view.cell_appended(cell_model);
             });
         },
+        insert_cell: function(cell_model, index) {
+            cell_model.parent_model = this;
+            this.notebook.splice(index, 0, cell_model);
+            _.each(this.views, function(view) {
+                view.cell_inserted(cell_model, index);
+            });
+        },
         json: function() {
             return _.map(this.notebook, function(cell_model) {
                 return cell_model.json();
