@@ -173,7 +173,8 @@ rect.frame {
     position:relative;
     width:100%;
     border-width: 1px;
-    border-color: #ddd;
+    padding: 1px;
+    border-color: #eee;
     border-style: solid;
 }
 

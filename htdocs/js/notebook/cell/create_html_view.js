@@ -75,7 +75,7 @@ Notebook.Cell.create_html_view = function(cell_model)
         // this is truly the wrong way to go about things
         var base_index = notebook_cell_div.index();
         var model_index = base_index - 2;
-        shell.insert_markdown_cell_before_index(model_index);
+        shell.insert_markdown_cell_before(model_index);
     });
     
     var ace_div = $('<div style="width:100%; height:100%"></div>');
@@ -86,7 +86,7 @@ Notebook.Cell.create_html_view = function(cell_model)
     widget.getSession().setUseWrapMode(true);
     widget.resize();
 
-    var r_result_div = $('<div class="r-result-div">Computing...</div>');
+    var r_result_div = $('<div class="r-result-div"></div>');
     inner_div.append(r_result_div);
 
     var result = {

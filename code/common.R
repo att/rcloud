@@ -249,5 +249,5 @@ wplot2 <- function(x, y, ...) {
 
 options(device=WSdev)
 setwd(paste(root,"/tmp",sep=''))
-# as the last thing, return the R version
-R.version.string
+# as the last thing, OOB send the ready-to-start signal
+NULL

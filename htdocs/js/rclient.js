@@ -32,6 +32,7 @@ RClient = {
             } else {
                 _received_handshake = true;
                 // result.post_response("Welcome to R-on-the-browser!");
+                result.running = true;
 		result.send(".session.init()");
                 onconnect && onconnect.call(result);
             }
@@ -98,8 +99,12 @@ RClient = {
 		"img.url.final": function(v) { return v.value[1]; },
 		"dev.new": function(v) { return ""; },
 		"dev.close": function(v) { return ""; },
-                "internal_cmd": function(v) { return ""; }
+                "internal_cmd": function(v) { return ""; },
+                "boot.failure": function(v) { 
+                    result.running = false;
+                }
             },
+            running: false,
             result_handlers: {},
 
             eval: function(data) {
@@ -249,6 +254,10 @@ RClient = {
             },
 
             send: function(command, wrap) {
+                if (!result.running) {
+                    alert("Init failed, cannot communicate with R process");
+                    return;
+                }
                 if (!_.isUndefined(wrap)) command = wrap(command)[0];
                 var buffer = new ArrayBuffer(command.length + 21);
                 var view = new EndianAwareDataView(buffer);

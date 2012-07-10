@@ -53,7 +53,11 @@ if (isTRUE(file.exists(data.fn))) {
     x <- paste(configuration.root,"/common.R",sep='')
     if (file.exists(x))
       source(x)$value
-    else "ERROR: Could not open common.R!" # R.version.string
+    else {
+      self.oobSend(list("boot.failure"))
+      NULL
+      ## "ERROR: Could not open common.R!" # R.version.string
+    }
 }
 
 .http.request <- function(url, query, body, headers, ...) {
