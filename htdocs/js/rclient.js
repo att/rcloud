@@ -290,7 +290,6 @@ RClient = {
                     delete that.result_handlers[id];
                     callback(data);
                 };
-                console.log(command);
                 this.send(command);
             },
 
