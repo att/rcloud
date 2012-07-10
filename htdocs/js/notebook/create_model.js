@@ -22,6 +22,9 @@ Notebook.create_model = function()
                 return cell_model.json();
             });
         },
+        index_of_cell_model: function(cell_model) {
+            return this.notebook.indexOf(cell_model);
+        },
         remove_cell: function(cell_model) {
             var cell_index = this.notebook.indexOf(cell_model);
             if (cell_index === -1) {

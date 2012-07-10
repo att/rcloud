@@ -21,8 +21,9 @@ Notebook.Cell.create_html_view = function(cell_model)
     }
 
     source_button.click(function(e) {
-        if (!$(e.currentTarget).hasClass("button-disabled"))
+        if (!$(e.currentTarget).hasClass("button-disabled")) {
             result.show_source();
+        }
     });
     result_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled"))
@@ -33,8 +34,9 @@ Notebook.Cell.create_html_view = function(cell_model)
             result.hide_all();
     });
     remove_button.click(function(e) {
-        if (!$(e.currentTarget).hasClass("button-disabled"))
-            cell_model.parent_model.remove_cell(cell_model);
+        if (!$(e.currentTarget).hasClass("button-disabled")) {
+            cell_model.parent_model.controller.remove_cell(cell_model);
+        }
     });
     run_md_button.click(function(e) {
         r_result_div.html("Computing...");
@@ -147,6 +149,7 @@ Notebook.Cell.create_html_view = function(cell_model)
             markdown_div.show();
             widget.resize();
             r_result_div.hide();
+            widget.focus();
         },
         show_result: function() {
             notebook_cell_div.css({'height': ''});

@@ -49,7 +49,10 @@ function transpose(ar) {
 function main_init() {
     rclient = RClient.create("ws://"+location.hostname+":8081/", function() {
         $("#new-md-cell-button").click(function() {
+            shell.terminal.disable();
             shell.new_markdown_cell("", "markdown");
+            var vs = shell.notebook.view.sub_views;
+            vs[vs.length-1].show_source();
         });
         rcloud.init_client_side_data();
         var that = this;

@@ -1040,7 +1040,6 @@ RClient = {
                     delete that.result_handlers[id];
                     callback(data);
                 };
-                console.log(command);
                 this.send(command);
             },
 
@@ -2541,8 +2540,9 @@ Notebook.Cell.create_html_view = function(cell_model)
     }
 
     source_button.click(function(e) {
-        if (!$(e.currentTarget).hasClass("button-disabled"))
+        if (!$(e.currentTarget).hasClass("button-disabled")) {
             result.show_source();
+        }
     });
     result_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled"))
@@ -2553,8 +2553,9 @@ Notebook.Cell.create_html_view = function(cell_model)
             result.hide_all();
     });
     remove_button.click(function(e) {
-        if (!$(e.currentTarget).hasClass("button-disabled"))
-            cell_model.parent_model.remove_cell(cell_model);
+        if (!$(e.currentTarget).hasClass("button-disabled")) {
+            cell_model.parent_model.controller.remove_cell(cell_model);
+        }
     });
     run_md_button.click(function(e) {
         r_result_div.html("Computing...");
@@ -2667,6 +2668,7 @@ Notebook.Cell.create_html_view = function(cell_model)
             markdown_div.show();
             widget.resize();
             r_result_div.hide();
+            widget.focus();
         },
         show_result: function() {
             notebook_cell_div.css({'height': ''});
@@ -2759,10 +2761,12 @@ Notebook.create_html_view = function(model, root_div)
 {
     var result = {
         model: model,
+        sub_views: [],
         cell_appended: function(cell_model) {
             var cell_view = Notebook.Cell.create_html_view(cell_model);
             cell_model.views.push(cell_view);
             root_div.append(cell_view.div());
+            this.sub_views.push(cell_view);
             return cell_view;
         },
         cell_inserted: function(cell_model, cell_index) {
@@ -2770,13 +2774,16 @@ Notebook.create_html_view = function(model, root_div)
             cell_model.views.push(cell_view);
             root_div.append(cell_view.div());
             $(cell_view.div()).insertBefore(root_div.children()[cell_index+2]);
+            this.sub_views.splice(cell_index, 0, cell_view);
             cell_view.show_source();
+            return cell_view;
             // $(root_div.children()[cell_index+2]).insertBefore();
         },
         cell_removed: function(cell_model, cell_index) {
             _.each(cell_model.views, function(view) {
                 view.self_removed();
             });
+            this.sub_views.splice(cell_index, 1);
         }
     };
     model.views.push(result);
@@ -2806,6 +2813,9 @@ Notebook.create_model = function()
                 return cell_model.json();
             });
         },
+        index_of_cell_model: function(cell_model) {
+            return this.notebook.indexOf(cell_model);
+        },
         remove_cell: function(cell_model) {
             var cell_index = this.notebook.indexOf(cell_model);
             if (cell_index === -1) {
@@ -2821,7 +2831,7 @@ Notebook.create_model = function()
 };
 Notebook.create_controller = function(model)
 {
-    return {
+    var result = {
         append_cell: function(content, type) {
             var cell_model = Notebook.Cell.create_model(content, type);
             var cell_controller = Notebook.Cell.create_controller(cell_model);
@@ -2834,6 +2844,10 @@ Notebook.create_controller = function(model)
             cell_model.controller = cell_controller;
             model.insert_cell(cell_model, index);
             return cell_controller;
+        }, remove_cell: function(cell_model) {
+            model.remove_cell(cell_model);
         }
     };
+    model.controller = result;
+    return result;
 };
