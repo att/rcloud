@@ -25,21 +25,6 @@ function interpret_command(command)
     }
 }
 
-function shell_tab()
-{
-    shell.terminal.enable();
-}
-
-function editor_tab()
-{
-    shell.terminal.disable();
-}
-
-function internals_tab()
-{
-    shell.terminal.disable();
-}
-
 function transpose(ar) {
     return _.map(_.range(ar[0].length), function(i) {
         return _.map(ar, function(lst) { return lst[i]; });
@@ -69,20 +54,6 @@ function main_init() {
 
         editor.init();
 
-        // tabs navigation
-        var map = {
-            0: shell_tab,
-            1: editor_tab,
-            2: internals_tab
-        };
-        $("#tabs").tabs({
-            select: function(event, ui) {
-                if (map[ui.index] === undefined)
-                    throw "bad select??";
-                map[ui.index]();
-            }
-        });
-        $("#tabs").tabs("select", "#tabs-1");
         if (location.search.length > 0) {
             function getURLParameter(name) {
                 return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
