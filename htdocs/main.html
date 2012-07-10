@@ -46,25 +46,18 @@
 <body>
 <div id="tabs" style="position: absolute; width:100%; height:100%;
 		      left: 0px; top: 0px;
-		      padding: 0px; margin: 0px;"
-     class="ui-tabs">
-<ul id="tabs-header" style="width:100%;">
-  <li><a href="#tabs-1">Shell</a></li>
-  <li><a href="#tabs-2">Editor</a></li>
-  <li><a href="#tabs-3">Internals</a></li>
-</ul>
-<div id="tabs-1" style="width: 100%;" class="ui-tabs-hide">
-  <div id="fixeddiv" 
-       style="position:absolute; bottom: 0px; left: 0px; width:100%;
-	      background:#FFFFFF; border:1px solid #DDDDDD">
-    <div id="term_demo"></div>
-  </div>
+		      padding: 0px; margin: 0px;">
+<div id="tabs-1" style="position: absolute; width: 70%; height: 100%; left:0px">
   <div id="output" class="tab-div">
-    <h1>R Interaction</h1>
+    <h1>RCloud - [<span id="file_title" contenteditable="true">Untitled</span>]</h1>
   </div>
   <div style="padding:2em;"></div>
+  <div id="fixeddiv" 
+       style="width:70%; background:#FFFFFF; border:1px solid #DDDDDD">
+    <div id="term_demo"></div>
+  </div>
 </div>
-<div id="tabs-2" style="width: 100%;" class="ui-tabs-hide">
+<div id="tabs-2" style="position: absolute; width: 30%; height: 100%; right:0px;">
   <div class="tab-div">
     <table width=100% height=60% style="padding:0; margin:0;">
       <tr>
@@ -96,15 +89,7 @@
     </div>
   </div>
 </div>
-<div id="tabs-3" style="width: 100%;" class="ui-tabs-hide">
-  <div class="tab-div">
-    <h1>system internals</h1>
-    <div id="internals-infocontainer"></div>
-    </div>
-  </div>
 </div>
-</div>
-<script src="internal_tab.js"></script>
 <script src="editor_tab.js"></script>
 <script src="shell_tab.js"></script>
 
