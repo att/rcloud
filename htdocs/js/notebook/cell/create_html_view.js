@@ -74,9 +74,9 @@ Notebook.Cell.create_html_view = function(cell_model)
     inner_div.append(cell_buttons_div);
     cell_buttons_div.append(insert_cell_button);
     insert_cell_button.click(function(e) {
-        // this is truly the wrong way to go about things
+        // truly the wrong way to go about this
         var base_index = notebook_cell_div.index();
-        var model_index = base_index - 2;
+        var model_index = base_index;
         shell.insert_markdown_cell_before(model_index);
     });
     

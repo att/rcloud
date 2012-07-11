@@ -14,11 +14,10 @@ Notebook.create_html_view = function(model, root_div)
             var cell_view = Notebook.Cell.create_html_view(cell_model);
             cell_model.views.push(cell_view);
             root_div.append(cell_view.div());
-            $(cell_view.div()).insertBefore(root_div.children()[cell_index+2]);
+            $(cell_view.div()).insertBefore(root_div.children()[cell_index]);
             this.sub_views.splice(cell_index, 0, cell_view);
             cell_view.show_source();
             return cell_view;
-            // $(root_div.children()[cell_index+2]).insertBefore();
         },
         cell_removed: function(cell_model, cell_index) {
             _.each(cell_model.views, function(view) {
