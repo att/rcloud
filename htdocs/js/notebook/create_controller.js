@@ -33,6 +33,13 @@ Notebook.create_controller = function(model)
                 k();
             });
         },
+        save_file: function(user, filename, k) {
+            var that = this;
+            var json_rep = JSON.stringify(model.json());
+            rcloud.save_to_user_file(user, filename, json_rep, function() {
+                k();
+            });
+        },
         run_all: function() {
             _.each(model.notebook, function(cell_model) {
                 console.log(cell_model);

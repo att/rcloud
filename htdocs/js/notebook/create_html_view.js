@@ -25,6 +25,12 @@ Notebook.create_html_view = function(model, root_div)
                 view.self_removed();
             });
             this.sub_views.splice(cell_index, 1);
+        },
+        
+        update_model: function() {
+            _.each(this.sub_views, function(cell_view) {
+                cell_view.update_model();
+            });
         }
     };
     model.views.push(result);
