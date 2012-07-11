@@ -179,6 +179,9 @@ Notebook.Cell.create_html_view = function(cell_model)
         },
         div: function() {
             return notebook_cell_div;
+        },
+        update_model: function() {
+            update_model();
         }
     };
 

@@ -2705,6 +2705,9 @@ Notebook.Cell.create_html_view = function(cell_model)
         },
         div: function() {
             return notebook_cell_div;
+        },
+        update_model: function() {
+            update_model();
         }
     };
 
@@ -2792,6 +2795,12 @@ Notebook.create_html_view = function(model, root_div)
                 view.self_removed();
             });
             this.sub_views.splice(cell_index, 1);
+        },
+        
+        update_model: function() {
+            _.each(this.sub_views, function(cell_view) {
+                cell_view.update_model();
+            });
         }
     };
     model.views.push(result);
@@ -2872,6 +2881,13 @@ Notebook.create_controller = function(model)
                     var cell_model = that.append_cell(
                         json_cell.content, json_cell.type);
                 });
+                k();
+            });
+        },
+        save_file: function(user, filename, k) {
+            var that = this;
+            var json_rep = JSON.stringify(model.json());
+            rcloud.save_to_user_file(user, filename, json_rep, function() {
                 k();
             });
         },

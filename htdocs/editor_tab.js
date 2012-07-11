@@ -125,10 +125,14 @@ var editor = {
         }, 500);
     },
     save_file: function(user, filename, k) {
-        rcloud.save_to_user_file(user, filename, this.widget.getSession().getValue(), k);
+        shell.save_to_file(user, filename, k);
     },
-    load_file: function(user, filename) {
-        shell.load_from_file(user, filename);
+    load_file: function(user, filename, k) {
+        var that = this;
+        shell.load_from_file(user, filename, function() {
+            that.current_file_owner = user;
+            that.current_filename = filename;
+        });
     },
     search: function(search_string) {
         var that = this;

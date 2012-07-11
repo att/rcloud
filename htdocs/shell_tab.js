@@ -146,15 +146,27 @@ var shell = (function() {
             return notebook_controller.append_cell(content, "interactive");
         }, insert_markdown_cell_before: function(index) {
             return notebook_controller.insert_cell("", "markdown", index);
-        }, load_from_file: function(user, filename) {
+        }, load_from_file: function(user, filename, k) {
             var that = this;
             this.notebook.controller.load_from_file(user, filename, function() {
                 $("#file_title").text(filename);
                 _.each(that.notebook.view.sub_views, function(cell_view) {
                     cell_view.show_source();
                 });
+                k && k();
+            });
+        }, save_to_file: function(user, filename, k) {
+            var that = this;
+            this.notebook.controller.save_file(user, filename, function() {
+                $("#file_title").text(filename);
+                k && k();
             });
         }
     };
+
+    $("#run-notebook").click(function() {
+        result.notebook.view.update_model();
+        result.notebook.controller.run_all();
+    });
     return result;
 })();
