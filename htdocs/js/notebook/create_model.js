@@ -1,8 +1,14 @@
 Notebook.create_model = function()
 {
-    return {
+    return { 
         notebook: [],
         views: [], // sub list for pubsub
+        clear: function() {
+            // FIXME this is O(n^2) because of O(n) indexOf in remove_cell...
+            while (this.notebook.length) {
+                this.remove_cell(this.notebook[this.notebook.length-1]);
+            }
+        },
         append_cell: function(cell_model) {
             cell_model.parent_model = this;
             this.notebook.push(cell_model);
@@ -21,9 +27,6 @@ Notebook.create_model = function()
             return _.map(this.notebook, function(cell_model) {
                 return cell_model.json();
             });
-        },
-        index_of_cell_model: function(cell_model) {
-            return this.notebook.indexOf(cell_model);
         },
         remove_cell: function(cell_model) {
             var cell_index = this.notebook.indexOf(cell_model);

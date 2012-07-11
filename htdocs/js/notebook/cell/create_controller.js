@@ -10,6 +10,7 @@ Notebook.Cell.create_controller = function(cell_model)
                 });
             }
             
+            rclient.record_cell_execution(cell_model);
             if (type === 'markdown') {
                 var wrapped_command = rclient.markdown_wrap_command(cell_model.content());
                 rclient.send_and_callback(wrapped_command, callback, _.identity);
