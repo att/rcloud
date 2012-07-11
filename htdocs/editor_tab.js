@@ -128,21 +128,7 @@ var editor = {
         rcloud.save_to_user_file(user, filename, this.widget.getSession().getValue(), k);
     },
     load_file: function(user, filename) {
-        var that = this;
-        rcloud.load_user_file(user, filename, function(file_lines) {
-            file_lines = file_lines.value;
-            that.widget.getSession().setValue(file_lines.join("\n"));
-            that.current_file_owner = user;
-            that.current_filename = filename;
-            var ro = user !== rcloud.username();
-            that.widget.setReadOnly(false);
-            if (!ro) {
-                that.widget.focus();
-                $("#editor-title-header").html(user + " | " + "<a href=\"share.html?user="+user+"&filename="+filename+"\">" + filename + "</a>");
-            } else {
-                $("#editor-title-header").text(user + " | " + filename + " | Read Only");
-            }
-        });
+        shell.load_from_file(user, filename);
     },
     search: function(search_string) {
         var that = this;
