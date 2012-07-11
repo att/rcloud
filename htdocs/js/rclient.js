@@ -274,6 +274,13 @@ RClient = {
                 socket.send(buffer);
             },
 
+            record_cell_execution: function(cell_model) {
+                var json_rep = JSON.stringify(cell_model.json());
+                var call = rclient.r_funcall("rcloud.record.cell.execution", 
+                                             rcloud.username(), json_rep);
+                rclient.send(call);
+            },
+
             send_and_callback: function(command, callback, wrap) {
                 if (_.isUndefined(callback))
                     callback = _.identity;

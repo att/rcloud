@@ -61,6 +61,10 @@ function main_init() {
             editor.load_file(getURLParameter("user"), getURLParameter("filename"));
             $("#tabs").tabs("select", "#tabs-2");
         }
+
+        shell.notebook.controller.load_from_file("cscheid", "test1", function() {
+            shell.notebook.controller.run_all();
+        });
     });
 }
 

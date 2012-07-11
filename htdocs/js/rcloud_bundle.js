@@ -1024,6 +1024,13 @@ RClient = {
                 socket.send(buffer);
             },
 
+            record_cell_execution: function(cell_model) {
+                var json_rep = JSON.stringify(cell_model.json());
+                var call = rclient.r_funcall("rcloud.record.cell.execution", 
+                                             rcloud.username(), json_rep);
+                rclient.send(call);
+            },
+
             send_and_callback: function(command, callback, wrap) {
                 if (_.isUndefined(callback))
                     callback = _.identity;
@@ -2745,6 +2752,7 @@ Notebook.Cell.create_controller = function(cell_model)
                 });
             }
             
+            rclient.record_cell_execution(cell_model);
             if (type === 'markdown') {
                 var wrapped_command = rclient.markdown_wrap_command(cell_model.content());
                 rclient.send_and_callback(wrapped_command, callback, _.identity);
@@ -2791,9 +2799,15 @@ Notebook.create_html_view = function(model, root_div)
 };
 Notebook.create_model = function()
 {
-    return {
+    return { 
         notebook: [],
         views: [], // sub list for pubsub
+        clear: function() {
+            // FIXME this is O(n^2) because of O(n) indexOf in remove_cell...
+            while (this.notebook.length) {
+                this.remove_cell(this.notebook[this.notebook.length-1]);
+            }
+        },
         append_cell: function(cell_model) {
             cell_model.parent_model = this;
             this.notebook.push(cell_model);
@@ -2812,9 +2826,6 @@ Notebook.create_model = function()
             return _.map(this.notebook, function(cell_model) {
                 return cell_model.json();
             });
-        },
-        index_of_cell_model: function(cell_model) {
-            return this.notebook.indexOf(cell_model);
         },
         remove_cell: function(cell_model) {
             var cell_index = this.notebook.indexOf(cell_model);
@@ -2838,14 +2849,37 @@ Notebook.create_controller = function(model)
             cell_model.controller = cell_controller;
             model.append_cell(cell_model);
             return cell_controller;
-        }, insert_cell: function(content, type, index) {
+        },
+        insert_cell: function(content, type, index) {
             var cell_model = Notebook.Cell.create_model(content, type);
             var cell_controller = Notebook.Cell.create_controller(cell_model);
             cell_model.controller = cell_controller;
             model.insert_cell(cell_model, index);
             return cell_controller;
-        }, remove_cell: function(cell_model) {
+        },
+        remove_cell: function(cell_model) {
             model.remove_cell(cell_model);
+        },
+        clear: function() {
+            model.clear();
+        },
+        load_from_file: function(user, filename, k) {
+            var that = this;
+            rcloud.load_user_file(user, filename, function(contents) {
+                var json_contents = JSON.parse(contents.value.join("\n"));
+                that.clear();
+                _.each(json_contents, function (json_cell) {
+                    var cell_model = that.append_cell(
+                        json_cell.content, json_cell.type);
+                });
+                k();
+            });
+        },
+        run_all: function() {
+            _.each(model.notebook, function(cell_model) {
+                console.log(cell_model);
+                cell_model.controller.execute();
+            });
         }
     };
     model.controller = result;

@@ -187,11 +187,16 @@ rcloud.search <- function(search.string) {
   }
 }
 
+rcloud.record.cell.execution <- function(user, json.string) {
+  cat(paste(paste(Sys.time(), user, json.string, sep="|"), "\n"),
+      file=paste(data.root, "history", "main_log.txt", sep='/'), append=TRUE)
+}
+
 ################################################################################
 # setup the UUID-string based injection hack
 
 # FIXME should use libuuid directly
-generate.uuid <- function() system("uuidgen -r", intern=TRUE);
+generate.uuid <- function() system("uuidgen", intern=TRUE);
 
 wplot.uuid <- generate.uuid();
 global.result.hash <- hash();

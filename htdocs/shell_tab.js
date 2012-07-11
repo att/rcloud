@@ -146,6 +146,8 @@ var shell = (function() {
             return notebook_controller.append_cell(content, "interactive");
         }, insert_markdown_cell_before: function(index) {
             return notebook_controller.insert_cell("", "markdown", index);
+        }, load_from_file: function(user, filename) {
+            return notebook_controller.load_from_file(user, filename);
         }
     };
     return result;
