@@ -101,6 +101,8 @@ var shell = (function() {
             controller: notebook_controller
         },
         terminal: terminal,
+        user: undefined,
+        filename: undefined,
         post_div: function(msg) {
             var div = this.detachable_div(msg);
             $("#output").append(div);
@@ -153,6 +155,8 @@ var shell = (function() {
                 _.each(that.notebook.view.sub_views, function(cell_view) {
                     cell_view.show_source();
                 });
+                that.user = user;
+                that.filename = filename;
                 k && k();
             });
         }, save_to_file: function(user, filename, k) {

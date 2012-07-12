@@ -2664,6 +2664,15 @@ Notebook.Cell.create_html_view = function(cell_model)
 
         //////////////////////////////////////////////////////////////////////
 
+        hide_buttons: function() {
+            button_float.css("display", "none");
+            cell_buttons_div.css("display", "none");
+        },
+        show_buttons: function() {
+            button_float.css("display", null);
+            cell_buttons_div.css("display", null);
+        },
+
         show_source: function() {
             notebook_cell_div.css({'height': '70%'});
             disable(source_button);
@@ -2874,6 +2883,7 @@ Notebook.create_controller = function(model)
         load_from_file: function(user, filename, k) {
             var that = this;
             rcloud.load_user_file(user, filename, function(contents) {
+                console.log("Contents: ", user, filename, contents.value);
                 var json_contents = JSON.parse(contents.value.join("\n"));
                 that.clear();
                 _.each(json_contents, function (json_cell) {

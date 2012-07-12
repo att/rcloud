@@ -1,11 +1,13 @@
 <html>
   <head>
-    <title>R Web</title>
-    <link rel="Stylesheet" type="text/css" href="css/custom-theme/jquery-ui-1.8.18.custom.css" />
+    <title>RCloud Instashare</title>
+    <link rel="stylesheet" type="text/css" href="css/custom-theme/jquery-ui-1.8.18.custom.css" />
     <link rel="stylesheet" type="text/css" href="css/jquery.terminal.css"/>
     <link rel="stylesheet" type="text/css" href="css/font-awesome.css"/>
     <link rel="stylesheet" type="text/css" href="css/jqtree.css"/>
-    <link rel="stylesheet" type="text/css" href="css/main.css"/>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-responsive.css"/>
+    <link rel="stylesheet" type="text/css" href="css/rmarkdown.css"/>
 
     <link rel="stylesheet" type="text/css" href="css/share.css"/>
 
@@ -28,6 +30,7 @@
 
     -->
     <script type="text/javascript" src="lib/dependencies_bundle.min.js"></script>
+    <script type="text/javascript" src="lib/bootstrap.js"></script>
 
     <script type="text/javascript" 
         src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
@@ -43,8 +46,31 @@
     <script type="text/javascript" src="share.js"></script>
   </head>
 <body>
-<h1 id="instashare-title">Instashare</h1>
-<div style="float: right"><a href="#" id="instashare-view-source">View source</a></div>
-<div id="output"></div>
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container-fluid">
+      <a class="brand" href="#">RCloud Instashare</a>
+      <div class="nav-collapse collapse">
+	<ul class="nav">
+	  <li><a href="#">[<span id="file_title">Untitled</span>]</a></li>
+	  <li class="divider-vertical"></li>
+	  <li><a href="#" id="instashare-view-source">View source</a></li>
+	  <li class="divider-vertical"></li>
+	</ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container-fluid">
+  <div class="row-fluid">
+    <div class="span2"></div>
+    <div class="span8"><div id="output" class="tab-div"></div></div>
+    <div class="span2"></div>
+  </div>
+</div>
+<div id="term_demo" style="display:none"></div>
+<script src="shell_tab.js"></script>
+<script src="lib/ace_bundle.js" charset="utf-8"></script>
+
 </body>
 </html>
