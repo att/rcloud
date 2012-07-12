@@ -24,6 +24,7 @@ Notebook.create_controller = function(model)
         load_from_file: function(user, filename, k) {
             var that = this;
             rcloud.load_user_file(user, filename, function(contents) {
+                console.log("Contents: ", user, filename, contents.value);
                 var json_contents = JSON.parse(contents.value.join("\n"));
                 that.clear();
                 _.each(json_contents, function (json_cell) {

@@ -39,6 +39,9 @@ function main_init() {
             var vs = shell.notebook.view.sub_views;
             vs[vs.length-1].show_source();
         });
+        $("#share-notebook").click(function() {
+            window.location="share.html?user=" + shell.user + "&filename=" + shell.filename;
+        });
         rcloud.init_client_side_data();
         var that = this;
         var shell_objtypes = ["scatterplot", "iframe", "facet_osm_plot", "facet_tour_plot"];

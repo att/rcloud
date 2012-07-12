@@ -5,6 +5,8 @@
     <link rel="stylesheet" type="text/css" href="css/jquery.terminal.css"/>
     <link rel="stylesheet" type="text/css" href="css/font-awesome.css"/>
     <link rel="stylesheet" type="text/css" href="css/jqtree.css"/>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-responsive.css"/>
     <link rel="stylesheet" type="text/css" href="css/rmarkdown.css"/>
     <link rel="stylesheet" type="text/css" href="css/main.css"/>
 
@@ -27,7 +29,7 @@
 
     -->
     <script type="text/javascript" src="lib/dependencies_bundle.min.js"></script>
-
+    <script type="text/javascript" src="lib/bootstrap.js"></script>
     <script type="text/javascript"
         src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
     </script>
@@ -44,51 +46,71 @@
     <script type="text/javascript" src="main.js"></script>
   </head>
 <body>
-<div id="tabs" style="position: absolute; width:100%; height:100%;
-		      left: 0px; top: 0px;
-		      padding: 0px; margin: 0px;">
-<div id="tabs-1" style="position: absolute; width: 70%; height: 100%; left:0px">
-  <h1 style="float: right">
-    <span class='fontawesome-button' id="run-notebook"><i style="position:relative;top:0.1em" class="icon-repeat"></i></span>
-  </h1>
-  <h1>RCloud - [<span id="file_title" contenteditable="true">Untitled</span>]</h1>
-  <div style="clear:both"></div>
-  <div id="output" class="tab-div">
-  </div>
-  <button style="float: right; width:10%;" id="new-md-cell-button">New cell</button>
-  <div id="fixeddiv" 
-       style="float: left; width:89%; background:#FFFFFF; border:1px solid #DDDDDD">
-    <div id="term_demo"></div>
-  </div>
-  <div style="padding:1em; clear:both"></div>
-</div>
-<div id="tabs-2" style="position: absolute; width: 30%; height: 100%; right:0px;">
-  <div class="tab-div">
-    <table width=100% height=60% style="padding:0; margin:0;">
-      <tr>
-	<td width="10%" valign="top">
-	  <div class="left-pane-header">
-	    <h3 id="editor-file-list-title">File list</h3>
-	  </div>
-	  <div id="editor-file-tree"></div>
-	</td>
-      </tr>
-    </table>
-    <div width="100%" style="margin-top: 0; padding-top: 0;">
-      <div class="left-pane-header">
-	<h3>Search</h3>
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container-fluid">
+      <a class="brand" href="#">RCloud</a>
+      <div class="nav-collapse collapse">
+	<ul class="nav">
+	  <li><a href="#">[<span id="file_title">Untitled</span>]</a></li>
+	  <li class="divider-vertical"></li>
+	  <li><a href="#" id="run-notebook">Run Notebook</a></li>
+	  <li><a href="#" id="share-notebook">Share</a></li>
+	  <li class="divider-vertical"></li>
+	</ul>
       </div>
-      <div>Full-text search for <input type="text" value="" id="input-text-search"></input></div>
-      <h4 id="input-text-source-results-title" style="padding-bottom: 0; margin-bottom: 0">Source results</h4>
-      <table id="input-text-source-results-table">
-      </table>
-      <h4 id="input-text-history-results-title" style="padding-bottom: 0; margin-bottom: 0">History results</h4>
-      <table id="input-text-history-results-table">
-      </table>
     </div>
   </div>
 </div>
+
+<div class="container-fluid">
+  <div class="row-fluid">
+    <div class="span1"></div>
+    <div class="span7">
+      <div id="tabs-1">
+	<div id="output" class="tab-div">
+	</div>
+
+	<button style="float: right; width:10%;" id="new-md-cell-button">New cell</button>
+	<div id="fixeddiv" 
+	     style="float: left; width:89%; background:#FFFFFF; border:1px solid #DDDDDD">
+	  <div id="term_demo"></div>
+	</div>
+	<div style="padding:1em; clear:both"></div>
+      </div>
+    </div>
+    <div class="span3">
+      <div id="tabs-2">
+	<div class="tab-div">
+	  <table width=100% height=60% style="padding:0; margin:0;">
+	    <tr>
+	      <td width="10%" valign="top">
+		<div class="left-pane-header">
+		  <h3 id="editor-file-list-title">File list</h3>
+		</div>
+		<div id="editor-file-tree"></div>
+	      </td>
+	    </tr>
+	  </table>
+	  <div width="100%" style="margin-top: 0; padding-top: 0;">
+	    <div class="left-pane-header">
+	      <h3>Search</h3>
+	    </div>
+	    <div>Full-text search for <input type="text" value="" id="input-text-search"></input></div>
+	    <h4 id="input-text-source-results-title" style="padding-bottom: 0; margin-bottom: 0">Source results</h4>
+	    <table id="input-text-source-results-table">
+	    </table>
+	    <h4 id="input-text-history-results-title" style="padding-bottom: 0; margin-bottom: 0">History results</h4>
+	    <table id="input-text-history-results-table">
+	    </table>
+	  </div>
+	</div>
+      </div>
+    </div>
+    <div class="span1"></div>
+  </div>
 </div>
+
 <script src="editor_tab.js"></script>
 <script src="shell_tab.js"></script>
 

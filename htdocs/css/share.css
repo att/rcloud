@@ -1,3 +1,193 @@
+body {
+    font-family: Helvetica Neue, Verdana, Helvetica, Arial, sans-serif;
+    padding-top: 65px;
+}
+
+.tab-div {
+    margin: 0.5em;
+}
+
+.internals-float {
+    float: left;
+    background-color: #eee;
+    border-color: #ccc;
+    border-style: solid;
+    border-width: 1px;
+    padding-left: 2em;
+    padding-right: 2em;
+}
+
+.key {
+    font-family: monospace;
+    color: #008;
+    margin-left: 0.1em;
+}
+
+.string-value {
+    font-family: monospace;
+    color: #800;
+    margin-left: 0.3em;
+}
+
+.obj {
+    margin: 0.5em;
+}
+
+.r-sent-command {
+    font-family: "Monaco", "Courier New", monospace;
+    color: #000;
+}
+
+.error-message {
+    font-family: monospace;
+    font-weight: bold;
+    color: #800;
+}
+
+.rule-text {
+    font: 10px sans-serif;
+}
+
+.x line, .y line {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+path.dot {
+  fill: black;
+  stroke-width: 1.5px;
+  stroke: white;
+}
+
+rect.extent {
+    fill: #000;
+    fill-opacity: .1;
+    stroke: #fff;
+}
+
+rect.frame {
+  fill: #fff;
+  fill-opacity: .7;
+  stroke: #aaa;
+}
+
+.detachable {
+    background-color: #fff;
+    margin: 10px;
+    padding: 10px;
+    display: inline-block;
+    border-color: #fff;
+    border-style: solid;
+    border-width: 1px;
+}
+
+.detachable:hover {
+    border-color: #ddd;
+    border-style: solid;
+    border-width: 1px;
+}
+
+.figure-icon {
+    color: #ddd;
+}
+
+.left-pane-header {
+    width:100%; 
+    background-color:#ddd;
+}
+
+.text-result-table-date {
+    font-size: 11px;
+}
+
+.text-result-table-same-date {
+    font-size: 11px;
+    color: #ddd;
+}
+
+.text-result-table-user {
+    font-size: 11px;
+}
+
+.text-result-table-same-user {
+    font-size: 11px;
+    color: #ddd;
+}
+
+.text-result-table-filename {
+    font-size: 11px;
+}
+
+.text-result-table-same-filename {
+    font-size: 11px;
+    color: #ddd;
+}
+
+.text-result-table-filename:hover {
+    font-size: 11px;
+    text-decoration: underline;
+    cursor: pointer;
+    color: blue;
+}
+
+.text-result-table-linenumber {
+    font-size: 11px;
+    padding-left: 3em;
+}
+
+.text-result-table-same-linenumber {
+    font-size: 11px;
+    padding-left: 3em;
+}
+
+.text-result-table-loc {
+    font-family: "Monaco", "Courier New", monospace;
+    font-size: 12px;
+}
+
+.text-result-table-loc:hover {
+    text-decoration: underline;
+    cursor: pointer;
+    color: blue;
+}
+
+.text-result-table-same-loc {
+    font-family: "Monaco", "Courier New", monospace;
+    font-size: 12px;
+}
+
+.text-result-table-same-loc:hover {
+    text-decoration: underline;
+    cursor: pointer;
+    color: blue;
+}
+
+/* .markdown-div { */
+/*     background-color: red; */
+/* } */
+
+/* .r-result-div { */
+/*     background-color: green; */
+/* } */
+
+.notebook-cell {
+    position:relative;
+    width:100%;
+    border-width: 1px;
+    padding: 1px;
+    border-color: #fff;
+    border-style: solid;
+}
+
+.fontawesome-button {
+    margin: 0.25em;
+    cursor: pointer;
+}
+.button-disabled {
+    color: #ddd;
+    cursor: default;
+}
+
 .error-message {
     visibility: hidden;
 }
