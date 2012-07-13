@@ -24,7 +24,6 @@ Notebook.create_controller = function(model)
         load_from_file: function(user, filename, k) {
             var that = this;
             rcloud.load_user_file(user, filename, function(contents) {
-                console.log("Contents: ", user, filename, contents.value);
                 var json_contents = JSON.parse(contents.value.join("\n"));
                 that.clear();
                 _.each(json_contents, function (json_cell) {
@@ -37,13 +36,19 @@ Notebook.create_controller = function(model)
         save_file: function(user, filename, k) {
             var that = this;
             var json_rep = JSON.stringify(model.json());
-            rcloud.save_to_user_file(user, filename, json_rep, function() {
-                k();
+            rcloud.load_user_file(user, filename, function(old_contents) {
+                old_contents = old_contents.value.join("\n");
+                if (json_rep !== old_contents) {
+                    rcloud.save_to_user_file(user, filename, json_rep, function() {
+                        k && k();
+                    });
+                } else {
+                    k && k();
+                }
             });
         },
         run_all: function() {
             _.each(model.notebook, function(cell_model) {
-                console.log(cell_model);
                 cell_model.controller.execute();
             });
         }
