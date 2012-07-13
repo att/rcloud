@@ -990,7 +990,7 @@ RClient = {
 
             markdown_wrap_command: function(command, silent) {
                 var this_command = command_counter++;
-                return [ ".session.markdown.eval({markdownToHTML(text=knit(text=" + escape_r_literal_string(command+'\n') + "), fragment=TRUE)}, "
+                return [ ".session.markdown.eval({markdownToHTML(text=paste(knit(text=" + escape_r_literal_string(command+'\n') + "), collapse=\"\\n\"), fragment=TRUE)}, "
                          + this_command + ", "
                          + (silent?"TRUE":"FALSE") + ")",
                          this_command ];

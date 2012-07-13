@@ -25,7 +25,10 @@ dependencies_bundle.js: \
 	js/facet.js \
 	js/colorbrewer.js \
 	js/jDataView.js \
-	js/hl.min.js
+	js/hl.min.js \
+	js/bootstrap.js \
+	js/bootstrap-transition.js \
+	js/bootstrap-collapse.js
 
 ace_bundle.min.js: ace_bundle.js Makefile
 	@rm -f $@
