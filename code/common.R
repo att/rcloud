@@ -167,6 +167,7 @@ rcloud.create.user.file <- function(user, filename) {
     if (!file.exists(dir <- dirname(internal_filename)))
       dir.create(dir, F, T, "0770")
     file.create(internal_filename);
+    write("[]\n", internal_filename);
     TRUE
   } else
     FALSE

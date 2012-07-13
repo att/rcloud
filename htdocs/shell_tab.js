@@ -165,12 +165,44 @@ var shell = (function() {
                 $("#file_title").text(filename);
                 k && k();
             });
+        }, new_file: function() {
+            function validate_filename(n) {
+                if (/\.\./.test(n))
+                    return false;
+                if (/[^0-9a-zA-Z_.]/.test(n))
+                    return false;
+                return true;
+            }
+            var filename = prompt("please enter a filename", "[new filename]");
+            if (!validate_filename(filename)) {
+                alert("Invalid filename");
+                return;
+            }
+            this.create_file(filename);
+        }, create_file: function(filename) {
+            var that = this;
+            rcloud.create_user_file(filename, function(result) {
+                if (result.value[0]) {
+                    editor.populate_file_list();
+                    that.load_from_file(rcloud.username(), filename);
+                }
+            });
+        }, serialize_state: function(k) {
+            var that = this;
+            this.notebook.view.update_model();
+            if (this.filename && (this.user === rcloud.username())) {
+                this.save_to_file(shell.user, shell.filename, k);
+            } else {
+                // FIXME what do we do with unnamed content??
+                k && k();
+            }
         }
     };
 
     $("#run-notebook").click(function() {
-        result.notebook.view.update_model();
-        result.notebook.controller.run_all();
+        result.serialize_state(function() {
+            result.notebook.controller.run_all();
+        });
     });
     return result;
 })();
