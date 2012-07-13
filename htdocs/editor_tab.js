@@ -1,10 +1,18 @@
 var editor = {
     widget: undefined,
+    file_tree_model: undefined,
     create_file_tree_widget: function() { 
         var that = this;
         var $tree = $("#editor-file-tree");
+        function onCreateLiHandler(node, $li) {
+            node = that.file_tree_model[node.id];
+            if (node) {
+                $li.find('.title').after('<span style="float: right">' + node.mtime + '</span>');
+            }
+        }
         $tree.tree({
-            autoOpen: 1
+            autoOpen: 1,
+            onCreateLi: onCreateLiHandler
         });
         $tree.bind(
             'tree.click', function(event) {
@@ -26,18 +34,24 @@ var editor = {
             data = data.value;
             var this_user = rcloud.username();
             var result = [];
+            that.file_tree_model = {};
             for (var i=0; i<data.length; ++i) {
                 var dirname = data[i].value[0].value[0];
-                var filenames = data[i].value[1].value;
+                var files_data = data[i].value[1].value;
                 
-                var file_nodes = _.map(filenames, function(name) {
-                    return { 
+                var file_nodes = _.map(files_data, function(file_data) {
+                    var name = file_data.value[0].value[0];
+                    var mtime = file_data.value[1].value[0];
+                    var result = { 
                         label: name,
+                        mtime: mtime,
                         file_name: name,
                         user_name: dirname,
                         file_type: (this_user === dirname) ? "w" : "r",
                         id: '/' + dirname + '/' + name 
                     };
+                    that.file_tree_model[result.id] = result;
+                    return result;
                 });
                 if (dirname === this_user) {
                     file_nodes.push({
@@ -54,10 +68,11 @@ var editor = {
             }
             var tree_data = [ { 
                 label: '/',
+                id: '/',
                 children: result 
             } ];
             var $tree = $("#editor-file-tree");
-            $tree.tree("loadData", tree_data);
+            $tree.tree("loadData", tree_data); 
             var folder = $tree.tree('getNodeById', "/" + rcloud.username());
             $(folder.element).parent().prepend(folder.element);
             $tree.tree('openNode', folder);

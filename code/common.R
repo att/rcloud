@@ -142,10 +142,14 @@ rcloud.user.file.name <- function(user, filename) {
 }
 
 rcloud.list.all.initial.filenames <- function() {
-  users <- list.files(path=paste(data.root, "userfiles", sep='/'));
-  lapply(users, function(user) {
-    list(user, list.files(path=paste(data.root, "userfiles", user, sep='/')))
-  });
+    users <- list.files(path = paste(data.root, "userfiles", sep = "/"))
+    lapply(users, function(user) {
+        filenames <- list.files(path = paste(data.root, "userfiles", user, sep = "/"))
+        list(user, lapply(filenames, function(filename) {
+            list(filename, format(file.info(paste(data.root, "userfiles", user, filename, 
+                sep = "/"))$mtime))
+        }))
+    })
 }
 
 rcloud.list.initial.filenames <- function(user) {
@@ -217,37 +221,6 @@ rcloud.fetch.deferred.result <- function(key) {
   v <- global.result.hash[[key]]
   del(key, global.result.hash)
   v
-}
-
-wplot2 <- function(x, y, ...) {
-  opts <- list(...)
-  if (missing(y)) {
-    y <- x
-    x <- seq.int(y)
-  }
-  if (is.null(opts$width)) {
-    width <- 300
-  } else {
-    width <- opts$width
-  }
-  if (is.null(opts$height)) {
-    height <- width
-  } else {
-    height <- opts$height
-  }
-
-  if (is.null(opts$group)) {
-    if (is.null(.session$group)) {
-      .session$group <- 1L
-      .session$group.len <- length(x)
-    } else {
-      if (.session$group.len != length(x)) {
-        .session$group <- .session$group + 1L
-        .session$group.len <- length(x)
-      }
-    }
-    opts$group <- .session$group
-  }
 }
 
 ################################################################################

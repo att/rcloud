@@ -191,7 +191,10 @@ var shell = (function() {
             var that = this;
             this.notebook.view.update_model();
             if (this.filename && (this.user === rcloud.username())) {
-                this.save_to_file(shell.user, shell.filename, k);
+                this.save_to_file(shell.user, shell.filename, function() {
+                    editor.populate_file_list();
+                    k && k();
+                });
             } else {
                 // FIXME what do we do with unnamed content??
                 k && k();
