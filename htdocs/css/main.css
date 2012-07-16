@@ -165,7 +165,6 @@ rect.frame {
 /* .markdown-div { */
 /*     background-color: red; */
 /* } */
-
 /* .r-result-div { */
 /*     background-color: green; */
 /* } */
@@ -186,4 +185,13 @@ rect.frame {
 .button-disabled {
     color: #ddd;
     cursor: default;
+}
+
+/* Ace sets its z-index to something obscene, 
+   and we need to one-up that obscenity with our own button float; Twitter's 
+   bootstrap tooltip needs to reflect that and one-up everything else.
+*/
+
+.tooltip {
+    z-index: 100000;
 }

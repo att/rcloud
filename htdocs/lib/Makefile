@@ -28,6 +28,7 @@ dependencies_bundle.js: \
 	js/hl.min.js \
 	js/bootstrap.js \
 	js/bootstrap-transition.js \
+	js/bootstrap-tooltip.js \
 	js/bootstrap-collapse.js
 
 ace_bundle.min.js: ace_bundle.js Makefile
