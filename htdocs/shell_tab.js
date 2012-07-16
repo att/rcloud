@@ -17,6 +17,16 @@ var shell = (function() {
     $('#output').click(function(x) {
         terminal.disable();
     });
+    $("#term_demo").click(function(x) {
+        d3.select("#term_helper")
+            .transition()
+            .duration(1000)
+            .style("opacity", "0")
+            .each("end", function() {
+                d3.select(this).style("display", "none");
+            });
+    });
+
 
     function handle_scatterplot(data) {
         var opts = {

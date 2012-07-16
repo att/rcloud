@@ -3,7 +3,6 @@ JS_COMPILER = ./node_modules/uglify-js/bin/uglifyjs
 all: rcloud_bundle.js rcloud_bundle.min.js
 
 rcloud_bundle.js: \
-	plot.js \
 	chart.js \
 	facet_chart.js \
 	websockets.js \
