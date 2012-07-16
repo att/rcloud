@@ -84,34 +84,7 @@ var editor = {
     init: function() {
         d3.select("#input-text-source-results-title").style("display", "none");
         d3.select("#input-text-history-results-title").style("display", "none");
-        // widget.commands.addCommand({
-        //     name: 'sendToR',
-        //     bindKey: {
-        //         win: 'Ctrl-Return',
-        //         mac: 'Command-Return',
-        //         sender: 'editor'
-        //     },
-        //     exec: function(widget, args, request) {
-        //         var range = widget.getSelectionRange();
-        //         if (range.start.column === range.end.column &&
-        //             range.start.row    === range.end.row) {
-        //             // FIXME check EOF here.
-        //             range = {start: {column: 0, row: range.start.row},
-        //                      end: {column: 0, row: range.start.row+1}};
-        //             var cursor = widget.getSession().getSelection().getCursor();
-        //             widget.gotoLine(cursor.row+2);
-        //         };
-        //         if (text === "")
-        //             return;
-        //         var text = widget.getSession().doc.getTextRange(range);
-        //         shell.new_markdown_cell(text).execute();
-        //     }
-        // });
         var that = this;
-        // var RMode = require("mode/r").Mode;
-        // var session = this.widget.getSession();
-        // var doc = session.doc;
-        // this.widget.getSession().setMode(new RMode(false, doc, session));
         this.create_file_tree_widget();
         this.populate_file_list();
         // $("#editor-title-header").text(rcloud.username() + " | [untitled]");
