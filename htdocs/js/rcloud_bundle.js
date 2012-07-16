@@ -2571,10 +2571,17 @@ function create_markdown_cell_html_view(cell_model)
         }
     });
 
+<<<<<<< local
+    var r_result_div = $('<div class="r-result-div"></div>');
+=======
     var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Not evaluated</span></div>');
+>>>>>>> other
     inner_div.append(r_result_div);
+<<<<<<< local
+=======
 
     var current_mode;
+>>>>>>> other
 
     var result = {
 
