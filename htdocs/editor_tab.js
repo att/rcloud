@@ -82,12 +82,11 @@ var editor = {
         });
     },
     init: function() {
-        d3.select("#input-text-source-results-title").style("display", "none");
-        d3.select("#input-text-history-results-title").style("display", "none");
+        $("#input-text-source-results-title").css("display", "none");
+        $("#input-text-history-results-title").css("display", "none");
         var that = this;
         this.create_file_tree_widget();
         this.populate_file_list();
-        // $("#editor-title-header").text(rcloud.username() + " | [untitled]");
         var old_text = "";
         window.setInterval(function() {
             var new_text = $("#input-text-search").val();
