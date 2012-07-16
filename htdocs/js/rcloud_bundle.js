@@ -2613,6 +2613,11 @@ Notebook.Cell.create_html_view = function(cell_model)
     inner_div.append(markdown_div);
     markdown_div.append(ace_div);
     var widget = ace.edit(ace_div[0]);
+    var RMode = require("mode/r").Mode;
+    var session = widget.getSession();
+    var doc = session.doc;
+    widget.getSession().setMode(new RMode(false, doc, session));
+
     widget.setTheme("ace/theme/chrome");
     widget.getSession().setUseWrapMode(true);
     widget.resize();
@@ -2628,11 +2633,6 @@ Notebook.Cell.create_html_view = function(cell_model)
             execute_cell();
         }
     });
-
-    // var RMode = require("mode/r").Mode;
-    // var session = this.widget.getSession();
-    // var doc = session.doc;
-    // this.widget.getSession().setMode(new RMode(false, doc, session));
 
     var r_result_div = $('<div class="r-result-div"></div>');
     inner_div.append(r_result_div);
