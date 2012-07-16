@@ -22,14 +22,17 @@
     d3 (and its colorbrewer colormaps), http://d3js.org
     facet,				http://cscheid.github.com/facet
     jDataView,				http://github.com/vjeux/jDataView
+    twitter's bootstrap                 http://twitter.github.com/bootstrap/
+       bootstrap-transition
+       bootstrap-collapse
 
     Indirectly, RCloud also depends on hljs, the syntax highlighter
     Javascript library used by knitr. It also depends on MathJax
     through knitr and rmarkdown.
 
     -->
+
     <script type="text/javascript" src="lib/dependencies_bundle.min.js"></script>
-    <script type="text/javascript" src="lib/bootstrap.js"></script>
     <script type="text/javascript"
         src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
     </script>
@@ -49,14 +52,13 @@
 <div class="navbar navbar-fixed-top">
   <div class="navbar-inner">
     <div class="container-fluid">
-      <a class="brand" href="#">RCloud</a>
+      <a class="brand" href="#">RCloud - [<span id="file_title">Untitled</span>]</a>
       <div class="nav-collapse collapse">
 	<ul class="nav">
-	  <li><a href="#">[<span id="file_title">Untitled</span>]</a></li>
-	  <li class="divider-vertical"></li>
 	  <li><a href="#" id="run-notebook">Run Notebook</a></li>
 	  <li><a href="#" id="share-notebook">Share</a></li>
 	  <li class="divider-vertical"></li>
+	  <li><a href="#" id="rcloud-logout">Logout</a></li>
 	</ul>
       </div>
     </div>
@@ -82,27 +84,33 @@
     <div class="span3">
       <div id="tabs-2">
 	<div class="tab-div">
-	  <table width=100% height=60% style="padding:0; margin:0;">
-	    <tr>
-	      <td width="10%" valign="top">
-		<div class="left-pane-header">
-		  <h3 id="editor-file-list-title">File list</h3>
+	  <div class="accordion" id="accordion">
+	    <div class="accordion-group">
+	      <div class="accordion-heading">
+		<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">Notebooks</a>
+	      </div>
+	      <div id="collapseOne" class="accordion-body collapse">
+		<div class="accordion-inner">
+		  <div id="editor-file-tree"></div>
 		</div>
-		<div id="editor-file-tree"></div>
-	      </td>
-	    </tr>
-	  </table>
-	  <div width="100%" style="margin-top: 0; padding-top: 0;">
-	    <div class="left-pane-header">
-	      <h3>Search</h3>
+	      </div>
 	    </div>
-	    <div>Full-text search for <input type="text" value="" id="input-text-search"></input></div>
-	    <h4 id="input-text-source-results-title" style="padding-bottom: 0; margin-bottom: 0">Source results</h4>
-	    <table id="input-text-source-results-table">
-	    </table>
-	    <h4 id="input-text-history-results-title" style="padding-bottom: 0; margin-bottom: 0">History results</h4>
-	    <table id="input-text-history-results-table">
-	    </table>
+	    <div class="accordion-group">
+	      <div class="accordion-heading">
+		<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">Search</a>
+	      </div>
+	      <div id="collapseTwo" class="accordion-body collapse in">
+		<div class="accordion-inner">
+		  <div>Full-text search for <input type="text" value="" id="input-text-search"></input></div>
+		  <h4 id="input-text-source-results-title" style="padding-bottom: 0; margin-bottom: 0">Source results</h4>
+		  <table id="input-text-source-results-table">
+		  </table>
+		  <h4 id="input-text-history-results-title" style="padding-bottom: 0; margin-bottom: 0">History results</h4>
+		  <table id="input-text-history-results-table">
+		  </table>
+		</div>
+	      </div>
+	    </div>
 	  </div>
 	</div>
       </div>
