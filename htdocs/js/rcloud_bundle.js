@@ -2536,7 +2536,7 @@ function create_markdown_cell_html_view(cell_model)
 
     var markdown_div = $('<div style="position: relative; width:100%; height:100%"></div>');
     var cell_buttons_div = $('<div style="position: absolute; right:-0.5em; top:-0.5em"></div>');
-    var insert_cell_button = $('<span class="fontawesome-button"><i class="icon-plus-sign"></i>');
+    var insert_cell_button = fa_button("icon-plus-sign", "insert cell");
     inner_div.append(cell_buttons_div);
     cell_buttons_div.append(insert_cell_button);
     insert_cell_button.click(function(e) {
@@ -2769,7 +2769,7 @@ function create_interactive_cell_html_view(cell_model)
 
     var markdown_div = $('<div style="position: relative; width:100%;"></div>');
     var cell_buttons_div = $('<div style="position: absolute; right:-0.5em; top:-0.5em"></div>');
-    var insert_cell_button = $('<span class="fontawesome-button"><i class="icon-plus-sign"></i>');
+    var insert_cell_button = fa_button("icon-plus-sign", "insert cell");
     inner_div.append(cell_buttons_div);
     cell_buttons_div.append(insert_cell_button);
     insert_cell_button.click(function(e) {
