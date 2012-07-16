@@ -6,3 +6,6 @@
 * Ideas
 ** saved cells could contain an image of the output! (if we save the HTML content before sending, we can display it on search results...)
 *** But what about wplot, wgeoplot, etc?
+* BUGS
+** Create directory when new user logs in
+
