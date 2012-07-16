@@ -336,7 +336,7 @@ function create_interactive_cell_html_view(cell_model)
     inner_div.append(markdown_div);
     markdown_div.append(ace_div);
 
-    var input = $('<input type="text" style="width:90%"/>');
+    var input = $('<input type="text" style="width:88%"/>');
     ace_div.append(input);
     // http://stackoverflow.com/questions/699065
     input.keypress(function(e) {

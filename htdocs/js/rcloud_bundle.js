@@ -2571,17 +2571,10 @@ function create_markdown_cell_html_view(cell_model)
         }
     });
 
-<<<<<<< local
-    var r_result_div = $('<div class="r-result-div"></div>');
-=======
     var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Not evaluated</span></div>');
->>>>>>> other
     inner_div.append(r_result_div);
-<<<<<<< local
-=======
 
     var current_mode;
->>>>>>> other
 
     var result = {
 
@@ -2790,7 +2783,7 @@ function create_interactive_cell_html_view(cell_model)
     inner_div.append(markdown_div);
     markdown_div.append(ace_div);
 
-    var input = $('<input type="text" style="width:90%"/>');
+    var input = $('<input type="text" style="width:88%"/>');
     ace_div.append(input);
     // http://stackoverflow.com/questions/699065
     input.keypress(function(e) {
