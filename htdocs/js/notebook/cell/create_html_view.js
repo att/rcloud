@@ -38,11 +38,14 @@ Notebook.Cell.create_html_view = function(cell_model)
             cell_model.parent_model.controller.remove_cell(cell_model);
         }
     });
-    run_md_button.click(function(e) {
+    function execute_cell() {
         r_result_div.html("Computing...");
         update_model();
         result.show_result();
         cell_model.controller.execute();
+    }
+    run_md_button.click(function(e) {
+        execute_cell();
     });
 
     // Ace sets its z-index to be 1000; 
@@ -87,6 +90,23 @@ Notebook.Cell.create_html_view = function(cell_model)
     widget.setTheme("ace/theme/chrome");
     widget.getSession().setUseWrapMode(true);
     widget.resize();
+
+    widget.commands.addCommand({
+        name: 'sendToR',
+        bindKey: {
+            win: 'Ctrl-Return',
+            mac: 'Command-Return',
+            sender: 'editor'
+        },
+        exec: function(widget, args, request) {
+            execute_cell();
+        }
+    });
+
+    // var RMode = require("mode/r").Mode;
+    // var session = this.widget.getSession();
+    // var doc = session.doc;
+    // this.widget.getSession().setMode(new RMode(false, doc, session));
 
     var r_result_div = $('<div class="r-result-div"></div>');
     inner_div.append(r_result_div);
