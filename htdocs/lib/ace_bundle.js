@@ -17368,6 +17368,399 @@ dom.importCssString(exports.cssText, exports.cssClass);
                 });
             })();
         define("ace/theme/chrome",["require","exports","module","ace/lib/dom"],function(a,b,c){b.cssClass="ace-chrome",b.cssText=".ace-chrome .ace_editor {  border: 2px solid rgb(159, 159, 159);}.ace-chrome .ace_editor.ace_focus {  border: 2px solid #327fbd;}.ace-chrome .ace_gutter {  width: 50px;  background: #e8e8e8;  color: #333;  overflow : hidden;}.ace-chrome .ace_gutter-layer {  width: 100%;  text-align: right;}.ace-chrome .ace_gutter-layer .ace_gutter-cell {  padding-right: 6px;}.ace-chrome .ace_print_margin {  width: 1px;  background: #e8e8e8;}.ace-chrome .ace_text-layer {  cursor: text;}.ace-chrome .ace_cursor {  border-left: 2px solid black;}.ace-chrome .ace_cursor.ace_overwrite {  border-left: 0px;  border-bottom: 1px solid black;}        .ace-chrome .ace_line .ace_invisible {  color: rgb(191, 191, 191);}.ace-chrome .ace_line .ace_keyword {  color: blue;}.ace-chrome .ace_line .ace_constant.ace_buildin {  color: rgb(88, 72, 246);}.ace-chrome .ace_line .ace_constant.ace_language {  color: rgb(88, 92, 246);}.ace-chrome .ace_line .ace_constant.ace_library {  color: rgb(6, 150, 14);}.ace-chrome .ace_line .ace_invalid {  background-color: rgb(153, 0, 0);  color: white;}.ace-chrome .ace_line .ace_fold {}.ace-chrome .ace_line .ace_support.ace_function {  color: rgb(60, 76, 114);}.ace-chrome .ace_line .ace_support.ace_constant {  color: rgb(6, 150, 14);}.ace-chrome .ace_line .ace_support.ace_type,.ace-chrome .ace_line .ace_support.ace_class {  color: rgb(109, 121, 222);}.ace-chrome .ace_line .ace_keyword.ace_operator {  color: rgb(104, 118, 135);}.ace-chrome .ace_line .ace_string {  color: #1919a6;}.ace-chrome .ace_line .ace_comment {  color: #236e24;}.ace-chrome .ace_line .ace_comment.ace_doc {  color: #236e24;}.ace-chrome .ace_line .ace_comment.ace_doc.ace_tag {  color: #236e24;}.ace-chrome .ace_line .ace_constant.ace_numeric {  color: rgb(0, 0, 205);}.ace-chrome .ace_line .ace_variable {  color: rgb(49, 132, 149);}.ace-chrome .ace_line .ace_xml_pe {  color: rgb(104, 104, 91);}.ace-chrome .ace_entity.ace_name.ace_function {  color: #0000A2;}.ace-chrome .ace_markup.ace_markupine {    text-decoration:underline;}.ace-chrome .ace_markup.ace_heading {  color: rgb(12, 7, 255);}.ace-chrome .ace_markup.ace_list {  color:rgb(185, 6, 144);}.ace-chrome .ace_marker-layer .ace_selection {  background: rgb(181, 213, 255);}.ace-chrome .ace_marker-layer .ace_step {  background: rgb(252, 255, 0);}.ace-chrome .ace_marker-layer .ace_stack {  background: rgb(164, 229, 101);}.ace-chrome .ace_marker-layer .ace_bracket {  margin: -1px 0 0 -1px;  border: 1px solid rgb(192, 192, 192);}.ace-chrome .ace_marker-layer .ace_active_line {  background: rgba(0, 0, 0, 0.07);}.ace-chrome .ace_marker-layer .ace_selected_word {  background: rgb(250, 250, 255);  border: 1px solid rgb(200, 200, 250);}.ace-chrome .ace_meta.ace_tag {  color: rgb(147, 15, 128);}.ace-chrome .ace_string.ace_regex {  color: rgb(255, 0, 0)}.ace-chrome .ace_entity.ace_other.ace_attribute-name{  color: #994409;}";var d=a("../lib/dom");d.importCssString(b.cssText,b.cssClass)})/*
+ * auto_brace_insert.js
+ *
+ * Copyright (C) 2009-11 by RStudio, Inc.
+ *
+ * The Initial Developer of the Original Code is
+ * Ajax.org B.V.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * This program is licensed to you under the terms of version 3 of the
+ * GNU Affero General Public License. This program is distributed WITHOUT
+ * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+ * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+ *
+ */
+define("mode/auto_brace_insert", function(require, exports, module)
+{
+   var Range = require("ace/range").Range;
+   var TextMode = require("ace/mode/text").Mode;
+
+   (function()
+   {
+      this.$complements = {
+         "(": ")",
+         "[": "]",
+         '"': '"',
+         "{": "}"
+      };
+      this.$reOpen = /^[(["{]$/;
+      this.$reClose = /^[)\]"}]$/;
+
+      // reStop is the set of characters before which we allow ourselves to
+      // automatically insert a closing paren. If any other character
+      // immediately follows the cursor we will NOT do the insert.
+      this.$reStop = /^[;,\s)\]}]$/;
+
+      this.wrapInsert = function(session, __insert, position, text)
+      {
+         if (!this.insertMatching)
+            return __insert.call(session, position, text);
+
+         var cursor = session.selection.getCursor();
+         var typing = session.selection.isEmpty() &&
+                      position.row == cursor.row &&
+                      position.column == cursor.column;
+
+         if (typing) {
+            var postRng = Range.fromPoints(position, {
+               row: position.row,
+               column: position.column + 1});
+            var postChar = session.doc.getTextRange(postRng);
+            if (this.$reClose.test(postChar) && postChar == text) {
+               session.selection.moveCursorTo(postRng.end.row,
+                                              postRng.end.column,
+                                              false);
+               return;
+            }
+         }
+
+         var prevChar = null;
+         if (typing)
+         {
+            var rangeBegin = this.$moveLeft(session.doc, position);
+            prevChar = session.doc.getTextRange(Range.fromPoints(rangeBegin,
+                                                                 position));
+         }
+
+         var endPos = __insert.call(session, position, text);
+         // Is this an open paren?
+         if (typing && this.$reOpen.test(text)) {
+            // Is the next char not a character or number?
+            var nextCharRng = Range.fromPoints(endPos, {
+               row: endPos.row,
+               column: endPos.column + 1
+            });
+            var nextChar = session.doc.getTextRange(nextCharRng);
+            if (this.$reStop.test(nextChar) || nextChar.length == 0) {
+               if (this.allowAutoInsert(session, endPos, this.$complements[text])) {
+                  session.doc.insert(endPos, this.$complements[text]);
+                  session.selection.moveCursorTo(endPos.row, endPos.column, false);
+               }
+            }
+         }
+         else if (typing && text === "\n") {
+            var rangeEnd = this.$moveRight(session.doc, endPos);
+            if (prevChar == "{" && "}" == session.doc.getTextRange(Range.fromPoints(endPos, rangeEnd)))
+            {
+               var indent;
+               if (this.getIndentForOpenBrace)
+                  indent = this.getIndentForOpenBrace(this.$moveLeft(session.doc, position));
+               else
+                  indent = this.$getIndent(session.doc.getLine(endPos.row - 1));
+               session.doc.insert(endPos, "\n" + indent);
+               session.selection.moveCursorTo(endPos.row, endPos.column, false);
+            }
+         }
+         return endPos;
+      };
+
+      this.allowAutoInsert = function(session, pos, text)
+      {
+         return true;
+      };
+
+      // To enable this, call "this.allowAutoInsert = this.smartAllowAutoInsert"
+      // in the mode subclass
+      this.smartAllowAutoInsert = function(session, pos, text)
+      {
+         if (text !== "'" && text !== '"')
+            return true;
+
+         // Only allow auto-insertion of a quote char if the actual character
+         // that was typed, was the start of a new string token
+
+         if (pos.column == 0)
+            return true;
+
+         var token = this.codeModel.getTokenForPos(pos, false, true);
+         return token &&
+                token.type === 'string' &&
+                token.column === pos.column-1;
+      };
+
+      this.wrapRemove = function(editor, __remove, dir)
+      {
+         var cursor = editor.selection.getCursor();
+         var doc = editor.session.getDocument();
+
+         // Here are some easy-to-spot reasons why it might be impossible for us
+         // to need our special deletion logic.
+         if (!this.insertMatching ||
+             dir != "left" ||
+             !editor.selection.isEmpty() ||
+             editor.$readOnly ||
+             cursor.column == 0 ||     // hitting backspace at the start of line
+             doc.getLine(cursor.row).length <= cursor.column) {
+
+            return __remove.call(editor, dir);
+         }
+
+         var leftRange = Range.fromPoints(this.$moveLeft(doc, cursor), cursor);
+         var rightRange = Range.fromPoints(cursor, this.$moveRight(doc, cursor));
+         var leftText = doc.getTextRange(leftRange);
+
+         var deleteRight = this.$reOpen.test(leftText) &&
+                           this.$complements[leftText] == doc.getTextRange(rightRange);
+
+         __remove.call(editor, dir);
+         if (deleteRight)
+            __remove.call(editor, 'right');
+      };
+
+      this.$moveLeft = function(doc, pos)
+      {
+         if (pos.row == 0 && pos.column == 0)
+            return pos;
+
+         var row = pos.row;
+         var col = pos.column;
+
+         if (col)
+            col--;
+         else
+         {
+            row--;
+            col = doc.getLine(row).length;
+         }
+         return {row: row, column: col};
+      };
+
+      this.$moveRight = function(doc, pos)
+      {
+         var row = pos.row;
+         var col = pos.column;
+
+         if (doc.getLine(row).length != col)
+            col++;
+         else
+         {
+            row++;
+            col = 0;
+         }
+
+         if (row >= doc.getLength())
+            return pos;
+         else
+            return {row: row, column: col};
+      };
+   }).call(TextMode.prototype);
+
+   exports.setInsertMatching = function(insertMatching) {
+      TextMode.prototype.insertMatching = insertMatching;
+   };
+
+});/*
+ * markdown.js
+ *
+ * Copyright (C) 2009-11 by RStudio, Inc.
+ *
+ * The Initial Developer of the Original Code is
+ * Ajax.org B.V.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * This program is licensed to you under the terms of version 3 of the
+ * GNU Affero General Public License. This program is distributed WITHOUT
+ * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+ * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+ *
+ */
+
+define("mode/markdown", function(require, exports, module) {
+
+var oop = require("ace/lib/oop");
+var TextMode = require("ace/mode/text").Mode;
+var Tokenizer = require("ace/tokenizer").Tokenizer;
+var MarkdownHighlightRules = require("mode/markdown_highlight_rules").MarkdownHighlightRules;
+
+var Mode = function() {   
+   this.$tokenizer = new Tokenizer(new MarkdownHighlightRules().getRules());
+};
+oop.inherits(Mode, TextMode);
+
+(function() {
+    this.getNextLineIndent = function(state, line, tab) {
+        if (state == "listblock") {
+            var match = /^((?:.+)?)([-+*][ ]+)/.exec(line);
+            if (match) {
+                return new Array(match[1].length + 1).join(" ") + match[2];
+            } else {
+                return "";
+            }
+        } else {
+            return this.$getIndent(line);
+        }
+    };
+}).call(Mode.prototype);
+
+exports.Mode = Mode;
+});
+/*
+ * markdown_highlight_rules.js
+ *
+ * Copyright (C) 2009-11 by RStudio, Inc.
+ *
+ * The Initial Developer of the Original Code is
+ * Ajax.org B.V.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * This program is licensed to you under the terms of version 3 of the
+ * GNU Affero General Public License. This program is distributed WITHOUT
+ * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+ * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+ *
+ */
+define("mode/markdown_highlight_rules", function(require, exports, module) {
+
+var oop = require("ace/lib/oop");
+var TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules;
+
+var MarkdownHighlightRules = function() {
+
+    // regexp must not have capturing parentheses
+    // regexps are ordered -> the first match is used
+
+    this.$rules = {
+        "start" : [ {
+            token : "empty_line",
+            regex : '^$'
+        }, { // code span `
+            token : "support.function",
+            regex : "(`+)([^\\r]*?[^`])(\\1)"
+        }, { // code block
+            token : "support.function",
+            regex : "^[ ]{4}.+"
+        }, { // h1
+            token: "markup.heading.1",
+            regex: "^=+(?=\\s*$)"
+        }, { // h2
+            token: "markup.heading.1",
+            regex: "^\\-+(?=\\s*$)"
+        }, { // header
+            token : function(value) {
+                return "markup.heading." + value.length;
+            },
+            regex : "^#{1,6}"
+        },
+        { // Github style block
+            token : "support.function",
+            regex : "^```[a-zA-Z]+\\s*$",
+            next  : "githubblock"
+        }, { // block quote
+            token : "string",
+            regex : "^>[ ].+$",
+            next  : "blockquote"
+        }, { // reference
+            token : ["text", "constant", "text", "url", "string", "text"],
+            regex : "^([ ]{0,3}\\[)([^\\]]+)(\\]:\\s*)([^ ]+)(\\s*(?:[\"][^\"]+[\"])?\\s*)$"
+        }, { // link by reference
+            token : ["text", "keyword", "text", "constant", "text"],
+            regex : "(\\[)((?:[[^\\]]*\\]|[^\\[\\]])*)(\\][ ]?(?:\\n[ ]*)?\\[)(.*?)(\\])"
+        }, { // link by url
+            token : ["text", "keyword", "text", "markup.underline", "string", "text"],
+            regex : "(\\[)"+
+                    "(\\[[^\\]]*\\]|[^\\[\\]]*)"+
+                    "(\\]\\([ \\t]*)"+
+                    "(<?(?:(?:[^\\(]*?\\([^\\)]*?\\)\\S*?)|(?:.*?))>?)"+
+                    "((?:[ \t]*\"(?:.*?)\"[ \\t]*)?)"+
+                    "(\\))"
+        }, { // HR *
+            token : "constant",
+            regex : "^[ ]{0,2}(?:[ ]?\\*[ ]?){3,}\\s*$"
+        }, { // HR -
+            token : "constant",
+            regex : "^[ ]{0,2}(?:[ ]?\\-[ ]?){3,}\\s*$"
+        }, { // HR _
+            token : "constant",
+            regex : "^[ ]{0,2}(?:[ ]?\\_[ ]?){3,}\\s*$"
+        }, { // MathJax $$
+            token : "markup.list",
+            regex : "\\${2}",
+            next  : "mathjax"
+        }, { // MathJax $
+            token : ["markup.list","support.function","markup.list"],
+            regex : "(\\$)" + "(\\S[^\\r]+\\S)" + "(\\$)"
+        }, { // list
+            token : "text",
+            regex : "^\\s{0,3}(?:[*+-]|\\d+\\.)\\s+",
+            next  : "listblock"
+        }, { // strong ** __
+            token : "constant.numeric",
+            regex : "([*]{2}|[_]{2}(?=\\S))([^\\r]*?\\S[*_]*)(\\1)"
+        }, { // emphasis * _
+            token : "constant.language.boolean",
+            regex : "([*]|[_](?=\\S))([^\\r]*?\\S[*_]*)(\\1)"
+        }, { // 
+            token : ["text", "url", "text"],
+            regex : "(<)("+
+                      "(?:https?|ftp|dict):[^'\">\\s]+"+
+                      "|"+
+                      "(?:mailto:)?[-.\\w]+\\@[-a-z0-9]+(?:\\.[-a-z0-9]+)*\\.[a-z]+"+
+                    ")(>)"
+        }, {
+            token : "text",
+            regex : "[^\\*_%$`\\[#<>]+"
+        } ],
+        
+        "listblock" : [ { // Lists only escape on completely blank lines.
+            token : "empty_line",
+            regex : "^$",
+            next  : "start"
+        }, {
+            token : "text",
+            regex : ".+"
+        } ],
+        
+        "blockquote" : [ { // BLockquotes only escape on blank lines.
+            token : "empty_line",
+            regex : "^\\s*$",
+            next  : "start"
+        }, {
+            token : "string",
+            regex : ".+"
+        } ],
+        
+        "githubblock" : [ {
+            token : "support.function",
+            regex : "^```",
+            next  : "start"
+        }, {
+            token : "support.function",
+            regex : ".+"
+        } ],
+
+        "mathjax" : [ {
+            token : "markup.list",
+            regex : "\\${2}",
+            next  : "start"
+        }, {
+            token : "support.function",
+            regex : "[^\\$]+"
+        } ]
+    };
+};
+oop.inherits(MarkdownHighlightRules, TextHighlightRules);
+
+exports.MarkdownHighlightRules = MarkdownHighlightRules;
+});
+/*
  * r.js
  *
  * Copyright (C) 2009-11 by RStudio, Inc.
@@ -19332,6 +19725,676 @@ define('mode/r_scope_tree', function(require, exports, module) {
    exports.ScopeManager = ScopeManager;
 
 });/*
+ * rdoc.js
+ *
+ * Copyright (C) 2009-11 by RStudio, Inc.
+ *
+ * This program is licensed to you under the terms of version 3 of the
+ * GNU Affero General Public License. This program is distributed WITHOUT
+ * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+ * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+ *
+ */
+define("mode/rdoc", function(require, exports, module) {
+
+var oop = require("ace/lib/oop");
+var TextMode = require("ace/mode/text").Mode;
+var Tokenizer = require("ace/tokenizer").Tokenizer;
+var TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules;
+var RDocHighlightRules = require("mode/rdoc_highlight_rules").RDocHighlightRules;
+var MatchingBraceOutdent = require("ace/mode/matching_brace_outdent").MatchingBraceOutdent;
+
+var Mode = function(suppressHighlighting) {
+	if (suppressHighlighting)
+    	this.$tokenizer = new Tokenizer(new TextHighlightRules().getRules());
+	else
+    	this.$tokenizer = new Tokenizer(new RDocHighlightRules().getRules());
+    this.$outdent = new MatchingBraceOutdent();
+};
+oop.inherits(Mode, TextMode);
+
+(function() {
+    this.getNextLineIndent = function(state, line, tab) {
+        return this.$getIndent(line);
+    };
+}).call(Mode.prototype);
+
+exports.Mode = Mode;
+});
+/*
+ * rdoc_highlight_rules.js
+ *
+ * Copyright (C) 2009-11 by RStudio, Inc.
+ *
+ * This program is licensed to you under the terms of version 3 of the
+ * GNU Affero General Public License. This program is distributed WITHOUT
+ * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+ * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+ *
+ */
+define("mode/rdoc_highlight_rules", function(require, exports, module) {
+
+var oop = require("ace/lib/oop");
+var lang = require("ace/lib/lang");
+var TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules;
+
+var RDocHighlightRules = function() {
+
+    // regexp must not have capturing parentheses. Use (?:) instead.
+    // regexps are ordered -> the first match is used
+
+    this.$rules = {
+        "start" : [
+	        {
+	            token : "comment",
+	            regex : "%.*$"
+	        }, {
+	            token : "text", // non-command
+	            regex : "\\\\[$&%#\\{\\}]"
+	        }, {
+	            token : "keyword", // command
+	            regex : "\\\\(?:[a-zA-z0-9]+|[^a-zA-z0-9])"
+	        }, {
+               // Obviously these are neither keywords nor operators, but
+               // labelling them as such was the easiest way to get them
+               // to be colored distinctly from regular text
+               token : "paren.keyword.operator",
+	            regex : "[[({]"
+	        }, {
+               // Obviously these are neither keywords nor operators, but
+               // labelling them as such was the easiest way to get them
+               // to be colored distinctly from regular text
+               token : "paren.keyword.operator",
+	            regex : "[\\])}]"
+	        }, {
+	            token : "text",
+	            regex : "\\s+"
+	        }
+        ]
+    };
+};
+
+oop.inherits(RDocHighlightRules, TextHighlightRules);
+
+exports.RDocHighlightRules = RDocHighlightRules;
+});
+/*
+ * rhtml.js
+ *
+ * Copyright (C) 2009-11 by RStudio, Inc.
+ *
+ * The Initial Developer of the Original Code is
+ * Ajax.org B.V.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * This program is licensed to you under the terms of version 3 of the
+ * GNU Affero General Public License. This program is distributed WITHOUT
+ * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+ * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+ *
+ */
+
+define("mode/rhtml", function(require, exports, module) {
+
+var oop = require("ace/lib/oop");
+var HtmlMode = require("ace/mode/html").Mode;
+var Tokenizer = require("ace/tokenizer").Tokenizer;
+var RHtmlHighlightRules = require("mode/rhtml_highlight_rules").RHtmlHighlightRules;
+var SweaveBackgroundHighlighter = require("mode/sweave_background_highlighter").SweaveBackgroundHighlighter;
+var RCodeModel = require("mode/r_code_model").RCodeModel;
+
+var Mode = function(suppressHighlighting, doc, session) {
+   this.$tokenizer = new Tokenizer(new RHtmlHighlightRules().getRules());
+
+   this.codeModel = new RCodeModel(doc, this.$tokenizer, /^r-/,
+                                   /^<!--\s*begin.rcode\s*(.*)/);
+   this.foldingRules = this.codeModel;
+   this.$sweaveBackgroundHighlighter = new SweaveBackgroundHighlighter(
+         session,
+         /^<!--\s*begin.rcode\s*(?:.*)/,
+         /^\s*end.rcode\s*-->/,
+         true);
+};
+oop.inherits(Mode, HtmlMode);
+
+(function() {
+   this.insertChunkInfo = {
+      value: "<!--begin.rcode\n\nend.rcode-->\n",
+      position: {row: 0, column: 15}
+   };
+    
+   this.getNextLineIndent = function(state, line, tab, tabSize, row)
+   {
+      return this.codeModel.getNextLineIndent(row, line, state, tab, tabSize);
+   };
+
+}).call(Mode.prototype);
+
+exports.Mode = Mode;
+});
+/*
+ * rhtml_highlight_rules.js
+ *
+ * Copyright (C) 2009-11 by RStudio, Inc.
+ *
+ * The Initial Developer of the Original Code is
+ * Ajax.org B.V.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * This program is licensed to you under the terms of version 3 of the
+ * GNU Affero General Public License. This program is distributed WITHOUT
+ * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+ * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+ *
+ */
+define("mode/rhtml_highlight_rules", function(require, exports, module) {
+
+var oop = require("ace/lib/oop");
+var RHighlightRules = require("mode/r_highlight_rules").RHighlightRules;
+var HtmlHighlightRules = require("ace/mode/html_highlight_rules").HtmlHighlightRules;
+var TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules;
+
+var RHtmlHighlightRules = function() {
+
+    // regexp must not have capturing parentheses
+    // regexps are ordered -> the first match is used
+
+    this.$rules = new HtmlHighlightRules().getRules();
+    this.$rules["start"].unshift({
+        token: "support.function.codebegin",
+        regex: "^<" + "!--\\s*begin.rcode\\s*(?:.*)",
+        next: "r-start"
+    });
+
+    var rRules = new RHighlightRules().getRules();
+    this.addRules(rRules, "r-");
+    this.$rules["r-start"].unshift({
+        token: "support.function.codeend",
+        regex: "^\\s*end.rcode\\s*-->",
+        next: "start"
+    });
+};
+oop.inherits(RHtmlHighlightRules, TextHighlightRules);
+
+exports.RHtmlHighlightRules = RHtmlHighlightRules;
+});
+/*
+ * markdown.js
+ *
+ * Copyright (C) 2009-11 by RStudio, Inc.
+ *
+ * The Initial Developer of the Original Code is
+ * Ajax.org B.V.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * This program is licensed to you under the terms of version 3 of the
+ * GNU Affero General Public License. This program is distributed WITHOUT
+ * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+ * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+ *
+ */
+
+define("mode/rmarkdown", function(require, exports, module) {
+
+var oop = require("ace/lib/oop");
+var MarkdownMode = require("mode/markdown").Mode;
+var Tokenizer = require("ace/tokenizer").Tokenizer;
+var RMarkdownHighlightRules = require("mode/rmarkdown_highlight_rules").RMarkdownHighlightRules;
+var SweaveBackgroundHighlighter = require("mode/sweave_background_highlighter").SweaveBackgroundHighlighter;
+var RCodeModel = require("mode/r_code_model").RCodeModel;
+
+var Mode = function(suppressHighlighting, doc, session) {
+   this.$tokenizer = new Tokenizer(new RMarkdownHighlightRules().getRules());
+
+   this.codeModel = new RCodeModel(doc, this.$tokenizer, /^r-/,
+                                   /^`{3,}\s*\{r(.*)\}\s*$/);
+   this.foldingRules = this.codeModel;
+   this.$sweaveBackgroundHighlighter = new SweaveBackgroundHighlighter(
+         session,
+         /^`{3,}\s*\{r(?:.*)\}\s*$/,
+         /^`{3,}\s*$/,
+         true);
+};
+oop.inherits(Mode, MarkdownMode);
+
+(function() {
+   this.insertChunkInfo = {
+      value: "```{r}\n\n```\n",
+      position: {row: 0, column: 5}
+   };
+
+   this.getNextLineIndent = function(state, line, tab, tabSize, row)
+   {
+      return this.codeModel.getNextLineIndent(row, line, state, tab, tabSize);
+   };
+
+}).call(Mode.prototype);
+
+exports.Mode = Mode;
+});
+/*
+ * markdown_highlight_rules.js
+ *
+ * Copyright (C) 2009-11 by RStudio, Inc.
+ *
+ * The Initial Developer of the Original Code is
+ * Ajax.org B.V.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * This program is licensed to you under the terms of version 3 of the
+ * GNU Affero General Public License. This program is distributed WITHOUT
+ * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+ * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+ *
+ */
+define("mode/rmarkdown_highlight_rules", function(require, exports, module) {
+
+var oop = require("ace/lib/oop");
+var RHighlightRules = require("mode/r_highlight_rules").RHighlightRules;
+var MarkdownHighlightRules = require("mode/markdown_highlight_rules").MarkdownHighlightRules;
+var TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules;
+
+var RMarkdownHighlightRules = function() {
+
+    // regexp must not have capturing parentheses
+    // regexps are ordered -> the first match is used
+
+    this.$rules = new MarkdownHighlightRules().getRules();
+    this.$rules["start"].unshift({
+        token: "support.function.codebegin",
+        regex: "^`{3,}\\s*\\{r(?:.*)\\}\\s*$",
+        next: "r-start"
+    });
+
+    var rRules = new RHighlightRules().getRules();
+    this.addRules(rRules, "r-");
+    this.$rules["r-start"].unshift({
+        token: "support.function.codeend",
+        regex: "^`{3,}\\s*$",
+        next: "start"
+    });
+};
+oop.inherits(RMarkdownHighlightRules, TextHighlightRules);
+
+exports.RMarkdownHighlightRules = RMarkdownHighlightRules;
+});
+/*
+ * sweave.js
+ *
+ * Copyright (C) 2009-11 by RStudio, Inc.
+ *
+ * The Initial Developer of the Original Code is
+ * Ajax.org B.V.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * This program is licensed to you under the terms of version 3 of the
+ * GNU Affero General Public License. This program is distributed WITHOUT
+ * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+ * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+ *
+ */
+define("mode/sweave", function(require, exports, module) {
+
+var oop = require("ace/lib/oop");
+var TextMode = require("ace/mode/text").Mode;
+var Tokenizer = require("ace/tokenizer").Tokenizer;
+var TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules;
+var SweaveBackgroundHighlighter = require("mode/sweave_background_highlighter").SweaveBackgroundHighlighter;
+var SweaveHighlightRules = require("mode/sweave_highlight_rules").SweaveHighlightRules;
+var RCodeModel = require("mode/r_code_model").RCodeModel;
+var MatchingBraceOutdent = require("ace/mode/matching_brace_outdent").MatchingBraceOutdent;
+var unicode = require("ace/unicode");
+
+var Mode = function(suppressHighlighting, doc, session) {
+	if (suppressHighlighting)
+    	this.$tokenizer = new Tokenizer(new TextHighlightRules().getRules());
+	else
+    	this.$tokenizer = new Tokenizer(new SweaveHighlightRules().getRules());
+   this.$outdent = new MatchingBraceOutdent();
+
+   this.codeModel = new RCodeModel(doc, this.$tokenizer, /^r-/, /<<(.*?)>>/);
+   this.foldingRules = this.codeModel;
+   this.$sweaveBackgroundHighlighter = new SweaveBackgroundHighlighter(
+         session,
+         /^\s*\<\<.*\>\>=.*$/,
+         /^\s*@(?:\s.*)?$/,
+         false);
+   this.$session = session;
+};
+oop.inherits(Mode, TextMode);
+
+(function() {
+
+   this.tokenRe = new RegExp("^["
+       + unicode.packages.L
+       + unicode.packages.Mn + unicode.packages.Mc
+       + unicode.packages.Nd
+       + unicode.packages.Pc + "_]+", "g"
+   );
+
+   this.nonTokenRe = new RegExp("^(?:[^"
+       + unicode.packages.L
+       + unicode.packages.Mn + unicode.packages.Mc
+       + unicode.packages.Nd
+       + unicode.packages.Pc + "_]|\s])+", "g"
+   );
+
+   this.$complements = {
+            "(": ")",
+            "[": "]",
+            '"': '"',
+            "'": "'",
+            "{": "}"
+         };
+   this.$reOpen = /^[(["'{]$/;
+   this.$reClose = /^[)\]"'}]$/;
+
+   this.insertChunkInfo = {
+      value: "<<>>=\n\n@\n",
+      position: {row: 0, column: 2}
+   };
+
+   this.getLanguageMode = function(position)
+   {
+      return this.$session.getState(position.row).match(/^r-/) ? 'R' : 'TeX';
+   };
+
+   this.getNextLineIndent = function(state, line, tab, tabSize, row)
+   {
+      return this.codeModel.getNextLineIndent(row, line, state, tab, tabSize);
+   };
+
+   this.checkOutdent = function(state, line, input)
+   {
+      return this.$outdent.checkOutdent(line, input);
+   };
+
+   this.autoOutdent = function(state, doc, row)
+   {
+      return this.$outdent.autoOutdent(doc, row);
+   };
+
+   this.allowAutoInsert = this.smartAllowAutoInsert;
+
+}).call(Mode.prototype);
+
+exports.Mode = Mode;
+});
+/*
+ * sweave_background_highlighter.js
+ *
+ * Copyright (C) 2009-11 by RStudio, Inc.
+ *
+ * This program is licensed to you under the terms of version 3 of the
+ * GNU Affero General Public License. This program is distributed WITHOUT
+ * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+ * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+ *
+ */
+define("mode/sweave_background_highlighter", function(require, exports, module)
+{
+   var Range = require("ace/range").Range;
+
+   var SweaveBackgroundHighlighter = function(session, reCode, reText,
+                                              textIsTerminator) {
+      this.$session = session;
+      this.$doc = session.getDocument();
+      this.$reCode = reCode;
+      this.$reText = reText;
+      this.$textIsTerminator = textIsTerminator;
+
+      var that = this;
+      this.$doc.on('change', function(evt) {
+         that.$onDocChange.apply(that, [evt]);
+      });
+
+      this.$rowState = new Array(this.$doc.getLength());
+      this.$markers = new Array();
+
+      for (var i = 0; i < this.$doc.getLength(); i++)
+         this.$updateRow(i);
+      this.$syncMarkers(0);
+   };
+
+   (function() {
+
+      var TYPE_TEXT = 'text';
+      var TYPE_BEGIN = 'begin';
+      var TYPE_END = 'end';
+      var TYPE_RCODE = 'r';
+
+      this.$updateRow = function(row) {
+         // classify this row
+         var line = this.$doc.getLine(row);
+
+         var type = TYPE_TEXT;
+         var nextType = TYPE_TEXT;
+         if (line.match(this.$reCode)) {
+            type = TYPE_BEGIN;
+            nextType = TYPE_RCODE;
+         }
+         else if (!this.$textIsTerminator && line.match(this.$reText)) {
+            type = TYPE_END;
+            nextType = TYPE_TEXT;
+         }
+         else if (row > 0) {
+            var prevRowState = this.$rowState[row-1];
+            if (prevRowState === TYPE_BEGIN || prevRowState === TYPE_RCODE) {
+               if (line.match(this.$reText)) {
+                  type = TYPE_END;
+                  nextType = TYPE_TEXT;
+               } else {
+                  type = TYPE_RCODE;
+                  nextType = TYPE_RCODE;
+               }
+            }
+         }
+
+         this.$rowState[row] = type;
+         for (var i = row+1; i < this.$rowState.length; i++) {
+            var thisType = this.$rowState[i];
+
+            // If this row begins a code block, we're done. It's not possible
+            // that a change to an earlier row could cause changes to ripple
+            // beyond a TYPE_BEGIN row.
+            if (thisType === TYPE_BEGIN)
+               break;
+
+            // If this row ends a code block, it's more complicated. If
+            // $textIsTerminator is false, then we're done; it's not possible
+            // that a change to an earlier row could cause changes to ripple
+            // beyond this row. However, if $textIsTerminator, and we're now
+            // in text mode, then this row could've been turned into a text
+            // row.
+            if (thisType === TYPE_END) {
+               if (!this.$textIsTerminator) {
+                  break;
+               }
+               else if (nextType === TYPE_TEXT) {
+                  this.$rowState[i] = TYPE_TEXT;
+                  break;
+               }
+               else {
+                  // This row was previously TYPE_END, and is still TYPE_END so
+                  // it's safe to exit.
+                  break;
+               }
+            }
+
+            // Conversely, if $textIsTerminator, it's possible that we removed
+            // a previous reText line that causes a currently-text row to become
+            // a code terminator.
+            if (this.$textIsTerminator &&
+                nextType === TYPE_RCODE &&
+                this.$doc.getLine(i).match(this.$reText))
+            {
+               this.$updateRow(i);
+               break;
+            }
+
+            if (this.$rowState[i] === nextType)
+               break;
+            this.$rowState[i] = nextType;
+         }
+      };
+
+      this.$syncMarkers = function(startRow, rowsChanged) {
+         var dontStopBeforeRow =
+               (typeof(rowsChanged) == 'undefined' ? this.$doc.getLength()
+                                                   : startRow + rowsChanged);
+
+         var endRow = this.$doc.getLength() - 1;
+         for (var row = startRow; row <= endRow; row++) {
+            var foreign = this.$rowState[row] != TYPE_TEXT;
+            if (!!foreign != !!this.$markers[row]) {
+               if (foreign) {
+                  this.$markers[row] = this.$session.addMarker(new Range(row, 0, row + 1, 0),
+                                                               "ace_foreign_line",
+                                                               "background",
+                                                               false);
+               }
+               else {
+                  this.$session.removeMarker(this.$markers[row]);
+                  delete this.$markers[row];
+               }
+            }
+            else if (row > dontStopBeforeRow)
+               break;
+         }
+      };
+
+      this.$insertNewRows = function(index, count) {
+         var args = new Array(count + 2);
+         args[0] = index;
+         args[1] = 0;
+         Array.prototype.splice.apply(this.$rowState, args);
+      };
+
+      this.$removeRows = function(index, count) {
+         var markers = this.$rowState.splice(index, count);
+      };
+
+      this.$onDocChange = function(evt)
+      {
+         var delta = evt.data;
+
+         if (delta.action === "insertLines")
+         {
+            var newLineCount = delta.range.end.row - delta.range.start.row;
+            this.$insertNewRows(delta.range.start.row, newLineCount);
+            for (var i = 0; i < newLineCount; i++)
+               this.$updateRow(delta.range.start.row + i);
+            this.$syncMarkers(delta.range.start.row);
+         }
+         else if (delta.action === "insertText")
+         {
+            if (this.$doc.isNewLine(delta.text))
+            {
+               this.$insertNewRows(delta.range.end.row, 1);
+               this.$updateRow(delta.range.start.row);
+               this.$updateRow(delta.range.start.row + 1);
+               this.$syncMarkers(delta.range.start.row);
+            }
+            else
+            {
+               this.$updateRow(delta.range.start.row);
+               this.$syncMarkers(delta.range.start.row, 1);
+            }
+         }
+         else if (delta.action === "removeLines")
+         {
+            this.$removeRows(delta.range.start.row,
+                             delta.range.end.row - delta.range.start.row);
+            this.$updateRow(delta.range.start.row);
+            this.$syncMarkers(delta.range.start.row);
+         }
+         else if (delta.action === "removeText")
+         {
+            if (this.$doc.isNewLine(delta.text))
+            {
+               this.$removeRows(delta.range.end.row, 1);
+               this.$updateRow(delta.range.start.row);
+               this.$syncMarkers(delta.range.start.row);
+            }
+            else
+            {
+               this.$updateRow(delta.range.start.row);
+               this.$syncMarkers(delta.range.start.row, 1);
+            }
+         }
+      };
+
+   }).call(SweaveBackgroundHighlighter.prototype);
+
+   exports.SweaveBackgroundHighlighter = SweaveBackgroundHighlighter;
+});
+/*
+ * sweave_highlight_rules.js
+ *
+ * Copyright (C) 2009-11 by RStudio, Inc.
+ *
+ * This program is licensed to you under the terms of version 3 of the
+ * GNU Affero General Public License. This program is distributed WITHOUT
+ * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+ * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+ *
+ */
+define("mode/sweave_highlight_rules", function(require, exports, module) {
+
+var oop = require("ace/lib/oop");
+var TexHighlightRules = require("mode/tex_highlight_rules").TexHighlightRules;
+var RHighlightRules = require("mode/r_highlight_rules").RHighlightRules;
+var TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules;
+
+var SweaveHighlightRules = function() {
+
+    // regexp must not have capturing parentheses
+    // regexps are ordered -> the first match is used
+
+    this.$rules = new TexHighlightRules().getRules();
+    this.$rules["start"].unshift({
+        token: "comment.codebegin",
+        regex: "^\\s*\\<\\<.*\\>\\>=.*$",
+        next: "r-start"
+    });
+    this.$rules["start"].unshift({
+        token: "comment",
+        regex: "^\\s*@(?:\\s.*)?$"
+    });
+
+    var rRules = new RHighlightRules().getRules();
+    this.addRules(rRules, "r-");
+    this.$rules["r-start"].unshift({
+        token: "comment.codeend",
+        regex: "^\\s*@(?:\\s.*)?$",
+        next: "start"
+    });
+   this.$rules["r-start"].unshift({
+       token: "comment.codebegin",
+       regex: "^\\<\\<.*\\>\\>=.*$",
+       next: "r-start"
+   });
+};
+
+oop.inherits(SweaveHighlightRules, TextHighlightRules);
+
+exports.SweaveHighlightRules = SweaveHighlightRules;
+});
+/*
  * tex.js
  *
  * Copyright (C) 2009-11 by RStudio, Inc.
@@ -19483,201 +20546,4 @@ var TexHighlightRules = function(textClass) {
 oop.inherits(TexHighlightRules, TextHighlightRules);
 
 exports.TexHighlightRules = TexHighlightRules;
-});
-/*
- * auto_brace_insert.js
- *
- * Copyright (C) 2009-11 by RStudio, Inc.
- *
- * The Initial Developer of the Original Code is
- * Ajax.org B.V.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * This program is licensed to you under the terms of version 3 of the
- * GNU Affero General Public License. This program is distributed WITHOUT
- * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
- * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
- *
- */
-define("mode/auto_brace_insert", function(require, exports, module)
-{
-   var Range = require("ace/range").Range;
-   var TextMode = require("ace/mode/text").Mode;
-
-   (function()
-   {
-      this.$complements = {
-         "(": ")",
-         "[": "]",
-         '"': '"',
-         "{": "}"
-      };
-      this.$reOpen = /^[(["{]$/;
-      this.$reClose = /^[)\]"}]$/;
-
-      // reStop is the set of characters before which we allow ourselves to
-      // automatically insert a closing paren. If any other character
-      // immediately follows the cursor we will NOT do the insert.
-      this.$reStop = /^[;,\s)\]}]$/;
-
-      this.wrapInsert = function(session, __insert, position, text)
-      {
-         if (!this.insertMatching)
-            return __insert.call(session, position, text);
-
-         var cursor = session.selection.getCursor();
-         var typing = session.selection.isEmpty() &&
-                      position.row == cursor.row &&
-                      position.column == cursor.column;
-
-         if (typing) {
-            var postRng = Range.fromPoints(position, {
-               row: position.row,
-               column: position.column + 1});
-            var postChar = session.doc.getTextRange(postRng);
-            if (this.$reClose.test(postChar) && postChar == text) {
-               session.selection.moveCursorTo(postRng.end.row,
-                                              postRng.end.column,
-                                              false);
-               return;
-            }
-         }
-
-         var prevChar = null;
-         if (typing)
-         {
-            var rangeBegin = this.$moveLeft(session.doc, position);
-            prevChar = session.doc.getTextRange(Range.fromPoints(rangeBegin,
-                                                                 position));
-         }
-
-         var endPos = __insert.call(session, position, text);
-         // Is this an open paren?
-         if (typing && this.$reOpen.test(text)) {
-            // Is the next char not a character or number?
-            var nextCharRng = Range.fromPoints(endPos, {
-               row: endPos.row,
-               column: endPos.column + 1
-            });
-            var nextChar = session.doc.getTextRange(nextCharRng);
-            if (this.$reStop.test(nextChar) || nextChar.length == 0) {
-               if (this.allowAutoInsert(session, endPos, this.$complements[text])) {
-                  session.doc.insert(endPos, this.$complements[text]);
-                  session.selection.moveCursorTo(endPos.row, endPos.column, false);
-               }
-            }
-         }
-         else if (typing && text === "\n") {
-            var rangeEnd = this.$moveRight(session.doc, endPos);
-            if (prevChar == "{" && "}" == session.doc.getTextRange(Range.fromPoints(endPos, rangeEnd)))
-            {
-               var indent;
-               if (this.getIndentForOpenBrace)
-                  indent = this.getIndentForOpenBrace(this.$moveLeft(session.doc, position));
-               else
-                  indent = this.$getIndent(session.doc.getLine(endPos.row - 1));
-               session.doc.insert(endPos, "\n" + indent);
-               session.selection.moveCursorTo(endPos.row, endPos.column, false);
-            }
-         }
-         return endPos;
-      };
-
-      this.allowAutoInsert = function(session, pos, text)
-      {
-         return true;
-      };
-
-      // To enable this, call "this.allowAutoInsert = this.smartAllowAutoInsert"
-      // in the mode subclass
-      this.smartAllowAutoInsert = function(session, pos, text)
-      {
-         if (text !== "'" && text !== '"')
-            return true;
-
-         // Only allow auto-insertion of a quote char if the actual character
-         // that was typed, was the start of a new string token
-
-         if (pos.column == 0)
-            return true;
-
-         var token = this.codeModel.getTokenForPos(pos, false, true);
-         return token &&
-                token.type === 'string' &&
-                token.column === pos.column-1;
-      };
-
-      this.wrapRemove = function(editor, __remove, dir)
-      {
-         var cursor = editor.selection.getCursor();
-         var doc = editor.session.getDocument();
-
-         // Here are some easy-to-spot reasons why it might be impossible for us
-         // to need our special deletion logic.
-         if (!this.insertMatching ||
-             dir != "left" ||
-             !editor.selection.isEmpty() ||
-             editor.$readOnly ||
-             cursor.column == 0 ||     // hitting backspace at the start of line
-             doc.getLine(cursor.row).length <= cursor.column) {
-
-            return __remove.call(editor, dir);
-         }
-
-         var leftRange = Range.fromPoints(this.$moveLeft(doc, cursor), cursor);
-         var rightRange = Range.fromPoints(cursor, this.$moveRight(doc, cursor));
-         var leftText = doc.getTextRange(leftRange);
-
-         var deleteRight = this.$reOpen.test(leftText) &&
-                           this.$complements[leftText] == doc.getTextRange(rightRange);
-
-         __remove.call(editor, dir);
-         if (deleteRight)
-            __remove.call(editor, 'right');
-      };
-
-      this.$moveLeft = function(doc, pos)
-      {
-         if (pos.row == 0 && pos.column == 0)
-            return pos;
-
-         var row = pos.row;
-         var col = pos.column;
-
-         if (col)
-            col--;
-         else
-         {
-            row--;
-            col = doc.getLine(row).length;
-         }
-         return {row: row, column: col};
-      };
-
-      this.$moveRight = function(doc, pos)
-      {
-         var row = pos.row;
-         var col = pos.column;
-
-         if (doc.getLine(row).length != col)
-            col++;
-         else
-         {
-            row++;
-            col = 0;
-         }
-
-         if (row >= doc.getLength())
-            return pos;
-         else
-            return {row: row, column: col};
-      };
-   }).call(TextMode.prototype);
-
-   exports.setInsertMatching = function(insertMatching) {
-      TextMode.prototype.insertMatching = insertMatching;
-   };
-
 });

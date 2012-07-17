@@ -641,6 +641,17 @@ FacetChart.facet_osm_plot = function(lats, lons, color, width, height)
 
     lats = Facet.attribute_buffer({vertex_array: lats, item_size: 1});
     lons = Facet.attribute_buffer({vertex_array: lons, item_size: 1});
+    console.log(color);
+
+    if (color.length === 3) {
+        color = Shade.vec(color[0], color[1], color[2], 1);
+    } else if (color.length > 1) {
+        color = Shade.vec(Facet.attribute_buffer({vertex_array: color, item_size: 3}), 1);
+    }
+
+    // color = Shade.Utils.choose([Shade.vec(1,0,0,1),
+    //                             Shade.vec(0,1,0,1),
+    //                             Shade.vec(0,0,1,1)])(color);
 
     var dots_model = Facet.model({
         type: "points",
@@ -649,7 +660,7 @@ FacetChart.facet_osm_plot = function(lats, lons, color, width, height)
     });
 
     var dots_batch = Facet.bake(dots_model, {
-        color: Shade.color("black"),
+        color: color,
         point_size: 2,
         position: globe.lat_lon_position(dots_model.lats.radians(), 
                                          dots_model.lons.radians())
@@ -2550,7 +2561,7 @@ function create_markdown_cell_html_view(cell_model)
     inner_div.append(markdown_div);
     markdown_div.append(ace_div);
     var widget = ace.edit(ace_div[0]);
-    var RMode = require("mode/r").Mode;
+    var RMode = require("mode/rmarkdown").Mode;
     var session = widget.getSession();
     var doc = session.doc;
     widget.getSession().setMode(new RMode(false, doc, session));

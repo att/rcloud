@@ -103,7 +103,7 @@ function create_markdown_cell_html_view(cell_model)
     inner_div.append(markdown_div);
     markdown_div.append(ace_div);
     var widget = ace.edit(ace_div[0]);
-    var RMode = require("mode/r").Mode;
+    var RMode = require("mode/rmarkdown").Mode;
     var session = widget.getSession();
     var doc = session.doc;
     widget.getSession().setMode(new RMode(false, doc, session));
