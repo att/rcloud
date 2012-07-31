@@ -1,0 +1,7 @@
+*~
+*.pyc
+pids.txt
+tmp
+userfiles
+lib/node_modules
+js/node_modules
