@@ -24,7 +24,8 @@ FacetChart.facet_tour_plot = function(array_list)
         for (var i=0; i<array_list.value.length; ++i) {
             result["dim_" + i] = Facet.attribute_buffer({
                 vertex_array: array_list.value[i].value,
-                item_size: 1
+                item_size: 1,
+                keep_array: true
             });
             columns.push("dim_" + i);
         }
