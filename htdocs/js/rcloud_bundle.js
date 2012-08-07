@@ -2629,7 +2629,8 @@ function create_markdown_cell_html_view(cell_model)
                 });
             
             // typeset the math
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+            if (!_.isUndefined(MathJax))
+                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
                 
             this.show_result();
         },
@@ -2852,7 +2853,8 @@ function create_interactive_cell_html_view(cell_model)
                 });
             
             // typeset the math
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+            if (!_.isUndefined(MathJax))
+                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
                 
             this.show_result();
         },
