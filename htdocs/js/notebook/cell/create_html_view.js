@@ -127,6 +127,11 @@ function create_markdown_cell_html_view(cell_model)
     var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Not evaluated</span></div>');
     inner_div.append(r_result_div);
 
+    // FIXME this is a terrible hack created simply so we can scroll
+    // to the end of a div. I know no better way of doing this..
+    var end_of_div_span = $('<span></span>');
+    inner_div.append(end_of_div_span);
+
     var current_mode;
 
     var result = {
@@ -175,6 +180,7 @@ function create_markdown_cell_html_view(cell_model)
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
                 
             this.show_result();
+            end_of_div_span[0].scrollIntoView();
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -212,7 +218,9 @@ function create_markdown_cell_html_view(cell_model)
 
             editor_row.hide();
             markdown_div.hide();
-            r_result_div.slideDown(150); // show();
+            r_result_div.slideDown(150, function() {
+                end_of_div_span[0].scrollIntoView();
+            }); // show();
             current_mode = "result";
         },
         hide_all: function() {
@@ -351,6 +359,8 @@ function create_interactive_cell_html_view(cell_model)
 
     var r_result_div = $('<div class="r-result-div"></div>');
     inner_div.append(r_result_div);
+    var end_of_div_span = $('<span></span>');
+    inner_div.append(end_of_div_span);
     var current_mode;
 
     var result = {
@@ -399,6 +409,7 @@ function create_interactive_cell_html_view(cell_model)
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
                 
             this.show_result();
+            end_of_div_span[0].scrollIntoView();
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -435,7 +446,9 @@ function create_interactive_cell_html_view(cell_model)
 
             editor_row.hide();
             markdown_div.hide();
-            r_result_div.slideDown(150);
+            r_result_div.slideDown(150, function() {
+                end_of_div_span[0].scrollIntoView();
+            });
             current_mode = "result";
         },
         hide_all: function() {

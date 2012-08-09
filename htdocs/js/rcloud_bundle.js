@@ -482,7 +482,8 @@ FacetChart.facet_tour_plot = function(array_list)
         for (var i=0; i<array_list.value.length; ++i) {
             result["dim_" + i] = Facet.attribute_buffer({
                 vertex_array: array_list.value[i].value,
-                item_size: 1
+                item_size: 1,
+                keep_array: true
             });
             columns.push("dim_" + i);
         }
@@ -2584,6 +2585,8 @@ function create_markdown_cell_html_view(cell_model)
 
     var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Not evaluated</span></div>');
     inner_div.append(r_result_div);
+    var end_of_div_span = $('<span></span>');
+    inner_div.append(end_of_div_span);
 
     var current_mode;
 
@@ -2633,6 +2636,9 @@ function create_markdown_cell_html_view(cell_model)
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
                 
             this.show_result();
+            console.log("before!");
+            end_of_div_span[0].scrollIntoView();
+            console.log("after!");
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -2670,7 +2676,9 @@ function create_markdown_cell_html_view(cell_model)
 
             editor_row.hide();
             markdown_div.hide();
-            r_result_div.slideDown(150); // show();
+            r_result_div.slideDown(150, function() {
+                end_of_div_span[0].scrollIntoView();
+            }); // show();
             current_mode = "result";
         },
         hide_all: function() {
@@ -2809,6 +2817,8 @@ function create_interactive_cell_html_view(cell_model)
 
     var r_result_div = $('<div class="r-result-div"></div>');
     inner_div.append(r_result_div);
+    var end_of_div_span = $('<span></span>');
+    inner_div.append(end_of_div_span);
     var current_mode;
 
     var result = {
@@ -2857,6 +2867,9 @@ function create_interactive_cell_html_view(cell_model)
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
                 
             this.show_result();
+            console.log("before!");
+            end_of_div_span[0].scrollIntoView();
+            console.log("after!");
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -2893,7 +2906,9 @@ function create_interactive_cell_html_view(cell_model)
 
             editor_row.hide();
             markdown_div.hide();
-            r_result_div.slideDown(150);
+            r_result_div.slideDown(150, function() {
+                end_of_div_span[0].scrollIntoView();
+            });
             current_mode = "result";
         },
         hide_all: function() {
