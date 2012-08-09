@@ -22,6 +22,11 @@
  * <http://jquery.offput.ca/every/>
  *
  * Date: Tue, 07 Feb 2012 22:18:58 +0000
+ * 
+ * 
+ * Changes by Carlos Scheidegger:
+ * 
+ * hack cmd+left and cmd+right to behave like home and end
  */
 
 /*
@@ -1177,6 +1182,8 @@ function get_stack(caller) {
                             }
                         }
                         self.position(pos);
+                    } else if (e.which === 37 && (e.metaKey || e.altKey)) {
+                        self.position(0);
                     } else {
                         //LEFT ARROW or CTRL+B
                         if (position > 0) {
@@ -1206,6 +1213,8 @@ function get_stack(caller) {
                             }
                         }
                         redraw();
+                    } else if (e.which === 39 && (e.metaKey || e.altKey)) {
+                        self.position(command.length);
                     } else {
                         if (position < command.length) {
                             ++position;
@@ -1260,7 +1269,8 @@ function get_stack(caller) {
                     return true;
                 }
                 return false;
-            } /*else {
+            }
+            /*else {
                 if ((e.altKey && e.which == 68) || 
                     (e.ctrlKey && [65, 66, 68, 69, 80, 78, 70].has(e.which)) ||
                     // 68 == D
