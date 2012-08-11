@@ -4,21 +4,34 @@
 ## as well as define any global variables you want all
 ## scripts to see
 
+## this is NO LONGER USED -- it is present for compatibiliy only and will go away
 .host <- "localhost"
 
 ## Today, pretty much everyone speaks UTF-8, it makes the life easier
 Sys.setlocale(,"en_US.UTF-8")
 
 ## it is useful to have access to the root of your
-## installation from R scripts
+## installation from R scripts -- for RCloud this is *mandatory*
 root <- Sys.getenv("ROOT")
 if (is.null(root) || nchar(root) == 0) root <- "/var/FastRWeb"
+cat("Using ROOT =", root, "\n")
 
+# CONFROOT/DATAROOT are purely optional
+# Whom are we kidding? Although it may be nice to abstract out all paths
+# this is far from complete (what about htdocs?) and not very practical
+# and this likely to go away (it's gone from the start script already)
+# until replaced by something more sensible (if at all)
 configuration.root <- Sys.getenv("CONFROOT")
-if (is.null(configuration.root) || nchar(configuration.root) == 0) configuration.root <- "/var/FastRWeb/code"
+if (!nzchar(configuration.root)) configuration.root <- paste(root, "code", sep='/')
+cat("Using CONFROOT =", configuration.root, "\n")
 
 data.root <- Sys.getenv("DATAROOT")
-if (is.null(data.root) || nchar(data.root) == 0) configuration.root <- "/var/FastRWeb"
+if (!nzchar(data.root)) data.root <- paste(root, "data", sep='/')
+cat("Using DATAROOT =", data.root, "\n")
+
+## load any local configuration (optional)
+local.conf <- paste(configuration.root, "local.R", sep='/')
+if (file.exists(local.conf)) source(local.conf)
 
 ## run the server in the "tmp" directory of the root in
 ## case some files need to be created
@@ -32,9 +45,12 @@ cat("Starting Rserve on", host,"\n")
 
 ## This is jsut a friendly way to load package and report success/failure
 ## You will definiteily need FastRWeb, others are optional
-pkgs <- c("Cairo", "FastRWeb", "Rserve", "png")
+pkgs <- c("Cairo", "FastRWeb", "Rserve", "png", "knitr", "markdown")
 cat("Loading packages...\n")
 for (pkg in pkgs) cat(pkg, ": ",require(pkg, quietly=TRUE, character.only=TRUE),"\n",sep='')
+
+## we actually need knitr ...
+opts_knit$set(global.device=TRUE)
 
 ## fix font mappings in Cairo -- some machines require this
 if (exists("CairoFonts")) CairoFonts("Arial:style=Regular","Arial:style=Bold","Arial:style=Italic","Helvetica","Symbol")
@@ -45,6 +61,8 @@ if (isTRUE(file.exists(data.fn))) {
   cat("Loading data...\n")
   load(data.fn)
 }
+
+## --- RCloud part folows ---
 
 ## WS init
 .session.init <- function() {
@@ -60,6 +78,7 @@ if (isTRUE(file.exists(data.fn))) {
     }
 }
 
+## this serves Rserve's built-in HTTP server
 .http.request <- function(url, query, body, headers, ...) {
   port <- ""
   host <- if (length(headers)) {
@@ -73,7 +92,7 @@ if (isTRUE(file.exists(data.fn))) {
   hosturl <- paste("http://", host, port, sep='')
   
   if (isTRUE(url == "") || isTRUE(url == "/")) url <- "/index.html"
-  fn <- paste(root, url, sep='/')
+  fn <- paste(root, "htdocs", url, sep='/')
   if (!file.exists(fn))
     list(paste("ERROR: item '", fn, "' not found!", sep=''),"text/html", character(), 404L)
   else {
@@ -89,12 +108,10 @@ if (isTRUE(file.exists(data.fn))) {
     ctl <- list("text/javascript"=".js", "image/png"=".png",
                 "image/jpeg"=".jpg", "image/jpeg"=".jpeg", "text/css"=".css")
     for (i in seq_along(ctl))
-      if (length(grep(paste("\\",ctl[[i]],"$",sep=''), TRUE))) {
+      if (length(grep(paste("\\",ctl[[i]],"$",sep=''), fn, TRUE))) {
         ct <- names(ctl)[i]
         break
       }
     list(r, ct)
   }
 }
-
-  
