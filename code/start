@@ -1,6 +1,6 @@
 #!/bin/sh
 # script to start Rserve with the configuration FastRWeb/code/rserve.conf
-# add -d if you want to start teh debugging version
+# add -d if you want to start the debugging version
 
 if [ -z "$ROOT" ]; then ## some auto-detection if ROOT is not set...
     for c in /data/ws /var/www/ws /var/FastRWeb /data/FastRWeb; do
@@ -43,5 +43,6 @@ if [ "$1" = -d ]; then
   PX=.dbg
 fi
 
-echo $RBIN CMD ${PRE}Rserve$PX --RS-conf $CONFROOT/rserve.conf --RS-source $CONFROOT/rserve.R --vanilla --no-save
-$RBIN CMD ${PRE}Rserve$PX --RS-conf $CONFROOT/rserve.conf --RS-source $CONFROOT/rserve.R --vanilla --no-save
+CMDSTART="$RBIN CMD ${PRE}Rserve$PX --RS-conf $CONFROOT/rserve.conf --RS-source $CONFROOT/rserve.R --no-save"
+echo $CMDSTART
+$CMDSTART

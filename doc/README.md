@@ -16,6 +16,14 @@ The following starts a pretty basic instance of RCloud serving on port 8080:
     $ cd $RCLOUD_ROOT
     $ ROOT=`pwd`/htdocs DATAROOT=`pwd`/userdata CONFROOT=`pwd`/code code/start -d
 
+Note you need to install the following R packages in advance:
+
+    install.packages(c('Cairo', 'FastRWeb', 'png', 'knitr', 'markdown', 'hash'))
+
+And the R package **Rserve** needs to be installed with `sudo`:
+
+    install.packages('Rserve')
+
 # Directory structure
 
 - code: Rserve configuration, and R source files used server-side.
