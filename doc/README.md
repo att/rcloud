@@ -14,7 +14,14 @@ type make.
 The following starts a pretty basic instance of RCloud serving on port 8080:
 
     $ cd $RCLOUD_ROOT
-    $ ROOT=`pwd`/htdocs DATAROOT=`pwd`/userdata CONFROOT=`pwd`/code code/start -d
+    $ ROOT=`pwd` code/start
+
+You will need several packages first, though. You can install them in R using:
+
+   install.packages(c("Rserve", "FastRWeb", "knitr", "markdown"),,
+                    c("http://rforge.net", "http://r.research.att.com"))
+
+(the second URL can be any CRAN mirror)
 
 # Directory structure
 
