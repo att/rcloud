@@ -43,5 +43,6 @@ if [ "$1" = -d ]; then
   PX=.dbg
 fi
 
-echo $RBIN CMD ${PRE}Rserve$PX --RS-conf $CONFROOT/rserve.conf --RS-source $CONFROOT/rserve.R --vanilla --no-save
-$RBIN CMD ${PRE}Rserve$PX --RS-conf $CONFROOT/rserve.conf --RS-source $CONFROOT/rserve.R --vanilla --no-save
+CMDSTART="$RBIN CMD ${PRE}Rserve$PX --RS-conf $CONFROOT/rserve.conf --RS-source $CONFROOT/rserve.R --vanilla --no-save"
+echo $CMDSTART
+$CMDSTART
