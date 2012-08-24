@@ -136,7 +136,7 @@ options(browser = function(url, ...) if(grepl("^http://127.0.0.1:", url)) self.o
 
 ## while at it, pass other requests as OOB, too
 options(pager = function(...) self.oobSend(list("pager", ...)))
-options(editor = function(file) self.oobSend(list("editor", file)))
+options(editor = function(...) self.oobSend(list("editor", ...)))
 
 ## and some options that may be of interest
 options(demo.ask = FALSE)
