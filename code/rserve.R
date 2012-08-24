@@ -80,6 +80,9 @@ if (isTRUE(file.exists(data.fn))) {
 
 ## this serves Rserve's built-in HTTP server
 .http.request <- function(url, query, body, headers, ...) {
+  ## pass-thru requests for the built-in R help system
+  if (grepl("^/library/|^/doc/", url)) return(tools:::httpd(url, query, body, headers, ...))
+  ## process everything else
   port <- ""
   host <- if (length(headers)) {
     h <- strsplit(rawToChar(headers), "[\n\r]+")[[1]]
@@ -92,10 +95,13 @@ if (isTRUE(file.exists(data.fn))) {
   hosturl <- paste("http://", host, port, sep='')
   
   if (isTRUE(url == "") || isTRUE(url == "/")) url <- "/index.html"
+
+  ## serve files from the htdocs directory
   fn <- paste(root, "htdocs", url, sep='/')
   if (!file.exists(fn))
     list(paste("ERROR: item '", fn, "' not found!", sep=''),"text/html", character(), 404L)
   else {
+    ## if the file is an R script, run it (via FastRWeb) instead of serving the content
     if (length(grep("\\.R$", fn))) {
       source(fn, TRUE)
       return(run(url, query, body, headers))
@@ -115,3 +121,24 @@ if (isTRUE(file.exists(data.fn))) {
     list(r, ct)
   }
 }
+
+## This is a bit of a hack (errr.. I mean a serious hack)
+## we fake out R to think that Rhttpd is running and hijack the browser
+## to pass all requests into the client
+local({
+  env <- environment(tools:::startDynamicHelp)
+  unlockBinding("httpdPort", env)
+  assign("httpdPort", 1L, env)
+  lockBinding("httpdPort", env)
+})
+options(help_type="html")
+options(browser = function(url, ...) if(grepl("^http://127.0.0.1:", url)) self.oobSend(list("browsePath", gsub("^http://[^/]+", "", url))) else self.oobSend(list("browseURL", url)))
+
+## while at it, pass other requests as OOB, too
+options(pager = function(...) self.oobSend(list("pager", ...)))
+options(editor = function(file) self.oobSend(list("editor", file)))
+
+## and some options that may be of interest
+options(demo.ask = FALSE)
+options(example.ask = FALSE)
+options(menu.graphics = FALSE)
