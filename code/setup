@@ -1,0 +1,5 @@
+#!/bin/bash
+
+mkdir -p data/userfiles
+mkdir -p data/history
+mkdir -p tmp
