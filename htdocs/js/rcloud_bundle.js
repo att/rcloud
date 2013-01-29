@@ -716,7 +716,7 @@ RClient = {
                 _received_handshake = true;
                 // result.post_response("Welcome to R-on-the-browser!");
                 result.running = true;
-		result.send(".session.init()");
+		result.send("session.init()");
                 onconnect && onconnect.call(result);
             }
         }
@@ -915,7 +915,7 @@ RClient = {
                 if (silent === undefined) {
                     silent = false;
                 }
-                return [ ".session.eval({" + command + "}, "
+                return [ "session.eval({" + command + "}, "
                          + this_command + ", "
                          + (silent?"TRUE":"FALSE") + ")",
                          this_command ];
@@ -923,14 +923,14 @@ RClient = {
 
             markdown_wrap_command: function(command, silent) {
                 var this_command = command_counter++;
-                return [ ".session.markdown.eval({markdownToHTML(text=paste(knit(text=" + escape_r_literal_string(command+'\n') + "), collapse=\"\\n\"), fragment=TRUE)}, "
+                return [ "session.markdown.eval({markdownToHTML(text=paste(knit(text=" + escape_r_literal_string(command+'\n') + "), collapse=\"\\n\"), fragment=TRUE)}, "
                          + this_command + ", "
                          + (silent?"TRUE":"FALSE") + ")",
                          this_command ];
             },
 
             log: function(command) {
-                command = ".session.log(\"" + rcloud.username() + "\", \"" +
+                command = "session.log(\"" + rcloud.username() + "\", \"" +
                     command.replace(/\\/g,"\\\\").replace(/"/g,"\\\"")
                 + "\")";
                 this.send(command);
@@ -2585,6 +2585,9 @@ function create_markdown_cell_html_view(cell_model)
 
     var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Not evaluated</span></div>');
     inner_div.append(r_result_div);
+
+    // FIXME this is a terrible hack created simply so we can scroll
+    // to the end of a div. I know no better way of doing this..
     var end_of_div_span = $('<span></span>');
     inner_div.append(end_of_div_span);
 
@@ -2636,9 +2639,7 @@ function create_markdown_cell_html_view(cell_model)
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
                 
             this.show_result();
-            console.log("before!");
             end_of_div_span[0].scrollIntoView();
-            console.log("after!");
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -2867,9 +2868,7 @@ function create_interactive_cell_html_view(cell_model)
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
                 
             this.show_result();
-            console.log("before!");
             end_of_div_span[0].scrollIntoView();
-            console.log("after!");
         },
 
         //////////////////////////////////////////////////////////////////////
