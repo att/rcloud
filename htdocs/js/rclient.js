@@ -33,7 +33,7 @@ RClient = {
                 _received_handshake = true;
                 // result.post_response("Welcome to R-on-the-browser!");
                 result.running = true;
-		result.send(".session.init()");
+		result.send("session.init()");
                 onconnect && onconnect.call(result);
             }
         }
@@ -232,7 +232,7 @@ RClient = {
                 if (silent === undefined) {
                     silent = false;
                 }
-                return [ ".session.eval({" + command + "}, "
+                return [ "session.eval({" + command + "}, "
                          + this_command + ", "
                          + (silent?"TRUE":"FALSE") + ")",
                          this_command ];
@@ -240,14 +240,14 @@ RClient = {
 
             markdown_wrap_command: function(command, silent) {
                 var this_command = command_counter++;
-                return [ ".session.markdown.eval({markdownToHTML(text=paste(knit(text=" + escape_r_literal_string(command+'\n') + "), collapse=\"\\n\"), fragment=TRUE)}, "
+                return [ "session.markdown.eval({markdownToHTML(text=paste(knit(text=" + escape_r_literal_string(command+'\n') + "), collapse=\"\\n\"), fragment=TRUE)}, "
                          + this_command + ", "
                          + (silent?"TRUE":"FALSE") + ")",
                          this_command ];
             },
 
             log: function(command) {
-                command = ".session.log(\"" + rcloud.username() + "\", \"" +
+                command = "session.log(\"" + rcloud.username() + "\", \"" +
                     command.replace(/\\/g,"\\\\").replace(/"/g,"\\\"")
                 + "\")";
                 this.send(command);

@@ -1,0 +1,9 @@
+Package: rcloud.support
+Type: Package
+Title: Support Package for the RCloud environment
+Version: 1.0
+Date: 2013-01-28
+Author: Carlos Scheidegger <cscheid@research.att.com>
+Maintainer: Carlos Scheidegger <cscheid@research.att.com>
+Description: It's used by RCloud internally.
+License: EPL

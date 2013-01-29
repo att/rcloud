@@ -1,10 +1,6 @@
-library(knitr)
-library(markdown)
-library(hash)
-
-.session <- new.env(parent=emptyenv())
-.session$WSdev.width <- 300
-.session$WSdev.height <- 300
+require(knitr)
+require(markdown)
+require(hash)
 
 # create a new device constructor
 WSdev <- function(width, height, ...) {
@@ -25,7 +21,7 @@ onSave <- function(dev, page, cmd="img.url.final") {
     TRUE
 }
 
-.session.eval <- function(x, command_id, silent) {
+session.eval <- function(x, command_id, silent) {
   val <- try(x, silent=TRUE)
   if (!inherits(val, "try-error") && !silent) print(val)
   if (.Device == "Cairo") {
@@ -42,7 +38,7 @@ onSave <- function(dev, page, cmd="img.url.final") {
   }
 }
 
-.session.markdown.eval <- function(x, command_id, silent) {
+session.markdown.eval <- function(x, command_id, silent) {
   val <- try(x, silent=TRUE)
   if (!inherits(val, "try-error") && !silent) print(val)
   if (.Device == "Cairo") {
@@ -59,11 +55,11 @@ onSave <- function(dev, page, cmd="img.url.final") {
   }
 }
 
-.session.log <- function(user, v) {
+session.log <- function(user, v) {
   vs <- strsplit(v, "\n")
   for (i in 1:length(vs[[1]])) {
     cat(paste(paste(Sys.time(), user, vs[[1]][i], sep="|"),"\n"),
-        file=paste(data.root,"history","main_log.txt",sep='/'), append=TRUE)
+        file=paste(.rcloud.conf$data.root,"history","main_log.txt",sep='/'), append=TRUE)
   }
 }
 
@@ -133,27 +129,27 @@ wtour <- function(...)
 
 rcloud.exec.user.file <- function(user, filename)
 {
-  .session.eval(eval(parse(text=readLines(rcloud.user.file.name(user, filename)))),
-                silent=TRUE)
+  session.eval(eval(parse(text=readLines(rcloud.user.file.name(user, filename)))),
+               silent=TRUE)
 }
 
 rcloud.user.file.name <- function(user, filename) {
-  paste(data.root,"userfiles",user,filename,sep='/')
+  paste(.rcloud.conf$data.root,"userfiles",user,filename,sep='/')
 }
 
 rcloud.list.all.initial.filenames <- function() {
-    users <- list.files(path = paste(data.root, "userfiles", sep = "/"))
+    users <- list.files(path = paste(.rcloud.conf$data.root, "userfiles", sep = "/"))
     lapply(users, function(user) {
-        filenames <- list.files(path = paste(data.root, "userfiles", user, sep = "/"))
+        filenames <- list.files(path = paste(.rcloud.conf$data.root, "userfiles", user, sep = "/"))
         list(user, lapply(filenames, function(filename) {
-            list(filename, format(file.info(paste(data.root, "userfiles", user, filename, 
+            list(filename, format(file.info(paste(.rcloud.conf$data.root, "userfiles", user, filename, 
                 sep = "/"))$mtime))
         }))
     })
 }
 
 rcloud.list.initial.filenames <- function(user) {
-  list.files(path=paste(data.root, "userfiles", user, sep='/'))
+  list.files(path=paste(.rcloud.conf$data.root, "userfiles", user, sep='/'))
 }
 
 rcloud.load.user.file <- function(user, filename) {
@@ -194,7 +190,7 @@ rcloud.search <- function(search.string) {
 
 rcloud.record.cell.execution <- function(user, json.string) {
   cat(paste(paste(Sys.time(), user, json.string, sep="|"), "\n"),
-      file=paste(data.root, "history", "main_log.txt", sep='/'), append=TRUE)
+      file=paste(.rcloud.conf$data.root, "history", "main_log.txt", sep='/'), append=TRUE)
 }
 
 ################################################################################
@@ -202,9 +198,6 @@ rcloud.record.cell.execution <- function(user, json.string) {
 
 # FIXME should use libuuid directly
 generate.uuid <- function() system("uuidgen", intern=TRUE);
-
-wplot.uuid <- generate.uuid();
-global.result.hash <- hash();
 
 stash.result <- function(value) {
   new.hash <- generate.uuid();
@@ -226,7 +219,101 @@ rcloud.fetch.deferred.result <- function(key) {
 ################################################################################
 # setup the r-side environment
 
-options(device=WSdev)
-setwd(paste(root,"/tmp",sep=''))
-# as the last thing, OOB send the ready-to-start signal
-NULL
+configure.rcloud <- function () {
+  .session <<- new.env(parent=emptyenv())
+  .session$WSdev.width <- 300
+  .session$WSdev.height <- 300
+
+  wplot.uuid <<- generate.uuid();
+  global.result.hash <<- hash::hash(); # why doesn't this work as 'hash()'?
+
+  .rcloud.conf <<- new.env(parent=emptyenv())
+  cat("Using rcloud.conf" , .rcloud.conf)
+
+  ## it is useful to have access to the root of your
+  ## installation from R scripts -- for RCloud this is *mandatory*
+  .rcloud.conf$root <- Sys.getenv("ROOT")
+  if (is.null(.rcloud.conf$root) || nchar(.rcloud.conf$root) == 0) root <- "/var/FastRWeb"
+  cat("Using ROOT =", .rcloud.conf$root, "\n")
+
+  # CONFROOT/DATAROOT are purely optional
+  # Whom are we kidding? Although it may be nice to abstract out all paths
+  # this is far from complete (what about htdocs?) and not very practical
+  # and this likely to go away (it's gone from the start script already)
+  # until replaced by something more sensible (if at all)
+  .rcloud.conf$configuration.root <- Sys.getenv("CONFROOT")
+  if (!nzchar(.rcloud.conf$configuration.root))
+    .rcloud.conf$configuration.root <- paste(.rcloud.conf$root, "code", sep='/')
+  cat("Using CONFROOT =", .rcloud.conf$configuration.root, "\n")
+
+  .rcloud.conf$data.root <- Sys.getenv("DATAROOT")
+  if (!nzchar(.rcloud.conf$data.root))
+    .rcloud.conf$data.root <- paste(.rcloud.conf$root, "data", sep='/')
+  cat("Using DATAROOT =", .rcloud.conf$data.root, "\n")
+
+  ## load any local configuration (optional)
+  .rcloud.conf$local.conf <- paste(.rcloud.conf$configuration.root, "local.R", sep='/')
+  if (file.exists(.rcloud.conf$local.conf))
+    source(.rcloud.conf$local.conf)
+
+  ## run the server in the "tmp" directory of the root in
+  ## case some files need to be created
+  .rcloud.conf$tmp.dir <- paste(.rcloud.conf$root,"tmp",sep='/')
+  if (!file.exists(.rcloud.conf$tmp.dir))
+    dir.create(.rcloud.conf$tmp.dir)
+  setwd(.rcloud.conf$tmp.dir)
+
+  ## if you have multiple servers it's good to know which machine this is
+  .rcloud.conf$host <- tolower(system("hostname -s", TRUE))
+  cat("Starting Rserve on", .rcloud.conf$host,"\n")
+
+  ## This is jsut a friendly way to load package and report success/failure
+  ## You will definiteily need FastRWeb, others are optional
+  pkgs <- c("Cairo", "FastRWeb", "Rserve", "png", "knitr", "markdown")
+  cat("Loading packages...\n")
+  for (pkg in pkgs)
+    cat(pkg, ": ",require(pkg, quietly=TRUE, character.only=TRUE),"\n",sep='')
+  
+  ## we actually need knitr ...
+  opts_knit$set(global.device=TRUE)
+
+  ## fix font mappings in Cairo -- some machines require this
+  if (exists("CairoFonts"))
+    CairoFonts("Arial:style=Regular","Arial:style=Bold","Arial:style=Italic","Helvetica","Symbol")
+
+  options(device=WSdev)
+
+  # FIXME why do we have both this and tmd.dir above??
+  setwd(paste(.rcloud.conf$root,"/tmp",sep=''))
+
+  ## Load any data you want
+  .rcloud.conf$data.fn <- paste(.rcloud.conf$root, "code", "data.RData", sep='/')
+  if (isTRUE(file.exists(.rcloud.conf$data.fn))) {
+    cat("Loading data...\n")
+    load(.rcloud.conf$data.fn)
+  }
+}
+
+start.rcloud <- function() {
+  ## This is a bit of a hack (errr.. I mean a serious hack)
+  ## we fake out R to think that Rhttpd is running and hijack the browser
+  ## to pass all requests into the client
+  local({
+    env <- environment(tools:::startDynamicHelp)
+    unlockBinding("httpdPort", env)
+    assign("httpdPort", 1L, env)
+    lockBinding("httpdPort", env)
+  })
+  options(help_type="html")
+  options(browser = function(url, ...) if(grepl("^http://127.0.0.1:", url)) self.oobSend(list("browsePath", gsub("^http://[^/]+", "", url))) else self.oobSend(list("browseURL", url)))
+  
+  ## while at it, pass other requests as OOB, too
+  options(pager = function(...) self.oobSend(list("pager", ...)))
+  options(editor = function(...) self.oobSend(list("editor", ...)))
+  
+  ## and some options that may be of interest
+  options(demo.ask = FALSE)
+  options(example.ask = FALSE)
+  options(menu.graphics = FALSE)
+}
+
