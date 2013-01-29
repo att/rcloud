@@ -208,7 +208,7 @@ deferred.rcloud.result <- function(value) {
 
 rcloud.fetch.deferred.result <- function(key) {
   v <- global.result.hash[[key]]
-  del(key, global.result.hash)
+  rm(key, envir=global.result.hash)
   v
 }
 
@@ -264,12 +264,12 @@ configure.rcloud <- function () {
 
   ## This is jsut a friendly way to load package and report success/failure
   ## You will definiteily need FastRWeb, others are optional
-  pkgs <- c("Cairo", "FastRWeb", "Rserve", "png", "knitr", "markdown", "hash")
+  pkgs <- c("Cairo", "FastRWeb", "Rserve", "png", "knitr", "markdown")
   cat("Loading packages...\n")
   for (pkg in pkgs)
     cat(pkg, ": ",require(pkg, quietly=TRUE, character.only=TRUE),"\n",sep='')
   
-  global.result.hash <<- hash();
+  global.result.hash <<- new.env(hash=TRUE, parent=emptyenv());
   
   ## we actually need knitr ...
   opts_knit$set(global.device=TRUE)
