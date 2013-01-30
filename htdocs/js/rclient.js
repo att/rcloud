@@ -94,6 +94,14 @@ RClient = {
                     }
                     return v.value[1]; 
                 },
+                "browsePath": function(v) {
+                    $.ajax({ url: "http://127.0.0.1:8080" + v.value[1].value }).done(function(result) {
+                        // horrible hack: we strip the content down to its main div via regexp
+                        // cue jwz here.
+                        var inside_body = /[\s\S]*<body>([\s\S]*)<\/body>/g.exec(result)[1];
+                        $("#help-output").html(inside_body);
+                    });
+                },
 		// FIXME: I couldn't get this.post_* to work from here so this is just to avoid the error ... it's nonsensical, obviously
 		"img.url.update": function(v) { return v.value[1]; },
 		"img.url.final": function(v) { return v.value[1]; },
