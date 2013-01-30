@@ -310,7 +310,12 @@ start.rcloud <- function() {
     lockBinding("httpdPort", env)
   })
   options(help_type="html")
-  options(browser = function(url, ...) if(grepl("^http://127.0.0.1:", url)) self.oobSend(list("browsePath", gsub("^http://[^/]+", "", url))) else self.oobSend(list("browseURL", url)))
+  options(browser = function(url, ...) {
+    if(grepl("^http://127.0.0.1:", url))
+      self.oobSend(list("browsePath", gsub("^http://[^/]+", "", url)))
+    else
+      self.oobSend(list("browseURL", url))
+  })
   
   ## while at it, pass other requests as OOB, too
   options(pager = function(...) self.oobSend(list("pager", ...)))
