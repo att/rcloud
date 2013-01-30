@@ -291,6 +291,14 @@ configure.rcloud <- function () {
   }
 }
 
+## --- RCloud part folows ---
+## WS init
+session.init <- function() {
+  set.seed(Sys.getpid()) # we want different seeds so we get different file names
+  tmpfile <<- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
+  start.rcloud()
+}
+
 start.rcloud <- function() {
   ## This is a bit of a hack (errr.. I mean a serious hack)
   ## we fake out R to think that Rhttpd is running and hijack the browser
