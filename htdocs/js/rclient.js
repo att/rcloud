@@ -124,7 +124,9 @@ RClient = {
                 }
                 if (data.value[0].type !== "string_array" ||
                     data.value[0].value.length !== 1) {
-                    return this.post_error("Protocol error, expected first element to be a single string");
+                    console.log("Protocol error?! ", data.value[0]);
+                    return undefined;
+                    // return this.post_error("Protocol error, expected first element to be a single string");
                 }
                 var cmd = data.value[0].value[0];
                 var cmds = this.handlers;
