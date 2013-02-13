@@ -1,6 +1,6 @@
 \name{start.rcloud}
 \alias{start.rcloud}
-\alias{configure.rcloud)
+\alias{configure.rcloud}
 \title{
   Functions to setup RCloud sessions
 }
@@ -14,7 +14,7 @@
 }
 \usage{
    configure.rcloud()
-   start.rcloud()
+   start.rcloud(username="", ...)
 }
 \value{
   Both functions return \code{TRUE}

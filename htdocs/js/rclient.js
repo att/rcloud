@@ -33,7 +33,9 @@ RClient = {
                 _received_handshake = true;
                 // result.post_response("Welcome to R-on-the-browser!");
                 result.running = true;
-		result.send("rcloud.support::session.init()");
+		// FIXME: there should be a better way to handle this ...
+		// FIXME: can we use r_funcall?
+		result.send("rcloud.support::session.init(username=" + escape_r_literal_string(rcloud.username()) + ")");
                 onconnect && onconnect.call(result);
             }
         }
