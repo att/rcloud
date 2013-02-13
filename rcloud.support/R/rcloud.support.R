@@ -4,6 +4,9 @@
 ################################################################################
 # rcloud_status stuff goes here
 
+## FIXME: should we relly allow JS to supply the username in all of the below?
+## If we do, then some access control would be in order ...
+
 rcloud.exec.user.file <- function(user, filename)
   session.eval(eval(parse(text=readLines(rcloud.user.file.name(user, filename)))),
                silent=TRUE)
@@ -156,6 +159,9 @@ configure.rcloud <- function () {
 ## this is called by session.init() on per-connection basis
 start.rcloud <- function(username="", ...) {
   .session$username <- username
+  if (is.function(getOption("RCloud.session.auth")))
+    getOption("RCloud.session.auth")(username=username, ...)
+
   ## This is a bit of a hack (errr.. I mean a serious hack)
   ## we fake out R to think that Rhttpd is running and hijack the browser
   ## to pass all requests into the client
@@ -185,5 +191,11 @@ start.rcloud <- function(username="", ...) {
   ## generate per-session result UUID (optional, really)
   .session$result.prefix.uuid <- generate.uuid()
 
+  ## per-user setup
+  if (nzchar(.session$username)) {
+    .session$username <- gsub("[^a-zA-Z0-9_.]+", "_", .session$username)
+    if (!file.exists(fn <- file.path(.rc.conf$data.root, "userfiles", .session$username)))
+      dir.create(fn, FALSE, TRUE, "0770")
+  }
   TRUE
 }
