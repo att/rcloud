@@ -75,6 +75,6 @@ session.init <- function(...) {
   set.seed(Sys.getpid()) # we want different seeds so we get different file names
   .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
   start.rcloud(...)
-  R.version.string
+  paste(R.version.string, " --- welcome, ", .session$username, sep='')
 }
 
