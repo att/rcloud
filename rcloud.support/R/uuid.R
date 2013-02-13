@@ -24,3 +24,6 @@ rcloud.fetch.deferred.result <- function(key) {
     rm(key, envir=.result.hash)
     v
 }
+
+rcloud.prefix.uuid <- function()
+  if (is.null(.session$result.prefix.uuid)) .session$result.prefix.uuid <- generate.uuid() else .session$result.prefix.uuid

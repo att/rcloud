@@ -13,7 +13,7 @@
     if (isTRUE(url == "") || isTRUE(url == "/")) url <- "/index.html"
 
     ## serve files from the htdocs directory
-    fn <- paste(.rcloud.conf$root, "htdocs", url, sep='/')
+    fn <- paste(.rc.conf$root, "htdocs", url, sep='/')
     if (!file.exists(fn))
         list(paste("ERROR: item '", fn, "' not found!", sep=''),"text/html", character(), 404L)
     else {
@@ -45,7 +45,7 @@
         ct <- "text/html"
         ctl <- list("text/javascript"=".js", "image/png"=".png",
                     "image/jpeg"=".jpg", "image/jpeg"=".jpeg", "text/css"=".css")
-        for (i in seq <- along(ctl))
+        for (i in seq_along(ctl))
             if (length(grep(paste("\\",ctl[[i]],"$",sep=''), fn, TRUE))) {
                 ct <- names(ctl)[i]
                 break

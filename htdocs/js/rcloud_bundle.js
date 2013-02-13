@@ -716,7 +716,9 @@ RClient = {
                 _received_handshake = true;
                 // result.post_response("Welcome to R-on-the-browser!");
                 result.running = true;
-		result.send("rcloud.support::session.init()");
+		// FIXME: there should be a better way to handle this ...
+		// FIXME: can we use r_funcall?
+		result.send("rcloud.support::session.init(username=" + escape_r_literal_string(rcloud.username()) + ")");
                 onconnect && onconnect.call(result);
             }
         }
@@ -2403,7 +2405,7 @@ rcloud.init_client_side_data = function()
             .enter()
             .append("li").text(function(i) { return i; });
     });
-    rclient.send_and_callback("wplot.uuid", function(data) {
+    rclient.send_and_callback("rcloud.prefix.uuid()", function(data) {
         that.wplot_uuid = data.value[0];
     });
 };
