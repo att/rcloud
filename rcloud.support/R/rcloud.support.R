@@ -58,17 +58,17 @@ rcloud.setup.dirs <- function() {
 }
 
 rcloud.search <- function(search.string) {
-  if (nchar(search.string) == 0) {
-    list(NULL, NULL);
-  } else {
-    cmd <- paste("find ../userfiles -type f -exec grep -iHn ",
+  if (nchar(search.string) == 0)
+    list(NULL, NULL)
+  else {
+    cmd <- paste0("find ", .rc.conf$data.root, "/userfiles -type f -exec grep -iHn ",
                  search.string,
-                 " {} \\; | sed 's/^..\\/userfiles//'");
-    source.results <- system(cmd, intern=TRUE);
+                 " {} \\; | sed 's:^", .rc.conf$data.root, "/userfiles::'")
+    source.results <- system(cmd, intern=TRUE)
 
-    cmd <- paste("grep -in ", search.string, " ../history/main_log.txt");
-    history.results <- rev(system(cmd, intern=TRUE));
-    list(source.results, history.results);
+    cmd <- paste0("grep -in ", search.string, " ", .rc.conf$data.root, "/history/main_log.txt")
+    history.results <- rev(system(cmd, intern=TRUE))
+    list(source.results, history.results)
   }
 }
 
