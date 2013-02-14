@@ -17,7 +17,7 @@ rcloud.init_client_side_data = function()
             .enter()
             .append("li").text(function(i) { return i; });
     });
-    rclient.send_and_callback("wplot.uuid", function(data) {
+    rclient.send_and_callback("rcloud.prefix.uuid()", function(data) {
         that.wplot_uuid = data.value[0];
     });
 };

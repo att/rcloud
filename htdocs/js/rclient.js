@@ -33,7 +33,9 @@ RClient = {
                 _received_handshake = true;
                 // result.post_response("Welcome to R-on-the-browser!");
                 result.running = true;
-		result.send(".session.init()");
+		// FIXME: there should be a better way to handle this ...
+		// FIXME: can we use r_funcall?
+		result.send("rcloud.support::session.init(username=" + escape_r_literal_string(rcloud.username()) + ")");
                 onconnect && onconnect.call(result);
             }
         }
@@ -94,6 +96,14 @@ RClient = {
                     }
                     return v.value[1]; 
                 },
+                "browsePath": function(v) {
+                    $.ajax({ url: "http://127.0.0.1:8080" + v.value[1].value }).done(function(result) {
+                        // horrible hack: we strip the content down to its main div via regexp
+                        // cue jwz here.
+                        var inside_body = /[\s\S]*<body>([\s\S]*)<\/body>/g.exec(result)[1];
+                        $("#help-output").html(inside_body);
+                    });
+                },
 		// FIXME: I couldn't get this.post_* to work from here so this is just to avoid the error ... it's nonsensical, obviously
 		"img.url.update": function(v) { return v.value[1]; },
 		"img.url.final": function(v) { return v.value[1]; },
@@ -124,7 +134,9 @@ RClient = {
                 }
                 if (data.value[0].type !== "string_array" ||
                     data.value[0].value.length !== 1) {
-                    return this.post_error("Protocol error, expected first element to be a single string");
+                    console.log("Protocol error?! ", data.value[0]);
+                    return undefined;
+                    // return this.post_error("Protocol error, expected first element to be a single string");
                 }
                 var cmd = data.value[0].value[0];
                 var cmds = this.handlers;
@@ -232,7 +244,7 @@ RClient = {
                 if (silent === undefined) {
                     silent = false;
                 }
-                return [ ".session.eval({" + command + "}, "
+                return [ "rcloud.support::session.eval({" + command + "}, "
                          + this_command + ", "
                          + (silent?"TRUE":"FALSE") + ")",
                          this_command ];
@@ -240,14 +252,14 @@ RClient = {
 
             markdown_wrap_command: function(command, silent) {
                 var this_command = command_counter++;
-                return [ ".session.markdown.eval({markdownToHTML(text=paste(knit(text=" + escape_r_literal_string(command+'\n') + "), collapse=\"\\n\"), fragment=TRUE)}, "
+                return [ "rcloud.support::session.markdown.eval({markdownToHTML(text=paste(knit(text=" + escape_r_literal_string(command+'\n') + "), collapse=\"\\n\"), fragment=TRUE)}, "
                          + this_command + ", "
                          + (silent?"TRUE":"FALSE") + ")",
                          this_command ];
             },
 
             log: function(command) {
-                command = ".session.log(\"" + rcloud.username() + "\", \"" +
+                command = "rcloud.support::session.log(\"" + rcloud.username() + "\", \"" +
                     command.replace(/\\/g,"\\\\").replace(/"/g,"\\\"")
                 + "\")";
                 this.send(command);

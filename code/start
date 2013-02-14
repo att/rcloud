@@ -1,9 +1,13 @@
 #!/bin/sh
 # script to start Rserve with the configuration FastRWeb/code/rserve.conf
-# add -d if you want to start teh debugging version
+# add -d if you want to start the debugging version
+#
+# honored environment variables:
+# ROOT     - root of the RCloud installation (mandatory, although there is a feeble fallback attempt)
+# RBIN     - path to R binary to be run (optional, default is "R")
 
 if [ -z "$ROOT" ]; then ## some auto-detection if ROOT is not set...
-    for c in /data/ws /var/www/ws /var/FastRWeb /data/FastRWeb; do
+    for c in /data/rcloud /data/ws /var/www/ws /var/FastRWeb /data/FastRWeb "`pwd`"; do
 	if [ -e "$c/code/rserve.conf" ]; then
 	    ROOT="$c"
 	    break
@@ -19,29 +23,21 @@ if [ -z "$ROOT" ]; then
 fi
 export ROOT
 
-if [ -z "$CONFROOT" ]; then
-    echo "WARNING: assuming CONFROOT is $ROOT. Probably the wrong assumption!!" >&2
-    CONFROOT=$ROOT
-fi
-export CONFROOT
-
-if [ -z "$DATAROOT" ]; then
-    echo "WARNING: assuming DATAROOT is $CONFROOT/.. . Probably the wrong assumption!!" >&2
-    DATAROOT=$CONFROOT/..
-fi
-export DATAROOT
-
-RBIN=R
+: ${RBIN=R}
 
 if [ "$1" = -h ]; then
   echo ''
   echo " Usage: $0 [-d]"
   echo ''
+  echo ' You may need to set ROOT and optionally RBIN accordingly'
+  echo ''
   exit 0
 fi
+
 if [ "$1" = -d ]; then
   PX=.dbg
 fi
 
-echo $RBIN CMD ${PRE}Rserve$PX --RS-conf $CONFROOT/rserve.conf --RS-source $CONFROOT/rserve.R --vanilla --no-save
-$RBIN CMD ${PRE}Rserve$PX --RS-conf $CONFROOT/rserve.conf --RS-source $CONFROOT/rserve.R --vanilla --no-save
+# --vanilla is intentional - use code/rserve.R for additional configuration NOT user R startup files
+echo $RBIN CMD ${PRE}Rserve$PX --RS-conf $ROOT/code/rserve.conf --RS-source $ROOT/code/rserve.R --vanilla --no-save
+$RBIN CMD ${PRE}Rserve$PX --RS-conf "$ROOT/code/rserve.conf" --RS-source "$ROOT/code/rserve.R" --vanilla --no-save

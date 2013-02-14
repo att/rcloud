@@ -1,0 +1,6 @@
+#!/bin/bash
+# NOTE: this should not be necessary as rcloud.configure() is taking care of it
+
+mkdir -p data/userfiles
+mkdir -p data/history
+mkdir -p tmp
