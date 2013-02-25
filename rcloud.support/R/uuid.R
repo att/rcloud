@@ -3,8 +3,7 @@
 
 .result.hash <- new.env(hash=TRUE, parent=emptyenv())
 
-# FIXME should use libuuid directly
-generate.uuid <- function() system("uuidgen", intern=TRUE);
+generate.uuid <- function() uuid::UUIDgenerate()
 
 stash.result <- function(value) {
     new.hash <- generate.uuid()
