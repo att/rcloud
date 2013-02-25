@@ -191,6 +191,11 @@ start.rcloud <- function(username="", ...) {
   ## generate per-session result UUID (optional, really)
   .session$result.prefix.uuid <- generate.uuid()
 
+  ## last-minute updates (or custom initialization) to be loaded
+  ## NB: it should be really fast since it will cause connect delay
+  if (file.exists(fn <- file.path(.rc.conf$configuration.root, "init.R")))
+    source(fn, TRUE)
+  
   ## per-user setup
   if (nzchar(.session$username)) {
     .session$username <- gsub("[^a-zA-Z0-9_.]+", "_", .session$username)
