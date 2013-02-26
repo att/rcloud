@@ -681,6 +681,13 @@ FacetChart.facet_osm_plot = function(lats, lons, color, width, height)
         }
     }
 })(this);
+/*
+
+ RClient is a low-level communication layer between Javascript and a
+ running R process on the other side. 
+ 
+ */
+//////////////////////////////////////////////////////////////////////////////
 (function() {
 
 // takes a string and returns the appropriate r literal string with escapes.
@@ -714,19 +721,25 @@ RClient = {
                 result.post_error("sorry, I only speak QAP1");
             } else {
                 _received_handshake = true;
-                // result.post_response("Welcome to R-on-the-browser!");
                 result.running = true;
-		// FIXME: there should be a better way to handle this ...
-		// FIXME: can we use r_funcall?
-		result.send("rcloud.support::session.init(username=" + escape_r_literal_string(rcloud.username()) + ")");
+                // FIXME: there should be a better way to handle this ...
+                // FIXME: can we use r_funcall? r_funcall does 
+                // not support named parameters (for now)
+                var cookies = $.cookies.get();
+                result.login(cookies.sessid);
+                result.send("rcloud.support::session.init(username=" + escape_r_literal_string(rcloud.username()) + ")");
                 onconnect && onconnect.call(result);
             }
         }
 
         socket.onmessage = function(msg) {
+            var v = null;
             if (_capturing_answers) {
                 try {
-                    _capturing_callback(result.eval(parse(msg.data)));
+                    v = parse(msg.data);
+                    if (v !== null)
+                        v = result.eval(v);
+                    _capturing_callback(v);
                 } catch (e) {
                     _capturing_answers = false;
                     _capturing_callback = undefined;
@@ -740,7 +753,9 @@ RClient = {
                 if (typeof msg.data === 'string')
                     result.post_response(msg.data);
                 else {
-                    result.eval(parse(msg.data));
+                    v = parse(msg.data);
+                    if (v !== null)
+                        result.eval(v);
                 }
             }
         };
@@ -948,6 +963,22 @@ RClient = {
                 this.send(command);
             },
 
+            login: function(token) {
+                var command = token + '\n' + token;
+                var buffer = new ArrayBuffer(command.length + 21);
+                var view = new EndianAwareDataView(buffer);
+                view.setInt32(0,  1);
+                view.setInt32(4,  5 + command.length);
+                view.setInt32(8,  0);
+                view.setInt32(12, 0);
+                view.setInt32(16, 4 + ((1 + command.length) << 8));
+                for (var i=0; i<command.length; ++i) {
+                    view.setUint8(20 + i, command.charCodeAt(i));
+                }
+                view.setUint8(buffer.byteLength - 1, 0);
+                socket.send(buffer);
+            },
+
             send: function(command, wrap) {
                 if (!result.running) {
                     alert("Init failed, cannot communicate with R process");
@@ -971,9 +1002,9 @@ RClient = {
 
             record_cell_execution: function(cell_model) {
                 var json_rep = JSON.stringify(cell_model.json());
-                var call = rclient.r_funcall("rcloud.record.cell.execution", 
-                                             rcloud.username(), json_rep);
-                rclient.send(call);
+                var call = this.r_funcall("rcloud.record.cell.execution", 
+                                          rcloud.username(), json_rep);
+                this.send(call);
             },
 
             send_and_callback: function(command, callback, wrap) {
@@ -1364,14 +1395,10 @@ function parse(msg)
     }
 
     var payload = my_ArrayBufferView(msg, 16, msg.byteLength - 16);
+    if (payload.length === 0)
+        return null;
     var result = parse_payload(reader(payload));
     return result;
-
-    if (result.type !== "sexp") {
-        throw "Bogus reply from RServe for eval, type not sexp";
-    }
-    var t = result.value;
-    return t;
 }
 
 function parse_payload(reader)

@@ -7,6 +7,11 @@
 ## FIXME: should we relly allow JS to supply the username in all of the below?
 ## If we do, then some access control would be in order ...
 
+## Yes. The right way to do this is when a user has successfully connected,
+## we create a unique session key, send this key to Javascript-side on startup,
+## and check the session key at every attempt at execution. This way users
+## cannot (easily) fake identities.
+
 rcloud.exec.user.file <- function(user, filename)
   session.eval(eval(parse(text=readLines(rcloud.user.file.name(user, filename)))),
                silent=TRUE)
@@ -54,7 +59,6 @@ rcloud.setup.dirs <- function() {
     for (data.subdir in c("userfiles", "history"))
         if (!file.exists(fn <- file.path(.rc.conf$data.root, data.subdir)))
              dir.create(fn, FALSE, TRUE, "0770")
-    
 }
 
 rcloud.search <- function(search.string) {

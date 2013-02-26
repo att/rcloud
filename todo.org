@@ -9,4 +9,5 @@
 *** But what about wplot, wgeoplot, etc?
 * BUGS
 ** Create directory when new user logs in
+** wplot negative signs are broken
 
