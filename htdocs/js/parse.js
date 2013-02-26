@@ -186,14 +186,10 @@ function parse(msg)
     }
 
     var payload = my_ArrayBufferView(msg, 16, msg.byteLength - 16);
+    if (payload.length === 0)
+        return null;
     var result = parse_payload(reader(payload));
     return result;
-
-    if (result.type !== "sexp") {
-        throw "Bogus reply from RServe for eval, type not sexp";
-    }
-    var t = result.value;
-    return t;
 }
 
 function parse_payload(reader)
