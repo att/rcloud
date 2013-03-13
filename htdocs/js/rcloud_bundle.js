@@ -730,7 +730,6 @@ RClient = {
                 // FIXME: can we use r_funcall? r_funcall does 
                 // not support named parameters (for now)
                 var cookies = $.cookies.get();
-                debugger;
                 result.login(cookies.token);
                 result.send("rcloud.support::session.init(username=" + escape_r_literal_string(rcloud.username()) + ")");
                 onconnect && onconnect.call(result);
