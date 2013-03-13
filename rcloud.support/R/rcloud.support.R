@@ -130,7 +130,7 @@ configure.rcloud <- function () {
 
   ## This is jsut a friendly way to load package and report success/failure
   ## Cairo, knitr, markdown and png are mandatory, really
-  pkgs <- c("Cairo", "FastRWeb", "Rserve", "png", "knitr", "markdown", "base64enc", "rjson")
+  pkgs <- c("Cairo", "FastRWeb", "Rserve", "png", "knitr", "markdown", "base64enc", "rjson", "httr", "github")
   ## $CONFROOT/packages.txt can list additional packages
   if (file.exists(fn <- file.path(.rc.conf$configuration.root, "packages.txt")))
     pkgs <- c(pkgs, readLines(fn))
@@ -153,6 +153,13 @@ configure.rcloud <- function () {
     cat("Loading data...\n")
     load(.rc.conf$data.fn)
   }
+
+  ## github API information is loaded from github_info.txt
+  f <- file(file.path(.rc.conf$configuration.root, "github_info.txt"), "rt")
+  .rc.conf$github.client.id <- readLines(f, 1)
+  .rc.conf$github.client.secret <- readLines(f, 1)
+  .rc.conf$github.base.url <- readLines(f, 1) 
+  .rc.conf$github.api.url <- readLines(f, 1)
 
   rcloud.setup.dirs()
 

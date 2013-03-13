@@ -687,6 +687,7 @@ FacetChart.facet_osm_plot = function(lats, lons, color, width, height)
  running R process on the other side. 
  
  */
+
 //////////////////////////////////////////////////////////////////////////////
 (function() {
 
@@ -697,7 +698,10 @@ function escape_r_literal_string(s) {
 }
 
 RClient = {
-    create: function(host, onconnect) {
+    create: function(opts) {
+        var host = opts.host;
+        var onconnect = opts.on_connect;
+
         var socket = new WebSocket(host);
 
         var _debug = true;
@@ -716,9 +720,9 @@ RClient = {
             if (msg.substr(0,4) !== 'Rsrv') {
                 result.post_error("server is not an RServe instance");
             } else if (msg.substr(4, 4) !== '0103') {
-                result.post_error("sorry, I can only use the 0103 version of the R server protocol");
+                result.post_error("sorry, rclient only speaks the 0103 version of the R server protocol");
             } else if (msg.substr(8, 4) !== 'QAP1') {
-                result.post_error("sorry, I only speak QAP1");
+                result.post_error("sorry, rclient only speaks QAP1");
             } else {
                 _received_handshake = true;
                 result.running = true;
@@ -726,7 +730,8 @@ RClient = {
                 // FIXME: can we use r_funcall? r_funcall does 
                 // not support named parameters (for now)
                 var cookies = $.cookies.get();
-                result.login(cookies.sessid);
+                debugger;
+                result.login(cookies.token);
                 result.send("rcloud.support::session.init(username=" + escape_r_literal_string(rcloud.username()) + ")");
                 onconnect && onconnect.call(result);
             }
@@ -859,6 +864,10 @@ RClient = {
                 this.handlers[cmd] = callback;
             },
 
+            //////////////////////////////////////////////////////////////////
+            // FIXME: all of this should move out of rclient and into
+            // the notebook objects.
+
             post_sent_command: function (msg) {
                 var d = $('<pre class="r-sent-command"></pre>').html('> ' + msg);
                 $("#output").append(d);
@@ -904,6 +913,8 @@ RClient = {
                     MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
                 }
             },
+
+            //////////////////////////////////////////////////////////////////
 
             post_error: function (msg) {
                 var d = $("<div class='error-message'></div>").html(msg);

@@ -32,7 +32,9 @@ function transpose(ar) {
 }
 
 function main_init() {
-    rclient = RClient.create("ws://"+location.hostname+":8081/", function() {
+    rclient = RClient.create({ 
+        host: "ws://"+location.hostname+":8081/", 
+        on_connect: function() {
         $("#new-md-cell-button").click(function() {
             shell.terminal.disable();
             shell.new_markdown_cell("", "markdown");
@@ -75,7 +77,7 @@ function main_init() {
             editor.load_file(getURLParameter("user"), getURLParameter("filename"));
             $("#tabs").tabs("select", "#tabs-2");
         }
-    });
+    }});
 }
 
 window.onload = main_init;
