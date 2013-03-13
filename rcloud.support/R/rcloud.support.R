@@ -104,7 +104,7 @@ configure.rcloud <- function () {
   # until replaced by something more sensible (if at all)
   .rc.conf$configuration.root <- Sys.getenv("CONFROOT")
   if (!nzchar(.rc.conf$configuration.root))
-    .rc.conf$configuration.root <- file.path(.rc.conf$root, "code")
+    .rc.conf$configuration.root <- file.path(.rc.conf$root, "conf")
   cat("Using CONFROOT =", .rc.conf$configuration.root, "\n")
 
   .rc.conf$data.root <- Sys.getenv("DATAROOT")

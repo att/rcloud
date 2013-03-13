@@ -1,5 +1,5 @@
 #!/bin/sh
-# script to start Rserve with the configuration FastRWeb/code/rserve.conf
+# script to start Rserve with the configuration FastRWeb/conf/rserve.conf
 # add -d if you want to start the debugging version
 #
 # honored environment variables:
@@ -8,7 +8,7 @@
 
 if [ -z "$ROOT" ]; then ## some auto-detection if ROOT is not set...
     for c in /data/rcloud /data/ws /var/www/ws /var/FastRWeb /data/FastRWeb "`pwd`"; do
-	if [ -e "$c/code/rserve.conf" ]; then
+	if [ -e "$c/conf/rserve.conf" ]; then
 	    ROOT="$c"
 	    break
 	fi
@@ -38,6 +38,6 @@ if [ "$1" = -d ]; then
   PX=.dbg
 fi
 
-# --vanilla is intentional - use code/rserve.R for additional configuration NOT user R startup files
-echo $RBIN CMD ${PRE}Rserve$PX --RS-conf $ROOT/code/rserve.conf --RS-source $ROOT/code/rserve.R --vanilla --no-save
-$RBIN CMD ${PRE}Rserve$PX --RS-conf "$ROOT/code/rserve.conf" --RS-source "$ROOT/code/rserve.R" --vanilla --no-save
+# --vanilla is intentional - use conf/rserve.R for additional configuration NOT user R startup files
+echo $RBIN CMD ${PRE}Rserve$PX --RS-conf $ROOT/conf/rserve.conf --RS-source $ROOT/conf/rserve.R --vanilla --no-save
+$RBIN CMD ${PRE}Rserve$PX --RS-conf "$ROOT/conf/rserve.conf" --RS-source "$ROOT/conf/rserve.R" --vanilla --no-save

@@ -1,6 +1,12 @@
 #!/bin/bash
-cd htdocs/js; make; cd ../..
+cd htdocs/js; 
+if [ -d node_modules ]; then
+    make;
+else
+    echo Skipping javascript build because node.js modules are not installed. Refer to Readme.md for details.
+fi
+cd ../..
 R CMD build rcloud.support && R CMD INSTALL rcloud.support_`sed -n 's/Version: *//p' rcloud.support/DESCRIPTION`.tar.gz
 killall -9 Rserve.dbg
-rm -f code/rcloud.auth
-./code/start -d
+rm -f conf/rcloud.auth
+./conf/start -d
