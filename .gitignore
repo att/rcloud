@@ -8,7 +8,7 @@ js/node_modules
 htdocs/lib/node_modules
 htdocs/js/node_modules
 data
-code/rcloud.auth
-code/github_info.txt
+conf/rcloud.auth
+conf/github_info.txt
 rcloud.support_1.0-0.tar.gz
 
