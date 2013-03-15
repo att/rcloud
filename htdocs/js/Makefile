@@ -6,12 +6,9 @@ rcloud_bundle.js: \
 	chart.js \
 	facet_chart.js \
 	websockets.js \
+	rserve.js \
 	rclient.js \
 	buffer.js \
-	parse.js \
-	peg_parser.js \
-	objs.js \
-	Rsrv.js \
 	rcloud.js \
 	notebook/_begin.js \
 	notebook/cell/_begin.js \

@@ -35,49 +35,50 @@ function main_init() {
     rclient = RClient.create({ 
         host: "ws://"+location.hostname+":8081/", 
         on_connect: function() {
-        $("#new-md-cell-button").click(function() {
-            shell.terminal.disable();
-            shell.new_markdown_cell("", "markdown");
-            var vs = shell.notebook.view.sub_views;
-            vs[vs.length-1].show_source();
-        });
-        $("#share-notebook").click(function() {
-            shell.serialize_state(function() {
-                window.location="share.html?user=" + shell.user + "&filename=" + shell.filename;
+            $("#new-md-cell-button").click(function() {
+                shell.terminal.disable();
+                shell.new_markdown_cell("", "markdown");
+                var vs = shell.notebook.view.sub_views;
+                vs[vs.length-1].show_source();
             });
-        });
-        $("#rcloud-logout").click(function() {
-            $.cookies.set('user', null);
-            $.cookies.set('sessid', null);
-            window.location.href = '/login.html';
-        });
-        $(".collapse").collapse();
-        $("#input-text-search").click(function() {
-            shell.terminal.disable();
-        });
-        rcloud.init_client_side_data();
-        var that = this;
-        var shell_objtypes = ["scatterplot", "iframe", "facet_osm_plot", "facet_tour_plot"];
-        for (var i=0; i<shell_objtypes.length; ++i) {
-            (function(objtype) {
-                that.register_handler(objtype, function(data) {
-                    var div = shell.handle(objtype, data);
-                    shell.post_div(div);
-                    // shell.handle(objtype, data);
+            $("#share-notebook").click(function() {
+                shell.serialize_state(function() {
+                    window.location="share.html?user=" + shell.user + "&filename=" + shell.filename;
                 });
-            })(shell_objtypes[i]);
-        }
-
-        editor.init();
-
-        if (location.search.length > 0) {
-            function getURLParameter(name) {
-                return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+            });
+            $("#rcloud-logout").click(function() {
+                $.cookies.set('user', null);
+                $.cookies.set('sessid', null);
+                window.location.href = '/login.html';
+            });
+            $(".collapse").collapse();
+            $("#input-text-search").click(function() {
+                shell.terminal.disable();
+            });
+            rcloud.init_client_side_data();
+            var that = this;
+            var shell_objtypes = ["scatterplot", "iframe", "facet_osm_plot", "facet_tour_plot"];
+            for (var i=0; i<shell_objtypes.length; ++i) {
+                (function(objtype) {
+                    that.register_handler(objtype, function(data) {
+                        var div = shell.handle(objtype, data);
+                        shell.post_div(div);
+                        // shell.handle(objtype, data);
+                    });
+                })(shell_objtypes[i]);
             }
-            editor.load_file(getURLParameter("user"), getURLParameter("filename"));
-            $("#tabs").tabs("select", "#tabs-2");
+
+            editor.init();
+
+            if (location.search.length > 0) {
+                function getURLParameter(name) {
+                    return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+                }
+                editor.load_file(getURLParameter("user"), getURLParameter("filename"));
+                $("#tabs").tabs("select", "#tabs-2");
+            }
         }
-    }});
+    });
 }
 
 window.onload = main_init;
