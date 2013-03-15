@@ -8,6 +8,7 @@ rcloud_bundle.js: \
 	websockets.js \
 	rserve.js \
 	rclient.js \
+	polyfill-dataview.js \
 	buffer.js \
 	rcloud.js \
 	notebook/_begin.js \
