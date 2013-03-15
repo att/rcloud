@@ -3778,7 +3778,6 @@ function get_stack(caller) {
                     self.set(history.next());
                 } else if (e.which == 37 ||
                            (e.which == 66 && e.ctrlKey)) {
-                    console.log("LEFT!", e);
                     //CTRL+LEFT ARROW or CTRL+B
                     if (e.ctrlKey && e.which != 66) {
                         len = position - 1;
@@ -3883,10 +3882,6 @@ function get_stack(caller) {
                     return true;
                 }
                 return false;
-            } else if (e.metaKey && e.which === 37) {
-                self.position(0);
-            } else if (e.metaKey && e.which === 39) {
-                self.position(command.length);
             }
             /*else {
                 if ((e.altKey && e.which == 68) || 
@@ -28046,457 +28041,946 @@ RdGy:{3:["rgb(239,138,98)","rgb(255,255,255)","rgb(153,153,153)"],4:["rgb(202,0,
 RdYlBu:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,191,219)"],4:["rgb(215,25,28)","rgb(253,174,97)","rgb(171,217,233)","rgb(44,123,182)"],5:["rgb(215,25,28)","rgb(253,174,97)","rgb(255,255,191)","rgb(171,217,233)","rgb(44,123,182)"],6:["rgb(215,48,39)","rgb(252,141,89)","rgb(254,224,144)","rgb(224,243,248)","rgb(145,191,219)","rgb(69,117,180)"],7:["rgb(215,48,39)","rgb(252,141,89)","rgb(254,224,144)","rgb(255,255,191)","rgb(224,243,248)","rgb(145,191,219)","rgb(69,117,180)"],8:["rgb(215,48,39)","rgb(244,109,67)","rgb(253,174,97)","rgb(254,224,144)","rgb(224,243,248)","rgb(171,217,233)","rgb(116,173,209)","rgb(69,117,180)"],9:["rgb(215,48,39)","rgb(244,109,67)","rgb(253,174,97)","rgb(254,224,144)","rgb(255,255,191)","rgb(224,243,248)","rgb(171,217,233)","rgb(116,173,209)","rgb(69,117,180)"],10:["rgb(165,0,38)","rgb(215,48,39)","rgb(244,109,67)","rgb(253,174,97)","rgb(254,224,144)","rgb(224,243,248)","rgb(171,217,233)","rgb(116,173,209)","rgb(69,117,180)","rgb(49,54,149)"],11:["rgb(165,0,38)","rgb(215,48,39)","rgb(244,109,67)","rgb(253,174,97)","rgb(254,224,144)","rgb(255,255,191)","rgb(224,243,248)","rgb(171,217,233)","rgb(116,173,209)","rgb(69,117,180)","rgb(49,54,149)"]},
 Spectral:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(153,213,148)"],4:["rgb(215,25,28)","rgb(253,174,97)","rgb(171,221,164)","rgb(43,131,186)"],5:["rgb(215,25,28)","rgb(253,174,97)","rgb(255,255,191)","rgb(171,221,164)","rgb(43,131,186)"],6:["rgb(213,62,79)","rgb(252,141,89)","rgb(254,224,139)","rgb(230,245,152)","rgb(153,213,148)","rgb(50,136,189)"],7:["rgb(213,62,79)","rgb(252,141,89)","rgb(254,224,139)","rgb(255,255,191)","rgb(230,245,152)","rgb(153,213,148)","rgb(50,136,189)"],8:["rgb(213,62,79)","rgb(244,109,67)","rgb(253,174,97)","rgb(254,224,139)","rgb(230,245,152)","rgb(171,221,164)","rgb(102,194,165)","rgb(50,136,189)"],9:["rgb(213,62,79)","rgb(244,109,67)","rgb(253,174,97)","rgb(254,224,139)","rgb(255,255,191)","rgb(230,245,152)","rgb(171,221,164)","rgb(102,194,165)","rgb(50,136,189)"],10:["rgb(158,1,66)","rgb(213,62,79)","rgb(244,109,67)","rgb(253,174,97)","rgb(254,224,139)","rgb(230,245,152)","rgb(171,221,164)","rgb(102,194,165)","rgb(50,136,189)","rgb(94,79,162)"],11:["rgb(158,1,66)","rgb(213,62,79)","rgb(244,109,67)","rgb(253,174,97)","rgb(254,224,139)","rgb(255,255,191)","rgb(230,245,152)","rgb(171,221,164)","rgb(102,194,165)","rgb(50,136,189)","rgb(94,79,162)"]},
 RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,25,28)","rgb(253,174,97)","rgb(166,217,106)","rgb(26,150,65)"],5:["rgb(215,25,28)","rgb(253,174,97)","rgb(255,255,191)","rgb(166,217,106)","rgb(26,150,65)"],6:["rgb(215,48,39)","rgb(252,141,89)","rgb(254,224,139)","rgb(217,239,139)","rgb(145,207,96)","rgb(26,152,80)"],7:["rgb(215,48,39)","rgb(252,141,89)","rgb(254,224,139)","rgb(255,255,191)","rgb(217,239,139)","rgb(145,207,96)","rgb(26,152,80)"],8:["rgb(215,48,39)","rgb(244,109,67)","rgb(253,174,97)","rgb(254,224,139)","rgb(217,239,139)","rgb(166,217,106)","rgb(102,189,99)","rgb(26,152,80)"],9:["rgb(215,48,39)","rgb(244,109,67)","rgb(253,174,97)","rgb(254,224,139)","rgb(255,255,191)","rgb(217,239,139)","rgb(166,217,106)","rgb(102,189,99)","rgb(26,152,80)"],10:["rgb(165,0,38)","rgb(215,48,39)","rgb(244,109,67)","rgb(253,174,97)","rgb(254,224,139)","rgb(217,239,139)","rgb(166,217,106)","rgb(102,189,99)","rgb(26,152,80)","rgb(0,104,55)"],11:["rgb(165,0,38)","rgb(215,48,39)","rgb(244,109,67)","rgb(253,174,97)","rgb(254,224,139)","rgb(255,255,191)","rgb(217,239,139)","rgb(166,217,106)","rgb(102,189,99)","rgb(26,152,80)","rgb(0,104,55)"]}};
-//
-// jDataView by Vjeux - Jan 2010
-//
-// A unique way to read a binary file in the browser
-// http://github.com/vjeux/jDataView
-// http://blog.vjeux.com/ <vjeuxx@gmail.com>
-//
+(function(global) {
+    if (global.WebSocket === undefined) {
+        if (global.MozWebSocket)
+            global.WebSocket = global.MozWebSocket;
+        else {
+            throw "WebSocket support not found";
+        }
+    }
+})(this);
+// thank you ie9 for not giving me a dataview. /s
+//////////////////////////////////////////////////////////////////////////////
 
-(function (global) {
+(function(global) {
+    var _is_little_endian;
 
-var compatibility = {
-	ArrayBuffer: typeof ArrayBuffer !== 'undefined',
-	DataView: typeof DataView !== 'undefined' && 'getFloat64' in DataView.prototype,
-	NodeBuffer: typeof Buffer !== 'undefined',
-// 0.6.0 -> readInt8LE(offset)
-	NodeBufferFull: typeof Buffer !== 'undefined' && 'readInt8LE' in Buffer,
-// 0.5.0 -> readInt8(offset, endian)
-	NodeBufferEndian: typeof Buffer !== 'undefined' && 'readInt8' in Buffer
-};
+    (function() {
+        var x = new ArrayBuffer(4);
+        var bytes = new Uint8Array(x),
+        words = new Uint32Array(x);
+        bytes[0] = 1;
+        if (words[0] === 1) {
+            _is_little_endian = true;
+        } else if (words[0] === 16777216) {
+            _is_little_endian = false;
+        } else {
+            throw "we're bizarro endian, refusing to continue";
+        }
+    })();
 
-var jDataView = function (buffer, byteOffset, byteLength, littleEndian) {
-	if (!(this instanceof arguments.callee)) {
-		throw new Error("Constructor may not be called as a function");
-	}
+    if (!global.DataView) {
+        var data_types = ['Int32', 'Int16', 'Uint32', 'Uint16',
+                          'Float32', 'Float64'];
+        var setters = ['setInt32', 'setInt16', 'setUint32', 'setUint16',
+                       'setFloat32', 'setFloat64'];
+        var getters = ['getInt32', 'getInt16', 'getUint32', 'getUint16',
+                       'getFloat32', 'getFloat64'];
 
-	this.buffer = buffer;
+        console.log("polyfilling DataView");
 
-	// Handle Type Errors
-	if (!(compatibility.NodeBuffer && buffer instanceof Buffer) &&
-		!(compatibility.ArrayBuffer && buffer instanceof ArrayBuffer) &&
-		typeof buffer !== 'string') {
-		throw new TypeError('Type error');
-	}
+        var helpers = {};
+        for (var i=0; i<data_types.length; ++i) {
+            var cls = this[data_types[i] + 'Array'];
+            var sz = cls.BYTES_PER_ELEMENT;
+            var buf = new ArrayBuffer(sz);
+            var original_array = new cls(buf);
+            var byte_array = new Uint8Array(buf);
+            helpers[data_types[i]] = (function(original_array, byte_array) {
+                return function(output, sz, ix, v) {
+                    original_array[0] = v;
+                    for (var i=0; i<sz; ++i) {
+                        output[ix + i] = byte_array[i];
+                    }
+                };
+            })(original_array, byte_array);
+        }
+        
+        function MyDataView(buffer, byteOffset, byteLength) {
+            this.buffer = buffer;
+            this.byteOffset = _.isUndefined(byteOffset) ? 0 : byteOffset;
+            this.byteLength = _.isUndefined(byteLength) ? buffer.byteLength : byteLength;
+            this.view = new jDataView(buffer, byteOffset, byteLength, _is_little_endian);
+            this.byte_array = new Uint8Array(buffer);
+        }
 
-	// Check parameters and existing functionnalities
-	this._isArrayBuffer = compatibility.ArrayBuffer && buffer instanceof ArrayBuffer;
-	this._isDataView = compatibility.DataView && this._isArrayBuffer;
-	this._isNodeBuffer = compatibility.NodeBuffer && buffer instanceof Buffer;
+        var proto = {};
+        MyDataView.prototype = proto;
+        for (i=0; i<data_types.length; ++i) {
+            var getter = 'get' + data_types[i];
+            proto[getter] = (function(name) {
+                return function(i) { return this.view[name](i); };
+            })(getter);
+            var setter = 'set' + data_types[i];
+            var sz = this[data_types[i] + 'Array'].BYTES_PER_ELEMENT;
+            proto[setter] = (function(sz, name) {
+                return function(byteOffset, v) {
+                    console.log(name);
+                    console.log(helpers);
+                    helpers[name](this.byte_array, sz, byteOffset, v);
+                };
+            })(sz, data_types[i]);
+        }
 
-	// Default Values
-	this._littleEndian = littleEndian === undefined ? true : littleEndian;
+        proto.setUint8 = function(ix, v) {
+            this.byte_array[ix] = v;
+        };
+        proto.setInt8 = function(ix, v) {
+            if (v < 0) v += 256;
+            this.byte_array[ix] = v;
+        };
+        proto.getInt8 = function(ix) { return this.view.GetInt8(ix); };
+        proto.getUint8 = function(ix) { /* return this.view.GetUint8(ix); // <-- doesn't work in FF! */ return this.byte_array[ix]; };
 
-	var bufferLength = this._isArrayBuffer ? buffer.byteLength : buffer.length;
-	if (byteOffset === undefined) {
-		byteOffset = 0;
-	}
-	this.byteOffset = byteOffset;
+        global.DataView = MyDataView;
+    }
+})(this);
+// we want an endian aware dataview mostly because ARM can be big-endian, and
+// that might put us in trouble wrt handheld devices.
+//////////////////////////////////////////////////////////////////////////////
 
-	if (byteLength === undefined) {
-		byteLength = bufferLength - byteOffset;
-	}
-	this.byteLength = byteLength;
+(function(global) {
+    var _is_little_endian;
 
-	if (!this._isDataView) {
-		// Do additional checks to simulate DataView
-		if (typeof byteOffset !== 'number') {
-			throw new TypeError('Type error');
-		}
-		if (typeof byteLength !== 'number') {
-			throw new TypeError('Type error');
-		}
-		if (typeof byteOffset < 0) {
-			throw new Error('INDEX_SIZE_ERR: DOM Exception 1');
-		}
-		if (typeof byteLength < 0) {
-			throw new Error('INDEX_SIZE_ERR: DOM Exception 1');
-		}
-	}
+    (function() {
+        var x = new ArrayBuffer(4);
+        var bytes = new Uint8Array(x),
+        words = new Uint32Array(x);
+        bytes[0] = 1;
+        if (words[0] === 1) {
+            _is_little_endian = true;
+        } else if (words[0] === 16777216) {
+            _is_little_endian = false;
+        } else {
+            throw "we're bizarro endian, refusing to continue";
+        }
+    })();
 
-	// Instanciate
-	if (this._isDataView) {
-		this._view = new DataView(buffer, byteOffset, byteLength);
-		this._start = 0;
-	}
-	this._start = byteOffset;
-	if (byteOffset + byteLength > bufferLength) {
-		throw new Error("INDEX_SIZE_ERR: DOM Exception 1");
-	}
+    global.EndianAwareDataView = (function() {
+        
+        var proto = {
+            'setInt8': function(i, v) { return this.view.setInt8(i, v); },
+            'setUint8': function(i, v) { return this.view.setUint8(i, v); },
+            'getInt8': function(i) { return this.view.getInt8(i); },
+            'getUint8': function(i) { return this.view.getUint8(i); }
+        };
 
-	this._offset = 0;
-};
+        var setters = ['setInt32', 'setInt16', 'setUint32', 'setUint16',
+                       'setFloat32', 'setFloat64'];
+        var getters = ['getInt32', 'getInt16', 'getUint32', 'getUint16',
+                       'getFloat32', 'getFloat64'];
 
-jDataView.createBuffer = function () {
-	if (compatibility.NodeBuffer) {
-		var buffer = new Buffer(arguments.length);
-		for (var i = 0; i < arguments.length; ++i) {
-			buffer[i] = arguments[i];
-		}
-		return buffer;
-	}
-	if (compatibility.ArrayBuffer) {
-		var buffer = new ArrayBuffer(arguments.length);
-		var view = new Int8Array(buffer);
-		for (var i = 0; i < arguments.length; ++i) {
-			view[i] = arguments[i];
-		}
-		return buffer;
-	}
+        for (var i=0; i<setters.length; ++i) {
+            var name = setters[i];
+            proto[name]= (function(name) {
+                return function(byteOffset, value) { 
+                    return this.view[name](byteOffset, value, _is_little_endian); };
+            })(name);
+        }
+        for (i=0; i<getters.length; ++i) {
+            var name = getters[i];
+            proto[name]= (function(name) {
+                return function(byteOffset) { 
+                    return this.view[name](byteOffset, _is_little_endian); 
+                };
+            })(name);
+        }
+        
+        function my_dataView(buffer, byteOffset, byteLength) {
+            if (byteOffset === undefined) {
+                this.view = new DataView(buffer);
+            } else {
+                this.view = new DataView(buffer, byteOffset, byteLength);
+            }
+        };
+        my_dataView.prototype = proto;
+        return my_dataView;
+    })();
 
-	return String.fromCharCode.apply(null, arguments);
-};
-
-jDataView.prototype = {
-
-	// Helpers
-
-	getString: function (length, byteOffset) {
-		var value;
-
-		// Handle the lack of byteOffset
-		if (byteOffset === undefined) {
-			byteOffset = this._offset;
-		}
-
-		// Error Checking
-		if (typeof byteOffset !== 'number') {
-			throw new TypeError('Type error');
-		}
-		if (length < 0 || byteOffset + length > this.byteLength) {
-			throw new Error('INDEX_SIZE_ERR: DOM Exception 1');
-		}
-
-		if (this._isNodeBuffer) {
-			value = this.buffer.toString('ascii', this._start + byteOffset, this._start + byteOffset + length);
-		}
-		else {
-			value = '';
-			for (var i = 0; i < length; ++i) {
-				var chr = this.getUint8(byteOffset + i);
-				value += String.fromCharCode(chr > 127 ? 65533 : chr);
-			}
-		}
-
-		this._offset = byteOffset + length;
-		return value;
-	},
-
-	getChar: function (byteOffset) {
-		return this.getString(1, byteOffset);
-	},
-
-	tell: function () {
-		return this._offset;
-	},
-
-	seek: function (byteOffset) {
-		if (typeof byteOffset !== 'number') {
-			throw new TypeError('Type error');
-		}
-		if (byteOffset < 0 || byteOffset > this.byteLength) {
-			throw new Error('INDEX_SIZE_ERR: DOM Exception 1');
-		}
-
-		return this._offset = byteOffset;
-	},
-
-	// Compatibility functions on a String Buffer
-
-	_endianness: function (byteOffset, pos, max, littleEndian) {
-		return byteOffset + (littleEndian ? max - pos - 1 : pos);
-	},
-
-	_getFloat64: function (byteOffset, littleEndian) {
-		var b0 = this._getUint8(this._endianness(byteOffset, 0, 8, littleEndian)),
-			b1 = this._getUint8(this._endianness(byteOffset, 1, 8, littleEndian)),
-			b2 = this._getUint8(this._endianness(byteOffset, 2, 8, littleEndian)),
-			b3 = this._getUint8(this._endianness(byteOffset, 3, 8, littleEndian)),
-			b4 = this._getUint8(this._endianness(byteOffset, 4, 8, littleEndian)),
-			b5 = this._getUint8(this._endianness(byteOffset, 5, 8, littleEndian)),
-			b6 = this._getUint8(this._endianness(byteOffset, 6, 8, littleEndian)),
-			b7 = this._getUint8(this._endianness(byteOffset, 7, 8, littleEndian)),
-
-			sign = 1 - (2 * (b0 >> 7)),
-			exponent = ((((b0 << 1) & 0xff) << 3) | (b1 >> 4)) - (Math.pow(2, 10) - 1),
-
-		// Binary operators such as | and << operate on 32 bit values, using + and Math.pow(2) instead
-			mantissa = ((b1 & 0x0f) * Math.pow(2, 48)) + (b2 * Math.pow(2, 40)) + (b3 * Math.pow(2, 32)) +
-						(b4 * Math.pow(2, 24)) + (b5 * Math.pow(2, 16)) + (b6 * Math.pow(2, 8)) + b7;
-
-		if (exponent === 1024) {
-			if (mantissa !== 0) {
-				return NaN;
-			} else {
-				return sign * Infinity;
-			}
-		}
-
-		if (exponent === -1023) { // Denormalized
-			return sign * mantissa * Math.pow(2, -1022 - 52);
-		}
-
-		return sign * (1 + mantissa * Math.pow(2, -52)) * Math.pow(2, exponent);
-	},
-
-	_getFloat32: function (byteOffset, littleEndian) {
-		var b0 = this._getUint8(this._endianness(byteOffset, 0, 4, littleEndian)),
-			b1 = this._getUint8(this._endianness(byteOffset, 1, 4, littleEndian)),
-			b2 = this._getUint8(this._endianness(byteOffset, 2, 4, littleEndian)),
-			b3 = this._getUint8(this._endianness(byteOffset, 3, 4, littleEndian)),
-
-			sign = 1 - (2 * (b0 >> 7)),
-			exponent = (((b0 << 1) & 0xff) | (b1 >> 7)) - 127,
-			mantissa = ((b1 & 0x7f) << 16) | (b2 << 8) | b3;
-
-		if (exponent === 128) {
-			if (mantissa !== 0) {
-				return NaN;
-			} else {
-				return sign * Infinity;
-			}
-		}
-
-		if (exponent === -127) { // Denormalized
-			return sign * mantissa * Math.pow(2, -126 - 23);
-		}
-
-		return sign * (1 + mantissa * Math.pow(2, -23)) * Math.pow(2, exponent);
-	},
-
-	_getInt32: function (byteOffset, littleEndian) {
-		var b = this._getUint32(byteOffset, littleEndian);
-		return b > Math.pow(2, 31) - 1 ? b - Math.pow(2, 32) : b;
-	},
-
-	_getUint32: function (byteOffset, littleEndian) {
-		var b3 = this._getUint8(this._endianness(byteOffset, 0, 4, littleEndian)),
-			b2 = this._getUint8(this._endianness(byteOffset, 1, 4, littleEndian)),
-			b1 = this._getUint8(this._endianness(byteOffset, 2, 4, littleEndian)),
-			b0 = this._getUint8(this._endianness(byteOffset, 3, 4, littleEndian));
-
-		return (b3 * Math.pow(2, 24)) + (b2 << 16) + (b1 << 8) + b0;
-	},
-
-	_getInt16: function (byteOffset, littleEndian) {
-		var b = this._getUint16(byteOffset, littleEndian);
-		return b > Math.pow(2, 15) - 1 ? b - Math.pow(2, 16) : b;
-	},
-
-	_getUint16: function (byteOffset, littleEndian) {
-		var b1 = this._getUint8(this._endianness(byteOffset, 0, 2, littleEndian)),
-			b0 = this._getUint8(this._endianness(byteOffset, 1, 2, littleEndian));
-
-		return (b1 << 8) + b0;
-	},
-
-	_getInt8: function (byteOffset) {
-		var b = this._getUint8(byteOffset);
-		return b > Math.pow(2, 7) - 1 ? b - Math.pow(2, 8) : b;
-	},
-
-	_getUint8: function (byteOffset) {
-		if (this._isArrayBuffer) {
-			return new Uint8Array(this.buffer, byteOffset, 1)[0];
-		}
-		else if (this._isNodeBuffer) {
-			return this.buffer[byteOffset];
-		} else {
-			return this.buffer.charCodeAt(byteOffset) & 0xff;
-		}
-	}
-};
-
-// Create wrappers
-
-var dataTypes = {
-	'Int8': 1,
-	'Int16': 2,
-	'Int32': 4,
-	'Uint8': 1,
-	'Uint16': 2,
-	'Uint32': 4,
-	'Float32': 4,
-	'Float64': 8
-};
-var nodeNaming = {
-	'Int8': 'Int8',
-	'Int16': 'Int16',
-	'Int32': 'Int32',
-	'Uint8': 'UInt8',
-	'Uint16': 'UInt16',
-	'Uint32': 'UInt32',
-	'Float32': 'Float',
-	'Float64': 'Double'
-};
-
-for (var type in dataTypes) {
-	if (!dataTypes.hasOwnProperty(type)) {
-		continue;
-	}
-
-	// Bind the variable type
-	(function (type) {
-		var size = dataTypes[type];
-
-		// Create the function
-		jDataView.prototype['get' + type] =
-			function (byteOffset, littleEndian) {
-				var value;
-
-				// Handle the lack of endianness
-				if (littleEndian === undefined) {
-					littleEndian = this._littleEndian;
-				}
-
-				// Handle the lack of byteOffset
-				if (byteOffset === undefined) {
-					byteOffset = this._offset;
-				}
-
-				// Dispatch on the good method
-				if (this._isDataView) {
-					// DataView: we use the direct method
-					value = this._view['get' + type](byteOffset, littleEndian);
-				}
-				// ArrayBuffer: we use a typed array of size 1 if the alignment is good
-				// ArrayBuffer does not support endianess flag (for size > 1)
-				else if (this._isArrayBuffer && (this._start + byteOffset) % size === 0 && (size === 1 || littleEndian)) {
-					value = new global[type + 'Array'](this.buffer, this._start + byteOffset, 1)[0];
-				}
-				// NodeJS Buffer
-				else if (this._isNodeBuffer && compatibility.NodeBufferFull) {
-					if (littleEndian) {
-						value = this.buffer['read' + nodeNaming[type] + 'LE'](this._start + byteOffset);
-					} else {
-						value = this.buffer['read' + nodeNaming[type] + 'BE'](this._start + byteOffset);
-					}
-				} else if (this._isNodeBuffer && compatibility.NodeBufferEndian) {
-					value = this.buffer['read' + nodeNaming[type]](this._start + byteOffset, littleEndian);
-				}
-				else {
-					// Error Checking
-					if (typeof byteOffset !== 'number') {
-						throw new TypeError('Type error');
-					}
-					if (byteOffset + size > this.byteLength) {
-						throw new Error('INDEX_SIZE_ERR: DOM Exception 1');
-					}
-					value = this['_get' + type](this._start + byteOffset, littleEndian);
-				}
-
-				// Move the internal offset forward
-				this._offset = byteOffset + size;
-
-				return value;
-			};
-	})(type);
-}
-
-if (typeof jQuery !== 'undefined' && jQuery.fn.jquery >= "1.6.2") {
-	var convertResponseBodyToText = function (byteArray) {
-		// http://jsperf.com/vbscript-binary-download/6
-		var scrambledStr;
-		try {
-			scrambledStr = IEBinaryToArray_ByteStr(byteArray);
-		} catch (e) {
-			// http://stackoverflow.com/questions/1919972/how-do-i-access-xhr-responsebody-for-binary-data-from-javascript-in-ie
-			// http://miskun.com/javascript/internet-explorer-and-binary-files-data-access/
-			var IEBinaryToArray_ByteStr_Script =
-				"Function IEBinaryToArray_ByteStr(Binary)\r\n"+
-				"	IEBinaryToArray_ByteStr = CStr(Binary)\r\n"+
-				"End Function\r\n"+
-				"Function IEBinaryToArray_ByteStr_Last(Binary)\r\n"+
-				"	Dim lastIndex\r\n"+
-				"	lastIndex = LenB(Binary)\r\n"+
-				"	if lastIndex mod 2 Then\r\n"+
-				"		IEBinaryToArray_ByteStr_Last = AscB( MidB( Binary, lastIndex, 1 ) )\r\n"+
-				"	Else\r\n"+
-				"		IEBinaryToArray_ByteStr_Last = -1\r\n"+
-				"	End If\r\n"+
-				"End Function\r\n";
-
-			// http://msdn.microsoft.com/en-us/library/ms536420(v=vs.85).aspx
-			// proprietary IE function
-			window.execScript(IEBinaryToArray_ByteStr_Script, 'vbscript');
-
-			scrambledStr = IEBinaryToArray_ByteStr(byteArray);
-		}
-
-		var lastChr = IEBinaryToArray_ByteStr_Last(byteArray),
-		result = "",
-		i = 0,
-		l = scrambledStr.length % 8,
-		thischar;
-		while (i < l) {
-			thischar = scrambledStr.charCodeAt(i++);
-			result += String.fromCharCode(thischar & 0xff, thischar >> 8);
-		}
-		l = scrambledStr.length;
-		while (i < l) {
-			result += String.fromCharCode(
-				(thischar = scrambledStr.charCodeAt(i++), thischar & 0xff), thischar >> 8,
-				(thischar = scrambledStr.charCodeAt(i++), thischar & 0xff), thischar >> 8,
-				(thischar = scrambledStr.charCodeAt(i++), thischar & 0xff), thischar >> 8,
-				(thischar = scrambledStr.charCodeAt(i++), thischar & 0xff), thischar >> 8,
-				(thischar = scrambledStr.charCodeAt(i++), thischar & 0xff), thischar >> 8,
-				(thischar = scrambledStr.charCodeAt(i++), thischar & 0xff), thischar >> 8,
-				(thischar = scrambledStr.charCodeAt(i++), thischar & 0xff), thischar >> 8,
-				(thischar = scrambledStr.charCodeAt(i++), thischar & 0xff), thischar >> 8);
-		}
-		if (lastChr > -1) {
-			result += String.fromCharCode(lastChr);
-		}
-		return result;
-	};
-
-	jQuery.ajaxSetup({
-		converters: {
-			'* dataview': function(data) {
-				return new jDataView(data);
-			}
-		},
-		accepts: {
-			dataview: "text/plain; charset=x-user-defined"
-		},
-		responseHandler: {
-			dataview: function (responses, options, xhr) {
-				// Array Buffer Firefox
-				if ('mozResponseArrayBuffer' in xhr) {
-					responses.text = xhr.mozResponseArrayBuffer;
-				}
-				// Array Buffer Chrome
-				else if ('responseType' in xhr && xhr.responseType === 'arraybuffer' && xhr.response) {
-					responses.text = xhr.response;
-				}
-				// Internet Explorer (Byte array accessible through VBScript -- convert to text)
-				else if ('responseBody' in xhr) {
-					responses.text = convertResponseBodyToText(xhr.responseBody);
-				}
-				// Older Browsers
-				else {
-					responses.text = xhr.responseText;
-				}
-			}
-		}
-	});
-
-	jQuery.ajaxPrefilter('dataview', function(options, originalOptions, jqXHR) {
-		// trying to set the responseType on IE 6 causes an error
-		if (jQuery.support.ajaxResponseType) {
-			if (!options.hasOwnProperty('xhrFields')) {
-				options.xhrFields = {};
-			}
-			options.xhrFields.responseType = 'arraybuffer';
-		}
-		options.mimeType = 'text/plain; charset=x-user-defined';
-	});
-}
-
-global.jDataView = (global.module || {}).exports = jDataView;
+    global.my_ArrayBufferView = function(b, o, l) {
+        o = _.isUndefined(o) ? 0 : o;
+        l = _.isUndefined(l) ? b.byteLength : l;
+        return {
+            buffer: b,
+            offset: o,
+            length: l,
+            make: function(ctor, new_offset, new_length) { 
+                new_offset = _.isUndefined(new_offset) ? 0 : new_offset;
+                new_length = _.isUndefined(new_length) ? this.length : new_length;
+                var element_size = ctor.BYTES_PER_ELEMENT || 1;
+                var n_els = new_length / element_size;
+                if ((this.offset + new_offset) % element_size != 0) {
+                    var view = new DataView(this.buffer, this.offset + new_offset, new_length);
+                    var output_buffer = new ArrayBuffer(new_length);
+                    var out_view = new DataView(output_buffer);
+                    for (var i=0; i < new_length; ++i) {
+                        out_view.setUint8(i, view.getUint8(i));
+                    }
+                    return new ctor(output_buffer);
+                } else {
+                    return new ctor(this.buffer, 
+                                    this.offset + new_offset, 
+                                    n_els);
+                }
+            },
+            view: function(new_offset, new_length) {
+                // FIXME Needs bounds checking
+                return my_ArrayBufferView(this.buffer, this.offset + new_offset, new_length);
+            }
+        };
+    };
 
 })(this);
+
+/*
+
+ RServe is a low-level communication layer between Javascript and a
+ running RServe process on the other side, via Websockets. 
+ 
+ */
+
+(function() {
+
+function RserveError(message, status_code) {
+    this.name = "RserveError";
+    this.message = message;
+    this.status_code = status_code;
+}
+
+RserveError.prototype = Object.create(Error);
+RserveError.prototype.constructor = RserveError;
+
+var Rsrv = {
+    PAR_TYPE: function(x) { return x & 255; },
+    PAR_LEN: function(x) { return x >> 8; },
+    PAR_LENGTH: function(x) { return x >> 8; },
+    par_parse: function(x) { return [Rsrv.PAR_TYPE(x), Rsrv.PAR_LEN(x)]; },
+    SET_PAR: function(ty, len) { return ((len & 0xffffff) << 8 | (ty & 255)); },
+    CMD_STAT: function(x) { return (x >> 24) & 127; },
+    SET_STAT: function(x, s) { return x | ((s & 127) << 24); },
+
+    CMD_RESP           : 0x10000,
+    RESP_OK            : 0x10000 | 0x0001,
+    RESP_ERR           : 0x10000 | 0x0002,
+    OOB_SEND           : 0x30000 | 0x1000,
+    ERR_auth_failed    : 0x41,
+    ERR_conn_broken    : 0x42,
+    ERR_inv_cmd        : 0x43,
+    ERR_inv_par        : 0x44,
+    ERR_Rerror         : 0x45,
+    ERR_IOerror        : 0x46,
+    ERR_notOpen        : 0x47,
+    ERR_accessDenied   : 0x48,
+    ERR_unsupportedCmd : 0x49,
+    ERR_unknownCmd     : 0x4a,
+    ERR_data_overflow  : 0x4b,
+    ERR_object_too_big : 0x4c,
+    ERR_out_of_mem     : 0x4d,
+    ERR_ctrl_closed    : 0x4e,
+    ERR_session_busy   : 0x50,
+    ERR_detach_failed  : 0x51,
+
+    CMD_long             : 0x001,
+    CMD_voidEval         : 0x002,
+    CMD_eval             : 0x003,
+    CMD_shutdown         : 0x004,
+    CMD_openFile         : 0x010,
+    CMD_createFile       : 0x011,
+    CMD_closeFile        : 0x012,
+    CMD_readFile         : 0x013,
+    CMD_writeFile        : 0x014,
+    CMD_removeFile       : 0x015,
+    CMD_setSEXP          : 0x020,
+    CMD_assignSEXP       : 0201,
+    CMD_detachSession    : 0x030,
+    CMD_detachedVoidEval : 0x031,
+    CMD_attachSession    : 0x032,
+    CMD_ctrl             : 0x40,
+    CMD_ctrlEval         : 0x42,
+    CMD_ctrlSource       : 0x45,
+    CMD_ctrlShutdown     : 0x44,
+    CMD_setBufferSize    : 0x081,
+    CMD_setEncoding      : 0x082,
+    CMD_SPECIAL_MASK     : 0xf0,
+    CMD_serEval          : 0xf5,
+    CMD_serAssign        : 0xf6,
+    CMD_serEEval         : 0xf7,
+
+
+    DT_INT        : 1,
+    DT_CHAR       : 2,
+    DT_DOUBLE     : 3,
+    DT_STRING     : 4,
+    DT_BYTESTREAM : 5,
+    DT_SEXP       : 10,
+    DT_ARRAY      : 11,
+    DT_LARGE      : 64,
+
+    XT_NULL          : 0,
+    XT_INT           : 1,
+    XT_DOUBLE        : 2,
+    XT_STR           : 3,
+    XT_LANG          : 4,
+    XT_SYM           : 5,
+    XT_BOOL          : 6,
+    XT_S4            : 7,
+    XT_VECTOR        : 16,
+    XT_LIST          : 17,
+    XT_CLOS          : 18,
+    XT_SYMNAME       : 19,
+    XT_LIST_NOTAG    : 20,
+    XT_LIST_TAG      : 21,
+    XT_LANG_NOTAG    : 22,
+    XT_LANG_TAG      : 23,
+    XT_VECTOR_EXP    : 26,
+    XT_VECTOR_STR    : 27,
+    XT_ARRAY_INT     : 32,
+    XT_ARRAY_DOUBLE  : 33,
+    XT_ARRAY_STR     : 34,
+    XT_ARRAY_BOOL_UA : 35,
+    XT_ARRAY_BOOL    : 36,
+    XT_RAW           : 37,
+    XT_ARRAY_CPLX    : 38,
+    XT_UNKNOWN       : 48,
+    XT_LARGE         : 64,
+    XT_HAS_ATTR      : 128,
+
+    BOOL_TRUE  : 1,
+    BOOL_FALSE : 0,
+    BOOL_NA    : 2,
+
+    GET_XT: function(x) { return x & 63; },
+    GET_DT: function(x) { return x & 63; },
+    HAS_ATTR: function(x) { return (x & Rsrv.XT_HAS_ATTR) > 0; },
+    IS_LARGE: function(x) { return (x & Rsrv.XT_LARGE) > 0; },
+
+    // # FIXME A WHOLE LOT OF MACROS HERE WHICH ARE PROBABLY IMPORTANT
+    // ##############################################################################
+
+    itop: function(x) { return x; },
+    ptoi: function(x) { return x; },
+    dtop: function(x) { return x; },
+    ptod: function(x) { return x; },
+
+    fixdcpy: function() { throw new RserveError("unimplemented", -1); },
+
+    status_codes: {
+        0x41 : "ERR_auth_failed"   ,
+        0x42 : "ERR_conn_broken"   ,
+        0x43 : "ERR_inv_cmd"       ,
+        0x44 : "ERR_inv_par"       ,
+        0x45 : "ERR_Rerror"        ,
+        0x46 : "ERR_IOerror"       ,
+        0x47 : "ERR_notOpen"       ,
+        0x48 : "ERR_accessDenied"  ,
+        0x49 : "ERR_unsupportedCmd",
+        0x4a : "ERR_unknownCmd"    ,
+        0x4b : "ERR_data_overflow" ,
+        0x4c : "ERR_object_too_big",
+        0x4d : "ERR_out_of_mem"    ,
+        0x4e : "ERR_ctrl_closed"   ,
+        0x50 : "ERR_session_busy"  ,
+        0x51 : "ERR_detach_failed"
+    }
+};
+
+function reader(m)
+{
+    var handlers = {};
+    var _;
+
+    function lift(f, amount) {
+        return function(attributes, length) {
+            return [f.call(that, attributes, length), amount || length];
+        };
+    }
+
+    function bind(m, f) {
+        return function(attributes, length) {
+            var t = m.call(that, attributes, length);
+            var t2 = f(t[0])(attributes, length - t[1]);
+            return [t2[0], t[1] + t2[1]];
+        };
+    }
+
+    function unfold(f) {
+        return function(attributes, length) {
+            var result = [];
+            var old_length = length;
+            while (length > 0) {
+                var t = f.call(that, attributes, length);
+                result.push(t[0]);
+                length -= t[1];
+            }
+            return [result, old_length];
+        };
+    }
+
+    var that = {
+        offset: 0,
+        data_view: m.make(EndianAwareDataView),
+        msg: m,
+
+        //////////////////////////////////////////////////////////////////////
+
+        read_int: function() {
+            var old_offset = this.offset;
+            this.offset += 4;
+            return this.data_view.getInt32(old_offset);
+        },
+        read_string: function(length) {
+            // FIXME SLOW
+            var result = "";
+            while (length--) {
+                var c = this.data_view.getInt8(this.offset++);
+                if (c) result = result + String.fromCharCode(c);
+            }
+            return result;
+        },
+        read_stream: function(length) {
+            var old_offset = this.offset;
+            this.offset += length;
+            return this.msg.view(old_offset, length);
+        },
+        read_int_vector: function(length) {
+            var old_offset = this.offset;
+            this.offset += length;
+            return this.msg.make(Int32Array, old_offset, length);
+        },
+        read_double_vector: function(length) {
+            var old_offset = this.offset;
+            this.offset += length;
+            return this.msg.make(Float64Array, old_offset, length);
+        },
+
+        //////////////////////////////////////////////////////////////////////
+
+        read_null: lift(function(a, l) { return Robj.null(a); }),
+
+        //////////////////////////////////////////////////////////////////////
+        // and these return full R objects as well.
+
+        read_string_array: function(attributes, length) {
+            var a = this.read_stream(length).make(Uint8Array);
+            var result = [];
+            var current_str = "";
+            for (var i=0; i<a.length; ++i)
+                if (a[i] === 0) {
+                    result.push(current_str);
+                    current_str = "";
+                } else {
+                    current_str = current_str + String.fromCharCode(a[i]);
+                }
+            return [Robj.string_array(result, attributes), length];
+        },
+        read_bool_array: function(attributes, length) {
+            var l2 = this.read_int();
+            var s = this.read_stream(length-4);
+            var a = s.make(Uint8Array); // new Uint8Array(s, 0, l2);
+            var result = [];
+            for (var i=0; i<l2; ++i)
+                result[i] = !!a[i];
+            return [Robj.bool_array(result, attributes), length];
+        },
+
+        read_sexp: function() {
+            var d = this.read_int();
+            var _ = Rsrv.par_parse(d);
+            var t = _[0], l = _[1];
+            var total_read = 4;
+            var attributes = undefined;
+            if (t & Rsrv.XT_HAS_ATTR) {
+                t = t & ~Rsrv.XT_HAS_ATTR;
+                var attr_result = this.read_sexp();
+                attributes = attr_result[0];
+                total_read += attr_result[1];
+                l -= attr_result[1];
+            }
+            if (handlers[t] === undefined) {
+                throw new RserveError("Unimplemented " + t, -1);
+            } else {
+                var result = handlers[t].call(this, attributes, l);
+                return [result[0], total_read + result[1]];
+            }
+        }
+    };
+
+    that.read_clos = bind(that.read_sexp, function(formals) { 
+              return bind(that.read_sexp, function(body)    { 
+              return lift(function(a, l) {
+              return Robj.clos(formals, body, a); 
+              }, 0);
+              } );
+    });
+
+    that.read_list = unfold(that.read_sexp);
+    that.read_list_tag = bind(that.read_list, function(lst) {
+        return lift(function(attributes, length) {
+            var result = {};
+            for (var i=0; i<lst.length; i+=2) {
+                var value = lst[i], tag = lst[i+1];
+                if (tag.type !== "symbol")
+                    throw new RserveError("Unexpected type " + tag.type + " as tag for tagged_list", -1);
+                result[tag.value] = value;
+            }
+            return Robj.tagged_list(result, attributes);
+        }, 0);
+    });
+
+    function xf(f, g) { return bind(f, function(t) { 
+        return lift(function(a, l) { return g(t, a); }, 0); 
+    }); }
+    that.read_vector       = xf(that.read_list, Robj.vector);
+    that.read_list_no_tag  = xf(that.read_list, Robj.list);
+    that.read_lang_no_tag  = xf(that.read_list, Robj.lang);
+    that.read_vector_exp   = xf(that.read_list, Robj.vector_exp);
+
+    function sl(f, g) { return lift(function(a, l) {
+        return g(f.call(that, l), a);
+    }); }
+    that.read_symname      = sl(that.read_string,        Robj.symbol);
+    that.read_int_array    = sl(that.read_int_vector,    Robj.int_array);
+    that.read_double_array = sl(that.read_double_vector, Robj.double_array);
+
+    handlers[Rsrv.XT_NULL]         = that.read_null;
+    handlers[Rsrv.XT_VECTOR]       = that.read_vector;
+    handlers[Rsrv.XT_CLOS]         = that.read_clos;
+    handlers[Rsrv.XT_SYMNAME]      = that.read_symname;
+    handlers[Rsrv.XT_LIST_NOTAG]   = that.read_list_no_tag;
+    handlers[Rsrv.XT_LIST_TAG]     = that.read_list_tag;
+    handlers[Rsrv.XT_LANG_NOTAG]   = that.read_lang_no_tag;
+    handlers[Rsrv.XT_VECTOR_EXP]   = that.read_vector_exp;
+    handlers[Rsrv.XT_ARRAY_INT]    = that.read_int_array;
+    handlers[Rsrv.XT_ARRAY_DOUBLE] = that.read_double_array;
+    handlers[Rsrv.XT_ARRAY_STR]    = that.read_string_array;
+    handlers[Rsrv.XT_ARRAY_BOOL]   = that.read_bool_array;
+
+    return that;
+}
+
+function parse(msg)
+{
+    var header = new Int32Array(msg, 0, 4);
+    if (header[0] !== Rsrv.RESP_OK && header[0] !== Rsrv.OOB_SEND) {
+        var status_code = header[0] >> 24;
+        throw new RserveError("ERROR FROM R SERVER: " + (Rsrv.status_codes[status_code] || 
+                                         status_code)
+               + " " + header[0] + " " + header[1] + " " + header[2] + " " + header[3]
+               + " " + msg.byteLength
+               + " " + msg, status_code);
+    }
+
+    var payload = my_ArrayBufferView(msg, 16, msg.byteLength - 16);
+    if (payload.length === 0)
+        return null;
+    var result = parse_payload(reader(payload));
+    return [result, header[0]];
+}
+
+function parse_payload(reader)
+{
+    var d = reader.read_int();
+    var _ = Rsrv.par_parse(d);
+    var t = _[0], l = _[1];
+    if (t === Rsrv.DT_INT) {
+        return { type: "int", value: reader.read_int() };
+    } else if (t === Rsrv.DT_STRING) {
+        return { type: "string", value: reader.read_string(l) };
+    } else if (t === Rsrv.DT_BYTESTREAM) { // NB this returns a my_ArrayBufferView()
+        return { type: "stream", value: reader.read_stream(l) };
+    } else if (t === Rsrv.DT_SEXP) {
+        _ = reader.read_sexp();
+        var sexp = _[0], l2 = _[1];
+        return { type: "sexp", value: sexp };
+    } else
+        throw new RserveError("Bad type for parse? " + t + " " + l, -1);
+}
+
+function make_basic(type, proto) {
+    return function(v, attrs) {
+        function r_object() {
+            this.type = type;
+            this.value = v;
+            this.attributes = attrs;
+        }
+        r_object.prototype = proto || {
+            html_element: function() {
+                return $("<div class='obj'></div>").append($("<div class='key'></div>").html(type));
+            }
+        };
+        return new r_object();
+    };
+}
+
+function pprint_array_as_div(formatter) {
+    function plain_array() {
+        var result = $("<div class='obj'></div>");
+        var div = $("<div class='string-value'></div>");
+        var v = this.value;
+        var s;
+        var that = this;
+        formatter = formatter || function(v) { return v; };
+        var element;
+        if (this.attributes && this.attributes.value.names) {
+            element = function(i) {
+                return that.attributes.value.names.value[i] + ": " + formatter(String(v[i]));
+            };
+        } else if (this.attributes && this.attributes.value.levels) {
+            element = function(i) {
+                return that.attributes.value.levels.value[v[i]-1];
+            };
+        } else {
+            element = function(i) {
+                return formatter(String(v[i]));
+            };
+        }
+        
+        if (v.length === 0) {
+            s = "[]";
+        } else if (v.length === 1) {
+            s = element(0);
+        } else if (v.length <= 10) {
+            s = "[" + element(0);
+            for (var i=1; i<v.length; ++i) {
+                s = s + ", " + element(i);
+            }
+            s = s + "]";
+        } else {
+            s = "[" + element(0);
+            for (var i=1; i<5; ++i) {
+                s = s + ", " + element(i);
+            }
+            s = s + ", ... ";
+            for (i=v.length-5; i<v.length; ++i)
+                s = s + ", " + element(i);
+            s = s + "]";
+        }
+        div.html(s);
+        result.append(div);
+        return result;
+    }
+    function matrix() {
+        var result = document.createElement("table");
+        var header = document.createElement("tr");
+        result.appendChild(header);
+        var dims = this.attributes.value.dim.value;
+        var values = this.value;
+        var that = this;
+        d3.select(header)
+            .selectAll("td")
+            .data(_.range(dims[1]+1))
+            .enter().append("td").text(function(i) {
+                if (i === 0) return "";
+                return "[," + i + "]";
+            });
+        d3.select(result)
+            .selectAll("tr-data")
+            .data(_.range(dims[0]))
+            .enter().append("tr")
+                    .selectAll("td")
+                    .data(function(i) { return _.map(_.range(dims[1]+1),
+                                                     function(j) {
+                                                         return [i,j];
+                                                     });
+                                      })
+                    .enter()
+                    .append("td")
+                    .text(function(d) {
+                        var row = d[0], col = d[1];
+                        if (col === 0) {
+                            return "[" + (row+1) + ",]";
+                        };
+                        var v = values[(col-1) * dims[0] + row];
+                        if (that.attributes &&
+                            that.attributes.value.levels) {
+                            return that.attributes.value.levels.value[v-1];
+                        } else {
+                            return v;
+                        }
+                    });
+        return result;
+    }
+    
+    return function() {
+        if (this.attributes &&
+            this.attributes.value.dim) {
+            return matrix.call(this);
+        } else
+            return plain_array.call(this);
+
+    };
+}
+
+Robj = {
+    "null": function(attributes) {
+        return { 
+            type: "null", 
+            value: null,
+            attributes: attributes,
+            html_element: function() {
+                return $("<div class='obj'><div class='key'>null</div></div>");
+            }
+        };
+    },
+
+    clos: function(formals, body, attributes) {
+        return {
+            type: "clos",
+            value: { formals: formals,
+                     body: body },
+            attributes: attributes,
+            html_element: function() {
+                var div = $("<div class='obj'></div>");
+                var pair = $("<div></div>");
+                pair.append($("<div class='key'>formals:</div>"));
+                pair.append(this.value.formals.html_element());
+                div.append(pair);
+                pair = $("<div></div>");
+                pair.append($("<div class='key'>body:</div>"));
+                pair.append(this.value.body.html_element());
+                div.append(pair);
+                return div;
+            }
+        };
+    },
+
+    vector: make_basic("vector", {
+        html_element: function () {
+            var div = $("<div class='obj'></div>");
+            if (!this.attributes) {
+                for (var i=0; i<this.value.length; ++i) {
+                    div.append(this.value[i].html_element());
+                }
+            } else {
+                var lengths = _.map(this.value, function(v) { return v.value.length; });
+                var names = this.attributes.value.names.value;
+                if (_.all(lengths, function(i) { return i === lengths[0]; })) {
+                    // it's a dataframe
+                    var result = document.createElement("table");
+                    var th = document.createElement("tr");
+                    var values = this.value;
+                    result.appendChild(th);
+                    d3.select(th)
+                        .selectAll("th")
+                        .data(_.range(lengths.length))
+                        .enter().append("th").text(function(i) {
+                            return names[i];
+                        });
+                    var rows;
+                        // rows = _.range(lengths[0]);
+                    if (lengths[0] < 11) {
+                        rows = _.range(lengths[0]);
+                    } else {
+                        rows = [0,1,2,3,4,5];
+                        rows.push.apply(rows, _.range(lengths[0] - 5, lengths[0]));
+                    }
+                    d3.select(result)
+                        .selectAll("tr-data")
+                        .data(rows)
+                        .enter().append("tr")
+                                .selectAll("td")
+                                .data(function(i) { return _.map(_.range(lengths.length),
+                                                                 function(j) {
+                                                                     return [i,j]; 
+                                                                 });
+                                                  })
+                                .enter()
+                                .append("td")
+                                .text(function(d, i) {
+                                    var row = d[0], col = d[1];
+                                    if (lengths[0] >= 11 && row === 5)
+                                        return "...";
+                                    var v = values[col].value[row];
+                                    if (values[col].attributes) {
+                                        return values[col].attributes.value.levels.value[v-1];
+                                    } else {
+                                        return v;
+                                    }
+                                });
+                    div.append(result);
+                } else {
+                    var pair = $("<div></div>");
+                    for (var i=0; i<this.value.length; ++i) {
+                        pair.append($("<span class='key'></span>").append(names[i] + ": "));
+                        pair.append(this.value[i].html_element());
+                    }
+                    div.append(pair);
+                }
+            }
+            return div;
+        }
+    }),
+    symbol: make_basic("symbol"),
+    list: make_basic("list"),
+    lang: make_basic("lang"),
+    tagged_list: make_basic("tagged_list"),
+    tagged_lang: make_basic("tagged_lang"),
+    vector_exp: make_basic("vector_exp"),
+    int_array: make_basic("int_array", {
+        html_element: pprint_array_as_div()
+    }),
+    double_array: make_basic("double_array", {
+        html_element: pprint_array_as_div()
+    }),
+    string_array: make_basic("string_array", {
+        // from http://javascript.crockford.com/remedial.html
+        html_element: pprint_array_as_div(function (s) {
+            var c, i, l = s.length, o = '"';
+            for (i = 0; i < l; i += 1) {
+                c = s.charAt(i);
+                if (c >= ' ') {
+                    if (c === '\\' || c === '"') {
+                        o += '\\';
+                    }
+                    o += c;
+                } else {
+                    switch (c) {
+                    case '\b':
+                        o += '\\b';
+                        break;
+                    case '\f':
+                        o += '\\f';
+                        break;
+                    case '\n':
+                        o += '\\n';
+                        break;
+                    case '\r':
+                        o += '\\r';
+                        break;
+                    case '\t':
+                        o += '\\t';
+                        break;
+                    default:
+                        c = c.charCodeAt();
+                        o += '\\u00' + Math.floor(c / 16).toString(16) +
+                            (c % 16).toString(16);
+                    }
+                }
+            }
+            return o + '"';
+        })
+    }),
+    bool_array: make_basic("bool_array", {
+        html_element: pprint_array_as_div()
+    })
+};
+
+Rserve = {
+    create: function(opts) {
+        var host = opts.host;
+        var onconnect = opts.on_connect;
+        var socket = new WebSocket(host);
+        var handle_error = opts.on_error || function(error) { throw new RserveError(error, -1); };
+        socket.binaryType = 'arraybuffer';
+
+        var received_handshake = false;
+        var value_callbacks = [];
+
+        var result;
+        var command_counter = 0;
+        
+        function hand_shake(msg)
+        {
+            msg = msg.data;
+            if (msg.substr(0,4) !== 'Rsrv') {
+                handle_error("server is not an RServe instance", -1);
+            } else if (msg.substr(4, 4) !== '0103') {
+                handle_error("sorry, rserve only speaks the 0103 version of the R server protocol", -1);
+            } else if (msg.substr(8, 4) !== 'QAP1') {
+                handle_error("sorry, rserve only speaks QAP1", -1);
+            } else {
+                received_handshake = true;
+                if (opts.login)
+                    result.login(opts.login);
+                result.running = true;
+                onconnect && onconnect.call(result);
+            }
+        }
+
+        socket.onclose = function(msg) {
+            result.running = false;
+            opts.on_close && opts.on_close(msg);
+        };
+
+        socket.onmessage = function(msg) {
+            if (!received_handshake) {
+                hand_shake(msg);
+                return;
+            }
+            if (typeof msg.data === 'string')
+                opts.on_raw_string && opts.on_raw_string(msg.data);
+            else {
+                var v;
+                try {
+                    v = parse(msg.data);
+                } catch (e) {
+                    handle_error(e.message, e.status_code);
+                    return;
+                }
+
+                if (v === null) {
+                    // there's no data, but there's no error either: ignore the message
+                    return;
+                }
+                var type = v[1];
+                v = v[0];
+                switch (type) {
+                case Rsrv.RESP_OK:
+                    var value_callback = value_callbacks.shift();
+                    value_callback(v);
+                    break;
+                case Rsrv.OOB_SEND: 
+                    opts.on_data && opts.on_data(v);
+                    break;
+                default:
+                    throw new RserveError("Internal Error, parse returned unexpected type " + type, -1);
+                }
+            }
+        };
+
+        result = {
+            close: function() {
+                socket.close();
+            },
+            
+            login: function(auth_string) {
+                var command = auth_string;
+                var buffer = new ArrayBuffer(command.length + 21);
+                var view = new EndianAwareDataView(buffer);
+                view.setInt32(0,  1);
+                view.setInt32(4,  5 + command.length);
+                view.setInt32(8,  0);
+                view.setInt32(12, 0);
+                view.setInt32(16, 4 + ((1 + command.length) << 8));
+                for (var i=0; i<command.length; ++i) {
+                    view.setUint8(20 + i, command.charCodeAt(i));
+                }
+                view.setUint8(buffer.byteLength - 1, 0);
+                socket.send(buffer);
+            },
+            eval: function(command, k) {
+                k = k || function() {};
+                value_callbacks.push(k);
+                var buffer = new ArrayBuffer(command.length + 21);
+                var view = new EndianAwareDataView(buffer);
+                view.setInt32(0,  3);
+                view.setInt32(4,  5 + command.length);
+                view.setInt32(8,  0);
+                view.setInt32(12, 0);
+                view.setInt32(16, 4 + ((1 + command.length) << 8));
+                for (var i=0; i<command.length; ++i) {
+                    view.setUint8(20 + i, command.charCodeAt(i));
+                }
+                view.setUint8(buffer.byteLength - 1, 0);
+                socket.send(buffer);
+            }
+        };
+        return result;
+    }
+};
+
+})();
 var hljs=new function(){function m(p){return p.replace(/&/gm,"&amp;").replace(/</gm,"&lt;")}function f(r,q,p){return RegExp(q,"m"+(r.cI?"i":"")+(p?"g":""))}function b(r){for(var p=0;p<r.childNodes.length;p++){var q=r.childNodes[p];if(q.nodeName=="CODE"){return q}if(!(q.nodeType==3&&q.nodeValue.match(/\s+/))){break}}}function h(t,s){var p="";for(var r=0;r<t.childNodes.length;r++){if(t.childNodes[r].nodeType==3){var q=t.childNodes[r].nodeValue;if(s){q=q.replace(/\n/g,"")}p+=q}else{if(t.childNodes[r].nodeName=="BR"){p+="\n"}else{p+=h(t.childNodes[r])}}}if(/MSIE [678]/.test(navigator.userAgent)){p=p.replace(/\r/g,"\n")}return p}function a(s){var r=s.className.split(/\s+/);r=r.concat(s.parentNode.className.split(/\s+/));for(var q=0;q<r.length;q++){var p=r[q].replace(/^language-/,"");if(e[p]){return p}}}function c(q){var p=[];(function(s,t){for(var r=0;r<s.childNodes.length;r++){if(s.childNodes[r].nodeType==3){t+=s.childNodes[r].nodeValue.length}else{if(s.childNodes[r].nodeName=="BR"){t+=1}else{if(s.childNodes[r].nodeType==1){p.push({event:"start",offset:t,node:s.childNodes[r]});t=arguments.callee(s.childNodes[r],t);p.push({event:"stop",offset:t,node:s.childNodes[r]})}}}}return t})(q,0);return p}function k(y,w,x){var q=0;var z="";var s=[];function u(){if(y.length&&w.length){if(y[0].offset!=w[0].offset){return(y[0].offset<w[0].offset)?y:w}else{return w[0].event=="start"?y:w}}else{return y.length?y:w}}function t(D){var A="<"+D.nodeName.toLowerCase();for(var B=0;B<D.attributes.length;B++){var C=D.attributes[B];A+=" "+C.nodeName.toLowerCase();if(C.value!==undefined&&C.value!==false&&C.value!==null){A+='="'+m(C.value)+'"'}}return A+">"}while(y.length||w.length){var v=u().splice(0,1)[0];z+=m(x.substr(q,v.offset-q));q=v.offset;if(v.event=="start"){z+=t(v.node);s.push(v.node)}else{if(v.event=="stop"){var p,r=s.length;do{r--;p=s[r];z+=("</"+p.nodeName.toLowerCase()+">")}while(p!=v.node);s.splice(r,1);while(r<s.length){z+=t(s[r]);r++}}}}return z+m(x.substr(q))}function j(){function q(x,y,v){if(x.compiled){return}var u;var s=[];if(x.k){x.lR=f(y,x.l||hljs.IR,true);for(var w in x.k){if(!x.k.hasOwnProperty(w)){continue}if(x.k[w] instanceof Object){u=x.k[w]}else{u=x.k;w="keyword"}for(var r in u){if(!u.hasOwnProperty(r)){continue}x.k[r]=[w,u[r]];s.push(r)}}}if(!v){if(x.bWK){x.b="\\b("+s.join("|")+")\\s"}x.bR=f(y,x.b?x.b:"\\B|\\b");if(!x.e&&!x.eW){x.e="\\B|\\b"}if(x.e){x.eR=f(y,x.e)}}if(x.i){x.iR=f(y,x.i)}if(x.r===undefined){x.r=1}if(!x.c){x.c=[]}x.compiled=true;for(var t=0;t<x.c.length;t++){if(x.c[t]=="self"){x.c[t]=x}q(x.c[t],y,false)}if(x.starts){q(x.starts,y,false)}}for(var p in e){if(!e.hasOwnProperty(p)){continue}q(e[p].dM,e[p],true)}}function d(B,C){if(!j.called){j();j.called=true}function q(r,M){for(var L=0;L<M.c.length;L++){if((M.c[L].bR.exec(r)||[null])[0]==r){return M.c[L]}}}function v(L,r){if(D[L].e&&D[L].eR.test(r)){return 1}if(D[L].eW){var M=v(L-1,r);return M?M+1:0}return 0}function w(r,L){return L.i&&L.iR.test(r)}function K(N,O){var M=[];for(var L=0;L<N.c.length;L++){M.push(N.c[L].b)}var r=D.length-1;do{if(D[r].e){M.push(D[r].e)}r--}while(D[r+1].eW);if(N.i){M.push(N.i)}return f(O,M.join("|"),true)}function p(M,L){var N=D[D.length-1];if(!N.t){N.t=K(N,E)}N.t.lastIndex=L;var r=N.t.exec(M);return r?[M.substr(L,r.index-L),r[0],false]:[M.substr(L),"",true]}function z(N,r){var L=E.cI?r[0].toLowerCase():r[0];var M=N.k[L];if(M&&M instanceof Array){return M}return false}function F(L,P){L=m(L);if(!P.k){return L}var r="";var O=0;P.lR.lastIndex=0;var M=P.lR.exec(L);while(M){r+=L.substr(O,M.index-O);var N=z(P,M);if(N){x+=N[1];r+='<span class="'+N[0]+'">'+M[0]+"</span>"}else{r+=M[0]}O=P.lR.lastIndex;M=P.lR.exec(L)}return r+L.substr(O,L.length-O)}function J(L,M){if(M.sL&&e[M.sL]){var r=d(M.sL,L);x+=r.keyword_count;return r.value}else{return F(L,M)}}function I(M,r){var L=M.cN?'<span class="'+M.cN+'">':"";if(M.rB){y+=L;M.buffer=""}else{if(M.eB){y+=m(r)+L;M.buffer=""}else{y+=L;M.buffer=r}}D.push(M);A+=M.r}function G(N,M,Q){var R=D[D.length-1];if(Q){y+=J(R.buffer+N,R);return false}var P=q(M,R);if(P){y+=J(R.buffer+N,R);I(P,M);return P.rB}var L=v(D.length-1,M);if(L){var O=R.cN?"</span>":"";if(R.rE){y+=J(R.buffer+N,R)+O}else{if(R.eE){y+=J(R.buffer+N,R)+O+m(M)}else{y+=J(R.buffer+N+M,R)+O}}while(L>1){O=D[D.length-2].cN?"</span>":"";y+=O;L--;D.length--}var r=D[D.length-1];D.length--;D[D.length-1].buffer="";if(r.starts){I(r.starts,"")}return R.rE}if(w(M,R)){throw"Illegal"}}var E=e[B];var D=[E.dM];var A=0;var x=0;var y="";try{var s,u=0;E.dM.buffer="";do{s=p(C,u);var t=G(s[0],s[1],s[2]);u+=s[0].length;if(!t){u+=s[1].length}}while(!s[2]);if(D.length>1){throw"Illegal"}return{r:A,keyword_count:x,value:y}}catch(H){if(H=="Illegal"){return{r:0,keyword_count:0,value:m(C)}}else{throw H}}}function g(t){var p={keyword_count:0,r:0,value:m(t)};var r=p;for(var q in e){if(!e.hasOwnProperty(q)){continue}var s=d(q,t);s.language=q;if(s.keyword_count+s.r>r.keyword_count+r.r){r=s}if(s.keyword_count+s.r>p.keyword_count+p.r){r=p;p=s}}if(r.language){p.second_best=r}return p}function i(r,q,p){if(q){r=r.replace(/^((<[^>]+>|\t)+)/gm,function(t,w,v,u){return w.replace(/\t/g,q)})}if(p){r=r.replace(/\n/g,"<br>")}return r}function n(t,w,r){var x=h(t,r);var v=a(t);var y,s;if(v){y=d(v,x)}else{return}var q=c(t);if(q.length){s=document.createElement("pre");s.innerHTML=y.value;y.value=k(q,c(s),x)}y.value=i(y.value,w,r);var u=t.className;if(!u.match("(\\s|^)(language-)?"+v+"(\\s|$)")){u=u?(u+" "+v):v}if(/MSIE [678]/.test(navigator.userAgent)&&t.tagName=="CODE"&&t.parentNode.tagName=="PRE"){s=t.parentNode;var p=document.createElement("div");p.innerHTML="<pre><code>"+y.value+"</code></pre>";t=p.firstChild.firstChild;p.firstChild.cN=s.cN;s.parentNode.replaceChild(p.firstChild,s)}else{t.innerHTML=y.value}t.className=u;t.result={language:v,kw:y.keyword_count,re:y.r};if(y.second_best){t.second_best={language:y.second_best.language,kw:y.second_best.keyword_count,re:y.second_best.r}}}function o(){if(o.called){return}o.called=true;var r=document.getElementsByTagName("pre");for(var p=0;p<r.length;p++){var q=b(r[p]);if(q){n(q,hljs.tabReplace)}}}function l(){if(window.addEventListener){window.addEventListener("DOMContentLoaded",o,false);window.addEventListener("load",o,false)}else{if(window.attachEvent){window.attachEvent("onload",o)}else{window.onload=o}}}var e={};this.LANGUAGES=e;this.highlight=d;this.highlightAuto=g;this.fixMarkup=i;this.highlightBlock=n;this.initHighlighting=o;this.initHighlightingOnLoad=l;this.IR="[a-zA-Z][a-zA-Z0-9_]*";this.UIR="[a-zA-Z_][a-zA-Z0-9_]*";this.NR="\\b\\d+(\\.\\d+)?";this.CNR="\\b(0[xX][a-fA-F0-9]+|(\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)";this.BNR="\\b(0b[01]+)";this.RSR="!|!=|!==|%|%=|&|&&|&=|\\*|\\*=|\\+|\\+=|,|\\.|-|-=|/|/=|:|;|<|<<|<<=|<=|=|==|===|>|>=|>>|>>=|>>>|>>>=|\\?|\\[|\\{|\\(|\\^|\\^=|\\||\\|=|\\|\\||~";this.ER="(?![\\s\\S])";this.BE={b:"\\\\.",r:0};this.ASM={cN:"string",b:"'",e:"'",i:"\\n",c:[this.BE],r:0};this.QSM={cN:"string",b:'"',e:'"',i:"\\n",c:[this.BE],r:0};this.CLCM={cN:"comment",b:"//",e:"$"};this.CBLCLM={cN:"comment",b:"/\\*",e:"\\*/"};this.HCM={cN:"comment",b:"#",e:"$"};this.NM={cN:"number",b:this.NR,r:0};this.CNM={cN:"number",b:this.CNR,r:0};this.BNM={cN:"number",b:this.BNR,r:0};this.inherit=function(r,s){var p={};for(var q in r){p[q]=r[q]}if(s){for(var q in s){p[q]=s[q]}}return p}}();hljs.LANGUAGES.r={dM:{c:[hljs.HCM,{cN:"number",b:"\\b0[xX][0-9a-fA-F]+[Li]?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+(?:[eE][+\\-]?\\d*)?L\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+\\.(?!\\d)(?:i\\b)?",e:hljs.IMMEDIATE_RE,r:1},{cN:"number",b:"\\b\\d+(?:\\.\\d*)?(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\.\\d+(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"keyword",b:"(?:tryCatch|library|setGeneric|setGroupGeneric)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\.",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\d+(?![\\w.])",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\b(?:function)",e:hljs.IMMEDIATE_RE,r:2},{cN:"keyword",b:"(?:if|in|break|next|repeat|else|for|return|switch|while|try|stop|warning|require|attach|detach|source|setMethod|setClass)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"literal",b:"(?:NA|NA_integer_|NA_real_|NA_character_|NA_complex_)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"literal",b:"(?:NULL|TRUE|FALSE|T|F|Inf|NaN)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"identifier",b:"[a-zA-Z.][a-zA-Z0-9._]*\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"<\\-(?!\\s*\\d)",e:hljs.IMMEDIATE_RE,r:2},{cN:"operator",b:"\\->|<\\-",e:hljs.IMMEDIATE_RE,r:1},{cN:"operator",b:"%%|~",e:hljs.IMMEDIATE_RE},{cN:"operator",b:">=|<=|==|!=|\\|\\||&&|=|\\+|\\-|\\*|/|\\^|>|<|!|&|\\||\\$|:",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"%",e:"%",i:"\\n",r:1},{cN:"identifier",b:"`",e:"`",r:0},{cN:"string",b:'"',e:'"',c:[hljs.BE],r:0},{cN:"string",b:"'",e:"'",c:[hljs.BE],r:0},{cN:"paren",b:"[[({\\])}]",e:hljs.IMMEDIATE_RE,r:0}]}};
 // hljs.initHighlightingOnLoad();
 /* ===================================================
