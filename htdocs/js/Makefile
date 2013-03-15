@@ -5,11 +5,7 @@ all: rcloud_bundle.js rcloud_bundle.min.js
 rcloud_bundle.js: \
 	chart.js \
 	facet_chart.js \
-	websockets.js \
-	rserve.js \
 	rclient.js \
-	polyfill_dataview.js \
-	endian_aware_dataview.js \
 	rcloud.js \
 	notebook/_begin.js \
 	notebook/cell/_begin.js \

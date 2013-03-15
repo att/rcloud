@@ -35,7 +35,7 @@ dependencies_bundle.js: \
 	js/d3.v2.js \
 	js/facet.js \
 	js/colorbrewer.js \
-	js/jDataView.js \
+	js/rserve.js \
 	js/hl.min.js \
 	js/bootstrap.js \
 	js/bootstrap-transition.js \
