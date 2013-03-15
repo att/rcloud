@@ -111,7 +111,7 @@ function reader(m)
                 l -= attr_result[1];
             }
             if (handlers[t] === undefined) {
-                throw "Unimplemented " + t;        
+                throw ["Unimplemented " + t, -1];
             } else {
                 var result = handlers[t].call(this, attributes, l);
                 return [result[0], total_read + result[1]];
@@ -134,7 +134,7 @@ function reader(m)
             for (var i=0; i<lst.length; i+=2) {
                 var value = lst[i], tag = lst[i+1];
                 if (tag.type !== "symbol")
-                    throw "Unexpected type " + tag.type + " as tag for tagged_list";
+                    throw ["Unexpected type " + tag.type + " as tag for tagged_list", -1];
                 result[tag.value] = value;
             }
             return Robj.tagged_list(result, attributes);
@@ -177,12 +177,12 @@ function parse(msg)
     var header = new Int32Array(msg, 0, 4);
     if (header[0] !== Rsrv.RESP_OK && header[0] !== Rsrv.OOB_SEND) {
         var status_code = header[0] >> 24;
-        throw("ERROR FROM R SERVER: " + (Rsrv.status_codes[status_code] || 
+        throw ["ERROR FROM R SERVER: " + (Rsrv.status_codes[status_code] || 
                                          status_code)
               + " " + header[0] + " " + header[1] + " " + header[2] + " " + header[3]
               + " " + msg.byteLength
-              + " " + msg
-             ); // not too helpful, but better than undefined
+              + " " + msg,
+               status_code];
     }
 
     var payload = my_ArrayBufferView(msg, 16, msg.byteLength - 16);
