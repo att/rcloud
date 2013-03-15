@@ -4,11 +4,11 @@ rcloud.init_client_side_data = function()
 {
     var that = this;
     rcloud.get_user_filenames(function(data) {
-        that.user_filenames = data.value;
+        that.user_filenames = data;
 
         //////////////////////////////////////////////////////////////////
         // debugging info
-        var filenames = data.value;
+        var filenames = data;
         var userfiles_float = d3.select("#internals-user-files");
         userfiles_float.append("h3").text("User files");
         userfiles_float.append("ul")
@@ -18,7 +18,7 @@ rcloud.init_client_side_data = function()
             .append("li").text(function(i) { return i; });
     });
     rclient.send_and_callback("rcloud.prefix.uuid()", function(data) {
-        that.wplot_uuid = data.value[0];
+        that.wplot_uuid = data;
     });
 };
 

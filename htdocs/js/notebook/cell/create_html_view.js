@@ -147,7 +147,7 @@ function create_markdown_cell_html_view(cell_model)
         },
         result_updated: function(r) {
             r_result_div.hide();
-            r_result_div.html(r.value[0]);
+            r_result_div.html(r);
             r_result_div.slideDown(150);
 
             // There's a list of things that we need to do to the output:
@@ -164,7 +164,7 @@ function create_markdown_cell_html_view(cell_model)
                     var that = this;
                     rcloud.resolve_deferred_result(uuids[1], function(data) {
                         $(that).replaceWith(function() {
-                            return shell.handle(data.value[0].value[0], data);
+                            return shell.handle(data[0], data);
                         });
                     });
                 });
@@ -376,7 +376,7 @@ function create_interactive_cell_html_view(cell_model)
         },
         result_updated: function(r) {
             r_result_div.hide();
-            r_result_div.html(r.value[0]);
+            r_result_div.html(r);
             r_result_div.slideDown(150);
 
             // There's a list of things that we need to do to the output:
@@ -393,7 +393,7 @@ function create_interactive_cell_html_view(cell_model)
                     var that = this;
                     rcloud.resolve_deferred_result(uuids[1], function(data) {
                         $(that).replaceWith(function() {
-                            return shell.handle(data.value[0].value[0], data);
+                            return shell.handle(data[0], data);
                         });
                     });
                 });

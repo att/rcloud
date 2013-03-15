@@ -35,18 +35,18 @@ var shell = (function() {
         };
         var row_based_data, group;
 
-        if (data.value.length === 6) {
-            row_based_data = transpose([data.value[1].value, data.value[2].value, data.value[3].value]);
+        if (data.length === 6) {
+            row_based_data = transpose([data[1], data[2], data[3]]);
             var color = d3.scale.category10();
             opts.fill = function(d) { return color(d[2]); };
-            opts.width = data.value[4].value[0];
-            opts.height = data.value[4].value[1];
-            group = data.value[5].value[0];
+            opts.width = data[4][0];
+            opts.height = data[4][1];
+            group = data[5];
         } else {
-            row_based_data = transpose([data.value[1].value, data.value[2].value]);
-            opts.width = data.value[3].value[0];
-            opts.height = data.value[3].value[1];
-            group = data.value[4].value[0];
+            row_based_data = transpose([data[1], data[2]]);
+            opts.width = data[3][0];
+            opts.height = data[3][1];
+            group = data[4];
         }
         var data_model = Chart.data_model(row_based_data, group);
         opts.data = data_model;
@@ -64,30 +64,30 @@ var shell = (function() {
 
     function handle_iframe(data) {
         var div = $("<iframe src='"
-                    + data.value[1].value[0] + "' width='" 
-                    + data.value[2].value[0] + "' height='"
-                    + data.value[2].value[1] + "' frameborder=0></iframe>");
+                    + data[1] + "' width='" 
+                    + data[2][0] + "' height='"
+                    + data[2][1] + "' frameborder=0></iframe>");
         return div;
         this.post_div(div);
     }
 
     function handle_facet_osm_plot(data) {
-        var lats = data.value[1].value,
-            lons = data.value[2].value,
-            color = data.value[3].value,
-            width = data.value[4].value[0],
-            height = data.value[4].value[1];
+        var lats = data[1],
+            lons = data[2],
+            color = data[3],
+            width = data[4][0],
+            height = data[4][1];
         return FacetChart.facet_osm_plot(lats, lons, color, width, height);
     }
 
     function handle_facet_tour_plot(data) {
-        var lst = data.value[1];
+        var lst = data[1];
         return FacetChart.facet_tour_plot(lst);
     }
 
     function handle_select(data) {
-        var group = data.value[1].value[0];
-        var sel = data.value[2].value;
+        var group = data[1];
+        var sel = data[2];
         Chart.set_selections(group, sel);
     }
 
@@ -192,7 +192,7 @@ var shell = (function() {
         }, create_file: function(filename) {
             var that = this;
             rcloud.create_user_file(filename, function(result) {
-                if (result.value[0]) {
+                if (result) {
                     editor.populate_file_list();
                     that.load_from_file(rcloud.username(), filename);
                 }
