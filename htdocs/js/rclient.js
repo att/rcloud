@@ -1,11 +1,3 @@
-/*
-
- RClient is a low-level communication layer between Javascript and a
- running R process on the other side. 
- 
- */
-
-//////////////////////////////////////////////////////////////////////////////
 (function() {
 
 // takes a string and returns the appropriate r literal string with escapes.
@@ -61,26 +53,20 @@ RClient = {
         var _capturing_callback = undefined;
 
         var result;
-        var command_counter = 0;
 
         result = {
             handlers: {
                 "eval": function(v) {
-                    if (v.value.length === 3) {
-                        var command_id = v.value[2].value[0];
-                        result.display_response(v.value[1]);
-                    }
-                    return v.value[1]; 
+                    debugger;
+                    result.post_response(v);
+                    return v;
                 },
                 "markdown.eval": function(v) {
-                    if (v.value.length === 3) {
-                        var command_id = v.value[2].value[0];
-                        result.display_markdown_response(v.value[1]);
-                    }
-                    return v.value[1]; 
+                    result.display_markdown_response(v);
+                    return v;
                 },
                 "browsePath": function(v) {
-                    $.ajax({ url: "http://127.0.0.1:8080" + v.value[1].value }).done(function(result) {
+                    $.ajax({ url: "http://127.0.0.1:8080" + v }).done(function(result) {
                         // horrible hack: we strip the content down to its main div via regexp
                         // cue jwz here.
                         var inside_body = /[\s\S]*<body>([\s\S]*)<\/body>/g.exec(result)[1];
@@ -88,8 +74,8 @@ RClient = {
                     });
                 },
 		// FIXME: I couldn't get this.post_* to work from here so this is just to avoid the error ... it's nonsensical, obviously
-		"img.url.update": function(v) { return v.value[1]; },
-		"img.url.final": function(v) { return v.value[1]; },
+		"img.url.update": function(v) { return v; },
+		"img.url.final": function(v) { return v; },
 		"dev.new": function(v) { return ""; },
 		"dev.close": function(v) { return ""; },
                 "internal_cmd": function(v) { return ""; },
@@ -98,7 +84,6 @@ RClient = {
                 }
             },
             running: false,
-            result_handlers: {},
 
             eval: function(data) {
                 var that = this;
@@ -127,17 +112,18 @@ RClient = {
                     return this.post_error("Unknown command " + cmd);
                 }
 		if (cmd == "img.url.update" || cmd == "img.url.final") {
+                    throw "Who's doing this?";
 		    // FIXME: this is a bad hack storing in the window - do something more reasonable ;)
-		    var ix = window.devImgIndex;
-		    if (!ix) window.devImgIndex = ix = 1;
-		    if (cmd == "img.url.final") window.devImgIndex++;
-		    var div = document.getElementById("dimg"+ix);
-		    if (div) // FIXME: we may want to move the div down as well -- maybe just remove the old one and add a new one?
-			div.innerHTML = "<img src="+data.value[1].value[0]+">";
-		    else
-			this.post_div("<div id=dimg"+ix+"><img src="+data.value[1].value[0]+"></div>");
+		    // var ix = window.devImgIndex;
+		    // if (!ix) window.devImgIndex = ix = 1;
+		    // if (cmd == "img.url.final") window.devImgIndex++;
+		    // var div = document.getElementById("dimg"+ix);
+		    // if (div) // FIXME: we may want to move the div down as well -- maybe just remove the old one and add a new one?
+		    //     div.innerHTML = "<img src="+data.value[1].value[0]+">";
+		    // else
+		    //     this.post_div("<div id=dimg"+ix+"><img src="+data.value[1].value[0]+"></div>");
 		}
-                return cmds[cmd].call(this, data);
+                return cmds[cmd].call(this, data.json()[1]);
             },
 
             register_handler: function(cmd, callback) {
@@ -163,24 +149,6 @@ RClient = {
                 return shell.post_div(msg);
             },
 
-            post_binary_response: function(msg) {
-                if (_debug) {
-                    this.post_debug_message(msg);
-                    this.display_response(parse(msg));
-                } else {
-                    try {
-                        this.display_response(parse(msg));
-                    } catch (e) {
-                        this.post_error("Uncaught exception: " + e.message + " - " + e.status_code);
-                    }
-                }
-            },
-
-            display_response: function (result) {
-                if (result) $("#output").append(result.html_element());
-                window.scrollTo(0, document.body.scrollHeight);
-            },
-
             display_markdown_response: function(result) {
                 if (result) {
                     $("#output")
@@ -197,7 +165,6 @@ RClient = {
             //////////////////////////////////////////////////////////////////
 
             post_error: function (msg) {
-                debugger;
                 var d = $("<div class='error-message'></div>").html(msg);
                 $("#output").append(d);
                 window.scrollTo(0, document.body.scrollHeight);
@@ -230,22 +197,16 @@ RClient = {
             wrap_command: function(command, silent) {
                 // FIXME code injection? notice that this is already eval, so
                 // what _additional_ harm would exist?
-                var this_command = command_counter++;
                 if (silent === undefined) {
                     silent = false;
                 }
-                return [ "rcloud.support::session.eval({" + command + "}, "
-                         + this_command + ", "
-                         + (silent?"TRUE":"FALSE") + ")",
-                         this_command ];
+                return "rcloud.support::session.eval({" + command + "}, "
+                    + (silent?"TRUE":"FALSE") + ")";
             },
 
             markdown_wrap_command: function(command, silent) {
-                var this_command = command_counter++;
-                return [ "rcloud.support::session.markdown.eval({markdownToHTML(text=paste(knit(text=" + escape_r_literal_string(command+'\n') + "), collapse=\"\\n\"), fragment=TRUE)}, "
-                         + this_command + ", "
-                         + (silent?"TRUE":"FALSE") + ")",
-                         this_command ];
+                return "rcloud.support::session.markdown.eval({markdownToHTML(text=paste(knit(text=" + escape_r_literal_string(command+'\n') + "), collapse=\"\\n\"), fragment=TRUE)}, "
+                    + (silent?"TRUE":"FALSE") + ")";
             },
 
             log: function(command) {
@@ -272,24 +233,23 @@ RClient = {
                     callback = no_callback;
                 var t;
                 if (wrap) {
-                    t = wrap(command);
+                    command = wrap(command);
                 } else {
-                    t = this.wrap_command(command, true);
+                    command = this.wrap_command(command, true);
                 }
-                command = t[0];
                 if (_debug)
                     console.log(command);
                 function unwrap(v) {
+                    v = v.value.json();
                     if (_debug) {
                         debugger;
                         console.log(v);
                     }
                     try {
-                        callback(v.value.value[1]);
+                        callback(v[1]);
                     } catch (e) {
                         if (e.constructor === NoCallbackError) {
-                            debugger;
-                            that.handlers[v.value.value[0].value[0]](v.value);
+                            that.handlers[v[0]](v[1]);
                         }
                     }
                 }

@@ -31,17 +31,16 @@ var editor = {
     populate_file_list: function() {
         var that = this;
         rcloud.get_all_user_filenames(function(data) {
-            data = data.value;
             var this_user = rcloud.username();
             var result = [];
             that.file_tree_model = {};
             for (var i=0; i<data.length; ++i) {
-                var dirname = data[i].value[0].value[0];
-                var files_data = data[i].value[1].value;
+                var dirname = data[i][0];
+                var files_data = data[i][1];
                 
                 var file_nodes = _.map(files_data, function(file_data) {
-                    var name = file_data.value[0].value[0];
-                    var mtime = file_data.value[1].value[0];
+                    var name = file_data[0];
+                    var mtime = file_data[1];
                     var result = { 
                         label: name,
                         mtime: mtime,
@@ -138,8 +137,8 @@ var editor = {
 
         function update_source_search(result) {
             d3.select("#input-text-source-results-title")
-                .style("display", (result.value !== null && result.value.length >= 1)?null:"none");
-            var data = _.map(result.value, split_source_search_lines);
+                .style("display", (result !== null && result.length >= 1)?null:"none");
+            var data = _.map(result, split_source_search_lines);
             d3.select("#input-text-source-results-table")
                 .selectAll("tr").remove();
             var td_classes = ["user", "filename", "linenumber", "loc"];
@@ -181,8 +180,8 @@ var editor = {
         };
         function update_history_search(result) {
             d3.select("#input-text-history-results-title")
-                .style("display", (result.value !== null && result.value.length >= 1)?null:"none");
-            var data = _.map(result.value, split_history_search_lines);
+                .style("display", (result !== null && result.length >= 1)?null:"none");
+            var data = _.map(result, split_history_search_lines);
             d3.select("#input-text-history-results-table")
                 .selectAll("tr").remove();
             var td_classes = ["date", "user", "loc"];
@@ -214,8 +213,8 @@ var editor = {
                 ;
         };
         rcloud.search(search_string, function(result) {
-            update_source_search(result.value[0]);
-            update_history_search(result.value[1]);
+            update_source_search(result[0]);
+            update_history_search(result[1]);
         });
     }
 };
