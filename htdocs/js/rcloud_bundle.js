@@ -1160,7 +1160,7 @@ function pprint_array_as_div(formatter) {
     };
 }
 
-Robj = {
+var Robj = {
     "null": function(attributes) {
         return { 
             type: "null", 
@@ -1487,7 +1487,7 @@ RClient = {
             login: token + "\n" + token
         });
 
-        var _debug = true;
+        var _debug = opts.debug || false;
         var _capturing_answers = false;
         var _capturing_callback = undefined;
 
