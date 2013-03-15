@@ -699,7 +699,6 @@ function RserveError(message, status_code) {
 RserveError.prototype = Object.create(Error);
 RserveError.prototype.constructor = RserveError;
 
-
 var Rsrv = {
     PAR_TYPE: function(x) { return x & 255; },
     PAR_LEN: function(x) { return x >> 8; },
@@ -1767,14 +1766,14 @@ RClient = {
         }
     })();
 
-    var data_types = ['Int32', 'Int16', 'Uint32', 'Uint16',
-                      'Float32', 'Float64'];
-    var setters = ['setInt32', 'setInt16', 'setUint32', 'setUint16',
-                   'setFloat32', 'setFloat64'];
-    var getters = ['getInt32', 'getInt16', 'getUint32', 'getUint16',
-                   'getFloat32', 'getFloat64'];
-
     if (!global.DataView) {
+        var data_types = ['Int32', 'Int16', 'Uint32', 'Uint16',
+                          'Float32', 'Float64'];
+        var setters = ['setInt32', 'setInt16', 'setUint32', 'setUint16',
+                       'setFloat32', 'setFloat64'];
+        var getters = ['getInt32', 'getInt16', 'getUint32', 'getUint16',
+                       'getFloat32', 'getFloat64'];
+
         console.log("polyfilling DataView");
 
         var helpers = {};
@@ -1828,10 +1827,27 @@ RClient = {
             this.byte_array[ix] = v;
         };
         proto.getInt8 = function(ix) { return this.view.GetInt8(ix); };
-        proto.getUint8 = function(ix) { /* return this.view.GetUint8(ix); // <-- doesn't work in FF! */ this.byte_array[ix]; };
+        proto.getUint8 = function(ix) { /* return this.view.GetUint8(ix); // <-- doesn't work in FF! */ return this.byte_array[ix]; };
 
         global.DataView = MyDataView;
     }
+})(this);
+(function(global) {
+    var _is_little_endian;
+
+    (function() {
+        var x = new ArrayBuffer(4);
+        var bytes = new Uint8Array(x),
+        words = new Uint32Array(x);
+        bytes[0] = 1;
+        if (words[0] === 1) {
+            _is_little_endian = true;
+        } else if (words[0] === 16777216) {
+            _is_little_endian = false;
+        } else {
+            throw "we're bizarro endian, refusing to continue";
+        }
+    })();
 
     global.EndianAwareDataView = (function() {
         

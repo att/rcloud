@@ -33,6 +33,7 @@ function transpose(ar) {
 
 function main_init() {
     rclient = RClient.create({ 
+        debug: false,
         host: "ws://"+location.hostname+":8081/", 
         on_connect: function() {
             $("#new-md-cell-button").click(function() {

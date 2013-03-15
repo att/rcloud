@@ -56,7 +56,7 @@ RClient = {
             login: token + "\n" + token
         });
 
-        var _debug = true;
+        var _debug = opts.debug || false;
         var _capturing_answers = false;
         var _capturing_callback = undefined;
 
