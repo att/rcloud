@@ -8,8 +8,8 @@ rcloud_bundle.js: \
 	websockets.js \
 	rserve.js \
 	rclient.js \
-	polyfill-dataview.js \
-	buffer.js \
+	polyfill_dataview.js \
+	endian_aware_dataview.js \
 	rcloud.js \
 	notebook/_begin.js \
 	notebook/cell/_begin.js \

@@ -477,7 +477,7 @@ function pprint_array_as_div(formatter) {
     };
 }
 
-Robj = {
+var Robj = {
     "null": function(attributes) {
         return { 
             type: "null", 
