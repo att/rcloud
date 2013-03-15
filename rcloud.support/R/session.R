@@ -24,8 +24,11 @@ onSave <- function(dev, page, cmd="img.url.final") {
     TRUE
 }
 
-## evaluation round (so we actually use it in the new version?!?)
-session.eval <- function(x, command_id, silent) {
+################################################################################
+## evaluation of R code
+
+# If the results of the function are desired, use session.eval
+session.eval <- function(x, silent) {
   val <- try(x, silent=TRUE)
   if (!inherits(val, "try-error") && !silent) print(val)
   if (.Device == "Cairo") {
@@ -35,15 +38,11 @@ session.eval <- function(x, command_id, silent) {
       onSave(dev.cur(), 0L, "img.url.update")
     }
   }
-  if (missing(command_id)) {
-    list("eval", val)
-  } else {
-    list("eval", val, command_id)
-  }
+  list("eval", val)
 }
 
-## evaluation tound - new version (?)
-session.markdown.eval <- function(x, command_id, silent) {
+# If evaluation is desired only for the output, use markdown.eval.
+session.markdown.eval <- function(x, silent) {
   val <- try(x, silent=TRUE)
   if (!inherits(val, "try-error") && !silent) print(val)
   if (.Device == "Cairo") {
@@ -53,11 +52,7 @@ session.markdown.eval <- function(x, command_id, silent) {
       onSave(dev.cur(), 0L, "img.url.update")
     }
   }
-  if (missing(command_id)) {
-    list("markdown.eval", val)
-  } else {
-    list("markdown.eval", val, command_id)
-  }
+  list("markdown.eval", val)
 }
 
 ## old version?
