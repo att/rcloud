@@ -24,21 +24,27 @@ RClient = {
             opts.on_connect && opts.on_connect.call(result);
         }
 
+        // this might be called multiple times; some conditions result
+        // in on_error and on_close both being called.
+        function shutdown() {
+            $("#input-div").hide();
+        }
+
         function on_error(msg, status_code) { 
             if (status_code === 65) {
                 // Authentication failed.
                 result.post_error("Authentication failed. Login first!");
-                result.post_error(msg);
-                
             } else {
                 result.post_error(msg);
             }
+            shutdown();
         }
 
         function on_close(msg) {
-            result.post_response("Socket was closed. Goodbye!");
-            result.running = false;
+            result.post_error("Socket was closed. Goodbye!");
+            shutdown();
         };
+
         var token = $.cookies.get().token;
         var rserve = Rserve.create({
             host: opts.host,
@@ -57,7 +63,6 @@ RClient = {
         result = {
             handlers: {
                 "eval": function(v) {
-                    debugger;
                     result.post_response(v);
                     return v;
                 },
@@ -74,8 +79,6 @@ RClient = {
                     });
                 },
 		// FIXME: I couldn't get this.post_* to work from here so this is just to avoid the error ... it's nonsensical, obviously
-		"img.url.update": function(v) { return v; },
-		"img.url.final": function(v) { return v; },
 		"dev.new": function(v) { return ""; },
 		"dev.close": function(v) { return ""; },
                 "internal_cmd": function(v) { return ""; },
@@ -111,18 +114,6 @@ RClient = {
                 if (cmds[cmd] === undefined) {
                     return this.post_error("Unknown command " + cmd);
                 }
-		if (cmd == "img.url.update" || cmd == "img.url.final") {
-                    throw "Who's doing this?";
-		    // FIXME: this is a bad hack storing in the window - do something more reasonable ;)
-		    // var ix = window.devImgIndex;
-		    // if (!ix) window.devImgIndex = ix = 1;
-		    // if (cmd == "img.url.final") window.devImgIndex++;
-		    // var div = document.getElementById("dimg"+ix);
-		    // if (div) // FIXME: we may want to move the div down as well -- maybe just remove the old one and add a new one?
-		    //     div.innerHTML = "<img src="+data.value[1].value[0]+">";
-		    // else
-		    //     this.post_div("<div id=dimg"+ix+"><img src="+data.value[1].value[0]+"></div>");
-		}
                 return cmds[cmd].call(this, data.json()[1]);
             },
 
@@ -133,17 +124,6 @@ RClient = {
             //////////////////////////////////////////////////////////////////
             // FIXME: all of this should move out of rclient and into
             // the notebook objects.
-
-            post_sent_command: function (msg) {
-                var d = $('<pre class="r-sent-command"></pre>').html('> ' + msg);
-                $("#output").append(d);
-            },
-
-            post_debug_message: function (msg) {
-                var view = new Uint8Array(msg);
-                var x = Array.prototype.join.call(view, ",");
-                this.post_response(x);
-            },
 
             post_div: function (msg) {
                 return shell.post_div(msg);
@@ -165,7 +145,7 @@ RClient = {
             //////////////////////////////////////////////////////////////////
 
             post_error: function (msg) {
-                var d = $("<div class='error-message'></div>").html(msg);
+                var d = $("<div class='alert alert-error'></div>").text(msg);
                 $("#output").append(d);
                 window.scrollTo(0, document.body.scrollHeight);
             },

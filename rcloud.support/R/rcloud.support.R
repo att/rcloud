@@ -4,13 +4,17 @@
 ################################################################################
 # rcloud_status stuff goes here
 
-## FIXME: should we relly allow JS to supply the username in all of the below?
+## FIXME: should we really allow JS to supply the username in all of the below?
 ## If we do, then some access control would be in order ...
 
 ## Yes. The right way to do this is when a user has successfully connected,
 ## we create a unique session key, send this key to Javascript-side on startup,
 ## and check the session key at every attempt at execution. This way users
 ## cannot (easily) fake identities.
+
+## We're almost there now that we use github for authentication. The next step
+## is to move all of these to require the session token to match against
+## the one we have stored during the login process.
 
 rcloud.exec.user.file <- function(user, filename)
   session.eval(eval(parse(text=readLines(rcloud.user.file.name(user, filename)))),

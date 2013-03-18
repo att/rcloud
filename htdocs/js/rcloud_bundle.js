@@ -698,21 +698,27 @@ RClient = {
             opts.on_connect && opts.on_connect.call(result);
         }
 
+        // this might be called multiple times; some conditions result
+        // in on_error and on_close both being called.
+        function shutdown() {
+            $("#input-div").hide();
+        }
+
         function on_error(msg, status_code) { 
             if (status_code === 65) {
                 // Authentication failed.
                 result.post_error("Authentication failed. Login first!");
-                result.post_error(msg);
-                
             } else {
                 result.post_error(msg);
             }
+            shutdown();
         }
 
         function on_close(msg) {
-            result.post_response("Socket was closed. Goodbye!");
-            result.running = false;
+            result.post_error("Socket was closed. Goodbye!");
+            shutdown();
         };
+
         var token = $.cookies.get().token;
         var rserve = Rserve.create({
             host: opts.host,
@@ -731,7 +737,6 @@ RClient = {
         result = {
             handlers: {
                 "eval": function(v) {
-                    debugger;
                     result.post_response(v);
                     return v;
                 },
@@ -808,17 +813,6 @@ RClient = {
             // FIXME: all of this should move out of rclient and into
             // the notebook objects.
 
-            post_sent_command: function (msg) {
-                var d = $('<pre class="r-sent-command"></pre>').html('> ' + msg);
-                $("#output").append(d);
-            },
-
-            post_debug_message: function (msg) {
-                var view = new Uint8Array(msg);
-                var x = Array.prototype.join.call(view, ",");
-                this.post_response(x);
-            },
-
             post_div: function (msg) {
                 return shell.post_div(msg);
             },
@@ -839,7 +833,7 @@ RClient = {
             //////////////////////////////////////////////////////////////////
 
             post_error: function (msg) {
-                var d = $("<div class='error-message'></div>").html(msg);
+                var d = $("<div class='alert alert-error'></div>").text(msg);
                 $("#output").append(d);
                 window.scrollTo(0, document.body.scrollHeight);
             },
