@@ -68,7 +68,6 @@ var shell = (function() {
                     + data[2][0] + "' height='"
                     + data[2][1] + "' frameborder=0></iframe>");
         return div;
-        this.post_div(div);
     }
 
     function handle_facet_osm_plot(data) {
@@ -113,12 +112,6 @@ var shell = (function() {
         terminal: terminal,
         user: undefined,
         filename: undefined,
-        post_div: function(msg) {
-            var div = this.detachable_div(msg);
-            $("#output").append(div);
-            window.scrollTo(0, document.body.scrollHeight);
-            return div;
-        },
         detachable_div: function(div) {
             var on_remove = function() {};
             var on_detach = function() {};
