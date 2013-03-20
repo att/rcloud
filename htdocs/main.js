@@ -57,17 +57,6 @@ function main_init() {
                 shell.terminal.disable();
             });
             rcloud.init_client_side_data();
-            var that = this;
-            var shell_objtypes = ["scatterplot", "iframe", "facet_osm_plot", "facet_tour_plot"];
-            for (var i=0; i<shell_objtypes.length; ++i) {
-                (function(objtype) {
-                    that.register_handler(objtype, function(data) {
-                        var div = shell.handle(objtype, data);
-                        shell.post_div(div);
-                        // shell.handle(objtype, data);
-                    });
-                })(shell_objtypes[i]);
-            }
 
             editor.init();
 
