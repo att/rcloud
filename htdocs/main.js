@@ -1,36 +1,3 @@
-var interpreter = {
-    'plot': function(cmd) {
-        rclient.capture_answers(cmd.ps.length, function(result) {
-            rclient.post_div(create_scatterplot.apply(result));
-        });
-        for (var i=0; i<cmd.ps.length; ++i) {
-            rclient.send(cmd.ps[i], rclient.wrap_command);
-        }
-    },
-    'logout': function(cmd) {
-        $.cookies.set('user', null);
-        $.cookies.set('sessid', null);
-        window.location.href = '/login.html';
-    }
-};
-
-function interpret_command(command)
-{
-    if (command[0] === '@') {
-        var cmd = parser.parse(command);
-        interpreter[cmd.id](cmd);
-    } else {
-        // rclient.log(command);
-        rclient.send(command, rclient.markdown_wrap_command);
-    }
-}
-
-function transpose(ar) {
-    return _.map(_.range(ar[0].length), function(i) {
-        return _.map(ar, function(lst) { return lst[i]; });
-    });
-}
-
 function main_init() {
     rclient = RClient.create({ 
         debug: false,

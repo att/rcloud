@@ -29,6 +29,12 @@ var shell = (function() {
 
 
     function handle_scatterplot(data) {
+        function transpose(ar) {
+            return _.map(_.range(ar[0].length), function(i) {
+                return _.map(ar, function(lst) { return lst[i]; });
+            });
+        }
+
         var opts = {
             x: function(d) { return d[0]; },
             y: function(d) { return d[1]; }
