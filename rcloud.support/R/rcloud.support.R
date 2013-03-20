@@ -91,10 +91,6 @@ rcloud.record.cell.execution <- function(user, json.string) {
 # everything that is common to all connections
 # the per-connection setup is done by start.rcloud()
 configure.rcloud <- function () {
-  ## FIXME: the defaults should be configurable
-  .session$WSdev.width <- 300
-  .session$WSdev.height <- 300
-
   ## it is useful to have access to the root of your
   ## installation from R scripts -- for RCloud this is *mandatory*
   .rc.conf$root <- Sys.getenv("ROOT")
@@ -148,8 +144,6 @@ configure.rcloud <- function () {
   ## fix font mappings in Cairo -- some machines require this
   if (exists("CairoFonts"))
     CairoFonts("Arial:style=Regular","Arial:style=Bold","Arial:style=Italic","Helvetica","Symbol")
-
-  options(device=WSdev)
 
   ## Load any data you want
   .rc.conf$data.fn <- file.path(.rc.conf$configuration.root, "data.RData")

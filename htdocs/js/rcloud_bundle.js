@@ -753,8 +753,6 @@ RClient = {
                     });
                 },
 		// FIXME: I couldn't get this.post_* to work from here so this is just to avoid the error ... it's nonsensical, obviously
-		"img.url.update": function(v) { return v; },
-		"img.url.final": function(v) { return v; },
 		"dev.new": function(v) { return ""; },
 		"dev.close": function(v) { return ""; },
                 "internal_cmd": function(v) { return ""; },
@@ -790,18 +788,6 @@ RClient = {
                 if (cmds[cmd] === undefined) {
                     return this.post_error("Unknown command " + cmd);
                 }
-		if (cmd == "img.url.update" || cmd == "img.url.final") {
-                    throw "Who's doing this?";
-		    // FIXME: this is a bad hack storing in the window - do something more reasonable ;)
-		    // var ix = window.devImgIndex;
-		    // if (!ix) window.devImgIndex = ix = 1;
-		    // if (cmd == "img.url.final") window.devImgIndex++;
-		    // var div = document.getElementById("dimg"+ix);
-		    // if (div) // FIXME: we may want to move the div down as well -- maybe just remove the old one and add a new one?
-		    //     div.innerHTML = "<img src="+data.value[1].value[0]+">";
-		    // else
-		    //     this.post_div("<div id=dimg"+ix+"><img src="+data.value[1].value[0]+"></div>");
-		}
                 return cmds[cmd].call(this, data.json()[1]);
             },
 
