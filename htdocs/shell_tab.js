@@ -144,10 +144,10 @@ var shell = (function() {
                     .append($('<a/>',
                               {class: "reset",
                                href: "javascript:"+name+"Chart"+N+".filterAll(); dc.redrawAll();",
-                               style: "display: none;"}))
-                    .append("reset");
+                               style: "display: none;"})
+                            .append("reset"));
             }
-            return $('<div/>', {class: "row"}).append(chartDiv("one")).append(chartDiv("two"));
+            return $('<div/>').append(chartDiv("one")).append(chartDiv("two"));
         }(++dcnum, data[1]);
     }                
     var handlers = {
