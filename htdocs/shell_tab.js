@@ -127,7 +127,7 @@ var shell = (function() {
 
                 twoChart.width(500)
                     .height(100)
-                    .margins({top: 0, right: 50, bottom: 20, left: 40})
+                    .margins({top: 20, right: 50, bottom: 20, left: 40})
                     .dimension(twoDimension)
                     .group(twoGroup)
                     .centerBar(false)
@@ -140,12 +140,15 @@ var shell = (function() {
             }, 100);
             function chartDiv(name) {
                 return $('<div/>',
-                         {id: name+N})
+                         {id: name+N, style: "float:left"})
+                    .append($('<strong/>').append(name))
+                    .append('&nbsp;&nbsp;')
                     .append($('<a/>',
                               {class: "reset",
                                href: "javascript:"+name+"Chart"+N+".filterAll(); dc.redrawAll();",
                                style: "display: none;"})
-                            .append("reset"));
+                            .append("reset"))
+                    .append($('<div/>').addClass("clearfix"));
             }
             return $('<div/>').append(chartDiv("one")).append(chartDiv("two"));
         }(++dcnum, data[1]);
