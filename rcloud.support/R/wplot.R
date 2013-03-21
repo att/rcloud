@@ -60,3 +60,7 @@ wtour <- function(...)
   deferred.rcloud.result((list("facet_tour_plot", opts)))
 }
 
+wtwochart <- function(data)
+{
+  deferred.rcloud.result((list("twochart", data)))
+}
