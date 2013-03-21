@@ -115,6 +115,8 @@ var shell = (function() {
                     return d[1];
                 });
                 var twoGroup = twoDimension.group().reduceCount();
+                // i'm sure there's a better way to do this; why doesn't the default-uniques work?
+                var twoDomain = _.map(twoDimension.group().all(), function(kv) { return kv.key; });
                 
                 oneChart.width(180)
                     .height(180)
@@ -130,7 +132,7 @@ var shell = (function() {
                     .group(twoGroup)
                     .centerBar(false)
                     .gap(0)
-                    .x(d3.scale.ordinal().domain(["a","b"]))
+                    .x(d3.scale.ordinal().domain(twoDomain))
                     .xUnits(dc.units.ordinal)
                 ;
                 
@@ -145,7 +147,7 @@ var shell = (function() {
                                style: "display: none;"}))
                     .append("reset");
             }
-            return $('<div/>').class("row").append(chartDiv("one")).append(chartDiv("two"));
+            return $('<div/>', {class: "row"}).append(chartDiv("one")).append(chartDiv("two"));
         }(++dcnum, data[1]);
     }                
     var handlers = {
