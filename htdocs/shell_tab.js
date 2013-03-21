@@ -95,13 +95,66 @@ var shell = (function() {
         var sel = data[2];
         Chart.set_selections(group, sel);
     }
+    
+    var dcnum=0;
+    function handle_twochart(data) {
+        return function(N, rows) {
+            setTimeout(function() {
+                var oneChart = window["oneChart"+N] = dc.pieChart("#one"+N);
+                var twoChart = window["twoChart"+N] = dc.barChart("#two"+N);
+                
+                var ndx = crossfilter(rows);
+                var all = ndx.groupAll();
 
+                var oneDimension = ndx.dimension(function(d) {
+                    return d[0];
+                });
+                var oneGroup = oneDimension.group().reduceCount();
+
+                var twoDimension = ndx.dimension(function(d) {
+                    return d[1];
+                });
+                var twoGroup = twoDimension.group().reduceCount();
+                
+                oneChart.width(180)
+                    .height(180)
+                    .radius(80)
+                    .dimension(oneDimension)
+                    .group(oneGroup)
+                ;
+
+                twoChart.width(500)
+                    .height(100)
+                    .margins({top: 0, right: 50, bottom: 20, left: 40})
+                    .dimension(twoDimension)
+                    .group(twoGroup)
+                    .centerBar(false)
+                    .gap(0)
+                    .x(d3.scale.ordinal().domain(["a","b"]))
+                    .xUnits(dc.units.ordinal)
+                ;
+                
+                dc.renderAll();
+            }, 100);
+            function chartDiv(name) {
+                return $('<div/>',
+                         {id: name+N})
+                    .append($('<a/>',
+                              {class: "reset",
+                               href: "javascript:"+name+"Chart"+N+".filterAll(); dc.redrawAll();",
+                               style: "display: none;"}))
+                    .append("reset");
+            }
+            return $('<div/>').class("row").append(chartDiv("one")).append(chartDiv("two"));
+        }(++dcnum, data[1]);
+    }                
     var handlers = {
         "scatterplot": handle_scatterplot,
         "iframe": handle_iframe,
         "facet_osm_plot": handle_facet_osm_plot,
         "facet_tour_plot": handle_facet_tour_plot,
-	"select": handle_select
+	"select": handle_select,
+        "twochart": handle_twochart
     };
 
     var notebook_model = Notebook.create_model();
