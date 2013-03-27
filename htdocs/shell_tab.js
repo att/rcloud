@@ -95,71 +95,28 @@ var shell = (function() {
         var sel = data[2];
         Chart.set_selections(group, sel);
     }
-    
-    var dcnum=0;
-    function handle_twochart(data) {
-        return function(N, rows) {
-            setTimeout(function() {
-                var oneChart = window["oneChart"+N] = dc.pieChart("#one"+N);
-                var twoChart = window["twoChart"+N] = dc.barChart("#two"+N);
-                
-                var ndx = crossfilter(rows);
-                var all = ndx.groupAll();
 
-                var oneDimension = ndx.dimension(function(d) {
-                    return d[0];
-                });
-                var oneGroup = oneDimension.group().reduceCount();
-
-                var twoDimension = ndx.dimension(function(d) {
-                    return d[1];
-                });
-                var twoGroup = twoDimension.group().reduceCount();
-                // i'm sure there's a better way to do this; why doesn't the default-uniques work?
-                var twoDomain = _.map(twoDimension.group().all(), function(kv) { return kv.key; });
-                
-                oneChart.width(180)
-                    .height(180)
-                    .radius(80)
-                    .dimension(oneDimension)
-                    .group(oneGroup)
-                ;
-
-                twoChart.width(500)
-                    .height(100)
-                    .margins({top: 20, right: 50, bottom: 20, left: 40})
-                    .dimension(twoDimension)
-                    .group(twoGroup)
-                    .centerBar(false)
-                    .gap(0)
-                    .x(d3.scale.ordinal().domain(twoDomain))
-                    .xUnits(dc.units.ordinal)
-                ;
-                
-                dc.renderAll();
-            }, 100);
-            function chartDiv(name) {
-                return $('<div/>',
-                         {id: name+N, style: "float:left"})
-                    .append($('<strong/>').append(name))
-                    .append('&nbsp;&nbsp;')
-                    .append($('<a/>',
-                              {class: "reset",
-                               href: "javascript:"+name+"Chart"+N+".filterAll(); dc.redrawAll();",
-                               style: "display: none;"})
-                            .append("reset"))
-                    .append($('<div/>').addClass("clearfix"));
-            }
-            return $('<div/>').append(chartDiv("one")).append(chartDiv("two"));
-        }(++dcnum, data[1]);
+    function handle_dcchart(data) {
+        var chart_data, dcfunc;
+        try {
+            chart_data = dcrchart.translate(data[2]);
+            dcfunc = new Function("rows", chart_data.javascript);
+        }
+        catch(e) {
+            return $('<p/>').append("Exception creating dc code: " + e);
+        }
+        var rows = data[1];
+        setTimeout(function() { dcfunc(rows); }, 10);
+        return chart_data.elem;
     }                
+
     var handlers = {
         "scatterplot": handle_scatterplot,
         "iframe": handle_iframe,
         "facet_osm_plot": handle_facet_osm_plot,
         "facet_tour_plot": handle_facet_tour_plot,
-	"select": handle_select,
-        "twochart": handle_twochart
+        "select": handle_select,
+        "dcchart": handle_dcchart
     };
 
     var notebook_model = Notebook.create_model();
