@@ -16,7 +16,7 @@ var dcrchart = (function() {
         return function(args) {
             return args.length==2 
                 ? disp + translate_expr(args[1])
-                : bin_op(disp`)(args); 
+                : bin_op(disp)(args); 
         }
     }
 
@@ -32,6 +32,7 @@ var dcrchart = (function() {
         "+": una_or_bin_op('+'),
         "*": bin_op('*'),
         "/": bin_op('/'),
+        "[": function(args) { return translate_expr(args[1]) + '[' + translate_expr(args[2]) + ']'; },
         "hash": function(args) { return '{' + _.map(args.slice(1), translate_kv) + '}'; },
         default : function(args) { return translate_expr(args[0]) + '(' +  _.map(args.slice(1), translate_expr) + ')'; } 
     };
@@ -119,8 +120,8 @@ var dcrchart = (function() {
     
     var statements = {
         dimension: function(result, sexp) {
-            result.decls.push(make_var(sexp[1]) + "ndx.dimension(function(d) { return " + 
-                              translate_dimension(sexp[2]) + "; })");
+            result.decls.push(make_var(sexp[1]) + "ndx.dimension(" +
+                              translate_expr(sexp[2]) + ")");
             return result;
         },
         domain: function(result, sexp) {
