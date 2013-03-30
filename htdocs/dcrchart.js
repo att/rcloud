@@ -146,7 +146,7 @@ var dcrchart = (function() {
             var result = _.reduce(sexp.slice(1), 
                                   translate_statement, 
                                   charts_result);
-            var js = "debugger;\n" +
+            var js = // "debugger;\n" +  
                 "var ndx = crossfilter(rows);\n" + 
                 result.decls.join(";\n") + ";\n" +
                 result.charts.join(";\n") + ";\n" + 
