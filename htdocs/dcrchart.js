@@ -15,20 +15,10 @@ var dcrchart = (function() {
     function una_or_bin_op(disp) {
         return function(args) {
             return args.length==2 
-                ? '-' + translate_expr(args[1])
-                : bin_op('-')(args); 
+                ? disp + translate_expr(args[1])
+                : bin_op(disp)(args); 
         }
     }
-
-    var translators = {
-        "$": bin_op('.'),
-        "-": una_or_bin_op('-'),
-        "+": una_or_bin_op('+'),
-        "*": bin_op('*'),
-        "/": bin_op('/'),
-        "hash": function(args) { return '{' + _.map(args.slice(1), translate_kv) + '}'; },
-        default : function(args) { return translate_expr(args[0]) + '(' +  _.map(args.slice(1), translate_expr) + ')'; } 
-    };
 
     function translate_kv(kv) {
         if(!$.isArray(kv) || kv[0] != ':' || typeof kv[1] != "string")
@@ -36,9 +26,30 @@ var dcrchart = (function() {
         return kv[1] + ': ' + translate_expr(kv[2]);
     }
 
+    var expressions = {
+        "$": bin_op('.'),
+        "-": una_or_bin_op('-'),
+        "+": una_or_bin_op('+'),
+        "*": bin_op('*'),
+        "/": bin_op('/'),
+        "[": function(args) { return translate_expr(args[1]) + '[' + translate_expr(args[2]) + ']'; },
+        "hash": function(args) { return '{' + _.map(args.slice(1), translate_kv) + '}'; },
+        default : function(args) { return translate_expr(args[0]) + '(' +  _.map(args.slice(1), translate_expr) + ')'; } 
+    };
+
+    function translate_function(sexp) {
+        var args = sexp[0].slice(1),
+            body = _.map(sexp.slice(1), translate_expr);
+        var text = "function (" + args.join() + ") { " + body.slice(0, -1).join("; ") + 
+            "return " + body[body.length-1] + "; }";
+        return text;
+    }
+
     function translate_expr(sexp) {
         if($.isArray(sexp)) {
-            var xlat = translators[sexp[0]] || translators.default;
+            if($.isArray(sexp[0]) && sexp[0][0] == "func") // special case function expr trees
+                return translate_function(sexp)
+            var xlat = expressions[sexp[0]] || expressions.default;
             return xlat(sexp);
         }
         else return sexp;
@@ -97,10 +108,20 @@ var dcrchart = (function() {
         return domains[sexp[0]](sexp);
     }
 
+    function chart_handler(prefix, constructor) {
+        return function(result, sexp) {
+            var name = prefix + chart_group + '_' + result.chart_no++;
+            var chart_code = translate_chart(name, constructor, sexp[1]);
+            result.charts.push(chart_code);
+            result.divs.push(make_chart_div(name))
+            return result;
+        }
+    }
+    
     var statements = {
         dimension: function(result, sexp) {
-            result.decls.push(make_var(sexp[1]) + "ndx.dimension(function(d) { return " + 
-                              translate_dimension(sexp[2]) + "; })");
+            result.decls.push(make_var(sexp[1]) + "ndx.dimension(" +
+                              translate_expr(sexp[2]) + ")");
             return result;
         },
         domain: function(result, sexp) {
@@ -125,7 +146,7 @@ var dcrchart = (function() {
             var result = _.reduce(sexp.slice(1), 
                                   translate_statement, 
                                   charts_result);
-            var js = "debugger;\n" +
+            var js = // "debugger;\n" +  
                 "var ndx = crossfilter(rows);\n" + 
                 result.decls.join(";\n") + ";\n" +
                 result.charts.join(";\n") + ";\n" + 
