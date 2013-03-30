@@ -20,9 +20,10 @@ You'll need the following packages from CRAN:
 
 You'll need the following packages from github (Installing via devtools is the easiest):
 
-	> library(devtools) # or install.packages("devtools")
-	> install_github("hadley", "httr")
-	> install_github("cscheid", "github")
+	> install.packages("devtools")
+        > library(devtools)
+	> install_github("httr", "hadley")
+	> install_github("rgithub", "cscheid")
 
 ### Github authentication
 
@@ -51,6 +52,9 @@ API. If you're using github.com, then your file will look like this:
 The third and fourth lines are the base URL of the github website and
 the entry point for the github API (these might differ in
 [Enterprise Github](http://enterprise.github.com) deployments).
+
+Then go to `http://127.0.0.1:8080/login.html`, click login, and authorize
+access to your account through github.
 
 ### Will you be hacking on the code? Read on
 
