@@ -21,7 +21,7 @@ You'll need the following packages from CRAN:
 You'll need the following packages from github (Installing via devtools is the easiest):
 
 	> install.packages("devtools")
-        > library(devtools)
+	> library(devtools)
 	> install_github("httr", "hadley")
 	> install_github("rgithub", "cscheid")
 
