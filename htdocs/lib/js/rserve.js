@@ -471,12 +471,16 @@ function reader(m)
     that.read_list = unfold(that.read_sexp);
     that.read_list_tag = bind(that.read_list, function(lst) {
         return lift(function(attributes, length) {
-            var result = {};
+            var result = [];
             for (var i=0; i<lst.length; i+=2) {
                 var value = lst[i], tag = lst[i+1];
-                if (tag.type !== "symbol")
-                    throw new RserveError("Unexpected type " + tag.type + " as tag for tagged_list", -1);
-                result[tag.value] = value;
+                if (tag.type === "symbol") {
+                    result.push({ name: tag.value,
+                                  value: value });
+                } else {
+                    result.push({ name: null,
+                                  value: value });
+                }
             }
             return Robj.tagged_list(result, attributes);
         }, 0);
@@ -504,6 +508,7 @@ function reader(m)
     handlers[Rsrv.XT_LIST_NOTAG]   = that.read_list_no_tag;
     handlers[Rsrv.XT_LIST_TAG]     = that.read_list_tag;
     handlers[Rsrv.XT_LANG_NOTAG]   = that.read_lang_no_tag;
+    handlers[Rsrv.XT_LANG_TAG]     = that.read_list_tag;
     handlers[Rsrv.XT_VECTOR_EXP]   = that.read_vector_exp;
     handlers[Rsrv.XT_ARRAY_INT]    = that.read_int_array;
     handlers[Rsrv.XT_ARRAY_DOUBLE] = that.read_double_array;
@@ -603,28 +608,33 @@ Robj = {
             }
         }
     }),
-    symbol: make_basic("symbol", { 
-        json: function() {
-            return this.value;
-        }
-    }),
+    symbol: make_basic("symbol"),
     list: make_basic("list"),
-    lang: make_basic("lang", {
+    lang: make_basic("lang"),
+    tagged_list: make_basic("tagged_list", {
         json: function() {
-            var values = _.map(this.value, function (x) { return x.json(); });
-            if (_.isUndefined(this.attributes)) {
-                return values;
-            } else {
-                var keys   = this.attributes.value.names.value;
-                var result = {};
-                _.each(keys, function(key, i) {
-                    result[key] = values[i];
-                });
-                return result;
+            function classify_list() {
+                if (_.all(this.value, function(elt) { return elt.name === null; })) {
+                    return "plain_list";
+                } else if (_.all(this.value, function(elt) { return elt.name !== null; })) {
+                    return "plain_object";
+                } else
+                    return "mixed_list";
+            }
+            switch (classify_list()) {
+            case "plain_list":
+                return _.map(this.value, function(elt) { return elt.value; });
+            case "plain_object":
+                return _.object(_.map(this.value, function(elt) { 
+                    return [elt.name, elt.value];
+                }));
+            case "mixed_list":
+                return this.value;
+            default:
+                throw "Internal Error";
             }
         }
     }),
-    tagged_list: make_basic("tagged_list"),
     tagged_lang: make_basic("tagged_lang"),
     vector_exp: make_basic("vector_exp"),
     int_array: make_basic("int_array", {
