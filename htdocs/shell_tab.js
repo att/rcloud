@@ -97,17 +97,16 @@ var shell = (function() {
     }
 
     function handle_dcchart(data) {
-        var chart_data, dcfunc;
+        var charts;
         try {
-            chart_data = dcrchart.translate(data[2]);
-            dcfunc = new Function("rows", chart_data.javascript);
+            charts = dcrchart.translate(data[2]);
         }
         catch(e) {
             return $('<p/>').append("Exception creating dc code: " + e);
         }
-        var rows = data[1];
-        setTimeout(function() { dcfunc(rows); }, 10);
-        return chart_data.elem;
+        var rdata = data[1];
+        setTimeout(function() { charts.dcfunc(rdata); }, 10);
+        return charts.elem;
     }                
 
     var handlers = {

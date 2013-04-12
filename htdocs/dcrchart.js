@@ -20,10 +20,19 @@ var dcrchart = (function() {
         }
     }
 
+    function translate_value(v) {
+        return _.isString(v) ? '"' + v + '"' : v;
+    }
+
     function translate_kv(kv) {
         if(!$.isArray(kv) || kv[0] != ':' || typeof kv[1] != "string")
             throw "expected 'key = value' in dc/r hash";
-        return kv[1] + ': ' + translate_expr(kv[2]);
+        return kv[1] + ': ' + translate_value(kv[2]);
+    }
+
+    function field(k,r) {
+        var index = translate_value(k);
+        return "rdata[" + index + "][" + r + "]";
     }
 
     var expressions = {
@@ -32,6 +41,8 @@ var dcrchart = (function() {
         "+": una_or_bin_op('+'),
         "*": bin_op('*'),
         "/": bin_op('/'),
+        "field" : function(args) { return field(args[1],args[2]); },
+        "c" : function(args) { return '[' + _.map(args.slice(1), translate_value) + ']'; },
         "[": function(args) { return translate_expr(args[1]) + '[' + translate_expr(args[2]) + ']'; },
         "hash": function(args) { return '{' + _.map(args.slice(1), translate_kv) + '}'; },
         default : function(args) { return translate_expr(args[0]) + '(' +  _.map(args.slice(1), translate_expr) + ')'; } 
@@ -59,8 +70,9 @@ var dcrchart = (function() {
         return "var " + name + ' = ';
     }
 
-    function translate_chart(name, constructor, sexp) {
-        return make_var(name) + 'window.charts["' + name + '"] = dc.' + constructor + '("#' + name + '").' +
+    function translate_chart(name, groupname, constructor, sexp) {
+        return make_var(name) + 'window.charts["' + name + '"] = dc.' + 
+            constructor + '("#' + name + '", "'+groupname+'").' +
             translate_expr(sexp);
     }
 
@@ -77,16 +89,6 @@ var dcrchart = (function() {
             .append($('<div/>').addClass("clearfix"));
     }
 
-    function chart_handler(prefix, constructor) {
-        return function(result, sexp) {
-            var name = prefix + chart_group + '_' + result.chart_no++;
-            var chart_code = translate_chart(name, constructor, sexp[1]);
-            result.charts.push(chart_code);
-            result.divs.push(make_chart_div(name))
-            return result;
-        }
-    }
-    
     var dimensions = {
         col: function(sexp) { return "d[" + sexp[1] + "]"; }
     };
@@ -111,7 +113,8 @@ var dcrchart = (function() {
     function chart_handler(prefix, constructor) {
         return function(result, sexp) {
             var name = prefix + chart_group + '_' + result.chart_no++;
-            var chart_code = translate_chart(name, constructor, sexp[1]);
+            var groupname = "chartgroup" + chart_group;
+            var chart_code = translate_chart(name, groupname, constructor, sexp[1]);
             result.charts.push(chart_code);
             result.divs.push(make_chart_div(name))
             return result;
@@ -129,7 +132,12 @@ var dcrchart = (function() {
             return result;
         },
         pie: chart_handler('pie', 'pieChart'),
-        bar: chart_handler('bar', 'barChart')
+        bar: chart_handler('line', 'lineChart'),
+        bubble: chart_handler('bubble', 'bubbleChart'),
+        debug: function(result, sexp) {
+            result.debug = true;
+            return result;
+        }
     };
         
     function translate_statement(result, sexp) {
@@ -137,24 +145,34 @@ var dcrchart = (function() {
             throw "unknown dc/r statement " + sexp[0]; 
         return statements[sexp[0]](result, sexp);
     }
-    
+
+    // assume that the rdata is an array or object of columns of the same length
+    // and return the length of the first column (should be the number of rows)
+    function get_num_rows(rdata) {
+        for(p in rdata) 
+            return rdata[p].length;
+    }    
     var result = {
+        get_num_rows : get_num_rows,
         translate: function(sexp) {
             if(sexp[0] != "charts")
                 throw 'expected "charts" at top level';
-            var charts_result = {chart_no: 0, decls: [], charts: [], divs: []};
+            var charts_result = {chart_no: 0, decls: [], charts: [], divs: [], debug: false};
             var result = _.reduce(sexp.slice(1), 
                                   translate_statement, 
                                   charts_result);
-            var js = // "debugger;\n" +  
-                "var ndx = crossfilter(rows);\n" + 
+            var js = "try {\n" + 
+                (result.debug? "debugger;\n" : "") +
+                "var nrows = dcrchart.get_num_rows(rdata);\n" +
+                "var ndx = crossfilter(_.range(0,nrows));\n" + 
                 result.decls.join(";\n") + ";\n" +
                 result.charts.join(";\n") + ";\n" + 
-                "dc.renderAll();\n";
-            chart_group++;
-            var divwrap = $('<div/>');
+                "dc.renderAll('chartgroup"+chart_group+"');\n" +
+                "} catch(e) { $('#chartdiv" + chart_group + "').text(e.toString()); }";
+            var divwrap = $('<div/>',{id:"chartdiv"+chart_group});
             _.each(result.divs, function(div) { divwrap.append(div); });
-            return { javascript: js, elem: divwrap };
+            chart_group++;
+            return { dcfunc: new Function("rdata", js), elem: divwrap };
         }
     };
     return result;
