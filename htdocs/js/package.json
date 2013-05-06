@@ -4,6 +4,6 @@
   "description": "don't look here",
   "keywords": [ "this", "is", "not", "a", "real", "file" ],
   "dependencies": {
-    "uglify-js": "1.0.6"
+    "uglify-js": "2.2.4"
   }
 }
