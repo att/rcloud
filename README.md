@@ -20,6 +20,7 @@ From R, type:
 	> install.packages("markdown")
 	> install.packages("base64enc")
 	> install.packages("rjson")
+	> install.packages("FastRWeb")
 	> install.packages("devtools")
 	> library(devtools)
 	> install_github("httr", "hadley")
