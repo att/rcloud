@@ -2,24 +2,24 @@
 
 ## Installation requirements
 
+Forgive us for the current mess. This is temporary.
+
+### R Version
+
+Upgrade to R 3.0. It'll make your life easier, we promise.
+
 ### Packages
 
-You'll need a recent version of Rserve. From R, type:
+From R, type:
 
     > install.packages("Rserve",,"http://rforge.net", type="source")
-
-You'll need the following packages from CRAN:
-
-* Cairo
-* FastRWeb
-* png
-* knitr
-* markdown
-* base64enc
-* rjson
-
-You'll need the following packages from github (Installing via devtools is the easiest):
-
+    > install.packages("uuid",,"http://rforge.net", type="source")
+    > install.packages("Cairo")
+	> install.packages("png")
+	> install.packages("knitr")
+	> install.packages("markdown")
+	> install.packages("base64enc")
+	> install.packages("rjson")
 	> install.packages("devtools")
 	> library(devtools)
 	> install_github("httr", "hadley")
@@ -37,7 +37,7 @@ rcloud (let's assume you're only testing it for now, so 127.0.0.1
 works). In that case, your application's URL will most likely be
 `http://127.0.0.1:8080`, and your Callback URL *must* be
 `http://127.0.0.1:8080/login_successful.R`. (the host and port needs
-to match the URL, and the path must be `login_successful.R`).
+to match the application URL, and the path must be `login_successful.R`).
 
 Then, you need to create a file under your configuration root
 (typically that's `/conf`) called github_info.txt. This file will
