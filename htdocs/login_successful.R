@@ -1,4 +1,5 @@
 require(rcloud.support)
+require(RCurl)
 
 run <- function(url, query, body, headers)
 {
