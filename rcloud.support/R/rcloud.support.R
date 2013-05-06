@@ -135,8 +135,12 @@ configure.rcloud <- function () {
   if (file.exists(fn <- file.path(.rc.conf$configuration.root, "packages.txt")))
     pkgs <- c(pkgs, readLines(fn))
   cat("Loading packages...\n")
-  for (pkg in pkgs)
-    cat(pkg, ": ",require(pkg, quietly=TRUE, character.only=TRUE),"\n",sep='')
+  for (pkg in pkgs) {
+    succeeded <- require(pkg, quietly=TRUE, character.only=TRUE)
+    cat(pkg, ": ",succeeded,"\n",sep='')
+    if (!succeeded)
+      stop(paste("Missing package: ", pkg, sep=''))
+  }
 
   ## we actually need knitr ...
   opts_knit$set(global.device=TRUE)
