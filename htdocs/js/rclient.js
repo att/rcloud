@@ -20,7 +20,9 @@ RClient = {
 
         function on_connect() {
             result.running = true;
-            result.send("rcloud.support::session.init(username=" + escape_r_literal_string(rcloud.username()) + ")");
+            result.send("rcloud.support::session.init(username=" 
+                        + escape_r_literal_string(rcloud.username()) + ",token="
+                        + escape_r_literal_string(rcloud.github_token()) + ")");
             opts.on_connect && opts.on_connect.call(result);
         }
 

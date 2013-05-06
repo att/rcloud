@@ -170,8 +170,20 @@ configure.rcloud <- function () {
 
 ## --- RCloud part folows ---
 ## this is called by session.init() on per-connection basis
-start.rcloud <- function(username="", ...) {
+start.rcloud <- function(username="", token="", ...) {
+  cat("FOOOOOOOOOO\n")
+  print(username)
+  print(token)
+  cat("BAAARRRRRRR\n")
+  if (!check.user.token.pair(username, token))
+    stop("bad username/token pair");
   .session$username <- username
+  .session$token <- token
+  .session$rgithub.context <-
+    rgithub.context.from.token(.rc.conf$github.api.url,
+                               .rc.conf$github.client.id,
+                               .rc.conf$github.client.secrent,
+                               token)
   if (is.function(getOption("RCloud.session.auth")))
     getOption("RCloud.session.auth")(username=username, ...)
 
