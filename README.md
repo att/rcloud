@@ -6,7 +6,7 @@
 
 You'll need a recent version of Rserve. From R, type:
 
-    > install.packages("Rserve",,"http://rforge.net")
+    > install.packages("Rserve",,"http://rforge.net", type="source")
 
 You'll need the following packages from CRAN:
 
