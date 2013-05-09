@@ -25,6 +25,7 @@ Here's a scatterchart and a couple of histograms on the iris data:
        $y(d3$scale$linear()$domain(c(0,10)))
        $elasticX(true)
        $elasticY(true)
+       $transitionDuration(300)
        $renderLabel(false)),
     bar("petal widths",
        width(300)$height(300)
@@ -34,6 +35,7 @@ Here's a scatterchart and a couple of histograms on the iris data:
        $x(d3$scale$linear()$domain(c(0,3)))
        $xUnits(dc$units$float$precision(0.2))
        $elasticX(true)
+       $transitionDuration(300)
        $gap(2)),
     bar("petal lengths",
        width(300)$height(300)
@@ -43,4 +45,5 @@ Here's a scatterchart and a couple of histograms on the iris data:
        $x(d3$scale$linear()$domain(c(1,7)))
        $xUnits(dc$units$float$precision(0.5))
        $elasticX(true)
+       $transitionDuration(300)
        $gap(2))))
