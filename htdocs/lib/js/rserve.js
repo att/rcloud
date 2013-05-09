@@ -635,23 +635,24 @@ Robj = {
     }),
     tagged_list: make_basic("tagged_list", {
         json: function() {
-            function classify_list() {
-                if (_.all(this.value, function(elt) { return elt.name === null; })) {
+            function classify_list(list) {
+                if (_.all(list, function(elt) { return elt.name === null; })) {
                     return "plain_list";
-                } else if (_.all(this.value, function(elt) { return elt.name !== null; })) {
+                } else if (_.all(list, function(elt) { return elt.name !== null; })) {
                     return "plain_object";
                 } else
                     return "mixed_list";
             }
-            switch (classify_list()) {
+            var list = this.value.slice(1);
+            switch (classify_list(list)) {
             case "plain_list":
-                return _.map(this.value, function(elt) { return elt.value; });
+                return _.map(list, function(elt) { return elt.value.json(); });
             case "plain_object":
-                return _.object(_.map(this.value, function(elt) { 
-                    return [elt.name, elt.value];
+                return _.object(_.map(list, function(elt) { 
+                    return [elt.name, elt.value.json()];
                 }));
             case "mixed_list":
-                return this.value;
+                return list;
             default:
                 throw "Internal Error";
             }
