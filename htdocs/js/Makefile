@@ -4,7 +4,7 @@ all: rcloud_bundle.js rcloud_bundle.min.js
 
 rcloud_bundle.js: \
 	chart.js \
-	facet_chart.js \
+	lux_chart.js \
 	rclient.js \
 	rcloud.js \
 	notebook/_begin.js \

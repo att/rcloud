@@ -76,18 +76,18 @@ var shell = (function() {
         return div;
     }
 
-    function handle_facet_osm_plot(data) {
+    function handle_lux_osm_plot(data) {
         var lats = data[1],
             lons = data[2],
             color = data[3],
             width = data[4][0],
             height = data[4][1];
-        return FacetChart.facet_osm_plot(lats, lons, color, width, height);
+        return LuxChart.lux_osm_plot(lats, lons, color, width, height);
     }
 
-    function handle_facet_tour_plot(data) {
+    function handle_lux_tour_plot(data) {
         var lst = data[1];
-        return FacetChart.facet_tour_plot(lst);
+        return LuxChart.lux_tour_plot(lst);
     }
 
     function handle_select(data) {
@@ -112,8 +112,8 @@ var shell = (function() {
     var handlers = {
         "scatterplot": handle_scatterplot,
         "iframe": handle_iframe,
-        "facet_osm_plot": handle_facet_osm_plot,
-        "facet_tour_plot": handle_facet_tour_plot,
+        "lux_osm_plot": handle_lux_osm_plot,
+        "lux_tour_plot": handle_lux_tour_plot,
         "select": handle_select,
         "dcchart": handle_dcchart
     };
