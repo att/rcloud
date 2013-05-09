@@ -7,16 +7,16 @@ var dcrchart = (function() {
     window.charts = {}; // initialize a global namespace for charts
 
     function bin_op(disp) {
-        return function(args) { 
-            return translate_expr(args[1]) + disp + translate_expr(args[2]); 
+        return function(args,ctx) { 
+            return translate_expr(args[1], ctx) + disp + translate_expr(args[2], ctx); 
         }
     }
 
     function una_or_bin_op(disp) {
-        return function(args) {
+        return function(args,ctx) {
             return args.length==2 
-                ? disp + translate_expr(args[1])
-                : bin_op(disp)(args); 
+                ? disp + translate_expr(args[1], ctx)
+                : bin_op(disp)(args, ctx); 
         }
     }
 
@@ -36,7 +36,7 @@ var dcrchart = (function() {
     }
 
     function debug_translate_field(k,r) {
-        var index = translate_value(k);
+        var index = translatae_value(k);
         return "dcrchart.field(rdata," + index + "," + r + ".key)";
     }
 
@@ -46,27 +46,36 @@ var dcrchart = (function() {
         "+": una_or_bin_op('+'),
         "*": bin_op('*'),
         "/": bin_op('/'),
-        "field" : function(args) { return translate_field(args[1],args[2]); },
-        "c" : function(args) { return '[' + _.map(args.slice(1), translate_value) + ']'; },
-        "[": function(args) { return translate_expr(args[1]) + '[' + translate_expr(args[2]) + ']'; },
-        "hash": function(args) { return '{' + _.map(args.slice(1), translate_kv) + '}'; },
-        default : function(args) { return translate_expr(args[0]) + '(' +  _.map(args.slice(1), translate_expr) + ')'; } 
+        "field" : function(args, ctx) { return translate_field(args[1],args[2],ctx); },
+        "c" : function(args, ctx) { return '[' + _.map(args.slice(1), function(arg) { return translate_value(arg) }) + ']'; },
+        "[": function(args, ctx) { return translate_expr(args[1], ctx) + '[' + translate_expr(args[2], ctx) + ']'; },
+        "hash": function(args, ctx) { return '{' + _.map(args.slice(1), translate_kv) + '}'; },
+        default : function(args, ctx) { return translate_expr(args[0], ctx) + '(' +  _.map(args.slice(1), function(arg) { return translate_expr(arg, ctx); }) + ')'; } 
     };
 
-    function translate_function(sexp) {
+    function translate_function(sexp, ctx) {
+        ctx.indent++;
         var args = sexp[0].slice(1),
-            body = _.map(sexp.slice(1), translate_expr);
-        var text = "function (" + args.join() + ") { " + body.slice(0, -1).join("; ") + 
-            "return " + body[body.length-1] + "; }";
+            body = _.map(sexp.slice(1), function(arg) { return translate_expr(arg,ctx); });
+        body[body.length-1] = "return " + body[body.length-1];
+        var cr = "\n", indent = Array(ctx.indent+1).join("\t");
+        var text = "function (" + args.join() + ") {" + cr + 
+            indent + body.join(";" + cr + indent) + ";" + cr;
+        ctx.indent--;
+        indent = Array(ctx.indent+1).join("\t");
+        text += indent + "}";
         return text;
     }
 
-    function translate_expr(sexp) {
+    function translate_expr(sexp, ctx) {
         if($.isArray(sexp)) {
             if($.isArray(sexp[0]) && sexp[0][0] == "func") // special case function expr trees
-                return translate_function(sexp)
+                return translate_function(sexp, ctx)
             var xlat = expressions[sexp[0]] || expressions.default;
-            return xlat(sexp);
+            return xlat(sexp, ctx);
+        }
+        else if($.isPlainObject(sexp)) {
+            return JSON.stringify(sexp);
         }
         else return sexp;
     }
@@ -75,10 +84,10 @@ var dcrchart = (function() {
         return "var " + name + ' = ';
     }
 
-    function translate_chart(name, groupname, constructor, sexp) {
+    function translate_chart(name, groupname, constructor, sexp, ctx) {
         return make_var(name) + 'window.charts["' + name + '"] = dc.' + 
             constructor + '("#' + name + '", "'+groupname+'").' +
-            translate_expr(sexp);
+            translate_expr(sexp, ctx);
     }
 
     function make_chart_div(name, title) {
@@ -116,10 +125,10 @@ var dcrchart = (function() {
     }
 
     function chart_handler(prefix, constructor) {
-        return function(result, sexp) {
+        return function(result, sexp, ctx) {
             var name = prefix + chart_group + '_' + result.chart_no++;
             var groupname = "chartgroup" + chart_group;
-            var chart_code = translate_chart(name, groupname, constructor, sexp[2]);
+            var chart_code = translate_chart(name, groupname, constructor, sexp[2], ctx);
             result.charts.push(chart_code);
             result.divs.push(make_chart_div(name, sexp[1]))
             return result;
@@ -127,19 +136,19 @@ var dcrchart = (function() {
     }
     
     var statements = {
-        dimension: function(result, sexp) {
+        dimension: function(result, sexp, ctx) {
             result.decls.push(make_var(sexp[1]) + "ndx.dimension(" +
-                              translate_expr(sexp[2]) + ")");
+                              translate_expr(sexp[2], ctx) + ")");
             return result;
         },
-        domain: function(result, sexp) {
+        domain: function(result, sexp, ctx) {
             result.decls.push(make_var(sexp[1]) + translate_domain(sexp[2]));
             return result;
         },
         pie: chart_handler('pie', 'pieChart'),
         bar: chart_handler('line', 'lineChart'),
         bubble: chart_handler('bubble', 'bubbleChart'),
-        debug: function(result, sexp) {
+        debug: function(result, sexp, ctx) {
             result.debug = true;
             return result;
         }
@@ -148,7 +157,8 @@ var dcrchart = (function() {
     function translate_statement(result, sexp) {
         if(_.isUndefined(statements[sexp[0]]))
             throw "unknown dc/r statement " + sexp[0]; 
-        return statements[sexp[0]](result, sexp);
+        var ctx =  {debug:result.debug,indent:1};
+        return statements[sexp[0]](result, sexp, ctx);
     }
 
     // assume that the rdata is an array or object of columns of the same length
@@ -176,7 +186,8 @@ var dcrchart = (function() {
                 result.decls.join(";\n") + ";\n" +
                 result.charts.join(";\n") + ";\n" + 
                 "dc.renderAll('chartgroup"+chart_group+"');\n" +
-                "} catch(e) { $('#chartdiv" + chart_group + "').text(e.toString()); }";
+                "} catch(e) { $('#chartdiv" + chart_group + "').text(e.toString()); }\n" +
+                "//@ sourceURL=dcChartScript" + chart_group + ".js";
             var divwrap = $('<div/>',{id:"chartdiv"+chart_group});
             _.each(result.divs, function(div) { divwrap.append(div); });
             chart_group++;
