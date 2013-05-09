@@ -599,7 +599,9 @@ Robj = {
             if (_.isUndefined(this.attributes)) {
                 return values;
             } else {
-                var keys   = this.attributes.value.names.value;
+                if(this.attributes.value[0].name!="names")
+                    throw "expected names here";
+                var keys   = this.attributes.value[0].value.value;
                 var result = {};
                 _.each(keys, function(key, i) {
                     result[key] = values[i];
@@ -608,28 +610,49 @@ Robj = {
             }
         }
     }),
-    symbol: make_basic("symbol"),
+    symbol: make_basic("symbol", { 
+        json: function() {
+            return this.value;
+        }
+    }),
     list: make_basic("list"),
-    lang: make_basic("lang"),
+    lang: make_basic("lang", {
+        json: function() {
+            var values = _.map(this.value, function (x) { return x.json(); });
+            if (_.isUndefined(this.attributes)) {
+                return values;
+            } else {
+                if(this.attributes.value[0].name!="names")
+                    throw "expected names here";
+                var keys   = this.attributes.value[0].value.value;
+                var result = {};
+                _.each(keys, function(key, i) {
+                    result[key] = values[i];
+                });
+                return result;
+            }
+        }
+    }),
     tagged_list: make_basic("tagged_list", {
         json: function() {
-            function classify_list() {
-                if (_.all(this.value, function(elt) { return elt.name === null; })) {
+            function classify_list(list) {
+                if (_.all(list, function(elt) { return elt.name === null; })) {
                     return "plain_list";
-                } else if (_.all(this.value, function(elt) { return elt.name !== null; })) {
+                } else if (_.all(list, function(elt) { return elt.name !== null; })) {
                     return "plain_object";
                 } else
                     return "mixed_list";
             }
-            switch (classify_list()) {
+            var list = this.value.slice(1);
+            switch (classify_list(list)) {
             case "plain_list":
-                return _.map(this.value, function(elt) { return elt.value; });
+                return _.map(list, function(elt) { return elt.value.json(); });
             case "plain_object":
-                return _.object(_.map(this.value, function(elt) { 
-                    return [elt.name, elt.value];
+                return _.object(_.map(list, function(elt) { 
+                    return [elt.name, elt.value.json()];
                 }));
             case "mixed_list":
-                return this.value;
+                return list;
             default:
                 throw "Internal Error";
             }
