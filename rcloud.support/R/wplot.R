@@ -43,7 +43,7 @@ select <- function(what, group) {
 
 fplot <- function()
 {
-  deferred.rcloud.result(list("iframe", "http://cscheid.github.com/facet/demos/osm/osm.html", c(960, 600)))
+  deferred.rcloud.result(list("iframe", "http://cscheid.github.io/lux/demos/osm/osm.html", c(960, 600)))
 }
 
 wgeoplot <- function(lats, lons, col=1L)
@@ -51,13 +51,13 @@ wgeoplot <- function(lats, lons, col=1L)
   if (is.null(dim(col))) col <- col2rgb(col) / 255
   #col <- rep(col, length.out = 3 * length(lats))
   col <- as.double(col)
-  deferred.rcloud.result(list("facet_osm_plot", lats, lons, col, c(960, 600)))
+  deferred.rcloud.result(list("lux_osm_plot", lats, lons, col, c(960, 600)))
 }
 
 wtour <- function(...)
 {
   opts <- list(...)
-  deferred.rcloud.result((list("facet_tour_plot", opts)))
+  deferred.rcloud.result((list("lux_tour_plot", opts)))
 }
 
 wdcchart <- function(data, dcexpr)

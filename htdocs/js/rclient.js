@@ -232,7 +232,8 @@ RClient = {
                     } catch (e) {
                         if (e.constructor === NoCallbackError) {
                             that.handlers[v[0]](v[1]);
-                        }
+                        } else
+                            throw e;
                     }
                 }
                 rserve.eval(command, unwrap);
