@@ -74,6 +74,9 @@ var dcrchart = (function() {
             var xlat = expressions[sexp[0]] || expressions.default;
             return xlat(sexp, ctx);
         }
+        else if($.isPlainObject(sexp)) {
+            return JSON.stringify(sexp);
+        }
         else return sexp;
     }
 
