@@ -599,7 +599,9 @@ Robj = {
             if (_.isUndefined(this.attributes)) {
                 return values;
             } else {
-                var keys   = this.attributes.value.names.value;
+                if(this.attributes.value[0].name!="names")
+                    throw "expected names here";
+                var keys   = this.attributes.value[0].value.value;
                 var result = {};
                 _.each(keys, function(key, i) {
                     result[key] = values[i];
@@ -608,9 +610,29 @@ Robj = {
             }
         }
     }),
-    symbol: make_basic("symbol"),
+    symbol: make_basic("symbol", { 
+        json: function() {
+            return this.value;
+        }
+    }),
     list: make_basic("list"),
-    lang: make_basic("lang"),
+    lang: make_basic("lang", {
+        json: function() {
+            var values = _.map(this.value, function (x) { return x.json(); });
+            if (_.isUndefined(this.attributes)) {
+                return values;
+            } else {
+                if(this.attributes.value[0].name!="names")
+                    throw "expected names here";
+                var keys   = this.attributes.value[0].value.value;
+                var result = {};
+                _.each(keys, function(key, i) {
+                    result[key] = values[i];
+                });
+                return result;
+            }
+        }
+    }),
     tagged_list: make_basic("tagged_list", {
         json: function() {
             function classify_list() {
