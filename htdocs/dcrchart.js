@@ -32,12 +32,12 @@ var dcrchart = (function() {
 
     function translate_field(k,r) {
         var index = translate_value(k);
-        return "rdata[" + index + "][" + r + ".key]";
+        return "rdata[" + index + "][" + r + "]";
     }
 
-    function debug_translate_field(k,r) {
-        var index = translatae_value(k);
-        return "dcrchart.field(rdata," + index + "," + r + ".key)";
+    function translate_gfield(k,r) {
+        var index = translate_value(k);
+        return "rdata[" + index + "][" + r + ".key]";
     }
 
     var expressions = {
@@ -46,7 +46,8 @@ var dcrchart = (function() {
         "+": una_or_bin_op('+'),
         "*": bin_op('*'),
         "/": bin_op('/'),
-        "field" : function(args, ctx) { return translate_field(args[1],args[2],ctx); },
+        "field" : function(args, ctx) { return translate_field(args[1],args[2]); },
+        "gfield" : function(args, ctx) { return translate_gfield(args[1],args[2]); },
         "c" : function(args, ctx) { return '[' + _.map(args.slice(1), function(arg) { return translate_value(arg) }) + ']'; },
         "[": function(args, ctx) { return translate_expr(args[1], ctx) + '[' + translate_expr(args[2], ctx) + ']'; },
         "hash": function(args, ctx) { return '{' + _.map(args.slice(1), translate_kv) + '}'; },
@@ -97,7 +98,7 @@ var dcrchart = (function() {
             .append('&nbsp;&nbsp;')
             .append($('<a/>',
                       {class: "reset",
-                       href: "javascript:charts."+name+".filterAll(); dc.redrawAll();",
+                       href: "javascript:window.charts['"+name+"'].filterAll(); dc.redrawAll('chartgroup" + chart_group + "');",
                        style: "display: none;"})
                     .append("reset"))
             .append($('<div/>').addClass("clearfix"));
@@ -146,7 +147,7 @@ var dcrchart = (function() {
             return result;
         },
         pie: chart_handler('pie', 'pieChart'),
-        bar: chart_handler('line', 'lineChart'),
+        bar: chart_handler('bar', 'barChart'),
         bubble: chart_handler('bubble', 'bubbleChart'),
         debug: function(result, sexp, ctx) {
             result.debug = true;
