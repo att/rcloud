@@ -139,7 +139,7 @@ configure.rcloud <- function () {
     cat(pkg, ": ",require(pkg, quietly=TRUE, character.only=TRUE),"\n",sep='')
 
   ## we actually need knitr ...
-  opts_knit$set(global.device=TRUE)
+  opts_knit$set(global.device=TRUE, tidy=FALSE, dev=CairoPNG)
 
   ## fix font mappings in Cairo -- some machines require this
   if (exists("CairoFonts"))
@@ -153,14 +153,17 @@ configure.rcloud <- function () {
   }
 
   ## github API information is loaded from github_info.txt
-  f <- file(file.path(.rc.conf$configuration.root, "github_info.txt"), "rt")
-  .rc.conf$github.client.id <- readLines(f, 1)
-  .rc.conf$github.client.secret <- readLines(f, 1)
-  .rc.conf$github.base.url <- readLines(f, 1) 
-  .rc.conf$github.api.url <- readLines(f, 1)
+  gh.cf <- file.path(.rc.conf$configuration.root, "github_info.txt")
+  if (file.exists(gh.cf)) {
+    ln <- readLines(gh.cf, 4)
+    n <- c("github.client.id", "github.client.secret", "github.base.url", "github.api.url")
+    for (i in seq.int(ln)) .rc.conf[[n[i]]] <- ln[i]
+  }
 
   rcloud.setup.dirs()
 
+  .rc.conf$instanceID <- generate.uuid()
+  
   TRUE
 }
 
