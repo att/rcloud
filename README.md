@@ -10,21 +10,18 @@ Upgrade to R 3.0. It'll make your life easier, we promise.
 
 ### Packages
 
-From R, type:
+In R, type:
 
-    > install.packages("Rserve",,"http://rforge.net", type="source")
-    > install.packages("uuid",,"http://rforge.net", type="source")
-    > install.packages("Cairo")
-	> install.packages("png")
-	> install.packages("knitr")
-	> install.packages("markdown")
-	> install.packages("base64enc")
-	> install.packages("rjson")
-	> install.packages("FastRWeb")
-	> install.packages("devtools")
-	> library(devtools)
-	> install_github("httr", "hadley")
-	> install_github("rgithub", "cscheid")
+    install.packages("rcloud.support",, c("http://RForge.net",
+                     "http://R.research.att.com"), type="source")
+
+From there on you can safely use the rcloud.support package in RCloud
+sources, but the above makes the bootstraping of dependencies
+easier. All remaining dependencies will be installed during the first
+start of RCloud. You can also install them by hand by running
+
+     rcloud.support:::check.installation()
+
 
 ### Github authentication
 
