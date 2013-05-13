@@ -456,32 +456,34 @@ Chart.histogram = function(opts)
 };
 
 })();
-FacetChart = {};
+LuxChart = {};
 
-FacetChart.facet_tour_plot = function(array_list)
+LuxChart.lux_tour_plot = function(array_list)
 {
     var width = 600, height = 600;
-    var canvas = $("<canvas width='" + width + "' height='" + height + "'></canvas>")[0];
+    var canvas = $("<canvas></canvas>")[0]; // width='" + width + "' height='" + height + "'></canvas>")[0];
+    canvas.width = width;
+    canvas.height = height;
     var tour_batch;
     var data;
     var axis_1_parameters, axis_2_parameters;
 
-    function display()
-    {
-        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-        gl.clearDepth(1.0);
-        gl.clearColor(0,0,0,0);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        tour_batch.draw();
-    }
+    // function display()
+    // {
+    //     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+    //     gl.clearDepth(1.0);
+    //     gl.clearColor(0,0,0,0);
+    //     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    //     tour_batch.draw();
+    // }
 
     function data_buffers()
     {
         var result = {};
         var columns = [];
         for (var i=0; i<array_list.length; ++i) {
-            result["dim_" + i] = Facet.attribute_buffer({
-                vertex_array: array_list[i],
+            result["dim_" + i] = Lux.attribute_buffer({
+                vertex_array: new Float32Array(array_list[i]),
                 item_size: 1,
                 keep_array: true
             });
@@ -493,7 +495,7 @@ FacetChart.facet_tour_plot = function(array_list)
 
     function init_webgl()
     {
-        Facet.set_context(gl);
+        Lux.set_context(gl);
         data = data_buffers();
 
         var point_diameter = 10;
@@ -522,25 +524,16 @@ FacetChart.facet_tour_plot = function(array_list)
                                                    column_min).abs());
         };
         
-        // var species_color = S.Utils.choose(
-        //     [S.vec(1, 0, 0, point_alpha),
-        //      S.vec(0, 1, 0, point_alpha),
-        //      S.vec(0, 0, 1, point_alpha)])(data.species);
-
-        var species_color = Shade.color("red");
-        
-        tour_batch = Facet.Marks.scatterplot({
+        Lux.Scene.add(Lux.Marks.scatterplot({
             elements: data[data.columns[0]].numItems,
             xy: xy_expression,
-            xy_scale: Shade.Utils.linear(xy_center.sub(xy_distance),
-                                         xy_center.add(xy_distance),
-                                         Shade.vec(0,0), 
-                                         Shade.vec(1,1)),
-            fill_color: species_color,
-            stroke_color: Shade.mix(Shade.color("black"), species_color, 0.5),
+            xy_scale: Shade.Scale.linear({domain: [xy_center.sub(xy_distance), xy_center.add(xy_distance)],
+                                          range:  [Shade.vec(0,0), Shade.vec(1,1)]}),
+            fill_color: Shade.color("red"),
+            stroke_color: Shade.mix(Shade.color("black"), Shade.color("red"), 0.5),
             stroke_width: stroke_width,
             point_diameter: point_diameter
-        });
+        }));
     }
     
     function random_2d_frame(dimension)
@@ -579,7 +572,8 @@ FacetChart.facet_tour_plot = function(array_list)
         return [v1, v2];
     }
 
-    var gl = Facet.init(canvas, {
+    var gl = Lux.init({
+        canvas: canvas,
         clearColor: [1,1,1,1]
     });
 
@@ -588,7 +582,8 @@ FacetChart.facet_tour_plot = function(array_list)
     var frame_2 = random_2d_frame(data.columns.length);
     var start = new Date().getTime();
     var prev_u = 1;
-    var f = function () {
+
+    Lux.Scene.animate(function() {
         var elapsed = (new Date().getTime() - start) / 1000;
         var u = elapsed/3;
         u -= Math.floor(u);
@@ -601,17 +596,15 @@ FacetChart.facet_tour_plot = function(array_list)
             axis_1_parameters[i].set(u*frame_2[0][i] + (1-u) * frame_1[0][i]);
             axis_2_parameters[i].set(u*frame_2[1][i] + (1-u) * frame_1[1][i]);
         }
-        window.requestAnimFrame(f, canvas);
-        display();
-    };
-    f();
+    });
     return canvas;
 };
 
-FacetChart.facet_osm_plot = function(lats, lons, color, width, height)
+LuxChart.lux_osm_plot = function(lats, lons, color, width, height)
 {
     var canvas = $("<canvas width='" + width + "' height='" + height + "'></canvas>")[0];
-    var gl = Facet.init(canvas, {
+    var gl = Lux.init({
+        canvas: canvas,
         clearColor: [1,1,1,1],
         mousedown: function(event) {
             var result = globe.mousedown(event);
@@ -635,40 +628,40 @@ FacetChart.facet_osm_plot = function(lats, lons, color, width, height)
         field_of_view_y: Shade.div(20, globe_zoom)
     });
 
-    var globe = Facet.Marks.globe({ 
+    var globe = Lux.Marks.globe({ 
         view_proj: view_proj,
         zoom: globe_zoom
     });
 
-    lats = Facet.attribute_buffer({vertex_array: lats, item_size: 1});
-    lons = Facet.attribute_buffer({vertex_array: lons, item_size: 1});
+    lats = Lux.attribute_buffer({vertex_array: lats, item_size: 1});
+    lons = Lux.attribute_buffer({vertex_array: lons, item_size: 1});
     console.log(color);
 
     if (color.length === 3) {
         color = Shade.vec(color[0], color[1], color[2], 1);
     } else if (color.length > 1) {
-        color = Shade.vec(Facet.attribute_buffer({vertex_array: color, item_size: 3}), 1);
+        color = Shade.vec(Lux.attribute_buffer({vertex_array: color, item_size: 3}), 1);
     }
 
     // color = Shade.Utils.choose([Shade.vec(1,0,0,1),
     //                             Shade.vec(0,1,0,1),
     //                             Shade.vec(0,0,1,1)])(color);
 
-    var dots_model = Facet.model({
+    var dots_model = Lux.model({
         type: "points",
         lats: lats, 
         lons: lons
     });
 
-    var dots_batch = Facet.bake(dots_model, {
+    var dots_batch = Lux.bake(dots_model, {
         color: color,
         point_size: 2,
         position: globe.lat_lon_position(dots_model.lats.radians(), 
                                          dots_model.lons.radians())
     });
 
-    Facet.Scene.add(globe);
-    Facet.Scene.add(dots_batch);
+    Lux.Scene.add(globe);
+    Lux.Scene.add(dots_batch);
 
     return canvas;
 };
@@ -694,7 +687,9 @@ RClient = {
 
         function on_connect() {
             result.running = true;
-            result.send("rcloud.support::session.init(username=" + escape_r_literal_string(rcloud.username()) + ")");
+            result.send("rcloud.support::session.init(username=" 
+                        + escape_r_literal_string(rcloud.username()) + ",token="
+                        + escape_r_literal_string(rcloud.github_token()) + ")");
             opts.on_connect && opts.on_connect.call(result);
         }
 
@@ -904,7 +899,8 @@ RClient = {
                     } catch (e) {
                         if (e.constructor === NoCallbackError) {
                             that.handlers[v[0]](v[1]);
-                        }
+                        } else
+                            throw e;
                     }
                 }
                 rserve.eval(command, unwrap);
@@ -959,6 +955,11 @@ rcloud.init_client_side_data = function()
 rcloud.username = function()
 {
     return $.cookies.get('user');
+};
+
+rcloud.github_token = function()
+{
+    return $.cookies.get('token');
 };
 
 rcloud.get_user_filenames = function(k)

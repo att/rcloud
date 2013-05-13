@@ -135,8 +135,12 @@ configure.rcloud <- function () {
   if (file.exists(fn <- file.path(.rc.conf$configuration.root, "packages.txt")))
     pkgs <- c(pkgs, readLines(fn))
   cat("Loading packages...\n")
-  for (pkg in pkgs)
-    cat(pkg, ": ",require(pkg, quietly=TRUE, character.only=TRUE),"\n",sep='')
+  for (pkg in pkgs) {
+    succeeded <- require(pkg, quietly=TRUE, character.only=TRUE)
+    cat(pkg, ": ",succeeded,"\n",sep='')
+    if (!succeeded)
+      stop(paste("Missing package: ", pkg, sep=''))
+  }
 
   ## we actually need knitr ...
   opts_knit$set(global.device=TRUE, tidy=FALSE, dev=CairoPNG)
@@ -169,8 +173,20 @@ configure.rcloud <- function () {
 
 ## --- RCloud part folows ---
 ## this is called by session.init() on per-connection basis
-start.rcloud <- function(username="", ...) {
+start.rcloud <- function(username="", token="", ...) {
+  cat("FOOOOOOOOOO\n")
+  print(username)
+  print(token)
+  cat("BAAARRRRRRR\n")
+  if (!check.user.token.pair(username, token))
+    stop("bad username/token pair");
   .session$username <- username
+  .session$token <- token
+  .session$rgithub.context <-
+    rgithub.context.from.token(.rc.conf$github.api.url,
+                               .rc.conf$github.client.id,
+                               .rc.conf$github.client.secrent,
+                               token)
   if (is.function(getOption("RCloud.session.auth")))
     getOption("RCloud.session.auth")(username=username, ...)
 

@@ -5,39 +5,45 @@ dcchart is an embedded domain specific language for creating interactive
 
 Currently it is mostly a transcription of the javascript into R.
 
-Here's an example of a (meaningless) set of three charts:
+Here's a scatterchart and a couple of histograms on the iris data:
 
-
-    data <- list(list(2008, "a", 8), list(2008, "c", 5), list(2009, "b", 12), list(2009, 
-        "a", 1), list(2010, "c", 17));
-    wdcchart(data,
-    charts(
-    dimension(one,func(d)(d[0])),
-    dimension(two,func(d)(d[1])),
-    dimension(three,func(d)(d[2])),
-    domain(twoD,uniques(two)),
-    domain(threeD,uniques(three)),
-    pie(width(180)
-          $height(180)
-          $radius(80)
-          $dimension(one)
-          $group(one$group()$reduceCount())),
-    bar(width(500)
-          $height(100)
-          $margins(hash(top:20,right:50,bottom:20,left:40))
-          $dimension(two)
-          $group(two$group()$reduceCount())
-          $centerBar(false)
-          $gap(0)
-          $x(d3$scale$ordinal()$domain(twoD))
-          $xUnits(dc$units$ordinal)),
-    bar(width(500)
-          $height(100)
-          $margins(hash(top:20,right:50,bottom:20,left:40))
-          $dimension(two)
-          $group(two$group()$reduceSum(func(d)(d[2])))
-          $centerBar(false)
-          $gap(0)
-          $x(d3$scale$ordinal()$domain(twoD))
-          $xUnits(dc$units$ordinal))
-    ))
+    wdcchart(iris,charts(
+    dimension(measures,func(d)(d)),
+    dimension(petalWidths,func(d)(field("Petal.Width",d))),
+    dimension(petalLengths,func(d)(field("Petal.Length",d))),
+    bubble("sepal width vs length",
+       width(300)$height(300)
+       $margins(list(top = 10, right = 50, bottom = 30, left = 40))
+       $dimension(measures)
+       $group(measures$group())
+       $colors(c("red","blue","green"))
+       $colorAccessor(func(d)(gfield("Species",d)-1))
+       $keyAccessor(func(d)(gfield("Sepal.Length",d)))
+       $valueAccessor(func(d)(gfield("Sepal.Width",d)))
+       $radiusValueAccessor(func(d)(d.value*3))
+       $x(d3$scale$linear()$domain(c(0,10)))
+       $y(d3$scale$linear()$domain(c(0,10)))
+       $elasticX(true)
+       $elasticY(true)
+       $transitionDuration(300)
+       $renderLabel(false)),
+    bar("petal widths",
+       width(300)$height(300)
+       $margins(list(top=10,right=50,bottom=30,left=40))
+       $dimension(petalWidths)
+       $group(petalWidths$group(func(x)(Math$floor(x*5)/5.0))$reduceCount())
+       $x(d3$scale$linear()$domain(c(0,3)))
+       $xUnits(dc$units$float$precision(0.2))
+       $elasticX(true)
+       $transitionDuration(300)
+       $gap(2)),
+    bar("petal lengths",
+       width(300)$height(300)
+       $margins(list(top=10,right=50,bottom=30,left=40))
+       $dimension(petalLengths)
+       $group(petalLengths$group(func(x)(Math$floor(x*2)/2.0))$reduceCount())
+       $x(d3$scale$linear()$domain(c(1,7)))
+       $xUnits(dc$units$float$precision(0.5))
+       $elasticX(true)
+       $transitionDuration(300)
+       $gap(2))))

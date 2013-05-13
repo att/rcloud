@@ -27,6 +27,11 @@ rcloud.username = function()
     return $.cookies.get('user');
 };
 
+rcloud.github_token = function()
+{
+    return $.cookies.get('token');
+};
+
 rcloud.get_user_filenames = function(k)
 {
     if (_.isUndefined(k)) k = _.identity;
