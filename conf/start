@@ -23,24 +23,19 @@ if [ -z "$ROOT" ]; then
 fi
 export ROOT
 
-# : ${RBIN=R}
+: ${RBIN=R}
 
-# if [ "$1" = -h ]; then
-#   echo ''
-#   echo " Usage: $0 [-d]"
-#   echo ''
-#   echo ' You may need to set ROOT and optionally RBIN accordingly'
-#   echo ''
-#   exit 0
-# fi
+if [ "$1" = -h ]; then
+   echo ''
+   echo " Usage: $0 [-d]"
+   echo ''
+   echo ' You may need to set ROOT and optionally RBIN accordingly'
+   echo ''
+   exit 0
+fi
 
-# if [ "$1" = -d ]; then
-#   PX=.dbg
-# fi
+if [ "$1" = -d ]; then
+   export DEBUG=1
+fi
 
-# --vanilla is intentional - use conf/rserve.R for additional configuration NOT user R startup files
-# echo $RBIN CMD ${PRE}Rserve$PX --RS-conf $ROOT/conf/rserve.conf --RS-source $ROOT/conf/rserve.R --vanilla --no-save
-# $RBIN CMD ${PRE}Rserve$PX --RS-conf "$ROOT/conf/rserve.conf" --RS-source "$ROOT/conf/rserve.R" --vanilla --no-save
-
-echo $PWD
-Rscript ./conf/run_rcloud.R $ROOT/conf/rserve.conf $ROOT/conf/rserve.R
+"$RBIN" --slave --no-restore --vanilla --file="$ROOT/conf/run_rcloud.R" --args "$ROOT/conf/rserve.conf" "$ROOT/conf/rserve.R"
