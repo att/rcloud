@@ -1,4 +1,5 @@
 require(rcloud.support)
+require(RCurl)
 
 run <- function(url, query, body, headers)
 {
@@ -15,8 +16,11 @@ run <- function(url, query, body, headers)
                                     rcloud.support:::.rc.conf$github.client.id,
                                     rcloud.support:::.rc.conf$github.client.secret,
                                     token)
-  print(ctx$user$login)
   ret = '/main.html'
+  cat("BEFORE")
+  print(ctx$user$login)
+  print(token)
+  cat("AFTER")
   set.token(ctx$user$login, token)
   list(paste("<html><head></head><body>",
              "<pre>Welcome, ", ctx$user$login, ".</pre>",

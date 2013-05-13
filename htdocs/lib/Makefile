@@ -33,7 +33,7 @@ dependencies_bundle.js: \
 	js/underscore-min.js \
 	js/jquery.terminal-0.4.7.js \
 	js/d3.v2.js \
-	js/facet.js \
+	js/lux.js \
 	js/crossfilter.js \
 	js/dc.js \
 	js/colorbrewer.js \
