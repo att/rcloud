@@ -1,5 +1,5 @@
 #!/bin/bash
-cd htdocs/js; 
+cd ../htdocs/js; 
 if [ -d node_modules ]; then
     make;
 else
