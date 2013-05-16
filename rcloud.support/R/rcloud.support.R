@@ -185,7 +185,7 @@ start.rcloud <- function(username="", token="", ...) {
   .session$rgithub.context <-
     rgithub.context.from.token(.rc.conf$github.api.url,
                                .rc.conf$github.client.id,
-                               .rc.conf$github.client.secrent,
+                               .rc.conf$github.client.secret,
                                token)
   if (is.function(getOption("RCloud.session.auth")))
     getOption("RCloud.session.auth")(username=username, ...)
