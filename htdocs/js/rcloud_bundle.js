@@ -468,15 +468,6 @@ LuxChart.lux_tour_plot = function(array_list)
     var data;
     var axis_1_parameters, axis_2_parameters;
 
-    // function display()
-    // {
-    //     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-    //     gl.clearDepth(1.0);
-    //     gl.clearColor(0,0,0,0);
-    //     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    //     tour_batch.draw();
-    // }
-
     function data_buffers()
     {
         var result = {};
@@ -602,7 +593,9 @@ LuxChart.lux_tour_plot = function(array_list)
 
 LuxChart.lux_osm_plot = function(lats, lons, color, width, height)
 {
-    var canvas = $("<canvas width='" + width + "' height='" + height + "'></canvas>")[0];
+    var canvas = $("<canvas></canvas>")[0]; // width='" + width + "' height='" + height + "'></canvas>")[0];
+    canvas.width = width;
+    canvas.height = height;
     var gl = Lux.init({
         canvas: canvas,
         clearColor: [1,1,1,1],
@@ -633,35 +626,31 @@ LuxChart.lux_osm_plot = function(lats, lons, color, width, height)
         zoom: globe_zoom
     });
 
-    lats = Lux.attribute_buffer({vertex_array: lats, item_size: 1});
-    lons = Lux.attribute_buffer({vertex_array: lons, item_size: 1});
-    console.log(color);
+    // lats = Lux.attribute_buffer({vertex_array: lats, item_size: 1});
+    // lons = Lux.attribute_buffer({vertex_array: lons, item_size: 1});
+    // console.log(color);
 
-    if (color.length === 3) {
-        color = Shade.vec(color[0], color[1], color[2], 1);
-    } else if (color.length > 1) {
-        color = Shade.vec(Lux.attribute_buffer({vertex_array: color, item_size: 3}), 1);
-    }
+    // if (color.length === 3) {
+    //     color = Shade.vec(color[0], color[1], color[2], 1);
+    // } else if (color.length > 1) {
+    //     color = Shade.vec(Lux.attribute_buffer({vertex_array: color, item_size: 3}), 1);
+    // }
 
-    // color = Shade.Utils.choose([Shade.vec(1,0,0,1),
-    //                             Shade.vec(0,1,0,1),
-    //                             Shade.vec(0,0,1,1)])(color);
+    // var dots_model = Lux.model({
+    //     type: "points",
+    //     lats: lats, 
+    //     lons: lons
+    // });
 
-    var dots_model = Lux.model({
-        type: "points",
-        lats: lats, 
-        lons: lons
-    });
-
-    var dots_batch = Lux.bake(dots_model, {
-        color: color,
-        point_size: 2,
-        position: globe.lat_lon_position(dots_model.lats.radians(), 
-                                         dots_model.lons.radians())
-    });
+    // var dots_batch = Lux.bake(dots_model, {
+    //     color: color,
+    //     point_size: 2,
+    //     position: globe.lat_lon_position(dots_model.lats.radians(), 
+    //                                      dots_model.lons.radians())
+    // });
 
     Lux.Scene.add(globe);
-    Lux.Scene.add(dots_batch);
+    // Lux.Scene.add(dots_batch);
 
     return canvas;
 };
