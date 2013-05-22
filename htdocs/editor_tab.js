@@ -20,20 +20,51 @@ var editor = {
                     shell.new_file();
                 } else if (!_.isUndefined(event.node.file_type)) {
                     shell.serialize_state(function() {
-                        shell.load_from_file(event.node.user_name, event.node.file_name);
+                        shell.load_notebook(event.node.user_name, event.node.gist_name);
                     });
                 } else {
-                    shell.load_from_file(event.node.user_name, event.node.file_name);
+                    shell.load_notebook(event.node.user_name, event.node.gist_name);
                 }
             }
         );
     },
     populate_file_list: function() {
         var that = this;
-        rcloud.get_all_user_filenames(function(data) {
-            var this_user = rcloud.username();
+        var this_user = rcloud.username();
+        rcloud.load_user_config(this_user, function(json) {
+            var data = JSON.parse(json);
             var result = [];
             that.file_tree_model = {};
+            var scratch = data.scratch;
+            for (var k in data.interests) {
+                var username = k;
+                var notebooks_data = data.interests[k];
+                
+                var notebook_nodes = _.map(notebooks_data, function(notebook_data) {
+                    var name = notebook_data[0];
+                    var result = {
+                        label: name,
+                        gist_name: name,
+                        id: '/' + username + '/' + name
+                    };
+                    that.file_tree_model[result.id] = result;
+                    return result;
+                });
+
+                if(username === this_user) {
+                    notebook_nodes.push({
+                        label: "[New File]",
+                        id: "newfile"
+                    });
+                };
+                var node = {
+                    label: username,
+                    id: '/' + username,
+                    children: notebook_nodes
+                };
+                result.push(node);
+            }
+/*
             for (var i=0; i<data.length; ++i) {
                 var dirname = data[i][0];
                 var files_data = data[i][1];
@@ -65,6 +96,7 @@ var editor = {
                 };
                 result.push(node);
             }
+*/
             var tree_data = [ { 
                 label: '/',
                 id: '/',
@@ -97,7 +129,7 @@ var editor = {
     },
     load_file: function(user, filename, k) {
         var that = this;
-        shell.load_from_file(user, filename);
+        shell.load_notebook(user, filename);
     },
     search: function(search_string) {
         var that = this;
