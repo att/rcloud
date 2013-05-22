@@ -10,7 +10,7 @@ function share_init() {
         rcloud.init_client_side_data();
         var user = getURLParameter("user");
         var filename = getURLParameter("filename");
-        shell.load_from_file(user, filename, function() {
+        shell.load_notebook(user, filename, function() {
             $("#file_title").text(filename);
             shell.notebook.controller.run_all();
             _.each(shell.notebook.view.sub_views, function(cell_view) {

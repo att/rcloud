@@ -933,6 +933,7 @@ rcloud = {};
 rcloud.init_client_side_data = function()
 {
     var that = this;
+/*
     rcloud.get_user_filenames(function(data) {
         that.user_filenames = data;
 
@@ -947,6 +948,7 @@ rcloud.init_client_side_data = function()
             .enter()
             .append("li").text(function(i) { return i; });
     });
+*/
     rclient.send_and_callback("rcloud.prefix.uuid()", function(data) {
         that.wplot_uuid = data;
     });
@@ -962,12 +964,14 @@ rcloud.github_token = function()
     return $.cookies.get('token');
 };
 
+/*
 rcloud.get_user_filenames = function(k)
 {
     if (_.isUndefined(k)) k = _.identity;
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.list.initial.filenames", this.username()), k);
-}; 
+};
+*/ 
 
 rcloud.search = function(search_string, k)
 {
@@ -977,8 +981,35 @@ rcloud.search = function(search_string, k)
         rclient.r_funcall("rcloud.search", search_string), k);
 };
 
+rcloud.load_user_config = function(user, k)
+{
+    if (_.isUndefined(k)) k = _.identity;
+    rclient.send_and_callback(
+        rclient.r_funcall("rcloud.load.user.config", user), k);
+}
+
+rcloud.save_user_config = function(user, content, k)
+{
+    if (_.isUndefined(k)) k = _.identity;
+    rclient.send_and_callback(
+        rclient.r_funcall("rcloud.save.user.config", user, content), k);
+}
+
+rcloud.load_notebook = function(id, k)
+{
+    rclient.send_and_callback(
+        rclient.r_funcall("rcloud.get.notebook", id), k);
+}
+
+rcloud.update_notebook = function(id, content, k)
+{
+    rclient.send_and_callback(
+        rclient.r_funcall("rcloud.update.notebook", id, content), k);
+}
+
 rcloud.get_all_user_filenames = function(k)
 {
+    debugger;
     var that = this;
     if (_.isUndefined(k)) k = _.identity;
     rclient.send_and_callback(
@@ -987,12 +1018,14 @@ rcloud.get_all_user_filenames = function(k)
 
 rcloud.load_user_file = function(user, filename, k)
 {
+    debugger;
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.load.user.file", user, filename), k);
 };
 
 rcloud.save_to_user_file = function(user, filename, content, k)
 {
+    debugger;
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.save.to.user.file", user, filename, content),
                           k);
@@ -1000,6 +1033,7 @@ rcloud.save_to_user_file = function(user, filename, content, k)
 
 rcloud.create_user_file = function(filename, k)
 {
+    debugger;
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.create.user.file", rcloud.username(), filename), k);
 };
@@ -1504,22 +1538,22 @@ function create_interactive_cell_html_view(cell_model)
 }
 
 var dispatch = {
-    markdown: create_markdown_cell_html_view,
-    interactive: create_interactive_cell_html_view
+    Markdown: create_markdown_cell_html_view,
+    R: create_interactive_cell_html_view
 };
 
 Notebook.Cell.create_html_view = function(cell_model)
 {
-    return dispatch[cell_model.type()](cell_model);
+    return dispatch[cell_model.language()](cell_model);
 };
 
 })();
-Notebook.Cell.create_model = function(content, type)
+Notebook.Cell.create_model = function(content, language)
 {
     var result = {
         views: [], // sub list for pubsub
-        type: function() {
-            return type;
+        language: function() {
+            return language;
         },
         content: function(new_content) {
             if (!_.isUndefined(new_content)) {
@@ -1531,7 +1565,7 @@ Notebook.Cell.create_model = function(content, type)
         json: function() {
             return {
                 content: content,
-                type: type
+                language: language
             };
         }
     };
@@ -1547,7 +1581,7 @@ Notebook.Cell.create_controller = function(cell_model)
     var result = {
         execute: function() {
             var that = this;
-            var type = cell_model.type();
+            var language = cell_model.language();
             function callback(r) {
                 _.each(cell_model.views, function(view) {
                     view.result_updated(r);
@@ -1555,13 +1589,13 @@ Notebook.Cell.create_controller = function(cell_model)
             }
             
             rclient.record_cell_execution(cell_model);
-            if (type === 'markdown') {
+            if (language === 'Markdown') {
                 var wrapped_command = rclient.markdown_wrap_command(cell_model.content());
                 rclient.send_and_callback(wrapped_command, callback, _.identity);
-            } else if (type === 'interactive') {
+            } else if (language === 'R') {
                 var wrapped_command = rclient.markdown_wrap_command("```{r}\n" + cell_model.content() + "\n```\n");
                 rclient.send_and_callback(wrapped_command, callback, _.identity);
-            } else alert("Can only do markdown or interactive for now!");
+            } else alert("Don't know language '" + language + "' - can only do Markdown or R for now!");
         }
     };
 
@@ -1670,15 +1704,23 @@ Notebook.create_controller = function(model)
         clear: function() {
             model.clear();
         },
-        load_from_file: function(user, filename, k) {
+        load_notebook: function(user, filename, k) {
             var that = this;
-            rcloud.load_user_file(user, filename, function(contents) {
-                var json_contents = JSON.parse(contents.join("\n"));
+            rcloud.load_notebook(filename, function(contents) {
                 that.clear();
-                _.each(json_contents, function (json_cell) {
-                    var cell_model = that.append_cell(
-                        json_cell.content, json_cell.type);
+                var gist = JSON.parse(contents);
+                var parts = []; // could probably rely on alphabetic order too
+                _.each(gist.files, function (file) {
+                    var filename = file.filename;
+                    if(/^part/.test(filename)) {
+                        var number = parseInt(filename.slice(4).split('.')[0]);
+                        if(number !== NaN)
+                            parts[number] = [file.content, file.language];
+                    }
+                    // style..
                 });
+                for(var i in parts)
+                    that.append_cell(parts[i][0], parts[i][1]);
                 k();
             });
         },
@@ -1688,9 +1730,9 @@ Notebook.create_controller = function(model)
             rcloud.load_user_file(user, filename, function(old_contents) {
                 old_contents = old_contents.join("\n");
                 if (json_rep !== old_contents) {
-                    rcloud.save_to_user_file(user, filename, json_rep, function() {
-                        k && k();
-                    });
+                    //rcloud.save_to_user_file(user, filename, json_rep, function() {
+                    //    k && k();
+                    //});
                 } else {
                     k && k();
                 }

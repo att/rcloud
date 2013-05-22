@@ -16,6 +16,40 @@
 ## is to move all of these to require the session token to match against
 ## the one we have stored during the login process.
 
+
+rcloud.user.config.filename <- function(user)
+  file.path(.rc.conf$data.root, "userfiles", paste(user, ".json", sep=''))
+
+
+rcloud.load.user.config <- function(user) {
+  print(rcloud.user.config.filename(user))
+  print("huh")
+  paste(readLines(rcloud.user.config.filename(user)), collapse="\n")
+}
+
+rcloud.save.user.config <- function(user, content) {
+  filename <- rcloud.user.config.filename(user)
+  invisible(write(content,filename))
+}
+
+rcloud.get.notebook <- function(id) {
+  res <- get.gist(.session$rgithub.context, id)
+  # this assumption of text might not be accurate in all cases,
+  # just a workaround because rserve.js doesn't support raw vectors yet
+  # and i'm not sure if/how to deal with binary json either
+  json <- rawToChar(res$content);
+  print("GOT GIST:")
+  print(json)
+  print("END GIST!")
+  json
+}
+
+rcloud.update.notebook <- function(id, content)
+  update.gist(.session$rgithub.context, id, content)
+
+  
+##########################
+
 rcloud.exec.user.file <- function(user, filename)
   session.eval(eval(parse(text=readLines(rcloud.user.file.name(user, filename)))),
                silent=TRUE)

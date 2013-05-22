@@ -1,9 +1,9 @@
-Notebook.Cell.create_model = function(content, type)
+Notebook.Cell.create_model = function(content, language)
 {
     var result = {
         views: [], // sub list for pubsub
-        type: function() {
-            return type;
+        language: function() {
+            return language;
         },
         content: function(new_content) {
             if (!_.isUndefined(new_content)) {
@@ -15,7 +15,7 @@ Notebook.Cell.create_model = function(content, type)
         json: function() {
             return {
                 content: content,
-                type: type
+                language: language
             };
         }
     };
