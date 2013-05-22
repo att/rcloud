@@ -26,7 +26,7 @@ Notebook.create_controller = function(model)
             rcloud.load_notebook(filename, function(contents) {
                 that.clear();
                 var gist = JSON.parse(contents);
-                var parts = []; // could probably rely on alphabetic order too
+                var parts = {}; // could rely on alphabetic input instead of gathering
                 _.each(gist.files, function (file) {
                     var filename = file.filename;
                     if(/^part/.test(filename)) {
