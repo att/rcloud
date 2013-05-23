@@ -1,4 +1,20 @@
+function init_shareable_link_box() {
+    $(".embed-link").each(function() {
+        var t = $(this), n = t.next(".embed-box"), f = function() {
+            t.toggle(); 
+            n.toggle();
+            if (n.is(":visible")) {
+                n.get(0).value = window.location.protocol + '//' + window.location.host + '/view.html?filename=' + shell.filename;
+                n.get(0).select();
+            }
+            return false;
+        };
+        t.click(f); n.blur(f);
+    });
+}
+
 function main_init() {
+    init_shareable_link_box();
     rclient = RClient.create({ 
         debug: false,
         host: "ws://"+location.hostname+":8081/", 
@@ -8,11 +24,6 @@ function main_init() {
                 shell.new_markdown_cell("", "markdown");
                 var vs = shell.notebook.view.sub_views;
                 vs[vs.length-1].show_source();
-            });
-            $("#share-notebook").click(function() {
-                shell.serialize_state(function() {
-                    window.location="share.html?user=" + shell.user + "&filename=" + shell.filename;
-                });
             });
             $("#rcloud-logout").click(function() {
                 $.cookies.set('user', null);
