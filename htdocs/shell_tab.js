@@ -166,14 +166,14 @@ var shell = (function() {
             } else
                 return handlers[objtype].call(this, data);
         }, new_markdown_cell: function(content) {
-            return notebook_controller.append_cell(content, "markdown");
+            return notebook_controller.append_cell(content, "Markdown");
         }, new_interactive_cell: function(content) {
-            return notebook_controller.append_cell(content, "interactive");
+            return notebook_controller.append_cell(content, "R");
         }, insert_markdown_cell_before: function(index) {
-            return notebook_controller.insert_cell("", "markdown", index);
-        }, load_from_file: function(user, filename, k) {
+            return notebook_controller.insert_cell("", "Markdown", index);
+        }, load_notebook: function(user, filename, k) {
             var that = this;
-            this.notebook.controller.load_from_file(user, filename, function() {
+            this.notebook.controller.load_notebook(user, filename, function() {
                 $("#file_title").text(filename);
                 _.each(that.notebook.view.sub_views, function(cell_view) {
                     cell_view.show_source();
@@ -207,7 +207,7 @@ var shell = (function() {
             rcloud.create_user_file(filename, function(result) {
                 if (result) {
                     editor.populate_file_list();
-                    that.load_from_file(rcloud.username(), filename);
+                    that.load_notebook(rcloud.username(), filename);
                 }
             });
         }, serialize_state: function(k) {

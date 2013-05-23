@@ -21,15 +21,23 @@ Notebook.create_controller = function(model)
         clear: function() {
             model.clear();
         },
-        load_from_file: function(user, filename, k) {
+        load_notebook: function(user, filename, k) {
             var that = this;
-            rcloud.load_user_file(user, filename, function(contents) {
-                var json_contents = JSON.parse(contents.join("\n"));
+            rcloud.load_notebook(filename, function(contents) {
                 that.clear();
-                _.each(json_contents, function (json_cell) {
-                    var cell_model = that.append_cell(
-                        json_cell.content, json_cell.type);
+                var gist = JSON.parse(contents);
+                var parts = {}; // could rely on alphabetic input instead of gathering
+                _.each(gist.files, function (file) {
+                    var filename = file.filename;
+                    if(/^part/.test(filename)) {
+                        var number = parseInt(filename.slice(4).split('.')[0]);
+                        if(number !== NaN)
+                            parts[number] = [file.content, file.language];
+                    }
+                    // style..
                 });
+                for(var i in parts)
+                    that.append_cell(parts[i][0], parts[i][1]);
                 k();
             });
         },
@@ -39,9 +47,9 @@ Notebook.create_controller = function(model)
             rcloud.load_user_file(user, filename, function(old_contents) {
                 old_contents = old_contents.join("\n");
                 if (json_rep !== old_contents) {
-                    rcloud.save_to_user_file(user, filename, json_rep, function() {
-                        k && k();
-                    });
+                    //rcloud.save_to_user_file(user, filename, json_rep, function() {
+                    //    k && k();
+                    //});
                 } else {
                     k && k();
                 }
