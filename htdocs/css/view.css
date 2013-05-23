@@ -195,3 +195,7 @@ rect.frame {
 .string-value {
     visibility: hidden;
 }
+
+#accordion { visibility: hidden; }
+
+#input-div { visibility: hidden; }
