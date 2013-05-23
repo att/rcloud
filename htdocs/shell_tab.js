@@ -166,11 +166,11 @@ var shell = (function() {
             } else
                 return handlers[objtype].call(this, data);
         }, new_markdown_cell: function(content) {
-            return notebook_controller.append_cell(content, "markdown");
+            return notebook_controller.append_cell(content, "Markdown");
         }, new_interactive_cell: function(content) {
-            return notebook_controller.append_cell(content, "interactive");
+            return notebook_controller.append_cell(content, "R");
         }, insert_markdown_cell_before: function(index) {
-            return notebook_controller.insert_cell("", "markdown", index);
+            return notebook_controller.insert_cell("", "Markdown", index);
         }, load_notebook: function(user, filename, k) {
             var that = this;
             this.notebook.controller.load_notebook(user, filename, function() {
