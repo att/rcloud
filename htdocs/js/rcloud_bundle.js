@@ -709,6 +709,7 @@ RClient = {
             on_connect: on_connect,
             on_error: on_error,
             on_close: on_close,
+            on_data: opts.on_data,
             login: token + "\n" + token
         });
 
