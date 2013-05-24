@@ -1,3 +1,10 @@
+var oob_handlers = {
+    "browsePath": function(v) {
+        $("#help-output").empty();
+        $("#help-output").append("<iframe class='help-iframe' src='" + window.location.protocol + '//' + window.location.host + v+ "'></iframe>");
+    }
+};
+
 function main_init() {
     rclient = RClient.create({ 
         debug: false,
@@ -34,6 +41,9 @@ function main_init() {
                 editor.load_file(getURLParameter("user"), getURLParameter("filename"));
                 $("#tabs").tabs("select", "#tabs-2");
             }
+        }, on_data: function(v) {
+            v = v.value.json();
+            oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
         }
     });
 }
