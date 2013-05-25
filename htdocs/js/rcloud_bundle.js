@@ -953,15 +953,6 @@ rcloud.github_token = function()
     return $.cookies.get('token');
 };
 
-/*
-rcloud.get_user_filenames = function(k)
-{
-    if (_.isUndefined(k)) k = _.identity;
-    rclient.send_and_callback(
-        rclient.r_funcall("rcloud.list.initial.filenames", this.username()), k);
-};
-*/ 
-
 rcloud.search = function(search_string, k)
 {
     var that = this;

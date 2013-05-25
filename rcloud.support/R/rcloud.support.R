@@ -52,36 +52,8 @@ rcloud.update.notebook <- function(id, content) {
   
 ##########################
 
-rcloud.exec.user.file <- function(user, filename)
-  session.eval(eval(parse(text=readLines(rcloud.user.file.name(user, filename)))),
-               silent=TRUE)
-
 rcloud.user.file.name <- function(user, filename)
   file.path(.rc.conf$data.root, "userfiles", user, filename)
-
-
-rcloud.list.all.initial.filenames <- function() {
-    users <- list.files(path = file.path(.rc.conf$data.root, "userfiles"))
-    lapply(users, function(user) {
-        filenames <- list.files(path = file.path(.rc.conf$data.root, "userfiles", user))
-        list(user, lapply(filenames, function(filename) {
-            list(filename, format(file.info(file.path(.rc.conf$data.root, "userfiles", user, filename))$mtime))
-        }))
-    })
-}
-
-rcloud.list.initial.filenames <- function(user) {
-  list.files(path=file.path(.rc.conf$data.root, "userfiles", user))
-}
-
-rcloud.load.user.file <- function(user, filename) {
-  readLines(rcloud.user.file.name(user, filename))
-}
-
-rcloud.save.to.user.file <- function(user, filename, content) {
-  filename <- rcloud.user.file.name(user, filename)
-  invisible(write(content, filename))
-}
 
 rcloud.create.user.file <- function(user, filename) {
   internal_filename <- rcloud.user.file.name(user, filename)
