@@ -87,20 +87,6 @@ Notebook.create_controller = function(model)
             }
             rcloud.update_notebook(current_notebook, changes_to_gist(changes), function(x) {});
         },
-        save_file: function(user, filename, k) {
-            var that = this;
-            var json_rep = JSON.stringify(model.json());
-            rcloud.load_user_file(user, filename, function(old_contents) {
-                old_contents = old_contents.join("\n");
-                if (json_rep !== old_contents) {
-                    //rcloud.save_to_user_file(user, filename, json_rep, function() {
-                    //    k && k();
-                    //});
-                } else {
-                    k && k();
-                }
-            });
-        },
         run_all: function() {
             _.each(model.notebook, function(cell_model) {
                 cell_model.controller.execute();
