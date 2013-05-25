@@ -93,10 +93,7 @@ function create_markdown_cell_html_view(cell_model)
     inner_div.append(cell_buttons_div);
     cell_buttons_div.append(insert_cell_button);
     insert_cell_button.click(function(e) {
-        // truly the wrong way to go about this
-        var base_index = notebook_cell_div.index();
-        var model_index = base_index;
-        shell.insert_markdown_cell_before(model_index);
+        shell.insert_markdown_cell_before(cell_model.id);
     });
     
     var ace_div = $('<div style="width:100%; height:100%"></div>');
@@ -237,10 +234,13 @@ function create_markdown_cell_html_view(cell_model)
                 markdown_div.slideUp(150); // hide();
             }
         },
+        /*
+        // this doesn't make sense: changes should go through controller
         remove_self: function() {
             cell_model.parent_model.remove_cell(cell_model);            
             notebook_cell_div.remove();
         },
+        */
         div: function() {
             return notebook_cell_div;
         },
@@ -335,10 +335,7 @@ function create_interactive_cell_html_view(cell_model)
     inner_div.append(cell_buttons_div);
     cell_buttons_div.append(insert_cell_button);
     insert_cell_button.click(function(e) {
-        // truly the wrong way to go about this
-        var base_index = notebook_cell_div.index();
-        var model_index = base_index;
-        shell.insert_markdown_cell_before(model_index);
+        shell.insert_markdown_cell_before(cell_model.id);
     });
     
     var ace_div = $('<div style="width:100%; margin-left: 0.5em; margin-top: 0.5em"></div>');
@@ -465,10 +462,13 @@ function create_interactive_cell_html_view(cell_model)
                 markdown_div.slideUp(150); // hide();
             }
         },
+        /*
+        // this doesn't make sense: changes should go through controller
         remove_self: function() {
             cell_model.parent_model.remove_cell(cell_model);            
             notebook_cell_div.remove();
         },
+        */
         div: function() {
             return notebook_cell_div;
         },
