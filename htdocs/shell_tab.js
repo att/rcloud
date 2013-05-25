@@ -182,13 +182,7 @@ var shell = (function() {
                 that.filename = filename;
                 k && k();
             });
-        }, save_to_file: function(user, filename, k) {
-            var that = this;
-            this.notebook.controller.save_file(user, filename, function() {
-                $("#file_title").text(filename);
-                k && k();
-            });
-        }, new_file: function() {
+        }, new_notebook: function() {
             function validate_filename(n) {
                 if (/\.\./.test(n))
                     return false;
@@ -196,7 +190,7 @@ var shell = (function() {
                     return false;
                 return true;
             }
-            var filename = prompt("please enter a filename", "[new filename]");
+            var filename = prompt("please enter a description", "[new notebook]");
             if (!validate_filename(filename)) {
                 alert("Invalid filename");
                 return;
@@ -210,25 +204,11 @@ var shell = (function() {
                     that.load_notebook(rcloud.username(), filename);
                 }
             });
-        }, serialize_state: function(k) {
-            var that = this;
-            this.notebook.view.update_model();
-            if (this.filename && (this.user === rcloud.username())) {
-                this.save_to_file(shell.user, shell.filename, function() {
-                    editor.populate_file_list();
-                    k && k();
-                });
-            } else {
-                // FIXME what do we do with unnamed content??
-                k && k();
-            }
         }
     };
 
     $("#run-notebook").click(function() {
-        result.serialize_state(function() {
-            result.notebook.controller.run_all();
-        });
+        result.notebook.controller.run_all();
     });
     return result;
 })();

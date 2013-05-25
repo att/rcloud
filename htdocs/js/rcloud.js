@@ -77,30 +77,6 @@ rcloud.update_notebook = function(id, content, k)
         rclient.r_funcall("rcloud.update.notebook", id, JSON.stringify(content)), k);
 }
 
-rcloud.get_all_user_filenames = function(k)
-{
-    debugger;
-    var that = this;
-    if (_.isUndefined(k)) k = _.identity;
-    rclient.send_and_callback(
-        rclient.r_funcall("rcloud.list.all.initial.filenames"), k);
-}; 
-
-rcloud.load_user_file = function(user, filename, k)
-{
-    debugger;
-    rclient.send_and_callback(
-        rclient.r_funcall("rcloud.load.user.file", user, filename), k);
-};
-
-rcloud.save_to_user_file = function(user, filename, content, k)
-{
-    debugger;
-    rclient.send_and_callback(
-        rclient.r_funcall("rcloud.save.to.user.file", user, filename, content),
-                          k);
-};
-
 rcloud.create_user_file = function(filename, k)
 {
     debugger;

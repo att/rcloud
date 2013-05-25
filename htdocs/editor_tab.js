@@ -16,12 +16,8 @@ var editor = {
         });
         $tree.bind(
             'tree.click', function(event) {
-                if (event.node.id === "newfile") {
-                    shell.new_file();
-                } else if (!_.isUndefined(event.node.file_type)) {
-                    shell.serialize_state(function() {
-                        shell.load_notebook(event.node.user_name, event.node.gist_name);
-                    });
+                if (event.node.id === "newbook") {
+                    shell.new_notebook();
                 } else {
                     shell.load_notebook(event.node.user_name, event.node.gist_name);
                 }
@@ -53,8 +49,8 @@ var editor = {
 
                 if(username === this_user) {
                     notebook_nodes.push({
-                        label: "[New File]",
-                        id: "newfile"
+                        label: "[New Notebook]",
+                        id: "newbook"
                     });
                 };
                 var node = {
@@ -124,10 +120,7 @@ var editor = {
             }
         }, 500);
     },
-    save_file: function(user, filename, k) {
-        shell.save_to_file(user, filename, k);
-    },
-    load_file: function(user, filename, k) {
+    load_notebook: function(user, filename, k) {
         var that = this;
         shell.load_notebook(user, filename);
     },
@@ -206,7 +199,7 @@ var editor = {
                                 return;
                             var j = d[1];
                             var user = data[j][0], filename = data[j][1];
-                            that.load_file(user, filename);
+                            that.load_notebook(user, filename);
                         })
                 ;
         };
