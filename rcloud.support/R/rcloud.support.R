@@ -41,12 +41,14 @@ rcloud.get.notebook <- function(id) {
   print("GOT GIST:")
   print(json)
   print("END GIST!")
-  json
+  content(res, as = 'text')
 }
 
-rcloud.update.notebook <- function(id, content)
-  update.gist(.session$rgithub.context, id, content)
-
+rcloud.update.notebook <- function(id, content) {
+  res <- update.gist(.session$rgithub.context, id, content)
+  output <- content(res, as = 'text')
+  1
+}
   
 ##########################
 

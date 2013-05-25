@@ -74,7 +74,7 @@ rcloud.load_notebook = function(id, k)
 rcloud.update_notebook = function(id, content, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.update.notebook", id, content), k);
+        rclient.r_funcall("rcloud.update.notebook", id, JSON.stringify(content)), k);
 }
 
 rcloud.get_all_user_filenames = function(k)

@@ -993,7 +993,7 @@ rcloud.load_notebook = function(id, k)
 rcloud.update_notebook = function(id, content, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.update.notebook", id, content), k);
+        rclient.r_funcall("rcloud.update.notebook", id, JSON.stringify(content)), k);
 }
 
 rcloud.get_all_user_filenames = function(k)
@@ -1134,10 +1134,7 @@ function create_markdown_cell_html_view(cell_model)
     inner_div.append(cell_buttons_div);
     cell_buttons_div.append(insert_cell_button);
     insert_cell_button.click(function(e) {
-        // truly the wrong way to go about this
-        var base_index = notebook_cell_div.index();
-        var model_index = base_index;
-        shell.insert_markdown_cell_before(model_index);
+        shell.insert_markdown_cell_before(cell_model.id);
     });
     
     var ace_div = $('<div style="width:100%; height:100%"></div>');
@@ -1278,10 +1275,13 @@ function create_markdown_cell_html_view(cell_model)
                 markdown_div.slideUp(150); // hide();
             }
         },
+        /*
+        // this doesn't make sense: changes should go through controller
         remove_self: function() {
             cell_model.parent_model.remove_cell(cell_model);            
             notebook_cell_div.remove();
         },
+        */
         div: function() {
             return notebook_cell_div;
         },
@@ -1376,10 +1376,7 @@ function create_interactive_cell_html_view(cell_model)
     inner_div.append(cell_buttons_div);
     cell_buttons_div.append(insert_cell_button);
     insert_cell_button.click(function(e) {
-        // truly the wrong way to go about this
-        var base_index = notebook_cell_div.index();
-        var model_index = base_index;
-        shell.insert_markdown_cell_before(model_index);
+        shell.insert_markdown_cell_before(cell_model.id);
     });
     
     var ace_div = $('<div style="width:100%; margin-left: 0.5em; margin-top: 0.5em"></div>');
@@ -1506,10 +1503,13 @@ function create_interactive_cell_html_view(cell_model)
                 markdown_div.slideUp(150); // hide();
             }
         },
+        /*
+        // this doesn't make sense: changes should go through controller
         remove_self: function() {
             cell_model.parent_model.remove_cell(cell_model);            
             notebook_cell_div.remove();
         },
+        */
         div: function() {
             return notebook_cell_div;
         },
@@ -1541,6 +1541,7 @@ Notebook.Cell.create_model = function(content, language)
 {
     var result = {
         views: [], // sub list for pubsub
+        id: -1,
         language: function() {
             return language;
         },
@@ -1578,6 +1579,8 @@ Notebook.Cell.create_controller = function(cell_model)
             }
             
             rclient.record_cell_execution(cell_model);
+            cell_model.parent_model.controller.update_notebook([[cell_model.id, {content: cell_model.content(), 
+                                                                  language: cell_model.language()}]]);
             if (language === 'Markdown') {
                 var wrapped_command = rclient.markdown_wrap_command(cell_model.content());
                 rclient.send_and_callback(wrapped_command, callback, _.identity);
@@ -1606,7 +1609,7 @@ Notebook.create_html_view = function(model, root_div)
             var cell_view = Notebook.Cell.create_html_view(cell_model);
             cell_model.views.push(cell_view);
             root_div.append(cell_view.div());
-            $(cell_view.div()).insertBefore(root_div.children()[cell_index]);
+            $(cell_view.div()).insertBefore(root_div.children('.notebook-cell')[cell_index]);
             this.sub_views.splice(cell_index, 0, cell_view);
             cell_view.show_source();
             return cell_view;
@@ -1629,73 +1632,151 @@ Notebook.create_html_view = function(model, root_div)
 };
 Notebook.create_model = function()
 {
+    /* note, the code below is a little more sophisticated than it needs to be:
+       allows multiple inserts or removes but currently n is hardcoded as 1.  */
+
+    function last_id(notebook) {
+        if(notebook.length)
+            return notebook[notebook.length-1].id;
+        else
+            return 0;
+    }
     return { 
         notebook: [],
         views: [], // sub list for pubsub
         clear: function() {
-            // FIXME this is O(n^2) because of O(n) indexOf in remove_cell...
-            while (this.notebook.length) {
-                this.remove_cell(this.notebook[this.notebook.length-1]);
+            return this.remove_cell(null,last_id(this.notebook));
+        },
+        append_cell: function(cell_model, id) {
+            cell_model.parent_model = this;
+            var changes = [];
+            var n = 1;
+            id = id || 1;
+            id = Math.max(id, last_id(this.notebook)+1);
+            while(n) {
+                changes.push([id,{content: cell_model.content(), language: cell_model.language()}]);
+                cell_model.id = id;
+                this.notebook.push(cell_model);
+                _.each(this.views, function(view) {
+                    view.cell_appended(cell_model);
+                });
+                ++id;
+                --n;
             }
+            return changes;
         },
-        append_cell: function(cell_model) {
+        insert_cell: function(cell_model, id) {
+            var that = this;
             cell_model.parent_model = this;
-            this.notebook.push(cell_model);
-            _.each(this.views, function(view) {
-                view.cell_appended(cell_model);
-            });
+            var changes = [];
+            var n = 1, x = 0;
+            while(x<this.notebook.length && this.notebook[x].id < id) ++x;
+            // check if ids can go above rather than shifting everything else down
+            if(x<this.notebook.length && id+n > this.notebook[x].id) {
+                var prev = x>0 ? this.notebook[x-1].id : 0;
+                id = Math.max(this.notebook[x].id-n, prev+1);
+            }
+            for(var j=0; j<n; ++j) {
+                changes.push([id+j, {content: cell_model.content(), language: cell_model.language()}]);
+                cell_model.id = id+j;
+                this.notebook.splice(x, 0, cell_model);
+                _.each(this.views, function(view) {
+                    view.cell_inserted(that.notebook[x], x);
+                });
+                ++x;
+            }
+            while(x<this.notebook.length && n) {
+                if(this.notebook[x].id > id) {
+                    var gap = this.notebook[x].id - id;
+                    n -= gap;
+                    id += gap;
+                }
+                if(n<=0)
+                    break;
+                changes.push([this.notebook[x].id+n,{content: this.notebook[x].content(), 
+                                                     language: this.notebook[x].language()}]);
+                this.notebook[x].id += n;
+                ++x;
+                ++id;
+            }
+            return changes;
         },
-        insert_cell: function(cell_model, index) {
-            cell_model.parent_model = this;
-            this.notebook.splice(index, 0, cell_model);
-            _.each(this.views, function(view) {
-                view.cell_inserted(cell_model, index);
-            });
+        remove_cell: function(cell_model, n) {
+            var that = this;
+            var cell_index, id;
+            if(cell_model!=null) {
+                cell_index = this.notebook.indexOf(cell_model);
+                id = cell_model.id;
+                if (cell_index === -1) {
+                    throw "cell_model not in notebook model?!";
+                }
+            }
+            else {
+                cell_index = 0;
+                id = 1;
+            }
+            var n = n || 1, x = cell_index;
+            var changes = [];
+            while(x<this.notebook.length && n) {
+                if(this.notebook[x].id == id) {
+                    _.each(this.views, function(view) {
+                        view.cell_removed(that.notebook[x], id);
+                    });
+                    changes.push([id, {erase: 1, language: that.notebook[x].language()} ])
+                    this.notebook.splice(x, 1);
+                }
+                ++id;
+                --n;
+            }
+            return changes;
         },
         json: function() {
             return _.map(this.notebook, function(cell_model) {
                 return cell_model.json();
             });
-        },
-        remove_cell: function(cell_model) {
-            var cell_index = this.notebook.indexOf(cell_model);
-            if (cell_index === -1) {
-                throw "cell_model not in notebook model?!";
-            }
-            _.each(this.views, function(view) {
-                view.cell_removed(cell_model, cell_index);
-            });
-            this.notebook.splice(cell_index, 1);
-            // delete this.notebook[cell_index];
         }
     };
 };
 Notebook.create_controller = function(model)
 {
+    var current_notebook;
+
+    function append_cell_helper(content, type, id) {
+        var cell_model = Notebook.Cell.create_model(content, type);
+        var cell_controller = Notebook.Cell.create_controller(cell_model);
+        cell_model.controller = cell_controller;
+        return [cell_controller, model.append_cell(cell_model, id)];
+    }
+
+    function insert_cell_helper(content, type, id) {
+        var cell_model = Notebook.Cell.create_model(content, type);
+        var cell_controller = Notebook.Cell.create_controller(cell_model);
+        cell_model.controller = cell_controller;
+        return [cell_controller, model.insert_cell(cell_model, id)]
+    }
+
     var result = {
-        append_cell: function(content, type) {
-            var cell_model = Notebook.Cell.create_model(content, type);
-            var cell_controller = Notebook.Cell.create_controller(cell_model);
-            cell_model.controller = cell_controller;
-            model.append_cell(cell_model);
-            return cell_controller;
+        append_cell: function(content, type, id) {
+            var cch = append_cell_helper(content, type, id);
+            this.update_notebook(cch[1]);
+            return cch[0];
         },
-        insert_cell: function(content, type, index) {
-            var cell_model = Notebook.Cell.create_model(content, type);
-            var cell_controller = Notebook.Cell.create_controller(cell_model);
-            cell_model.controller = cell_controller;
-            model.insert_cell(cell_model, index);
-            return cell_controller;
+        insert_cell: function(content, type, id) {
+            var cch = insert_cell_helper(content, type, id);
+            this.update_notebook(cch[1]);
+            return cch[0];
         },
         remove_cell: function(cell_model) {
-            model.remove_cell(cell_model);
+            var changes = model.remove_cell(cell_model);
+            this.update_notebook(changes);
         },
         clear: function() {
             model.clear();
         },
-        load_notebook: function(user, filename, k) {
+        load_notebook: function(user, notebook, k) {
             var that = this;
-            rcloud.load_notebook(filename, function(contents) {
+            current_notebook = notebook;
+            rcloud.load_notebook(notebook, function(contents) {
                 that.clear();
                 var gist = JSON.parse(contents);
                 var parts = {}; // could rely on alphabetic input instead of gathering
@@ -1704,14 +1785,46 @@ Notebook.create_controller = function(model)
                     if(/^part/.test(filename)) {
                         var number = parseInt(filename.slice(4).split('.')[0]);
                         if(number !== NaN)
-                            parts[number] = [file.content, file.language];
+                            parts[number] = [file.content, file.language, number];
                     }
                     // style..
                 });
                 for(var i in parts)
-                    that.append_cell(parts[i][0], parts[i][1]);
+                    append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
                 k();
             });
+        },
+        update_notebook: function(changes) {
+            function partname(id, language) {
+                var ext;
+                switch(language) {
+                case 'R': 
+                    ext = 'R';
+                    break;
+                case 'Markdown':
+                    ext = 'md';
+                    break;
+                default:
+                    throw "Unknown language " + language;
+                }
+                return 'part' + id + '.' + ext;
+            }
+            function changes_to_gist(changes) {
+                function xlate_change(filehash, change) {
+                    var c = null;
+                    c = {};
+                    if(change[1]['content'] !== undefined)
+                        c['content'] = change[1]['content'];
+                    if(change[1]['rename'] != undefined)
+                        c['rename'] = partname(change[1]['rename']);
+                    if(change[1]['erase'])
+                        c = null;
+                    filehash[partname(change[0], change[1].language)] = c;
+                    return filehash;
+                }
+                return {files: _.reduce(changes, xlate_change, {})};
+            }
+            rcloud.update_notebook(current_notebook, changes_to_gist(changes), function(x) {});
         },
         save_file: function(user, filename, k) {
             var that = this;

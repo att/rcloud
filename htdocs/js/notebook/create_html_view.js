@@ -14,7 +14,7 @@ Notebook.create_html_view = function(model, root_div)
             var cell_view = Notebook.Cell.create_html_view(cell_model);
             cell_model.views.push(cell_view);
             root_div.append(cell_view.div());
-            $(cell_view.div()).insertBefore(root_div.children()[cell_index]);
+            $(cell_view.div()).insertBefore(root_div.children('.notebook-cell')[cell_index]);
             this.sub_views.splice(cell_index, 0, cell_view);
             cell_view.show_source();
             return cell_view;
