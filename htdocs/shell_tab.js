@@ -131,7 +131,7 @@ var shell = (function() {
         },
         terminal: terminal,
         user: undefined,
-        filename: undefined,
+        gistname: undefined,
         detachable_div: function(div) {
             var on_remove = function() {};
             var on_detach = function() {};
@@ -171,18 +171,19 @@ var shell = (function() {
             return notebook_controller.append_cell(content, "R");
         }, insert_markdown_cell_before: function(index) {
             return notebook_controller.insert_cell("", "Markdown", index);
-        }, load_notebook: function(user, filename, k) {
+        }, load_notebook: function(user, gistname, k) {
             var that = this;
-            this.notebook.controller.load_notebook(user, filename, function() {
-                $("#file_title").text(filename);
+            this.notebook.controller.load_notebook(user, gistname, function() {
+                $("#file_title").text(gistname);
                 _.each(that.notebook.view.sub_views, function(cell_view) {
                     cell_view.show_source();
                 });
                 that.user = user;
-                that.filename = filename;
+                that.gistname = gistname;
                 k && k();
             });
         }, new_notebook: function() {
+            debugger;
             function validate_filename(n) {
                 if (/\.\./.test(n))
                     return false;

@@ -7,7 +7,7 @@ var editor = {
         function onCreateLiHandler(node, $li) {
             node = that.file_tree_model[node.id];
             if (node) {
-                $li.find('.title').after('<span style="float: right">' + node.mtime + '</span>');
+                $li.find('.title').after('<span style="float: right">' + node.gist_name + '</span>');
             }
         }
         $tree.tree({
@@ -29,23 +29,22 @@ var editor = {
         var this_user = rcloud.username();
         rcloud.load_user_config(this_user, function(json) {
             var data = JSON.parse(json);
-            var result = [];
+            var user_nodes = [];
             that.file_tree_model = {};
             var scratch = data.scratch;
-            for (var k in data.interests) {
-                var username = k;
-                var notebooks_data = data.interests[k];
-                
-                var notebook_nodes = _.map(notebooks_data, function(notebook_data) {
-                    var name = notebook_data[0];
+            for (var username in data.interests) {
+                var notebooks_data = data.interests[username];
+                var notebook_nodes = [];
+                for(var name in notebooks_data) {
+                    var attrs = notebooks_data[name];
                     var result = {
-                        label: name,
+                        label: attrs.description,
                         gist_name: name,
                         id: '/' + username + '/' + name
                     };
                     that.file_tree_model[result.id] = result;
-                    return result;
-                });
+                    notebook_nodes.push(result);
+                }
 
                 if(username === this_user) {
                     notebook_nodes.push({
@@ -58,45 +57,12 @@ var editor = {
                     id: '/' + username,
                     children: notebook_nodes
                 };
-                result.push(node);
+                user_nodes.push(node);
             }
-/*
-            for (var i=0; i<data.length; ++i) {
-                var dirname = data[i][0];
-                var files_data = data[i][1];
-                
-                var file_nodes = _.map(files_data, function(file_data) {
-                    var name = file_data[0];
-                    var mtime = file_data[1];
-                    var result = { 
-                        label: name,
-                        mtime: mtime,
-                        file_name: name,
-                        user_name: dirname,
-                        file_type: (this_user === dirname) ? "w" : "r",
-                        id: '/' + dirname + '/' + name 
-                    };
-                    that.file_tree_model[result.id] = result;
-                    return result;
-                });
-                if (dirname === this_user) {
-                    file_nodes.push({
-                        label: "[New File]",
-                        id: "newfile"
-                    });
-                };
-                var node = { 
-                    label: dirname,
-                    id: '/' + dirname,
-                    children: file_nodes 
-                };
-                result.push(node);
-            }
-*/
             var tree_data = [ { 
                 label: '/',
                 id: '/',
-                children: result 
+                children: user_nodes
             } ];
             var $tree = $("#editor-file-tree");
             $tree.tree("loadData", tree_data); 
@@ -120,9 +86,9 @@ var editor = {
             }
         }, 500);
     },
-    load_notebook: function(user, filename, k) {
+    load_notebook: function(user, notebook, k) {
         var that = this;
-        shell.load_notebook(user, filename);
+        shell.load_notebook(user, notebook);
     },
     search: function(search_string) {
         var that = this;
@@ -198,8 +164,8 @@ var editor = {
                             if (i !== 1 && i !== 3)
                                 return;
                             var j = d[1];
-                            var user = data[j][0], filename = data[j][1];
-                            that.load_notebook(user, filename);
+                            var user = data[j][0], notebook = data[j][1];
+                            that.load_notebook(user, notebook);
                         })
                 ;
         };
