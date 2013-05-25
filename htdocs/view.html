@@ -8,31 +8,8 @@
     <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
     <link rel="stylesheet" type="text/css" href="css/bootstrap-responsive.css"/>
     <link rel="stylesheet" type="text/css" href="css/rmarkdown.css"/>
-    <link rel="stylesheet" type="text/css" href="css/main.css"/>
+    <link rel="stylesheet" type="text/css" href="css/view.css"/>
     <link rel="stylesheet" type="text/css" href="css/dc.css"/>
-
-    <!-- We bundle all dependencies to make maintenance of different
-    pages easier, and to cut down on the number of requests.
-
-    jquery,                             http://jquery.com
-    jquery-ui,                          http://jqueryui.com
-    jquery.cookies,			http://code.google.com/p/cookies/wiki/License
-    tree.jquery.js,			http://mbraak.github.com/jqTree/
-    underscore.js,                      http://underscorejs.org
-    jquery.terminal,			http://terminal.jcubic.pl/
-    d3 (and its colorbrewer colormaps), http://d3js.org
-    crossfilter,                        http://square.github.com/crossfilter/
-    dc.js,                              http://nickqizhu.github.com/dc.js/
-    facet,				http://cscheid.github.com/facet
-    twitter's bootstrap                 http://twitter.github.com/bootstrap/
-       bootstrap-transition
-       bootstrap-collapse
-
-    Indirectly, RCloud also depends on hljs, the syntax highlighter
-    Javascript library used by knitr. It also depends on MathJax
-    through knitr and rmarkdown.
-
-    -->
 
     <script type="text/javascript" src="lib/dependencies_bundle.js"></script>
     <script type="text/javascript">MathJax = undefined;</script>
@@ -47,7 +24,7 @@
 
     <script type="text/javascript" src="js/rcloud_bundle.js"></script>
 
-    <script type="text/javascript" src="main.js"></script>
+    <script type="text/javascript" src="view.js"></script>
   </head>
 <body>
 <div class="navbar navbar-fixed-top">
@@ -56,10 +33,7 @@
       <a class="brand" href="#">RCloud - [<span id="file_title">Untitled</span>]</a>
       <div class="nav-collapse collapse">
 	<ul class="nav">
-	  <li><a href="#" id="run-notebook">Run</a></li>
-	  <li><a href="#" class="embed-link">Get Link</a><input class="embed-box" type="text" size="25" style="display:none;margin-top:0.7em;"></li>
-	  <li class="divider-vertical"></li>
-	  <li><a href="#" id="rcloud-logout">Logout</a></li>
+	  <li><a href="#" id="view-source">View source</a></li>
 	</ul>
       </div>
     </div>
