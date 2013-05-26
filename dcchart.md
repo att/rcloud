@@ -1,6 +1,6 @@
 # how to use dcchart
 
-dcchart is an embedded domain specific language for creating interactive [crossfilter][http://square.github.io/crossfilter/] / 
+dcchart is an embedded domain specific language for creating interactive [crossfilter](http://square.github.io/crossfilter/) / 
 [dc.js](http://nickqizhu.github.com/dc.js/) charts from R.
 
 Currently it is mostly a transliteration of the javascript into R; a visitor simply traverses the tree of R expressions and produces javascript code to set up dc.js.
