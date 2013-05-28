@@ -61,8 +61,9 @@ Notebook.create_model = function()
                 }
                 if(n<=0)
                     break;
-                changes.push([this.notebook[x].id+n,{content: this.notebook[x].content(), 
-                                                     language: this.notebook[x].language()}]);
+                changes.push([this.notebook[x].id,{content: this.notebook[x].content(),
+                                                   rename: this.notebook[x].id+n,
+                                                   language: this.notebook[x].language()}]);
                 this.notebook[x].id += n;
                 ++x;
                 ++id;

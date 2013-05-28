@@ -1660,8 +1660,9 @@ Notebook.create_model = function()
                 }
                 if(n<=0)
                     break;
-                changes.push([this.notebook[x].id+n,{content: this.notebook[x].content(), 
-                                                     language: this.notebook[x].language()}]);
+                changes.push([this.notebook[x].id,{content: this.notebook[x].content(),
+                                                   rename: this.notebook[x].id+n,
+                                                   language: this.notebook[x].language()}]);
                 this.notebook[x].id += n;
                 ++x;
                 ++id;
@@ -1777,16 +1778,27 @@ Notebook.create_controller = function(model)
                 return 'part' + id + '.' + ext;
             }
             function changes_to_gist(changes) {
+                // we don't use the gist rename feature because it doesn't
+                // allow renaming x -> y and creating a new x at the same time
+                // instead, create y and if there is no longer any x, erase it
+                var post_names = _.reduce(changes, 
+                                         function(names, change) {
+                                             if(!change[1].erase) {
+                                                 var after = change[1].rename || change[0];
+                                                 names[partname(after, change[1].language)] = 1;
+                                             }
+                                             return names;
+                                         }, {});
                 function xlate_change(filehash, change) {
-                    var c = null;
-                    c = {};
-                    if(change[1]['content'] !== undefined)
-                        c['content'] = change[1]['content'];
-                    if(change[1]['rename'] != undefined)
-                        c['rename'] = partname(change[1]['rename']);
-                    if(change[1]['erase'])
-                        c = null;
-                    filehash[partname(change[0], change[1].language)] = c;
+                    var c = {};
+                    if(change[1].content !== undefined)
+                        c.content = change[1].content;
+                    var pre_name = partname(change[0], change[1].language);
+                    if(change[1].erase || !post_names[pre_name])
+                        filehash[pre_name] = null;
+                    var post_name = partname(change[1].rename || change[0], change[1].language);
+                    if(!change[1].erase)
+                        filehash[post_name] = c;
                     return filehash;
                 }
                 return {files: _.reduce(changes, xlate_change, {})};
