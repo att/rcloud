@@ -167,6 +167,8 @@
                 new_length = _.isUndefined(new_length) ? this.length : new_length;
                 var element_size = ctor.BYTES_PER_ELEMENT || 1;
                 var n_els = new_length / element_size;
+                
+                /*Amol : not entering into below loop..*/
                 if ((this.offset + new_offset) % element_size != 0) {
                     var view = new DataView(this.buffer, this.offset + new_offset, new_length);
                     var output_buffer = new ArrayBuffer(new_length);
@@ -520,6 +522,10 @@ function reader(m)
 
 function parse(msg)
 {
+    /*Amol : not able to parse the [msg] from this function
+    getting header[0] = 65775
+    header[1] is not recognizable format
+    */
     var header = new Int32Array(msg, 0, 4);
     if (header[0] !== Rsrv.RESP_OK && header[0] !== Rsrv.OOB_SEND) {
         var status_code = header[0] >> 24;
