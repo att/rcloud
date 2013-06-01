@@ -89,7 +89,7 @@ Notebook.create_model = function()
             while(x<this.notebook.length && n) {
                 if(this.notebook[x].id == id) {
                     _.each(this.views, function(view) {
-                        view.cell_removed(that.notebook[x], id);
+                        view.cell_removed(that.notebook[x], x);
                     });
                     changes.push([id, {erase: 1, language: that.notebook[x].language()} ])
                     this.notebook.splice(x, 1);
