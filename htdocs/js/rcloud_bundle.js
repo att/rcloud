@@ -922,22 +922,6 @@ rcloud = {};
 rcloud.init_client_side_data = function()
 {
     var that = this;
-/*
-    rcloud.get_user_filenames(function(data) {
-        that.user_filenames = data;
-
-        //////////////////////////////////////////////////////////////////
-        // debugging info
-        var filenames = data;
-        var userfiles_float = d3.select("#internals-user-files");
-        userfiles_float.append("h3").text("User files");
-        userfiles_float.append("ul")
-            .selectAll("li")
-            .data(filenames)
-            .enter()
-            .append("li").text(function(i) { return i; });
-    });
-*/
     rclient.send_and_callback("rcloud.prefix.uuid()", function(data) {
         that.wplot_uuid = data;
     });
@@ -1031,7 +1015,7 @@ function create_markdown_cell_html_view(cell_model)
     var run_md_button = fa_button("icon-repeat", "run");
 
     function update_model() {
-        cell_model.content(widget.getSession().getValue());
+        return cell_model.content(widget.getSession().getValue());
     }
     function enable(el) {
         el.removeClass("button-disabled");
@@ -1064,8 +1048,10 @@ function create_markdown_cell_html_view(cell_model)
     });
     function execute_cell() {
         r_result_div.html("Computing...");
-        update_model();
+        var new_content = update_model();
         result.show_result();
+        if(new_content)
+            cell_model.parent_model.controller.update_cell(cell_model);
         cell_model.controller.execute();
     }
     run_md_button.click(function(e) {
@@ -1145,7 +1131,7 @@ function create_markdown_cell_html_view(cell_model)
         // pubsub event handlers
 
         content_updated: function() {
-            widget.getSession().setValue(cell_model.content());
+            return widget.getSession().setValue(cell_model.content());
         },
         self_removed: function() {
             notebook_cell_div.remove();
@@ -1253,10 +1239,13 @@ function create_markdown_cell_html_view(cell_model)
             return notebook_cell_div;
         },
         update_model: function() {
-            update_model();
+            return update_model();
         },
         focus: function() {
             widget.focus();
+        },
+        get_content: function() { // for debug
+            return cell_model.content();
         }
     };
 
@@ -1277,7 +1266,7 @@ function create_interactive_cell_html_view(cell_model)
     var remove_button = $("<span class='fontawesome-button'><i class='icon-trash'></i></span>").tooltip({ title: "remove" });
 
     function update_model() {
-        cell_model.content($(input).val());
+        return cell_model.content($(input).val());
     }
     function enable(el) {
         el.removeClass("button-disabled");
@@ -1310,8 +1299,10 @@ function create_interactive_cell_html_view(cell_model)
     });
     function execute_cell() {
         r_result_div.html("Computing...");
-        update_model();
+        var new_content = update_model();
         result.show_result();
+        if(new_content)
+            cell_model.parent_model.controller.update_cell(cell_model);
         cell_model.controller.execute();
     }
 
@@ -1481,10 +1472,13 @@ function create_interactive_cell_html_view(cell_model)
             return notebook_cell_div;
         },
         update_model: function() {
-            update_model();
+            return update_model();
         },
         focus: function() {
             input.focus();
+        },
+        get_content: function() { // for debug
+            return cell_model.content();
         }
     };
 
@@ -1514,8 +1508,12 @@ Notebook.Cell.create_model = function(content, language)
         },
         content: function(new_content) {
             if (!_.isUndefined(new_content)) {
-                content = new_content;
-                notify_views();
+                if(content != new_content) {
+                    content = new_content;
+                    notify_views();
+                    return content;
+                }
+                else return null;
             }
             return content;
         },
@@ -1546,8 +1544,7 @@ Notebook.Cell.create_controller = function(cell_model)
             }
             
             rclient.record_cell_execution(cell_model);
-            cell_model.parent_model.controller.update_notebook([[cell_model.id, {content: cell_model.content(), 
-                                                                  language: cell_model.language()}]]);
+
             if (language === 'Markdown') {
                 var wrapped_command = rclient.markdown_wrap_command(cell_model.content());
                 rclient.send_and_callback(wrapped_command, callback, _.identity);
@@ -1589,8 +1586,8 @@ Notebook.create_html_view = function(model, root_div)
         },
         
         update_model: function() {
-            _.each(this.sub_views, function(cell_view) {
-                cell_view.update_model();
+            return _.map(this.sub_views, function(cell_view) {
+                return cell_view.update_model();
             });
         }
     };
@@ -1698,6 +1695,26 @@ Notebook.create_model = function()
             }
             return changes;
         },
+        update_cell: function(cell_model) {
+            return [[cell_model.id, {content: cell_model.content(), 
+                                     language: cell_model.language()}]];
+        },
+        reread_cells: function() {
+            var that = this;
+            var changed_cells_per_view = _.map(this.views, function(view) {
+                return view.update_model();
+            });
+            if(changed_cells_per_view.length != 1)
+                throw "not expecting more than one notebook view";
+            return _.reduce(changed_cells_per_view[0], 
+                            function(changes, content, index) { 
+                                if(content)
+                                    changes.push([that.notebook[index].id, {content: content,
+                                                                            language: that.notebook[index].language()}]);
+                                return changes;
+                            },
+                            []);
+        },
         json: function() {
             return _.map(this.notebook, function(cell_model) {
                 return cell_model.json();
@@ -1763,6 +1780,8 @@ Notebook.create_controller = function(model)
             });
         },
         update_notebook: function(changes) {
+            if(!changes.length)
+                return;
             function partname(id, language) {
                 var ext;
                 switch(language) {
@@ -1805,9 +1824,17 @@ Notebook.create_controller = function(model)
             }
             rcloud.update_notebook(current_notebook, changes_to_gist(changes), function(x) {});
         },
+        refresh_cells: function() {
+            return model.reread_cells();
+        },
+        update_cell: function(cell_model) {
+            this.update_notebook(model.update_cell(cell_model));
+        },
         run_all: function() {
+            var changes = this.refresh_cells();
+            this.update_notebook(changes);
             _.each(model.notebook, function(cell_model) {
-                cell_model.controller.execute();
+                cell_model.controller.execute(null);
             });
         }
     };

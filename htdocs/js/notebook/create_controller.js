@@ -56,6 +56,8 @@ Notebook.create_controller = function(model)
             });
         },
         update_notebook: function(changes) {
+            if(!changes.length)
+                return;
             function partname(id, language) {
                 var ext;
                 switch(language) {
@@ -98,7 +100,15 @@ Notebook.create_controller = function(model)
             }
             rcloud.update_notebook(current_notebook, changes_to_gist(changes), function(x) {});
         },
+        refresh_cells: function() {
+            return model.reread_cells();
+        },
+        update_cell: function(cell_model) {
+            this.update_notebook(model.update_cell(cell_model));
+        },
         run_all: function() {
+            var changes = this.refresh_cells();
+            this.update_notebook(changes);
             _.each(model.notebook, function(cell_model) {
                 cell_model.controller.execute();
             });
