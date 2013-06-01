@@ -1776,7 +1776,7 @@ Notebook.create_controller = function(model)
                 });
                 for(var i in parts)
                     append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
-                k();
+                k && k(gist);
             });
         },
         update_notebook: function(changes) {

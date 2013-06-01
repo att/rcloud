@@ -173,8 +173,8 @@ var shell = (function() {
             return notebook_controller.insert_cell("", "Markdown", index);
         }, load_notebook: function(user, gistname, k) {
             var that = this;
-            this.notebook.controller.load_notebook(user, gistname, function() {
-                $("#file_title").text(gistname);
+            this.notebook.controller.load_notebook(user, gistname, function(notebook) {
+                $("#notebook_title").text(notebook.description);
                 _.each(that.notebook.view.sub_views, function(cell_view) {
                     cell_view.show_source();
                 });
@@ -183,25 +183,13 @@ var shell = (function() {
                 k && k();
             });
         }, new_notebook: function() {
-            debugger;
-            function validate_filename(n) {
-                if (/\.\./.test(n))
-                    return false;
-                if (/[^0-9a-zA-Z_.]/.test(n))
-                    return false;
-                return true;
-            }
-            var filename = prompt("please enter a description", "[new notebook]");
-            if (!validate_filename(filename)) {
-                alert("Invalid filename");
-                return;
-            }
+            var filename = "foo"; // about to get rid of this
             this.create_file(filename);
         }, create_file: function(filename) {
             var that = this;
             rcloud.create_user_file(filename, function(result) {
                 if (result) {
-                    editor.populate_file_list();
+                    editor.populate_interests();
                     that.load_notebook(rcloud.username(), filename);
                 }
             });
