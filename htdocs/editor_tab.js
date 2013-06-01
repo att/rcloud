@@ -1,11 +1,11 @@
 var editor = {
     widget: undefined,
-    file_tree_model: undefined,
-    create_file_tree_widget: function() { 
+    book_tree_model: undefined,
+    create_book_tree_widget: function() { 
         var that = this;
-        var $tree = $("#editor-file-tree");
+        var $tree = $("#editor-book-tree");
         function onCreateLiHandler(node, $li) {
-            node = that.file_tree_model[node.id];
+            node = that.book_tree_model[node.id];
             if (node) {
                 $li.find('.title').after('<span style="float: right">' + node.gist_name + '</span>');
             }
@@ -24,13 +24,13 @@ var editor = {
             }
         );
     },
-    populate_file_list: function() {
+    populate_interests: function() {
         var that = this;
         var this_user = rcloud.username();
         rcloud.load_user_config(this_user, function(json) {
             var data = JSON.parse(json);
             var user_nodes = [];
-            that.file_tree_model = {};
+            that.book_tree_model = {};
             var scratch = data.scratch;
             for (var username in data.interests) {
                 var notebooks_data = data.interests[username];
@@ -42,7 +42,7 @@ var editor = {
                         gist_name: name,
                         id: '/' + username + '/' + name
                     };
-                    that.file_tree_model[result.id] = result;
+                    that.book_tree_model[result.id] = result;
                     notebook_nodes.push(result);
                 }
 
@@ -64,7 +64,7 @@ var editor = {
                 id: '/',
                 children: user_nodes
             } ];
-            var $tree = $("#editor-file-tree");
+            var $tree = $("#editor-book-tree");
             $tree.tree("loadData", tree_data); 
             var folder = $tree.tree('getNodeById', "/" + rcloud.username());
             $(folder.element).parent().prepend(folder.element);
@@ -75,8 +75,8 @@ var editor = {
         $("#input-text-source-results-title").css("display", "none");
         $("#input-text-history-results-title").css("display", "none");
         var that = this;
-        this.create_file_tree_widget();
-        this.populate_file_list();
+        this.create_book_tree_widget();
+        this.populate_interests();
         var old_text = "";
         window.setInterval(function() {
             var new_text = $("#input-text-search").val();
