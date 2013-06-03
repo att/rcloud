@@ -180,18 +180,14 @@ var shell = (function() {
                 });
                 that.user = user;
                 that.gistname = gistname;
-                k && k();
+                k && k(notebook);
             });
-        }, new_notebook: function() {
-            var filename = "foo"; // about to get rid of this
-            this.create_file(filename);
-        }, create_file: function(filename) {
+        }, new_notebook: function(desc, k) {
+            this.create_notebook({description: desc, private: true, files: {}}, k);
+        }, create_notebook: function(content, k) {
             var that = this;
-            rcloud.create_user_file(filename, function(result) {
-                if (result) {
-                    editor.populate_interests();
-                    that.load_notebook(rcloud.username(), filename);
-                }
+            rcloud.create_notebook(content, function(result) {
+                result && k && k(result);
             });
         }
     };

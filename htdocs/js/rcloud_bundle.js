@@ -971,12 +971,11 @@ rcloud.update_notebook = function(id, content, k)
         rclient.r_funcall("rcloud.update.notebook", id, JSON.stringify(content)), k);
 }
 
-rcloud.create_user_file = function(filename, k)
+rcloud.create_notebook = function(content, k)
 {
-    debugger;
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.create.user.file", rcloud.username(), filename), k);
-};
+        rclient.r_funcall("rcloud.create.notebook", JSON,stringify(content)), k);
+}
 
 rcloud.resolve_deferred_result = function(uuid, k)
 {
