@@ -22,8 +22,6 @@ rcloud.user.config.filename <- function(user)
 
 
 rcloud.load.user.config <- function(user) {
-  print(rcloud.user.config.filename(user))
-  print("huh")
   paste(readLines(rcloud.user.config.filename(user)), collapse="\n")
 }
 
@@ -46,25 +44,12 @@ rcloud.get.notebook <- function(id) {
 
 rcloud.update.notebook <- function(id, content) {
   res <- update.gist(.session$rgithub.context, id, content)
-  output <- content(res, as = 'text')
-  1
+  content(res, as = 'text')
 }
-  
-##########################
 
-rcloud.user.file.name <- function(user, filename)
-  file.path(.rc.conf$data.root, "userfiles", user, filename)
-
-rcloud.create.user.file <- function(user, filename) {
-  internal_filename <- rcloud.user.file.name(user, filename)
-  if (!file.exists(internal_filename)) {
-    if (!file.exists(dir <- dirname(internal_filename)))
-      dir.create(dir, FALSE, TRUE, "0770")
-    file.create(internal_filename);
-    write("[]\n", internal_filename);
-    TRUE
-  } else
-    FALSE
+rcloud.create.notebook <- function(content) {
+  res <- create.gist(.session$github.context, content)
+  content(res, as = 'text')
 }
 
 rcloud.setup.dirs <- function() {
