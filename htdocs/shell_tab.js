@@ -130,7 +130,6 @@ var shell = (function() {
             controller: notebook_controller
         },
         terminal: terminal,
-        user: undefined,
         gistname: undefined,
         detachable_div: function(div) {
             var on_remove = function() {};
@@ -171,23 +170,23 @@ var shell = (function() {
             return notebook_controller.append_cell(content, "R");
         }, insert_markdown_cell_before: function(index) {
             return notebook_controller.insert_cell("", "Markdown", index);
-        }, load_notebook: function(user, gistname, k) {
+        }, load_notebook: function(gistname, k) {
             var that = this;
-            this.notebook.controller.load_notebook(user, gistname, function(notebook) {
+            this.notebook.controller.load_notebook(gistname, function(notebook) {
                 $("#notebook_title").text(notebook.description);
                 _.each(that.notebook.view.sub_views, function(cell_view) {
                     cell_view.show_source();
                 });
-                that.user = user;
-                that.gistname = gistname;
+                that.gistname = notebook.id;
                 k && k(notebook);
             });
         }, new_notebook: function(desc, k) {
-            this.create_notebook({description: desc, private: true, files: {}}, k);
-        }, create_notebook: function(content, k) {
             var that = this;
-            rcloud.create_notebook(content, function(result) {
-                result && k && k(result);
+            var content = {description: desc, public: false, files: {"scratch.R":""}};
+            this.notebook.controller.create_notebook(content, function(notebook) {
+                $("#notebook_title").text(notebook.description);
+                that.gistname = notebook.id;
+                k && k(notebook);
             });
         }
     };

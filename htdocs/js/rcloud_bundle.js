@@ -949,32 +949,47 @@ rcloud.load_user_config = function(user, k)
 {
     if (_.isUndefined(k)) k = _.identity;
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.load.user.config", user), k);
+        rclient.r_funcall("rcloud.load.user.config", user), function(result) {
+            k && k(JSON.parse(result));
+        });
 }
 
 rcloud.save_user_config = function(user, content, k)
 {
     if (_.isUndefined(k)) k = _.identity;
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.save.user.config", user, content), k);
+        rclient.r_funcall("rcloud.save.user.config", user, 
+                          JSON.stringify(content)), 
+        function(result) {
+            k && k(JSON.parse(result))
+        });
 }
 
 rcloud.load_notebook = function(id, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.get.notebook", id), k);
+        rclient.r_funcall("rcloud.get.notebook", id), 
+        function(result) {
+            k && k(JSON.parse(result))
+        });
 }
 
 rcloud.update_notebook = function(id, content, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.update.notebook", id, JSON.stringify(content)), k);
+        rclient.r_funcall("rcloud.update.notebook", id, JSON.stringify(content)), 
+        function(result) {
+            k && k(JSON.parse(result))
+        });
 }
 
 rcloud.create_notebook = function(content, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.create.notebook", JSON,stringify(content)), k);
+        rclient.r_funcall("rcloud.create.notebook", JSON.stringify(content)), 
+        function(result) {
+            k && k(JSON.parse(result))
+        });
 }
 
 rcloud.resolve_deferred_result = function(uuid, k)
@@ -1723,8 +1738,6 @@ Notebook.create_model = function()
 };
 Notebook.create_controller = function(model)
 {
-    var current_notebook;
-
     function append_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
         var cell_controller = Notebook.Cell.create_controller(cell_model);
@@ -1757,14 +1770,12 @@ Notebook.create_controller = function(model)
         clear: function() {
             model.clear();
         },
-        load_notebook: function(user, notebook, k) {
+        load_notebook: function(gistname, k) {
             var that = this;
-            current_notebook = notebook;
-            rcloud.load_notebook(notebook, function(contents) {
+            rcloud.load_notebook(gistname, function(notebook) {
                 that.clear();
-                var gist = JSON.parse(contents);
                 var parts = {}; // could rely on alphabetic input instead of gathering
-                _.each(gist.files, function (file) {
+                _.each(notebook.files, function (file) {
                     var filename = file.filename;
                     if(/^part/.test(filename)) {
                         var number = parseInt(filename.slice(4).split('.')[0]);
@@ -1775,7 +1786,14 @@ Notebook.create_controller = function(model)
                 });
                 for(var i in parts)
                     append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
-                k && k(gist);
+                k && k(notebook);
+            });
+        },
+        create_notebook: function(content, k) {
+            var that = this;
+            rcloud.create_notebook(content, function(notebook) {
+                that.clear();
+                k && k(notebook);
             });
         },
         update_notebook: function(changes) {
@@ -1821,7 +1839,7 @@ Notebook.create_controller = function(model)
                 }
                 return {files: _.reduce(changes, xlate_change, {})};
             }
-            rcloud.update_notebook(current_notebook, changes_to_gist(changes), function(x) {});
+            rcloud.update_notebook(shell.gistname, changes_to_gist(changes), _.bind(editor.notebook_loaded, editor));
         },
         refresh_cells: function() {
             return model.reread_cells();
