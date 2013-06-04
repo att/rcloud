@@ -42,7 +42,7 @@ function main_init() {
                 function getURLParameter(name) {
                     return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
                 }
-                editor.load_notebook(getURLParameter("user"), getURLParameter("notebook"));
+                editor.load_notebook(getURLParameter("notebook"));
                 $("#tabs").tabs("select", "#tabs-2");
             }
         }

@@ -41,17 +41,21 @@ var editor = function () {
         $tree.tree('openNode', folder);
     }
 
-    var config = undefined;
-
     var result = {
         widget: undefined,
+        config: undefined,
         book_tree_model: undefined,
         init: function() {
+            var that = this;
             $("#input-text-source-results-title").css("display", "none");
             $("#input-text-history-results-title").css("display", "none");
-            var that = this;
             this.create_book_tree_widget();
-            this.load_config();
+            this.load_config(function(config) {
+                if(config.currbook)
+                    that.load_notebook(config.currbook);
+                else
+                    that.new_notebook();
+            });
             var old_text = "";
             window.setInterval(function() {
                 var new_text = $("#input-text-search").val();
@@ -76,60 +80,77 @@ var editor = function () {
             });
             $tree.bind(
                 'tree.click', function(event) {
-                    function callback(result) {
-                        config.currbook = result.id;
-                        that.update_notebook_status(result.user.login, 
-                                                    result.id, 
-                                                    {description: result.description,
-                                                     last_commit: result.history[0].committed_at});
-                    }
-                    if (event.node.id === "newbook") {
-                        var desc = "work" + config.nextwork;
-                        ++config.nextwork;
-                        shell.new_notebook(desc, callback);
-                    } else {
-                        shell.load_notebook(event.node.user_name, event.node.gist_name, callback);
-                    }
+                    if (event.node.id === "newbook") 
+                        that.new_notebook();
+                    else
+                        that.load_notebook(event.node.gist_name);
                 }
             );
         },
-        load_config: function() {
+        load_config: function(k) {
             var that = this;
             var this_user = rcloud.username();
-            rcloud.load_user_config(this_user, function(json) {
-                config = json ? 
-                    JSON.parse(json) :
-                    {currbook: null,
-                     nextwork: 1,
-                     interests: {this_user: {}}};
+            rcloud.load_user_config(this_user, function(config) {
+                function defaults() {
+                    var ret = {currbook: null,
+                        nextwork: 1,
+                        interests: {}};
+                    ret.interests[this_user] = {};
+                    return ret;
+                }
+                that.config = config || defaults();
                 that.book_tree_model = {};
-                populate_interests(that.book_tree_model, config, this_user);
+                populate_interests(that.book_tree_model, that.config, this_user);
+                k && k(that.config);
             });
         },
         save_config: function() {
             var this_user = rcloud.username();
-            rcloud.save_user_config(this_user, config, function() {});
+            rcloud.save_user_config(this_user, this.config);
         },
-        load_notebook: function(user, notebook, k) {
+        new_notebook: function() {
+            var desc = "work" + this.config.nextwork;
+            ++this.config.nextwork;
+            shell.new_notebook(desc, _.bind(result.notebook_loaded,this));
+        },
+        load_notebook: function(notebook) {
             var that = this;
-            shell.load_notebook(user, notebook, function(result) {
-                that.update_notebook_status(user, notebook, 
-                                            {description: result.description,
-                                             last_commit: result.history[0].committed_at});
-                k && k();
-            });
+            shell.load_notebook(notebook, _.bind(result.notebook_loaded,this));
+        },
+        notebook_loaded: function(result) {
+            this.config.currbook = result.id;
+            this.update_notebook_status(result.user.login, 
+                                        result.id, 
+                                        {description: result.description,
+                                         last_commit: result.history[0].committed_at});
         },
         update_notebook_status: function(user, notebook, status) {
-            var entry = config.interests[user][notebook];
+            var iu = this.config.interests[user], entry, upd;
+            if(iu[notebook]) {
+                entry = iu[notebook];
+                upd = true;
+            }
+            else {
+                entry = iu[notebook] = {};
+                upd = false;
+            }
             entry.description = status.description;
             entry.last_commit = status.last_commit;
+            var data = {label: status.description,
+                        last_commit: status.last_commit};
 
-            var id = '/' + user + '/' + notebook;
             var $tree = $("#editor-book-tree");
-            var node = $tree.tree('getNodeById', id);
-            $tree.tree("updateNode", id, 
-                       {label: status.description,
-                        last_commit: status.last_commit}); 
+            if(upd) {
+                var id = '/' + user + '/' + notebook;
+                var node = $tree.tree('getNodeById', id);
+                $tree.tree("updateNode", node, data); 
+            }
+            else {
+                var newnode = $tree.tree('getNodeById', "newbook");
+                data.gist_name = notebook;
+                data.id = '/' + user + '/' + notebook;
+                $tree.tree("addNodeBefore", data, newnode);
+            }
 
             this.save_config();
         },
@@ -208,7 +229,7 @@ var editor = function () {
                             return;
                         var j = d[1];
                         var user = data[j][0], notebook = data[j][1];
-                        that.load_notebook(user, notebook);
+                        that.load_notebook(notebook);
                     })
                 ;
             };

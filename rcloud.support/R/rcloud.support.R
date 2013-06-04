@@ -22,10 +22,15 @@ rcloud.user.config.filename <- function(user)
 
 
 rcloud.load.user.config <- function(user) {
-  paste(readLines(rcloud.user.config.filename(user)), collapse="\n")
+  ufile <- rcloud.user.config.filename(user);
+  if(file.exists(ufile))
+    paste(readLines(ufile), collapse="\n")
+  else
+    "null";
 }
 
 rcloud.save.user.config <- function(user, content) {
+  print("save it")
   filename <- rcloud.user.config.filename(user)
   invisible(write(content,filename))
 }
@@ -48,7 +53,7 @@ rcloud.update.notebook <- function(id, content) {
 }
 
 rcloud.create.notebook <- function(content) {
-  res <- create.gist(.session$github.context, content)
+  res <- create.gist(.session$rgithub.context, content)
   content(res, as = 'text')
 }
 
