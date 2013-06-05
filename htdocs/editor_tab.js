@@ -42,8 +42,9 @@ var editor = function () {
         $(folder.element).parent().prepend(folder.element);
         $tree.tree('openNode', folder);
     }
-    function display_date(date) {
+    function display_date(ds) {
         function pad(n) { return n<10 ? '0'+n : n; }
+        var date = new Date(ds);
         var diff = Date.now() - date;
         if(diff < 24*60*60*1000)
             return date.getHours() + ':' + pad(date.getMinutes());
@@ -79,7 +80,8 @@ var editor = function () {
             var $tree = $("#editor-book-tree");
             function onCreateLiHandler(node, $li) {
                 if (node.last_commit) {
-                    $li.find('.title').after('<span style="float: right" id="date">' + node.last_commit + '</span>');
+                    $li.find('.title').after('<span style="float: right" id="date">' 
+                                             + display_date(node.last_commit) + '</span>');
                 }
             }
             $tree.tree({
@@ -147,7 +149,7 @@ var editor = function () {
                 upd = false;
             }
             entry.description = status.description;
-            entry.last_commit = display_date(new Date(status.last_commit));
+            entry.last_commit = status.last_commit;
             var data = {label: entry.description,
                         last_commit: entry.last_commit};
 
@@ -156,7 +158,7 @@ var editor = function () {
                 var id = '/' + user + '/' + notebook;
                 var node = $tree.tree('getNodeById', id);
                 $tree.tree("updateNode", node, data); 
-                $(node.element).find('#date').text(entry.last_commit);
+                $(node.element).find('#date').text(display_date(entry.last_commit));
             }
             else {
                 data.gist_name = notebook;
