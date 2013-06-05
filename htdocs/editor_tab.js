@@ -1,6 +1,6 @@
 var editor = function () {
-    function populate_interests(tree_model, config, this_user) {
-        var user_nodes = [];
+    function populate_interests(config, this_user) {
+        var my_notebooks, user_nodes = [];
         for (var username in config.interests) {
             var notebooks_config = config.interests[username];
             var notebook_nodes = [];
@@ -12,7 +12,6 @@ var editor = function () {
                     last_commit: attrs.last_commit || '',
                     id: '/' + username + '/' + name
                 };
-                tree_model[result.id] = result;
                 notebook_nodes.push(result);
             }
 
@@ -21,30 +20,40 @@ var editor = function () {
                     label: "[New Notebook]",
                     id: "newbook"
                 });
-            };
-            var node = {
-                label: username,
-                id: '/' + username,
-                children: notebook_nodes
-            };
-            user_nodes.push(node);
+                my_notebooks = notebook_nodes;
+            }
+            else {
+                var node = {
+                    label: username + "'s notebooks",
+                    id: '/' + username,
+                    children: notebook_nodes
+                };
+                user_nodes.push(node);
+            }
         }
         var tree_data = [ { 
-            label: '/',
+            label: 'my interests',
             id: '/',
-            children: user_nodes
+            children: my_notebooks.concat(user_nodes)
         } ];
         var $tree = $("#editor-book-tree");
         $tree.tree("loadData", tree_data); 
-        var folder = $tree.tree('getNodeById', "/" + rcloud.username());
+        var folder = $tree.tree('getNodeById', "/");
         $(folder.element).parent().prepend(folder.element);
         $tree.tree('openNode', folder);
+    }
+    function display_date(date) {
+        function pad(n) { return n<10 ? '0'+n : n; }
+        var diff = Date.now() - date;
+        if(diff < 24*60*60*1000)
+            return date.getHours() + ':' + pad(date.getMinutes());
+        else
+            return (date.getMonth()+1) + '/' + date.getDate();
     }
 
     var result = {
         widget: undefined,
         config: undefined,
-        book_tree_model: undefined,
         init: function() {
             var that = this;
             $("#input-text-source-results-title").css("display", "none");
@@ -69,9 +78,8 @@ var editor = function () {
             var that = this;
             var $tree = $("#editor-book-tree");
             function onCreateLiHandler(node, $li) {
-                node = that.book_tree_model[node.id];
-                if (node) {
-                    $li.find('.title').after('<span style="float: right">' + node.last_commit + '</span>');
+                if (node.last_commit) {
+                    $li.find('.title').after('<span style="float: right" id="date">' + node.last_commit + '</span>');
                 }
             }
             $tree.tree({
@@ -99,8 +107,7 @@ var editor = function () {
                     return ret;
                 }
                 that.config = config || defaults();
-                that.book_tree_model = {};
-                populate_interests(that.book_tree_model, that.config, this_user);
+                populate_interests(that.config, this_user);
                 k && k(that.config);
             });
         },
@@ -122,10 +129,15 @@ var editor = function () {
             this.update_notebook_status(result.user.login, 
                                         result.id, 
                                         {description: result.description,
-                                         last_commit: result.history[0].committed_at});
+                                         last_commit: result.updated_at || result.history[0].committed_at});
         },
         update_notebook_status: function(user, notebook, status) {
-            var iu = this.config.interests[user], entry, upd;
+            // this is almost a task for d3 or mvc on its own
+            var iu = this.config.interests[user], entry, upd, new_user;
+            if(!iu) {
+                iu = this.config.interests[user] = {};
+                new_user = true;
+            }
             if(iu[notebook]) {
                 entry = iu[notebook];
                 upd = true;
@@ -135,21 +147,42 @@ var editor = function () {
                 upd = false;
             }
             entry.description = status.description;
-            entry.last_commit = status.last_commit;
-            var data = {label: status.description,
-                        last_commit: status.last_commit};
+            entry.last_commit = display_date(new Date(status.last_commit));
+            var data = {label: entry.description,
+                        last_commit: entry.last_commit};
 
             var $tree = $("#editor-book-tree");
             if(upd) {
                 var id = '/' + user + '/' + notebook;
                 var node = $tree.tree('getNodeById', id);
                 $tree.tree("updateNode", node, data); 
+                $(node.element).find('#date').text(entry.last_commit);
             }
             else {
-                var newnode = $tree.tree('getNodeById', "newbook");
                 data.gist_name = notebook;
                 data.id = '/' + user + '/' + notebook;
-                $tree.tree("addNodeBefore", data, newnode);
+                if(user == rcloud.username()) {
+                    var newnode = $tree.tree('getNodeById', "newbook");
+                    $tree.tree("addNodeBefore", data, newnode);
+                }
+                else {
+                    if(new_user) {
+                        var parent = $tree.tree('getNodeById', '/');
+                        var pdat = [{
+                            label: user + "'s notebooks",
+                            id: '/' + user,
+                            children: [data]
+                        }];
+                        // appendNode doesn't seem to work properly with subtrees
+                        $tree.tree('loadData', pdat, parent);
+                        var folder = $tree.tree('getNodeById', '/' + user);
+                        $tree.tree('openNode', folder);
+                    }
+                    else {
+                        var usernode = $tree.tree('getNodeById', '/'+user);
+                        $tree.tree('appendNode', data, usernode);
+                    }
+                }
             }
 
             this.save_config();
