@@ -169,7 +169,7 @@ var editor = function () {
                 data.id = '/' + user + '/' + notebook;
                 if(user == rcloud.username()) {
                     var newnode = $tree.tree('getNodeById', "newbook");
-                    $tree.tree("addNodeBefore", data, newnode);
+                    $tree.tree("addNodeAfter", data, newnode);
                 }
                 else {
                     if(new_user) {
