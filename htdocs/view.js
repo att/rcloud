@@ -8,7 +8,7 @@ function view_init() {
         host: "ws://"+location.hostname+":8081/", 
         on_connect: function() {
             $("#view-source").click(function() {
-                window.location = "main.html?user=" + shell.user + "&filename=" + shell.filename;
+                window.location = "main.html?filename=" + shell.gistname;
             });
             rcloud.init_client_side_data();
             var user = getURLParameter("user");
