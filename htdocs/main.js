@@ -4,7 +4,7 @@ function init_shareable_link_box() {
             t.toggle(); 
             n.toggle();
             if (n.is(":visible")) {
-                n.get(0).value = window.location.protocol + '//' + window.location.host + '/view.html?filename=' + shell.filename;
+                n.get(0).value = window.location.protocol + '//' + window.location.host + '/view.html?filename=' + shell.gistname;
                 n.get(0).select();
             }
             return false;
