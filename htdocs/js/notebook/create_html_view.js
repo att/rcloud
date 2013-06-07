@@ -27,8 +27,8 @@ Notebook.create_html_view = function(model, root_div)
         },
         
         update_model: function() {
-            _.each(this.sub_views, function(cell_view) {
-                cell_view.update_model();
+            return _.map(this.sub_views, function(cell_view) {
+                return cell_view.update_model();
             });
         }
     };

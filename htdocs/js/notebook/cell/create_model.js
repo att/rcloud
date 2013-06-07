@@ -8,8 +8,12 @@ Notebook.Cell.create_model = function(content, language)
         },
         content: function(new_content) {
             if (!_.isUndefined(new_content)) {
-                content = new_content;
-                notify_views();
+                if(content != new_content) {
+                    content = new_content;
+                    notify_views();
+                    return content;
+                }
+                else return null;
             }
             return content;
         },
