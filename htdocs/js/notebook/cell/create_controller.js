@@ -11,8 +11,7 @@ Notebook.Cell.create_controller = function(cell_model)
             }
             
             rclient.record_cell_execution(cell_model);
-            cell_model.parent_model.controller.update_notebook([[cell_model.id, {content: cell_model.content(), 
-                                                                  language: cell_model.language()}]]);
+
             if (language === 'Markdown') {
                 var wrapped_command = rclient.markdown_wrap_command(cell_model.content());
                 rclient.send_and_callback(wrapped_command, callback, _.identity);

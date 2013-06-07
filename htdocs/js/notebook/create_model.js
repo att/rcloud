@@ -89,7 +89,7 @@ Notebook.create_model = function()
             while(x<this.notebook.length && n) {
                 if(this.notebook[x].id == id) {
                     _.each(this.views, function(view) {
-                        view.cell_removed(that.notebook[x], id);
+                        view.cell_removed(that.notebook[x], x);
                     });
                     changes.push([id, {erase: 1, language: that.notebook[x].language()} ])
                     this.notebook.splice(x, 1);
@@ -98,6 +98,26 @@ Notebook.create_model = function()
                 --n;
             }
             return changes;
+        },
+        update_cell: function(cell_model) {
+            return [[cell_model.id, {content: cell_model.content(), 
+                                     language: cell_model.language()}]];
+        },
+        reread_cells: function() {
+            var that = this;
+            var changed_cells_per_view = _.map(this.views, function(view) {
+                return view.update_model();
+            });
+            if(changed_cells_per_view.length != 1)
+                throw "not expecting more than one notebook view";
+            return _.reduce(changed_cells_per_view[0], 
+                            function(changes, content, index) { 
+                                if(content)
+                                    changes.push([that.notebook[index].id, {content: content,
+                                                                            language: that.notebook[index].language()}]);
+                                return changes;
+                            },
+                            []);
         },
         json: function() {
             return _.map(this.notebook, function(cell_model) {

@@ -4,7 +4,7 @@ function init_shareable_link_box() {
             t.toggle(); 
             n.toggle();
             if (n.is(":visible")) {
-                n.get(0).value = window.location.protocol + '//' + window.location.host + '/view.html?filename=' + shell.gistname;
+                n.get(0).value = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname;
                 n.get(0).select();
             }
             return false;
@@ -42,7 +42,7 @@ function main_init() {
                 function getURLParameter(name) {
                     return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
                 }
-                editor.load_notebook(getURLParameter("user"), getURLParameter("filename"));
+                editor.load_notebook(getURLParameter("notebook"));
                 $("#tabs").tabs("select", "#tabs-2");
             }
         }

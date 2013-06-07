@@ -130,7 +130,6 @@ var shell = (function() {
             controller: notebook_controller
         },
         terminal: terminal,
-        user: undefined,
         gistname: undefined,
         detachable_div: function(div) {
             var on_remove = function() {};
@@ -171,39 +170,23 @@ var shell = (function() {
             return notebook_controller.append_cell(content, "R");
         }, insert_markdown_cell_before: function(index) {
             return notebook_controller.insert_cell("", "Markdown", index);
-        }, load_notebook: function(user, gistname, k) {
+        }, load_notebook: function(gistname, k) {
             var that = this;
-            this.notebook.controller.load_notebook(user, gistname, function() {
-                $("#file_title").text(gistname);
+            this.notebook.controller.load_notebook(gistname, function(notebook) {
+                $("#notebook_title").text(notebook.description);
                 _.each(that.notebook.view.sub_views, function(cell_view) {
                     cell_view.show_source();
                 });
-                that.user = user;
-                that.gistname = gistname;
-                k && k();
+                that.gistname = notebook.id;
+                k && k(notebook);
             });
-        }, new_notebook: function() {
-            debugger;
-            function validate_filename(n) {
-                if (/\.\./.test(n))
-                    return false;
-                if (/[^0-9a-zA-Z_.]/.test(n))
-                    return false;
-                return true;
-            }
-            var filename = prompt("please enter a description", "[new notebook]");
-            if (!validate_filename(filename)) {
-                alert("Invalid filename");
-                return;
-            }
-            this.create_file(filename);
-        }, create_file: function(filename) {
+        }, new_notebook: function(desc, k) {
             var that = this;
-            rcloud.create_user_file(filename, function(result) {
-                if (result) {
-                    editor.populate_file_list();
-                    that.load_notebook(rcloud.username(), filename);
-                }
+            var content = {description: desc, public: false, files: {"scratch.R":""}};
+            this.notebook.controller.create_notebook(content, function(notebook) {
+                $("#notebook_title").text(notebook.description);
+                that.gistname = notebook.id;
+                k && k(notebook);
             });
         }
     };
