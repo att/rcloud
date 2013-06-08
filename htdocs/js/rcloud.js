@@ -42,7 +42,7 @@ rcloud.save_user_config = function(user, content, k)
         rclient.r_funcall("rcloud.save.user.config", user, 
                           JSON.stringify(content)), 
         function(result) {
-            k && k(JSON.parse(result))
+            k && k(JSON.parse(result));
         });
 }
 
@@ -51,7 +51,7 @@ rcloud.load_notebook = function(id, k)
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.get.notebook", id), 
         function(result) {
-            k && k(JSON.parse(result))
+            k && k(JSON.parse(result));
         });
 }
 
@@ -60,7 +60,7 @@ rcloud.update_notebook = function(id, content, k)
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.update.notebook", id, JSON.stringify(content)), 
         function(result) {
-            k && k(JSON.parse(result))
+            k && k(JSON.parse(result));
         });
 }
 
@@ -69,7 +69,7 @@ rcloud.create_notebook = function(content, k)
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.create.notebook", JSON.stringify(content)), 
         function(result) {
-            k && k(JSON.parse(result))
+            k && k(JSON.parse(result));
         });
 }
 
