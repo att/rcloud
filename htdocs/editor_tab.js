@@ -4,6 +4,12 @@ var editor = function () {
         for (var username in config.interests) {
             var notebooks_config = config.interests[username];
             var notebook_nodes = [];
+            if(username === this_user) {
+                notebook_nodes.push({
+                    label: "[New Notebook]",
+                    id: "newbook"
+                });
+            }
             for(var name in notebooks_config) {
                 var attrs = notebooks_config[name];
                 var result = {
@@ -15,16 +21,11 @@ var editor = function () {
                 notebook_nodes.push(result);
             }
 
-            if(username === this_user) {
-                notebook_nodes.push({
-                    label: "[New Notebook]",
-                    id: "newbook"
-                });
+            if(username === this_user)
                 my_notebooks = notebook_nodes;
-            }
             else {
                 var node = {
-                    label: username + "'s notebooks",
+                    label: someone_elses(username),
                     id: '/' + username,
                     children: notebook_nodes
                 };
@@ -32,7 +33,7 @@ var editor = function () {
             }
         }
         var tree_data = [ { 
-            label: 'my interests',
+            label: 'My Interests',
             id: '/',
             children: my_notebooks.concat(user_nodes)
         } ];
@@ -50,6 +51,9 @@ var editor = function () {
             return date.getHours() + ':' + pad(date.getMinutes());
         else
             return (date.getMonth()+1) + '/' + date.getDate();
+    }
+    function someone_elses(name) {
+        return name + "'s Notebooks";
     }
 
     var result = {
@@ -118,7 +122,9 @@ var editor = function () {
             rcloud.save_user_config(this_user, this.config);
         },
         new_notebook: function() {
-            var desc = "work" + this.config.nextwork;
+            if(isNaN(this.config.nextwork))
+                this.config.nextwork = 1;
+            var desc = "Notebook " + this.config.nextwork;
             ++this.config.nextwork;
             shell.new_notebook(desc, _.bind(result.notebook_loaded,this));
         },
@@ -165,13 +171,13 @@ var editor = function () {
                 data.id = '/' + user + '/' + notebook;
                 if(user == rcloud.username()) {
                     var newnode = $tree.tree('getNodeById', "newbook");
-                    $tree.tree("addNodeBefore", data, newnode);
+                    $tree.tree("addNodeAfter", data, newnode);
                 }
                 else {
                     if(new_user) {
                         var parent = $tree.tree('getNodeById', '/');
                         var pdat = [{
-                            label: user + "'s notebooks",
+                            label: someone_elses(user),
                             id: '/' + user,
                             children: [data]
                         }];
