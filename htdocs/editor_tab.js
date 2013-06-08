@@ -65,9 +65,11 @@ var editor = function () {
             $("#input-text-history-results-title").css("display", "none");
             this.create_book_tree_widget();
             this.load_config(function(config) {
-                if(config.currbook)
+                if(shell.gistname) // notebook specified in url
+                    config.currbook = shell.gistname;
+                else if(config.currbook)
                     that.load_notebook(config.currbook);
-                else
+                else // branch new config
                     that.new_notebook();
             });
             var old_text = "";
