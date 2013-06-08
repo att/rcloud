@@ -172,12 +172,15 @@ var shell = (function() {
             return notebook_controller.insert_cell("", "Markdown", index);
         }, load_notebook: function(gistname, k) {
             var that = this;
+            // asymetrical: we know the gistname before it's loaded here,
+            // but not in new.  and we have to set this here to signal 
+            // editor's init load config callback to override the currbook
+            this.gistname = gistname;
             this.notebook.controller.load_notebook(gistname, function(notebook) {
                 $("#notebook_title").text(notebook.description);
                 _.each(that.notebook.view.sub_views, function(cell_view) {
                     cell_view.show_source();
                 });
-                that.gistname = notebook.id;
                 k && k(notebook);
             });
         }, new_notebook: function(desc, k) {
