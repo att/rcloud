@@ -109,8 +109,9 @@ var editor = function () {
             rcloud.load_user_config(this_user, function(config) {
                 function defaults() {
                     var ret = {currbook: null,
-                        nextwork: 1,
-                        interests: {}};
+                               nextwork: 1,
+                               interests: {},
+                               all_books: {}};
                     ret.interests[this_user] = {};
                     return ret;
                 }
@@ -158,6 +159,12 @@ var editor = function () {
             }
             entry.description = status.description;
             entry.last_commit = status.last_commit;
+
+            // if we haven't seen this notebook and it belongs to 
+            // the logged-in user, sqve it to the all-books list
+            if(!upd && user == rcloud.username())
+                this.config.all_books[notebook] = entry;
+
             var data = {label: entry.description,
                         last_commit: entry.last_commit};
 
