@@ -122,6 +122,8 @@ var editor = function () {
             rcloud.save_user_config(this_user, this.config);
         },
         new_notebook: function() {
+            if(isNaN(this.config.nextwork))
+                this.config.nextwork = 1;
             var desc = "Notebook " + this.config.nextwork;
             ++this.config.nextwork;
             shell.new_notebook(desc, _.bind(result.notebook_loaded,this));
