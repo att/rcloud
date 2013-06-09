@@ -15,6 +15,13 @@ In R, type:
     install.packages("rcloud.support",, c("http://RForge.net",
                      "http://R.research.att.com"), type="source")
 
+if you're running RStudio, we've had reports of better luck with the
+following line, which removes the empty second parameter
+from the invocation:
+
+	install.packages("rcloud.support", 
+		c("http://RForge.net", "http://R.research.att.com"), type="source")
+
 From there on you can safely use the rcloud.support package in RCloud
 sources, but the above makes the bootstraping of dependencies
 easier. All remaining dependencies will be installed during the first
