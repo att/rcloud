@@ -6,7 +6,7 @@ var editor = function () {
             var result = {
                 label: attrs.description,
                 gist_name: name,
-                last_commit: attrs.last_commit || '',
+                last_commit: attrs.last_commit || 'none',
                 id: '/' + root + '/' + username + '/' + name
             };
             notebook_nodes.push(result);
@@ -16,6 +16,8 @@ var editor = function () {
 
     function populate_interests(config, this_user) {
         var my_notebooks, user_nodes = [];
+        if(!config.interests[this_user])
+            config.interests[this_user] = {};
         for (var username in config.interests) {
             var notebooks_config = config.interests[username];
             var notebook_nodes = [];
@@ -38,29 +40,27 @@ var editor = function () {
                 user_nodes.push(node);
             }
         }
-        var tree_data = [ { 
-            label: 'My Interests',
-            id: '/interests',
-            children: my_notebooks.concat(user_nodes)
-        } ];
+        var children =  my_notebooks.concat(user_nodes);
         var $tree = $("#editor-book-tree");
-        $tree.tree("loadData", tree_data); 
-        var folder = $tree.tree('getNodeById', "/interests");
-        $(folder.element).parent().prepend(folder.element);
-        $tree.tree('openNode', folder);
+        var interests = $tree.tree('getNodeById', "/interests");
+        $tree.tree("loadData", children, interests); 
+        $(interests.element).parent().prepend(interests.element);
+        $tree.tree('openNode', interests);
     }
-    function populate_allbooks(this_user) {
+    function load_all_configs(this_user, k) {
         rcloud.get_users(function(userlist) {
             var users = _.pluck(userlist, 'login');
             rcloud.load_multiple_user_configs(users, function(configset) {
-                var my_alls, user_nodes = [];
+                var my_alls = [], user_nodes = [], my_config = null;
                 for(var username in configset) {
                     var config = configset[username];
                     if(!config)
                         continue;
                     var notebook_nodes = convert_notebook_set('alls', username, config.all_books);
-                    if(username === this_user)
+                    if(username === this_user) {
+                        my_config = config;
                         my_alls = notebook_nodes;
+                    }
                     else {
                         var node = {
                             label: someone_elses(username),
@@ -70,22 +70,79 @@ var editor = function () {
                         user_nodes.push(node);
                     }
                 }
-                // jqTree doesn't seem to have a way to loadData to make a new root node
-                // so append root node then loadData
+
+                // create both root folders now but only load /alls now
+                // populate_interests will load /interests
                 var children = my_alls.concat(user_nodes);
-                var alls_root = {
-                    label: 'All Notebooks',
-                    id: '/alls'
-                };
+                var root_data = [
+                    { 
+                        label: 'My Interests',
+                        id: '/interests',
+                    },
+                    {
+                        label: 'All Notebooks',
+                        id: '/alls',
+                        children: children
+                    }
+                ];
                 var $tree = $("#editor-book-tree");
-                var rnode = $tree.tree('appendNode', alls_root);
-                $tree.tree("loadData", children, rnode);  // append?
+                $tree.tree("loadData", root_data);  
+
+                k && k(my_config);
             });
         });
+    }
+
+    function update_tree($tree, root, user, notebook, data) {
+        var id = '/' + root + '/' + user + '/' + notebook;
+        var node = $tree.tree('getNodeById', id);
+        if(node) {
+            // updateNode not available in the version of jqTree we're using
+            // $tree.tree("updateNode", node, data); 
+            // (and the newer versions don't look right?)
+            node.setData(data);
+            $(node.element).find('.title').text(data.label);
+            $(node.element).find('#date').text(display_date(data.last_commit));
+        }
+        else {
+            data.gist_name = notebook;
+            data.id = '/' + root + '/' + user + '/' + notebook;
+            if(user == rcloud.username()) {
+                if(root === 'interests') {
+                    var newnode = $tree.tree('getNodeById', "newbook");
+                    node = $tree.tree("addNodeAfter", data, newnode);
+                }
+                else {
+                    var parent = $tree.tree('getNodeById', '/' + root);
+                    node = $tree.tree('appendNode', data, parent);
+                }
+            }
+            else {
+                var usernode = $tree.tree('getNodeById', '/' + root + '/' + user);
+                if(usernode) 
+                    $tree.tree('appendNode', data, usernode);
+                else {
+                    var parent = $tree.tree('getNodeById', '/' + root);
+                    var pdat = [{
+                        label: someone_elses(user),
+                        id: '/' + root + '/' + user,
+                        children: [data]
+                    }];
+                    // appendNode doesn't seem to work properly with subtrees
+                    $tree.tree('loadData', pdat, parent);
+                    var user_folder = $tree.tree('getNodeById', '/' + root + '/' + user);
+                    $tree.tree('openNode', user_folder);
+                    node = $tree.tree('getNodeById',id);
+                }
+            }
+        }
+        return node;
     }
                 
     function display_date(ds) {
         function pad(n) { return n<10 ? '0'+n : n; }
+        if(ds==='none')
+            return '';
         var date = new Date(ds);
         var diff = Date.now() - date;
         if(diff < 24*60*60*1000)
@@ -93,6 +150,7 @@ var editor = function () {
         else
             return (date.getMonth()+1) + '/' + date.getDate();
     }
+
     function someone_elses(name) {
         return name + "'s Notebooks";
     }
@@ -132,7 +190,6 @@ var editor = function () {
                 }
             }
             $tree.tree({
-                autoOpen: 1,
                 onCreateLi: onCreateLiHandler
             });
             $tree.bind(
@@ -147,20 +204,19 @@ var editor = function () {
         load_config: function(k) {
             var that = this;
             var this_user = rcloud.username();
-            rcloud.load_user_config(this_user, function(config) {
-                function defaults() {
-                    var ret = {currbook: null,
-                               nextwork: 1,
-                               interests: {},
-                               all_books: {}};
-                    ret.interests[this_user] = {};
-                    return ret;
-                }
-                that.config = config || defaults();
+            function defaults() {
+                var ret = {currbook: null,
+                           nextwork: 1,
+                           interests: {},
+                           all_books: {}};
+                ret.interests[this_user] = {};
+                return ret;
+            }
+            var my_config = load_all_configs(this_user, function(my_config) {
+                that.config = my_config || defaults();
                 populate_interests(that.config, this_user);
                 k && k(that.config);
             });
-            populate_allbooks(this_user);
         },
         save_config: function() {
             var this_user = rcloud.username();
@@ -211,38 +267,9 @@ var editor = function () {
                         last_commit: entry.last_commit};
 
             var $tree = $("#editor-book-tree");
-            if(upd) {
-                var id = '/interests/' + user + '/' + notebook;
-                var node = $tree.tree('getNodeById', id);
-                $tree.tree("updateNode", node, data); 
-                $(node.element).find('#date').text(display_date(entry.last_commit));
-            }
-            else {
-                data.gist_name = notebook;
-                data.id = '/interests/' + user + '/' + notebook;
-                if(user == rcloud.username()) {
-                    var newnode = $tree.tree('getNodeById', "newbook");
-                    $tree.tree("addNodeAfter", data, newnode);
-                }
-                else {
-                    if(new_user) {
-                        var parent = $tree.tree('getNodeById', '/');
-                        var pdat = [{
-                            label: someone_elses(user),
-                            id: '/interests/' + user,
-                            children: [data]
-                        }];
-                        // appendNode doesn't seem to work properly with subtrees
-                        $tree.tree('loadData', pdat, parent);
-                        var folder = $tree.tree('getNodeById', '/interests/' + user);
-                        $tree.tree('openNode', folder);
-                    }
-                    else {
-                        var usernode = $tree.tree('getNodeById', '/interests/'+user);
-                        $tree.tree('appendNode', data, usernode);
-                    }
-                }
-            }
+            var node = update_tree($tree, 'interests', user, notebook, data);
+            // $tree.tree('selectNode', node); // currently disabled (tricky!)
+            update_tree($tree, 'alls', user, notebook, data);
 
             this.save_config();
         },
