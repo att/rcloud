@@ -29,6 +29,12 @@ rcloud.load.user.config <- function(user) {
     "null";
 }
 
+# hackish? but more efficient than multiple calls
+rcloud.load.multiple.user.configs <- function(users) {
+  entry <- function(user) paste('"', user, '": ', rcloud.load.user.config(user), sep='')
+  paste('{', paste(Map(entry, users), collapse=',\n'), '}')
+}
+
 rcloud.save.user.config <- function(user, content) {
   print("save it")
   filename <- rcloud.user.config.filename(user)
@@ -82,6 +88,9 @@ rcloud.record.cell.execution <- function(user, json.string) {
   cat(paste(paste(Sys.time(), user, json.string, sep="|"), "\n"),
       file=file.path(.rc.conf$data.root, "history", "main_log.txt"), append=TRUE)
 }
+
+rcloud.get.users <- function()
+  content(get.users(.session$rgithub.context))
 
 ################################################################################
 # setup the r-side environment
