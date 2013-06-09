@@ -239,15 +239,34 @@ RClient = {
                 rserve.eval(command, unwrap);
             },
 
-            // FIXME this needs hardening
+            // supports only the following argument types:
+            // * string
+            // * number
+            // * array of string/number (doesn't check they match)
             r_funcall: function(function_name) {
+                function output_one(result, val) {
+                    var t = typeof val;
+                    if (t === "string") {
+                        result.push(escape_r_literal_string(val));
+                    } 
+                    else if (t == "number") {
+                        result.push(String(val));
+                    }
+                    else throw "unsupported r_funcall argument type " + t;
+                }
                 var result = [function_name, "("];
                 for (var i=1; i<arguments.length; ++i) {
-                    var t = typeof arguments[i];
-                    if (t === "string") {
-                        result.push(escape_r_literal_string(arguments[i]));
-                    } else
-                        result.push(String(arguments[i]));
+                    var arg = arguments[i];
+                    if ($.isArray(arg)) {
+                        result.push("c(");
+                        for(var j = 0; j<arg.length; ++j) {
+                            output_one(result,arg[j]);
+                            if(j < arg.length-1)
+                                result.push(",");
+                        }
+                        result.push(")");
+                    }
+                    else output_one(result, arg);
                     if (i < arguments.length-1)
                         result.push(",");
                 }
