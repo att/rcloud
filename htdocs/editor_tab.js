@@ -1,4 +1,19 @@
 var editor = function () {
+    function convert_notebook_set(root, username, set) {
+        var notebook_nodes = [];
+        for(var name in set) {
+            var attrs = set[name];
+            var result = {
+                label: attrs.description,
+                gist_name: name,
+                last_commit: attrs.last_commit || '',
+                id: '/' + root + '/' + username + '/' + name
+            };
+            notebook_nodes.push(result);
+        }
+        return notebook_nodes;
+    }
+
     function populate_interests(config, this_user) {
         var my_notebooks, user_nodes = [];
         for (var username in config.interests) {
@@ -10,23 +25,14 @@ var editor = function () {
                     id: "newbook"
                 });
             }
-            for(var name in notebooks_config) {
-                var attrs = notebooks_config[name];
-                var result = {
-                    label: attrs.description,
-                    gist_name: name,
-                    last_commit: attrs.last_commit || '',
-                    id: '/' + username + '/' + name
-                };
-                notebook_nodes.push(result);
-            }
+            notebook_nodes = notebook_nodes.concat(convert_notebook_set('interests', username, notebooks_config));
 
             if(username === this_user)
                 my_notebooks = notebook_nodes;
             else {
                 var node = {
                     label: someone_elses(username),
-                    id: '/' + username,
+                    id: '/interests/' + username,
                     children: notebook_nodes
                 };
                 user_nodes.push(node);
@@ -34,15 +40,50 @@ var editor = function () {
         }
         var tree_data = [ { 
             label: 'My Interests',
-            id: '/',
+            id: '/interests',
             children: my_notebooks.concat(user_nodes)
         } ];
         var $tree = $("#editor-book-tree");
         $tree.tree("loadData", tree_data); 
-        var folder = $tree.tree('getNodeById', "/");
+        var folder = $tree.tree('getNodeById', "/interests");
         $(folder.element).parent().prepend(folder.element);
         $tree.tree('openNode', folder);
     }
+    function populate_allbooks(this_user) {
+        rcloud.get_users(function(userlist) {
+            var users = _.pluck(userlist, 'login');
+            rcloud.load_multiple_user_configs(users, function(configset) {
+                var my_alls, user_nodes = [];
+                for(var username in configset) {
+                    var config = configset[username];
+                    if(!config)
+                        continue;
+                    var notebook_nodes = convert_notebook_set('alls', username, config.all_books);
+                    if(username === this_user)
+                        my_alls = notebook_nodes;
+                    else {
+                        var node = {
+                            label: someone_elses(username),
+                            id: '/alls/' + username,
+                            children: notebook_nodes
+                        };
+                        user_nodes.push(node);
+                    }
+                }
+                // jqTree doesn't seem to have a way to loadData to make a new root node
+                // so append root node then loadData
+                var children = my_alls.concat(user_nodes);
+                var alls_root = {
+                    label: 'All Notebooks',
+                    id: '/alls'
+                };
+                var $tree = $("#editor-book-tree");
+                var rnode = $tree.tree('appendNode', alls_root);
+                $tree.tree("loadData", children, rnode);  // append?
+            });
+        });
+    }
+                
     function display_date(ds) {
         function pad(n) { return n<10 ? '0'+n : n; }
         var date = new Date(ds);
@@ -119,6 +160,7 @@ var editor = function () {
                 populate_interests(that.config, this_user);
                 k && k(that.config);
             });
+            populate_allbooks(this_user);
         },
         save_config: function() {
             var this_user = rcloud.username();
@@ -170,14 +212,14 @@ var editor = function () {
 
             var $tree = $("#editor-book-tree");
             if(upd) {
-                var id = '/' + user + '/' + notebook;
+                var id = '/interests/' + user + '/' + notebook;
                 var node = $tree.tree('getNodeById', id);
                 $tree.tree("updateNode", node, data); 
                 $(node.element).find('#date').text(display_date(entry.last_commit));
             }
             else {
                 data.gist_name = notebook;
-                data.id = '/' + user + '/' + notebook;
+                data.id = '/interests/' + user + '/' + notebook;
                 if(user == rcloud.username()) {
                     var newnode = $tree.tree('getNodeById', "newbook");
                     $tree.tree("addNodeAfter", data, newnode);
@@ -187,16 +229,16 @@ var editor = function () {
                         var parent = $tree.tree('getNodeById', '/');
                         var pdat = [{
                             label: someone_elses(user),
-                            id: '/' + user,
+                            id: '/interests/' + user,
                             children: [data]
                         }];
                         // appendNode doesn't seem to work properly with subtrees
                         $tree.tree('loadData', pdat, parent);
-                        var folder = $tree.tree('getNodeById', '/' + user);
+                        var folder = $tree.tree('getNodeById', '/interests/' + user);
                         $tree.tree('openNode', folder);
                     }
                     else {
-                        var usernode = $tree.tree('getNodeById', '/'+user);
+                        var usernode = $tree.tree('getNodeById', '/interests/'+user);
                         $tree.tree('appendNode', data, usernode);
                     }
                 }

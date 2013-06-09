@@ -895,15 +895,34 @@ RClient = {
                 rserve.eval(command, unwrap);
             },
 
-            // FIXME this needs hardening
+            // supports only the following argument types:
+            // * string
+            // * number
+            // * array of string/number (doesn't check they match)
             r_funcall: function(function_name) {
+                function output_one(result, val) {
+                    var t = typeof val;
+                    if (t === "string") {
+                        result.push(escape_r_literal_string(val));
+                    } 
+                    else if (t == "number") {
+                        result.push(String(val));
+                    }
+                    else throw "unsupported r_funcall argument type " + t;
+                }
                 var result = [function_name, "("];
                 for (var i=1; i<arguments.length; ++i) {
-                    var t = typeof arguments[i];
-                    if (t === "string") {
-                        result.push(escape_r_literal_string(arguments[i]));
-                    } else
-                        result.push(String(arguments[i]));
+                    var arg = arguments[i];
+                    if ($.isArray(arg)) {
+                        result.push("c(");
+                        for(var j = 0; j<arg.length; ++j) {
+                            output_one(result,arg[j]);
+                            if(j < arg.length-1)
+                                result.push(",");
+                        }
+                        result.push(")");
+                    }
+                    else output_one(result, arg);
                     if (i < arguments.length-1)
                         result.push(",");
                 }
@@ -954,6 +973,15 @@ rcloud.load_user_config = function(user, k)
         });
 }
 
+rcloud.load_multiple_user_configs = function(users, k)
+{
+    rclient.send_and_callback(
+        rclient.r_funcall("rcloud.load.multiple.user.configs", users), function(result) {
+            k && k(JSON.parse(result));
+        });
+}
+
+
 rcloud.save_user_config = function(user, content, k)
 {
     if (_.isUndefined(k)) k = _.identity;
@@ -961,7 +989,7 @@ rcloud.save_user_config = function(user, content, k)
         rclient.r_funcall("rcloud.save.user.config", user, 
                           JSON.stringify(content)), 
         function(result) {
-            k && k(JSON.parse(result))
+            k && k(JSON.parse(result));
         });
 }
 
@@ -970,7 +998,7 @@ rcloud.load_notebook = function(id, k)
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.get.notebook", id), 
         function(result) {
-            k && k(JSON.parse(result))
+            k && k(JSON.parse(result));
         });
 }
 
@@ -979,7 +1007,7 @@ rcloud.update_notebook = function(id, content, k)
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.update.notebook", id, JSON.stringify(content)), 
         function(result) {
-            k && k(JSON.parse(result))
+            k && k(JSON.parse(result));
         });
 }
 
@@ -988,7 +1016,7 @@ rcloud.create_notebook = function(content, k)
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.create.notebook", JSON.stringify(content)), 
         function(result) {
-            k && k(JSON.parse(result))
+            k && k(JSON.parse(result));
         });
 }
 
@@ -997,6 +1025,15 @@ rcloud.resolve_deferred_result = function(uuid, k)
     var cmd = rclient.r_funcall("rcloud.fetch.deferred.result", uuid);
     rclient.send_and_callback(cmd, k);
 };
+
+rcloud.get_users = function(k)
+{
+    rclient.send_and_callback(
+        rclient.r_funcall("rcloud.get.users"),
+        function(result) {
+            k && k(result); // why is this coming back preparsed? JSON.parse(result));
+        });
+}
 Notebook = {};
 
 //////////////////////////////////////////////////////////////////////////////
