@@ -139,7 +139,7 @@ var editor = function () {
                 'tree.click', function(event) {
                     if (event.node.id === "newbook") 
                         that.new_notebook();
-                    else
+                    else if(event.node.gist_name)
                         that.load_notebook(event.node.gist_name);
                 }
             );
