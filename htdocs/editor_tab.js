@@ -1,4 +1,24 @@
 var editor = function () {
+    // major key is sort_order and minor key is name (label)
+    // sort_order 0 is for headers like [New Notebook]
+    // sort_order 1 is notebooks
+    // sort_order 2 is subfolders
+    function compare_nodes(a, b) {
+        var so = a.sort_order-b.sort_order;
+        if(so) return so;
+        else {
+            var alab = a.name || a.label, blab = b.name || b.label;
+            // haha horrible special case to sort "Notebook X" numerically!
+            if(/Notebook /.test(alab) && /Notebook /.test(blab)) {
+                var an = alab.slice(9), bn = blab.slice(9);
+                if($.isNumeric(an) && $.isNumeric(bn))
+                    return an-bn;
+            }
+            var lc = alab.localeCompare(blab);
+            return lc;
+        }
+    }
+
     function convert_notebook_set(root, username, set) {
         var notebook_nodes = [];
         for(var name in set) {
@@ -7,7 +27,8 @@ var editor = function () {
                 label: attrs.description,
                 gist_name: name,
                 last_commit: attrs.last_commit || 'none',
-                id: '/' + root + '/' + username + '/' + name
+                id: '/' + root + '/' + username + '/' + name,
+                sort_order: 1
             };
             notebook_nodes.push(result);
         }
@@ -24,7 +45,8 @@ var editor = function () {
             if(username === this_user) {
                 notebook_nodes.push({
                     label: "[New Notebook]",
-                    id: "newbook"
+                    id: "newbook",
+                    sort_order: 0
                 });
             }
             notebook_nodes = notebook_nodes.concat(convert_notebook_set('interests', username, notebooks_config));
@@ -35,18 +57,20 @@ var editor = function () {
                 var node = {
                     label: someone_elses(username),
                     id: '/interests/' + username,
-                    children: notebook_nodes
+                    sort_order: 2,
+                    children: notebook_nodes.sort(compare_nodes)
                 };
                 user_nodes.push(node);
             }
         }
-        var children =  my_notebooks.concat(user_nodes);
+        var children =  my_notebooks.concat(user_nodes).sort(compare_nodes);
         var $tree = $("#editor-book-tree");
         var interests = $tree.tree('getNodeById', "/interests");
         $tree.tree("loadData", children, interests); 
         $(interests.element).parent().prepend(interests.element);
         $tree.tree('openNode', interests);
     }
+
     function load_all_configs(this_user, k) {
         rcloud.get_users(function(userlist) {
             var users = _.pluck(userlist, 'login');
@@ -65,7 +89,8 @@ var editor = function () {
                         var node = {
                             label: someone_elses(username),
                             id: '/alls/' + username,
-                            children: notebook_nodes
+                            sort_order: 2,
+                            children: notebook_nodes.sort(compare_nodes)
                         };
                         user_nodes.push(node);
                     }
@@ -73,7 +98,7 @@ var editor = function () {
 
                 // create both root folders now but only load /alls now
                 // populate_interests will load /interests
-                var children = my_alls.concat(user_nodes);
+                var children = my_alls.concat(user_nodes).sort(compare_nodes);
                 var root_data = [
                     { 
                         label: 'My Interests',
@@ -93,44 +118,53 @@ var editor = function () {
         });
     }
 
+    function insert_alpha($tree, data, parent) {
+        // this could be a binary search but linear is probably fast enough
+        // for a single insert, and it also could be out of order
+        for(var i = 0; i < parent.children.length; ++i) {
+            var child = parent.children[i];
+            var so = compare_nodes(data, child);
+            if(so<0)
+                return $tree.tree('addNodeBefore', data, child);
+        }
+        return $tree.tree('appendNode', data, parent);
+    }
+
     function update_tree($tree, root, user, notebook, data) {
         var id = '/' + root + '/' + user + '/' + notebook;
         var node = $tree.tree('getNodeById', id);
+        var parent;
         if(node) {
-            // updateNode not available in the version of jqTree we're using
-            // $tree.tree("updateNode", node, data); 
-            // (and the newer versions don't look right?)
-            node.setData(data);
-            $(node.element).find('.title').text(data.label);
-            $(node.element).find('#date').text(display_date(data.last_commit));
+            // the update stuff doesn't exist in the jqtree version
+            // we're using, and the latest jqtree didn't seem to work 
+            // at all, so.. blunt stupid approach here:
+            parent = node.parent;
+            $tree.tree('removeNode', node);
+            insert_alpha($tree, data, parent);
         }
         else {
             data.gist_name = notebook;
             data.id = '/' + root + '/' + user + '/' + notebook;
             if(user == rcloud.username()) {
-                if(root === 'interests') {
-                    var newnode = $tree.tree('getNodeById', "newbook");
-                    node = $tree.tree("addNodeAfter", data, newnode);
-                }
-                else {
-                    var parent = $tree.tree('getNodeById', '/' + root);
-                    node = $tree.tree('appendNode', data, parent);
-                }
+                parent = $tree.tree('getNodeById', '/' + root);
+                node = insert_alpha($tree, data, parent);
             }
             else {
                 var usernode = $tree.tree('getNodeById', '/' + root + '/' + user);
                 if(usernode) 
-                    $tree.tree('appendNode', data, usernode);
+                    node = insert_alpha($tree, data, usernode);
                 else {
-                    var parent = $tree.tree('getNodeById', '/' + root);
-                    var pdat = [{
+                    // creating a subfolder and then using loadData on it
+                    // seems to be *the* way that works
+                    parent = $tree.tree('getNodeById', '/' + root);
+                    var pdat = {
                         label: someone_elses(user),
                         id: '/' + root + '/' + user,
-                        children: [data]
-                    }];
-                    // appendNode doesn't seem to work properly with subtrees
-                    $tree.tree('loadData', pdat, parent);
-                    var user_folder = $tree.tree('getNodeById', '/' + root + '/' + user);
+                        sort_order: 2
+                    };
+                    var children = [data];
+                    var user_folder = insert_alpha($tree, pdat, parent);
+                    $tree.tree('loadData', children, user_folder);
                     $tree.tree('openNode', user_folder);
                     node = $tree.tree('getNodeById',id);
                 }
@@ -264,7 +298,8 @@ var editor = function () {
                 this.config.all_books[notebook] = entry;
 
             var data = {label: entry.description,
-                        last_commit: entry.last_commit};
+                        last_commit: entry.last_commit,
+                        sort_order: 1};
 
             var $tree = $("#editor-book-tree");
             var node = update_tree($tree, 'interests', user, notebook, data);
