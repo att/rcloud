@@ -497,7 +497,7 @@ function create_interactive_cell_html_view(cell_model)
 
 var dispatch = {
     Markdown: create_markdown_cell_html_view,
-    R: create_interactive_cell_html_view
+    R: create_markdown_cell_html_view
 };
 
 Notebook.Cell.create_html_view = function(cell_model)
