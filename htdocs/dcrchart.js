@@ -131,9 +131,9 @@ var dcrchart = (function() {
             var groupname = "chartgroup" + chart_group;
             var chart_code = translate_chart(name, groupname, constructor, sexp[2], ctx);
             result.charts.push(chart_code);
-            result.divs.push(make_chart_div(name, sexp[1]))
+            result.divs.push(make_chart_div(name, sexp[1]));
             return result;
-        }
+        };
     }
     
     var statements = {
