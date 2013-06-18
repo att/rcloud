@@ -171,6 +171,15 @@ configure.rcloud <- function () {
     for (i in seq.int(ln)) .rc.conf[[n[i]]] <- ln[i]
   }
 
+  ## load configuration --- I'm not sure if DCF is a good idea - we may change this ...
+  ## ideally, all of the above should be superceded by the configuration file
+  rc.cf <- file.path(.rc.conf$configuration.root, "rcloud.conf")
+  if (isTRUE(file.exists(rc.cf))) {
+    cat("Loading RCloud configuration file...\n")
+    rc.c <- read.dcf(rc.cf)[1,]
+    for (n in names(rc.c)) .rc.conf[[gsub("[ \t]", ".", tolower(n))]] <- as.vector(rc.c[n])
+  }
+
   rcloud.setup.dirs()
 
   .rc.conf$instanceID <- generate.uuid()
