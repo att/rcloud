@@ -132,7 +132,7 @@ configure.rcloud <- function () {
   setwd(.rc.conf$tmp.dir)
 
   ## if you have multiple servers it's good to know which machine this is
-  .rc.conf$host <- tolower(system("hostname -s", TRUE))
+  .rc.conf$host <- tolower(system("hostname -f", TRUE))
   cat("Starting Rserve on", .rc.conf$host,"\n")
 
   ## This is jsut a friendly way to load package and report success/failure
@@ -171,6 +171,18 @@ configure.rcloud <- function () {
     for (i in seq.int(ln)) .rc.conf[[n[i]]] <- ln[i]
   }
 
+  ## load configuration --- I'm not sure if DCF is a good idea - we may change this ...
+  ## ideally, all of the above should be superceded by the configuration file
+  rc.cf <- file.path(.rc.conf$configuration.root, "rcloud.conf")
+  if (isTRUE(file.exists(rc.cf))) {
+    cat("Loading RCloud configuration file...\n")
+    rc.c <- read.dcf(rc.cf)[1,]
+    for (n in names(rc.c)) .rc.conf[[gsub("[ \t]", ".", tolower(n))]] <- as.vector(rc.c[n])
+  }
+
+  if (is.null(.rc.conf$cookie.domain)) .rc.conf$cookie.domain <- .rc.conf$host
+  if (!isTRUE(grepl("[.:]", .rc.conf$cookie.domain))) stop("*** ERROR: cookie.domain must be a FQDN! Please set your hostname correctly or add cookie.domain directive to rcloud.conf")
+  
   rcloud.setup.dirs()
 
   .rc.conf$instanceID <- generate.uuid()
