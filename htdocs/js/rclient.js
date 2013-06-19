@@ -2,7 +2,7 @@
 
 // takes a string and returns the appropriate r literal string with escapes.
 function escape_r_literal_string(s) {
-    return "\"" + s.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\"";
+    return (s == null) ? "\"\"" : ("\"" + s.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\"");
     // return "\"" + s.replace(/"/g, "\\\"") + "\"";
 }
 
