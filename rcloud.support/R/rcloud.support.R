@@ -151,6 +151,9 @@ configure.rcloud <- function () {
 
   ## we actually need knitr ...
   opts_knit$set(global.device=TRUE, tidy=FALSE, dev=CairoPNG)
+  ## the dev above doesn't work ... it's still using png()
+  ## so make sure it uses the cairo back-end ..
+  if (capabilities()['cairo']) options(bitmapType='cairo')
 
   ## fix font mappings in Cairo -- some machines require this
   if (exists("CairoFonts"))
