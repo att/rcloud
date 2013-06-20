@@ -1,9 +1,11 @@
 # how to use dcchart
 
-dcchart is an embedded domain specific language for creating interactive
+dcchart is an embedded domain specific language for creating interactive [crossfilter](http://square.github.io/crossfilter/) / 
 [dc.js](http://nickqizhu.github.com/dc.js/) charts from R.
 
-Currently it is mostly a transcription of the javascript into R.
+Currently it is mostly a transliteration of the javascript into R; a visitor simply traverses the tree of R expressions and produces javascript code to set up dc.js.
+
+Consult the crossfilter and dc.js documentation to see how dimensions, groups, and the specific property methods work.
 
 Here's a scatterchart and a couple of histograms on the iris data:
 
