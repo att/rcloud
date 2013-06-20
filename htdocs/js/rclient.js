@@ -46,13 +46,14 @@ RClient = {
             shutdown();
         };
 
-        var token = $.cookies.get().token;
+        var token = $.cookies.get().token;  // document access token
+        var execToken = $.cookies.get().execToken; // execution token (if enabled)
         var rserve = Rserve.create({
             host: opts.host,
             on_connect: on_connect,
             on_error: on_error,
             on_close: on_close,
-            login: token + "\n" + token
+            login: token + "\n" + execToken
         });
 
         var _debug = opts.debug || false;

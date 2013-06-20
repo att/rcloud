@@ -12,7 +12,7 @@
   d
 }
 
-set.token <- function(user, token)
+set.token <- function(user, token, realm="rcloud")
 {
   if (is.null(rcloud.support:::.rc.conf$session.server)) {
     rcloud.auth.path <- paste(rcloud.support:::.rc.conf$configuration.root, "/rcloud.auth", sep="")
@@ -25,11 +25,11 @@ set.token <- function(user, token)
     d$token.to.user[[token]] <- user
     saveRDS(d, rcloud.auth.path)
   } else {
-    RCurl::getURL(paste0(rcloud.support:::.rc.conf$session.server, "/stored_token?token=", URLencode(token), "&user=", URLencode(user), "&realm=rcloud"))
+    RCurl::getURL(paste0(rcloud.support:::.rc.conf$session.server, "/stored_token?token=", URLencode(token), "&user=", URLencode(user), "&realm=", URLencode(realm)))
   }    
 }
 
-check.user.token.pair <- function(user, token)
+check.user.token.pair <- function(user, token, valid.sources="stored", realm="rcloud")
 {
   if (is.null(rcloud.support:::.rc.conf$session.server)) {
     d <- .get.token.list()
@@ -46,14 +46,14 @@ check.user.token.pair <- function(user, token)
      !is.null(token.from.user) &&
      (token.from.user == token))
   } else {
-    res <- RCurl::getURL(paste0(rcloud.support:::.rc.conf$session.server, "/valid?token=", URLencode(token), "&realm=rcloud"))
+    res <- RCurl::getURL(paste0(rcloud.support:::.rc.conf$session.server, "/valid?token=", URLencode(token), "&realm=", URLencode(realm)))
     res <- strsplit(res, "\n")[[1]]
-    cat("check.user.token.pair(", user, ", ", token, ") valid: ", res[1],", user: ", res[2], ", source: ", res[3], "\n", sep='')
-    (length(res) > 1) && isTRUE(res[1] == "YES") && isTRUE(res[2] == user) && isTRUE(res[3] == "stored")
+    cat("check.user.token.pair(", user, ", ", token, ", ", realm, ") valid: ", res[1],", user: ", res[2], ", source: ", res[3], "\n", sep='')
+    (length(res) > 1) && isTRUE(res[1] == "YES") && isTRUE(res[2] == as.vector(user)) && isTRUE(res[3] %in% valid.sources)
   }
 }
 
-check.token <- function(token, valid.sources="stored")
+check.token <- function(token, valid.sources="stored", realm="rcloud")
 {
   if (is.null(rcloud.support:::.rc.conf$session.server)) {
     d <- .get.token.list()
@@ -63,9 +63,9 @@ check.token <- function(token, valid.sources="stored")
     else
       FALSE
   } else {
-    res <- RCurl::getURL(paste0(rcloud.support:::.rc.conf$session.server, "/valid?token=", URLencode(token), "&realm=rcloud"))
+    res <- RCurl::getURL(paste0(rcloud.support:::.rc.conf$session.server, "/valid?token=", URLencode(token), "&realm=", URLencode(realm)))
     res <- strsplit(res, "\n")[[1]]
-    cat("check.token(", token,") valid: ", res[1],", user: ", res[2], ", source: ", res[3], "\n", sep='')
+    cat("check.token(", token,", ", realm,") valid: ", res[1],", user: ", res[2], ", source: ", res[3], "\n", sep='')
     if ((length(res) > 1) && isTRUE(res[1] == "YES") && isTRUE(res[3] %in% valid.sources)) res[2] else FALSE    
   }
 }
