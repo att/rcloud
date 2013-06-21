@@ -24,7 +24,7 @@ function main_init() {
     init_shareable_link_box();
     rclient = RClient.create({ 
         debug: false,
-        host: "ws://"+location.hostname+":8081/", 
+        host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8082/") : ("ws://"+location.hostname+":8081/"), 
         on_connect: function() {
             $("#new-md-cell-button").click(function() {
                 shell.terminal.disable();
@@ -33,9 +33,9 @@ function main_init() {
                 vs[vs.length-1].show_source();
             });
             $("#rcloud-logout").click(function() {
-                $.cookies.set('user', null);
-                $.cookies.set('sessid', null);
-                window.location.href = '/login.html';
+		// let the server-side script handle this so it can
+		// also revoke all tokens
+                window.location.href = '/logout.R';
             });
             $(".collapse").collapse();
             $("#input-text-search").click(function() {
