@@ -9,7 +9,7 @@ var dcrchart = (function() {
     function bin_op(disp) {
         return function(args,ctx) { 
             return translate_expr(args[1], ctx) + disp + translate_expr(args[2], ctx); 
-        }
+        };
     }
 
     function una_or_bin_op(disp) {
@@ -17,7 +17,7 @@ var dcrchart = (function() {
             return args.length==2 
                 ? disp + translate_expr(args[1], ctx)
                 : bin_op(disp)(args, ctx); 
-        }
+        };
     }
 
     function translate_value(v) {
@@ -48,7 +48,7 @@ var dcrchart = (function() {
         "/": bin_op('/'),
         "field" : function(args, ctx) { return translate_field(args[1],args[2]); },
         "gfield" : function(args, ctx) { return translate_gfield(args[1],args[2]); },
-        "c" : function(args, ctx) { return '[' + _.map(args.slice(1), function(arg) { return translate_value(arg) }) + ']'; },
+        "c" : function(args, ctx) { return '[' + _.map(args.slice(1), function(arg) { return translate_value(arg); }) + ']'; },
         "[": function(args, ctx) { return translate_expr(args[1], ctx) + '[' + translate_expr(args[2], ctx) + ']'; },
         "hash": function(args, ctx) { return '{' + _.map(args.slice(1), translate_kv) + '}'; },
         default : function(args, ctx) { return translate_expr(args[0], ctx) + '(' +  _.map(args.slice(1), function(arg) { return translate_expr(arg, ctx); }) + ')'; } 
@@ -71,7 +71,7 @@ var dcrchart = (function() {
     function translate_expr(sexp, ctx) {
         if($.isArray(sexp)) {
             if($.isArray(sexp[0]) && sexp[0][0] == "func") // special case function expr trees
-                return translate_function(sexp, ctx)
+                return translate_function(sexp, ctx);
             var xlat = expressions[sexp[0]] || expressions.default;
             return xlat(sexp, ctx);
         }
@@ -97,21 +97,11 @@ var dcrchart = (function() {
             .append($('<strong/>').append(title))
             .append('&nbsp;&nbsp;')
             .append($('<a/>',
-                      {class: "reset",
+                      {'class': "reset",
                        href: "javascript:window.charts['"+name+"'].filterAll(); dc.redrawAll('chartgroup" + chart_group + "');",
                        style: "display: none;"})
                     .append("reset"))
             .append($('<div/>').addClass("clearfix"));
-    }
-
-    var dimensions = {
-        col: function(sexp) { return "d[" + sexp[1] + "]"; }
-    };
-
-    function translate_dimension(sexp) {
-        if(_.isUndefined(dimensions[sexp[0]]))
-            throw "unknown dc/r dimension " + sexp[0];
-        return dimensions[sexp[0]](sexp);
     }
 
     // this could conceivably just be a "var" statement
