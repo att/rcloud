@@ -633,7 +633,7 @@ LuxChart.lux_osm_plot = function(lats, lons, color, width, height)
     if (color.length === 3) {
         color = Shade.vec(color[0], color[1], color[2], 1);
     } else if (color.length > 1) {
-        color = Shade.vec(Lux.attribute_buffer({vertex_array: color, item_size: 3}), 1);
+        color = Shade.vec(Lux.attribute_buffer({vertex_array: new Float32Array(color), item_size: 3}), 1);
     }
 
     var dots_model = Lux.model({
