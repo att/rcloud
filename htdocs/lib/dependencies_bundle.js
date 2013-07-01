@@ -17468,7 +17468,7 @@ Lux.is_shade_expression = function(obj)
 // 
 //   http://javascript.crockford.com/remedial.html
 //
-// In particular, lux_typeOf will return "object" if given Shade expressions.
+// In particular, lux_typeOf will return "object" if given Shade expressions
 // 
 // Shade expressions are actually functions with a bunch of extra methods.
 // 
@@ -17480,12 +17480,12 @@ function lux_typeOf(value)
 {
     var s = typeof value;
     if (s === 'function' && value._lux_expression)
-        return 'object';
+        return 'object'; // shade expression
     if (s === 'object') {
         if (value) {
-            if (typeof value.length === 'number' &&
-                !(value.propertyIsEnumerable('length')) &&
-                typeof value.splice === 'function') {
+            if (typeof value.length === 'number'
+                 && !(value.propertyIsEnumerable('length'))
+                 && typeof value.splice === 'function')  { // typed array
                 s = 'array';
             }
         } else {
@@ -17901,8 +17901,9 @@ Lux.bake = function(model, appearance, opts)
         force_no_pick: false,
         force_no_unproject: false
     });
+    var ctx = model._ctx || Lux._globals.ctx;
 
-    appearance = Shade.canonicalize_program_object(appearance);
+    appearance = Lux.Transform.apply(appearance, ctx);
 
     if (_.isUndefined(appearance.gl_FragColor)) {
         appearance.gl_FragColor = Shade.vec(1,1,1,1);
@@ -17922,8 +17923,6 @@ Lux.bake = function(model, appearance, opts)
     } else if (!appearance.gl_Position.type.equals(Shade.Types.vec4)) {
         throw new Error("position appearance attribute must be vec2, vec3 or vec4");
     }
-
-    var ctx = model._ctx || Lux._globals.ctx;
 
     var batch_id = Lux.fresh_pick_id();
 
@@ -18064,6 +18063,13 @@ Lux.bake = function(model, appearance, opts)
     // readers.
 
     function create_batch_opts(program, caps_name) {
+        function ensure_parameter(v) {
+            if (lux_typeOf(v) === 'number')
+                return Shade.parameter("float", v);
+            else if (Lux.is_shade_expression(v) === 'parameter')
+                return v;
+            else throw new Error("expected float or parameter, got " + v + " instead.");
+        }
         var result = {
             _ctx: ctx,
             program: program,
@@ -18074,14 +18080,14 @@ Lux.bake = function(model, appearance, opts)
                        Lux.DrawingMode.standard[caps_name]);
                 mode_caps();
                 if (this.line_width) {
-                    ctx.lineWidth(this.line_width);
+                    ctx.lineWidth(this.line_width.get());
                 }
             },
             draw_chunk: draw_chunk,
             batch_id: largest_batch_id++
         };
-        if (appearance.line_width)
-            result.line_width = appearance.line_width;
+        if (!_.isUndefined(appearance.line_width))
+            result.line_width = ensure_parameter(appearance.line_width);
         return result;
     }
 
@@ -18177,6 +18183,7 @@ Lux.element_buffer = function(vertex_array)
     result._ctx = ctx;
     result._shade_type = 'element_buffer';
     result.itemSize = 1;
+    var draw_enum;
 
     //////////////////////////////////////////////////////////////////////////
     // These methods are only for internal use within Lux
@@ -18208,6 +18215,12 @@ Lux.element_buffer = function(vertex_array)
         }
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, this);
         ctx.bufferData(ctx.ELEMENT_ARRAY_BUFFER, typedArray, ctx.STATIC_DRAW);
+        if (typedArray.constructor === Uint16Array)
+            draw_enum = ctx.UNSIGNED_SHORT;
+        else if (typedArray.constructor === Uint32Array)
+            draw_enum = ctx.UNSIGNED_INT;
+        else
+            throw new Error("internal error: expecting typed array to be either Uint16 or Uint32");
         this.array = typedArray;
         this.numItems = typedArray.length;
     };
@@ -18217,7 +18230,7 @@ Lux.element_buffer = function(vertex_array)
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, this);
     };
     result.draw = function(primitive) {
-        ctx.drawElements(primitive, this.numItems, ctx.UNSIGNED_SHORT, 0);
+        ctx.drawElements(primitive, this.numItems, draw_enum, 0);
     };
     result.bind_and_draw = function(primitive) {
         this.bind();
@@ -18290,6 +18303,17 @@ function initialize_context_globals(gl)
 
     // Optional, enabled WebGL extensions go here.
     gl._lux_globals.webgl_extensions = {};
+
+    // from https://developer.mozilla.org/en-US/docs/JavaScript/Typed_arrays/DataView
+    gl._lux_globals.little_endian = (function() {
+        var buffer = new ArrayBuffer(2);
+        new DataView(buffer).setInt16(0, 256, true);
+        return new Int16Array(buffer)[0] === 256;
+    })();
+
+    // the transform stack is honored by Lux.bake and can be used to implement
+    // a matrix stack, etc. 
+    gl._lux_globals.transform_stack = [];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -18412,7 +18436,8 @@ Lux.init = function(opts)
         //////////////////////////////////////////////////////////////////////
         // event handling
 
-        var canvas_events = ["mouseover", "mousemove", "mousedown", "mouseout", "mouseup"];
+        var canvas_events = ["mouseover", "mousemove", "mousedown", "mouseout", 
+                             "mouseup", "dblclick"];
         _.each(canvas_events, function(ename) {
             var listener = opts[ename];
             function internal_listener(event) {
@@ -18438,28 +18463,24 @@ Lux.init = function(opts)
         var ext;
         var exts = gl.getSupportedExtensions();
         _.each(["OES_texture_float", "OES_standard_derivatives"], function(ext) {
-            if (exts.indexOf(ext) === -1) {
+            if (exts.indexOf(ext) === -1 ||
+                (gl.getExtension(ext)) === null) { // must call this to enable extension
                 alert(ext + " is not available on your browser/computer! " +
                       "Lux will not work, sorry.");
                 throw new Error("insufficient GPU support");
-            } else {
-                gl.getExtension(ext); // must call this to enable extension
             }
         });
         _.each(["WEBKIT_EXT_texture_filter_anisotropic",
                 "EXT_texture_filter_anisotropic"], 
                function(ext) {
-                   if (exts.indexOf(ext) !== -1) {
-                       gl.getExtension(ext);
+                   if (exts.indexOf(ext) !== -1 && (gl.getExtension(ext) !== null)) {
                        gl._lux_globals.webgl_extensions.EXT_texture_filter_anisotropic = true;
                        gl.TEXTURE_MAX_ANISOTROPY_EXT     = 0x84FE;
                        gl.MAX_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FF;
-                       console.log("Lux: Enabling anisotropic filtering extension, max ",
-                                   gl.getParameter(gl.MAX_TEXTURE_MAX_ANISOTROPY_EXT));
                    }
                });
-        if (exts.indexOf("OES_element_index_uint")) {
-            gl.getExtension(ext);
+        if (exts.indexOf("OES_element_index_uint") !== -1 &&
+            gl.getExtension("OES_element_index_uint") !== null) {
             gl._lux_globals.webgl_extensions.OES_element_index_uint = true;
         }
     } catch(e) {
@@ -18474,6 +18495,8 @@ Lux.init = function(opts)
     gl._lux_globals.devicePixelRatio = devicePixelRatio;
 
     Lux.set_context(gl);
+
+    Lux.Transform.clear();
 
     if (opts.display) {
         gl._lux_globals.display_callback = opts.display;
@@ -18885,17 +18908,20 @@ Lux.render_buffer = function(opts)
     };
     frame_buffer.make_screen_batch = function(with_texel_at_uv, mode) {
         var that = this;
-        mode = mode || Lux.DrawingMode.standard;
-        var sq = Lux.Models.square();
-        return Lux.bake(sq, {
-            position: sq.vertex.mul(2).sub(1),
-            color: with_texel_at_uv(function(offset) { 
-                var texcoord = sq.tex_coord;
-                if (arguments.length > 0)
-                    texcoord = texcoord.add(offset);
-                return Shade.texture2D(that.texture, texcoord);
-            }, sq.tex_coord),
-            mode: mode
+        return Lux.Transform.saving(function() {
+            Lux.Transform.clear();
+            mode = mode || Lux.DrawingMode.standard;
+            var sq = Lux.Models.square();
+            return Lux.bake(sq, {
+                position: sq.vertex.mul(2).sub(1),
+                color: with_texel_at_uv(function(offset) { 
+                    var texcoord = sq.tex_coord;
+                    if (arguments.length > 0)
+                        texcoord = texcoord.add(offset);
+                    return Shade.texture2D(that.texture, texcoord);
+                }, sq.tex_coord),
+                mode: mode
+            });
         });
     };
     return frame_buffer;
@@ -18938,10 +18964,10 @@ Lux.texture = function(opts)
         var ctx = Lux._globals.ctx;
         opts = _.defaults(opts, {
             onload: function() {},
-            max_anisotropy: 2,
+            max_anisotropy: opts.mipmaps ? 2 : 1,
             mipmaps: true,
             mag_filter: Lux.texture.linear,
-            min_filter: Lux.texture.linear_mipmap_linear,
+            min_filter: _.isUndefined(opts.mipmaps) || opts.mipmaps ? Lux.texture.linear_mipmap_linear : Lux.texture.linear,
             wrap_s: Lux.texture.clamp_to_edge,
             wrap_t: Lux.texture.clamp_to_edge,
             format: Lux.texture.rgba,
@@ -19112,7 +19138,8 @@ Lux.texture = function(opts)
         ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, opts.min_filter);
         ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, opts.wrap_s);
         ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, opts.wrap_t);
-        if (ctx._lux_globals.webgl_extensions.EXT_texture_filter_anisotropic) {
+        if (ctx._lux_globals.webgl_extensions.EXT_texture_filter_anisotropic &&
+            opts.max_anisotropy > 1 && opts.mipmaps) {
             ctx.texParameterf(ctx.TEXTURE_2D, ctx.TEXTURE_MAX_ANISOTROPY_EXT, opts.max_anisotropy);
         }
 
@@ -19237,6 +19264,82 @@ Lux.Unprojector = {
 };
 
 })();
+Lux.Transform = {};
+Lux.Transform.saving = function(what, ctx) {
+    if (_.isUndefined(ctx))
+        ctx = Lux._globals.ctx;
+    var old_stack = ctx._lux_globals.transform_stack;
+    try {
+        return what();
+    } finally {
+        ctx._lux_globals.transform_stack = old_stack;
+    }
+};
+Lux.Transform.using = function(transformation, what, ctx)
+{
+    if (_.isUndefined(ctx))
+        ctx = Lux._globals.ctx;
+    return Lux.Transform.saving(function() {
+        Lux.Transform.push(transformation, ctx);
+        return what();
+    });
+};
+Lux.Transform.push = function(transform, ctx) {
+    if (_.isUndefined(ctx))
+        ctx = Lux._globals.ctx;
+    var new_stack = ctx._lux_globals.transform_stack.slice();
+    new_stack.push(transform);
+    ctx._lux_globals.transform_stack = new_stack;
+};
+Lux.Transform.pop = function(ctx) {
+    if (_.isUndefined(ctx))
+        ctx = Lux._globals.ctx;
+    var new_stack = ctx._lux_globals.transform_stack.slice();
+    var result = new_stack.pop();
+    ctx._lux_globals.transform_stack = new_stack;
+    return result;
+};
+Lux.Transform.clear = function(ctx) {
+    // The last transformation on the stack canonicalizes
+    // the appearance object to always have gl_Position, gl_FragColor
+    // and gl_PointSize fields.
+    if (_.isUndefined(ctx))
+        ctx = Lux._globals.ctx;
+    ctx._lux_globals.transform_stack = [Shade.canonicalize_program_object];
+};
+Lux.Transform.apply = function(appearance, ctx) 
+{
+    return Lux.Transform.get(ctx)(appearance);
+};
+Lux.Transform.apply_inverse = function(appearance, ctx) 
+{
+    return Lux.Transform.get_inverse(ctx)(appearance);
+};
+Lux.Transform.get = function(ctx)
+{
+    if (_.isUndefined(ctx))
+        ctx = Lux._globals.ctx;
+    var s = ctx._lux_globals.transform_stack;
+    return function(appearance) {
+        var i = s.length;
+        while (--i >= 0) {
+            appearance = s[i](appearance);
+        }
+        return appearance;
+    };
+};
+Lux.Transform.get_inverse = function(ctx)
+{
+    if (_.isUndefined(ctx))
+        ctx = Lux._globals.ctx;
+    var s = ctx._lux_globals.transform_stack;
+    return function(appearance) {
+        for (var i=0; i<s.length; ++i) {
+            appearance = (s[i].inverse || function(i) { return i; })(appearance);
+        }
+        return appearance;
+    };
+};
 Lux.Net = {};
 
 (function() {
@@ -19883,6 +19986,7 @@ Lux.UI.center_zoom_interactor = function(opts)
         mouseup: function() {},
         mousedown: function() {},
         mousewheel: function() {},
+        dblclick: function() {},
         center: vec.make([0,0]),
         zoom: 1,
         widest_zoom: 0.1
@@ -19913,6 +20017,14 @@ Lux.UI.center_zoom_interactor = function(opts)
 
     var prev_mouse_pos;
     var current_button = 0;
+
+    function dblclick(event) {
+        internal_move(result.width/2-event.offsetX, event.offsetY-result.height/2);
+        zoom.set(zoom.get() * 2);
+        internal_move(event.offsetX-result.width/2, result.height/2-event.offsetY);
+        Lux.Scene.invalidate();
+        opts.dblclick(event);
+    }
 
     function mousedown(event) {
         if (_.isUndefined(event.buttons)) {
@@ -19984,12 +20096,27 @@ Lux.UI.center_zoom_interactor = function(opts)
         result.resize(w, h);
     }
 
+    // implement transform stack inverse requirements
+    var transform = function(appearance) {
+        var new_appearance = _.clone(appearance);
+        new_appearance.position = result.project(new_appearance.position);
+        return new_appearance;
+    };
+    transform.inverse = function(appearance) {
+        var new_appearance = _.clone(appearance);
+        new_appearance.position = result.unproject(new_appearance.position);
+        return new_appearance;
+    };
+    transform.inverse.inverse = transform;
+
     var result = {
         camera: camera,
         center: center,
         zoom: zoom,
         width: width,
         height: height,
+
+        transform: transform,
 
         project: function(pt) {
             return this.camera.project(pt);
@@ -20066,6 +20193,7 @@ Lux.UI.center_zoom_interactor = function(opts)
             mouseup: mouseup,
             mousemove: mousemove,
             mousewheel: mousewheel,
+            dblclick: dblclick,
             resize: resize
         }
     };
@@ -24912,42 +25040,6 @@ Shade.Utils.fit = function(data) {
     return Shade.Scale.linear({domain: [min, max]},
                               {range: [0, 1]});
 };
-
-// replicates something like an opengl light. 
-// Fairly bare-bones for now (only diffuse, no attenuation)
-Shade.gl_light = function(opts)
-{
-    opts = _.defaults(opts || {}, {
-        light_ambient: Shade.vec(0,0,0,1),
-        light_diffuse: Shade.vec(1,1,1,1),
-        two_sided: false,
-        per_vertex: false
-    });
-    function vec3(v) {
-        return v.type.equals(Shade.Types.vec4) ? v.swizzle("xyz").div(v.at(3)) : v;
-    }
-    var light_pos = vec3(opts.light_position);
-    var vertex_pos = vec3(opts.vertex);
-    var material_color = opts.material_color;
-    var light_ambient = opts.light_ambient;
-    var light_diffuse = opts.light_diffuse;
-    var per_vertex = opts.per_vertex;
-    var vertex_normal = (opts.normal.type.equals(Shade.Types.vec4) ? 
-                         opts.normal.swizzle("xyz") : 
-                         opts.normal).normalize();
-
-    // this must be appropriately transformed
-    var N = vertex_normal;
-    var L = light_pos.sub(vertex_pos).normalize();
-    var v = Shade.max(Shade.ifelse(opts.two_sided,
-                                   L.dot(N).abs(),
-                                   L.dot(N)), 0);
-    if (per_vertex)
-        v = Shade.per_vertex(v);
-
-    return Shade.add(light_ambient.mul(material_color),
-                     v.mul(light_diffuse).mul(material_color));
-};
 // replicates OpenGL's fog functionality
 
 (function() {
@@ -24993,15 +25085,15 @@ Shade.gl_fog = function(opts)
 };
 
 })();
-Shade.cosh = function(v)
+Shade.cosh = Shade(function(v)
 {
-    return Shade.exp(v).add(v.neg().exp()).div(2);
-};
+    return v.exp().add(v.neg().exp()).div(2);
+});
 Shade.Exp.cosh = function() { return Shade.cosh(this); };
-Shade.sinh = function(v)
+Shade.sinh = Shade(function(v)
 {
-    return Shade.exp(v).sub(v.neg().exp()).div(2);
-};
+    return v.exp().sub(v.neg().exp()).div(2);
+});
 Shade.Exp.sinh = function() { return Shade.sinh(this); };
 Shade.tanh = Shade(function(v)
 {
@@ -26802,6 +26894,42 @@ Shade.Scale.Geo.latlong_to_mercator = Shade(function(lat, lon)
     lat = lat.div(2).add(Math.PI/4).tan().log();
     return Shade.vec(lon, lat);
 });
+// replicates something like an opengl light. 
+// Fairly bare-bones for now (only diffuse, no attenuation)
+// gl_light is deprecated, functionality is being moved to Shade.Light
+Shade.gl_light = function(opts)
+{
+    opts = _.defaults(opts || {}, {
+        light_ambient: Shade.vec(0,0,0,1),
+        light_diffuse: Shade.vec(1,1,1,1),
+        two_sided: false,
+        per_vertex: false
+    });
+    function vec3(v) {
+        return v.type.equals(Shade.Types.vec4) ? v.swizzle("xyz").div(v.at(3)) : v;
+    }
+    var light_pos = vec3(opts.light_position);
+    var vertex_pos = vec3(opts.vertex);
+    var material_color = opts.material_color;
+    var light_ambient = opts.light_ambient;
+    var light_diffuse = opts.light_diffuse;
+    var per_vertex = opts.per_vertex;
+    var vertex_normal = (opts.normal.type.equals(Shade.Types.vec4) ? 
+                         opts.normal.swizzle("xyz") : 
+                         opts.normal).normalize();
+
+    // this must be appropriately transformed
+    var N = vertex_normal;
+    var L = light_pos.sub(vertex_pos).normalize();
+    var v = Shade.max(Shade.ifelse(opts.two_sided,
+                                   L.dot(N).abs(),
+                                   L.dot(N)), 0);
+    if (per_vertex)
+        v = Shade.per_vertex(v);
+
+    return Shade.add(light_ambient.mul(material_color),
+                     v.mul(light_diffuse).mul(material_color));
+};
 Shade.Light = {};
 // The most basic lighting component, ambient lighting simply multiplies
 // the light color by the material color.
@@ -26815,13 +26943,13 @@ Shade.Light.ambient = function(light_opts)
     } else throw new Error("expected color of type vec3 or vec4, got " +
                            light_opts.color.type.repr() + " instead");
     return function(material_opts) {
-        if (material_opts.material.type.equals(Shade.Types.vec4)) {
+        if (material_opts.color.type.equals(Shade.Types.vec4)) {
             return Shade.vec(
-                material_opts.material.swizzle("xyz").mul(color),
-                material_opts.material.swizzle("a")
+                material_opts.color.swizzle("xyz").mul(color),
+                material_opts.color.swizzle("a")
             );
         } else {
-            return material_opts.material.mul(color);
+            return material_opts.color.mul(color);
         }
     };
 };
@@ -26837,33 +26965,36 @@ Shade.Light.diffuse = function(light_opts)
     var light_diffuse = light_opts.color;
     if (light_diffuse.type.equals(Shade.Types.vec4))
         light_diffuse = light_diffuse.swizzle("xyz");
-    var light_pos = vec3(light_opts.light_position);
+    var light_pos = vec3(light_opts.position);
 
     return function(material_opts) {
         material_opts = _.defaults(material_opts || {}, {
             two_sided: false
         });
-        var vertex_pos = vec3(material_opts.vertex);
-        var material_color = material_opts.material;
+        var vertex_pos = vec3(material_opts.position);
+        var material_color = material_opts.color;
         if (material_color.type.equals(Shade.Types.vec4))
             material_color = material_color.swizzle("xyz");
 
-        var vertex_normal = (material_opts.normal.type.equals(Shade.Types.vec4) ?
-                             material_opts.normal.swizzle("xyz") :
-                             material_opts.normal).normalize();
+        var vertex_normal;
+        if (_.isUndefined(material_opts.normal)) {
+            vertex_normal = Shade.ThreeD.normal(vertex_pos);
+        } else {
+            vertex_normal = vec3(material_opts.normal).normalize();
+        }
 
-        var N = vertex_normal;
         var L = light_pos.sub(vertex_pos).normalize();
         var v = Shade.max(Shade.ifelse(material_opts.two_sided,
-                                       L.dot(N).abs(),
-                                       L.dot(N)), 0);
+                                       L.dot(vertex_normal).abs(),
+                                       L.dot(vertex_normal)), 0);
 
         var c = Shade.add(v.mul(light_diffuse).mul(material_color));
 
-        return material_opts.material.type.equals(Shade.Types.vec4) ?
-            Shade.vec(c, material_opts.material.a()) : c;
+        return material_opts.color.type.equals(Shade.Types.vec4) ?
+            Shade.vec(c, material_opts.color.a()) : c;
     };
 };
+// functions to help with 3D rendering.
 Shade.ThreeD = {};
 // Shade.ThreeD.bump returns a normal perturbed by bump mapping.
 
@@ -26889,6 +27020,18 @@ Shade.ThreeD.bump = function(opts) {
     var det        = sigmaX.dot(R1);
     var vGrad      = det.sign().mul(dHdxy.x().mul(R1).add(dHdxy.y().mul(R2)));
     return det.abs().mul(surf_norm).sub(vGrad).normalize();
+};
+/*
+ * Given a position expression, computes screen-space normals using
+ * pixel derivatives
+ */
+Shade.ThreeD.normal = function(position)
+{
+    if (position.type.equals(Shade.Types.vec4))
+        position = position.swizzle("xyz").div(position.w());
+    var dPos_dpixelx = Shade.dFdx(position);
+    var dPos_dpixely = Shade.dFdy(position);
+    return Shade.normalize(Shade.cross(dPos_dpixelx, dPos_dpixely));
 };
 Lux.Geometry = {};
 Lux.Geometry.triangulate = function(opts) {
@@ -26957,11 +27100,11 @@ Lux.Geometry.PLY.load = function(url, k) {
             }
             ++current_line;
             function parse_element_header() {
-                var line = lines[current_line].split(' ');
+                var line = lines[current_line].trim().split(' ');
                 ++current_line;
                 var result = { name: line[1], count: Number(line[2]), 
                                properties: [] };
-                line = lines[current_line].split(' ');
+                line = lines[current_line].trim().split(' ');
                 while (line[0] === 'property') {
                     if (line[1] === 'list') {
                         result.properties.push({ type: line[1], 
@@ -26971,7 +27114,7 @@ Lux.Geometry.PLY.load = function(url, k) {
                         result.properties.push({ type: line[1], name: line[2] });
                     }
                     ++current_line;
-                    line = lines[current_line].split(' ');
+                    line = lines[current_line].trim().split(' ');
                 }
                 return result;
             }
@@ -26979,18 +27122,45 @@ Lux.Geometry.PLY.load = function(url, k) {
                 if (lines[current_line].match(/^element.*/)) {
                     header.elements.push(parse_element_header());
                 } else if (lines[current_line].match(/^comment.*/)) {
-                    header.comments.push(lines[current_line].split(' ').slice(1).join(" "));
+                    header.comments.push(lines[current_line].trim().split(' ').slice(1).join(" "));
                     ++current_line;
                 } else if (lines[current_line].match(/^format.*/)) {
-                    header.format = lines[current_line].split(' ').slice(1);
+                    header.format = lines[current_line].trim().split(' ').slice(1);
                     ++current_line;
                 } else
                     fail();
             }
+            current_line++;
             return header;
         };
 
+        // element list parsing is currently very very primitive, and
+        // limited to polygonal faces one typically sees in PLY files.
+
         function parse_element_list(element_header) {
+            if (element_header.name !== 'face' ||
+                element_header.properties.length !== 1 ||
+                element_header.properties[0].element_type !== 'int') {
+                throw new Error("element lists are only currently supported for 'face' element and a single property if type 'int'");
+            }
+            var result = [];
+            var max_v = 0;
+            for (var i=0; i<element_header.count; ++i) {
+                var row = _.map(lines[current_line].trim().split(' '), Number);
+                current_line++;
+                if (row.length < 4)
+                    continue;
+                var vertex1 = row[1];
+                max_v = Math.max(max_v, row[1], row[2]);
+                for (var j=2; j<row.length-1; ++j) {
+                    result.push(vertex1, row[j], row[j+1]);
+                    max_v = Math.max(max_v, row[j+1]);
+                }
+            }
+            if (max_v > 65535)
+                return new Uint32Array(result);
+            else
+                return new Uint16Array(result);
         }
 
         function parse_element(element_header) {
@@ -27018,10 +27188,12 @@ Lux.Geometry.PLY.load = function(url, k) {
                 row_offset += property_size(prop);
             });
             var n_props = row_offsets.length;
+            var endian = Lux._globals.ctx._lux_globals.little_endian;
             for (var i=0; i<element_header.count; ++i) {
-                var row = _.map(lines[i].split(' '), Number);
-                for (var j=0; j<row_offsets.length; ++i) {
-                    property_setters[j](i * row_size + row_offsets[j], row[j]);
+                var row = _.map(lines[current_line].trim().split(' '), Number);
+                current_line++;
+                for (var j=0; j<row_offsets.length; ++j) {
+                    property_setters[j].call(view, i * row_size + row_offsets[j], row[j], endian);
                 };
             }
             return result_buffer;
@@ -27031,13 +27203,14 @@ Lux.Geometry.PLY.load = function(url, k) {
             if (header.format[0] !== 'ascii' ||
                 header.format[1] !== '1.0')
                 throw new Error("format is unsupported: " + header.format.join(' '));
-            return _.map(header.elements, function(element) {
-                return parse_element(element);
-            });
+            return _.object(_.map(header.elements, function(element) {
+                return [element.name, parse_element(element)];
+            }));
         }
 
         var header = parse_header();
-        k(header);
+        var content = parse_content();
+        k({ header: header, content: content });
     });
 };
 Lux.Text = {};
@@ -27723,26 +27896,28 @@ Lux.Marks.scatterplot = function(opts)
         pick_id: opts.pick_id
     });
 };
+// Lux.Marks.center_zoom_interactor_brush needs the transformation stack
+// to have appropriate inverses for the position. If it doesn't have them,
+// then do not use the transformation stack, and instead use
+// opts.project and opts.unproject, which need to be inverses of each other.
 Lux.Marks.center_zoom_interactor_brush = function(opts)
 {
     opts = _.defaults(opts || {}, {
         color: Shade.vec(1,1,1,0.5),
         mode: Lux.DrawingMode.over,
+        project: function(v) { return v; },
+        unproject: function(v) { return v; },
         on: {}
     });
 
-    if (_.isUndefined(opts.interactor)) {
-        throw new Error("center_zoom_interactor_brush needs an interactor");
-    }
-    var interactor = opts.interactor;
-
+    var inverter = Lux.Transform.get_inverse();
     var unproject = Shade(function(p) {
-        return interactor.unproject(p);
+        return opts.unproject(inverter({ position: p }).position);
     }).js_evaluate;
     var selection_pt1 = Shade.parameter("vec2", vec.make([0,0]));
     var selection_pt2 = Shade.parameter("vec2", vec.make([0,0]));
-    var proj_pt1 = interactor.project(selection_pt1);
-    var proj_pt2 = interactor.project(selection_pt2);
+    var proj_pt1 = opts.project(selection_pt1);
+    var proj_pt2 = opts.project(selection_pt2);
 
     var brush_batch = Lux.Marks.aligned_rects({
         elements: 1,
@@ -28170,8 +28345,6 @@ Lux.Marks.globe = function(opts)
 
     return result;
 };
-(function() {
-
 Lux.Marks.globe_2d = function(opts)
 {
     opts = _.defaults(opts || {}, {
@@ -28182,14 +28355,15 @@ Lux.Marks.globe_2d = function(opts)
         tile_pattern: function(zoom, x, y) {
             return "http://tile.openstreetmap.org/"+zoom+"/"+x+"/"+y+".png";
         },
+        camera: function(v) { return v; },
         debug: false, // if true, add outline and x-y-zoom marker to every tile
         no_network: false, // if true, tile is always blank white and does no HTTP requests.
         post_process: function(c) { return c; }
     });
+
     if (opts.interactor) {
         opts.center = opts.interactor.center;
         opts.zoom   = opts.interactor.zoom;
-        opts.camera = opts.interactor.camera;
     }
     if (opts.no_network) {
         opts.debug = true; // no_network implies debug;
@@ -28257,8 +28431,8 @@ Lux.Marks.globe_2d = function(opts)
     ;
 
     var tile_batch = Lux.bake(patch, {
-        gl_Position: opts.camera(v),
-        gl_FragColor: opts.post_process(Shade.texture2D(sampler, xformed_patch)),
+        position: opts.camera(v),
+        color: opts.post_process(Shade.texture2D(sampler, xformed_patch)),
         mode: Lux.DrawingMode.pass
     });
 
@@ -28272,9 +28446,7 @@ Lux.Marks.globe_2d = function(opts)
         tiles: tiles,
         queue: [],
         current_osm_zoom: opts.zoom.get(),
-        lat_lon_position: function(lat, lon) {
-            return Shade.Scale.Geo.latlong_to_mercator(lat, lon).div(Math.PI * 2).add(Shade.vec(0.5,0.5));
-        },
+        lat_lon_position: Lux.Marks.globe_2d.lat_lon_to_tile_mercator,
         resolution_bias: opts.resolution_bias,
         new_center: function(center_x, center_y, center_zoom) {
             var screen_resolution_bias = Math.log(ctx.viewportHeight / 256) / Math.log(2);
@@ -28455,7 +28627,19 @@ Lux.Marks.globe_2d = function(opts)
     return result;
 };
 
-})();
+Lux.Marks.globe_2d.lat_lon_to_tile_mercator = Shade(function(lat, lon) {
+    return Shade.Scale.Geo.latlong_to_mercator(lat, lon).div(Math.PI * 2).add(Shade.vec(0.5,0.5));
+});
+
+Lux.Marks.globe_2d.transform = function(appearance) {
+    var new_appearance = _.clone(appearance);
+    new_appearance.position = Shade.vec(Lux.Marks.globe_2d.lat_lon_to_tile_mercator(
+        appearance.position.x(),
+        appearance.position.y()), appearance.position.swizzle("xw"));
+    return new_appearance;
+};
+
+Lux.Marks.globe_2d.transform.inverse = function() { throw new Error("unimplemented"); };
 Lux.Models = {};
 Lux.Models.flat_cube = function() {
     return Lux.model({
@@ -30226,6 +30410,7 @@ Lux.Scene.add = function(obj, ctx)
 
     scene.push(obj);
     Lux.Scene.invalidate(undefined, undefined, ctx);
+    return obj;
 };
 Lux.Scene.remove = function(obj, ctx)
 {
