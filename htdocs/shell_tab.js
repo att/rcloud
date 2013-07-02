@@ -185,7 +185,7 @@ var shell = (function() {
             });
         }, new_notebook: function(desc, k) {
             var that = this;
-            var content = {description: desc, public: false, files: {"scratch.R":""}};
+            var content = {description: desc, public: false, files: {"scratch.R": {content:""}}};
             this.notebook.controller.create_notebook(content, function(notebook) {
                 $("#notebook_title").text(notebook.description);
                 that.gistname = notebook.id;
