@@ -16,51 +16,57 @@
 ## is to move all of these to require the session token to match against
 ## the one we have stored during the login process.
 
-rcloud.exec.user.file <- function(user, filename)
-  session.eval(eval(parse(text=readLines(rcloud.user.file.name(user, filename)))),
-               silent=TRUE)
 
-rcloud.user.file.name <- function(user, filename)
-  file.path(.rc.conf$data.root, "userfiles", user, filename)
+rcloud.user.config.filename <- function(user)
+  file.path(.rc.conf$data.root, "userfiles", paste(user, ".json", sep=''))
 
 
-rcloud.list.all.initial.filenames <- function() {
-    users <- list.files(path = file.path(.rc.conf$data.root, "userfiles"))
-    lapply(users, function(user) {
-        filenames <- list.files(path = file.path(.rc.conf$data.root, "userfiles", user))
-        list(user, lapply(filenames, function(filename) {
-            list(filename, format(file.info(file.path(.rc.conf$data.root, "userfiles", user, filename))$mtime))
-        }))
-    })
+rcloud.load.user.config <- function(user) {
+  ufile <- rcloud.user.config.filename(user);
+  if(file.exists(ufile))
+    paste(readLines(ufile), collapse="\n")
+  else
+    "null";
 }
 
-rcloud.list.initial.filenames <- function(user) {
-  list.files(path=file.path(.rc.conf$data.root, "userfiles", user))
+# hackish? but more efficient than multiple calls
+rcloud.load.multiple.user.configs <- function(users) {
+  entry <- function(user) paste('"', user, '": ', rcloud.load.user.config(user), sep='')
+  paste('{', paste(Map(entry, users), collapse=',\n'), '}')
 }
 
-rcloud.load.user.file <- function(user, filename) {
-  readLines(rcloud.user.file.name(user, filename))
+rcloud.save.user.config <- function(user, content) {
+  if (rcloud.debug.level()) cat("rcloud.save.user.config(", user, ")\n", sep='')
+  filename <- rcloud.user.config.filename(user)
+  invisible(write(content,filename))
 }
 
-rcloud.save.to.user.file <- function(user, filename, content) {
-  filename <- rcloud.user.file.name(user, filename)
-  invisible(write(content, filename))
+rcloud.get.notebook <- function(id) {
+  res <- get.gist(.session$rgithub.context, id)
+  # this assumption of text might not be accurate in all cases,
+  # just a workaround because rserve.js doesn't support raw vectors yet
+  # and i'm not sure if/how to deal with binary json either
+  json <- rawToChar(res$content);
+  if (rcloud.debug.level() > 1L) {
+    cat("==== GOT GIST ====\n")
+    cat(json)
+    cat("==== END GIST ====\n")
+  }
+  content(res, as = 'text')
 }
 
-rcloud.create.user.file <- function(user, filename) {
-  internal_filename <- rcloud.user.file.name(user, filename)
-  if (!file.exists(internal_filename)) {
-    if (!file.exists(dir <- dirname(internal_filename)))
-      dir.create(dir, FALSE, TRUE, "0770")
-    file.create(internal_filename);
-    write("[]\n", internal_filename);
-    TRUE
-  } else
-    FALSE
+rcloud.update.notebook <- function(id, content) {
+  res <- update.gist(.session$rgithub.context, id, content)
+  content(res, as = 'text')
+}
+
+rcloud.create.notebook <- function(content) {
+  res <- create.gist(.session$rgithub.context, content)
+  content(res, as = 'text')
 }
 
 rcloud.setup.dirs <- function() {
-    for (data.subdir in c("userfiles", "history"))
+    for (data.subdir in c("userfiles", "history", "home"))
         if (!file.exists(fn <- file.path(.rc.conf$data.root, data.subdir)))
              dir.create(fn, FALSE, TRUE, "0770")
 }
@@ -85,6 +91,11 @@ rcloud.record.cell.execution <- function(user, json.string) {
       file=file.path(.rc.conf$data.root, "history", "main_log.txt"), append=TRUE)
 }
 
+rcloud.get.users <- function()
+  content(get.users(.session$rgithub.context))
+
+rcloud.debug.level <- function() if (is.null(.rc.conf$debug)) 0L else .rc.conf$debug
+
 ################################################################################
 # setup the r-side environment
 # this is called once in the main Rserve instance, so it should do and load
@@ -97,6 +108,13 @@ configure.rcloud <- function () {
   if (is.null(.rc.conf$root) || nchar(.rc.conf$root) == 0) .rc.conf$root <- "/var/FastRWeb"
   cat("Using ROOT =", .rc.conf$root, "\n")
 
+  if (nzchar(Sys.getenv("DEBUG"))) {
+    dl <- as.integer(Sys.getenv("DEBUG"))
+    if (any(is.na(dl))) dl <- 1L
+    .rc.conf$debug <- dl
+    cat("=== NOTE: DEBUG is set, enabling debug mode at level", dl, "===\n")
+  }
+  
   # CONFROOT/DATAROOT are purely optional
   # Whom are we kidding? Although it may be nice to abstract out all paths
   # this is far from complete (what about htdocs?) and not very practical
@@ -125,12 +143,12 @@ configure.rcloud <- function () {
   setwd(.rc.conf$tmp.dir)
 
   ## if you have multiple servers it's good to know which machine this is
-  .rc.conf$host <- tolower(system("hostname -s", TRUE))
+  .rc.conf$host <- tolower(system("hostname -f", TRUE))
   cat("Starting Rserve on", .rc.conf$host,"\n")
 
   ## This is jsut a friendly way to load package and report success/failure
   ## Cairo, knitr, markdown and png are mandatory, really
-  pkgs <- c("Cairo", "FastRWeb", "Rserve", "png", "knitr", "markdown", "base64enc", "rjson", "httr", "github")
+  pkgs <- c("Cairo", "FastRWeb", "Rserve", "png", "knitr", "markdown", "base64enc", "rjson", "httr", "github", "RCurl")
   ## $CONFROOT/packages.txt can list additional packages
   if (file.exists(fn <- file.path(.rc.conf$configuration.root, "packages.txt")))
     pkgs <- c(pkgs, readLines(fn))
@@ -144,6 +162,9 @@ configure.rcloud <- function () {
 
   ## we actually need knitr ...
   opts_knit$set(global.device=TRUE, tidy=FALSE, dev=CairoPNG)
+  ## the dev above doesn't work ... it's still using png()
+  ## so make sure it uses the cairo back-end ..
+  if (capabilities()['cairo']) options(bitmapType='cairo')
 
   ## fix font mappings in Cairo -- some machines require this
   if (exists("CairoFonts"))
@@ -164,6 +185,23 @@ configure.rcloud <- function () {
     for (i in seq.int(ln)) .rc.conf[[n[i]]] <- ln[i]
   }
 
+  ## load configuration --- I'm not sure if DCF is a good idea - we may change this ...
+  ## ideally, all of the above should be superceded by the configuration file
+  rc.cf <- file.path(.rc.conf$configuration.root, "rcloud.conf")
+  if (isTRUE(file.exists(rc.cf))) {
+    cat("Loading RCloud configuration file...\n")
+    rc.c <- read.dcf(rc.cf)[1,]
+    for (n in names(rc.c)) .rc.conf[[gsub("[ \t]", ".", tolower(n))]] <- as.vector(rc.c[n])
+  }
+
+  if (is.character(.rc.conf$debug)) {
+    .rc.conf$debug <- as.integer(.rc.conf$debug)
+    if (any(is.na(.rc.conf$debug))) .rc.conf$debug <- 1L
+  }
+
+  if (is.null(.rc.conf$cookie.domain)) .rc.conf$cookie.domain <- .rc.conf$host
+  if (!isTRUE(grepl("[.:]", .rc.conf$cookie.domain))) stop("*** ERROR: cookie.domain must be a FQDN! Please set your hostname correctly or add cookie.domain directive to rcloud.conf")
+  
   rcloud.setup.dirs()
 
   .rc.conf$instanceID <- generate.uuid()
@@ -174,10 +212,7 @@ configure.rcloud <- function () {
 ## --- RCloud part folows ---
 ## this is called by session.init() on per-connection basis
 start.rcloud <- function(username="", token="", ...) {
-  cat("FOOOOOOOOOO\n")
-  print(username)
-  print(token)
-  cat("BAAARRRRRRR\n")
+  if (rcloud.debug.level()) cat("start.rcloud(", username, ", ", token, ")\n", sep='')
   if (!check.user.token.pair(username, token))
     stop("bad username/token pair");
   .session$username <- username

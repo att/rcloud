@@ -2,8 +2,7 @@
 
 // takes a string and returns the appropriate r literal string with escapes.
 function escape_r_literal_string(s) {
-    return "\"" + s.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\"";
-    // return "\"" + s.replace(/"/g, "\\\"") + "\"";
+    return (s == null) ? "NULL" : ("\"" + s.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\"");
 }
 
 function NoCallbackError() {
@@ -47,14 +46,15 @@ RClient = {
             shutdown();
         };
 
-        var token = $.cookies.get().token;
+        var token = $.cookies.get().token;  // document access token
+        var execToken = $.cookies.get().execToken; // execution token (if enabled)
         var rserve = Rserve.create({
             host: opts.host,
             on_connect: on_connect,
             on_error: on_error,
             on_close: on_close,
             on_data: opts.on_data,
-            login: token + "\n" + token
+            login: token + "\n" + execToken
         });
 
         var _debug = opts.debug || false;
@@ -240,15 +240,34 @@ RClient = {
                 rserve.eval(command, unwrap);
             },
 
-            // FIXME this needs hardening
+            // supports only the following argument types:
+            // * string
+            // * number
+            // * array of string/number (doesn't check they match)
             r_funcall: function(function_name) {
+                function output_one(result, val) {
+                    var t = typeof val;
+                    if (t === "string") {
+                        result.push(escape_r_literal_string(val));
+                    } 
+                    else if (t == "number") {
+                        result.push(String(val));
+                    }
+                    else throw "unsupported r_funcall argument type " + t;
+                }
                 var result = [function_name, "("];
                 for (var i=1; i<arguments.length; ++i) {
-                    var t = typeof arguments[i];
-                    if (t === "string") {
-                        result.push(escape_r_literal_string(arguments[i]));
-                    } else
-                        result.push(String(arguments[i]));
+                    var arg = arguments[i];
+                    if ($.isArray(arg)) {
+                        result.push("c(");
+                        for(var j = 0; j<arg.length; ++j) {
+                            output_one(result,arg[j]);
+                            if(j < arg.length-1)
+                                result.push(",");
+                        }
+                        result.push(")");
+                    }
+                    else output_one(result, arg);
                     if (i < arguments.length-1)
                         result.push(",");
                 }
