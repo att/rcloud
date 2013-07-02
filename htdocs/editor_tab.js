@@ -134,6 +134,8 @@ var editor = function () {
         var id = '/' + root + '/' + user + '/' + notebook;
         var node = $tree.tree('getNodeById', id);
         var parent;
+        data.gist_name = notebook;
+        data.id = id;
         if(node) {
             // the update stuff doesn't exist in the jqtree version
             // we're using, and the latest jqtree didn't seem to work 
@@ -143,8 +145,6 @@ var editor = function () {
             insert_alpha($tree, data, parent);
         }
         else {
-            data.gist_name = notebook;
-            data.id = '/' + root + '/' + user + '/' + notebook;
             if(user == rcloud.username()) {
                 parent = $tree.tree('getNodeById', '/' + root);
                 node = insert_alpha($tree, data, parent);

@@ -26,5 +26,5 @@ run <- function(url, query, body, headers)
              "<pre>Welcome, ", ctx$user$login, ".</pre>",
              "</body></html>", sep=''),
        "text/html",
-       paste("Set-Cookie: user=", ctx$user$login, "; domain=", host,"; path=/;\r\nSet-Cookie: token=", token, "; domain=", host, "; path=/;\r\nRefresh: 1; url=", ret, sep=''))
+       paste("Set-Cookie: user=", ctx$user$login, "; domain=", .rc.conf$cookie.domain,"; path=/;\r\nSet-Cookie: token=", token, "; domain=", .rc.conf$cookie.domain, "; path=/;\r\nRefresh: 0.1; url=", ret, sep=''))
 }
