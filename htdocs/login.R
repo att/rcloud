@@ -10,8 +10,6 @@ cookies <- function(headers) {
   } else list()
 }
 
-.exec.login.url <- "/welcome.html"
-
 run <- function(url, query, body, headers)
 {
   cookies <- cookies(headers)
@@ -27,13 +25,16 @@ run <- function(url, query, body, headers)
       } else return(list(paste(capture.output(print(res)), collapse="\n"), "text/plain"))
                                         #return(list("<html><head></head><body>Authentication failed.</body></html>", "text/html"))
     }
+    ret <- rcloud.support:::.rc.conf$welcome.page
+    if (is.null(ret)) ret <- '/welcome.html'
+
     if (is.null(cookies$execToken))
       return(list("<html><head></head><body>Missing execution token, requesting authentication...",
-                  "text/html", paste0("Refresh: 0.1; url=", .exec.login.url)))
+                  "text/html", paste0("Refresh: 0.1; url=", ret)))
     usr <- rcloud.support::check.token(cookies$execToken, .rc.conf$exec.auth, "rcloud.exec")
     if (usr == FALSE)
       return(list("<html><head></head><body>Invalid or expired execution token, requesting authentication...",
-                  "text/html", paste0("Refresh: 0.1; url=", .exec.login.url)))
+                  "text/html", paste0("Refresh: 0.1; url=", ret)))
   }          
   state <- rnorm(1)
   list(paste("<html><head><meta http-equiv='refresh' content='0;URL=\"",rcloud.support:::.rc.conf$github.base.url,

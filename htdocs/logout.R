@@ -16,7 +16,8 @@ run <- function(url, query, body, headers) {
     rcloud.support::revoke.token(cookies$execToken, realm="rcloud.exec")
   if (!is.null(cookies$token))
     rcloud.support::revoke.token(cookies$token)
-  ret <- '/welcome.html'
+  ret <- rcloud.support:::.rc.conf$welcome.page
+  if (is.null(ret)) ret <- '/welcome.html'
   list("<html><head></head><body>Logout...</body></html>",
        "text/html",
        paste0("Set-Cookie: user=; domain=", .rc.conf$cookie.domain,"; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT\r\nSet-Cookie: token=; domain=", .rc.conf$cookie.domain, "; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT\r\nSet-Cookie: execUser=; domain=", .rc.conf$cookie.domain,"; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT\r\nSet-Cookie: execToken=; domain=", .rc.conf$cookie.domain,"; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT\r\nRefresh: 0.1; url=", ret, sep=''))
