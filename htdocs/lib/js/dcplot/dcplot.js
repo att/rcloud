@@ -1,3 +1,9 @@
+/*
+ dcplot: a minimal interface to dc.js with ggplot-like defaulting
+
+ takes a description 
+*/
+
 dcplot.bin = function(dim, binwidth) {
     return {dim: dim,
             f: function(x) { return Math.floor(x/binwidth)*binwidth; }};
@@ -14,7 +20,70 @@ dcplot.sum = function(decl) {
     return decl;
 };
 
+/* forgive me for overengineering this a little bit
+
+ 1. generate a complete definition by using defaults and inference
+ 2. check for required and unknown attributes
+ 3. generate the dimensions, groups, and charts
+
+*/
+
+// a map of attr->required to check for at the end to make sure we have everything
+var plot_attrs = {
+    base: {
+        dimension: {required: true},
+        group: {required: true},
+        width: {required: true, default: 300},
+        height: {required: true, default: 300},
+        'transition.duration': {required: false}, 
+        label: {required: false}
+        // key, value are terrible names: handle as variables below
+    },
+    color: {
+        colors: {required: false},
+        color: {required: false}, // colorAccessor
+        'color.domain': {required: false}
+    },
+    stackable: {
+        stack: {required: false}
+    },
+    coordinateGrid: {
+        margins: {required: false},
+        'x.trans': {required: false}, // x (scale)
+        'x.domain': {required: false}, // domain() component of x
+    },
+    bubble: {
+        margins: true,
+        colors: true,
+        color: true,
+        
+        
+
 function dcplot(frame, definition, groupno) {
+    function find_unused(hash, base) {
+        if(!hash[base])
+            return base;
+        var n = 1;
+        while(hash[base + n]) ++n;
+        return base + n;
+    }
+    function base_attrs(defn) {
+        if(defn.group) {
+            if(defn.dimension && defn.dimension!=group[defn.group].dim)
+                throw "group " + defn.group + " dimension " + group[defn.group].dim
+                + " does not match chart dimension " + defn.dimension;
+            defn.dimension = group[defn.group].dim;
+        }
+        else if(defn.dimension) {
+            defn.group = find_unused(group, defn.dimension);
+            var g = group[defn.group] = {};
+            g.dim = defn.dimension;
+                var dim = dims[defn.dimension];
+                chart.dimension(dim);
+                chart.group(dim.group());
+            }
+            else throw "must specify either group or dimension";
+
     var dims = {};
     var groups = {};
     var charts = {};
@@ -39,17 +108,6 @@ function dcplot(frame, definition, groupno) {
         switch(defn.type) {
         case 'bubble': 
             chart = dc.bubbleChart('#' + name, groupname);
-            if(defn.dimension) {
-                var dim = dims[defn.dimension];
-                chart.dimension(dim);
-                chart.group(dim.group());
-            }
-            else if(defn.group) {
-                var group = groups[defn.group];
-                chart.dimension(dims[group.dim]);
-                chart.group(group.group);
-            }
-            else throw "must specify either group or dimension for bubble chart";
             chart.elasticX(defn['x.elastic']===undefined ? true : defn['x.elastic']);
             chart.elasticY(defn['y.elastic']===undefined ? true : defn['y.elastic']);
             break;
