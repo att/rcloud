@@ -123,7 +123,7 @@ function create_markdown_cell_html_view(cell_model)
         }
     });
 
-    var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Not evaluated</span></div>');
+    var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
     inner_div.append(r_result_div);
 
     // FIXME this is a terrible hack created simply so we can scroll

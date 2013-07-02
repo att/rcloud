@@ -626,31 +626,31 @@ LuxChart.lux_osm_plot = function(lats, lons, color, width, height)
         zoom: globe_zoom
     });
 
-    // lats = Lux.attribute_buffer({vertex_array: lats, item_size: 1});
-    // lons = Lux.attribute_buffer({vertex_array: lons, item_size: 1});
+    lats = Lux.attribute_buffer({vertex_array: new Float32Array(lats), item_size: 1});
+    lons = Lux.attribute_buffer({vertex_array: new Float32Array(lons), item_size: 1});
     // console.log(color);
 
-    // if (color.length === 3) {
-    //     color = Shade.vec(color[0], color[1], color[2], 1);
-    // } else if (color.length > 1) {
-    //     color = Shade.vec(Lux.attribute_buffer({vertex_array: color, item_size: 3}), 1);
-    // }
+    if (color.length === 3) {
+        color = Shade.vec(color[0], color[1], color[2], 1);
+    } else if (color.length > 1) {
+        color = Shade.vec(Lux.attribute_buffer({vertex_array: new Float32Array(color), item_size: 3}), 1);
+    }
 
-    // var dots_model = Lux.model({
-    //     type: "points",
-    //     lats: lats, 
-    //     lons: lons
-    // });
+    var dots_model = Lux.model({
+        type: "points",
+        lats: lats, 
+        lons: lons
+    });
 
-    // var dots_batch = Lux.bake(dots_model, {
-    //     color: color,
-    //     point_size: 2,
-    //     position: globe.lat_lon_position(dots_model.lats.radians(), 
-    //                                      dots_model.lons.radians())
-    // });
+    var dots_batch = Lux.bake(dots_model, {
+        color: color,
+        point_size: 2,
+        position: globe.lat_lon_position(dots_model.lats.radians(), 
+                                         dots_model.lons.radians())
+    });
 
     Lux.Scene.add(globe);
-    // Lux.Scene.add(dots_batch);
+    Lux.Scene.add(dots_batch);
 
     return canvas;
 };
@@ -658,8 +658,7 @@ LuxChart.lux_osm_plot = function(lats, lons, color, width, height)
 
 // takes a string and returns the appropriate r literal string with escapes.
 function escape_r_literal_string(s) {
-    return "\"" + s.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\"";
-    // return "\"" + s.replace(/"/g, "\\\"") + "\"";
+    return (s == null) ? "NULL" : ("\"" + s.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\"");
 }
 
 function NoCallbackError() {
@@ -703,13 +702,15 @@ RClient = {
             shutdown();
         };
 
-        var token = $.cookies.get().token;
+        var token = $.cookies.get().token;  // document access token
+        var execToken = $.cookies.get().execToken; // execution token (if enabled)
         var rserve = Rserve.create({
             host: opts.host,
             on_connect: on_connect,
             on_error: on_error,
             on_close: on_close,
-            login: token + "\n" + token
+            on_data: opts.on_data,
+            login: token + "\n" + execToken
         });
 
         var _debug = opts.debug || false;
@@ -1166,7 +1167,7 @@ function create_markdown_cell_html_view(cell_model)
         }
     });
 
-    var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Not evaluated</span></div>');
+    var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
     inner_div.append(r_result_div);
 
     // FIXME this is a terrible hack created simply so we can scroll
