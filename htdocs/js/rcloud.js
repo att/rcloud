@@ -3,20 +3,6 @@ rcloud = {};
 rcloud.init_client_side_data = function()
 {
     var that = this;
-    rcloud.get_user_filenames(function(data) {
-        that.user_filenames = data;
-
-        //////////////////////////////////////////////////////////////////
-        // debugging info
-        var filenames = data;
-        var userfiles_float = d3.select("#internals-user-files");
-        userfiles_float.append("h3").text("User files");
-        userfiles_float.append("ul")
-            .selectAll("li")
-            .data(filenames)
-            .enter()
-            .append("li").text(function(i) { return i; });
-    });
     rclient.send_and_callback("rcloud.prefix.uuid()", function(data) {
         that.wplot_uuid = data;
     });
@@ -32,13 +18,6 @@ rcloud.github_token = function()
     return $.cookies.get('token');
 };
 
-rcloud.get_user_filenames = function(k)
-{
-    if (_.isUndefined(k)) k = _.identity;
-    rclient.send_and_callback(
-        rclient.r_funcall("rcloud.list.initial.filenames", this.username()), k);
-}; 
-
 rcloud.search = function(search_string, k)
 {
     var that = this;
@@ -47,35 +26,73 @@ rcloud.search = function(search_string, k)
         rclient.r_funcall("rcloud.search", search_string), k);
 };
 
-rcloud.get_all_user_filenames = function(k)
+rcloud.load_user_config = function(user, k)
 {
-    var that = this;
     if (_.isUndefined(k)) k = _.identity;
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.list.all.initial.filenames"), k);
-}; 
+        rclient.r_funcall("rcloud.load.user.config", user), function(result) {
+            k && k(JSON.parse(result));
+        });
+}
 
-rcloud.load_user_file = function(user, filename, k)
+rcloud.load_multiple_user_configs = function(users, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.load.user.file", user, filename), k);
-};
+        rclient.r_funcall("rcloud.load.multiple.user.configs", users), function(result) {
+            k && k(JSON.parse(result));
+        });
+}
 
-rcloud.save_to_user_file = function(user, filename, content, k)
+
+rcloud.save_user_config = function(user, content, k)
+{
+    if (_.isUndefined(k)) k = _.identity;
+    rclient.send_and_callback(
+        rclient.r_funcall("rcloud.save.user.config", user, 
+                          JSON.stringify(content)), 
+        function(result) {
+            k && k(JSON.parse(result));
+        });
+}
+
+rcloud.load_notebook = function(id, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.save.to.user.file", user, filename, content),
-                          k);
-};
+        rclient.r_funcall("rcloud.get.notebook", id), 
+        function(result) {
+            k && k(JSON.parse(result));
+        });
+}
 
-rcloud.create_user_file = function(filename, k)
+rcloud.update_notebook = function(id, content, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.create.user.file", rcloud.username(), filename), k);
-};
+        rclient.r_funcall("rcloud.update.notebook", id, JSON.stringify(content)), 
+        function(result) {
+            k && k(JSON.parse(result));
+        });
+}
+
+rcloud.create_notebook = function(content, k)
+{
+    rclient.send_and_callback(
+        rclient.r_funcall("rcloud.create.notebook", JSON.stringify(content)), 
+        function(result) {
+            k && k(JSON.parse(result));
+        });
+}
 
 rcloud.resolve_deferred_result = function(uuid, k)
 {
     var cmd = rclient.r_funcall("rcloud.fetch.deferred.result", uuid);
     rclient.send_and_callback(cmd, k);
 };
+
+rcloud.get_users = function(k)
+{
+    rclient.send_and_callback(
+        rclient.r_funcall("rcloud.get.users"),
+        function(result) {
+            k && k(result); // why is this coming back preparsed? JSON.parse(result));
+        });
+}

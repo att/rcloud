@@ -3,7 +3,7 @@ Notebook.Cell.create_controller = function(cell_model)
     var result = {
         execute: function() {
             var that = this;
-            var type = cell_model.type();
+            var language = cell_model.language();
             function callback(r) {
                 _.each(cell_model.views, function(view) {
                     view.result_updated(r);
@@ -11,13 +11,14 @@ Notebook.Cell.create_controller = function(cell_model)
             }
             
             rclient.record_cell_execution(cell_model);
-            if (type === 'markdown') {
+
+            if (language === 'Markdown') {
                 var wrapped_command = rclient.markdown_wrap_command(cell_model.content());
                 rclient.send_and_callback(wrapped_command, callback, _.identity);
-            } else if (type === 'interactive') {
+            } else if (language === 'R') {
                 var wrapped_command = rclient.markdown_wrap_command("```{r}\n" + cell_model.content() + "\n```\n");
                 rclient.send_and_callback(wrapped_command, callback, _.identity);
-            } else alert("Can only do markdown or interactive for now!");
+            } else alert("Don't know language '" + language + "' - can only do Markdown or R for now!");
         }
     };
 

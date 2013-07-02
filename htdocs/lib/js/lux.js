@@ -4737,12 +4737,13 @@ Lux.texture = function(opts)
 
     texture.init = Lux.on_context(ctx, function(opts) {
         var ctx = Lux._globals.ctx;
+        var has_mipmaps = _.isUndefined(opts.mipmaps) || opts.mipmaps;
         opts = _.defaults(opts, {
             onload: function() {},
             max_anisotropy: opts.mipmaps ? 2 : 1,
             mipmaps: true,
             mag_filter: Lux.texture.linear,
-            min_filter: _.isUndefined(opts.mipmaps) || opts.mipmaps ? Lux.texture.linear_mipmap_linear : Lux.texture.linear,
+            min_filter: opts.mipmaps ? Lux.texture.linear_mipmap_linear : Lux.texture.linear,
             wrap_s: Lux.texture.clamp_to_edge,
             wrap_t: Lux.texture.clamp_to_edge,
             format: Lux.texture.rgba,
@@ -12674,6 +12675,7 @@ Shade.Scale.Geo.latlong_to_mercator = Shade(function(lat, lon)
 // gl_light is deprecated, functionality is being moved to Shade.Light
 Shade.gl_light = function(opts)
 {
+    console.log("DEPRECATED: use Shade.Light functionality");
     opts = _.defaults(opts || {}, {
         light_ambient: Shade.vec(0,0,0,1),
         light_diffuse: Shade.vec(1,1,1,1),
@@ -14158,6 +14160,7 @@ Lux.Marks.globe_2d = function(opts)
 
     var ctx = Lux._globals.ctx;
     var texture = Lux.texture({
+        mipmaps: false,
         width: super_tile_size,
         height: super_tile_size
     });

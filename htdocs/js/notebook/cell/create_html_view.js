@@ -23,7 +23,7 @@ function create_markdown_cell_html_view(cell_model)
     var run_md_button = fa_button("icon-repeat", "run");
 
     function update_model() {
-        cell_model.content(widget.getSession().getValue());
+        return cell_model.content(widget.getSession().getValue());
     }
     function enable(el) {
         el.removeClass("button-disabled");
@@ -56,8 +56,10 @@ function create_markdown_cell_html_view(cell_model)
     });
     function execute_cell() {
         r_result_div.html("Computing...");
-        update_model();
+        var new_content = update_model();
         result.show_result();
+        if(new_content)
+            cell_model.parent_model.controller.update_cell(cell_model);
         cell_model.controller.execute();
     }
     run_md_button.click(function(e) {
@@ -93,10 +95,7 @@ function create_markdown_cell_html_view(cell_model)
     inner_div.append(cell_buttons_div);
     cell_buttons_div.append(insert_cell_button);
     insert_cell_button.click(function(e) {
-        // truly the wrong way to go about this
-        var base_index = notebook_cell_div.index();
-        var model_index = base_index;
-        shell.insert_markdown_cell_before(model_index);
+        shell.insert_markdown_cell_before(cell_model.id);
     });
     
     var ace_div = $('<div style="width:100%; height:100%"></div>');
@@ -124,7 +123,7 @@ function create_markdown_cell_html_view(cell_model)
         }
     });
 
-    var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Not evaluated</span></div>');
+    var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
     inner_div.append(r_result_div);
 
     // FIXME this is a terrible hack created simply so we can scroll
@@ -140,7 +139,7 @@ function create_markdown_cell_html_view(cell_model)
         // pubsub event handlers
 
         content_updated: function() {
-            widget.getSession().setValue(cell_model.content());
+            return widget.getSession().setValue(cell_model.content());
         },
         self_removed: function() {
             notebook_cell_div.remove();
@@ -237,18 +236,24 @@ function create_markdown_cell_html_view(cell_model)
                 markdown_div.slideUp(150); // hide();
             }
         },
+        /*
+        // this doesn't make sense: changes should go through controller
         remove_self: function() {
             cell_model.parent_model.remove_cell(cell_model);            
             notebook_cell_div.remove();
         },
+        */
         div: function() {
             return notebook_cell_div;
         },
         update_model: function() {
-            update_model();
+            return update_model();
         },
         focus: function() {
             widget.focus();
+        },
+        get_content: function() { // for debug
+            return cell_model.content();
         }
     };
 
@@ -269,7 +274,7 @@ function create_interactive_cell_html_view(cell_model)
     var remove_button = $("<span class='fontawesome-button'><i class='icon-trash'></i></span>").tooltip({ title: "remove" });
 
     function update_model() {
-        cell_model.content($(input).val());
+        return cell_model.content($(input).val());
     }
     function enable(el) {
         el.removeClass("button-disabled");
@@ -302,8 +307,10 @@ function create_interactive_cell_html_view(cell_model)
     });
     function execute_cell() {
         r_result_div.html("Computing...");
-        update_model();
+        var new_content = update_model();
         result.show_result();
+        if(new_content)
+            cell_model.parent_model.controller.update_cell(cell_model);
         cell_model.controller.execute();
     }
 
@@ -335,10 +342,7 @@ function create_interactive_cell_html_view(cell_model)
     inner_div.append(cell_buttons_div);
     cell_buttons_div.append(insert_cell_button);
     insert_cell_button.click(function(e) {
-        // truly the wrong way to go about this
-        var base_index = notebook_cell_div.index();
-        var model_index = base_index;
-        shell.insert_markdown_cell_before(model_index);
+        shell.insert_markdown_cell_before(cell_model.id);
     });
     
     var ace_div = $('<div style="width:100%; margin-left: 0.5em; margin-top: 0.5em"></div>');
@@ -465,18 +469,24 @@ function create_interactive_cell_html_view(cell_model)
                 markdown_div.slideUp(150); // hide();
             }
         },
+        /*
+        // this doesn't make sense: changes should go through controller
         remove_self: function() {
             cell_model.parent_model.remove_cell(cell_model);            
             notebook_cell_div.remove();
         },
+        */
         div: function() {
             return notebook_cell_div;
         },
         update_model: function() {
-            update_model();
+            return update_model();
         },
         focus: function() {
             input.focus();
+        },
+        get_content: function() { // for debug
+            return cell_model.content();
         }
     };
 
@@ -486,13 +496,13 @@ function create_interactive_cell_html_view(cell_model)
 }
 
 var dispatch = {
-    markdown: create_markdown_cell_html_view,
-    interactive: create_interactive_cell_html_view
+    Markdown: create_markdown_cell_html_view,
+    R: create_markdown_cell_html_view
 };
 
 Notebook.Cell.create_html_view = function(cell_model)
 {
-    return dispatch[cell_model.type()](cell_model);
+    return dispatch[cell_model.language()](cell_model);
 };
 
 })();

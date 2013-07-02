@@ -130,8 +130,7 @@ var shell = (function() {
             controller: notebook_controller
         },
         terminal: terminal,
-        user: undefined,
-        filename: undefined,
+        gistname: undefined,
         detachable_div: function(div) {
             var on_remove = function() {};
             var on_detach = function() {};
@@ -166,69 +165,37 @@ var shell = (function() {
             } else
                 return handlers[objtype].call(this, data);
         }, new_markdown_cell: function(content) {
-            return notebook_controller.append_cell(content, "markdown");
+            return notebook_controller.append_cell(content, "Markdown");
         }, new_interactive_cell: function(content) {
-            return notebook_controller.append_cell(content, "interactive");
+            return notebook_controller.append_cell(content, "R");
         }, insert_markdown_cell_before: function(index) {
-            return notebook_controller.insert_cell("", "markdown", index);
-        }, load_from_file: function(user, filename, k) {
+            return notebook_controller.insert_cell("", "Markdown", index);
+        }, load_notebook: function(gistname, k) {
             var that = this;
-            this.notebook.controller.load_from_file(user, filename, function() {
-                $("#file_title").text(filename);
+            // asymetrical: we know the gistname before it's loaded here,
+            // but not in new.  and we have to set this here to signal 
+            // editor's init load config callback to override the currbook
+            this.gistname = gistname;
+            this.notebook.controller.load_notebook(gistname, function(notebook) {
+                $("#notebook_title").text(notebook.description);
                 _.each(that.notebook.view.sub_views, function(cell_view) {
                     cell_view.show_source();
                 });
-                that.user = user;
-                that.filename = filename;
-                k && k();
+                k && k(notebook);
             });
-        }, save_to_file: function(user, filename, k) {
+        }, new_notebook: function(desc, k) {
             var that = this;
-            this.notebook.controller.save_file(user, filename, function() {
-                $("#file_title").text(filename);
-                k && k();
+            var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
+            this.notebook.controller.create_notebook(content, function(notebook) {
+                $("#notebook_title").text(notebook.description);
+                that.gistname = notebook.id;
+                k && k(notebook);
             });
-        }, new_file: function() {
-            function validate_filename(n) {
-                if (/\.\./.test(n))
-                    return false;
-                if (/[^0-9a-zA-Z_.]/.test(n))
-                    return false;
-                return true;
-            }
-            var filename = prompt("please enter a filename", "[new filename]");
-            if (!validate_filename(filename)) {
-                alert("Invalid filename");
-                return;
-            }
-            this.create_file(filename);
-        }, create_file: function(filename) {
-            var that = this;
-            rcloud.create_user_file(filename, function(result) {
-                if (result) {
-                    editor.populate_file_list();
-                    that.load_from_file(rcloud.username(), filename);
-                }
-            });
-        }, serialize_state: function(k) {
-            var that = this;
-            this.notebook.view.update_model();
-            if (this.filename && (this.user === rcloud.username())) {
-                this.save_to_file(shell.user, shell.filename, function() {
-                    editor.populate_file_list();
-                    k && k();
-                });
-            } else {
-                // FIXME what do we do with unnamed content??
-                k && k();
-            }
         }
     };
 
     $("#run-notebook").click(function() {
-        result.serialize_state(function() {
-            result.notebook.controller.run_all();
-        });
+        result.notebook.controller.run_all();
     });
     return result;
 })();
