@@ -24,7 +24,7 @@ function main_init() {
     init_shareable_link_box();
     rclient = RClient.create({ 
         debug: false,
-        host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8082/") : ("ws://"+location.hostname+":8081/"), 
+        host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"), 
         on_connect: function() {
             $("#new-md-cell-button").click(function() {
                 shell.terminal.disable();
