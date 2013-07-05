@@ -29,8 +29,9 @@ dcplot.sum = function(decl) {
 */
 
 // a map of attr->required to check for at the end to make sure we have everything
-var plot_attrs = {
+var chart_attrs = {
     base: {
+        supported: true,
         dimension: {required: true},
         group: {required: true},
         width: {required: true, default: 300},
@@ -40,24 +41,125 @@ var plot_attrs = {
         // key, value are terrible names: handle as variables below
     },
     color: {
+        supported: true,
         colors: {required: false},
         color: {required: false}, // colorAccessor
         'color.domain': {required: false}
     },
     stackable: {
+        supported: true,
         stack: {required: false}
     },
     coordinateGrid: {
+        parents: ['base'],
+        supported: true,
         margins: {required: false},
-        'x.trans': {required: false}, // x (scale)
-        'x.domain': {required: false}, // domain() component of x
+        // prob a good idea to group these
+        'x.trans': {required: true}, // transform component of x (scale)
+        'x.domain': {required: true}, // domain component of x
+        'x.units': {required: true}, // the most horrible thing EVER
+        'x.round': {required: false},
+        'x.elastic': {required: false},
+        'x.padding': {required: false},
+        // likewise
+        'y.trans': {required: false},
+        'y.elastic': {required: false},
+        'y.padding': {required: false},
+        gridlines: {required: false}, // horizontal and/or vertical
+        brush: {required: false}
+        // etc...
+    },
+    pie: {
+        parents: ['color', 'base'],
+        supported: true,
+        radius: {required: false},
+        innerRadius: {required: false}
+        // etc...
+    },
+    row: {
+        parents: ['color', 'base'],
+        supported: false
+    },
+    bar: {
+        parents: ['stackable', 'coordinateGrid'],
+        supported: true,
+        centerBar: {required: false},
+        gap: {required: false}
+    },
+    line: {
+        parents: ['stackable', 'coordinateGrid'],
+        supported: true,
+        area: {required: false},
+        dotRadius: {required: false},
+    },
+    composite: {
+        parents: ['coordinateGrid'],
+        supported: false
+    },
+    abstractBubble: {
+        parents: ['color'],
+        supported: true,
+        r: {required: false}, // radiusValueAccessor
+        'r.trans': {required: false}, // transform component of r scale
+        'r.domain': {required: false} // domain component of r
     },
     bubble: {
-        margins: true,
-        colors: true,
-        color: true,
-        
-        
+        parents: ['abstractBubble', 'coordinateGrid'],
+        supported: true,
+        margins: {required: true},
+        colors: {required: true},
+        color: {required: true}
+    },
+    bubbleOverlay: {
+        parents: ['abstractBubble', 'base'],
+        supported: false // this chart is a crime!
+    },
+    geoCloropleth: {
+        supported: false
+    },
+    dataCount: {
+        supported: false
+    },
+    dataTableWidget: {
+        supported: false
+    }
+};
+
+// look for required attrs not filled and unknown attrs
+function check_requirements(defn, type) {
+    function find_discreps(defn, type, missing, found) {
+        var cattrs = chart_attrs[type];
+        if(!cattrs.supported)
+            throw 'chart type ' + type + ' not supported';
+        for(var a in cattrs) {
+            if(a==='supported')
+                continue;
+            else if(a==='parents')
+                for(var i in cattrs[a])
+                    find_discreps(defn, cattrs[a][i], missing);
+            else {
+                if(cattrs[a].required && defn[a]===undefined)
+                    missing.push(a);
+                if(_.has(found, a))
+                    found[a] = true;
+            }
+        }
+    }
+    var missing = [], found = _.object(_.keys(defn));
+    find_discreps(defn, type, missing, found);
+    var error = '';
+    if(missing.length)
+        error += 'definition is missing required attrs ' + missing;
+    var unknown = _.map(_.reject(_.pairs(found), 
+                                 function(p) { return p[1]; }),
+                        function(p) { return p[0]; });
+    if(unknown.length) {
+        if(error) error += '\n';
+        error += 'definition has unknown attrs ' + unknown;
+    }
+    if(error) 
+        throw error;
+}
 
 function dcplot(frame, definition, groupno) {
     function find_unused(hash, base) {
@@ -75,15 +177,14 @@ function dcplot(frame, definition, groupno) {
             defn.dimension = group[defn.group].dim;
         }
         else if(defn.dimension) {
+            if(!dims[defn.dimension])
+                throw "unknown dimension " + defn.dimension;
             defn.group = find_unused(group, defn.dimension);
             var g = group[defn.group] = {};
             g.dim = defn.dimension;
-                var dim = dims[defn.dimension];
-                chart.dimension(dim);
-                chart.group(dim.group());
-            }
-            else throw "must specify either group or dimension";
-
+        }
+        else throw "must specify either group or dimension";
+    }
     var dims = {};
     var groups = {};
     var charts = {};
