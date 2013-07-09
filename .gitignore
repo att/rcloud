@@ -12,3 +12,4 @@ conf/rcloud.auth
 conf/github_info.txt
 rcloud.support_1.0-0.tar.gz
 
+/htdocs/lib/js/dcplot/chart_hier.js

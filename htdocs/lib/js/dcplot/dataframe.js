@@ -11,7 +11,6 @@ var dataframe = {
                     return columnv[i];
                 };
             },
-            // in particular this one may not work for array-of-records?
             index_accessor: function() {
                 return function(i) {
                     return i; 
@@ -20,6 +19,29 @@ var dataframe = {
             num_rows: function() {
                 for(var col in data) 
                     return data[col].length;
+            },
+            records: function() {
+                return _.range(0, this.num_rows());
+            }
+        };
+        return result;
+    },
+    rows: function(data) {
+        var result = {
+            accessor: function(column) {
+                return function(i) {
+                    return data[i][column];
+                };
+            },
+            // we could get rid of row indices and just use rows
+            // except here (?)
+            index_accessor: function() {
+                return function(i) {
+                    return i;
+                };
+            },
+            num_rows: function() {
+                return data.length;
             },
             records: function() {
                 return _.range(0, this.num_rows());
