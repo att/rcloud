@@ -172,11 +172,11 @@ var chart_attrs = {
     }
 };
 
-// defaults and inferences
-function fill_dimension(defn) {
+// inferences
+function infer_dimension(defn) {
     // nothing (yet?)
 }
-function fill_group(defn, dims) {
+function infer_group(defn, dims) {
     var errors = [];
     if(!_.has(defn, 'dim'))
         errors.push('group needs dimension');
@@ -190,7 +190,7 @@ function fill_group(defn, dims) {
     if(errors.length)
         throw errors;
 }
-function fill_chart(defn, dims, groups) {
+function infer_chart(defn, dims, groups) {
     var errors = [];
     function find_unused(hash, base) {
         if(!hash[base])
@@ -253,10 +253,61 @@ function fill_chart(defn, dims, groups) {
         throw errors;
 }
 
-// look for required attrs not filled and unknown attrs
-function check_dimension(defn) {
+// defaults
+function default_dimension(defn) {
+    // nothing (yet?)
 }
-function check_group(defn) {
+function default_group(defn, dims) {
+    var errors = [];
+    if(!_.has(defn, 'group'))
+        defn.group = group.identity;
+    if(!_.has(defn, 'reduce'))
+        defn.reduce = reduce.count;
+
+    if(errors.length)
+        throw errors;
+}
+function default_chart(defn, dims, groups) {
+    function do_defaults(defn, type) {
+        var cattrs = chart_attrs[type];
+        if(!cattrs.supported)
+            throw 'chart type ' + type + ' not supported';
+        for(var a in cattrs) {
+            if(a==='supported' || a==='parents')
+                continue;
+            if(_.has(cattrs[a], 'default') && defn[a]===undefined)
+                defn[a] = cattrs[a].default;
+        }
+        if('parents' in cattrs)
+            for(var i in cattrs.parents)
+                do_defaults(defn, cattrs.parents[i], missing, found);
+
+    }
+    function empty_found_map(defn) {
+        var k = _.without(_.keys(defn), 'type'), n = k.length, v = [];
+        while(n--) v.push(false);
+        return _.object(k,v);
+    }
+    var missing = [], found = empty_found_map(defn);
+    do_defaults(defn, defn.type, missing, found);
+    var errors = [];
+    if(missing.length)
+        errors.push('chart definition is missing required attrs: ' + missing.join(', '));
+    var unknown = _.map(_.reject(_.pairs(found), 
+                                 function(p) { return p[1]; }),
+                        function(p) { return p[0]; });
+    if(unknown.length) 
+        errors.push('chart definition has unknown attrs: ' + unknown.join(', '));
+
+    if(errors.length) 
+        throw errors;
+}
+
+
+// look for required attrs not filled and unknown attrs
+function check_dimension_attrs(defn) {
+}
+function check_group_attrs(defn) {
     var expected = ['dim', 'group', 'reduce'];
     var k = _.keys(defn),
         missing = _.difference(expected, k),
@@ -270,23 +321,21 @@ function check_group(defn) {
     if(errors.length) 
         throw errors;
 }
-function check_chart(defn, type) {
+function check_chart_attrs(defn) {
     function find_discreps(defn, type, missing, found) {
         var cattrs = chart_attrs[type];
         if(!cattrs.supported)
             throw 'chart type ' + type + ' not supported';
+        if('parents' in cattrs)
+            for(var i in cattrs.parents)
+                find_discreps(defn, cattrs[a][i], missing, found);
         for(var a in cattrs) {
-            if(a==='supported')
+            if(a==='supported' || a==='parents')
                 continue;
-            else if(a==='parents')
-                for(var i in cattrs[a])
-                    find_discreps(defn, cattrs[a][i], missing, found);
-            else {
-                if(cattrs[a].required && defn[a]===undefined)
-                    missing.push(a);
-                if(_.has(found, a))
-                    found[a] = true;
-            }
+            if(cattrs[a].required && defn[a]===undefined)
+                missing.push(a);
+            if(_.has(found, a))
+                found[a] = true;
         }
     }
     function empty_found_map(defn) {
@@ -295,7 +344,7 @@ function check_chart(defn, type) {
         return _.object(k,v);
     }
     var missing = [], found = empty_found_map(defn);
-    find_discreps(defn, type, missing, found);
+    find_discreps(defn, defn.type, missing, found);
     var errors = [];
     if(missing.length)
         errors.push('chart definition is missing required attrs: ' + missing.join(', '));
@@ -308,6 +357,63 @@ function check_chart(defn, type) {
     if(errors.length) 
         throw errors;
 }
+
+
+// logic errors
+function check_dimension_logic(defn) {
+    // nothing (yet?)
+}
+function check_group_logic(defn, dims) {
+    var errors = [];
+    if(!_.has(dims, defn.dim))
+        errors.push('unknown dimension ' + defn.dim);
+
+    if(errors.length)
+        throw errors;
+}
+function check_chart_logic(defn, dims, groups) {
+    var errors = [];
+    function base() {
+    }
+    function color() {
+    }
+    function stackable() {
+    }
+    function coordinateGrid() {
+        base();
+    }
+    function pie() {
+        base();
+        color();
+    }
+    function bar() {
+        stackable();
+        coordinateGrid();
+    }
+    function line() {
+        stackable();
+        coordinateGrid();
+    }
+    function abstractBubble() {
+        color();
+    }
+    function bubble() {
+        abstractBubble();
+        coordinateGrid();
+    }
+    switch(defn.type) {
+    case 'pie': pie(); break;
+    case 'bar': bar(); break;
+    case 'line': line(); break;
+    case 'bubble': bubble(); break;
+    default: throw 'unknown chart type ' + defn.type;
+    }
+
+    if(errors.length)
+        throw errors;
+}
+
+
 
 // this is a hopefully a lot of boilerplate with no logic
 // maps from dcplot attributes to dc.js methods
@@ -447,80 +553,71 @@ function create_chart(groupname, defn, dimensions, groups) {
     return chart;
 }
 
+
 function dcplot(frame, groupno, definition) {
-    var dimensions = {};
-    var groups = {};
-    var charts = {};
+    function aggregate_errors(dimension_fn, group_fn, chart_fn) {
+        var errors = [];
+        for(var d in definition.dimensions) {
+            defn = definition.dimensions[d];
+            try {
+                dimension_fn(defn);
+            }
+            catch(e) {
+                errors = errors.concat(e);
+            }
+        }
+        if(!_.has(definition, 'groups'))
+            definition.groups = {};
+        for(var g in definition.groups) {
+            defn = definition.groups[g];
+            try {
+                group_fn(defn, definition.dimensions);
+            }
+            catch(e) {
+                errors = errors.concat(e);
+            }
+        }
+        for(var c in definition.charts) {
+            defn = definition.charts[c];
+            try {
+                chart_fn(defn, definition.dimensions, definition.groups);
+            }
+            catch(e) {
+                errors = errors.concat(e);
+            }
+        }
+        return errors;
+    }
 
     var groupname = 'chartgroup' + groupno;
     var errors = [];
     var defn;
 
-    // FILL
-    for(var d in definition.dimensions) {
-        defn = definition.dimensions[d];
-        try {
-            fill_dimension(defn);
-        }
-        catch(e) {
-            errors = errors.concat(e);
-        }
-    }
-    if(!_.has(definition, 'groups'))
-        definition.groups = {};
-    for(var g in definition.groups) {
-        defn = definition.groups[g];
-        try {
-            fill_group(defn, definition.dimensions);
-        }
-        catch(e) {
-            errors = errors.concat(e);
-        }
-    }
-    for(var c in definition.charts) {
-        defn = definition.charts[c];
-        try {
-            fill_chart(defn, definition.dimensions, definition.groups);
-        }
-        catch(e) {
-            errors = errors.concat(e);
-        }
-    }
+    // infer attributes from other attributes
+    errors = aggregate_errors(infer_dimension, infer_group, infer_chart);
     if(errors.length)
         throw errors;
 
-    // CHECK
-    for(d in definition.dimensions) {
-        defn = definition.dimensions[d];
-        try {
-            check_dimension(defn);
-        }
-        catch(e) {
-            errors = errors.concat(e);
-        }
-    }
-    for(g in definition.groups) {
-        defn = definition.groups[g];
-        try {
-            check_group(defn);
-        }
-        catch(e) {
-            errors = errors.concat(e);
-        }
-    }
-    for(c in definition.charts) {
-        defn = definition.charts[c];
-        try {
-            check_chart(defn, defn.type);
-        }
-        catch(e) {
-            errors = errors.concat(e);
-        }
-    }
+    // fill in anything easily defaultable (will not happen in incremental mode)
+    errors = aggregate_errors(default_dimension, default_group, default_chart);
     if(errors.length)
         throw errors;
 
-    // CREATE
+    // check for missing or unknown attrs
+    errors = aggregate_errors(check_dimension_attrs, check_group_attrs, check_chart_attrs);
+    if(errors.length)
+        throw errors;
+
+    // check for inconsistencies and other specific badness
+    errors = aggregate_errors(check_dimension_logic, check_group_logic, check_chart_logic);
+    if(errors.length)
+        throw errors;
+
+    // create / fill stuff in
+    var dimensions = {};
+    var groups = {};
+    var charts = {};
+
     var ndx = crossfilter(frame.records());
     for(var d in definition.dimensions) {
         defn = definition.dimensions[d];
@@ -529,7 +626,6 @@ function dcplot(frame, groupno, definition) {
     for(var g in definition.groups) {
         defn = definition.groups[g];
         groups[g] = defn.reduce(defn.group(dimensions[defn.dim]));
-        var t = groups[g].top(3);
     }
     for(c in definition.charts) {
         defn = definition.charts[c];
