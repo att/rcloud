@@ -13,11 +13,18 @@ function init_shareable_link_box() {
     });
 }
 
+var oob_handlers = {
+    "browsePath": function(v) {
+        $("#help-output").empty();
+        $("#help-output").append("<iframe class='help-iframe' src='" + window.location.protocol + '//' + window.location.host + v+ "'></iframe>");
+    }
+};
+
 function main_init() {
     init_shareable_link_box();
     rclient = RClient.create({ 
         debug: false,
-        host: "ws://"+location.hostname+":8081/", 
+        host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"), 
         on_connect: function() {
             $("#new-md-cell-button").click(function() {
                 shell.terminal.disable();
@@ -26,9 +33,9 @@ function main_init() {
                 vs[vs.length-1].show_source();
             });
             $("#rcloud-logout").click(function() {
-                $.cookies.set('user', null);
-                $.cookies.set('sessid', null);
-                window.location.href = '/login.html';
+		// let the server-side script handle this so it can
+		// also revoke all tokens
+                window.location.href = '/logout.R';
             });
             $(".collapse").collapse();
             $("#input-text-search").click(function() {
@@ -45,6 +52,9 @@ function main_init() {
                 editor.load_notebook(getURLParameter("notebook"));
                 $("#tabs").tabs("select", "#tabs-2");
             }
+        }, on_data: function(v) {
+            v = v.value.json();
+            oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
         }
     });
 }
