@@ -117,6 +117,7 @@ var chart_attrs = {
         // etc...
     },
     pie: {
+        concrete: true,
         parents: ['base', 'color'],
         supported: true,
         radius: {required: false},
@@ -130,12 +131,14 @@ var chart_attrs = {
         supported: false
     },
     bar: {
+        concrete: true,
         parents: ['coordinateGrid', 'stackable'],
         supported: true,
         centerBar: {required: false},
         gap: {required: false}
     },
     line: {
+        concrete: true,
         parents: ['coordinateGrid', 'stackable'],
         supported: true,
         area: {required: false},
@@ -153,6 +156,7 @@ var chart_attrs = {
         'r.domain': {required: false} // domain component of r
     },
     bubble: {
+        concrete: true,
         parents: ['coordinateGrid', 'abstractBubble'],
         supported: true,
         'r.elastic': {required: false}
@@ -171,6 +175,29 @@ var chart_attrs = {
         supported: false
     }
 };
+
+function skip_attr(a) {
+    return a==='supported' || a=='concrete' || a==='parents';
+}
+
+function preorder_traversal(map, iter, callbacks) {
+    if(!iter in map)
+        throw 'unknown chart type ' + defn.type;
+    var curr = map[iter];
+    if('parents' in curr)
+        for(var p in curr.parents)
+            preorder_traversal(map, curr.parents[p], callbacks);
+    callbacks[iter]();
+}
+function postorder_traversal(map, iter, callbacks) {
+    if(!iter in map)
+        throw 'unknown chart type ' + defn.type;
+    callbacks[iter]();
+    var curr = map[iter];
+    if('parents' in curr)
+        for(var p in curr.parents)
+            postorder_traversal(map, curr.parents[p], callbacks);
+}
 
 // inferences
 function infer_dimension(defn) {
@@ -199,55 +226,41 @@ function infer_chart(defn, dims, groups) {
         while(hash[base + n]) ++n;
         return base + n;
     }
-    function base() {
-        if(defn.group) {
-            if(defn.dimension && defn.dimension!=groups[defn.group].dim)
-                errors.push("group " + defn.group + " dimension " + groups[defn.group].dim
-                            + " does not match chart dimension " + defn.dimension);
-            defn.dimension = groups[defn.group].dim;
+    var callbacks = {
+        base: function() {
+            if(defn.group) {
+                if(defn.dimension && defn.dimension!=groups[defn.group].dim)
+                    errors.push("group " + defn.group + " dimension " + groups[defn.group].dim
+                                + " does not match chart dimension " + defn.dimension);
+                defn.dimension = groups[defn.group].dim;
+            }
+            else if(defn.dimension) {
+                if(!dims[defn.dimension])
+                    errors.push("unknown dimension " + defn.dimension);
+                defn.group = find_unused(groups, defn.dimension);
+                var g = groups[defn.group] = {};
+                g.dim = defn.dimension;
+            }
+            else errors.push("must specify either group or dimension");
+        },
+        color: function() {
+        },
+        stackable: function() {
+        },
+        coordinateGrid: function() {
+        },
+        pie: function() {
+        },
+        bar: function() {
+        },
+        line: function() {
+        },
+        abstractBubble: function() {
+        },
+        bubble: function() {
         }
-        else if(defn.dimension) {
-            if(!dims[defn.dimension])
-                errors.push("unknown dimension " + defn.dimension);
-            defn.group = find_unused(groups, defn.dimension);
-            var g = groups[defn.group] = {};
-            g.dim = defn.dimension;
-        }
-        else errors.push("must specify either group or dimension");
-    }
-    function color() {
-    }
-    function stackable() {
-    }
-    function coordinateGrid() {
-        base();
-    }
-    function pie() {
-        base();
-        color();
-    }
-    function bar() {
-        stackable();
-        coordinateGrid();
-    }
-    function line() {
-        stackable();
-        coordinateGrid();
-    }
-    function abstractBubble() {
-        color();
-    }
-    function bubble() {
-        abstractBubble();
-        coordinateGrid();
-    }
-    switch(defn.type) {
-    case 'pie': pie(); break;
-    case 'bar': bar(); break;
-    case 'line': line(); break;
-    case 'bubble': bubble(); break;
-    default: throw 'unknown chart type ' + defn.type;
-    }
+    };
+    preorder_traversal(chart_attrs, defn.type, callbacks);
 
     if(errors.length)
         throw errors;
@@ -273,11 +286,12 @@ function default_chart(defn, dims, groups) {
         if(!cattrs.supported)
             throw 'chart type ' + type + ' not supported';
         for(var a in cattrs) {
-            if(a==='supported' || a==='parents')
+            if(skip_attr(a)) 
                 continue;
             if(_.has(cattrs[a], 'default') && defn[a]===undefined)
                 defn[a] = cattrs[a].default;
         }
+        // postorder
         if('parents' in cattrs)
             for(var i in cattrs.parents)
                 do_defaults(defn, cattrs.parents[i]);
@@ -313,7 +327,7 @@ function check_chart_attrs(defn) {
             for(var i in cattrs.parents)
                 find_discreps(defn, cattrs.parents[i], missing, found);
         for(var a in cattrs) {
-            if(a==='supported' || a==='parents')
+            if(skip_attr(a)) 
                 continue;
             if(cattrs[a].required && defn[a]===undefined)
                 missing.push(a);
@@ -356,41 +370,28 @@ function check_group_logic(defn, dims) {
 }
 function check_chart_logic(defn, dims, groups) {
     var errors = [];
-    function base() {
-    }
-    function color() {
-    }
-    function stackable() {
-    }
-    function coordinateGrid() {
-        base();
-    }
-    function pie() {
-        base();
-        color();
-    }
-    function bar() {
-        stackable();
-        coordinateGrid();
-    }
-    function line() {
-        stackable();
-        coordinateGrid();
-    }
-    function abstractBubble() {
-        color();
-    }
-    function bubble() {
-        abstractBubble();
-        coordinateGrid();
-    }
-    switch(defn.type) {
-    case 'pie': pie(); break;
-    case 'bar': bar(); break;
-    case 'line': line(); break;
-    case 'bubble': bubble(); break;
-    default: throw 'unknown chart type ' + defn.type;
-    }
+    var callbacks = {
+        base: function() {
+        },
+        color: function() {
+        },
+        stackable: function() {
+        },
+        coordinateGrid: function() {
+        },
+        pie: function() {
+        },
+        bar: function() {
+        },
+        line: function() {
+        },
+        abstractBubble: function() {
+        },
+        bubble: function() {
+        }
+    };
+    
+    preorder_traversal(chart_attrs, defn.type, callbacks);
 
     if(errors.length)
         throw errors;
@@ -402,7 +403,9 @@ function check_chart_logic(defn, dims, groups) {
 // maps from dcplot attributes to dc.js methods
 function create_chart(groupname, defn, dimensions, groups) {
     var ctor, chart;
-    function base() {
+
+    var callbacks = {
+    base: function() {
         chart = ctor(defn.div, groupname);
         chart.dimension(dimensions[defn.dimension])
             .group(groups[defn.group])
@@ -412,16 +415,16 @@ function create_chart(groupname, defn, dimensions, groups) {
             chart.transitionDuration(defn['transition.duration']);
         if(_.has(defn, 'label'))
             chart.label(defn.label);
-    }
-    function color() {
+    },
+    color: function() {
         if(_.has(defn, 'colors'))
             chart.colors(defn.colors);
         if(_.has(defn, 'color'))
             chart.colorAccessor(defn.color);
         if(_.has(defn, 'color.domain'))
             chart.colorDomain(defn['color.domain']);
-    }
-    function stackable() {
+    },
+    stackable: function() {
         if(_.has(defn, 'stack'))
             for(var s in defn.stack) {
                 var stack = defn.stack[s];
@@ -430,10 +433,8 @@ function create_chart(groupname, defn, dimensions, groups) {
                 else
                     chart.stack(stack);
             }
-    }
-    function coordinateGrid() {
-        base();
-
+    },
+    coordinateGrid: function() {
         if(_.has(defn, 'margins'))
             chart.margins(defn.margins);
 
@@ -474,12 +475,8 @@ function create_chart(groupname, defn, dimensions, groups) {
         }
         if(_.has(defn, 'brush'))
             chart.brushOn(defn.brush);
-    }
-    function pie() {
-        ctor = dc.pieChart;
-        base();
-        color();
-        
+    },
+    pie: function() {
         if(_.has(defn, 'wedge'))
             chart.keyAccessor(defn.wedge);
         if(_.has(defn, 'size'))
@@ -489,34 +486,22 @@ function create_chart(groupname, defn, dimensions, groups) {
             chart.radius(defn.radius);
         if(_.has(defn, 'innerRadius'))
             chart.innerRadius(defn.innerRadius);
-    }
-    function bar() {
-        ctor = dc.barChart;
-        coordinateGrid();
-        stackable();
+    },
+    bar: function() {
         if(_.has(defn, 'centerBar'))
             chart.centerBar(defn.centerBar);
         if(_.has(defn, 'gap'))
             chart.gap(defn.gap);
-    }
-    function line() {
-        ctor = dc.lineChart;
-        coordinateGrid();
-        stackable();
-
+    },
+    line: function() {
         if(_.has(defn, 'area'))
             chart.renderArea(defn.area);
         if(_.has(defn, 'dotRadius'))
             chart.dotRadius(defn.dotRadius);
-    }
-    function abstractBubble() {
-        color();
-    }
-    function bubble() {
-        ctor = dc.bubbleChart;
-        coordinateGrid();
-        abstractBubble();
-        
+    },
+    abstractBubble: function() {
+    },
+    bubble: function() {
         if(_.has(defn, 'r'))
             chart.radiusValueAccessor(defn.r);
         if(_.has(defn, 'r.transform')) {
@@ -526,13 +511,16 @@ function create_chart(groupname, defn, dimensions, groups) {
             chart.r(rtrans);
         }
     }
-    switch(defn.type) {
-    case 'pie': pie(); break;
-    case 'bar': bar(); break;
-    case 'line': line(); break;
-    case 'bubble': bubble(); break;
-    default: throw 'unknown chart type ' + defn.type;
-    }
+    };
+    ctor = {
+        pie: dc.pieChart,
+        bar: dc.barChart,
+        line: dc.lineChart,
+        bubble: dc.bubbleChart
+    }[defn.type];
+    
+    preorder_traversal(chart_attrs, defn.type, callbacks);
+
     return chart;
 }
 
@@ -575,6 +563,17 @@ function dcplot(frame, groupno, definition) {
     var groupname = 'chartgroup' + groupno;
     var errors = [];
     var defn;
+
+    // first check all chart types because the traversals are unchecked
+    for(var c in definition.charts) {
+        defn = definition.charts[c];
+        if(!defn.type in chart_attrs)
+            throw 'unknown chart type ' + defn.type;
+        if(!chart_attrs[defn.type].supported)
+            throw 'unsupported chart type ' + defn.type;
+        if(!chart_attrs[defn.type].concrete)
+            throw "can't create abstract chart type " + defn.type;
+    }
 
     // infer attributes from other attributes
     errors = aggregate_errors(infer_dimension, infer_group, infer_chart);
