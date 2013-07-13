@@ -2,7 +2,7 @@
  dcplot: a minimal interface to dc.js with ggplot-like defaulting
 
  takes a description 
-*/
+ */
 
 var group = {
     identity: function(dim) { return dim.group(); },
@@ -69,7 +69,7 @@ var reduce = {
  2. check for required and unknown attributes
  3. generate the dimensions, groups, and charts
 
-*/
+ */
 
 // a map of attr->required to check for at the end to make sure we have everything
 var chart_attrs = {
@@ -405,112 +405,112 @@ function create_chart(groupname, defn, dimensions, groups) {
     var ctor, chart;
 
     var callbacks = {
-    base: function() {
-        chart = ctor(defn.div, groupname);
-        chart.dimension(dimensions[defn.dimension])
-            .group(groups[defn.group])
-            .width(defn.width)
-            .height(defn.height);
-        if(_.has(defn, 'transition.duration'))
-            chart.transitionDuration(defn['transition.duration']);
-        if(_.has(defn, 'label'))
-            chart.label(defn.label);
-    },
-    color: function() {
-        if(_.has(defn, 'colors'))
-            chart.colors(defn.colors);
-        if(_.has(defn, 'color'))
-            chart.colorAccessor(defn.color);
-        if(_.has(defn, 'color.domain'))
-            chart.colorDomain(defn['color.domain']);
-    },
-    stackable: function() {
-        if(_.has(defn, 'stack'))
-            for(var s in defn.stack) {
-                var stack = defn.stack[s];
-                if($.isArray(stack))
-                    chart.stack(stack[0], stack[1]);
-                else
-                    chart.stack(stack);
+        base: function() {
+            chart = ctor(defn.div, groupname);
+            chart.dimension(dimensions[defn.dimension])
+                .group(groups[defn.group])
+                .width(defn.width)
+                .height(defn.height);
+            if(_.has(defn, 'transition.duration'))
+                chart.transitionDuration(defn['transition.duration']);
+            if(_.has(defn, 'label'))
+                chart.label(defn.label);
+        },
+        color: function() {
+            if(_.has(defn, 'colors'))
+                chart.colors(defn.colors);
+            if(_.has(defn, 'color'))
+                chart.colorAccessor(defn.color);
+            if(_.has(defn, 'color.domain'))
+                chart.colorDomain(defn['color.domain']);
+        },
+        stackable: function() {
+            if(_.has(defn, 'stack'))
+                for(var s in defn.stack) {
+                    var stack = defn.stack[s];
+                    if($.isArray(stack))
+                        chart.stack(stack[0], stack[1]);
+                    else
+                        chart.stack(stack);
+                }
+        },
+        coordinateGrid: function() {
+            if(_.has(defn, 'margins'))
+                chart.margins(defn.margins);
+
+            if(_.has(defn, 'x'))
+                chart.keyAccessor(defn.x);
+            if(_.has(defn, 'y'))
+                chart.keyAccessor(defn.y);
+
+            var xtrans = defn['x.transform'];
+            if(_.has(defn, 'x.domain'))
+                xtrans.domain(defn['x.domain']);
+            chart.x(xtrans)
+                .xUnits(defn['x.units']);
+            if(_.has(defn, 'x.round'))
+                chart.round(defn['x.round']);
+            if(_.has(defn, 'x.elastic'))
+                chart.elasticX(defn['x.elastic']);
+            if(_.has(defn, 'x.padding'))
+                chart.xAxisPadding(defn['x.padding']);
+
+            if(_.has(defn, 'y.transform')) {
+                var ytrans = defn['y.transform'];
+                if(_.has(defn, 'y.domain'))
+                    ytrans.domain(defn['y.domain']);
+                chart.y(ytrans);
             }
-    },
-    coordinateGrid: function() {
-        if(_.has(defn, 'margins'))
-            chart.margins(defn.margins);
+            if(_.has(defn, 'y.elastic'))
+                chart.elasticY(defn['y.elastic']);
+            if(_.has(defn, 'y.padding'))
+                chart.yAxisPadding(defn['y.padding']);
 
-        if(_.has(defn, 'x'))
-            chart.keyAccessor(defn.x);
-        if(_.has(defn, 'y'))
-            chart.keyAccessor(defn.y);
+            if(_.has(defn, 'gridLines')) {
+                var lines = defn.gridLines;
+                if('horizontal' in lines)
+                    chart.renderVerticalGridLines(lines.horizontal);
+                if('vertical' in lines)
+                    chart.renderVerticalGridLines(lines.vertical);
+            }
+            if(_.has(defn, 'brush'))
+                chart.brushOn(defn.brush);
+        },
+        pie: function() {
+            if(_.has(defn, 'wedge'))
+                chart.keyAccessor(defn.wedge);
+            if(_.has(defn, 'size'))
+                chart.keyAccessor(defn.size);
 
-        var xtrans = defn['x.transform'];
-        if(_.has(defn, 'x.domain'))
-            xtrans.domain(defn['x.domain']);
-        chart.x(xtrans)
-            .xUnits(defn['x.units']);
-        if(_.has(defn, 'x.round'))
-            chart.round(defn['x.round']);
-        if(_.has(defn, 'x.elastic'))
-            chart.elasticX(defn['x.elastic']);
-        if(_.has(defn, 'x.padding'))
-            chart.xAxisPadding(defn['x.padding']);
-
-        if(_.has(defn, 'y.transform')) {
-            var ytrans = defn['y.transform'];
-            if(_.has(defn, 'y.domain'))
-                ytrans.domain(defn['y.domain']);
-            chart.y(ytrans);
+            if(_.has(defn, 'radius'))
+                chart.radius(defn.radius);
+            if(_.has(defn, 'innerRadius'))
+                chart.innerRadius(defn.innerRadius);
+        },
+        bar: function() {
+            if(_.has(defn, 'centerBar'))
+                chart.centerBar(defn.centerBar);
+            if(_.has(defn, 'gap'))
+                chart.gap(defn.gap);
+        },
+        line: function() {
+            if(_.has(defn, 'area'))
+                chart.renderArea(defn.area);
+            if(_.has(defn, 'dotRadius'))
+                chart.dotRadius(defn.dotRadius);
+        },
+        abstractBubble: function() {
+        },
+        bubble: function() {
+            if(_.has(defn, 'r'))
+                chart.radiusValueAccessor(defn.r);
+            if(_.has(defn, 'r.transform')) {
+                var rtrans = defn['r.transform'];
+                if(_.has(defn, 'r.domain'))
+                    rtrans.domain(defn['r.domain']);
+                chart.r(rtrans);
+            }
         }
-        if(_.has(defn, 'y.elastic'))
-            chart.elasticY(defn['y.elastic']);
-        if(_.has(defn, 'y.padding'))
-            chart.yAxisPadding(defn['y.padding']);
-
-        if(_.has(defn, 'gridLines')) {
-            var lines = defn.gridLines;
-            if('horizontal' in lines)
-                chart.renderVerticalGridLines(lines.horizontal);
-            if('vertical' in lines)
-                chart.renderVerticalGridLines(lines.vertical);
-        }
-        if(_.has(defn, 'brush'))
-            chart.brushOn(defn.brush);
-    },
-    pie: function() {
-        if(_.has(defn, 'wedge'))
-            chart.keyAccessor(defn.wedge);
-        if(_.has(defn, 'size'))
-            chart.keyAccessor(defn.size);
-
-        if(_.has(defn, 'radius'))
-            chart.radius(defn.radius);
-        if(_.has(defn, 'innerRadius'))
-            chart.innerRadius(defn.innerRadius);
-    },
-    bar: function() {
-        if(_.has(defn, 'centerBar'))
-            chart.centerBar(defn.centerBar);
-        if(_.has(defn, 'gap'))
-            chart.gap(defn.gap);
-    },
-    line: function() {
-        if(_.has(defn, 'area'))
-            chart.renderArea(defn.area);
-        if(_.has(defn, 'dotRadius'))
-            chart.dotRadius(defn.dotRadius);
-    },
-    abstractBubble: function() {
-    },
-    bubble: function() {
-        if(_.has(defn, 'r'))
-            chart.radiusValueAccessor(defn.r);
-        if(_.has(defn, 'r.transform')) {
-            var rtrans = defn['r.transform'];
-            if(_.has(defn, 'r.domain'))
-                rtrans.domain(defn['r.domain']);
-            chart.r(rtrans);
-        }
-    }
     };
     ctor = {
         pie: dc.pieChart,
