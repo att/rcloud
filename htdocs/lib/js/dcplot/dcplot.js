@@ -280,27 +280,10 @@ function default_chart(defn, dims, groups) {
         }
         if('parents' in cattrs)
             for(var i in cattrs.parents)
-                do_defaults(defn, cattrs.parents[i], missing, found);
+                do_defaults(defn, cattrs.parents[i]);
 
-    }
-    function empty_found_map(defn) {
-        var k = _.without(_.keys(defn), 'type'), n = k.length, v = [];
-        while(n--) v.push(false);
-        return _.object(k,v);
-    }
-    var missing = [], found = empty_found_map(defn);
-    do_defaults(defn, defn.type, missing, found);
-    var errors = [];
-    if(missing.length)
-        errors.push('chart definition is missing required attrs: ' + missing.join(', '));
-    var unknown = _.map(_.reject(_.pairs(found), 
-                                 function(p) { return p[1]; }),
-                        function(p) { return p[0]; });
-    if(unknown.length) 
-        errors.push('chart definition has unknown attrs: ' + unknown.join(', '));
-
-    if(errors.length) 
-        throw errors;
+    } 
+    do_defaults(defn, defn.type);
 }
 
 
@@ -328,7 +311,7 @@ function check_chart_attrs(defn) {
             throw 'chart type ' + type + ' not supported';
         if('parents' in cattrs)
             for(var i in cattrs.parents)
-                find_discreps(defn, cattrs[a][i], missing, found);
+                find_discreps(defn, cattrs.parents[i], missing, found);
         for(var a in cattrs) {
             if(a==='supported' || a==='parents')
                 continue;
