@@ -35985,6 +35985,23 @@ function reader(m)
             return Robj.tagged_list(result, attributes);
         }, 0);
     });
+    that.read_lang_tag = bind(that.read_list, function(lst) {
+        return lift(function(attributes, length) {
+            var result = [];
+            for (var i=0; i<lst.length; i+=2) {
+                var value = lst[i], tag = lst[i+1];
+                if (tag.type === "symbol") {
+                    result.push({ name: tag.value,
+                                  value: value });
+                } else {
+                    result.push({ name: null,
+                                  value: value });
+                }
+            }
+            return Robj.tagged_lang(result, attributes);
+        }, 0);
+    });
+
 
     function xf(f, g) { return bind(f, function(t) { 
         return lift(function(a, l) { return g(t, a); }, 0); 
