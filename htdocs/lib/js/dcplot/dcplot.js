@@ -208,380 +208,389 @@ function postorder_traversal(map, iter, callbacks) {
             postorder_traversal(map, curr.parents[p], callbacks);
 }
 
-// defaults
-function default_dimension(name, defn) {
-    // nothing (yet?)
-}
-function default_group(name, defn, dims) {
-    var errors = [];
-    if(!_.has(defn, 'group'))
-        defn.group = group.identity;
-    if(!_.has(defn, 'reduce'))
-        defn.reduce = reduce.count;
-
-    if(errors.length)
-        throw errors;
-}
-function default_chart(name, defn, dims, groups) {
-    // exclusively from chart_attrs
-    function do_defaults(defn, type) {
-        var cattrs = chart_attrs[type];
-        if(!cattrs.supported)
-            throw 'chart type ' + type + ' not supported';
-        for(var a in cattrs) {
-            if(skip_attr(a)) 
-                continue;
-            if(_.has(cattrs[a], 'default') && defn[a]===undefined)
-                defn[a] = cattrs[a].default;
-        }
-        // postorder
-        if('parents' in cattrs)
-            for(var i in cattrs.parents)
-                do_defaults(defn, cattrs.parents[i]);
-
-    } 
-    do_defaults(defn, defn.type);
-}
-
-// inferences
-function infer_dimension(name, defn) {
-    // nothing (yet?)
-}
-function infer_group(name, defn, dims) {
-    var errors = [];
-    if(!_.has(defn, 'dim'))
-        errors.push('group needs dimension');
-    if(!_.has(dims, defn.dim))
-        errors.push('unknown dimension ' + defn.dim);
-    if(!_.has(defn, 'group'))
-        defn.group = group.identity;
-    if(!_.has(defn, 'reduce'))
-        defn.reduce = reduce.count;
-
-    if(errors.length)
-        throw errors;
-}
-function infer_chart(name, defn, dims, groups) {
-    var errors = [];
-    function find_unused(hash, base) {
-        if(!hash[base])
-            return base;
-        var n = 1;
-        while(hash[base + n]) ++n;
-        return base + n;
-    }
-    var callbacks = {
-        base: function() {
-            if(!('div' in defn))
-                defn.div = '#' + name;
-            if(defn.group) {
-                if(!defn.dimension)
-                    defn.dimension = groups[defn.group].dim;
-            }
-            else if(defn.dimension) {
-                if(!dims[defn.dimension])
-                    errors.push("unknown dimension " + defn.dimension);
-                defn.group = find_unused(groups, defn.dimension);
-                var g = groups[defn.group] = {};
-                g.dim = defn.dimension;
-                infer_group(defn.group, g, dims);
-            }
-        },
-        color: function() {
-        },
-        stackable: function() {
-        },
-        coordinateGrid: function() {
-            // domain actually isn't required by dc.js but for correctness you
-            // need it... unless you're elastic, in which case [0,0] is fine
-            if('x.elastic' in defn && defn['x.elastic'] && !('x.domain' in defn))
-                defn['x.domain'] = [0,0];
-            if('y.elastic' in defn && defn['y.elastic'] && !('y.domain' in defn))
-                defn['y.domain'] = [0,0];
-        },
-        pie: function() {
-        },
-        bar: function() {
-            /* in practice, dc's xUnits seem to be based on either the bin width
-             for a histogram, or the set of ordinals */
-            if(!('x.units' in defn) && defn.group) {
-                var group = groups[defn.group];
-                if('group' in group && 'binwidth' in group.group)
-                    defn['x.units'] = dc.units.float.precision(group.group.binwidth);
-            }
-        },
-        line: function() {
-        },
-        abstractBubble: function() {
-        },
-        bubble: function() {
-        }
-    };
-    preorder_traversal(chart_attrs, defn.type, callbacks);
-
-    if(errors.length)
-        throw errors;
-}
-
-
-// look for required attrs not filled and unknown attrs
-function check_dimension_attrs(name, defn) {
-}
-function check_group_attrs(name, defn) {
-    var expected = ['dim', 'group', 'reduce'];
-    var k = _.keys(defn),
-        missing = _.difference(expected, k),
-        unknown = _.difference(k, expected),
-        errors = [];
-    if(missing.length)
-        errors.push('group definition is missing required attrs: ' + missing.join(', '));
-    if(unknown.length) 
-        errors.push('group definition has unknown attrs: ' + unknown.join(', '));
-
-    if(errors.length) 
-        throw errors;
-}
-function check_chart_attrs(name, defn) {
-    function find_discreps(defn, type, missing, found) {
-        var cattrs = chart_attrs[type];
-        if(!cattrs.supported)
-            throw 'chart type ' + type + ' not supported';
-        if('parents' in cattrs)
-            for(var i in cattrs.parents)
-                find_discreps(defn, cattrs.parents[i], missing, found);
-        for(var a in cattrs) {
-            if(skip_attr(a)) 
-                continue;
-            if(cattrs[a].required && defn[a]===undefined)
-                missing.push(a);
-            if(_.has(found, a))
-                found[a] = true;
-        }
-    }
-    function empty_found_map(defn) {
-        var k = _.without(_.keys(defn), 'type'), n = k.length, v = [];
-        while(n--) v.push(false);
-        return _.object(k,v);
-    }
-    var missing = [], found = empty_found_map(defn);
-    find_discreps(defn, defn.type, missing, found);
-    var errors = [];
-    if(missing.length)
-        errors.push('chart definition is missing required attrs: ' + missing.join(', '));
-    var unknown = _.map(_.reject(_.pairs(found), 
-                                 function(p) { return p[1]; }),
-                        function(p) { return p[0]; });
-    if(unknown.length) 
-        errors.push('chart definition has unknown attrs: ' + unknown.join(', '));
-
-    if(errors.length) 
-        throw errors;
-}
-
-
-// logic errors
-function check_dimension_logic(name, defn) {
-    // nothing (yet?)
-}
-function check_group_logic(name, defn, dims) {
-    var errors = [];
-    if(!_.has(dims, defn.dim))
-        errors.push('unknown dimension ' + defn.dim);
-
-    if(errors.length)
-        throw errors;
-}
-function check_chart_logic(name, defn, dims, groups) {
-    var errors = [];
-    var callbacks = {
-        base: function() {
-            if(defn.dimension && defn.dimension!=groups[defn.group].dim)
-                errors.push("group " + defn.group + " dimension " + groups[defn.group].dim
-                            + " does not match chart dimension " + defn.dimension);
-        },
-        color: function() {
-        },
-        stackable: function() {
-        },
-        coordinateGrid: function() {
-        },
-        pie: function() {
-        },
-        bar: function() {
-        },
-        line: function() {
-        },
-        abstractBubble: function() {
-        },
-        bubble: function() {
-        }
-    };
-    
-    preorder_traversal(chart_attrs, defn.type, callbacks);
-
-    if(errors.length)
-        throw errors;
-}
-
-
-
-// this is a hopefully a lot of boilerplate with no logic
-// maps from dcplot attributes to dc.js methods
-function create_chart(groupname, defn, dimensions, groups) {
-    var ctor, chart;
-
-    /* create uniformity between crossfilter dimension and reduce functions,
-     and dc.js accessor functions with a simple trick: for the latter,
-     split the input, which is {key, value}, into two params. this works
-     because crossfilter functions work with just the 'key' 
-
-     i.e. in crossfilter:
-     * dimension functions are key -> key
-     * group.group functions are key -> key
-     * group.reduce functions are key -> value
-     in dc:
-     * accessor functions are {key,value} -> whatever
-     
-     so instead we make them (key,value) -> whatever and then they look like
-     crossfilter functions!
-     */
-    function key_value(f) { return function(kv) { return f(kv.key, kv.value); }; }
-
-    var callbacks = {
-        base: function() {
-            chart = ctor(defn.div, groupname);
-            chart.dimension(dimensions[defn.dimension])
-                .group(groups[defn.group])
-                .width(defn.width)
-                .height(defn.height);
-            if(_.has(defn, 'transition.duration'))
-                chart.transitionDuration(defn['transition.duration']);
-            if(_.has(defn, 'label')) {
-                if(defn.label) 
-                    chart.label(defn.label);
-                else
-                    chart.renderLabel(false);
-            }
-            if(_.has(defn, 'tips')) {
-                if(defn.tips)
-                    chart.title(key_value(defn.tips));
-                else 
-                    chart.renderTitle(false);
-            }
-        },
-        color: function() {
-            if(_.has(defn, 'colors'))
-                chart.colors(defn.colors);
-            if(_.has(defn, 'color'))
-                chart.colorAccessor(defn.color);
-            if(_.has(defn, 'color.domain'))
-                chart.colorDomain(defn['color.domain']);
-        },
-        stackable: function() {
-            if(_.has(defn, 'stack'))
-                for(var s in defn.stack) {
-                    var stack = defn.stack[s];
-                    if($.isArray(stack))
-                        chart.stack(stack[0], stack[1]);
-                    else
-                        chart.stack(stack);
-                }
-        },
-        coordinateGrid: function() {
-            if(_.has(defn, 'margins'))
-                chart.margins(defn.margins);
-
-            if(_.has(defn, 'x'))
-                chart.keyAccessor(key_value(defn.x));
-            if(_.has(defn, 'y'))
-                chart.valueAccessor(key_value(defn.y));
-
-            var xtrans = defn['x.transform'];
-            if(_.has(defn, 'x.domain'))
-                xtrans.domain(defn['x.domain']);
-            chart.x(xtrans)
-                .xUnits(defn['x.units']);
-            if(_.has(defn, 'x.round'))
-                chart.round(defn['x.round']);
-            if(_.has(defn, 'x.elastic'))
-                chart.elasticX(defn['x.elastic']);
-            if(_.has(defn, 'x.padding'))
-                chart.xAxisPadding(defn['x.padding']);
-
-            if(_.has(defn, 'y.transform')) {
-                var ytrans = defn['y.transform'];
-                if(_.has(defn, 'y.domain'))
-                    ytrans.domain(defn['y.domain']);
-                chart.y(ytrans);
-            }
-            if(_.has(defn, 'y.elastic'))
-                chart.elasticY(defn['y.elastic']);
-            if(_.has(defn, 'y.padding'))
-                chart.yAxisPadding(defn['y.padding']);
-
-            if(_.has(defn, 'gridLines')) {
-                var lines = defn.gridLines;
-                if('horizontal' in lines)
-                    chart.renderVerticalGridLines(lines.horizontal);
-                if('vertical' in lines)
-                    chart.renderVerticalGridLines(lines.vertical);
-            }
-            if(_.has(defn, 'brush'))
-                chart.brushOn(defn.brush);
-        },
-        pie: function() {
-            if(_.has(defn, 'wedge'))
-                chart.keyAccessor(defn.wedge);
-            if(_.has(defn, 'size'))
-                chart.keyAccessor(defn.size);
-
-            if(_.has(defn, 'radius'))
-                chart.radius(defn.radius);
-            if(_.has(defn, 'innerRadius'))
-                chart.innerRadius(defn.innerRadius);
-        },
-        bar: function() {
-            if(_.has(defn, 'centerBar'))
-                chart.centerBar(defn.centerBar);
-            if(_.has(defn, 'gap'))
-                chart.gap(defn.gap);
-        },
-        line: function() {
-            if(_.has(defn, 'area'))
-                chart.renderArea(defn.area);
-            if(_.has(defn, 'dotRadius'))
-                chart.dotRadius(defn.dotRadius);
-        },
-        abstractBubble: function() {
-        },
-        bubble: function() {
-            if(_.has(defn, 'r'))
-                chart.radiusValueAccessor(key_value(defn.r));
-            if(_.has(defn, 'r.transform') || _.has(defn, 'r.domain')) {
-                var rtrans = defn['r.transform'] || d3.scale.linear();
-                rtrans.domain(defn['r.domain'] || [0,100]);
-                chart.r(rtrans);
-            }
-        }
-    };
-    ctor = {
-        pie: dc.pieChart,
-        bar: dc.barChart,
-        line: dc.lineChart,
-        bubble: dc.bubbleChart
-    }[defn.type];
-    
-    preorder_traversal(chart_attrs, defn.type, callbacks);
-
-    // perform any extra post-processing
-    if(_.has(defn, 'more'))
-        defn.more(chart);
-
-    return chart;
-}
-
-
 function dcplot(frame, groupno, definition) {
+
+    // defaults
+    function default_dimension(name, defn) {
+        // nothing (yet?)
+    }
+    function default_group(name, defn, dims) {
+        var errors = [];
+        if(!_.has(defn, 'group'))
+            defn.group = group.identity;
+        if(!_.has(defn, 'reduce'))
+            defn.reduce = reduce.count;
+
+        if(errors.length)
+            throw errors;
+    }
+    function default_chart(name, defn, dims, groups) {
+        // exclusively from chart_attrs
+        function do_defaults(defn, type) {
+            var cattrs = chart_attrs[type];
+            if(!cattrs.supported)
+                throw 'chart type ' + type + ' not supported';
+            for(var a in cattrs) {
+                if(skip_attr(a)) 
+                    continue;
+                if(_.has(cattrs[a], 'default') && defn[a]===undefined)
+                    defn[a] = cattrs[a].default;
+            }
+            // postorder
+            if('parents' in cattrs)
+                for(var i in cattrs.parents)
+                    do_defaults(defn, cattrs.parents[i]);
+
+        } 
+        do_defaults(defn, defn.type);
+    }
+
+    function accessor(a) {
+        if(_.isFunction(a))
+            return a;
+        else if(_.isString(a))
+            return frame.access(a);
+        else throw "illegal accessor " + a.toString();
+    }
+
+    // inferences
+    function infer_dimension(name, defn) {
+        // nothing (yet?)
+    }
+    function infer_group(name, defn, dims) {
+        var errors = [];
+        if(!_.has(defn, 'dim'))
+            errors.push('group needs dimension');
+        if(!_.has(dims, defn.dim))
+            errors.push('unknown dimension ' + defn.dim);
+        if(!_.has(defn, 'group'))
+            defn.group = group.identity;
+        if(!_.has(defn, 'reduce'))
+            defn.reduce = reduce.count;
+
+        if(errors.length)
+            throw errors;
+    }
+    function infer_chart(name, defn, dims, groups) {
+        var errors = [];
+        function find_unused(hash, base) {
+            if(!hash[base])
+                return base;
+            var n = 1;
+            while(hash[base + n]) ++n;
+            return base + n;
+        }
+        var callbacks = {
+            base: function() {
+                if(!('div' in defn))
+                    defn.div = '#' + name;
+                if(defn.group) {
+                    if(!defn.dimension)
+                        defn.dimension = groups[defn.group].dim;
+                }
+                else if(defn.dimension) {
+                    if(!dims[defn.dimension])
+                        errors.push("unknown dimension " + defn.dimension);
+                    defn.group = find_unused(groups, defn.dimension);
+                    var g = groups[defn.group] = {};
+                    g.dim = defn.dimension;
+                    infer_group(defn.group, g, dims);
+                }
+            },
+            color: function() {
+            },
+            stackable: function() {
+            },
+            coordinateGrid: function() {
+                // domain actually isn't required by dc.js but for correctness you
+                // need it... unless you're elastic, in which case [0,0] is fine
+                if('x.elastic' in defn && defn['x.elastic'] && !('x.domain' in defn))
+                    defn['x.domain'] = [0,0];
+                if('y.elastic' in defn && defn['y.elastic'] && !('y.domain' in defn))
+                    defn['y.domain'] = [0,0];
+            },
+            pie: function() {
+            },
+            bar: function() {
+                /* in practice, dc's xUnits seem to be based on either the bin width
+                 for a histogram, or the set of ordinals */
+                if(!('x.units' in defn) && defn.group) {
+                    var group = groups[defn.group];
+                    if('group' in group && 'binwidth' in group.group)
+                        defn['x.units'] = dc.units.float.precision(group.group.binwidth);
+                }
+            },
+            line: function() {
+            },
+            abstractBubble: function() {
+            },
+            bubble: function() {
+            }
+        };
+        preorder_traversal(chart_attrs, defn.type, callbacks);
+
+        if(errors.length)
+            throw errors;
+    }
+
+
+    // look for required attrs not filled and unknown attrs
+    function check_dimension_attrs(name, defn) {
+    }
+    function check_group_attrs(name, defn) {
+        var expected = ['dim', 'group', 'reduce'];
+        var k = _.keys(defn),
+            missing = _.difference(expected, k),
+            unknown = _.difference(k, expected),
+            errors = [];
+        if(missing.length)
+            errors.push('group definition is missing required attrs: ' + missing.join(', '));
+        if(unknown.length) 
+            errors.push('group definition has unknown attrs: ' + unknown.join(', '));
+
+        if(errors.length) 
+            throw errors;
+    }
+    function check_chart_attrs(name, defn) {
+        function find_discreps(defn, type, missing, found) {
+            var cattrs = chart_attrs[type];
+            if(!cattrs.supported)
+                throw 'chart type ' + type + ' not supported';
+            if('parents' in cattrs)
+                for(var i in cattrs.parents)
+                    find_discreps(defn, cattrs.parents[i], missing, found);
+            for(var a in cattrs) {
+                if(skip_attr(a)) 
+                    continue;
+                if(cattrs[a].required && defn[a]===undefined)
+                    missing.push(a);
+                if(_.has(found, a))
+                    found[a] = true;
+            }
+        }
+        function empty_found_map(defn) {
+            var k = _.without(_.keys(defn), 'type'), n = k.length, v = [];
+            while(n--) v.push(false);
+            return _.object(k,v);
+        }
+        var missing = [], found = empty_found_map(defn);
+        find_discreps(defn, defn.type, missing, found);
+        var errors = [];
+        if(missing.length)
+            errors.push('chart definition is missing required attrs: ' + missing.join(', '));
+        var unknown = _.map(_.reject(_.pairs(found), 
+                                     function(p) { return p[1]; }),
+                            function(p) { return p[0]; });
+        if(unknown.length) 
+            errors.push('chart definition has unknown attrs: ' + unknown.join(', '));
+
+        if(errors.length) 
+            throw errors;
+    }
+
+
+    // logic errors
+    function check_dimension_logic(name, defn) {
+        // nothing (yet?)
+    }
+    function check_group_logic(name, defn, dims) {
+        var errors = [];
+        if(!_.has(dims, defn.dim))
+            errors.push('unknown dimension ' + defn.dim);
+
+        if(errors.length)
+            throw errors;
+    }
+    function check_chart_logic(name, defn, dims, groups) {
+        var errors = [];
+        var callbacks = {
+            base: function() {
+                if(defn.dimension && defn.dimension!=groups[defn.group].dim)
+                    errors.push("group " + defn.group + " dimension " + groups[defn.group].dim
+                                + " does not match chart dimension " + defn.dimension);
+            },
+            color: function() {
+            },
+            stackable: function() {
+            },
+            coordinateGrid: function() {
+            },
+            pie: function() {
+            },
+            bar: function() {
+            },
+            line: function() {
+            },
+            abstractBubble: function() {
+            },
+            bubble: function() {
+            }
+        };
+        
+        preorder_traversal(chart_attrs, defn.type, callbacks);
+
+        if(errors.length)
+            throw errors;
+    }
+
+
+
+    // this is a hopefully a lot of boilerplate with no logic
+    // maps from dcplot attributes to dc.js methods
+    function create_chart(groupname, defn, dimensions, groups) {
+        var ctor, chart;
+
+        /* create uniformity between crossfilter dimension and reduce functions,
+         and dc.js accessor functions with a simple trick: for the latter,
+         split the input, which is {key, value}, into two params. this works
+         because crossfilter functions work with just the 'key' 
+
+         i.e. in crossfilter:
+         * dimension functions are key -> key
+         * group.group functions are key -> key
+         * group.reduce functions are key -> value
+         in dc:
+         * accessor functions are {key,value} -> whatever
+         
+         so instead we make them (key,value) -> whatever and then they look like
+         crossfilter functions!
+         */
+        function key_value(f) { return function(kv) { return f(kv.key, kv.value); }; }
+
+        var callbacks = {
+            base: function() {
+                chart = ctor(defn.div, groupname);
+                chart.dimension(dimensions[defn.dimension])
+                    .group(groups[defn.group])
+                    .width(defn.width)
+                    .height(defn.height);
+                if(_.has(defn, 'transition.duration'))
+                    chart.transitionDuration(defn['transition.duration']);
+                if(_.has(defn, 'label')) {
+                    if(defn.label) 
+                        chart.label(defn.label);
+                    else
+                        chart.renderLabel(false);
+                }
+                if(_.has(defn, 'tips')) {
+                    if(defn.tips)
+                        chart.title(key_value(defn.tips));
+                    else 
+                        chart.renderTitle(false);
+                }
+            },
+            color: function() {
+                if(_.has(defn, 'colors'))
+                    chart.colors(defn.colors);
+                if(_.has(defn, 'color'))
+                    chart.colorAccessor(defn.color);
+                if(_.has(defn, 'color.domain'))
+                    chart.colorDomain(defn['color.domain']);
+            },
+            stackable: function() {
+                if(_.has(defn, 'stack'))
+                    for(var s in defn.stack) {
+                        var stack = defn.stack[s];
+                        if($.isArray(stack))
+                            chart.stack(stack[0], stack[1]);
+                        else
+                            chart.stack(stack);
+                    }
+            },
+            coordinateGrid: function() {
+                if(_.has(defn, 'margins'))
+                    chart.margins(defn.margins);
+
+                if(_.has(defn, 'x'))
+                    chart.keyAccessor(key_value(accessor(defn.x)));
+                if(_.has(defn, 'y'))
+                    chart.valueAccessor(key_value(accessor(defn.y)));
+
+                var xtrans = defn['x.transform'];
+                if(_.has(defn, 'x.domain'))
+                    xtrans.domain(defn['x.domain']);
+                chart.x(xtrans)
+                    .xUnits(defn['x.units']);
+                if(_.has(defn, 'x.round'))
+                    chart.round(defn['x.round']);
+                if(_.has(defn, 'x.elastic'))
+                    chart.elasticX(defn['x.elastic']);
+                if(_.has(defn, 'x.padding'))
+                    chart.xAxisPadding(defn['x.padding']);
+
+                if(_.has(defn, 'y.transform')) {
+                    var ytrans = defn['y.transform'];
+                    if(_.has(defn, 'y.domain'))
+                        ytrans.domain(defn['y.domain']);
+                    chart.y(ytrans);
+                }
+                if(_.has(defn, 'y.elastic'))
+                    chart.elasticY(defn['y.elastic']);
+                if(_.has(defn, 'y.padding'))
+                    chart.yAxisPadding(defn['y.padding']);
+
+                if(_.has(defn, 'gridLines')) {
+                    var lines = defn.gridLines;
+                    if('horizontal' in lines)
+                        chart.renderVerticalGridLines(lines.horizontal);
+                    if('vertical' in lines)
+                        chart.renderVerticalGridLines(lines.vertical);
+                }
+                if(_.has(defn, 'brush'))
+                    chart.brushOn(defn.brush);
+            },
+            pie: function() {
+                if(_.has(defn, 'wedge'))
+                    chart.keyAccessor(defn.wedge);
+                if(_.has(defn, 'size'))
+                    chart.keyAccessor(defn.size);
+
+                if(_.has(defn, 'radius'))
+                    chart.radius(defn.radius);
+                if(_.has(defn, 'innerRadius'))
+                    chart.innerRadius(defn.innerRadius);
+            },
+            bar: function() {
+                if(_.has(defn, 'centerBar'))
+                    chart.centerBar(defn.centerBar);
+                if(_.has(defn, 'gap'))
+                    chart.gap(defn.gap);
+            },
+            line: function() {
+                if(_.has(defn, 'area'))
+                    chart.renderArea(defn.area);
+                if(_.has(defn, 'dotRadius'))
+                    chart.dotRadius(defn.dotRadius);
+            },
+            abstractBubble: function() {
+            },
+            bubble: function() {
+                if(_.has(defn, 'r'))
+                    chart.radiusValueAccessor(key_value(accessor(defn.r)));
+                if(_.has(defn, 'r.transform') || _.has(defn, 'r.domain')) {
+                    var rtrans = defn['r.transform'] || d3.scale.linear();
+                    rtrans.domain(defn['r.domain'] || [0,100]);
+                    chart.r(rtrans);
+                }
+            }
+        };
+        ctor = {
+            pie: dc.pieChart,
+            bar: dc.barChart,
+            line: dc.lineChart,
+            bubble: dc.bubbleChart
+        }[defn.type];
+        
+        preorder_traversal(chart_attrs, defn.type, callbacks);
+
+        // perform any extra post-processing
+        if(_.has(defn, 'more'))
+            defn.more(chart);
+
+        return chart;
+    }
+
+
     function aggregate_errors(dimension_fn, group_fn, chart_fn) {
         var errors = [];
         for(var d in definition.dimensions) {
@@ -660,7 +669,7 @@ function dcplot(frame, groupno, definition) {
     var ndx = crossfilter(frame.records());
     for(var d in definition.dimensions) {
         defn = definition.dimensions[d];
-        dimensions[d] = ndx.dimension(defn);
+        dimensions[d] = ndx.dimension(accessor(defn));
     }
     for(var g in definition.groups) {
         defn = definition.groups[g];
