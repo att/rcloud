@@ -4,6 +4,7 @@
  takes a description 
  */
 
+// todo? the groupvalue function could access subfields of the dimension value?
 var group = {
     identity: function(dim) { return dim.group(); },
     bin: function(binwidth) {
@@ -18,49 +19,74 @@ var group = {
     }
 };
 
+// yes! these are fourth-order functions!
+// the methods on this object take an access-thing and return an object for accessor()
+// accessor() will bind access to a real accessor function
+// that function is ready to take a group
+// and pass it the functions it composes to call the true accessor
 var reduce = {
     count: function(group) { return group.reduceCount(); },
     sum: function(access) {
-        return function(group) {
-            return group.reduceSum(
-                function(item) { 
-                    return access(item); 
-                }
-            );
+        return {
+            arg: access,
+            fun: function(acc2) {
+                return function(group) {
+                    return group.reduceSum(
+                        function(item) { 
+                            return acc2(item); 
+                        }
+                    );
+                };
+            }
         };
     },
     any: function(access) {
-        return function(group) {
-            return group.reduce(
-                function(p, v) { 
-                    return access(v); 
-                },
-                function(p, v) { 
-                    return p; 
-                },
-                function(p, v) { 
-                    return 0; 
-                });
+        return {
+            arg: access,
+            fun: function(acc2) {
+                return function(group) {
+                    return group.reduce(
+                        function(p, v) {  
+                            return acc2(v); 
+                        },
+                        function(p, v) { 
+                            return p; 
+                        },
+                        function(p, v) { 
+                            return 0; 
+                        });
+                };
+            }
         };
     },
     avg: function(access) {
-        return function(group) {
-            return group.reduce(
-                function(p, v) { 
-                    ++p.count;
-                    p.sum += access(v);
-                    p.avg = p.sum / p.count;
-                    return p;
-                },
-                function(p, v) {
-                    --p.count;
-                    p.sum -= access(v);
-                    p.avg = p.count ? p.sum / p.count : 0;
-                    return p;
-                },
-                function(p, v) { 
-                    return {count: 0, sum: 0, avg: 0}; 
-                });
+        return {
+            arg: access,
+            fun: function(acc2) {
+                return function(group) {
+                    return group.reduce(
+                        function(p, v) { 
+                            ++p.count;
+                            p.sum += acc2(v);
+                            p.avg = p.sum / p.count;
+                            return p;
+                        },
+                        function(p, v) {
+                            --p.count;
+                            p.sum -= acc2(v);
+                            p.avg = p.count ? p.sum / p.count : 0;
+                            return p;
+                        },
+                        function(p, v) { 
+                            return {count: 0, sum: 0, avg: 0}; 
+                        });
+                };
+            }
+        };
+    },
+    value: function(field) {
+        return function(key, value) {
+            return value[field];
         };
     }
 };
@@ -250,6 +276,11 @@ function dcplot(frame, groupno, definition) {
             return a;
         else if(_.isString(a))
             return frame.access(a);
+        else if(_.isObject(a)) {
+            var fun = a.fun, arg = a.arg;
+            var resolve = accessor(arg);
+            return fun(resolve);
+        }
         else throw "illegal accessor " + a.toString();
     }
 
@@ -673,7 +704,7 @@ function dcplot(frame, groupno, definition) {
     }
     for(var g in definition.groups) {
         defn = definition.groups[g];
-        groups[g] = defn.reduce(defn.group(dimensions[defn.dim]));
+        groups[g] = accessor(defn.reduce)(defn.group(dimensions[defn.dim]));
     }
     for(c in definition.charts) {
         defn = definition.charts[c];
