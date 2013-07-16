@@ -109,13 +109,28 @@ var shell = (function() {
         return charts.elem;
     }                
 
+    function handle_dcplot(data) {
+        var charts;
+        try {
+            charts = wdcplot.translate.apply(data);
+        }
+        catch(e) {
+            return $('<p/>').append("Exception creating dc code: " + e);
+        }
+        var rdata = data[1];
+        setTimeout(function() { charts.dcfunc(rdata); }, 10);
+        return charts.elem;
+    }                
+    
+   
     var handlers = {
         "scatterplot": handle_scatterplot,
         "iframe": handle_iframe,
         "lux_osm_plot": handle_lux_osm_plot,
         "lux_tour_plot": handle_lux_tour_plot,
         "select": handle_select,
-        "dcchart": handle_dcchart
+        "dcchart": handle_dcchart,
+        "dcplot": handle_dcplot
     };
 
     var notebook_model = Notebook.create_model();

@@ -525,7 +525,7 @@ function reader(m)
     handlers[Rsrv.XT_LIST_NOTAG]   = that.read_list_no_tag;
     handlers[Rsrv.XT_LIST_TAG]     = that.read_list_tag;
     handlers[Rsrv.XT_LANG_NOTAG]   = that.read_lang_no_tag;
-    handlers[Rsrv.XT_LANG_TAG]     = that.read_list_tag;
+    handlers[Rsrv.XT_LANG_TAG]     = that.read_lang_tag;
     handlers[Rsrv.XT_VECTOR_EXP]   = that.read_vector_exp;
     handlers[Rsrv.XT_ARRAY_INT]    = that.read_int_array;
     handlers[Rsrv.XT_ARRAY_DOUBLE] = that.read_double_array;
@@ -675,7 +675,12 @@ Robj = {
             }
         }
     }),
-    tagged_lang: make_basic("tagged_lang"),
+    tagged_lang: make_basic("tagged_lang", {
+        json: function() {
+            var pair_vec = _.map(this.value, function(elt) { return [elt.name, elt.value.json()]; });
+            return pair_vec;
+        }
+    }),
     vector_exp: make_basic("vector_exp"),
     int_array: make_basic("int_array", {
         json: function() {

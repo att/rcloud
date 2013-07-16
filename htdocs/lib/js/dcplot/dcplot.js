@@ -104,6 +104,7 @@ var chart_attrs = {
     base: {
         supported: true,
         div: {required: true}, // actually sent to parent selector for chart constructor
+        title: {required: false}, // title for html in the div
         dimension: {required: true},
         group: {required: true},
         width: {required: true, default: 300},
