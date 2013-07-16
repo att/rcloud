@@ -64,3 +64,8 @@ wdcchart <- function(data, dcexpr)
 {
   deferred.rcloud.result(list("dcchart", data, substitute(dcexpr)))
 }
+
+wdcplot <- function(data, dims, groups, charts)
+{
+  deferred.rcloud.result(list("dcplot", data, substitute(dims), substitute(groups), substitute(charts)))
+}
