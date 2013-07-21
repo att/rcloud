@@ -109,16 +109,25 @@ var shell = (function() {
         return charts.elem;
     }                
 
-    function handle_dcplot(data) {
-        var charts;
+    function handle_dcplot(data, cell) {
+        var charts, outid;
         try {
-            charts = wdcplot.translate.apply(data);
+            charts = wdcplot.translate.apply(null,data.slice(1));
+            outid = $(charts.elem).attr('id');
         }
         catch(e) {
-            return $('<p/>').append("Exception creating dc code: " + e);
+            return $('<p/>').append("Exception creating dcplot definition: " + e);
         }
-        var rdata = data[1];
-        setTimeout(function() { charts.dcfunc(rdata); }, 10);
+        setTimeout(function() { 
+            try {
+                var dccharts = dcplot(charts.dataframe, charts.groupname, charts.defn);
+                _.extend(window.charts, dccharts);
+            }
+            catch(e) {
+                var error_report = wdcplot.format_error(e);
+                $(cell).find('#' + outid).replaceWith(error_report);
+            }
+        }, 10);
         return charts.elem;
     }                
     
@@ -173,12 +182,12 @@ var shell = (function() {
             result[0].on_detach = function(callback) { on_detach = callback; };
             
             return result[0];
-        }, handle: function(objtype, data) {
+        }, handle: function(objtype, data, cell) {
             if (_.isUndefined(handlers[objtype])) {
                 console.log("Shell can't handle object of type", objtype);
                 return undefined;
             } else
-                return handlers[objtype].call(this, data);
+                return handlers[objtype].call(this, data, cell);
         }, new_markdown_cell: function(content) {
             return notebook_controller.append_cell(content, "Markdown");
         }, new_interactive_cell: function(content) {

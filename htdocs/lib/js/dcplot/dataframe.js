@@ -6,6 +6,8 @@ var dataframe = {
     cols: function(data) {
         var result = {
             access: function(column) { 
+                if(!(column in data))
+                    throw "dataframe doesn't have column " + column.toString();
                 var columnv = data[column];
                 return function(i) { 
                     return columnv[i];
@@ -17,6 +19,9 @@ var dataframe = {
             num_rows: function() {
                 for(var col in data) 
                     return data[col].length;
+            },
+            has: function(k) {
+                return k in data;
             },
             records: function() {
                 return _.range(0, this.num_rows());
@@ -38,6 +43,9 @@ var dataframe = {
             },
             num_rows: function() {
                 return data.length;
+            },
+            has: function(k) {
+                return k in data[0];
             },
             records: function() {
                 return _.range(0, this.num_rows());
