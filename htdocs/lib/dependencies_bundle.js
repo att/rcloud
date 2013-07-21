@@ -36056,7 +36056,7 @@ function dcplot(frame, groupname, definition) {
                     chart.transitionDuration(defn['transition.duration']);
                 if(_.has(defn, 'label')) {
                     if(defn.label) 
-                        chart.label(defn.label);
+                        chart.label(key_value(defn.label));
                     else
                         chart.renderLabel(false);
                 }
@@ -36071,7 +36071,7 @@ function dcplot(frame, groupname, definition) {
                 if(_.has(defn, 'colors'))
                     chart.colors(defn.colors);
                 if(_.has(defn, 'color'))
-                    chart.colorAccessor(defn.color);
+                    chart.colorAccessor(key_value(defn.color));
                 if(_.has(defn, 'color.domain'))
                     chart.colorDomain(defn['color.domain']);
             },
@@ -36129,9 +36129,9 @@ function dcplot(frame, groupname, definition) {
             },
             pie: function() {
                 if(_.has(defn, 'wedge'))
-                    chart.keyAccessor(defn.wedge);
+                    chart.keyAccessor(key_value(defn.wedge));
                 if(_.has(defn, 'size'))
-                    chart.keyAccessor(defn.size);
+                    chart.keyAccessor(key_value(defn.size));
 
                 if(_.has(defn, 'radius'))
                     chart.radius(defn.radius);

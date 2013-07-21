@@ -6,6 +6,10 @@ var wdcplot = (function() {
     var chart_group = 0;
     window.charts = {}; // initialize a global namespace for charts
 
+    function chart_group_name(group_no) {
+        return 'dcplotgroup' + group_no;
+    }
+
     function bin_op(disp) {
         return function(frame, args, ctx) { 
             return translate_expr(frame, args[1], ctx) + disp + translate_expr(frame, args[2], ctx); 
@@ -35,16 +39,21 @@ var wdcplot = (function() {
         default : function(frame, args, ctx) { return translate_expr(frame, args[0], ctx) + '(' +  _.map(args.slice(1), function(arg) { return translate_expr(frame, arg, ctx); }) + ')'; } 
     };
 
-    function translate_function(frame, sexp, ctx) {
-        ctx.indent++;
-        var args = sexp[0].slice(1),
-            body = _.map(sexp.slice(1), function(arg) { return translate_expr(frame, arg, ctx); });
+    function translate_function_body(frame, exprs, ctx) {
+        var body = _.map(exprs, function(arg) { return translate_expr(frame, arg, ctx); });
         body[body.length-1] = "return " + body[body.length-1];
         var cr = "\n", indent = Array(ctx.indent+1).join("\t");
+        return indent + body.join(";" + cr + indent) + ";";
+    }
+
+    function translate_function(frame, sexp, ctx) {
+        ctx.indent++;
+        var args = sexp[0].slice(1);
+        var cr = "\n";
         var text = "function (" + args.join() + ") {" + cr + 
-            indent + body.join(";" + cr + indent) + ";" + cr;
+            translate_function_body(frame, sexp.slice(1), ctx) + cr;
         ctx.indent--;
-        indent = Array(ctx.indent+1).join("\t");
+        var indent = Array(ctx.indent+1).join("\t");
         text += indent + "}";
         return text;
     }
@@ -69,14 +78,26 @@ var wdcplot = (function() {
                 }
             }
             else if(frame.has(sexp))
-                return "frame.access('" + sexp + "')";
+                return "frame.access('" + sexp + "')(key)";
             else return translate_value(sexp);
         }
         else return sexp;
     }
 
-    function access_expression(frame, sexp) {
-        if(_.isString(sexp)) {
+    /* a dcplot value expression may be 
+     - null 
+     - a simple field accessor (if it's a string which is a field name in the dataframe)
+     - a string (if it's any other string)
+     - a number
+     - an array (we assume any top-level array contains only literals)
+     - otherwise an implicit lambda
+     the correct way to do this is probably to infer lambda-ness
+     from the leaves up.
+     */
+    function value_expression(frame, sexp) {
+        if(sexp==null)
+            return null;
+        else if(_.isString(sexp)) {
             // special-case simple string field access for efficiency
             if(/\.\..*\.\.$/.test(sexp)) {
                 var content = sexp.substring(2, sexp.length-2);
@@ -89,10 +110,17 @@ var wdcplot = (function() {
                 return frame.access(sexp);
             else return sexp;
         }
-        var ctx =  {indent:1};
-        var body = translate_expr(frame, sexp, ctx);
-        return _.partial(new Function("frame", "key", "value", body),
-                         frame);
+        else if(_.isNumber(sexp))
+            return sexp;
+        else if(_.isArray(sexp) && sexp[0]==='c')
+            return sexp.slice(1);
+        var ctx =  {indent:0};
+        //var body = translate_function_body(frame, [sexp], ctx);
+
+        return function(key,value) { return eval(translate_expr(frame, sexp, ctx)); };
+
+//_.partial(new Function("frame", "key", "value", body),
+//                         frame);
     }
 
     // are these recursive or is this top-level catch enough?
@@ -100,26 +128,27 @@ var wdcplot = (function() {
         switch(sexp[0]) {
         case 'bin': return group.bin(sexp[1]);
         case 'identity': return group.identity;
-        default: return access_expression(frame, sexp); // but it's operating on keys? 
+        default: return value_expression(frame, sexp); // but it's operating on keys? 
         }
     }
 
     function reduce_expression(frame, sexp) {
         switch(sexp[0]) {
         case 'count': return reduce.count;
-        case 'sum': return reduce.sum(access_expression(frame, sexp[1]));
-        case 'any': return reduce.any(access_expression(frame, sexp[1]));
-        case 'avg': return reduce.avg(access_expression(frame, sexp[1]));
-        default: return access_expression(frame, sexp);
+        case 'sum': return reduce.sum(value_expression(frame, sexp[1]));
+        case 'any': return reduce.any(value_expression(frame, sexp[1]));
+        case 'avg': return reduce.avg(value_expression(frame, sexp[1]));
+        default: return value_expression(frame, sexp);
         }
     }
 
     function do_dimensions(frame, sexps) {
         var ret = {};
         for(var i = 0; i < sexps.length; ++i) 
-            ret[sexps[i][0]] = access_expression(frame, sexps[i][1]);
+            ret[sexps[i][0]] = value_expression(frame, sexps[i][1]);
         return ret;
     }
+
     function do_groups(frame, sexps) {
         var ret = {};
         for(var i = 0; i < sexps.length; ++i) {
@@ -148,6 +177,7 @@ var wdcplot = (function() {
         }
         return ret;
     }
+
     function do_charts(frame, sexps) {
         var ret = {};
         for(var i = 0; i < sexps.length; ++i) {
@@ -158,7 +188,7 @@ var wdcplot = (function() {
             var defn = {type: val[0][1]};
             defn.title = defn.title || sexps[i][0];
             for(var j = 1; j < val.length; ++j)
-                defn[val[j][0]] = access_expression(frame, val[j][1]);
+                defn[val[j][0]] = value_expression(frame, val[j][1]);
             ret[name] = defn;
         }
         return ret;
@@ -170,7 +200,7 @@ var wdcplot = (function() {
             .append('&nbsp;&nbsp;')
             .append($('<a/>',
                       {'class': "reset",
-                       href: "javascript:window.charts['"+name+"'].filterAll(); dc.redrawAll('chartgroup" + chart_group + "');",
+                       href: "javascript:window.charts['"+name+"'].filterAll(); dc.redrawAll('" + chart_group_name(chart_group) + "');",
                        style: "display: none;"})
                     .append("reset"))
             .append($('<div/>').addClass("clearfix"));
@@ -179,6 +209,32 @@ var wdcplot = (function() {
     var result = {
         field : function(rdata, k, r) {
             return rdata[k][r];
+        },
+        format_error: function(e) {
+            // could maybe push this into dcplot.js itself
+            var tab;
+            if(_.isArray(e)) { // expected exception: input error
+                tab = $('<table/>');
+                $.each(e, function(i) {
+                    var err = e[i];
+                    /*
+                     var errors = $('<td/>');
+                     for(var i = 0; i < err.errors.length; ++i)
+                     errors.append($('<p/>').text(err.errors[i]));
+                     */
+                    tab.append($('<tr/>').
+                               append($('<td/>').text(err.type)).
+                               append($('<td/>').text(err.name)).
+                               append($('<td/>').text(err.errors.toString()))
+                              );
+                });
+            }
+            else // unexpected exception: probably logic error
+                tab = $('<p/>').text(e.toString());
+            var error_report = $('<div/>').
+                    append($('<p/>').text('dcplot errors!')).
+                    append(tab);
+            return error_report;
         },
         translate: function(data) {
             var frame = dataframe.cols(data);
@@ -211,40 +267,10 @@ var wdcplot = (function() {
             var divwrap = $('<div/>',{id:"chartdiv"+chart_group});
             _.each(divs, function(div) { divwrap.append(div); });
 
-            var groupname = "chartgroup" + chart_group;
-
-            chart_group++;
-
             return {dataframe: frame, 
                     defn: definition, 
                     elem: divwrap, 
-                    groupname: groupname};
-        },
-        format_error: function(e) {
-            // could maybe push this into dcplot.js itself
-            var tab;
-            if(_.isArray(e)) { // expected exception: input error
-                tab = $('<table/>');
-                $.each(e, function(i) {
-                    var err = e[i];
-                    /*
-                     var errors = $('<td/>');
-                     for(var i = 0; i < err.errors.length; ++i)
-                     errors.append($('<p/>').text(err.errors[i]));
-                     */
-                    tab.append($('<tr/>').
-                               append($('<td/>').text(err.type)).
-                               append($('<td/>').text(err.name)).
-                               append($('<td/>').text(err.errors.toString()))
-                              );
-                });
-            }
-            else // unexpected exception: probably logic error
-                tab = $('<p/>').text(e.toString());
-            var error_report = $('<div/>').
-                    append($('<p/>').text('dcplot errors!')).
-                    append(tab);
-            return error_report;
+                    groupname: chart_group_name(chart_group++)};
         }
     };
     return result;

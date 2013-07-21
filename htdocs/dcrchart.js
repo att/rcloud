@@ -6,6 +6,10 @@ var dcrchart = (function() {
     var chart_group = 0;
     window.charts = {}; // initialize a global namespace for charts
 
+    function chart_group_name(group_no) {
+        return 'dcchartgroup' + group_no;
+    }
+
     function bin_op(disp) {
         return function(args,ctx) { 
             return translate_expr(args[1], ctx) + disp + translate_expr(args[2], ctx); 
@@ -98,7 +102,7 @@ var dcrchart = (function() {
             .append('&nbsp;&nbsp;')
             .append($('<a/>',
                       {'class': "reset",
-                       href: "javascript:window.charts['"+name+"'].filterAll(); dc.redrawAll('chartgroup" + chart_group + "');",
+                       href: "javascript:window.charts['"+name+"'].filterAll(); dc.redrawAll('" + chart_group_name(chart_group) + "');",
                        style: "display: none;"})
                     .append("reset"))
             .append($('<div/>').addClass("clearfix"));
@@ -118,8 +122,7 @@ var dcrchart = (function() {
     function chart_handler(prefix, constructor) {
         return function(result, sexp, ctx) {
             var name = prefix + chart_group + '_' + result.chart_no++;
-            var groupname = "chartgroup" + chart_group;
-            var chart_code = translate_chart(name, groupname, constructor, sexp[2], ctx);
+            var chart_code = translate_chart(name, chart_group_name(chart_group), constructor, sexp[2], ctx);
             result.charts.push(chart_code);
             result.divs.push(make_chart_div(name, sexp[1]));
             return result;
@@ -176,7 +179,7 @@ var dcrchart = (function() {
                 "var ndx = crossfilter(_.range(0,nrows));\n" + 
                 result.decls.join(";\n") + ";\n" +
                 result.charts.join(";\n") + ";\n" + 
-                "dc.renderAll('chartgroup"+chart_group+"');\n" +
+                "dc.renderAll('"+chart_group_name(chart_group)+"');\n" +
                 "} catch(e) { $('#chartdiv" + chart_group + "').text(e.toString()); }\n" +
                 "//@ sourceURL=dcChartScript" + chart_group + ".js";
             var divwrap = $('<div/>',{id:"chartdiv"+chart_group});
