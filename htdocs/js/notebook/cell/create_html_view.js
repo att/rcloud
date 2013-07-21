@@ -163,7 +163,7 @@ function create_markdown_cell_html_view(cell_model)
                     var that = this;
                     rcloud.resolve_deferred_result(uuids[1], function(data) {
                         $(that).replaceWith(function() {
-                            return shell.handle(data[0], data);
+                            return shell.handle(data[0], data, inner_div);
                         });
                     });
                 });
@@ -397,7 +397,7 @@ function create_interactive_cell_html_view(cell_model)
                     var that = this;
                     rcloud.resolve_deferred_result(uuids[1], function(data) {
                         $(that).replaceWith(function() {
-                            return shell.handle(data[0], data);
+                            return shell.handle(data[0], data, that);
                         });
                     });
                 });

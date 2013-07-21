@@ -221,8 +221,8 @@ function preorder_traversal(map, iter, callbacks) {
         throw 'unknown chart type ' + defn.type;
     var curr = map[iter];
     if('parents' in curr)
-        for(var p in curr.parents)
-            preorder_traversal(map, curr.parents[p], callbacks);
+        for(var i = 0; i < curr.parents.length; ++i) 
+            preorder_traversal(map, curr.parents[i], callbacks);
     callbacks[iter]();
 }
 function postorder_traversal(map, iter, callbacks) {
@@ -231,11 +231,11 @@ function postorder_traversal(map, iter, callbacks) {
     callbacks[iter]();
     var curr = map[iter];
     if('parents' in curr)
-        for(var p in curr.parents)
-            postorder_traversal(map, curr.parents[p], callbacks);
+        for(var i = 0; i < curr.parents.length; ++i) 
+            postorder_traversal(map, curr.parents[i], callbacks);
 }
 
-function dcplot(frame, groupno, definition) {
+function dcplot(frame, groupname, definition) {
 
     // defaults
     function default_dimension(name, defn) {
@@ -265,7 +265,7 @@ function dcplot(frame, groupno, definition) {
             }
             // postorder
             if('parents' in cattrs)
-                for(var i in cattrs.parents)
+                for(var i = 0; i < cattrs.parents.length; ++i)
                     do_defaults(defn, cattrs.parents[i]);
 
         } 
@@ -389,7 +389,7 @@ function dcplot(frame, groupno, definition) {
             if(!cattrs.supported)
                 throw 'chart type ' + type + ' not supported';
             if('parents' in cattrs)
-                for(var i in cattrs.parents)
+                for(var i = 0; i < cattrs.parents.length; ++i)
                     find_discreps(defn, cattrs.parents[i], missing, found);
             for(var a in cattrs) {
                 if(skip_attr(a)) 
@@ -657,7 +657,6 @@ function dcplot(frame, groupno, definition) {
         return errors;
     }
 
-    var groupname = 'chartgroup' + groupno;
     var errors = [];
     var defn;
 
@@ -709,7 +708,6 @@ function dcplot(frame, groupno, definition) {
     }
     for(c in definition.charts) {
         defn = definition.charts[c];
-        // var name = defn.type + groupno + '_' + c;
         charts[c] = create_chart(groupname, defn, dimensions, groups);
     }
 
