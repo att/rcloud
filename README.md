@@ -8,6 +8,15 @@ Forgive us for the current mess. This is temporary.
 
 Upgrade to R 3.0. It'll make your life easier, we promise.
 
+### Initialize git submodules
+
+Some of rcloud's code comes from other git repositories, included through the 
+magic of git submodules.  So after you have the code, run:
+
+    $ git submodule init
+    $ git submodule update
+
+
 ### Packages
 
 In R, type:
@@ -95,4 +104,4 @@ of the above is not true, then create `conf/rcloud.conf` file with
 
     Cookie.Domain: myserver.mydomain
 
-Alrernatively, you can set `Host:` instead with the same effect.
+Alternatively, you can set `Host:` instead with the same effect.
