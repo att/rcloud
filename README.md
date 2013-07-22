@@ -8,13 +8,20 @@ Forgive us for the current mess. This is temporary.
 
 Upgrade to R 3.0. It'll make your life easier, we promise.
 
-### Initialize git submodules
+### Checking out the code
 
-Some of rcloud's code comes from other git repositories, included through the 
-magic of git submodules.  So after you have the code, run:
+You will need to do 
+
+    $ git clone --recursive https://github.com/cscheid/rcloud.git
+
+to get RCloud and all of its dependencies.
+
+Or, if you already have an RCloud source tree, run
 
     $ git submodule init
     $ git submodule update
+
+to just get the dependencies.
 
 
 ### Packages
