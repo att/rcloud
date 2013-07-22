@@ -35656,11 +35656,12 @@ var reduce = {
  */
 
 // a map of attr->required to check for at the end to make sure we have everything
+// warning: don't put method calls for defaults which must be constructed each time!
 var chart_attrs = {
     base: {
         supported: true,
         div: {required: true}, // actually sent to parent selector for chart constructor
-        title: {required: false}, // title for html in the div
+        title: {required: false}, // title for html in the div, handled outside this lib
         dimension: {required: true},
         group: {required: true},
         width: {required: true, default: 300},
@@ -35688,16 +35689,16 @@ var chart_attrs = {
         x: {required: false}, // keyAccessor
         y: {required: false}, // valueAccessor
         // prob would be good to subgroup these?
-        'x.transform': {required: true, default: d3.scale.linear()}, // transform component of x (scale)
+        'x.transform': {required: true}, // transform component of x (scale)
         'x.domain': {required: true}, // domain component of x
         'x.units': {required: false}, // the most horrible thing EVER
         'x.round': {required: false},
-        'x.elastic': {required: false, default: true},
+        'x.elastic': {required: false},
         'x.padding': {required: false},
         // likewise
         'y.transform': {required: false},
         'y.domain': {required: true},
-        'y.elastic': {required: false, default: true},
+        'y.elastic': {required: false},
         'y.padding': {required: false},
         gridLines: {required: false}, // horizontal and/or vertical
         brush: {required: false}
@@ -35750,6 +35751,7 @@ var chart_attrs = {
     bubble: {
         concrete: true,
         parents: ['coordinateGrid', 'abstractBubble'],
+        width: {default: 400},
         supported: true,
         'r.elastic': {required: false}
     },
@@ -35789,6 +35791,20 @@ function postorder_traversal(map, iter, callbacks) {
     if('parents' in curr)
         for(var i = 0; i < curr.parents.length; ++i) 
             postorder_traversal(map, curr.parents[i], callbacks);
+}
+
+// dc.js formats all numbers as ints - override
+var _psv = dc.utils.printSingleValue;
+dc.utils.printSingleValue = function(filter) {
+    if(typeof(filter) == 'number') {
+        if(filter%1 === 0)
+            return filter;
+        else if(filter>10000 || filter < -10000)
+            return Math.round(filter);
+        else
+            return filter.toPrecision(4);
+    }
+    else return _psv(filter);
 }
 
 function dcplot(frame, groupname, definition) {
@@ -35847,10 +35863,10 @@ function dcplot(frame, groupname, definition) {
     }
     function infer_group(name, defn, dims) {
         var errors = [];
-        if(!_.has(defn, 'dim'))
+        if(!_.has(defn, 'dimension'))
             errors.push('group needs dimension');
-        if(!_.has(dims, defn.dim))
-            errors.push('unknown dimension ' + defn.dim);
+        if(!_.has(dims, defn.dimension))
+            errors.push('unknown dimension "' + defn.dimension + '"');
         if(!_.has(defn, 'group'))
             defn.group = group.identity;
         if(!_.has(defn, 'reduce'))
@@ -35874,14 +35890,14 @@ function dcplot(frame, groupname, definition) {
                     defn.div = '#' + name;
                 if(defn.group) {
                     if(!defn.dimension)
-                        defn.dimension = groups[defn.group].dim;
+                        defn.dimension = groups[defn.group].dimension;
                 }
                 else if(defn.dimension) {
                     if(!dims[defn.dimension])
-                        errors.push("unknown dimension " + defn.dimension);
+                        errors.push('unknown dimension "' + defn.dimension + '"');
                     defn.group = find_unused(groups, defn.dimension);
                     var g = groups[defn.group] = {};
-                    g.dim = defn.dimension;
+                    g.dimension = defn.dimension;
                     infer_group(defn.group, g, dims);
                 }
             },
@@ -35890,6 +35906,18 @@ function dcplot(frame, groupname, definition) {
             stackable: function() {
             },
             coordinateGrid: function() {
+                // not a default because we must construct a new object each time
+                if(!('x.transform' in defn))
+                    defn['x.transform'] = d3.scale.linear();
+                if(!('y.transform' in defn))
+                    defn['y.transform'] = d3.scale.linear();
+
+                // this won't work incrementally out of the box
+                if(!('x.domain' in defn) && !('x.elastic' in defn))
+                    defn['x.elastic'] = true;                
+                if(!('y.domain' in defn) && !('y.elastic' in defn))
+                    defn['y.elastic'] = true;
+
                 // domain actually isn't required by dc.js but for correctness you
                 // need it... unless you're elastic, in which case [0,0] is fine
                 if('x.elastic' in defn && defn['x.elastic'] && !('x.domain' in defn))
@@ -35926,7 +35954,7 @@ function dcplot(frame, groupname, definition) {
     function check_dimension_attrs(name, defn) {
     }
     function check_group_attrs(name, defn) {
-        var expected = ['dim', 'group', 'reduce'];
+        var expected = ['dimension', 'group', 'reduce'];
         var k = _.keys(defn),
             missing = _.difference(expected, k),
             unknown = _.difference(k, expected),
@@ -35943,7 +35971,7 @@ function dcplot(frame, groupname, definition) {
         function find_discreps(defn, type, missing, found) {
             var cattrs = chart_attrs[type];
             if(!cattrs.supported)
-                throw 'chart type ' + type + ' not supported';
+                throw 'chart type "' + type + '" not supported';
             if('parents' in cattrs)
                 for(var i = 0; i < cattrs.parents.length; ++i)
                     find_discreps(defn, cattrs.parents[i], missing, found);
@@ -35983,8 +36011,8 @@ function dcplot(frame, groupname, definition) {
     }
     function check_group_logic(name, defn, dims) {
         var errors = [];
-        if(!_.has(dims, defn.dim))
-            errors.push('unknown dimension ' + defn.dim);
+        if(!_.has(dims, defn.dimension))
+            errors.push('unknown dimension "' + defn.dimension + '"');
 
         if(errors.length)
             throw errors;
@@ -35993,9 +36021,9 @@ function dcplot(frame, groupname, definition) {
         var errors = [];
         var callbacks = {
             base: function() {
-                if(defn.dimension && defn.dimension!=groups[defn.group].dim)
-                    errors.push("group " + defn.group + " dimension " + groups[defn.group].dim
-                                + " does not match chart dimension " + defn.dimension);
+                if(defn.dimension && defn.dimension!=groups[defn.group].dimension)
+                    errors.push('group "' + defn.group + '" dimension "' + groups[defn.group].dimension
+                                + '" does not match chart dimension "' + defn.dimension + '"');
             },
             color: function() {
             },
@@ -36079,7 +36107,7 @@ function dcplot(frame, groupname, definition) {
                 if(_.has(defn, 'stack'))
                     for(var s in defn.stack) {
                         var stack = defn.stack[s];
-                        if($.isArray(stack))
+                        if(_.isArray(stack))
                             chart.stack(stack[0], stack[1]);
                         else
                             chart.stack(stack);
@@ -36220,11 +36248,11 @@ function dcplot(frame, groupname, definition) {
     for(var c in definition.charts) {
         defn = definition.charts[c];
         if(!(defn.type in chart_attrs))
-            throw 'unknown chart type ' + defn.type;
+            throw 'unknown chart type "' + defn.type + '"';
         if(!chart_attrs[defn.type].supported)
-            throw 'unsupported chart type ' + defn.type;
+            throw 'unsupported chart type "' + defn.type + '"';
         if(!chart_attrs[defn.type].concrete)
-            throw "can't create abstract chart type " + defn.type;
+            throw "can't create abstract chart type \"" + defn.type + '"';
     }
 
     // fill in anything easily defaultable (will not happen in incremental mode)
@@ -36248,6 +36276,9 @@ function dcplot(frame, groupname, definition) {
     if(errors.length)
         throw errors;
 
+    console.log("dcplot charts definition:");
+    console.log(definition);
+
     // create / fill stuff in
     var dimensions = {};
     var groups = {};
@@ -36260,7 +36291,7 @@ function dcplot(frame, groupname, definition) {
     }
     for(var g in definition.groups) {
         defn = definition.groups[g];
-        groups[g] = accessor(defn.reduce)(defn.group(dimensions[defn.dim]));
+        groups[g] = accessor(defn.reduce)(defn.group(dimensions[defn.dimension]));
     }
     for(c in definition.charts) {
         defn = definition.charts[c];
@@ -36771,7 +36802,12 @@ function reader(m)
                                   value: value });
                 }
             }
-            return Robj.tagged_lang(result, attributes);
+
+            // hacky: call this data rather than language if it's a list
+            if(result[0].name===null && result[0].value.type==='symbol' && result[0].value.value=='list')
+                return Robj.tagged_list(result, attributes);
+            else
+                return Robj.tagged_lang(result, attributes);
         }, 0);
     });
 
