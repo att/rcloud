@@ -35720,8 +35720,8 @@ var Rsrv = {
     CMD_RESP           : 0x10000,
     RESP_OK            : 0x10000 | 0x0001,
     RESP_ERR           : 0x10000 | 0x0002,
-    OOB_SEND           : 0x30000 | 0x1000,
-    OOB_MSG            : 0x30000 | 0x2000,
+    OOB_SEND           : 0x20000 | 0x1000,
+    OOB_MSG            : 0x20000 | 0x2000,
     ERR_auth_failed    : 0x41,
     ERR_conn_broken    : 0x42,
     ERR_inv_cmd        : 0x43,
@@ -36324,7 +36324,7 @@ Rserve = {
                 _cmd(Rsrv.CMD_eval, _encode_string(command), k);
             },
             oob_response: function(command, error) {
-                _cmd_no_callback(error ? Rsrv.RESP_ERR : Rsrv.RESP_OK, 
+                _cmd_no_callback((error ? Rsrv.RESP_ERR : Rsrv.RESP_OK) | Rsrv.OOB_MSG, 
                                  _encode_string(command));
             },
             createFile: function(command, k) {
