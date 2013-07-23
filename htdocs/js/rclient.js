@@ -54,6 +54,7 @@ RClient = {
             on_error: on_error,
             on_close: on_close,
             on_data: opts.on_data,
+            on_oob_message: opts.on_oob_message,
             login: token + "\n" + execToken
         });
 

@@ -20,6 +20,13 @@ var oob_handlers = {
     }
 };
 
+var oob_msg_handlers = {
+    "password": function(v, callback) {
+        var x = prompt(v);
+        callback(x);
+    }
+};
+
 function main_init() {
     init_shareable_link_box();
     rclient = RClient.create({ 
@@ -55,6 +62,14 @@ function main_init() {
         }, on_data: function(v) {
             v = v.value.json();
             oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
+        }, on_oob_message: function(v, callback) {
+            console.log("ON OOB MESSAGE");
+            try {
+                v = v.value.json();
+                oob_msg_handlers[v[0]] && oob_msg_handlers[v[0]](v.slice(1), callback);
+            } catch (e) {
+                callback(String(e), true);
+            }
         }
     });
 }
