@@ -35721,6 +35721,7 @@ var Rsrv = {
     RESP_OK            : 0x10000 | 0x0001,
     RESP_ERR           : 0x10000 | 0x0002,
     OOB_SEND           : 0x30000 | 0x1000,
+    OOB_MSG            : 0x30000 | 0x2000,
     ERR_auth_failed    : 0x41,
     ERR_conn_broken    : 0x42,
     ERR_inv_cmd        : 0x43,
@@ -35738,7 +35739,7 @@ var Rsrv = {
     ERR_session_busy   : 0x50,
     ERR_detach_failed  : 0x51,
 
-    CMD_long             : 0x001,
+    CMD_login            : 0x001,
     CMD_voidEval         : 0x002,
     CMD_eval             : 0x003,
     CMD_shutdown         : 0x004,
@@ -35763,7 +35764,6 @@ var Rsrv = {
     CMD_serEval          : 0xf5,
     CMD_serAssign        : 0xf6,
     CMD_serEEval         : 0xf7,
-
 
     DT_INT        : 1,
     DT_CHAR       : 2,
@@ -35985,23 +35985,6 @@ function reader(m)
             return Robj.tagged_list(result, attributes);
         }, 0);
     });
-    that.read_lang_tag = bind(that.read_list, function(lst) {
-        return lift(function(attributes, length) {
-            var result = [];
-            for (var i=0; i<lst.length; i+=2) {
-                var value = lst[i], tag = lst[i+1];
-                if (tag.type === "symbol") {
-                    result.push({ name: tag.value,
-                                  value: value });
-                } else {
-                    result.push({ name: null,
-                                  value: value });
-                }
-            }
-            return Robj.tagged_lang(result, attributes);
-        }, 0);
-    });
-
 
     function xf(f, g) { return bind(f, function(t) { 
         return lift(function(a, l) { return g(t, a); }, 0); 
@@ -36038,13 +36021,17 @@ function reader(m)
 function parse(msg)
 {
     var header = new Int32Array(msg, 0, 4);
-    if (header[0] !== Rsrv.RESP_OK && header[0] !== Rsrv.OOB_SEND) {
+    if (header[0] === Rsrv.RESP_ERR) {
         var status_code = header[0] >> 24;
         throw new RserveError("ERROR FROM R SERVER: " + (Rsrv.status_codes[status_code] || 
                                          status_code)
                + " " + header[0] + " " + header[1] + " " + header[2] + " " + header[3]
                + " " + msg.byteLength
                + " " + msg, status_code);
+    }
+
+    if (!_.contains([Rsrv.RESP_OK, Rsrv.OOB_SEND, Rsrv.OOB_MSG], header[0])) {
+        throw new RserveError("Unexpected response from RServe: " + header[0]);
     }
 
     var payload = my_ArrayBufferView(msg, 16, msg.byteLength - 16);
@@ -36220,7 +36207,7 @@ Rserve = {
         socket.binaryType = 'arraybuffer';
 
         var received_handshake = false;
-        var value_callbacks = [];
+        var callbacks = [];
 
         var result;
         var command_counter = 0;
@@ -36266,17 +36253,28 @@ Rserve = {
 
                 if (v === null) {
                     // there's no data, but there's no error either: ignore the message
+                    var callback = callbacks.shift();
+                    callback();
                     return;
                 }
                 var type = v[1];
                 v = v[0];
                 switch (type) {
                 case Rsrv.RESP_OK:
-                    var value_callback = value_callbacks.shift();
+                    var value_callback = callbacks.shift();
                     value_callback(v);
                     break;
                 case Rsrv.OOB_SEND: 
                     opts.on_data && opts.on_data(v);
+                    break;
+                case Rsrv.OOB_MSG:
+                    if (_.isUndefined(opts.on_oob_message)) {
+                        result.oob_response("No handler installed", true); // FIXME this should be an error signal of some sort
+                        return;
+                    }
+                    opts.on_oob_message(v, function(message, error) {
+                        result.oob_response(message, error);
+                    });
                     break;
                 default:
                     throw new RserveError("Internal Error, parse returned unexpected type " + type, -1);
@@ -36284,41 +36282,59 @@ Rserve = {
             }
         };
 
+        var _cmd_no_callback = function(command, buffer) {
+            var big_buffer = new ArrayBuffer(16 + buffer.byteLength);
+            var array_view = new Uint8Array(buffer);
+            var view = new EndianAwareDataView(big_buffer);
+            view.setInt32(0, command);
+            view.setInt32(4, buffer.byteLength);
+            view.setInt32(8, 0);
+            view.setInt32(12, 0);
+            for (var i=0; i<buffer.byteLength; ++i)
+                view.setUint8(16+i, array_view[i]);
+            socket.send(big_buffer);
+            return big_buffer;
+        };
+
+        var _cmd = function(command, buffer, k) {
+            k = k || function() {};
+            callbacks.push(k);
+            return _cmd_no_callback(command, buffer);
+        };
+
+        var _encode_string = function(str) {
+            var payload_length = str.length + 5;
+            var result = new ArrayBuffer(payload_length);
+            var view = new EndianAwareDataView(result);
+            view.setInt32(0, Rsrv.DT_STRING + (payload_length << 8));
+            for (var i=0; i<str.length; ++i)
+                view.setInt8(4+i, str.charCodeAt(i));
+            view.setInt8(4+str.length, 0);
+            return result;
+        };
+
         result = {
             close: function() {
                 socket.close();
             },
-            
-            login: function(auth_string) {
-                var command = auth_string;
-                var buffer = new ArrayBuffer(command.length + 21);
-                var view = new EndianAwareDataView(buffer);
-                view.setInt32(0,  1);
-                view.setInt32(4,  5 + command.length);
-                view.setInt32(8,  0);
-                view.setInt32(12, 0);
-                view.setInt32(16, 4 + ((1 + command.length) << 8));
-                for (var i=0; i<command.length; ++i) {
-                    view.setUint8(20 + i, command.charCodeAt(i));
-                }
-                view.setUint8(buffer.byteLength - 1, 0);
-                socket.send(buffer);
+            login: function(command, k) {
+                _cmd(Rsrv.CMD_login, _encode_string(command), k);
             },
             eval: function(command, k) {
-                k = k || function() {};
-                value_callbacks.push(k);
-                var buffer = new ArrayBuffer(command.length + 21);
-                var view = new EndianAwareDataView(buffer);
-                view.setInt32(0,  3);
-                view.setInt32(4,  5 + command.length);
-                view.setInt32(8,  0);
-                view.setInt32(12, 0);
-                view.setInt32(16, 4 + ((1 + command.length) << 8));
-                for (var i=0; i<command.length; ++i) {
-                    view.setUint8(20 + i, command.charCodeAt(i));
-                }
-                view.setUint8(buffer.byteLength - 1, 0);
-                socket.send(buffer);
+                _cmd(Rsrv.CMD_eval, _encode_string(command), k);
+            },
+            oob_response: function(command, error) {
+                _cmd_no_callback(error ? Rsrv.RESP_ERR : Rsrv.RESP_OK, 
+                                 _encode_string(command));
+            },
+            createFile: function(command, k) {
+                _cmd(Rsrv.CMD_createFile, _encode_string(command), k);
+            },
+            writeFile: function(chunk, k) {
+                _cmd(Rsrv.CMD_writeFile, chunk, k);
+            },
+            closeFile: function(k) {
+                _cmd(Rsrv.CMD_writeFile, new ArrayBuffer(0), k);
             }
         };
         return result;
