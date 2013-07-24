@@ -1,5 +1,5 @@
 function init_shareable_link_box() {
-    $(".embed-link").each(function() {
+    $("#share-notebook").each(function() {
         var t = $(this), n = t.next(".embed-box"), f = function() {
             t.toggle(); 
             n.toggle();
@@ -10,6 +10,16 @@ function init_shareable_link_box() {
             return false;
         };
         t.click(f); n.blur(f);
+    });
+}
+
+function init_editable_title_box() {
+    $("#notebook-title").click(function() {
+        var result = prompt("Please enter the new name for a notebook");
+        if (result !== null) {
+            $("#notebook-title").text(result);
+            rcloud.rename_notebook(shell.gistname, result);
+        }
     });
 }
 
@@ -29,6 +39,7 @@ var oob_msg_handlers = {
 
 function main_init() {
     init_shareable_link_box();
+    init_editable_title_box();
     rclient = RClient.create({ 
         debug: false,
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"), 

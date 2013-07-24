@@ -973,7 +973,7 @@ rcloud.load_user_config = function(user, k)
         rclient.r_funcall("rcloud.load.user.config", user), function(result) {
             k && k(JSON.parse(result));
         });
-}
+};
 
 rcloud.load_multiple_user_configs = function(users, k)
 {
@@ -981,7 +981,7 @@ rcloud.load_multiple_user_configs = function(users, k)
         rclient.r_funcall("rcloud.load.multiple.user.configs", users), function(result) {
             k && k(JSON.parse(result));
         });
-}
+};
 
 
 rcloud.save_user_config = function(user, content, k)
@@ -993,7 +993,7 @@ rcloud.save_user_config = function(user, content, k)
         function(result) {
             k && k(JSON.parse(result));
         });
-}
+};
 
 rcloud.load_notebook = function(id, k)
 {
@@ -1002,7 +1002,7 @@ rcloud.load_notebook = function(id, k)
         function(result) {
             k && k(JSON.parse(result));
         });
-}
+};
 
 rcloud.update_notebook = function(id, content, k)
 {
@@ -1011,7 +1011,7 @@ rcloud.update_notebook = function(id, content, k)
         function(result) {
             k && k(JSON.parse(result));
         });
-}
+};
 
 rcloud.create_notebook = function(content, k)
 {
@@ -1020,7 +1020,7 @@ rcloud.create_notebook = function(content, k)
         function(result) {
             k && k(JSON.parse(result));
         });
-}
+};
 
 rcloud.resolve_deferred_result = function(uuid, k)
 {
@@ -1035,7 +1035,16 @@ rcloud.get_users = function(k)
         function(result) {
             k && k(result); // why is this coming back preparsed? JSON.parse(result));
         });
-}
+};
+
+rcloud.rename_notebook = function(id, new_name, k)
+{
+    rclient.send_and_callback(
+        rclient.r_funcall("rcloud.rename.notebook", id, new_name),
+        function(result) {
+            k && k(JSON.parse(result));
+        });
+};
 Notebook = {};
 
 //////////////////////////////////////////////////////////////////////////////

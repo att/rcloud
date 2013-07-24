@@ -65,6 +65,14 @@ rcloud.create.notebook <- function(content) {
   content(res, as = 'text')
 }
 
+rcloud.rename.notebook <- function(id, new.name) {
+  res <- update.gist(.session$rgithub.context,
+                     id,
+                     list(description=new.name))
+  content(res, as = 'text')
+}
+
+
 rcloud.setup.dirs <- function() {
     for (data.subdir in c("userfiles", "history", "home"))
         if (!file.exists(fn <- file.path(.rc.conf$data.root, data.subdir)))

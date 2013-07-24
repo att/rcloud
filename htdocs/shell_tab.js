@@ -177,7 +177,7 @@ var shell = (function() {
             // editor's init load config callback to override the currbook
             this.gistname = gistname;
             this.notebook.controller.load_notebook(gistname, function(notebook) {
-                $("#notebook_title").text(notebook.description);
+                $("#notebook-title").text(notebook.description);
                 _.each(that.notebook.view.sub_views, function(cell_view) {
                     cell_view.show_source();
                 });
@@ -187,7 +187,7 @@ var shell = (function() {
             var that = this;
             var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
             this.notebook.controller.create_notebook(content, function(notebook) {
-                $("#notebook_title").text(notebook.description);
+                $("#notebook-title").text(notebook.description);
                 that.gistname = notebook.id;
                 k && k(notebook);
             });
