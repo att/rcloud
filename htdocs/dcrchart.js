@@ -6,6 +6,20 @@ var dcrchart = (function() {
     var chart_group = 0;
     window.charts = {}; // initialize a global namespace for charts
 
+    function is_tagged(sexp) {
+        switch(sexp.r_type) {
+        case 'tagged_list':
+        case 'tagged_lang':
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    function root_name(sexp) {
+        return is_tagged(sexp) ? sexp[0][1] : sexp[0];
+    }
+
     function chart_group_name(group_no) {
         return 'dcchartgroup' + group_no;
     }
@@ -29,7 +43,7 @@ var dcrchart = (function() {
     }
 
     function translate_kv(kv) {
-        if(!$.isArray(kv) || kv[0] != ':' || typeof kv[1] != "string")
+        if(!_.isArray(kv) || kv[0] != ':' || typeof kv[1] != "string")
             throw "expected 'key = value' in dc/r hash";
         return kv[1] + ': ' + translate_value(kv[2]);
     }
@@ -44,6 +58,16 @@ var dcrchart = (function() {
         return "rdata[" + index + "][" + r + ".key]";
     }
 
+    // inexact: we assume everything with tagnames should become a hash object,
+    // and everything without should become an array sequence
+    function translate_list(args, ctx) {
+        if(is_tagged(args))
+            return '{' + _.map(args.slice(1), function(arg) { return arg[0] + ': ' + 
+                                                              translate_value(arg[1]); }) + '}';
+        else
+            return '[' + _.map(args.slice(1), function(arg) { return translate_value(arg); }) + ']';
+    }
+
     var expressions = {
         "$": bin_op('.'),
         "-": una_or_bin_op('-'),
@@ -52,11 +76,13 @@ var dcrchart = (function() {
         "/": bin_op('/'),
         "field" : function(args, ctx) { return translate_field(args[1],args[2]); },
         "gfield" : function(args, ctx) { return translate_gfield(args[1],args[2]); },
-        "c" : function(args, ctx) { return '[' + _.map(args.slice(1), function(arg) { return translate_value(arg); }) + ']'; },
+        "c" : translate_list,
+        "list" : translate_list,
         "[": function(args, ctx) { return translate_expr(args[1], ctx) + '[' + translate_expr(args[2], ctx) + ']'; },
         "hash": function(args, ctx) { return '{' + _.map(args.slice(1), translate_kv) + '}'; },
         default : function(args, ctx) { return translate_expr(args[0], ctx) + '(' +  _.map(args.slice(1), function(arg) { return translate_expr(arg, ctx); }) + ')'; } 
     };
+
 
     function translate_function(sexp, ctx) {
         ctx.indent++;
@@ -73,10 +99,10 @@ var dcrchart = (function() {
     }
 
     function translate_expr(sexp, ctx) {
-        if($.isArray(sexp)) {
-            if($.isArray(sexp[0]) && sexp[0][0] == "func") // special case function expr trees
+        if(_.isArray(sexp)) {
+            if(_.isArray(sexp[0]) && root_name(sexp[0]) == "func") // special case function expr trees
                 return translate_function(sexp, ctx);
-            var xlat = expressions[sexp[0]] || expressions.default;
+            var xlat = expressions[root_name(sexp)] || expressions.default;
             return xlat(sexp, ctx);
         }
         else if($.isPlainObject(sexp)) {
