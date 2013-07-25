@@ -1,4 +1,4 @@
-// R to dc.js bridge code.  This should probably become a library in js/, 
+// R to dc.js bridge code.  This should probably become a library in js/,
 // just deploying it separately for now to ease development
 //////////////////////////////////////////////////////////////////////////////
 
@@ -11,16 +11,16 @@ var wdcplot = (function() {
     }
 
     function bin_op(disp) {
-        return function(frame, args, ctx) { 
-            return translate_expr(frame, args[1], ctx) + disp + translate_expr(frame, args[2], ctx); 
+        return function(frame, args, ctx) {
+            return translate_expr(frame, args[1], ctx) + disp + translate_expr(frame, args[2], ctx);
         };
     }
 
     function una_or_bin_op(disp) {
         return function(frame, args, ctx) {
-            return args.length==2 
+            return args.length==2
                 ? disp + translate_expr(frame, args[1], ctx)
-                : bin_op(disp)(frame, args, ctx); 
+                : bin_op(disp)(frame, args, ctx);
         };
     }
 
@@ -36,7 +36,7 @@ var wdcplot = (function() {
         "/": bin_op('/'),
         "c" : function(frame, args, ctx) { return '[' + _.map(args.slice(1), function(arg) { return translate_value(arg); }) + ']'; },
         "[": function(frame, args, ctx) { return translate_expr(frame, args[1], ctx) + '[' + translate_expr(frame, args[2], ctx) + ']'; },
-        default : function(frame, args, ctx) { return translate_expr(frame, args[0], ctx) + '(' +  _.map(args.slice(1), function(arg) { return translate_expr(frame, arg, ctx); }) + ')'; } 
+        default : function(frame, args, ctx) { return translate_expr(frame, args[0], ctx) + '(' +  _.map(args.slice(1), function(arg) { return translate_expr(frame, arg, ctx); }) + ')'; }
     };
 
     function translate_function_body(frame, exprs, ctx) {
@@ -50,7 +50,7 @@ var wdcplot = (function() {
         ctx.indent++;
         var args = sexp[0].slice(1);
         var cr = "\n";
-        var text = "function (" + args.join() + ") {" + cr + 
+        var text = "function (" + args.join() + ") {" + cr +
             translate_function_body(frame, sexp.slice(1), ctx) + cr;
         ctx.indent--;
         var indent = Array(ctx.indent+1).join("\t");
@@ -84,8 +84,8 @@ var wdcplot = (function() {
         else return sexp;
     }
 
-    /* a dcplot value expression may be 
-     - null 
+    /* a dcplot value expression may be
+     - null
      - a simple field accessor (if it's a string which is a field name in the dataframe)
      - a string (if it's any other string)
      - a number
@@ -128,7 +128,7 @@ var wdcplot = (function() {
         switch(sexp[0]) {
         case 'bin': return group.bin(sexp[1]);
         case 'identity': return group.identity;
-        default: return value_expression(frame, sexp); // but it's operating on keys? 
+        default: return value_expression(frame, sexp); // but it's operating on keys?
         }
     }
 
@@ -182,7 +182,7 @@ var wdcplot = (function() {
             var elem = sexps[i], key, value;
             if(_.isArray(elem)) {
                 value = elem[1];
-                if(elem[0] !== null) 
+                if(elem[0] !== null)
                     key = elem[0];
                 else {
                     if(!_.isString(value))
@@ -210,9 +210,9 @@ var wdcplot = (function() {
                 throw "groups should use group constructor";
             var group = {};
             for(var j = 1; j < defn.length; ++j) {
-                var field = defn[j][0], val; 
+                var field = defn[j][0], val;
                 switch(field) {
-                case 'dimension': 
+                case 'dimension':
                     val = defn[j][1];
                     break;
                 case 'group':
@@ -233,9 +233,9 @@ var wdcplot = (function() {
         var ret = {};
         for(var i = 0; i < sexps.length; ++i) {
             var val = sexps[i][1];
-            // pity we can't do more positional args but dimension or group is 
+            // pity we can't do more positional args but dimension or group is
             // the next natural argument and we don't know which
-            val = positionals(val, [null, 'title']); 
+            val = positionals(val, [null, 'title']);
             if(val[0][0] !== null)
                 throw "expected a null here";
             var defn = {type: val[0][1]};
@@ -334,7 +334,7 @@ var wdcplot = (function() {
                     break;
                 case 'charts':
                     definition.charts = do_charts(frame, secdata);
-                    divs = _.map(_.keys(definition.charts), 
+                    divs = _.map(_.keys(definition.charts),
                                  function(key) { return make_chart_div(key, definition.charts[key].title); });
                     break;
                 default: throw "unexpected section " + section[1];
@@ -344,9 +344,9 @@ var wdcplot = (function() {
             var divwrap = $('<div/>',{id:"chartdiv"+chart_group});
             _.each(divs, function(div) { divwrap.append(div); });
 
-            return {dataframe: frame, 
-                    defn: definition, 
-                    elem: divwrap, 
+            return {dataframe: frame,
+                    defn: definition,
+                    elem: divwrap,
                     groupname: chart_group_name(chart_group++)};
         }
     };
