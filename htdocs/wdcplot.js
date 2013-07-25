@@ -249,7 +249,7 @@ var wdcplot = (function() {
                     defn[key] = value_expression(frame, value);
                 }
             }
-            var name = sexps[i][0] + chart_group + '_' + i;
+            var name = sexps[i][0] + '_' + chart_group + '_' + i;
             ret[name] = defn;
         }
         return ret;
@@ -290,9 +290,10 @@ var wdcplot = (function() {
                         $.each(err.errors, function(e) {
                             formatted_errors.append($('<p/>').text(err.errors[e]));
                         });
+                    var name = err.name.replace(/_\d*_\d*$/, '');
                     tab.append($('<tr valign=top/>').
                                append($('<td/>').text(err.type)).
-                               append($('<td/>').text(err.name)).
+                               append($('<td/>').text(name)).
                                append(formatted_errors)
                               );
                 });
