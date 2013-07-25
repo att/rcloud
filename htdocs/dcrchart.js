@@ -1,4 +1,4 @@
-// R to dc.js bridge code.  This should probably become a library in js/, 
+// R to dc.js bridge code.  This should probably become a library in js/,
 // just deploying it separately for now to ease development
 //////////////////////////////////////////////////////////////////////////////
 
@@ -25,16 +25,16 @@ var dcrchart = (function() {
     }
 
     function bin_op(disp) {
-        return function(args,ctx) { 
-            return translate_expr(args[1], ctx) + disp + translate_expr(args[2], ctx); 
+        return function(args,ctx) {
+            return translate_expr(args[1], ctx) + disp + translate_expr(args[2], ctx);
         };
     }
 
     function una_or_bin_op(disp) {
         return function(args,ctx) {
-            return args.length==2 
+            return args.length==2
                 ? disp + translate_expr(args[1], ctx)
-                : bin_op(disp)(args, ctx); 
+                : bin_op(disp)(args, ctx);
         };
     }
 
@@ -62,7 +62,7 @@ var dcrchart = (function() {
     // and everything without should become an array sequence
     function translate_list(args, ctx) {
         if(is_tagged(args))
-            return '{' + _.map(args.slice(1), function(arg) { return arg[0] + ': ' + 
+            return '{' + _.map(args.slice(1), function(arg) { return arg[0] + ': ' +
                                                               translate_value(arg[1]); }) + '}';
         else
             return '[' + _.map(args.slice(1), function(arg) { return translate_value(arg); }) + ']';
@@ -80,7 +80,7 @@ var dcrchart = (function() {
         "list" : translate_list,
         "[": function(args, ctx) { return translate_expr(args[1], ctx) + '[' + translate_expr(args[2], ctx) + ']'; },
         "hash": function(args, ctx) { return '{' + _.map(args.slice(1), translate_kv) + '}'; },
-        default : function(args, ctx) { return translate_expr(args[0], ctx) + '(' +  _.map(args.slice(1), function(arg) { return translate_expr(arg, ctx); }) + ')'; } 
+        default : function(args, ctx) { return translate_expr(args[0], ctx) + '(' +  _.map(args.slice(1), function(arg) { return translate_expr(arg, ctx); }) + ')'; }
     };
 
 
@@ -90,7 +90,7 @@ var dcrchart = (function() {
             body = _.map(sexp.slice(1), function(arg) { return translate_expr(arg,ctx); });
         body[body.length-1] = "return " + body[body.length-1];
         var cr = "\n", indent = Array(ctx.indent+1).join("\t");
-        var text = "function (" + args.join() + ") {" + cr + 
+        var text = "function (" + args.join() + ") {" + cr +
             indent + body.join(";" + cr + indent) + ";" + cr;
         ctx.indent--;
         indent = Array(ctx.indent+1).join("\t");
@@ -116,7 +116,7 @@ var dcrchart = (function() {
     }
 
     function translate_chart(name, groupname, constructor, sexp, ctx) {
-        return make_var(name) + 'window.charts["' + name + '"] = dc.' + 
+        return make_var(name) + 'window.charts["' + name + '"] = dc.' +
             constructor + '("#' + name + '", "'+groupname+'").' +
             translate_expr(sexp, ctx);
     }
@@ -154,7 +154,7 @@ var dcrchart = (function() {
             return result;
         };
     }
-    
+
     var statements = {
         dimension: function(result, sexp, ctx) {
             result.decls.push(make_var(sexp[1]) + "ndx.dimension(" +
@@ -173,10 +173,10 @@ var dcrchart = (function() {
             return result;
         }
     };
-        
+
     function translate_statement(result, sexp) {
         if(_.isUndefined(statements[sexp[0]]))
-            throw "unknown dc/r statement " + sexp[0]; 
+            throw "unknown dc/r statement " + sexp[0];
         var ctx =  {debug:result.debug,indent:1};
         return statements[sexp[0]](result, sexp, ctx);
     }
@@ -184,9 +184,9 @@ var dcrchart = (function() {
     // assume that the rdata is an array or object of columns of the same length
     // and return the length of the first column (should be the number of rows)
     function get_num_rows(rdata) {
-        for(p in rdata) 
+        for(p in rdata)
             return rdata[p].length;
-    }    
+    }
     var result = {
         get_num_rows : get_num_rows,
         field : function(rdata, k, r) {
@@ -196,15 +196,15 @@ var dcrchart = (function() {
             if(sexp[0] != "charts")
                 throw 'expected "charts" at top level';
             var charts_result = {chart_no: 0, decls: [], charts: [], divs: [], debug: false};
-            var result = _.reduce(sexp.slice(1), 
-                                  translate_statement, 
+            var result = _.reduce(sexp.slice(1),
+                                  translate_statement,
                                   charts_result);
-            var js = "try {\n" + 
+            var js = "try {\n" +
                 (result.debug? "debugger;\n" : "") +
                 "var nrows = dcrchart.get_num_rows(rdata);\n" +
-                "var ndx = crossfilter(_.range(0,nrows));\n" + 
+                "var ndx = crossfilter(_.range(0,nrows));\n" +
                 result.decls.join(";\n") + ";\n" +
-                result.charts.join(";\n") + ";\n" + 
+                result.charts.join(";\n") + ";\n" +
                 "dc.renderAll('"+chart_group_name(chart_group)+"');\n" +
                 "} catch(e) { $('#chartdiv" + chart_group + "').text(e.toString()); }\n" +
                 "//@ sourceURL=dcChartScript" + chart_group + ".js";

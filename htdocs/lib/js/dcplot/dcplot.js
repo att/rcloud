@@ -1,18 +1,18 @@
 /*
  dcplot: a minimal interface to dc.js with ggplot-like defaulting
 
- takes a description 
+ takes a description
  */
 
 // todo? the groupvalue function could access subfields of the dimension value?
 var group = {
     identity: function(dim) { return dim.group(); },
     bin: function(binwidth) {
-        var f = function(dim) { 
+        var f = function(dim) {
             return dim.group(
-                function(x) { 
-                    return Math.floor(x/binwidth)*binwidth; 
-                }); 
+                function(x) {
+                    return Math.floor(x/binwidth)*binwidth;
+                });
         };
         f.binwidth = binwidth;
         return f;
@@ -32,8 +32,8 @@ var reduce = {
             fun: function(acc2) {
                 return function(group) {
                     return group.reduceSum(
-                        function(item) { 
-                            return acc2(item); 
+                        function(item) {
+                            return acc2(item);
                         }
                     );
                 };
@@ -46,14 +46,14 @@ var reduce = {
             fun: function(acc2) {
                 return function(group) {
                     return group.reduce(
-                        function(p, v) {  
-                            return acc2(v); 
+                        function(p, v) {
+                            return acc2(v);
                         },
-                        function(p, v) { 
-                            return p; 
+                        function(p, v) {
+                            return p;
                         },
-                        function(p, v) { 
-                            return 0; 
+                        function(p, v) {
+                            return 0;
                         });
                 };
             }
@@ -65,7 +65,7 @@ var reduce = {
             fun: function(acc2) {
                 return function(group) {
                     return group.reduce(
-                        function(p, v) { 
+                        function(p, v) {
                             ++p.count;
                             p.sum += acc2(v);
                             p.avg = p.sum / p.count;
@@ -77,8 +77,8 @@ var reduce = {
                             p.avg = p.count ? p.sum / p.count : 0;
                             return p;
                         },
-                        function(p, v) { 
-                            return {count: 0, sum: 0, avg: 0}; 
+                        function(p, v) {
+                            return {count: 0, sum: 0, avg: 0};
                         });
                 };
             }
@@ -110,7 +110,7 @@ var chart_attrs = {
         group: {required: true},
         width: {required: true, default: 300},
         height: {required: true, default: 300},
-        'transition.duration': {required: false}, 
+        'transition.duration': {required: false},
         label: {required: false}, // or null for no labels
         tips: {required: false}, // dc 'title', or null for no tips
         more: {required: false} // executes arbitrary extra code on the dc.js chart object
@@ -223,7 +223,7 @@ function preorder_traversal(map, iter, callbacks) {
         throw 'unknown chart type ' + defn.type;
     var curr = map[iter];
     if('parents' in curr)
-        for(var i = 0; i < curr.parents.length; ++i) 
+        for(var i = 0; i < curr.parents.length; ++i)
             preorder_traversal(map, curr.parents[i], callbacks);
     callbacks[iter]();
 }
@@ -233,7 +233,7 @@ function postorder_traversal(map, iter, callbacks) {
     callbacks[iter]();
     var curr = map[iter];
     if('parents' in curr)
-        for(var i = 0; i < curr.parents.length; ++i) 
+        for(var i = 0; i < curr.parents.length; ++i)
             postorder_traversal(map, curr.parents[i], callbacks);
 }
 
@@ -274,7 +274,7 @@ function dcplot(frame, groupname, definition) {
             if(!cattrs.supported)
                 throw 'chart type ' + type + ' not supported';
             for(var a in cattrs) {
-                if(skip_attr(a)) 
+                if(skip_attr(a))
                     continue;
                 if(_.has(cattrs[a], 'default') && defn[a]===undefined)
                     defn[a] = cattrs[a].default;
@@ -284,7 +284,7 @@ function dcplot(frame, groupname, definition) {
                 for(var i = 0; i < cattrs.parents.length; ++i)
                     do_defaults(defn, cattrs.parents[i]);
 
-        } 
+        }
         do_defaults(defn, defn.type);
     }
 
@@ -358,7 +358,7 @@ function dcplot(frame, groupname, definition) {
 
                 // this won't work incrementally out of the box
                 if(!('x.domain' in defn) && !('x.elastic' in defn))
-                    defn['x.elastic'] = true;                
+                    defn['x.elastic'] = true;
                 if(!('y.domain' in defn) && !('y.elastic' in defn))
                     defn['y.elastic'] = true;
 
@@ -405,10 +405,10 @@ function dcplot(frame, groupname, definition) {
             errors = [];
         if(missing.length)
             errors.push('group definition is missing required attrs: ' + missing.join(', '));
-        if(unknown.length) 
+        if(unknown.length)
             errors.push('group definition has unknown attrs: ' + unknown.join(', '));
 
-        if(errors.length) 
+        if(errors.length)
             throw errors;
     }
     function check_chart_attrs(name, defn) {
@@ -420,7 +420,7 @@ function dcplot(frame, groupname, definition) {
                 for(var i = 0; i < cattrs.parents.length; ++i)
                     find_discreps(defn, cattrs.parents[i], missing, found);
             for(var a in cattrs) {
-                if(skip_attr(a)) 
+                if(skip_attr(a))
                     continue;
                 if(cattrs[a].required && defn[a]===undefined)
                     missing.push(a);
@@ -438,13 +438,13 @@ function dcplot(frame, groupname, definition) {
         var errors = [];
         if(missing.length)
             errors.push('chart definition is missing required attrs: ' + missing.join(', '));
-        var unknown = _.map(_.reject(_.pairs(found), 
+        var unknown = _.map(_.reject(_.pairs(found),
                                      function(p) { return p[1]; }),
                             function(p) { return p[0]; });
-        if(unknown.length) 
+        if(unknown.length)
             errors.push('chart definition has unknown attrs: ' + unknown.join(', '));
 
-        if(errors.length) 
+        if(errors.length)
             throw errors;
     }
 
@@ -486,7 +486,7 @@ function dcplot(frame, groupname, definition) {
             bubble: function() {
             }
         };
-        
+
         preorder_traversal(chart_attrs, defn.type, callbacks);
 
         if(errors.length)
@@ -503,7 +503,7 @@ function dcplot(frame, groupname, definition) {
         /* create uniformity between crossfilter dimension and reduce functions,
          and dc.js accessor functions with a simple trick: for the latter,
          split the input, which is {key, value}, into two params. this works
-         because crossfilter functions work with just the 'key' 
+         because crossfilter functions work with just the 'key'
 
          i.e. in crossfilter:
          * dimension functions are key -> key
@@ -511,7 +511,7 @@ function dcplot(frame, groupname, definition) {
          * group.reduce functions are key -> value
          in dc:
          * accessor functions are {key,value} -> whatever
-         
+
          so instead we make them (key,value) -> whatever and then they look like
          crossfilter functions!
          */
@@ -527,7 +527,7 @@ function dcplot(frame, groupname, definition) {
                 if(_.has(defn, 'transition.duration'))
                     chart.transitionDuration(defn['transition.duration']);
                 if(_.has(defn, 'label')) {
-                    if(defn.label) 
+                    if(defn.label)
                         chart.label(key_value(defn.label));
                     else
                         chart.renderLabel(false);
@@ -535,7 +535,7 @@ function dcplot(frame, groupname, definition) {
                 if(_.has(defn, 'tips')) {
                     if(defn.tips)
                         chart.title(key_value(defn.tips));
-                    else 
+                    else
                         chart.renderTitle(false);
                 }
             },
@@ -640,7 +640,7 @@ function dcplot(frame, groupname, definition) {
             line: dc.lineChart,
             bubble: dc.bubbleChart
         }[defn.type];
-        
+
         preorder_traversal(chart_attrs, defn.type, callbacks);
 
         // perform any extra post-processing
