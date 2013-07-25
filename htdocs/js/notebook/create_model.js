@@ -9,7 +9,7 @@ Notebook.create_model = function()
         else
             return 0;
     }
-    return { 
+    return {
         notebook: [],
         views: [], // sub list for pubsub
         clear: function() {
@@ -91,7 +91,7 @@ Notebook.create_model = function()
                     _.each(this.views, function(view) {
                         view.cell_removed(that.notebook[x], x);
                     });
-                    changes.push([id, {erase: 1, language: that.notebook[x].language()} ])
+                    changes.push([id, {erase: 1, language: that.notebook[x].language()} ]);
                     this.notebook.splice(x, 1);
                 }
                 ++id;
@@ -100,7 +100,7 @@ Notebook.create_model = function()
             return changes;
         },
         update_cell: function(cell_model) {
-            return [[cell_model.id, {content: cell_model.content(), 
+            return [[cell_model.id, {content: cell_model.content(),
                                      language: cell_model.language()}]];
         },
         reread_cells: function() {
@@ -110,8 +110,8 @@ Notebook.create_model = function()
             });
             if(changed_cells_per_view.length != 1)
                 throw "not expecting more than one notebook view";
-            return _.reduce(changed_cells_per_view[0], 
-                            function(changes, content, index) { 
+            return _.reduce(changed_cells_per_view[0],
+                            function(changes, content, index) {
                                 if(content)
                                     changes.push([that.notebook[index].id, {content: content,
                                                                             language: that.notebook[index].language()}]);

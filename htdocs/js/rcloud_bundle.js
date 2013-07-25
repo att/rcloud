@@ -1056,10 +1056,10 @@ Notebook.Cell = {};
 
 function fa_button(which, title)
 {
-    return $("<span class='fontawesome-button'><i class='" + 
-             which + 
-             "'></i></span>").tooltip({ 
-                 title: title, 
+    return $("<span class='fontawesome-button'><i class='" +
+             which +
+             "'></i></span>").tooltip({
+                 title: title,
                  delay: { show: 250, hide: 0 }
              });
 }
@@ -1103,7 +1103,7 @@ function create_markdown_cell_html_view(cell_model)
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             cell_model.parent_model.controller.remove_cell(cell_model);
 
-            // twitter bootstrap gets confused about its tooltips if parent element 
+            // twitter bootstrap gets confused about its tooltips if parent element
             // is deleted while tooltip is active; let's help it
             $(".tooltip").remove();
         }
@@ -1120,7 +1120,7 @@ function create_markdown_cell_html_view(cell_model)
         execute_cell();
     });
 
-    // Ace sets its z-index to be 1000; 
+    // Ace sets its z-index to be 1000;
     // "and thus began the great z-index arms race of 2012"
     var button_float = $("<div style='position:relative; float: right; z-index:10000'></div>");
     var row1 = $("<div style='margin:0.5em;'></div>");
@@ -1151,7 +1151,7 @@ function create_markdown_cell_html_view(cell_model)
     insert_cell_button.click(function(e) {
         shell.insert_markdown_cell_before(cell_model.id);
     });
-    
+
     var ace_div = $('<div style="width:100%; height:100%"></div>');
     inner_div.append(markdown_div);
     markdown_div.append(ace_div);
@@ -1227,11 +1227,11 @@ function create_markdown_cell_html_view(cell_model)
                 .each(function(i, e) {
                     hljs.highlightBlock(e);
                 });
-            
+
             // typeset the math
             if (!_.isUndefined(MathJax))
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
-                
+
             this.show_result();
             end_of_div_span[0].scrollIntoView();
         },
@@ -1293,7 +1293,7 @@ function create_markdown_cell_html_view(cell_model)
         /*
         // this doesn't make sense: changes should go through controller
         remove_self: function() {
-            cell_model.parent_model.remove_cell(cell_model);            
+            cell_model.parent_model.remove_cell(cell_model);
             notebook_cell_div.remove();
         },
         */
@@ -1354,7 +1354,7 @@ function create_interactive_cell_html_view(cell_model)
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             cell_model.parent_model.controller.remove_cell(cell_model);
 
-            // twitter bootstrap gets confused about its tooltips if parent element 
+            // twitter bootstrap gets confused about its tooltips if parent element
             // is deleted while tooltip is active; let's help it
             $(".tooltip").remove();
         }
@@ -1368,7 +1368,7 @@ function create_interactive_cell_html_view(cell_model)
         cell_model.controller.execute();
     }
 
-    // Ace sets its z-index to be 1000; 
+    // Ace sets its z-index to be 1000;
     // "and thus began the great z-index arms race of 2012"
     var button_float = $("<div style='position:relative; float: right; z-index:10000'></div>");
     var row1 = $("<div style='margin:0.5em;'></div>");
@@ -1398,7 +1398,7 @@ function create_interactive_cell_html_view(cell_model)
     insert_cell_button.click(function(e) {
         shell.insert_markdown_cell_before(cell_model.id);
     });
-    
+
     var ace_div = $('<div style="width:100%; margin-left: 0.5em; margin-top: 0.5em"></div>');
     inner_div.append(markdown_div);
     markdown_div.append(ace_div);
@@ -1451,7 +1451,7 @@ function create_interactive_cell_html_view(cell_model)
                     var that = this;
                     rcloud.resolve_deferred_result(uuids[1], function(data) {
                         $(that).replaceWith(function() {
-                            return shell.handle(data[0], data);
+                            return shell.handle(data[0], data, that);
                         });
                     });
                 });
@@ -1461,11 +1461,11 @@ function create_interactive_cell_html_view(cell_model)
                 .each(function(i, e) {
                     hljs.highlightBlock(e);
                 });
-            
+
             // typeset the math
             if (!_.isUndefined(MathJax))
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
-                
+
             this.show_result();
             end_of_div_span[0].scrollIntoView();
         },
@@ -1526,7 +1526,7 @@ function create_interactive_cell_html_view(cell_model)
         /*
         // this doesn't make sense: changes should go through controller
         remove_self: function() {
-            cell_model.parent_model.remove_cell(cell_model);            
+            cell_model.parent_model.remove_cell(cell_model);
             notebook_cell_div.remove();
         },
         */
@@ -1667,7 +1667,7 @@ Notebook.create_model = function()
         else
             return 0;
     }
-    return { 
+    return {
         notebook: [],
         views: [], // sub list for pubsub
         clear: function() {
@@ -1749,7 +1749,7 @@ Notebook.create_model = function()
                     _.each(this.views, function(view) {
                         view.cell_removed(that.notebook[x], x);
                     });
-                    changes.push([id, {erase: 1, language: that.notebook[x].language()} ])
+                    changes.push([id, {erase: 1, language: that.notebook[x].language()} ]);
                     this.notebook.splice(x, 1);
                 }
                 ++id;
@@ -1758,7 +1758,7 @@ Notebook.create_model = function()
             return changes;
         },
         update_cell: function(cell_model) {
-            return [[cell_model.id, {content: cell_model.content(), 
+            return [[cell_model.id, {content: cell_model.content(),
                                      language: cell_model.language()}]];
         },
         reread_cells: function() {
@@ -1768,8 +1768,8 @@ Notebook.create_model = function()
             });
             if(changed_cells_per_view.length != 1)
                 throw "not expecting more than one notebook view";
-            return _.reduce(changed_cells_per_view[0], 
-                            function(changes, content, index) { 
+            return _.reduce(changed_cells_per_view[0],
+                            function(changes, content, index) {
                                 if(content)
                                     changes.push([that.notebook[index].id, {content: content,
                                                                             language: that.notebook[index].language()}]);

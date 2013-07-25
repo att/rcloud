@@ -1,4 +1,4 @@
-// FIXME this is about to become the most important object, 
+// FIXME this is about to become the most important object,
 // so lots of little things are temporarily being moved here
 //////////////////////////////////////////////////////////////////////////////
 
@@ -12,7 +12,7 @@ var shell = (function() {
         exit: false,
         greetings: false
     });
-    
+
     // hacky workaround, but whatever.
     $('#output').click(function(x) {
         terminal.disable();
@@ -59,7 +59,7 @@ var shell = (function() {
 
         var plot = Chart.scatterplot(opts);
         // FIXME deleted plot observers need to be notified
-        // 
+        //
         // var detachable_div = this.post_div(plot.plot);
         // detachable_div.on_remove(function() {
         //     plot.deleted();
@@ -70,7 +70,7 @@ var shell = (function() {
 
     function handle_iframe(data) {
         var div = $("<iframe src='"
-                    + data[1] + "' width='" 
+                    + data[1] + "' width='"
                     + data[2][0] + "' height='"
                     + data[2][1] + "' frameborder=0></iframe>");
         return div;
@@ -107,7 +107,26 @@ var shell = (function() {
         var rdata = data[1];
         setTimeout(function() { charts.dcfunc(rdata); }, 10);
         return charts.elem;
-    }                
+    }
+
+    function handle_dcplot(data) {
+        var charts, elem;
+        try {
+            charts = wdcplot.translate.apply(null,data.slice(1));
+        }
+        catch(e) {
+            return $('<p/>').append("Exception creating dcplot definition: " + e);
+        }
+        try {
+            var dccharts = dcplot(charts.dataframe, charts.groupname, charts.defn);
+            _.extend(window.charts, dccharts);
+        }
+        catch(e) {
+            return wdcplot.format_error(e);
+        }
+        return charts.elem;
+    }
+
 
     var handlers = {
         "scatterplot": handle_scatterplot,
@@ -115,7 +134,8 @@ var shell = (function() {
         "lux_osm_plot": handle_lux_osm_plot,
         "lux_tour_plot": handle_lux_tour_plot,
         "select": handle_select,
-        "dcchart": handle_dcchart
+        "dcchart": handle_dcchart,
+        "dcplot": handle_dcplot
     };
 
     var notebook_model = Notebook.create_model();
@@ -156,14 +176,14 @@ var shell = (function() {
 
             result[0].on_remove = function(callback) { on_remove = callback; };
             result[0].on_detach = function(callback) { on_detach = callback; };
-            
+
             return result[0];
-        }, handle: function(objtype, data) {
+        }, handle: function(objtype, data, cell) {
             if (_.isUndefined(handlers[objtype])) {
                 console.log("Shell can't handle object of type", objtype);
                 return undefined;
             } else
-                return handlers[objtype].call(this, data);
+                return handlers[objtype].call(this, data, cell);
         }, new_markdown_cell: function(content) {
             return notebook_controller.append_cell(content, "Markdown");
         }, new_interactive_cell: function(content) {
@@ -173,7 +193,7 @@ var shell = (function() {
         }, load_notebook: function(gistname, k) {
             var that = this;
             // asymetrical: we know the gistname before it's loaded here,
-            // but not in new.  and we have to set this here to signal 
+            // but not in new.  and we have to set this here to signal
             // editor's init load config callback to override the currbook
             this.gistname = gistname;
             this.notebook.controller.load_notebook(gistname, function(notebook) {
