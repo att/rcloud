@@ -109,11 +109,12 @@ var shell = (function() {
         return charts.elem;
     }
 
-    function handle_dcplot(data, cell) {
-        var charts, outid;
+    function handle_dcplot(data) {
+        var charts, elem;
         try {
             charts = wdcplot.translate.apply(null,data.slice(1));
-            outid = $(charts.elem).attr('id');
+            elem = charts.elem;
+            charts.elem = $('<div/>').append(charts.elem);
         }
         catch(e) {
             return $('<p/>').append("Exception creating dcplot definition: " + e);
@@ -125,7 +126,7 @@ var shell = (function() {
             }
             catch(e) {
                 var error_report = wdcplot.format_error(e);
-                $(cell).find('#' + outid).replaceWith(error_report);
+                elem.replaceWith(error_report);
             }
         }, 10);
         return charts.elem;
