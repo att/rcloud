@@ -269,7 +269,6 @@ var wdcplot = (function() {
                                href: "javascript:window.charts['"+name+"'].filterAll(); dc.redrawAll('" + chart_group_name(chart_group) + "');",
                                style: "display: none;"})
                             .append("reset"))
-                    //            .append($('<div/>').addClass("clearfix"))
                    );
     }
 
@@ -336,7 +335,10 @@ var wdcplot = (function() {
                 case 'charts':
                     definition.charts = do_charts(frame, secdata);
                     divs = _.map(_.keys(definition.charts),
-                                 function(key) { return make_chart_div(key, definition.charts[key].title); });
+                                 function(key) {
+                                     return definition.charts[key].div
+                                         = make_chart_div(key, definition.charts[key].title)[0];
+                                 });
                     break;
                 default: throw "unexpected section " + section[1];
                 }

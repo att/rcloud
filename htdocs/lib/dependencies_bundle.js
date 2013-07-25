@@ -32433,6 +32433,11 @@ dc.baseChart = function (_chart) {
         return _chart;
     };
 
+    _chart.anchorName = function () {
+        var anchor = this.anchor();
+        return _.isObject(anchor) ? anchor.id : _chart.anchor().replace('#', '');
+    };
+
     _chart.root = function (r) {
         if (!arguments.length) return _root;
         _root = r;
@@ -32490,11 +32495,11 @@ dc.baseChart = function (_chart) {
 
         if (_dimension == null)
             throw new dc.errors.InvalidStateException("Mandatory attribute chart.dimension is missing on chart["
-                + _chart.anchor() + "]");
+                + _chart.anchorName() + "]");
 
         if (_group == null)
             throw new dc.errors.InvalidStateException("Mandatory attribute chart.group is missing on chart["
-                + _chart.anchor() + "]");
+                + _chart.anchorName() + "]");
 
         var result = _chart.doRender();
 
@@ -33210,7 +33215,7 @@ dc.marginable = function (_chart) {
     };
 
     function getClipPathId() {
-        return _chart.anchor().replace('#', '') + "-clip";
+        return _chart.anchorName() + "-clip";
     }
 
     _chart.clipPadding = function (p) {
@@ -33234,7 +33239,7 @@ dc.marginable = function (_chart) {
     _chart.doRender = function () {
         if (_x == null)
             throw new dc.errors.InvalidStateException("Mandatory attribute chart.x is missing on chart["
-                + _chart.anchor() + "]");
+                + _chart.anchorName() + "]");
 
         _chart.resetSvg();
 
@@ -35960,9 +35965,9 @@ function dcplot(frame, groupname, definition) {
             unknown = _.difference(k, expected),
             errors = [];
         if(missing.length)
-            errors.push('group definition is missing required attrs: ' + missing.join(', '));
+            errors.push('definition is missing required attrs: ' + missing.join(', '));
         if(unknown.length)
-            errors.push('group definition has unknown attrs: ' + unknown.join(', '));
+            errors.push('definition has unknown attrs: ' + unknown.join(', '));
 
         if(errors.length)
             throw errors;
@@ -35971,7 +35976,7 @@ function dcplot(frame, groupname, definition) {
         function find_discreps(defn, type, missing, found) {
             var cattrs = chart_attrs[type];
             if(!cattrs.supported)
-                throw 'chart type "' + type + '" not supported';
+                throw 'type "' + type + '" not supported';
             if('parents' in cattrs)
                 for(var i = 0; i < cattrs.parents.length; ++i)
                     find_discreps(defn, cattrs.parents[i], missing, found);
@@ -35993,12 +35998,12 @@ function dcplot(frame, groupname, definition) {
         find_discreps(defn, defn.type, missing, found);
         var errors = [];
         if(missing.length)
-            errors.push('chart definition is missing required attrs: ' + missing.join(', '));
+            errors.push('definition is missing required attrs: ' + missing.join(', '));
         var unknown = _.map(_.reject(_.pairs(found),
                                      function(p) { return p[1]; }),
                             function(p) { return p[0]; });
         if(unknown.length)
-            errors.push('chart definition has unknown attrs: ' + unknown.join(', '));
+            errors.push('definition has unknown attrs: ' + unknown.join(', '));
 
         if(errors.length)
             throw errors;

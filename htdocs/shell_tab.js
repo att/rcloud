@@ -113,22 +113,17 @@ var shell = (function() {
         var charts, elem;
         try {
             charts = wdcplot.translate.apply(null,data.slice(1));
-            elem = charts.elem;
-            charts.elem = $('<div/>').append(charts.elem);
         }
         catch(e) {
             return $('<p/>').append("Exception creating dcplot definition: " + e);
         }
-        setTimeout(function() {
-            try {
-                var dccharts = dcplot(charts.dataframe, charts.groupname, charts.defn);
-                _.extend(window.charts, dccharts);
-            }
-            catch(e) {
-                var error_report = wdcplot.format_error(e);
-                elem.replaceWith(error_report);
-            }
-        }, 10);
+        try {
+            var dccharts = dcplot(charts.dataframe, charts.groupname, charts.defn);
+            _.extend(window.charts, dccharts);
+        }
+        catch(e) {
+            return wdcplot.format_error(e);
+        }
         return charts.elem;
     }
 
