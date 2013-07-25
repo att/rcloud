@@ -66,7 +66,7 @@ var editor = function () {
         var children =  my_notebooks.concat(user_nodes).sort(compare_nodes);
         var $tree = $("#editor-book-tree");
         var interests = $tree.tree('getNodeById', "/interests");
-        $tree.tree("loadData", children, interests); 
+        $tree.tree("loadData", children, interests);
         $(interests.element).parent().prepend(interests.element);
         $tree.tree('openNode', interests);
     }
@@ -100,7 +100,7 @@ var editor = function () {
                 // populate_interests will load /interests
                 var children = my_alls.concat(user_nodes).sort(compare_nodes);
                 var root_data = [
-                    { 
+                    {
                         label: 'My Interests',
                         id: '/interests',
                     },
@@ -111,7 +111,7 @@ var editor = function () {
                     }
                 ];
                 var $tree = $("#editor-book-tree");
-                $tree.tree("loadData", root_data);  
+                $tree.tree("loadData", root_data);
 
                 k && k(my_config);
             });
@@ -138,7 +138,7 @@ var editor = function () {
         data.id = id;
         if(node) {
             // the update stuff doesn't exist in the jqtree version
-            // we're using, and the latest jqtree didn't seem to work 
+            // we're using, and the latest jqtree didn't seem to work
             // at all, so.. blunt stupid approach here:
             parent = node.parent;
             $tree.tree('removeNode', node);
@@ -151,7 +151,7 @@ var editor = function () {
             }
             else {
                 var usernode = $tree.tree('getNodeById', '/' + root + '/' + user);
-                if(usernode) 
+                if(usernode)
                     node = insert_alpha($tree, data, usernode);
                 else {
                     // creating a subfolder and then using loadData on it
@@ -172,7 +172,7 @@ var editor = function () {
         }
         return node;
     }
-                
+
     function display_date(ds) {
         function pad(n) { return n<10 ? '0'+n : n; }
         if(ds==='none')
@@ -214,12 +214,12 @@ var editor = function () {
                 }
             }, 500);
         },
-        create_book_tree_widget: function() { 
+        create_book_tree_widget: function() {
             var that = this;
             var $tree = $("#editor-book-tree");
             function onCreateLiHandler(node, $li) {
                 if (node.last_commit) {
-                    $li.find('.title').after('<span style="float: right" id="date">' 
+                    $li.find('.title').after('<span style="float: right" id="date">'
                                              + display_date(node.last_commit) + '</span>');
                 }
             }
@@ -228,7 +228,7 @@ var editor = function () {
             });
             $tree.bind(
                 'tree.click', function(event) {
-                    if (event.node.id === "newbook") 
+                    if (event.node.id === "newbook")
                         that.new_notebook();
                     else if(event.node.gist_name)
                         that.load_notebook(event.node.gist_name);
@@ -269,8 +269,8 @@ var editor = function () {
         },
         notebook_loaded: function(result) {
             this.config.currbook = result.id;
-            this.update_notebook_status(result.user.login, 
-                                        result.id, 
+            this.update_notebook_status(result.user.login,
+                                        result.id,
                                         {description: result.description,
                                          last_commit: result.updated_at || result.history[0].committed_at});
         },
@@ -292,7 +292,7 @@ var editor = function () {
             entry.description = status.description;
             entry.last_commit = status.last_commit;
 
-            // if we haven't seen this notebook and it belongs to 
+            // if we haven't seen this notebook and it belongs to
             // the logged-in user, sqve it to the all-books list
             if(!upd && user == rcloud.username())
                 this.config.all_books[notebook] = entry;
@@ -335,7 +335,7 @@ var editor = function () {
                 while (r.exec(line) !== null) {
                     result.push(r.lastIndex);
                     if (result.length === 2) {
-                        return [line_number, 
+                        return [line_number,
                                 line.substring(0, result[0]-1),
                                 line.substring(result[0], result[1]-1),
                                 line.substring(result[1])];
@@ -356,16 +356,16 @@ var editor = function () {
                     .data(data)
                     .enter().append("tr")
                     .selectAll("td")
-                    .data(function(d,i) { 
+                    .data(function(d,i) {
                         return _.map(d, function(v, k) {
                             return [v, i];
                         });
                     })
                     .enter()
                     .append("td")
-                    .text(function(d, i) { 
-                        if (i === 2) { 
-                            return d[0] + ":"; 
+                    .text(function(d, i) {
+                        if (i === 2) {
+                            return d[0] + ":";
                         } else {
                             return d[0];
                         }
@@ -399,14 +399,14 @@ var editor = function () {
                     .data(data)
                     .enter().append("tr")
                     .selectAll("td")
-                    .data(function(d,i) { 
+                    .data(function(d,i) {
                         return _.map(d.slice(1), function(v, k) {
                             return [v, i];
                         });
                     })
                     .enter()
                     .append("td")
-                    .text(function(d) { 
+                    .text(function(d) {
                         return d[0];
                     })
                     .attr("class", function(d, i) {

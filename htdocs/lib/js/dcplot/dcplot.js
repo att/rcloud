@@ -1,18 +1,18 @@
 /*
  dcplot: a minimal interface to dc.js with ggplot-like defaulting
 
- takes a description 
+ takes a description
  */
 
 // todo? the groupvalue function could access subfields of the dimension value?
 var group = {
     identity: function(dim) { return dim.group(); },
     bin: function(binwidth) {
-        var f = function(dim) { 
+        var f = function(dim) {
             return dim.group(
-                function(x) { 
-                    return Math.floor(x/binwidth)*binwidth; 
-                }); 
+                function(x) {
+                    return Math.floor(x/binwidth)*binwidth;
+                });
         };
         f.binwidth = binwidth;
         return f;
@@ -32,8 +32,8 @@ var reduce = {
             fun: function(acc2) {
                 return function(group) {
                     return group.reduceSum(
-                        function(item) { 
-                            return acc2(item); 
+                        function(item) {
+                            return acc2(item);
                         }
                     );
                 };
@@ -46,14 +46,14 @@ var reduce = {
             fun: function(acc2) {
                 return function(group) {
                     return group.reduce(
-                        function(p, v) {  
-                            return acc2(v); 
+                        function(p, v) {
+                            return acc2(v);
                         },
-                        function(p, v) { 
-                            return p; 
+                        function(p, v) {
+                            return p;
                         },
-                        function(p, v) { 
-                            return 0; 
+                        function(p, v) {
+                            return 0;
                         });
                 };
             }
@@ -65,7 +65,7 @@ var reduce = {
             fun: function(acc2) {
                 return function(group) {
                     return group.reduce(
-                        function(p, v) { 
+                        function(p, v) {
                             ++p.count;
                             p.sum += acc2(v);
                             p.avg = p.sum / p.count;
@@ -77,8 +77,8 @@ var reduce = {
                             p.avg = p.count ? p.sum / p.count : 0;
                             return p;
                         },
-                        function(p, v) { 
-                            return {count: 0, sum: 0, avg: 0}; 
+                        function(p, v) {
+                            return {count: 0, sum: 0, avg: 0};
                         });
                 };
             }
@@ -100,15 +100,17 @@ var reduce = {
  */
 
 // a map of attr->required to check for at the end to make sure we have everything
+// warning: don't put method calls for defaults which must be constructed each time!
 var chart_attrs = {
     base: {
         supported: true,
         div: {required: true}, // actually sent to parent selector for chart constructor
+        title: {required: false}, // title for html in the div, handled outside this lib
         dimension: {required: true},
         group: {required: true},
         width: {required: true, default: 300},
         height: {required: true, default: 300},
-        'transition.duration': {required: false}, 
+        'transition.duration': {required: false},
         label: {required: false}, // or null for no labels
         tips: {required: false}, // dc 'title', or null for no tips
         more: {required: false} // executes arbitrary extra code on the dc.js chart object
@@ -131,16 +133,16 @@ var chart_attrs = {
         x: {required: false}, // keyAccessor
         y: {required: false}, // valueAccessor
         // prob would be good to subgroup these?
-        'x.transform': {required: true, default: d3.scale.linear()}, // transform component of x (scale)
+        'x.transform': {required: true}, // transform component of x (scale)
         'x.domain': {required: true}, // domain component of x
         'x.units': {required: false}, // the most horrible thing EVER
         'x.round': {required: false},
-        'x.elastic': {required: false, default: true},
+        'x.elastic': {required: false},
         'x.padding': {required: false},
         // likewise
         'y.transform': {required: false},
         'y.domain': {required: true},
-        'y.elastic': {required: false, default: true},
+        'y.elastic': {required: false},
         'y.padding': {required: false},
         gridLines: {required: false}, // horizontal and/or vertical
         brush: {required: false}
@@ -193,6 +195,7 @@ var chart_attrs = {
     bubble: {
         concrete: true,
         parents: ['coordinateGrid', 'abstractBubble'],
+        width: {default: 400},
         supported: true,
         'r.elastic': {required: false}
     },
@@ -220,8 +223,8 @@ function preorder_traversal(map, iter, callbacks) {
         throw 'unknown chart type ' + defn.type;
     var curr = map[iter];
     if('parents' in curr)
-        for(var p in curr.parents)
-            preorder_traversal(map, curr.parents[p], callbacks);
+        for(var i = 0; i < curr.parents.length; ++i)
+            preorder_traversal(map, curr.parents[i], callbacks);
     callbacks[iter]();
 }
 function postorder_traversal(map, iter, callbacks) {
@@ -230,11 +233,25 @@ function postorder_traversal(map, iter, callbacks) {
     callbacks[iter]();
     var curr = map[iter];
     if('parents' in curr)
-        for(var p in curr.parents)
-            postorder_traversal(map, curr.parents[p], callbacks);
+        for(var i = 0; i < curr.parents.length; ++i)
+            postorder_traversal(map, curr.parents[i], callbacks);
 }
 
-function dcplot(frame, groupno, definition) {
+// dc.js formats all numbers as ints - override
+var _psv = dc.utils.printSingleValue;
+dc.utils.printSingleValue = function(filter) {
+    if(typeof(filter) == 'number') {
+        if(filter%1 === 0)
+            return filter;
+        else if(filter>10000 || filter < -10000)
+            return Math.round(filter);
+        else
+            return filter.toPrecision(4);
+    }
+    else return _psv(filter);
+}
+
+function dcplot(frame, groupname, definition) {
 
     // defaults
     function default_dimension(name, defn) {
@@ -257,17 +274,17 @@ function dcplot(frame, groupno, definition) {
             if(!cattrs.supported)
                 throw 'chart type ' + type + ' not supported';
             for(var a in cattrs) {
-                if(skip_attr(a)) 
+                if(skip_attr(a))
                     continue;
                 if(_.has(cattrs[a], 'default') && defn[a]===undefined)
                     defn[a] = cattrs[a].default;
             }
             // postorder
             if('parents' in cattrs)
-                for(var i in cattrs.parents)
+                for(var i = 0; i < cattrs.parents.length; ++i)
                     do_defaults(defn, cattrs.parents[i]);
 
-        } 
+        }
         do_defaults(defn, defn.type);
     }
 
@@ -290,10 +307,10 @@ function dcplot(frame, groupno, definition) {
     }
     function infer_group(name, defn, dims) {
         var errors = [];
-        if(!_.has(defn, 'dim'))
+        if(!_.has(defn, 'dimension'))
             errors.push('group needs dimension');
-        if(!_.has(dims, defn.dim))
-            errors.push('unknown dimension ' + defn.dim);
+        if(!_.has(dims, defn.dimension))
+            errors.push('unknown dimension "' + defn.dimension + '"');
         if(!_.has(defn, 'group'))
             defn.group = group.identity;
         if(!_.has(defn, 'reduce'))
@@ -317,14 +334,14 @@ function dcplot(frame, groupno, definition) {
                     defn.div = '#' + name;
                 if(defn.group) {
                     if(!defn.dimension)
-                        defn.dimension = groups[defn.group].dim;
+                        defn.dimension = groups[defn.group].dimension;
                 }
                 else if(defn.dimension) {
                     if(!dims[defn.dimension])
-                        errors.push("unknown dimension " + defn.dimension);
+                        errors.push('unknown dimension "' + defn.dimension + '"');
                     defn.group = find_unused(groups, defn.dimension);
                     var g = groups[defn.group] = {};
-                    g.dim = defn.dimension;
+                    g.dimension = defn.dimension;
                     infer_group(defn.group, g, dims);
                 }
             },
@@ -333,6 +350,18 @@ function dcplot(frame, groupno, definition) {
             stackable: function() {
             },
             coordinateGrid: function() {
+                // not a default because we must construct a new object each time
+                if(!('x.transform' in defn))
+                    defn['x.transform'] = d3.scale.linear();
+                if(!('y.transform' in defn))
+                    defn['y.transform'] = d3.scale.linear();
+
+                // this won't work incrementally out of the box
+                if(!('x.domain' in defn) && !('x.elastic' in defn))
+                    defn['x.elastic'] = true;
+                if(!('y.domain' in defn) && !('y.elastic' in defn))
+                    defn['y.elastic'] = true;
+
                 // domain actually isn't required by dc.js but for correctness you
                 // need it... unless you're elastic, in which case [0,0] is fine
                 if('x.elastic' in defn && defn['x.elastic'] && !('x.domain' in defn))
@@ -369,29 +398,29 @@ function dcplot(frame, groupno, definition) {
     function check_dimension_attrs(name, defn) {
     }
     function check_group_attrs(name, defn) {
-        var expected = ['dim', 'group', 'reduce'];
+        var expected = ['dimension', 'group', 'reduce'];
         var k = _.keys(defn),
             missing = _.difference(expected, k),
             unknown = _.difference(k, expected),
             errors = [];
         if(missing.length)
-            errors.push('group definition is missing required attrs: ' + missing.join(', '));
-        if(unknown.length) 
-            errors.push('group definition has unknown attrs: ' + unknown.join(', '));
+            errors.push('definition is missing required attrs: ' + missing.join(', '));
+        if(unknown.length)
+            errors.push('definition has unknown attrs: ' + unknown.join(', '));
 
-        if(errors.length) 
+        if(errors.length)
             throw errors;
     }
     function check_chart_attrs(name, defn) {
         function find_discreps(defn, type, missing, found) {
             var cattrs = chart_attrs[type];
             if(!cattrs.supported)
-                throw 'chart type ' + type + ' not supported';
+                throw 'type "' + type + '" not supported';
             if('parents' in cattrs)
-                for(var i in cattrs.parents)
+                for(var i = 0; i < cattrs.parents.length; ++i)
                     find_discreps(defn, cattrs.parents[i], missing, found);
             for(var a in cattrs) {
-                if(skip_attr(a)) 
+                if(skip_attr(a))
                     continue;
                 if(cattrs[a].required && defn[a]===undefined)
                     missing.push(a);
@@ -408,14 +437,14 @@ function dcplot(frame, groupno, definition) {
         find_discreps(defn, defn.type, missing, found);
         var errors = [];
         if(missing.length)
-            errors.push('chart definition is missing required attrs: ' + missing.join(', '));
-        var unknown = _.map(_.reject(_.pairs(found), 
+            errors.push('definition is missing required attrs: ' + missing.join(', '));
+        var unknown = _.map(_.reject(_.pairs(found),
                                      function(p) { return p[1]; }),
                             function(p) { return p[0]; });
-        if(unknown.length) 
-            errors.push('chart definition has unknown attrs: ' + unknown.join(', '));
+        if(unknown.length)
+            errors.push('definition has unknown attrs: ' + unknown.join(', '));
 
-        if(errors.length) 
+        if(errors.length)
             throw errors;
     }
 
@@ -426,8 +455,8 @@ function dcplot(frame, groupno, definition) {
     }
     function check_group_logic(name, defn, dims) {
         var errors = [];
-        if(!_.has(dims, defn.dim))
-            errors.push('unknown dimension ' + defn.dim);
+        if(!_.has(dims, defn.dimension))
+            errors.push('unknown dimension "' + defn.dimension + '"');
 
         if(errors.length)
             throw errors;
@@ -436,9 +465,9 @@ function dcplot(frame, groupno, definition) {
         var errors = [];
         var callbacks = {
             base: function() {
-                if(defn.dimension && defn.dimension!=groups[defn.group].dim)
-                    errors.push("group " + defn.group + " dimension " + groups[defn.group].dim
-                                + " does not match chart dimension " + defn.dimension);
+                if(defn.dimension && defn.dimension!=groups[defn.group].dimension)
+                    errors.push('group "' + defn.group + '" dimension "' + groups[defn.group].dimension
+                                + '" does not match chart dimension "' + defn.dimension + '"');
             },
             color: function() {
             },
@@ -457,7 +486,7 @@ function dcplot(frame, groupno, definition) {
             bubble: function() {
             }
         };
-        
+
         preorder_traversal(chart_attrs, defn.type, callbacks);
 
         if(errors.length)
@@ -474,7 +503,7 @@ function dcplot(frame, groupno, definition) {
         /* create uniformity between crossfilter dimension and reduce functions,
          and dc.js accessor functions with a simple trick: for the latter,
          split the input, which is {key, value}, into two params. this works
-         because crossfilter functions work with just the 'key' 
+         because crossfilter functions work with just the 'key'
 
          i.e. in crossfilter:
          * dimension functions are key -> key
@@ -482,7 +511,7 @@ function dcplot(frame, groupno, definition) {
          * group.reduce functions are key -> value
          in dc:
          * accessor functions are {key,value} -> whatever
-         
+
          so instead we make them (key,value) -> whatever and then they look like
          crossfilter functions!
          */
@@ -498,15 +527,15 @@ function dcplot(frame, groupno, definition) {
                 if(_.has(defn, 'transition.duration'))
                     chart.transitionDuration(defn['transition.duration']);
                 if(_.has(defn, 'label')) {
-                    if(defn.label) 
-                        chart.label(defn.label);
+                    if(defn.label)
+                        chart.label(key_value(defn.label));
                     else
                         chart.renderLabel(false);
                 }
                 if(_.has(defn, 'tips')) {
                     if(defn.tips)
                         chart.title(key_value(defn.tips));
-                    else 
+                    else
                         chart.renderTitle(false);
                 }
             },
@@ -514,7 +543,7 @@ function dcplot(frame, groupno, definition) {
                 if(_.has(defn, 'colors'))
                     chart.colors(defn.colors);
                 if(_.has(defn, 'color'))
-                    chart.colorAccessor(defn.color);
+                    chart.colorAccessor(key_value(defn.color));
                 if(_.has(defn, 'color.domain'))
                     chart.colorDomain(defn['color.domain']);
             },
@@ -522,7 +551,7 @@ function dcplot(frame, groupno, definition) {
                 if(_.has(defn, 'stack'))
                     for(var s in defn.stack) {
                         var stack = defn.stack[s];
-                        if($.isArray(stack))
+                        if(_.isArray(stack))
                             chart.stack(stack[0], stack[1]);
                         else
                             chart.stack(stack);
@@ -572,9 +601,9 @@ function dcplot(frame, groupno, definition) {
             },
             pie: function() {
                 if(_.has(defn, 'wedge'))
-                    chart.keyAccessor(defn.wedge);
+                    chart.keyAccessor(key_value(defn.wedge));
                 if(_.has(defn, 'size'))
-                    chart.keyAccessor(defn.size);
+                    chart.keyAccessor(key_value(defn.size));
 
                 if(_.has(defn, 'radius'))
                     chart.radius(defn.radius);
@@ -611,7 +640,7 @@ function dcplot(frame, groupno, definition) {
             line: dc.lineChart,
             bubble: dc.bubbleChart
         }[defn.type];
-        
+
         preorder_traversal(chart_attrs, defn.type, callbacks);
 
         // perform any extra post-processing
@@ -656,7 +685,6 @@ function dcplot(frame, groupno, definition) {
         return errors;
     }
 
-    var groupname = 'chartgroup' + groupno;
     var errors = [];
     var defn;
 
@@ -664,11 +692,11 @@ function dcplot(frame, groupno, definition) {
     for(var c in definition.charts) {
         defn = definition.charts[c];
         if(!(defn.type in chart_attrs))
-            throw 'unknown chart type ' + defn.type;
+            throw 'unknown chart type "' + defn.type + '"';
         if(!chart_attrs[defn.type].supported)
-            throw 'unsupported chart type ' + defn.type;
+            throw 'unsupported chart type "' + defn.type + '"';
         if(!chart_attrs[defn.type].concrete)
-            throw "can't create abstract chart type " + defn.type;
+            throw "can't create abstract chart type \"" + defn.type + '"';
     }
 
     // fill in anything easily defaultable (will not happen in incremental mode)
@@ -692,6 +720,9 @@ function dcplot(frame, groupno, definition) {
     if(errors.length)
         throw errors;
 
+    console.log("dcplot charts definition:");
+    console.log(definition);
+
     // create / fill stuff in
     var dimensions = {};
     var groups = {};
@@ -704,11 +735,10 @@ function dcplot(frame, groupno, definition) {
     }
     for(var g in definition.groups) {
         defn = definition.groups[g];
-        groups[g] = accessor(defn.reduce)(defn.group(dimensions[defn.dim]));
+        groups[g] = accessor(defn.reduce)(defn.group(dimensions[defn.dimension]));
     }
     for(c in definition.charts) {
         defn = definition.charts[c];
-        // var name = defn.type + groupno + '_' + c;
         charts[c] = create_chart(groupname, defn, dimensions, groups);
     }
 
