@@ -139,7 +139,10 @@ function create_markdown_cell_html_view(cell_model)
         // pubsub event handlers
 
         content_updated: function() {
-            return widget.getSession().setValue(cell_model.content());
+            var position = widget.getCursorPosition();
+            var changed = widget.getSession().setValue(cell_model.content());
+            widget.getSelection().moveCursorToPosition(position);
+            return changed;
         },
         self_removed: function() {
             notebook_cell_div.remove();
