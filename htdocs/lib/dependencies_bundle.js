@@ -14227,7 +14227,7 @@ d3.time.scale.utc = function() {
  * Lux: An EDSL for WebGL graphics
  * By Carlos Scheidegger, cscheid@research.att.com
  * 
- * Copyright (c) 2011, 2012 AT&T Intellectual Property
+ * Copyright (c) 2011-2013 AT&T Intellectual Property
  * 
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -17896,14 +17896,13 @@ var largest_batch_id = 1;
 
 Lux.bake = function(model, appearance, opts)
 {
+    appearance = Shade.canonicalize_program_object(appearance);
     opts = _.defaults(opts || {}, {
         force_no_draw: false,
         force_no_pick: false,
         force_no_unproject: false
     });
     var ctx = model._ctx || Lux._globals.ctx;
-
-    appearance = Lux.Transform.apply(appearance, ctx);
 
     if (_.isUndefined(appearance.gl_FragColor)) {
         appearance.gl_FragColor = Shade.vec(1,1,1,1);
@@ -18146,6 +18145,15 @@ Lux.conditional_batch = function(batch, condition)
         }
     };
 };
+
+Lux.conditional_actor = function(opts)
+{
+    opts = _.clone(opts);
+    opts.bake = function(model, changed_appearance) {
+        return Lux.conditional_batch(Lux.bake(model, changed_appearance), opts.condition);
+    };
+    return Lux.actor(opts);
+};
 Lux.bake_many = function(model_list, 
                          appearance_function,
                          model_callback)
@@ -18274,13 +18282,6 @@ function initialize_context_globals(gl)
 {
     gl._lux_globals = {};
 
-    // when Lux.init is called with a display callback, that gets stored in
-    // gl._globals.display_callback
-    gl._lux_globals.display_callback = Lux.Scene.render;
-
-    // Objects stored in the scene are automatically drawn
-    gl._lux_globals.scene = [];
-
     // batches can currently be rendered in "draw" or "pick" mode.
     // draw: 0
     // pick: 1
@@ -18290,14 +18291,6 @@ function initialize_context_globals(gl)
 
     // epoch is the initial time being tracked by the context.
     gl._lux_globals.epoch = new Date().getTime() / 1000;
-
-    // pre and post_display_list are callback lists managed by Lux.Scene.invalidate
-    // to avoid multiple invocations of requestAnimFrame in the same frame (which will
-    // guarantee that multiple invocations of Lux.Scene.invalidate will be triggered
-    // on the very next requestAnimFrame issued)
-
-    gl._lux_globals.pre_display_list = [];
-    gl._lux_globals.post_display_list = [];
 
     gl._lux_globals.devicePixelRatio = undefined;
 
@@ -18310,10 +18303,6 @@ function initialize_context_globals(gl)
         new DataView(buffer).setInt16(0, 256, true);
         return new Int16Array(buffer)[0] === 256;
     })();
-
-    // the transform stack is honored by Lux.bake and can be used to implement
-    // a matrix stack, etc. 
-    gl._lux_globals.transform_stack = [];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -18360,26 +18349,6 @@ Lux.init = function(opts)
     canvas.unselectable = true;
     canvas.onselectstart = function() { return false; };
     var gl;
-    var clearColor, clearDepth;
-
-    if (Lux.is_shade_expression(opts.clearColor)) {
-        if (!opts.clearColor.is_constant())
-            throw new Error("clearColor must be constant expression");
-        if (!opts.clearColor.type.equals(Shade.Types.vec4))
-            throw new Error("clearColor must be vec4");
-        clearColor = _.toArray(opts.clearColor.constant_value());
-    } else
-        clearColor = opts.clearColor;
-
-    // FIXME This should be a "is Shade expression" check
-    if (Lux.is_shade_expression(opts.clearDepth)) {
-        if (!opts.clearDepth.is_constant())
-            throw new Error("clearDepth must be constant expression");
-        if (!opts.clearDepth.type.equals(Shade.Types.float_t))
-            throw new Error("clearDepth must be float");
-        clearDepth = opts.clearDepth.constant_value();
-    } else
-        clearDepth = opts.clearDepth;
 
     var devicePixelRatio = 1;
 
@@ -18408,6 +18377,7 @@ Lux.init = function(opts)
             throw new Error("failed context creation");
         initialize_context_globals(gl);
         if ("interactor" in opts) {
+            opts.interactor.resize && opts.interactor.resize(canvas.width, canvas.height);
             for (var key in opts.interactor.events) {
                 if (opts[key]) {
                     opts[key] = (function(handler, interactor_handler) {
@@ -18442,7 +18412,7 @@ Lux.init = function(opts)
             var listener = opts[ename];
             function internal_listener(event) {
                 polyfill_event(event, gl);
-                if (!Lux.Scene.on(ename)(event))
+                if (!Lux.Scene.on(ename, event, gl))
                     return false;
                 if (listener)
                     return listener(event);
@@ -18496,24 +18466,6 @@ Lux.init = function(opts)
 
     Lux.set_context(gl);
 
-    Lux.Transform.clear();
-
-    if (opts.display) {
-        gl._lux_globals.display_callback = opts.display;
-    }
-
-    gl.display = function() {
-        this.viewport(0, 0, this.viewportWidth, this.viewportHeight);
-        this.clearDepth(clearDepth);
-        this.clearColor.apply(this, clearColor);
-        this.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        var raw_t = new Date().getTime() / 1000;
-        var new_t = raw_t - this._lux_globals.epoch;
-        var old_t = this.parameters.now.get();
-        this.parameters.frame_duration.set(new_t - old_t);
-        this.parameters.now.set(new_t);
-        this._lux_globals.display_callback();
-    };
     gl.resize = function(width, height) {
         this.parameters.width.set(width);
         this.parameters.height.set(height);
@@ -18534,7 +18486,6 @@ Lux.init = function(opts)
             if (opts.resize)
                 opts.resize(width, height);
         }
-        Lux.Scene.invalidate();
     };
     gl.parameters = {};
     if (opts.highDPS) {
@@ -18546,6 +18497,25 @@ Lux.init = function(opts)
     }
     gl.parameters.now = Shade.parameter("float", gl._lux_globals.epoch);
     gl.parameters.frame_duration = Shade.parameter("float", 0);
+
+    gl._lux_globals.scene = Lux.default_scene({
+        context: gl,
+        clearColor: opts.clearColor,
+        clearDepth: opts.clearDepth,
+        pre_draw: function() {
+            var raw_t = new Date().getTime() / 1000;
+            var new_t = raw_t - gl._lux_globals.epoch;
+            var old_t = gl.parameters.now.get();
+            gl.parameters.frame_duration.set(new_t - old_t);
+            gl.parameters.now.set(new_t);
+            gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+        }
+    });
+
+    if ("interactor" in opts) {
+        gl._lux_globals.scene.add(opts.interactor.scene);
+        gl._lux_globals.scene = opts.interactor.scene;
+    }
 
     return gl;
 };
@@ -18733,15 +18703,11 @@ Lux.Picker = {
             });
         }
 
-        callback = callback || ctx._lux_globals.display_callback;
+        callback = callback || function() { Lux._globals.ctx._lux_globals.scene.draw(); };
         var old_scene_render_mode = ctx._lux_globals.batch_render_mode;
         ctx._lux_globals.batch_render_mode = 1;
         try {
-            rb.with_bound_buffer(function() {
-                ctx.clearColor(0,0,0,0);
-                ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
-                callback();
-            });
+            rb.with_bound_buffer(callback);
         } finally {
             ctx._lux_globals.batch_render_mode = old_scene_render_mode;
         }
@@ -18828,17 +18794,21 @@ Lux.program = function(vs_src, fs_src)
 };
 Lux.render_buffer = function(opts)
 {
-    var ctx = Lux._globals.ctx;
-    var frame_buffer = ctx.createFramebuffer();
     opts = _.defaults(opts || {}, {
+        context: Lux._globals.ctx,
         width: 512,
         height: 512,
         mag_filter: Lux.texture.linear,
         min_filter: Lux.texture.linear,
         mipmaps: false,
+        max_anisotropy: 1,
         wrap_s: Lux.texture.clamp_to_edge,
-        wrap_t: Lux.texture.clamp_to_edge
+        wrap_t: Lux.texture.clamp_to_edge,
+        clearColor: [0,0,0,1],
+        clearDepth: 1.0
     });
+    var ctx = opts.context;
+    var frame_buffer = ctx.createFramebuffer();
 
     // Weird:
     // http://www.khronos.org/registry/gles/specs/2.0/es_full_spec_2.0.25.pdf
@@ -18906,24 +18876,47 @@ Lux.render_buffer = function(opts)
             ctx.bindFramebuffer(ctx.FRAMEBUFFER, null);
         }
     };
-    frame_buffer.make_screen_batch = function(with_texel_at_uv, mode) {
+    frame_buffer.screen_actor = function(opts) {
+        opts = _.defaults(opts, {
+            mode: Lux.DrawingMode.standard
+        });
+        var with_texel_at_uv = opts.texel_function;
+        var mode = opts.mode;
         var that = this;
-        return Lux.Transform.saving(function() {
-            Lux.Transform.clear();
-            mode = mode || Lux.DrawingMode.standard;
-            var sq = Lux.Models.square();
-            return Lux.bake(sq, {
-                position: sq.vertex.mul(2).sub(1),
-                color: with_texel_at_uv(function(offset) { 
+        var sq = Lux.Models.square();
+        mode = mode || Lux.DrawingMode.standard;
+        return Lux.actor({
+            model: sq,
+            appearance: {
+                screen_position: sq.vertex.mul(2).sub(1),
+                color: with_texel_at_uv(function(offset) {
                     var texcoord = sq.tex_coord;
                     if (arguments.length > 0)
                         texcoord = texcoord.add(offset);
                     return Shade.texture2D(that.texture, texcoord);
-                }, sq.tex_coord),
+                }),
                 mode: mode
-            });
+            },
+            bake: opts.bake
         });
     };
+    
+    var old_v;
+    frame_buffer.scene = Lux.default_scene({
+        clearColor: opts.clearColor,
+        clearDepth: opts.clearDepth,
+        context: ctx,
+        pre_draw: function() {
+            old_v = ctx.getParameter(ctx.VIEWPORT);
+            ctx.bindFramebuffer(ctx.FRAMEBUFFER, frame_buffer);
+            ctx.viewport(0, 0, frame_buffer.width, frame_buffer.height);
+        },
+        post_draw: function() {
+            ctx.viewport(old_v[0], old_v[1], old_v[2], old_v[3]);
+            ctx.bindFramebuffer(ctx.FRAMEBUFFER, null);
+        }
+    });
+
     return frame_buffer;
 };
 Lux.set_context = function(the_ctx)
@@ -19265,82 +19258,6 @@ Lux.Unprojector = {
 };
 
 })();
-Lux.Transform = {};
-Lux.Transform.saving = function(what, ctx) {
-    if (_.isUndefined(ctx))
-        ctx = Lux._globals.ctx;
-    var old_stack = ctx._lux_globals.transform_stack;
-    try {
-        return what();
-    } finally {
-        ctx._lux_globals.transform_stack = old_stack;
-    }
-};
-Lux.Transform.using = function(transformation, what, ctx)
-{
-    if (_.isUndefined(ctx))
-        ctx = Lux._globals.ctx;
-    return Lux.Transform.saving(function() {
-        Lux.Transform.push(transformation, ctx);
-        return what();
-    });
-};
-Lux.Transform.push = function(transform, ctx) {
-    if (_.isUndefined(ctx))
-        ctx = Lux._globals.ctx;
-    var new_stack = ctx._lux_globals.transform_stack.slice();
-    new_stack.push(transform);
-    ctx._lux_globals.transform_stack = new_stack;
-};
-Lux.Transform.pop = function(ctx) {
-    if (_.isUndefined(ctx))
-        ctx = Lux._globals.ctx;
-    var new_stack = ctx._lux_globals.transform_stack.slice();
-    var result = new_stack.pop();
-    ctx._lux_globals.transform_stack = new_stack;
-    return result;
-};
-Lux.Transform.clear = function(ctx) {
-    // The last transformation on the stack canonicalizes
-    // the appearance object to always have gl_Position, gl_FragColor
-    // and gl_PointSize fields.
-    if (_.isUndefined(ctx))
-        ctx = Lux._globals.ctx;
-    ctx._lux_globals.transform_stack = [Shade.canonicalize_program_object];
-};
-Lux.Transform.apply = function(appearance, ctx) 
-{
-    return Lux.Transform.get(ctx)(appearance);
-};
-Lux.Transform.apply_inverse = function(appearance, ctx) 
-{
-    return Lux.Transform.get_inverse(ctx)(appearance);
-};
-Lux.Transform.get = function(ctx)
-{
-    if (_.isUndefined(ctx))
-        ctx = Lux._globals.ctx;
-    var s = ctx._lux_globals.transform_stack;
-    return function(appearance) {
-        var i = s.length;
-        while (--i >= 0) {
-            appearance = s[i](appearance);
-        }
-        return appearance;
-    };
-};
-Lux.Transform.get_inverse = function(ctx)
-{
-    if (_.isUndefined(ctx))
-        ctx = Lux._globals.ctx;
-    var s = ctx._lux_globals.transform_stack;
-    return function(appearance) {
-        for (var i=0; i<s.length; ++i) {
-            appearance = (s[i].inverse || function(i) { return i; })(appearance);
-        }
-        return appearance;
-    };
-};
 Lux.Net = {};
 
 (function() {
@@ -19990,18 +19907,13 @@ Lux.UI.center_zoom_interactor = function(opts)
         dblclick: function() {},
         center: vec.make([0,0]),
         zoom: 1,
-        widest_zoom: 0.1
+        widest_zoom: 0.1,
+        width: 100,
+        height: 100
     });
 
     var height = opts.height;
     var width = opts.width;
-
-    if (_.isUndefined(width)) {
-        throw new Error("Lux.UI.center_zoom_interactor requires width parameter");
-    }
-    if (_.isUndefined(height)) {
-        throw new Error("Lux.UI.center_zoom_interactor requires height parameter");
-    }
 
     var aspect_ratio = Shade.parameter("float", width/height);
     var center = Shade.parameter("vec2", opts.center);
@@ -20016,7 +19928,7 @@ Lux.UI.center_zoom_interactor = function(opts)
         aspect_ratio: aspect_ratio
     });
 
-    var prev_mouse_pos;
+    var prev_mouse_pos, down_mouse_pos;
     var current_button = 0;
 
     function dblclick(event) {
@@ -20037,6 +19949,7 @@ Lux.UI.center_zoom_interactor = function(opts)
         }
 
         prev_mouse_pos = [event.offsetX, event.offsetY];
+        down_mouse_pos = [event.offsetX, event.offsetY];
         opts.mousedown(event);
     }
 
@@ -20058,7 +19971,10 @@ Lux.UI.center_zoom_interactor = function(opts)
     }).js_evaluate;
 
     var internal_move = function(dx, dy) {
-        var negdelta = f(vec.make([dx, dy]));
+        var ctx = Lux._globals.ctx;
+        var v = vec.make([2*dx/ctx.parameters.width.get(), 
+                          2*dy/ctx.parameters.height.get()]);
+        var negdelta = f(v);
         // we use a kahan compensated sum here:
         // http://en.wikipedia.org/wiki/Kahan_summation_algorithm
         // to accumulate minute changes in the center that come from deep zooms.
@@ -20074,7 +19990,10 @@ Lux.UI.center_zoom_interactor = function(opts)
                         -(event.offsetY - prev_mouse_pos[1]));
             Lux.Scene.invalidate();
         } else if ((current_button & 1) && event.shiftKey) {
-            zoom.set(Math.max(opts.widest_zoom, zoom.get() * (1.0 + (event.offsetY - prev_mouse_pos[1]) / 240)));
+            internal_move(result.width/2-down_mouse_pos[0], down_mouse_pos[1]-result.height/2);
+            var new_value = Math.max(opts.widest_zoom, zoom.get() * (1.0 + (event.offsetY - prev_mouse_pos[1]) / 240));
+            zoom.set(new_value);
+            internal_move(down_mouse_pos[0]-result.width/2, result.height/2-down_mouse_pos[1]);
             Lux.Scene.invalidate();
         }
         prev_mouse_pos = [ event.offsetX, event.offsetY ];
@@ -20099,11 +20018,15 @@ Lux.UI.center_zoom_interactor = function(opts)
 
     // implement transform stack inverse requirements
     var transform = function(appearance) {
+        if (_.isUndefined(appearance.position))
+            return appearance;
         var new_appearance = _.clone(appearance);
         new_appearance.position = result.project(new_appearance.position);
         return new_appearance;
     };
     transform.inverse = function(appearance) {
+        if (_.isUndefined(appearance.position))
+            return appearance;
         var new_appearance = _.clone(appearance);
         new_appearance.position = result.unproject(new_appearance.position);
         return new_appearance;
@@ -20118,6 +20041,10 @@ Lux.UI.center_zoom_interactor = function(opts)
         height: height,
 
         transform: transform,
+
+        scene: Lux.scene({
+            transform: transform
+        }),
 
         project: function(pt) {
             return this.camera.project(pt);
@@ -20219,6 +20146,126 @@ var Shade = function(exp)
 (function() {
 
 Shade.debug = false;
+/*
+ * Shade.Debug contains code that helps with debugging Shade
+   expressions, the Shade-to-GLSL compiler, etc.
+ */
+Shade.Debug = {};
+/*
+ * Shade.Debug.walk walks an expression dag and calls 'visit' on each
+ * expression in a bottom-up order. The return values of 'visit' are
+ * passed to the higher-level invocations of 'visit', and so is the
+ * dictionary of references that is used to resolve multiple node
+ * references. Shade.Debug.walk will only call 'visit' once per node,
+ * even if visit can be reached by many different paths in the dag.
+ * 
+ * If 'revisit' is passed, then it is called every time a node is 
+ * revisited. 
+ * 
+ * Shade.Debug.walk returns the dictionary of references.
+ */
+
+Shade.Debug.walk = function(exp, visit, revisit) {
+    var refs = {};
+    function internal_walk_no_revisit(node) {
+        if (!_.isUndefined(refs[node.guid])) {
+            return refs[node.guid];
+        }
+        var parent_results = _.map(node.parents, internal_walk_no_revisit);
+        var result = visit(node, parent_results, refs);
+        refs[node.guid] = result;
+        return result;
+    };
+    function internal_walk_revisit(node) {
+        if (!_.isUndefined(refs[node.guid])) {
+            return revisit(node, _.map(node.parents, function(exp) {
+                return refs[exp.guid];
+            }), refs);
+        }
+        var parent_results = _.map(node.parents, internal_walk_revisit);
+        var result = visit(node, parent_results, refs);
+        refs[node.guid] = result;
+        return result;
+    }
+    if (!_.isUndefined(revisit))
+        internal_walk_revisit(exp);
+    else
+        internal_walk_no_revisit(exp);
+    return refs;
+};
+/*
+ * from_json produces a JSON object that satisfies the following property:
+ * 
+ * if j is a Shade expresssion,
+ * 
+ * Shade.Debug.from_json(f.json()) equals f, up to guid renaming
+ */
+Shade.Debug.from_json = function(json)
+{
+    var refs = {};
+    function build_node(json_node) {
+        var parent_nodes = _.map(json_node.parents, function(parent) {
+            return refs[parent.guid];
+        });
+        switch (json_node.type) {
+        case "constant": 
+            return Shade.constant.apply(undefined, json_node.values);
+        case "struct":
+            return Shade.struct(_.build(_.zip(json_node.fields, json_node.parents)));
+        case "parameter":
+            return Shade.parameter(json_node.parameter_type);
+        case "attribute":
+            return Shade.attribute(json_node.attribute_type);
+        case "varying":
+            return Shade.varying(json_node.varying_name, json_node.varying_type);
+        case "index":
+            return parent_nodes[0].at(parent_nodes[1]);
+        };
+
+        // swizzle
+        var m = json_node.type.match(/swizzle{(.+)}$/);
+        if (m) return parent_nodes[0].swizzle(m[1]);
+
+        // field
+        m = json_node.type.match(/struct-accessor{(.+)}$/);
+        if (m) return parent_nodes[0].field(m[1]);
+
+        var f = Shade[json_node.type];
+        if (_.isUndefined(f)) {
+            throw new Error("from_json: unimplemented type '" + json_node.type + "'");
+        }
+        return f.apply(undefined, parent_nodes);
+    }
+    function walk_json(json_node) {
+        if (json_node.type === 'reference')
+            return refs[json_node.guid];
+        _.each(json_node.parents, walk_json);
+        var new_node = build_node(json_node);
+        refs[json_node.guid] = new_node;
+        return new_node;
+    }
+    return walk_json(json);
+};
+/*
+ * Shade.Debug._json_builder is a helper function used internally by
+ * the Shade infrastructure to build JSON objects through
+ * Shade.Debug.walk visitors.
+ * 
+ */
+Shade.Debug._json_builder = function(type, parent_reprs_fun) {
+    parent_reprs_fun = parent_reprs_fun || function (i) { return i; };
+    return function(parent_reprs, refs) {
+        if (!_.isUndefined(refs[this.guid]))
+            return { type: "reference",
+                     guid: this.guid };
+        else {
+            var result = { type: type || this._json_key(),
+                           guid: this.guid,
+                           parents: parent_reprs };
+            return parent_reprs_fun.call(this, result);
+        }
+    };
+};
 //////////////////////////////////////////////////////////////////////////////
 // make converts objects which can be meaningfully interpreted as
 // Exp values to the appropriate Exp values, giving us some poor-man
@@ -20227,7 +20274,7 @@ Shade.debug = false;
 Shade.make = function(value)
 {
     if (_.isUndefined(value)) {
-        throw new Error("expected a value, got undefined instead");
+        return undefined;
     }
     var t = lux_typeOf(value);
     if (t === 'string') {
@@ -20451,23 +20498,25 @@ Shade.Camera.ortho = function(opts)
     var b = l_or_p.ifelse(cy.sub(corrected_half_height), bottom);
     var t = l_or_p.ifelse(cy.add(corrected_half_height), top);
     var m = Shade.ortho(l, r, b, t, near, far);
-    
-    var view_xform = Shade(function(model_vertex) {
-        if (model_vertex.type === Shade.Types.vec2) {
-            return model_vertex.sub(opts.center).mul(opts.zoom);
-        } else if (model_vertex.type === Shade.Types.vec3) {
-            return Shade.vec(
-                model_vertex.swizzle("xy").sub(opts.center).mul(opts.zoom),
-                model_vertex.z());
-        } else if (model_vertex.type === Shade.Types.vec4) {
-            return Shade.vec(
-                model_vertex.swizzle("xy").sub(opts.center).mul(opts.zoom),
-                model_vertex.z());
-        } else 
+
+    function replace_xy_with(vec, new_vec) {
+        if (vec.type === Shade.Types.vec2)
+            return new_vec;
+        else if (vec.type === Shade.Types.vec3)
+            return Shade.vec(new_vec, vec.z());
+        else if (vec.type === Shade.Types.vec4)
+            return Shade.vec(new_vec, vec.swizzle("zw"));
+        else
             throw new Error("Shade.ortho requires vec2, vec3, or vec4s");
+    };
+
+    var view_xform = Shade(function(model_vertex) {
+        var new_v = model_vertex.swizzle("xy").sub(opts.center).mul(opts.zoom);
+        return replace_xy_with(model_vertex, new_v);
     });
     var view_xform_invert = Shade(function(view_vertex) {
-        return view_vertex.swizzle("xy").div(opts.zoom).add(opts.center);
+        var new_v = view_vertex.swizzle("xy").div(opts.zoom).add(opts.center);
+        return replace_xy_with(view_vertex, new_v);
     });
 
     function result(obj) {
@@ -20480,13 +20529,22 @@ Shade.Camera.ortho = function(opts)
     result.project = function(model_vertex) {
         return m.mul(view_xform(model_vertex));
     };
-    result.unproject = function(screen_pos) {
-        var ctx = Lux._globals.ctx;
-        var screen_size = Shade.vec(ctx.parameters.width, ctx.parameters.height);
-        var min = Shade.vec(l, b);
-        var max = Shade.vec(r, t);
-        var view_vtx = min.add(max.sub(min).mul(screen_pos.div(screen_size)));
-        return view_xform_invert(view_vtx);
+    result.unproject = function(normalized_view_pos) {
+        // var inv_m = Shade.Scale.linear({
+        //     domain: [Shade.vec(-1,-1,-1),
+        //              Shade.vec( 1, 1, 1)],
+        //     range: [Shade.vec(l, b, near),
+        //             Shade.vec(r, t, far)]});
+        var inv_m = Shade.Scale.linear({
+            domain: [Shade.vec(-1,-1),
+                     Shade.vec( 1, 1)],
+            range: [Shade.vec(l, b),
+                    Shade.vec(r, t)]});
+        return view_xform_invert(inv_m(normalized_view_pos));
+        // var ctx = Lux._globals.ctx;
+        // var screen_size = Shade.vec(ctx.parameters.width, ctx.parameters.height);
+        // var view_vtx = min.add(max.sub(min).mul(screen_pos.div(screen_size)));
+        // return view_xform_invert(view_vtx);
     };
     return result;
 };
@@ -22066,7 +22124,7 @@ Shade.Exp = {
         return Shade._create_concrete_value_exp({
             parents: [this],
             type: this.type.fields[field_name],
-            expression_type: "struct-accessor",
+            expression_type: "struct-accessor{" + field_name + "}",
             value: function() {
                 return "(" + this.parents[0].glsl_expression() + "." + field_name + ")";
             },
@@ -22152,6 +22210,14 @@ Shade.Exp = {
 
     //////////////////////////////////////////////////////////////////////////
     // debugging infrastructure
+
+    json: function() {
+        function helper_f(node, parents, refs) { return node._json_helper(parents, refs); };
+        var refs = Shade.Debug.walk(this, helper_f, helper_f);
+        return refs[this.guid];
+    },
+    _json_helper: Shade.Debug._json_builder(),    
+    _json_key: function() { return this.expression_type; },
     
     debug_print: function(do_what) {
         var lst = [];
@@ -22448,7 +22514,15 @@ Shade.constant = function(v, type)
             }),
             compile: function(ctx) {},
             parents: [],
-            type: type
+            type: type,
+
+            //////////////////////////////////////////////////////////////////
+            // debugging
+
+            _json_helper: Shade.Debug._json_builder("constant", function(obj) {
+                obj.values = args;
+                return obj;
+            })
         });
     };
 
@@ -22570,7 +22644,9 @@ Shade.array = function(v)
             var that = this;
             xform = xform || function(x) { return x; };
             return Shade.locate(function(i) { return xform(that.at(i.as_int())); }, target, 0, array_size-1);
-        }
+        },
+
+        _json_key: function() { return "array"; }
     });
 };
 // Shade.struct denotes a heterogeneous structure of Shade values:
@@ -22634,7 +22710,11 @@ Shade.struct = function(obj)
         },
         call_operator: function(v) {
             return this.field(v);
-        }
+        },
+        _json_helper: Shade.Debug._json_builder("struct", function(obj) {
+            obj.fields = ks;
+            return obj;
+        })
     });
 
     // _.each(ks, function(k) {
@@ -22777,7 +22857,15 @@ Shade.parameter = function(type, v)
             this.watchers.splice(this.watchers.indexOf(callback), 1);
         },
         uniform_call: call,
-        uniform_name: uniform_name
+        uniform_name: uniform_name,
+
+        //////////////////////////////////////////////////////////////////////
+        // debugging
+
+        _json_helper: Shade.Debug._json_builder("parameter", function(obj) {
+            obj.parameter_type = type.repr();
+            return obj;
+        })
     });
     result._uniforms = [result];
     result.set(v);
@@ -22857,7 +22945,16 @@ Shade.attribute = function(type)
             }
             bound_buffer = buffer;
         },
-        _attribute_name: name
+        _attribute_name: name,
+
+        //////////////////////////////////////////////////////////////////////
+        // debugging
+
+        _json_helper: Shade.Debug._json_builder("attribute", function(obj) {
+            obj.attribute_type = type.repr();
+            return obj;
+        })
+
     });
 };
 Shade.varying = function(name, type)
@@ -22908,7 +23005,16 @@ Shade.varying = function(name, type)
                 ctx.add_initialization(this.precomputed_value_glsl_name + " = " + name);
                 ctx.value_function(this, this.precomputed_value_glsl_name);
             }
-        }
+        },
+
+        //////////////////////////////////////////////////////////////////////
+        // debugging
+
+        _json_helper: Shade.Debug._json_builder("varying", function(obj) {
+            obj.varying_type = type.repr();
+            obj.varying_name = name;
+            return obj;
+        })
     });
 };
 
@@ -22922,7 +23028,8 @@ Shade.fragCoord = function() {
             throw new Error("evaluate undefined for fragCoord");
         },
         compile: function(ctx) {
-        }
+        },
+        json_key: function() { return "fragCoord"; }
     });
 };
 Shade.pointCoord = function() {
@@ -22935,7 +23042,8 @@ Shade.pointCoord = function() {
         },
         evaluate: function() {
             throw new Error("evaluate undefined for pointCoord");
-        }
+        },
+        _json_key: function() { return 'pointCoord'; }
     });
 };
 Shade.round_dot = function(color) {
@@ -22947,13 +23055,15 @@ Shade.round_dot = function(color) {
 var operator = function(exp1, exp2, 
                         operator_name, type_resolver,
                         evaluator,
-                        element_evaluator)
+                        element_evaluator,
+                        shade_name)
 {
     var resulting_type = type_resolver(exp1.type, exp2.type);
     return Shade._create_concrete_value_exp( {
         parents: [exp1, exp2],
         type: resulting_type,
         expression_type: "operator" + operator_name,
+        _json_key: function() { return shade_name; },
         value: function () {
             var p1 = this.parents[0], p2 = this.parents[1];
             if (this.type.is_struct()) {
@@ -23087,12 +23197,12 @@ Shade.add = function() {
             v2 = e2.element(i);
         else
             v2 = e2;
-        return operator(v1, v2, "+", add_type_resolver, evaluator, element_evaluator);
+        return operator(v1, v2, "+", add_type_resolver, evaluator, element_evaluator, "add");
     }
     for (var i=1; i<arguments.length; ++i) {
         current_result = operator(current_result, Shade.make(arguments[i]),
                                   "+", add_type_resolver, evaluator,
-                                  element_evaluator);
+                                  element_evaluator, "add");
     }
     return current_result;
 };
@@ -23190,13 +23300,13 @@ Shade.sub = function() {
             v2 = e2.element(i);
         else
             v2 = e2;
-        return operator(v1, v2, "-", sub_type_resolver, evaluator, element_evaluator);
+        return operator(v1, v2, "-", sub_type_resolver, evaluator, element_evaluator, "sub");
     }
     var current_result = Shade.make(arguments[0]);
     for (var i=1; i<arguments.length; ++i) {
         current_result = operator(current_result, Shade.make(arguments[i]),
                                   "-", sub_type_resolver, evaluator,
-                                  element_evaluator);
+                                  element_evaluator, "sub");
     }
     return current_result;
 };
@@ -23319,12 +23429,13 @@ Shade.div = function() {
             v2 = e2.element(i);
         else
             v2 = e2;
-        return operator(v1, v2, "/", div_type_resolver, evaluator, element_evaluator);
+        return operator(v1, v2, "/", div_type_resolver, evaluator, element_evaluator, "div");
     }
     var current_result = Shade.make(arguments[0]);
     for (var i=1; i<arguments.length; ++i) {
         current_result = operator(current_result, Shade.make(arguments[i]),
-                                  "/", div_type_resolver, evaluator, element_evaluator);
+                                  "/", div_type_resolver, evaluator, element_evaluator,
+                                  "div");
     }
     return current_result;
 };
@@ -23444,21 +23555,21 @@ Shade.mul = function() {
                 },
                 "vec": function() { 
                     v1 = e1; v2 = e2.element(i); 
-                    return operator(v1, v2, "*", mul_type_resolver, evaluator, element_evaluator);
+                    return operator(v1, v2, "*", mul_type_resolver, evaluator, element_evaluator, "mul");
                 },
                 "mat": function() { 
                     v1 = e1; v2 = e2.element(i); 
-                    return operator(v1, v2, "*", mul_type_resolver, evaluator, element_evaluator);
+                    return operator(v1, v2, "*", mul_type_resolver, evaluator, element_evaluator, "mul");
                 }
             },
             "vec": { 
                 "pod": function() { 
                     v1 = e1.element(i); v2 = e2; 
-                    return operator(v1, v2, "*", mul_type_resolver, evaluator, element_evaluator);
+                    return operator(v1, v2, "*", mul_type_resolver, evaluator, element_evaluator, "mul");
                 },
                 "vec": function() { 
                     v1 = e1.element(i); v2 = e2.element(i); 
-                    return operator(v1, v2, "*", mul_type_resolver, evaluator, element_evaluator);
+                    return operator(v1, v2, "*", mul_type_resolver, evaluator, element_evaluator, "mul");
                 },
                 "mat": function() {
                     // FIXME should we have a mat_dimension?
@@ -23468,7 +23579,7 @@ Shade.mul = function() {
             "mat": { 
                 "pod": function() { 
                     v1 = e1.element(i); v2 = e2;
-                    return operator(v1, v2, "*", mul_type_resolver, evaluator, element_evaluator);
+                    return operator(v1, v2, "*", mul_type_resolver, evaluator, element_evaluator, "mul");
                 },
                 "vec": function() {
                     // FIXME should we have a mat_dimension?
@@ -23494,7 +23605,8 @@ Shade.mul = function() {
                 },
                 "mat": function() {
                     var col = e2.element(i);
-                    return operator(e1, col, "*", mul_type_resolver, evaluator, element_evaluator);
+                    return operator(e1, col, "*", mul_type_resolver, evaluator, element_evaluator,
+                                    "mul");
                 }
             }
         };
@@ -23510,7 +23622,7 @@ Shade.mul = function() {
             }
         }
         current_result = operator(current_result, Shade.make(arguments[i]),
-                                  "*", mul_type_resolver, evaluator, element_evaluator);
+                                  "*", mul_type_resolver, evaluator, element_evaluator, "mul");
     }
     return current_result;
 };
@@ -23722,6 +23834,7 @@ function zipWith3(f, v1, v2, v3)
 function builtin_glsl_function(opts)
 {
     var name = opts.name;
+    var shade_name = opts.shade_name || opts.name;
     var evaluator = opts.evaluator;
     var type_resolving_list = opts.type_resolving_list;
     var element_function = opts.element_function;
@@ -23784,7 +23897,8 @@ function builtin_glsl_function(opts)
                             return t.glsl_expression(); 
                         }).join(", "),
                         ")"].join(" ");
-            }
+            },
+            _json_helper: Shade.Debug._json_builder(shade_name)
         };
 
         if (evaluator) {
@@ -24133,6 +24247,7 @@ Shade.smoothstep = smoothstep;
 
 var norm = builtin_glsl_function({
     name: "length", 
+    shade_name: "norm",
     type_resolving_list: [
         [Shade.Types.float_t, Shade.Types.float_t],
         [Shade.Types.vec2,    Shade.Types.float_t],
@@ -24826,6 +24941,7 @@ Shade.canonicalize_program_object = function(program_obj)
     var canonicalization_map = {
         'color': 'gl_FragColor',
         'position': 'gl_Position',
+        'screen_position': 'gl_Position',
         'point_size': 'gl_PointSize'
     };
 
@@ -24930,7 +25046,13 @@ Shade.program = function(program_obj)
 
     var used_varying_names = [];
     _.each(fp_obj, function(v, k) {
-        v = fp_optimize(v);
+        try {
+            v = fp_optimize(v);
+        } catch (e) {
+            console.error("fragment program optimization crashed. This is a bug. Please send the following JSON object in the bug report:");
+            console.error(JSON.stringify(v.json()));
+            throw e;
+        }
         used_varying_names.push.apply(used_varying_names,
                                       _.map(v.find_if(is_varying),
                                             function (v) { 
@@ -24940,9 +25062,18 @@ Shade.program = function(program_obj)
     });
 
     _.each(vp_obj, function(v, k) {
+        var new_v;
         if ((varying_names.indexOf(k) === -1) ||
-            (used_varying_names.indexOf(k) !== -1))
-            vp_exprs.push(Shade.set(vp_optimize(v), k));
+            (used_varying_names.indexOf(k) !== -1)) {
+            try {
+                new_v = vp_optimize(v);
+            } catch (e) {
+                console.error("vertex program optimization crashed. This is a bug. Please send the following JSON object in the bug report:");
+                console.error(JSON.stringify(v.json()));
+                throw e;
+            }
+            vp_exprs.push(Shade.set(new_v, k));
+        }
     });
 
     var vp_exp = Shade.seq(vp_exprs);
@@ -25104,7 +25235,7 @@ Shade.Exp.tanh = function() { return Shade.tanh(this); };
 (function() {
 
 var logical_operator_binexp = function(exp1, exp2, operator_name, evaluator,
-                                       parent_is_unconditional)
+                                       parent_is_unconditional, shade_name)
 {
     parent_is_unconditional = parent_is_unconditional ||
         function (i) { return true; };
@@ -25119,7 +25250,8 @@ var logical_operator_binexp = function(exp1, exp2, operator_name, evaluator,
         evaluate: Shade.memoize_on_guid_dict(function(cache) {
             return evaluator(this, cache);
         }),
-        parent_is_unconditional: parent_is_unconditional
+        parent_is_unconditional: parent_is_unconditional,
+        _json_key: function() { return shade_name; }
     });
 };
 
@@ -25131,7 +25263,7 @@ var lift_binfun_to_evaluator = function(binfun) {
 };
 
 var logical_operator_exp = function(operator_name, binary_evaluator,
-                                    parent_is_unconditional)
+                                    parent_is_unconditional, shade_name)
 {
     return function() {
         if (arguments.length === 0) 
@@ -25153,7 +25285,7 @@ var logical_operator_exp = function(operator_name, binary_evaluator,
             current_result = logical_operator_binexp(
                 current_result, next,
                 operator_name, binary_evaluator,
-                parent_is_unconditional);
+                parent_is_unconditional, shade_name);
         }
         return current_result;
     };
@@ -25161,7 +25293,7 @@ var logical_operator_exp = function(operator_name, binary_evaluator,
 
 Shade.or = logical_operator_exp(
     "||", lift_binfun_to_evaluator(function(a, b) { return a || b; }),
-    function(i) { return i === 0; }
+    function(i) { return i === 0; }, "or"
 );
 
 Shade.Exp.or = function(other)
@@ -25171,7 +25303,7 @@ Shade.Exp.or = function(other)
 
 Shade.and = logical_operator_exp(
     "&&", lift_binfun_to_evaluator(function(a, b) { return a && b; }),
-    function(i) { return i === 0; }
+    function(i) { return i === 0; }, "and"
 );
 
 Shade.Exp.and = function(other)
@@ -25180,7 +25312,7 @@ Shade.Exp.and = function(other)
 };
 
 Shade.xor = logical_operator_exp(
-    "^^", lift_binfun_to_evaluator(function(a, b) { return ~~(a ^ b); }));
+    "^^", lift_binfun_to_evaluator(function(a, b) { return ~~(a ^ b); }), undefined, "xor");
 Shade.Exp.xor = function(other)
 {
     return Shade.xor(this, other);
@@ -25200,19 +25332,20 @@ Shade.not = Shade(function(exp)
         },
         evaluate: Shade.memoize_on_guid_dict(function(cache) {
             return !this.parents[0].evaluate(cache);
-        })
+        }),
+        _json_key: function() { return "not"; }
     });
 });
 
 Shade.Exp.not = function() { return Shade.not(this); };
 
-var comparison_operator_exp = function(operator_name, type_checker, binary_evaluator)
+var comparison_operator_exp = function(operator_name, type_checker, binary_evaluator, shade_name)
 {
     return Shade(function(first, second) {
         type_checker(first.type, second.type);
 
         return logical_operator_binexp(
-            first, second, operator_name, binary_evaluator);
+            first, second, operator_name, binary_evaluator, undefined, shade_name);
     });
 };
 
@@ -25243,19 +25376,19 @@ var equality_type_checker = function(name) {
 };
 
 Shade.lt = comparison_operator_exp("<", inequality_type_checker("<"),
-    lift_binfun_to_evaluator(function(a, b) { return a < b; }));
+    lift_binfun_to_evaluator(function(a, b) { return a < b; }), "lt");
 Shade.Exp.lt = function(other) { return Shade.lt(this, other); };
 
 Shade.le = comparison_operator_exp("<=", inequality_type_checker("<="),
-    lift_binfun_to_evaluator(function(a, b) { return a <= b; }));
+    lift_binfun_to_evaluator(function(a, b) { return a <= b; }), "le");
 Shade.Exp.le = function(other) { return Shade.le(this, other); };
 
 Shade.gt = comparison_operator_exp(">", inequality_type_checker(">"),
-    lift_binfun_to_evaluator(function(a, b) { return a > b; }));
+    lift_binfun_to_evaluator(function(a, b) { return a > b; }), "gt");
 Shade.Exp.gt = function(other) { return Shade.gt(this, other); };
 
 Shade.ge = comparison_operator_exp(">=", inequality_type_checker(">="),
-    lift_binfun_to_evaluator(function(a, b) { return a >= b; }));
+    lift_binfun_to_evaluator(function(a, b) { return a >= b; }), "ge");
 Shade.Exp.ge = function(other) { return Shade.ge(this, other); };
 
 Shade.eq = comparison_operator_exp("==", equality_type_checker("=="),
@@ -25266,7 +25399,7 @@ Shade.eq = comparison_operator_exp("==", equality_type_checker("=="),
                          function (x) { return x; });
         }
         return Shade.Types.type_of(a).value_equals(a, b);
-    }));
+    }), "eq");
 Shade.Exp.eq = function(other) { return Shade.eq(this, other); };
 
 Shade.ne = comparison_operator_exp("!=", equality_type_checker("!="),
@@ -25277,7 +25410,7 @@ Shade.ne = comparison_operator_exp("!=", equality_type_checker("!="),
                          function (x) { return x; });
         }
         return !Shade.Types.type_of(a).value_equals(a, b);
-    }));
+    }), "ne");
 Shade.Exp.ne = function(other) { return Shade.ne(this, other); };
 
 // component-wise comparisons are defined on builtins.js
@@ -25603,6 +25736,9 @@ performance problem into an actual bug.
 
 Shade.discard_if = function(exp, condition)
 {
+    if (_.isUndefined(exp) ||
+        _.isUndefined(condition))
+        throw new Error("discard_if expects two parameters");
     exp = Shade.make(exp);
     condition = Shade.make(condition);
 
@@ -25611,19 +25747,19 @@ Shade.discard_if = function(exp, condition)
             var cond = _.all(this.parents, function(v) {
                 return v.is_constant();
             });
-            return (cond && !this.parents[0].constant_value());
+            return (cond && !this.parents[1].constant_value());
         }),
         _must_be_function_call: true,
         type: exp.type,
         expression_type: "discard_if",
-        parents: [condition, exp],
+        parents: [exp, condition],
         parent_is_unconditional: function(i) {
             return i === 0;
         },
         compile: function(ctx) {
-            ctx.strings.push(exp.type.repr(), this.glsl_name, "(void) {\n",
-                             "    if (",this.parents[0].glsl_expression(),") discard;\n",
-                             "    return ", this.parents[1].glsl_expression(), ";\n}\n");
+            ctx.strings.push(this.parents[0].type.repr(), this.glsl_name, "(void) {\n",
+                             "    if (",this.parents[1].glsl_expression(),") discard;\n",
+                             "    return ", this.parents[0].glsl_expression(), ";\n}\n");
         },
         // FIXME How does evaluate interact with fragment discarding?
         // I still need to define the value of a discarded fragment. Currently evaluate
@@ -25787,7 +25923,7 @@ Shade.Colors.Brewer.qualitative = function(opts) {
     return Shade.Scale.ordinal({range: range});
 };
 
-Shade.Colors.Brewer.diverging = function(opts) {
+Shade.Colors.Brewer.divergent = function(opts) {
     opts = _.defaults(opts || {}, {
         alpha: 1,
         low: -1,
@@ -25796,9 +25932,9 @@ Shade.Colors.Brewer.diverging = function(opts) {
     });
     if (_.isUndefined(opts.name))
         throw new Error("'name' is a required option");
-    var a = schemes.diverging[opts.name];
+    var a = schemes.divergent[opts.name];
     if (_.isUndefined(a))
-        throw new Error("Unknown diverging colormap " + opts.name);
+        throw new Error("Unknown divergent colormap " + opts.name);
     var range = _.map(a, function(lst) {
         return Shade.vec(lst[0] / 255, lst[1]/255, lst[2]/255, opts.alpha);
     });
@@ -26872,16 +27008,24 @@ Shade.Scale.log2 = function(opts)
     return Shade.Scale.transformed(new_opts);
 };
 Shade.Scale.Geo = {};
-Shade.Scale.Geo.mercator_to_spherical = Shade(function(x, y)
+Shade.Scale.Geo.latlong_to_hammer = Shade(function(lat, lon, B)
 {
-    var lat = y.sinh().atan();
-    var lon = x;
-    return Shade.Scale.Geo.latlong_to_spherical(lat, lon);
+    if (_.isUndefined(B))
+        B = Shade(2);
+    else if (!B.type.equals(Shade.Types.float_t))
+        throw new Error("B should have type float");
+    var phi = lat,
+        lambda = lon;
+    var eta = phi.cos().mul(lambda.div(B).cos()).add(1).sqrt();
+    var x = B.mul(Math.sqrt(2)).mul(phi.cos()).mul(lambda.div(B).sin()).div(eta);
+    var y = phi.sin().mul(Math.sqrt(2)).div(eta);
+    var out = Shade.vec(x, y);
+    return out;
 });
-Shade.Scale.Geo.mercator_to_latlong = Shade(function(x, y)
+Shade.Scale.Geo.latlong_to_mercator = Shade(function(lat, lon)
 {
-    // http://stackoverflow.com/a/1166095
-    return Shade.vec(y.sinh().atan(), x);
+    lat = lat.div(2).add(Math.PI/4).tan().log();
+    return Shade.vec(lon, lat);
 });
 Shade.Scale.Geo.latlong_to_spherical = Shade(function(lat, lon)
 {
@@ -26890,10 +27034,16 @@ Shade.Scale.Geo.latlong_to_spherical = Shade(function(lat, lon)
                      lat.sin(),
                      lon.cos().mul(stretch), 1);
 });
-Shade.Scale.Geo.latlong_to_mercator = Shade(function(lat, lon)
+Shade.Scale.Geo.mercator_to_latlong = Shade(function(x, y)
 {
-    lat = lat.div(2).add(Math.PI/4).tan().log();
-    return Shade.vec(lon, lat);
+    // http://stackoverflow.com/a/1166095
+    return Shade.vec(y.sinh().atan(), x);
+});
+Shade.Scale.Geo.mercator_to_spherical = Shade(function(x, y)
+{
+    var lat = y.sinh().atan();
+    var lon = x;
+    return Shade.Scale.Geo.latlong_to_spherical(lat, lon);
 });
 // replicates something like an opengl light. 
 // Fairly bare-bones for now (only diffuse, no attenuation)
@@ -27035,6 +27185,13 @@ Shade.ThreeD.normal = function(position)
     var dPos_dpixely = Shade.dFdy(position);
     return Shade.normalize(Shade.cross(dPos_dpixelx, dPos_dpixely));
 };
+Shade.ThreeD.cull_backface = Shade(function(position, ccw)
+{
+    if (_.isUndefined(ccw)) ccw = Shade(true);
+    ccw = ccw.ifelse(1, -1);
+    var n = Shade.ThreeD.normal(position);
+    return position.discard_if(n.cross(Shade.vec(0,0,ccw)).z().gt(0));
+});
 Lux.Geometry = {};
 Lux.Geometry.triangulate = function(opts) {
     var poly = _.map(opts.contour, function(contour) {
@@ -27331,7 +27488,7 @@ function parse_typeface_instructions(glyph)
     return paths;
 }
 
-var loop_blinn_batch = function(opts) {
+var loop_blinn_actor = function(opts) {
     var position_function = opts.position;
     var color_function = opts.color;
     
@@ -27363,24 +27520,26 @@ var loop_blinn_batch = function(opts) {
     var y_offset = Shade.parameter("float", 0);
     var offset = Shade.vec(x_offset, y_offset);
     var ears_position = Shade.add(ears_model.position, offset);
-    var ears_batch = Lux.bake(ears_model, {
-        position: position_function(ears_position.div(1000).mul(opts.size)),
-        color: quadratic_discard(color_function(ears_position), ears_model)
-    });
+    var ears_actor = Lux.actor({
+        model: ears_model, 
+        appearance: {
+            position: position_function(ears_position.div(1000).mul(opts.size)),
+            color: quadratic_discard(color_function(ears_position), ears_model)}});
     var internal_model = Lux.model({
         vertex: internal_position_attribute,
         elements: elements
     });
     var internal_position = Shade.add(internal_model.vertex, offset);
-    var internal_batch = Lux.bake(internal_model, {
-        position: position_function(internal_position.div(1000).mul(opts.size)),
-        elements: internal_model.elements,
-        color: color_function(internal_position)
-    });
+    var internal_actor = Lux.actor({
+        model: internal_model, 
+        appearance: {
+            position: position_function(internal_position.div(1000).mul(opts.size)),
+            elements: internal_model.elements,
+            color: color_function(internal_position)}});
     return {
-        ears_batch: ears_batch,
+        ears_actor: ears_actor,
         ears_model: ears_model,
-        internal_batch: internal_batch,
+        internal_actor: internal_actor,
         internal_model: internal_model,
         x_offset: x_offset,
         y_offset: y_offset
@@ -27432,10 +27591,6 @@ function glyph_to_model(glyph)
 }
 
 Lux.Text.outline = function(opts) {
-    var old_opts = opts;
-    if (opts.batch) {
-        return opts.batch;
-    }
     opts = _.defaults(opts, {
         string: "",
         size: 10,
@@ -27446,8 +27601,7 @@ Lux.Text.outline = function(opts) {
     if (_.isUndefined(opts.font)) {
         throw new Error("outline requires font parameter");
     }
-    var batch = loop_blinn_batch(opts);
-    old_opts.batch = batch;
+    var actor = loop_blinn_actor(opts);
 
     var result = {
         set: function(new_string) {
@@ -27471,42 +27625,40 @@ Lux.Text.outline = function(opts) {
                 throw new Error("align must be one of 'left', 'center' or 'right'");
             }
         },
-        // vertical_alignment_offset: function() {
-        //     switch (opts.vertical_align) {
-        //     case "baseline": return 0;
-        //     case "middle": return -opts.font.lineHeight/2;
-        //     case "top": return -opts.font.lineHeight;
-        //         default:
-        //         throw new Error("vertical_align must be one of 'baseline', 'middle' or 'top'");
-        //     };
-        // },
-        draw: function() {
-            batch.x_offset.set(this.alignment_offset(0));
-            batch.y_offset.set(0);
-            for (var i=0; i<opts.string.length; ++i) {
-                var c = opts.string[i];
-                if ("\n\r".indexOf(c) !== -1) {
-                    batch.x_offset.set(0);                    
-                    batch.y_offset.set(batch.y_offset.get() - opts.font.lineHeight);
-                    continue;
+        dress: function(scene) {
+            actor.internal_batch = actor.internal_actor.dress(scene);
+            actor.ears_batch = actor.ears_actor.dress(scene);
+            return {
+                draw: function() {
+                    actor.x_offset.set(result.alignment_offset(0));
+                    actor.y_offset.set(0);
+                    for (var i=0; i<opts.string.length; ++i) {
+                        var c = opts.string[i];
+                        if ("\n\r".indexOf(c) !== -1) {
+                            actor.x_offset.set(0);                    
+                            actor.y_offset.set(actor.y_offset.get() - opts.font.lineHeight);
+                            continue;
+                        }
+                        var glyph = opts.font.glyphs[c];
+                        if (_.isUndefined(glyph))
+                            glyph = opts.font.glyphs['?'];
+                        var model = glyph_to_model(glyph);
+                        if (model) {
+                            actor.ears_model.elements = model.ears_model.elements;
+                            actor.ears_model.uv.set(model.ears_model.uv.get());
+                            actor.ears_model.winding.set(model.ears_model.winding.get());
+                            actor.ears_model.position.set(model.ears_model.position.get());
+                            actor.internal_model.vertex.set(model.internal_model.vertex.get());
+                            actor.internal_model.elements.set(model.internal_model.elements.array);
+                            actor.ears_batch.draw();
+                            actor.internal_batch.draw();
+                        }
+                        actor.x_offset.set(actor.x_offset.get() + glyph.ha);
+                    }
                 }
-                var glyph = opts.font.glyphs[c];
-                if (_.isUndefined(glyph))
-                    glyph = opts.font.glyphs['?'];
-                var model = glyph_to_model(glyph);
-                if (model) {
-                    batch.ears_model.elements = model.ears_model.elements;
-                    batch.ears_model.uv.set(model.ears_model.uv.get());
-                    batch.ears_model.winding.set(model.ears_model.winding.get());
-                    batch.ears_model.position.set(model.ears_model.position.get());
-                    batch.internal_model.vertex.set(model.internal_model.vertex.get());
-                    batch.internal_model.elements.set(model.internal_model.elements.array);
-                    batch.ears_batch.draw();
-                    batch.internal_batch.draw();
-                }
-                batch.x_offset.set(batch.x_offset.get() + glyph.ha);
-            }
-        }
+            };
+        },
+        on: function() { return true; }
     };
     return result;
 };
@@ -27514,7 +27666,10 @@ Lux.Text.outline = function(opts) {
 })();
 (function() {
 
-function internal_batch(opts, texture) {
+function internal_actor(opts) {
+    var texture = opts.font.texture;
+    var texture_width = opts.font.texture_width;
+    var texture_height = opts.font.texture_height;
     
     var position_function = opts.position;
     var color_function = opts.color;
@@ -27534,7 +27689,7 @@ function internal_batch(opts, texture) {
     });
     var world_position = Shade.add(model.position, offset).div(opts.font.ascender).mul(opts.size);
     var opacity = Shade.texture2D(texture, model.uv).r();
-    var uv_gradmag = model.uv.x().mul(texture.width).dFdx().pow(2).add(model.uv.y().mul(texture.height).dFdy().pow(2)).sqrt();
+    var uv_gradmag = model.uv.x().mul(texture_width).dFdx().pow(2).add(model.uv.y().mul(texture_height).dFdy().pow(2)).sqrt();
 
     var blur_compensation = Shade.Scale.linear(
         {domain: [Shade.max(Shade(0.5).sub(uv_gradmag), 0), Shade.min(Shade(0.5).add(uv_gradmag), 1)],
@@ -27543,14 +27698,15 @@ function internal_batch(opts, texture) {
     var final_opacity = Shade.ifelse(opts.compensate_blur, blur_compensation, opacity);
 
     var final_color = color_function(world_position).mul(Shade.vec(1,1,1, final_opacity));
-    var batch = Lux.bake(model, {
-        position: position_function(world_position),
-        color: final_color,
-        elements: model.elements,
-        mode: Lux.DrawingMode.over_with_depth
-    });
+    var actor = Lux.actor({
+        model: model, 
+        appearance: {
+            position: position_function(world_position),
+            color: final_color,
+            elements: model.elements,
+            mode: Lux.DrawingMode.over_with_depth }});
     return {
-        batch: batch,
+        actor: actor,
         model: model,
         x_offset: x_offset,
         y_offset: y_offset
@@ -27580,16 +27736,13 @@ function glyph_to_model(glyph, font)
 }
 
 Lux.Text.texture = function(opts) {
-    var old_opts = opts;
-    if (!_.isUndefined(opts.batch)) {
-        return opts.batch;
-    }
     opts = _.defaults(opts, {
         string: "",
         size: 10,
         align: "left",
         position: function(pos) { return Shade.vec(pos, 0, 1); },
         color: function(pos) { return Shade.color("white"); },
+        onload: function() { Lux.Scene.invalidate(); },
         compensate_blur: true
     });
 
@@ -27597,19 +27750,18 @@ Lux.Text.texture = function(opts) {
         throw new Error("Lux.Text.texture requires font parameter");
     }
 
-    var batch = {};
+    var actor = {};
 
     if (!opts.font.texture) {
         opts.font.texture = Lux.texture({
             src: opts.font.image_url,
-            onload: function() { 
-                batch = internal_batch(opts, this);
-                old_opts.batch = batch;
-                Lux.Scene.invalidate(); 
+            mipmaps: false,
+            onload: function() {
+                return opts.onload();
             }
         });
     }
-    old_opts.batch = batch;
+    actor = internal_actor(opts);
 
     var result = {
         set: function(new_string) {
@@ -27635,32 +27787,35 @@ Lux.Text.texture = function(opts) {
                 throw new Error("align must be one of 'left', 'center' or 'right'");
             }
         },
-        draw: function() {
-            if (_.isUndefined(batch.batch))
-                return;
-
-            batch.x_offset.set(this.alignment_offset(0));
-            batch.y_offset.set(0);
-            for (var i=0; i<opts.string.length; ++i) {
-                var c = opts.string[i];
-                if ("\n\r".indexOf(c) !== -1) {
-                    batch.x_offset.set(0);
-                    batch.y_offset.set(batch.y_offset.get() - opts.font.lineheight);
-                    continue;
+        dress: function(scene) {
+            actor.batch = actor.actor.dress(scene);
+            return {
+                draw: function() {
+                    actor.x_offset.set(result.alignment_offset(0));
+                    actor.y_offset.set(0);
+                    for (var i=0; i<opts.string.length; ++i) {
+                        var c = opts.string[i];
+                        if ("\n\r".indexOf(c) !== -1) {
+                            actor.x_offset.set(0);
+                            actor.y_offset.set(actor.y_offset.get() - opts.font.lineheight);
+                            continue;
+                        }
+                        var glyph = opts.font.glyphs[String(c.charCodeAt(0))];
+                        if (_.isUndefined(glyph))
+                            glyph = opts.font.glyphs[String('?'.charCodeAt(0))];
+                        var model = glyph_to_model(glyph, opts.font);
+                        if (model) {
+                            actor.model.elements = model.elements;
+                            actor.model.uv.set(model.uv.get());
+                            actor.model.position.set(model.position.get());
+                            actor.batch.draw();
+                        }
+                        actor.x_offset.set(actor.x_offset.get() + glyph.ha);
+                    }
                 }
-                var glyph = opts.font.glyphs[String(c.charCodeAt(0))];
-                if (_.isUndefined(glyph))
-                    glyph = opts.font.glyphs[String('?'.charCodeAt(0))];
-                var model = glyph_to_model(glyph, opts.font);
-                if (model) {
-                    batch.model.elements = model.elements;
-                    batch.model.uv.set(model.uv.get());
-                    batch.model.position.set(model.position.get());
-                    batch.batch.draw();
-                }
-                batch.x_offset.set(batch.x_offset.get() + glyph.ha);
-            }
-        }
+            };
+        },
+        on: function() { return true; }
     };
     return result;
 };
@@ -27709,8 +27864,9 @@ Lux.Marks.aligned_rects = function(opts)
     if (!opts.bottom)   throw new Error("bottom is a required field");
     if (!opts.color)    throw new Error("color is a required field");
 
+    var index = _.range(opts.elements * 6);
     var vertex_index = Lux.attribute_buffer({ 
-        vertex_array: _.range(opts.elements * 6), 
+        vertex_array: index, 
         item_size: 1
     });
     var primitive_index = Shade.div(vertex_index, 6).floor();
@@ -27740,15 +27896,19 @@ Lux.Marks.aligned_rects = function(opts)
     var index_array = Shade.array([0, 2, 3, 0, 1, 2]);
     var index_in_vertex_primitive = index_array.at(vertex_in_primitive);
 
-    return Lux.bake({
+    var model = Lux.model({
         type: "triangles",
-        elements: vertex_index
-    }, {
+        elements: index
+    });
+
+    var appearance = {
         position: Shade.vec(vertex_map.at(vertex_in_primitive), z),
         color: color,
         pick_id: opts.pick_id,
         mode: opts.mode
-    });
+    };
+
+    return Lux.actor({ model: model, appearance: appearance });
 };
 Lux.Marks.lines = function(opts)
 {
@@ -27785,10 +27945,11 @@ Lux.Marks.lines = function(opts)
     if (opts.line_width) {
         appearance.line_width = opts.line_width;
     }
-    return Lux.bake({
+    var model = {
         type: "lines",
         elements: vertex_index
-    }, appearance);
+    };
+    return Lux.actor({ model: model, appearance: appearance });
 };
 Lux.Marks.dots = function(opts)
 {
@@ -27841,13 +28002,14 @@ Lux.Marks.dots = function(opts)
                     no_alpha)
         .discard_if(distance_to_center_in_pixels.gt(point_radius));
 
-    var result = Lux.bake(model, {
-        position: gl_Position,
-        point_size: point_diameter,
-        color: opts.plain.ifelse(plain_fill_color, alpha_fill_color),
-        mode: opts.mode,
-        pick_id: opts.pick_id
-    });
+    var result = Lux.actor({
+        model: model, 
+        appearance: {
+            position: gl_Position,
+            point_size: point_diameter,
+            color: opts.plain.ifelse(plain_fill_color, alpha_fill_color),
+            mode: opts.mode,
+            pick_id: opts.pick_id }});
 
     /* We pass the gl_Position attribute explicitly because some other
      call might want to explicitly use the same position of the dots marks.
@@ -27898,49 +28060,28 @@ Lux.Marks.scatterplot = function(opts)
         pick_id: opts.pick_id
     });
 };
-// Lux.Marks.center_zoom_interactor_brush needs the transformation stack
-// to have appropriate inverses for the position. If it doesn't have them,
-// then do not use the transformation stack, and instead use
-// opts.project and opts.unproject, which need to be inverses of each other.
-Lux.Marks.center_zoom_interactor_brush = function(opts)
+Lux.Marks.rectangle_brush = function(opts)
 {
     opts = _.defaults(opts || {}, {
         color: Shade.vec(1,1,1,0.5),
-        mode: Lux.DrawingMode.over,
-        project: function(v) { return v; },
-        unproject: function(v) { return v; },
+        mode: Lux.DrawingMode.over_no_depth,
         on: {}
     });
-
-    var inverter = Lux.Transform.get_inverse();
-    var unproject = Shade(function(p) {
-        return opts.unproject(inverter({ position: p }).position);
-    }).js_evaluate;
-    var selection_pt1 = Shade.parameter("vec2", vec.make([0,0]));
-    var selection_pt2 = Shade.parameter("vec2", vec.make([0,0]));
-    var proj_pt1 = opts.project(selection_pt1);
-    var proj_pt2 = opts.project(selection_pt2);
-
-    var brush_batch = Lux.Marks.aligned_rects({
-        elements: 1,
-        left: proj_pt1.x(),
-        right: proj_pt2.x(),
-        top: proj_pt1.y(),
-        bottom: proj_pt2.y(),
-        color: opts.color,
-        mode: opts.mode
-    });
-
     var gl = Lux._globals.ctx;
     var brush_is_active = false;
+    var unproject;
+    var selection_pt1 = Shade.parameter("vec2", vec.make([0,0]));
+    var selection_pt2 = Shade.parameter("vec2", vec.make([0,0]));
     var b1;
-    brush_batch.on = {
+
+    var handlers = {
         mousedown: function(event) {
             if (opts.accept_event(event)) {
                 var xy_v = unproject(vec.make([event.luxX / gl._lux_globals.devicePixelRatio, event.luxY / gl._lux_globals.devicePixelRatio]));
                 b1 = xy_v;
                 selection_pt1.set(xy_v);
                 brush_is_active = true;
+                opts.on.brush_started && opts.on.brush_started(b1);
                 return false;
             }
             return true;
@@ -27951,6 +28092,8 @@ Lux.Marks.center_zoom_interactor_brush = function(opts)
             if (opts.accept_event(event)) {
                 var xy_v = unproject(vec.make([event.luxX / gl._lux_globals.devicePixelRatio, event.luxY / gl._lux_globals.devicePixelRatio]));
                 selection_pt2.set(xy_v);
+                var b2 = xy_v;
+                opts.on.brush_changed && opts.on.brush_changed(b1, b2);
                 Lux.Scene.invalidate();
                 return false;
             }
@@ -27964,7 +28107,11 @@ Lux.Marks.center_zoom_interactor_brush = function(opts)
                 var xy_v = unproject(vec.make([event.luxX / gl._lux_globals.devicePixelRatio, event.luxY / gl._lux_globals.devicePixelRatio]));
                 selection_pt2.set(xy_v);
                 var b2 = xy_v;
-                opts.on.brush_updated && opts.on.brush_updated(b1, b2);
+                if (opts.on.brush_changed) {
+                    opts.on.brush_changed(b1, b2);
+                } else if (opts.on.brush_ended) {
+                    opts.on.brush_ended(b1, b2);
+                }
                 Lux.Scene.invalidate();
                 return false;
             }
@@ -27972,7 +28119,32 @@ Lux.Marks.center_zoom_interactor_brush = function(opts)
         }
     };
 
-    return brush_batch;
+    var brush_actor = Lux.Marks.aligned_rects({
+        elements: 1,
+        left: selection_pt1.x(),
+        right: selection_pt2.x(),
+        top: selection_pt1.y(),
+        bottom: selection_pt2.y(),
+        color: opts.color,
+        mode: opts.mode
+    });
+
+    return {
+        dress: function(scene) {
+            var ctx = Lux._globals.ctx;
+            var xform = scene.get_transform();
+            var half_screen_size = Shade.vec(ctx.parameters.width, ctx.parameters.height).div(2);
+            unproject = Shade(function(p) {
+                return xform.inverse({position: p.div(half_screen_size).sub(Shade.vec(1,1))}).position;
+            }).js_evaluate;
+            return brush_actor.dress(scene);
+        }, on: function(ename, event) {
+            var handler = handlers[ename];
+            if (_.isUndefined(handler))
+                return true;
+            return handler(event);
+        }
+    };
 };
 function spherical_mercator_patch(tess)
 {
@@ -28097,11 +28269,13 @@ Lux.Marks.globe = function(opts)
         .mul(texture_scale)
     ;
 
-    var sphere_batch = Lux.bake(patch, {
-        gl_Position: mvp(v),
-        gl_FragColor: Shade.texture2D(sampler, xformed_patch).discard_if(model.mul(v).z().lt(0)),
-        mode: Lux.DrawingMode.pass
-    });
+    var sphere_actor = Lux.actor({
+        model: patch, 
+        appearance: {
+            gl_Position: mvp(v), // Shade.ThreeD.cull_backface(mvp(v)),
+            gl_FragColor: Shade.texture2D(sampler, xformed_patch).discard_if(model.mul(v).z().lt(0)),
+            mode: Lux.DrawingMode.pass
+        }});
 
     function inertia_tick() {
         var f = function() {
@@ -28319,29 +28493,35 @@ Lux.Marks.globe = function(opts)
                 onload: f(x, y, zoom, id)
             });
         },
-        draw: function() {
-            var lst = _.range(cache_size);
-            var that = this;
-            lst.sort(function(id1, id2) { 
-                var g1 = Math.abs(tiles[id1].zoom - that.current_osm_zoom);
-                var g2 = Math.abs(tiles[id2].zoom - that.current_osm_zoom);
-                return g2 - g1;
-            });
+        dress: function(scene) {
+            var sphere_batch = sphere_actor.dress(scene);
+            return {
+                draw: function() {
+                    var lst = _.range(cache_size);
+                    var that = this;
+                    lst.sort(function(id1, id2) { 
+                        var g1 = Math.abs(tiles[id1].zoom - that.current_osm_zoom);
+                        var g2 = Math.abs(tiles[id2].zoom - that.current_osm_zoom);
+                        return g2 - g1;
+                    });
 
-            sampler.set(texture);
-            for (var i=0; i<cache_size; ++i) {
-                var t = tiles[lst[i]];
-                if (t.active !== 2)
-                    continue;
-                min_x.set((t.x / (1 << t.zoom))           * Math.PI*2 + Math.PI);
-                min_y.set((1 - (t.y + 1) / (1 << t.zoom)) * Math.PI*2 - Math.PI);
-                max_x.set(((t.x + 1) / (1 << t.zoom))     * Math.PI*2 + Math.PI);
-                max_y.set((1 - t.y / (1 << t.zoom))       * Math.PI*2 - Math.PI);
-                offset_x.set(t.offset_x);
-                offset_y.set(t.offset_y);
-                sphere_batch.draw();
-            }
-        }
+                    sampler.set(texture);
+                    for (var i=0; i<cache_size; ++i) {
+                        var t = tiles[lst[i]];
+                        if (t.active !== 2)
+                            continue;
+                        min_x.set((t.x / (1 << t.zoom))           * Math.PI*2 + Math.PI);
+                        min_y.set((1 - (t.y + 1) / (1 << t.zoom)) * Math.PI*2 - Math.PI);
+                        max_x.set(((t.x + 1) / (1 << t.zoom))     * Math.PI*2 + Math.PI);
+                        max_y.set((1 - t.y / (1 << t.zoom))       * Math.PI*2 - Math.PI);
+                        offset_x.set(t.offset_x);
+                        offset_y.set(t.offset_y);
+                        sphere_batch.draw();
+                    }
+                }
+            };
+        },
+        on: function() { return true; }
     };
     result.init();
 
@@ -28363,9 +28543,14 @@ Lux.Marks.globe_2d = function(opts)
         post_process: function(c) { return c; }
     });
 
+    var has_interactor = false, get_center_zoom;
     if (opts.interactor) {
-        opts.center = opts.interactor.center;
-        opts.zoom   = opts.interactor.zoom;
+        has_interactor = true;
+        get_center_zoom = function() {
+            return [opts.interactor.center.get()[0], 
+                    opts.interactor.center.get()[1], 
+                    opts.interactor.zoom.get()];
+        };
     }
     if (opts.no_network) {
         opts.debug = true; // no_network implies debug;
@@ -28433,11 +28618,12 @@ Lux.Marks.globe_2d = function(opts)
         .mul(texture_scale)
     ;
 
-    var tile_batch = Lux.bake(patch, {
-        position: opts.camera(v),
-        color: opts.post_process(Shade.texture2D(sampler, xformed_patch)),
-        mode: Lux.DrawingMode.pass
-    });
+    var tile_actor = Lux.actor({
+        model: patch, 
+        appearance: {
+            position: opts.camera(v),
+            color: opts.post_process(Shade.texture2D(sampler, xformed_patch)),
+            mode: Lux.DrawingMode.pass }});
 
     if (lux_typeOf(opts.zoom) === "number") {
         opts.zoom = Shade.parameter("float", opts.zoom);
@@ -28445,13 +28631,23 @@ Lux.Marks.globe_2d = function(opts)
         throw new Error("zoom must be either a number or a parameter");
     }
 
+    var unproject;
+
     var result = {
         tiles: tiles,
         queue: [],
-        current_osm_zoom: opts.zoom.get(),
+        current_osm_zoom: 0,
         lat_lon_position: Lux.Marks.globe_2d.lat_lon_to_tile_mercator,
         resolution_bias: opts.resolution_bias,
-        new_center: function(center_x, center_y, center_zoom) {
+        new_center: function() {
+            // ctx.viewport* here is bad...
+            // var mn = unproject(vec.make([0, 0]));
+            // var mx = unproject(vec.make([ctx.viewportWidth, ctx.viewportHeight]));
+            var t = get_center_zoom();
+            var center_x = t[0];
+            var center_y = t[1];
+            var center_zoom = t[2]; // opts.zoom.get();
+
             var screen_resolution_bias = Math.log(ctx.viewportHeight / 256) / Math.log(2);
             var zoom = this.resolution_bias + screen_resolution_bias + (Math.log(center_zoom) / Math.log(2));
             zoom = ~~zoom;
@@ -28597,33 +28793,49 @@ Lux.Marks.globe_2d = function(opts)
             }
             tiles[id].texture.load(obj);
         },
-        draw: function() {
-            this.new_center(opts.center.get()[0],
-                            opts.center.get()[1],
-                            opts.zoom.get());
-            var lst = _.range(cache_size);
-            var that = this;
-            lst.sort(function(id1, id2) { 
-                var g1 = Math.abs(tiles[id1].zoom - that.current_osm_zoom);
-                var g2 = Math.abs(tiles[id2].zoom - that.current_osm_zoom);
-                return g2 - g1;
-            });
-
-            sampler.set(texture);
-            for (var i=0; i<cache_size; ++i) {
-                var t = tiles[lst[i]];
-                if (t.active !== 2)
-                    continue;
-                var z = (1 << t.zoom);
-                min_x.set(t.x / z);
-                min_y.set(1 - (t.y + 1) / z);
-                max_x.set((t.x + 1) / z);
-                max_y.set(1 - t.y / z);
-                offset_x.set(t.offset_x);
-                offset_y.set(t.offset_y);
-                tile_batch.draw();
+        dress: function(scene) {
+            var tile_batch = tile_actor.dress(scene);
+            var xf = scene.get_transform().inverse;
+            if (!has_interactor) {
+                get_center_zoom = function() {
+                    var p1 = unproject(vec.make([0, 0]));
+                    var p2 = unproject(vec.make([1, 1]));
+                    var zoom = 1.0/(p2[1] - p1[1]);
+                    return [p1[0], p1[1], zoom];
+                };
+                unproject = Shade(function(p) {
+                    return xf({position: p}).position;
+                }).js_evaluate;
             }
-        }
+            var that = this;
+            return {
+                draw: function() {
+                    that.new_center();
+                    var lst = _.range(cache_size);
+                    lst.sort(function(id1, id2) { 
+                        var g1 = Math.abs(tiles[id1].zoom - that.current_osm_zoom);
+                        var g2 = Math.abs(tiles[id2].zoom - that.current_osm_zoom);
+                        return g2 - g1;
+                    });
+
+                    sampler.set(texture);
+                    for (var i=0; i<cache_size; ++i) {
+                        var t = tiles[lst[i]];
+                        if (t.active !== 2)
+                            continue;
+                        var z = (1 << t.zoom);
+                        min_x.set(t.x / z);
+                        min_y.set(1 - (t.y + 1) / z);
+                        max_x.set((t.x + 1) / z);
+                        max_y.set(1 - t.y / z);
+                        offset_x.set(t.offset_x);
+                        offset_y.set(t.offset_y);
+                        tile_batch.draw();
+                    }
+                }
+            };
+        },
+        on: function() { return true; }
     };
     result.init();
 
@@ -30403,6 +30615,310 @@ Lux.Mesh.indexed = function(vertices, elements)
         }
     };
 };
+/*
+ * An actor must conform to the following interface:
+
+ * - actors respond to a "dress" method. This method takes as a
+ * parameter an object conforming to the scene interface and returns
+ * an object conforming to the batch interface.
+
+ * - actors respond to an "on" method. This method takes as a
+ * parameter a string and an object. The string is the name of the
+ * canvas event that was triggered, and the object is the
+ * corresponding event. The method should return false if the event
+ * handling chain is to be terminated. If true, the event handling
+ * loop will keep traversing the scene graph and calling event
+ * handlers.
+
+ */
+
+Lux.actor = function(opts)
+{
+    opts = _.defaults(opts, {
+        on: function() { return true; },
+        bake: Lux.bake
+    });
+    var appearance = opts.appearance;
+    var model = opts.model;
+    var on = opts.on;
+    var bake = opts.bake;
+    var batch;
+    return {
+        dress: function(scene) {
+            var xform = scene.get_transform();
+            var this_appearance = xform(appearance);
+            return bake(model, this_appearance);
+        },
+        on: function(event_name, event) {
+            return opts.on(event_name, event);
+        }
+    };
+};
+
+Lux.actor_list = function(actors_list)
+{
+    return {
+        dress: function(scene) {
+            var batch_list = _.map(actors_list, function(actor) {
+                return actor.dress(scene);
+            });
+            return {
+                draw: function() {
+                    _.each(batch_list, function(batch) {
+                        return batch.draw();
+                    });
+                }
+            };
+        },
+        on: function(event_name, event) {
+            for (var i=0; i<actors_list.length; ++i) {
+                if (!actors_list[i].on(event_name, event))
+                    return false;
+            }
+            return true;
+        }
+    };
+};
+/*
+ * Scenes conform to the actor interface. Scenes can then
+   contain other scenes, and have hierarchical structure. Currently,
+   "sub-scenes" cannot have more than one parent. (If you're thinking
+   about scene graphs and sharing, this means that, to you, Lux scenes
+   are actually "scene trees".)
+
+ */
+Lux.scene = function(opts)
+{
+    opts = _.defaults(opts || {}, {
+        context: Lux._globals.ctx,
+        transform: function(i) { return i; },
+        pre_draw: function() {},
+        post_draw: function() {}
+    });
+    var ctx = opts.context;
+    var transform = opts.transform;
+
+    var dirty = false;
+    var pre_display_list = [];
+    var post_display_list = [];
+    function draw_it() {
+        Lux.set_context(ctx);
+        var pre = pre_display_list;
+        pre_display_list = [];
+        var post = post_display_list;
+        post_display_list = [];
+        for (var i=0; i<pre.length; ++i)
+            pre[i]();
+        scene.draw();
+        dirty = false;
+        for (i=0; i<post.length; ++i)
+            post[i]();
+    }
+
+    var batch_list = [];
+    var actor_list = [];
+    var parent_scene = undefined;
+    var scene = {
+        context: ctx,
+        get_transform: function() { return transform; },
+
+        add: function(actor) {
+            actor_list.push(actor);
+            var result = actor.dress(this);
+            batch_list.push(result);
+            this.invalidate(undefined, undefined, ctx);
+            return result;
+        }, 
+
+        //////////////////////////////////////////////////////////////////////
+        /*
+         * animate starts a continuous stream of animation
+         * refresh triggers. It returns an object with a single field
+         * "stop", which is a function that when called will stop the
+         * refresh triggers.
+         */
+
+        animate: function(tick_function) {
+            if (parent_scene)
+                return parent_scene.animate(tick_function);
+            if (_.isUndefined(tick_function)) {
+                tick_function = _.identity;
+            }
+            var done = false;
+            var that = this;
+            function f() {
+                that.invalidate(
+                    function() {
+                        tick_function();
+                    }, function() { 
+                        if (!done) f();
+                    }, ctx);
+            };
+            f();
+            return {
+                stop: function() {
+                    done = true;
+                }
+            };
+        },
+
+        /*
+         * scene.invalidate triggers a scene redraw using
+         * requestAnimFrame.  It takes two callbacks to be called respectively
+         * before the scene is drawn and after. 
+         * 
+         * The function allows many different callbacks to be
+         * invoked by a single requestAnimFrame handler. This guarantees that
+         * every callback passed to scene.invalidate during the rendering
+         * of a single frame will be called before the invocation of the next scene 
+         * redraw.
+         * 
+         * If every call to invalidate issues a new requestAnimFrame, the following situation might happen:
+         * 
+         * - during scene.render:
+         * 
+         *    - object 1 calls scene.invalidate(f1, f2) (requestAnimFrame #1)
+         * 
+         *    - object 2 calls scene.invalidate(f3, f4) (requestAnimFrame #2)
+         * 
+         *    - scene.render ends
+         * 
+         * - requestAnimFrame #1 is triggered:
+         * 
+         *    - f1 is called
+         * 
+         *    - scene.render is called
+         * 
+         *    ...
+         * 
+         * So scene.render is being called again before f3 has a chance to run.
+         * 
+         */
+        invalidate: function(pre_display, post_display) {
+            if (parent_scene) {
+                parent_scene.invalidate(pre_display, post_display);
+                return;
+            }
+            if (!dirty) {
+                dirty = true;
+                window.requestAnimFrame(function() { return draw_it(); });
+            }
+            if (pre_display) {
+                pre_display_list.push(pre_display);
+            }
+            if (post_display) {
+                post_display_list.push(post_display);
+            }
+        },
+
+
+        //////////////////////////////////////////////////////////////////////
+        // actor interface
+
+        on: function(event_name, event) {
+            for (var i=0; i<actor_list.length; ++i) {
+                if (!actor_list[i].on(event_name, event))
+                    return false;
+            }
+            return true;
+        },
+
+        dress: function(scene) {
+            parent_scene = scene;
+            var that = this;
+            // reset transform, then re-add things to batch list.
+            transform = function(appearance) {
+                appearance = opts.transform(appearance);
+                appearance = parent_scene.get_transform()(appearance);
+                return appearance;
+            };
+            transform.inverse = function(appearance) {
+                appearance = parent_scene.get_transform().inverse(appearance);
+                appearance = opts.transform.inverse(appearance);
+                return appearance;
+            };
+            // FIXME ideally we'd have a well-defined cleanup of batches; I
+            // think the current implementation below might leak.
+            batch_list = _.map(actor_list, function(actor) {
+                return actor.dress(that);                
+            });
+            return this;
+        },
+
+        //////////////////////////////////////////////////////////////////////
+        // batch interface
+
+        draw: function() {
+            opts.pre_draw();
+            for (var i=0; i<batch_list.length; ++i) {
+                batch_list[i].draw();
+            }
+            opts.post_draw();
+        }
+
+    };
+    return scene;
+};
+
+Lux.default_scene = function(opts)
+{
+    opts = _.clone(opts);
+    opts.transform = function(appearance) {
+        appearance = _.clone(appearance);
+        if (!_.isUndefined(appearance.screen_position))
+            appearance.position = appearance.screen_position;
+        // return Shade.canonicalize_program_object(appearance);
+        return appearance;
+    };
+    opts.transform.inverse = function(i) { return i; };
+    var scene = Lux.scene(opts);
+    var ctx = scene.context;
+
+    var clearColor, clearDepth;
+
+    if (Lux.is_shade_expression(opts.clearColor)) {
+        if (!opts.clearColor.is_constant())
+            throw new Error("clearColor must be constant expression");
+        if (!opts.clearColor.type.equals(Shade.Types.vec4))
+            throw new Error("clearColor must be vec4");
+        clearColor = _.toArray(opts.clearColor.constant_value());
+    } else
+        clearColor = opts.clearColor;
+
+    if (Lux.is_shade_expression(opts.clearDepth)) {
+        if (!opts.clearDepth.is_constant())
+            throw new Error("clearDepth must be constant expression");
+        if (!opts.clearDepth.type.equals(Shade.Types.float_t))
+            throw new Error("clearDepth must be float");
+        clearDepth = opts.clearDepth.constant_value();
+    } else
+        clearDepth = opts.clearDepth;
+
+    // FIXME this is kind of ugly, but would otherwise requiring changing the picker infrastructure
+    // quite a bit. Since the picker infrastructure should be overhauled anyway,
+    // we stick with this hack until we fix everything.
+    function clear() {
+        switch (ctx._lux_globals.batch_render_mode) {
+        case 1:
+        case 2:
+            ctx.clearDepth(clearDepth);
+            ctx.clearColor(0,0,0,0);
+            break;
+        case 0:
+            ctx.clearDepth(clearDepth);
+            ctx.clearColor.apply(ctx, clearColor);
+            break;
+        default:
+            throw new Error("Unknown batch rendering mode");
+        }
+        ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
+    }
+    scene.add({
+        dress: function(scene) { return { draw: clear }; },
+        on: function() { return true; }
+    });
+    return scene;
+};
 Lux.Scene = {};
 Lux.Scene.add = function(obj, ctx)
 {
@@ -30411,9 +30927,7 @@ Lux.Scene.add = function(obj, ctx)
     }
     var scene = ctx._lux_globals.scene;
 
-    scene.push(obj);
-    Lux.Scene.invalidate(undefined, undefined, ctx);
-    return obj;
+    return scene.add(obj);
 };
 Lux.Scene.remove = function(obj, ctx)
 {
@@ -30438,119 +30952,124 @@ Lux.Scene.render = function()
         scene[i].draw();
     }
 };
-Lux.Scene.on = function(ename) {
-    return function(event) {
-        var scene = Lux._globals.ctx._lux_globals.scene;
-        for (var i=0; i < scene.length; ++i) {
-            if (scene[i].on && scene[i].on[ename]) {
-                if (!scene[i].on[ename](event))
-                    return false;
-            }
-        }
-        return true;
-    };
-};
-/*
- * Lux.Scene.animate starts a continuous stream of animation refresh
- * triggers. It returns an object with a single field "stop", which is
- * a function that when called will stop the refresh triggers.
- */
-
 Lux.Scene.animate = function(tick_function, ctx)
 {
     if (_.isUndefined(ctx)) {
         ctx = Lux._globals.ctx;
     }
-    if (_.isUndefined(tick_function)) {
-        tick_function = _.identity;
-    }
-    var done = false;
-    function f() {
-        Lux.Scene.invalidate(
-            function() {
-                tick_function();
-            }, function() { 
-                if (!done) f();
-            }, ctx);
-    };
-    f();
+    var scene = ctx._lux_globals.scene;
 
-    return {
-        stop: function() {
-            done = true;
-        }
-    };
+    return scene.animate(tick_function);
 };
-/*
- * Lux.Scene.invalidate triggers a scene redraw using
- * requestAnimFrame.  It takes two callbacks to be called respectively
- * before the scene is drawn and after. 
- * 
- * The function allows many different callbacks to be
- * invoked by a single requestAnimFrame handler. This guarantees that
- * every callback passed to Lux.Scene.invalidate during the rendering
- * of a single frame will be called before the invocation of the next scene 
- * redraw.
- * 
- * If every call to invalidate issues a new requestAnimFrame, the following situation might happen:
- * 
- * - during scene.render:
- * 
- *    - object 1 calls Scene.invalidate(f1, f2) (requestAnimFrame #1)
- * 
- *    - object 2 calls Scene.invalidate(f3, f4) (requestAnimFrame #2)
- * 
- *    - scene.render ends
- * 
- * - requestAnimFrame #1 is triggered:
- * 
- *    - f1 is called
- * 
- *    - scene.render is called
- * 
- *    ...
- * 
- * So scene.render is being called again before f3 has a chance to run.
- * 
- */
+Lux.Scene.on = function(ename, event, ctx) 
+{
+    if (_.isUndefined(ctx)) {
+        ctx = Lux._globals.ctx;
+    }
+    var scene = ctx._lux_globals.scene;
 
-(function() {
-
-function draw_it(ctx) {
-    Lux.set_context(ctx);
-
-    // Pluck out all callbacks first to avoid infinite loops.
-    var pre = ctx._lux_globals.pre_display_list;
-    ctx._lux_globals.pre_display_list = [];
-    var post = ctx._lux_globals.post_display_list;
-    ctx._lux_globals.post_display_list = [];
-
-    for (var i=0; i<pre.length; ++i)
-        pre[i]();
-    ctx.display();
-    ctx._lux_globals.dirty = false;
-    for (i=0; i<post.length; ++i)
-        post[i]();
-}
-
+    return scene.on(ename, event);
+};
 Lux.Scene.invalidate = function(pre_display, post_display, ctx)
 {
     if (_.isUndefined(ctx)) {
         ctx = Lux._globals.ctx;
     }
-    if (!ctx._lux_globals.dirty) {
-        ctx._lux_globals.dirty = true;
-        window.requestAnimFrame(function() { return draw_it(ctx); });
-    }
-    if (pre_display) {
-        ctx._lux_globals.pre_display_list.push(pre_display);
-    }
-    if (post_display) {
-        ctx._lux_globals.post_display_list.push(post_display);
-    }
-};
+    var scene = ctx._lux_globals.scene;
 
+    return scene.invalidate(pre_display, post_display);
+};
+Lux.Scene.Transform = {};
+Lux.Scene.Transform.Geo = {};
+
+(function() {
+
+var two_d_position_xform = function(xform, inverse_xform) {
+    function make_it(xf) {
+        return function(appearance) {
+            if (_.isUndefined(appearance.position))
+                return appearance;
+            appearance = _.clone(appearance);
+            var pos = appearance.position;
+            var out = xf(appearance.position.x(), appearance.position.y());
+            if (pos.type.equals(Shade.Types.vec2))
+                appearance.position = out;
+            else if (pos.type.equals(Shade.Types.vec3))
+                appearance.position = Shade.vec(out, pos.at(2));
+            else if (pos.type.equals(Shade.Types.vec4))
+                appearance.position = Shade.vec(out, pos.swizzle("zw"));
+            return appearance;
+        };
+    };
+    return function(opts) {
+        opts = _.clone(opts || {});
+        opts.transform = make_it(xform);
+        if (!_.isUndefined(inverse_xform)) {
+            opts.transform.inverse = make_it(inverse_xform);
+            opts.transform.inverse.inverse = opts.transform;
+        }
+        return Lux.scene(opts);
+    };
+};
+Lux.Scene.Transform.Geo.latlong_to_hammer = function(opts) {
+    opts = _.clone(opts || {});
+    opts.transform = function(appearance) {
+        if (_.isUndefined(appearance.position))
+            return appearance;
+        appearance = _.clone(appearance);
+        var pos = appearance.position;
+        var out = Shade.Scale.Geo.latlong_to_hammer(appearance.position.x(), appearance.position.y(), opts.B);
+        if (pos.type.equals(Shade.Types.vec2))
+            appearance.position = out;
+        else if (pos.type.equals(Shade.Types.vec3))
+            appearance.position = Shade.vec(out, pos.at(2));
+        else if (pos.type.equals(Shade.Types.vec4))
+            appearance.position = Shade.vec(out, pos.swizzle("zw"));
+        return appearance;
+    };
+    return Lux.scene(opts);
+};
+Lux.Scene.Transform.Geo.latlong_to_mercator = 
+    two_d_position_xform(Shade.Scale.Geo.latlong_to_mercator,
+                         Shade.Scale.Geo.mercator_to_latlong);
+Lux.Scene.Transform.Geo.latlong_to_spherical = function(opts) {
+    opts = _.clone(opts || {});
+    opts.transform = function(appearance) {
+        if (_.isUndefined(appearance.position))
+            return appearance;
+        appearance = _.clone(appearance);
+        var pos = appearance.position;
+        var lat = appearance.position.x();
+        var lon = appearance.position.y();
+        var out = Shade.Scale.Geo.latlong_to_spherical(lat, lon);
+        if (pos.type.equals(Shade.Types.vec3))
+            appearance.position = out;
+        else if (pos.type.equals(Shade.Types.vec4))
+            appearance.position = Shade.vec(out, pos.w());
+        return appearance;
+    };
+    return Lux.scene(opts);
+};
+Lux.Scene.Transform.Geo.mercator_to_latlong = 
+    two_d_position_xform(Shade.Scale.Geo.mercator_to_latlong,
+                         Shade.Scale.Geo.latlong_to_mercator);
 })();
+Lux.Scene.Transform.Camera = {};
+Lux.Scene.Transform.Camera.perspective = function(opts)
+{
+    opts = _.clone(opts || {});
+    var camera = Shade.Camera.perspective(opts);
+    opts.transform = function(appearance) {
+        if (_.isUndefined(appearance.position))
+            return appearance;
+        appearance = _.clone(appearance);
+        appearance.position = camera(appearance.position);
+        return appearance;
+    };
+    var scene = Lux.scene(opts);
+    scene.camera = camera;
+    return scene;
+};
 (function(exports){
 crossfilter.version = "1.1.2";
 function crossfilter_identity(d) {
@@ -36517,6 +37036,30 @@ function RserveError(message, status_code) {
 RserveError.prototype = Object.create(Error);
 RserveError.prototype.constructor = RserveError;
 
+function _encode_command(command, buffer) {
+    var big_buffer = new ArrayBuffer(16 + buffer.byteLength);
+    var array_view = new Uint8Array(buffer);
+    var view = new EndianAwareDataView(big_buffer);
+    view.setInt32(0, command);
+    view.setInt32(4, buffer.byteLength);
+    view.setInt32(8, 0);
+    view.setInt32(12, 0);
+    for (var i=0; i<buffer.byteLength; ++i)
+        view.setUint8(16+i, array_view[i]);
+    return big_buffer;
+};
+
+function _encode_string(str) {
+    var payload_length = str.length + 5;
+    var result = new ArrayBuffer(payload_length);
+    var view = new EndianAwareDataView(result);
+    view.setInt32(0, Rsrv.DT_STRING + (payload_length << 8));
+    for (var i=0; i<str.length; ++i)
+        view.setInt8(4+i, str.charCodeAt(i));
+    view.setInt8(4+str.length, 0);
+    return result;
+};
+
 var Rsrv = {
     PAR_TYPE: function(x) { return x & 255; },
     PAR_LEN: function(x) { return x >> 8; },
@@ -36840,25 +37383,35 @@ function reader(m)
 
 function parse(msg)
 {
+    var result = {};
     var header = new Int32Array(msg, 0, 4);
+    result.header = header[0];
+
     if (header[0] === Rsrv.RESP_ERR) {
         var status_code = header[0] >> 24;
-        throw new RserveError("ERROR FROM R SERVER: " + (Rsrv.status_codes[status_code] || 
+        result.ok = false;
+        result.status_code = status_code;
+        result.message = "ERROR FROM R SERVER: " + (Rsrv.status_codes[status_code] || 
                                          status_code)
                + " " + header[0] + " " + header[1] + " " + header[2] + " " + header[3]
                + " " + msg.byteLength
-               + " " + msg, status_code);
+               + " " + msg;
+        return result;
     }
 
     if (!_.contains([Rsrv.RESP_OK, Rsrv.OOB_SEND, Rsrv.OOB_MSG], header[0])) {
-        throw new RserveError("Unexpected response from RServe: " + header[0]);
+        result.ok = false;
+        result.message = "Unexpected response from RServe: " + header[0];
+        return result;
     }
-
+    result.ok = true;
     var payload = my_ArrayBufferView(msg, 16, msg.byteLength - 16);
-    if (payload.length === 0)
-        return null;
-    var result = parse_payload(reader(payload));
-    return [result, header[0]];
+    if (payload.length === 0) {
+        result.payload = null;
+    } else {
+        result.payload = parse_payload(reader(payload));
+    }
+    return result;
 }
 
 function parse_payload(reader)
@@ -37050,7 +37603,6 @@ Rserve = {
         socket.binaryType = 'arraybuffer';
 
         var received_handshake = false;
-        var callbacks = [];
 
         var result;
         var command_counter = 0;
@@ -37075,6 +37627,7 @@ Rserve = {
 
         socket.onclose = function(msg) {
             result.running = false;
+            result.closed = true;
             opts.on_close && opts.on_close(msg);
         };
 
@@ -37082,81 +37635,79 @@ Rserve = {
             if (!received_handshake) {
                 hand_shake(msg);
                 return;
-            }
-            if (typeof msg.data === 'string')
+            } 
+            if (typeof msg.data === 'string') {
                 opts.on_raw_string && opts.on_raw_string(msg.data);
-            else {
-                var v;
-                try {
-                    v = parse(msg.data);
-                } catch (e) {
-                    handle_error(e.message, e.status_code);
-                    return;
-                }
-
-                if (v === null) {
-                    // there's no data, but there's no error either: ignore the message
-                    var callback = callbacks.shift();
-                    callback();
-                    return;
-                }
-                var type = v[1];
-                v = v[0];
-                switch (type) {
-                case Rsrv.RESP_OK:
-                    var value_callback = callbacks.shift();
-                    value_callback(v);
-                    break;
-                case Rsrv.OOB_SEND: 
-                    opts.on_data && opts.on_data(v);
-                    break;
-                case Rsrv.OOB_MSG:
-                    if (_.isUndefined(opts.on_oob_message)) {
-                        result.oob_response("No handler installed", true); // FIXME this should be an error signal of some sort
-                        return;
-                    }
-                    opts.on_oob_message(v, function(message, error) {
-                        result.oob_response(message, error);
+                return;
+            }
+            var v = parse(msg.data);
+            if (!v.ok) {
+                handle_error(v.message, v.status_code);
+            } else if (v.header === Rsrv.RESP_OK) {
+                result_callback(v.payload);
+            } else if (v.header === Rsrv.OOB_SEND) {
+                opts.on_data && opts.on_data(v.payload);
+            } else if (v.header === Rsrv.OOB_MSG) {
+                if (_.isUndefined(opts.on_oob_message)) {
+                    _send_cmd_now(Rsrv.RESP_ERR | Rsrv.OOB_MSG, 
+                                  _encode_string("No handler installed"));
+                } else {
+                    in_oob_message = true;
+                    opts.on_oob_message(v.payload, function(message, error) {
+                        if (!in_oob_message) {
+                            handle_error("Don't call oob_message_handler more than once.");
+                            return;
+                        }
+                        in_oob_message = false;
+                        var header = Rsrv.OOB_MSG | 
+                            (error ? Rsrv.RESP_ERR : Rsrv.RESP_OK);
+                        _send_cmd_now(header, _encode_string(message));
+                        bump_queue();
                     });
-                    break;
-                default:
-                    throw new RserveError("Internal Error, parse returned unexpected type " + type, -1);
                 }
+            } else {
+                handle_error("Internal Error, parse returned unexpected type " + v.header, -1);
             }
         };
 
-        var _cmd_no_callback = function(command, buffer) {
-            var big_buffer = new ArrayBuffer(16 + buffer.byteLength);
-            var array_view = new Uint8Array(buffer);
-            var view = new EndianAwareDataView(big_buffer);
-            view.setInt32(0, command);
-            view.setInt32(4, buffer.byteLength);
-            view.setInt32(8, 0);
-            view.setInt32(12, 0);
-            for (var i=0; i<buffer.byteLength; ++i)
-                view.setUint8(16+i, array_view[i]);
+        function _send_cmd_now(command, buffer) {
+            var big_buffer = _encode_command(command, buffer);
             socket.send(big_buffer);
             return big_buffer;
         };
 
-        var _cmd = function(command, buffer, k) {
-            k = k || function() {};
-            callbacks.push(k);
-            return _cmd_no_callback(command, buffer);
+        var queue = [];
+        var in_oob_message = false;
+        var awaiting_result = false;
+        var result_callback;
+        function bump_queue() {
+            if (result.closed && queue.length) {
+                handle_error("Cannot send messages on a closed socket!", -1);
+            } else if (!awaiting_result && !in_oob_message && queue.length) {
+                var lst = queue.shift();
+                result_callback = lst[1];
+                awaiting_result = true;
+                socket.send(lst[0]);
+            }
+        }
+        function enqueue(buffer, k) {
+            queue.push([buffer, function(result) {
+                awaiting_result = false;
+                bump_queue();
+                k(result);
+            }]);
+            bump_queue();
         };
 
-        var _encode_string = function(str) {
-            var payload_length = str.length + 5;
-            var result = new ArrayBuffer(payload_length);
-            var view = new EndianAwareDataView(result);
-            view.setInt32(0, Rsrv.DT_STRING + (payload_length << 8));
-            for (var i=0; i<str.length; ++i)
-                view.setInt8(4+i, str.charCodeAt(i));
-            view.setInt8(4+str.length, 0);
-            return result;
+        function _cmd(command, buffer, k) {
+            k = k || function() {};
+            var big_buffer = _encode_command(command, buffer);
+            return enqueue(big_buffer, k);
         };
 
         result = {
+            running: false,
+            closed: false,
             close: function() {
                 socket.close();
             },
@@ -37165,10 +37716,6 @@ Rserve = {
             },
             eval: function(command, k) {
                 _cmd(Rsrv.CMD_eval, _encode_string(command), k);
-            },
-            oob_response: function(command, error) {
-                _cmd_no_callback((error ? Rsrv.RESP_ERR : Rsrv.RESP_OK) | Rsrv.OOB_MSG, 
-                                 _encode_string(command));
             },
             createFile: function(command, k) {
                 _cmd(Rsrv.CMD_createFile, _encode_string(command), k);
