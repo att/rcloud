@@ -170,7 +170,6 @@ LuxChart.lux_osm_plot = function(lats, lons, color, width, height)
 
     lats = Lux.attribute_buffer({vertex_array: new Float32Array(lats), item_size: 1});
     lons = Lux.attribute_buffer({vertex_array: new Float32Array(lons), item_size: 1});
-    // console.log(color);
 
     if (color.length === 3) {
         color = Shade.vec(color[0], color[1], color[2], 1);
@@ -184,15 +183,17 @@ LuxChart.lux_osm_plot = function(lats, lons, color, width, height)
         lons: lons
     });
 
-    var dots_batch = Lux.bake(dots_model, {
-        color: color,
-        point_size: 2,
-        position: globe.lat_lon_position(dots_model.lats.radians(), 
-                                         dots_model.lons.radians())
-    });
+    var dots_actor = Lux.actor({
+        model: dots_model, 
+        appearance: {
+            color: color,
+            point_size: 2,
+            position: globe.lat_lon_position(dots_model.lats.radians(), 
+                                             dots_model.lons.radians())
+        }});
 
     Lux.Scene.add(globe);
-    Lux.Scene.add(dots_batch);
+    Lux.Scene.add(dots_actor);
 
     return canvas;
 };
