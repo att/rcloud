@@ -165,7 +165,8 @@ LuxChart.lux_osm_plot = function(lats, lons, color, width, height)
 
     var globe = Lux.Marks.globe({ 
         view_proj: view_proj,
-        zoom: globe_zoom
+        zoom: globe_zoom,
+        polygon_offset: { factor: 0, units: 5 }
     });
 
     lats = Lux.attribute_buffer({vertex_array: new Float32Array(lats), item_size: 1});
