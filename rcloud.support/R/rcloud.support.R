@@ -122,7 +122,7 @@ configure.rcloud <- function () {
     .rc.conf$debug <- dl
     cat("=== NOTE: DEBUG is set, enabling debug mode at level", dl, "===\n")
   }
-  
+
   # CONFROOT/DATAROOT are purely optional
   # Whom are we kidding? Although it may be nice to abstract out all paths
   # this is far from complete (what about htdocs?) and not very practical
@@ -209,11 +209,11 @@ configure.rcloud <- function () {
 
   if (is.null(.rc.conf$cookie.domain)) .rc.conf$cookie.domain <- .rc.conf$host
   if (!isTRUE(grepl("[.:]", .rc.conf$cookie.domain))) stop("*** ERROR: cookie.domain must be a FQDN! Please set your hostname correctly or add cookie.domain directive to rcloud.conf")
-  
+
   rcloud.setup.dirs()
 
   .rc.conf$instanceID <- generate.uuid()
-  
+
   TRUE
 }
 
@@ -249,11 +249,11 @@ start.rcloud <- function(username="", token="", ...) {
     else
       self.oobSend(list("browseURL", url))
   })
-  
+
   ## while at it, pass other requests as OOB, too
   options(pager = function(...) self.oobSend(list("pager", ...)))
   options(editor = function(...) self.oobSend(list("editor", ...)))
-  
+
   ## and some options that may be of interest
   options(demo.ask = FALSE)
   options(example.ask = FALSE)
@@ -266,7 +266,7 @@ start.rcloud <- function(username="", token="", ...) {
   ## NB: it should be really fast since it will cause connect delay
   if (file.exists(fn <- file.path(.rc.conf$configuration.root, "init.R")))
     source(fn, TRUE)
-  
+
   ## per-user setup
   if (nzchar(.session$username)) {
     .session$username <- gsub("[^a-zA-Z0-9_.]+", "_", .session$username)
