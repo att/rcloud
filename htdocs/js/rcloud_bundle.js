@@ -988,8 +988,8 @@ rcloud.save_user_config = function(user, content, k)
 {
     if (_.isUndefined(k)) k = _.identity;
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.save.user.config", user, 
-                          JSON.stringify(content)), 
+        rclient.r_funcall("rcloud.save.user.config", user,
+                          JSON.stringify(content)),
         function(result) {
             k && k(JSON.parse(result));
         });
@@ -998,7 +998,7 @@ rcloud.save_user_config = function(user, content, k)
 rcloud.load_notebook = function(id, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.get.notebook", id), 
+        rclient.r_funcall("rcloud.get.notebook", id),
         function(result) {
             k && k(JSON.parse(result));
         });
@@ -1007,7 +1007,7 @@ rcloud.load_notebook = function(id, k)
 rcloud.update_notebook = function(id, content, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.update.notebook", id, JSON.stringify(content)), 
+        rclient.r_funcall("rcloud.update.notebook", id, JSON.stringify(content)),
         function(result) {
             k && k(JSON.parse(result));
         });
@@ -1016,7 +1016,7 @@ rcloud.update_notebook = function(id, content, k)
 rcloud.create_notebook = function(content, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.create.notebook", JSON.stringify(content)), 
+        rclient.r_funcall("rcloud.create.notebook", JSON.stringify(content)),
         function(result) {
             k && k(JSON.parse(result));
         });
