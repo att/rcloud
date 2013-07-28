@@ -43,13 +43,9 @@ rcloud.save.user.config <- function(user, content) {
 
 rcloud.get.notebook <- function(id) {
   res <- get.gist(.session$rgithub.context, id)
-  # this assumption of text might not be accurate in all cases,
-  # just a workaround because rserve.js doesn't support raw vectors yet
-  # and i'm not sure if/how to deal with binary json either
-  json <- rawToChar(res$content);
   if (rcloud.debug.level() > 1L) {
     cat("==== GOT GIST ====\n")
-    cat(json)
+    cat(content(res, as = 'text'))
     cat("==== END GIST ====\n")
   }
   content(res, as = 'text')
