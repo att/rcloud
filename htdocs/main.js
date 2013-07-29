@@ -1,7 +1,7 @@
 function init_shareable_link_box() {
     $("#share-notebook").each(function() {
         var t = $(this), n = t.next(".embed-box"), f = function() {
-            t.toggle(); 
+            t.toggle();
             n.toggle();
             if (n.is(":visible")) {
                 n.get(0).value = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname;
@@ -40,9 +40,9 @@ var oob_msg_handlers = {
 function main_init() {
     init_shareable_link_box();
     init_editable_title_box();
-    rclient = RClient.create({ 
+    rclient = RClient.create({
         debug: false,
-        host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"), 
+        host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
         on_connect: function() {
             $("#new-md-cell-button").click(function() {
                 shell.terminal.disable();
