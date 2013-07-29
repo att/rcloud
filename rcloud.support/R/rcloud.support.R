@@ -44,30 +44,46 @@ rcloud.save.user.config <- function(user, content) {
 rcloud.get.notebook <- function(id) {
   res <- get.gist(.session$rgithub.context, id)
   if (rcloud.debug.level() > 1L) {
-    cat("==== GOT GIST ====\n")
-    cat(content(res, as = 'text'))
-    cat("==== END GIST ====\n")
+    if(res$succeeded) {
+      cat("==== GOT GIST ====\n")
+      cat(content(res$response, as = 'text'))
+      cat("==== END GIST ====\n")
+    }
+    else {
+      cat("==== GET NOTEBOOK FAILED ====\n");
+      print(res);
+    }
   }
-  content(res, as = 'text')
+  list(succeeded = res$succeeded,
+       content = content(res$response))
 }
 
 rcloud.update.notebook <- function(id, content) {
   res <- update.gist(.session$rgithub.context, id, content)
-  content(res, as = 'text')
+  list(succeeded = res$succeeded,
+       content = content(res$response))
 }
 
 rcloud.create.notebook <- function(content) {
   res <- create.gist(.session$rgithub.context, content)
-  content(res, as = 'text')
+  res <- update.gist(.session$rgithub.context, id, content)
+  list(succeeded = res$succeeded,
+       content = content(res$response))
 }
 
 rcloud.rename.notebook <- function(id, new.name) {
   res <- update.gist(.session$rgithub.context,
                      id,
                      list(description=new.name))
-  content(res, as = 'text')
+  list(succeeded = res$succeeded,
+       content = content(res$response))
 }
 
+rcloud.get.users <- function() {
+  res <- get.users(.session$rgithub.context);
+  list(succeeded = res$succeeded,
+       content = content(res$response))
+}
 
 rcloud.setup.dirs <- function() {
     for (data.subdir in c("userfiles", "history", "home"))
@@ -94,9 +110,6 @@ rcloud.record.cell.execution <- function(user, json.string) {
   cat(paste(paste(Sys.time(), user, json.string, sep="|"), "\n"),
       file=file.path(.rc.conf$data.root, "history", "main_log.txt"), append=TRUE)
 }
-
-rcloud.get.users <- function()
-  content(get.users(.session$rgithub.context))
 
 rcloud.debug.level <- function() if (is.null(.rc.conf$debug)) 0L else .rc.conf$debug
 
@@ -221,11 +234,16 @@ start.rcloud <- function(username="", token="", ...) {
     stop("bad username/token pair");
   .session$username <- username
   .session$token <- token
-  .session$rgithub.context <-
+  res <-
     rgithub.context.from.token(.rc.conf$github.api.url,
                                .rc.conf$github.client.id,
                                .rc.conf$github.client.secret,
                                token)
+  if(res$succeeded)
+    .session$rgithub.context <- res$content
+  else
+    stop(paste('error in rgithub.context.from.token: ', res$content))
+
   if (is.function(getOption("RCloud.session.auth")))
     getOption("RCloud.session.auth")(username=username, ...)
 
