@@ -891,7 +891,7 @@ RClient = {
                         if (e.constructor === NoCallbackError) {
                             that.handlers[v[0]](v[1]);
                         } else
-                            throw e;
+                            throw 'Error evaluating "' + command + '": ' + e;
                     }
                 }
                 rserve.eval(command, unwrap);
@@ -995,31 +995,37 @@ rcloud.save_user_config = function(user, content, k)
         });
 };
 
+function rcloud_github_handler(command, k) {
+    return function(result) {
+        if(result.succeeded)
+            k && k(result.content);
+        else
+            rclient.post_error(command + ': ' + result.content.message);
+    };
+}
+
 rcloud.load_notebook = function(id, k)
 {
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.get.notebook", id),
-        function(result) {
-            k && k(JSON.parse(result));
-        });
+        rcloud_github_handler("rcloud.get.notebook " + id, k)
+    );
 };
 
 rcloud.update_notebook = function(id, content, k)
 {
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.update.notebook", id, JSON.stringify(content)),
-        function(result) {
-            k && k(JSON.parse(result));
-        });
+        rcloud_github_handler("rcloud.update.notebook", k)
+    );
 };
 
 rcloud.create_notebook = function(content, k)
 {
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.create.notebook", JSON.stringify(content)),
-        function(result) {
-            k && k(JSON.parse(result));
-        });
+        rcloud_github_handler("rcloud.create.notebook", k)
+    );
 };
 
 rcloud.resolve_deferred_result = function(uuid, k)
@@ -1032,18 +1038,16 @@ rcloud.get_users = function(k)
 {
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.get.users"),
-        function(result) {
-            k && k(result); // why is this coming back preparsed? JSON.parse(result));
-        });
+        rcloud_github_handler("rcloud.get.users", k)
+    );
 };
 
 rcloud.rename_notebook = function(id, new_name, k)
 {
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.rename.notebook", id, new_name),
-        function(result) {
-            k && k(JSON.parse(result));
-        });
+        rcloud_github_handler("rcloud.rename.notebook", k)
+    );
 };
 Notebook = {};
 

@@ -12,10 +12,14 @@ run <- function(url, query, body, headers)
     print(content(result))
   }
   token <- content(result)$access_token
-  ctx <- rgithub.context.from.token(rcloud.support:::.rc.conf$github.api.url,
+  result <- rgithub.context.from.token(rcloud.support:::.rc.conf$github.api.url,
                                     rcloud.support:::.rc.conf$github.client.id,
                                     rcloud.support:::.rc.conf$github.client.secret,
                                     token)
+  if(!result$succeeded)
+    stop(paste("login failed: ", result$content$message))
+  else
+    ctx <- result$content
   ret = '/main.html'
   if (rcloud.debug.level()) cat("context: ", ctx$user$login, token, "\n")
   set.token(ctx$user$login, token)
