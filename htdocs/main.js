@@ -15,10 +15,10 @@ function init_shareable_link_box() {
 
 function init_editable_title_box() {
     $("#notebook-title").click(function() {
-        var result = prompt("Please enter the new name for a notebook");
+        var result = prompt("Please enter the new name for '" + $(this).text() + "':");
         if (result !== null) {
-            $("#notebook-title").text(result);
-            rcloud.rename_notebook(shell.gistname, result);
+            $(this).text(result);
+            rcloud.rename_notebook(shell.gistname, result, _.bind(editor.notebook_loaded, editor));
         }
     });
 }
