@@ -19,7 +19,7 @@ RClient = {
 
         function on_connect() {
             result.running = true;
-            result.send("rcloud.support::session.init(username=" 
+            result.send("rcloud.support::session.init(username="
                         + escape_r_literal_string(rcloud.username()) + ",token="
                         + escape_r_literal_string(rcloud.github_token()) + ")");
             opts.on_connect && opts.on_connect.call(result);
@@ -31,7 +31,7 @@ RClient = {
             $("#input-div").hide();
         }
 
-        function on_error(msg, status_code) { 
+        function on_error(msg, status_code) {
             if (status_code === 65) {
                 // Authentication failed.
                 result.post_error("Authentication failed. Login first!");
@@ -86,7 +86,7 @@ RClient = {
 		"dev.new": function(v) { return ""; },
 		"dev.close": function(v) { return ""; },
                 "internal_cmd": function(v) { return ""; },
-                "boot.failure": function(v) { 
+                "boot.failure": function(v) {
                     result.running = false;
                 }
             },
@@ -139,8 +139,8 @@ RClient = {
                         .append($("<div></div>")
                                 .html(result.value[0]))
                         .find("pre code")
-                        .each(function(i, e) { 
-                            hljs.highlightBlock(e); 
+                        .each(function(i, e) {
+                            hljs.highlightBlock(e);
                         });
                     MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
                 }
@@ -202,7 +202,7 @@ RClient = {
 
             record_cell_execution: function(cell_model) {
                 var json_rep = JSON.stringify(cell_model.json());
-                var call = this.r_funcall("rcloud.record.cell.execution", 
+                var call = this.r_funcall("rcloud.record.cell.execution",
                                           rcloud.username(), json_rep);
                 rserve.eval(call);
             },
@@ -250,7 +250,7 @@ RClient = {
                     var t = typeof val;
                     if (t === "string") {
                         result.push(escape_r_literal_string(val));
-                    } 
+                    }
                     else if (t == "number") {
                         result.push(String(val));
                     }
