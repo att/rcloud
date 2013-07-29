@@ -235,7 +235,7 @@ RClient = {
                         if (e.constructor === NoCallbackError) {
                             that.handlers[v[0]](v[1]);
                         } else
-                            throw e;
+                            throw 'Error evaluating "' + command + '": ' + e;
                     }
                 }
                 rserve.eval(command, unwrap);
