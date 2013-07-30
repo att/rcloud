@@ -127,7 +127,6 @@ var shell = (function() {
         return charts.elem;
     }
 
-
     var handlers = {
         "scatterplot": handle_scatterplot,
         "iframe": handle_iframe,
@@ -142,11 +141,31 @@ var shell = (function() {
     var notebook_view = Notebook.create_html_view(notebook_model, $("#output"));
     var notebook_controller = Notebook.create_controller(notebook_model);
 
-    function show_or_hide_input() {
-        if(notebook_model.read_only)
+    function show_fork_or_input_elements() {
+        if(notebook_model.read_only) {
             $('#input-div').hide();
-        else
+            $('#fork-notebook').show();
+        }
+        else {
             $('#input-div').show();
+            $('#fork-notebook').hide();
+        }
+    }
+
+    function on_new(k, notebook) {
+        $("#notebook-title").text(notebook.description);
+        show_fork_or_input_elements();
+        this.gistname = notebook.id;
+        k && k(notebook);
+    }
+
+    function on_load(k, notebook) {
+        $("#notebook-title").text(notebook.description);
+        show_fork_or_input_elements();
+        _.each(this.notebook.view.sub_views, function(cell_view) {
+            cell_view.show_source();
+        });
+        k && k(notebook);
     }
 
     var result = {
@@ -203,22 +222,16 @@ var shell = (function() {
             // but not in new.  and we have to set this here to signal
             // editor's init load config callback to override the currbook
             this.gistname = gistname;
-            this.notebook.controller.load_notebook(gistname, function(notebook) {
-                $("#notebook-title").text(notebook.description);
-                show_or_hide_input();
-                _.each(that.notebook.view.sub_views, function(cell_view) {
-                    cell_view.show_source();
-                });
-                k && k(notebook);
-            });
+            this.notebook.controller.load_notebook(gistname, _.bind(on_load, this, k));
         }, new_notebook: function(desc, k) {
-            var that = this;
             var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
-            this.notebook.controller.create_notebook(content, function(notebook) {
-                $("#notebook-title").text(notebook.description);
-                show_or_hide_input();
+            this.notebook.controller.create_notebook(content, _.bind(on_new, this, k));
+        }, fork_notebook: function(gistname, k) {
+            var that = this;
+            notebook_model.read_only = false;
+            this.notebook.controller.fork_notebook(gistname, function(notebook) {
                 that.gistname = notebook.id;
-                k && k(notebook);
+                on_load.call(that, k, notebook);
             });
         }
     };
