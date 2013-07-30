@@ -17804,10 +17804,12 @@ Lux.unload_batch = function()
             delete uniform._lux_active_uniform;
         });
     }
-    // FIXME setting line width belongs somewhere else, but I'm not quite sure where.
-    // resets line width
+
     if (previous_batch_opts.line_width)
         ctx.lineWidth(1.0);
+    if (previous_batch_opts.polygon_offset) {
+        ctx.disable(ctx.POLYGON_OFFSET_FILL);
+    }
 
     // reset the opengl capabilities which are determined by
     // Lux.DrawingMode.*
@@ -18081,12 +18083,22 @@ Lux.bake = function(model, appearance, opts)
                 if (this.line_width) {
                     ctx.lineWidth(this.line_width.get());
                 }
+                if (this.polygon_offset) {
+                    ctx.enable(ctx.POLYGON_OFFSET_FILL);
+                    ctx.polygonOffset(this.polygon_offset.factor.get(), 
+                                      this.polygon_offset.units.get());
+                }
             },
             draw_chunk: draw_chunk,
             batch_id: largest_batch_id++
         };
         if (!_.isUndefined(appearance.line_width))
             result.line_width = ensure_parameter(appearance.line_width);
+        if (!_.isUndefined(appearance.polygon_offset))
+            result.polygon_offset = {
+                factor: ensure_parameter(appearance.polygon_offset.factor),
+                units: ensure_parameter(appearance.polygon_offset.units)
+            };
         return result;
     }
 
@@ -23925,9 +23937,9 @@ function builtin_glsl_function(opts)
                 };
             } else {
                 obj.element_is_constant = function(i) {
-                    if (this.guid === 489) {
-                        debugger;
-                    }
+                    // if (this.guid === 489) {
+                    //     debugger;
+                    // }
                     return this.element(i).is_constant();
                 };
             }
@@ -24018,7 +24030,7 @@ function atan1_evaluator(exp, cache)
     if (exp.type.equals(Shade.Types.float_t))
         return Math.atan(v1);
     else {
-        return vec.map(c, Math.atan);
+        return vec.map(v1, Math.atan);
     }
 }
 
@@ -24237,7 +24249,6 @@ var smoothstep = builtin_glsl_function({
         var edge1 = exp.parents[1];
         var x = exp.parents[2];
         var t = Shade.clamp(x.sub(edge0).div(edge1.sub(edge0)), 0, 1);
-        // FIXME this is cute but will be inefficient
         return t.mul(t).mul(Shade.sub(3, t.mul(2))).evaluate(cache);
     }, element_function: function(exp, i) {
         return Shade.smoothstep.apply(this, broadcast_elements(exp, i));
@@ -24299,8 +24310,8 @@ var cross = builtin_glsl_function({
         return vec3.cross(exp.parents[0].evaluate(cache),
                           exp.parents[1].evaluate(cache));
     }, element_function: function (exp, i) {
-        var v1 = exp.parents[0].length;
-        var v2 = exp.parents[1].length;
+        var v1 = exp.parents[0];
+        var v2 = exp.parents[1];
         if        (i === 0) { return v1.at(1).mul(v2.at(2)).sub(v1.at(2).mul(v2.at(1)));
         } else if (i === 1) { return v1.at(2).mul(v2.at(0)).sub(v1.at(0).mul(v2.at(2)));
         } else if (i === 2) { return v1.at(0).mul(v2.at(1)).sub(v1.at(1).mul(v2.at(0)));
@@ -24953,6 +24964,47 @@ Shade.canonicalize_program_object = function(program_obj)
     return result;
 };
 
+//////////////////////////////////////////////////////////////////////////////
+/*
+ * Shade.program is the main procedure that compiles a Shade
+ * appearance object (which is an object with fields containing Shade
+ * expressions like 'position' and 'color') to a WebGL program (a pair
+ * of vertex and fragment shaders). It performs a variety of optimizations and
+ * program transformations to support a more uniform programming model.
+ * 
+ * The sequence of transformations is as follows:
+ * 
+ *  - An appearance object is first canonicalized (which transforms names like 
+ *    color to gl_FragColor)
+ * 
+ *  - There are some expressions that are valid in vertex shader contexts but 
+ *    invalid in fragment shader contexts, and vice-versa (eg. attributes can 
+ *    only be read in vertex shaders; dFdx can only be evaluated in fragment 
+ *    shaders; the discard statement can only appear in a fragment shader). 
+ *    This means we must move expressions around:
+ * 
+ *    - expressions that can be hoisted from the vertex shader to the fragment 
+ *      shader are hoisted. Currently, this only includes discard_if 
+ *      statements.
+ * 
+ *    - expressions that must be hoisted from the fragment-shader computations 
+ *      to the vertex-shader computations are hoisted. For example, WebGL 
+ *      attributes can only be read on vertex shaders, and so Shade.program 
+ *      introduces a varying variable to communicate the value to the fragment 
+ *      shader.
+ * 
+ *  - At the end of this stage, some fragment-shader only expressions might 
+ *    remain on vertex-shader computations. These are invalid WebGL programs and
+ *    Shade.program must fail here (The canonical example is: 
+ *
+ *    {
+ *        position: Shade.dFdx(attribute)
+ *    })
+ * 
+ *  - After relocating expressions, vertex and fragment shaders are optimized
+ *    using a variety of simple expression rewriting (constant folding, etc).
+ */
+
 Shade.program = function(program_obj)
 {
     program_obj = Shade.canonicalize_program_object(program_obj);
@@ -25011,30 +25063,69 @@ Shade.program = function(program_obj)
         return result;
     }
 
-    // explicit per-vertex hoisting must happen before is_attribute hoisting,
-    // otherwise we might end up reading from a varying in the vertex program,
-    // which is undefined behavior
+    //////////////////////////////////////////////////////////////////////////
+    // moving discard statements on vertex program to fragment program
+
+    var shade_values_vp_obj = Shade(_.object(_.filter(
+        _.pairs(vp_obj), function(lst) {
+            var k = lst[0], v = lst[1];
+            return Lux.is_shade_expression(v);
+        })));
+
+    var vp_discard_conditions = {};
+    shade_values_vp_obj = shade_values_vp_obj.replace_if(function(x) {
+        return x.expression_type === 'discard_if';
+    }, function(exp) {
+        vp_discard_conditions[exp.parents[1].guid] = exp.parents[1];
+        return exp.parents[0];
+    });
+
+    var disallowed_vertex_expressions = shade_values_vp_obj.find_if(function(x) {
+        if (x.expression_type === 'builtin_function{dFdx}') return true;
+        if (x.expression_type === 'builtin_function{dFdy}') return true;
+        if (x.expression_type === 'builtin_function{fwidth}') return true;
+        return false;
+    });
+    if (disallowed_vertex_expressions.length > 0) {
+        throw "'" + disallowed_vertex_expressions[0] + "' not allowed in vertex expression";
+    }
+
+    vp_obj = _.object(shade_values_vp_obj.fields, shade_values_vp_obj.parents);
+    vp_discard_conditions = _.values(vp_discard_conditions);
+
+    if (vp_discard_conditions.length) {
+        var vp_discard_condition = _.reduce(vp_discard_conditions, function(a, b) {
+            return a.or(b);
+        }).ifelse(1, 0).gt(0);
+        fp_obj.gl_FragColor = fp_obj.gl_FragColor.discard_if(vp_discard_condition);
+    }
+
+    
 
     var common_sequence = [
         [Shade.Optimizer.is_times_zero, Shade.Optimizer.replace_with_zero, 
-         "v * 0", true],
-        [Shade.Optimizer.is_times_one, Shade.Optimizer.replace_with_notone, 
-         "v * 1", true],
-        [Shade.Optimizer.is_plus_zero, Shade.Optimizer.replace_with_nonzero,
-         "v + 0", true],
-        [Shade.Optimizer.is_never_discarding,
-         Shade.Optimizer.remove_discard, "discard_if(false)"],
-        [Shade.Optimizer.is_known_branch,
-         Shade.Optimizer.prune_ifelse_branch, "constant?a:b", true],
-        [Shade.Optimizer.vec_at_constant_index, 
-         Shade.Optimizer.replace_vec_at_constant_with_swizzle, "vec[constant_ix]"],
-        [Shade.Optimizer.is_constant,
-         Shade.Optimizer.replace_with_constant, "constant folding"],
-        [Shade.Optimizer.is_logical_or_with_constant,
-         Shade.Optimizer.replace_logical_or_with_constant, "constant||v", true],
-        [Shade.Optimizer.is_logical_and_with_constant,
-         Shade.Optimizer.replace_logical_and_with_constant, "constant&&v", true]];
+         "v * 0", true]
+       ,[Shade.Optimizer.is_times_one, Shade.Optimizer.replace_with_notone, 
+         "v * 1", true]
+       ,[Shade.Optimizer.is_plus_zero, Shade.Optimizer.replace_with_nonzero,
+         "v + 0", true]
+       ,[Shade.Optimizer.is_never_discarding,
+         Shade.Optimizer.remove_discard, "discard_if(false)"]
+       ,[Shade.Optimizer.is_known_branch,
+         Shade.Optimizer.prune_ifelse_branch, "constant?a:b", true]
+       ,[Shade.Optimizer.vec_at_constant_index, 
+         Shade.Optimizer.replace_vec_at_constant_with_swizzle, "vec[constant_ix]"]
+       ,[Shade.Optimizer.is_constant,
+         Shade.Optimizer.replace_with_constant, "constant folding"]
+       ,[Shade.Optimizer.is_logical_or_with_constant,
+         Shade.Optimizer.replace_logical_or_with_constant, "constant||v", true]
+       ,[Shade.Optimizer.is_logical_and_with_constant,
+         Shade.Optimizer.replace_logical_and_with_constant, "constant&&v", true]
+    ];
 
+    // explicit per-vertex hoisting must happen before is_attribute hoisting,
+    // otherwise we might end up reading from a varying in the vertex program,
+    // which is undefined behavior
     var fp_sequence = [
         [is_per_vertex, hoist_to_varying, "per-vertex hoisting"],
         [is_attribute, hoist_to_varying, "attribute hoisting"]  
@@ -27185,12 +27276,11 @@ Shade.ThreeD.normal = function(position)
     var dPos_dpixely = Shade.dFdy(position);
     return Shade.normalize(Shade.cross(dPos_dpixelx, dPos_dpixely));
 };
-Shade.ThreeD.cull_backface = Shade(function(position, ccw)
+Shade.ThreeD.cull_backface = Shade(function(position, normal, ccw)
 {
     if (_.isUndefined(ccw)) ccw = Shade(true);
     ccw = ccw.ifelse(1, -1);
-    var n = Shade.ThreeD.normal(position);
-    return position.discard_if(n.cross(Shade.vec(0,0,ccw)).z().gt(0));
+    return position.discard_if(normal.dot(Shade.vec(0,0,ccw)).le(0));
 });
 Lux.Geometry = {};
 Lux.Geometry.triangulate = function(opts) {
@@ -28146,6 +28236,8 @@ Lux.Marks.rectangle_brush = function(opts)
         }
     };
 };
+(function() {
+
 function spherical_mercator_patch(tess)
 {
     var uv = [];
@@ -28272,9 +28364,9 @@ Lux.Marks.globe = function(opts)
     var sphere_actor = Lux.actor({
         model: patch, 
         appearance: {
-            gl_Position: mvp(v), // Shade.ThreeD.cull_backface(mvp(v)),
+            gl_Position: mvp(v),
             gl_FragColor: Shade.texture2D(sampler, xformed_patch).discard_if(model.mul(v).z().lt(0)),
-            mode: Lux.DrawingMode.pass
+            polygon_offset: opts.polygon_offset
         }});
 
     function inertia_tick() {
@@ -28527,6 +28619,8 @@ Lux.Marks.globe = function(opts)
 
     return result;
 };
+
+})();
 Lux.Marks.globe_2d = function(opts)
 {
     opts = _.defaults(opts || {}, {
