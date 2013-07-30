@@ -66,7 +66,6 @@ rcloud.update.notebook <- function(id, content) {
 
 rcloud.create.notebook <- function(content) {
   res <- create.gist(.session$rgithub.context, content)
-  res <- update.gist(.session$rgithub.context, id, content)
   list(succeeded = res$succeeded,
        content = content(res$response))
 }
