@@ -1033,6 +1033,14 @@ rcloud.create_notebook = function(content, k)
     );
 };
 
+rcloud.fork_notebook = function(id, k)
+{
+    rclient.send_and_callback(
+        rclient.r_funcall("rcloud.fork.notebook", id),
+        rcloud_github_handler("rcloud.fork.notebook", k)
+    );
+};
+
 rcloud.resolve_deferred_result = function(uuid, k)
 {
     var cmd = rclient.r_funcall("rcloud.fetch.deferred.result", uuid);
@@ -1588,6 +1596,27 @@ Notebook.create_controller = function(model)
             $('.ace_cursor-layer').show();
     }
 
+    function on_load(k, notebook) {
+        this.clear();
+        // is there anything else to gist permissions?
+        // certainly versioning figures in here too
+        model.read_only = notebook.user.login != rcloud.username();
+        var parts = {}; // could rely on alphabetic input instead of gathering
+        _.each(notebook.files, function (file) {
+            var filename = file.filename;
+            if(/^part/.test(filename)) {
+                var number = parseInt(filename.slice(4).split('.')[0]);
+                if(number !== NaN)
+                    parts[number] = [file.content, file.language, number];
+            }
+            // style..
+        });
+        for(var i in parts)
+            append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
+        show_or_hide_cursor();
+        k && k(notebook);
+    }
+
     var result = {
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
@@ -1608,26 +1637,7 @@ Notebook.create_controller = function(model)
         },
         load_notebook: function(gistname, k) {
             var that = this;
-            rcloud.load_notebook(gistname, function(notebook) {
-                that.clear();
-                // is there anything else to gist permissions?
-                // certainly versioning figures in here too
-                model.read_only = notebook.user.login != rcloud.username();
-                var parts = {}; // could rely on alphabetic input instead of gathering
-                _.each(notebook.files, function (file) {
-                    var filename = file.filename;
-                    if(/^part/.test(filename)) {
-                        var number = parseInt(filename.slice(4).split('.')[0]);
-                        if(number !== NaN)
-                            parts[number] = [file.content, file.language, number];
-                    }
-                    // style..
-                });
-                for(var i in parts)
-                    append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
-                show_or_hide_cursor();
-                k && k(notebook);
-            });
+            rcloud.load_notebook(gistname, _.bind(on_load, this, k));
         },
         create_notebook: function(content, k) {
             var that = this;
@@ -1637,13 +1647,19 @@ Notebook.create_controller = function(model)
                 k && k(notebook);
             });
         },
+        fork_notebook: function(gistname, k) {
+            var that = this;
+            rcloud.fork_notebook(gistname, function(notebook) {
+                that.load_notebook(notebook.id, k);
+            });
+        },
         update_notebook: function(changes) {
             if(!changes.length)
                 return;
             function partname(id, language) {
                 var ext;
                 switch(language) {
-                case 'R': 
+                case 'R':
                     ext = 'R';
                     break;
                 case 'Markdown':
@@ -1658,7 +1674,7 @@ Notebook.create_controller = function(model)
                 // we don't use the gist rename feature because it doesn't
                 // allow renaming x -> y and creating a new x at the same time
                 // instead, create y and if there is no longer any x, erase it
-                var post_names = _.reduce(changes, 
+                var post_names = _.reduce(changes,
                                          function(names, change) {
                                              if(!change[1].erase) {
                                                  var after = change[1].rename || change[0];

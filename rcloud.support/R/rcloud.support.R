@@ -66,6 +66,8 @@ rcloud.rename.notebook <- function(id, new.name)
               id,
               list(description=new.name))
 
+rcloud.fork.notebook <- function(id) fork.gist(.session$rgithub.context, id)
+
 rcloud.get.users <- function()
   get.users(.session$rgithub.context);
 

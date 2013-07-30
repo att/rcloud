@@ -256,6 +256,9 @@ var editor = function () {
             var this_user = rcloud.username();
             rcloud.save_user_config(this_user, this.config);
         },
+        load_notebook: function(gistname) {
+            shell.load_notebook(gistname, _.bind(result.notebook_loaded,this));
+        },
         new_notebook: function() {
             if(isNaN(this.config.nextwork))
                 this.config.nextwork = 1;
@@ -263,9 +266,11 @@ var editor = function () {
             ++this.config.nextwork;
             shell.new_notebook(desc, _.bind(result.notebook_loaded,this));
         },
-        load_notebook: function(notebook) {
-            var that = this;
-            shell.load_notebook(notebook, _.bind(result.notebook_loaded,this));
+        rename_notebook: function(gistname, newname) {
+            rcloud.rename_notebook(gistname, newname, _.bind(result.notebook_loaded,this));
+        },
+        fork_notebook: function(gistname) {
+            shell.fork_notebook(gistname, _.bind(result.notebook_loaded,this));
         },
         notebook_loaded: function(result) {
             this.config.currbook = result.id;

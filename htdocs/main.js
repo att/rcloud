@@ -18,8 +18,14 @@ function init_editable_title_box() {
         var result = prompt("Please enter the new name for '" + $(this).text() + "':");
         if (result !== null) {
             $(this).text(result);
-            rcloud.rename_notebook(shell.gistname, result, _.bind(editor.notebook_loaded, editor));
+            editor.rename_notebook(shell.gistname, result);
         }
+    });
+}
+
+function init_fork_button() {
+    $("#fork-notebook").click(function() {
+        editor.fork_notebook(shell.gistname);
     });
 }
 
@@ -40,6 +46,7 @@ var oob_msg_handlers = {
 function main_init() {
     init_shareable_link_box();
     init_editable_title_box();
+    init_fork_button();
     rclient = RClient.create({
         debug: false,
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),

@@ -91,6 +91,14 @@ rcloud.create_notebook = function(content, k)
     );
 };
 
+rcloud.fork_notebook = function(id, k)
+{
+    rclient.send_and_callback(
+        rclient.r_funcall("rcloud.fork.notebook", id),
+        rcloud_github_handler("rcloud.fork.notebook", k)
+    );
+};
+
 rcloud.resolve_deferred_result = function(uuid, k)
 {
     var cmd = rclient.r_funcall("rcloud.fetch.deferred.result", uuid);
