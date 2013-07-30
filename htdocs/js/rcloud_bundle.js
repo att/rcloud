@@ -1091,7 +1091,7 @@ function create_markdown_cell_html_view(cell_model)
     var result_button = fa_button("icon-picture", "result");
     var hide_button   = fa_button("icon-resize-small", "hide");
     var remove_button = fa_button("icon-trash", "remove");
-    var run_md_button = fa_button("icon-repeat", "run");
+    var run_md_button = fa_button("icon-play", "run");
 
     function update_model() {
         return cell_model.content(widget.getSession().getValue());
@@ -1137,12 +1137,17 @@ function create_markdown_cell_html_view(cell_model)
         execute_cell();
     });
 
-    // Ace sets its z-index to be 1000;
-    // "and thus began the great z-index arms race of 2012"
-    var button_float = $("<div style='position:relative; float: right; z-index:10000'></div>");
-    var row1 = $("<div style='margin:0.5em;'></div>");
-    var editor_row = $("<div style='margin:0.5em;'></div>");
-    row1.append(source_button);
+    var button_float = $("<div class='cell-controls'></div>");
+    //var row1 = $("<div style='margin:0.5em;'></div>");
+    //var editor_row = $("<div style='margin:0.5em;'></div>");
+    var col = $('<table/>');
+    $.each([source_button,result_button,hide_button,remove_button,run_md_button],
+           function() {
+               col.append($('<tr/>').append($('<td/>').append($(this))));
+           });
+    button_float.append(col);
+
+/*
     row1.append(result_button);
     row1.append(hide_button);
     row1.append(remove_button);
@@ -1150,6 +1155,7 @@ function create_markdown_cell_html_view(cell_model)
     editor_row.append(run_md_button);
     editor_row.hide();
     button_float.append(editor_row);
+*/
 
     notebook_cell_div.append(button_float);
 
@@ -1275,7 +1281,7 @@ function create_markdown_cell_html_view(cell_model)
             enable(result_button);
             enable(hide_button);
             enable(remove_button);
-            editor_row.show();
+            //editor_row.show();
 
             markdown_div.show();
             r_result_div.hide();
@@ -1291,7 +1297,7 @@ function create_markdown_cell_html_view(cell_model)
             enable(hide_button);
             enable(remove_button);
 
-            editor_row.hide();
+            //editor_row.hide();
             markdown_div.hide();
             r_result_div.slideDown(150, function() {
                 end_of_div_span[0].scrollIntoView();
@@ -1305,7 +1311,7 @@ function create_markdown_cell_html_view(cell_model)
             disable(hide_button);
             enable(remove_button);
 
-            editor_row.hide();
+            //editor_row.hide();
             if (current_mode === "result") {
                 r_result_div.slideUp(150); // hide();
             } else {

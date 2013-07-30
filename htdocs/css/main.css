@@ -92,7 +92,7 @@ rect.frame {
 }
 
 .left-pane-header {
-    width:100%; 
+    width:100%;
     background-color:#ddd;
 }
 
@@ -178,6 +178,11 @@ rect.frame {
     border-style: solid;
 }
 
+.notebook-cell .cell-controls {
+    position:absolute;
+    right: -2em
+}
+
 .fontawesome-button {
     margin: 0.25em;
     cursor: pointer;
@@ -187,8 +192,8 @@ rect.frame {
     cursor: default;
 }
 
-/* Ace sets its z-index to something obscene, 
-   and we need to one-up that obscenity with our own button float; Twitter's 
+/* Ace sets its z-index to something obscene,
+   and we need to one-up that obscenity with our own button float; Twitter's
    bootstrap tooltip needs to reflect that and one-up everything else.
 */
 
