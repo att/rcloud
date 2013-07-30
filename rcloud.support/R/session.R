@@ -6,14 +6,14 @@
 # If the results of the function are desired, use session.eval
 session.eval <- function(x, silent) {
   val <- try(x, silent=TRUE)
-  if (!inherits(val, "try-error") && !silent) print(val)
+  if (!inherits(val, "try-error") && !silent && rcloud.debug.level()) print(val)
   list("eval", val)
 }
 
 # If evaluation is desired only for the output, use markdown.eval.
 session.markdown.eval <- function(x, silent) {
   val <- try(x, silent=TRUE)
-  if (!inherits(val, "try-error") && !silent) print(val)
+  if (!inherits(val, "try-error") && !silent && rcloud.debug.level()) print(val)
   list("markdown.eval", val)
 }
 
