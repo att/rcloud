@@ -142,6 +142,13 @@ var shell = (function() {
     var notebook_view = Notebook.create_html_view(notebook_model, $("#output"));
     var notebook_controller = Notebook.create_controller(notebook_model);
 
+    function show_or_hide_input() {
+        if(notebook_model.read_only)
+            $('#input-div').hide();
+        else
+            $('#input-div').show();
+    }
+
     var result = {
         notebook: {
             // very convenient for debugging
@@ -198,6 +205,7 @@ var shell = (function() {
             this.gistname = gistname;
             this.notebook.controller.load_notebook(gistname, function(notebook) {
                 $("#notebook-title").text(notebook.description);
+                show_or_hide_input();
                 _.each(that.notebook.view.sub_views, function(cell_view) {
                     cell_view.show_source();
                 });
@@ -208,6 +216,7 @@ var shell = (function() {
             var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
             this.notebook.controller.create_notebook(content, function(notebook) {
                 $("#notebook-title").text(notebook.description);
+                show_or_hide_input();
                 that.gistname = notebook.id;
                 k && k(notebook);
             });

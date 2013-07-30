@@ -57,10 +57,13 @@ rcloud.save_user_config = function(user, content, k)
 
 function rcloud_github_handler(command, k) {
     return function(result) {
-        if(result.succeeded)
+        if(result.ok)
             k && k(result.content);
-        else
-            rclient.post_error(command + ': ' + result.content.message);
+        else {
+            var message = _.isObject(result) && 'ok' in result
+                    ? result.content.message : result.toString();
+            rclient.post_error(command + ': ' + message);
+        }
     };
 }
 
