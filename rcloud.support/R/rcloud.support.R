@@ -109,7 +109,6 @@ configure.rcloud <- function () {
   ## installation from R scripts -- for RCloud this is *mandatory*
   .rc.conf$root <- Sys.getenv("ROOT")
   if (is.null(.rc.conf$root) || nchar(.rc.conf$root) == 0) .rc.conf$root <- "/var/FastRWeb"
-  cat("Using ROOT =", .rc.conf$root, "\n")
 
   if (nzchar(Sys.getenv("DEBUG"))) {
     dl <- as.integer(Sys.getenv("DEBUG"))
@@ -117,6 +116,7 @@ configure.rcloud <- function () {
     .rc.conf$debug <- dl
     cat("=== NOTE: DEBUG is set, enabling debug mode at level", dl, "===\n")
   }
+  if (rcloud.debug.level()) cat("Using ROOT =", .rc.conf$root, "\n")
 
   # CONFROOT/DATAROOT are purely optional
   # Whom are we kidding? Although it may be nice to abstract out all paths
@@ -126,12 +126,12 @@ configure.rcloud <- function () {
   .rc.conf$configuration.root <- Sys.getenv("CONFROOT")
   if (!nzchar(.rc.conf$configuration.root))
     .rc.conf$configuration.root <- file.path(.rc.conf$root, "conf")
-  cat("Using CONFROOT =", .rc.conf$configuration.root, "\n")
+  if (rcloud.debug.level()) cat("Using CONFROOT =", .rc.conf$configuration.root, "\n")
 
   .rc.conf$data.root <- Sys.getenv("DATAROOT")
   if (!nzchar(.rc.conf$data.root))
     .rc.conf$data.root <- file.path(.rc.conf$root, "data")
-  cat("Using DATAROOT =", .rc.conf$data.root, "\n")
+  if (rcloud.debug.level()) cat("Using DATAROOT =", .rc.conf$data.root, "\n")
 
   ## load any local configuration (optional)
   .rc.conf$local.conf <- file.path(.rc.conf$configuration.root, "local.R")
@@ -155,16 +155,16 @@ configure.rcloud <- function () {
   ## $CONFROOT/packages.txt can list additional packages
   if (file.exists(fn <- file.path(.rc.conf$configuration.root, "packages.txt")))
     pkgs <- c(pkgs, readLines(fn))
-  cat("Loading packages...\n")
+  if (rcloud.debug.level()) cat("Loading packages...\n")
   for (pkg in pkgs) {
     succeeded <- require(pkg, quietly=TRUE, character.only=TRUE)
-    cat(pkg, ": ",succeeded,"\n",sep='')
+    if (rcloud.debug.level()) cat(pkg, ": ",succeeded,"\n",sep='')
     if (!succeeded)
       stop(paste("Missing package: ", pkg, sep=''))
   }
 
   ## we actually need knitr ...
-  opts_knit$set(global.device=TRUE, tidy=FALSE, dev=CairoPNG)
+  opts_knit$set(global.device=TRUE, tidy=FALSE, dev=CairoPNG, progress=FALSE)
   ## the dev above doesn't work ... it's still using png()
   ## so make sure it uses the cairo back-end ..
   if (capabilities()['cairo']) options(bitmapType='cairo')
@@ -176,7 +176,7 @@ configure.rcloud <- function () {
   ## Load any data you want
   .rc.conf$data.fn <- file.path(.rc.conf$configuration.root, "data.RData")
   if (isTRUE(file.exists(.rc.conf$data.fn))) {
-    cat("Loading data...\n")
+    if (rcloud.debug.level()) cat("Loading data...\n")
     load(.rc.conf$data.fn)
   }
 

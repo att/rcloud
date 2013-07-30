@@ -14,7 +14,7 @@ configure.rcloud()
 ## WS authentication (experimental as the name suggests...)
 test_function <- function(v)
 {
-  cat("WS-login: ", paste(v, collapse=', '), "\n")
+  ## cat("WS-login: ", paste(v, collapse=', '), "\n")
   ## the following should really go into rcloud.support, obviously ...
   if (!is.null(rcloud.support:::.rc.conf$exec.auth)) {
     exec.usr <- check.token(v[[2]], rcloud.support:::.rc.conf$exec.auth, "rcloud.exec")
