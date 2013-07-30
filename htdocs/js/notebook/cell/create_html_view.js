@@ -105,6 +105,8 @@ function create_markdown_cell_html_view(cell_model)
     var RMode = require("mode/rmarkdown").Mode;
     var session = widget.getSession();
     var doc = session.doc;
+    widget.setReadOnly(cell_model.parent_model.read_only);
+
     widget.getSession().setMode(new RMode(false, doc, session));
 
     widget.setTheme("ace/theme/chrome");

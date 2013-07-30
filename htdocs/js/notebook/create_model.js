@@ -10,6 +10,7 @@ Notebook.create_model = function()
             return 0;
     }
     return {
+        read_only: false,
         notebook: [],
         views: [], // sub list for pubsub
         clear: function() {

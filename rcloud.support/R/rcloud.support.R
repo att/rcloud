@@ -44,9 +44,9 @@ rcloud.save.user.config <- function(user, content) {
 rcloud.get.notebook <- function(id) {
   res <- get.gist(.session$rgithub.context, id)
   if (rcloud.debug.level() > 1L) {
-    if(res$succeeded) {
+    if(res$ok) {
       cat("==== GOT GIST ====\n")
-      cat(content(res$response, as = 'text'))
+      cat(toJSON(res$content))
       cat("==== END GIST ====\n")
     }
     else {
@@ -54,35 +54,20 @@ rcloud.get.notebook <- function(id) {
       print(res);
     }
   }
-  list(succeeded = res$succeeded,
-       content = content(res$response))
+  res
 }
 
-rcloud.update.notebook <- function(id, content) {
-  res <- update.gist(.session$rgithub.context, id, content)
-  list(succeeded = res$succeeded,
-       content = content(res$response))
-}
+rcloud.update.notebook <- function(id, content) update.gist(.session$rgithub.context, id, content)
 
-rcloud.create.notebook <- function(content) {
-  res <- create.gist(.session$rgithub.context, content)
-  list(succeeded = res$succeeded,
-       content = content(res$response))
-}
+rcloud.create.notebook <- function(content) create.gist(.session$rgithub.context, content)
 
-rcloud.rename.notebook <- function(id, new.name) {
-  res <- update.gist(.session$rgithub.context,
-                     id,
-                     list(description=new.name))
-  list(succeeded = res$succeeded,
-       content = content(res$response))
-}
+rcloud.rename.notebook <- function(id, new.name)
+  update.gist(.session$rgithub.context,
+              id,
+              list(description=new.name))
 
-rcloud.get.users <- function() {
-  res <- get.users(.session$rgithub.context);
-  list(succeeded = res$succeeded,
-       content = content(res$response))
-}
+rcloud.get.users <- function()
+  get.users(.session$rgithub.context);
 
 rcloud.setup.dirs <- function() {
     for (data.subdir in c("userfiles", "history", "home"))
@@ -238,7 +223,7 @@ start.rcloud <- function(username="", token="", ...) {
                                .rc.conf$github.client.id,
                                .rc.conf$github.client.secret,
                                token)
-  if(res$succeeded)
+  if(res$ok)
     .session$rgithub.context <- res$content
   else
     stop(paste('error in rgithub.context.from.token: ', res$content))

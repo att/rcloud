@@ -16,7 +16,7 @@ run <- function(url, query, body, headers)
                                     rcloud.support:::.rc.conf$github.client.id,
                                     rcloud.support:::.rc.conf$github.client.secret,
                                     token)
-  if(!result$succeeded)
+  if(!result$ok)
     stop(paste("login failed: ", result$content$message))
   else
     ctx <- result$content

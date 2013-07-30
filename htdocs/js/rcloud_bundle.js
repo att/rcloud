@@ -997,10 +997,13 @@ rcloud.save_user_config = function(user, content, k)
 
 function rcloud_github_handler(command, k) {
     return function(result) {
-        if(result.succeeded)
+        if(result.ok)
             k && k(result.content);
-        else
-            rclient.post_error(command + ': ' + result.content.message);
+        else {
+            var message = _.isObject(result) && 'ok' in result
+                    ? result.content.message : result.toString();
+            rclient.post_error(command + ': ' + message);
+        }
     };
 }
 
@@ -1163,6 +1166,8 @@ function create_markdown_cell_html_view(cell_model)
     var RMode = require("mode/rmarkdown").Mode;
     var session = widget.getSession();
     var doc = session.doc;
+    widget.setReadOnly(cell_model.parent_model.read_only);
+
     widget.getSession().setMode(new RMode(false, doc, session));
 
     widget.setTheme("ace/theme/chrome");
@@ -1420,7 +1425,6 @@ Notebook.create_html_view = function(model, root_div)
             });
             this.sub_views.splice(cell_index, 1);
         },
-        
         update_model: function() {
             return _.map(this.sub_views, function(cell_view) {
                 return cell_view.update_model();
@@ -1442,6 +1446,7 @@ Notebook.create_model = function()
             return 0;
     }
     return {
+        read_only: false,
         notebook: [],
         views: [], // sub list for pubsub
         clear: function() {
@@ -1571,7 +1576,14 @@ Notebook.create_controller = function(model)
         var cell_model = Notebook.Cell.create_model(content, type);
         var cell_controller = Notebook.Cell.create_controller(cell_model);
         cell_model.controller = cell_controller;
-        return [cell_controller, model.insert_cell(cell_model, id)]
+        return [cell_controller, model.insert_cell(cell_model, id)];
+    }
+
+    function show_or_hide_cursor() {
+        if(model.read_only)
+            $('.ace_cursor-layer').hide();
+        else
+            $('.ace_cursor-layer').show();
     }
 
     var result = {
@@ -1596,6 +1608,9 @@ Notebook.create_controller = function(model)
             var that = this;
             rcloud.load_notebook(gistname, function(notebook) {
                 that.clear();
+                // is there anything else to gist permissions?
+                // certainly versioning figures in here too
+                model.read_only = notebook.user.login != rcloud.username();
                 var parts = {}; // could rely on alphabetic input instead of gathering
                 _.each(notebook.files, function (file) {
                     var filename = file.filename;
@@ -1608,6 +1623,7 @@ Notebook.create_controller = function(model)
                 });
                 for(var i in parts)
                     append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
+                show_or_hide_cursor();
                 k && k(notebook);
             });
         },
@@ -1615,6 +1631,7 @@ Notebook.create_controller = function(model)
             var that = this;
             rcloud.create_notebook(content, function(notebook) {
                 that.clear();
+                model.read_only = notebook.user.login != rcloud.username();
                 k && k(notebook);
             });
         },
