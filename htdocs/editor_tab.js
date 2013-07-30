@@ -25,7 +25,9 @@ var editor = function () {
             var attrs = set[name];
             var result = {
                 label: attrs.description,
-                gist_name: name,
+                gistname: name,
+                user: username,
+                root: root,
                 last_commit: attrs.last_commit || 'none',
                 id: '/' + root + '/' + username + '/' + name,
                 sort_order: 1
@@ -102,7 +104,7 @@ var editor = function () {
                 var root_data = [
                     {
                         label: 'My Interests',
-                        id: '/interests',
+                        id: '/interests'
                     },
                     {
                         label: 'All Notebooks',
@@ -134,8 +136,10 @@ var editor = function () {
         var id = '/' + root + '/' + user + '/' + notebook;
         var node = $tree.tree('getNodeById', id);
         var parent;
-        data.gist_name = notebook;
+        data.gistname = notebook;
         data.id = id;
+        data.root = root;
+        data.user = user;
         if(node) {
             // the update stuff doesn't exist in the jqtree version
             // we're using, and the latest jqtree didn't seem to work
@@ -189,6 +193,19 @@ var editor = function () {
         return name + "'s Notebooks";
     }
 
+    function fa_button(which, title)
+    {
+        return $("<span class='fontawesome-button " +
+                 title +
+                 "'><i class='" +
+                 which +
+                 "' style='line-height:90%;'></i></span>").tooltip({
+                     title: title,
+                     delay: { show: 250, hide: 0 }
+                 });
+    }
+
+
     var result = {
         widget: undefined,
         config: undefined,
@@ -217,11 +234,28 @@ var editor = function () {
         create_book_tree_widget: function() {
             var that = this;
             var $tree = $("#editor-book-tree");
+            var this_user = rcloud.username();
             function onCreateLiHandler(node, $li) {
+                var title = $li.find('.title');
                 if (node.last_commit) {
-                    $li.find('.title').after('<span style="float: right" id="date">'
+                    title.after('<span style="float: right" id="date">'
                                              + display_date(node.last_commit) + '</span>');
                 }
+                if(node.gistname && (node.root==='interests' || node.user===this_user)) {
+                    var remove = fa_button("icon-trash", "remove").hide();
+                    remove.click(function() {
+                        $(this).tooltip("hide");
+                        that.remove_notebook(node);
+                    });
+                    title.append(remove);
+                    title.hover(
+                        function() {
+                            $('.remove', this).show();
+                        },
+                        function() {
+                            $('.remove', this).hide();
+                        });
+                };
             }
             $tree.tree({
                 onCreateLi: onCreateLiHandler
@@ -230,8 +264,8 @@ var editor = function () {
                 'tree.click', function(event) {
                     if (event.node.id === "newbook")
                         that.new_notebook();
-                    else if(event.node.gist_name)
-                        that.load_notebook(event.node.gist_name);
+                    else if(event.node.gistname)
+                        that.load_notebook(event.node.gistname);
                 }
             );
         },
@@ -268,6 +302,24 @@ var editor = function () {
         },
         rename_notebook: function(gistname, newname) {
             rcloud.rename_notebook(gistname, newname, _.bind(result.notebook_loaded,this));
+        },
+        remove_notebook: function(node) {
+            var $tree = $("#editor-book-tree");
+            var this_user = rcloud.username();
+            if(node.root == 'alls') {
+                if(node.user === this_user)
+                    delete this.config.all_books[node.gistname];
+            }
+            else {
+                delete this.config.interests[node.user][node.gistname];
+                if(node.user!==this_user && _.isEmpty(this.config.interests[node.user])) {
+                    delete this.config.interests[node.user];
+                    var id = '/interests/' + node.user;
+                    node = $tree.tree('getNodeById', id);
+                }
+            }
+            $tree.tree('removeNode', node);
+            this.save_config();
         },
         fork_notebook: function(gistname) {
             shell.fork_notebook(gistname, _.bind(result.notebook_loaded,this));
