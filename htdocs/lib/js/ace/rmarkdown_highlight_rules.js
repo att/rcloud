@@ -1,5 +1,5 @@
 /*
- * rhtml_highlight_rules.js
+ * markdown_highlight_rules.js
  *
  * Copyright (C) 2009-11 by RStudio, Inc.
  *
@@ -15,22 +15,22 @@
  * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
  *
  */
-define("mode/rhtml_highlight_rules", function(require, exports, module) {
+define("ace/mode/rmarkdown_highlight_rules", function(require, exports, module) {
 
 var oop = require("ace/lib/oop");
-var RHighlightRules = require("mode/r_highlight_rules").RHighlightRules;
-var HtmlHighlightRules = require("ace/mode/html_highlight_rules").HtmlHighlightRules;
+var RHighlightRules = require("ace/mode/r_highlight_rules").RHighlightRules;
+var MarkdownHighlightRules = require("ace/mode/markdown_highlight_rules").MarkdownHighlightRules;
 var TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules;
 
-var RHtmlHighlightRules = function() {
+var RMarkdownHighlightRules = function() {
 
     // regexp must not have capturing parentheses
     // regexps are ordered -> the first match is used
 
-    this.$rules = new HtmlHighlightRules().getRules();
+    this.$rules = new MarkdownHighlightRules().getRules();
     this.$rules["start"].unshift({
         token: "support.function.codebegin",
-        regex: "^<" + "!--\\s*begin.rcode\\s*(?:.*)",
+        regex: "^`{3,}\\s*\\{r(?:.*)\\}\\s*$",
         next: "r-start"
     });
 
@@ -38,11 +38,11 @@ var RHtmlHighlightRules = function() {
     this.addRules(rRules, "r-");
     this.$rules["r-start"].unshift({
         token: "support.function.codeend",
-        regex: "^\\s*end.rcode\\s*-->",
+        regex: "^`{3,}\\s*$",
         next: "start"
     });
 };
-oop.inherits(RHtmlHighlightRules, TextHighlightRules);
+oop.inherits(RMarkdownHighlightRules, TextHighlightRules);
 
-exports.RHtmlHighlightRules = RHtmlHighlightRules;
+exports.RMarkdownHighlightRules = RMarkdownHighlightRules;
 });

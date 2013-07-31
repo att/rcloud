@@ -1,5 +1,5 @@
 /*
- * rhtml.js
+ * markdown.js
  *
  * Copyright (C) 2009-11 by RStudio, Inc.
  *
@@ -16,35 +16,35 @@
  *
  */
 
-define("mode/rhtml", function(require, exports, module) {
+define("ace/mode/rmarkdown", function(require, exports, module) {
 
 var oop = require("ace/lib/oop");
-var HtmlMode = require("ace/mode/html").Mode;
+var MarkdownMode = require("ace/mode/markdown").Mode;
 var Tokenizer = require("ace/tokenizer").Tokenizer;
-var RHtmlHighlightRules = require("mode/rhtml_highlight_rules").RHtmlHighlightRules;
-var SweaveBackgroundHighlighter = require("mode/sweave_background_highlighter").SweaveBackgroundHighlighter;
-var RCodeModel = require("mode/r_code_model").RCodeModel;
+var RMarkdownHighlightRules = require("ace/mode/rmarkdown_highlight_rules").RMarkdownHighlightRules;
+var SweaveBackgroundHighlighter = require("ace/mode/sweave_background_highlighter").SweaveBackgroundHighlighter;
+var RCodeModel = require("ace/mode/r_code_model").RCodeModel;
 
 var Mode = function(suppressHighlighting, doc, session) {
-   this.$tokenizer = new Tokenizer(new RHtmlHighlightRules().getRules());
+   this.$tokenizer = new Tokenizer(new RMarkdownHighlightRules().getRules());
 
    this.codeModel = new RCodeModel(doc, this.$tokenizer, /^r-/,
-                                   /^<!--\s*begin.rcode\s*(.*)/);
+                                   /^`{3,}\s*\{r(.*)\}\s*$/);
    this.foldingRules = this.codeModel;
    this.$sweaveBackgroundHighlighter = new SweaveBackgroundHighlighter(
          session,
-         /^<!--\s*begin.rcode\s*(?:.*)/,
-         /^\s*end.rcode\s*-->/,
+         /^`{3,}\s*\{r(?:.*)\}\s*$/,
+         /^`{3,}\s*$/,
          true);
 };
-oop.inherits(Mode, HtmlMode);
+oop.inherits(Mode, MarkdownMode);
 
 (function() {
    this.insertChunkInfo = {
-      value: "<!--begin.rcode\n\nend.rcode-->\n",
-      position: {row: 0, column: 15}
+      value: "```{r}\n\n```\n",
+      position: {row: 0, column: 5}
    };
-    
+
    this.getNextLineIndent = function(state, line, tab, tabSize, row)
    {
       return this.codeModel.getNextLineIndent(row, line, state, tab, tabSize);
