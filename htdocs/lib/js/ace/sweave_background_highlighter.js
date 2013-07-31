@@ -10,7 +10,7 @@
  * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
  *
  */
-define("mode/sweave_background_highlighter", function(require, exports, module)
+define("ace/mode/sweave_background_highlighter", function(require, exports, module)
 {
    var Range = require("ace/range").Range;
 

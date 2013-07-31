@@ -11,7 +11,7 @@
  *
  */
 
-define("mode/r_code_model", function(require, exports, module) {
+define("ace/mode/r_code_model", function(require, exports, module) {
 
 var Range = require("ace/range").Range;
 var TokenIterator = require("ace/token_iterator").TokenIterator;
@@ -23,7 +23,7 @@ function comparePoints(pos1, pos2)
    return pos1.column - pos2.column;
 }
 
-var ScopeManager = require("mode/r_scope_tree").ScopeManager;
+var ScopeManager = require("ace/mode/r_scope_tree").ScopeManager;
 
 var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
    this.$doc = doc;
