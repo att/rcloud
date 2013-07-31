@@ -10,8 +10,7 @@ function fa_button(which, title)
              });
 }
 
-function create_markdown_cell_html_view(cell_model)
-{
+function create_markdown_cell_html_view(language) { return function(cell_model) {
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
 
     //////////////////////////////////////////////////////////////////////////
@@ -95,7 +94,7 @@ function create_markdown_cell_html_view(cell_model)
     inner_div.append(markdown_div);
     markdown_div.append(ace_div);
     var widget = ace.edit(ace_div[0]);
-    var RMode = require("mode/rmarkdown").Mode;
+    var RMode = require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
     var session = widget.getSession();
     var doc = session.doc;
     widget.setReadOnly(cell_model.parent_model.read_only);
@@ -258,11 +257,11 @@ function create_markdown_cell_html_view(cell_model)
     result.show_result();
     result.content_updated();
     return result;
-};
+}};
 
 var dispatch = {
-    Markdown: create_markdown_cell_html_view,
-    R: create_markdown_cell_html_view
+    Markdown: create_markdown_cell_html_view("Markdown"),
+    R: create_markdown_cell_html_view("R")
 };
 
 Notebook.Cell.create_html_view = function(cell_model)
