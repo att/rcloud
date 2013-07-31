@@ -1168,6 +1168,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var markdown_div = $('<div style="position: relative; width:100%; height:100%"></div>');
 
     var ace_div = $('<div style="width:100%; height:100%"></div>');
+    ace_div.css({'background-color': language === 'R' ? "#E8F1FA" : "#F7EEE4"});
+
+
+    // ace_div.css({'background-color': language === 'R' ? "#B1BEA4" : "#F1EDC0"});
     inner_div.append(markdown_div);
     markdown_div.append(ace_div);
     var widget = ace.edit(ace_div[0]);

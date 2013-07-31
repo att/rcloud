@@ -16227,7 +16227,7 @@ color: rgb(104, 104, 91);\
 color: #0000A2;\
 }\
 .ace-chrome .ace_heading {\
-color: rgb(12, 7, 255);\
+color: rgb(52, 47, 205);\
 }\
 .ace-chrome .ace_list {\
 color:rgb(185, 6, 144);\
