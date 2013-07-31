@@ -176,11 +176,14 @@ rect.frame {
     padding: 1px;
     border-color: #eee;
     border-style: solid;
+    margin-top: 1.2em;
+    min-height: 75px;
 }
 
 .notebook-cell .cell-controls {
     position:absolute;
-    right: -2em
+    right: -2em;
+    top: -1.1em;
 }
 
 .fontawesome-button {

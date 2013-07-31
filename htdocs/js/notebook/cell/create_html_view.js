@@ -10,14 +10,24 @@ function fa_button(which, title)
              });
 }
 
+function editor_height(widget)
+{
+    var lineHeight = widget.renderer.lineHeight;
+    var rows = Math.min(30, widget.getSession().getLength());
+    var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
+    return Math.max(75, newHeight);
+}
+
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
 
     //////////////////////////////////////////////////////////////////////////
     // button bar
+    
+    var insert_cell_button = fa_button("icon-plus-sign", "insert cell");
     var source_button = fa_button("icon-edit", "source");
     var result_button = fa_button("icon-picture", "result");
-    var hide_button   = fa_button("icon-resize-small", "hide");
+    // var hide_button   = fa_button("icon-resize-small", "hide");
     var remove_button = fa_button("icon-trash", "remove");
     var run_md_button = fa_button("icon-play", "run");
 
@@ -31,6 +41,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         el.addClass("button-disabled");
     }
 
+    insert_cell_button.click(function(e) {
+        shell.insert_markdown_cell_before(cell_model.id);
+    });
     source_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             result.show_source();
@@ -40,10 +53,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         if (!$(e.currentTarget).hasClass("button-disabled"))
             result.show_result();
     });
-    hide_button.click(function(e) {
-        if (!$(e.currentTarget).hasClass("button-disabled"))
-            result.hide_all();
-    });
+    // hide_button.click(function(e) {
+    //     if (!$(e.currentTarget).hasClass("button-disabled"))
+    //         result.hide_all();
+    // });
     remove_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             cell_model.parent_model.controller.remove_cell(cell_model);
@@ -67,7 +80,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     var button_float = $("<div class='cell-controls'></div>");
     var col = $('<table/>');
-    $.each([source_button,result_button,hide_button,remove_button,run_md_button],
+    $.each([insert_cell_button, source_button,result_button/*,hide_button*/,remove_button,run_md_button],
            function() {
                col.append($('<tr/>').append($('<td/>').append($(this))));
            });
@@ -82,13 +95,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     notebook_cell_div.append(clear_div);
 
     var markdown_div = $('<div style="position: relative; width:100%; height:100%"></div>');
-    var cell_buttons_div = $('<div style="position: absolute; right:-0.5em; top:-0.5em"></div>');
-    var insert_cell_button = fa_button("icon-plus-sign", "insert cell");
-    inner_div.append(cell_buttons_div);
-    cell_buttons_div.append(insert_cell_button);
-    insert_cell_button.click(function(e) {
-        shell.insert_markdown_cell_before(cell_model.id);
-    });
 
     var ace_div = $('<div style="width:100%; height:100%"></div>');
     inner_div.append(markdown_div);
@@ -100,6 +106,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     widget.setReadOnly(cell_model.parent_model.read_only);
 
     widget.getSession().setMode(new RMode(false, doc, session));
+    widget.getSession().on('change', function() {
+        notebook_cell_div.css({'height': editor_height(widget) + "px"});
+        widget.resize();
+    });
 
     widget.setTheme("ace/theme/chrome");
     widget.getSession().setUseWrapMode(true);
@@ -183,18 +193,48 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
         hide_buttons: function() {
             button_float.css("display", "none");
-            cell_buttons_div.css("display", "none");
         },
         show_buttons: function() {
             button_float.css("display", null);
-            cell_buttons_div.css("display", null);
         },
 
         show_source: function() {
-            notebook_cell_div.css({'height': '70%'});
+            /*
+             * Some explanation for the next poor soul 
+             * that might come across this great madness below:
+             * 
+             * ACE appears to have trouble computing properties such as
+             * renderer.lineHeight. This is unfortunate, since we want
+             * to use lineHeight to determine the size of the widget in the
+             * first place. The only way we got ACE to work with
+             * dynamic sizing was to set up a three-div structure, like so:
+             * 
+             * <div id="1"><div id="2"><div id="3"></div></div></div>
+             * 
+             * set the middle div (id 2) to have a style of "height: 100%"
+             * 
+             * set the outer div (id 1) to have whatever height in pixels you want
+             * 
+             * make sure the entire div structure is on the DOM and is visible
+             * 
+             * call ace's resize function once. (This will update the 
+             * renderer.lineHeight property)
+             * 
+             * Now set the outer div (id 1) to have the desired height as a
+             * funtion of renderer.lineHeight, and call resize again.
+             * 
+             * Easy!
+             * 
+             */
+            // do the two-change dance to make ace happy
+            notebook_cell_div.css({'height': editor_height(widget) + "px"});
+            markdown_div.show();
+            widget.resize(true);
+            notebook_cell_div.css({'height': editor_height(widget) + "px"});
+            widget.resize(true);
             disable(source_button);
             enable(result_button);
-            enable(hide_button);
+            // enable(hide_button);
             enable(remove_button);
             //editor_row.show();
 
@@ -209,7 +249,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             notebook_cell_div.css({'height': ''});
             enable(source_button);
             disable(result_button);
-            enable(hide_button);
+            // enable(hide_button);
             enable(remove_button);
 
             //editor_row.hide();
@@ -223,7 +263,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             notebook_cell_div.css({'height': ''});
             enable(source_button);
             enable(result_button);
-            disable(hide_button);
+            // disable(hide_button);
             enable(remove_button);
 
             //editor_row.hide();
