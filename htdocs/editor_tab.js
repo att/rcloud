@@ -149,7 +149,7 @@ var editor = function () {
             insert_alpha($tree, data, parent);
         }
         else {
-            if(user == rcloud.username()) {
+            if(user == this_user) {
                 parent = $tree.tree('getNodeById', '/' + root);
                 node = insert_alpha($tree, data, parent);
             }
@@ -205,12 +205,14 @@ var editor = function () {
                  });
     }
 
+    var this_user = null;
 
     var result = {
         widget: undefined,
         config: undefined,
         init: function() {
             var that = this;
+            this_user = rcloud.username();
             $("#input-text-source-results-title").css("display", "none");
             $("#input-text-history-results-title").css("display", "none");
             this.create_book_tree_widget();
@@ -234,7 +236,6 @@ var editor = function () {
         create_book_tree_widget: function() {
             var that = this;
             var $tree = $("#editor-book-tree");
-            var this_user = rcloud.username();
             function onCreateLiHandler(node, $li) {
                 var title = $li.find('.title');
                 if (node.last_commit) {
@@ -276,7 +277,6 @@ var editor = function () {
         },
         load_config: function(k) {
             var that = this;
-            var this_user = rcloud.username();
             function defaults() {
                 var ret = {currbook: null,
                            nextwork: 1,
@@ -292,7 +292,6 @@ var editor = function () {
             });
         },
         save_config: function() {
-            var this_user = rcloud.username();
             rcloud.save_user_config(this_user, this.config);
         },
         load_notebook: function(gistname) {
@@ -310,7 +309,6 @@ var editor = function () {
         },
         remove_notebook: function(node) {
             var $tree = $("#editor-book-tree");
-            var this_user = rcloud.username();
             if(node.root == 'alls') {
                 if(node.user === this_user)
                     delete this.config.all_books[node.gistname];
@@ -356,7 +354,7 @@ var editor = function () {
 
             // if we haven't seen this notebook and it belongs to
             // the logged-in user, sqve it to the all-books list
-            if(!upd && user == rcloud.username())
+            if(!upd && user == this_user)
                 this.config.all_books[notebook] = entry;
 
             var data = {label: entry.description,
