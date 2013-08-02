@@ -1,8 +1,10 @@
 var editor = function () {
     // major key is sort_order and minor key is name (label)
-    // sort_order 0 is for headers like [New Notebook]
-    // sort_order 1 is notebooks
-    // sort_order 2 is subfolders
+    var ordering = {
+        HEADER: 0, // like [New Notebook]
+        NOTEBOOK: 1,
+        SUBFOLDER: 2
+    };
     function compare_nodes(a, b) {
         var so = a.sort_order-b.sort_order;
         if(so) return so;
@@ -30,7 +32,7 @@ var editor = function () {
                 root: root,
                 last_commit: attrs.last_commit || 'none',
                 id: '/' + root + '/' + username + '/' + name,
-                sort_order: 1
+                sort_order: ordering.NOTEBOOK
             };
             notebook_nodes.push(result);
         }
@@ -48,7 +50,7 @@ var editor = function () {
                 notebook_nodes.push({
                     label: "[New Notebook]",
                     id: "newbook",
-                    sort_order: 0
+                    sort_order: ordering.HEADER
                 });
             }
             notebook_nodes = notebook_nodes.concat(convert_notebook_set('interests', username, notebooks_config));
@@ -59,7 +61,7 @@ var editor = function () {
                 var node = {
                     label: someone_elses(username),
                     id: '/interests/' + username,
-                    sort_order: 2,
+                    sort_order: ordering.SUBFOLDER,
                     children: notebook_nodes.sort(compare_nodes)
                 };
                 user_nodes.push(node);
@@ -91,7 +93,7 @@ var editor = function () {
                         var node = {
                             label: someone_elses(username),
                             id: '/alls/' + username,
-                            sort_order: 2,
+                            sort_order: ordering.SUBFOLDER,
                             children: notebook_nodes.sort(compare_nodes)
                         };
                         user_nodes.push(node);
@@ -164,7 +166,7 @@ var editor = function () {
                     var pdat = {
                         label: someone_elses(user),
                         id: '/' + root + '/' + user,
-                        sort_order: 2
+                        sort_order: ordering.SUBFOLDER
                     };
                     var children = [data];
                     var user_folder = insert_alpha($tree, pdat, parent);
@@ -359,7 +361,7 @@ var editor = function () {
 
             var data = {label: entry.description,
                         last_commit: entry.last_commit,
-                        sort_order: 1};
+                        sort_order: ordering.NOTEBOOK};
 
             var $tree = $("#editor-book-tree");
             var node = update_tree($tree, 'interests', user, notebook, data);
