@@ -151,7 +151,7 @@ var editor = function () {
             // at all, so.. blunt stupid approach here:
             parent = node.parent;
             $tree.tree('removeNode', node);
-            insert_alpha($tree, data, parent);
+            node = insert_alpha($tree, data, parent);
         }
         else {
             if(user == this_user) {
@@ -290,7 +290,8 @@ var editor = function () {
                 }
             }
             $tree.tree({
-                onCreateLi: onCreateLiHandler
+                onCreateLi: onCreateLiHandler,
+                selectable: true
             });
             $tree.bind(
                 'tree.click', function(event) {
@@ -387,7 +388,8 @@ var editor = function () {
                 this.config.all_books[gistname] = entry;
 
             var node = this.update_tree_entry(user, gistname, entry);
-            // $tree.tree('selectNode', node); // currently disabled (tricky!)
+            var $tree = $("#editor-book-tree");
+            $tree.tree('selectNode', node);
         },
         update_tree_entry: function(user, gistname, entry) {
             var data = {label: entry.description,
