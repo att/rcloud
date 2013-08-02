@@ -55,6 +55,7 @@ Notebook.create_controller = function(model)
         },
         remove_cell: function(cell_model) {
             var changes = model.remove_cell(cell_model);
+            shell.input_widget.focus(); // there must be a better way
             this.update_notebook(changes);
         },
         clear: function() {

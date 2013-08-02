@@ -19,7 +19,6 @@ dependencies_bundle.js: \
 	js/tree.jquery.js \
 	js/jquery-ui-1.8.18.custom.min.js \
 	js/underscore-min.js \
-	js/jquery.terminal-0.4.7.js \
 	js/d3.v2.js \
 	js/lux.js \
 	js/crossfilter.js \

@@ -3,30 +3,47 @@
 //////////////////////////////////////////////////////////////////////////////
 
 var shell = (function() {
-    var terminal = $('#term_demo').terminal(function(command, term) {
-        if (command !== '') {
-            term.clear();
-            result.new_interactive_cell(command).execute();
+    function setup_command_entry(entry_div) {
+        function set_ace_height() {
+            entry_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
+            widget.resize();
         }
-    }, {
-        exit: false,
-        greetings: false
-    });
+        entry_div.css({'background-color': "#E8F1FA"});
+        var widget = ace.edit(entry_div[0]);
+        set_ace_height();
+        var RMode = require("ace/mode/r").Mode;
+        var session = widget.getSession();
+        var doc = session.doc;
 
-    // hacky workaround, but whatever.
-    $('#output').click(function(x) {
-        terminal.disable();
-    });
-    $("#term_demo").click(function(x) {
-        d3.select("#term_helper")
-            .transition()
-            .duration(1000)
-            .style("opacity", "0")
-            .each("end", function() {
-                d3.select(this).style("display", "none");
-            });
-    });
+        session.setMode(new RMode(false, doc, session));
+        session.on('change', set_ace_height);
 
+        widget.setTheme("ace/theme/chrome");
+        session.setUseWrapMode(true);
+        widget.resize();
+        input_widget = widget;
+
+        widget.commands.addCommand({
+            name: 'execute',
+            bindKey: {
+                win: 'Return',
+                mac: 'Return',
+                sender: 'editor'
+            },
+            exec: function(widget, args, request) {
+                var code = session.getValue();
+                if(code.length) {
+                    result.new_interactive_cell(code).execute();
+                    session.setValue('');
+                }
+            }
+        });
+    }
+
+    var entry_div = $("#command-entry");
+    var input_widget = null;
+    if(entry_div.length)
+        setup_command_entry(entry_div);
 
     function handle_scatterplot(data) {
         function transpose(ar) {
@@ -156,6 +173,7 @@ var shell = (function() {
         $("#notebook-title").text(notebook.description);
         show_fork_or_input_elements();
         this.gistname = notebook.id;
+        this.input_widget.focus(); // surely not the right way to do this
         k && k(notebook);
     }
 
@@ -165,6 +183,7 @@ var shell = (function() {
         _.each(this.notebook.view.sub_views, function(cell_view) {
             cell_view.show_source();
         });
+        this.input_widget.focus(); // surely not the right way to do this
         k && k(notebook);
     }
 
@@ -175,7 +194,7 @@ var shell = (function() {
             view: notebook_view,
             controller: notebook_controller
         },
-        terminal: terminal,
+        input_widget: input_widget,
         gistname: undefined,
         detachable_div: function(div) {
             var on_remove = function() {};
@@ -238,6 +257,7 @@ var shell = (function() {
 
     $("#run-notebook").click(function() {
         result.notebook.controller.run_all();
+        result.input_widget.focus(); // surely not the right way to do this
     });
     return result;
 })();

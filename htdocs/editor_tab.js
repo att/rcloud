@@ -243,14 +243,6 @@ var editor = function () {
                 }
                 if(node.gistname) {
                     var commands = $('<span/>', {class: 'commands'});
-                    if(node.root==='interests' || node.user===this_user) {
-                        var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', remove_icon_style);
-                        remove.click(function() {
-                            $(this).tooltip('hide');
-                            that.remove_notebook(node);
-                        });
-                        commands.append(remove);
-                    };
                     if(node.user===this_user) {
                         var make_private = ui_utils.fa_button('icon-eye-close', 'make private', 'private', icon_style),
                             make_public = ui_utils.fa_button('icon-eye-open', 'make public', 'public', icon_style);
@@ -268,8 +260,16 @@ var editor = function () {
                         });
                         commands.append(make_private, make_public);
                     }
+                    if(node.root==='interests' || node.user===this_user) {
+                        var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', remove_icon_style);
+                        remove.click(function() {
+                            $(this).tooltip('hide');
+                            that.remove_notebook(node);
+                        });
+                        commands.append(remove);
+                    };
                     commands.hide();
-                    title.append(commands);
+                    title.append('&nbsp;', commands);
                     $li.hover(
                         function() {
                             $('.commands', this).show();
@@ -312,7 +312,8 @@ var editor = function () {
             rcloud.save_user_config(this_user, this.config);
         },
         load_notebook: function(gistname) {
-            shell.load_notebook(gistname, _.bind(result.notebook_loaded,this));
+            shell.load_notebook(gistname,
+                _.bind(result.notebook_loaded,this));
         },
         new_notebook: function() {
             if(isNaN(this.config.nextwork))
