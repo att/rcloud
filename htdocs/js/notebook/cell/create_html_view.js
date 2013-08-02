@@ -1,35 +1,17 @@
 (function() {
 
-function fa_button(which, title)
-{
-    return $("<span class='fontawesome-button'><i class='" +
-             which +
-             "'></i></span>").tooltip({
-                 title: title,
-                 delay: { show: 250, hide: 0 }
-             });
-}
-
-function editor_height(widget)
-{
-    var lineHeight = widget.renderer.lineHeight;
-    var rows = Math.min(30, widget.getSession().getLength());
-    var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
-    return Math.max(75, newHeight);
-}
-
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
 
     //////////////////////////////////////////////////////////////////////////
     // button bar
-    
-    var insert_cell_button = fa_button("icon-plus-sign", "insert cell");
-    var source_button = fa_button("icon-edit", "source");
-    var result_button = fa_button("icon-picture", "result");
-    // var hide_button   = fa_button("icon-resize-small", "hide");
-    var remove_button = fa_button("icon-trash", "remove");
-    var run_md_button = fa_button("icon-play", "run");
+
+    var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
+    var source_button = ui_utils.fa_button("icon-edit", "source");
+    var result_button = ui_utils.fa_button("icon-picture", "result");
+    // var hide_button   = ui_utils.fa_button("icon-resize-small", "hide");
+    var remove_button = ui_utils.fa_button("icon-trash", "remove");
+    var run_md_button = ui_utils.fa_button("icon-play", "run");
 
     function update_model() {
         return cell_model.content(widget.getSession().getValue());

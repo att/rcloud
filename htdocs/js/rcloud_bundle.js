@@ -1062,6 +1062,41 @@ rcloud.rename_notebook = function(id, new_name, k)
         rcloud_github_handler("rcloud.rename.notebook", k)
     );
 };
+var ui_utils = {};
+
+ui_utils.fa_button = function(which, title, classname, style)
+{
+    var span = $('<span/>', {class: 'fontawesome-button ' + (classname || '')});
+    var icon = $('<i/>', {class: which});
+    if(style)
+        icon.css(style);
+    span.append(icon)
+        .tooltip({
+            title: title,
+            delay: { show: 250, hide: 0 }
+        });
+    return span;
+};
+/*
+function(which, title)
+{
+    return $("<span class='fontawesome-button'><i class='" +
+             which +
+             "'></i></span>").tooltip({
+                 title: title,
+                 delay: { show: 250, hide: 0 }
+             });
+}
+*/
+
+ui_utils.editor_height = function(widget)
+{
+    var lineHeight = widget.renderer.lineHeight;
+    var rows = Math.min(30, widget.getSession().getLength());
+    var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
+    return Math.max(75, newHeight);
+};
+
 Notebook = {};
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1071,36 +1106,18 @@ Notebook = {};
 Notebook.Cell = {};
 (function() {
 
-function fa_button(which, title)
-{
-    return $("<span class='fontawesome-button'><i class='" +
-             which +
-             "'></i></span>").tooltip({
-                 title: title,
-                 delay: { show: 250, hide: 0 }
-             });
-}
-
-function editor_height(widget)
-{
-    var lineHeight = widget.renderer.lineHeight;
-    var rows = Math.min(30, widget.getSession().getLength());
-    var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
-    return Math.max(75, newHeight);
-}
-
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
 
     //////////////////////////////////////////////////////////////////////////
     // button bar
-    
-    var insert_cell_button = fa_button("icon-plus-sign", "insert cell");
-    var source_button = fa_button("icon-edit", "source");
-    var result_button = fa_button("icon-picture", "result");
-    // var hide_button   = fa_button("icon-resize-small", "hide");
-    var remove_button = fa_button("icon-trash", "remove");
-    var run_md_button = fa_button("icon-play", "run");
+
+    var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
+    var source_button = ui_utils.fa_button("icon-edit", "source");
+    var result_button = ui_utils.fa_button("icon-picture", "result");
+    // var hide_button   = ui_utils.fa_button("icon-resize-small", "hide");
+    var remove_button = ui_utils.fa_button("icon-trash", "remove");
+    var run_md_button = ui_utils.fa_button("icon-play", "run");
 
     function update_model() {
         return cell_model.content(widget.getSession().getValue());
@@ -1180,14 +1197,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var doc = session.doc;
     widget.setReadOnly(cell_model.parent_model.read_only);
 
-    widget.getSession().setMode(new RMode(false, doc, session));
-    widget.getSession().on('change', function() {
-        notebook_cell_div.css({'height': editor_height(widget) + "px"});
+    session.setMode(new RMode(false, doc, session));
+    session.on('change', function() {
+        notebook_cell_div.css({'height': ui_utils.editor_height(widget) + "px"});
         widget.resize();
     });
 
     widget.setTheme("ace/theme/chrome");
-    widget.getSession().setUseWrapMode(true);
+    session.setUseWrapMode(true);
     widget.resize();
 
     widget.commands.addCommand({
@@ -1302,10 +1319,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
              * 
              */
             // do the two-change dance to make ace happy
-            notebook_cell_div.css({'height': editor_height(widget) + "px"});
+            notebook_cell_div.css({'height': ui_utils.editor_height(widget) + "px"});
             markdown_div.show();
             widget.resize(true);
-            notebook_cell_div.css({'height': editor_height(widget) + "px"});
+            notebook_cell_div.css({'height': ui_utils.editor_height(widget) + "px"});
             widget.resize(true);
             disable(source_button);
             enable(result_button);
