@@ -371,26 +371,19 @@ var editor = function () {
         },
         update_notebook_status: function(user, gistname, status) {
             // this is almost a task for d3 or mvc on its own
-            var iu = this.config.interests[user], entry, upd, new_user;
-            if(!iu) {
+            var iu = this.config.interests[user];
+            if(!iu)
                 iu = this.config.interests[user] = {};
-                new_user = true;
-            }
-            if(iu[gistname]) {
-                entry = iu[gistname];
-                upd = true;
-            }
-            else {
-                entry = iu[gistname] = {};
-                upd = false;
-            }
+
+            var entry = iu[gistname] || this.config.all_books[gistname] || {};
+
             entry.description = status.description;
             entry.last_commit = status.last_commit;
             entry.visibility = entry.visibility || 'public';
 
-            // if we haven't seen this notebook and it belongs to
-            // the logged-in user, save it to the all-books list
-            if(!upd && user == this_user)
+            // write back (maybe somewhat redundant)
+            iu[gistname] = entry;
+            if(user === this_user)
                 this.config.all_books[gistname] = entry;
 
             var node = this.update_tree_entry(user, gistname, entry);
