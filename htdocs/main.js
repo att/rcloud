@@ -47,12 +47,13 @@ function main_init() {
     init_shareable_link_box();
     init_editable_title_box();
     init_fork_button();
+
     rclient = RClient.create({
         debug: false,
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
         on_connect: function() {
             $("#new-md-cell-button").click(function() {
-                shell.terminal.disable();
+                // shell.terminal.disable(); // what were these for?
                 shell.new_markdown_cell("", "markdown");
                 var vs = shell.notebook.view.sub_views;
                 vs[vs.length-1].show_source();
@@ -64,7 +65,7 @@ function main_init() {
             });
             $(".collapse").collapse();
             $("#input-text-search").click(function() {
-                shell.terminal.disable();
+                // shell.terminal.disable(); // what were these for?
             });
             rcloud.init_client_side_data();
 

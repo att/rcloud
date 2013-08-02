@@ -1077,19 +1077,8 @@ ui_utils.fa_button = function(which, title, classname, style)
         });
     return span;
 };
-/*
-function(which, title)
-{
-    return $("<span class='fontawesome-button'><i class='" +
-             which +
-             "'></i></span>").tooltip({
-                 title: title,
-                 delay: { show: 250, hide: 0 }
-             });
-}
-*/
 
-ui_utils.editor_height = function(widget)
+ui_utils.ace_editor_height = function(widget)
 {
     var lineHeight = widget.renderer.lineHeight;
     var rows = Math.min(30, widget.getSession().getLength());
@@ -1199,7 +1188,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
-        notebook_cell_div.css({'height': ui_utils.editor_height(widget) + "px"});
+        notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
         widget.resize();
     });
 
@@ -1292,37 +1281,37 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
         show_source: function() {
             /*
-             * Some explanation for the next poor soul 
+             * Some explanation for the next poor soul
              * that might come across this great madness below:
-             * 
+             *
              * ACE appears to have trouble computing properties such as
              * renderer.lineHeight. This is unfortunate, since we want
              * to use lineHeight to determine the size of the widget in the
              * first place. The only way we got ACE to work with
              * dynamic sizing was to set up a three-div structure, like so:
-             * 
+             *
              * <div id="1"><div id="2"><div id="3"></div></div></div>
-             * 
+             *
              * set the middle div (id 2) to have a style of "height: 100%"
-             * 
+             *
              * set the outer div (id 1) to have whatever height in pixels you want
-             * 
+             *
              * make sure the entire div structure is on the DOM and is visible
-             * 
-             * call ace's resize function once. (This will update the 
+             *
+             * call ace's resize function once. (This will update the
              * renderer.lineHeight property)
-             * 
+             *
              * Now set the outer div (id 1) to have the desired height as a
              * funtion of renderer.lineHeight, and call resize again.
-             * 
+             *
              * Easy!
-             * 
+             *
              */
             // do the two-change dance to make ace happy
-            notebook_cell_div.css({'height': ui_utils.editor_height(widget) + "px"});
+            notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
             markdown_div.show();
             widget.resize(true);
-            notebook_cell_div.css({'height': ui_utils.editor_height(widget) + "px"});
+            notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
             widget.resize(true);
             disable(source_button);
             enable(result_button);
@@ -1683,6 +1672,7 @@ Notebook.create_controller = function(model)
         },
         remove_cell: function(cell_model) {
             var changes = model.remove_cell(cell_model);
+            shell.input_widget.focus(); // there must be a better way
             this.update_notebook(changes);
         },
         clear: function() {
