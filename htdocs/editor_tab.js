@@ -198,19 +198,6 @@ var editor = function () {
         return name + "'s Notebooks";
     }
 
-    function fa_button(which, classname, title, size)
-    {
-        size = size || '90%';
-        var span = $('<span/>', {class: 'fontawesome-button ' + classname});
-        span.append($('<i/>', {class: which})
-                    .css({'line-height': '90%',
-                          'font-size': size}))
-            .tooltip({
-                title: title,
-                delay: { show: 250, hide: 0 }
-            });
-        return span;
-    }
 
     var this_user = null;
 
@@ -243,6 +230,9 @@ var editor = function () {
         create_book_tree_widget: function() {
             var that = this;
             var $tree = $("#editor-book-tree");
+            var icon_style = {'line-height': '90%'};
+            var remove_icon_style = {'line-height': '90%', 'font-size': '75%'};
+
             function onCreateLiHandler(node, $li) {
                 var title = $li.find('.title');
                 if(node.visibility==='private')
@@ -254,7 +244,7 @@ var editor = function () {
                 if(node.gistname) {
                     var commands = $('<span/>', {class: 'commands'});
                     if(node.root==='interests' || node.user===this_user) {
-                        var remove = fa_button('icon-remove', 'remove', 'remove', '75%');
+                        var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', remove_icon_style);
                         remove.click(function() {
                             $(this).tooltip('hide');
                             that.remove_notebook(node);
@@ -262,8 +252,8 @@ var editor = function () {
                         commands.append(remove);
                     };
                     if(node.user===this_user) {
-                        var make_private = fa_button('icon-eye-close', 'private', 'make private'),
-                            make_public = fa_button('icon-eye-open', 'public', 'make public');
+                        var make_private = ui_utils.fa_button('icon-eye-close', 'make private', 'private', icon_style),
+                            make_public = ui_utils.fa_button('icon-eye-open', 'make public', 'public', icon_style);
                         if(node.visibility=='public')
                             make_public.hide();
                         else
