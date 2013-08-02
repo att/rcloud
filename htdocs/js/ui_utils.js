@@ -14,7 +14,7 @@ ui_utils.fa_button = function(which, title, classname, style)
     return span;
 };
 
-ui_utils.editor_height = function(widget)
+ui_utils.ace_editor_height = function(widget)
 {
     var lineHeight = widget.renderer.lineHeight;
     var rows = Math.min(30, widget.getSession().getLength());

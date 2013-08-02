@@ -213,10 +213,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
              *
              */
             // do the two-change dance to make ace happy
-            notebook_cell_div.css({'height': editor_height(widget) + "px"});
+            notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
             markdown_div.show();
             widget.resize(true);
-            notebook_cell_div.css({'height': editor_height(widget) + "px"});
+            notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
             widget.resize(true);
             disable(source_button);
             enable(result_button);
