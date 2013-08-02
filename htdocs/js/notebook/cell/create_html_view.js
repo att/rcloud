@@ -91,14 +91,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var doc = session.doc;
     widget.setReadOnly(cell_model.parent_model.read_only);
 
-    widget.getSession().setMode(new RMode(false, doc, session));
-    widget.getSession().on('change', function() {
-        notebook_cell_div.css({'height': editor_height(widget) + "px"});
+    session.setMode(new RMode(false, doc, session));
+    session.on('change', function() {
+        notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
         widget.resize();
     });
 
     widget.setTheme("ace/theme/chrome");
-    widget.getSession().setUseWrapMode(true);
+    session.setUseWrapMode(true);
     widget.resize();
 
     widget.commands.addCommand({
@@ -186,31 +186,31 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
         show_source: function() {
             /*
-             * Some explanation for the next poor soul 
+             * Some explanation for the next poor soul
              * that might come across this great madness below:
-             * 
+             *
              * ACE appears to have trouble computing properties such as
              * renderer.lineHeight. This is unfortunate, since we want
              * to use lineHeight to determine the size of the widget in the
              * first place. The only way we got ACE to work with
              * dynamic sizing was to set up a three-div structure, like so:
-             * 
+             *
              * <div id="1"><div id="2"><div id="3"></div></div></div>
-             * 
+             *
              * set the middle div (id 2) to have a style of "height: 100%"
-             * 
+             *
              * set the outer div (id 1) to have whatever height in pixels you want
-             * 
+             *
              * make sure the entire div structure is on the DOM and is visible
-             * 
-             * call ace's resize function once. (This will update the 
+             *
+             * call ace's resize function once. (This will update the
              * renderer.lineHeight property)
-             * 
+             *
              * Now set the outer div (id 1) to have the desired height as a
              * funtion of renderer.lineHeight, and call resize again.
-             * 
+             *
              * Easy!
-             * 
+             *
              */
             // do the two-change dance to make ace happy
             notebook_cell_div.css({'height': editor_height(widget) + "px"});
