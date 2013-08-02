@@ -345,7 +345,7 @@ var editor = function () {
                 if(node.user!==this_user && _.isEmpty(this.config.interests[node.user])) {
                     delete this.config.interests[node.user];
                     var id = '/interests/' + node.user;
-                    node = $tree.tree('getNodeById', id);
+                    $tree.tree('removeNode', $tree.tree('getNodeById', id));
                 }
             }
             $tree.tree('removeNode', node);
