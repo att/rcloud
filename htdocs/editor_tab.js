@@ -199,7 +199,7 @@ var editor = function () {
                  title +
                  "'><i class='" +
                  which +
-                 "' style='line-height:90%;'></i></span>").tooltip({
+                 "' style='line-height:90%; font-size:75%; '></i></span>").tooltip({
                      title: title,
                      delay: { show: 250, hide: 0 }
                  });
@@ -241,21 +241,26 @@ var editor = function () {
                     title.after('<span style="float: right" id="date">'
                                              + display_date(node.last_commit) + '</span>');
                 }
-                if(node.gistname && (node.root==='interests' || node.user===this_user)) {
-                    var remove = fa_button("icon-trash", "remove").hide();
-                    remove.click(function() {
-                        $(this).tooltip("hide");
-                        that.remove_notebook(node);
-                    });
-                    title.append(remove);
-                    title.hover(
+                if(node.gistname) {
+                    var commands = $('<span/>', {class: 'commands'});
+                    if(node.root==='interests' || node.user===this_user) {
+                        var remove = fa_button("icon-remove", "remove");
+                        remove.click(function() {
+                            $(this).tooltip("hide");
+                            that.remove_notebook(node);
+                        });
+                        commands.append(remove);
+                    };
+                    commands.hide();
+                    title.append(commands);
+                    $li.hover(
                         function() {
-                            $('.remove', this).show();
+                            $('.commands', this).show();
                         },
                         function() {
-                            $('.remove', this).hide();
+                            $('.commands', this).hide();
                         });
-                };
+                }
             }
             $tree.tree({
                 onCreateLi: onCreateLiHandler
