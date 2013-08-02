@@ -25,11 +25,14 @@ var editor = function () {
         var notebook_nodes = [];
         for(var name in set) {
             var attrs = set[name];
+            if(username!==this_user && root==='alls' && attrs.visibility==='private')
+                continue;
             var result = {
                 label: attrs.description,
                 gistname: name,
                 user: username,
                 root: root,
+                visibility: attrs.visibility || 'public',
                 last_commit: attrs.last_commit || 'none',
                 id: '/' + root + '/' + username + '/' + name,
                 sort_order: ordering.NOTEBOOK
@@ -195,16 +198,18 @@ var editor = function () {
         return name + "'s Notebooks";
     }
 
-    function fa_button(which, title)
+    function fa_button(which, classname, title, size)
     {
-        return $("<span class='fontawesome-button " +
-                 title +
-                 "'><i class='" +
-                 which +
-                 "' style='line-height:90%; font-size:75%; '></i></span>").tooltip({
-                     title: title,
-                     delay: { show: 250, hide: 0 }
-                 });
+        size = size || '90%';
+        var span = $('<span/>', {class: 'fontawesome-button ' + classname});
+        span.append($('<i/>', {class: which})
+                    .css({'line-height': '90%',
+                          'font-size': size}))
+            .tooltip({
+                title: title,
+                delay: { show: 250, hide: 0 }
+            });
+        return span;
     }
 
     var this_user = null;
@@ -240,6 +245,8 @@ var editor = function () {
             var $tree = $("#editor-book-tree");
             function onCreateLiHandler(node, $li) {
                 var title = $li.find('.title');
+                if(node.visibility==='private')
+                    title.wrap('<i/>');
                 if (node.last_commit) {
                     title.after('<span style="float: right" id="date">'
                                              + display_date(node.last_commit) + '</span>');
@@ -247,13 +254,30 @@ var editor = function () {
                 if(node.gistname) {
                     var commands = $('<span/>', {class: 'commands'});
                     if(node.root==='interests' || node.user===this_user) {
-                        var remove = fa_button("icon-remove", "remove");
+                        var remove = fa_button('icon-remove', 'remove', 'remove', '75%');
                         remove.click(function() {
-                            $(this).tooltip("hide");
+                            $(this).tooltip('hide');
                             that.remove_notebook(node);
                         });
                         commands.append(remove);
                     };
+                    if(node.user===this_user) {
+                        var make_private = fa_button('icon-eye-close', 'private', 'make private'),
+                            make_public = fa_button('icon-eye-open', 'public', 'make public');
+                        if(node.visibility=='public')
+                            make_public.hide();
+                        else
+                            make_private.hide();
+                        make_private.click(function() {
+                            $(this).tooltip('hide');
+                            that.set_visibility(node, 'private');
+                        });
+                        make_public.click(function() {
+                            $(this).tooltip('hide');
+                            that.set_visibility(node, 'public');
+                        });
+                        commands.append(make_private, make_public);
+                    }
                     commands.hide();
                     title.append(commands);
                     $li.hover(
@@ -270,7 +294,7 @@ var editor = function () {
             });
             $tree.bind(
                 'tree.click', function(event) {
-                    if (event.node.id === "newbook")
+                    if (event.node.id === 'newbook')
                         that.new_notebook();
                     else if(event.node.gistname)
                         that.load_notebook(event.node.gistname);
@@ -311,7 +335,7 @@ var editor = function () {
         },
         remove_notebook: function(node) {
             var $tree = $("#editor-book-tree");
-            if(node.root == 'alls') {
+            if(node.root === 'alls') {
                 if(node.user === this_user)
                     delete this.config.all_books[node.gistname];
             }
@@ -326,6 +350,15 @@ var editor = function () {
             $tree.tree('removeNode', node);
             this.save_config();
         },
+        set_visibility: function(node, visibility) {
+            if(node.user !== this_user)
+                throw "attempt to set visibility on notebook not mine";
+            var $tree = $("#editor-book-tree");
+            var entry = this.config.interests[this_user][node.gistname];
+            entry.visibility = visibility;
+            this.config.all_books[node.gistname] = entry;
+            this.update_tree_entry(this_user, node.gistname, entry);
+        },
         fork_notebook: function(gistname) {
             shell.fork_notebook(gistname, _.bind(result.notebook_loaded,this));
         },
@@ -336,39 +369,45 @@ var editor = function () {
                                         {description: result.description,
                                          last_commit: result.updated_at || result.history[0].committed_at});
         },
-        update_notebook_status: function(user, notebook, status) {
+        update_notebook_status: function(user, gistname, status) {
             // this is almost a task for d3 or mvc on its own
             var iu = this.config.interests[user], entry, upd, new_user;
             if(!iu) {
                 iu = this.config.interests[user] = {};
                 new_user = true;
             }
-            if(iu[notebook]) {
-                entry = iu[notebook];
+            if(iu[gistname]) {
+                entry = iu[gistname];
                 upd = true;
             }
             else {
-                entry = iu[notebook] = {};
+                entry = iu[gistname] = {};
                 upd = false;
             }
             entry.description = status.description;
             entry.last_commit = status.last_commit;
+            entry.visibility = entry.visibility || 'public';
 
             // if we haven't seen this notebook and it belongs to
-            // the logged-in user, sqve it to the all-books list
+            // the logged-in user, save it to the all-books list
             if(!upd && user == this_user)
-                this.config.all_books[notebook] = entry;
+                this.config.all_books[gistname] = entry;
 
+            var node = this.update_tree_entry(user, gistname, entry);
+            // $tree.tree('selectNode', node); // currently disabled (tricky!)
+        },
+        update_tree_entry: function(user, gistname, entry) {
             var data = {label: entry.description,
                         last_commit: entry.last_commit,
-                        sort_order: ordering.NOTEBOOK};
+                        sort_order: ordering.NOTEBOOK,
+                        visibility: entry.visibility};
 
             var $tree = $("#editor-book-tree");
-            var node = update_tree($tree, 'interests', user, notebook, data);
-            // $tree.tree('selectNode', node); // currently disabled (tricky!)
-            update_tree($tree, 'alls', user, notebook, data);
+            var node = update_tree($tree, 'interests', user, gistname, data);
+            update_tree($tree, 'alls', user, gistname, data);
 
             this.save_config();
+            return node;
         },
         search: function(search_string) {
             var that = this;
