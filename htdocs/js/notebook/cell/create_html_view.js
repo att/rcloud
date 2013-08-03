@@ -62,12 +62,16 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     var button_float = $("<div class='cell-controls'></div>");
     var col = $('<table/>');
-    $.each([insert_cell_button, source_button,result_button/*,hide_button*/,remove_button,run_md_button],
+    $.each([source_button,result_button/*,hide_button*/,remove_button,run_md_button],
            function() {
                col.append($('<tr/>').append($('<td/>').append($(this))));
            });
     button_float.append(col);
     notebook_cell_div.append(button_float);
+
+    var insert_button_float = $("<div class='cell-insert-control'></div>");
+    insert_button_float.append(insert_cell_button);
+    notebook_cell_div.parent.append(insert_button_float);
 
     //////////////////////////////////////////////////////////////////////////
 
