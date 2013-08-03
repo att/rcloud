@@ -181,8 +181,14 @@ rect.frame {
 }
 
 .notebook-cell .cell-controls {
-    position:absolute;
+    position: absolute;
     right: -2em;
+    top: -0em;
+}
+
+notebook-cell .cell-insert-control {
+    position: absolute;
+    right: 0.1em;
     top: -1.1em;
 }
 
