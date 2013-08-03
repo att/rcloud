@@ -242,7 +242,7 @@ var editor = function () {
                                              + display_date(node.last_commit) + '</span>');
                 }
                 if(node.gistname) {
-                    var commands = $('<span/>', {class: 'commands'});
+                    var commands = $('<span/>', {class: 'notebook-commands'});
                     if(node.user===this_user) {
                         var make_private = ui_utils.fa_button('icon-eye-close', 'make private', 'private', icon_style),
                             make_public = ui_utils.fa_button('icon-eye-open', 'make public', 'public', icon_style);
@@ -272,10 +272,10 @@ var editor = function () {
                     title.append('&nbsp;', commands);
                     $li.hover(
                         function() {
-                            $('.commands', this).show();
+                            $('.notebook-commands', this).show();
                         },
                         function() {
-                            $('.commands', this).hide();
+                            $('.notebook-commands', this).hide();
                         });
                 }
             }

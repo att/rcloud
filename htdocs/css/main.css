@@ -206,6 +206,10 @@ rect.frame {
     overflow-y: scroll;
 }
 
+.notebook-commands .fontawesome-button {
+    margin: 0;
+}
+
 /* Ace sets its z-index to something obscene,
    and we need to one-up that obscenity with our own button float; Twitter's
    bootstrap tooltip needs to reflect that and one-up everything else.
