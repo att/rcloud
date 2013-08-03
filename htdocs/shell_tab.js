@@ -190,6 +190,7 @@ var shell = (function() {
         $("#notebook-title").text(notebook.description);
         show_fork_or_input_elements();
         this.gistname = notebook.id;
+        this.version = null;
         this.input_widget.focus(); // surely not the right way to do this
         k && k(notebook);
     }
@@ -213,6 +214,7 @@ var shell = (function() {
         },
         input_widget: input_widget,
         gistname: undefined,
+        version: null,
         detachable_div: function(div) {
             var on_remove = function() {};
             var on_detach = function() {};
@@ -258,6 +260,7 @@ var shell = (function() {
             // but not in new.  and we have to set this here to signal
             // editor's init load config callback to override the currbook
             this.gistname = gistname;
+            this.version = version;
             this.notebook.controller.load_notebook(gistname, version, _.bind(on_load, this, k));
         }, new_notebook: function(desc, k) {
             var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
@@ -267,6 +270,7 @@ var shell = (function() {
             notebook_model.read_only = false;
             this.notebook.controller.fork_notebook(gistname, version, function(notebook) {
                 that.gistname = notebook.id;
+                that.version = null;
                 on_load.call(that, k, notebook);
             });
         }

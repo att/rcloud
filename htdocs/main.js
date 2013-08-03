@@ -25,7 +25,7 @@ function init_editable_title_box() {
 
 function init_fork_button() {
     $("#fork-notebook").click(function() {
-        editor.fork_notebook(shell.gistname);
+        editor.fork_notebook(shell.gistname, shell.version);
     });
 }
 
