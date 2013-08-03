@@ -360,7 +360,7 @@ var editor = function () {
             this.update_tree_entry(this_user, node.gistname, entry);
         },
         fork_notebook: function(gistname) {
-            shell.fork_notebook(gistname, _.bind(result.notebook_loaded, this, null));
+            shell.fork_notebook(gistname, null, _.bind(result.notebook_loaded, this, null));
         },
         show_history: function(node) {
             ;
