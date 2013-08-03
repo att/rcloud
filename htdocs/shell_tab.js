@@ -23,7 +23,7 @@ var shell = (function() {
         widget.resize();
         input_widget = widget;
 
-        widget.commands.addCommand({
+        widget.commands.addCommands([{
             name: 'execute',
             bindKey: {
                 win: 'Return',
@@ -37,7 +37,24 @@ var shell = (function() {
                     session.setValue('');
                 }
             }
-        });
+        }, {
+            name: 'execute-selection-or-line',
+            bindKey: {
+                win: 'Alt-Return',
+                mac: 'Alt-Return',
+                sender: 'editor'
+            },
+            exec: function(widget, args, request) {
+                var code = session.getTextRange(widget.getSelectionRange());
+                if(code.length==0) {
+                    var pos = widget.getCursorPosition();
+                    var Range = require('ace/range').Range;
+                    var range = new Range(pos.row, 0, pos.row+1, 0);
+                    code = session.getTextRange(range);
+                }
+                result.new_interactive_cell(code).execute();
+            }
+        }]);
     }
 
     var entry_div = $("#command-entry");
