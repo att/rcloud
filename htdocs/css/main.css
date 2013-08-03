@@ -202,7 +202,7 @@ rect.frame {
 }
 
 .notebook-tree {
-    height: 500px;
+    height: 450px;
     overflow-y: scroll;
 }
 
