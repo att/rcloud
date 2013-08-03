@@ -906,12 +906,12 @@ RClient = {
             r_funcall: function(function_name) {
                 function output_one(result, val) {
                     var t = typeof val;
-                    if (t === "string") {
+                    if (val === null)
+                        result.push('NULL');
+                    else if (t === "string")
                         result.push(escape_r_literal_string(val));
-                    }
-                    else if (t == "number") {
+                    else if (t == "number")
                         result.push(String(val));
-                    }
                     else throw "unsupported r_funcall argument type " + t;
                 }
                 var result = [function_name, "("];
@@ -1012,7 +1012,7 @@ function rcloud_github_handler(command, k) {
 rcloud.load_notebook = function(id, version, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.get.notebook", id),
+        rclient.r_funcall("rcloud.get.notebook", id, version),
         rcloud_github_handler("rcloud.get.notebook " + id, k)
     );
 };
@@ -1642,11 +1642,11 @@ Notebook.create_controller = function(model)
             $('.ace_cursor-layer').show();
     }
 
-    function on_load(k, notebook) {
+    function on_load(k, version, notebook) {
         this.clear();
         // is there anything else to gist permissions?
         // certainly versioning figures in here too
-        model.read_only = notebook.user.login != rcloud.username();
+        model.read_only = version != null || notebook.user.login != rcloud.username();
         var parts = {}; // could rely on alphabetic input instead of gathering
         _.each(notebook.files, function (file) {
             var filename = file.filename;
@@ -1684,7 +1684,7 @@ Notebook.create_controller = function(model)
         },
         load_notebook: function(gistname, version, k) {
             var that = this;
-            rcloud.load_notebook(gistname, version, _.bind(on_load, this, k));
+            rcloud.load_notebook(gistname, version || null, _.bind(on_load, this, k, version));
         },
         create_notebook: function(content, k) {
             var that = this;
