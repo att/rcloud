@@ -183,13 +183,13 @@ rect.frame {
 .notebook-cell .cell-controls {
     position: absolute;
     right: -2em;
-    top: -0em;
+    top: .1em;
 }
 
-notebook-cell .cell-insert-control {
+.notebook-cell .cell-insert-control {
     position: absolute;
-    right: 0.1em;
-    top: -1.1em;
+    right: -0.5em;
+    top: -1.3em;
 }
 
 .fontawesome-button {
