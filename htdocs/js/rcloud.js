@@ -67,7 +67,7 @@ function rcloud_github_handler(command, k) {
     };
 }
 
-rcloud.load_notebook = function(id, k)
+rcloud.load_notebook = function(id, version, k)
 {
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.get.notebook", id),

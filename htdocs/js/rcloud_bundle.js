@@ -1009,7 +1009,7 @@ function rcloud_github_handler(command, k) {
     };
 }
 
-rcloud.load_notebook = function(id, k)
+rcloud.load_notebook = function(id, version, k)
 {
     rclient.send_and_callback(
         rclient.r_funcall("rcloud.get.notebook", id),
@@ -1682,9 +1682,9 @@ Notebook.create_controller = function(model)
         clear: function() {
             model.clear();
         },
-        load_notebook: function(gistname, k) {
+        load_notebook: function(gistname, version, k) {
             var that = this;
-            rcloud.load_notebook(gistname, _.bind(on_load, this, k));
+            rcloud.load_notebook(gistname, version, _.bind(on_load, this, k));
         },
         create_notebook: function(content, k) {
             var that = this;
@@ -1694,10 +1694,12 @@ Notebook.create_controller = function(model)
                 k && k(notebook);
             });
         },
-        fork_notebook: function(gistname, k) {
+        fork_notebook: function(gistname, version, k) {
+            if(version)
+                throw "version not supported yet";
             var that = this;
             rcloud.fork_notebook(gistname, function(notebook) {
-                that.load_notebook(notebook.id, k);
+                that.load_notebook(notebook.id, null, k);
             });
         },
         update_notebook: function(changes) {
@@ -1743,7 +1745,9 @@ Notebook.create_controller = function(model)
                 }
                 return {files: _.reduce(changes, xlate_change, {})};
             }
-            rcloud.update_notebook(shell.gistname, changes_to_gist(changes), _.bind(editor.notebook_loaded, editor));
+            // not awesome to callback to someone else here
+            rcloud.update_notebook(shell.gistname, changes_to_gist(changes),
+                                   _.bind(editor.notebook_loaded, editor, null));
         },
         refresh_cells: function() {
             return model.reread_cells();

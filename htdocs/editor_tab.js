@@ -214,7 +214,7 @@ var editor = function () {
                 if(shell.gistname) // notebook specified in url
                     config.currbook = shell.gistname;
                 else if(config.currbook)
-                    that.load_notebook(config.currbook);
+                    that.load_notebook(config.currbook, config.currversion);
                 else // branch new config
                     that.new_notebook();
             });
@@ -243,6 +243,13 @@ var editor = function () {
                 }
                 if(node.gistname) {
                     var commands = $('<span/>', {class: 'notebook-commands'});
+                    if(true) { // all notebooks have history - should it always be accessible?
+                        var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style);
+                        history.click(function() {
+                            that.show_history(node);
+                        });
+                        commands.append(history);
+                    }
                     if(node.user===this_user) {
                         var make_private = ui_utils.fa_button('icon-eye-close', 'make private', 'private', icon_style),
                             make_public = ui_utils.fa_button('icon-eye-open', 'make public', 'public', icon_style);
@@ -288,7 +295,7 @@ var editor = function () {
                     if (event.node.id === 'newbook')
                         that.new_notebook();
                     else if(event.node.gistname)
-                        that.load_notebook(event.node.gistname);
+                        that.load_notebook(event.node.gistname, event.node.version);
                 }
             );
         },
@@ -296,6 +303,7 @@ var editor = function () {
             var that = this;
             function defaults() {
                 var ret = {currbook: null,
+                           currversion: null,
                            nextwork: 1,
                            interests: {},
                            all_books: {}};
@@ -311,19 +319,19 @@ var editor = function () {
         save_config: function() {
             rcloud.save_user_config(this_user, this.config);
         },
-        load_notebook: function(gistname) {
-            shell.load_notebook(gistname,
-                _.bind(result.notebook_loaded,this));
+        load_notebook: function(gistname, version) {
+            shell.load_notebook(gistname, version,
+                _.bind(result.notebook_loaded, this, version));
         },
         new_notebook: function() {
             if(isNaN(this.config.nextwork))
                 this.config.nextwork = 1;
             var desc = "Notebook " + this.config.nextwork;
             ++this.config.nextwork;
-            shell.new_notebook(desc, _.bind(result.notebook_loaded,this));
+            shell.new_notebook(desc, _.bind(result.notebook_loaded, this, null));
         },
         rename_notebook: function(gistname, newname) {
-            rcloud.rename_notebook(gistname, newname, _.bind(result.notebook_loaded,this));
+            rcloud.rename_notebook(gistname, newname, _.bind(result.notebook_loaded, this, null));
         },
         remove_notebook: function(node) {
             var $tree = $("#editor-book-tree");
@@ -352,10 +360,14 @@ var editor = function () {
             this.update_tree_entry(this_user, node.gistname, entry);
         },
         fork_notebook: function(gistname) {
-            shell.fork_notebook(gistname, _.bind(result.notebook_loaded,this));
+            shell.fork_notebook(gistname, _.bind(result.notebook_loaded, this, null));
         },
-        notebook_loaded: function(result) {
+        show_history: function(node) {
+            ;
+        },
+        notebook_loaded: function(version, result) {
             this.config.currbook = result.id;
+            this.config.currversion = version;
             this.update_notebook_status(result.user.login,
                                         result.id,
                                         {description: result.description,
@@ -470,7 +482,7 @@ var editor = function () {
                             return;
                         var j = d[1];
                         var user = data[j][0], notebook = data[j][1];
-                        that.load_notebook(notebook);
+                        that.load_notebook(notebook, null);
                     })
                 ;
             };
