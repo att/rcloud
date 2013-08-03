@@ -21,11 +21,11 @@ Notebook.create_controller = function(model)
             $('.ace_cursor-layer').show();
     }
 
-    function on_load(k, notebook) {
+    function on_load(k, version, notebook) {
         this.clear();
         // is there anything else to gist permissions?
         // certainly versioning figures in here too
-        model.read_only = notebook.user.login != rcloud.username();
+        model.read_only = version != null || notebook.user.login != rcloud.username();
         var parts = {}; // could rely on alphabetic input instead of gathering
         _.each(notebook.files, function (file) {
             var filename = file.filename;
@@ -63,7 +63,7 @@ Notebook.create_controller = function(model)
         },
         load_notebook: function(gistname, version, k) {
             var that = this;
-            rcloud.load_notebook(gistname, version, _.bind(on_load, this, k));
+            rcloud.load_notebook(gistname, version || null, _.bind(on_load, this, k, version));
         },
         create_notebook: function(content, k) {
             var that = this;

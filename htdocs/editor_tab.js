@@ -140,7 +140,7 @@ var editor = function () {
     function update_tree($tree, root, user, notebook, data) {
         var id = '/' + root + '/' + user + '/' + notebook;
         var node = $tree.tree('getNodeById', id);
-        var parent;
+        var parent, children;
         data.gistname = notebook;
         data.id = id;
         data.root = root;
@@ -150,8 +150,14 @@ var editor = function () {
             // we're using, and the latest jqtree didn't seem to work
             // at all, so.. blunt stupid approach here:
             parent = node.parent;
+            children = node.children;
             $tree.tree('removeNode', node);
             node = insert_alpha($tree, data, parent);
+            if(children) {
+                // this is incredibly hacky but appears to work
+                $tree.tree('loadData', children, node);
+                $tree.tree('openNode', node);
+            }
         }
         else {
             if(user == this_user) {
@@ -171,7 +177,7 @@ var editor = function () {
                         id: '/' + root + '/' + user,
                         sort_order: ordering.SUBFOLDER
                     };
-                    var children = [data];
+                    children = [data];
                     var user_folder = insert_alpha($tree, pdat, parent);
                     $tree.tree('loadData', children, user_folder);
                     $tree.tree('openNode', user_folder);
@@ -180,6 +186,30 @@ var editor = function () {
             }
         }
         return node;
+    }
+
+    function create_history_tree($tree, node) {
+        function process_history(history) {
+            if(!history)
+                return;
+            var children = [];
+            var n = Math.min(10, history.length);
+            for(var i=0; i<n; ++i) {
+                var hdat = _.clone(node);
+                var sha = history[i].version.substring(0, 10);
+                hdat.label = sha;
+                hdat.version = history[i].version;
+                hdat.last_commit = history[i].committed_at;
+                hdat.id = node.id + '/' + sha;
+                $tree.tree('appendNode', hdat, node);
+            }
+        }
+        if(node.history)
+            process_history(node.history);
+        else
+            rcloud.load_notebook(node.gistname, null, function(notebook) {
+                process_history(notebook.history);
+            });
     }
 
     function display_date(ds) {
@@ -237,15 +267,19 @@ var editor = function () {
                 var title = $li.find('.title');
                 if(node.visibility==='private')
                     title.wrap('<i/>');
-                if (node.last_commit) {
+                if(node.last_commit && (!node.version ||
+                                        display_date(node.last_commit) != display_date(node.parent.last_commit))) {
                     title.after('<span style="float: right" id="date">'
                                              + display_date(node.last_commit) + '</span>');
                 }
-                if(node.gistname) {
+                if(node.version)
+                    title.css({color: '#7CB9E8'});
+                if(node.gistname && !node.version) {
                     var commands = $('<span/>', {class: 'notebook-commands'});
                     if(true) { // all notebooks have history - should it always be accessible?
                         var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style);
                         history.click(function() {
+                            $(this).tooltip('hide');
                             that.show_history(node);
                         });
                         commands.append(history);
@@ -295,7 +329,7 @@ var editor = function () {
                     if (event.node.id === 'newbook')
                         that.new_notebook();
                     else if(event.node.gistname)
-                        that.load_notebook(event.node.gistname, event.node.version);
+                        that.load_notebook(event.node.gistname, event.node.version || null);
                 }
             );
         },
@@ -363,7 +397,8 @@ var editor = function () {
             shell.fork_notebook(gistname, null, _.bind(result.notebook_loaded, this, null));
         },
         show_history: function(node) {
-            ;
+            var $tree = $("#editor-book-tree");
+            create_history_tree($tree, node);
         },
         notebook_loaded: function(version, result) {
             this.config.currbook = result.id;
@@ -371,7 +406,8 @@ var editor = function () {
             this.update_notebook_status(result.user.login,
                                         result.id,
                                         {description: result.description,
-                                         last_commit: result.updated_at || result.history[0].committed_at});
+                                         last_commit: result.updated_at || result.history[0].committed_at,
+                                         history: result.history});
         },
         update_notebook_status: function(user, gistname, status) {
             // this is almost a task for d3 or mvc on its own
@@ -390,15 +426,16 @@ var editor = function () {
             if(user === this_user)
                 this.config.all_books[gistname] = entry;
 
-            var node = this.update_tree_entry(user, gistname, entry);
+            var node = this.update_tree_entry(user, gistname, entry, status.history);
             var $tree = $("#editor-book-tree");
             $tree.tree('selectNode', node);
         },
-        update_tree_entry: function(user, gistname, entry) {
+        update_tree_entry: function(user, gistname, entry, history) {
             var data = {label: entry.description,
                         last_commit: entry.last_commit,
                         sort_order: ordering.NOTEBOOK,
-                        visibility: entry.visibility};
+                        visibility: entry.visibility,
+                        history: history};
 
             var $tree = $("#editor-book-tree");
             var node = update_tree($tree, 'interests', user, gistname, data);

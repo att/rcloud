@@ -25,7 +25,10 @@ function init_editable_title_box() {
 
 function init_fork_button() {
     $("#fork-notebook").click(function() {
-        editor.fork_notebook(shell.gistname, shell.version);
+        if(shell.version)
+            alert("Sorry, forking from an earlier version not supported yet!");
+        else
+            editor.fork_notebook(shell.gistname, shell.version);
     });
 }
 
