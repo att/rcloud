@@ -71,7 +71,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     var insert_button_float = $("<div class='cell-insert-control'></div>");
     insert_button_float.append(insert_cell_button);
-    notebook_cell_div.parent.append(insert_button_float);
+    notebook_cell_div.append(insert_button_float);
 
     //////////////////////////////////////////////////////////////////////////
 
