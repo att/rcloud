@@ -195,6 +195,11 @@ rect.frame {
     cursor: default;
 }
 
+.notebook-tree {
+    height: 500px;
+    overflow-y: scroll;
+}
+
 /* Ace sets its z-index to something obscene,
    and we need to one-up that obscenity with our own button float; Twitter's
    bootstrap tooltip needs to reflect that and one-up everything else.
