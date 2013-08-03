@@ -252,20 +252,20 @@ var shell = (function() {
             return notebook_controller.append_cell(content, "R");
         }, insert_markdown_cell_before: function(index) {
             return notebook_controller.insert_cell("", "Markdown", index);
-        }, load_notebook: function(gistname, k) {
+        }, load_notebook: function(gistname, version, k) {
             var that = this;
             // asymetrical: we know the gistname before it's loaded here,
             // but not in new.  and we have to set this here to signal
             // editor's init load config callback to override the currbook
             this.gistname = gistname;
-            this.notebook.controller.load_notebook(gistname, _.bind(on_load, this, k));
+            this.notebook.controller.load_notebook(gistname, version, _.bind(on_load, this, k));
         }, new_notebook: function(desc, k) {
             var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
             this.notebook.controller.create_notebook(content, _.bind(on_new, this, k));
-        }, fork_notebook: function(gistname, k) {
+        }, fork_notebook: function(gistname, version, k) {
             var that = this;
             notebook_model.read_only = false;
-            this.notebook.controller.fork_notebook(gistname, function(notebook) {
+            this.notebook.controller.fork_notebook(gistname, version, function(notebook) {
                 that.gistname = notebook.id;
                 on_load.call(that, k, notebook);
             });
