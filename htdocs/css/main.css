@@ -223,3 +223,16 @@ rect.frame {
     width: 100%;
     height: 100%;
 }
+
+/*
+how do i just delete their styles which i don't like,
+without modifying jqtree.css?
+
+ul.jqtree-tree li.jqtree-selected > .jqtree-element,
+ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
+    background-color: default;
+    background: default;
+    text-shadow: default;
+    font-weight: bold;
+}
+*/

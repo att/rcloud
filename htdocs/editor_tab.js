@@ -289,7 +289,7 @@ var editor = function () {
             const remove_icon_style = {'line-height': '90%', 'font-size': '75%'};
 
             function onCreateLiHandler(node, $li) {
-                var title = $li.find('.title');
+                var title = $li.find('.jqtree-title');
                 if(node.visibility==='private')
                     title.wrap('<i/>');
                 if(node.last_commit && (!node.version ||
@@ -306,6 +306,7 @@ var editor = function () {
                         history.click(function() {
                             $(this).tooltip('hide');
                             that.show_history(node);
+                            return false;
                         });
                         commands.append(history);
                     }
@@ -347,6 +348,16 @@ var editor = function () {
             }
             $tree = $("#editor-book-tree");
             $tree.tree({
+                data: [
+                    {
+                        label: 'My Interests',
+                        id: '/interests'
+                    },
+                    {
+                        label: 'All Notebooks',
+                        id: '/alls'
+                    }
+                ],
                 onCreateLi: onCreateLiHandler,
                 selectable: true
             });
@@ -423,6 +434,7 @@ var editor = function () {
         },
         show_history: function(node) {
             add_history_nodes(node);
+            $tree.tree('openNode', node);
             // just an annoying ui glitch in jqTree where the selection disappears
             // if you add siblings
             if(node.gistname === this_config.currbook && this_config.currversion) {
@@ -478,8 +490,10 @@ var editor = function () {
                                        nhist = node.children ? node.children.length : 0;
                                    });
             add_history_nodes(node, nhist);
-            if(this_config.currversion)
+            if(this_config.currversion) {
+                $tree.tree('openNode', node);
                 node = $tree.tree('getNodeById', node_id('interests', user, gistname, this_config.currversion));
+            }
             update_tree('alls', user, gistname, data);
 
             this.save_config();
