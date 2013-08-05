@@ -7,9 +7,9 @@ var editor = function () {
     };
 
     // "private members"
-    var this_user = null,
-        $tree = undefined,
-        this_config = undefined;
+    var username_ = null,
+        $tree_ = undefined,
+        config_ = undefined;
 
     function compare_nodes(a, b) {
         var so = a.sort_order-b.sort_order;
@@ -38,7 +38,7 @@ var editor = function () {
         var notebook_nodes = [];
         for(var name in set) {
             var attrs = set[name];
-            if(username!==this_user && root==='alls' && attrs.visibility==='private')
+            if(username!==username_ && root==='alls' && attrs.visibility==='private')
                 continue;
             var result = {
                 label: attrs.description,
@@ -57,12 +57,12 @@ var editor = function () {
 
     function populate_interests() {
         var my_notebooks, user_nodes = [];
-        if(!this_config.interests[this_user])
-            this_config.interests[this_user] = {};
-        for (var username in this_config.interests) {
-            var user_notebooks = this_config.interests[username];
+        if(!config_.interests[username_])
+            config_.interests[username_] = {};
+        for (var username in config_.interests) {
+            var user_notebooks = config_.interests[username];
             var notebook_nodes = [];
-            if(username === this_user) {
+            if(username === username_) {
                 notebook_nodes.push({
                     label: "[New Notebook]",
                     id: "newbook",
@@ -71,7 +71,7 @@ var editor = function () {
             }
             notebook_nodes = notebook_nodes.concat(convert_notebook_set('interests', username, user_notebooks));
 
-            if(username === this_user)
+            if(username === username_)
                 my_notebooks = notebook_nodes;
             else {
                 var node = {
@@ -84,10 +84,10 @@ var editor = function () {
             }
         }
         var children =  my_notebooks.concat(user_nodes).sort(compare_nodes);
-        var interests = $tree.tree('getNodeById', "/interests");
-        $tree.tree("loadData", children, interests);
+        var interests = $tree_.tree('getNodeById', "/interests");
+        $tree_.tree("loadData", children, interests);
         $(interests.element).parent().prepend(interests.element);
-        $tree.tree('openNode', interests);
+        $tree_.tree('openNode', interests);
     }
 
     function load_all_configs(k) {
@@ -100,7 +100,7 @@ var editor = function () {
                     if(!user_config)
                         continue;
                     var notebook_nodes = convert_notebook_set('alls', username, user_config.all_books);
-                    if(username === this_user) {
+                    if(username === username_) {
                         my_config = user_config;
                         my_alls = notebook_nodes;
                     }
@@ -129,7 +129,7 @@ var editor = function () {
                         children: children
                     }
                 ];
-                $tree.tree("loadData", root_data);
+                $tree_.tree("loadData", root_data);
 
                 k && k(my_config);
             });
@@ -143,14 +143,14 @@ var editor = function () {
             var child = parent.children[i];
             var so = compare_nodes(data, child);
             if(so<0)
-                return $tree.tree('addNodeBefore', data, child);
+                return $tree_.tree('addNodeBefore', data, child);
         }
-        return $tree.tree('appendNode', data, parent);
+        return $tree_.tree('appendNode', data, parent);
     }
 
     function update_tree(root, user, gistname, data, last_chance) {
         var id = node_id(root, user, gistname);
-        var node = $tree.tree('getNodeById', id);
+        var node = $tree_.tree('getNodeById', id);
         var parent, children;
         data.gistname = gistname;
         data.id = id;
@@ -164,22 +164,22 @@ var editor = function () {
             children = node.children;
             if(last_chance)
                 last_chance(node); // hacky
-            $tree.tree('removeNode', node);
+            $tree_.tree('removeNode', node);
             node = insert_alpha(data, parent);
         }
         else {
-            if(user == this_user) {
-                parent = $tree.tree('getNodeById', node_id(root));
+            if(user == username_) {
+                parent = $tree_.tree('getNodeById', node_id(root));
                 node = insert_alpha(data, parent);
             }
             else {
-                var usernode = $tree.tree('getNodeById', node_id(root, user));
+                var usernode = $tree_.tree('getNodeById', node_id(root, user));
                 if(usernode)
                     node = insert_alpha(data, usernode);
                 else {
                     // creating a subfolder and then using loadData on it
                     // seems to be *the* way that works
-                    parent = $tree.tree('getNodeById', node_id(root));
+                    parent = $tree_.tree('getNodeById', node_id(root));
                     var pdat = {
                         label: someone_elses(user),
                         id: node_id(root, user),
@@ -187,9 +187,9 @@ var editor = function () {
                     };
                     children = [data];
                     var user_folder = insert_alpha(pdat, parent);
-                    $tree.tree('loadData', children, user_folder);
-                    $tree.tree('openNode', user_folder);
-                    node = $tree.tree('getNodeById',id);
+                    $tree_.tree('loadData', children, user_folder);
+                    $tree_.tree('openNode', user_folder);
+                    node = $tree_.tree('getNodeById',id);
                 }
             }
         }
@@ -227,7 +227,7 @@ var editor = function () {
                 hdat.version = history[i].version;
                 hdat.last_commit = history[i].committed_at;
                 hdat.id = node.id + '/' + hdat.version;
-                $tree.tree('appendNode', hdat, node);
+                $tree_.tree('appendNode', hdat, node);
             }
         }
 
@@ -238,7 +238,7 @@ var editor = function () {
         else if(_.isNumber(where)) {
             if(node.children.length)
                 for(var i = node.children.length - 1; i >= 0; --i)
-                    $tree.tree('removeNode', node.children[i]);
+                    $tree_.tree('removeNode', node.children[i]);
             if(where==0)
                 return;
             begin = 1; // skip first which is current
@@ -287,15 +287,15 @@ var editor = function () {
     var result = {
         init: function() {
             var that = this;
-            this_user = rcloud.username();
+            username_ = rcloud.username();
             $("#input-text-source-results-title").css("display", "none");
             $("#input-text-history-results-title").css("display", "none");
             this.create_book_tree_widget();
             this.load_config(function() {
                 if(shell.gistname) // notebook specified in url
-                    this_config.currbook = shell.gistname;
-                else if(this_config.currbook)
-                    that.load_notebook(this_config.currbook, this_config.currversion);
+                    config_.currbook = shell.gistname;
+                else if(config_.currbook)
+                    that.load_notebook(config_.currbook, config_.currversion);
                 else // brand new config
                     that.new_notebook();
             });
@@ -335,7 +335,7 @@ var editor = function () {
                         });
                         commands.append(history);
                     }
-                    if(node.user===this_user) {
+                    if(node.user===username_) {
                         var make_private = ui_utils.fa_button('icon-eye-close', 'make private', 'private', icon_style),
                             make_public = ui_utils.fa_button('icon-eye-open', 'make public', 'public', icon_style);
                         if(node.visibility=='public')
@@ -352,7 +352,7 @@ var editor = function () {
                         });
                         commands.append(make_private, make_public);
                     }
-                    if(node.root==='interests' || node.user===this_user) {
+                    if(node.root==='interests' || node.user===username_) {
                         var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', remove_icon_style);
                         remove.click(function() {
                             $(this).tooltip('hide');
@@ -371,8 +371,8 @@ var editor = function () {
                         });
                 }
             }
-            $tree = $("#editor-book-tree");
-            $tree.tree({
+            $tree_ = $("#editor-book-tree");
+            $tree_.tree({
                 data: [
                     {
                         label: 'My Interests',
@@ -386,7 +386,7 @@ var editor = function () {
                 onCreateLi: onCreateLiHandler,
                 selectable: true
             });
-            $tree.bind(
+            $tree_.bind(
                 'tree.click', function(event) {
                     if (event.node.id === 'newbook')
                         that.new_notebook();
@@ -402,29 +402,29 @@ var editor = function () {
             load_all_configs(function(my_config) {
                 // build up config incrementally & allow user to just
                 // remove parts of it if they're broken
-                this_config = my_config || {};
-                this_config.currbook = this_config.currbook || null;
-                this_config.currversion = this_config.currversion || null;
-                this_config.nextwork = this_config.nextwork || 1;
-                this_config.interests = this_config.interests || {};
-                this_config.interests[this_user] = this_config.interests[this_user] || {};
-                this_config.all_books = this_config.all_books || {};
+                config_ = my_config || {};
+                config_.currbook = config_.currbook || null;
+                config_.currversion = config_.currversion || null;
+                config_.nextwork = config_.nextwork || 1;
+                config_.interests = config_.interests || {};
+                config_.interests[username_] = config_.interests[username_] || {};
+                config_.all_books = config_.all_books || {};
                 populate_interests();
                 k && k();
             });
         },
         save_config: function() {
-            rcloud.save_user_config(this_user, this_config);
+            rcloud.save_user_config(username_, config_);
         },
         load_notebook: function(gistname, version) {
             shell.load_notebook(gistname, version,
                 _.bind(result.notebook_loaded, this, version));
         },
         new_notebook: function() {
-            if(isNaN(this_config.nextwork))
-                this_config.nextwork = 1;
-            var desc = "Notebook " + this_config.nextwork;
-            ++this_config.nextwork;
+            if(isNaN(config_.nextwork))
+                config_.nextwork = 1;
+            var desc = "Notebook " + config_.nextwork;
+            ++config_.nextwork;
             shell.new_notebook(desc, _.bind(result.notebook_loaded, this, null));
         },
         rename_notebook: function(gistname, newname) {
@@ -432,38 +432,38 @@ var editor = function () {
         },
         remove_notebook: function(node) {
             if(node.root === 'alls') {
-                if(node.user === this_user)
-                    delete this_config.all_books[node.gistname];
+                if(node.user === username_)
+                    delete config_.all_books[node.gistname];
             }
             else {
-                delete this_config.interests[node.user][node.gistname];
-                if(node.user!==this_user && _.isEmpty(this_config.interests[node.user])) {
-                    delete this_config.interests[node.user];
+                delete config_.interests[node.user][node.gistname];
+                if(node.user!==username_ && _.isEmpty(config_.interests[node.user])) {
+                    delete config_.interests[node.user];
                     var id = '/interests/' + node.user;
-                    $tree.tree('removeNode', $tree.tree('getNodeById', id));
+                    $tree_.tree('removeNode', $tree_.tree('getNodeById', id));
                 }
             }
-            $tree.tree('removeNode', node);
+            $tree_.tree('removeNode', node);
             this.save_config();
         },
         set_visibility: function(node, visibility) {
-            if(node.user !== this_user)
+            if(node.user !== username_)
                 throw "attempt to set visibility on notebook not mine";
-            var entry = this_config.interests[this_user][node.gistname];
+            var entry = config_.interests[username_][node.gistname];
             entry.visibility = visibility;
-            this_config.all_books[node.gistname] = entry;
-            this.update_tree_entry(this_user, node.gistname, entry);
+            config_.all_books[node.gistname] = entry;
+            this.update_tree_entry(username_, node.gistname, entry);
         },
         fork_notebook: function(gistname) {
             shell.fork_notebook(gistname, null, _.bind(result.notebook_loaded, this, null));
         },
         show_history: function(node) {
             add_history_nodes(node);
-            $tree.tree('openNode', node);
+            $tree_.tree('openNode', node);
         },
         notebook_loaded: function(version, result) {
-            this_config.currbook = result.id;
-            this_config.currversion = version;
+            config_.currbook = result.id;
+            config_.currversion = version;
             this.update_notebook_status(result.user.login,
                                         result.id,
                                         {description: result.description,
@@ -473,11 +473,11 @@ var editor = function () {
         },
         update_notebook_status: function(user, gistname, status) {
             // this is almost a task for d3 or mvc on its own
-            var iu = this_config.interests[user];
+            var iu = config_.interests[user];
             if(!iu)
-                iu = this_config.interests[user] = {};
+                iu = config_.interests[user] = {};
 
-            var entry = iu[gistname] || this_config.all_books[gistname] || {};
+            var entry = iu[gistname] || config_.all_books[gistname] || {};
 
             entry.description = status.description;
             entry.last_commit = status.last_commit;
@@ -485,12 +485,12 @@ var editor = function () {
 
             // write back (maybe somewhat redundant)
             iu[gistname] = entry;
-            if(user === this_user)
-                this_config.all_books[gistname] = entry;
+            if(user === username_)
+                config_.all_books[gistname] = entry;
 
             var node = this.update_tree_entry(user, gistname, entry, status.history);
             if(node)
-                $tree.tree('selectNode', node);
+                $tree_.tree('selectNode', node);
         },
         update_tree_entry: function(user, gistname, entry, history) {
             var data = {label: entry.description,
@@ -509,17 +509,17 @@ var editor = function () {
                                        data.history = data.history || node.history;
                                        where = node.children ? node.children.length : 0;
                                    });
-            where = where || this_config.currversion;
+            where = where || config_.currversion;
             var k = null;
-            if(this_config.currversion) {
+            if(config_.currversion) {
                 k = function(node) {
-                    $tree.tree('openNode', node);
-                    var n2 = $tree.tree('getNodeById', node_id('interests', user, gistname, this_config.currversion));
-                    $tree.tree('selectNode', n2);
+                    $tree_.tree('openNode', node);
+                    var n2 = $tree_.tree('getNodeById', node_id('interests', user, gistname, config_.currversion));
+                    $tree_.tree('selectNode', n2);
                 };
             }
             add_history_nodes(node, where, k);
-            if(this_config.currversion)
+            if(config_.currversion)
                 node = null; // don't select
             update_tree('alls', user, gistname, data);
 
