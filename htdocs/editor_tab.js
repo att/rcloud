@@ -196,11 +196,21 @@ var editor = function () {
         return node;
     }
 
+    //http://stackoverflow.com/questions/7969031/indexof-element-in-js-array-using-a-truth-function-using-underscore-or-jquery
+    function find_index(collection, filter) {
+        for (var i = 0; i < collection.length; i++) {
+            if(filter(collection[i], i, collection))
+                return i;
+        }
+        return -1;
+    }
+
+
     // add_history_nodes:
     // - tries to add a constant INCR number of nodes
-    // - or pass it a length and it erases and rebuilds to num
+    // - or pass it a length or sha and it erases and rebuilds to there
     // d3 anyone?
-    function add_history_nodes(node, num) {
+    function add_history_nodes(node, where, k) {
         const INCR = 5;
         var begin, end; // range [begin,end)
 
@@ -221,25 +231,40 @@ var editor = function () {
             }
         }
 
-        if(num === undefined) {
+        if(where === null || where === undefined) {
             begin = node.children.length + 1;
             end = begin + INCR;
         }
-        else {
-            begin = 1;
-            end = num + 1;
+        else if(_.isNumber(where)) {
             if(node.children.length)
                 for(var i = node.children.length - 1; i >= 0; --i)
                     $tree.tree('removeNode', node.children[i]);
-            if(num==0)
+            if(where==0)
                 return;
+            begin = 1; // skip first which is current
+            end = where + 1;
         }
-        if(node.history)
+        else if(_.isString(where)) {
+            begin = null;
+        }
+        else throw "add_history_nodes don't understand where " + where.toString();
+
+        if(node.history) {
             process_history();
+            k && k(node);
+        }
         else
             rcloud.load_notebook(node.gistname, null, function(notebook) {
                 node.history = notebook.history;
+                if(begin === null) {
+                    var sha_ind = find_index(node.history, function(hist) { return hist.version===where; });
+                    if(sha_ind<0)
+                        throw "didn't find sha " + where + " in history";
+                    begin = 1;
+                    end = sha_ind + INCR;
+                }
                 process_history();
+                k && k(node);
             });
     }
 
@@ -410,6 +435,12 @@ var editor = function () {
                 if(node.user === this_user)
                     delete this_config.all_books[node.gistname];
             }
+            // just an annoying ui glitch in jqTree where the selection disappears
+            // if you add siblings
+            if(node.gistname === this_config.currbook && this_config.currversion) {
+                var n = $tree.tree('getNodeById', node_id('interests', node.user, node.gistname, this_config.currversion));
+                $tree.tree('selectNode', n);
+            }
             else {
                 delete this_config.interests[node.user][node.gistname];
                 if(node.user!==this_user && _.isEmpty(this_config.interests[node.user])) {
@@ -435,12 +466,6 @@ var editor = function () {
         show_history: function(node) {
             add_history_nodes(node);
             $tree.tree('openNode', node);
-            // just an annoying ui glitch in jqTree where the selection disappears
-            // if you add siblings
-            if(node.gistname === this_config.currbook && this_config.currversion) {
-                var n = $tree.tree('getNodeById', node_id('interests', node.user, node.gistname, this_config.currversion));
-                $tree.tree('selectNode', n);
-            }
         },
         notebook_loaded: function(version, result) {
             this_config.currbook = result.id;
@@ -470,7 +495,8 @@ var editor = function () {
                 this_config.all_books[gistname] = entry;
 
             var node = this.update_tree_entry(user, gistname, entry, status.history);
-            $tree.tree('selectNode', node);
+            if(node)
+                $tree.tree('selectNode', node);
         },
         update_tree_entry: function(user, gistname, entry, history) {
             var data = {label: entry.description,
@@ -483,17 +509,24 @@ var editor = function () {
             // it.  otherwise use the history in the node if it has any.  otherwise
             // add_history_nodes will do an async call to get the history.
             // always show the same number of history nodes as before.
-            var nhist;
+            var where;
             var node = update_tree('interests', user, gistname, data,
                                    function(node) {
                                        data.history = data.history || node.history;
-                                       nhist = node.children ? node.children.length : 0;
+                                       where = node.children ? node.children.length : 0;
                                    });
-            add_history_nodes(node, nhist);
+            where = where || this_config.currversion;
+            var k = null;
             if(this_config.currversion) {
-                $tree.tree('openNode', node);
-                node = $tree.tree('getNodeById', node_id('interests', user, gistname, this_config.currversion));
+                k = function(node) {
+                    $tree.tree('openNode', node);
+                    var n2 = $tree.tree('getNodeById', node_id('interests', user, gistname, this_config.currversion));
+                    $tree.tree('selectNode', n2);
+                };
             }
+            add_history_nodes(node, where, k);
+            if(this_config.currversion)
+                node = null; // don't select
             update_tree('alls', user, gistname, data);
 
             this.save_config();
