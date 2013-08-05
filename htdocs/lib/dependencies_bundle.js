@@ -1268,8 +1268,8 @@ limitations under the License.
       return this.tree;
     };
 
-    JqTreeWidget.prototype.selectNode = function(node) {
-      return this._selectNode(node, true);
+    JqTreeWidget.prototype.selectNode = function(node, must_toggle) {
+      return this._selectNode(node, must_toggle);
     };
 
     JqTreeWidget.prototype._selectNode = function(node, must_toggle) {
