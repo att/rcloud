@@ -55,7 +55,7 @@ var editor = function () {
         return notebook_nodes;
     }
 
-    function populate_interests() {
+    function populate_interests(root_data) {
         var my_notebooks, user_nodes = [];
         if(!config_.interests[username_])
             config_.interests[username_] = {};
@@ -84,10 +84,14 @@ var editor = function () {
             }
         }
         var children =  my_notebooks.concat(user_nodes).sort(compare_nodes);
+        root_data[0].children = children;
+        result.create_book_tree_widget(root_data);
         var interests = $tree_.tree('getNodeById', "/interests");
+        $tree_.tree('openNode', interests);
+        /*
         $tree_.tree("loadData", children, interests);
         $(interests.element).parent().prepend(interests.element);
-        $tree_.tree('openNode', interests);
+         */
     }
 
     function load_all_configs(k) {
@@ -115,8 +119,8 @@ var editor = function () {
                     }
                 }
 
-                // create both root folders now but only load /alls now
-                // populate_interests will load /interests
+                // start creating the tree data and pass it forward
+                // populate_interests will create the tree
                 var children = my_alls.concat(user_nodes).sort(compare_nodes);
                 var root_data = [
                     {
@@ -129,9 +133,7 @@ var editor = function () {
                         children: children
                     }
                 ];
-                $tree_.tree("loadData", root_data);
-
-                k && k(my_config);
+                k && k(my_config, root_data);
             });
         });
     }
@@ -213,6 +215,9 @@ var editor = function () {
     function add_history_nodes(node, where, k) {
         const INCR = 5;
         var begin, end; // range [begin,end)
+        var ellipsis = null;
+        if(node.children && node.children.length && node.children[node.children.length-1].id == 'showmore')
+            ellipsis = node.children[node.children.length-1];
 
         function process_history() {
             var history = node.history;
@@ -227,15 +232,25 @@ var editor = function () {
                 hdat.version = history[i].version;
                 hdat.last_commit = history[i].committed_at;
                 hdat.id = node.id + '/' + hdat.version;
-                $tree_.tree('appendNode', hdat, node);
+                if(ellipsis)
+                    $tree_.tree('addNodeBefore', hdat, ellipsis);
+                else
+                    $tree_.tree('appendNode', hdat, node);
             }
+            if(!ellipsis) {
+                if(end < history.length) {
+                    var data = {
+                        label: '...',
+                        id: 'showmore'
+                    };
+                    $tree_.tree('appendNode', data, node);
+                }
+            }
+            else if(end === history.length)
+                $tree_.tree('removeNode', ellipsis);
         }
 
-        if(where === null || where === undefined) {
-            begin = node.children.length + 1;
-            end = begin + INCR;
-        }
-        else if(_.isNumber(where)) {
+        if(_.isNumber(where)) {
             if(node.children.length)
                 for(var i = node.children.length - 1; i >= 0; --i)
                     $tree_.tree('removeNode', node.children[i]);
@@ -245,7 +260,13 @@ var editor = function () {
             end = where + 1;
         }
         else if(_.isString(where)) {
-            begin = null;
+            if(where==='more') {
+                begin = node.children.length + 1;
+                if(ellipsis) --begin;
+                end = begin + INCR;
+            }
+            else
+                begin = null;
         }
         else throw "add_history_nodes don't understand where " + where.toString();
 
@@ -290,7 +311,6 @@ var editor = function () {
             username_ = rcloud.username();
             $("#input-text-source-results-title").css("display", "none");
             $("#input-text-history-results-title").css("display", "none");
-            this.create_book_tree_widget();
             this.load_config(function() {
                 if(shell.gistname) // notebook specified in url
                     config_.currbook = shell.gistname;
@@ -308,7 +328,7 @@ var editor = function () {
                 }
             }, 500);
         },
-        create_book_tree_widget: function() {
+        create_book_tree_widget: function(data) {
             var that = this;
             const icon_style = {'line-height': '90%'};
             const remove_icon_style = {'line-height': '90%', 'font-size': '75%'};
@@ -327,12 +347,20 @@ var editor = function () {
                 if(node.gistname && !node.version) {
                     var commands = $('<span/>', {class: 'notebook-commands'});
                     if(true) { // all notebooks have history - should it always be accessible?
+                        var disable = config_.currbook===node.gistname && config_.currversion;
                         var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style);
+                        // jqtree recreates large portions of the tree whenever anything changes
+                        // so far this seems safe but might need revisiting if that improves
+                        if(disable)
+                           history.addClass('button-disabled');
                         history.click(function() {
-                            $(this).tooltip('hide');
-                            that.show_history(node);
+                            if(!disable) {
+                                $(this).tooltip('hide');
+                                that.show_history(node, true);
+                            }
                             return false;
                         });
+
                         commands.append(history);
                     }
                     if(node.user===username_) {
@@ -373,25 +401,19 @@ var editor = function () {
             }
             $tree_ = $("#editor-book-tree");
             $tree_.tree({
-                data: [
-                    {
-                        label: 'My Interests',
-                        id: '/interests'
-                    },
-                    {
-                        label: 'All Notebooks',
-                        id: '/alls'
-                    }
-                ],
+                data: data,
                 onCreateLi: onCreateLiHandler,
                 selectable: true
             });
             $tree_.bind(
                 'tree.click', function(event) {
-                    if (event.node.id === 'newbook')
+                    if(event.node.id === 'newbook')
                         that.new_notebook();
+                    else if(event.node.id === 'showmore')
+                        that.show_history(event.node.parent, false);
                     else if(event.node.gistname)
                         that.load_notebook(event.node.gistname, event.node.version || null);
+                    return false;
                 }
             );
         },
@@ -399,7 +421,7 @@ var editor = function () {
             function defaults() {
                 return ret;
             }
-            load_all_configs(function(my_config) {
+            load_all_configs(function(my_config, root_data) {
                 // build up config incrementally & allow user to just
                 // remove parts of it if they're broken
                 config_ = my_config || {};
@@ -409,7 +431,7 @@ var editor = function () {
                 config_.interests = config_.interests || {};
                 config_.interests[username_] = config_.interests[username_] || {};
                 config_.all_books = config_.all_books || {};
-                populate_interests();
+                populate_interests(root_data);
                 k && k();
             });
         },
@@ -457,9 +479,18 @@ var editor = function () {
         fork_notebook: function(gistname) {
             shell.fork_notebook(gistname, null, _.bind(result.notebook_loaded, this, null));
         },
-        show_history: function(node) {
-            add_history_nodes(node);
-            $tree_.tree('openNode', node);
+        show_history: function(node, toggle) {
+            var where = node.children.length && toggle ? 0 : "more";
+            add_history_nodes(node, where, function(node) {
+                $tree_.tree('openNode', node);
+            });
+            /*
+            // need this if user is allowed to hide history of the current gist and config_.currversion
+            if(node.gistname === config_.currbook && config_.currversion) {
+                var n = $tree_.tree('getNodeById', node_id('interests', node.user, node.gistname, config_.currversion));
+                $tree_.tree('selectNode', n);
+            }
+             */
         },
         notebook_loaded: function(version, result) {
             config_.currbook = result.id;
@@ -502,14 +533,18 @@ var editor = function () {
             // we only receive history here if we're at HEAD, so use that if we get
             // it.  otherwise use the history in the node if it has any.  otherwise
             // add_history_nodes will do an async call to get the history.
-            // always show the same number of history nodes as before.
+            // always show the same number of history nodes as before, unless
+            // we're starting out and looking at an old version
             var where;
             var node = update_tree('interests', user, gistname, data,
                                    function(node) {
                                        data.history = data.history || node.history;
-                                       where = node.children ? node.children.length : 0;
+                                       where = node.children.length;
+                                       if(where && node.children[where-1].id==='showmore')
+                                           --where;
                                    });
-            where = where || config_.currversion;
+            if(where===0 && config_.currversion)
+                where = config_.currversion;
             var k = null;
             if(config_.currversion) {
                 k = function(node) {
