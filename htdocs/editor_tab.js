@@ -435,12 +435,6 @@ var editor = function () {
                 if(node.user === this_user)
                     delete this_config.all_books[node.gistname];
             }
-            // just an annoying ui glitch in jqTree where the selection disappears
-            // if you add siblings
-            if(node.gistname === this_config.currbook && this_config.currversion) {
-                var n = $tree.tree('getNodeById', node_id('interests', node.user, node.gistname, this_config.currversion));
-                $tree.tree('selectNode', n);
-            }
             else {
                 delete this_config.interests[node.user][node.gistname];
                 if(node.user!==this_user && _.isEmpty(this_config.interests[node.user])) {
