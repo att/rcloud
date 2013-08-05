@@ -14,7 +14,7 @@ ace_bundle.js:	\
         js/ace/sweave_background_highlighter.js
 
 dependencies_bundle.js: \
-	js/jquery-1.7.1.min.js \
+	js/jquery-1.7.1.js \
 	js/jquery.cookies.2.2.0.js \
 	js/tree.jquery.js \
 	js/jquery-ui-1.8.18.custom.min.js \
