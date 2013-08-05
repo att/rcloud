@@ -692,15 +692,15 @@ RClient = {
         function on_error(msg, status_code) {
             if (status_code === 65) {
                 // Authentication failed.
-                result.post_error("Authentication failed. Login first!");
+                result.post_error(result.disconnection_error("Authentication failed. Login first!"));
             } else {
-                result.post_error(msg);
+                result.post_error(result.disconnection_error(msg));
             }
             shutdown();
         }
 
         function on_close(msg) {
-            result.post_error("Socket was closed. Goodbye!");
+            result.post_error(result.disconnection_error("Socket was closed. Goodbye!"));
             shutdown();
         };
 
@@ -806,9 +806,29 @@ RClient = {
 
             //////////////////////////////////////////////////////////////////
 
+            string_error: function(msg) {
+                return $("<div class='alert alert-error'></div>").text(msg);
+            },
+
+            disconnection_error: function(msg) {
+                var result = $("<div class='alert alert-error'></div>");
+                result.append($("<span></span>").text(msg));
+                var button = $("<button type='button' class='close'>Reconnect</button>");
+                result.append(button);
+                button.click(function() {
+                    window.location = (window.location.protocol + 
+                                       '//' + window.location.host + '/login.R');
+                });
+                return result;
+            },
+
             post_error: function (msg) {
-                var d = $("<div class='alert alert-error'></div>").text(msg);
-                $("#output").append(d);
+                if (typeof msg === 'string')
+                    msg = this.string_error(msg);
+                if (typeof msg !== 'object')
+                    throw new Error("post_error expects a string or a jquery div");
+                // var d = $("<div class='alert alert-error'></div>").text(msg);
+                $("#output").append(msg);
                 window.scrollTo(0, document.body.scrollHeight);
             },
 
