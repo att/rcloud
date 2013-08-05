@@ -55,6 +55,7 @@ var shell = (function() {
                 result.new_interactive_cell(code).execute();
             }
         }]);
+        ui_utils.make_prompt_chevron_gutter(widget);
     }
 
     var entry_div = $("#command-entry");
