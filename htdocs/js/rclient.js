@@ -107,7 +107,7 @@ RClient = {
                 if (data.type !== "vector") {
                     return this.post_error("Protocol error, unexpected value of type " + data.type);
                 }
-                if (data.value[0].type !== "string_array" ||
+               if (data.value[0].type !== "string_array" ||
                     data.value[0].value.length !== 1) {
                     console.log("Protocol error?! ", data.value[0]);
                     return undefined;
@@ -123,6 +123,18 @@ RClient = {
 
             register_handler: function(cmd, callback) {
                 this.handlers[cmd] = callback;
+            },
+            
+            createFile: function(name,k) {
+                rserve.createFile(name,k);
+            },
+          
+            writeFile: function(buffer,k) {
+                rserve.writeFile(buffer,k);
+            },
+          
+            closeFile: function(k) {
+                rserve.closeFile(k);
             },
 
             //////////////////////////////////////////////////////////////////

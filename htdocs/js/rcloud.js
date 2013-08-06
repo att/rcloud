@@ -120,3 +120,50 @@ rcloud.rename_notebook = function(id, new_name, k)
         rcloud_github_handler("rcloud.rename.notebook", k)
     );
 };
+
+rcloud.upload_file = function() 
+{
+  if(!(window.File && window.FileReader && window.FileList && window.Blob))
+    throw "File API not supported by browser.";
+  else
+  {
+    
+    var file=$("#file")[0].files[0];
+    if(_.isUndefined(file))
+      throw "No file selected!";
+    else
+    {
+      /*FIXME add logged in user */
+      rclient.createFile("/home/"+"smsc"+"/"+file.name, function(){console.log("file created")});
+      var fr = new FileReader();
+      //read 10MB chunks for now
+      var chunk_size = 10*1024*1024;
+      var f_size=file.size;
+      var cur_pos=0;
+      //This is an ugly hack, 
+      var end = function(start) {
+        return start + (chunk_size-1) >= f_size ? f_size : start+(chunk_size-1);
+      };
+      //initiate the first chunk, and then another, and then another ...
+      // ...while waiting for one to complete before reading another
+      fr.readAsArrayBuffer(file.slice(cur_pos, end(cur_pos)));
+      fr.onload = function(e) {
+        var bytes = new Uint8Array(e.target.result);
+        rclient.writeFile(bytes, function() {
+          console.log("buffer written");
+        });
+        
+        if(end(cur_pos) < file.size) {
+          cur_pos = end(cur_pos)+1;
+          fr.readAsArrayBuffer(file.slice(cur_pos, end(cur_pos)));      
+        }
+        else {
+          //last chunk has been read
+          rclient.closeFile(function(){
+            console.log("file closed");
+          });
+        }
+      };
+    }
+  }
+};

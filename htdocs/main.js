@@ -67,6 +67,9 @@ function main_init() {
             $("#input-text-search").click(function() {
                 // shell.terminal.disable(); // what were these for?
             });
+            $("#upload-submit").click(function() {
+              rcloud.upload_file();
+            });
             rcloud.init_client_side_data();
 
             editor.init();
@@ -78,10 +81,12 @@ function main_init() {
                 editor.load_notebook(getURLParameter("notebook"));
                 $("#tabs").tabs("select", "#tabs-2");
             }
-        }, on_data: function(v) {
+        }, 
+        on_data: function(v) {
             v = v.value.json();
             oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
-        }, on_oob_message: function(v, callback) {
+        }, 
+        on_oob_message: function(v, callback) {
             console.log("ON OOB MESSAGE");
             try {
                 v = v.value.json();

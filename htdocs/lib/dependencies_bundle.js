@@ -44007,6 +44007,26 @@ function _encode_string(str) {
     return result;
 };
 
+function _encode_bytes(bytes) {
+    var payload_length = bytes.length + 4;
+    var result = new ArrayBuffer(payload_length);
+    var view = new EndianAwareDataView(result);
+    view.setInt32(0, Rsrv.DT_BYTESTREAM + (payload_length << 8));
+    for (var i=0; i<bytes.length; ++i)
+        view.setInt8(4+i, bytes[i]);
+    return result;
+};
+
+function _encode_buffer(buf) {
+    var payload_length = buf.byteLength + 4;
+    var result = new ArrayBuffer(payload_length);
+    var view = new EndianAwareDataView(result);
+    view.setInt32(0, Rsrv.DT_BYTESTREAM + (payload_length << 8));
+    for (var i=0; i<buf.byteLength; ++i)
+        view.setInt8(4+i, buf[i]);
+    return result;
+};
+
 var Rsrv = {
     PAR_TYPE: function(x) { return x & 255; },
     PAR_LEN: function(x) { return x >> 8; },
@@ -44668,10 +44688,10 @@ Rserve = {
                 _cmd(Rsrv.CMD_createFile, _encode_string(command), k);
             },
             writeFile: function(chunk, k) {
-                _cmd(Rsrv.CMD_writeFile, chunk, k);
+                _cmd(Rsrv.CMD_writeFile, _encode_bytes(chunk), k);
             },
             closeFile: function(k) {
-                _cmd(Rsrv.CMD_writeFile, new ArrayBuffer(0), k);
+                _cmd(Rsrv.CMD_closeFile, new ArrayBuffer(0), k);
             }
         };
         return result;
