@@ -44008,22 +44008,13 @@ function _encode_string(str) {
 };
 
 function _encode_bytes(bytes) {
-    var payload_length = bytes.length + 4;
-    var result = new ArrayBuffer(payload_length);
+    var payload_length = bytes.length;
+    var header_length = 4;
+    var result = new ArrayBuffer(payload_length + header_length);
     var view = new EndianAwareDataView(result);
     view.setInt32(0, Rsrv.DT_BYTESTREAM + (payload_length << 8));
     for (var i=0; i<bytes.length; ++i)
         view.setInt8(4+i, bytes[i]);
-    return result;
-};
-
-function _encode_buffer(buf) {
-    var payload_length = buf.byteLength + 4;
-    var result = new ArrayBuffer(payload_length);
-    var view = new EndianAwareDataView(result);
-    view.setInt32(0, Rsrv.DT_BYTESTREAM + (payload_length << 8));
-    for (var i=0; i<buf.byteLength; ++i)
-        view.setInt8(4+i, buf[i]);
     return result;
 };
 
