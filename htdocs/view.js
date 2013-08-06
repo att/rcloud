@@ -3,9 +3,9 @@ function view_init() {
         return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
     }
 
-    rclient = RClient.create({ 
+    rclient = RClient.create({
         debug: false,
-        host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"), 
+        host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
         on_connect: function() {
             $("#view-source").click(function() {
                 window.location = "main.html?notebook=" + shell.gistname;
