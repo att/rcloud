@@ -228,7 +228,7 @@ var shell = (function() {
         },
         fork_or_revert: function() {
             if(version_)
-                alert("Sorry, forking and reverting are not supported yet!");
+                alert("Sorry, operations on previous versions are not supported yet!");
             else
                 editor.fork_or_revert_notebook(gistname_, version_);
         },
