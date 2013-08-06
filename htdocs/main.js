@@ -4,7 +4,7 @@ function init_shareable_link_box() {
             t.toggle();
             n.toggle();
             if (n.is(":visible")) {
-                n.get(0).value = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname;
+                n.get(0).value = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
                 n.get(0).select();
             }
             return false;
@@ -18,17 +18,14 @@ function init_editable_title_box() {
         var result = prompt("Please enter the new name for this notebook:", $(this).text());
         if (result !== null) {
             $(this).text(result);
-            editor.rename_notebook(shell.gistname, result);
+            editor.rename_notebook(shell.gistname(), result);
         }
     });
 }
 
-function init_fork_button() {
-    $("#fork-notebook").click(function() {
-        if(shell.version)
-            alert("Sorry, forking from an earlier version not supported yet!");
-        else
-            editor.fork_notebook(shell.gistname, shell.version);
+function init_fork_revert_button() {
+    $("#fork-revert-notebook").click(function() {
+        shell.fork_or_revert();
     });
 }
 
@@ -49,7 +46,7 @@ var oob_msg_handlers = {
 function main_init() {
     init_shareable_link_box();
     init_editable_title_box();
-    init_fork_button();
+    init_fork_revert_button();
 
     rclient = RClient.create({
         debug: false,

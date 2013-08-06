@@ -8,7 +8,7 @@ function view_init() {
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
         on_connect: function() {
             $("#view-source").click(function() {
-                window.location = "main.html?notebook=" + shell.gistname;
+                window.location = "main.html?notebook=" + shell.gistname();
             });
             rcloud.init_client_side_data();
             var notebook = getURLParameter("notebook");

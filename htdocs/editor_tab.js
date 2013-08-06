@@ -312,8 +312,8 @@ var editor = function () {
             $("#input-text-source-results-title").css("display", "none");
             $("#input-text-history-results-title").css("display", "none");
             this.load_config(function() {
-                if(shell.gistname) // notebook specified in url
-                    config_.currbook = shell.gistname;
+                if(shell.gistname()) // notebook specified in url
+                    config_.currbook = shell.gistname();
                 else if(config_.currbook)
                     that.load_notebook(config_.currbook, config_.currversion);
                 else // brand new config
@@ -476,7 +476,7 @@ var editor = function () {
             config_.all_books[node.gistname] = entry;
             this.update_tree_entry(username_, node.gistname, entry);
         },
-        fork_notebook: function(gistname) {
+        fork_or_revert_notebook: function(gistname) {
             shell.fork_notebook(gistname, null, _.bind(result.notebook_loaded, this, null));
         },
         show_history: function(node, toggle) {
