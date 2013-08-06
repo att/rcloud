@@ -125,7 +125,7 @@ Notebook.create_controller = function(model)
                 return {files: _.reduce(changes, xlate_change, {})};
             }
             // not awesome to callback to someone else here
-            rcloud.update_notebook(shell.gistname, changes_to_gist(changes),
+            rcloud.update_notebook(shell.gistname(), changes_to_gist(changes),
                                    _.bind(editor.notebook_loaded, editor, null));
         },
         refresh_cells: function() {
