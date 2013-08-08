@@ -44882,6 +44882,10 @@ var Rsrv = {
     ERR_ctrl_closed    : 0x4e,
     ERR_session_busy   : 0x50,
     ERR_detach_failed  : 0x51,
+    ERR_disabled       : 0x61,
+    ERR_unavailable    : 0x62,
+    ERR_cryptError     : 0x63,
+    ERR_securityClose  : 0x64,
 
     CMD_login            : 0x001,
     CMD_voidEval         : 0x002,
@@ -44982,7 +44986,11 @@ var Rsrv = {
         0x4d : "ERR_out_of_mem"    ,
         0x4e : "ERR_ctrl_closed"   ,
         0x50 : "ERR_session_busy"  ,
-        0x51 : "ERR_detach_failed"
+        0x51 : "ERR_detach_failed" ,
+        0x61 : "ERR_disabled"      ,
+        0x62 : "ERR_unavailable"   ,
+        0x63 : "ERR_cryptError"    ,
+        0x64 : "ERR_securityClose"
     }
 };
 
@@ -45177,23 +45185,23 @@ function parse(msg)
 {
     var result = {};
     var header = new Int32Array(msg, 0, 4);
-    result.header = header[0];
+    var resp = header[0] & 16777215, status_code = header[0] >> 24;
+    result.header = [resp, status_code];
 
-    if (header[0] === Rsrv.RESP_ERR) {
-        var status_code = header[0] >> 24;
+    if (result.header[0] === Rsrv.RESP_ERR) {
         result.ok = false;
         result.status_code = status_code;
         result.message = "ERROR FROM R SERVER: " + (Rsrv.status_codes[status_code] || 
                                          status_code)
-               + " " + header[0] + " " + header[1] + " " + header[2] + " " + header[3]
+               + " " + result.header[0] + " " + result.header[1]
                + " " + msg.byteLength
                + " " + msg;
         return result;
     }
 
-    if (!_.contains([Rsrv.RESP_OK, Rsrv.OOB_SEND, Rsrv.OOB_MSG], header[0])) {
+    if (!_.contains([Rsrv.RESP_OK, Rsrv.OOB_SEND, Rsrv.OOB_MSG], result.header[0])) {
         result.ok = false;
-        result.message = "Unexpected response from RServe: " + header[0];
+        result.message = "Unexpected response from RServe: " + result.header[0] + " status: " + Rsrv.status_codes[status_code];
         return result;
     }
     result.ok = true;
@@ -45228,7 +45236,6 @@ function parse_payload(reader)
 function make_basic(type, proto) {
     proto = proto || {
         json: function() { 
-            debugger;
             throw "json() unsupported for type " + this.type;
         }
     };
@@ -45424,6 +45431,8 @@ Rserve = {
         };
 
         socket.onmessage = function(msg) {
+            if (opts.debug)
+                opts.debug.message_in && opts.debug.message_in(msg);
             if (!received_handshake) {
                 hand_shake(msg);
                 return;
@@ -45435,11 +45444,11 @@ Rserve = {
             var v = parse(msg.data);
             if (!v.ok) {
                 handle_error(v.message, v.status_code);
-            } else if (v.header === Rsrv.RESP_OK) {
+            } else if (v.header[0] === Rsrv.RESP_OK) {
                 result_callback(v.payload);
-            } else if (v.header === Rsrv.OOB_SEND) {
+            } else if (v.header[0] === Rsrv.OOB_SEND) {
                 opts.on_data && opts.on_data(v.payload);
-            } else if (v.header === Rsrv.OOB_MSG) {
+            } else if (v.header[0] === Rsrv.OOB_MSG) {
                 if (_.isUndefined(opts.on_oob_message)) {
                     _send_cmd_now(Rsrv.RESP_ERR | Rsrv.OOB_MSG, 
                                   _encode_string("No handler installed"));
@@ -45458,12 +45467,14 @@ Rserve = {
                     });
                 }
             } else {
-                handle_error("Internal Error, parse returned unexpected type " + v.header, -1);
+                handle_error("Internal Error, parse returned unexpected type " + v.header[0], -1);
             }
         };
 
         function _send_cmd_now(command, buffer) {
             var big_buffer = _encode_command(command, buffer);
+            if (opts.debug)
+                opts.debug.message_out && opts.debug.message_out(big_buffer[0], command);
             socket.send(big_buffer);
             return big_buffer;
         };
@@ -45479,22 +45490,24 @@ Rserve = {
                 var lst = queue.shift();
                 result_callback = lst[1];
                 awaiting_result = true;
+                if (opts.debug)
+                    opts.debug.message_out && opts.debug.message_out(lst[0], lst[2]);
                 socket.send(lst[0]);
             }
         }
-        function enqueue(buffer, k) {
+        function enqueue(buffer, k, command) {
             queue.push([buffer, function(result) {
                 awaiting_result = false;
                 bump_queue();
                 k(result);
-            }]);
+            }, command]);
             bump_queue();
         };
 
-        function _cmd(command, buffer, k) {
+        function _cmd(command, buffer, k, string) {
             k = k || function() {};
             var big_buffer = _encode_command(command, buffer);
-            return enqueue(big_buffer, k);
+            return enqueue(big_buffer, k, string);
         };
 
         result = {
@@ -45504,19 +45517,19 @@ Rserve = {
                 socket.close();
             },
             login: function(command, k) {
-                _cmd(Rsrv.CMD_login, _encode_string(command), k);
+                _cmd(Rsrv.CMD_login, _encode_string(command), k, command);
             },
             eval: function(command, k) {
-                _cmd(Rsrv.CMD_eval, _encode_string(command), k);
+                _cmd(Rsrv.CMD_eval, _encode_string(command), k, command);
             },
             createFile: function(command, k) {
-                _cmd(Rsrv.CMD_createFile, _encode_string(command), k);
+                _cmd(Rsrv.CMD_createFile, _encode_string(command), k, command);
             },
             writeFile: function(chunk, k) {
-                _cmd(Rsrv.CMD_writeFile, _encode_bytes(chunk), k);
+                _cmd(Rsrv.CMD_writeFile, _encode_bytes(chunk), k, "");
             },
             closeFile: function(k) {
-                _cmd(Rsrv.CMD_closeFile, new ArrayBuffer(0), k);
+                _cmd(Rsrv.CMD_closeFile, new ArrayBuffer(0), k, "");
             }
         };
         return result;
