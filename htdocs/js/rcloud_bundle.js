@@ -1332,11 +1332,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
     inner_div.append(r_result_div);
 
-    // FIXME this is a terrible hack created simply so we can scroll
-    // to the end of a div. I know no better way of doing this..
-    var end_of_div_span = $('<span></span>');
-    inner_div.append(end_of_div_span);
-
     var current_mode;
 
     var result = {
@@ -1388,7 +1383,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
 
             this.show_result();
-            end_of_div_span[0].scrollIntoView();
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -1458,9 +1452,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
             //editor_row.hide();
             markdown_div.hide();
-            r_result_div.slideDown(150, function() {
-                end_of_div_span[0].scrollIntoView();
-            }); // show();
+            r_result_div.slideDown(150); // show();
             current_mode = "result";
         },
         hide_all: function() {
@@ -1550,15 +1542,16 @@ Notebook.Cell.create_model = function(content, language)
 Notebook.Cell.create_controller = function(cell_model)
 {
     var result = {
-        execute: function() {
+        execute: function(k) {
             var that = this;
             var language = cell_model.language();
             function callback(r) {
                 _.each(cell_model.views, function(view) {
                     view.result_updated(r);
                 });
+                k && k();
             }
-            
+
             rclient.record_cell_execution(cell_model);
 
             if (language === 'Markdown') {
