@@ -38,7 +38,9 @@ var shell = (function() {
             exec: function(widget, args, request) {
                 var code = session.getValue();
                 if(code.length) {
-                    result.new_interactive_cell(code).execute();
+                    result.new_interactive_cell(code).execute(function() {
+                        $.scrollTo(null, entry_div);
+                    });
                     session.setValue('');
                 }
             }
@@ -57,7 +59,9 @@ var shell = (function() {
                     var range = new Range(pos.row, 0, pos.row+1, 0);
                     code = session.getTextRange(range);
                 }
-                result.new_interactive_cell(code).execute();
+                result.new_interactive_cell(code).execute(function() {
+                    $.scrollTo(null, entry_div);
+                });
             }
         }]);
         ui_utils.make_prompt_chevron_gutter(widget);
