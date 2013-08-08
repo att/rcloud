@@ -690,13 +690,20 @@ RClient = {
         }
 
         function on_error(msg, status_code) {
-            if (status_code === 65) {
+            switch (status_code) {
+            case 65:
                 // Authentication failed.
                 result.post_error(result.disconnection_error("Authentication failed. Login first!"));
-            } else {
+                shutdown();
+                break;
+            case 16:
+                // RServe is raising an error 16 at startup. Ignore it!
+                break;
+            default:
+                // Unmarked error, post disconnection_error.
                 result.post_error(result.disconnection_error(msg));
+                shutdown();
             }
-            shutdown();
         }
 
         function on_close(msg) {
@@ -713,10 +720,21 @@ RClient = {
             on_close: on_close,
             on_data: opts.on_data,
             on_oob_message: opts.on_oob_message,
+            debug: {
+                message_in: function(msg) {
+                    if (typeof msg.data === 'string')
+                        console.log("Message in, string,", msg.data);
+                    else
+                        console.log("Message in, array,", new Uint8Array(msg.data));
+                },
+                message_out: function(msg, command) {
+                    debugger;
+                    console.log("Message out", command);
+                }
+            },
             login: token + "\n" + execToken
         });
 
-        var _debug = opts.debug || false;
         var _capturing_answers = false;
         var _capturing_callback = undefined;
 
@@ -823,6 +841,7 @@ RClient = {
             },
 
             disconnection_error: function(msg) {
+                debugger;
                 var result = $("<div class='alert alert-error'></div>");
                 result.append($("<span></span>").text(msg));
                 var button = $("<button type='button' class='close'>Reconnect</button>");
@@ -911,14 +930,8 @@ RClient = {
                 } else {
                     command = this.wrap_command(command, true);
                 }
-                if (_debug)
-                    console.log(command);
                 function unwrap(v) {
                     v = v.value.json();
-                    if (_debug) {
-                        debugger;
-                        console.log(v);
-                    }
                     try {
                         callback(v[1]);
                     } catch (e) {
