@@ -1223,6 +1223,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     // var hide_button   = ui_utils.fa_button("icon-resize-small", "hide");
     var remove_button = ui_utils.fa_button("icon-trash", "remove");
     var run_md_button = ui_utils.fa_button("icon-play", "run");
+    var gap = $('<div/>').html('&nbsp;').css({'line-height': '25%'});
 
     function update_model() {
         return cell_model.content(widget.getSession().getValue());
@@ -1273,7 +1274,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     var button_float = $("<div class='cell-controls'></div>");
     var col = $('<table/>');
-    $.each([source_button,result_button/*,hide_button*/,remove_button,run_md_button],
+    $.each([run_md_button, source_button, result_button/*, hide_button*/, gap, remove_button],
            function() {
                col.append($('<tr/>').append($('<td/>').append($(this))));
            });
