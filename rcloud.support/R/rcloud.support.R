@@ -41,8 +41,8 @@ rcloud.save.user.config <- function(user, content) {
   invisible(write(content,filename))
 }
 
-rcloud.get.notebook <- function(id) {
-  res <- get.gist(.session$rgithub.context, id)
+rcloud.get.notebook <- function(id, version = NULL) {
+  res <- get.gist(.session$rgithub.context, id, version)
   if (rcloud.debug.level() > 1L) {
     if(res$ok) {
       cat("==== GOT GIST ====\n")

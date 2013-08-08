@@ -4,7 +4,10 @@ function init_shareable_link_box() {
             t.toggle();
             n.toggle();
             if (n.is(":visible")) {
-                n.get(0).value = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname;
+                n.get(0).value = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
+                var v = shell.version();
+                if(v)
+                    n.get(0).value = n.get(0).value + '&version='+v;
                 n.get(0).select();
             }
             return false;
@@ -18,14 +21,14 @@ function init_editable_title_box() {
         var result = prompt("Please enter the new name for this notebook:", $(this).text());
         if (result !== null) {
             $(this).text(result);
-            editor.rename_notebook(shell.gistname, result);
+            editor.rename_notebook(shell.gistname(), result);
         }
     });
 }
 
-function init_fork_button() {
-    $("#fork-notebook").click(function() {
-        editor.fork_notebook(shell.gistname);
+function init_fork_revert_button() {
+    $("#fork-revert-notebook").click(function() {
+        shell.fork_or_revert_button();
     });
 }
 
@@ -46,7 +49,7 @@ var oob_msg_handlers = {
 function main_init() {
     init_shareable_link_box();
     init_editable_title_box();
-    init_fork_button();
+    init_fork_revert_button();
 
     rclient = RClient.create({
         debug: false,
@@ -78,7 +81,7 @@ function main_init() {
                 function getURLParameter(name) {
                     return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
                 }
-                editor.load_notebook(getURLParameter("notebook"));
+                editor.load_notebook(getURLParameter("notebook"), getURLParameter("version"));
                 $("#tabs").tabs("select", "#tabs-2");
             }
         }, 
