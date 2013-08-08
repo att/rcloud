@@ -938,12 +938,12 @@ RClient = {
             r_funcall: function(function_name) {
                 function output_one(result, val) {
                     var t = typeof val;
-                    if (t === "string") {
+                    if (val === null)
+                        result.push('NULL');
+                    else if (t === "string")
                         result.push(escape_r_literal_string(val));
-                    }
-                    else if (t == "number") {
+                    else if (t == "number")
                         result.push(String(val));
-                    }
                     else throw "unsupported r_funcall argument type " + t;
                 }
                 var result = [function_name, "("];
@@ -1041,10 +1041,10 @@ function rcloud_github_handler(command, k) {
     };
 }
 
-rcloud.load_notebook = function(id, k)
+rcloud.load_notebook = function(id, version, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.get.notebook", id),
+        rclient.r_funcall("rcloud.get.notebook", id, version),
         rcloud_github_handler("rcloud.get.notebook " + id, k)
     );
 };
@@ -1099,7 +1099,7 @@ rcloud.upload_file = function()
 {
     function do_upload(path, file) {
         var upload_name = path + '/' + file.name;
-        rclient.createFile(upload_name, function() { console.log("file created"); });
+        rclient.createFile(upload_name);
         var fr = new FileReader();
         var chunk_size = 1024*1024;
         var f_size=file.size;
@@ -1108,18 +1108,14 @@ rcloud.upload_file = function()
         // ...while waiting for one to complete before reading another
         fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
         fr.onload = function(e) {
-            console.log("file to write");
             if (e.target.result.byteLength > 0) {
                 var bytes = new Uint8Array(e.target.result);
                 rclient.writeFile(bytes, function() {
-                    console.log("file written");
                     cur_pos += chunk_size;
                     fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                 });
             } else {
-                rclient.closeFile(function() {
-                    console.log("file closed");
-                });
+                rclient.closeFile();
             }
         };
     }
@@ -1398,9 +1394,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
         hide_buttons: function() {
             button_float.css("display", "none");
+            insert_button_float.hide();
         },
         show_buttons: function() {
             button_float.css("display", null);
+            insert_button_float.show();
         },
 
         show_source: function() {
@@ -1741,6 +1739,8 @@ Notebook.create_model = function()
 };
 Notebook.create_controller = function(model)
 {
+    var current_gist_;
+
     function append_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
         var cell_controller = Notebook.Cell.create_controller(cell_model);
@@ -1762,11 +1762,11 @@ Notebook.create_controller = function(model)
             $('.ace_cursor-layer').show();
     }
 
-    function on_load(k, notebook) {
+    function on_load(k, version, notebook) {
         this.clear();
         // is there anything else to gist permissions?
         // certainly versioning figures in here too
-        model.read_only = notebook.user.login != rcloud.username();
+        model.read_only = version != null || notebook.user.login != rcloud.username();
         var parts = {}; // could rely on alphabetic input instead of gathering
         _.each(notebook.files, function (file) {
             var filename = file.filename;
@@ -1780,7 +1780,31 @@ Notebook.create_controller = function(model)
         for(var i in parts)
             append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
         show_or_hide_cursor();
+        current_gist_ = notebook;
         k && k(notebook);
+    }
+
+    function find_changes_from(notebook) {
+        var changes = [];
+        var nf = notebook.files,
+            cf = _.extend({}, current_gist_.files); // to keep track of changes
+        for(var f in nf) {
+            if(f==='r_type')
+                continue; // artifact of rserve.js
+            if(f in cf) {
+                if(cf[f].language != nf[f].language || cf[f].content != nf[f].content) {
+                    changes.push([f, cf[f]]);
+                }
+                delete cf[f];
+            }
+            else changes.push([f, {erase: true, language: nf[f].language}]);
+        }
+        for(f in cf) {
+            if(f==='r_type')
+                continue; // artifact of rserve.js
+            changes.push([f, cf[f]]);
+        }
+        return changes;
     }
 
     var result = {
@@ -1802,28 +1826,57 @@ Notebook.create_controller = function(model)
         clear: function() {
             model.clear();
         },
-        load_notebook: function(gistname, k) {
+        load_notebook: function(gistname, version, k) {
             var that = this;
-            rcloud.load_notebook(gistname, _.bind(on_load, this, k));
+            rcloud.load_notebook(gistname, version || null, _.bind(on_load, this, k, version));
         },
         create_notebook: function(content, k) {
             var that = this;
             rcloud.create_notebook(content, function(notebook) {
                 that.clear();
                 model.read_only = notebook.user.login != rcloud.username();
+                current_gist_ = notebook;
                 k && k(notebook);
             });
         },
-        fork_notebook: function(gistname, k) {
+        fork_or_revert_notebook: function(is_mine, gistname, version, k) {
             var that = this;
-            rcloud.fork_notebook(gistname, function(notebook) {
-                that.load_notebook(notebook.id, k);
+            function update_if(changes, gistname, k) {
+                // if there are no changes, just load the gist so that we are sending along
+                // the latest history, timestamp, etc.
+                if(changes.length)
+                    that.update_notebook(changes, gistname, k);
+                else {
+                    // also less than awesome separation of concerns here, wtf?
+                    show_or_hide_cursor();
+                    rcloud.load_notebook(gistname, null, k);
+                }
+            }
+            if(is_mine) // get HEAD, calculate changes from there to here, and apply
+                rcloud.load_notebook(gistname, null, function(notebook) {
+                    var changes = find_changes_from(notebook);
+                    update_if(changes, gistname, k);
+                });
+            else rcloud.fork_notebook(gistname, function(notebook) {
+                if(version) {
+                    // fork, then get changes from there to here, and apply
+                    var changes = find_changes_from(notebook);
+                    update_if(changes, notebook.id, k);
+                }
+                else
+                    that.load_notebook(notebook.id, null, k);
             });
         },
-        update_notebook: function(changes) {
+        update_notebook: function(changes, gistname, k) {
             if(!changes.length)
                 return;
+            if(model.read_only)
+                throw "attempted to update read-only notebook";
+            gistname = gistname || shell.gistname();
             function partname(id, language) {
+                // yuk
+                if(_.isString(id))
+                    return id;
                 var ext;
                 switch(language) {
                 case 'R':
@@ -1863,7 +1916,16 @@ Notebook.create_controller = function(model)
                 }
                 return {files: _.reduce(changes, xlate_change, {})};
             }
-            rcloud.update_notebook(shell.gistname, changes_to_gist(changes), _.bind(editor.notebook_loaded, editor));
+            // not awesome to callback to someone else here
+            k = k || _.bind(editor.notebook_loaded, editor, null);
+            // also less than awesome separation of concerns here, wtf?
+            show_or_hide_cursor();
+            var k2 = function(notebook) {
+                current_gist_ = notebook;
+                k(notebook);
+            };
+            if(changes.length)
+                rcloud.update_notebook(gistname, changes_to_gist(changes), k2);
         },
         refresh_cells: function() {
             return model.reread_cells();

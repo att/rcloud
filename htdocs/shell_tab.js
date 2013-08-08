@@ -3,6 +3,11 @@
 //////////////////////////////////////////////////////////////////////////////
 
 var shell = (function() {
+
+    var version_ = null,
+        gistname_ = null,
+        is_mine_ = null;
+
     function setup_command_entry(entry_div) {
         function set_ace_height() {
             entry_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
@@ -177,31 +182,42 @@ var shell = (function() {
     var notebook_controller = Notebook.create_controller(notebook_model);
 
     function show_fork_or_input_elements() {
+        var fork_revert = $('#fork-revert-notebook');
         if(notebook_model.read_only) {
             $('#input-div').hide();
-            $('#fork-notebook').show();
+            fork_revert.text(is_mine_ ? 'Revert' : 'Fork');
+            fork_revert.show();
         }
         else {
             $('#input-div').show();
-            $('#fork-notebook').hide();
+            fork_revert.hide();
         }
+    }
+
+    function notebook_is_mine(notebook) {
+        return rcloud.username() === notebook.user.login;
     }
 
     function on_new(k, notebook) {
         $("#notebook-title").text(notebook.description);
+        gistname_ = notebook.id;
+        version_ = null;
+        is_mine_ = notebook_is_mine(notebook);
         show_fork_or_input_elements();
-        this.gistname = notebook.id;
-        this.input_widget.focus(); // surely not the right way to do this
+        if(this.input_widget)
+            this.input_widget.focus(); // surely not the right way to do this
         k && k(notebook);
     }
 
     function on_load(k, notebook) {
         $("#notebook-title").text(notebook.description);
-        show_fork_or_input_elements();
+        is_mine_ = notebook_is_mine(notebook);
+        show_fork_or_input_elements(notebook_is_mine(notebook));
         _.each(this.notebook.view.sub_views, function(cell_view) {
             cell_view.show_source();
         });
-        this.input_widget.focus(); // surely not the right way to do this
+        if(this.input_widget)
+            this.input_widget.focus(); // surely not the right way to do this
         k && k(notebook);
     }
 
@@ -213,7 +229,16 @@ var shell = (function() {
             controller: notebook_controller
         },
         input_widget: input_widget,
-        gistname: undefined,
+        gistname: function() {
+            return gistname_;
+        },
+        version: function() {
+            return version_;
+        },
+        fork_or_revert_button: function() {
+            // hmm messages bouncing around everywhere
+            editor.fork_or_revert_notebook(is_mine_, gistname_, version_);
+        },
         detachable_div: function(div) {
             var on_remove = function() {};
             var on_detach = function() {};
@@ -253,21 +278,25 @@ var shell = (function() {
             return notebook_controller.append_cell(content, "R");
         }, insert_markdown_cell_before: function(index) {
             return notebook_controller.insert_cell("", "Markdown", index);
-        }, load_notebook: function(gistname, k) {
+        }, load_notebook: function(gistname, version, k) {
             var that = this;
             // asymetrical: we know the gistname before it's loaded here,
             // but not in new.  and we have to set this here to signal
             // editor's init load config callback to override the currbook
-            this.gistname = gistname;
-            this.notebook.controller.load_notebook(gistname, _.bind(on_load, this, k));
+            gistname_ = gistname;
+            version_ = version;
+            this.notebook.controller.load_notebook(gistname_, version_, _.bind(on_load, this, k));
         }, new_notebook: function(desc, k) {
             var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
             this.notebook.controller.create_notebook(content, _.bind(on_new, this, k));
-        }, fork_notebook: function(gistname, k) {
+        }, fork_or_revert_notebook: function(is_mine, gistname, version, k) {
+            if(is_mine && !version)
+                throw "unexpected revert of current version";
             var that = this;
             notebook_model.read_only = false;
-            this.notebook.controller.fork_notebook(gistname, function(notebook) {
-                that.gistname = notebook.id;
+            this.notebook.controller.fork_or_revert_notebook(is_mine, gistname, version, function(notebook) {
+                gistname_ = notebook.id;
+                version_ = null;
                 on_load.call(that, k, notebook);
             });
         }

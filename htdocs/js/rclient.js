@@ -280,12 +280,12 @@ RClient = {
             r_funcall: function(function_name) {
                 function output_one(result, val) {
                     var t = typeof val;
-                    if (t === "string") {
+                    if (val === null)
+                        result.push('NULL');
+                    else if (t === "string")
                         result.push(escape_r_literal_string(val));
-                    }
-                    else if (t == "number") {
+                    else if (t == "number")
                         result.push(String(val));
-                    }
                     else throw "unsupported r_funcall argument type " + t;
                 }
                 var result = [function_name, "("];
