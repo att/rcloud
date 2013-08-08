@@ -56,7 +56,6 @@ function main_init() {
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
         on_connect: function() {
             $("#new-md-cell-button").click(function() {
-                // shell.terminal.disable(); // what were these for?
                 shell.new_markdown_cell("", "markdown");
                 var vs = shell.notebook.view.sub_views;
                 vs[vs.length-1].show_source();
@@ -67,9 +66,6 @@ function main_init() {
                 window.location.href = '/logout.R';
             });
             $(".collapse").collapse();
-            $("#input-text-search").click(function() {
-                // shell.terminal.disable(); // what were these for?
-            });
             $("#upload-submit").click(function() {
               rcloud.upload_file();
             });
