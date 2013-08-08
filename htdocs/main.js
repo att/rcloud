@@ -5,6 +5,9 @@ function init_shareable_link_box() {
             n.toggle();
             if (n.is(":visible")) {
                 n.get(0).value = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
+                var v = shell.version();
+                if(v)
+                    n.get(0).value = n.get(0).value + '&version='+v;
                 n.get(0).select();
             }
             return false;
@@ -25,7 +28,7 @@ function init_editable_title_box() {
 
 function init_fork_revert_button() {
     $("#fork-revert-notebook").click(function() {
-        shell.fork_or_revert();
+        shell.fork_or_revert_button();
     });
 }
 
@@ -75,7 +78,7 @@ function main_init() {
                 function getURLParameter(name) {
                     return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
                 }
-                editor.load_notebook(getURLParameter("notebook"));
+                editor.load_notebook(getURLParameter("notebook"), getURLParameter("version"));
                 $("#tabs").tabs("select", "#tabs-2");
             }
         }, on_data: function(v) {

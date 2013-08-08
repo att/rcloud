@@ -183,9 +183,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
         hide_buttons: function() {
             button_float.css("display", "none");
+            insert_button_float.hide();
         },
         show_buttons: function() {
             button_float.css("display", null);
+            insert_button_float.show();
         },
 
         show_source: function() {
