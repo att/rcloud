@@ -95,8 +95,7 @@ var editor = function () {
     }
 
     function load_all_configs(k) {
-        rcloud.get_users(function(userlist) {
-            var users = _.pluck(userlist, 'login');
+        rcloud.get_users(username_, function(users) {
             rcloud.load_multiple_user_configs(users, function(configset) {
                 var my_alls = [], user_nodes = [], my_config = null;
                 for(var username in configset) {

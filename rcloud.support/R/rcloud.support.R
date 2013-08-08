@@ -20,7 +20,6 @@
 rcloud.user.config.filename <- function(user)
   file.path(.rc.conf$data.root, "userfiles", paste(user, ".json", sep=''))
 
-
 rcloud.load.user.config <- function(user) {
   ufile <- rcloud.user.config.filename(user);
   if(file.exists(ufile))
@@ -68,8 +67,16 @@ rcloud.rename.notebook <- function(id, new.name)
 
 rcloud.fork.notebook <- function(id) fork.gist(.session$rgithub.context, id)
 
-rcloud.get.users <- function()
-  get.users(.session$rgithub.context);
+rcloud.get.users <- function(user) {
+  userlistfile <- file.path(.rc.conf$data.root, "userfiles", "userlist.txt")
+  userhash <- new.env()
+  assign(user, 1, envir = userhash)
+  for (user in readLines(userlistfile))
+    assign(user, 1, envir = userhash)
+  users <- names(as.list(userhash))
+  write(paste(users, collapse='\n'), userlistfile)
+  users
+}
 
 rcloud.setup.dirs <- function() {
     for (data.subdir in c("userfiles", "history", "home"))

@@ -105,12 +105,11 @@ rcloud.resolve_deferred_result = function(uuid, k)
     rclient.send_and_callback(cmd, k);
 };
 
-rcloud.get_users = function(k)
+rcloud.get_users = function(user, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.get.users"),
-        rcloud_github_handler("rcloud.get.users", k)
-    );
+        rclient.r_funcall("rcloud.get.users", user),
+        k);
 };
 
 rcloud.rename_notebook = function(id, new_name, k)
