@@ -11,8 +11,9 @@ function view_init() {
                 window.location = "main.html?notebook=" + shell.gistname();
             });
             rcloud.init_client_side_data();
-            var notebook = getURLParameter("notebook");
-            shell.load_notebook(notebook, function() {
+            var notebook = getURLParameter("notebook"),
+                version = getURLParameter("version");
+            shell.load_notebook(notebook, version, function() {
                 shell.notebook.controller.run_all();
                 _.each(shell.notebook.view.sub_views, function(cell_view) {
                     cell_view.hide_buttons();

@@ -268,7 +268,7 @@ var editor = function () {
             else
                 begin = null;
         }
-        else throw "add_history_nodes don't understand where " + where.toString();
+        else throw "add_history_nodes don't understand where '" + where + "'";
 
         if(node.history) {
             process_history();
@@ -476,8 +476,8 @@ var editor = function () {
             config_.all_books[node.gistname] = entry;
             this.update_tree_entry(username_, node.gistname, entry);
         },
-        fork_or_revert_notebook: function(gistname) {
-            shell.fork_notebook(gistname, null, _.bind(result.notebook_loaded, this, null));
+        fork_or_revert_notebook: function(is_mine, gistname, version) {
+            shell.fork_or_revert_notebook(is_mine, gistname, version, _.bind(result.notebook_loaded, this, null));
         },
         show_history: function(node, toggle) {
             var where = node.children.length && toggle ? 0 : "more";
@@ -535,13 +535,14 @@ var editor = function () {
             // add_history_nodes will do an async call to get the history.
             // always show the same number of history nodes as before, unless
             // we're starting out and looking at an old version
-            var where;
+            var where = 0, is_open = false;
             var node = update_tree('interests', user, gistname, data,
                                    function(node) {
                                        data.history = data.history || node.history;
                                        where = node.children.length;
                                        if(where && node.children[where-1].id==='showmore')
                                            --where;
+                                       is_open = node.is_open;
                                    });
             if(where===0 && config_.currversion)
                 where = config_.currversion;
@@ -553,6 +554,8 @@ var editor = function () {
                     $tree_.tree('selectNode', n2);
                 };
             }
+            else if(is_open)
+                k = function(node) { $tree_.tree('openNode', node); };
             add_history_nodes(node, where, k);
             if(config_.currversion)
                 node = null; // don't select
