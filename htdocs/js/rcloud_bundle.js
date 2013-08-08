@@ -696,9 +696,6 @@ RClient = {
                 result.post_error(result.disconnection_error("Authentication failed. Login first!"));
                 shutdown();
                 break;
-            case 16:
-                // RServe is raising an error 16 at startup. Ignore it!
-                break;
             default:
                 // Unmarked error, post disconnection_error.
                 result.post_error(result.disconnection_error(msg));
