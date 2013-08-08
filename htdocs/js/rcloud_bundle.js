@@ -720,18 +720,18 @@ RClient = {
             on_close: on_close,
             on_data: opts.on_data,
             on_oob_message: opts.on_oob_message,
-            debug: {
-                message_in: function(msg) {
-                    if (typeof msg.data === 'string')
-                        console.log("Message in, string,", msg.data);
-                    else
-                        console.log("Message in, array,", new Uint8Array(msg.data));
-                },
-                message_out: function(msg, command) {
-                    debugger;
-                    console.log("Message out", command);
-                }
-            },
+            // debug: {
+            //     message_in: function(msg) {
+            //         if (typeof msg.data === 'string')
+            //             console.log("Message in, string,", msg.data);
+            //         else
+            //             console.log("Message in, array,", new Uint8Array(msg.data));
+            //     },
+            //     message_out: function(msg, command) {
+            //         debugger;
+            //         console.log("Message out", command);
+            //     }
+            // },
             login: token + "\n" + execToken
         });
 
@@ -841,7 +841,6 @@ RClient = {
             },
 
             disconnection_error: function(msg) {
-                debugger;
                 var result = $("<div class='alert alert-error'></div>");
                 result.append($("<span></span>").text(msg));
                 var button = $("<button type='button' class='close'>Reconnect</button>");
