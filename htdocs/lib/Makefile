@@ -18,6 +18,7 @@ dependencies_bundle.js: \
 	js/jquery.cookies.2.2.0.js \
 	js/tree.jquery.js \
 	js/jquery-ui-1.8.18.custom.min.js \
+	js/jquery.scrollto.js \
 	js/underscore-min.js \
 	js/d3.v2.js \
 	js/lux.js \
