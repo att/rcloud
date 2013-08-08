@@ -71,7 +71,9 @@ rcloud.get.users <- function(user) {
   userlistfile <- file.path(.rc.conf$data.root, "userfiles", "userlist.txt")
   userhash <- new.env()
   assign(user, 1, envir = userhash)
-  for (user in readLines(userlistfile))
+  for (user in tryCatch({readLines(userlistfile)},
+                          error = function(e) {c()},
+                          warning = function(w) {}))
     assign(user, 1, envir = userhash)
   users <- names(as.list(userhash))
   write(paste(users, collapse='\n'), userlistfile)
