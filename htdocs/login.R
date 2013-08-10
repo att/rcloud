@@ -35,11 +35,14 @@ run <- function(url, query, body, headers)
     if (usr == FALSE)
       return(list("<html><head></head><body>Invalid or expired execution token, requesting authentication...",
                   "text/html", paste0("Refresh: 0.1; url=", ret)))
-  }          
-  state <- rnorm(1)
+  }
+  if (is.null((redirect = query["redirect"])))
+    redirect = '/main.html'
+  state <- list(nonce=rnorm(1),
+                redirect=redirect)
   list(paste("<html><head><meta http-equiv='refresh' content='0;URL=\"",rcloud.support:::.rc.conf$github.base.url,
              "login/oauth/authorize?client_id=", rcloud.support:::.rc.conf$github.client.id, 
-             "&state=",state,
+             "&state=",URLencode(toJSON(state)),
              "&scope=gist,user",
              "\"'></head></html>", sep=''),
        "text/html", extra.headers)
