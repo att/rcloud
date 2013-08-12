@@ -71,12 +71,15 @@ Notebook.create_controller = function(model)
     var result = {
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
-            this.update_notebook(cch[1]);
+            // github gist api will not take empty cells, so drop them
+            if(content.length)
+                this.update_notebook(cch[1]);
             return cch[0];
         },
         insert_cell: function(content, type, id) {
             var cch = insert_cell_helper(content, type, id);
-            this.update_notebook(cch[1]);
+            if(content.length)
+                this.update_notebook(cch[1]);
             return cch[0];
         },
         remove_cell: function(cell_model) {

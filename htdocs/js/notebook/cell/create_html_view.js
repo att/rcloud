@@ -53,7 +53,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         r_result_div.html("Computing...");
         var new_content = update_model();
         result.show_result();
-        if(new_content)
+        if(new_content!==null) // if any change (including removing the content)
             cell_model.parent_model.controller.update_cell(cell_model);
         cell_model.controller.execute();
     }
