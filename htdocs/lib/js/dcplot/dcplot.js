@@ -108,6 +108,7 @@ var chart_attrs = {
         title: {required: false}, // title for html in the div, handled outside this lib
         dimension: {required: true},
         group: {required: true},
+        ordering: {required: false},
         width: {required: true, default: 300},
         height: {required: true, default: 300},
         'transition.duration': {required: false},
@@ -283,6 +284,15 @@ dcplot.format_error = function(e) {
 
 function dcplot(frame, groupname, definition) {
 
+    // generalization of _.has
+    function mhas(obj) {
+        for(var i=1; i<arguments.length; ++i)
+            if(!_.has(obj, arguments[i]))
+                return false
+        else obj = obj[arguments[i]];
+        return true;
+    }
+
     // defaults
     function default_dimension(name, defn) {
         // nothing (yet?)
@@ -374,6 +384,19 @@ function dcplot(frame, groupname, definition) {
                     g.dimension = defn.dimension;
                     infer_group(defn.group, g, dims);
                 }
+                if(!_.has(defn, 'ordering')) {
+                    // note it's a little messy to have this as a property of the chart rather than
+                    // the group, but dc.js sometimes needs an ordering and sometimes doesn't
+                    if(_.has(dims, defn.dimension) && mhas(accessor(dims[defn.dimension]), 'attrs', 'levels')) {
+                        var levels = accessor(dims[defn.dimension]).attrs.levels;
+                        var rmap = _.object(levels, _.range(levels.length));
+                        // the ordering function uses a reverse map of the levels
+                        defn.ordering = function(p) {
+                            return rmap[p.key];
+                        };
+                    }
+                }
+
             },
             color: function() {
             },
@@ -406,7 +429,7 @@ function dcplot(frame, groupname, definition) {
                  for a histogram, or the set of ordinals */
                 if(!('x.units' in defn) && defn.group) {
                     var group = groups[defn.group];
-                    if('group' in group && 'binwidth' in group.group)
+                    if(mhas(group, 'group', 'binwidth'))
                         defn['x.units'] = dc.units.float.precision(group.group.binwidth);
                 }
             },
@@ -523,9 +546,12 @@ function dcplot(frame, groupname, definition) {
             throw errors;
     }
 
+    function create_group(defn, dimensions) {
+        return accessor(defn.reduce)(defn.group(dimensions[defn.dimension]));
+    }
 
 
-    // this is a hopefully a lot of boilerplate with no logic
+    // this is a hopefully a lot of boilerplate with not too much logic
     // maps from dcplot attributes to dc.js methods
     function create_chart(groupname, defn, dimensions, groups) {
         var ctor, chart;
@@ -554,6 +580,8 @@ function dcplot(frame, groupname, definition) {
                     .group(groups[defn.group])
                     .width(defn.width)
                     .height(defn.height);
+                if(_.has(defn, 'ordering'))
+                    chart.ordering(defn.ordering);
                 if(_.has(defn, 'transition.duration'))
                     chart.transitionDuration(defn['transition.duration']);
                 if(_.has(defn, 'label')) {
@@ -581,6 +609,8 @@ function dcplot(frame, groupname, definition) {
                 var scale = defn['color.transform'] || d3.scale.category10();
                 if(_.has(defn, 'color.domain'))
                     scale.domain(defn['color.domain']);
+                else if(mhas(defn, 'color', 'attrs', 'levels'))
+                    scale.domain(defn.color.attrs.levels);
                 if(_.has(defn, 'color.range'))
                     scale.range(defn['color.range']);
                 chart.colors(scale);
@@ -774,7 +804,7 @@ function dcplot(frame, groupname, definition) {
     }
     for(var g in definition.groups) {
         defn = definition.groups[g];
-        groups[g] = accessor(defn.reduce)(defn.group(dimensions[defn.dimension]));
+        groups[g] = create_group(defn, dimensions);
     }
     for(c in definition.charts) {
         defn = definition.charts[c];
