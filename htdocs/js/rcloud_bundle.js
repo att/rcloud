@@ -843,8 +843,11 @@ RClient = {
                 var button = $("<button type='button' class='close'>Reconnect</button>");
                 result.append(button);
                 button.click(function() {
-                    window.location = (window.location.protocol + 
-                                       '//' + window.location.host + '/login.R');
+                    window.location = 
+                        (window.location.protocol + 
+                         '//' + window.location.host + 
+                         '/login.R?redirect=' + 
+                         encodeURIComponent(window.location.pathname + window.location.search));
                 });
                 return result;
             },
