@@ -38886,7 +38886,7 @@ Lux.Scene.Transform.Camera.perspective = function(opts)
     return scene;
 };
 (function(exports){
-crossfilter.version = "1.1.2";
+crossfilter.version = "1.2.0";
 function crossfilter_identity(d) {
   return d;
 }
@@ -38910,18 +38910,15 @@ function bisect_by(f) {
   // present in a, the insertion point will be before (to the left of) any
   // existing entries. The return value is suitable for use as the first
   // argument to `array.splice` assuming that a is already sorted.
-  // Incomparable values such as NaN and undefined are assumed to be at the end
-  // of the array.
   //
   // The returned insertion point i partitions the array a into two halves so
   // that all v < x for v in a[lo:i] for the left side and all v >= x for v in
   // a[i:hi] for the right side.
   function bisectLeft(a, x, lo, hi) {
     while (lo < hi) {
-      var mid = lo + hi >>> 1,
-          y = f(a[mid]);
-      if (x <= y || !(y <= y)) hi = mid;
-      else lo = mid + 1;
+      var mid = lo + hi >>> 1;
+      if (f(a[mid]) < x) lo = mid + 1;
+      else hi = mid;
     }
     return lo;
   }
@@ -38934,9 +38931,8 @@ function bisect_by(f) {
   // a[i:hi] for the right side.
   function bisectRight(a, x, lo, hi) {
     while (lo < hi) {
-      var mid = lo + hi >>> 1,
-          y = f(a[mid]);
-      if (x < y || !(y <= y)) hi = mid;
+      var mid = lo + hi >>> 1;
+      if (x < f(a[mid])) hi = mid;
       else lo = mid + 1;
     }
     return lo;
@@ -39034,7 +39030,7 @@ function insertionsort_by(f) {
 
   function insertionsort(a, lo, hi) {
     for (var i = lo + 1; i < hi; ++i) {
-      for (var j = i, t = a[i], x = f(t), y; j > lo && ((y = f(a[j - 1])) > x || !(y <= y)); --j) {
+      for (var j = i, t = a[i], x = f(t); j > lo && f(a[j - 1]) > x; --j) {
         a[j] = a[j - 1];
       }
       a[j] = t;
@@ -39061,17 +39057,6 @@ function quicksort_by(f) {
   }
 
   function quicksort(a, lo, hi) {
-    // First move NaN and undefined to the end.
-    var x, y;
-    while (lo < hi && !(x = f(a[hi - 1]), x <= x)) hi--;
-    for (var i = hi; --i >= lo; ) {
-      x = f(y = a[i]);
-      if (!(x <= x)) {
-        a[i] = a[--hi];
-        a[hi] = y;
-      }
-    }
-
     // Compute the two pivots by looking at 5 elements.
     var sixth = (hi - lo) / 6 | 0,
         i1 = lo + sixth,
@@ -39456,6 +39441,7 @@ function crossfilter() {
       filter: filter,
       filterExact: filterExact,
       filterRange: filterRange,
+      filterFunction: filterFunction,
       filterAll: filterAll,
       top: top,
       bottom: bottom,
@@ -39472,6 +39458,7 @@ function crossfilter() {
         newIndex, // temporary array storing newly-added index
         sort = quicksort_by(function(i) { return newValues[i]; }),
         refilter = crossfilter_filterAll, // for recomputing filter
+        refilterFunction, // the custom filter function in use
         indexListeners = [], // when data is added
         dimensionGroups = [],
         lo0 = 0,
@@ -39502,9 +39489,15 @@ function crossfilter() {
       newValues = permute(newValues, newIndex);
 
       // Bisect newValues to determine which new records are selected.
-      var bounds = refilter(newValues), lo1 = bounds[0], hi1 = bounds[1], i;
-      for (i = 0; i < lo1; ++i) filters[newIndex[i] + n0] |= one;
-      for (i = hi1; i < n1; ++i) filters[newIndex[i] + n0] |= one;
+      var bounds = refilter(newValues), lo1 = bounds[0], hi1 = bounds[1], i, k;
+      if (refilterFunction) {
+        for (i = 0; i < n1; ++i) {
+          if (!refilterFunction(newValues[i], k = newIndex[i] + n0)) filters[k] |= one;
+        }
+      } else {
+        for (i = 0; i < lo1; ++i) filters[newIndex[i] + n0] |= one;
+        for (i = hi1; i < n1; ++i) filters[newIndex[i] + n0] |= one;
+      }
 
       // If this dimension previously had no data, then we don't need to do the
       // more expensive merge operation; use the new values and index as-is.
@@ -39560,12 +39553,21 @@ function crossfilter() {
 
     // Updates the selected values based on the specified bounds [lo, hi].
     // This implementation is used by all the public filter methods.
-    function filterIndex(bounds) {
+    function filterIndexBounds(bounds) {
+      var lo1 = bounds[0],
+          hi1 = bounds[1];
+
+      if (refilterFunction) {
+        refilterFunction = null;
+        filterIndexFunction(function(d, i) { return lo1 <= i && i < hi1; });
+        lo0 = lo1;
+        hi0 = hi1;
+        return dimension;
+      }
+
       var i,
           j,
           k,
-          lo1 = bounds[0],
-          hi1 = bounds[1],
           added = [],
           removed = [];
 
@@ -39608,24 +39610,53 @@ function crossfilter() {
     function filter(range) {
       return range == null
           ? filterAll() : Array.isArray(range)
-          ? filterRange(range)
+          ? filterRange(range) : typeof range === "function"
+          ? filterFunction(range)
           : filterExact(range);
     }
 
     // Filters this dimension to select the exact value.
     function filterExact(value) {
-      return filterIndex((refilter = crossfilter_filterExact(bisect, value))(values));
+      return filterIndexBounds((refilter = crossfilter_filterExact(bisect, value))(values));
     }
 
     // Filters this dimension to select the specified range [lo, hi].
     // The lower bound is inclusive, and the upper bound is exclusive.
     function filterRange(range) {
-      return filterIndex((refilter = crossfilter_filterRange(bisect, range))(values));
+      return filterIndexBounds((refilter = crossfilter_filterRange(bisect, range))(values));
     }
 
     // Clears any filters on this dimension.
     function filterAll() {
-      return filterIndex((refilter = crossfilter_filterAll)(values));
+      return filterIndexBounds((refilter = crossfilter_filterAll)(values));
+    }
+
+    // Filters this dimension using an arbitrary function.
+    function filterFunction(f) {
+      refilter = crossfilter_filterAll;
+
+      filterIndexFunction(refilterFunction = f);
+
+      lo0 = 0;
+      hi0 = n;
+
+      return dimension;
+    }
+
+    function filterIndexFunction(f) {
+      var i,
+          k,
+          x,
+          added = [],
+          removed = [];
+
+      for (i = 0; i < n; ++i) {
+        if (!(filters[k = index[i]] & one) ^ (x = f(values[i], k))) {
+          if (x) filters[k] &= zero, added.push(k);
+          else filters[k] |= one, removed.push(k);
+        }
+      }
+      filterListeners.forEach(function(l) { l(one, added, removed); });
     }
 
     // Returns the top K selected records based on this dimension's order.
@@ -39733,8 +39764,8 @@ function crossfilter() {
         // Get the first old key (x0 of g0), if it exists.
         if (k0) x0 = (g0 = oldGroups[0]).key;
 
-        // Find the first new key (x1).
-        x1 = key(newValues[i1]);
+        // Find the first new key (x1), skipping NaN keys.
+        while (i1 < n1 && !((x1 = key(newValues[i1])) >= x1)) ++i1;
 
         // While new keys remain…
         while (i1 < n1) {
@@ -39758,7 +39789,7 @@ function crossfilter() {
 
           // Add any selected records belonging to the added group, while
           // advancing the new key and populating the associated group index.
-          while (x1 <= x || !(x1 <= x1) && !(x <= x)) {
+          while (!(x1 > x)) {
             groupIndex[j = newIndex[i1] + n0] = k;
             if (!(filters[j] & zero)) g.value = add(g.value, data[j]);
             if (++i1 >= n1) break;
@@ -39819,11 +39850,6 @@ function crossfilter() {
       function updateMany(filterOne, added, removed) {
         if (filterOne === one || resetNeeded) return;
 
-        if (!reduceRemove && removed.length) {
-          resetNeeded = true;
-          return;
-        }
-
         var i,
             k,
             n,
@@ -39850,11 +39876,6 @@ function crossfilter() {
       // This function is only used when the cardinality is 1.
       function updateOne(filterOne, added, removed) {
         if (filterOne === one || resetNeeded) return;
-
-        if (!reduceRemove && removed.length) {
-          resetNeeded = true;
-          return;
-        }
 
         var i,
             k,
@@ -40002,7 +40023,7 @@ function crossfilter() {
   }
 
   // A convenience method for groupAll on a dummy dimension.
-  // This implementation can be optimized since it is always cardinality 1.
+  // This implementation can be optimized since it always has cardinality 1.
   function groupAll() {
     var group = {
       reduce: reduce,
@@ -40048,11 +40069,6 @@ function crossfilter() {
           n;
 
       if (resetNeeded) return;
-
-      if (!reduceRemove && removed.length) {
-        resetNeeded = true;
-        return;
-      }
 
       // Add the added values.
       for (i = 0, n = added.length; i < n; ++i) {
@@ -40652,6 +40668,9 @@ dc.baseChart = function (_chart) {
 
     var _width = 200, _height = 200;
 
+    var _ordering = function (p) {
+        return p.key;
+    };
     var _keyAccessor = function (d) {
         return d.key;
     };
@@ -40730,10 +40749,15 @@ dc.baseChart = function (_chart) {
         return _chart;
     };
 
+    _chart.ordering = function(o) {
+        if (!arguments.length) return _ordering;
+        _ordering = o;
+        _chart.expireCache();
+        return _chart;
+    };
+
     _chart.orderedGroup = function () {
-        return _group.order(function (p) {
-            return p.key;
-        });
+        return _group.order(_ordering);
     };
 
     _chart.filterAll = function () {
@@ -42181,7 +42205,17 @@ dc.pieChart = function (parent, chartGroup) {
 
     function assemblePieData() {
         if (_slicesCap == Infinity) {
-            return _chart.orderedGroup().top(_slicesCap); // ordered by keys
+            // _chart.orderedGroup().top(_slicesCap) does not work for two reasons:
+            // 1. crossfilter's heap functions pass in the value, not the key-value pair
+            // 2. crossfilter sorts in descending order
+            var data = _chart.group().all().slice(0); // clone
+            if(data.length < 2)
+                return data;
+            var compf = _.isNumber(_chart.ordering()(data[0]))
+                    ? function(a, b) { return _chart.ordering()(a) - _chart.ordering()(b); }
+                : function(a, b) { return _chart.ordering()(a).localeCompare(_chart.ordering()(b)); };
+            data.sort(compf);
+            return data;
         } else {
             var topRows = _chart.group().top(_slicesCap); // ordered by value
             var topRowsSum = d3.sum(topRows, _chart.valueAccessor());
@@ -43848,9 +43882,12 @@ var dataframe = {
                 if(!(column in data))
                     throw "dataframe doesn't have column " + column.toString();
                 var columnv = data[column];
-                return function(i) {
+                var f = function(i) {
                     return columnv[i];
                 };
+                // access e.g. R attributes through access("col").attrs
+                f.attrs = columnv;
+                return f;
             },
             index: function(i) {
                 return i;
@@ -43871,9 +43908,14 @@ var dataframe = {
     rows: function(data) {
         var result = {
             access: function(column) {
-                return function(i) {
+                var f = function(i) {
                     return data[i][column];
                 };
+                // to support attributes, add a field called 'attrs'
+                // to the row array!
+                if('attrs' in data && _.isObject(data.attrs))
+                    f.attrs = data.attrs[column];
+                return f;
             },
             // we could get rid of row indices and just use rows
             // except here (?)
@@ -44003,6 +44045,7 @@ var chart_attrs = {
         title: {required: false}, // title for html in the div, handled outside this lib
         dimension: {required: true},
         group: {required: true},
+        ordering: {required: false},
         width: {required: true, default: 300},
         height: {required: true, default: 300},
         'transition.duration': {required: false},
@@ -44178,6 +44221,15 @@ dcplot.format_error = function(e) {
 
 function dcplot(frame, groupname, definition) {
 
+    // generalization of _.has
+    function mhas(obj) {
+        for(var i=1; i<arguments.length; ++i)
+            if(!_.has(obj, arguments[i]))
+                return false
+        else obj = obj[arguments[i]];
+        return true;
+    }
+
     // defaults
     function default_dimension(name, defn) {
         // nothing (yet?)
@@ -44269,6 +44321,18 @@ function dcplot(frame, groupname, definition) {
                     g.dimension = defn.dimension;
                     infer_group(defn.group, g, dims);
                 }
+                if(!_.has(defn, 'ordering')) {
+                    // note it's a little messy to have this as a property of the chart rather than
+                    // the group, but dc.js sometimes needs an ordering and sometimes doesn't
+                    if(_.has(dims, defn.dimension) && mhas(accessor(dims[defn.dimension]), 'attrs', 'levels')) {
+                        var levels = accessor(dims[defn.dimension]).attrs.levels;
+                        var rmap = _.object(levels, _.range(levels.length));
+                        defn.ordering = function(p) {
+                            return rmap[p.key];
+                        };
+                    }
+                }
+
             },
             color: function() {
             },
@@ -44301,7 +44365,7 @@ function dcplot(frame, groupname, definition) {
                  for a histogram, or the set of ordinals */
                 if(!('x.units' in defn) && defn.group) {
                     var group = groups[defn.group];
-                    if('group' in group && 'binwidth' in group.group)
+                    if(mhas(group, 'group', 'binwidth'))
                         defn['x.units'] = dc.units.float.precision(group.group.binwidth);
                 }
             },
@@ -44418,9 +44482,12 @@ function dcplot(frame, groupname, definition) {
             throw errors;
     }
 
+    function create_group(defn, dimensions) {
+        return accessor(defn.reduce)(defn.group(dimensions[defn.dimension]));
+    }
 
 
-    // this is a hopefully a lot of boilerplate with no logic
+    // this is a hopefully a lot of boilerplate with not too much logic
     // maps from dcplot attributes to dc.js methods
     function create_chart(groupname, defn, dimensions, groups) {
         var ctor, chart;
@@ -44449,6 +44516,8 @@ function dcplot(frame, groupname, definition) {
                     .group(groups[defn.group])
                     .width(defn.width)
                     .height(defn.height);
+                if(_.has(defn, 'ordering'))
+                    chart.ordering(defn.ordering);
                 if(_.has(defn, 'transition.duration'))
                     chart.transitionDuration(defn['transition.duration']);
                 if(_.has(defn, 'label')) {
@@ -44468,16 +44537,19 @@ function dcplot(frame, groupname, definition) {
                 // i am cool with dc.js's color accessor
                 if(_.has(defn, 'color'))
                     chart.colorAccessor(key_value(accessor(defn.color)));
-                // i am not cool with its "color calculator" when it should
-                // just do things the d3 way. so just plug a d3 scale into colors
+                // however i don't understand why dc chooses to use a
+                // "color calculator" when a d3 scale seems like it ought
+                // to serve the purpose. so just plug a d3 scale into colors
                 // and override the calculator to use it
+                // also default to category10 which seems better for discrete colors
                 var scale = defn['color.transform'] || d3.scale.category10();
                 if(_.has(defn, 'color.domain'))
                     scale.domain(defn['color.domain']);
+                else if(mhas(defn, 'color', 'attrs', 'levels'))
+                    scale.domain(defn.color.attrs.levels);
                 if(_.has(defn, 'color.range'))
                     scale.range(defn['color.range']);
                 chart.colors(scale);
-                //var map = {a: 'red', b: 'blue', c: 'green'}; return map[c]; });
                 chart.colorCalculator(function(x) { return chart.colors()(x); });
             },
             stackable: function() {
@@ -44668,7 +44740,7 @@ function dcplot(frame, groupname, definition) {
     }
     for(var g in definition.groups) {
         defn = definition.groups[g];
-        groups[g] = accessor(defn.reduce)(defn.group(dimensions[defn.dimension]));
+        groups[g] = create_group(defn, dimensions);
     }
     for(c in definition.charts) {
         defn = definition.charts[c];
