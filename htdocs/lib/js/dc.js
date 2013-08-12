@@ -498,6 +498,9 @@ dc.baseChart = function (_chart) {
 
     var _width = 200, _height = 200;
 
+    var _ordering = function (p) {
+        return p.key;
+    };
     var _keyAccessor = function (d) {
         return d.key;
     };
@@ -576,10 +579,15 @@ dc.baseChart = function (_chart) {
         return _chart;
     };
 
+    _chart.ordering = function(o) {
+        if (!arguments.length) return _ordering;
+        _ordering = o;
+        _chart.expireCache();
+        return _chart;
+    };
+
     _chart.orderedGroup = function () {
-        return _group.order(function (p) {
-            return p.key;
-        });
+        return _group.order(_ordering);
     };
 
     _chart.filterAll = function () {
@@ -2027,7 +2035,17 @@ dc.pieChart = function (parent, chartGroup) {
 
     function assemblePieData() {
         if (_slicesCap == Infinity) {
-            return _chart.orderedGroup().top(_slicesCap); // ordered by keys
+            // _chart.orderedGroup().top(_slicesCap) does not work for two reasons:
+            // 1. crossfilter's heap functions pass in the value, not the key-value pair
+            // 2. crossfilter sorts in descending order
+            var data = _chart.group().all().slice(0); // clone
+            if(data.length < 2)
+                return data;
+            var compf = _.isNumber(_chart.ordering()(data[0]))
+                    ? function(a, b) { return _chart.ordering()(a) - _chart.ordering()(b); }
+                : function(a, b) { return _chart.ordering()(a).localeCompare(_chart.ordering()(b)); };
+            data.sort(compf);
+            return data;
         } else {
             var topRows = _chart.group().top(_slicesCap); // ordered by value
             var topRowsSum = d3.sum(topRows, _chart.valueAccessor());
