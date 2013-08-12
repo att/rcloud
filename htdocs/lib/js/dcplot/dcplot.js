@@ -118,9 +118,10 @@ var chart_attrs = {
     },
     color: {
         supported: true,
-        colors: {required: false},
         color: {required: false}, // colorAccessor
-        'color.domain': {required: false}
+        'color.transform': {required: false}, // the d3 way not the dc way
+        'color.domain': {required: false},
+        'color.range': {required: false}
     },
     stackable: {
         supported: true,
@@ -251,7 +252,6 @@ dc.utils.printSingleValue = function(filter) {
     else return _psv(filter);
 }
 
-function dcplot(frame, groupname, definition) {
 dcplot.format_error = function(e) {
     var tab;
     if(_.isArray(e)) { // expected exception: input error
@@ -281,6 +281,7 @@ dcplot.format_error = function(e) {
 };
 
 
+function dcplot(frame, groupname, definition) {
 
     // defaults
     function default_dimension(name, defn) {
@@ -569,12 +570,21 @@ dcplot.format_error = function(e) {
                 }
             },
             color: function() {
-                if(_.has(defn, 'colors'))
-                    chart.colors(defn.colors);
+                // i am cool with dc.js's color accessor
                 if(_.has(defn, 'color'))
-                    chart.colorAccessor(key_value(defn.color));
+                    chart.colorAccessor(key_value(accessor(defn.color)));
+                // however i don't understand why dc chooses to use a
+                // "color calculator" when a d3 scale seems like it ought
+                // to serve the purpose. so just plug a d3 scale into colors
+                // and override the calculator to use it
+                // also default to category10 which seems better for discrete colors
+                var scale = defn['color.transform'] || d3.scale.category10();
                 if(_.has(defn, 'color.domain'))
-                    chart.colorDomain(defn['color.domain']);
+                    scale.domain(defn['color.domain']);
+                if(_.has(defn, 'color.range'))
+                    scale.range(defn['color.range']);
+                chart.colors(scale);
+                chart.colorCalculator(function(x) { return chart.colors()(x); });
             },
             stackable: function() {
                 if(_.has(defn, 'stack'))

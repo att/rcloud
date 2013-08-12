@@ -44013,9 +44013,10 @@ var chart_attrs = {
     },
     color: {
         supported: true,
-        colors: {required: false},
         color: {required: false}, // colorAccessor
-        'color.domain': {required: false}
+        'color.transform': {required: false}, // the d3 way not the dc way
+        'color.domain': {required: false},
+        'color.range': {required: false}
     },
     stackable: {
         supported: true,
@@ -44145,6 +44146,35 @@ dc.utils.printSingleValue = function(filter) {
     }
     else return _psv(filter);
 }
+
+dcplot.format_error = function(e) {
+    var tab;
+    if(_.isArray(e)) { // expected exception: input error
+        tab = $('<table/>');
+        $.each(e, function(i) {
+            var err = e[i], formatted_errors = $('<td/>');
+            if(_.isString(err.errors))
+                formatted_errors.text(err.errors);
+            else if(_.isArray(err.errors))
+                $.each(err.errors, function(e) {
+                    formatted_errors.append($('<p/>').text(err.errors[e]));
+                });
+            var name = err.name.replace(/_\d*_\d*$/, '');
+            tab.append($('<tr valign=top/>').
+                       append($('<td/>').text(err.type)).
+                       append($('<td/>').text(name)).
+                       append(formatted_errors)
+                      );
+        });
+    }
+    else // unexpected exception: probably logic error
+        tab = $('<p/>').text(e.toString());
+    var error_report = $('<div/>').
+            append($('<p/>').text('dcplot errors!')).
+            append(tab);
+    return error_report;
+};
+
 
 function dcplot(frame, groupname, definition) {
 
@@ -44435,12 +44465,20 @@ function dcplot(frame, groupname, definition) {
                 }
             },
             color: function() {
-                if(_.has(defn, 'colors'))
-                    chart.colors(defn.colors);
+                // i am cool with dc.js's color accessor
                 if(_.has(defn, 'color'))
-                    chart.colorAccessor(key_value(defn.color));
+                    chart.colorAccessor(key_value(accessor(defn.color)));
+                // i am not cool with its "color calculator" when it should
+                // just do things the d3 way. so just plug a d3 scale into colors
+                // and override the calculator to use it
+                var scale = defn['color.transform'] || d3.scale.category10();
                 if(_.has(defn, 'color.domain'))
-                    chart.colorDomain(defn['color.domain']);
+                    scale.domain(defn['color.domain']);
+                if(_.has(defn, 'color.range'))
+                    scale.range(defn['color.range']);
+                chart.colors(scale);
+                //var map = {a: 'red', b: 'blue', c: 'green'}; return map[c]; });
+                chart.colorCalculator(function(x) { return chart.colors()(x); });
             },
             stackable: function() {
                 if(_.has(defn, 'stack'))
