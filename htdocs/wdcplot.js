@@ -276,34 +276,7 @@ var wdcplot = (function() {
         field : function(rdata, k, r) {
             return rdata[k][r];
         },
-        format_error: function(e) {
-            // could maybe push this into dcplot.js itself
-            var tab;
-            if(_.isArray(e)) { // expected exception: input error
-                tab = $('<table/>');
-                $.each(e, function(i) {
-                    var err = e[i], formatted_errors = $('<td/>');
-                    if(_.isString(err.errors))
-                        formatted_errors.text(err.errors);
-                    else if(_.isArray(err.errors))
-                        $.each(err.errors, function(e) {
-                            formatted_errors.append($('<p/>').text(err.errors[e]));
-                        });
-                    var name = err.name.replace(/_\d*_\d*$/, '');
-                    tab.append($('<tr valign=top/>').
-                               append($('<td/>').text(err.type)).
-                               append($('<td/>').text(name)).
-                               append(formatted_errors)
-                              );
-                });
-            }
-            else // unexpected exception: probably logic error
-                tab = $('<p/>').text(e.toString());
-            var error_report = $('<div/>').
-                    append($('<p/>').text('dcplot errors!')).
-                    append(tab);
-            return error_report;
-        },
+        format_error: dcplot.format_error,
         translate: function(data) {
             var frame = dataframe.cols(data);
             // allow skipping sections (but don't allow repeated sections)
