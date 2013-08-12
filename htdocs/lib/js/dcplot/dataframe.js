@@ -9,9 +9,12 @@ var dataframe = {
                 if(!(column in data))
                     throw "dataframe doesn't have column " + column.toString();
                 var columnv = data[column];
-                return function(i) {
+                var f = function(i) {
                     return columnv[i];
                 };
+                // access e.g. R attributes through access("col").attrs
+                f.attrs = columnv;
+                return f;
             },
             index: function(i) {
                 return i;
@@ -32,9 +35,14 @@ var dataframe = {
     rows: function(data) {
         var result = {
             access: function(column) {
-                return function(i) {
+                var f = function(i) {
                     return data[i][column];
                 };
+                // to support attributes, add a field called 'attrs'
+                // to the row array!
+                if('attrs' in data && _.isObject(data.attrs))
+                    f.attrs = data.attrs[column];
+                return f;
             },
             // we could get rid of row indices and just use rows
             // except here (?)
