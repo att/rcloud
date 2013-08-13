@@ -70,14 +70,15 @@ var wdcplot = (function() {
         return text;
     }
 
-    function expression(frame, sexp, ctx) {
-        if($.isArray(sexp)) {
-            if($.isArray(sexp[0]) && sexp[0][0] == "func") // special case lambda expr trees
-                return lambda(frame, sexp, ctx);
-            var xlat = operators[sexp[0]] || operators.default;
-            return xlat(frame, sexp, ctx);
-        }
-        else if($.isPlainObject(sexp)) {
+    function node(frame, sexp, ctx) {
+        if($.isArray(sexp[0]) && sexp[0][0] == "func") // special case lambda expr trees
+            return lambda(frame, sexp, ctx);
+        var xlat = operators[sexp[0]] || operators.default;
+        return xlat(frame, sexp, ctx);
+    }
+
+    function leaf(frame, sexp, ctx) {
+        if($.isPlainObject(sexp)) {
             return JSON.stringify(sexp);
         }
         else if(_.isString(sexp)) {
@@ -96,7 +97,14 @@ var wdcplot = (function() {
         else return sexp;
     }
 
-    /* a dcplot value expression may be
+    function expression(frame, sexp, ctx) {
+        if($.isArray(sexp))
+            return node(frame, sexp, ctx);
+        else
+            return leaf(frame, sexp, ctx);
+    }
+
+    /* a wdcplot argument may be
      - null
      - a simple field accessor (if it's a string which is a field name in the dataframe)
      - a string (if it's any other string)
@@ -106,7 +114,7 @@ var wdcplot = (function() {
      the correct way to do this is probably to infer lambda-ness
      from the leaves up.
      */
-    function value_expression(frame, sexp) {
+    function argument(frame, sexp) {
         if(sexp==null)
             return null;
         else if(_.isString(sexp)) {
@@ -136,26 +144,27 @@ var wdcplot = (function() {
     }
 
     // are these recursive or is this top-level catch enough?
-    function group_expression(frame, sexp) {
+    function group_constructor(frame, sexp) {
         switch(sexp[0]) {
         case 'bin': return group.bin(sexp[1]);
         case 'identity': return group.identity;
-        default: return value_expression(frame, sexp); // but it's operating on keys?
+        default: return argument(frame, sexp); // but it's operating on keys?
         }
     }
 
-    function reduce_expression(frame, sexp) {
+    function reduce_constructor(frame, sexp) {
         switch(sexp[0]) {
         case 'count': return reduce.count;
-        case 'sum': return reduce.sum(value_expression(frame, sexp[1]));
-        case 'any': return reduce.any(value_expression(frame, sexp[1]));
-        case 'avg': return reduce.avg(value_expression(frame, sexp[1]));
-        default: return value_expression(frame, sexp);
+        case 'sum': return reduce.sum(argument(frame, sexp[1]));
+        case 'any': return reduce.any(argument(frame, sexp[1]));
+        case 'avg': return reduce.avg(argument(frame, sexp[1]));
+        default: return argument(frame, sexp);
         }
     }
 
     // take an array of named or unnamed arguments and for any that are unnamed
     // at the beginning, give them the names specified in names
+    // a cheap, incomplete implementation of R positional arguments
     function positionals(sexps, names) {
         var ret = [];
         if(!sexps.length)
@@ -206,7 +215,7 @@ var wdcplot = (function() {
                 key = value = elem;
             else throw 'illegal dimension specification ' + elem.toString();
 
-            ret[key] = value_expression(frame, value);
+            ret[key] = argument(frame, value);
         }
         return ret;
     }
@@ -228,10 +237,10 @@ var wdcplot = (function() {
                     val = defn[j][1];
                     break;
                 case 'group':
-                    val = group_expression(frame, defn[j][1]);
+                    val = group_constructor(frame, defn[j][1]);
                     break;
                 case 'reduce':
-                    val = reduce_expression(frame, defn[j][1]);
+                    val = reduce_constructor(frame, defn[j][1]);
                     break;
                 }
                 group[field] = val;
@@ -258,7 +267,7 @@ var wdcplot = (function() {
                 case 'dimension': defn[key] = value; // don't allow lambdas here
                     break;
                 default:
-                    defn[key] = value_expression(frame, value);
+                    defn[key] = argument(frame, value);
                 }
             }
             var name = sexps[i][0] + '_' + chart_group + '_' + i;
