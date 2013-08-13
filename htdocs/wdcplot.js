@@ -12,57 +12,69 @@ var wdcplot = (function() {
 
     function bin_op(disp) {
         return function(frame, args, ctx) {
-            return translate_expr(frame, args[1], ctx) + disp + translate_expr(frame, args[2], ctx);
+            return expression(frame, args[1], ctx) + disp + expression(frame, args[2], ctx);
         };
     }
 
     function una_or_bin_op(disp) {
         return function(frame, args, ctx) {
             return args.length==2
-                ? disp + translate_expr(frame, args[1], ctx)
+                ? disp + expression(frame, args[1], ctx)
                 : bin_op(disp)(frame, args, ctx);
         };
     }
 
-    function translate_value(v) {
+    function value(v) {
         return _.isString(v) ? '"' + v + '"' : v;
     }
 
-    var expressions = {
+    var operators = {
         "$": bin_op('.'),
         "-": una_or_bin_op('-'),
         "+": una_or_bin_op('+'),
         "*": bin_op('*'),
         "/": bin_op('/'),
-        "c" : function(frame, args, ctx) { return '[' + _.map(args.slice(1), function(arg) { return translate_value(arg); }) + ']'; },
-        "[": function(frame, args, ctx) { return translate_expr(frame, args[1], ctx) + '[' + translate_expr(frame, args[2], ctx) + ']'; },
-        default : function(frame, args, ctx) { return translate_expr(frame, args[0], ctx) + '(' +  _.map(args.slice(1), function(arg) { return translate_expr(frame, arg, ctx); }) + ')'; }
+        "c" : function(frame, args, ctx) {
+            return '[' + _.map(args.slice(1), function(arg) {
+                return value(arg); })
+                + ']';
+        },
+        "[": function(frame, args, ctx) {
+            return expression(frame, args[1], ctx)
+                + '[' + expression(frame, args[2], ctx) + ']';
+        },
+        default: function(frame, args, ctx) { // function call operator()
+            return expression(frame, args[0], ctx)
+                + '(' +  _.map(args.slice(1), function(arg) {
+                    return expression(frame, arg, ctx); })
+                + ')';
+        }
     };
 
-    function translate_function_body(frame, exprs, ctx) {
-        var body = _.map(exprs, function(arg) { return translate_expr(frame, arg, ctx); });
+    function lambda_body(frame, exprs, ctx) {
+        var body = _.map(exprs, function(arg) { return expression(frame, arg, ctx); });
         body[body.length-1] = "return " + body[body.length-1];
         var cr = "\n", indent = Array(ctx.indent+1).join("\t");
         return indent + body.join(";" + cr + indent) + ";";
     }
 
-    function translate_function(frame, sexp, ctx) {
+    function lambda(frame, sexp, ctx) {
         ctx.indent++;
         var args = sexp[0].slice(1);
         var cr = "\n";
         var text = "function (" + args.join() + ") {" + cr +
-            translate_function_body(frame, sexp.slice(1), ctx) + cr;
+            lambda_body(frame, sexp.slice(1), ctx) + cr;
         ctx.indent--;
         var indent = Array(ctx.indent+1).join("\t");
         text += indent + "}";
         return text;
     }
 
-    function translate_expr(frame, sexp, ctx) {
+    function expression(frame, sexp, ctx) {
         if($.isArray(sexp)) {
-            if($.isArray(sexp[0]) && sexp[0][0] == "func") // special case function expr trees
-                return translate_function(frame, sexp, ctx);
-            var xlat = expressions[sexp[0]] || expressions.default;
+            if($.isArray(sexp[0]) && sexp[0][0] == "func") // special case lambda expr trees
+                return lambda(frame, sexp, ctx);
+            var xlat = operators[sexp[0]] || operators.default;
             return xlat(frame, sexp, ctx);
         }
         else if($.isPlainObject(sexp)) {
@@ -79,7 +91,7 @@ var wdcplot = (function() {
             }
             else if(frame.has(sexp))
                 return "frame.access('" + sexp + "')(key)";
-            else return translate_value(sexp);
+            else return value(sexp);
         }
         else return sexp;
     }
@@ -115,7 +127,7 @@ var wdcplot = (function() {
         else if(_.isArray(sexp) && sexp[0]==='c')
             return sexp.slice(1);
         var ctx =  {indent:0};
-        var js_expr = translate_expr(frame, sexp, ctx);
+        var js_expr = expression(frame, sexp, ctx);
         // it seems kind of screwy to use eval here but it has the nice property
         // of using a closure, which new Function() does not, which makes it
         // easier to inspect the js_expr in the debugger (without _.partial()
