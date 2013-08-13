@@ -41902,6 +41902,7 @@ dc.stackableChart = function (_chart) {
             _allKeyAccessors.push(_chart.keyAccessor());
 
             for (var i = 0; i < _groupStack.size(); ++i)
+                // shouldn't this be _groupStack.getAccessorByIndex(i) ?
                 _allKeyAccessors.push(_chart.keyAccessor());
         }
 
@@ -42727,6 +42728,16 @@ dc.barChart = function (parent, chartGroup) {
 
     dc.override(_chart, "prepareOrdinalXAxis", function () {
         return this._prepareOrdinalXAxis(_chart.xUnitCount() + 1);
+    });
+
+    dc.override(_chart, "xAxisMax", function() {
+        var max = this._xAxisMax();
+        // i guess this requires domain knowledge to get right
+        if('resolution' in _chart.xUnits()) {
+            var res = _chart.xUnits().resolution;
+            max += res;
+        }
+        return max;
     });
 
     return _chart.anchor(parent, chartGroup);
@@ -44327,6 +44338,7 @@ function dcplot(frame, groupname, definition) {
                     if(_.has(dims, defn.dimension) && mhas(accessor(dims[defn.dimension]), 'attrs', 'levels')) {
                         var levels = accessor(dims[defn.dimension]).attrs.levels;
                         var rmap = _.object(levels, _.range(levels.length));
+                        // the ordering function uses a reverse map of the levels
                         defn.ordering = function(p) {
                             return rmap[p.key];
                         };
