@@ -40182,7 +40182,7 @@ function crossfilter_capacity(w) {
  *  limitations under the License.
  */
 dc = {
-    version: "1.4.0",
+    version: "1.5.0",
     constants : {
         CHART_CLASS: "dc-chart",
         DEBUG_GROUP_CLASS: "debug",
@@ -40299,8 +40299,8 @@ dc.units.integers = function(s, e) {
 dc.units.ordinal = function(s, e, domain){
     return domain;
 };
-dc.units.float = {};
-dc.units.float.precision= function(precision){
+dc.units.fp = {};
+dc.units.fp.precision= function(precision){
     var _f = function(s, e, domain){return Math.ceil(Math.abs((e-s)/_f.resolution));};
     _f.resolution = precision;
     return _f;
@@ -40430,32 +40430,32 @@ dc.utils.subtract = function (l, r) {
 };
 
 dc.utils.GroupStack = function () {
-    var _dataPointMatrix = [];
+    var _dataLayers = [];
     var _groups = [];
     var _defaultAccessor;
 
-    function initializeDataPointRow(x) {
-        if (!_dataPointMatrix[x])
-            _dataPointMatrix[x] = [];
+    function initializeDataLayer(i) {
+        if (!_dataLayers[i])
+            _dataLayers[i] = [];
     }
 
-    this.setDataPoint = function (x, y, data) {
-        initializeDataPointRow(x);
-        _dataPointMatrix[x][y] = data;
+    this.setDataPoint = function (layerIndex, pointIndex, data) {
+        initializeDataLayer(layerIndex);
+        _dataLayers[layerIndex][pointIndex] = data;
     };
 
     this.getDataPoint = function (x, y) {
-        initializeDataPointRow(x);
-        var dataPoint = _dataPointMatrix[x][y];
+        initializeDataLayer(x);
+        var dataPoint = _dataLayers[x][y];
         if (dataPoint == undefined)
             dataPoint = 0;
         return dataPoint;
     };
 
-    this.addGroup = function (group, retriever) {
-        if (!retriever)
-            retriever = _defaultAccessor;
-        _groups.push([group, retriever]);
+    this.addGroup = function (group, accessor) {
+        if (!accessor)
+            accessor = _defaultAccessor;
+        _groups.push([group, accessor]);
         return _groups.length - 1;
     };
 
@@ -40472,7 +40472,7 @@ dc.utils.GroupStack = function () {
     };
 
     this.clear = function () {
-        _dataPointMatrix = [];
+        _dataLayers = [];
         _groups = [];
     };
 
@@ -40480,8 +40480,24 @@ dc.utils.GroupStack = function () {
         _defaultAccessor = retriever;
     };
 
-    this.getDataPoints = function () {
-        return _dataPointMatrix;
+    this.getDataLayers = function () {
+        return _dataLayers;
+    };
+
+    this.toLayers = function(){
+        var layers = [];
+
+        for(var i = 0; i<_dataLayers.length; ++i){
+            var layer = {index: i, points: []};
+            var dataPoints = _dataLayers[i];
+
+            for(var j = 0; j < dataPoints.length; ++j)
+                layer.points.push(dataPoints[j]);
+
+            layers.push(layer);
+        }
+
+        return layers;
     };
 };
 
@@ -40668,14 +40684,14 @@ dc.baseChart = function (_chart) {
 
     var _width = 200, _height = 200;
 
-    var _ordering = function (p) {
-        return p.key;
-    };
     var _keyAccessor = function (d) {
         return d.key;
     };
     var _valueAccessor = function (d) {
         return d.value;
+    };
+    var _ordering = function (p) {
+        return p.key;
     };
 
     var _label = function (d) {
@@ -40754,10 +40770,6 @@ dc.baseChart = function (_chart) {
         _ordering = o;
         _chart.expireCache();
         return _chart;
-    };
-
-    _chart.orderedGroup = function () {
-        return _group.order(_ordering);
     };
 
     _chart.filterAll = function () {
@@ -40852,11 +40864,11 @@ dc.baseChart = function (_chart) {
         _listeners.preRender(_chart);
 
         if (_dimension == null)
-            throw new dc.errors.InvalidStateException("Mandatory attribute chart.dimension is missing on chart["
+            throw new dc.errors.InvalidStateException("Mandatory attribute chart.dimension is missing on chart[#"
                 + _chart.anchorName() + "]");
 
         if (_group == null)
-            throw new dc.errors.InvalidStateException("Mandatory attribute chart.group is missing on chart["
+            throw new dc.errors.InvalidStateException("Mandatory attribute chart.group is missing on chart[#"
                 + _chart.anchorName() + "]");
 
         var result = _chart.doRender();
@@ -40905,6 +40917,7 @@ dc.baseChart = function (_chart) {
     function removeFilter(_) {
         _filters.splice(_filters.indexOf(_), 1);
         applyFilters();
+        _chart.invokeFilteredListener(_chart, _);
     }
 
     function addFilter(_) {
@@ -41082,7 +41095,10 @@ dc.marginable = function (_chart) {
     var HORIZONTAL_CLASS = "horizontal";
     var VERTICAL_CLASS = "vertical";
 
-    _chart = dc.marginable(dc.baseChart(_chart));
+
+    _chart = dc.colorChart(dc.marginable(dc.baseChart(_chart)));
+
+    _chart.colors(d3.scale.category10());
 
     var _parent;
     var _g;
@@ -41114,9 +41130,13 @@ dc.marginable = function (_chart) {
     var _focusChart;
 
     var _mouseZoomable = false;
-    var _clipPadding = 5;
+    var _clipPadding = 0;
 
-    _chart.resetUnitCount = function () {
+    _chart.title(function (d) {
+        return d.data.key + ": " + d.data.value;
+    });
+
+    _chart.rescale = function () {
         _unitCount = null;
         _chart.xUnitCount();
     }
@@ -41137,6 +41157,7 @@ dc.marginable = function (_chart) {
         _g = _parent.append("g");
 
         _chartBodyG = _g.append("g").attr("class", "chartBody")
+            .attr("transform", "translate(" + _chart.margins().left + ", " + _chart.margins().top + ")")
             .attr("clip-path", "url(#" + getClipPathId() + ")");
 
         return _g;
@@ -41254,9 +41275,9 @@ dc.marginable = function (_chart) {
     };
 
     function renderVerticalGridLines(g) {
-        if (_renderVerticalGridLine) {
-            var gridLineG = g.selectAll("g." + VERTICAL_CLASS);
+        var gridLineG = g.selectAll("g." + VERTICAL_CLASS);
 
+        if (_renderVerticalGridLine) {
             if (gridLineG.empty())
                 gridLineG = g.insert("g", ":first-child")
                     .attr("class", GRID_LINE_CLASS + " " + VERTICAL_CLASS)
@@ -41296,6 +41317,9 @@ dc.marginable = function (_chart) {
             // exit
             lines.exit().remove();
         }
+        else {
+            gridLineG.selectAll("line").remove()
+        }
     }
 
     _chart.xAxisY = function () {
@@ -41329,10 +41353,11 @@ dc.marginable = function (_chart) {
             .call(_yAxis);
     };
 
-    function renderHorizontalGridLines(g) {
-        if (_renderHorizontalGridLine) {
-            var gridLineG = g.selectAll("g." + HORIZONTAL_CLASS);
 
+    function renderHorizontalGridLines(g) {
+        var gridLineG = g.selectAll("g." + HORIZONTAL_CLASS);
+       
+        if (_renderHorizontalGridLine) {
             var ticks = _yAxis.tickValues() ? _yAxis.tickValues() : _y.ticks(_yAxis.ticks()[0]);
 
             if (gridLineG.empty())
@@ -41371,6 +41396,9 @@ dc.marginable = function (_chart) {
 
             // exit
             lines.exit().remove();
+        }
+        else {
+            gridLineG.selectAll("line").remove()
         }
     }
 
@@ -41587,16 +41615,16 @@ dc.marginable = function (_chart) {
 
         var chartBodyClip = dc.utils.appendOrSelect(defs, "clipPath").attr("id", getClipPathId());
 
+        var padding = _clipPadding * 2;
+
         dc.utils.appendOrSelect(chartBodyClip, "rect")
-            .attr("x", _chart.margins().left - _clipPadding)
-            .attr("y", _chart.margins().top - _clipPadding)
-            .attr("width", _chart.xAxisLength() + _clipPadding*2)
-            .attr("height", _chart.yAxisHeight() + _clipPadding*2);
+            .attr("width", _chart.xAxisLength() + padding)
+            .attr("height", _chart.yAxisHeight() + padding);
     }
 
     _chart.doRender = function () {
         if (_x == null)
-            throw new dc.errors.InvalidStateException("Mandatory attribute chart.x is missing on chart["
+            throw new dc.errors.InvalidStateException("Mandatory attribute chart.x is missing on chart[#"
                 + _chart.anchorName() + "]");
 
         _chart.resetSvg();
@@ -41699,7 +41727,7 @@ dc.marginable = function (_chart) {
     };
 
     function hasRangeSelected(range) {
-        return range != null && range != undefined && range instanceof Array && range.length > 1;
+        return range instanceof Array && range.length > 1;
     }
 
     _chart.focus = function (range) {
@@ -41711,12 +41739,8 @@ dc.marginable = function (_chart) {
             _chart.x().domain(_chart.xOriginalDomain());
         }
 
-        if (typeof(_chart.resetUnitCount) != 'undefined') {
-            _chart.resetUnitCount();
-        }
-        if (typeof(_chart.resetBarProperties) != 'undefined') {
-            _chart.resetBarProperties();
-        }
+        _chart.rescale();
+
         _chart.redraw();
 
         if (!hasRangeSelected(range))
@@ -41733,6 +41757,7 @@ dc.marginable = function (_chart) {
         _chart.on("filtered", function (chart) {
             dc.events.trigger(function () {
                 _focusChart.focus(chart.filter());
+                _focusChart.filter(chart.filter());
                 dc.redrawAll(chart.chartGroup());
             });
         });
@@ -41805,12 +41830,17 @@ dc.colorChart = function(_chart) {
     return _chart;
 };
 dc.stackableChart = function (_chart) {
-    var MIN_DATA_POINT_HEIGHT = 0;
-
     var _groupStack = new dc.utils.GroupStack();
+    var _stackLayout = d3.layout.stack()
+        .offset("zero")
+        .order("default")
+        .values(function (d) {
+            return d.points;
+        });
     var _allGroups;
     var _allValueAccessors;
     var _allKeyAccessors;
+    var _stackLayers;
 
     _chart.stack = function (group, retriever) {
         _groupStack.setDefaultAccessor(_chart.valueAccessor());
@@ -41821,10 +41851,11 @@ dc.stackableChart = function (_chart) {
         return _chart;
     };
 
-    _chart.expireCache = function(){
+    _chart.expireCache = function () {
         _allGroups = null;
         _allValueAccessors = null;
         _allKeyAccessors = null;
+        _stackLayers = null;
         return _chart;
     };
 
@@ -41859,22 +41890,11 @@ dc.stackableChart = function (_chart) {
     };
 
     _chart.yAxisMin = function () {
-        var min = 0;
-        var allGroups = _chart.allGroups();
+        var min, all = flattenStack();
 
-        for (var groupIndex = 0; groupIndex < allGroups.length; ++groupIndex) {
-            var group = allGroups[groupIndex];
-            var m = dc.utils.groupMin(group, _chart.getValueAccessorByIndex(groupIndex));
-            if (m < min) min = m;
-        }
-
-        if (min < 0) {
-            min = 0;
-            for (var groupIndex = 0; groupIndex < allGroups.length; ++groupIndex) {
-                var group = allGroups[groupIndex];
-                min += dc.utils.groupMin(group, _chart.getValueAccessorByIndex(groupIndex));
-            }
-        }
+        min = d3.min(all, function (p) {
+            return  (p.y + p.y0 < p.y0) ? (p.y + p.y0) : p.y0;
+        });
 
         min = dc.utils.subtract(min, _chart.yAxisPadding());
 
@@ -41882,18 +41902,37 @@ dc.stackableChart = function (_chart) {
     };
 
     _chart.yAxisMax = function () {
-        var max = 0;
-        var allGroups = _chart.allGroups();
+        var max, all = flattenStack();
 
-        for (var groupIndex = 0; groupIndex < allGroups.length; ++groupIndex) {
-            var group = allGroups[groupIndex];
-            max += dc.utils.groupMax(group, _chart.getValueAccessorByIndex(groupIndex));
-        }
+        max = d3.max(all, function (p) {
+            return p.y + p.y0;
+        });
 
         max = dc.utils.add(max, _chart.yAxisPadding());
 
         return max;
     };
+
+    function flattenStack() {
+        var all = [];
+
+        if (_chart.x()) {
+            var xDomain = _chart.x().domain();
+
+            _chart.stackLayers().forEach(function (e) {
+                e.points.forEach(function (p) {
+                    if (p.x >= xDomain[0] && p.x <= xDomain[1])
+                        all.push(p);
+                });
+            });
+        } else {
+            _chart.stackLayers().forEach(function (e) {
+                all = all.concat(e.points);
+            });
+        }
+
+        return all;
+    }
 
     _chart.allKeyAccessors = function () {
         if (_allKeyAccessors == null) {
@@ -41902,7 +41941,6 @@ dc.stackableChart = function (_chart) {
             _allKeyAccessors.push(_chart.keyAccessor());
 
             for (var i = 0; i < _groupStack.size(); ++i)
-                // shouldn't this be _groupStack.getAccessorByIndex(i) ?
                 _allKeyAccessors.push(_chart.keyAccessor());
         }
 
@@ -41939,69 +41977,29 @@ dc.stackableChart = function (_chart) {
         return dc.utils.add(max, _chart.xAxisPadding());
     };
 
-    _chart.baseLineY = function () {
-        return _chart.y()(0);
+    function getKeyFromData(groupIndex, d) {
+        return _chart.getKeyAccessorByIndex(groupIndex)(d);
     }
-
-    _chart.dataPointBaseline = function () {
-        return _chart.margins().top + _chart.baseLineY();
-    };
 
     function getValueFromData(groupIndex, d) {
         return _chart.getValueAccessorByIndex(groupIndex)(d);
     }
 
-    _chart.dataPointHeight = function (d, groupIndex) {
-        var value = getValueFromData(groupIndex, d);
-        var yPosition = _chart.y()(value);
-        var zeroPosition = _chart.baseLineY();
-        var h = 0;
-
-        if (value > 0)
-            h = zeroPosition - yPosition;
-        else
-            h = yPosition - zeroPosition;
-
-        if (isNaN(h) || h < MIN_DATA_POINT_HEIGHT)
-            h = MIN_DATA_POINT_HEIGHT;
-
-        return h;
-    };
-
     function calculateDataPointMatrix(data, groupIndex) {
         for (var dataIndex = 0; dataIndex < data.length; ++dataIndex) {
             var d = data[dataIndex];
+            var key = getKeyFromData(groupIndex, d);
             var value = getValueFromData(groupIndex, d);
-            var pseudoZero = 1e-13;
-            if (groupIndex == 0) {
-                if (value > pseudoZero)
-                    _groupStack.setDataPoint(groupIndex, dataIndex, _chart.dataPointBaseline() - _chart.dataPointHeight(d, groupIndex));
-                else
-                    _groupStack.setDataPoint(groupIndex, dataIndex, _chart.dataPointBaseline());
-            } else {
-                if (value > pseudoZero)
-                    _groupStack.setDataPoint(groupIndex, dataIndex, _groupStack.getDataPoint(groupIndex - 1, dataIndex) - _chart.dataPointHeight(d, groupIndex))
-                else if (value < -pseudoZero)
-                    _groupStack.setDataPoint(groupIndex, dataIndex, _groupStack.getDataPoint(groupIndex - 1, dataIndex) + _chart.dataPointHeight(d, groupIndex - 1))
-                else // value ~= 0
-                    _groupStack.setDataPoint(groupIndex, dataIndex, _groupStack.getDataPoint(groupIndex - 1, dataIndex))
-            }
+
+            _groupStack.setDataPoint(groupIndex, dataIndex, {data: d, x: key, y: value});
         }
     }
 
-    _chart.calculateDataPointMatrixForAll = function (groups) {
+    _chart.calculateDataPointMatrixForAll = function () {
+        var groups = _chart.allGroups();
         for (var groupIndex = 0; groupIndex < groups.length; ++groupIndex) {
             var group = groups[groupIndex];
             var data = group.all();
-
-            calculateDataPointMatrix(data, groupIndex);
-        }
-    };
-
-    _chart.calculateDataPointMatrixWithinXDomain = function (groups) {
-        for (var groupIndex = 0; groupIndex < groups.length; ++groupIndex) {
-            var group = groups[groupIndex];
-            var data = _chart.getDataWithinXDomain(group);
 
             calculateDataPointMatrix(data, groupIndex);
         }
@@ -42022,6 +42020,24 @@ dc.stackableChart = function (_chart) {
         _chart.expireCache();
         return _chart._keyAccessor(_);
     });
+
+    _chart.stackLayout = function (stack) {
+        if (!arguments.length) return _stackLayout;
+        _stackLayout = stack;
+        return _chart;
+    };
+
+    _chart.stackLayers = function (_) {
+        if (!arguments.length) {
+            if (_stackLayers == null) {
+                _chart.calculateDataPointMatrixForAll();
+                _stackLayers = _chart.stackLayout()(_groupStack.toLayers());
+            }
+            return _stackLayers;
+        } else {
+            _stackLayers = _;
+        }
+    };
 
     return _chart;
 };
@@ -42190,7 +42206,8 @@ dc.pieChart = function (parent, chartGroup) {
 
     var _sliceCssClass = "pie-slice";
 
-    var _radius = 90, _innerRadius = 0;
+    var _radius,
+        _innerRadius = 0;
 
     var _g;
 
@@ -42206,9 +42223,6 @@ dc.pieChart = function (parent, chartGroup) {
 
     function assemblePieData() {
         if (_slicesCap == Infinity) {
-            // _chart.orderedGroup().top(_slicesCap) does not work for two reasons:
-            // 1. crossfilter's heap functions pass in the value, not the key-value pair
-            // 2. crossfilter sorts in descending order
             var data = _chart.group().all().slice(0); // clone
             if(data.length < 2)
                 return data;
@@ -42257,6 +42271,9 @@ dc.pieChart = function (parent, chartGroup) {
     function drawChart() {
         if (_chart.dataSet()) {
             var pie = calculateDataPie();
+
+            // set radius on basis of chart dimension if missing
+            _radius = _radius ? _radius : d3.min([_chart.width(), _chart.height()]) /2;
 
             var arc = _chart.buildArcs();
 
@@ -42542,100 +42559,87 @@ dc.barChart = function (parent, chartGroup) {
     var _numberOfBars;
     var _barWidth;
 
-    _chart.resetBarProperties = function () {
+    dc.override(_chart, 'rescale', function () {
+        _chart._rescale();
         _numberOfBars = null;
         _barWidth = null;
         getNumberOfBars();
-        barWidth();
-    }
+    });
 
     _chart.plotData = function () {
-        var groups = _chart.allGroups();
+        var layers = _chart.chartBodyG().selectAll("g.stack")
+            .data(_chart.stackLayers());
 
-        _chart.calculateDataPointMatrixWithinXDomain(groups);
+        calculateBarWidth();
 
-        for (var groupIndex = 0; groupIndex < groups.length; ++groupIndex) {
-            generateBarsPerGroup(groupIndex, groups[groupIndex]);
-        }
+        layers
+            .enter()
+            .append("g")
+            .attr("class", function (d, i) {
+                return "stack " + "_" + i;
+            });
+
+        layers.each(function (d, i) {
+            var layer = d3.select(this);
+
+            renderBars(layer, d, i);
+        });
+
+        _chart.stackLayers(null);
     };
 
-    function generateBarsPerGroup(groupIndex, group) {
-        var data = _chart.getDataWithinXDomain(group);
-
-        calculateBarWidth(_chart.x()(_chart.keyAccessor()(data[0])));
-
-        var bars = _chart.chartBodyG().selectAll("rect." + dc.constants.STACK_CLASS + groupIndex)
-            .data(data);
-
-        addNewBars(bars, groupIndex);
-
-        updateBars(bars, groupIndex);
-
-        deleteBars(bars);
+    function barHeight(d) {
+        return Math.abs(_chart.y()(d.y + d.y0) - _chart.y()(d.y0));
     }
 
-    function calculateBarWidth(offset) {
+    function renderBars(layer, d, i) {
+        var bars = layer.selectAll("rect.bar")
+            .data(d.points);
+
+        bars.enter()
+            .append("rect")
+            .attr("class", "bar")
+            .attr("fill", function (d) {
+                return _chart.colors()(i);
+            })
+            .append("title").text(_chart.title());
+
+        dc.transition(bars, _chart.transitionDuration())
+            .attr("x", function (d) {
+                var x = _chart.x()(d.x);
+                if (_centerBar) x -= _barWidth / 2;
+                return  x;
+            })
+            .attr("y", function (d) {
+                var y = _chart.y()(d.y + d.y0);
+
+                if (d.y < 0)
+                    y -= barHeight(d);
+
+                return y;
+            })
+            .attr("width", _barWidth)
+            .attr("height", function (d) {
+                return barHeight(d);
+            })
+            .select("title").text(_chart.title());
+
+        dc.transition(bars.exit(), _chart.transitionDuration())
+            .attr("height", 0)
+            .remove();
+    }
+
+    function calculateBarWidth() {
         if (_barWidth == null) {
             var numberOfBars = _chart.isOrdinal() ? getNumberOfBars() + 1 : getNumberOfBars();
 
-            var w = Math.floor((_chart.xAxisLength() - offset - (numberOfBars - 1) * _gap) / numberOfBars);
+            var w = Math.floor((_chart.xAxisLength() - (numberOfBars - 1) * _gap) / numberOfBars);
 
-
-            if (isNaN(w) || w < MIN_BAR_WIDTH)
+            if (w == Infinity || isNaN(w) || w < MIN_BAR_WIDTH)
                 w = MIN_BAR_WIDTH;
 
             _barWidth = w;
         }
-    }
-
-    function addNewBars(bars, groupIndex) {
-        var bars = bars.enter().append("rect");
-
-        bars.attr("class", "bar " + dc.constants.STACK_CLASS + groupIndex)
-            .attr("x", function (data, dataIndex) {
-                return barX(this, data, groupIndex, dataIndex);
-            })
-            .attr("y", _chart.baseLineY())
-            .attr("width", barWidth);
-
-        if (_chart.isOrdinal())
-            bars.on("click", _chart.onClick);
-
-        if (_chart.renderTitle()) {
-            bars.append("title").text(_chart.title());
-        }
-
-        dc.transition(bars, _chart.transitionDuration())
-            .attr("y", function (data, dataIndex) {
-                return barY(this, data, dataIndex);
-            })
-            .attr("height", function (data) {
-                return _chart.dataPointHeight(data, getGroupIndexFromBar(this));
-            });
-    }
-
-    function updateBars(bars, groupIndex) {
-        if (_chart.renderTitle()) {
-            bars.select("title").text(_chart.title());
-        }
-
-        dc.transition(bars, _chart.transitionDuration())
-            .attr("x", function (data) {
-                return barX(this, data, groupIndex);
-            })
-            .attr("y", function (data, dataIndex) {
-                return barY(this, data, dataIndex);
-            })
-            .attr("height", function (data) {
-                return _chart.dataPointHeight(data, getGroupIndexFromBar(this));
-            })
-            .attr("width", barWidth);
-    }
-
-    function deleteBars(bars) {
-        dc.transition(bars.exit(), _chart.transitionDuration())
-            .attr("y", _chart.xAxisY())
-            .attr("height", 0);
     }
 
     function getNumberOfBars() {
@@ -42646,31 +42650,6 @@ dc.barChart = function (parent, chartGroup) {
         return _numberOfBars;
     }
 
-    function barWidth(d) {
-        return _barWidth;
-    }
-
-    function setGroupIndexToBar(bar, groupIndex) {
-        bar[dc.constants.GROUP_INDEX_NAME] = groupIndex;
-    }
-
-    function barX(bar, data, groupIndex) {
-        setGroupIndexToBar(bar, groupIndex);
-        var position = _chart.x()(_chart.keyAccessor()(data)) + _chart.margins().left;
-        if (_centerBar)
-            position -= barWidth() / 2;
-        return position;
-    }
-
-    function getGroupIndexFromBar(bar) {
-        return bar[dc.constants.GROUP_INDEX_NAME];
-    }
-
-    function barY(bar, data, dataIndex) {
-        var groupIndex = getGroupIndexFromBar(bar);
-        return _chart.getChartStack().getDataPoint(groupIndex, dataIndex);
-    }
-
     _chart.fadeDeselectedArea = function () {
         var bars = _chart.chartBodyG().selectAll("rect.bar");
         var extent = _chart.brush().extent();
@@ -42678,10 +42657,10 @@ dc.barChart = function (parent, chartGroup) {
         if (_chart.isOrdinal()) {
             if (_chart.hasFilter()) {
                 bars.classed(dc.constants.SELECTED_CLASS, function (d) {
-                    return _chart.hasFilter(_chart.keyAccessor()(d));
+                    return _chart.hasFilter(_chart.keyAccessor()(d.data));
                 });
                 bars.classed(dc.constants.DESELECTED_CLASS, function (d) {
-                    return !_chart.hasFilter(_chart.keyAccessor()(d));
+                    return !_chart.hasFilter(_chart.keyAccessor()(d.data));
                 });
             } else {
                 bars.classed(dc.constants.SELECTED_CLASS, false);
@@ -42693,7 +42672,7 @@ dc.barChart = function (parent, chartGroup) {
                 var end = extent[1];
 
                 bars.classed(dc.constants.DESELECTED_CLASS, function (d) {
-                    var xValue = _chart.keyAccessor()(d);
+                    var xValue = _chart.keyAccessor()(d.data);
                     return xValue < start || xValue >= end;
                 });
             } else {
@@ -42732,7 +42711,6 @@ dc.barChart = function (parent, chartGroup) {
 
     dc.override(_chart, "xAxisMax", function() {
         var max = this._xAxisMax();
-        // i guess this requires domain knowledge to get right
         if('resolution' in _chart.xUnits()) {
             var res = _chart.xUnits().resolution;
             max += res;
@@ -42742,8 +42720,7 @@ dc.barChart = function (parent, chartGroup) {
 
     return _chart.anchor(parent, chartGroup);
 };
-dc.lineChart = function(parent, chartGroup) {
-    var AREA_BOTTOM_PADDING = 1;
+dc.lineChart = function (parent, chartGroup) {
     var DEFAULT_DOT_RADIUS = 5;
     var TOOLTIP_G_CLASS = "dc-tooltip";
     var DOT_CIRCLE_CLASS = "dot";
@@ -42756,155 +42733,126 @@ dc.lineChart = function(parent, chartGroup) {
 
     _chart.transitionDuration(500);
 
-    _chart.plotData = function() {
-        var groups = _chart.allGroups();
+    _chart.plotData = function () {
+        var layers = _chart.chartBodyG().selectAll("g.stack")
+            .data(_chart.stackLayers());
 
-        _chart.calculateDataPointMatrixForAll(groups);
-
-        for (var groupIndex = 0; groupIndex < groups.length; ++ groupIndex) {
-            var group = groups[groupIndex];
-            plotDataByGroup(groupIndex, group);
-        }
-    };
-
-    function plotDataByGroup(groupIndex, group) {
-        var stackedCssClass = getStackedCssClass(groupIndex);
-
-        var g = createGrouping(stackedCssClass, group);
-
-        var line = drawLine(g, stackedCssClass, groupIndex);
-
-        if (_renderArea)
-            drawArea(g, stackedCssClass, groupIndex, line);
-
-        if (_chart.renderTitle())
-            drawDots(g, groupIndex);
-    }
-
-    function getStackedCssClass(groupIndex) {
-        return dc.constants.STACK_CLASS + groupIndex;
-    }
-
-    function createGrouping(stackedCssClass, group) {
-        var g = _chart.chartBodyG().select("g." + stackedCssClass);
-
-        if (g.empty())
-            g = _chart.chartBodyG().append("g").attr("class", stackedCssClass);
-
-        g.datum(group.all());
-
-        return g;
-    }
-
-    function drawLine(g, stackedCssClass, groupIndex) {
-        var linePath = g.select("path.line");
-
-        if (linePath.empty())
-            linePath = g.append("path")
-                .attr("class", "line " + stackedCssClass);
-
-        linePath[0][0][dc.constants.GROUP_INDEX_NAME] = groupIndex;
-
-        var line = d3.svg.line()
-            .x(lineX)
-            .y(function(d, dataIndex) {
-                var groupIndex = this[dc.constants.GROUP_INDEX_NAME];
-                return lineY(d, dataIndex, groupIndex);
+        var layersEnter = layers
+            .enter()
+            .append("g")
+            .attr("class", function (d, i) {
+                return "stack " + "_" + i;
             });
 
-        dc.transition(linePath, _chart.transitionDuration(),
-            function(t) {
-                t.ease("linear");
-            }).attr("d", line);
+        drawLine(layersEnter, layers);
 
-        return line;
-    }
+        drawArea(layersEnter, layers);
 
-    var lineX = function(d) {
-        return _chart.margins().left + _chart.x()(_chart.keyAccessor()(d));
+        drawDots(layers);
+
+        _chart.stackLayers(null);
     };
 
-    var lineY = function(d, dataIndex, groupIndex) {
-        var y = _chart.getChartStack().getDataPoint(groupIndex, dataIndex);
-        if(y >= _chart.dataPointBaseline())
-            y += _chart.dataPointHeight(d, groupIndex);
-        return y;
-    };
-
-    function drawArea(g, stackedCssClass, groupIndex, line) {
-        var areaPath = g.select("path.area");
-
-        if (areaPath.empty())
-            areaPath = g.append("path")
-                .attr("class", "area " + stackedCssClass);
-
-        areaPath[0][0][dc.constants.GROUP_INDEX_NAME] = groupIndex;
-
-        var area = d3.svg.area()
-            .x(line.x())
-            .y1(line.y())
-            .y0(function(d, dataIndex) {
-                var groupIndex = this[dc.constants.GROUP_INDEX_NAME];
-
-                if (groupIndex == 0)
-                    return _chart.dataPointBaseline() - AREA_BOTTOM_PADDING;
-
-                var y = _chart.getChartStack().getDataPoint(groupIndex-1, dataIndex);
-
-                if(y < _chart.dataPointBaseline())
-                    return y - AREA_BOTTOM_PADDING;
-                else
-                    return y + _chart.dataPointHeight(d, groupIndex-1);
-            });
-
-        dc.transition(areaPath, _chart.transitionDuration(),
-            function(t) {
-                t.ease("linear");
-            }).attr("d", area);
-    }
-
-    _chart.renderArea = function(_) {
+    _chart.renderArea = function (_) {
         if (!arguments.length) return _renderArea;
         _renderArea = _;
         return _chart;
     };
 
-    function drawDots(parentG, groupIndex) {
-        var g = parentG.select("g." + TOOLTIP_G_CLASS);
-
-        if (g.empty())
-            g = parentG.append("g").attr("class", TOOLTIP_G_CLASS);
-
-        createRefLines(g);
-
-        var dots = g.selectAll("circle." + DOT_CIRCLE_CLASS)
-            .data(g.datum());
-
-        dots.enter()
-            .append("circle")
-            .attr("class", DOT_CIRCLE_CLASS)
-            .attr("r", _dotRadius)
-            .style("fill-opacity", 1e-6)
-            .style("stroke-opacity", 1e-6)
-            .on("mousemove", function(d) {
-                var dot = d3.select(this);
-                showDot(dot);
-                showRefLines(dot, g);
+    function drawLine(layersEnter, layers) {
+        var line = d3.svg.line()
+            .x(function (d) {
+                return _chart.x()(d.x);
             })
-            .on("mouseout", function(d) {
-                var dot = d3.select(this);
-                hideDot(dot);
-                hideRefLines(g);
-            })
-            .append("title").text(_chart.title());
+            .y(function (d) {
+                return _chart.y()(d.y + d.y0);
+            });
 
-        dots.attr("cx", lineX)
-            .attr("cy", function(d, dataIndex) {
-                return lineY(d, dataIndex, groupIndex);
-            })
-            .select("title").text(_chart.title());
+        layersEnter.append("path")
+            .attr("class", "line")
+            .attr("stroke", function (d, i) {
+                return _chart.colors()(i);
+            });
 
-        dots.exit().remove();
+        dc.transition(layers.select("path.line"), _chart.transitionDuration())
+            .attr("d", function (d) {
+                return line(d.points);
+            });
+    }
+
+    function drawArea(layersEnter, layers) {
+        if (_renderArea) {
+            var area = d3.svg.area()
+                .x(function (d) {
+                    return _chart.x()(d.x);
+                })
+                .y(function (d) {
+                    return _chart.y()(d.y + d.y0);
+                })
+                .y0(function(d){
+                    return _chart.y()(d.y0);
+                });
+
+            layersEnter.append("path")
+                .attr("class", "area")
+                .attr("fill", function (d, i) {
+                    return _chart.colors()(i);
+                })
+                .attr("d", function (d) {
+                    return area(d.points);
+                });
+
+            dc.transition(layers.select("path.area"), _chart.transitionDuration())
+                .attr("d", function (d) {
+                    return area(d.points);
+                });
+        }
+    }
+
+    function drawDots(layersEnter) {
+        if (!_chart.brushOn()) {
+            layersEnter.each(function (d, i) {
+                var layer = d3.select(this);
+
+                var g = layer.append("g").attr("class", TOOLTIP_G_CLASS);
+
+                createRefLines(g);
+
+                var dots = g.selectAll("circle." + DOT_CIRCLE_CLASS)
+                    .data(g.datum().points);
+
+                dots.enter()
+                    .append("circle")
+                    .attr("class", DOT_CIRCLE_CLASS)
+                    .attr("r", _dotRadius)
+                    .attr("fill", function (d) {
+                        return _chart.colors()(i);
+                    })
+                    .style("fill-opacity", 1e-6)
+                    .style("stroke-opacity", 1e-6)
+                    .on("mousemove", function (d) {
+                        var dot = d3.select(this);
+                        showDot(dot);
+                        showRefLines(dot, g);
+                    })
+                    .on("mouseout", function (d) {
+                        var dot = d3.select(this);
+                        hideDot(dot);
+                        hideRefLines(g);
+                    })
+                    .append("title").text(_chart.title());
+
+                dots.attr("cx", function (d) {
+                        return _chart.x()(d.x);
+                    })
+                    .attr("cy", function (d) {
+                        return _chart.y()(d.y + d.y0);
+                    })
+                    .select("title").text(_chart.title());
+
+                dots.exit().remove();
+            });
+        }
     }
 
     function createRefLines(g) {
@@ -42924,8 +42872,8 @@ dc.lineChart = function(parent, chartGroup) {
     function showRefLines(dot, g) {
         var x = dot.attr("cx");
         var y = dot.attr("cy");
-        g.select("path." + Y_AXIS_REF_LINE_CLASS).style("display", "").attr("d", "M" + _chart.margins().left + " " + y + "L" + (x) + " " + (y));
-        g.select("path." + X_AXIS_REF_LINE_CLASS).style("display", "").attr("d", "M" + x + " " + (_chart.height() - _chart.margins().bottom) + "L" + x + " " + y);
+        g.select("path." + Y_AXIS_REF_LINE_CLASS).style("display", "").attr("d", "M0 " + y + "L" + (x) + " " + (y));
+        g.select("path." + X_AXIS_REF_LINE_CLASS).style("display", "").attr("d", "M" + x + " " + _chart.yAxisHeight() + "L" + x + " " + y);
     }
 
     function hideDot(dot) {
@@ -42937,7 +42885,7 @@ dc.lineChart = function(parent, chartGroup) {
         g.select("path." + X_AXIS_REF_LINE_CLASS).style("display", "none");
     }
 
-    _chart.dotRadius = function(_) {
+    _chart.dotRadius = function (_) {
         if (!arguments.length) return _dotRadius;
         _dotRadius = _;
         return _chart;
@@ -43204,11 +43152,9 @@ dc.compositeChart = function(parent, chartGroup) {
             if (child.group() == null) child.group(_chart.group());
             child.chartGroup(_chart.chartGroup());
             child.svg(_chart.svg());
-            child.height(_chart.height());
-            child.width(_chart.width());
-            child.margins(_chart.margins());
             child.xUnits(_chart.xUnits());
             child.transitionDuration(_chart.transitionDuration());
+            child.brushOn(_chart.brushOn());
         }
 
         return g;
@@ -43248,6 +43194,12 @@ dc.compositeChart = function(parent, chartGroup) {
 
     _chart.compose = function(charts) {
         _children = charts;
+        for (var i = 0; i < _children.length; ++i) {
+            var child = _children[i];
+            child.height(_chart.height());
+            child.width(_chart.width());
+            child.margins(_chart.margins());
+        }
         return _chart;
     };
 
@@ -43313,12 +43265,12 @@ dc.geoChoroplethChart = function (parent, chartGroup) {
     });
 
     var _geoPath = d3.geo.path();
+    var _projectionFlag;
 
     var _geoJsons = [];
 
     _chart.doRender = function () {
         _chart.resetSvg();
-
         for (var layerIndex = 0; layerIndex < _geoJsons.length; ++layerIndex) {
             var states = _chart.svg().append("g")
                 .attr("class", "layer" + layerIndex);
@@ -43338,6 +43290,7 @@ dc.geoChoroplethChart = function (parent, chartGroup) {
 
             plotData(layerIndex);
         }
+        _projectionFlag = false;
     };
 
     function plotData(layerIndex) {
@@ -43445,7 +43398,11 @@ dc.geoChoroplethChart = function (parent, chartGroup) {
     _chart.doRedraw = function () {
         for (var layerIndex = 0; layerIndex < _geoJsons.length; ++layerIndex) {
             plotData(layerIndex);
+            if(_projectionFlag) {
+                _chart.svg().selectAll("g." + geoJson(layerIndex).name + " path").attr("d", _geoPath)
+            };
         }
+        _projectionFlag = false
     };
 
     _chart.overlayGeoJson = function (json, name, keyAccessor) {
@@ -43462,6 +43419,7 @@ dc.geoChoroplethChart = function (parent, chartGroup) {
 
     _chart.projection = function (projection) {
         _geoPath.projection(projection);
+        _projectionFlag = true;
         return _chart;
     };
 
@@ -43834,13 +43792,13 @@ dc.bubbleOverlay = function(root, chartGroup) {
 
     _chart.labelOffsetX = function (o) {
         if (!arguments.length) return _labelOffsetX;
-        _labelOffset = o;
+        _labelOffsetX = o;
         return _chart;
     };
 
     _chart.labelOffsetY = function (o) {
         if (!arguments.length) return _labelOffsetY;
-        _labelOffset = o;
+        _labelOffsetY = o;
         return _chart;
     };
 
@@ -44378,7 +44336,7 @@ function dcplot(frame, groupname, definition) {
                 if(!('x.units' in defn) && defn.group) {
                     var group = groups[defn.group];
                     if(mhas(group, 'group', 'binwidth'))
-                        defn['x.units'] = dc.units.float.precision(group.group.binwidth);
+                        defn['x.units'] = dc.units.fp.precision(group.group.binwidth);
                 }
             },
             line: function() {
