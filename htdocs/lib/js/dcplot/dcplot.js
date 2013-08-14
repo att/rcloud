@@ -430,7 +430,7 @@ function dcplot(frame, groupname, definition) {
                 if(!('x.units' in defn) && defn.group) {
                     var group = groups[defn.group];
                     if(mhas(group, 'group', 'binwidth'))
-                        defn['x.units'] = dc.units.float.precision(group.group.binwidth);
+                        defn['x.units'] = dc.units.fp.precision(group.group.binwidth);
                 }
             },
             line: function() {
