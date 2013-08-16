@@ -270,12 +270,12 @@ var shell = (function() {
             result[0].on_detach = function(callback) { on_detach = callback; };
 
             return result[0];
-        }, handle: function(objtype, data, cell) {
+        }, handle: function(objtype, data) {
             if (_.isUndefined(handlers[objtype])) {
                 console.log("Shell can't handle object of type", objtype);
                 return undefined;
             } else
-                return handlers[objtype].call(this, data, cell);
+                return handlers[objtype].call(this, data);
         }, new_markdown_cell: function(content) {
             return notebook_controller.append_cell(content, "Markdown");
         }, new_interactive_cell: function(content) {
