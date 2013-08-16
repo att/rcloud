@@ -1,5 +1,11 @@
 ## this serves Rserve's built-in HTTP server
 .http.request <- function(url, query, body, headers, ...) {
+    if (!is.null(.rc.conf$http.user)) {
+      unixtools::chown(tempdir(), .rc.conf$http.user, NULL)
+      unixtools::set.user(.rc.conf$http.user)
+      dir.create(td <- paste(tempdir(), .rc.conf$http.user, sep='-'), FALSE, TRUE, "0700")
+      unixtools::set.tempdir(td)
+    }
     ## if there is a custom authentication mechanism, invoke it
     if (is.function(getOption("RCloud.auth"))) {
         auth <- getOption("RCloud.auth")(url, query, body, headers)
