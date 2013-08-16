@@ -207,6 +207,13 @@ configure.rcloud <- function () {
 
   rcloud.setup.dirs()
 
+  if (nzchar(.rc.conf$curl.cainfo)) {
+    cainfo <- .rc.conf$curl.cainfo
+    ## relative paths are relative to the config directory and made absolute
+    if (!grepl("^/", cainfo)) cainfo <- file.path(.rc.conf$configuration.root, cainfo)
+    httr::set_config(httr::config(cainfo = cainfo))
+  }
+  
   .rc.conf$instanceID <- generate.uuid()
 
   TRUE
