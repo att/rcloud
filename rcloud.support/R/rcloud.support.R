@@ -114,6 +114,8 @@ rcloud.debug.level <- function() if (is.null(.rc.conf$debug)) 0L else .rc.conf$d
 # everything that is common to all connections
 # the per-connection setup is done by start.rcloud()
 configure.rcloud <- function () {
+  require(rcloud.support) ## make sure we're on the search path (may not be needed once we switch to OCap)
+  
   ## it is useful to have access to the root of your
   ## installation from R scripts -- for RCloud this is *mandatory*
   .rc.conf$root <- Sys.getenv("ROOT")
@@ -126,7 +128,7 @@ configure.rcloud <- function () {
     cat("=== NOTE: DEBUG is set, enabling debug mode at level", dl, "===\n")
   }
   if (rcloud.debug.level()) cat("Using ROOT =", .rc.conf$root, "\n")
-
+  
   # CONFROOT/DATAROOT are purely optional
   # Whom are we kidding? Although it may be nice to abstract out all paths
   # this is far from complete (what about htdocs?) and not very practical
@@ -157,6 +159,30 @@ configure.rcloud <- function () {
   ## if you have multiple servers it's good to know which machine this is
   .rc.conf$host <- tolower(system("hostname -f", TRUE))
   cat("Starting Rserve on", .rc.conf$host,"\n")
+
+  ## github API information is loaded from github_info.txt
+  gh.cf <- file.path(.rc.conf$configuration.root, "github_info.txt")
+  if (file.exists(gh.cf)) {
+    ln <- readLines(gh.cf, 4)
+    n <- c("github.client.id", "github.client.secret", "github.base.url", "github.api.url")
+    for (i in seq.int(ln)) .rc.conf[[n[i]]] <- ln[i]
+  }
+
+  ## load configuration --- I'm not sure if DCF is a good idea - we may change this ...
+  ## ideally, all of the above should be superceded by the configuration file
+  rc.cf <- file.path(.rc.conf$configuration.root, "rcloud.conf")
+  if (isTRUE(file.exists(rc.cf))) {
+    cat("Loading RCloud configuration file...\n")
+    rc.c <- read.dcf(rc.cf)[1,]
+    for (n in names(rc.c)) .rc.conf[[gsub("[ \t]", ".", tolower(n))]] <- as.vector(rc.c[n])
+  }
+  if (!all(sapply(c("github.client.id", "github.client.secret", "github.base.url", "github.api.url"), function(o) isTRUE(nzchar(.rc.conf[[o]])))))
+    stop("*** ERROR: You need a GitHub configuration in github_info.txt or rcloud.conf! Please refer to README.md for more instructions.")
+
+  ## set locale - default is UTF-8
+  locale <- .rc.conf$locale
+  if (!isTRUE(nzchar(locale))) locale <- "en_US.UTF-8"
+  Sys.setlocale(,locale)
 
   ## This is jsut a friendly way to load package and report success/failure
   ## Cairo, knitr, markdown and png are mandatory, really
@@ -189,25 +215,6 @@ configure.rcloud <- function () {
     load(.rc.conf$data.fn)
   }
 
-  ## github API information is loaded from github_info.txt
-  gh.cf <- file.path(.rc.conf$configuration.root, "github_info.txt")
-  if (file.exists(gh.cf)) {
-    ln <- readLines(gh.cf, 4)
-    n <- c("github.client.id", "github.client.secret", "github.base.url", "github.api.url")
-    for (i in seq.int(ln)) .rc.conf[[n[i]]] <- ln[i]
-  }
-
-  ## load configuration --- I'm not sure if DCF is a good idea - we may change this ...
-  ## ideally, all of the above should be superceded by the configuration file
-  rc.cf <- file.path(.rc.conf$configuration.root, "rcloud.conf")
-  if (isTRUE(file.exists(rc.cf))) {
-    cat("Loading RCloud configuration file...\n")
-    rc.c <- read.dcf(rc.cf)[1,]
-    for (n in names(rc.c)) .rc.conf[[gsub("[ \t]", ".", tolower(n))]] <- as.vector(rc.c[n])
-  }
-  if (!all(sapply(c("github.client.id", "github.client.secret", "github.base.url", "github.api.url"), function(o) isTRUE(nzchar(.rc.conf[[o]])))))
-    stop("*** ERROR: You need a GitHub configuration in github_info.txt or rcloud.conf! Please refer to README.md for more instructions.")
-  
   if (is.character(.rc.conf$debug)) {
     .rc.conf$debug <- as.integer(.rc.conf$debug)
     if (any(is.na(.rc.conf$debug))) .rc.conf$debug <- 1L
