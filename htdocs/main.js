@@ -80,11 +80,11 @@ function main_init() {
                 editor.load_notebook(getURLParameter("notebook"), getURLParameter("version"));
                 $("#tabs").tabs("select", "#tabs-2");
             }
-        }, 
+        },
         on_data: function(v) {
             v = v.value.json();
             oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
-        }, 
+        },
         on_oob_message: function(v, callback) {
             console.log("ON OOB MESSAGE");
             try {
