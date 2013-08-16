@@ -690,17 +690,21 @@ RClient = {
         }
 
         function on_error(msg, status_code) {
-            if (status_code === 65) {
+            switch (status_code) {
+            case 65:
                 // Authentication failed.
-                result.post_error("Authentication failed. Login first!");
-            } else {
-                result.post_error(msg);
+                result.post_error(result.disconnection_error("Authentication failed. Login first!"));
+                shutdown();
+                break;
+            default:
+                // Unmarked error, post disconnection_error.
+                result.post_error(result.disconnection_error(msg));
+                shutdown();
             }
-            shutdown();
         }
 
         function on_close(msg) {
-            result.post_error("Socket was closed. Goodbye!");
+            result.post_error(result.disconnection_error("Socket was closed. Goodbye!"));
             shutdown();
         };
 
@@ -713,10 +717,21 @@ RClient = {
             on_close: on_close,
             on_data: opts.on_data,
             on_oob_message: opts.on_oob_message,
+            // debug: {
+            //     message_in: function(msg) {
+            //         if (typeof msg.data === 'string')
+            //             console.log("Message in, string,", msg.data);
+            //         else
+            //             console.log("Message in, array,", new Uint8Array(msg.data));
+            //     },
+            //     message_out: function(msg, command) {
+            //         debugger;
+            //         console.log("Message out", command);
+            //     }
+            // },
             login: token + "\n" + execToken
         });
 
-        var _debug = opts.debug || false;
         var _capturing_answers = false;
         var _capturing_callback = undefined;
 
@@ -765,7 +780,7 @@ RClient = {
                 if (data.type !== "vector") {
                     return this.post_error("Protocol error, unexpected value of type " + data.type);
                 }
-                if (data.value[0].type !== "string_array" ||
+               if (data.value[0].type !== "string_array" ||
                     data.value[0].value.length !== 1) {
                     console.log("Protocol error?! ", data.value[0]);
                     return undefined;
@@ -781,6 +796,18 @@ RClient = {
 
             register_handler: function(cmd, callback) {
                 this.handlers[cmd] = callback;
+            },
+            
+            createFile: function(name,k) {
+                rserve.createFile(name,k);
+            },
+          
+            writeFile: function(buffer,k) {
+                rserve.writeFile(buffer,k);
+            },
+          
+            closeFile: function(k) {
+                rserve.closeFile(k);
             },
 
             //////////////////////////////////////////////////////////////////
@@ -806,9 +833,32 @@ RClient = {
 
             //////////////////////////////////////////////////////////////////
 
+            string_error: function(msg) {
+                return $("<div class='alert alert-error'></div>").text(msg);
+            },
+
+            disconnection_error: function(msg) {
+                var result = $("<div class='alert alert-error'></div>");
+                result.append($("<span></span>").text(msg));
+                var button = $("<button type='button' class='close'>Reconnect</button>");
+                result.append(button);
+                button.click(function() {
+                    window.location = 
+                        (window.location.protocol + 
+                         '//' + window.location.host + 
+                         '/login.R?redirect=' + 
+                         encodeURIComponent(window.location.pathname + window.location.search));
+                });
+                return result;
+            },
+
             post_error: function (msg) {
-                var d = $("<div class='alert alert-error'></div>").text(msg);
-                $("#output").append(d);
+                if (typeof msg === 'string')
+                    msg = this.string_error(msg);
+                if (typeof msg !== 'object')
+                    throw new Error("post_error expects a string or a jquery div");
+                // var d = $("<div class='alert alert-error'></div>").text(msg);
+                $("#output").append(msg);
                 window.scrollTo(0, document.body.scrollHeight);
             },
 
@@ -879,14 +929,8 @@ RClient = {
                 } else {
                     command = this.wrap_command(command, true);
                 }
-                if (_debug)
-                    console.log(command);
                 function unwrap(v) {
                     v = v.value.json();
-                    if (_debug) {
-                        debugger;
-                        console.log(v);
-                    }
                     try {
                         callback(v[1]);
                     } catch (e) {
@@ -906,12 +950,12 @@ RClient = {
             r_funcall: function(function_name) {
                 function output_one(result, val) {
                     var t = typeof val;
-                    if (t === "string") {
+                    if (val === null)
+                        result.push('NULL');
+                    else if (t === "string")
                         result.push(escape_r_literal_string(val));
-                    }
-                    else if (t == "number") {
+                    else if (t == "number")
                         result.push(String(val));
-                    }
                     else throw "unsupported r_funcall argument type " + t;
                 }
                 var result = [function_name, "("];
@@ -1009,10 +1053,10 @@ function rcloud_github_handler(command, k) {
     };
 }
 
-rcloud.load_notebook = function(id, k)
+rcloud.load_notebook = function(id, version, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.get.notebook", id),
+        rclient.r_funcall("rcloud.get.notebook", id, version),
         rcloud_github_handler("rcloud.get.notebook " + id, k)
     );
 };
@@ -1047,12 +1091,11 @@ rcloud.resolve_deferred_result = function(uuid, k)
     rclient.send_and_callback(cmd, k);
 };
 
-rcloud.get_users = function(k)
+rcloud.get_users = function(user, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.get.users"),
-        rcloud_github_handler("rcloud.get.users", k)
-    );
+        rclient.r_funcall("rcloud.get.users", user),
+        k);
 };
 
 rcloud.rename_notebook = function(id, new_name, k)
@@ -1061,6 +1104,114 @@ rcloud.rename_notebook = function(id, new_name, k)
         rclient.r_funcall("rcloud.rename.notebook", id, new_name),
         rcloud_github_handler("rcloud.rename.notebook", k)
     );
+};
+
+rcloud.upload_file = function() 
+{
+    function do_upload(path, file) {
+        var upload_name = path + '/' + file.name;
+        rclient.createFile(upload_name);
+        var fr = new FileReader();
+        var chunk_size = 1024*1024;
+        var f_size=file.size;
+        var cur_pos=0;
+        //initiate the first chunk, and then another, and then another ...
+        // ...while waiting for one to complete before reading another
+        fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+        fr.onload = function(e) {
+            if (e.target.result.byteLength > 0) {
+                var bytes = new Uint8Array(e.target.result);
+                rclient.writeFile(bytes, function() {
+                    cur_pos += chunk_size;
+                    fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+                });
+            } else {
+                rclient.closeFile();
+            }
+        };
+    }
+
+    if(!(window.File && window.FileReader && window.FileList && window.Blob))
+        throw "File API not supported by browser.";
+    else {
+        var file=$("#file")[0].files[0];
+        if(_.isUndefined(file))
+            throw "No file selected!";
+        else {
+            /*FIXME add logged in user */
+            rclient.send_and_callback(
+                rclient.r_funcall("rcloud.upload.path"), function(path) {
+                    var file=$("#file")[0].files[0];
+                    if(_.isUndefined(file))
+                        throw new Error("No file selected!");
+                    do_upload(path, file);
+                });
+        }
+    }
+};
+var ui_utils = {};
+
+ui_utils.fa_button = function(which, title, classname, style)
+{
+    var span = $('<span/>', {class: 'fontawesome-button ' + (classname || '')});
+    var icon = $('<i/>', {class: which});
+    if(style)
+        icon.css(style);
+    span.append(icon)
+        .tooltip({
+            title: title,
+            delay: { show: 250, hide: 0 }
+        });
+    return span;
+};
+
+ui_utils.ace_editor_height = function(widget)
+{
+    var lineHeight = widget.renderer.lineHeight;
+    var rows = Math.min(30, widget.getSession().getLength());
+    var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
+    return Math.max(75, newHeight);
+};
+
+// this is a hack, but it'll help giving people the right impression.
+// I'm happy to replace it witht the Right Way to do it when we learn
+// how to do it.
+ui_utils.make_prompt_chevron_gutter = function(widget)
+{
+    var dom = require("ace/lib/dom");
+    widget.renderer.$gutterLayer.update = function(config) {
+        var emptyAnno = {className: ""};
+        var html = [];
+        var i = config.firstRow;
+        var lastRow = config.lastRow;
+        var fold = this.session.getNextFoldLine(i);
+        var foldStart = fold ? fold.start.row : Infinity;
+        var foldWidgets = this.$showFoldWidgets && this.session.foldWidgets;
+        var breakpoints = this.session.$breakpoints;
+        var decorations = this.session.$decorations;
+        var firstLineNumber = this.session.$firstLineNumber;
+        var lastLineNumber = 0;
+        html.push(
+            "<div class='ace_gutter-cell ",
+            "' style='height:", this.session.getRowLength(0) * config.lineHeight, "px;'>", 
+            "&gt;", "</div>"
+        );
+
+        this.element = dom.setInnerHtml(this.element, html.join(""));
+        this.element.style.height = config.minHeight + "px";
+        
+        if (this.session.$useWrapMode)
+            lastLineNumber = this.session.getLength();
+        
+        var gutterWidth = ("" + lastLineNumber).length * config.characterWidth;
+        var padding = this.$padding || this.$computePadding();
+        gutterWidth += padding.left + padding.right;
+        if (gutterWidth !== this.gutterWidth && !isNaN(gutterWidth)) {
+            this.gutterWidth = gutterWidth;
+            this.element.style.width = Math.ceil(this.gutterWidth) + "px";
+            this._emit("changeGutterWidth", gutterWidth);
+        }
+    };
 };
 Notebook = {};
 
@@ -1071,36 +1222,19 @@ Notebook = {};
 Notebook.Cell = {};
 (function() {
 
-function fa_button(which, title)
-{
-    return $("<span class='fontawesome-button'><i class='" +
-             which +
-             "'></i></span>").tooltip({
-                 title: title,
-                 delay: { show: 250, hide: 0 }
-             });
-}
-
-function editor_height(widget)
-{
-    var lineHeight = widget.renderer.lineHeight;
-    var rows = Math.min(30, widget.getSession().getLength());
-    var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
-    return Math.max(75, newHeight);
-}
-
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
 
     //////////////////////////////////////////////////////////////////////////
     // button bar
-    
-    var insert_cell_button = fa_button("icon-plus-sign", "insert cell");
-    var source_button = fa_button("icon-edit", "source");
-    var result_button = fa_button("icon-picture", "result");
-    // var hide_button   = fa_button("icon-resize-small", "hide");
-    var remove_button = fa_button("icon-trash", "remove");
-    var run_md_button = fa_button("icon-play", "run");
+
+    var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
+    var source_button = ui_utils.fa_button("icon-edit", "source");
+    var result_button = ui_utils.fa_button("icon-picture", "result");
+    // var hide_button   = ui_utils.fa_button("icon-resize-small", "hide");
+    var remove_button = ui_utils.fa_button("icon-trash", "remove");
+    var run_md_button = ui_utils.fa_button("icon-play", "run");
+    var gap = $('<div/>').html('&nbsp;').css({'line-height': '25%'});
 
     function update_model() {
         return cell_model.content(widget.getSession().getValue());
@@ -1141,7 +1275,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         r_result_div.html("Computing...");
         var new_content = update_model();
         result.show_result();
-        if(new_content)
+        if(new_content!==null) // if any change (including removing the content)
             cell_model.parent_model.controller.update_cell(cell_model);
         cell_model.controller.execute();
     }
@@ -1151,12 +1285,16 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     var button_float = $("<div class='cell-controls'></div>");
     var col = $('<table/>');
-    $.each([insert_cell_button, source_button,result_button/*,hide_button*/,remove_button,run_md_button],
+    $.each([run_md_button, source_button, result_button/*, hide_button*/, gap, remove_button],
            function() {
                col.append($('<tr/>').append($('<td/>').append($(this))));
            });
     button_float.append(col);
     notebook_cell_div.append(button_float);
+
+    var insert_button_float = $("<div class='cell-insert-control'></div>");
+    insert_button_float.append(insert_cell_button);
+    notebook_cell_div.append(insert_button_float);
 
     //////////////////////////////////////////////////////////////////////////
 
@@ -1180,14 +1318,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var doc = session.doc;
     widget.setReadOnly(cell_model.parent_model.read_only);
 
-    widget.getSession().setMode(new RMode(false, doc, session));
-    widget.getSession().on('change', function() {
-        notebook_cell_div.css({'height': editor_height(widget) + "px"});
+    session.setMode(new RMode(false, doc, session));
+    session.on('change', function() {
+        notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
         widget.resize();
     });
 
     widget.setTheme("ace/theme/chrome");
-    widget.getSession().setUseWrapMode(true);
+    session.setUseWrapMode(true);
     widget.resize();
 
     widget.commands.addCommand({
@@ -1204,11 +1342,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
     inner_div.append(r_result_div);
-
-    // FIXME this is a terrible hack created simply so we can scroll
-    // to the end of a div. I know no better way of doing this..
-    var end_of_div_span = $('<span></span>');
-    inner_div.append(end_of_div_span);
 
     var current_mode;
 
@@ -1261,51 +1394,52 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
 
             this.show_result();
-            end_of_div_span[0].scrollIntoView();
         },
 
         //////////////////////////////////////////////////////////////////////
 
         hide_buttons: function() {
             button_float.css("display", "none");
+            insert_button_float.hide();
         },
         show_buttons: function() {
             button_float.css("display", null);
+            insert_button_float.show();
         },
 
         show_source: function() {
             /*
-             * Some explanation for the next poor soul 
+             * Some explanation for the next poor soul
              * that might come across this great madness below:
-             * 
+             *
              * ACE appears to have trouble computing properties such as
              * renderer.lineHeight. This is unfortunate, since we want
              * to use lineHeight to determine the size of the widget in the
              * first place. The only way we got ACE to work with
              * dynamic sizing was to set up a three-div structure, like so:
-             * 
+             *
              * <div id="1"><div id="2"><div id="3"></div></div></div>
-             * 
+             *
              * set the middle div (id 2) to have a style of "height: 100%"
-             * 
+             *
              * set the outer div (id 1) to have whatever height in pixels you want
-             * 
+             *
              * make sure the entire div structure is on the DOM and is visible
-             * 
-             * call ace's resize function once. (This will update the 
+             *
+             * call ace's resize function once. (This will update the
              * renderer.lineHeight property)
-             * 
+             *
              * Now set the outer div (id 1) to have the desired height as a
              * funtion of renderer.lineHeight, and call resize again.
-             * 
+             *
              * Easy!
-             * 
+             *
              */
             // do the two-change dance to make ace happy
-            notebook_cell_div.css({'height': editor_height(widget) + "px"});
+            notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
             markdown_div.show();
             widget.resize(true);
-            notebook_cell_div.css({'height': editor_height(widget) + "px"});
+            notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
             widget.resize(true);
             disable(source_button);
             enable(result_button);
@@ -1329,9 +1463,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
             //editor_row.hide();
             markdown_div.hide();
-            r_result_div.slideDown(150, function() {
-                end_of_div_span[0].scrollIntoView();
-            }); // show();
+            r_result_div.slideDown(150); // show();
             current_mode = "result";
         },
         hide_all: function() {
@@ -1421,15 +1553,16 @@ Notebook.Cell.create_model = function(content, language)
 Notebook.Cell.create_controller = function(cell_model)
 {
     var result = {
-        execute: function() {
+        execute: function(k) {
             var that = this;
             var language = cell_model.language();
             function callback(r) {
                 _.each(cell_model.views, function(view) {
                     view.result_updated(r);
                 });
+                k && k();
             }
-            
+
             rclient.record_cell_execution(cell_model);
 
             if (language === 'Markdown') {
@@ -1611,6 +1744,8 @@ Notebook.create_model = function()
 };
 Notebook.create_controller = function(model)
 {
+    var current_gist_;
+
     function append_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
         var cell_controller = Notebook.Cell.create_controller(cell_model);
@@ -1632,11 +1767,11 @@ Notebook.create_controller = function(model)
             $('.ace_cursor-layer').show();
     }
 
-    function on_load(k, notebook) {
+    function on_load(k, version, notebook) {
         this.clear();
         // is there anything else to gist permissions?
         // certainly versioning figures in here too
-        model.read_only = notebook.user.login != rcloud.username();
+        model.read_only = version != null || notebook.user.login != rcloud.username();
         var parts = {}; // could rely on alphabetic input instead of gathering
         _.each(notebook.files, function (file) {
             var filename = file.filename;
@@ -1650,49 +1785,106 @@ Notebook.create_controller = function(model)
         for(var i in parts)
             append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
         show_or_hide_cursor();
+        current_gist_ = notebook;
         k && k(notebook);
+    }
+
+    function find_changes_from(notebook) {
+        var changes = [];
+        var nf = notebook.files,
+            cf = _.extend({}, current_gist_.files); // to keep track of changes
+        for(var f in nf) {
+            if(f==='r_type')
+                continue; // artifact of rserve.js
+            if(f in cf) {
+                if(cf[f].language != nf[f].language || cf[f].content != nf[f].content) {
+                    changes.push([f, cf[f]]);
+                }
+                delete cf[f];
+            }
+            else changes.push([f, {erase: true, language: nf[f].language}]);
+        }
+        for(f in cf) {
+            if(f==='r_type')
+                continue; // artifact of rserve.js
+            changes.push([f, cf[f]]);
+        }
+        return changes;
     }
 
     var result = {
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
-            this.update_notebook(cch[1]);
+            // github gist api will not take empty cells, so drop them
+            if(content.length)
+                this.update_notebook(cch[1]);
             return cch[0];
         },
         insert_cell: function(content, type, id) {
             var cch = insert_cell_helper(content, type, id);
-            this.update_notebook(cch[1]);
+            if(content.length)
+                this.update_notebook(cch[1]);
             return cch[0];
         },
         remove_cell: function(cell_model) {
             var changes = model.remove_cell(cell_model);
+            shell.input_widget.focus(); // there must be a better way
             this.update_notebook(changes);
         },
         clear: function() {
             model.clear();
         },
-        load_notebook: function(gistname, k) {
+        load_notebook: function(gistname, version, k) {
             var that = this;
-            rcloud.load_notebook(gistname, _.bind(on_load, this, k));
+            rcloud.load_notebook(gistname, version || null, _.bind(on_load, this, k, version));
         },
         create_notebook: function(content, k) {
             var that = this;
             rcloud.create_notebook(content, function(notebook) {
                 that.clear();
                 model.read_only = notebook.user.login != rcloud.username();
+                current_gist_ = notebook;
                 k && k(notebook);
             });
         },
-        fork_notebook: function(gistname, k) {
+        fork_or_revert_notebook: function(is_mine, gistname, version, k) {
             var that = this;
-            rcloud.fork_notebook(gistname, function(notebook) {
-                that.load_notebook(notebook.id, k);
+            function update_if(changes, gistname, k) {
+                // if there are no changes, just load the gist so that we are sending along
+                // the latest history, timestamp, etc.
+                if(changes.length)
+                    that.update_notebook(changes, gistname, k);
+                else {
+                    // also less than awesome separation of concerns here, wtf?
+                    show_or_hide_cursor();
+                    rcloud.load_notebook(gistname, null, k);
+                }
+            }
+            if(is_mine) // get HEAD, calculate changes from there to here, and apply
+                rcloud.load_notebook(gistname, null, function(notebook) {
+                    var changes = find_changes_from(notebook);
+                    update_if(changes, gistname, k);
+                });
+            else rcloud.fork_notebook(gistname, function(notebook) {
+                if(version) {
+                    // fork, then get changes from there to here, and apply
+                    var changes = find_changes_from(notebook);
+                    update_if(changes, notebook.id, k);
+                }
+                else
+                    that.load_notebook(notebook.id, null, k);
             });
         },
-        update_notebook: function(changes) {
+        update_notebook: function(changes, gistname, k) {
             if(!changes.length)
                 return;
+            if(model.read_only)
+                throw "attempted to update read-only notebook";
+            gistname = gistname || shell.gistname();
             function partname(id, language) {
+                // yuk
+                if(_.isString(id))
+                    return id;
                 var ext;
                 switch(language) {
                 case 'R':
@@ -1732,7 +1924,16 @@ Notebook.create_controller = function(model)
                 }
                 return {files: _.reduce(changes, xlate_change, {})};
             }
-            rcloud.update_notebook(shell.gistname, changes_to_gist(changes), _.bind(editor.notebook_loaded, editor));
+            // not awesome to callback to someone else here
+            k = k || _.bind(editor.notebook_loaded, editor, null);
+            // also less than awesome separation of concerns here, wtf?
+            show_or_hide_cursor();
+            var k2 = function(notebook) {
+                current_gist_ = notebook;
+                k(notebook);
+            };
+            if(changes.length)
+                rcloud.update_notebook(gistname, changes_to_gist(changes), k2);
         },
         refresh_cells: function() {
             return model.reread_cells();

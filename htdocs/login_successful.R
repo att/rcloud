@@ -1,6 +1,6 @@
 run <- function(url, query, body, headers)
 {
-  state <- rnorm(1)
+  state = fromJSON(URLdecode(query["state"]))
   result <- POST(paste(rcloud.support:::.rc.conf$github.base.url, "login/oauth/access_token", sep=''),
                  config=accept_json(),
                  body=list(
@@ -20,7 +20,8 @@ run <- function(url, query, body, headers)
     stop(paste("login failed: ", result$content$message))
   else
     ctx <- result$content
-  ret = '/main.html'
+  if (is.null((ret = state$redirect)))
+    ret = '/main.html'
   if (rcloud.debug.level()) cat("context: ", ctx$user$login, token, "\n")
   set.token(ctx$user$login, token)
   list(paste("<html><head></head><body>",

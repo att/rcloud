@@ -7,6 +7,7 @@ rcloud_bundle.js: \
 	lux_chart.js \
 	rclient.js \
 	rcloud.js \
+	ui_utils.js \
 	notebook/_begin.js \
 	notebook/cell/_begin.js \
 	notebook/cell/create_html_view.js \

@@ -4,7 +4,10 @@ function init_shareable_link_box() {
             t.toggle();
             n.toggle();
             if (n.is(":visible")) {
-                n.get(0).value = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname;
+                n.get(0).value = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
+                var v = shell.version();
+                if(v)
+                    n.get(0).value = n.get(0).value + '&version='+v;
                 n.get(0).select();
             }
             return false;
@@ -15,17 +18,17 @@ function init_shareable_link_box() {
 
 function init_editable_title_box() {
     $("#notebook-title").click(function() {
-        var result = prompt("Please enter the new name for '" + $(this).text() + "':");
+        var result = prompt("Please enter the new name for this notebook:", $(this).text());
         if (result !== null) {
             $(this).text(result);
-            editor.rename_notebook(shell.gistname, result);
+            editor.rename_notebook(shell.gistname(), result);
         }
     });
 }
 
-function init_fork_button() {
-    $("#fork-notebook").click(function() {
-        editor.fork_notebook(shell.gistname);
+function init_fork_revert_button() {
+    $("#fork-revert-notebook").click(function() {
+        shell.fork_or_revert_button();
     });
 }
 
@@ -46,13 +49,13 @@ var oob_msg_handlers = {
 function main_init() {
     init_shareable_link_box();
     init_editable_title_box();
-    init_fork_button();
+    init_fork_revert_button();
+
     rclient = RClient.create({
         debug: false,
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
         on_connect: function() {
             $("#new-md-cell-button").click(function() {
-                shell.terminal.disable();
                 shell.new_markdown_cell("", "markdown");
                 var vs = shell.notebook.view.sub_views;
                 vs[vs.length-1].show_source();
@@ -63,8 +66,8 @@ function main_init() {
                 window.location.href = '/logout.R';
             });
             $(".collapse").collapse();
-            $("#input-text-search").click(function() {
-                shell.terminal.disable();
+            $("#upload-submit").click(function() {
+              rcloud.upload_file();
             });
             rcloud.init_client_side_data();
 
@@ -74,13 +77,15 @@ function main_init() {
                 function getURLParameter(name) {
                     return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
                 }
-                editor.load_notebook(getURLParameter("notebook"));
+                editor.load_notebook(getURLParameter("notebook"), getURLParameter("version"));
                 $("#tabs").tabs("select", "#tabs-2");
             }
-        }, on_data: function(v) {
+        }, 
+        on_data: function(v) {
             v = v.value.json();
             oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
-        }, on_oob_message: function(v, callback) {
+        }, 
+        on_oob_message: function(v, callback) {
             console.log("ON OOB MESSAGE");
             try {
                 v = v.value.json();

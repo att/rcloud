@@ -32,17 +32,21 @@ RClient = {
         }
 
         function on_error(msg, status_code) {
-            if (status_code === 65) {
+            switch (status_code) {
+            case 65:
                 // Authentication failed.
-                result.post_error("Authentication failed. Login first!");
-            } else {
-                result.post_error(msg);
+                result.post_error(result.disconnection_error("Authentication failed. Login first!"));
+                shutdown();
+                break;
+            default:
+                // Unmarked error, post disconnection_error.
+                result.post_error(result.disconnection_error(msg));
+                shutdown();
             }
-            shutdown();
         }
 
         function on_close(msg) {
-            result.post_error("Socket was closed. Goodbye!");
+            result.post_error(result.disconnection_error("Socket was closed. Goodbye!"));
             shutdown();
         };
 
@@ -55,10 +59,21 @@ RClient = {
             on_close: on_close,
             on_data: opts.on_data,
             on_oob_message: opts.on_oob_message,
+            // debug: {
+            //     message_in: function(msg) {
+            //         if (typeof msg.data === 'string')
+            //             console.log("Message in, string,", msg.data);
+            //         else
+            //             console.log("Message in, array,", new Uint8Array(msg.data));
+            //     },
+            //     message_out: function(msg, command) {
+            //         debugger;
+            //         console.log("Message out", command);
+            //     }
+            // },
             login: token + "\n" + execToken
         });
 
-        var _debug = opts.debug || false;
         var _capturing_answers = false;
         var _capturing_callback = undefined;
 
@@ -107,7 +122,7 @@ RClient = {
                 if (data.type !== "vector") {
                     return this.post_error("Protocol error, unexpected value of type " + data.type);
                 }
-                if (data.value[0].type !== "string_array" ||
+               if (data.value[0].type !== "string_array" ||
                     data.value[0].value.length !== 1) {
                     console.log("Protocol error?! ", data.value[0]);
                     return undefined;
@@ -123,6 +138,18 @@ RClient = {
 
             register_handler: function(cmd, callback) {
                 this.handlers[cmd] = callback;
+            },
+            
+            createFile: function(name,k) {
+                rserve.createFile(name,k);
+            },
+          
+            writeFile: function(buffer,k) {
+                rserve.writeFile(buffer,k);
+            },
+          
+            closeFile: function(k) {
+                rserve.closeFile(k);
             },
 
             //////////////////////////////////////////////////////////////////
@@ -148,9 +175,32 @@ RClient = {
 
             //////////////////////////////////////////////////////////////////
 
+            string_error: function(msg) {
+                return $("<div class='alert alert-error'></div>").text(msg);
+            },
+
+            disconnection_error: function(msg) {
+                var result = $("<div class='alert alert-error'></div>");
+                result.append($("<span></span>").text(msg));
+                var button = $("<button type='button' class='close'>Reconnect</button>");
+                result.append(button);
+                button.click(function() {
+                    window.location = 
+                        (window.location.protocol + 
+                         '//' + window.location.host + 
+                         '/login.R?redirect=' + 
+                         encodeURIComponent(window.location.pathname + window.location.search));
+                });
+                return result;
+            },
+
             post_error: function (msg) {
-                var d = $("<div class='alert alert-error'></div>").text(msg);
-                $("#output").append(d);
+                if (typeof msg === 'string')
+                    msg = this.string_error(msg);
+                if (typeof msg !== 'object')
+                    throw new Error("post_error expects a string or a jquery div");
+                // var d = $("<div class='alert alert-error'></div>").text(msg);
+                $("#output").append(msg);
                 window.scrollTo(0, document.body.scrollHeight);
             },
 
@@ -221,14 +271,8 @@ RClient = {
                 } else {
                     command = this.wrap_command(command, true);
                 }
-                if (_debug)
-                    console.log(command);
                 function unwrap(v) {
                     v = v.value.json();
-                    if (_debug) {
-                        debugger;
-                        console.log(v);
-                    }
                     try {
                         callback(v[1]);
                     } catch (e) {
@@ -248,12 +292,12 @@ RClient = {
             r_funcall: function(function_name) {
                 function output_one(result, val) {
                     var t = typeof val;
-                    if (t === "string") {
+                    if (val === null)
+                        result.push('NULL');
+                    else if (t === "string")
                         result.push(escape_r_literal_string(val));
-                    }
-                    else if (t == "number") {
+                    else if (t == "number")
                         result.push(String(val));
-                    }
                     else throw "unsupported r_funcall argument type " + t;
                 }
                 var result = [function_name, "("];

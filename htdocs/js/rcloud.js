@@ -67,10 +67,10 @@ function rcloud_github_handler(command, k) {
     };
 }
 
-rcloud.load_notebook = function(id, k)
+rcloud.load_notebook = function(id, version, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.get.notebook", id),
+        rclient.r_funcall("rcloud.get.notebook", id, version),
         rcloud_github_handler("rcloud.get.notebook " + id, k)
     );
 };
@@ -105,12 +105,11 @@ rcloud.resolve_deferred_result = function(uuid, k)
     rclient.send_and_callback(cmd, k);
 };
 
-rcloud.get_users = function(k)
+rcloud.get_users = function(user, k)
 {
     rclient.send_and_callback(
-        rclient.r_funcall("rcloud.get.users"),
-        rcloud_github_handler("rcloud.get.users", k)
-    );
+        rclient.r_funcall("rcloud.get.users", user),
+        k);
 };
 
 rcloud.rename_notebook = function(id, new_name, k)
@@ -119,4 +118,48 @@ rcloud.rename_notebook = function(id, new_name, k)
         rclient.r_funcall("rcloud.rename.notebook", id, new_name),
         rcloud_github_handler("rcloud.rename.notebook", k)
     );
+};
+
+rcloud.upload_file = function() 
+{
+    function do_upload(path, file) {
+        var upload_name = path + '/' + file.name;
+        rclient.createFile(upload_name);
+        var fr = new FileReader();
+        var chunk_size = 1024*1024;
+        var f_size=file.size;
+        var cur_pos=0;
+        //initiate the first chunk, and then another, and then another ...
+        // ...while waiting for one to complete before reading another
+        fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+        fr.onload = function(e) {
+            if (e.target.result.byteLength > 0) {
+                var bytes = new Uint8Array(e.target.result);
+                rclient.writeFile(bytes, function() {
+                    cur_pos += chunk_size;
+                    fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+                });
+            } else {
+                rclient.closeFile();
+            }
+        };
+    }
+
+    if(!(window.File && window.FileReader && window.FileList && window.Blob))
+        throw "File API not supported by browser.";
+    else {
+        var file=$("#file")[0].files[0];
+        if(_.isUndefined(file))
+            throw "No file selected!";
+        else {
+            /*FIXME add logged in user */
+            rclient.send_and_callback(
+                rclient.r_funcall("rcloud.upload.path"), function(path) {
+                    var file=$("#file")[0].files[0];
+                    if(_.isUndefined(file))
+                        throw new Error("No file selected!");
+                    do_upload(path, file);
+                });
+        }
+    }
 };

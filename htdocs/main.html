@@ -2,7 +2,6 @@
   <head>
     <title>RCloud</title>
     <link rel="stylesheet" type="text/css" href="css/custom-theme/jquery-ui-1.8.18.custom.css" />
-    <link rel="stylesheet" type="text/css" href="css/jquery.terminal.css"/>
     <link rel="stylesheet" type="text/css" href="css/font-awesome.css"/>
     <link rel="stylesheet" type="text/css" href="css/jqtree.css"/>
     <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
@@ -19,7 +18,6 @@
     jquery.cookies,			http://code.google.com/p/cookies/wiki/License
     tree.jquery.js,			http://mbraak.github.com/jqTree/
     underscore.js,                      http://underscorejs.org
-    jquery.terminal,			http://terminal.jcubic.pl/
     d3 (and its colorbrewer colormaps), http://d3js.org
     crossfilter,                        http://square.github.com/crossfilter/
     dc.js,                              http://nickqizhu.github.com/dc.js/
@@ -58,7 +56,7 @@
 	<ul class="nav">
 	  <li><a href="#" id="run-notebook">Run</a></li>
 	  <li><a href="#" id="share-notebook" class="embed-link">Get Link</a><input class="embed-box" type="text" size="25" style="display:none;margin-top:0.7em;"></li>
-          <li><a href="#" id="fork-notebook" style="display:none;">Fork</a></li>
+          <li><a href="#" id="fork-revert-notebook" style="display:none;">Fork</a></li>
 	  <li class="divider-vertical"></li>
 	  <li><a href="#" id="rcloud-logout">Logout</a></li>
 	</ul>
@@ -77,10 +75,8 @@
 
 	<div id="input-div">
 	  <button style="float: right; width:20%;" id="new-md-cell-button">New RMarkdown cell</button>
-	  <div id="terminal-container" 
-	       style="float: left; width:79%; background:#FFFFFF; border:1px solid #DDDDDD">
-	    <div id="term_demo"><span id="term_helper" style="float:right">Type R commands here!</span></div>
-	  </div>
+	  <div id="command-entry" 
+	       style="float: left; width:79%; height: 50px; background:#FFFFFF; border:1px solid #DDDDDD"></div>
 	</div>
 	<div style="padding:1em; clear:both"></div>
       </div>
@@ -94,8 +90,22 @@
 		<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">Notebooks</a>
 	      </div>
 	      <div id="collapseOne" class="accordion-body collapse">
-		<div class="accordion-inner">
+		<div class="accordion-inner notebook-tree">
 		  <div id="editor-book-tree"></div>
+		</div>
+	      </div>
+	    </div>
+            <div class="accordion-group">
+	      <div class="accordion-heading">
+		<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseFour">File Upload </a>
+	      </div>
+	      <div id="collapseFour" class="accordion-body collapse in">
+		<div class="accordion-inner">
+		  <div>
+                    <div class="progress-bar" id="file-progress"style="height: 5px;"></div>
+		    <input type="file" id="file"></input>
+		    <input type="submit" id="upload-submit" value="Upload" style="float: right;"></input>
+		  </div>
 		</div>
 	      </div>
 	    </div>
@@ -134,11 +144,6 @@
   </div>
 </div>
 
-<script src="editor_tab.js"></script>
-<script src="shell_tab.js"></script>
-<script src="dcrchart.js"></script>
-<script src="wdcplot.js"></script>
-
 <!-- For some bizarre reason, line numbering has garbage characters on --
   -- the minified version, so we use the unminified version instead.
 
@@ -151,4 +156,10 @@
 
   -->
 <script src="lib/ace_bundle.js" charset="utf-8"></script>
+
+<script src="editor_tab.js"></script>
+<script src="shell_tab.js"></script>
+<script src="dcrchart.js"></script>
+<script src="wdcplot.js"></script>
+
 </body></html>

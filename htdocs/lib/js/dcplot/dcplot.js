@@ -108,6 +108,7 @@ var chart_attrs = {
         title: {required: false}, // title for html in the div, handled outside this lib
         dimension: {required: true},
         group: {required: true},
+        ordering: {required: false},
         width: {required: true, default: 300},
         height: {required: true, default: 300},
         'transition.duration': {required: false},
@@ -118,9 +119,10 @@ var chart_attrs = {
     },
     color: {
         supported: true,
-        colors: {required: false},
         color: {required: false}, // colorAccessor
-        'color.domain': {required: false}
+        'color.transform': {required: false}, // the d3 way not the dc way
+        'color.domain': {required: false},
+        'color.range': {required: false}
     },
     stackable: {
         supported: true,
@@ -251,7 +253,45 @@ dc.utils.printSingleValue = function(filter) {
     else return _psv(filter);
 }
 
+dcplot.format_error = function(e) {
+    var tab;
+    if(_.isArray(e)) { // expected exception: input error
+        tab = $('<table/>');
+        $.each(e, function(i) {
+            var err = e[i], formatted_errors = $('<td/>');
+            if(_.isString(err.errors))
+                formatted_errors.text(err.errors);
+            else if(_.isArray(err.errors))
+                $.each(err.errors, function(e) {
+                    formatted_errors.append($('<p/>').text(err.errors[e]));
+                });
+            var name = err.name.replace(/_\d*_\d*$/, '');
+            tab.append($('<tr valign=top/>').
+                       append($('<td/>').text(err.type)).
+                       append($('<td/>').text(name)).
+                       append(formatted_errors)
+                      );
+        });
+    }
+    else // unexpected exception: probably logic error
+        tab = $('<p/>').text(e.toString());
+    var error_report = $('<div/>').
+            append($('<p/>').text('dcplot errors!')).
+            append(tab);
+    return error_report;
+};
+
+
 function dcplot(frame, groupname, definition) {
+
+    // generalization of _.has
+    function mhas(obj) {
+        for(var i=1; i<arguments.length; ++i)
+            if(!_.has(obj, arguments[i]))
+                return false
+        else obj = obj[arguments[i]];
+        return true;
+    }
 
     // defaults
     function default_dimension(name, defn) {
@@ -344,6 +384,19 @@ function dcplot(frame, groupname, definition) {
                     g.dimension = defn.dimension;
                     infer_group(defn.group, g, dims);
                 }
+                if(!_.has(defn, 'ordering')) {
+                    // note it's a little messy to have this as a property of the chart rather than
+                    // the group, but dc.js sometimes needs an ordering and sometimes doesn't
+                    if(_.has(dims, defn.dimension) && mhas(accessor(dims[defn.dimension]), 'attrs', 'levels')) {
+                        var levels = accessor(dims[defn.dimension]).attrs.levels;
+                        var rmap = _.object(levels, _.range(levels.length));
+                        // the ordering function uses a reverse map of the levels
+                        defn.ordering = function(p) {
+                            return rmap[p.key];
+                        };
+                    }
+                }
+
             },
             color: function() {
             },
@@ -376,8 +429,8 @@ function dcplot(frame, groupname, definition) {
                  for a histogram, or the set of ordinals */
                 if(!('x.units' in defn) && defn.group) {
                     var group = groups[defn.group];
-                    if('group' in group && 'binwidth' in group.group)
-                        defn['x.units'] = dc.units.float.precision(group.group.binwidth);
+                    if(mhas(group, 'group', 'binwidth'))
+                        defn['x.units'] = dc.units.fp.precision(group.group.binwidth);
                 }
             },
             line: function() {
@@ -493,9 +546,12 @@ function dcplot(frame, groupname, definition) {
             throw errors;
     }
 
+    function create_group(defn, dimensions) {
+        return accessor(defn.reduce)(defn.group(dimensions[defn.dimension]));
+    }
 
 
-    // this is a hopefully a lot of boilerplate with no logic
+    // this is a hopefully a lot of boilerplate with not too much logic
     // maps from dcplot attributes to dc.js methods
     function create_chart(groupname, defn, dimensions, groups) {
         var ctor, chart;
@@ -524,6 +580,8 @@ function dcplot(frame, groupname, definition) {
                     .group(groups[defn.group])
                     .width(defn.width)
                     .height(defn.height);
+                if(_.has(defn, 'ordering'))
+                    chart.ordering(defn.ordering);
                 if(_.has(defn, 'transition.duration'))
                     chart.transitionDuration(defn['transition.duration']);
                 if(_.has(defn, 'label')) {
@@ -540,12 +598,23 @@ function dcplot(frame, groupname, definition) {
                 }
             },
             color: function() {
-                if(_.has(defn, 'colors'))
-                    chart.colors(defn.colors);
+                // i am cool with dc.js's color accessor
                 if(_.has(defn, 'color'))
-                    chart.colorAccessor(key_value(defn.color));
+                    chart.colorAccessor(key_value(accessor(defn.color)));
+                // however i don't understand why dc chooses to use a
+                // "color calculator" when a d3 scale seems like it ought
+                // to serve the purpose. so just plug a d3 scale into colors
+                // and override the calculator to use it
+                // also default to category10 which seems better for discrete colors
+                var scale = defn['color.transform'] || d3.scale.category10();
                 if(_.has(defn, 'color.domain'))
-                    chart.colorDomain(defn['color.domain']);
+                    scale.domain(defn['color.domain']);
+                else if(mhas(defn, 'color', 'attrs', 'levels'))
+                    scale.domain(defn.color.attrs.levels);
+                if(_.has(defn, 'color.range'))
+                    scale.range(defn['color.range']);
+                chart.colors(scale);
+                chart.colorCalculator(function(x) { return chart.colors()(x); });
             },
             stackable: function() {
                 if(_.has(defn, 'stack'))
@@ -735,7 +804,7 @@ function dcplot(frame, groupname, definition) {
     }
     for(var g in definition.groups) {
         defn = definition.groups[g];
-        groups[g] = accessor(defn.reduce)(defn.group(dimensions[defn.dimension]));
+        groups[g] = create_group(defn, dimensions);
     }
     for(c in definition.charts) {
         defn = definition.charts[c];
