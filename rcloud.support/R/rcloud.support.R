@@ -195,8 +195,6 @@ configure.rcloud <- function () {
     ln <- readLines(gh.cf, 4)
     n <- c("github.client.id", "github.client.secret", "github.base.url", "github.api.url")
     for (i in seq.int(ln)) .rc.conf[[n[i]]] <- ln[i]
-  } else {
-    stop("*** ERROR: You need a github_info.txt file! Please refer to README.md for more instructions.")
   }
 
   ## load configuration --- I'm not sure if DCF is a good idea - we may change this ...
@@ -207,7 +205,9 @@ configure.rcloud <- function () {
     rc.c <- read.dcf(rc.cf)[1,]
     for (n in names(rc.c)) .rc.conf[[gsub("[ \t]", ".", tolower(n))]] <- as.vector(rc.c[n])
   }
-
+  if (!all(sapply(c("github.client.id", "github.client.secret", "github.base.url", "github.api.url"), function(o) isTRUE(nzchar(.rc.conf[[o]])))))
+    stop("*** ERROR: You need a GitHub configuration in github_info.txt or rcloud.conf! Please refer to README.md for more instructions.")
+  
   if (is.character(.rc.conf$debug)) {
     .rc.conf$debug <- as.integer(.rc.conf$debug)
     if (any(is.na(.rc.conf$debug))) .rc.conf$debug <- 1L
