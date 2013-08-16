@@ -68,7 +68,7 @@ rcloud.rename.notebook <- function(id, new.name)
 rcloud.fork.notebook <- function(id) fork.gist(.session$rgithub.context, id)
 
 rcloud.get.users <- function(user) {
-  userlistfile <- file.path(.rc.conf$data.root, "userfiles", "userlist.txt")
+  userlistfile <- file.path(.rc.conf$data.root, "userfiles", paste0(user, "-userlist.txt"))
   userhash <- new.env()
   assign(user, 1, envir = userhash)
   for (user in tryCatch({readLines(userlistfile)},
