@@ -12,89 +12,119 @@ var wdcplot = (function() {
 
     function bin_op(disp) {
         return function(frame, args, ctx) {
-            return translate_expr(frame, args[1], ctx) + disp + translate_expr(frame, args[2], ctx);
+            var lhs = expression(frame, args[1], ctx),
+                rhs = expression(frame, args[2], ctx);
+            return {lambda: lhs.lambda || rhs.lambda, text: lhs.text + disp + rhs.text};
         };
     }
 
     function una_or_bin_op(disp) {
         return function(frame, args, ctx) {
-            return args.length==2
-                ? disp + translate_expr(frame, args[1], ctx)
-                : bin_op(disp)(frame, args, ctx);
+            if(args.length==2) {
+                var operand = expression(frame, args[1], ctx);
+                return {lambda: operand.lambda, text: disp + operand.text};
+            }
+            else return bin_op(disp)(frame, args, ctx);
         };
     }
 
-    function translate_value(v) {
+    function value(v) {
         return _.isString(v) ? '"' + v + '"' : v;
     }
 
-    var expressions = {
+    var operators = {
         "$": bin_op('.'),
         "-": una_or_bin_op('-'),
         "+": una_or_bin_op('+'),
         "*": bin_op('*'),
         "/": bin_op('/'),
-        "c" : function(frame, args, ctx) { return '[' + _.map(args.slice(1), function(arg) { return translate_value(arg); }) + ']'; },
-        "[": function(frame, args, ctx) { return translate_expr(frame, args[1], ctx) + '[' + translate_expr(frame, args[2], ctx) + ']'; },
-        default : function(frame, args, ctx) { return translate_expr(frame, args[0], ctx) + '(' +  _.map(args.slice(1), function(arg) { return translate_expr(frame, arg, ctx); }) + ')'; }
+        "c" : function(frame, args, ctx) {
+            return '[' + _.map(args.slice(1), function(arg) {
+                return value(arg); })
+                + ']';
+        },
+        "[": function(frame, args, ctx) {
+            var ray = expression(frame, args[1], ctx),
+                sub = expression(frame, args[2], ctx);
+            return {lambda: ray.lambda || sub.lambda,
+                    text: ray.text + '[' + sub.text + ']'};
+        },
+        default: function(frame, args, ctx) { // function call operator()
+            var fun = expression(frame, args[0], ctx),
+                call = _.foldl(args.slice(1), function(mem) {
+                    var arg = expression(frame, arg, ctx);
+                    return {lambda: mem.lambda || arg.lambda, text: mem.text + ', ' + arg.text};
+                }, {lambda: fun.lambda, text: fun.text + '('});
+            call.text += ')';
+            return call;
+        }
     };
 
-    function translate_function_body(frame, exprs, ctx) {
-        var body = _.map(exprs, function(arg) { return translate_expr(frame, arg, ctx); });
+    function lambda_body(frame, exprs, ctx) {
+        var body = _.map(exprs, function(arg) { return expression(frame, arg, ctx).text; });
         body[body.length-1] = "return " + body[body.length-1];
         var cr = "\n", indent = Array(ctx.indent+1).join("\t");
         return indent + body.join(";" + cr + indent) + ";";
     }
 
-    function translate_function(frame, sexp, ctx) {
+    function lambda(frame, sexp, ctx) {
         ctx.indent++;
         var args = sexp[0].slice(1);
         var cr = "\n";
         var text = "function (" + args.join() + ") {" + cr +
-            translate_function_body(frame, sexp.slice(1), ctx) + cr;
+            lambda_body(frame, sexp.slice(1), ctx) + cr;
         ctx.indent--;
         var indent = Array(ctx.indent+1).join("\t");
         text += indent + "}";
-        return text;
+        // what? not a lambda? no, we just don't need to wrap it as one
+        // if it ends up evaluating into a lambda that's cool
+        return {lambda: false, text: text};
     }
 
-    function translate_expr(frame, sexp, ctx) {
-        if($.isArray(sexp)) {
-            if($.isArray(sexp[0]) && sexp[0][0] == "func") // special case function expr trees
-                return translate_function(frame, sexp, ctx);
-            var xlat = expressions[sexp[0]] || expressions.default;
-            return xlat(frame, sexp, ctx);
-        }
-        else if($.isPlainObject(sexp)) {
-            return JSON.stringify(sexp);
+    function node(frame, sexp, ctx) {
+        if($.isArray(sexp[0]) && sexp[0][0] == "func") // special case lambda expr trees
+            return lambda(frame, sexp, ctx);
+        var op = operators[sexp[0]] || operators.default;
+        return op(frame, sexp, ctx);
+    }
+
+    function leaf(frame, sexp, ctx) {
+        if($.isPlainObject(sexp)) {
+            return {lambda: false, text: JSON.stringify(sexp)};
         }
         else if(_.isString(sexp)) {
             if(/\.\..*\.\.$/.test(sexp)) {
                 var content = sexp.substring(2, sexp.length-2);
                 switch(content) {
-                case 'index': return "frame.index(key)";
-                case 'selected': return "value";
+                case 'index': return {lambda: true, text: "frame.index(key)"};
+                case 'selected': return {lambda: true, text: "value"};
                 default: throw "unknown special variable " + sexp;
                 }
             }
             else if(frame.has(sexp))
-                return "frame.access('" + sexp + "')(key)";
-            else return translate_value(sexp);
+                return {lambda: true, text: "frame.access('" + sexp + "')(key)"};
+            else return {lambda: false, text: sexp};
         }
-        else return sexp;
+        else return {lambda: false, text: sexp};
     }
 
-    /* a dcplot value expression may be
+    function expression(frame, sexp, ctx) {
+        if($.isArray(sexp))
+            return node(frame, sexp, ctx);
+        else
+            return leaf(frame, sexp, ctx);
+    }
+
+    /* a wdcplot argument may be
      - null
      - a simple field accessor (if it's a string which is a field name in the dataframe)
      - a string (if it's any other string)
      - a number
      - an array (we assume any top-level array contains only literals)
-     - otherwise an implicit lambda
-     the correct way to do this is probably to infer lambda-ness
-     from the leaves up.
+     - otherwise we build javascript from the expression tree; if it contains
+     field names identifiers, it's a lambda(key,value) else execute it immediately
      */
-    function value_expression(frame, sexp) {
+    function argument(frame, sexp) {
         if(sexp==null)
             return null;
         else if(_.isString(sexp)) {
@@ -114,36 +144,43 @@ var wdcplot = (function() {
             return sexp;
         else if(_.isArray(sexp) && sexp[0]==='c')
             return sexp.slice(1);
-        var ctx =  {indent:0};
-        var js_expr = translate_expr(frame, sexp, ctx);
-        // it seems kind of screwy to use eval here but it has the nice property
-        // of using a closure, which new Function() does not, which makes it
-        // easier to inspect the js_expr in the debugger (without _.partial()
-        // getting in the way, etc.)
-        return function(key,value) { return eval(js_expr); };
-    }
-
-    // are these recursive or is this top-level catch enough?
-    function group_expression(frame, sexp) {
-        switch(sexp[0]) {
-        case 'bin': return group.bin(sexp[1]);
-        case 'identity': return group.identity;
-        default: return value_expression(frame, sexp); // but it's operating on keys?
+        var ctx = {indent:0};
+        var js_expr = expression(frame, sexp, ctx);
+        if(js_expr.lambda) {
+            // it seems kind of screwy to use eval here but it has the nice property
+            // of using a closure, which new Function() does not, which makes it
+            // easier to inspect the js_expr in the debugger (without _.partial()
+            // getting in the way, etc.)
+            return function(key,value) { return eval(js_expr.text); };
+        }
+        else {
+            // the expression didn't involve any variables, so we can execute it now
+            return eval(js_expr.text);
         }
     }
 
-    function reduce_expression(frame, sexp) {
+    // are these recursive or is this top-level catch enough?
+    function group_constructor(frame, sexp) {
+        switch(sexp[0]) {
+        case 'bin': return group.bin(sexp[1]);
+        case 'identity': return group.identity;
+        default: return argument(frame, sexp); // but it's operating on keys?
+        }
+    }
+
+    function reduce_constructor(frame, sexp) {
         switch(sexp[0]) {
         case 'count': return reduce.count;
-        case 'sum': return reduce.sum(value_expression(frame, sexp[1]));
-        case 'any': return reduce.any(value_expression(frame, sexp[1]));
-        case 'avg': return reduce.avg(value_expression(frame, sexp[1]));
-        default: return value_expression(frame, sexp);
+        case 'sum': return reduce.sum(argument(frame, sexp[1]));
+        case 'any': return reduce.any(argument(frame, sexp[1]));
+        case 'avg': return reduce.avg(argument(frame, sexp[1]));
+        default: return argument(frame, sexp);
         }
     }
 
     // take an array of named or unnamed arguments and for any that are unnamed
     // at the beginning, give them the names specified in names
+    // a cheap, incomplete implementation of R positional arguments
     function positionals(sexps, names) {
         var ret = [];
         if(!sexps.length)
@@ -194,7 +231,7 @@ var wdcplot = (function() {
                 key = value = elem;
             else throw 'illegal dimension specification ' + elem.toString();
 
-            ret[key] = value_expression(frame, value);
+            ret[key] = argument(frame, value);
         }
         return ret;
     }
@@ -216,10 +253,10 @@ var wdcplot = (function() {
                     val = defn[j][1];
                     break;
                 case 'group':
-                    val = group_expression(frame, defn[j][1]);
+                    val = group_constructor(frame, defn[j][1]);
                     break;
                 case 'reduce':
-                    val = reduce_expression(frame, defn[j][1]);
+                    val = reduce_constructor(frame, defn[j][1]);
                     break;
                 }
                 group[field] = val;
@@ -246,7 +283,7 @@ var wdcplot = (function() {
                 case 'dimension': defn[key] = value; // don't allow lambdas here
                     break;
                 default:
-                    defn[key] = value_expression(frame, value);
+                    defn[key] = argument(frame, value);
                 }
             }
             var name = sexps[i][0] + '_' + chart_group + '_' + i;
@@ -276,34 +313,7 @@ var wdcplot = (function() {
         field : function(rdata, k, r) {
             return rdata[k][r];
         },
-        format_error: function(e) {
-            // could maybe push this into dcplot.js itself
-            var tab;
-            if(_.isArray(e)) { // expected exception: input error
-                tab = $('<table/>');
-                $.each(e, function(i) {
-                    var err = e[i], formatted_errors = $('<td/>');
-                    if(_.isString(err.errors))
-                        formatted_errors.text(err.errors);
-                    else if(_.isArray(err.errors))
-                        $.each(err.errors, function(e) {
-                            formatted_errors.append($('<p/>').text(err.errors[e]));
-                        });
-                    var name = err.name.replace(/_\d*_\d*$/, '');
-                    tab.append($('<tr valign=top/>').
-                               append($('<td/>').text(err.type)).
-                               append($('<td/>').text(name)).
-                               append(formatted_errors)
-                              );
-                });
-            }
-            else // unexpected exception: probably logic error
-                tab = $('<p/>').text(e.toString());
-            var error_report = $('<div/>').
-                    append($('<p/>').text('dcplot errors!')).
-                    append(tab);
-            return error_report;
-        },
+        format_error: dcplot.format_error,
         translate: function(data) {
             var frame = dataframe.cols(data);
             // allow skipping sections (but don't allow repeated sections)

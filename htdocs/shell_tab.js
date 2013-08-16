@@ -3,30 +3,74 @@
 //////////////////////////////////////////////////////////////////////////////
 
 var shell = (function() {
-    var terminal = $('#term_demo').terminal(function(command, term) {
-        if (command !== '') {
-            term.clear();
-            result.new_interactive_cell(command).execute();
+
+    var version_ = null,
+        gistname_ = null,
+        is_mine_ = null;
+
+    function setup_command_entry(entry_div) {
+        function set_ace_height() {
+            entry_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
+            widget.resize();
         }
-    }, {
-        exit: false,
-        greetings: false
-    });
+        entry_div.css({'background-color': "#E8F1FA"});
+        var widget = ace.edit(entry_div[0]);
+        set_ace_height();
+        var RMode = require("ace/mode/r").Mode;
+        var session = widget.getSession();
+        var doc = session.doc;
 
-    // hacky workaround, but whatever.
-    $('#output').click(function(x) {
-        terminal.disable();
-    });
-    $("#term_demo").click(function(x) {
-        d3.select("#term_helper")
-            .transition()
-            .duration(1000)
-            .style("opacity", "0")
-            .each("end", function() {
-                d3.select(this).style("display", "none");
-            });
-    });
+        session.setMode(new RMode(false, doc, session));
+        session.on('change', set_ace_height);
 
+        widget.setTheme("ace/theme/chrome");
+        session.setUseWrapMode(true);
+        widget.resize();
+        input_widget = widget;
+
+        widget.commands.addCommands([{
+            name: 'execute',
+            bindKey: {
+                win: 'Return',
+                mac: 'Return',
+                sender: 'editor'
+            },
+            exec: function(widget, args, request) {
+                var code = session.getValue();
+                if(code.length) {
+                    result.new_interactive_cell(code).execute(function() {
+                        $.scrollTo(null, entry_div);
+                    });
+                    session.setValue('');
+                }
+            }
+        }, {
+            name: 'execute-selection-or-line',
+            bindKey: {
+                win: 'Alt-Return',
+                mac: 'Alt-Return',
+                sender: 'editor'
+            },
+            exec: function(widget, args, request) {
+                var code = session.getTextRange(widget.getSelectionRange());
+                if(code.length==0) {
+                    var pos = widget.getCursorPosition();
+                    var Range = require('ace/range').Range;
+                    var range = new Range(pos.row, 0, pos.row+1, 0);
+                    code = session.getTextRange(range);
+                }
+                result.new_interactive_cell(code).execute(function() {
+                    $.scrollTo(null, entry_div);
+                });
+            }
+        }]);
+        ui_utils.make_prompt_chevron_gutter(widget);
+    }
+
+    var entry_div = $("#command-entry");
+    var input_widget = null;
+    if(entry_div.length)
+        setup_command_entry(entry_div);
 
     function handle_scatterplot(data) {
         function transpose(ar) {
@@ -142,29 +186,42 @@ var shell = (function() {
     var notebook_controller = Notebook.create_controller(notebook_model);
 
     function show_fork_or_input_elements() {
+        var fork_revert = $('#fork-revert-notebook');
         if(notebook_model.read_only) {
             $('#input-div').hide();
-            $('#fork-notebook').show();
+            fork_revert.text(is_mine_ ? 'Revert' : 'Fork');
+            fork_revert.show();
         }
         else {
             $('#input-div').show();
-            $('#fork-notebook').hide();
+            fork_revert.hide();
         }
+    }
+
+    function notebook_is_mine(notebook) {
+        return rcloud.username() === notebook.user.login;
     }
 
     function on_new(k, notebook) {
         $("#notebook-title").text(notebook.description);
+        gistname_ = notebook.id;
+        version_ = null;
+        is_mine_ = notebook_is_mine(notebook);
         show_fork_or_input_elements();
-        this.gistname = notebook.id;
+        if(this.input_widget)
+            this.input_widget.focus(); // surely not the right way to do this
         k && k(notebook);
     }
 
     function on_load(k, notebook) {
         $("#notebook-title").text(notebook.description);
-        show_fork_or_input_elements();
+        is_mine_ = notebook_is_mine(notebook);
+        show_fork_or_input_elements(notebook_is_mine(notebook));
         _.each(this.notebook.view.sub_views, function(cell_view) {
             cell_view.show_source();
         });
+        if(this.input_widget)
+            this.input_widget.focus(); // surely not the right way to do this
         k && k(notebook);
     }
 
@@ -175,8 +232,17 @@ var shell = (function() {
             view: notebook_view,
             controller: notebook_controller
         },
-        terminal: terminal,
-        gistname: undefined,
+        input_widget: input_widget,
+        gistname: function() {
+            return gistname_;
+        },
+        version: function() {
+            return version_;
+        },
+        fork_or_revert_button: function() {
+            // hmm messages bouncing around everywhere
+            editor.fork_or_revert_notebook(is_mine_, gistname_, version_);
+        },
         detachable_div: function(div) {
             var on_remove = function() {};
             var on_detach = function() {};
@@ -216,21 +282,25 @@ var shell = (function() {
             return notebook_controller.append_cell(content, "R");
         }, insert_markdown_cell_before: function(index) {
             return notebook_controller.insert_cell("", "Markdown", index);
-        }, load_notebook: function(gistname, k) {
+        }, load_notebook: function(gistname, version, k) {
             var that = this;
             // asymetrical: we know the gistname before it's loaded here,
             // but not in new.  and we have to set this here to signal
             // editor's init load config callback to override the currbook
-            this.gistname = gistname;
-            this.notebook.controller.load_notebook(gistname, _.bind(on_load, this, k));
+            gistname_ = gistname;
+            version_ = version;
+            this.notebook.controller.load_notebook(gistname_, version_, _.bind(on_load, this, k));
         }, new_notebook: function(desc, k) {
             var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
             this.notebook.controller.create_notebook(content, _.bind(on_new, this, k));
-        }, fork_notebook: function(gistname, k) {
+        }, fork_or_revert_notebook: function(is_mine, gistname, version, k) {
+            if(is_mine && !version)
+                throw "unexpected revert of current version";
             var that = this;
             notebook_model.read_only = false;
-            this.notebook.controller.fork_notebook(gistname, function(notebook) {
-                that.gistname = notebook.id;
+            this.notebook.controller.fork_or_revert_notebook(is_mine, gistname, version, function(notebook) {
+                gistname_ = notebook.id;
+                version_ = null;
                 on_load.call(that, k, notebook);
             });
         }
@@ -238,6 +308,7 @@ var shell = (function() {
 
     $("#run-notebook").click(function() {
         result.notebook.controller.run_all();
+        result.input_widget.focus(); // surely not the right way to do this
     });
     return result;
 })();

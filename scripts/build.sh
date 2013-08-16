@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # build JS and rcloud.support
-make -C htdocs/js && R CMD build rcloud.support && R CMD INSTALL rcloud.support_`sed -n 's/Version: *//p' rcloud.support/DESCRIPTION`.tar.gz
+make -C ../htdocs/js && R CMD build rcloud.support && R CMD INSTALL rcloud.support_`sed -n 's/Version: *//p' rcloud.support/DESCRIPTION`.tar.gz
 
 # build internal packages (not in git)
 if [ -e internal ]; then

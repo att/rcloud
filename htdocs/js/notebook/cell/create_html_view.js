@@ -1,35 +1,18 @@
 (function() {
 
-function fa_button(which, title)
-{
-    return $("<span class='fontawesome-button'><i class='" +
-             which +
-             "'></i></span>").tooltip({
-                 title: title,
-                 delay: { show: 250, hide: 0 }
-             });
-}
-
-function editor_height(widget)
-{
-    var lineHeight = widget.renderer.lineHeight;
-    var rows = Math.min(30, widget.getSession().getLength());
-    var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
-    return Math.max(75, newHeight);
-}
-
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
 
     //////////////////////////////////////////////////////////////////////////
     // button bar
-    
-    var insert_cell_button = fa_button("icon-plus-sign", "insert cell");
-    var source_button = fa_button("icon-edit", "source");
-    var result_button = fa_button("icon-picture", "result");
-    // var hide_button   = fa_button("icon-resize-small", "hide");
-    var remove_button = fa_button("icon-trash", "remove");
-    var run_md_button = fa_button("icon-play", "run");
+
+    var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
+    var source_button = ui_utils.fa_button("icon-edit", "source");
+    var result_button = ui_utils.fa_button("icon-picture", "result");
+    // var hide_button   = ui_utils.fa_button("icon-resize-small", "hide");
+    var remove_button = ui_utils.fa_button("icon-trash", "remove");
+    var run_md_button = ui_utils.fa_button("icon-play", "run");
+    var gap = $('<div/>').html('&nbsp;').css({'line-height': '25%'});
 
     function update_model() {
         return cell_model.content(widget.getSession().getValue());
@@ -70,7 +53,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         r_result_div.html("Computing...");
         var new_content = update_model();
         result.show_result();
-        if(new_content)
+        if(new_content!==null) // if any change (including removing the content)
             cell_model.parent_model.controller.update_cell(cell_model);
         cell_model.controller.execute();
     }
@@ -80,12 +63,16 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     var button_float = $("<div class='cell-controls'></div>");
     var col = $('<table/>');
-    $.each([insert_cell_button, source_button,result_button/*,hide_button*/,remove_button,run_md_button],
+    $.each([run_md_button, source_button, result_button/*, hide_button*/, gap, remove_button],
            function() {
                col.append($('<tr/>').append($('<td/>').append($(this))));
            });
     button_float.append(col);
     notebook_cell_div.append(button_float);
+
+    var insert_button_float = $("<div class='cell-insert-control'></div>");
+    insert_button_float.append(insert_cell_button);
+    notebook_cell_div.append(insert_button_float);
 
     //////////////////////////////////////////////////////////////////////////
 
@@ -109,14 +96,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var doc = session.doc;
     widget.setReadOnly(cell_model.parent_model.read_only);
 
-    widget.getSession().setMode(new RMode(false, doc, session));
-    widget.getSession().on('change', function() {
-        notebook_cell_div.css({'height': editor_height(widget) + "px"});
+    session.setMode(new RMode(false, doc, session));
+    session.on('change', function() {
+        notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
         widget.resize();
     });
 
     widget.setTheme("ace/theme/chrome");
-    widget.getSession().setUseWrapMode(true);
+    session.setUseWrapMode(true);
     widget.resize();
 
     widget.commands.addCommand({
@@ -133,11 +120,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
     inner_div.append(r_result_div);
-
-    // FIXME this is a terrible hack created simply so we can scroll
-    // to the end of a div. I know no better way of doing this..
-    var end_of_div_span = $('<span></span>');
-    inner_div.append(end_of_div_span);
 
     var current_mode;
 
@@ -190,51 +172,52 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
 
             this.show_result();
-            end_of_div_span[0].scrollIntoView();
         },
 
         //////////////////////////////////////////////////////////////////////
 
         hide_buttons: function() {
             button_float.css("display", "none");
+            insert_button_float.hide();
         },
         show_buttons: function() {
             button_float.css("display", null);
+            insert_button_float.show();
         },
 
         show_source: function() {
             /*
-             * Some explanation for the next poor soul 
+             * Some explanation for the next poor soul
              * that might come across this great madness below:
-             * 
+             *
              * ACE appears to have trouble computing properties such as
              * renderer.lineHeight. This is unfortunate, since we want
              * to use lineHeight to determine the size of the widget in the
              * first place. The only way we got ACE to work with
              * dynamic sizing was to set up a three-div structure, like so:
-             * 
+             *
              * <div id="1"><div id="2"><div id="3"></div></div></div>
-             * 
+             *
              * set the middle div (id 2) to have a style of "height: 100%"
-             * 
+             *
              * set the outer div (id 1) to have whatever height in pixels you want
-             * 
+             *
              * make sure the entire div structure is on the DOM and is visible
-             * 
-             * call ace's resize function once. (This will update the 
+             *
+             * call ace's resize function once. (This will update the
              * renderer.lineHeight property)
-             * 
+             *
              * Now set the outer div (id 1) to have the desired height as a
              * funtion of renderer.lineHeight, and call resize again.
-             * 
+             *
              * Easy!
-             * 
+             *
              */
             // do the two-change dance to make ace happy
-            notebook_cell_div.css({'height': editor_height(widget) + "px"});
+            notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
             markdown_div.show();
             widget.resize(true);
-            notebook_cell_div.css({'height': editor_height(widget) + "px"});
+            notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
             widget.resize(true);
             disable(source_button);
             enable(result_button);
@@ -258,9 +241,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
             //editor_row.hide();
             markdown_div.hide();
-            r_result_div.slideDown(150, function() {
-                end_of_div_span[0].scrollIntoView();
-            }); // show();
+            r_result_div.slideDown(150); // show();
             current_mode = "result";
         },
         hide_all: function() {

@@ -45,6 +45,10 @@ start of RCloud. You can also install them by hand by running
 
      rcloud.support:::check.installation()
 
+Make sure you're running a recent version of [rgithub](http://github.com/cscheid/rgithub):
+
+    > library(devtools)
+    > install_github("rgithub", "cscheid")
 
 ### Github authentication
 

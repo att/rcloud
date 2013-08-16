@@ -2,7 +2,6 @@
   <head>
     <title>RCloud</title>
     <link rel="stylesheet" type="text/css" href="css/custom-theme/jquery-ui-1.8.18.custom.css" />
-    <link rel="stylesheet" type="text/css" href="css/jquery.terminal.css"/>
     <link rel="stylesheet" type="text/css" href="css/font-awesome.css"/>
     <link rel="stylesheet" type="text/css" href="css/jqtree.css"/>
     <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
@@ -48,13 +47,6 @@
 	<div id="output" class="tab-div">
 	</div>
 
-	<div id="input-div">
-	  <button style="float: right; width:20%;" id="new-md-cell-button">New RMarkdown cell</button>
-	  <div id="terminal-container" 
-	       style="float: left; width:79%; background:#FFFFFF; border:1px solid #DDDDDD">
-	    <div id="term_demo"><span id="term_helper" style="float:right">Type R commands here!</span></div>
-	  </div>
-	</div>
 	<div style="padding:1em; clear:both"></div>
       </div>
     </div>
@@ -107,11 +99,6 @@
   </div>
 </div>
 
-<script src="editor_tab.js"></script>
-<script src="shell_tab.js"></script>
-<script src="dcrchart.js"></script>
-<script src="wdcplot.js"></script>
-
 <!-- For some bizarre reason, line numbering has garbage characters on --
   -- the minified version, so we use the unminified version instead.
 
@@ -120,6 +107,14 @@
   -- going out. Shouldn't be an issue when SPDY becomes the new
   -- standard, but until then...
 
+    ace.js                              http://ace.ajax.org
+
   -->
 <script src="lib/ace_bundle.js" charset="utf-8"></script>
+
+<script src="editor_tab.js"></script>
+<script src="shell_tab.js"></script>
+<script src="dcrchart.js"></script>
+<script src="wdcplot.js"></script>
+
 </body></html>

@@ -20,7 +20,6 @@
 rcloud.user.config.filename <- function(user)
   file.path(.rc.conf$data.root, "userfiles", paste(user, ".json", sep=''))
 
-
 rcloud.load.user.config <- function(user) {
   ufile <- rcloud.user.config.filename(user);
   if(file.exists(ufile))
@@ -41,8 +40,8 @@ rcloud.save.user.config <- function(user, content) {
   invisible(write(content,filename))
 }
 
-rcloud.get.notebook <- function(id) {
-  res <- get.gist(.session$rgithub.context, id)
+rcloud.get.notebook <- function(id, version = NULL) {
+  res <- get.gist(.session$rgithub.context, id, version)
   if (rcloud.debug.level() > 1L) {
     if(res$ok) {
       cat("==== GOT GIST ====\n")
@@ -68,8 +67,18 @@ rcloud.rename.notebook <- function(id, new.name)
 
 rcloud.fork.notebook <- function(id) fork.gist(.session$rgithub.context, id)
 
-rcloud.get.users <- function()
-  get.users(.session$rgithub.context);
+rcloud.get.users <- function(user) {
+  userlistfile <- file.path(.rc.conf$data.root, "userfiles", "userlist.txt")
+  userhash <- new.env()
+  assign(user, 1, envir = userhash)
+  for (user in tryCatch({readLines(userlistfile)},
+                          error = function(e) {c()},
+                          warning = function(w) {}))
+    assign(user, 1, envir = userhash)
+  users <- names(as.list(userhash))
+  write(paste(users, collapse='\n'), userlistfile)
+  users
+}
 
 rcloud.setup.dirs <- function() {
     for (data.subdir in c("userfiles", "history", "home"))
@@ -186,6 +195,8 @@ configure.rcloud <- function () {
     ln <- readLines(gh.cf, 4)
     n <- c("github.client.id", "github.client.secret", "github.base.url", "github.api.url")
     for (i in seq.int(ln)) .rc.conf[[n[i]]] <- ln[i]
+  } else {
+    stop("*** ERROR: You need a github_info.txt file! Please refer to README.md for more instructions.")
   }
 
   ## load configuration --- I'm not sure if DCF is a good idea - we may change this ...
@@ -281,4 +292,10 @@ start.rcloud <- function(username="", token="", ...) {
       dir.create(fn, FALSE, TRUE, "0770")
   }
   TRUE
+}
+
+# FIXME we need a better place for this.
+rcloud.upload.path <- function()
+{
+  Sys.getenv("HOME");
 }

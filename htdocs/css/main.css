@@ -181,9 +181,15 @@ rect.frame {
 }
 
 .notebook-cell .cell-controls {
-    position:absolute;
+    position: absolute;
     right: -2em;
-    top: -1.1em;
+    top: .1em;
+}
+
+.notebook-cell .cell-insert-control {
+    position: absolute;
+    right: -0.5em;
+    top: -1.3em;
 }
 
 .fontawesome-button {
@@ -193,6 +199,15 @@ rect.frame {
 .button-disabled {
     color: #ddd;
     cursor: default;
+}
+
+.notebook-tree {
+    height: 450px;
+    overflow-y: scroll;
+}
+
+.notebook-commands .fontawesome-button {
+    margin: 0;
 }
 
 /* Ace sets its z-index to something obscene,
@@ -208,3 +223,28 @@ rect.frame {
     width: 100%;
     height: 100%;
 }
+
+/**********************************************************************
+ Override some of bootstrap's css
+*/
+
+.close {
+    opacity: 0.5;
+}
+
+.close:hover {
+    opacity: 0.7;
+}
+
+/*
+how do i just delete their styles which i don't like,
+without modifying jqtree.css?
+
+ul.jqtree-tree li.jqtree-selected > .jqtree-element,
+ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
+    background-color: default;
+    background: default;
+    text-shadow: default;
+    font-weight: bold;
+}
+*/
