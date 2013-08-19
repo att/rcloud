@@ -26,64 +26,62 @@ to just get the dependencies.
 
 ### Packages
 
-In R, type:
+RCloud provides the `rcloud.support` which contains supporting code but also authmated installation.
+In R type:
 
-    install.packages("rcloud.support",, c("http://RForge.net",
+    install.packages("rcloud.support", repos=c("http://RForge.net",
                      "http://R.research.att.com"), type="source")
 
-if you're running RStudio, we've had reports of better luck with the
-following line, which removes the empty second parameter
-from the invocation:
-
-	install.packages("rcloud.support", 
-		c("http://RForge.net", "http://R.research.att.com"), type="source")
-
-From there on you can safely use the rcloud.support package in RCloud
+From there on you can safely use the `rcloud.support` package in RCloud
 sources, but the above makes the bootstraping of dependencies
 easier. All remaining dependencies will be installed during the first
 start of RCloud. You can also install them by hand by running
 
      rcloud.support:::check.installation()
 
-Make sure you're running a recent version of [rgithub](http://github.com/cscheid/rgithub):
-
-    > library(devtools)
-    > install_github("rgithub", "cscheid")
+Add `force.all=TRUE` argument to reinstall all packages - always try that
+when you encounter issues. It is useful for keeping up with the development
+as we don't always bump the versions.
 
 ### Github authentication
 
-Rcloud uses [gists](http://gist.github.com) for storage and Github
+RCloud uses [gists](http://gist.github.com) for storage and Github
 accounts for authentication.
 
 You'll need to create a
 [github application](https://github.com/settings/applications). This
 github application will need to point to the location you will deploy
-rcloud (let's assume you're only testing it for now, so 127.0.0.1
+RCloud (let's assume you're only testing it for now, so 127.0.0.1
 works). In that case, your application's URL will most likely be
 `http://127.0.0.1:8080`, and your Callback URL *must* be
 `http://127.0.0.1:8080/login_successful.R`. (the host and port needs
 to match the application URL, and the path must be `login_successful.R`).
 
 Then, you need to create a file under your configuration root
-(typically that's `/conf`) called github_info.txt. This file will
+(typically that's `/conf`) called `rcloud.conf`. This file will
 contain the information necessary to connect to the github website and
 API. If you're using github.com, then your file will look like this:
 
-    your.20.character.client.id
-    your.40.character.client.secret
-    https://github.com/
-    https://api.github.com/
+    github.client.id: your.20.character.client.id
+    github.client.secret: your.40.character.client.secret
+    github.base.url: https://github.com/
+    github.api.url: https://api.github.com/
 
 The third and fourth lines are the base URL of the github website and
 the entry point for the github API (these might differ in
 [Enterprise Github](http://enterprise.github.com) deployments).
+
+If your computer doesn't resolve its hostname to what you will be using,
+(let's say `127.0.0.1`) you may also want to add:
+
+    host: 127.0.0.1
 
 Then go to `http://127.0.0.1:8080/login.html`, click login, and authorize
 access to your account through github.
 
 ### Will you be hacking on the code? Read on
 
-If you're just running rcloud, skip this session. If you're going to
+If you're just running RCloud, skip this session. If you're going to
 be hacking the code, you'll need to install a recent version of
 [node.js](http://nodejs.org). Then, in your shell:
 

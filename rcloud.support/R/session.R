@@ -17,11 +17,12 @@ session.markdown.eval <- function(x, silent) {
   list("markdown.eval", val)
 }
 
+## FIXME: won't work, global file!
 session.log <- function(user, v) {
   vs <- strsplit(v, "\n")
   for (i in 1:length(vs[[1]])) {
     cat(paste(paste(Sys.time(), user, vs[[1]][i], sep="|"),"\n"),
-        file=paste(.rc.conf$data.root, "history", "main_log.txt",sep='/'), append=TRUE)
+        file=pathConf("data.root", "history", "main_log.txt"), append=TRUE)
   }
 }
 
