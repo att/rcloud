@@ -1,6 +1,3 @@
-# configuration environment -- we should really abstract the access out ..
-.rc.conf <- new.env(parent=emptyenv())
-
 ################################################################################
 # rcloud_status stuff goes here
 
@@ -17,27 +14,29 @@
 ## the one we have stored during the login process.
 
 
-rcloud.user.config.filename <- function(user)
-  file.path(.rc.conf$data.root, "userfiles", paste(user, ".json", sep=''))
+rcloud.user.config.filename <- function(user = .session$username)
+  pathConf("data.root", "userfiles", paste(user, ".json", sep=''))
 
-rcloud.load.user.config <- function(user) {
-  ufile <- rcloud.user.config.filename(user);
-  if(file.exists(ufile))
-    paste(readLines(ufile), collapse="\n")
-  else
-    "null";
+rcloud.load.user.config <- function(user = .session$username, map = FALSE) {
+  ufile <- rcloud.user.config.filename(user)
+  payload <- 
+    if(file.exists(ufile))
+      paste(readLines(ufile), collapse="\n")
+    else
+      "null"
+  if (map) paste0('"', user, '": ', payload) else payload
 }
 
 # hackish? but more efficient than multiple calls
-rcloud.load.multiple.user.configs <- function(users) {
-  entry <- function(user) paste('"', user, '": ', rcloud.load.user.config(user), sep='')
-  paste('{', paste(Map(entry, users), collapse=',\n'), '}')
-}
+rcloud.load.multiple.user.configs <- function(users)
+  paste('{', paste(sapply(users, rcloud.load.user.config, TRUE), collapse=',\n'), '}')
 
-rcloud.save.user.config <- function(user, content) {
+rcloud.save.user.config <- function(user = .session$username, content) {
   if (rcloud.debug.level()) cat("rcloud.save.user.config(", user, ")\n", sep='')
   filename <- rcloud.user.config.filename(user)
-  invisible(write(content,filename))
+  ## write and then move atomically to avoid corruption due to concurrency
+  writeLines(content, paste0(filename, ".tmp"))
+  invisible(file.rename(paste0(filename, ".tmp"), filename))
 }
 
 rcloud.get.notebook <- function(id, version = NULL) {
@@ -67,22 +66,12 @@ rcloud.rename.notebook <- function(id, new.name)
 
 rcloud.fork.notebook <- function(id) fork.gist(.session$rgithub.context, id)
 
-rcloud.get.users <- function(user) {
-  userlistfile <- file.path(.rc.conf$data.root, "userfiles", paste0(user, "-userlist.txt"))
-  userhash <- new.env()
-  assign(user, 1, envir = userhash)
-  for (user in tryCatch({readLines(userlistfile)},
-                          error = function(e) {c()},
-                          warning = function(w) {}))
-    assign(user, 1, envir = userhash)
-  users <- names(as.list(userhash))
-  write(paste(users, collapse='\n'), userlistfile)
-  users
-}
+rcloud.get.users <- function(user)  ## instead of using a list file let's simply look for existing user configs ...
+  unique(c(user, gsub(".json$", "", basename(Sys.glob(pathConf("data.root", "userfiles", "*.json"))))))
 
 rcloud.setup.dirs <- function() {
     for (data.subdir in c("userfiles", "history", "home"))
-        if (!file.exists(fn <- file.path(.rc.conf$data.root, data.subdir)))
+        if (!file.exists(fn <- pathConf("data.root", data.subdir)))
              dir.create(fn, FALSE, TRUE, "0770")
 }
 
@@ -90,23 +79,24 @@ rcloud.search <- function(search.string) {
   if (nchar(search.string) == 0)
     list(NULL, NULL)
   else {
-    cmd <- paste0("find ", .rc.conf$data.root, "/userfiles -type f -exec grep -iHn ",
+    cmd <- paste0("find ", getConf("data.root"), "/userfiles -type f -exec grep -iHn ",
                  search.string,
-                 " {} \\; | sed 's:^", .rc.conf$data.root, "/userfiles::'")
+                 " {} \\; | sed 's:^", getConf("data.root"), "/userfiles::'")
     source.results <- system(cmd, intern=TRUE)
 
-    cmd <- paste0("grep -in ", search.string, " ", .rc.conf$data.root, "/history/main_log.txt")
+    cmd <- paste0("grep -in ", search.string, " ", getConf("data.root"), "/history/main_log.txt")
     history.results <- rev(system(cmd, intern=TRUE))
     list(source.results, history.results)
   }
 }
 
-rcloud.record.cell.execution <- function(user, json.string) {
+## FIXME: won't work - uses a global file!
+rcloud.record.cell.execution <- function(user = .session$username, json.string) {
   cat(paste(paste(Sys.time(), user, json.string, sep="|"), "\n"),
-      file=file.path(.rc.conf$data.root, "history", "main_log.txt"), append=TRUE)
+      file=pathConf("data.root", "history", "main_log.txt"), append=TRUE)
 }
 
-rcloud.debug.level <- function() if (is.null(.rc.conf$debug)) 0L else .rc.conf$debug
+rcloud.debug.level <- function() if (hasConf("debug")) getConf("debug") else 0L
 
 ################################################################################
 # setup the r-side environment
@@ -118,69 +108,69 @@ configure.rcloud <- function () {
   
   ## it is useful to have access to the root of your
   ## installation from R scripts -- for RCloud this is *mandatory*
-  .rc.conf$root <- Sys.getenv("ROOT")
-  if (is.null(.rc.conf$root) || nchar(.rc.conf$root) == 0) .rc.conf$root <- "/var/FastRWeb"
+  setConf("root", Sys.getenv("ROOT"))
+  if (!nzConf("root")) {
+    setConf("root", "/var/FastRWeb")
+    warning("Invalid ROOT - falling back to", getConf("root"))
+  }
 
+  ## forward our HTTP handler so Rserve can use it
+  .GlobalEnv$.http.request <- .http.request
+
+  debug.override <- FALSE
   if (nzchar(Sys.getenv("DEBUG"))) {
     dl <- as.integer(Sys.getenv("DEBUG"))
     if (any(is.na(dl))) dl <- 1L
-    .rc.conf$debug <- dl
+    setConf("debug", dl)
+    debug.override <- TRUE
     cat("=== NOTE: DEBUG is set, enabling debug mode at level", dl, "===\n")
   }
-  if (rcloud.debug.level()) cat("Using ROOT =", .rc.conf$root, "\n")
+  if (rcloud.debug.level()) cat("Using ROOT =", getConf("root"), "\n")
   
   # CONFROOT/DATAROOT are purely optional
   # Whom are we kidding? Although it may be nice to abstract out all paths
   # this is far from complete (what about htdocs?) and not very practical
   # and this likely to go away (it's gone from the start script already)
   # until replaced by something more sensible (if at all)
-  .rc.conf$configuration.root <- Sys.getenv("CONFROOT")
-  if (!nzchar(.rc.conf$configuration.root))
-    .rc.conf$configuration.root <- file.path(.rc.conf$root, "conf")
-  if (rcloud.debug.level()) cat("Using CONFROOT =", .rc.conf$configuration.root, "\n")
+  setConf("configuration.root", Sys.getenv("CONFROOT"))
+  if (!nzConf("configuration.root"))
+    setConf("configuration.root", pathConf("root", "conf"))
+  if (rcloud.debug.level()) cat("Using CONFROOT =", getConf("configuration.root"), "\n")
 
-  .rc.conf$data.root <- Sys.getenv("DATAROOT")
-  if (!nzchar(.rc.conf$data.root))
-    .rc.conf$data.root <- file.path(.rc.conf$root, "data")
-  if (rcloud.debug.level()) cat("Using DATAROOT =", .rc.conf$data.root, "\n")
+  setConf("data.root", Sys.getenv("DATAROOT"))
+  if (!nzConf("data.root"))
+    setConf("data.root", pathConf("root", "data"))
+  if (rcloud.debug.level()) cat("Using DATAROOT =", getConf("data.root"), "\n")
 
   ## load any local configuration (optional)
-  .rc.conf$local.conf <- file.path(.rc.conf$configuration.root, "local.R")
-  if (file.exists(.rc.conf$local.conf))
-    source(.rc.conf$local.conf)
+  setConf("local.conf", pathConf("configuration.root", "local.R"))
+  if (validFileConf("local.conf"))
+    source(pathConf("local.conf"))
 
   ## run the server in the "tmp" directory of the root in
   ## case some files need to be created
-  .rc.conf$tmp.dir <- file.path(.rc.conf$root, "tmp")
-  if (!file.exists(.rc.conf$tmp.dir))
-    dir.create(.rc.conf$tmp.dir, FALSE, TRUE, "0770")
-  setwd(.rc.conf$tmp.dir)
+  setConf("tmp.dir", pathConf("root", "tmp"))
+  if (!validFileConf("tmp.dir"))
+    dir.create(pathConf("tmp.dir"), FALSE, TRUE, "0770")
+  setwd(pathConf("tmp.dir"))
 
   ## if you have multiple servers it's good to know which machine this is
-  .rc.conf$host <- tolower(system("hostname -f", TRUE))
-  cat("Starting Rserve on", .rc.conf$host,"\n")
-
-  ## github API information is loaded from github_info.txt
-  gh.cf <- file.path(.rc.conf$configuration.root, "github_info.txt")
-  if (file.exists(gh.cf)) {
-    ln <- readLines(gh.cf, 4)
-    n <- c("github.client.id", "github.client.secret", "github.base.url", "github.api.url")
-    for (i in seq.int(ln)) .rc.conf[[n[i]]] <- ln[i]
-  }
+  setConf("host", tolower(system("hostname -f", TRUE)))
+  cat("Starting Rserve on", getConf("host"),"\n")
 
   ## load configuration --- I'm not sure if DCF is a good idea - we may change this ...
   ## ideally, all of the above should be superceded by the configuration file
-  rc.cf <- file.path(.rc.conf$configuration.root, "rcloud.conf")
+  rc.cf <- pathConf("configuration.root", "rcloud.conf")
   if (isTRUE(file.exists(rc.cf))) {
     cat("Loading RCloud configuration file...\n")
     rc.c <- read.dcf(rc.cf)[1,]
-    for (n in names(rc.c)) .rc.conf[[gsub("[ \t]", ".", tolower(n))]] <- as.vector(rc.c[n])
+    for (n in names(rc.c)) setConf(gsub("[ \t]", ".", tolower(n)), as.vector(rc.c[n]))
   }
-  if (!all(sapply(c("github.client.id", "github.client.secret", "github.base.url", "github.api.url"), function(o) isTRUE(nzchar(.rc.conf[[o]])))))
-    stop("*** ERROR: You need a GitHub configuration in github_info.txt or rcloud.conf! Please refer to README.md for more instructions.")
+  if (!all(sapply(c("github.client.id", "github.client.secret", "github.base.url", "github.api.url"), nzConf)))
+    stop("*** ERROR: You need a GitHub configuration in rcloud.conf! Please refer to README.md for more instructions.")
 
   ## set locale - default is UTF-8
-  locale <- .rc.conf$locale
+  locale <- getConf("locale")
   if (!isTRUE(nzchar(locale))) locale <- "en_US.UTF-8"
   Sys.setlocale(,locale)
 
@@ -188,7 +178,7 @@ configure.rcloud <- function () {
   ## Cairo, knitr, markdown and png are mandatory, really
   pkgs <- c("Cairo", "FastRWeb", "Rserve", "png", "knitr", "markdown", "base64enc", "rjson", "httr", "github", "RCurl")
   ## $CONFROOT/packages.txt can list additional packages
-  if (file.exists(fn <- file.path(.rc.conf$configuration.root, "packages.txt")))
+  if (file.exists(fn <- pathConf("configuration.root", "packages.txt")))
     pkgs <- c(pkgs, readLines(fn))
   if (rcloud.debug.level()) cat("Loading packages...\n")
   for (pkg in pkgs) {
@@ -209,30 +199,40 @@ configure.rcloud <- function () {
     CairoFonts("Arial:style=Regular","Arial:style=Bold","Arial:style=Italic","Helvetica","Symbol")
 
   ## Load any data you want
-  .rc.conf$data.fn <- file.path(.rc.conf$configuration.root, "data.RData")
-  if (isTRUE(file.exists(.rc.conf$data.fn))) {
-    if (rcloud.debug.level()) cat("Loading data...\n")
-    load(.rc.conf$data.fn)
+  if (nzConf("preload.data")) {
+    fns <- strsplit(getConf("preload.data"), ", *")[[1]]
+    for (fn in fns) {
+      fn <- absPath(fn)
+      if (isTRUE(file.exists(fn))) {
+        if (rcloud.debug.level()) cat("Loading data", fn, "...\n")
+        load(fn)
+      }
+    }
   }
 
-  if (is.character(.rc.conf$debug)) {
-    .rc.conf$debug <- as.integer(.rc.conf$debug)
-    if (any(is.na(.rc.conf$debug))) .rc.conf$debug <- 1L
+  ## re-visit debug level based on the config file
+  if (is.character(getConf("debug"))) {
+    if (debug.override) {
+      cat("NOTE: configuration debug level is '", getConf("debug"),"' but DEBUG is set to '", dl, "', the latter wins\n", sep='')
+      setConf("debug", dl)
+    } else {
+      setConf("debug", as.integer(getConf("debug")))
+      if (any(is.na(getConf("debug")))) setConf("debug", 1L) ## if the content is not an integer, use 1
+    }
   }
 
-  if (is.null(.rc.conf$cookie.domain)) .rc.conf$cookie.domain <- .rc.conf$host
-  if (!isTRUE(grepl("[.:]", .rc.conf$cookie.domain))) stop("*** ERROR: cookie.domain must be a FQDN! Please set your hostname correctly or add cookie.domain directive to rcloud.conf")
+  if (!nzConf("cookie.domain")) setConf("cookie.domain", getConf("host"))
+  if (!isTRUE(grepl("[.:]", getConf("cookie.domain"))))
+    stop("*** ERROR: cookie.domain must be a FQDN! Please set your hostname correctly or add cookie.domain directive to rcloud.conf")
 
   rcloud.setup.dirs()
 
-  if (nzchar(.rc.conf$curl.cainfo)) {
-    cainfo <- .rc.conf$curl.cainfo
-    ## relative paths are relative to the config directory and made absolute
-    if (!grepl("^/", cainfo)) cainfo <- file.path(.rc.conf$configuration.root, cainfo)
+  if (nzConf("curl.cainfo")) {
+    cainfo <- pathConf("curl.cainfo", anchor=getConf("configuration.root"))
     httr::set_config(httr::config(cainfo = cainfo))
   }
   
-  .rc.conf$instanceID <- generate.uuid()
+  setConf("instanceID", generate.uuid())
 
   TRUE
 }
@@ -246,10 +246,8 @@ start.rcloud <- function(username="", token="", ...) {
   .session$username <- username
   .session$token <- token
   res <-
-    rgithub.context.from.token(.rc.conf$github.api.url,
-                               .rc.conf$github.client.id,
-                               .rc.conf$github.client.secret,
-                               token)
+    rgithub.context.from.token(getConf("github.api.url"), getConf("github.client.id"),
+                               getConf("github.client.secret"), token)
   if(res$ok)
     .session$rgithub.context <- res$content
   else
@@ -289,20 +287,17 @@ start.rcloud <- function(username="", token="", ...) {
 
   ## last-minute updates (or custom initialization) to be loaded
   ## NB: it should be really fast since it will cause connect delay
-  if (file.exists(fn <- file.path(.rc.conf$configuration.root, "init.R")))
+  if (file.exists(fn <- pathConf("configuration.root", "init.R")))
     source(fn, TRUE)
 
   ## per-user setup
   if (nzchar(.session$username)) {
     .session$username <- gsub("[^a-zA-Z0-9_.]+", "_", .session$username)
-    if (!file.exists(fn <- file.path(.rc.conf$data.root, "userfiles", .session$username)))
+    if (!file.exists(fn <- pathConf("data.root", "userfiles", .session$username)))
       dir.create(fn, FALSE, TRUE, "0770")
   }
   TRUE
 }
 
 # FIXME we need a better place for this.
-rcloud.upload.path <- function()
-{
-  Sys.getenv("HOME");
-}
+rcloud.upload.path <- function() Sys.getenv("HOME")
