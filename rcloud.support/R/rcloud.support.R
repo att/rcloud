@@ -166,7 +166,12 @@ configure.rcloud <- function () {
     rc.c <- read.dcf(rc.cf)[1,]
     for (n in names(rc.c)) setConf(gsub("[ \t]", ".", tolower(n)), as.vector(rc.c[n]))
   }
-  if (!all(sapply(c("github.client.id", "github.client.secret", "github.base.url", "github.api.url"), nzConf)))
+
+  ## use public github by default
+  if (!nzConf("github.base.url")) setConf("github.base.url", "https://github.com/")
+  if (!nzConf("github.api.url")) setConf("github.api.url", "https://api.github.com/")
+  
+  if (!all(sapply(c("github.client.id", "github.client.secret"), nzConf)))
     stop("*** ERROR: You need a GitHub configuration in rcloud.conf! Please refer to README.md for more instructions.")
 
   ## set locale - default is UTF-8
