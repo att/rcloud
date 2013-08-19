@@ -5,12 +5,12 @@
 RC.authenticate <- function(v, check.only=FALSE)
 {
   ## is execution authentication enabled?
-  if (!is.null(rcloud.support:::.rc.conf$exec.auth)) {
-    exec.usr <- check.token(v[[2]], rcloud.support:::.rc.conf$exec.auth, "rcloud.exec")
+  if (nzConf("exec.auth")) {
+    exec.usr <- check.token(v[[2]], getConf("exec.auth"), "rcloud.exec")
     if (exec.usr == FALSE) return(FALSE)
-    if (identical(rcloud.support:::.rc.conf$exec.match.user, "login")) {
+    if (identical(getConf("exec.match.user"), "login")) {
       ## change ownership of the working directory (session home) and rc-specific user home
-      dir.create(rc.user.home <- file.path(rcloud.support:::.rc.conf$data.root, "home", exec.usr), FALSE, TRUE, "0700")
+      dir.create(rc.user.home <- pathConf("data.root", "home", exec.usr), FALSE, TRUE, "0700")
       dir.create(td <- paste(tempdir(), exec.usr, sep='-'), FALSE, TRUE, "0700")
       unixtools::chown(c(getwd(), rc.user.home, td), exec.usr, NULL)
       ## switch users
