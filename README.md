@@ -58,9 +58,10 @@ works). In that case, your application's URL will most likely be
 to match the application URL, and the path must be `login_successful.R`).
 
 Then, you need to create a file under your configuration root
-(typically that's `/conf`) called `rcloud.conf`. This file will
-contain the information necessary to connect to the github website and
-API. If you're using github.com, then your file will look like this:
+(typically that's `/conf`) called `rcloud.conf` (see `rcloud.conf.samp`
+in the distribution of an example starting point and
+[the rcloud.conf WiKi page for full details](https://github.com/cscheid/rcloud/wiki/rcloud.conf)).
+If you're using github.com, then your file will look like this:
 
     github.client.id: your.20.character.client.id
     github.client.secret: your.40.character.client.secret
@@ -69,7 +70,8 @@ API. If you're using github.com, then your file will look like this:
 
 The third and fourth lines are the base URL of the github website and
 the entry point for the github API (these might differ in
-[Enterprise Github](http://enterprise.github.com) deployments).
+[Enterprise Github](http://enterprise.github.com) deployments -
+they are optional if you use the public GitHub).
 
 If your computer doesn't resolve its hostname to what you will be using,
 (let's say `127.0.0.1`) you may also want to add:
@@ -113,4 +115,11 @@ of the above is not true, then create `conf/rcloud.conf` file with
 
     Cookie.Domain: myserver.mydomain
 
-Alternatively, you can set `Host:` instead with the same effect.
+Alternatively, you can set `Host:` instead with the same effect
+(Host is used in other places not just the cookie domain).
+
+Also if things are failing, try to run
+
+    rcloud.support:::check.installation(force.all=TRUE)
+
+which will re-fetch and install all packages.
