@@ -5,7 +5,7 @@ nzConf <- function(name) isTRUE(nzchar(.rc.conf[[name]]))
 getConf <- function(name) .rc.conf[[name]]
 setConf <- function(name, value) {
   .rc.conf[[name]] <- value
-  cat("CONFIG: '",name,"'='",value,"'\n",sep='')
+  if (rcloud.debug.level()) cat("CONFIG: '",name,"'='",value,"'\n",sep='')
   value
 }
 hasConf <- function(name) !is.null(.rc.conf[[name]])
