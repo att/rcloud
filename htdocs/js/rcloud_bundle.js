@@ -1126,7 +1126,10 @@ rcloud.upload_file = function()
                     fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                 });
             } else {
-                rclient.closeFile();
+                //This is just temporary, until we add the nice info messages from bootstrap
+                rclient.closeFile(function(){
+                            alert.show("File uploaded successfully!");
+                        });
             }
         };
     }
