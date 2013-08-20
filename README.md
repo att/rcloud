@@ -8,11 +8,12 @@ Please use R 3.0.0 or later. It'll make your life easier, we promise.
 As for library dependencies - you will need several headers and libraries to compile dependent
 R packages (as well as R) -- on Debian/Ubuntu, you can use 
 
-    $ sudo apt-get install libxt-dev libcurl4-openssl-dev libcairo2-dev
+    $ sudo apt-get install libxt-dev libcurl4-openssl-dev libcairo2-dev libreadline-dev
     
 to install the dependencies (also `git`, if you don't have it already).
 If you are using other Linux systems, the names may vary.
-On Mac OS X all packages should be available in binary form so no dependencies should be needed.
+On Mac OS X all packages should be available in binary form so no dependencies should be needed
+(other than Xcode Command Line tools).
 
 ### Checking out the code
 
