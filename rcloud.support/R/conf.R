@@ -1,6 +1,7 @@
 ## configuration environment -- loaded from the config file in configure.rcloud()
 .rc.conf <- new.env(parent=emptyenv())
 
+## --- the following are utility functions used inside rcloud.support, not exported --
 nzConf <- function(name) isTRUE(nzchar(.rc.conf[[name]]))
 getConf <- function(name) .rc.conf[[name]]
 setConf <- function(name, value) {
@@ -19,3 +20,6 @@ pathConf <- function(name, ..., anchor = FALSE) {
   path <- file.path(.rc.conf[[name]], ...)
   if (is.logical(anchor) && isTRUE(!anchor)) path else absPath(path, anchor)
 }
+
+## --- this one is exported for use outside of rcloud.support ---
+rcloud.config <- function(name) .rc.conf[[name]]
