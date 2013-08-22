@@ -25,23 +25,16 @@ RClient = {
             }
 
             // the rcloud ocap-0 performs the login authentication dance
+            // success is indicated by the rest of the capabilities being sent
             rserve.ocap([token, execToken], function(ocaps) {
                 if (ocaps !== null) {
                     result.running = true;
-                    ocaps.session_init(rcloud.username(),
-                                       rcloud.github_token(), function() {});
-                    // opts.on_connect && opts.on_connect.call(result);
+                    opts.on_connect && opts.on_connect.call(result, ocaps);
                 } else {
                     result.post_error(result.disconnection_error("Authentication failed. Shutting down!"));
                     shutdown();
                 }
             });
-
-            // result.running = true;
-            // result.send("rcloud.support:::session.init(username="
-            //             + escape_r_literal_string(rcloud.username()) + ",token="
-            //             + escape_r_literal_string(rcloud.github_token()) + ")");
-            // opts.on_connect && opts.on_connect.call(result);
         }
 
         // this might be called multiple times; some conditions result
@@ -160,18 +153,6 @@ RClient = {
                 this.handlers[cmd] = callback;
             },
             
-            createFile: function(name,k) {
-                rserve.createFile(name,k);
-            },
-          
-            writeFile: function(buffer,k) {
-                rserve.writeFile(buffer,k);
-            },
-          
-            closeFile: function(k) {
-                rserve.closeFile(k);
-            },
-
             //////////////////////////////////////////////////////////////////
             // FIXME: all of this should move out of rclient and into
             // the notebook objects.
@@ -228,118 +209,93 @@ RClient = {
                 var d = $("<pre></pre>").html(msg);
                 $("#output").append(d);
                 window.scrollTo(0, document.body.scrollHeight);
-            },
+            }
 
-            capture_answers: function (how_many, callback) {
-                if (_capturing_answers) {
-                    throw "Still waiting for previous answers...";
-                }
-                _capturing_answers = true;
-                var result = [];
-                function blip(msg) {
-                    result.push(msg);
-                    how_many--;
-                    if (how_many === 0) {
-                        _capturing_answers = false;
-                        _capturing_callback = undefined;
-                        callback(result);
-                    }
-                }
-                _capturing_callback = blip;
-            },
+            // wrap_command: function(command, silent) {
+            //     // FIXME code injection? notice that this is already eval, so
+            //     // what _additional_ harm would exist?
+            //     if (silent === undefined) {
+            //         silent = false;
+            //     }
+            //     return "rcloud.support:::session.eval({" + command + "}, "
+            //         + (silent?"TRUE":"FALSE") + ")";
+            // },
 
-            wrap_command: function(command, silent) {
-                // FIXME code injection? notice that this is already eval, so
-                // what _additional_ harm would exist?
-                if (silent === undefined) {
-                    silent = false;
-                }
-                return "rcloud.support:::session.eval({" + command + "}, "
-                    + (silent?"TRUE":"FALSE") + ")";
-            },
+            // markdown_wrap_command: function(command, silent) {
+            //     return "rcloud.support:::session.markdown.eval({markdownToHTML(text=paste(knit(text=" + escape_r_literal_string(command+'\n') + "), collapse=\"\\n\"), fragment=TRUE)}, "
+            //         + (silent?"TRUE":"FALSE") + ")";
+            // },
 
-            markdown_wrap_command: function(command, silent) {
-                return "rcloud.support:::session.markdown.eval({markdownToHTML(text=paste(knit(text=" + escape_r_literal_string(command+'\n') + "), collapse=\"\\n\"), fragment=TRUE)}, "
-                    + (silent?"TRUE":"FALSE") + ")";
-            },
+            // log: function(command) {
+            //     command = "rcloud.support:::session.log(\"" + rcloud.username() + "\", \"" +
+            //         command.replace(/\\/g,"\\\\").replace(/"/g,"\\\"")
+            //     + "\")";
+            //     this.send(command);
+            // },
 
-            log: function(command) {
-                command = "rcloud.support:::session.log(\"" + rcloud.username() + "\", \"" +
-                    command.replace(/\\/g,"\\\\").replace(/"/g,"\\\"")
-                + "\")";
-                this.send(command);
-            },
+            // send: function(command, wrap) {
+            //     this.send_and_callback(command, no_callback, wrap);
+            // },
 
-            record_cell_execution: function(cell_model) {
-                var json_rep = JSON.stringify(cell_model.json());
-                var call = this.r_funcall("rcloud.record.cell.execution",
-                                          rcloud.username(), json_rep);
-                rserve.eval(call);
-            },
-
-            send: function(command, wrap) {
-                this.send_and_callback(command, no_callback, wrap);
-            },
-
-            send_and_callback: function(command, callback, wrap) {
-                var that = this;
-                if (_.isUndefined(callback))
-                    callback = no_callback;
-                var t;
-                if (wrap) {
-                    command = wrap(command);
-                } else {
-                    command = this.wrap_command(command, true);
-                }
-                function unwrap(v) {
-                    v = v.value.json();
-                    try {
-                        callback(v[1]);
-                    } catch (e) {
-                        if (e.constructor === NoCallbackError) {
-                            that.handlers[v[0]](v[1]);
-                        } else
-                            throw 'Error evaluating "' + command + '": ' + e;
-                    }
-                }
-                rserve.eval(command, unwrap);
-            },
+            // send_and_callback: function(command, callback, wrap) {
+            //     var that = this;
+            //     if (_.isUndefined(callback))
+            //         callback = no_callback;
+            //     var t;
+            //     if (wrap) {
+            //         command = wrap(command);
+            //     } else {
+            //         command = this.wrap_command(command, true);
+            //     }
+            //     function unwrap(v) {
+            //         v = v.value.json();
+            //         try {
+            //             callback(v[1]);
+            //         } catch (e) {
+            //             if (e.constructor === NoCallbackError) {
+            //                 that.handlers[v[0]](v[1]);
+            //             } else
+            //                 throw 'Error evaluating "' + command + '": ' + e;
+            //         }
+            //     }
+            //     rserve.eval(command, unwrap);
+            // }
 
             // supports only the following argument types:
             // * string
             // * number
             // * array of string/number (doesn't check they match)
-            r_funcall: function(function_name) {
-                function output_one(result, val) {
-                    var t = typeof val;
-                    if (val === null)
-                        result.push('NULL');
-                    else if (t === "string")
-                        result.push(escape_r_literal_string(val));
-                    else if (t == "number")
-                        result.push(String(val));
-                    else throw "unsupported r_funcall argument type " + t;
-                }
-                var result = [function_name, "("];
-                for (var i=1; i<arguments.length; ++i) {
-                    var arg = arguments[i];
-                    if ($.isArray(arg)) {
-                        result.push("c(");
-                        for(var j = 0; j<arg.length; ++j) {
-                            output_one(result,arg[j]);
-                            if(j < arg.length-1)
-                                result.push(",");
-                        }
-                        result.push(")");
-                    }
-                    else output_one(result, arg);
-                    if (i < arguments.length-1)
-                        result.push(",");
-                }
-                result.push(")");
-                var s = result.join("");
-                return s;
-            }
+            // r_funcall: function(function_name) {
+            //     function output_one(result, val) {
+            //         var t = typeof val;
+            //         if (val === null)
+            //             result.push('NULL');
+            //         else if (t === "string")
+            //             result.push(escape_r_literal_string(val));
+            //         else if (t == "number")
+            //             result.push(String(val));
+            //         else throw "unsupported r_funcall argument type " + t;
+            //     }
+            //     var result = [function_name, "("];
+            //     for (var i=1; i<arguments.length; ++i) {
+            //         var arg = arguments[i];
+            //         if ($.isArray(arg)) {
+            //             result.push("c(");
+            //             for(var j = 0; j<arg.length; ++j) {
+            //                 output_one(result,arg[j]);
+            //                 if(j < arg.length-1)
+            //                     result.push(",");
+            //             }
+            //             result.push(")");
+            //         }
+            //         else output_one(result, arg);
+            //         if (i < arguments.length-1)
+            //             result.push(",");
+            //     }
+            //     result.push(")");
+            //     var s = result.join("");
+            //     return s;
+            // }
         };
         return result;
     }
