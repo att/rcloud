@@ -11,14 +11,16 @@ Notebook.Cell.create_controller = function(cell_model)
                 k && k();
             }
 
-            rclient.record_cell_execution(cell_model);
+            rcloud.record_cell_execution(cell_model);
 
             if (language === 'Markdown') {
-                var wrapped_command = rclient.markdown_wrap_command(cell_model.content());
-                rclient.send_and_callback(wrapped_command, callback, _.identity);
+                rcloud.session_markdown_eval(cell_model.content(), false, callback);
+                // var wrapped_command = rclient.markdown_wrap_command(cell_model.content());
+                // rclient.send_and_callback(wrapped_command, callback, _.identity);
             } else if (language === 'R') {
-                var wrapped_command = rclient.markdown_wrap_command("```{r}\n" + cell_model.content() + "\n```\n");
-                rclient.send_and_callback(wrapped_command, callback, _.identity);
+                rcloud.session_markdown_eval("```{r}\n" + cell_model.content() + "\n```\n", false, callback);
+                // var wrapped_command = rclient.markdown_wrap_command("```{r}\n" + cell_model.content() + "\n```\n");
+                // rclient.send_and_callback(wrapped_command, callback, _.identity);
             } else alert("Don't know language '" + language + "' - can only do Markdown or R for now!");
         }
     };

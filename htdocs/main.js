@@ -54,7 +54,10 @@ function main_init() {
     rclient = RClient.create({
         debug: false,
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
-        on_connect: function() {
+        on_connect: function(ocaps) {
+            rcloud = RCloud.create(ocaps.rcloud);
+            rcloud.session_init(rcloud.username(), rcloud.github_token());
+
             $("#new-md-cell-button").click(function() {
                 shell.new_markdown_cell("", "markdown");
                 var vs = shell.notebook.view.sub_views;

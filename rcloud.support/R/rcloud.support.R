@@ -303,6 +303,3 @@ start.rcloud <- function(username="", token="", ...) {
   }
   TRUE
 }
-
-# FIXME we need a better place for this.
-rcloud.upload.path <- function() Sys.getenv("HOME")
