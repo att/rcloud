@@ -16,13 +16,24 @@ function no_callback() { throw new NoCallbackError(); }
 
 RClient = {
     create: function(opts) {
-
+        debugger;
         function on_connect() {
-            result.running = true;
-            result.send("rcloud.support:::session.init(username="
-                        + escape_r_literal_string(rcloud.username()) + ",token="
-                        + escape_r_literal_string(rcloud.github_token()) + ")");
-            opts.on_connect && opts.on_connect.call(result);
+            if (!rserve.ocap_mode) {
+                result.post_error(result.disconnection_error("Expected an object-capability Rserve. Shutting Down!"));
+                shutdown();
+                return;
+            }
+
+            // the rcloud ocap-0 performs the login authentication dance
+            rserve.ocap(token + "\n" + execToken, function(result) {
+                debugger;
+            });
+
+            // result.running = true;
+            // result.send("rcloud.support:::session.init(username="
+            //             + escape_r_literal_string(rcloud.username()) + ",token="
+            //             + escape_r_literal_string(rcloud.github_token()) + ")");
+            // opts.on_connect && opts.on_connect.call(result);
         }
 
         // this might be called multiple times; some conditions result
@@ -80,6 +91,7 @@ RClient = {
         var result;
 
         result = {
+            _rserve: rserve,
             handlers: {
                 "eval": function(v) {
                     result.post_response(v);
