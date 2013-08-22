@@ -37,7 +37,7 @@ RC.authenticate <- function(v, check.only=FALSE)
 oc.init <- function(v)
 {
   if (RC.authenticate(v)) {
-    "Pass!"
+    initial.ocaps()
   } else
     NULL
 }
