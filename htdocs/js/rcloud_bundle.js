@@ -683,8 +683,16 @@ RClient = {
             }
 
             // the rcloud ocap-0 performs the login authentication dance
-            rserve.ocap(token + "\n" + execToken, function(result) {
-                debugger;
+            rserve.ocap([token, execToken], function(ocaps) {
+                if (ocaps !== null) {
+                    result.running = true;
+                    ocaps.session_init(rcloud.username(),
+                                       rcloud.github_token(), function() {});
+                    // opts.on_connect && opts.on_connect.call(result);
+                } else {
+                    result.post_error(result.disconnection_error("Authentication failed. Shutting down!"));
+                    shutdown();
+                }
             });
 
             // result.running = true;
