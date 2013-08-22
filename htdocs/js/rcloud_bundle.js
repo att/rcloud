@@ -656,22 +656,6 @@ LuxChart.lux_osm_plot = function(lats, lons, color, width, height)
 
     return canvas;
 };
-(function() {
-
-// takes a string and returns the appropriate r literal string with escapes.
-function escape_r_literal_string(s) {
-    return (s == null) ? "NULL" : ("\"" + s.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\"");
-}
-
-function NoCallbackError() {
-    this.name = "NoCallbackError";
-}
-
-NoCallbackError.prototype = Object.create(Error);
-NoCallbackError.prototype.constructor = NoCallbackError;
-
-function no_callback() { throw new NoCallbackError(); }
-
 RClient = {
     create: function(opts) {
         function on_connect() {
@@ -688,7 +672,7 @@ RClient = {
                     result.running = true;
                     opts.on_connect && opts.on_connect.call(result, ocaps);
                 } else {
-                    result.post_error(result.disconnection_error("Authentication failed. Shutting down!"));
+                    result.post_error(result.disconnection_error("Login failed. Shutting down!"));
                     shutdown();
                 }
             });
@@ -698,20 +682,13 @@ RClient = {
         // in on_error and on_close both being called.
         function shutdown() {
             $("#input-div").hide();
+            if (!rserve.closed)
+                rserve.close();
         }
 
         function on_error(msg, status_code) {
-            switch (status_code) {
-            case 65:
-                // Authentication failed.
-                result.post_error(result.disconnection_error("Authentication failed. Login first!"));
-                shutdown();
-                break;
-            default:
-                // Unmarked error, post disconnection_error.
-                result.post_error(result.disconnection_error(msg));
-                shutdown();
-            }
+            result.post_error(result.disconnection_error(msg));
+            shutdown();
         }
 
         function on_close(msg) {
@@ -727,111 +704,18 @@ RClient = {
             on_error: on_error,
             on_close: on_close,
             on_data: opts.on_data,
-            on_oob_message: opts.on_oob_message,
-            // debug: {
-            //     message_in: function(msg) {
-            //         if (typeof msg.data === 'string')
-            //             console.log("Message in, string,", msg.data);
-            //         else
-            //             console.log("Message in, array,", new Uint8Array(msg.data));
-            //     },
-            //     message_out: function(msg, command) {
-            //         debugger;
-            //         console.log("Message out", command);
-            //     }
-            // },
-            login: token + "\n" + execToken
+            on_oob_message: opts.on_oob_message
         });
-
-        var _capturing_answers = false;
-        var _capturing_callback = undefined;
 
         var result;
 
         result = {
             _rserve: rserve,
-            handlers: {
-                "eval": function(v) {
-                    result.post_response(v);
-                    return v;
-                },
-                "markdown.eval": function(v) {
-                    result.display_markdown_response(v);
-                    return v;
-                },
-                "browsePath": function(v) {
-                    $.ajax({ url: "http://127.0.0.1:8080" + v }).done(function(result) {
-                        // horrible hack: we strip the content down to its main div via regexp
-                        // cue jwz here.
-                        var inside_body = /[\s\S]*<body>([\s\S]*)<\/body>/g.exec(result)[1];
-                        $("#help-output").html(inside_body);
-                    });
-                },
-		// FIXME: I couldn't get this.post_* to work from here so this is just to avoid the error ... it's nonsensical, obviously
-		"dev.new": function(v) { return ""; },
-		"dev.close": function(v) { return ""; },
-                "internal_cmd": function(v) { return ""; },
-                "boot.failure": function(v) {
-                    result.running = false;
-                }
-            },
             running: false,
-
-            eval: function(data) {
-                var that = this;
-                if (data.type !== "sexp") {
-                    return this.post_error("Bad protocol, should always be sexp.");
-                }
-                data = data.value;
-                if (data.type === "string_array") {
-                    return this.post_error(data.value[0]);
-                }
-                if (data.type === "null") {
-                    return null;
-                }
-                if (data.type !== "vector") {
-                    return this.post_error("Protocol error, unexpected value of type " + data.type);
-                }
-               if (data.value[0].type !== "string_array" ||
-                    data.value[0].value.length !== 1) {
-                    console.log("Protocol error?! ", data.value[0]);
-                    return undefined;
-                    // return this.post_error("Protocol error, expected first element to be a single string");
-                }
-                var cmd = data.value[0].value[0];
-                var cmds = this.handlers;
-                if (cmds[cmd] === undefined) {
-                    return this.post_error("Unknown command " + cmd);
-                }
-                return cmds[cmd].call(this, data.json()[1]);
-            },
-
-            register_handler: function(cmd, callback) {
-                this.handlers[cmd] = callback;
-            },
-            
+           
             //////////////////////////////////////////////////////////////////
             // FIXME: all of this should move out of rclient and into
             // the notebook objects.
-
-            post_div: function (msg) {
-                return shell.post_div(msg);
-            },
-
-            display_markdown_response: function(result) {
-                if (result) {
-                    $("#output")
-                        .append($("<div></div>")
-                                .html(result.value[0]))
-                        .find("pre code")
-                        .each(function(i, e) {
-                            hljs.highlightBlock(e);
-                        });
-                    MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
-                }
-            },
-
-            //////////////////////////////////////////////////////////////////
 
             string_error: function(msg) {
                 return $("<div class='alert alert-error'></div>").text(msg);
@@ -867,98 +751,10 @@ RClient = {
                 $("#output").append(d);
                 window.scrollTo(0, document.body.scrollHeight);
             }
-
-            // wrap_command: function(command, silent) {
-            //     // FIXME code injection? notice that this is already eval, so
-            //     // what _additional_ harm would exist?
-            //     if (silent === undefined) {
-            //         silent = false;
-            //     }
-            //     return "rcloud.support:::session.eval({" + command + "}, "
-            //         + (silent?"TRUE":"FALSE") + ")";
-            // },
-
-            // markdown_wrap_command: function(command, silent) {
-            //     return "rcloud.support:::session.markdown.eval({markdownToHTML(text=paste(knit(text=" + escape_r_literal_string(command+'\n') + "), collapse=\"\\n\"), fragment=TRUE)}, "
-            //         + (silent?"TRUE":"FALSE") + ")";
-            // },
-
-            // log: function(command) {
-            //     command = "rcloud.support:::session.log(\"" + rcloud.username() + "\", \"" +
-            //         command.replace(/\\/g,"\\\\").replace(/"/g,"\\\"")
-            //     + "\")";
-            //     this.send(command);
-            // },
-
-            // send: function(command, wrap) {
-            //     this.send_and_callback(command, no_callback, wrap);
-            // },
-
-            // send_and_callback: function(command, callback, wrap) {
-            //     var that = this;
-            //     if (_.isUndefined(callback))
-            //         callback = no_callback;
-            //     var t;
-            //     if (wrap) {
-            //         command = wrap(command);
-            //     } else {
-            //         command = this.wrap_command(command, true);
-            //     }
-            //     function unwrap(v) {
-            //         v = v.value.json();
-            //         try {
-            //             callback(v[1]);
-            //         } catch (e) {
-            //             if (e.constructor === NoCallbackError) {
-            //                 that.handlers[v[0]](v[1]);
-            //             } else
-            //                 throw 'Error evaluating "' + command + '": ' + e;
-            //         }
-            //     }
-            //     rserve.eval(command, unwrap);
-            // }
-
-            // supports only the following argument types:
-            // * string
-            // * number
-            // * array of string/number (doesn't check they match)
-            // r_funcall: function(function_name) {
-            //     function output_one(result, val) {
-            //         var t = typeof val;
-            //         if (val === null)
-            //             result.push('NULL');
-            //         else if (t === "string")
-            //             result.push(escape_r_literal_string(val));
-            //         else if (t == "number")
-            //             result.push(String(val));
-            //         else throw "unsupported r_funcall argument type " + t;
-            //     }
-            //     var result = [function_name, "("];
-            //     for (var i=1; i<arguments.length; ++i) {
-            //         var arg = arguments[i];
-            //         if ($.isArray(arg)) {
-            //             result.push("c(");
-            //             for(var j = 0; j<arg.length; ++j) {
-            //                 output_one(result,arg[j]);
-            //                 if(j < arg.length-1)
-            //                     result.push(",");
-            //             }
-            //             result.push(")");
-            //         }
-            //         else output_one(result, arg);
-            //         if (i < arguments.length-1)
-            //             result.push(",");
-            //     }
-            //     result.push(")");
-            //     var s = result.join("");
-            //     return s;
-            // }
         };
         return result;
     }
 };
-
-})();
 RCloud = {};
 
 RCloud.create = function(rcloud_ocaps) {
@@ -1087,156 +883,6 @@ RCloud.create = function(rcloud_ocaps) {
     };
     return rcloud;
 };
-
-// rcloud.upload_file = function() 
-// {
-//     function do_upload(path, file) {
-//         var upload_name = path + '/' + file.name;
-//         rclient.createFile(upload_name);
-//         var fr = new FileReader();
-//         var chunk_size = 1024*1024;
-//         var f_size=file.size;
-//         var cur_pos=0;
-//         //initiate the first chunk, and then another, and then another ...
-//         // ...while waiting for one to complete before reading another
-//         fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-//         fr.onload = function(e) {
-//             if (e.target.result.byteLength > 0) {
-//                 var bytes = new Uint8Array(e.target.result);
-//                 rclient.writeFile(bytes, function() {
-//                     cur_pos += chunk_size;
-//                     fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-//                 });
-//             } else {
-//                 //This is just temporary, until we add the nice info messages from bootstrap
-//                 rclient.closeFile(function(){
-//                             alert.show("File uploaded successfully!");
-//                         });
-//             }
-//         };
-//     }
-//     if(!(window.File && window.FileReader && window.FileList && window.Blob))
-//         throw "File API not supported by browser.";
-//     else {
-//         var file=$("#file")[0].files[0];
-//         if(_.isUndefined(file))
-//             throw "No file selected!";
-//         else {
-//             /*FIXME add logged in user */
-//             rclient.send_and_callback(
-//                 rclient.r_funcall("rcloud.upload.path"), function(path) {
-//                     var file=$("#file")[0].files[0];
-//                     if(_.isUndefined(file))
-//                         throw new Error("No file selected!");
-//                     do_upload(path, file);
-//                 });
-//         }
-//     }
-// };
-
-// rcloud.search = function(search_string, k)
-// {
-//     if (_.isUndefined(k)) k = _.identity;
-//     rclient.send_and_callback(
-//         rclient.r_funcall("rcloud.search", search_string), k);
-// };
-
-// rcloud.load_user_config = function(user, k)
-// {
-//     if (_.isUndefined(k)) k = _.identity;
-//     rclient.send_and_callback(
-//         rclient.r_funcall("rcloud.load.user.config", user), function(result) {
-//             k && k(JSON.parse(result));
-//         });
-// };
-
-// rcloud.load_multiple_user_configs = function(users, k)
-// {
-//     rclient.send_and_callback(
-//         rclient.r_funcall("rcloud.load.multiple.user.configs", users), function(result) {
-//             k && k(JSON.parse(result));
-//         });
-// };
-
-// rcloud.save_user_config = function(user, content, k)
-// {
-//     if (_.isUndefined(k)) k = _.identity;
-//     rclient.send_and_callback(
-//         rclient.r_funcall("rcloud.save.user.config", user,
-//                           JSON.stringify(content)),
-//         function(result) {
-//             k && k(JSON.parse(result));
-//         });
-// };
-
-// rcloud.load_notebook = function(id, version, k)
-// {
-//     rclient.send_and_callback(
-//         rclient.r_funcall("rcloud.get.notebook", id, version),
-//         rcloud_github_handler("rcloud.get.notebook " + id, k)
-//     );
-// };
-
-// rcloud.update_notebook = function(id, content, k)
-// {
-//     rclient.send_and_callback(
-//         rclient.r_funcall("rcloud.update.notebook", id, JSON.stringify(content)),
-//         rcloud_github_handler("rcloud.update.notebook", k)
-//     );
-// };
-
-// rcloud.create_notebook = function(content, k)
-// {
-//     rclient.send_and_callback(
-//         rclient.r_funcall("rcloud.create.notebook", JSON.stringify(content)),
-//         rcloud_github_handler("rcloud.create.notebook", k)
-//     );
-// };
-
-// rcloud.create_notebook = function(content, k)
-// {
-//     rclient.send_and_callback(
-//         rclient.r_funcall("rcloud.create.notebook", JSON.stringify(content)),
-//         rcloud_github_handler("rcloud.create.notebook", k)
-//     );
-// };
-
-// rcloud.fork_notebook = function(id, k)
-// {
-//     rclient.send_and_callback(
-//         rclient.r_funcall("rcloud.fork.notebook", id),
-//         rcloud_github_handler("rcloud.fork.notebook", k)
-//     );
-// };
-
-// rcloud.fork_notebook = function(id, k)
-// {
-//     rclient.send_and_callback(
-//         rclient.r_funcall("rcloud.fork.notebook", id),
-//         rcloud_github_handler("rcloud.fork.notebook", k)
-//     );
-// };
-
-// rcloud.resolve_deferred_result = function(uuid, k)
-// {
-//     var cmd = rclient.r_funcall("rcloud.fetch.deferred.result", uuid);
-//     rclient.send_and_callback(cmd, k);
-// };
-
-// rcloud.get_users = function(user, k)
-// {
-//     rclient.send_and_callback(
-//         rclient.r_funcall("rcloud.get.users", user),
-//         k);
-// };
-
-// rcloud.rename_notebook = function(id, new_name, k)
-// {
-//     rclient.send_and_callback(
-//         rclient.r_funcall("rcloud.rename.notebook", id, new_name),
-//         rcloud_github_handler("rcloud.rename.notebook", k)
-//     );
-// };
 var ui_utils = {};
 
 ui_utils.fa_button = function(which, title, classname, style)
