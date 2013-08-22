@@ -3,18 +3,13 @@
 ################################################################################
 ## evaluation of R code
 
-# If the results of the function are desired, use session.eval
-session.eval <- function(x, silent) {
-  val <- try(x, silent=TRUE)
-  if (!inherits(val, "try-error") && !silent && rcloud.debug.level()) print(val)
-  list("eval", val)
-}
-
 # If evaluation is desired only for the output, use markdown.eval.
-session.markdown.eval <- function(x, silent) {
+session.markdown.eval <- function(command, silent) {
+  x <- markdownToHTML(text=paste(knit(text=command), collapse="\n"),
+                      fragment=TRUE)
   val <- try(x, silent=TRUE)
   if (!inherits(val, "try-error") && !silent && rcloud.debug.level()) print(val)
-  list("markdown.eval", val)
+  val
 }
 
 ## FIXME: won't work, global file!
@@ -28,7 +23,6 @@ session.log <- function(user, v) {
 
 ## WS init
 session.init <- function(...) {
-  print("ASKJDHALKSDJHALKSJDHLAKSJHDKLAJSHD");
   set.seed(Sys.getpid()) # we want different seeds so we get different file names
   .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
   start.rcloud(...)
