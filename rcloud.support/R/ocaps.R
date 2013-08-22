@@ -4,13 +4,7 @@ initial.ocaps <- function()
     # ocaps used by rcloud.js
     rcloud=list(
       session_init=make.oc(session.init),
-      session_markdown_eval=make.oc(function(command, silent) {
-        session.markdown.eval({
-          markdownToHTML(text=paste(knit(text=command), collapse="\n"),
-                         fragment=TRUE)
-        }, silent)
-      }),
-
+      session_markdown_eval=make.oc(session.markdown.eval),
       prefix_uuid=make.oc(rcloud.prefix.uuid),
       search=make.oc(rcloud.search),
       load_user_config=make.oc(rcloud.load.user.config),
@@ -18,6 +12,7 @@ initial.ocaps <- function()
       save_user_config=make.oc(rcloud.save.user.config),
       get_notebook=make.oc(rcloud.get.notebook),
       update_notebook=make.oc(rcloud.update.notebook),
+      create_notebook=make.oc(rcloud.create.notebook),
       fetch_deferred_result=make.oc(rcloud.fetch.deferred.result),
       get_users=make.oc(rcloud.get.users),
       rename_notebook=make.oc(rcloud.rename.notebook),

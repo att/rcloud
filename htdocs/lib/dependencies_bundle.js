@@ -45054,7 +45054,6 @@ Rserve.Rsrv = {
 function read(m)
 {
     var handlers = {};
-    var _;
 
     function lift(f, amount) {
         return function(attributes, length) {
@@ -45143,7 +45142,9 @@ function read(m)
         read_bool_array: function(attributes, length) {
             var l2 = this.read_int();
             var s = this.read_stream(length-4);
-            var a = s.make(Uint8Array).subarray(0, l2);
+            var a = _.map(s.make(Uint8Array).subarray(0, l2), function(v) {
+                return v ? true : false;
+            });
             return [Rserve.Robj.bool_array(a, attributes), length];
         },
 
@@ -45459,8 +45460,6 @@ function _encode_bytes(bytes) {
 
 function _encode_value(value, forced_type)
 {
-    if (!_.isUndefined(forced_type))
-        debugger;
     var sz = Rserve.determine_size(value, forced_type);
     var buffer = new ArrayBuffer(sz + 4);
     var view = Rserve.my_ArrayBufferView(buffer);
@@ -45659,16 +45658,18 @@ Rserve.wrap_all_ocaps = function(s, v) {
         var result = obj;
         if (_.isArray(obj) &&
             obj.r_attributes &&
-            obj.r_attributes['class'] == 'OCref')
+            obj.r_attributes['class'] == 'OCref') {
             return Rserve.wrap_ocap(s, obj);
-        if (_.isObject(obj)) {
-            result = _.object(_.map(obj, function(v, k) {
-                return [k, replace(v)];
-            }));
         } else if (_.isArray(obj)) {
             result = _.map(obj, replace);
             result.r_type = obj.r_type;
             result.r_attributes = obj.r_attributes;
+        } else if (_.isTypedArray(obj)) {
+            return result;
+        } else if (_.isObject(obj)) {
+            result = _.object(_.map(obj, function(v, k) {
+                return [k, replace(v)];
+            }));
         }
         return result;
     }
@@ -45698,21 +45699,27 @@ Rserve.RserveError.prototype = Object.create(Error);
 Rserve.RserveError.prototype.constructor = Rserve.RserveError;
 (function () {
 
+_.mixin({
+    isTypedArray: function(v) {
+        return !_.isUndefined(v.byteLength) && !_.isUndefined(v.BYTES_PER_ELEMENT);
+    }
+});
+
 // type_id tries to match some javascript values to Rserve value types
 Rserve.type_id = function(value)
 {
     if (_.isNull(value) || _.isUndefined(value))
         return Rserve.Rsrv.XT_NULL;
     var type_dispatch = {
-        "boolean": Rserve.Rsrv.XT_BOOL,
-        "number": Rserve.Rsrv.XT_ARRAY_DOUBLE,
-        "string": Rserve.Rsrv.XT_ARRAY_STR // base strings need to be array_str or R gets confused?
+        "boolean": Rserve.Rsrv.XT_ARRAY_BOOL,
+        "number":  Rserve.Rsrv.XT_ARRAY_DOUBLE,
+        "string":  Rserve.Rsrv.XT_ARRAY_STR // base strings need to be array_str or R gets confused?
     };
     if (!_.isUndefined(type_dispatch[typeof value]))
         return type_dispatch[typeof value];
 
     // typed arrays
-    if (!_.isUndefined(value.byteLength) && !_.isUndefined(value.BYTES_PER_ELEMENT))
+    if (_.isTypedArray(value))
         return Rserve.Rsrv.XT_ARRAY_DOUBLE;
 
     // arraybuffers
@@ -45722,6 +45729,9 @@ Rserve.type_id = function(value)
     // lists of strings (important for tags)
     if (_.isArray(value) && _.all(value, function(el) { return typeof el === 'string'; }))
         return Rserve.Rsrv.XT_ARRAY_STR;
+
+    if (_.isArray(value) && _.all(value, function(el) { return typeof el === 'boolean'; }))
+        return Rserve.Rsrv.XT_ARRAY_BOOL;
 
     // arbitrary lists
     if (_.isArray(value))
@@ -45746,8 +45756,11 @@ Rserve.determine_size = function(value, forced_type)
     switch (t) {
     case Rserve.Rsrv.XT_NULL:
         return header_size + 0;
-    case Rserve.Rsrv.XT_BOOL:
-        return header_size + 1;
+    case Rserve.Rsrv.XT_ARRAY_BOOL:
+        if (_.isBoolean(value))
+            return header_size + 8;
+        else
+            return header_size + ((value.length + 7) & ~3);
     case Rserve.Rsrv.XT_ARRAY_STR:
         if (_.isArray(value))
             return header_size + _.reduce(value, function(memo, str) {
@@ -45766,7 +45779,6 @@ Rserve.determine_size = function(value, forced_type)
     case Rserve.Rsrv.XT_LANG_NOTAG:
         return header_size + list_size(value);
     case Rserve.Rsrv.XT_VECTOR | Rserve.Rsrv.XT_HAS_ATTR:
-        debugger;
         return header_size // XT_VECTOR | XT_HAS_ATTR
             + header_size // XT_LIST_TAG (attribute)
               + header_size + "names".length + 3 // length of 'names' + padding (tag as XT_STR)
@@ -45790,8 +45802,15 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type)
     switch (t) {
     case Rserve.Rsrv.XT_NULL:
         break;
-    case Rserve.Rsrv.XT_BOOL:
-        write_view.setInt8(4, value ? 1 : 0);
+    case Rserve.Rsrv.XT_ARRAY_BOOL:
+        if (_.isBoolean(value)) {
+            write_view.setInt32(4, 1);
+            write_view.setInt8(8, value ? 1 : 0);
+        } else {
+            write_view.setInt32(4, value.length);
+            for (i=0; i<value.length; ++i)
+                write_view.setInt8(8 + i, value[i] ? 1 : 0);
+        }
         break;
     case Rserve.Rsrv.XT_ARRAY_STR:
         if (_.isArray(value)) {

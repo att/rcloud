@@ -674,7 +674,6 @@ function no_callback() { throw new NoCallbackError(); }
 
 RClient = {
     create: function(opts) {
-        debugger;
         function on_connect() {
             if (!rserve.ocap_mode) {
                 result.post_error(result.disconnection_error("Expected an object-capability Rserve. Shutting Down!"));

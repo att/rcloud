@@ -56,7 +56,9 @@ function main_init() {
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
         on_connect: function(ocaps) {
             rcloud = RCloud.create(ocaps.rcloud);
-            rcloud.session_init(rcloud.username(), rcloud.github_token());
+            rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {
+                rclient.post_response(hello);
+            });
 
             $("#new-md-cell-button").click(function() {
                 shell.new_markdown_cell("", "markdown");
