@@ -265,6 +265,7 @@ dcplot.format_error = function(e) {
                 $.each(err.errors, function(e) {
                     formatted_errors.append($('<p/>').text(err.errors[e]));
                 });
+            else formatted_errors.text(err.errors.message.toString());
             var name = err.name.replace(/_\d*_\d*$/, '');
             tab.append($('<tr valign=top/>').
                        append($('<td/>').text(err.type)).
