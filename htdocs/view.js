@@ -6,7 +6,11 @@ function view_init() {
     rclient = RClient.create({
         debug: false,
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
-        on_connect: function() {
+        on_connect: function(ocaps) {
+            rcloud = RCloud.create(ocaps.rcloud);
+            rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {
+                rclient.post_response(hello);
+            });
             $("#view-source").click(function() {
                 window.location = "main.html?notebook=" + shell.gistname();
             });
