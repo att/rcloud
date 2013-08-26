@@ -1,4 +1,2 @@
 #function to request a password popup
-get.password <- function(){
-  password <- self.oobMessage(list("password","Please enter your password?"))
-}
+password <- function(prompt="Please enter your password") self.oobMessage(list("password", as.character(prompt)[1]))

@@ -1,7 +1,7 @@
 ## this is only used is there is no session server ... and it's a bad hack since it's not safe>
 .get.token.list <- function()
 {
-  rcloud.auth.path <- paste(rcloud.support:::.rc.conf$configuration.root, "/rcloud.auth", sep="")
+  rcloud.auth.path <- pathConf("configuration.root", "rcloud.auth")
   tryCatch(readRDS(rcloud.auth.path),
            error=function(e) {
              d <- new.env(parent=emptyenv())
@@ -12,7 +12,7 @@
 }
 
 .save.token.list <- function(d) {
-  rcloud.auth.path <- paste(rcloud.support:::.rc.conf$configuration.root, "/rcloud.auth", sep="")
+  rcloud.auth.path <- pathConf("configuration.root", "rcloud.auth")
   ## save + move to ensure that at least the content will be consitent
   ## it is still unsafe because there is no lock between read and save, so
   ## concurrent changes will be lost -- but that's why this is jsut
@@ -24,33 +24,29 @@
 
 set.token <- function(user, token, realm="rcloud")
 {
-  if (is.null(rcloud.support:::.rc.conf$session.server)) {
+  if (!nzConf("session.server")) {
     d <- .get.token.list()
     old.token <- d$user.to.token[[user]]
     if (!is.null(old.token)) d$token.to.user[[old.token]] <- NULL
     d$user.to.token[[user]] <- token
     d$token.to.user[[token]] <- user
     .save.token.list(d)
-  } else {
-    RCurl::getURL(paste0(rcloud.support:::.rc.conf$session.server, "/stored_token?token=", URLencode(token), "&user=", URLencode(user), "&realm=", URLencode(realm)))
-  }    
+  } else RCurl::getURL(paste0(getConf("session.server"), "/stored_token?token=", URLencode(token), "&user=", URLencode(user), "&realm=", URLencode(realm)))
 }
 
 revoke.token <- function(token, realm="rcloud") {
-  if (is.null(rcloud.support:::.rc.conf$session.server)) {
+  if (!nzConf("session.server")) {
     d <- .get.token.list()
     user <- d$token.to.user[[token]]
     if (!is.null(user)) d$user.to.token[[user]] <- NULL
     d$token.to.user[[token]] <- NULL
     .save.token.list(d)
-  } else {
-    RCurl::getURL(paste0(rcloud.support:::.rc.conf$session.server, "/revoke?token=", URLencode(token), "&realm=", URLencode(realm)))
-  }
+  } else RCurl::getURL(paste0(getConf("session.server"), "/revoke?token=", URLencode(token), "&realm=", URLencode(realm)))
 }
 
 check.user.token.pair <- function(user, token, valid.sources="stored", realm="rcloud")
 {
-  if (is.null(rcloud.support:::.rc.conf$session.server)) {
+  if (!nzConf("session.server")) {
     d <- .get.token.list()
     token.from.user <- d$user.to.token[[user]]
     user.from.token <- d$token.to.user[[token]]
@@ -61,7 +57,7 @@ check.user.token.pair <- function(user, token, valid.sources="stored", realm="rc
      !is.null(token.from.user) &&
      (token.from.user == token))
   } else {
-    res <- RCurl::getURL(paste0(rcloud.support:::.rc.conf$session.server, "/valid?token=", URLencode(token), "&realm=", URLencode(realm)))
+    res <- RCurl::getURL(paste0(getConf("session.server"), "/valid?token=", URLencode(token), "&realm=", URLencode(realm)))
     res <- strsplit(res, "\n")[[1]]
     if (rcloud.debug.level()) cat("check.user.token.pair(", user, ", ", token, ", ", realm, ") valid: ", res[1],", user: ", res[2], ", source: ", res[3], "\n", sep='')
     (length(res) > 1) && isTRUE(res[1] == "YES") && isTRUE(res[2] == as.vector(user)) && isTRUE(res[3] %in% valid.sources)
@@ -70,7 +66,7 @@ check.user.token.pair <- function(user, token, valid.sources="stored", realm="rc
 
 check.token <- function(token, valid.sources="stored", realm="rcloud")
 {
-  if (is.null(rcloud.support:::.rc.conf$session.server)) {
+  if (!nzConf("session.server")) {
     d <- .get.token.list()
     user.from.token <- d$token.to.user[[token]]
     if (!is.null(user.from.token))
@@ -78,7 +74,7 @@ check.token <- function(token, valid.sources="stored", realm="rcloud")
     else
       FALSE
   } else {
-    res <- RCurl::getURL(paste0(rcloud.support:::.rc.conf$session.server, "/valid?token=", URLencode(token), "&realm=", URLencode(realm)))
+    res <- RCurl::getURL(paste0(getConf("session.server"), "/valid?token=", URLencode(token), "&realm=", URLencode(realm)))
     res <- strsplit(res, "\n")[[1]]
     if (rcloud.debug.level()) cat("check.token(", token,", ", realm,") valid: ", res[1],", user: ", res[2], ", source: ", res[3], "\n", sep='')
     if ((length(res) > 1) && isTRUE(res[1] == "YES") && isTRUE(res[3] %in% valid.sources)) res[2] else FALSE    

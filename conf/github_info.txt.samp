@@ -1,8 +1,0 @@
---- replace with your client-id ---
---- replace with your client secret ---
-https://github.com/
-https://api.github.com/
-
-
-## rename this file to github_info.txt
-## adjust the URLs above if you use Enterprise GitHub
