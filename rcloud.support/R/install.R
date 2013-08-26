@@ -1,7 +1,7 @@
 check.installation <- function(install=TRUE, force.all=FALSE, update=FALSE) {
   ## packages that we have to pull from github
-  on.github      <- c("httr", "github")
-  on.github.repo <- c("httr", "rgithub")
+  on.github      <- c("httr",   "github")
+  on.github.repo <- c("httr",   "rgithub")
   on.github.user <- c("hadley", "cscheid")
 
   dl.method <- "internal"

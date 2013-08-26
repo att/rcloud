@@ -19,7 +19,7 @@ RClient = {
 
         function on_connect() {
             result.running = true;
-            result.send("rcloud.support::session.init(username="
+            result.send("rcloud.support:::session.init(username="
                         + escape_r_literal_string(rcloud.username()) + ",token="
                         + escape_r_literal_string(rcloud.github_token()) + ")");
             opts.on_connect && opts.on_connect.call(result);
@@ -234,17 +234,17 @@ RClient = {
                 if (silent === undefined) {
                     silent = false;
                 }
-                return "rcloud.support::session.eval({" + command + "}, "
+                return "rcloud.support:::session.eval({" + command + "}, "
                     + (silent?"TRUE":"FALSE") + ")";
             },
 
             markdown_wrap_command: function(command, silent) {
-                return "rcloud.support::session.markdown.eval({markdownToHTML(text=paste(knit(text=" + escape_r_literal_string(command+'\n') + "), collapse=\"\\n\"), fragment=TRUE)}, "
+                return "rcloud.support:::session.markdown.eval({markdownToHTML(text=paste(knit(text=" + escape_r_literal_string(command+'\n') + "), collapse=\"\\n\"), fragment=TRUE)}, "
                     + (silent?"TRUE":"FALSE") + ")";
             },
 
             log: function(command) {
-                command = "rcloud.support::session.log(\"" + rcloud.username() + "\", \"" +
+                command = "rcloud.support:::session.log(\"" + rcloud.username() + "\", \"" +
                     command.replace(/\\/g,"\\\\").replace(/"/g,"\\\"")
                 + "\")";
                 this.send(command);

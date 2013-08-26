@@ -1,3 +1,5 @@
+require(rcloud.support)
+
 cookies <- function(headers) {
   a <- strsplit(rawToChar(headers), "\n")
   if (length(a) && length(c <- grep("^cookie:", a[[1]], TRUE)) &&
@@ -13,12 +15,12 @@ cookies <- function(headers) {
 run <- function(url, query, body, headers) {
   cookies <- cookies(headers)
   if (!is.null(cookies$execToken))
-    rcloud.support::revoke.token(cookies$execToken, realm="rcloud.exec")
+    rcloud.support:::revoke.token(cookies$execToken, realm="rcloud.exec")
   if (!is.null(cookies$token))
-    rcloud.support::revoke.token(cookies$token)
-  ret <- rcloud.support:::.rc.conf$welcome.page
+    rcloud.support:::revoke.token(cookies$token)
+  ret <- rcloud.config("welcome.page")
   if (is.null(ret)) ret <- '/welcome.html'
   list("<html><head></head><body>Logout...</body></html>",
        "text/html",
-       paste0("Set-Cookie: user=; domain=", .rc.conf$cookie.domain,"; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT\r\nSet-Cookie: token=; domain=", .rc.conf$cookie.domain, "; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT\r\nSet-Cookie: execUser=; domain=", .rc.conf$cookie.domain,"; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT\r\nSet-Cookie: execToken=; domain=", .rc.conf$cookie.domain,"; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT\r\nRefresh: 0.1; url=", ret, sep=''))
+       paste0("Set-Cookie: user=; domain=", rcloud.config("cookie.domain"), "; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT\r\nSet-Cookie: token=; domain=", rcloud.config("cookie.domain"), "; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT\r\nSet-Cookie: execUser=; domain=", rcloud.config("cookie.domain"), "; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT\r\nSet-Cookie: execToken=; domain=", rcloud.config("cookie.domain"), "; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT\r\nRefresh: 0.1; url=", ret, sep=''))
 }
