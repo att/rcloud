@@ -1,5 +1,12 @@
 ## this serves Rserve's built-in HTTP server
 .http.request <- function(url, query, body, headers, ...) {
+    if (nzConf("http.user")) {
+      http.user <- getConf("http.user")
+      unixtools::chown(tempdir(), http.user, NULL)
+      unixtools::set.user(http.user)
+      dir.create(td <- paste(tempdir(), http.user, sep='-'), FALSE, TRUE, "0700")
+      unixtools::set.tempdir(td)
+    }
     ## if there is a custom authentication mechanism, invoke it
     if (is.function(getOption("RCloud.auth"))) {
         auth <- getOption("RCloud.auth")(url, query, body, headers)
@@ -13,7 +20,7 @@
     if (isTRUE(url == "") || isTRUE(url == "/")) url <- "/index.html"
 
     ## serve files from the htdocs directory
-    fn <- paste(.rc.conf$root, "htdocs", url, sep='/')
+    fn <- pathConf("root", "htdocs", url)
     if (!file.exists(fn))
         list(paste("ERROR: item '", fn, "' not found!", sep=''),"text/html", character(), 404L)
     else {
