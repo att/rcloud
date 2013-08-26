@@ -78,7 +78,7 @@ var reduce = {
                             return p;
                         },
                         function(p, v) {
-                            return {count: 0, sum: 0, avg: 0};
+                            return {count: 0, sum: 0, avg: 0, valueOf: function() { return this.avg; }};
                         });
                 };
             }
