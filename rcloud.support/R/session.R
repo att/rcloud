@@ -3,13 +3,16 @@
 ################################################################################
 ## evaluation of R code
 
-# If evaluation is desired only for the output, use markdown.eval.
 session.markdown.eval <- function(command, silent) {
-  x <- markdownToHTML(text=paste(knit(text=command), collapse="\n"),
-                      fragment=TRUE)
-  val <- try(x, silent=TRUE)
+  val <- try(markdownToHTML(text=paste(knit(text=command), collapse="\n"),
+                            fragment=TRUE), silent=TRUE)
   if (!inherits(val, "try-error") && !silent && rcloud.debug.level()) print(val)
-  val
+  if (inherits(val, "try-error")) {
+    # FIXME better error handling
+    paste("<pre>", val[1], "</pre>", sep="")
+  } else {
+    val
+  }
 }
 
 ## FIXME: won't work, global file!
