@@ -1,16 +1,28 @@
+# FIXME Add support for multiple file upload
+
+.rcloud.upload.state <- new.env()
+
 rcloud.upload.create.file <- function(filename)
 {
-  stop("Unimplemented!");
+  if (!is.null(.rcloud.upload.state$file) && isOpen(.rcloud.upload.state$file))
+    stop("rcloud.upload: file already open, close it first")
+  .rcloud.upload.state$file <- file(filename, "wb")
+  isOpen(.rcloud.upload.state$file)
 }
 
 rcloud.upload.write.file <- function(bytes)
 {
-  stop("Unimplemented!");
+  if (is.null(.rcloud.upload.state$file) || !isOpen(.rcloud.upload.state$file))
+    stop("rcloud.upload: must create file first")
+  writeBin(bytes, .rcloud.upload.state$file)
 }
 
 rcloud.upload.close.file <- function()
 {
-  stop("Unimplemented!");
+  if (is.null(.rcloud.upload.state$file) || !isOpen(.rcloud.upload.state$file))
+    stop("rcloud.upload: must create file first")
+  close(.rcloud.upload.state$file)
+  .rcloud.upload.state$file <- NULL
 }
 
 # FIXME we need a better place for this.

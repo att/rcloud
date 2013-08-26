@@ -95,14 +95,14 @@ RCloud.create = function(rcloud_ocaps) {
             fr.onload = function(e) {
                 if (e.target.result.byteLength > 0) {
                     var bytes = new Uint8Array(e.target.result);
-                    rcloud_ocaps.file_upload.write(bytes, function() {
+                    rcloud_ocaps.file_upload.write(bytes.buffer, function() {
                         cur_pos += chunk_size;
                         fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                     });
                 } else {
                     //This is just temporary, until we add the nice info messages from bootstrap
                     rcloud_ocaps.file_upload.close(function(){
-                        alert.show("File uploaded successfully!");
+                        alert("File uploaded successfully!");
                     });
                 }
             };
