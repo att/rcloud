@@ -15,6 +15,8 @@ run <- function(url, query, body, headers)
   cookies <- cookies(headers)
   extra.headers <- character(0)
   if (!is.null(.rc.conf$exec.auth)) {
+    ret <- rcloud.support:::getConf("welcome.page")
+    if (is.null(ret)) ret <- '/welcome.html'
     if (is.null(.rc.conf$session.server))
       return(list("<html><head></head><body>ERROR: This RCloud instance is not properly configured: Exec.auth is set, but session.server is not!", "text/html"))
     if (length(body) > 2 && "execLogin" %in% body['action']) {
@@ -22,16 +24,13 @@ run <- function(url, query, body, headers)
       if (length(res) > 2) {
         extra.headers <- paste0("Set-Cookie: execUser=", res[2], "; domain=", .rc.conf$cookie.domain,"; path=/;\r\nSet-Cookie: execToken=", res[1], "; domain=", .rc.conf$cookie.domain, "; path=/;")
         cookies$execToken <- res[1]
-      } else return(list(paste(capture.output(print(res)), collapse="\n"), "text/plain"))
-                                        #return(list("<html><head></head><body>Authentication failed.</body></html>", "text/html"))
+      } else return(list("<html><head></head><body>Authentication failed - please check your username and password.</body></html>", "text/html"))
     }
-    ret <- rcloud.support:::.rc.conf$welcome.page
-    if (is.null(ret)) ret <- '/welcome.html'
 
     if (is.null(cookies$execToken))
       return(list("<html><head></head><body>Missing execution token, requesting authentication...",
                   "text/html", paste0("Refresh: 0.1; url=", ret)))
-    usr <- rcloud.support::check.token(cookies$execToken, .rc.conf$exec.auth, "rcloud.exec")
+    usr <- rcloud.support:::check.token(cookies$execToken, .rc.conf$exec.auth, "rcloud.exec")
     if (usr == FALSE)
       return(list("<html><head></head><body>Invalid or expired execution token, requesting authentication...",
                   "text/html", paste0("Refresh: 0.1; url=", ret)))

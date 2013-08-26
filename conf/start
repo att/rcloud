@@ -41,4 +41,4 @@ fi
 ## those that choose to use the RCloud Rlib shall be supported ...
 : ${R_LIBS="$ROOT/Rlib"}
 
-"$RBIN" --slave --no-restore --vanilla --file="$ROOT/conf/run_rcloud.R" --args "$ROOT/conf/rserve.conf" "$ROOT/conf/rserve.R"
+"$RBIN" --slave --no-restore --vanilla --file="$ROOT/conf/run_rcloud.R" --args "$ROOT/conf/rserve.conf"
