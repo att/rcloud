@@ -26165,7 +26165,7 @@ Lux.init = function(opts)
 
         var ext;
         var exts = gl.getSupportedExtensions();
-        _.each(["OES_texture_float", "OES_standard_derivatives"], function(ext) {
+        _.each(["OES_texture_float", "OES_texture_float_linear", "OES_standard_derivatives"], function(ext) {
             if (exts.indexOf(ext) === -1 ||
                 (gl.getExtension(ext)) === null) { // must call this to enable extension
                 alert(ext + " is not available on your browser/computer! " +
@@ -27705,6 +27705,7 @@ Lux.UI.center_zoom_interactor = function(opts)
 
     var internal_move = function(dx, dy) {
         var ctx = Lux._globals.ctx;
+        // FIXME This doesn't work with highDPS: true
         var v = vec.make([2*dx/ctx.parameters.width.get(), 
                           2*dy/ctx.parameters.height.get()]);
         var negdelta = f(v);
@@ -44900,6 +44901,14 @@ Rserve.Robj = {
                 return this.value;
         }
     }),
+    raw: make_basic("raw", {
+        json: function() {
+            if (this.value.length === 1 && _.isUndefined(this.attributes))
+                return this.value[0];
+            else
+                return this.value;
+        }
+    }),
     string: make_basic("string", {
         json: function() {
             return this.value;
@@ -45147,6 +45156,12 @@ function read(m)
             });
             return [Rserve.Robj.bool_array(a, attributes), length];
         },
+        read_raw: function(attributes, length) {
+            var l2 = this.read_int();
+            var s = this.read_stream(length-4);
+            var a = s.make(Uint8Array).subarray(0, l2).buffer;
+            return [Rserve.Robj.raw(a, attributes), length];
+        },
 
         read_sexp: function() {
             var d = this.read_int();
@@ -45235,6 +45250,7 @@ function read(m)
     handlers[Rserve.Rsrv.XT_ARRAY_DOUBLE] = that.read_double_array;
     handlers[Rserve.Rsrv.XT_ARRAY_STR]    = that.read_string_array;
     handlers[Rserve.Rsrv.XT_ARRAY_BOOL]   = that.read_bool_array;
+    handlers[Rserve.Rsrv.XT_RAW]          = that.read_raw;
 
     handlers[Rserve.Rsrv.XT_STR]          = sl(that.read_string, Rserve.Robj.string);
 
@@ -45458,27 +45474,45 @@ function _encode_bytes(bytes) {
     return result;
 };
 
-function _encode_value(value, forced_type)
-{
-    var sz = Rserve.determine_size(value, forced_type);
-    var buffer = new ArrayBuffer(sz + 4);
-    var view = Rserve.my_ArrayBufferView(buffer);
-    view.data_view().setInt32(0, Rserve.Rsrv.DT_SEXP + (sz << 8));
-    Rserve.write_into_view(value, view.skip(4), forced_type);
-    return buffer;
-}
-
 Rserve.create = function(opts) {
     var host = opts.host;
     var onconnect = opts.on_connect;
     var socket = new WebSocket(host);
     socket.binaryType = 'arraybuffer';
     var handle_error = opts.on_error || function(error) { throw new Rserve.RserveError(error, -1); };
-
     var received_handshake = false;
 
     var result;
     var command_counter = 0;
+
+    var captured_functions = {};
+
+    var fresh_hash = function() {
+        var k;
+        do {
+            // while js has no crypto rngs :(
+            k = String(Math.random()).slice(2,12);
+        } while (k in captured_functions);
+        if (k.length !== 10)
+            throw new Error("Bad rng, no cookie");
+        return k;
+    };
+    
+    function convert_to_hash(value) {
+        var hash = fresh_hash();
+        captured_functions[hash] = value;
+        return hash;
+    }
+
+    function _encode_value(value, forced_type)
+    {
+        var sz = Rserve.determine_size(value, forced_type);
+        var buffer = new ArrayBuffer(sz + 4);
+        var view = Rserve.my_ArrayBufferView(buffer);
+        view.data_view().setInt32(0, Rserve.Rsrv.DT_SEXP + (sz << 8));
+        Rserve.write_into_view(value, view.skip(4), forced_type, convert_to_hash);
+        return buffer;
+    }
     
     function hand_shake(msg)
     {
@@ -45544,22 +45578,51 @@ Rserve.create = function(opts) {
         } else if (v.header[0] === Rserve.Rsrv.OOB_SEND) {
             opts.on_data && opts.on_data(v.payload);
         } else if (v.header[0] === Rserve.Rsrv.OOB_MSG) {
-            if (_.isUndefined(opts.on_oob_message)) {
-                _send_cmd_now(Rserve.Rsrv.RESP_ERR | Rserve.Rsrv.OOB_MSG, 
-                              _encode_string("No handler installed"));
-            } else {
-                in_oob_message = true;
-                opts.on_oob_message(v.payload, function(message, error) {
-                    if (!in_oob_message) {
-                        handle_error("Don't call oob_message_handler more than once.");
+            if (result.ocap_mode) {
+                var p = v.payload.value.json();
+                var c;
+                try {
+                    c = p[0].r_attributes['class'];
+                } catch (e) {};
+                if (_.isUndefined(c) || c !== 'javascript_function')
+                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | Rserve.Rsrv.OOB_MSG, 
+                                  _encode_string("OOB Messages on ocap-mode must be javascript function calls"));
+                else {
+                    var params = p.slice(1);
+                    var hash = p[0][0];
+                    if (!(hash in captured_functions)) {
+                        _send_cmd_now(Rserve.Rsrv.RESP_ERR | Rserve.Rsrv.OOB_MSG, 
+                                      _encode_string("hash " + hash + " not found."));
                         return;
                     }
-                    in_oob_message = false;
-                    var header = Rserve.Rsrv.OOB_MSG | 
-                        (error ? Rserve.Rsrv.RESP_ERR : Rserve.Rsrv.RESP_OK);
-                    _send_cmd_now(header, _encode_string(message));
-                    bump_queue();
-                });
+                    var captured_function = captured_functions[hash];
+                    try {
+                        result = captured_function.apply(undefined, params);
+                        _send_cmd_now(Rserve.Rsrv.OOB_MSG,
+                                      _encode_value(result));
+                    } catch (e) {
+                        _send_cmd_now(Rserve.Rsrv.RESP_ERR | Rserve.Rsrv.OOB_MSG, 
+                                      _encode_string("javascript function raised exception " + String(e)));
+                    }
+                }
+            } else {
+                if (_.isUndefined(opts.on_oob_message)) {
+                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | Rserve.Rsrv.OOB_MSG, 
+                                  _encode_string("No handler installed"));
+                } else {
+                    in_oob_message = true;
+                    opts.on_oob_message(v.payload, function(message, error) {
+                        if (!in_oob_message) {
+                            handle_error("Don't call oob_message_handler more than once.");
+                            return;
+                        }
+                        in_oob_message = false;
+                        var header = Rserve.Rsrv.OOB_MSG | 
+                            (error ? Rserve.Rsrv.RESP_ERR : Rserve.Rsrv.RESP_OK);
+                        _send_cmd_now(header, _encode_string(message));
+                        bump_queue();
+                    });
+                }
             }
         } else {
             handle_error("Internal Error, parse returned unexpected type " + v.header[0], -1);
@@ -45612,6 +45675,10 @@ Rserve.create = function(opts) {
         close: function() {
             socket.close();
         },
+
+        //////////////////////////////////////////////////////////////////////
+        // non-ocap mode
+
         login: function(command, k) {
             _cmd(Rserve.Rsrv.CMD_login, _encode_string(command), k, command);
         },
@@ -45630,6 +45697,10 @@ Rserve.create = function(opts) {
         set: function(key, value, k) {
             _cmd(Rserve.Rsrv.CMD_setSEXP, [_encode_string(key), _encode_value(value)], k, "");
         }, 
+
+        //////////////////////////////////////////////////////////////////////
+        // ocap mode
+
         OCcall: function(ocap, values, k) {
             var is_ocap = false, str;
             try {
@@ -45665,7 +45736,9 @@ Rserve.wrap_all_ocaps = function(s, v) {
             result.r_type = obj.r_type;
             result.r_attributes = obj.r_attributes;
         } else if (_.isTypedArray(obj)) {
-            return result;
+            return obj;
+        } else if (_.isFunction(obj)) {
+            return obj;
         } else if (_.isObject(obj)) {
             result = _.object(_.map(obj, function(v, k) {
                 return [k, replace(v)];
@@ -45701,6 +45774,8 @@ Rserve.RserveError.prototype.constructor = Rserve.RserveError;
 
 _.mixin({
     isTypedArray: function(v) {
+        if (!_.isObject(v))
+            return false;
         return !_.isUndefined(v.byteLength) && !_.isUndefined(v.BYTES_PER_ELEMENT);
     }
 });
@@ -45736,6 +45811,10 @@ Rserve.type_id = function(value)
     // arbitrary lists
     if (_.isArray(value))
         return Rserve.Rsrv.XT_VECTOR;
+
+    // functions get passed as an array_str with extra attributes
+    if (_.isFunction(value))
+        return Rserve.Rsrv.XT_ARRAY_STR | Rserve.Rsrv.XT_HAS_ATTR;
 
     // objects
     if (_.isObject(value))
@@ -45774,27 +45853,33 @@ Rserve.determine_size = function(value, forced_type)
         else
             return header_size + 8 * value.length;
     case Rserve.Rsrv.XT_RAW:
-        return header_size + value.length;
+        return header_size + 4 + value.byteLength;
     case Rserve.Rsrv.XT_VECTOR:
     case Rserve.Rsrv.XT_LANG_NOTAG:
         return header_size + list_size(value);
     case Rserve.Rsrv.XT_VECTOR | Rserve.Rsrv.XT_HAS_ATTR:
         return header_size // XT_VECTOR | XT_HAS_ATTR
             + header_size // XT_LIST_TAG (attribute)
-              + header_size + "names".length + 3 // length of 'names' + padding (tag as XT_STR)
+              + header_size + "names".length + 3 // length of 'names' + padding (tag as XT_SYMNAME)
               + Rserve.determine_size(_.keys(value)) // length of names
             + list_size(_.values(value)); // length of values
+    case Rserve.Rsrv.XT_ARRAY_STR | Rserve.Rsrv.XT_HAS_ATTR:
+        return Rserve.determine_size("0403556553") // length of string 
+            + header_size // XT_LIST_TAG (attribute)
+              + header_size + "class".length + 3 // length of 'class' + padding (tag as XT_SYMNAME)
+              + Rserve.determine_size(["javascript_function"]); // length of class name
+        
     default:
         throw new Rserve.RserveError("Internal error, can't handle type " + t);
     }
 };
 
-Rserve.write_into_view = function(value, array_buffer_view, forced_type)
+Rserve.write_into_view = function(value, array_buffer_view, forced_type, convert)
 {
     var size = Rserve.determine_size(value, forced_type);
     if (size > 16777215)
         throw new Rserve.RserveError("Can't currently handle objects >16MB");
-    var t = forced_type || Rserve.type_id(value), i, current_offset;
+    var t = forced_type || Rserve.type_id(value), i, current_offset, lbl;
     var read_view;
     var write_view = array_buffer_view.data_view();
     write_view.setInt32(0, t + ((size - 4) << 8));
@@ -45835,8 +45920,11 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type)
         break;
     case Rserve.Rsrv.XT_RAW:
         read_view = new Rserve.EndianAwareDataView(value);
-        for (i=0; i<value.length; ++i)
-            write_view.setUint8(4 + i, read_view.getUint8(value, i));
+        write_view.setUint32(4, value.byteLength);
+        for (i=0; i<value.byteLength; ++i) {
+            write_view.setUint8(8 + i, read_view.getUint8(i));
+            console.log(i, read_view.getUint8(i));
+        }
         break;
     case Rserve.Rsrv.XT_VECTOR:
     case Rserve.Rsrv.XT_LANG_NOTAG:
@@ -45844,7 +45932,7 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type)
         _.each(value, function(el) {
             var sz = Rserve.determine_size(el);
             Rserve.write_into_view(el, array_buffer_view.skip(
-                current_offset));
+                current_offset), undefined, convert);
             current_offset += sz;
         });
         break;
@@ -45859,7 +45947,7 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type)
 
         write_view.setUint32(current_offset, Rserve.Rsrv.XT_SYMNAME + (8 << 8));
         current_offset += 4;
-        var lbl = "names";
+        lbl = "names";
         for (i=0; i<lbl.length; ++i, ++current_offset)
             write_view.setUint8(current_offset, lbl.charCodeAt(i));
         current_offset += 3;
@@ -45869,9 +45957,32 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type)
         _.each(_.values(value), function(el) {
             var sz = Rserve.determine_size(el);
             Rserve.write_into_view(el, array_buffer_view.skip(
-                current_offset));
+                current_offset), undefined, convert);
             current_offset += sz;
         });
+        break;
+
+    case Rserve.Rsrv.XT_ARRAY_STR | Rserve.Rsrv.XT_HAS_ATTR:
+        var converted_function = convert(value);
+        current_offset = 12;
+        var class_name = "javascript_function";
+        for (i=0; i<class_name.length; ++i, ++current_offset)
+            write_view.setUint8(current_offset, class_name.charCodeAt(i));
+        write_view.setUint8(current_offset++, 0);
+        write_view.setUint32(8, Rserve.Rsrv.XT_ARRAY_STR + ((current_offset - 12) << 8));
+
+        write_view.setUint32(current_offset, Rserve.Rsrv.XT_SYMNAME + (8 << 8));
+        current_offset += 4;
+        lbl = "class";
+        for (i=0; i<lbl.length; ++i, ++current_offset)
+            write_view.setUint8(current_offset, lbl.charCodeAt(i));
+        current_offset += 3;
+
+        write_view.setUint32(4, Rserve.Rsrv.XT_LIST_TAG + ((current_offset - 8) << 8));
+
+        for (i=0; i<converted_function.length; ++i)
+            write_view.setUint8(current_offset + i, converted_function.charCodeAt(i));
+        write_view.setUint8(current_offset + converted_function.length, 0);
         break;
     default:
         throw new Rserve.RserveError("Internal error, can't handle type " + t);
