@@ -25887,6 +25887,9 @@ Lux.conditional_actor = function(opts)
     };
     return Lux.actor(opts);
 };
+// DEPRECATED, possibly useless. actor_many is what you're probably looking for,
+// but that has a horrible name. There's got to be a better API for this kind of thing.
+
 Lux.bake_many = function(model_list, 
                          appearance_function,
                          model_callback)
@@ -28160,6 +28163,7 @@ Shade.Camera.perspective = function(opts)
         if (_.isUndefined(ctx)) {
             throw new Error("aspect_ratio is only optional with an active Lux context");
         }
+        // FIXME why is this not using parameters.width and parameters.height?
         aspect_ratio = ctx.viewportWidth / ctx.viewportHeight;
     }
 
@@ -36015,13 +36019,14 @@ Lux.Marks.globe = function(opts)
         zoom: 3,
         resolution_bias: 0,
         patch_size: 10,
+        cache_size: 3,
         tile_pattern: function(zoom, x, y) {
             return "http://tile.openstreetmap.org/"+zoom+"/"+x+"/"+y+".png";
         }
     });
     var model = Shade.parameter("mat4");
     var patch = spherical_mercator_patch(opts.patch_size);
-    var cache_size = 64; // cache size must be (2^n)^2
+    var cache_size = 1 << (2 * opts.cache_size); // cache size must be (2^n)^2
     var tile_size = 256;
     var tiles_per_line  = 1 << (~~Math.round(Math.log(Math.sqrt(cache_size))/Math.log(2)));
     var super_tile_size = tile_size * tiles_per_line;
@@ -36029,7 +36034,8 @@ Lux.Marks.globe = function(opts)
     var ctx = Lux._globals.ctx;
     var texture = Lux.texture({
         width: super_tile_size,
-        height: super_tile_size
+        height: super_tile_size,
+        mipmaps: false
     });
 
     function new_tile(i) {
@@ -36082,7 +36088,6 @@ Lux.Marks.globe = function(opts)
 
     var v = patch.vertex(Shade.vec(min_x, min_y), 
                          Shade.vec(max_x, max_y));
-    var mvp = opts.view_proj(model);
 
     var xformed_patch = patch.uv 
     // These two lines work around the texture seams on the texture atlas
@@ -36096,8 +36101,8 @@ Lux.Marks.globe = function(opts)
     var sphere_actor = Lux.actor({
         model: patch, 
         appearance: {
-            gl_Position: mvp(v),
-            gl_FragColor: Shade.texture2D(sampler, xformed_patch).discard_if(model.mul(v).z().lt(0)),
+            position: model(v),
+            color: Shade.texture2D(sampler, xformed_patch).discard_if(model.mul(v).z().lt(0)),
             polygon_offset: opts.polygon_offset
         }});
 
@@ -36120,6 +36125,7 @@ Lux.Marks.globe = function(opts)
     } else if (Lux.is_shade_expression(opts.zoom) !== "parameter") {
         throw new Error("zoom must be either a number or a parameter");
     }
+    var foo = Shade.parameter("vec4");
 
     var result = {
         tiles: tiles,
@@ -36129,10 +36135,9 @@ Lux.Marks.globe = function(opts)
         latitude_center: opts.latitude_center,
         zoom: opts.zoom,
         model_matrix: model,
-        mvp: mvp,
-        lat_lon_position: function(lat, lon) {
-            return mvp(Shade.Scale.Geo.latlong_to_spherical(lat, lon));
-        },
+        // lat_lon_position: function(lat, lon) {
+        //     return model(Shade.Scale.Geo.latlong_to_spherical(lat, lon));
+        // },
         resolution_bias: opts.resolution_bias,
         update_model_matrix: function() {
             while (this.longitude_center < 0)
@@ -36316,6 +36321,19 @@ Lux.Marks.globe = function(opts)
                 y_offset: tiles[id].offset_y * tile_size,
                 onload: f(x, y, zoom, id)
             });
+        },
+        scene: function(opts) {
+            opts = _.clone(opts || {});
+            opts.transform = function(appearance) {
+                if (_.isUndefined(appearance.position))
+                    return appearance;
+                appearance = _.clone(appearance);
+                var lat = appearance.position.x();
+                var lon = appearance.position.y();
+                appearance.position = model(Shade.Scale.Geo.latlong_to_spherical(lat, lon));
+                return appearance;
+            };
+            return Lux.scene(opts);
         },
         dress: function(scene) {
             var sphere_batch = sphere_actor.dress(scene);
@@ -36668,19 +36686,34 @@ Lux.Marks.globe_2d = function(opts)
     return result;
 };
 
+Lux.Marks.globe_2d.scene = function(opts)
+{
+    opts = _.clone(opts || {});
+    opts.transform = function(appearance) {
+        if (_.isUndefined(appearance.position))
+            return appearance;
+        appearance = _.clone(appearance);
+        var lat = appearance.position.x();
+        var lon = appearance.position.y();
+        appearance.position = Lux.Marks.globe_2d.lat_lon_to_tile_mercator(lat, lon);
+        return appearance;
+    };
+    return Lux.scene(opts);
+};
+
 Lux.Marks.globe_2d.lat_lon_to_tile_mercator = Shade(function(lat, lon) {
     return Shade.Scale.Geo.latlong_to_mercator(lat, lon).div(Math.PI * 2).add(Shade.vec(0.5,0.5));
 });
 
-Lux.Marks.globe_2d.transform = function(appearance) {
-    var new_appearance = _.clone(appearance);
-    new_appearance.position = Shade.vec(Lux.Marks.globe_2d.lat_lon_to_tile_mercator(
-        appearance.position.x(),
-        appearance.position.y()), appearance.position.swizzle("xw"));
-    return new_appearance;
-};
+// Lux.Marks.globe_2d.transform = function(appearance) {
+//     var new_appearance = _.clone(appearance);
+//     new_appearance.position = Shade.vec(Lux.Marks.globe_2d.lat_lon_to_tile_mercator(
+//         appearance.position.x(),
+//         appearance.position.y()), appearance.position.swizzle("xw"));
+//     return new_appearance;
+// };
 
-Lux.Marks.globe_2d.transform.inverse = function() { throw new Error("unimplemented"); };
+// Lux.Marks.globe_2d.transform.inverse = function() { throw new Error("unimplemented"); };
 Lux.Models = {};
 Lux.Models.flat_cube = function() {
     return Lux.model({
@@ -38502,6 +38535,55 @@ Lux.actor_list = function(actors_list)
                     return false;
             }
             return true;
+        }
+    };
+};
+
+Lux.actor_many = function(opts)
+{
+    opts = _.defaults(opts, {
+        on: function() { return true; }
+    });
+    var appearance_function = opts.appearance_function;
+    var model_list = opts.model_list;
+    var on = opts.on;
+    var model_callback = opts.model_callback;
+    var scratch_model = _.clone(model_list[0]);
+    var scratch_actor = Lux.actor({
+        model: scratch_model,
+        appearance: appearance_function(scratch_model)
+    });
+    var batch;
+
+    return {
+        dress: function(scene) {
+            batch = scratch_actor.dress(scene);
+            return model_callback ? {
+                draw: function() {
+                    _.each(model_list, function(model, i) {
+                        _.each(scratch_model.attributes, function(v, k) {
+                            v.set(model[k].get());
+                        });
+                        scratch_model.elements.set(model.elements.array);
+                        model_callback(model, i);
+                        batch.draw();
+                    });
+                }
+            } : {
+                draw: function() {
+                    _.each(model_list, function(model, i) {
+                        _.each(scratch_model.attributes, function(v, k) {
+                            v.set(model[k].get());
+                        });
+                        scratch_model.elements.set(model.elements.array);
+                        // model_callback(model, i); -- only difference to above
+                        batch.draw();
+                    });
+                }
+            };
+        },
+        on: function(event_name, event) {
+            return opts.on(event_name, event);
         }
     };
 };
@@ -45596,14 +45678,11 @@ Rserve.create = function(opts) {
                         return;
                     }
                     var captured_function = captured_functions[hash];
-                    try {
-                        result = captured_function.apply(undefined, params);
-                        _send_cmd_now(Rserve.Rsrv.OOB_MSG,
-                                      _encode_value(result));
-                    } catch (e) {
-                        _send_cmd_now(Rserve.Rsrv.RESP_ERR | Rserve.Rsrv.OOB_MSG, 
-                                      _encode_string("javascript function raised exception " + String(e)));
-                    }
+                    
+                    params.push(function(result) {
+                        _send_cmd_now(Rserve.Rsrv.OOB_MSG, _encode_value(result));
+                    });
+                    captured_function.apply(undefined, params); 
                 }
             } else {
                 if (_.isUndefined(opts.on_oob_message)) {
