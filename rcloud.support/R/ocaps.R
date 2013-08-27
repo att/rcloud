@@ -8,6 +8,7 @@ initial.ocaps <- function()
       prefix_uuid=make.oc(rcloud.prefix.uuid),
       search=make.oc(rcloud.search),
       load_user_config=make.oc(rcloud.load.user.config),
+      reset_session=make.oc(reset.session),
       load_multiple_user_configs=make.oc(rcloud.load.multiple.user.configs),
       save_user_config=make.oc(rcloud.save.user.config),
       get_notebook=make.oc(rcloud.get.notebook),

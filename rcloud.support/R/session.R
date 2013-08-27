@@ -4,7 +4,7 @@
 ## evaluation of R code
 
 session.markdown.eval <- function(command, silent) {
-  val <- try(markdownToHTML(text=paste(knit(text=command), collapse="\n"),
+  val <- try(markdownToHTML(text=paste(knit(text=command, envir=.session$knitr.env), collapse="\n"),
                             fragment=TRUE), silent=TRUE)
   if (!inherits(val, "try-error") && !silent && rcloud.debug.level()) print(val)
   if (inherits(val, "try-error")) {
@@ -29,5 +29,11 @@ session.init <- function(...) {
   set.seed(Sys.getpid()) # we want different seeds so we get different file names
   .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
   start.rcloud(...)
+  reset.session()
   paste(R.version.string, " --- welcome, ", .session$username, sep='')
+}
+
+reset.session <- function() {
+  .session$knitr.env <- new.env(parent=environment())
+  NULL
 }
