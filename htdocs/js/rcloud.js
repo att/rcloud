@@ -49,7 +49,11 @@ RCloud.create = function(rcloud_ocaps) {
     };
     rcloud.load_notebook = function(id, version, k) {
         k = rcloud_github_handler("rcloud.get.notebook " + id, k);
-        rcloud_ocaps.get_notebook(id, version, k);
+        rcloud_ocaps.get_notebook(id, version, function(notebook) {
+            rcloud_ocaps.reset_session(function() {
+                k(notebook);
+            });
+        });
     };
     rcloud.update_notebook = function(id, content, k) {
         k = rcloud_github_handler("rcloud.update.notebook", k);
