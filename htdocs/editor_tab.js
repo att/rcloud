@@ -452,7 +452,7 @@ var editor = function () {
 		       else
 		        {
             	 	  desc = "Notebook " + config_.nextwork;
-            	       	++config_.nextwork;
+            	       	  ++config_.nextwork;
 		        }
             shell.new_notebook(desc, _.bind(result.notebook_loaded, this, null));
         },
