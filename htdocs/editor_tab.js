@@ -444,14 +444,15 @@ var editor = function () {
         new_notebook: function() {
             if(isNaN(config_.nextwork))
                 config_.nextwork = 1;
+                //changes made for naming a notebook
                 var desc;
 		    var name=prompt("Please enter a name","Notebook");
 		    if(name!=null)
 		    { desc=name;}
 		       else
 		        {
-            	 desc = "Notebook " + config_.nextwork;
-            	++config_.nextwork;
+            	 	  desc = "Notebook " + config_.nextwork;
+            	       	++config_.nextwork;
 		        }
             shell.new_notebook(desc, _.bind(result.notebook_loaded, this, null));
         },
