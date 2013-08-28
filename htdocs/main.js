@@ -39,13 +39,6 @@ var oob_handlers = {
     }
 };
 
-var oob_msg_handlers = {
-    "password": function(v, callback) {
-        var x = prompt(v);
-        callback(x);
-    }
-};
-
 function main_init() {
     init_shareable_link_box();
     init_editable_title_box();
@@ -91,7 +84,6 @@ function main_init() {
             oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
         }, 
         on_oob_message: function(v, callback) {
-            console.log("ON OOB MESSAGE");
             try {
                 v = v.value.json();
                 oob_msg_handlers[v[0]] && oob_msg_handlers[v[0]](v.slice(1), callback);

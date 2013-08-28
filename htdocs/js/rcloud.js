@@ -128,5 +128,18 @@ RCloud.create = function(rcloud_ocaps) {
             }
         }
     };
+
+    // javascript.R
+    rcloud.setup_js_installer = function(v, k) {
+        rcloud_ocaps.setup_js_installer(v, k || _.identity);
+    };
+
+    rcloud.modules = {};
+    rcloud.setup_js_installer(function(name, content, k) {
+        var result = eval(content);
+        rcloud.modules[name] = result;
+        k(result);
+    });
+
     return rcloud;
 };

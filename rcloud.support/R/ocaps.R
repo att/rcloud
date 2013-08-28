@@ -18,6 +18,9 @@ initial.ocaps <- function()
       get_users=make.oc(rcloud.get.users),
       rename_notebook=make.oc(rcloud.rename.notebook),
 
+      # javascript.R
+      setup_js_installer=make.oc(rcloud.setup.js.installer),
+      
       # file upload ocaps
       file_upload=list(
         create=make.oc(rcloud.upload.create.file),
@@ -40,4 +43,24 @@ initial.ocaps <- function()
     ## rcloud.search=make.oc(rcloud.search),
     ## rcloud.load.user.config=make.oc(rcloud.load.user.config)
     )
+}
+
+wrap.js.fun <- function(s)
+{
+  if (class(s) != "javascript_function")
+    stop("Can only wrap 'javascript_function's");
+  function(...) {
+    x <- self.oobMessage(list(s, ...))
+    x
+  }
+}
+
+wrap.all.js.funs <- function(v)
+{
+  if (class(v) == 'javascript_function')
+    wrap.js.fun(v)
+  else if (class(v) == 'list')
+    lapply(v, wrap.all.js.funs)
+  else
+    v
 }
