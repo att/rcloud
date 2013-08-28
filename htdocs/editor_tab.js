@@ -448,10 +448,10 @@ var editor = function () {
                 var desc; 
                 var name=prompt("Please enter a name","Notebook");
                 if(name!=null)
-                { desc=name;
+                { desc=name;//stores the name entered by the user
                 }
                 else
-                {	desc = "Notebook " + config_.nextwork;
+                {	desc = "Notebook " + config_.nextwork;//default naming convention
                 	++config_.nextwork;
                 }
                 //end of changes
