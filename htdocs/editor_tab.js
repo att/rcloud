@@ -445,22 +445,24 @@ var editor = function () {
             if(isNaN(config_.nextwork))
                 config_.nextwork = 1;
                 //changes made for naming a notebook
-                var desc;
-		    var name=prompt("Please enter a name","Notebook");
-		    if(name!=null)
-		    { desc=name;}
-		       else
-		        {
-            	 	  desc = "Notebook " + config_.nextwork;
-            	       	  ++config_.nextwork;
-		        }
-            shell.new_notebook(desc, _.bind(result.notebook_loaded, this, null));
+                var desc; 
+                var name=prompt("Please enter a name","Notebook");
+                if(name!=null)
+                { desc=name;
+                }
+                else
+                {	desc = "Notebook " + config_.nextwork;
+                	++config_.nextwork;
+                }
+                //end of changes
+                	shell.new_notebook(desc, _.bind(result.notebook_loaded, this, null));
         },
         rename_notebook: function(gistname, newname) {
             rcloud.rename_notebook(gistname, newname, _.bind(result.notebook_loaded, this, null));
         },
         remove_notebook: function(node) {
-            if(node.root === 'alls') {
+            if(node.root === 'alls') 
+            {
                 if(node.user === username_)
                     delete config_.all_books[node.gistname];
             }
