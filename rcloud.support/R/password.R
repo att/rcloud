@@ -1,2 +1,13 @@
 #function to request a password popup
-password <- function(prompt="Please enter your password") self.oobMessage(list("password", as.character(prompt)[1]))
+
+password <- function(prompt)
+{
+  caps <- rcloud.install.js.module(
+            "password", "({
+  prompt: function(v, k) {
+    var x = prompt(v);
+    k(x);
+  }
+})");
+  caps$prompt(prompt)
+}
