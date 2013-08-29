@@ -116,6 +116,8 @@ configure.rcloud <- function () {
 
   ## forward our HTTP handler so Rserve can use it
   .GlobalEnv$.http.request <- .http.request
+  ## forward oc.init
+  .GlobalEnv$oc.init <- oc.init
 
   debug.override <- FALSE
   if (nzchar(Sys.getenv("DEBUG"))) {
