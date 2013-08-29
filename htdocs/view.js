@@ -18,7 +18,7 @@ function view_init() {
             var notebook = getURLParameter("notebook"),
                 version = getURLParameter("version");
             shell.load_notebook(notebook, version, function() {
-                shell.notebook.controller.run_all();
+                shell.notebook.controller.run_all(Notebook.hide_r_source);
                 _.each(shell.notebook.view.sub_views, function(cell_view) {
                     cell_view.hide_buttons();
                 });
