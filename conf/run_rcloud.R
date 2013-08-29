@@ -2,6 +2,9 @@
 ##installed <- gsub(".*/([^/]+)/DESCRIPTION$","\\1",Sys.glob(paste0(.libPaths(),"/*/DESCRIPTION")))
 installed <- gsub(".*/([^/]+)/DESCRIPTION$","\\1",Sys.glob(paste0(.libPaths(),"/rcloud.support/DESCRIPTION")))
 
+## we will deliberatly load rcloud.support outside of Rserve just to get the installation support - so we can silence the load warning
+options(rcs.silence.loadcheck=TRUE)
+
 if ("rcloud.support" %in% installed && is.function(try(rcloud.support:::check.installation, silent=TRUE))) rcloud.support:::check.installation() else {
   cat("\n***** RCloud is not properly installed, attempting to install ... *****\n\n")
   install.packages("rcloud.support",,c("http://rforge.net","http://r.research.att.com"),type='source')
@@ -12,4 +15,4 @@ args <- commandArgs(trailingOnly=TRUE)
 
 debug <- isTRUE(nzchar(Sys.getenv("DEBUG")))
 
-Rserve::Rserve(debug, args=c("--RS-conf", args[1], "--RS-source", args[2], "--vanilla", "--no-save"))
+Rserve::Rserve(debug, args=c("--RS-conf", args[1], "--vanilla", "--no-save"))
