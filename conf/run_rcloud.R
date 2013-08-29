@@ -11,4 +11,5 @@ if ("rcloud.support" %in% installed && is.function(try(rcloud.support:::check.in
 args <- commandArgs(trailingOnly=TRUE)
 
 debug <- isTRUE(nzchar(Sys.getenv("DEBUG")))
-Rserve::Rserve(debug, args=c("--RS-conf", args[1], "--vanilla", "--no-save"))
+
+Rserve::Rserve(debug, args=c("--RS-conf", args[1], "--RS-source", args[2], "--vanilla", "--no-save"))

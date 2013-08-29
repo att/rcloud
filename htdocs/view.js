@@ -6,7 +6,11 @@ function view_init() {
     rclient = RClient.create({
         debug: false,
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
-        on_connect: function() {
+        on_connect: function(ocaps) {
+            rcloud = RCloud.create(ocaps.rcloud);
+            rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {
+                rclient.post_response(hello);
+            });
             $("#view-source").click(function() {
                 window.location = "main.html?notebook=" + shell.gistname();
             });
@@ -14,7 +18,7 @@ function view_init() {
             var notebook = getURLParameter("notebook"),
                 version = getURLParameter("version");
             shell.load_notebook(notebook, version, function() {
-                shell.notebook.controller.run_all();
+                shell.notebook.controller.run_all(Notebook.hide_r_source);
                 _.each(shell.notebook.view.sub_views, function(cell_view) {
                     cell_view.hide_buttons();
                 });

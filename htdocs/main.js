@@ -39,13 +39,6 @@ var oob_handlers = {
     }
 };
 
-var oob_msg_handlers = {
-    "password": function(v, callback) {
-        var x = prompt(v);
-        callback(x);
-    }
-};
-
 function main_init() {
     init_shareable_link_box();
     init_editable_title_box();
@@ -54,7 +47,12 @@ function main_init() {
     rclient = RClient.create({
         debug: false,
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
-        on_connect: function() {
+        on_connect: function(ocaps) {
+            rcloud = RCloud.create(ocaps.rcloud);
+            rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {
+                rclient.post_response(hello);
+            });
+
             $("#new-md-cell-button").click(function() {
                 shell.new_markdown_cell("", "markdown");
                 var vs = shell.notebook.view.sub_views;
@@ -86,7 +84,6 @@ function main_init() {
             oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
         },
         on_oob_message: function(v, callback) {
-            console.log("ON OOB MESSAGE");
             try {
                 v = v.value.json();
                 oob_msg_handlers[v[0]] && oob_msg_handlers[v[0]](v.slice(1), callback);
