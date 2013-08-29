@@ -369,6 +369,12 @@ function dcplot(frame, groupname, definition) {
             while(hash[base + n]) ++n;
             return base + n;
         }
+        function get_levels(dim) {
+            var levels = null;
+            if(_.has(dims, dim) && mhas(accessor(dims[dim]), 'attrs', 'levels'))
+                levels = accessor(dims[dim]).attrs.levels;
+            return levels;
+        }
         var callbacks = {
             base: function() {
                 if(!('div' in defn))
@@ -388,8 +394,8 @@ function dcplot(frame, groupname, definition) {
                 if(!_.has(defn, 'ordering')) {
                     // note it's a little messy to have this as a property of the chart rather than
                     // the group, but dc.js sometimes needs an ordering and sometimes doesn't
-                    if(_.has(dims, defn.dimension) && mhas(accessor(dims[defn.dimension]), 'attrs', 'levels')) {
-                        var levels = accessor(dims[defn.dimension]).attrs.levels;
+                    var levels = get_levels(defn.dimension);
+                    if(levels) {
                         var rmap = _.object(levels, _.range(levels.length));
                         // the ordering function uses a reverse map of the levels
                         defn.ordering = function(p) {
@@ -404,9 +410,20 @@ function dcplot(frame, groupname, definition) {
             stackable: function() {
             },
             coordinateGrid: function() {
+                var levels = get_levels(defn.dimension);
+                if(levels && !('x.transform' in defn))
+                    defn['x.transform'] = dc.units.ordinal;
+
+                var is_ordinal = defn['x.transform'] === dc.units.ordinal;
+                if(is_ordinal) {
+                    if(!('x.domain' in defn))
+                        if(levels)
+                            defn['x.domain'] = levels;
+                }
+
                 // not a default because we must construct a new object each time
                 if(!('x.transform' in defn))
-                    defn['x.transform'] = d3.scale.linear();
+                    defn['x.transform'] = levels ? d3.scale.ordinal() : d3.scale.linear();
                 if(!('y.transform' in defn))
                     defn['y.transform'] = d3.scale.linear();
 
@@ -639,6 +656,8 @@ function dcplot(frame, groupname, definition) {
                 var xtrans = defn['x.transform'];
                 if(_.has(defn, 'x.domain'))
                     xtrans.domain(defn['x.domain']);
+                else if(xtrans === dc.units.ordinal)
+                    xtrans.domain(_.pluck(groups[defn.group].all(), 'key'));
                 chart.x(xtrans)
                     .xUnits(defn['x.units']);
                 if(_.has(defn, 'x.round'))
