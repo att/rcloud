@@ -56,19 +56,16 @@ initial.ocaps <- function()
 
 wrap.js.fun <- function(s)
 {
-  if (class(s) != "javascript_function")
+  if (!inherits(s, "javascript_function"))
     stop("Can only wrap 'javascript_function's");
-  function(...) {
-    x <- self.oobMessage(list(s, ...))
-    x
-  }
+  function(...) self.oobMessage(list(s, ...))
 }
 
 wrap.all.js.funs <- function(v)
 {
-  if (class(v) == 'javascript_function')
+  if (inherits(v, 'javascript_function'))
     wrap.js.fun(v)
-  else if (class(v) == 'list')
+  else if (is.list(v))
     lapply(v, wrap.all.js.funs)
   else
     v
