@@ -447,11 +447,11 @@ var editor = function () {
                 //changes made for naming a notebook
                 var desc; 
                 var name=prompt("Please enter a name","Notebook");
-                if(name!=null)
-                { desc=name;//stores the name entered by the user
+                if(name!=null){ 
+                    desc=name;//stores the name entered by the user
                 }
-                else
-                {	desc = "Notebook " + config_.nextwork;//default naming convention
+                else {	
+                    desc = "Notebook " + config_.nextwork;//default naming convention
                 	++config_.nextwork;
                 }
                 //end of changes
@@ -461,8 +461,7 @@ var editor = function () {
             rcloud.rename_notebook(gistname, newname, _.bind(result.notebook_loaded, this, null));
         },
         remove_notebook: function(node) {
-            if(node.root === 'alls') 
-            {
+            if(node.root === 'alls') {
                 if(node.user === username_)
                     delete config_.all_books[node.gistname];
             }
