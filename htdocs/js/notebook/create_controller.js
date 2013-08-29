@@ -197,11 +197,17 @@ Notebook.create_controller = function(model)
         update_cell: function(cell_model) {
             this.update_notebook(model.update_cell(cell_model));
         },
-        run_all: function() {
+        run_all: function(k) {
             var changes = this.refresh_cells();
             this.update_notebook(changes);
+            var n = model.notebook.length;
+            function bump_executed() {
+                --n;
+                if (n === 0)
+                    k && k();
+            }
             _.each(model.notebook, function(cell_model) {
-                cell_model.controller.execute();
+                cell_model.controller.execute(bump_executed);
             });
         }
     };
