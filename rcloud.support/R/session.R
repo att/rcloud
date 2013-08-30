@@ -34,6 +34,8 @@ session.init <- function(...) {
 }
 
 reset.session <- function() {
-  .session$knitr.env <- new.env(parent=environment())
+  ## use the global workspace as the parent to avoid long lookups across irrelevant namespaces
+  .session$knitr.env <- new.env(parent=.GlobalEnv)
+  ## FIXME: we should reset the knitr graphics state which lingers as well as the current device which is dirty at this point
   NULL
 }

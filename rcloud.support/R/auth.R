@@ -34,10 +34,3 @@ RC.authenticate <- function(v, check.only=FALSE)
   check.token(v[[1]]) != FALSE
 }
 
-oc.init <- function(v)
-{
-  if (RC.authenticate(v)) {
-    initial.ocaps()
-  } else
-    NULL
-}
