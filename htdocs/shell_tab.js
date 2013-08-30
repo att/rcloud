@@ -187,7 +187,7 @@ var shell = (function() {
 
     function show_fork_or_input_elements() {
         var fork_revert = $('#fork-revert-notebook');
-        if(notebook_model.read_only) {
+        if(notebook_model.read_only()) {
             $('#input-div').hide();
             fork_revert.text(is_mine_ ? 'Revert' : 'Fork');
             fork_revert.show();
@@ -297,7 +297,7 @@ var shell = (function() {
             if(is_mine && !version)
                 throw "unexpected revert of current version";
             var that = this;
-            notebook_model.read_only = false;
+            notebook_model.read_only(false);
             this.notebook.controller.fork_or_revert_notebook(is_mine, gistname, version, function(notebook) {
                 gistname_ = notebook.id;
                 version_ = null;
