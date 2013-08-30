@@ -1,3 +1,12 @@
+make.oc <- function(fun) .Call(Rserve_oc_register, fun)
+
+oc.init <- function(...) { ## this is the payload of the OCinit message
+  ## remove myself from the global env since my job is done
+  if (identical(.GlobalEnv$oc.init, oc.init)) rm(oc.init, envir=.GlobalEnv)
+  ## simply send the cap that authenticates and returns supported caps
+  make.oc(function(v) if (RC.authenticate(v)) initial.ocaps() else NULL)
+}
+
 initial.ocaps <- function()
 {
   list(
@@ -17,6 +26,7 @@ initial.ocaps <- function()
       fetch_deferred_result=make.oc(rcloud.fetch.deferred.result),
       get_users=make.oc(rcloud.get.users),
       rename_notebook=make.oc(rcloud.rename.notebook),
+      call_notebook=make.oc(rcloud.call.notebook),
 
       # javascript.R
       setup_js_installer=make.oc(rcloud.setup.js.installer),
@@ -47,19 +57,16 @@ initial.ocaps <- function()
 
 wrap.js.fun <- function(s)
 {
-  if (class(s) != "javascript_function")
+  if (!inherits(s, "javascript_function"))
     stop("Can only wrap 'javascript_function's");
-  function(...) {
-    x <- self.oobMessage(list(s, ...))
-    x
-  }
+  function(...) self.oobMessage(list(s, ...))
 }
 
 wrap.all.js.funs <- function(v)
 {
-  if (class(v) == 'javascript_function')
+  if (inherits(v, 'javascript_function'))
     wrap.js.fun(v)
-  else if (class(v) == 'list')
+  else if (is.list(v))
     lapply(v, wrap.all.js.funs)
   else
     v

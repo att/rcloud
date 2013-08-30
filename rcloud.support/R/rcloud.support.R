@@ -55,6 +55,42 @@ rcloud.get.notebook <- function(id, version = NULL) {
   res
 }
 
+## this evaluates a notebook for its result
+## this is extremely experimental -- use at your own risk
+## the meaining of args is ambiguous and probably a bad idea - it jsut makes the client code a bit easier to write ...
+## <hack>if the result is a function, it will be treated like the run() function in a FastRWeb script</hack>
+rcloud.call.notebook <- function(id, version = NULL, args = NULL) {
+  res <- get.gist(.session$rgithub.context, id, version)
+  if (res$ok) {
+    args <- as.list(args)
+    ## this is a hack for now - we should have a more general infrastructure for this ...
+    ## get all files
+    p <- res$content$files
+    n <- names(p)
+    ## extract the integer number
+    i <- as.integer(gsub("^\\D+(\\d+)\\..*", "\\1", n))
+    result <- NULL
+    e <- new.env(parent=.GlobalEnv)
+    if (is.list(args) && length(args)) for (i in names(args)) e[[i]] <- args[[i]]
+    ## sort 
+    for (o in p[match(sort.int(i), i)]) {
+      if (grepl("^part.*\\.R$", o$filename)) { ## R code
+        expr <- parse(text=o$content)
+        result <- eval(expr, e)
+      } else if (grepl("^part.*\\.md", o$filename)) { ## markdown
+        ## FIXME: we ignore markdown for now ...
+      }
+    }
+    ## FastRWeb compatibility hack ... this should really go elsewhere ...
+    if (is.function(result)) {
+      require(FastRWeb)
+      l <- as.list(as.WebResult(do.call(result, args, envir=e)))
+      l[[1]] <- NULL ## FIXME: we assume "html" type here .. need to implement others ...
+      l
+    } else result
+  } else NULL
+}
+
 rcloud.update.notebook <- function(id, content) update.gist(.session$rgithub.context, id, content)
 
 rcloud.create.notebook <- function(content) create.gist(.session$rgithub.context, content)
@@ -116,6 +152,8 @@ configure.rcloud <- function () {
 
   ## forward our HTTP handler so Rserve can use it
   .GlobalEnv$.http.request <- .http.request
+  ## forward oc.init
+  .GlobalEnv$oc.init <- oc.init
 
   debug.override <- FALSE
   if (nzchar(Sys.getenv("DEBUG"))) {
