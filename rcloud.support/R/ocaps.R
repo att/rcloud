@@ -27,6 +27,7 @@ initial.ocaps <- function()
       get_users=make.oc(rcloud.get.users),
       rename_notebook=make.oc(rcloud.rename.notebook),
       call_notebook=make.oc(rcloud.call.notebook),
+      call_fastrweb_notebook=make.oc(rcloud.call.FastRWeb.notebook),
 
       # javascript.R
       setup_js_installer=make.oc(rcloud.setup.js.installer),

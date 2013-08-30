@@ -81,14 +81,18 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL) {
         ## FIXME: we ignore markdown for now ...
       }
     }
-    ## FastRWeb compatibility hack ... this should really go elsewhere ...
-    if (is.function(result)) {
-      require(FastRWeb)
-      l <- as.list(as.WebResult(do.call(result, args, envir=e)))
-      l[[1]] <- NULL ## FIXME: we assume "html" type here .. need to implement others ...
-      l
-    } else result
+    result
   } else NULL
+}
+
+rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
+  result <- rcloud.call.notebook(id, version, args)
+  if (is.function(result)) {
+    require(FastRWeb)
+    l <- as.list(as.WebResult(do.call(result, args, envir=e)))
+    l[[1]] <- NULL ## FIXME: we assume "html" type here .. need to implement others ...
+    l
+  } else result
 }
 
 rcloud.update.notebook <- function(id, content) update.gist(.session$rgithub.context, id, content)
