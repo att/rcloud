@@ -89,7 +89,7 @@ rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
   result <- rcloud.call.notebook(id, version, args)
   if (is.function(result)) {
     require(FastRWeb)
-    l <- as.list(as.WebResult(do.call(result, args, envir=e)))
+    l <- as.list(as.WebResult(do.call(result, args, envir=environment(result))))
     l[[1]] <- NULL ## FIXME: we assume "html" type here .. need to implement others ...
     l
   } else result
