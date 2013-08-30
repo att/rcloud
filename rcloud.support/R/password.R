@@ -2,12 +2,8 @@
 
 password <- function(prompt)
 {
-  caps <- rcloud.install.js.module(
-            "password", "({
-  prompt: function(v, k) {
-    var x = prompt(v);
-    k(x);
-  }
-})");
+  path <- system.file("javascript", "password.js", package="rcloud.support");
+  caps <- rcloud.install.js.module("password",
+                                   paste(readLines(path), collapse='\n'))
   caps$prompt(prompt)
 }
