@@ -1873,10 +1873,8 @@ Notebook.create_controller = function(model)
                 // the latest history, timestamp, etc.
                 if(changes.length)
                     that.update_notebook(changes, gistname, k);
-                else {
-                    //show_or_hide_cursor();
+                else
                     rcloud.load_notebook(gistname, null, k);
-                }
             }
             if(is_mine) // revert: get HEAD, calculate changes from there to here, and apply
                 rcloud.load_notebook(gistname, null, function(notebook) {
@@ -1945,7 +1943,6 @@ Notebook.create_controller = function(model)
             }
             // not awesome to callback to someone else here
             k = k || _.bind(editor.notebook_loaded, editor, null);
-            //show_or_hide_cursor();
             var k2 = function(notebook) {
                 current_gist_ = notebook;
                 k(notebook);
