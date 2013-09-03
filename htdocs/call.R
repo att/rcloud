@@ -24,8 +24,8 @@ run <- function(url, query, body, headers)
     query <- as.list(query)
     notebook <- query$notebook
 #    list(paste0("<pre>",paste(capture.output(print(caps)),collapse='\n'),"</pre>"))
-    RSclient::RS.eval.qap(c, as.call(list(caps$rcloud$call_notebook, notebook, NULL, query)))
+    RSclient::RS.eval.qap(c, as.call(list(caps$rcloud$call_fastrweb_notebook, notebook, NULL, query)))
   }, error=function(e) {
-    list(paste("Unable to authenticate + execute.", paste(as.character(e), collapse='\n')), "text/html")
+    list(paste("Unable to authenticate + execute.<p><pre>", paste(as.character(e), collapse='\n'), "</pre>"), "text/html")
   })
 }
