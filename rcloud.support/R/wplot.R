@@ -38,15 +38,11 @@ wplot <- function(x, y, ...) {
   }
 }
 
+## FIXME fix this
 select <- function(what, group) {
   if (missing(group)) group <- .session$group
   if (is.numeric(what)) what <- seq.int(.session$group.len) %in% what 
   invisible(self.oobSend(list("select", as.integer(group), as.integer(what))))
-}
-
-fplot <- function()
-{
-  deferred.rcloud.result(list("iframe", "http://cscheid.github.io/lux/demos/osm/osm.html", c(960, 600)))
 }
 
 wgeoplot <- function(lats, lons, col=1L)
