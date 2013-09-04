@@ -1,5 +1,4 @@
 exportPattern("^rcloud.*") ## rcloud API
 exportPattern("^w.*")      ## wplot, wdc, wgeo...
-exportPattern("plot$")     ## other plots ... (currenly jsut fplot)
 ## other user-visible functions
-export(password, select, check.installation)
+export(password, select, check.installation, show.iframe)
