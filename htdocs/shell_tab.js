@@ -72,14 +72,6 @@ var shell = (function() {
     if(entry_div.length)
         setup_command_entry(entry_div);
 
-    function handle_iframe(data) {
-        var div = $("<iframe src='"
-                    + data[1] + "' width='"
-                    + data[2][0] + "' height='"
-                    + data[2][1] + "' frameborder=0></iframe>");
-        return div;
-    }
-
     function handle_lux_osm_plot(data) {
         var lats = data[1],
             lons = data[2],
@@ -132,7 +124,6 @@ var shell = (function() {
     }
 
     var handlers = {
-        "iframe": handle_iframe,
         "lux_osm_plot": handle_lux_osm_plot,
         "lux_tour_plot": handle_lux_tour_plot,
         "select": handle_select,
