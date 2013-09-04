@@ -1,7 +1,3 @@
-// FIXME this is about to become the most important object,
-// so lots of little things are temporarily being moved here
-//////////////////////////////////////////////////////////////////////////////
-
 var shell = (function() {
 
     var version_ = null,
@@ -71,65 +67,6 @@ var shell = (function() {
     var input_widget = null;
     if(entry_div.length)
         setup_command_entry(entry_div);
-
-    function handle_lux_osm_plot(data) {
-        var lats = data[1],
-            lons = data[2],
-            color = data[3],
-            width = data[4][0],
-            height = data[4][1];
-        return LuxChart.lux_osm_plot(lats, lons, color, width, height);
-    }
-
-    function handle_lux_tour_plot(data) {
-        var lst = data[1];
-        return LuxChart.lux_tour_plot(lst);
-    }
-
-    function handle_select(data) {
-        var group = data[1];
-        var sel = data[2];
-        Chart.set_selections(group, sel);
-    }
-
-    function handle_dcchart(data) {
-        var charts;
-        try {
-            charts = dcrchart.translate(data[2]);
-        }
-        catch(e) {
-            return $('<p/>').append("Exception creating dc code: " + e);
-        }
-        var rdata = data[1];
-        setTimeout(function() { charts.dcfunc(rdata); }, 10);
-        return charts.elem;
-    }
-
-    function handle_dcplot(data) {
-        var charts, elem;
-        try {
-            charts = wdcplot.translate.apply(null,data.slice(1));
-        }
-        catch(e) {
-            return $('<p/>').append("Exception creating dcplot definition: " + e);
-        }
-        try {
-            var dccharts = dcplot(charts.dataframe, charts.groupname, charts.defn);
-            _.extend(window.charts, dccharts);
-        }
-        catch(e) {
-            return wdcplot.format_error(e);
-        }
-        return charts.elem;
-    }
-
-    var handlers = {
-        "lux_osm_plot": handle_lux_osm_plot,
-        "lux_tour_plot": handle_lux_tour_plot,
-        "select": handle_select,
-        "dcchart": handle_dcchart,
-        "dcplot": handle_dcplot
-    };
 
     var notebook_model = Notebook.create_model();
     var notebook_view = Notebook.create_html_view(notebook_model, $("#output"));
@@ -220,12 +157,6 @@ var shell = (function() {
             result[0].on_detach = function(callback) { on_detach = callback; };
 
             return result[0];
-        }, handle: function(objtype, data, cell) {
-            if (_.isUndefined(handlers[objtype])) {
-                console.log("Shell can't handle object of type", objtype);
-                return undefined;
-            } else
-                return handlers[objtype].call(this, data, cell);
         }, new_markdown_cell: function(content) {
             return notebook_controller.append_cell(content, "Markdown");
         }, new_interactive_cell: function(content) {

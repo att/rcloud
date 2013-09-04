@@ -498,6 +498,12 @@ return {
         k(function() { return plot.plot; });
         // k("<div>AKSJHDA</div>");
         // k(plot.plot);
+    },
+
+    handle_select: function (data, k) {
+        var group = data[1];
+        var sel = data[2];
+        k(function() { return Chart.set_selections(group, sel); });
     }
 };
 

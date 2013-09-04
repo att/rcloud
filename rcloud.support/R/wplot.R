@@ -40,38 +40,12 @@ wplot <- function(x, y, ...) {
 
 ## FIXME fix this
 select <- function(what, group) {
+  path <- system.file("javascript", "wplot.js", package="rcloud.support");
+  caps <- rcloud.install.js.module("wplot",
+                                   paste(readLines(path), collapse='\n'))
+
   if (missing(group)) group <- .session$group
-  if (is.numeric(what)) what <- seq.int(.session$group.len) %in% what 
-  invisible(self.oobSend(list("select", as.integer(group), as.integer(what))))
-}
+  if (is.numeric(what)) what <- seq.int(.session$group.len) %in% what
 
-wgeoplot <- function(lats, lons, col=1L)
-{
-  if (is.null(dim(col))) col <- col2rgb(col) / 255
-  #col <- rep(col, length.out = 3 * length(lats))
-  col <- as.double(col)
-  deferred.rcloud.result(list("lux_osm_plot", lats, lons, col, c(960, 600)))
-}
-
-wtour <- function(...)
-{
-  opts <- list(...)
-  deferred.rcloud.result((list("lux_tour_plot", opts)))
-}
-
-wdcchart <- function(data, dcexpr)
-{
-  deferred.rcloud.result(list("dcchart", data, substitute(dcexpr)))
-}
-
-wdcplot <- function(data, dims, groups, charts)
-{
-  deferred.rcloud.result(list("dcplot", data, substitute(dims), substitute(groups), substitute(charts)))
-}
-
-wplot2 <- function()
-{
-  deferred.rcloud.result(function() {
-    "<a href='http://www.yahoo.com'>Yeah</a>"
-  })
+  deferred.rcloud.result(function() caps$handle_select(list("select", as.integer(group), as.integer(what))))
 }
