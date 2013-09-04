@@ -337,6 +337,10 @@ dc.utils.GroupStack = function () {
     };
 };
 
+dc.utils.isNumber = function(n) {
+    return n===+n;
+};
+
 dc.utils.isFloat = function (n) {
     return n===+n && n!==(n|0);
 };
@@ -642,6 +646,17 @@ dc.baseChart = function (_chart) {
         _ordering = o;
         _chart.expireCache();
         return _chart;
+    };
+
+    _chart.computeOrderedGroups = function() {
+        var data = _chart.group().all().slice(0); // clone
+        if(data.length < 2)
+            return data;
+        var compf = dc.utils.isNumber(_chart.ordering()(data[0]))
+                ? function(a, b) { return _chart.ordering()(a) - _chart.ordering()(b); }
+            : function(a, b) { return _chart.ordering()(a).localeCompare(_chart.ordering()(b)); };
+        data.sort(compf);
+        return data;
     };
 
     _chart.filterAll = function () {
@@ -1147,6 +1162,9 @@ dc.coordinateGridChart = function (_chart) {
     function prepareXAxis(g) {
         if (_chart.elasticX() && !_chart.isOrdinal()) {
             _x.domain([_chart.xAxisMin(), _chart.xAxisMax()]);
+        }
+        else if (_chart.isOrdinal() && _x.domain().length===0) {
+            _x.domain(_chart.computeOrderedGroups().map(function(kv) { return kv.key; }));
         }
 
         if (_chart.isOrdinal()) {
@@ -2138,14 +2156,7 @@ dc.pieChart = function (parent, chartGroup) {
 
     function assemblePieData() {
         if (_slicesCap == Infinity) {
-            var data = _chart.group().all().slice(0); // clone
-            if(data.length < 2)
-                return data;
-            var compf = _.isNumber(_chart.ordering()(data[0]))
-                    ? function(a, b) { return _chart.ordering()(a) - _chart.ordering()(b); }
-                : function(a, b) { return _chart.ordering()(a).localeCompare(_chart.ordering()(b)); };
-            data.sort(compf);
-            return data;
+            return _chart.computeOrderedGroups();
         } else {
             var topRows = _chart.group().top(_slicesCap); // ordered by value
             var topRowsSum = d3.sum(topRows, _chart.valueAccessor());
