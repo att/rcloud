@@ -659,8 +659,6 @@ function dcplot(frame, groupname, definition) {
                 var xtrans = defn['x.scale'];
                 if(_.has(defn, 'x.domain'))
                     xtrans.domain(defn['x.domain']);
-                else if(defn['x.ordinal'])
-                    xtrans.domain(_.pluck(groups[defn.group].all(), 'key'));
                 chart.x(xtrans)
                     .xUnits(defn['x.units']);
                 if(_.has(defn, 'x.round'))
