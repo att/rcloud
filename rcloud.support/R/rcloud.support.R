@@ -58,7 +58,7 @@ rcloud.get.notebook <- function(id, version = NULL) {
 ## this evaluates a notebook for its result
 ## this is extremely experimental -- use at your own risk
 ## the meaining of args is ambiguous and probably a bad idea - it jsut makes the client code a bit easier to write ...
-## <hack>if the result is a function, it will be treated like the run() function in a FastRWeb script</hack>
+
 rcloud.call.notebook <- function(id, version = NULL, args = NULL) {
   res <- get.gist(.session$rgithub.context, id, version)
   if (res$ok) {
