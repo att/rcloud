@@ -1,5 +1,7 @@
 Notebook.create_model = function()
 {
+    var read_only = false;
+
     /* note, the code below is a little more sophisticated than it needs to be:
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
 
@@ -10,7 +12,6 @@ Notebook.create_model = function()
             return 0;
     }
     return {
-        read_only: false,
         notebook: [],
         views: [], // sub list for pubsub
         clear: function() {
@@ -119,6 +120,15 @@ Notebook.create_model = function()
                                 return changes;
                             },
                             []);
+        },
+        read_only: function(readonly) {
+            if(!_.isUndefined(readonly)) {
+                read_only = readonly;
+                _.each(this.views, function(view) {
+                    view.set_readonly(read_only);
+                });
+            }
+            return read_only;
         },
         json: function() {
             return _.map(this.notebook, function(cell_model) {

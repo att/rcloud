@@ -187,7 +187,7 @@ var shell = (function() {
 
     function show_fork_or_input_elements() {
         var fork_revert = $('#fork-revert-notebook');
-        if(notebook_model.read_only) {
+        if(notebook_model.read_only()) {
             $('#input-div').hide();
             fork_revert.text(is_mine_ ? 'Revert' : 'Fork');
             fork_revert.show();
@@ -270,12 +270,12 @@ var shell = (function() {
             result[0].on_detach = function(callback) { on_detach = callback; };
 
             return result[0];
-        }, handle: function(objtype, data, cell) {
+        }, handle: function(objtype, data) {
             if (_.isUndefined(handlers[objtype])) {
                 console.log("Shell can't handle object of type", objtype);
                 return undefined;
             } else
-                return handlers[objtype].call(this, data, cell);
+                return handlers[objtype].call(this, data);
         }, new_markdown_cell: function(content) {
             return notebook_controller.append_cell(content, "Markdown");
         }, new_interactive_cell: function(content) {
@@ -297,7 +297,7 @@ var shell = (function() {
             if(is_mine && !version)
                 throw "unexpected revert of current version";
             var that = this;
-            notebook_model.read_only = false;
+            notebook_model.read_only(false);
             this.notebook.controller.fork_or_revert_notebook(is_mine, gistname, version, function(notebook) {
                 gistname_ = notebook.id;
                 version_ = null;

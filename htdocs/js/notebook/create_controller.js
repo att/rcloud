@@ -16,18 +16,8 @@ Notebook.create_controller = function(model)
         return [cell_controller, model.insert_cell(cell_model, id)];
     }
 
-    function show_or_hide_cursor() {
-        if(model.read_only)
-            $('.ace_cursor-layer').hide();
-        else
-            $('.ace_cursor-layer').show();
-    }
-
     function on_load(k, version, notebook) {
         this.clear();
-        // is there anything else to gist permissions?
-        // certainly versioning figures in here too
-        model.read_only = version != null || notebook.user.login != rcloud.username();
         var parts = {}; // could rely on alphabetic input instead of gathering
         _.each(notebook.files, function (file) {
             var filename = file.filename;
@@ -40,7 +30,8 @@ Notebook.create_controller = function(model)
         });
         for(var i in parts)
             append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
-        show_or_hide_cursor();
+        // is there anything else to gist permissions?
+        model.read_only(version != null || notebook.user.login != rcloud.username());
         current_gist_ = notebook;
         k && k(notebook);
     }
@@ -98,7 +89,7 @@ Notebook.create_controller = function(model)
             var that = this;
             rcloud.create_notebook(content, function(notebook) {
                 that.clear();
-                model.read_only = notebook.user.login != rcloud.username();
+                model.read_only(notebook.user.login != rcloud.username());
                 current_gist_ = notebook;
                 k && k(notebook);
             });
@@ -110,31 +101,29 @@ Notebook.create_controller = function(model)
                 // the latest history, timestamp, etc.
                 if(changes.length)
                     that.update_notebook(changes, gistname, k);
-                else {
-                    // also less than awesome separation of concerns here, wtf?
-                    show_or_hide_cursor();
+                else
                     rcloud.load_notebook(gistname, null, k);
-                }
             }
-            if(is_mine) // get HEAD, calculate changes from there to here, and apply
+            if(is_mine) // revert: get HEAD, calculate changes from there to here, and apply
                 rcloud.load_notebook(gistname, null, function(notebook) {
                     var changes = find_changes_from(notebook);
                     update_if(changes, gistname, k);
                 });
-            else rcloud.fork_notebook(gistname, function(notebook) {
-                if(version) {
-                    // fork, then get changes from there to here, and apply
-                    var changes = find_changes_from(notebook);
-                    update_if(changes, notebook.id, k);
-                }
-                else
-                    that.load_notebook(notebook.id, null, k);
-            });
+            else // fork:
+                rcloud.fork_notebook(gistname, function(notebook) {
+                    if(version) {
+                        // fork, then get changes from there to here, and apply
+                        var changes = find_changes_from(notebook);
+                        update_if(changes, notebook.id, k);
+                    }
+                    else
+                        that.load_notebook(notebook.id, null, k);
+                });
         },
         update_notebook: function(changes, gistname, k) {
             if(!changes.length)
                 return;
-            if(model.read_only)
+            if(model.read_only())
                 throw "attempted to update read-only notebook";
             gistname = gistname || shell.gistname();
             function partname(id, language) {
@@ -182,8 +171,6 @@ Notebook.create_controller = function(model)
             }
             // not awesome to callback to someone else here
             k = k || _.bind(editor.notebook_loaded, editor, null);
-            // also less than awesome separation of concerns here, wtf?
-            show_or_hide_cursor();
             var k2 = function(notebook) {
                 current_gist_ = notebook;
                 k(notebook);
