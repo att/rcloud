@@ -143,22 +143,34 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             r_result_div.slideDown(150);
 
             // There's a list of things that we need to do to the output:
-            var uuid = rcloud.wplot_uuid;
+            var uuid = rcloud.deferred_knitr_uuid;
 
-            // capture interactive graphics
+            // capture deferred knitr results
             inner_div.find("pre code")
                 .contents()
                 .filter(function() {
                     return this.nodeValue.indexOf(uuid) !== -1;
                 }).parent().parent()
                 .each(function() {
-                    var uuids = this.childNodes[0].childNodes[0].data.substr(8,73).split("|");
                     var that = this;
-                    rcloud.resolve_deferred_result(uuids[1], function(data) {
+                    var uuids = this.childNodes[0].childNodes[0].data.substr(8,65).split("|");
+                    // FIXME monstrous hack: we rebuild the ocap from the string to
+                    // call it via rserve-js
+                    var ocap = [uuids[1]];
+                    ocap.r_attributes = { "class": "OCref" };
+                    var f = rclient._rserve.wrap_ocap(ocap);
+
+                    f(function(future) {
+                        var data = future();
                         $(that).replaceWith(function() {
-                            return shell.handle(data[0], data);
+                            return data;
                         });
                     });
+                    // rcloud.resolve_deferred_result(uuids[1], function(data) {
+                    //     $(that).replaceWith(function() {
+                    //         return shell.handle(data[0], data);
+                    //     });
+                    // });
                 });
             // highlight R
             inner_div

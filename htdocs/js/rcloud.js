@@ -32,7 +32,7 @@ RCloud.create = function(rcloud_ocaps) {
     rcloud.init_client_side_data = function() {
         var that = this;
         rcloud_ocaps.prefix_uuid(function(v) {
-            that.wplot_uuid = v;
+            that.deferred_knitr_uuid = v;
         });
     };
     rcloud.search = function(search_string, k) {
@@ -66,9 +66,6 @@ RCloud.create = function(rcloud_ocaps) {
     rcloud.fork_notebook = function(id, k) {
         k = rcloud_github_handler("rcloud.fork.notebook", k);
         rcloud_ocaps.fork_notebook(id, k);
-    };
-    rcloud.resolve_deferred_result = function(uuid, k) {
-        rcloud_ocaps.fetch_deferred_result(uuid, k || _.identity);
     };
     rcloud.get_users = function(user, k) {
         rcloud_ocaps.get_users(user, k || _.identity);

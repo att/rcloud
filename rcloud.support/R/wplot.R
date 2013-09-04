@@ -1,5 +1,8 @@
 ## scatterplot
 wplot <- function(x, y, ...) {
+  path <- system.file("javascript", "wplot.js", package="rcloud.support");
+  caps <- rcloud.install.js.module("wplot",
+                                   paste(readLines(path), collapse='\n'))
   opts <- list(...)
   if (missing(y)) {
     y <- x
@@ -29,9 +32,9 @@ wplot <- function(x, y, ...) {
     opts$group <- .session$group
   }
   if (!is.null(opts$kind)) {
-    deferred.rcloud.result(list("scatterplot",x,y,opts$kind,c(width,height),opts$group))
+    deferred.rcloud.result(function() caps$handle(list("scatterplot",x,y,opts$kind,c(width,height),opts$group)))
   } else {
-    deferred.rcloud.result(list("scatterplot",x,y,c(width,height),opts$group))
+    deferred.rcloud.result(function() caps$handle(list("scatterplot",x,y,c(width,height),opts$group)))
   }
 }
 
@@ -68,4 +71,11 @@ wdcchart <- function(data, dcexpr)
 wdcplot <- function(data, dims, groups, charts)
 {
   deferred.rcloud.result(list("dcplot", data, substitute(dims), substitute(groups), substitute(charts)))
+}
+
+wplot2 <- function()
+{
+  deferred.rcloud.result(function() {
+    "<a href='http://www.yahoo.com'>Yeah</a>"
+  })
 }
