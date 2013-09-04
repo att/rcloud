@@ -1067,7 +1067,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var RMode = require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
     var session = widget.getSession();
     var doc = session.doc;
-    widget.setReadOnly(cell_model.parent_model.read_only);
+    widget.setReadOnly(cell_model.parent_model.read_only());
 
     session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
@@ -1145,6 +1145,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
 
             this.show_result();
+        },
+        set_readonly: function(readonly) {
+            widget.setReadOnly(readonly);
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -1332,6 +1335,12 @@ Notebook.Cell.create_controller = function(cell_model)
 };
 Notebook.create_html_view = function(model, root_div)
 {
+    function show_or_hide_cursor(readonly) {
+        if(readonly)
+            $('.ace_cursor-layer').hide();
+        else
+            $('.ace_cursor-layer').show();
+    }
     var result = {
         model: model,
         sub_views: [],
@@ -1357,6 +1366,12 @@ Notebook.create_html_view = function(model, root_div)
             });
             this.sub_views.splice(cell_index, 1);
         },
+        set_readonly: function(readonly) {
+            show_or_hide_cursor(readonly);
+            _.each(this.sub_views, function(view) {
+                view.set_readonly(readonly);
+            });
+        },
         update_model: function() {
             return _.map(this.sub_views, function(cell_view) {
                 return cell_view.update_model();
@@ -1368,6 +1383,8 @@ Notebook.create_html_view = function(model, root_div)
 };
 Notebook.create_model = function()
 {
+    var read_only = false;
+
     /* note, the code below is a little more sophisticated than it needs to be:
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
 
@@ -1378,7 +1395,6 @@ Notebook.create_model = function()
             return 0;
     }
     return {
-        read_only: false,
         notebook: [],
         views: [], // sub list for pubsub
         clear: function() {
@@ -1488,6 +1504,15 @@ Notebook.create_model = function()
                             },
                             []);
         },
+        read_only: function(readonly) {
+            if(!_.isUndefined(readonly)) {
+                read_only = readonly;
+                _.each(this.views, function(view) {
+                    view.set_readonly(read_only);
+                });
+            }
+            return read_only;
+        },
         json: function() {
             return _.map(this.notebook, function(cell_model) {
                 return cell_model.json();
@@ -1513,18 +1538,8 @@ Notebook.create_controller = function(model)
         return [cell_controller, model.insert_cell(cell_model, id)];
     }
 
-    function show_or_hide_cursor() {
-        if(model.read_only)
-            $('.ace_cursor-layer').hide();
-        else
-            $('.ace_cursor-layer').show();
-    }
-
     function on_load(k, version, notebook) {
         this.clear();
-        // is there anything else to gist permissions?
-        // certainly versioning figures in here too
-        model.read_only = version != null || notebook.user.login != rcloud.username();
         var parts = {}; // could rely on alphabetic input instead of gathering
         _.each(notebook.files, function (file) {
             var filename = file.filename;
@@ -1537,7 +1552,8 @@ Notebook.create_controller = function(model)
         });
         for(var i in parts)
             append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
-        show_or_hide_cursor();
+        // is there anything else to gist permissions?
+        model.read_only(version != null || notebook.user.login != rcloud.username());
         current_gist_ = notebook;
         k && k(notebook);
     }
@@ -1595,7 +1611,7 @@ Notebook.create_controller = function(model)
             var that = this;
             rcloud.create_notebook(content, function(notebook) {
                 that.clear();
-                model.read_only = notebook.user.login != rcloud.username();
+                model.read_only(notebook.user.login != rcloud.username());
                 current_gist_ = notebook;
                 k && k(notebook);
             });
@@ -1607,31 +1623,29 @@ Notebook.create_controller = function(model)
                 // the latest history, timestamp, etc.
                 if(changes.length)
                     that.update_notebook(changes, gistname, k);
-                else {
-                    // also less than awesome separation of concerns here, wtf?
-                    show_or_hide_cursor();
+                else
                     rcloud.load_notebook(gistname, null, k);
-                }
             }
-            if(is_mine) // get HEAD, calculate changes from there to here, and apply
+            if(is_mine) // revert: get HEAD, calculate changes from there to here, and apply
                 rcloud.load_notebook(gistname, null, function(notebook) {
                     var changes = find_changes_from(notebook);
                     update_if(changes, gistname, k);
                 });
-            else rcloud.fork_notebook(gistname, function(notebook) {
-                if(version) {
-                    // fork, then get changes from there to here, and apply
-                    var changes = find_changes_from(notebook);
-                    update_if(changes, notebook.id, k);
-                }
-                else
-                    that.load_notebook(notebook.id, null, k);
-            });
+            else // fork:
+                rcloud.fork_notebook(gistname, function(notebook) {
+                    if(version) {
+                        // fork, then get changes from there to here, and apply
+                        var changes = find_changes_from(notebook);
+                        update_if(changes, notebook.id, k);
+                    }
+                    else
+                        that.load_notebook(notebook.id, null, k);
+                });
         },
         update_notebook: function(changes, gistname, k) {
             if(!changes.length)
                 return;
-            if(model.read_only)
+            if(model.read_only())
                 throw "attempted to update read-only notebook";
             gistname = gistname || shell.gistname();
             function partname(id, language) {
@@ -1679,8 +1693,6 @@ Notebook.create_controller = function(model)
             }
             // not awesome to callback to someone else here
             k = k || _.bind(editor.notebook_loaded, editor, null);
-            // also less than awesome separation of concerns here, wtf?
-            show_or_hide_cursor();
             var k2 = function(notebook) {
                 current_gist_ = notebook;
                 k(notebook);
