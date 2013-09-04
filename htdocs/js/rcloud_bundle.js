@@ -1122,7 +1122,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                     return this.nodeValue.indexOf(uuid) !== -1;
                 }).parent().parent()
                 .each(function() {
-                    debugger;
                     var that = this;
                     var uuids = this.childNodes[0].childNodes[0].data.substr(8,65).split("|");
                     // FIXME monstrous hack: we rebuild the ocap from the string to
@@ -1133,7 +1132,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
                     f(function(future) {
                         var data = future();
-                        debugger;
                         $(that).replaceWith(function() {
                             return data;
                         });

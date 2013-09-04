@@ -7,7 +7,6 @@ deferred.rcloud.result <- function(value) {
   uuid <- make.oc(value)
   if (is.null(.session$result.prefix.uuid))
     .session$result.prefix.uuid <- generate.uuid()
-  print(list("deferring", value, uuid))
   paste(.session$result.prefix.uuid, uuid, sep="|")
 }
 
