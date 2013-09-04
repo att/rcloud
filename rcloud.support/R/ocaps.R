@@ -23,7 +23,6 @@ initial.ocaps <- function()
       get_notebook=make.oc(rcloud.get.notebook),
       update_notebook=make.oc(rcloud.update.notebook),
       create_notebook=make.oc(rcloud.create.notebook),
-      fetch_deferred_result=make.oc(rcloud.fetch.deferred.result),
       get_users=make.oc(rcloud.get.users),
       rename_notebook=make.oc(rcloud.rename.notebook),
       call_notebook=make.oc(rcloud.call.notebook),

@@ -72,46 +72,6 @@ var shell = (function() {
     if(entry_div.length)
         setup_command_entry(entry_div);
 
-    function handle_scatterplot(data) {
-        function transpose(ar) {
-            return _.map(_.range(ar[0].length), function(i) {
-                return _.map(ar, function(lst) { return lst[i]; });
-            });
-        }
-
-        var opts = {
-            x: function(d) { return d[0]; },
-            y: function(d) { return d[1]; }
-        };
-        var row_based_data, group;
-
-        if (data.length === 6) {
-            row_based_data = transpose([data[1], data[2], data[3]]);
-            var color = d3.scale.category10();
-            opts.fill = function(d) { return color(d[2]); };
-            opts.width = data[4][0];
-            opts.height = data[4][1];
-            group = data[5];
-        } else {
-            row_based_data = transpose([data[1], data[2]]);
-            opts.width = data[3][0];
-            opts.height = data[3][1];
-            group = data[4];
-        }
-        var data_model = Chart.data_model(row_based_data, group);
-        opts.data = data_model;
-
-        var plot = Chart.scatterplot(opts);
-        // FIXME deleted plot observers need to be notified
-        //
-        // var detachable_div = this.post_div(plot.plot);
-        // detachable_div.on_remove(function() {
-        //     plot.deleted();
-        // });
-
-        return plot.plot;
-    }
-
     function handle_iframe(data) {
         var div = $("<iframe src='"
                     + data[1] + "' width='"
@@ -172,7 +132,6 @@ var shell = (function() {
     }
 
     var handlers = {
-        "scatterplot": handle_scatterplot,
         "iframe": handle_iframe,
         "lux_osm_plot": handle_lux_osm_plot,
         "lux_tour_plot": handle_lux_tour_plot,
