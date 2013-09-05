@@ -94,7 +94,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var RMode = require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
     var session = widget.getSession();
     var doc = session.doc;
-    widget.setReadOnly(cell_model.parent_model.read_only);
+    widget.setReadOnly(cell_model.parent_model.read_only());
 
     session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
@@ -184,6 +184,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
 
             this.show_result();
+        },
+        set_readonly: function(readonly) {
+            widget.setReadOnly(readonly);
         },
 
         //////////////////////////////////////////////////////////////////////

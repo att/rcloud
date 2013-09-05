@@ -1,5 +1,11 @@
 Notebook.create_html_view = function(model, root_div)
 {
+    function show_or_hide_cursor(readonly) {
+        if(readonly)
+            $('.ace_cursor-layer').hide();
+        else
+            $('.ace_cursor-layer').show();
+    }
     var result = {
         model: model,
         sub_views: [],
@@ -24,6 +30,12 @@ Notebook.create_html_view = function(model, root_div)
                 view.self_removed();
             });
             this.sub_views.splice(cell_index, 1);
+        },
+        set_readonly: function(readonly) {
+            show_or_hide_cursor(readonly);
+            _.each(this.sub_views, function(view) {
+                view.set_readonly(readonly);
+            });
         },
         update_model: function() {
             return _.map(this.sub_views, function(cell_view) {
