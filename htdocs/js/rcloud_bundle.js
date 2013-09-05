@@ -457,6 +457,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // There's a list of things that we need to do to the output:
             var uuid = rcloud.deferred_knitr_uuid;
 
+
             // capture deferred knitr results
             inner_div.find("pre code")
                 .contents()
@@ -494,6 +495,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // typeset the math
             if (!_.isUndefined(MathJax))
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+
+            // this is kinda bad
+            if (!shell.notebook.controller._r_source_visible) {
+                Notebook.hide_r_source(inner_div);
+            }
 
             this.show_result();
         },
@@ -1069,17 +1075,38 @@ Notebook.create_controller = function(model)
             _.each(model.notebook, function(cell_model) {
                 cell_model.controller.execute(bump_executed);
             });
+        },
+
+        //////////////////////////////////////////////////////////////////////
+
+        _r_source_visible: true,
+
+        hide_r_source: function() {
+            this._r_source_visible = false;
+            this.run_all(Notebook.hide_r_source);
+        },
+        show_r_source: function() {
+            this._r_source_visible = true;
+            this.run_all(Notebook.show_r_source);
         }
     };
     model.controller = result;
     return result;
 };
-Notebook.hide_r_source = function()
+Notebook.hide_r_source = function(selection)
 {
-    $(".r").parent().hide();
+    if (selection)
+        selection = $(selection).find(".r");
+    else
+        selection = $(".r");
+    selection.parent().hide();
 };
 
-Notebook.show_r_source = function()
+Notebook.show_r_source = function(selection)
 {
-    $(".r").parent().show();
+    if (selection)
+        selection = $(selection).find(".r");
+    else
+        selection = $(".r");
+    selection.parent().show();
 };

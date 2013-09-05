@@ -1,9 +1,17 @@
-Notebook.hide_r_source = function()
+Notebook.hide_r_source = function(selection)
 {
-    $(".r").parent().hide();
+    if (selection)
+        selection = $(selection).find(".r");
+    else
+        selection = $(".r");
+    selection.parent().hide();
 };
 
-Notebook.show_r_source = function()
+Notebook.show_r_source = function(selection)
 {
-    $(".r").parent().show();
+    if (selection)
+        selection = $(selection).find(".r");
+    else
+        selection = $(".r");
+    selection.parent().show();
 };
