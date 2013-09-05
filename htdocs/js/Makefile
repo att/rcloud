@@ -3,8 +3,6 @@ JS_COMPILER = ./node_modules/uglify-js/bin/uglifyjs
 all: rcloud_bundle.js rcloud_bundle.min.js
 
 rcloud_bundle.js: \
-	chart.js \
-	lux_chart.js \
 	rclient.js \
 	rcloud.js \
 	ui_utils.js \

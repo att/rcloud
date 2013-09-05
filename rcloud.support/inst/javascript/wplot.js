@@ -1,6 +1,7 @@
-// bare-bones d3 charting facilities
+((function() {
 
-(function() {
+//////////////////////////////////////////////////////////////////////////////
+// bare-bones d3 charting facilities
 
 function svg_translate(dx, dy)
 {
@@ -17,6 +18,7 @@ function array_remove(array, from, to) {
 
 var models = {};
 var selections = {};
+
 function add_data_model(model, group_id)
 {
     if (_.isUndefined(models[group_id])) {
@@ -45,14 +47,13 @@ Chart.set_selections = function(group_id, sel) {
 Chart.data_model = function(data, group_id)
 {
     var l = data.length;
-    // I use typed arrays because this might be useful in Facet eventually
+    // I use typed arrays because this might be useful in Lux eventually
     var result = {
         views: {},
         group_id: group_id,
         data: function() { return data; },
         selection: function() { return selections[this.group_id]; },
 
-        // toggle_selection: function(
         register_view: function(v) { this.views[v._view_index] = v; },
         deregister_view: function(v) { delete this.views[v._view_index]; },
         notify: function() {
@@ -66,7 +67,6 @@ Chart.data_model = function(data, group_id)
             _.each(models[this.group_id], function(model) {
                 _.each(model.views, function(v) {
                     if (v._view_index !== active_view._view_index) {
-                        console.log("clearing brush on view", v._view_index, v, active_view);
                         v.clear_brush();
                     }
                 });
@@ -455,4 +455,56 @@ Chart.histogram = function(opts)
     // return result;
 };
 
-})();
+//////////////////////////////////////////////////////////////////////////////
+
+return {
+    handle: function(data, k) {
+        function transpose(ar) {
+            return _.map(_.range(ar[0].length), function(i) {
+                return _.map(ar, function(lst) { return lst[i]; });
+            });
+        }
+
+        var opts = {
+            x: function(d) { return d[0]; },
+            y: function(d) { return d[1]; }
+        };
+        var row_based_data, group;
+
+        if (data.length === 6) {
+            row_based_data = transpose([data[1], data[2], data[3]]);
+            var color = d3.scale.category10();
+            opts.fill = function(d) { return color(d[2]); };
+            opts.width = data[4][0];
+            opts.height = data[4][1];
+            group = data[5];
+        } else {
+            row_based_data = transpose([data[1], data[2]]);
+            opts.width = data[3][0];
+            opts.height = data[3][1];
+            group = data[4];
+        }
+        var data_model = Chart.data_model(row_based_data, group);
+        opts.data = data_model;
+
+        var plot = Chart.scatterplot(opts);
+        // FIXME deleted plot observers need to be notified
+        //
+        // var detachable_div = this.post_div(plot.plot);
+        // detachable_div.on_remove(function() {
+        //     plot.deleted();
+        // });
+
+        k(function() { return plot.plot; });
+        // k("<div>AKSJHDA</div>");
+        // k(plot.plot);
+    },
+
+    handle_select: function (data, k) {
+        var group = data[1];
+        var sel = data[2];
+        k(function() { return Chart.set_selections(group, sel); });
+    }
+};
+
+})())

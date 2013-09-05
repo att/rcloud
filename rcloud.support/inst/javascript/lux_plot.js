@@ -1,4 +1,6 @@
-LuxChart = {};
+(function() {
+
+var LuxChart = {};
 
 LuxChart.lux_tour_plot = function(array_list)
 {
@@ -198,3 +200,19 @@ LuxChart.lux_osm_plot = function(lats, lons, color, width, height)
 
     return canvas;
 };
+
+return {
+    handle_osm_plot: function(data, k) {
+        var lats = data[1],
+            lons = data[2],
+            color = data[3],
+            width = data[4][0],
+            height = data[4][1];
+        k(function() { return LuxChart.lux_osm_plot(lats, lons, color, width, height); });
+    },
+
+    handle_tour_plot: function(data, k) {
+        var lst = data[1];
+        k(function() { return LuxChart.lux_tour_plot(lst); });
+    }
+};})
