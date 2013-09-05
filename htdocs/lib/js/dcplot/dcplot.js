@@ -78,7 +78,7 @@ var reduce = {
                             return p;
                         },
                         function(p, v) {
-                            return {count: 0, sum: 0, avg: 0};
+                            return {count: 0, sum: 0, avg: 0, valueOf: function() { return this.avg; }};
                         });
                 };
             }
@@ -120,7 +120,7 @@ var chart_attrs = {
     color: {
         supported: true,
         color: {required: false}, // colorAccessor
-        'color.transform': {required: false}, // the d3 way not the dc way
+        'color.scale': {required: false}, // the d3 way not the dc way
         'color.domain': {required: false},
         'color.range': {required: false}
     },
@@ -135,15 +135,16 @@ var chart_attrs = {
         x: {required: false}, // keyAccessor
         y: {required: false}, // valueAccessor
         // prob would be good to subgroup these?
-        'x.transform': {required: true}, // transform component of x (scale)
-        'x.domain': {required: true}, // domain component of x
+        'x.ordinal': {required: false},
+        'x.scale': {required: true}, // scale component of x
+        'x.domain': {required: false}, // domain component of x
         'x.units': {required: false}, // the most horrible thing EVER
         'x.round': {required: false},
         'x.elastic': {required: false},
         'x.padding': {required: false},
         // likewise
-        'y.transform': {required: false},
-        'y.domain': {required: true},
+        'y.scale': {required: false},
+        'y.domain': {required: false},
         'y.elastic': {required: false},
         'y.padding': {required: false},
         gridLines: {required: false}, // horizontal and/or vertical
@@ -191,7 +192,7 @@ var chart_attrs = {
         supported: true,
         parents: ['color'],
         r: {required: false}, // radiusValueAccessor
-        'r.transform': {required: false}, // transform component of r scale
+        'r.scale': {required: false}, // scale component of r 
         'r.domain': {required: false} // domain component of r
     },
     bubble: {
@@ -265,6 +266,7 @@ dcplot.format_error = function(e) {
                 $.each(err.errors, function(e) {
                     formatted_errors.append($('<p/>').text(err.errors[e]));
                 });
+            else formatted_errors.text(err.errors.message.toString());
             var name = err.name.replace(/_\d*_\d*$/, '');
             tab.append($('<tr valign=top/>').
                        append($('<td/>').text(err.type)).
@@ -368,6 +370,15 @@ function dcplot(frame, groupname, definition) {
             while(hash[base + n]) ++n;
             return base + n;
         }
+        function get_levels(dim) {
+            var levels = null;
+            if(_.has(dims, dim) && mhas(accessor(dims[dim]), 'attrs', 'levels'))
+                levels = accessor(dims[dim]).attrs.levels;
+            return levels;
+        }
+        function looks_ordinal(dim) {
+            return _.has(dims, dim) && _.isString(accessor(dims[dim])(0));
+        }
         var callbacks = {
             base: function() {
                 if(!('div' in defn))
@@ -387,8 +398,8 @@ function dcplot(frame, groupname, definition) {
                 if(!_.has(defn, 'ordering')) {
                     // note it's a little messy to have this as a property of the chart rather than
                     // the group, but dc.js sometimes needs an ordering and sometimes doesn't
-                    if(_.has(dims, defn.dimension) && mhas(accessor(dims[defn.dimension]), 'attrs', 'levels')) {
-                        var levels = accessor(dims[defn.dimension]).attrs.levels;
+                    var levels = get_levels(defn.dimension);
+                    if(levels) {
                         var rmap = _.object(levels, _.range(levels.length));
                         // the ordering function uses a reverse map of the levels
                         defn.ordering = function(p) {
@@ -403,24 +414,29 @@ function dcplot(frame, groupname, definition) {
             stackable: function() {
             },
             coordinateGrid: function() {
+                var levels = get_levels(defn.dimension);
+                if(!('x.ordinal' in defn))
+                    defn['x.ordinal'] = (('x.units' in defn) && defn['x.units'] === dc.units.ordinal)
+                    || (levels != null) || looks_ordinal(defn.dimension);
+
+                if(!('x.scale' in defn) && defn['x.ordinal'])
+                    defn['x.scale'] = d3.scale.ordinal();
+                if(!('x.units' in defn) && defn['x.ordinal'])
+                    defn['x.units'] = dc.units.ordinal;
+                if(!('x.domain' in defn) && levels)
+                    defn['x.domain'] = levels;
+
                 // not a default because we must construct a new object each time
-                if(!('x.transform' in defn))
-                    defn['x.transform'] = d3.scale.linear();
-                if(!('y.transform' in defn))
-                    defn['y.transform'] = d3.scale.linear();
+                if(!('x.scale' in defn))
+                    defn['x.scale'] = levels ? d3.scale.ordinal() : d3.scale.linear();
+                if(!('y.scale' in defn))
+                    defn['y.scale'] = d3.scale.linear();
 
                 // this won't work incrementally out of the box
                 if(!('x.domain' in defn) && !('x.elastic' in defn))
                     defn['x.elastic'] = true;
                 if(!('y.domain' in defn) && !('y.elastic' in defn))
                     defn['y.elastic'] = true;
-
-                // domain actually isn't required by dc.js but for correctness you
-                // need it... unless you're elastic, in which case [0,0] is fine
-                if('x.elastic' in defn && defn['x.elastic'] && !('x.domain' in defn))
-                    defn['x.domain'] = [0,0];
-                if('y.elastic' in defn && defn['y.elastic'] && !('y.domain' in defn))
-                    defn['y.domain'] = [0,0];
             },
             pie: function() {
             },
@@ -527,6 +543,11 @@ function dcplot(frame, groupname, definition) {
             stackable: function() {
             },
             coordinateGrid: function() {
+                // dc.js doesn't require domain but in practice it's needed unless elastic
+                if(!defn['x.elastic'] && !('x.domain' in defn))
+                    throw 'need x.domain unless x.elastic';
+                if(!defn['y.elastic'] && !('y.domain' in defn))
+                    throw 'need y.domain unless y.elastic';
             },
             pie: function() {
             },
@@ -606,7 +627,7 @@ function dcplot(frame, groupname, definition) {
                 // to serve the purpose. so just plug a d3 scale into colors
                 // and override the calculator to use it
                 // also default to category10 which seems better for discrete colors
-                var scale = defn['color.transform'] || d3.scale.category10();
+                var scale = defn['color.scale'] || d3.scale.category10();
                 if(_.has(defn, 'color.domain'))
                     scale.domain(defn['color.domain']);
                 else if(mhas(defn, 'color', 'attrs', 'levels'))
@@ -635,7 +656,7 @@ function dcplot(frame, groupname, definition) {
                 if(_.has(defn, 'y'))
                     chart.valueAccessor(key_value(accessor(defn.y)));
 
-                var xtrans = defn['x.transform'];
+                var xtrans = defn['x.scale'];
                 if(_.has(defn, 'x.domain'))
                     xtrans.domain(defn['x.domain']);
                 chart.x(xtrans)
@@ -647,8 +668,8 @@ function dcplot(frame, groupname, definition) {
                 if(_.has(defn, 'x.padding'))
                     chart.xAxisPadding(defn['x.padding']);
 
-                if(_.has(defn, 'y.transform')) {
-                    var ytrans = defn['y.transform'];
+                if(_.has(defn, 'y.scale')) {
+                    var ytrans = defn['y.scale'];
                     if(_.has(defn, 'y.domain'))
                         ytrans.domain(defn['y.domain']);
                     chart.y(ytrans);
@@ -696,8 +717,8 @@ function dcplot(frame, groupname, definition) {
             bubble: function() {
                 if(_.has(defn, 'r'))
                     chart.radiusValueAccessor(key_value(accessor(defn.r)));
-                if(_.has(defn, 'r.transform') || _.has(defn, 'r.domain')) {
-                    var rtrans = defn['r.transform'] || d3.scale.linear();
+                if(_.has(defn, 'r.scale') || _.has(defn, 'r.domain')) {
+                    var rtrans = defn['r.scale'] || d3.scale.linear();
                     rtrans.domain(defn['r.domain'] || [0,100]);
                     chart.r(rtrans);
                 }
