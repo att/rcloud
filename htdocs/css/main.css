@@ -257,7 +257,7 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
     right: -50px;
     position: fixed; 
     width: 50px;
-    z-index: 1030
+    z-index: 1030;
     margin: 0;
     padding: 0;
 }
