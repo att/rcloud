@@ -4,7 +4,8 @@ wdcchart <- function(data, dcexpr)
   path <- system.file("javascript", "dc_chart.js", package="rcloud.support");
   caps <- rcloud.install.js.module("dc_chart",
                                    paste(readLines(path), collapse='\n'))
-  deferred.rcloud.result(function() caps$handle_dcchart(list("dcchart", data, substitute(dcexpr))))
+  dcexpr2 <- substitute(dcexpr)
+  deferred.rcloud.result(function() caps$handle_dcchart(list("dcchart", data, dcexpr2)))
 }
 
 wdcplot <- function(data, dims, groups, charts)
@@ -12,5 +13,9 @@ wdcplot <- function(data, dims, groups, charts)
   path <- system.file("javascript", "dc_chart.js", package="rcloud.support");
   caps <- rcloud.install.js.module("dc_chart",
                                    paste(readLines(path), collapse='\n'))
-  deferred.rcloud.result(function() caps$handle_dcplot(list("dcplot", data, substitute(dims), substitute(groups), substitute(charts))))
+  dims2 <- substitute(dims)
+  groups2 <- substitute(groups)
+  charts2 <- substitute(charts)
+
+  deferred.rcloud.result(function() caps$handle_dcplot(list("dcplot", data, dims2, groups2, charts2)))
 }
