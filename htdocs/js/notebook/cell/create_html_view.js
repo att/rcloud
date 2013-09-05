@@ -145,6 +145,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // There's a list of things that we need to do to the output:
             var uuid = rcloud.deferred_knitr_uuid;
 
+
             // capture deferred knitr results
             inner_div.find("pre code")
                 .contents()
@@ -182,6 +183,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // typeset the math
             if (!_.isUndefined(MathJax))
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+
+            // this is kinda bad
+            if (!shell.notebook.controller._r_source_visible) {
+                Notebook.hide_r_source(inner_div);
+            }
 
             this.show_result();
         },

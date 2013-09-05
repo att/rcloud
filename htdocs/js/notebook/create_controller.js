@@ -196,6 +196,19 @@ Notebook.create_controller = function(model)
             _.each(model.notebook, function(cell_model) {
                 cell_model.controller.execute(bump_executed);
             });
+        },
+
+        //////////////////////////////////////////////////////////////////////
+
+        _r_source_visible: true,
+
+        hide_r_source: function() {
+            this._r_source_visible = false;
+            this.run_all(Notebook.hide_r_source);
+        },
+        show_r_source: function() {
+            this._r_source_visible = true;
+            this.run_all(Notebook.show_r_source);
         }
     };
     model.controller = result;

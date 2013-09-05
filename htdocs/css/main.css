@@ -266,6 +266,12 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
     padding-bottom: 2.5em; /* must be .footer height + 2 * .footer.padding */
 }
 
+.icon-check,
+.icon-check-empty,
 #cog {
     cursor: pointer;
+}
+
+.fa-icon-label {
+    padding-left: .2em;
 }

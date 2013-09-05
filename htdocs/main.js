@@ -44,6 +44,18 @@ function main_init() {
     init_editable_title_box();
     init_fork_revert_button();
     footer.init();
+    $("#show-source").click(function() {
+        var this_class = $(this).attr("class");
+        if (this_class === 'icon-check') {
+            $(this).addClass('icon-check-empty');
+            $(this).removeClass('icon-check');
+            shell.notebook.controller.hide_r_source();
+        } else {
+            $(this).addClass('icon-check');
+            $(this).removeClass('icon-check-empty');
+            shell.notebook.controller.show_r_source();
+        }
+    });
 
     rclient = RClient.create({
         debug: false,
