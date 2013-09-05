@@ -43,6 +43,7 @@ function main_init() {
     init_shareable_link_box();
     init_editable_title_box();
     init_fork_revert_button();
+    footer.init();
 
     rclient = RClient.create({
         debug: false,

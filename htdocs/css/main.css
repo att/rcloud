@@ -248,3 +248,24 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
     font-weight: bold;
 }
 */
+
+.footer {
+    background-color: black; 
+    color: #999;
+    height: 2.5em; 
+    bottom: 0;
+    right: -50px;
+    position: fixed; 
+    width: 50px;
+    z-index: 1030
+    margin: 0;
+    padding: 0;
+}
+
+#main-div {
+    padding-bottom: 2.5em; /* must be .footer height + 2 * .footer.padding */
+}
+
+#cog {
+    cursor: pointer;
+}
