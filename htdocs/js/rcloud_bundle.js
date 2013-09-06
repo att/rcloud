@@ -181,7 +181,8 @@ RCloud.create = function(rcloud_ocaps) {
     rcloud.session_markdown_eval = function(command, silent, k) {
         rcloud_ocaps.session_markdown_eval(command, silent, k || _.identity);
     };
-    rcloud.upload_file = function() {
+    rcloud.upload_file = function(on_success) {
+        on_success = on_success || _.identity;
         function do_upload(path, file) {
             var upload_name = path + '/' + file.name;
             rcloud_ocaps.file_upload.create(upload_name, _.identity);
@@ -202,7 +203,7 @@ RCloud.create = function(rcloud_ocaps) {
                 } else {
                     //This is just temporary, until we add the nice info messages from bootstrap
                     rcloud_ocaps.file_upload.close(function(){
-                        alert("File uploaded successfully!");
+                        on_success(path, file);
                     });
                 }
             };
