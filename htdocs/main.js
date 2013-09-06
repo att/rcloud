@@ -81,7 +81,14 @@ function main_init() {
             });
             $(".collapse").collapse();
             $("#upload-submit").click(function() {
-              rcloud.upload_file();
+              rcloud.upload_file(function(path, file) {
+                  $("#file-upload-div").append(
+                      bootstrap.alert({
+                          "class": 'info',
+                          text: "File " + file.name + " uploaded."
+                      })
+                  );
+              });
             });
             rcloud.init_client_side_data();
 

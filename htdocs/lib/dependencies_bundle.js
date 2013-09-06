@@ -46384,7 +46384,6 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type, convert
         write_view.setUint32(4, value.byteLength);
         for (i=0; i<value.byteLength; ++i) {
             write_view.setUint8(8 + i, read_view.getUint8(i));
-            console.log(i, read_view.getUint8(i));
         }
         break;
     case Rserve.Rsrv.XT_VECTOR:
