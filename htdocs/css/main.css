@@ -275,3 +275,23 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
 .fa-icon-label {
     padding-left: .2em;
 }
+
+/******************************************************************************/
+
+.comment-container {
+    margin-bottom: .4em;
+    clear: both;
+}
+
+.comment-header {
+    float: right;
+    color: #aaa
+}
+
+.comment-body {
+    color: #555
+}
+
+#comment-entry {
+    width: 100%
+}

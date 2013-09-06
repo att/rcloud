@@ -56,7 +56,10 @@ function main_init() {
             shell.notebook.controller.show_r_source();
         }
     });
-
+    $("#comment-submit").click(function() {
+        editor.post_comment($("#comment-entry-body").val());
+        return false;
+    });
     rclient = RClient.create({
         debug: false,
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),

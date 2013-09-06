@@ -237,6 +237,14 @@ RCloud.create = function(rcloud_ocaps) {
         k(result);
     });
 
+    // notebook.comments.R
+    rcloud.get_all_comments = function(id, k) {
+        rcloud_ocaps.comments.get_all(id, k || _.identity);
+    };
+    rcloud.post_comment = function(id, content, k) {
+        rcloud_ocaps.comments.post(id, content, k || _.identity);
+    };
+
     return rcloud;
 };
 var ui_utils = {};

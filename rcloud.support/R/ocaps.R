@@ -42,6 +42,12 @@ initial.ocaps <- function()
       # logging ocaps
       log=list(
         record_cell_execution=make.oc(rcloud.record.cell.execution)
+        ),
+
+      # commenting ocaps
+      comments=list(
+        get_all=make.oc(rcloud.get.comments),
+        post=make.oc(rcloud.post.comment)
         )
 
       )

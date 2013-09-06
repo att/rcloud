@@ -304,6 +304,29 @@ var editor = function () {
         return name + "'s Notebooks";
     }
 
+    function populate_comments(comments) {
+        debugger;
+        d3.select("#comment-count")
+            .text(String(comments.length));
+        // no update logic, clearing/rebuilding is easier
+        d3.select("#comments-container").selectAll("div").remove();
+        var comment_div = d3.select("#comments-container")
+            .selectAll("div")
+            .data(comments)
+            .enter()
+            .append("div")
+            .attr("class", "comment-container");
+
+        comment_div
+            .append("div")
+            .attr("class", "comment-header")
+            .text(function(d) { return d.user.login; });
+        comment_div
+            .append("div")
+            .attr("class", "comment-body")
+            .text(function(d) { return d.body; });
+    }
+
     var result = {
         init: function() {
             var that = this;
@@ -500,6 +523,9 @@ var editor = function () {
                                          last_commit: result.updated_at || result.history[0].committed_at,
                                          // we don't want the truncated history from an old version
                                          history: version ? null : result.history});
+            rcloud.get_all_comments(result.id, function(data) {
+                populate_comments(JSON.parse(data));
+            });
         },
         update_notebook_status: function(user, gistname, status) {
             // this is almost a task for d3 or mvc on its own
@@ -565,6 +591,17 @@ var editor = function () {
 
             this.save_config();
             return node;
+        },
+        post_comment: function(comment) {
+            comment = JSON.stringify({"body":comment});
+            rcloud.post_comment(config_.currbook, comment, function(result) {
+                if (!result)
+                    return;
+                rcloud.get_all_comments(config_.currbook, function(data) {
+                    populate_comments(JSON.parse(data));
+                    $('#comment-entry-body').val('');
+                });
+            });
         },
         search: function(search_string) {
             var that = this;
