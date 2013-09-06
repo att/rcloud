@@ -352,7 +352,6 @@ var editor = function () {
         create_book_tree_widget: function(data) {
             var that = this;
             const icon_style = {'line-height': '90%'};
-            const remove_icon_style = {'line-height': '90%', 'font-size': '75%'};
 
             function onCreateLiHandler(node, $li) {
                 var title = $li.find('.jqtree-title');
@@ -367,6 +366,10 @@ var editor = function () {
                     title.css({color: '#7CB9E8'});
                 if(node.gistname && !node.version) {
                     var commands = $('<span/>', {class: 'notebook-commands'});
+                    function add_buttons() {
+                        commands.append('&nbsp;');
+                        commands.append.apply(commands, arguments);
+                    }
                     if(true) { // all notebooks have history - should it always be accessible?
                         var disable = config_.currbook===node.gistname && config_.currversion;
                         var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style);
@@ -382,7 +385,7 @@ var editor = function () {
                             return false;
                         });
 
-                        commands.append(history);
+                        add_buttons(history);
                     }
                     if(node.user===username_) {
                         var make_private = ui_utils.fa_button('icon-eye-close', 'make private', 'private', icon_style),
@@ -399,15 +402,15 @@ var editor = function () {
                             $(this).tooltip('hide');
                             that.set_visibility(node, 'public');
                         });
-                        commands.append(make_private, make_public);
+                        add_buttons(make_private, make_public);
                     }
                     if(node.root==='interests' || node.user===username_) {
-                        var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', remove_icon_style);
+                        var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style);
                         remove.click(function() {
                             $(this).tooltip('hide');
                             that.remove_notebook(node);
                         });
-                        commands.append(remove);
+                        add_buttons(remove);
                     };
                     commands.hide();
                     title.append('&nbsp;', commands);
