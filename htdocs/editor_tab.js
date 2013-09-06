@@ -305,7 +305,6 @@ var editor = function () {
     }
 
     function populate_comments(comments) {
-        debugger;
         d3.select("#comment-count")
             .text(String(comments.length));
         // no update logic, clearing/rebuilding is easier
