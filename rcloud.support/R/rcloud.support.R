@@ -39,6 +39,8 @@ rcloud.save.user.config <- function(user = .session$username, content) {
   invisible(file.rename(paste0(filename, ".tmp"), filename))
 }
 
+rcloud.get.github.url <- function() getConf("github.base.url")
+
 rcloud.get.notebook <- function(id, version = NULL) {
   res <- get.gist(.session$rgithub.context, id, version)
   if (rcloud.debug.level() > 1L) {

@@ -184,6 +184,15 @@ var shell = (function() {
                 version_ = null;
                 on_load.call(that, k, notebook);
             });
+        }, open_in_github: function() {
+            rcloud.get_github_url(function(url) {
+                url += 'gist/' + gistname_;
+                if(version_)
+                    url += '/' + version_;
+                // can't get this to open in new tab with target = '_blank'
+                // so just going there.  FIXME
+                window.open(url, "_self");
+            });
         }
     };
 
