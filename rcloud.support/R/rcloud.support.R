@@ -72,7 +72,7 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL) {
     result <- NULL
     e <- new.env(parent=.GlobalEnv)
     if (is.list(args) && length(args)) for (i in names(args)) e[[i]] <- args[[i]]
-    ## sort 
+    ## sort
     for (o in p[match(sort.int(i), i)]) {
       if (grepl("^part.*\\.R$", o$filename)) { ## R code
         expr <- parse(text=o$content)
@@ -105,6 +105,13 @@ rcloud.rename.notebook <- function(id, new.name)
               list(description=new.name))
 
 rcloud.fork.notebook <- function(id) fork.gist(.session$rgithub.context, id)
+
+rcloud.port.notebooks <- function(url, books) {
+  blank <- list(
+  for (notebook in books) {
+    rcloud.create.notebook(
+      git clone https://github.research.att.com/gist/543cdef02e915a29fce0.git gist-543cdef0
+}
 
 rcloud.get.users <- function(user)  ## instead of using a list file let's simply look for existing user configs ...
   unique(c(user, gsub(".json$", "", basename(Sys.glob(pathConf("data.root", "userfiles", "*.json"))))))
