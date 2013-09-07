@@ -32,6 +32,12 @@ function init_fork_revert_button() {
     });
 }
 
+function init_github_button() {
+    $("#open-github").click(function() {
+        shell.open_in_github();
+    });
+}
+
 var oob_handlers = {
     "browsePath": function(v) {
         $("#help-output").empty();
@@ -43,6 +49,7 @@ function main_init() {
     init_shareable_link_box();
     init_editable_title_box();
     init_fork_revert_button();
+    init_github_button();
     footer.init();
     $("#show-source").click(function() {
         var this_class = $(this).attr("class");

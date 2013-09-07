@@ -20,6 +20,7 @@ initial.ocaps <- function()
       reset_session=make.oc(reset.session),
       load_multiple_user_configs=make.oc(rcloud.load.multiple.user.configs),
       save_user_config=make.oc(rcloud.save.user.config),
+      get_github_url=make.oc(rcloud.get.github.url),
       get_notebook=make.oc(rcloud.get.notebook),
       update_notebook=make.oc(rcloud.update.notebook),
       create_notebook=make.oc(rcloud.create.notebook),
