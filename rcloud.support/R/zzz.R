@@ -1,4 +1,5 @@
 .onLoad <- function(libname, pkgname) {
+  if (nzchar(Sys.getenv("RCS_SILENCE_LOADCHECK"))) options(rcs.silence.loadcheck=TRUE)
   ## make sure we try the embedding version first and then fall back to whatever is registered
   environment(.onLoad)$Rserve_oc_register <-
     tryCatch(getNativeSymbolInfo("Rserve_oc_register", "(embedding)"),
