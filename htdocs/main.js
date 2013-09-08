@@ -32,9 +32,14 @@ function init_fork_revert_button() {
     });
 }
 
-function init_github_button() {
-    $("#open-github").click(function() {
+function init_github_buttons() {
+    $("#open-in-github").click(function() {
         shell.open_in_github();
+    });
+    $("#open-from-github").click(function() {
+        var result = prompt("Enter notebook ID or github URL:");
+        if(result !== null)
+            shell.open_from_github(result);
     });
 }
 
@@ -49,7 +54,7 @@ function main_init() {
     init_shareable_link_box();
     init_editable_title_box();
     init_fork_revert_button();
-    init_github_button();
+    init_github_buttons();
     footer.init();
     $("#show-source").click(function() {
         var this_class = $(this).attr("class");
@@ -100,6 +105,7 @@ function main_init() {
             rcloud.init_client_side_data();
 
             editor.init();
+            shell.init();
 
             if (location.search.length > 0) {
                 function getURLParameter(name) {

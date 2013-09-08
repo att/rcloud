@@ -2,7 +2,8 @@ var shell = (function() {
 
     var version_ = null,
         gistname_ = null,
-        is_mine_ = null;
+        is_mine_ = null,
+        github_url_ = null;
 
     function setup_command_entry(entry_div) {
         function set_ace_height() {
@@ -126,6 +127,9 @@ var shell = (function() {
         version: function() {
             return version_;
         },
+        init: function() {
+            rcloud.get_github_url(function(url) { github_url_ = url; });
+        },
         fork_or_revert_button: function() {
             // hmm messages bouncing around everywhere
             editor.fork_or_revert_notebook(is_mine_, gistname_, version_);
@@ -185,14 +189,49 @@ var shell = (function() {
                 on_load.call(that, k, notebook);
             });
         }, open_in_github: function() {
-            rcloud.get_github_url(function(url) {
-                url += 'gist/' + gistname_;
-                if(version_)
-                    url += '/' + version_;
-                // can't get this to open in new tab with target = '_blank'
-                // so just going there.  FIXME
-                window.open(url, "_self");
-            });
+            var url = github_url_;
+            url += 'gist/' + gistname_;
+            if(version_)
+                url += '/' + version_;
+            // can't get this to open in new tab with target = '_blank'
+            // so just going there.  FIXME
+            window.open(url, "_self");
+        }, open_from_github: function(notebook_or_url) {
+            var notebook;
+            // hmm a more general url parser might be in order here
+            if(notebook_or_url.indexOf('://') > 0) {
+                var pref = notebook_or_url.substring(0, github_url_.length);
+                if(pref !== github_url_) {
+                    alert("Sorry, importing from foreign GitHub instances not supported yet!");
+                    return;
+                }
+                notebook = notebook_or_url.substring(github_url_.length);
+                if(notebook.substring(0,1) == '/')
+                    notebook = notebook.substring(1);
+                if(notebook.substring(0,5) !== 'gist/') {
+                    alert("URL must be a /gist/ url");
+                    return;
+                }
+                notebook = notebook.substring(5);
+            }
+            else notebook = notebook_or_url;
+            var version = null;
+            var slashpos = notebook.indexOf('/');
+            if(slashpos > 0) {
+                version = notebook.substring(slashpos+1);
+                notebook = notebook.substring(0, slashpos);
+                slashpos = version.indexOf('/');
+                if(slashpos > 0) {
+                    if(slashpos < version.length-1) {
+                        alert("Sorry, couldn't parse '" + notebook_or_url + "'");
+                        return;
+                    }
+                    version = version.substring(0, slashpos);
+                    if(version === "")
+                        version = null;
+                }
+            }
+            editor.load_notebook(notebook, version);
         }
     };
 
