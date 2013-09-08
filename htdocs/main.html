@@ -37,8 +37,8 @@
     <script type="text/javascript"
         src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
     </script>
-    <script type="text/javascript">MathJax && MathJax.Hub.Config({tex2jax: {processEscapes: true, 
-        processEnvironments: false, inlineMath: [ ['\\(','\\)'] ], 
+    <script type="text/javascript">MathJax && MathJax.Hub.Config({tex2jax: {processEscapes: true,
+        processEnvironments: false, inlineMath: [ ['\\(','\\)'] ],
         displayMath: [ ['\\[','\\]'] ] },
         "HTML-CSS": { minScaleAdjust: 125 } });
     </script>
@@ -57,7 +57,8 @@
 	  <li><a href="#" id="run-notebook">Run</a></li>
 	  <li><a href="#" id="share-notebook" class="embed-link">Get Link</a><input class="embed-box" type="text" size="25" style="display:none;margin-top:0.7em;"></li>
           <li><a href="#" id="fork-revert-notebook" style="display:none;">Fork</a></li>
-          <li><a href="#" id="open-github">Open in GitHub</a></li>
+          <li><a href="#" id="open-in-github">To GitHub</a></li>
+          <li><a href="#" id="open-from-github">From GitHub</a></li>
 	  <li class="divider-vertical"></li>
 	  <li><a href="#" id="rcloud-logout">Logout</a></li>
 	</ul>
@@ -76,7 +77,7 @@
 
 	<div id="input-div">
 	  <button style="float: right; width:20%;" id="new-md-cell-button">New RMarkdown cell</button>
-	  <div id="command-entry" 
+	  <div id="command-entry"
 	       style="float: left; width:79%; height: 50px; background:#FFFFFF; border:1px solid #DDDDDD"></div>
 	</div>
 	<div style="padding:1em; clear:both"></div>
