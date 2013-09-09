@@ -525,9 +525,36 @@ var editor = function () {
                                          last_commit: result.updated_at || result.history[0].committed_at,
                                          // we don't want the truncated history from an old version
                                          history: version ? null : result.history});
+            this.update_notebook_file_list(result.files);
             rcloud.get_all_comments(result.id, function(data) {
                 populate_comments(JSON.parse(data));
             });
+        },
+        update_notebook_file_list: function(files) {
+            // FIXME natural sort!
+            var files_out = _(files).pairs().filter(function(v) { 
+                var k = v[0];
+                return !k.match(/\.([rR]|[mM][dD])$/) && k !== "r_type" && k !== "r_attributes"; 
+            });
+            debugger;
+
+            d3.select("#notebook-assets")
+                .selectAll("li")
+                .remove();
+            var s = d3.select("#notebook-assets")
+                .selectAll("li")
+                .data(files_out)
+                .enter()
+                .append("li")
+                .append("a")
+                .attr("tabindex", "-1")
+                .attr("href", "#");
+            s.append("a")
+                .text(function(d) { return d[0]; })
+                .attr("href", function(d) { return d[1].raw_url; })
+                .attr("target", "_blank");
+
+                // .text(function(d, i) { return String(i); });
         },
         update_notebook_status: function(user, gistname, status) {
             // this is almost a task for d3 or mvc on its own

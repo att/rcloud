@@ -163,12 +163,20 @@
 </div>
 
 <div class="footer" id="footer">
-  <img src="img/footerborderleft.png" style="height:2.5em; left: -2.5em; position: absolute"/>
+  <img id="black-triangle-behind-cog"
+       src="img/footerborderleft.png" style="height:2.5em; left: -2.5em; position: absolute; cursor: pointer"/>
   <div style="position: relative; padding: .5em; padding-left: 35px;
 	      top: .4em; font-size: 0.8em">
-    <span id="show-source" class="icon-check"><span class="fa-icon-label">Show R source</span></span>
+    <div style="float: left" id="show-source" class="icon-check"><span class="fa-icon-label">Show R source</span></div>
+    <div style="float: left; position: relative; top: -2.5px" class="dropup">
+      <a class="footer-dropdown-toggle" data-toggle="dropdown" href="#">Notebook assets</a>
+      <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel" id="notebook-assets">
+      </ul>
+    </div>
   </div>
+
   <i style="position: absolute; left: -14px; top: 14px; " class="icon-cog" id="cog"> </i>
+
 </div>
 
 <!-- For some bizarre reason, line numbering has garbage characters on --
