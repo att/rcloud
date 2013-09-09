@@ -295,3 +295,21 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
 #comment-entry {
     width: 100%
 }
+
+/******************************************************************************/
+/* Bring in some of bootstrap's more up-to-date CSS */
+
+.dropdown-menu > li > a {
+  display: block;
+  padding: 3px 20px;
+  clear: both;
+  font-weight: normal;
+  line-height: 20px;
+  color: #333333;
+  white-space: nowrap;
+}
+
+a.footer-dropdown-toggle {
+    padding: 5px;
+    color: #999;
+}
