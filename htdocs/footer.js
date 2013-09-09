@@ -35,14 +35,17 @@
 
     footer = {
         init: function() {
-            d3.select("#cog")
-                .on("click", function() {
-                    if (on) {
-                        hide_footer();
-                    } else {
-                        show_footer();
-                    }
-                });
+            _.each([d3.select("#cog"),
+                    d3.select("#black-triangle-behind-cog")], 
+                   function(s) {
+                       s.on("click", function() {
+                           if (on) {
+                               hide_footer();
+                           } else {
+                               show_footer();
+                           }
+                       });
+                   });
         }
     };
 
