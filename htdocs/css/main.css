@@ -7,6 +7,12 @@ body {
     margin: 0.5em;
 }
 
+.scroll {
+    width:250px;
+    height:200px;
+    overflow:scroll;
+}
+
 .internals-float {
     float: left;
     background-color: #eee;
