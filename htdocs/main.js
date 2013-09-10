@@ -50,7 +50,9 @@ function main_init() {
     init_shareable_link_box();
     init_editable_title_box();
     init_fork_revert_button();
-
+    
+    $("#scroll_search").hide();
+    
     rclient = RClient.create({
         debug: false,
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
