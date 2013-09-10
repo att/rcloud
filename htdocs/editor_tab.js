@@ -611,11 +611,10 @@ var editor = function () {
             function update_source_search(result) {
                 d3.select("#input-text-source-results-title")
                     .style("display", (result !== null && result.length >= 1)?null:"none");
-                if (result !== null) {
+                if (result !== null)
                     $("#scroll_search").show();
-		        } else {
-	                $("#scroll_search").hide();
-		        }
+		else
+	            $("#scroll_search").hide();
                 var data = _.map(result, split_source_search_lines);
                 d3.select("#input-text-source-results-table")
                     .selectAll("tr").remove();
@@ -659,11 +658,10 @@ var editor = function () {
             function update_history_search(result) {
                 d3.select("#input-text-history-results-title")
                     .style("display", (result !== null && result.length >= 1)?null:"none");
-                if (result !== null) {
+                if (result !== null)
                     $("#scroll_search").show();
-		        } else {
-	                $("#scroll_search").hide();
-		        }    
+                else
+	            $("#scroll_search").hide();
                 var data = _.map(result, split_history_search_lines);
                 d3.select("#input-text-history-results-table")
                     .selectAll("tr").remove();
