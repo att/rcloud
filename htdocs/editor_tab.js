@@ -469,8 +469,14 @@ var editor = function () {
         new_notebook: function() {
             if(isNaN(config_.nextwork))
                 config_.nextwork = 1;
-            var desc = "Notebook " + config_.nextwork;
-            ++config_.nextwork;
+            var desc; 
+            var name=prompt("Please enter a name","Notebook");
+            if(name!=null){ 
+                desc=name;//stores the name entered by the user
+            } else {	
+                desc = "Notebook " + config_.nextwork;//default naming convention
+                ++config_.nextwork;
+            }
             shell.new_notebook(desc, _.bind(result.notebook_loaded, this, null));
         },
         rename_notebook: function(gistname, newname) {
