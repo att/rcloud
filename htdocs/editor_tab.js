@@ -114,6 +114,7 @@ var editor = function () {
             }
         }
         var children = my_notebooks.concat(user_nodes).sort(compare_nodes);
+        debugger;
         children = as_folder_hierarchy(children);
         root_data[0].children = children;
         result.create_book_tree_widget(root_data);
@@ -550,12 +551,10 @@ var editor = function () {
         notebook_loaded: function(version, result) {
             config_.currbook = result.id;
             config_.currversion = version;
-            var m, description = (m = result.description.match(/.+\/([^/]+)$/)) ? 
-                m[1] : result.description;
 
             this.update_notebook_status(result.user.login,
                                         result.id,
-                                        {description: description,
+                                        {description: result.description,
                                          last_commit: result.updated_at || result.history[0].committed_at,
                                          // we don't want the truncated history from an old version
                                          history: version ? null : result.history});
@@ -611,7 +610,9 @@ var editor = function () {
                 $tree_.tree('selectNode', node);
         },
         update_tree_entry: function(user, gistname, entry, history) {
-            var data = {label: entry.description,
+            var m, label = (m = entry.description.match(/.+\/([^/]+)$/)) ? 
+                m[1] : entry.description;
+            var data = {label: label,
                         last_commit: entry.last_commit,
                         sort_order: ordering.NOTEBOOK,
                         visibility: entry.visibility,
