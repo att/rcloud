@@ -550,11 +550,6 @@ var editor = function () {
         notebook_loaded: function(version, result) {
             config_.currbook = result.id;
             config_.currversion = version;
-            // var description, m = result.description.match(/.+\/([^/]+)$/);
-            // if (m)
-            //     description = m[1];
-            // else
-            //     description = result.description;
             var m, description = (m = result.description.match(/.+\/([^/]+)$/)) ? 
                 m[1] : result.description;
 
