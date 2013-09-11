@@ -34,6 +34,36 @@ var editor = function () {
         return ret;
     }
 
+    function as_folder_hierarchy(nodes) {
+        function is_in_folder(v) { return v.label.match(/([^/]+)\/(.+)/); }
+        var in_folders = nodes;
+        in_folders = _.filter(in_folders, is_in_folder);
+        in_folders = _.map(in_folders, function(v) {
+            var m = v.label.match(/([^/]+)\/(.+)/);
+            var r = _.clone(v);
+            r.folder_name = m[1];
+            r.label = m[2];
+            return r;
+        });
+        in_folders = _.groupBy(in_folders, function(v) {
+            return v.folder_name;
+        });
+        in_folders = _.map(in_folders, function(v, k) {
+            var children = _.map(v, function(o) { 
+                return _.omit(o, "folder_name"); 
+            });
+            return {
+                label: k,
+                id: k + '/',
+                children: as_folder_hierarchy(children)
+            };
+        });
+        var outside_folders = _.filter(nodes, function(v) { 
+            return !is_in_folder(v);
+        });
+        return outside_folders.concat(in_folders);
+    }
+
     function convert_notebook_set(root, username, set) {
         var notebook_nodes = [];
         for(var name in set) {
@@ -83,7 +113,8 @@ var editor = function () {
                 user_nodes.push(node);
             }
         }
-        var children =  my_notebooks.concat(user_nodes).sort(compare_nodes);
+        var children = my_notebooks.concat(user_nodes).sort(compare_nodes);
+        children = as_folder_hierarchy(children);
         root_data[0].children = children;
         result.create_book_tree_widget(root_data);
         var interests = $tree_.tree('getNodeById', "/interests");
@@ -519,9 +550,17 @@ var editor = function () {
         notebook_loaded: function(version, result) {
             config_.currbook = result.id;
             config_.currversion = version;
+            // var description, m = result.description.match(/.+\/([^/]+)$/);
+            // if (m)
+            //     description = m[1];
+            // else
+            //     description = result.description;
+            var m, description = (m = result.description.match(/.+\/([^/]+)$/)) ? 
+                m[1] : result.description;
+
             this.update_notebook_status(result.user.login,
                                         result.id,
-                                        {description: result.description,
+                                        {description: description,
                                          last_commit: result.updated_at || result.history[0].committed_at,
                                          // we don't want the truncated history from an old version
                                          history: version ? null : result.history});
@@ -536,7 +575,6 @@ var editor = function () {
                 var k = v[0];
                 return !k.match(/\.([rR]|[mM][dD])$/) && k !== "r_type" && k !== "r_attributes"; 
             });
-            debugger;
 
             d3.select("#notebook-assets")
                 .selectAll("li")
