@@ -14,29 +14,20 @@
 ## the one we have stored during the login process.
 
 
-rcloud.user.config.filename <- function(user = .session$username)
-  pathConf("data.root", "userfiles", paste(user, ".json", sep=''))
-
 rcloud.load.user.config <- function(user = .session$username, map = FALSE) {
-  ufile <- rcloud.user.config.filename(user)
-  payload <- 
-    if(file.exists(ufile))
-      paste(readLines(ufile), collapse="\n")
-    else
-      "null"
+  payload <- rcs.get(usr.key("config.json", user=user, notebook="system"))
+  if (is.null(payload)) payload <- "null"
   if (map) paste0('"', user, '": ', payload) else payload
 }
 
 # hackish? but more efficient than multiple calls
+# FIXME: when we add vectorized rcs.get() we will want to update this
 rcloud.load.multiple.user.configs <- function(users)
   paste('{', paste(sapply(users, rcloud.load.user.config, TRUE), collapse=',\n'), '}')
 
 rcloud.save.user.config <- function(user = .session$username, content) {
   if (rcloud.debug.level()) cat("rcloud.save.user.config(", user, ")\n", sep='')
-  filename <- rcloud.user.config.filename(user)
-  ## write and then move atomically to avoid corruption due to concurrency
-  writeLines(content, paste0(filename, ".tmp"))
-  invisible(file.rename(paste0(filename, ".tmp"), filename))
+  invisible(rcs.set(usr.key("config.json", user=user, notebook="system"), content))
 }
 
 rcloud.get.github.url <- function() getConf("github.base.url")
@@ -108,8 +99,8 @@ rcloud.rename.notebook <- function(id, new.name)
 
 rcloud.fork.notebook <- function(id) fork.gist(.session$rgithub.context, id)
 
-rcloud.get.users <- function(user)  ## instead of using a list file let's simply look for existing user configs ...
-  unique(c(user, gsub(".json$", "", basename(Sys.glob(pathConf("data.root", "userfiles", "*.json"))))))
+rcloud.get.users <- function(user) ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
+  gsub("/.*","",rcs.list(usr.key("config.json", user="*", notebook="system")))
 
 rcloud.setup.dirs <- function() {
     for (data.subdir in c("userfiles", "history", "home"))
