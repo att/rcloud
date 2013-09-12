@@ -334,6 +334,18 @@ start.rcloud <- function(username="", token="", ...) {
   ## generate per-session result UUID (optional, really)
   .session$result.prefix.uuid <- generate.uuid()
 
+  if (getConf("rcs.engine") == "redis")
+    .session$rcs.engine <- rcs.redis(getConf("rcs.redis.host"))
+
+  if (is.null(.session$rcs.engine)) { ## fall-back engine are flat files
+    if (nzConf("exec.auth") && identical(getConf("exec.match.user"), "login"))
+      warning("*** WARNING: user switching is enabled but no rcs.engine is specified!\n *** This will break due to permission conflicts! rcs.engine: redis is recommended for multi-user setup")
+    fdir <- pathConf("data.root", "rcs")
+    if (!file.exists(fdir))
+      dir.create(fdir, FALSE, TRUE, "0777")
+    .session$rcs.engine <- structure(list(root=fdir), class="RCSff")
+  }
+
   ## last-minute updates (or custom initialization) to be loaded
   ## NB: it should be really fast since it will cause connect delay
   if (file.exists(fn <- pathConf("configuration.root", "init.R")))
