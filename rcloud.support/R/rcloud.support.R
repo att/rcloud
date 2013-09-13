@@ -17,13 +17,13 @@
 rcloud.load.user.config <- function(user = .session$username, map = FALSE) {
   payload <- rcs.get(usr.key("config.json", user=user, notebook="system"))
   if (is.null(payload)) payload <- "null"
-  if (map) paste0('"', user, '": ', payload) else payload
+  if (map) paste0('"', user, '": ', paste(payload, collapse='\n')) else payload
 }
 
-# hackish? but more efficient than multiple calls
-# FIXME: when we add vectorized rcs.get() we will want to update this
-rcloud.load.multiple.user.configs <- function(users)
-  paste('{', paste(sapply(users, rcloud.load.user.config, TRUE), collapse=',\n'), '}')
+rcloud.load.multiple.user.configs <- function(users) {
+  res <- unlist(lapply(rcs.get(usr.key("config.json", user=users, notebook="system"), TRUE), paste, collapse="\n"))
+  paste0('{', paste(paste0('"', users, '": ', res), collapse=','), '}')
+}
 
 rcloud.save.user.config <- function(user = .session$username, content) {
   if (rcloud.debug.level()) cat("rcloud.save.user.config(", user, ")\n", sep='')
