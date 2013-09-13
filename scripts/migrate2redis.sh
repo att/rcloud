@@ -15,4 +15,4 @@ if [ ! -e "data/userfiles" ]; then
     exit 1
 fi
 
-echo 'library(rredis); redisConnect(); for (i in Sys.glob("data/userfiles/*.json")) { cat(" migrating", i,"\n"); x <- readLines(i); redisSet(gsub("^data/userfiles/(.*).json$","\\\\1/system/config.json",i), x) }' | R --vanilla --slave
+echo 'library(rredis); redisConnect(timeout=100000000L); for (i in Sys.glob("data/userfiles/*.json")) { cat(" migrating", i,"\n"); x <- readLines(i); redisSet(gsub("^data/userfiles/(.*).json$","\\\\1/system/config.json",i), x) }' | R --vanilla --slave
