@@ -138,11 +138,12 @@ var editor = function () {
                         my_alls = notebook_nodes;
                     }
                     else {
+                        var id = node_id('alls', username) + '/';
                         var node = {
                             label: someone_elses(username),
-                            id: '/alls/' + username,
+                            id: id,
                             sort_order: ordering.SUBFOLDER,
-                            children: notebook_nodes.sort(compare_nodes)
+                            children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
                         };
                         user_nodes.push(node);
                     }
