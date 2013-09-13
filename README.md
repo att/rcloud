@@ -15,6 +15,8 @@ If you are using other Linux systems, the names may vary.
 On Mac OS X all packages should be available in binary form so no dependencies should be needed
 (other than Xcode Command Line tools).
 
+You will also need to install and run a [redis server](http://redis.io/)
+
 ### Checking out the code
 
 You will need to do
