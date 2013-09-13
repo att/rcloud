@@ -181,10 +181,25 @@ var editor = function () {
         return $tree_.tree('appendNode', data, parent);
     }
 
-    function update_tree(root, user, gistname, data, last_chance) {
-        var id = node_id(root, user, gistname);
-        var node = $tree_.tree('getNodeById', id);
-        var parent, children;
+    function update_tree(root, user, gistname, path, last_chance) {
+        // make sure parents exist
+        var id = user===username_ ? node_id(root) : node_id(root, user),
+            parent = $tree_.tree('getNodeById', id),
+            pdat = null,
+            node = null;
+        while('children' in path) {
+            node = $tree_.tree('getNodeById', path.id);
+            if(!node) {
+                pdat = _.omit(path, 'children');
+                node = insert_alpha(pdat, parent);
+            }
+            parent = node;
+            path = path.children[0];
+        }
+        var data = path;
+        id = node_id(root, user, gistname);
+        node = $tree_.tree('getNodeById', id);
+        var children;
         data.gistname = gistname;
         data.id = id;
         data.root = root;
@@ -193,12 +208,18 @@ var editor = function () {
             // the update stuff doesn't exist in the jqtree version
             // we're using, and the latest jqtree didn't seem to work
             // at all, so.. blunt stupid approach here:
-            parent = node.parent;
             children = node.children;
             if(last_chance)
                 last_chance(node); // hacky
+            var dp = node.parent;
             $tree_.tree('removeNode', node);
             node = insert_alpha(data, parent);
+            // remove any empty notebook hierarchy
+            while(dp.children.length===0 && dp.sort_order===ordering.NOTEBOOK) {
+                var dp2 = dp.parent;
+                $tree_.tree('removeNode', dp);
+                dp = dp2;
+            }
         }
         else {
             if(user == username_) {
@@ -213,7 +234,7 @@ var editor = function () {
                     // creating a subfolder and then using loadData on it
                     // seems to be *the* way that works
                     parent = $tree_.tree('getNodeById', node_id(root));
-                    var pdat = {
+                    pdat = {
                         label: someone_elses(user),
                         id: node_id(root, user),
                         sort_order: ordering.SUBFOLDER
@@ -610,9 +631,7 @@ var editor = function () {
                 $tree_.tree('selectNode', node);
         },
         update_tree_entry: function(user, gistname, entry, history) {
-            var m, label = (m = entry.description.match(/.+\/([^/]+)$/)) ?
-                m[1] : entry.description;
-            var data = {label: label,
+            var data = {label: entry.description,
                         last_commit: entry.last_commit,
                         sort_order: ordering.NOTEBOOK,
                         visibility: entry.visibility,
@@ -624,7 +643,8 @@ var editor = function () {
             // always show the same number of history nodes as before, unless
             // we're starting out and looking at an old version
             var where = 0, is_open = false;
-            var node = update_tree('interests', user, gistname, data,
+            var inter_path = as_folder_hierarchy([data], node_id('interests', user))[0];
+            var node = update_tree('interests', user, gistname, inter_path,
                                    function(node) {
                                        data.history = data.history || node.history;
                                        where = node.children.length;
@@ -650,7 +670,8 @@ var editor = function () {
             add_history_nodes(node, where, k);
             if(config_.currversion)
                 node = null; // don't select
-            update_tree('alls', user, gistname, data);
+            var alls_path = as_folder_hierarchy([data], node_id('alls', user))[0];
+            update_tree('alls', user, gistname, alls_path);
 
             this.save_config();
             return node;
