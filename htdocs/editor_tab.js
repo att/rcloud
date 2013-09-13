@@ -114,9 +114,9 @@ var editor = function () {
             }
         }
         var children = my_notebooks.concat(user_nodes).sort(compare_nodes);
-        debugger;
         children = as_folder_hierarchy(children);
         root_data[0].children = children;
+        root_data[1].children = as_folder_hierarchy(root_data[1].children);
         result.create_book_tree_widget(root_data);
         var interests = $tree_.tree('getNodeById', "/interests");
         $tree_.tree('openNode', interests);
