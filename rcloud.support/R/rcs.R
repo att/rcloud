@@ -1,8 +1,8 @@
 ## RCS (RCloud Storage) methods
 
-usr.key <- function(..., user=.session$username, notebook=.session$notebook) paste( user, notebook, ..., sep='/', collapse=':')
+usr.key <- function(..., user=.session$username, notebook=.session$notebook) paste(user, notebook, ..., sep='/')
 
-rcs.get <- function(key, engine=.session$rcs.engine) UseMethod("rcs.get", engine)
+rcs.get <- function(key, list=FALSE, engine=.session$rcs.engine) UseMethod("rcs.get", engine)
 
 rcs.set <- function(key, value, engine=.session$rcs.engine) UseMethod("rcs.set", engine)
 

@@ -2,15 +2,24 @@
 
 .ffpath <- function(key, engine) file.path(engine$root, key)
 
-rcs.get.RCSff <- function(key, engine=.session$rcs.engine) (tryCatch(readRDS(.ffpath(key, engine)), error=function(e) NULL, warning=function(w) NULL))
+.lnapply <- function(X, ...) { l <- lapply(X, ...); names(l) <- X; l }
+
+rcs.get.RCSff <- function(key, list=FALSE, engine=.session$rcs.engine)
+   if (list || length(key) != 1L) .lnapply(key, rcs.get.RCSff, FALSE, engine) else (tryCatch(readRDS(.ffpath(key, engine)), error=function(e) NULL, warning=function(w) NULL))
 
 rcs.set.RCSff <- function(key, value, engine=.session$rcs.engine) {
-  tmp <- paste0(.ffpath(key, engine), "...tmp")
-  dir <- dirname(tmp)
-  if (!file.exists(dir)) dir.create(dir, FALSE, TRUE, "0777")
-  saveRDS(value, tmp)
-  file.rename(tmp, .ffpath(key, engine))
-  value
+  if (missing(value)) {
+    if (!is.list(key) || is.null(names(key))) stop("Missing `value' and `key' is not a named vector")
+    for (i in seq.int(length(key))) rcs.set.RCSff(names(key)[i], key[[i]], engine)
+    key
+  } else {
+    tmp <- paste0(.ffpath(key, engine), "...tmp")
+    dir <- dirname(tmp)
+    if (!file.exists(dir)) dir.create(dir, FALSE, TRUE, "0777")
+    saveRDS(value, tmp)
+    file.rename(tmp, .ffpath(key, engine))
+    value
+  }
 }
 
 rcs.incr.RCSff <- function(key, engine=.session$rcs.engine) {

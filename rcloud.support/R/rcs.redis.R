@@ -23,9 +23,9 @@ rcs.redis <- function(host=NULL) {
   expr
 }
 
-rcs.get.RCSredis <- function(key, engine=.session$rcs.engine) .rdo(redisGet(key), engine)
+rcs.get.RCSredis <- function(key, list=FALSE, engine=.session$rcs.engine) .rdo(if (list || length(key) != 1L) redisMGet(key) else redisGet(key), engine)
 
-rcs.set.RCSredis <- function(key, value, engine=.session$rcs.engine) .rdo(redisSet(key, value), engine)
+rcs.set.RCSredis <- function(key, value, engine=.session$rcs.engine) .rdo(if (missing(value) && is.list(key)) redisMSet(key) else redisSet(key, value), engine)
 
 rcs.incr.RCSredis <- function(key, engine=.session$rcs.engine) .rdo(redisIncr(key), engine)
 
