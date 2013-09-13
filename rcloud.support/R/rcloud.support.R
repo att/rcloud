@@ -325,7 +325,8 @@ start.rcloud <- function(username="", token="", ...) {
   ## generate per-session result UUID (optional, really)
   .session$result.prefix.uuid <- generate.uuid()
 
-  if (getConf("rcs.engine") == "redis")
+  reconf <- getConf("rcs.engine")
+  if (!is.null(reconf) && reconf == "redis")
     .session$rcs.engine <- rcs.redis(getConf("rcs.redis.host"))
 
   if (is.null(.session$rcs.engine)) { ## fall-back engine are flat files
