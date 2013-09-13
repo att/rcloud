@@ -29,7 +29,7 @@
         }
         catch(e) {
             k(function() {
-                wdcplot.format_error(e);
+                return wdcplot.format_error(e);
             });
             return;
         }
