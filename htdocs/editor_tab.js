@@ -34,7 +34,7 @@ var editor = function () {
         return ret;
     }
 
-    function as_folder_hierarchy(nodes) {
+    function as_folder_hierarchy(nodes, prefix) {
         function is_in_folder(v) { return v.label.match(/([^/]+)\/(.+)/); }
         var in_folders = nodes;
         in_folders = _.filter(in_folders, is_in_folder);
@@ -52,11 +52,12 @@ var editor = function () {
             var children = _.map(v, function(o) {
                 return _.omit(o, "folder_name");
             });
+            var id = prefix + k + '/';
             return {
                 label: k,
                 sort_order: ordering.NOTEBOOK,
-                id: k + '/',
-                children: as_folder_hierarchy(children)
+                id: id,
+                children: as_folder_hierarchy(children, id)
             };
         });
         var outside_folders = _.filter(nodes, function(v) {
@@ -115,7 +116,7 @@ var editor = function () {
             }
         }
         var children = my_notebooks.concat(user_nodes);
-        children = as_folder_hierarchy(children).sort(compare_nodes);
+        children = as_folder_hierarchy(children, node_id('interests', username_) + '/').sort(compare_nodes);
         root_data[0].children = children;
         result.create_book_tree_widget(root_data);
         var interests = $tree_.tree('getNodeById', "/interests");
