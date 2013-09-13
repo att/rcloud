@@ -22,16 +22,17 @@ initial.ocaps <- function()
       save_user_config=make.oc(rcloud.save.user.config),
       get_github_url=make.oc(rcloud.get.github.url),
       get_notebook=make.oc(rcloud.get.notebook),
+      call_notebook=make.oc(rcloud.call.notebook),
       update_notebook=make.oc(rcloud.update.notebook),
       create_notebook=make.oc(rcloud.create.notebook),
-      get_users=make.oc(rcloud.get.users),
       rename_notebook=make.oc(rcloud.rename.notebook),
-      call_notebook=make.oc(rcloud.call.notebook),
+      fork_notebook=make.oc(rcloud.fork.notebook),
+      get_users=make.oc(rcloud.get.users),
       call_fastrweb_notebook=make.oc(rcloud.call.FastRWeb.notebook),
 
       # javascript.R
       setup_js_installer=make.oc(rcloud.setup.js.installer),
-      
+
       # file upload ocaps
       file_upload=list(
         create=make.oc(rcloud.upload.create.file),

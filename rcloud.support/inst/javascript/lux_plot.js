@@ -1,4 +1,4 @@
-(function() {
+((function() {
 
 var LuxChart = {};
 
@@ -215,4 +215,6 @@ return {
         var lst = data[1];
         k(function() { return LuxChart.lux_tour_plot(lst); });
     }
-};})
+};
+})())
+

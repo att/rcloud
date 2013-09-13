@@ -18,7 +18,7 @@
             charts = wdcplot.translate.apply(null,data.slice(1));
         }
         catch(e) {
-            k(function() { 
+            k(function() {
                 return $('<p/>').append("Exception creating dcplot definition: " + e);
             });
             return;
@@ -29,7 +29,7 @@
         }
         catch(e) {
             k(function() {
-                wdcplot.format_error(e);
+                return wdcplot.format_error(e);
             });
             return;
         }
