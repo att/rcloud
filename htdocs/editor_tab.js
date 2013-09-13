@@ -149,7 +149,8 @@ var editor = function () {
 
                 // start creating the tree data and pass it forward
                 // populate_interests will create the tree
-                var children = my_alls.concat(user_nodes).sort(compare_nodes);
+                var children = as_folder_hierarchy(my_alls, node_id('alls', username_) + '/');
+                children = children.concat(user_nodes).sort(compare_nodes);
                 var root_data = [
                     {
                         label: 'My Interests',
