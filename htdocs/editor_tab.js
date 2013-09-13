@@ -34,6 +34,38 @@ var editor = function () {
         return ret;
     }
 
+    function as_folder_hierarchy(nodes, prefix) {
+        function is_in_folder(v) { return v.label.match(/([^/]+)\/(.+)/); }
+        var in_folders = nodes;
+        in_folders = _.filter(in_folders, is_in_folder);
+        in_folders = _.map(in_folders, function(v) {
+            var m = v.label.match(/([^/]+)\/(.+)/);
+            var r = _.clone(v);
+            r.folder_name = m[1];
+            r.label = m[2];
+            return r;
+        });
+        in_folders = _.groupBy(in_folders, function(v) {
+            return v.folder_name;
+        });
+        in_folders = _.map(in_folders, function(v, k) {
+            var children = _.map(v, function(o) {
+                return _.omit(o, "folder_name");
+            });
+            var id = prefix + '/' + k;
+            return {
+                label: k,
+                sort_order: ordering.NOTEBOOK,
+                id: id,
+                children: as_folder_hierarchy(children, id)
+            };
+        });
+        var outside_folders = _.filter(nodes, function(v) {
+            return !is_in_folder(v);
+        });
+        return outside_folders.concat(in_folders).sort(compare_nodes);
+    }
+
     function convert_notebook_set(root, username, set) {
         var notebook_nodes = [];
         for(var name in set) {
@@ -74,24 +106,22 @@ var editor = function () {
             if(username === username_)
                 my_notebooks = notebook_nodes;
             else {
+                var id = node_id('interests', username);
                 var node = {
                     label: someone_elses(username),
-                    id: '/interests/' + username,
+                    id: id,
                     sort_order: ordering.SUBFOLDER,
-                    children: notebook_nodes.sort(compare_nodes)
+                    children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
                 };
                 user_nodes.push(node);
             }
         }
-        var children =  my_notebooks.concat(user_nodes).sort(compare_nodes);
+        var children = as_folder_hierarchy(my_notebooks, node_id('interests', username_));
+        children = children.concat(user_nodes).sort(compare_nodes);
         root_data[0].children = children;
         result.create_book_tree_widget(root_data);
         var interests = $tree_.tree('getNodeById', "/interests");
         $tree_.tree('openNode', interests);
-        /*
-        $tree_.tree("loadData", children, interests);
-        $(interests.element).parent().prepend(interests.element);
-         */
     }
 
     function load_all_configs(k) {
@@ -108,11 +138,12 @@ var editor = function () {
                         my_alls = notebook_nodes;
                     }
                     else {
+                        var id = node_id('alls', username);
                         var node = {
                             label: someone_elses(username),
-                            id: '/alls/' + username,
+                            id: id,
                             sort_order: ordering.SUBFOLDER,
-                            children: notebook_nodes.sort(compare_nodes)
+                            children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
                         };
                         user_nodes.push(node);
                     }
@@ -120,7 +151,8 @@ var editor = function () {
 
                 // start creating the tree data and pass it forward
                 // populate_interests will create the tree
-                var children = my_alls.concat(user_nodes).sort(compare_nodes);
+                var children = as_folder_hierarchy(my_alls, node_id('alls', username_));
+                children = children.concat(user_nodes).sort(compare_nodes);
                 var root_data = [
                     {
                         label: 'My Interests',
@@ -149,10 +181,25 @@ var editor = function () {
         return $tree_.tree('appendNode', data, parent);
     }
 
-    function update_tree(root, user, gistname, data, last_chance) {
-        var id = node_id(root, user, gistname);
-        var node = $tree_.tree('getNodeById', id);
-        var parent, children;
+    function update_tree(root, user, gistname, path, last_chance) {
+        // make sure parents exist
+        var id = user===username_ ? node_id(root) : node_id(root, user),
+            parent = $tree_.tree('getNodeById', id),
+            pdat = null,
+            node = null;
+        while('children' in path) {
+            node = $tree_.tree('getNodeById', path.id);
+            if(!node) {
+                pdat = _.omit(path, 'children');
+                node = insert_alpha(pdat, parent);
+            }
+            parent = node;
+            path = path.children[0];
+        }
+        var data = path;
+        id = node_id(root, user, gistname);
+        node = $tree_.tree('getNodeById', id);
+        var children;
         data.gistname = gistname;
         data.id = id;
         data.root = root;
@@ -161,12 +208,18 @@ var editor = function () {
             // the update stuff doesn't exist in the jqtree version
             // we're using, and the latest jqtree didn't seem to work
             // at all, so.. blunt stupid approach here:
-            parent = node.parent;
             children = node.children;
             if(last_chance)
                 last_chance(node); // hacky
+            var dp = node.parent;
             $tree_.tree('removeNode', node);
             node = insert_alpha(data, parent);
+            // remove any empty notebook hierarchy
+            while(dp.children.length===0 && dp.sort_order===ordering.NOTEBOOK) {
+                var dp2 = dp.parent;
+                $tree_.tree('removeNode', dp);
+                dp = dp2;
+            }
         }
         else {
             if(user == username_) {
@@ -181,7 +234,7 @@ var editor = function () {
                     // creating a subfolder and then using loadData on it
                     // seems to be *the* way that works
                     parent = $tree_.tree('getNodeById', node_id(root));
-                    var pdat = {
+                    pdat = {
                         label: someone_elses(user),
                         id: node_id(root, user),
                         sort_order: ordering.SUBFOLDER
@@ -519,6 +572,7 @@ var editor = function () {
         notebook_loaded: function(version, result) {
             config_.currbook = result.id;
             config_.currversion = version;
+
             this.update_notebook_status(result.user.login,
                                         result.id,
                                         {description: result.description,
@@ -532,9 +586,9 @@ var editor = function () {
         },
         update_notebook_file_list: function(files) {
             // FIXME natural sort!
-            var files_out = _(files).pairs().filter(function(v) { 
+            var files_out = _(files).pairs().filter(function(v) {
                 var k = v[0];
-                return !k.match(/\.([rR]|[mM][dD])$/) && k !== "r_type" && k !== "r_attributes"; 
+                return !k.match(/\.([rR]|[mM][dD])$/) && k !== "r_type" && k !== "r_attributes";
             });
 
             d3.select("#notebook-assets")
@@ -589,7 +643,8 @@ var editor = function () {
             // always show the same number of history nodes as before, unless
             // we're starting out and looking at an old version
             var where = 0, is_open = false;
-            var node = update_tree('interests', user, gistname, data,
+            var inter_path = as_folder_hierarchy([data], node_id('interests', user))[0];
+            var node = update_tree('interests', user, gistname, inter_path,
                                    function(node) {
                                        data.history = data.history || node.history;
                                        where = node.children.length;
@@ -615,7 +670,8 @@ var editor = function () {
             add_history_nodes(node, where, k);
             if(config_.currversion)
                 node = null; // don't select
-            update_tree('alls', user, gistname, data);
+            var alls_path = as_folder_hierarchy([data], node_id('alls', user))[0];
+            update_tree('alls', user, gistname, alls_path);
 
             this.save_config();
             return node;
