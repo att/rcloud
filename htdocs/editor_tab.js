@@ -52,7 +52,7 @@ var editor = function () {
             var children = _.map(v, function(o) {
                 return _.omit(o, "folder_name");
             });
-            var id = prefix + k + '/';
+            var id = prefix + '/' + k;
             return {
                 label: k,
                 sort_order: ordering.NOTEBOOK,
@@ -106,7 +106,7 @@ var editor = function () {
             if(username === username_)
                 my_notebooks = notebook_nodes;
             else {
-                var id = node_id('interests', username) + '/';
+                var id = node_id('interests', username);
                 var node = {
                     label: someone_elses(username),
                     id: id,
@@ -116,7 +116,7 @@ var editor = function () {
                 user_nodes.push(node);
             }
         }
-        var children = as_folder_hierarchy(my_notebooks, node_id('interests', username_) + '/');
+        var children = as_folder_hierarchy(my_notebooks, node_id('interests', username_));
         children = children.concat(user_nodes).sort(compare_nodes);
         root_data[0].children = children;
         result.create_book_tree_widget(root_data);
@@ -138,7 +138,7 @@ var editor = function () {
                         my_alls = notebook_nodes;
                     }
                     else {
-                        var id = node_id('alls', username) + '/';
+                        var id = node_id('alls', username);
                         var node = {
                             label: someone_elses(username),
                             id: id,
@@ -151,7 +151,7 @@ var editor = function () {
 
                 // start creating the tree data and pass it forward
                 // populate_interests will create the tree
-                var children = as_folder_hierarchy(my_alls, node_id('alls', username_) + '/');
+                var children = as_folder_hierarchy(my_alls, node_id('alls', username_));
                 children = children.concat(user_nodes).sort(compare_nodes);
                 var root_data = [
                     {
