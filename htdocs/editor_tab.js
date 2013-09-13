@@ -106,11 +106,12 @@ var editor = function () {
             if(username === username_)
                 my_notebooks = notebook_nodes;
             else {
+                var id = node_id('interests', username) + '/';
                 var node = {
                     label: someone_elses(username),
-                    id: '/interests/' + username,
+                    id: id,
                     sort_order: ordering.SUBFOLDER,
-                    children: notebook_nodes.sort(compare_nodes)
+                    children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
                 };
                 user_nodes.push(node);
             }
