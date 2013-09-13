@@ -6,4 +6,3 @@ github.client.id: xxxxxxxxxxx
 github.client.secret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 github.base.url: https://github.com/
 github.api.url: https://api.github.com/
-rcs.engine: redis
