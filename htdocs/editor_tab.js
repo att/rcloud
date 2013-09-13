@@ -49,8 +49,8 @@ var editor = function () {
             return v.folder_name;
         });
         in_folders = _.map(in_folders, function(v, k) {
-            var children = _.map(v, function(o) { 
-                return _.omit(o, "folder_name"); 
+            var children = _.map(v, function(o) {
+                return _.omit(o, "folder_name");
             });
             return {
                 label: k,
@@ -58,7 +58,7 @@ var editor = function () {
                 children: as_folder_hierarchy(children)
             };
         });
-        var outside_folders = _.filter(nodes, function(v) { 
+        var outside_folders = _.filter(nodes, function(v) {
             return !is_in_folder(v);
         });
         return outside_folders.concat(in_folders);
@@ -565,9 +565,9 @@ var editor = function () {
         },
         update_notebook_file_list: function(files) {
             // FIXME natural sort!
-            var files_out = _(files).pairs().filter(function(v) { 
+            var files_out = _(files).pairs().filter(function(v) {
                 var k = v[0];
-                return !k.match(/\.([rR]|[mM][dD])$/) && k !== "r_type" && k !== "r_attributes"; 
+                return !k.match(/\.([rR]|[mM][dD])$/) && k !== "r_type" && k !== "r_attributes";
             });
 
             d3.select("#notebook-assets")
@@ -610,7 +610,7 @@ var editor = function () {
                 $tree_.tree('selectNode', node);
         },
         update_tree_entry: function(user, gistname, entry, history) {
-            var m, label = (m = entry.description.match(/.+\/([^/]+)$/)) ? 
+            var m, label = (m = entry.description.match(/.+\/([^/]+)$/)) ?
                 m[1] : entry.description;
             var data = {label: label,
                         last_commit: entry.last_commit,
