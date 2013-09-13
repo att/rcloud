@@ -22,6 +22,9 @@ rcs.set.RCSff <- function(key, value, engine=.session$rcs.engine) {
   }
 }
 
+rcs.rm.RCSff <- function(key, engine=.session$rcs.engine)
+  tryCatch(file.remove(.ffpath(key, engine)), warning=function(w) FALSE, error=function(e) FALSE)
+
 rcs.incr.RCSff <- function(key, engine=.session$rcs.engine) {
   x <- tryCatch(as.integer(rcs.get(key, engine)), warning=function(w) 0L)
   if (length(x) != 1L) x <- 0L
