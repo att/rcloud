@@ -536,7 +536,6 @@ var editor = function () {
                 var k = v[0];
                 return !k.match(/\.([rR]|[mM][dD])$/) && k !== "r_type" && k !== "r_attributes"; 
             });
-            debugger;
 
             d3.select("#notebook-assets")
                 .selectAll("li")
