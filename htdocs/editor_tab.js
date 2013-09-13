@@ -54,6 +54,7 @@ var editor = function () {
             });
             return {
                 label: k,
+                sort_order: ordering.NOTEBOOK,
                 id: k + '/',
                 children: as_folder_hierarchy(children)
             };
@@ -61,7 +62,7 @@ var editor = function () {
         var outside_folders = _.filter(nodes, function(v) {
             return !is_in_folder(v);
         });
-        return outside_folders.concat(in_folders);
+        return outside_folders.concat(in_folders).sort(compare_nodes);
     }
 
     function convert_notebook_set(root, username, set) {
@@ -113,17 +114,12 @@ var editor = function () {
                 user_nodes.push(node);
             }
         }
-        var children = my_notebooks.concat(user_nodes).sort(compare_nodes);
-        debugger;
-        children = as_folder_hierarchy(children);
+        var children = my_notebooks.concat(user_nodes);
+        children = as_folder_hierarchy(children).sort(compare_nodes);
         root_data[0].children = children;
         result.create_book_tree_widget(root_data);
         var interests = $tree_.tree('getNodeById', "/interests");
         $tree_.tree('openNode', interests);
-        /*
-        $tree_.tree("loadData", children, interests);
-        $(interests.element).parent().prepend(interests.element);
-         */
     }
 
     function load_all_configs(k) {
