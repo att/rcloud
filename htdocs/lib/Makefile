@@ -11,7 +11,8 @@ ace_bundle.js:	\
 	js/ace/r_code_model.js \
 	js/ace/r_scope_tree.js \
 	js/ace/mode-markdown.js \
-        js/ace/sweave_background_highlighter.js
+        js/ace/sweave_background_highlighter.js \
+	js/ace/ext-language_tools.js
 
 dependencies_bundle.js: \
 	js/jquery-1.7.1.js \
