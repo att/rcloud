@@ -39,8 +39,8 @@ var textCompleter = require("../autocomplete/text_completer");
 var keyWordCompleter = {
     getCompletions: function(editor, session, pos, prefix, callback) {
         var state = editor.session.getState(pos.row);
-        var completions = session.$mode.getCompletions(state, session, pos, prefix);
-        callback(null, completions);
+        var completions = session.$mode.getCompletions(state, session, pos, prefix, callback);
+        //callback(null, completions);
     }
 };
 
