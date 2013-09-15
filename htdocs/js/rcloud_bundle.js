@@ -174,6 +174,8 @@ RCloud.create = function(rcloud_ocaps) {
     };
     rcloud.get_completions = function(text, pos, k) {
         return rcloud_ocaps.get_completions(text, pos, function(comps) {
+            // convert to the record format ace.js autocompletion expects
+            // meta is what gets displayed at right; name & score might be improved
             k(_.map(comps,
                     function(comp) {
                         return {meta: "local",
