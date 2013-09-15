@@ -172,6 +172,18 @@ RCloud.create = function(rcloud_ocaps) {
     rcloud.get_users = function(user, k) {
         rcloud_ocaps.get_users(user, k || _.identity);
     };
+    rcloud.get_completions = function(text, pos, k) {
+        return rcloud_ocaps.get_completions(text, pos, function(comps) {
+            k(_.map(comps,
+                    function(comp) {
+                        return {meta: "local",
+                                name: "library",
+                                score: 3,
+                                value: comp
+                               };
+                    }));
+        });
+    };
     rcloud.rename_notebook = function(id, new_name, k) {
         k = rcloud_github_handler("rcloud.rename.notebook", k);
         rcloud_ocaps.rename_notebook(id, new_name, k);
@@ -414,12 +426,15 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     // ace_div.css({'background-color': language === 'R' ? "#B1BEA4" : "#F1EDC0"});
     inner_div.append(markdown_div);
     markdown_div.append(ace_div);
+    ace.require("ace/ext/language_tools");
     var widget = ace.edit(ace_div[0]);
     var RMode = require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
     var session = widget.getSession();
     var doc = session.doc;
     widget.setReadOnly(cell_model.parent_model.read_only());
-
+    widget.setOptions({
+        enableBasicAutocompletion: true
+    });
     session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
         notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
