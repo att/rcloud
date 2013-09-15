@@ -108,6 +108,15 @@ rcloud.setup.dirs <- function() {
              dir.create(fn, FALSE, TRUE, "0770")
 }
 
+rcloud.get.completions <- function(text, pos) {
+  # from rcompgen.completion
+  utils:::.assignLinebuffer(text)
+  utils:::.assignEnd(pos)
+  utils:::.guessTokenFromLine()
+  utils:::.completeToken()
+  utils:::.CompletionEnv[["comps"]]
+}
+
 rcloud.search <- function(search.string) {
   if (nchar(search.string) == 0)
     list(NULL, NULL)
