@@ -1042,7 +1042,8 @@ var Autocomplete = function() {
             data.completer.insertMatch(this.editor);
         } else {
             if (this.completions.filterText) {
-                var ranges = this.editor.selection.getAllRanges();
+                // gw: getAllRanges comes up blank, so it doesn't replace (??)
+                var ranges = [this.editor.selection.getRange()]; // this.editor.selection.getAllRanges();
                 for (var i = 0, range; range = ranges[i]; i++) {
                     range.start.column -= this.completions.filterText.length;
                     this.editor.session.remove(range);
