@@ -193,9 +193,7 @@ var shell = (function() {
             url += 'gist/' + gistname_;
             if(version_)
                 url += '/' + version_;
-            // can't get this to open in new tab with target = '_blank'
-            // so just going there.  FIXME
-            window.open(url, "_self");
+            window.open(url, "_blank");
         }, open_from_github: function(notebook_or_url) {
             var notebook;
             // hmm a more general url parser might be in order here
