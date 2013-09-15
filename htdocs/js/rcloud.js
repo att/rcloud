@@ -73,6 +73,20 @@ RCloud.create = function(rcloud_ocaps) {
     rcloud.get_users = function(user, k) {
         rcloud_ocaps.get_users(user, k || _.identity);
     };
+    rcloud.get_completions = function(text, pos, k) {
+        return rcloud_ocaps.get_completions(text, pos, function(comps) {
+            // convert to the record format ace.js autocompletion expects
+            // meta is what gets displayed at right; name & score might be improved
+            k(_.map(comps,
+                    function(comp) {
+                        return {meta: "local",
+                                name: "library",
+                                score: 3,
+                                value: comp
+                               };
+                    }));
+        });
+    };
     rcloud.rename_notebook = function(id, new_name, k) {
         k = rcloud_github_handler("rcloud.rename.notebook", k);
         rcloud_ocaps.rename_notebook(id, new_name, k);
