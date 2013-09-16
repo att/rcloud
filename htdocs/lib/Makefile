@@ -30,10 +30,7 @@ dependencies_bundle.js: \
 	js/dcplot/dcplot.js \
 	js/rserve.js \
 	js/hl.min.js \
-	js/bootstrap.js \
-	js/bootstrap-transition.js \
-	js/bootstrap-tooltip.js \
-	js/bootstrap-collapse.js
+	js/bootstrap.js
 
 ace_bundle.min.js: ace_bundle.js Makefile
 	@rm -f $@
