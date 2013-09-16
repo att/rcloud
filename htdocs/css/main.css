@@ -236,6 +236,14 @@ rect.frame {
     opacity: 0.7;
 }
 
+/* not sure why these got smaller in bootstrap 3? */
+.navbar-brand {
+    font-size: 20px;
+}
+.navbar-nav {
+    font-size: 13px;
+}
+
 /*
 how do i just delete their styles which i don't like,
 without modifying jqtree.css?
