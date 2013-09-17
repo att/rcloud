@@ -60,11 +60,11 @@ RClient = {
             // the notebook objects.
 
             string_error: function(msg) {
-                return $("<div class='alert alert-error'></div>").text(msg);
+                return $("<div class='alert alert-danger'></div>").text(msg);
             },
 
             disconnection_error: function(msg) {
-                var result = $("<div class='alert alert-error'></div>");
+                var result = $("<div class='alert alert-danger'></div>");
                 result.append($("<span></span>").text(msg));
                 var button = $("<button type='button' class='close'>Reconnect</button>");
                 result.append(button);
@@ -83,7 +83,7 @@ RClient = {
                     msg = this.string_error(msg);
                 if (typeof msg !== 'object')
                     throw new Error("post_error expects a string or a jquery div");
-                // var d = $("<div class='alert alert-error'></div>").text(msg);
+                // var d = $("<div class='alert alert-danger'></div>").text(msg);
                 $("#output").append(msg);
                 window.scrollTo(0, document.body.scrollHeight);
             },
