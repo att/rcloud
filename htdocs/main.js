@@ -118,14 +118,6 @@ function main_init() {
         on_data: function(v) {
             v = v.value.json();
             oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
-        },
-        on_oob_message: function(v, callback) {
-            try {
-                v = v.value.json();
-                oob_msg_handlers[v[0]] && oob_msg_handlers[v[0]](v.slice(1), callback);
-            } catch (e) {
-                callback(String(e), true);
-            }
         }
     });
 }

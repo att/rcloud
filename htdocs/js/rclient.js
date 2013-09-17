@@ -45,8 +45,7 @@ RClient = {
             on_connect: on_connect,
             on_error: on_error,
             on_close: on_close,
-            on_data: opts.on_data,
-            on_oob_message: opts.on_oob_message
+            on_data: opts.on_data
         });
 
         var result;
