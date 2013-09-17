@@ -45,8 +45,7 @@ RClient = {
             on_connect: on_connect,
             on_error: on_error,
             on_close: on_close,
-            on_data: opts.on_data,
-            on_oob_message: opts.on_oob_message
+            on_data: opts.on_data
         });
 
         var result;
@@ -261,6 +260,12 @@ RCloud.create = function(rcloud_ocaps) {
     };
     rcloud.post_comment = function(id, content, k) {
         rcloud_ocaps.comments.post(id, content, k || _.identity);
+    };
+
+    // debugging ocaps
+    rcloud.debug = {};
+    rcloud.debug.raise = function(msg, k) {
+        rcloud_ocaps.debug.raise(msg, k);
     };
 
     return rcloud;
