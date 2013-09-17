@@ -1,4 +1,9 @@
-make.oc <- function(fun) .Call(Rserve_oc_register, fun)
+make.oc <- function(fun) {
+  f <- function(...) {
+    try(fun(...))
+  }
+  .Call(Rserve_oc_register, f)
+}
 
 oc.init <- function(...) { ## this is the payload of the OCinit message
   ## remove myself from the global env since my job is done
@@ -51,6 +56,11 @@ initial.ocaps <- function()
       comments=list(
         get_all=make.oc(rcloud.get.comments),
         post=make.oc(rcloud.post.comment)
+        ),
+
+      # debugging
+      debug=list(
+        raise=make.oc(function(msg) stop(paste("Forced exception", msg)))
         )
 
       )
