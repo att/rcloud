@@ -164,5 +164,11 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud_ocaps.comments.post(id, content, k || _.identity);
     };
 
+    // debugging ocaps
+    rcloud.debug = {};
+    rcloud.debug.raise = function(msg, k) {
+        rcloud_ocaps.debug.raise(msg, k);
+    };
+
     return rcloud;
 };
