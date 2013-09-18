@@ -93,14 +93,36 @@ function main_init() {
             });
             $(".collapse").collapse();
             $("#upload-submit").click(function() {
-              rcloud.upload_file(function(path, file) {
-                  $("#file-upload-div").append(
-                      bootstrap.alert({
-                          "class": 'info',
-                          text: "File " + file.name + " uploaded."
-                      })
-                  );
-              });
+                var success = function(path, file) {
+                    $("#file-upload-div").append(
+                        bootstrap_utils.alert({
+                            "class": 'alert-info',
+                            text: "File " + file.name + " uploaded."
+                        })
+                    );
+                };
+                rcloud.upload_file(false, success, function() {
+                    var overwrite_click = function() {
+                        rcloud.upload_file(true, success, function(exception_value) {
+                            var msg = exception_value;
+                            $("#file-upload-div").append(
+                                bootstrap_utils.alert({
+                                    "class": 'alert-danger',
+                                    text: msg
+                                })
+                            );
+                        });
+                    };
+                    var alert_element = $("<div></div>");
+                    var p = $("<p>File exists. </p>");
+                    alert_element.append(p);
+                    var overwrite = bootstrap_utils
+                        .button({"class": 'btn-danger'})
+                        .click(overwrite_click)
+                        .text("Overwrite");
+                    p.append(overwrite);
+                    $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
+                });
             });
             rcloud.init_client_side_data();
 

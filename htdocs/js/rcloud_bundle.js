@@ -99,6 +99,14 @@ RClient = {
 RCloud = {};
 
 RCloud.create = function(rcloud_ocaps) {
+    function is_exception(v) {
+        return _.isArray(v) && v.r_attributes && v.r_attributes['class'] === 'try-error';
+    }
+    function exception_message(v) {
+        if (!is_exception(v))
+            throw new Error("Not an R exception value");
+        return v[0];
+    }
     function json_k(k) {
         return function(result) {
             k && k(JSON.parse(result));
@@ -197,32 +205,37 @@ RCloud.create = function(rcloud_ocaps) {
     rcloud.session_markdown_eval = function(command, silent, k) {
         rcloud_ocaps.session_markdown_eval(command, silent, k || _.identity);
     };
-    rcloud.upload_file = function(on_success) {
+    rcloud.upload_file = function(force, on_success, on_failure) {
         on_success = on_success || _.identity;
         function do_upload(path, file) {
             var upload_name = path + '/' + file.name;
-            rcloud_ocaps.file_upload.create(upload_name, _.identity);
-            var fr = new FileReader();
-            var chunk_size = 1024*1024;
-            var f_size=file.size;
-            var cur_pos=0;
-            //initiate the first chunk, and then another, and then another ...
-            // ...while waiting for one to complete before reading another
-            fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-            fr.onload = function(e) {
-                if (e.target.result.byteLength > 0) {
-                    var bytes = new Uint8Array(e.target.result);
-                    rcloud_ocaps.file_upload.write(bytes.buffer, function() {
-                        cur_pos += chunk_size;
-                        fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-                    });
-                } else {
-                    //This is just temporary, until we add the nice info messages from bootstrap
-                    rcloud_ocaps.file_upload.close(function(){
-                        on_success(path, file);
-                    });
+            rcloud_ocaps.file_upload.create(upload_name, force, function(result) {
+                if (is_exception(result)) {
+                    on_failure(exception_message(result));
+                    return;
                 }
-            };
+                var fr = new FileReader();
+                var chunk_size = 1024*1024;
+                var f_size=file.size;
+                var cur_pos=0;
+                //initiate the first chunk, and then another, and then another ...
+                // ...while waiting for one to complete before reading another
+                fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+                fr.onload = function(e) {
+                    if (e.target.result.byteLength > 0) {
+                        var bytes = new Uint8Array(e.target.result);
+                        rcloud_ocaps.file_upload.write(bytes.buffer, function() {
+                            cur_pos += chunk_size;
+                            fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+                        });
+                    } else {
+                        //This is just temporary, until we add the nice info messages from bootstrap
+                        rcloud_ocaps.file_upload.close(function(){
+                            on_success(path, file);
+                        });
+                    }
+                };
+            });
         }
         if(!(window.File && window.FileReader && window.FileList && window.Blob))
             throw "File API not supported by browser.";
@@ -333,6 +346,30 @@ ui_utils.make_prompt_chevron_gutter = function(widget)
             this._emit("changeGutterWidth", gutterWidth);
         }
     };
+};
+var bootstrap_utils = {};
+
+bootstrap_utils.alert = function(opts)
+{
+    opts = _.defaults(opts || {}, {
+        close_button: true
+    });
+    var div = $('<div class="alert"></div>');
+    if (opts.html) div.html(opts.html);
+    if (opts.text) div.text(opts.text);
+    if (opts['class']) div.addClass(opts['class']);
+    if (opts.close_button) 
+        div.prepend($('<button type="button" class="close" data-dismiss="alert">&times;</button>'));
+    return div;
+};
+
+bootstrap_utils.button = function(opts)
+{
+    opts = opts || {}; // _.defaults(opts || {}, {});
+    var a = $('<a class="btn" href="#"></a>');
+    a.text(opts.text);
+    if (opts['class']) a.addClass(opts['class']);
+    return a;
 };
 Notebook = {};
 
