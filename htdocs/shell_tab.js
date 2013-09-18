@@ -28,6 +28,8 @@ var shell = (function() {
         widget.resize();
         input_widget = widget;
 
+        var Autocomplete = require("ace/autocomplete").Autocomplete;
+
         widget.commands.addCommands([{
             name: 'execute',
             bindKey: {
@@ -63,6 +65,10 @@ var shell = (function() {
                     $.scrollTo(null, entry_div);
                 });
             }
+        }, {
+            name: 'another autocomplete key',
+            bindKey: 'Ctrl-.',
+            exec: Autocomplete.startCommand.exec
         }]);
         ui_utils.make_prompt_chevron_gutter(widget);
     }
