@@ -45,10 +45,11 @@ function init_github_buttons() {
 
 var oob_handlers = {
     "browsePath": function(v) {
-        $("#help-output").empty();
-        //$("#help-output").append("<iframe class='help-iframe' src='" + window.location.protocol + '//' + window.location.host + v+ "'></iframe>");
         var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
-        window.open(x,'','width=400,height=500,scrollbars=yes,resizable=yes,left=1000');
+        var width=600;
+        var height=500;
+        var left=screen.width-width;
+        window.open(x,'','width='+width+',height='+height+',scrollbars=yes,resizable=yes,left='+left);
     }
 };
 
@@ -58,17 +59,6 @@ function main_init() {
     init_fork_revert_button();
     init_github_buttons();
     footer.init();
-    
-    $("#input-text-help").keypress(function(event) { var key=event.keyCode || event.which;
-  if (key==13) {
-	var new_text = $("#input-text-help").val(); 
-	new_text="?"+new_text;	
-		 function myCallback(v){	} 
-                rcloud.session_markdown_eval("```{r}\n" + new_text + "\n```\n", false, myCallback);
-		}
-		});
-    
-    
     
     $("#show-source").click(function() {
         var this_class = $(this).attr("class");
