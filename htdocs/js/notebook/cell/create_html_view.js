@@ -154,6 +154,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // There's a list of things that we need to do to the output:
             var uuid = rcloud.deferred_knitr_uuid;
 
+            // fix image width so that retina displays are set correctly
+            // FIXME currently assumes that all plots are 72 dpi x 7 inches (which is bad)
+            inner_div.find("img")
+                .attr("width", "504px");
 
             // capture deferred knitr results
             inner_div.find("pre code")
