@@ -170,7 +170,7 @@ Notebook.create_controller = function(model)
                 return {files: _.reduce(changes, xlate_change, {})};
             }
             // not awesome to callback to someone else here
-            k = k || _.bind(editor.notebook_loaded, editor, null);
+            k = k || editor.load_callback(null, true);
             var k2 = function(notebook) {
                 current_gist_ = notebook;
                 k(notebook);
