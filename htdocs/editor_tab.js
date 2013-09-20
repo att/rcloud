@@ -303,17 +303,19 @@ var editor = function () {
         }
 
         if(_.isNumber(where)) {
+            if(where < INCR)
+                where = INCR;
             if(node.children.length)
                 for(var i = node.children.length - 1; i >= 0; --i)
                     $tree_.tree('removeNode', node.children[i]);
             if(where==0)
                 return;
-            begin = 1; // skip first which is current
-            end = where + 1;
+            begin = 0; // skip first which is current
+            end = where;
         }
         else if(_.isString(where)) {
             if(where==='more') {
-                begin = node.children.length + 1;
+                begin = node.children.length;
                 if(ellipsis) --begin;
                 end = begin + INCR;
             }
@@ -516,18 +518,17 @@ var editor = function () {
             rcloud.save_user_config(username_, config_);
         },
         load_notebook: function(gistname, version) {
-            shell.load_notebook(gistname, version,
-                _.bind(result.notebook_loaded, this, version));
+            shell.load_notebook(gistname, version, this.load_callback(version, false));
         },
         new_notebook: function() {
             if(isNaN(config_.nextwork))
                 config_.nextwork = 1;
             var desc = "Notebook " + config_.nextwork;
             ++config_.nextwork;
-            shell.new_notebook(desc, _.bind(result.notebook_loaded, this, null));
+            shell.new_notebook(desc, this.load_callback(null, false));
         },
         rename_notebook: function(gistname, newname) {
-            rcloud.rename_notebook(gistname, newname, _.bind(result.notebook_loaded, this, null));
+            rcloud.rename_notebook(gistname, newname, this.load_callback(null, true));
         },
         remove_notebook: function(node) {
             if(node.root === 'alls') {
@@ -554,35 +555,39 @@ var editor = function () {
             this.update_tree_entry(username_, node.gistname, entry);
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
-            shell.fork_or_revert_notebook(is_mine, gistname, version, _.bind(result.notebook_loaded, this, null));
+            shell.fork_or_revert_notebook(is_mine, gistname, version, this.load_callback(null, is_mine));
         },
         show_history: function(node, toggle) {
             var where = node.children.length && toggle ? 0 : "more";
             add_history_nodes(node, where, function(node) {
                 $tree_.tree('openNode', node);
             });
-            /*
-            // need this if user is allowed to hide history of the current gist and config_.currversion
-            if(node.gistname === config_.currbook && config_.currversion) {
-                var n = $tree_.tree('getNodeById', node_id('interests', node.user, node.gistname, config_.currversion));
-                $tree_.tree('selectNode', n);
-            }
-             */
         },
-        notebook_loaded: function(version, result) {
-            config_.currbook = result.id;
-            config_.currversion = version;
-
-            this.update_notebook_status(result.user.login,
-                                        result.id,
-                                        {description: result.description,
-                                         last_commit: result.updated_at || result.history[0].committed_at,
-                                         // we don't want the truncated history from an old version
-                                         history: version ? null : result.history});
-            this.update_notebook_file_list(result.files);
-            rcloud.get_all_comments(result.id, function(data) {
-                populate_comments(JSON.parse(data));
-            });
+        load_callback: function(version, is_change) {
+            var that = this;
+            return function(result) {
+                config_.currbook = result.id;
+                config_.currversion = version;
+                var history;
+                // oddly when you make a change you get only prior history
+                // but when loading you get the entire history
+                // also we don't want the truncated history at all if loading old version
+                if(version)
+                    history = null;
+                else if(is_change)
+                    history = result.history;
+                else
+                    history = result.history.slice(1);
+                that.update_notebook_status(result.user.login,
+                                            result.id,
+                                            {description: result.description,
+                                             last_commit: result.updated_at || result.history[0].committed_at,
+                                             history:history});
+                that.update_notebook_file_list(result.files);
+                rcloud.get_all_comments(result.id, function(data) {
+                    populate_comments(JSON.parse(data));
+                });
+            };
         },
         update_notebook_file_list: function(files) {
             // FIXME natural sort!
