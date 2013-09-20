@@ -281,6 +281,12 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud_ocaps.debug.raise(msg, k);
     };
 
+    // graphics
+    rcloud.graphics = {};
+    rcloud.graphics.set_device_pixel_ratio = function(ratio, k) {
+        rcloud_ocaps.graphics.set_device_pixel_ratio(ratio, k);
+    };
+
     return rcloud;
 };
 var ui_utils = {};
@@ -534,6 +540,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // There's a list of things that we need to do to the output:
             var uuid = rcloud.deferred_knitr_uuid;
 
+            // fix image width so that retina displays are set correctly
+            // FIXME currently assumes that all plots are 72 dpi x 7 inches (which is bad)
+            inner_div.find("img")
+                .attr("width", "504px");
 
             // capture deferred knitr results
             inner_div.find("pre code")

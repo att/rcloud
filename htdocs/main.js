@@ -45,8 +45,11 @@ function init_github_buttons() {
 
 var oob_handlers = {
     "browsePath": function(v) {
-        $("#help-output").empty();
-        $("#help-output").append("<iframe class='help-iframe' src='" + window.location.protocol + '//' + window.location.host + v+ "'></iframe>");
+        var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
+        var width=600;
+        var height=500;
+        var left=screen.width-width;
+        window.open(x,'','width='+width+',height='+height+',scrollbars=yes,resizable=yes,left='+left);
     }
 };
 
@@ -56,6 +59,7 @@ function main_init() {
     init_fork_revert_button();
     init_github_buttons();
     footer.init();
+    
     $("#show-source").click(function() {
         var this_class = $(this).attr("class");
         if (this_class === 'icon-check') {
@@ -79,6 +83,7 @@ function main_init() {
             rcloud = RCloud.create(ocaps.rcloud);
             rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {
                 rclient.post_response(hello);
+                rcloud.graphics.set_device_pixel_ratio(window.devicePixelRatio, function() {});
             });
 
             $("#new-md-cell-button").click(function() {
