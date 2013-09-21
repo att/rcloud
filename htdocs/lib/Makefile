@@ -15,7 +15,7 @@ ace_bundle.js:	\
 	js/ace/ext-language_tools.js
 
 dependencies_bundle.js: \
-	js/jquery-1.7.1.js \
+	js/jquery-1.10.2.js \
 	js/jquery.cookies.2.2.0.js \
 	js/tree.jquery.js \
 	js/jquery-ui-1.8.18.custom.min.js \
