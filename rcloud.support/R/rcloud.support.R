@@ -30,7 +30,7 @@ rcloud.save.user.config <- function(user = .session$username, content) {
   invisible(rcs.set(usr.key("config.json", user=user, notebook="system"), content))
 }
 
-rcloud.get.github.url <- function() getConf("github.base.url")
+rcloud.get.conf.value <- function(key) getConf(key)
 
 rcloud.get.notebook <- function(id, version = NULL) {
   res <- get.gist(.session$rgithub.context, id, version)
