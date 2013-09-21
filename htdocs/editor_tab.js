@@ -666,7 +666,7 @@ var editor = function () {
                     var n2 = $tree_.tree('getNodeById', node_id('interests', user, gistname, config_.currversion));
                     $tree_.tree('selectNode', n2);
                     // are there other cases where the selected notebook is not in view?
-                    if($(n2.element).position().top > $tree_.parent().height())
+                    if($(n2.element).position().top > ($tree_.parent().scrollTop() + $tree_.parent().height()))
                         $tree_.parent().scrollTo(null, $(n2.element).position().top - $tree_.parent().height() + 50);
                 };
             }
