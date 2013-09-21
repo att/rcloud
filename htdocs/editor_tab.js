@@ -303,7 +303,7 @@ var editor = function () {
         }
 
         if(_.isNumber(where)) {
-            if(where < INCR)
+            if(0 < where && where < INCR)
                 where = INCR;
             if(node.children.length)
                 for(var i = node.children.length - 1; i >= 0; --i)
