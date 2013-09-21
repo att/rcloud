@@ -244,19 +244,6 @@ rect.frame {
     font-size: 13px;
 }
 
-/*
-how do i just delete their styles which i don't like,
-without modifying jqtree.css?
-
-ul.jqtree-tree li.jqtree-selected > .jqtree-element,
-ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
-    background-color: default;
-    background: default;
-    text-shadow: default;
-    font-weight: bold;
-}
-*/
-
 .footer {
     background-color: black; 
     color: #999;
@@ -283,6 +270,25 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
 .fa-icon-label {
     padding-left: .2em;
 }
+/******************************************************************************/
+
+ul.jqtree-tree .jqtree-toggler {
+    top: 10%;
+}
+
+/*
+how do i just delete their styles which i don't like,
+without modifying jqtree.css?
+
+ul.jqtree-tree li.jqtree-selected > .jqtree-element,
+ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
+    background-color: default;
+    background: default;
+    text-shadow: default;
+    font-weight: bold;
+}
+*/
+
 
 /******************************************************************************/
 
