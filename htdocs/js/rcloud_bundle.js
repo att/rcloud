@@ -153,8 +153,8 @@ RCloud.create = function(rcloud_ocaps) {
     rcloud.save_user_config = function(user, content, k) {
         rcloud_ocaps.save_user_config(user, JSON.stringify(content), json_k(k));
     };
-    rcloud.get_github_url = function(k) {
-        rcloud_ocaps.get_github_url(k);
+    rcloud.get_conf_value = function(key, k) {
+        rcloud_ocaps.get_conf_value(key, k);
     };
     rcloud.load_notebook = function(id, version, k) {
         k = rcloud_github_handler("rcloud.get.notebook " + id, k);
