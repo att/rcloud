@@ -29,11 +29,13 @@
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>\
     <h3>Password</h3>\
   </div>');
-        var dialog = $('<div class="modal hide fade"></div>')
-            .append(header).append(body).append(footer);
+        var dialog = $('<div class="modal fade"></div>')
+                .append($('<div class="modal-dialog"></div>')
+                        .append($('<div class="modal-content"></div>')
+                                .append(header).append(body).append(footer)));
         $("body").append(dialog);
         $(dialog).modal()
-            .on('hidden', function() {
+            .on('hide.bs.modal', function() {
                 $(dialog).remove();
                 k(result);
             });
