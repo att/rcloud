@@ -665,9 +665,10 @@ var editor = function () {
                     $tree_.tree('openNode', node);
                     var n2 = $tree_.tree('getNodeById', node_id('interests', user, gistname, config_.currversion));
                     $tree_.tree('selectNode', n2);
+                    var height = $tree_.parent().css("height").replace("px","");
                     // are there other cases where the selected notebook is not in view?
-                    if($(n2.element).position().top > ($tree_.parent().scrollTop() + $tree_.parent().height()))
-                        $tree_.parent().scrollTo(null, $(n2.element).position().top - $tree_.parent().height() + 50);
+                    if($(n2.element).position().top > height)
+                        $tree_.parent().scrollTo(null, $tree_.parent().scrollTop() + $(n2.element).position().top - height + 50);
                 };
             }
             else if(is_open)
@@ -676,7 +677,7 @@ var editor = function () {
             if(config_.currversion)
                 node = null; // don't select
             var alls_path = as_folder_hierarchy([data], node_id('alls', user))[0];
-            update_tree('alls', user, gistname, alls_path);
+            //update_tree('alls', user, gistname, alls_path);
 
             this.save_config();
             return node;
