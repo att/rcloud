@@ -677,7 +677,7 @@ var editor = function () {
             if(config_.currversion)
                 node = null; // don't select
             var alls_path = as_folder_hierarchy([data], node_id('alls', user))[0];
-            //update_tree('alls', user, gistname, alls_path);
+            update_tree('alls', user, gistname, alls_path);
 
             this.save_config();
             return node;
