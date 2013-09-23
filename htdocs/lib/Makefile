@@ -21,7 +21,7 @@ dependencies_bundle.js: \
 	js/jquery-ui-1.8.18.custom.min.js \
 	js/jquery.scrollto.js \
 	js/underscore-min.js \
-	js/d3.v2.js \
+	js/d3.v3.js \
 	js/lux.js \
 	js/crossfilter.js \
 	js/dc.js \
