@@ -37,13 +37,40 @@
 
       <h2>Screencasts</h2>
 
-      <div>
-	<h4>Hello, World</h4>
-	<a href="http://www.youtube.com/watch?v=LM-i0Xy9zxc&feature=youtu.be">Youtube link</a><br>
-      <iframe id="ytplayer-1" type="text/html" width="640" height="390"
-	      src="http://www.youtube.com/embed/LM-i0Xy9zxc&origin=http://cscheid.github.io/"
-	frameborder="0"/>
+      <div class="row">
+	<div class="col-sm-10 col-md-5">
+	  <div class="caption">
+	    <h4>Hello, World</h4>
+	  </div>
+	  <div style="width: 100%" id="ytplayer-1"></div>
+	</div>
+	<!-- <div class="col-sm-10 col-md-5"> -->
+	<!--   <div class="caption"> -->
+	<!--     <h4>Hello, World</h4> -->
+	<!--   </div> -->
+	<!--   <div style="width: 100%" id="ytplayer-2"></div> -->
+	<!-- </div> -->
       </div>
+
+<script>
+  // Load the IFrame Player API code asynchronously.
+  var tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/player_api";
+  var firstScriptTag = document.getElementsByTagName('script')[0];
+  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+  // Replace the 'ytplayer' element with an <iframe> and
+  // YouTube player after the API code downloads.
+  var screencasts = [ ['ytplayer-1', 'LM-i0Xy9zxc'] ];
+  function onYouTubePlayerAPIReady() {
+    for (var i=0; i<screencasts.length; ++i) {
+      var p = new YT.Player(screencasts[i][0], {
+        height: '300',
+        videoId: screencasts[i][1]
+      });
+    }
+  }
+</script>
 
       <h2>About us</h2>
       <p>RCloud is <a href="http://github.com/cscheid/rcloud">open-source software</a> developed primarily by <a href="http://cscheid.net">Carlos
