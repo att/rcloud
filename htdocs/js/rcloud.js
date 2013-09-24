@@ -1,14 +1,16 @@
 RCloud = {};
 
+RCloud.is_exception = function(v) {
+    return _.isArray(v) && v.r_attributes && v.r_attributes['class'] === 'try-error';
+};
+
+RCloud.exception_message = function(v) {
+    if (!RCloud.is_exception(v))
+        throw new Error("Not an R exception value");
+    return v[0];
+};
+
 RCloud.create = function(rcloud_ocaps) {
-    function is_exception(v) {
-        return _.isArray(v) && v.r_attributes && v.r_attributes['class'] === 'try-error';
-    }
-    function exception_message(v) {
-        if (!is_exception(v))
-            throw new Error("Not an R exception value");
-        return v[0];
-    }
     function json_k(k) {
         return function(result) {
             k && k(JSON.parse(result));
@@ -112,8 +114,8 @@ RCloud.create = function(rcloud_ocaps) {
         function do_upload(path, file) {
             var upload_name = path + '/' + file.name;
             rcloud_ocaps.file_upload.create(upload_name, force, function(result) {
-                if (is_exception(result)) {
-                    on_failure(exception_message(result));
+                if (RCloud.is_exception(result)) {
+                    on_failure(RCloud.exception_message(result));
                     return;
                 }
                 var fr = new FileReader();
