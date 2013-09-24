@@ -8,7 +8,7 @@ wdcchart <- function(data, dcexpr)
   deferred.rcloud.result(function() caps$handle_dcchart(list("dcchart", data, dcexpr2)))
 }
 
-wdcplot <- function(data, dims, groups, charts)
+wdcplot <- function(data, dims=NULL, groups=NULL, charts=NULL)
 {
   path <- system.file("javascript", "dc_chart.js", package="rcloud.support");
   caps <- rcloud.install.js.module("dc_chart",
