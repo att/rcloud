@@ -44,12 +44,12 @@
 	  </div>
 	  <div style="width: 100%" id="ytplayer-1"></div>
 	</div>
-	<!-- <div class="col-sm-10 col-md-5"> -->
-	<!--   <div class="caption"> -->
-	<!--     <h4>Hello, World</h4> -->
-	<!--   </div> -->
-	<!--   <div style="width: 100%" id="ytplayer-2"></div> -->
-	<!-- </div> -->
+	<div class="col-sm-10 col-md-5">
+	  <div class="caption">
+	    <h4>Markdown</h4>
+	  </div>
+	  <div style="width: 100%" id="ytplayer-2"></div>
+	</div>
       </div>
 
 <script>
@@ -61,12 +61,14 @@
 
   // Replace the 'ytplayer' element with an <iframe> and
   // YouTube player after the API code downloads.
-  var screencasts = [ ['ytplayer-1', 'LM-i0Xy9zxc'] ];
+  var screencasts = [ 'LM-i0Xy9zxc',
+                      'Jwgp7ksmw2A'
+     ];
   function onYouTubePlayerAPIReady() {
     for (var i=0; i<screencasts.length; ++i) {
-      var p = new YT.Player(screencasts[i][0], {
+      var p = new YT.Player('ytplayer-' + (i+1), {
         height: '300',
-        videoId: screencasts[i][1]
+        videoId: screencasts[i]
       });
     }
   }
