@@ -175,10 +175,18 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                     var f = rclient._rserve.wrap_ocap(ocap);
 
                     f(function(future) {
-                        var data = future();
-                        $(that).replaceWith(function() {
-                            return data;
-                        });
+                        if (RCloud.is_exception(future)) {
+                            var data = RCloud.exception_message(future);
+                            $(that).replaceWith(function() {
+                                return rclient.string_error(data);
+                            });
+                        } else {
+                            var data = future();
+                            $(that).replaceWith(function() {
+                                return data;
+                            });
+                        }
+                            throw new Error(RCloud.exception_message(future));
                     });
                     // rcloud.resolve_deferred_result(uuids[1], function(data) {
                     //     $(that).replaceWith(function() {
