@@ -90,12 +90,15 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     // ace_div.css({'background-color': language === 'R' ? "#B1BEA4" : "#F1EDC0"});
     inner_div.append(markdown_div);
     markdown_div.append(ace_div);
+    ace.require("ace/ext/language_tools");
     var widget = ace.edit(ace_div[0]);
     var RMode = require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
     var session = widget.getSession();
     var doc = session.doc;
     widget.setReadOnly(cell_model.parent_model.read_only());
-
+    widget.setOptions({
+        enableBasicAutocompletion: true
+    });
     session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
         notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
@@ -106,7 +109,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     session.setUseWrapMode(true);
     widget.resize();
 
-    widget.commands.addCommand({
+    var Autocomplete = require("ace/autocomplete").Autocomplete;
+
+    widget.commands.addCommands([{
         name: 'sendToR',
         bindKey: {
             win: 'Ctrl-Return',
@@ -116,7 +121,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         exec: function(widget, args, request) {
             execute_cell();
         }
-    });
+    }, {
+        name: 'another autocomplete key',
+        bindKey: 'Ctrl-.',
+        exec: Autocomplete.startCommand.exec
+    }]);
 
     var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
     inner_div.append(r_result_div);
@@ -145,6 +154,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // There's a list of things that we need to do to the output:
             var uuid = rcloud.deferred_knitr_uuid;
 
+            // fix image width so that retina displays are set correctly
+            // FIXME currently assumes that all plots are 72 dpi x 7 inches (which is bad)
+            inner_div.find("img")
+                .attr("width", "504px");
 
             // capture deferred knitr results
             inner_div.find("pre code")

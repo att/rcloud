@@ -32,10 +32,24 @@ function init_fork_revert_button() {
     });
 }
 
+function init_github_buttons() {
+    $("#open-in-github").click(function() {
+        shell.open_in_github();
+    });
+    $("#open-from-github").click(function() {
+        var result = prompt("Enter notebook ID or github URL:");
+        if(result !== null)
+            shell.open_from_github(result);
+    });
+}
+
 var oob_handlers = {
     "browsePath": function(v) {
-        $("#help-output").empty();
-        $("#help-output").append("<iframe class='help-iframe' src='" + window.location.protocol + '//' + window.location.host + v+ "'></iframe>");
+        var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
+        var width=600;
+        var height=500;
+        var left=screen.width-width;
+        window.open(x,'','width='+width+',height='+height+',scrollbars=yes,resizable=yes,left='+left);
     }
 };
 
@@ -43,7 +57,9 @@ function main_init() {
     init_shareable_link_box();
     init_editable_title_box();
     init_fork_revert_button();
+    init_github_buttons();
     footer.init();
+    
     $("#show-source").click(function() {
         var this_class = $(this).attr("class");
         if (this_class === 'icon-check') {
@@ -67,6 +83,7 @@ function main_init() {
             rcloud = RCloud.create(ocaps.rcloud);
             rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {
                 rclient.post_response(hello);
+                rcloud.graphics.set_device_pixel_ratio(window.devicePixelRatio, function() {});
             });
 
             $("#new-md-cell-button").click(function() {
@@ -81,18 +98,41 @@ function main_init() {
             });
             $(".collapse").collapse();
             $("#upload-submit").click(function() {
-              rcloud.upload_file(function(path, file) {
-                  $("#file-upload-div").append(
-                      bootstrap.alert({
-                          "class": 'info',
-                          text: "File " + file.name + " uploaded."
-                      })
-                  );
-              });
+                var success = function(path, file) {
+                    $("#file-upload-div").append(
+                        bootstrap_utils.alert({
+                            "class": 'alert-info',
+                            text: "File " + file.name + " uploaded."
+                        })
+                    );
+                };
+                rcloud.upload_file(false, success, function() {
+                    var overwrite_click = function() {
+                        rcloud.upload_file(true, success, function(exception_value) {
+                            var msg = exception_value;
+                            $("#file-upload-div").append(
+                                bootstrap_utils.alert({
+                                    "class": 'alert-danger',
+                                    text: msg
+                                })
+                            );
+                        });
+                    };
+                    var alert_element = $("<div></div>");
+                    var p = $("<p>File exists. </p>");
+                    alert_element.append(p);
+                    var overwrite = bootstrap_utils
+                        .button({"class": 'btn-danger'})
+                        .click(overwrite_click)
+                        .text("Overwrite");
+                    p.append(overwrite);
+                    $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
+                });
             });
             rcloud.init_client_side_data();
 
             editor.init();
+            shell.init();
 
             if (location.search.length > 0) {
                 function getURLParameter(name) {
@@ -105,14 +145,6 @@ function main_init() {
         on_data: function(v) {
             v = v.value.json();
             oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
-        },
-        on_oob_message: function(v, callback) {
-            try {
-                v = v.value.json();
-                oob_msg_handlers[v[0]] && oob_msg_handlers[v[0]](v.slice(1), callback);
-            } catch (e) {
-                callback(String(e), true);
-            }
         }
     });
 }

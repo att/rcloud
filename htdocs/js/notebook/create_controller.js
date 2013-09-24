@@ -41,8 +41,8 @@ Notebook.create_controller = function(model)
         var nf = notebook.files,
             cf = _.extend({}, current_gist_.files); // to keep track of changes
         for(var f in nf) {
-            if(f==='r_type')
-                continue; // artifact of rserve.js
+            if(f==='r_type' || f==='r_attributes')
+                continue; // R metadata
             if(f in cf) {
                 if(cf[f].language != nf[f].language || cf[f].content != nf[f].content) {
                     changes.push([f, cf[f]]);
@@ -170,7 +170,7 @@ Notebook.create_controller = function(model)
                 return {files: _.reduce(changes, xlate_change, {})};
             }
             // not awesome to callback to someone else here
-            k = k || _.bind(editor.notebook_loaded, editor, null);
+            k = k || editor.load_callback(null, true);
             var k2 = function(notebook) {
                 current_gist_ = notebook;
                 k(notebook);

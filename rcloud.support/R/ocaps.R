@@ -1,4 +1,9 @@
-make.oc <- function(fun) .Call(Rserve_oc_register, fun)
+make.oc <- function(fun) {
+  f <- function(...) {
+    try(fun(...))
+  }
+  .Call(Rserve_oc_register, f)
+}
 
 oc.init <- function(...) { ## this is the payload of the OCinit message
   ## remove myself from the global env since my job is done
@@ -20,18 +25,21 @@ initial.ocaps <- function()
       reset_session=make.oc(reset.session),
       load_multiple_user_configs=make.oc(rcloud.load.multiple.user.configs),
       save_user_config=make.oc(rcloud.save.user.config),
+      get_conf_value=make.oc(rcloud.get.conf.value),
       get_notebook=make.oc(rcloud.get.notebook),
+      call_notebook=make.oc(rcloud.call.notebook),
       update_notebook=make.oc(rcloud.update.notebook),
       create_notebook=make.oc(rcloud.create.notebook),
+      rename_notebook=make.oc(rcloud.rename.notebook),
+      fork_notebook=make.oc(rcloud.fork.notebook),
       port_notebooks=make.oc(rcloud.port.notebooks),
       get_users=make.oc(rcloud.get.users),
-      rename_notebook=make.oc(rcloud.rename.notebook),
-      call_notebook=make.oc(rcloud.call.notebook),
+      get_completions=make.oc(rcloud.get.completions),
       call_fastrweb_notebook=make.oc(rcloud.call.FastRWeb.notebook),
 
       # javascript.R
       setup_js_installer=make.oc(rcloud.setup.js.installer),
-      
+
       # file upload ocaps
       file_upload=list(
         create=make.oc(rcloud.upload.create.file),
@@ -49,6 +57,16 @@ initial.ocaps <- function()
       comments=list(
         get_all=make.oc(rcloud.get.comments),
         post=make.oc(rcloud.post.comment)
+        ),
+
+      # debugging
+      debug=list(
+        raise=make.oc(function(msg) stop(paste("Forced exception", msg)))
+        ),
+
+      # graphics
+      graphics=list(
+        set_device_pixel_ratio=make.oc(rcloud.set.device.pixel.ratio)
         )
 
       )

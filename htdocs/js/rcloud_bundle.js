@@ -45,8 +45,7 @@ RClient = {
             on_connect: on_connect,
             on_error: on_error,
             on_close: on_close,
-            on_data: opts.on_data,
-            on_oob_message: opts.on_oob_message
+            on_data: opts.on_data
         });
 
         var result;
@@ -60,11 +59,11 @@ RClient = {
             // the notebook objects.
 
             string_error: function(msg) {
-                return $("<div class='alert alert-error'></div>").text(msg);
+                return $("<div class='alert alert-danger'></div>").text(msg);
             },
 
             disconnection_error: function(msg) {
-                var result = $("<div class='alert alert-error'></div>");
+                var result = $("<div class='alert alert-danger'></div>");
                 result.append($("<span></span>").text(msg));
                 var button = $("<button type='button' class='close'>Reconnect</button>");
                 result.append(button);
@@ -83,7 +82,7 @@ RClient = {
                     msg = this.string_error(msg);
                 if (typeof msg !== 'object')
                     throw new Error("post_error expects a string or a jquery div");
-                // var d = $("<div class='alert alert-error'></div>").text(msg);
+                // var d = $("<div class='alert alert-danger'></div>").text(msg);
                 $("#output").append(msg);
                 window.scrollTo(0, document.body.scrollHeight);
             },
@@ -100,6 +99,14 @@ RClient = {
 RCloud = {};
 
 RCloud.create = function(rcloud_ocaps) {
+    function is_exception(v) {
+        return _.isArray(v) && v.r_attributes && v.r_attributes['class'] === 'try-error';
+    }
+    function exception_message(v) {
+        if (!is_exception(v))
+            throw new Error("Not an R exception value");
+        return v[0];
+    }
     function json_k(k) {
         return function(result) {
             k && k(JSON.parse(result));
@@ -146,6 +153,9 @@ RCloud.create = function(rcloud_ocaps) {
     rcloud.save_user_config = function(user, content, k) {
         rcloud_ocaps.save_user_config(user, JSON.stringify(content), json_k(k));
     };
+    rcloud.get_conf_value = function(key, k) {
+        rcloud_ocaps.get_conf_value(key, k);
+    };
     rcloud.load_notebook = function(id, version, k) {
         k = rcloud_github_handler("rcloud.get.notebook " + id, k);
         rcloud_ocaps.get_notebook(id, version, function(notebook) {
@@ -172,6 +182,20 @@ RCloud.create = function(rcloud_ocaps) {
     rcloud.get_users = function(user, k) {
         rcloud_ocaps.get_users(user, k || _.identity);
     };
+    rcloud.get_completions = function(text, pos, k) {
+        return rcloud_ocaps.get_completions(text, pos, function(comps) {
+            // convert to the record format ace.js autocompletion expects
+            // meta is what gets displayed at right; name & score might be improved
+            k(_.map(comps,
+                    function(comp) {
+                        return {meta: "local",
+                                name: "library",
+                                score: 3,
+                                value: comp
+                               };
+                    }));
+        });
+    };
     rcloud.rename_notebook = function(id, new_name, k) {
         k = rcloud_github_handler("rcloud.rename.notebook", k);
         rcloud_ocaps.rename_notebook(id, new_name, k);
@@ -184,32 +208,37 @@ RCloud.create = function(rcloud_ocaps) {
     rcloud.session_markdown_eval = function(command, silent, k) {
         rcloud_ocaps.session_markdown_eval(command, silent, k || _.identity);
     };
-    rcloud.upload_file = function(on_success) {
+    rcloud.upload_file = function(force, on_success, on_failure) {
         on_success = on_success || _.identity;
         function do_upload(path, file) {
             var upload_name = path + '/' + file.name;
-            rcloud_ocaps.file_upload.create(upload_name, _.identity);
-            var fr = new FileReader();
-            var chunk_size = 1024*1024;
-            var f_size=file.size;
-            var cur_pos=0;
-            //initiate the first chunk, and then another, and then another ...
-            // ...while waiting for one to complete before reading another
-            fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-            fr.onload = function(e) {
-                if (e.target.result.byteLength > 0) {
-                    var bytes = new Uint8Array(e.target.result);
-                    rcloud_ocaps.file_upload.write(bytes.buffer, function() {
-                        cur_pos += chunk_size;
-                        fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-                    });
-                } else {
-                    //This is just temporary, until we add the nice info messages from bootstrap
-                    rcloud_ocaps.file_upload.close(function(){
-                        on_success(path, file);
-                    });
+            rcloud_ocaps.file_upload.create(upload_name, force, function(result) {
+                if (is_exception(result)) {
+                    on_failure(exception_message(result));
+                    return;
                 }
-            };
+                var fr = new FileReader();
+                var chunk_size = 1024*1024;
+                var f_size=file.size;
+                var cur_pos=0;
+                //initiate the first chunk, and then another, and then another ...
+                // ...while waiting for one to complete before reading another
+                fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+                fr.onload = function(e) {
+                    if (e.target.result.byteLength > 0) {
+                        var bytes = new Uint8Array(e.target.result);
+                        rcloud_ocaps.file_upload.write(bytes.buffer, function() {
+                            cur_pos += chunk_size;
+                            fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+                        });
+                    } else {
+                        //This is just temporary, until we add the nice info messages from bootstrap
+                        rcloud_ocaps.file_upload.close(function(){
+                            on_success(path, file);
+                        });
+                    }
+                };
+            });
         }
         if(!(window.File && window.FileReader && window.FileList && window.Blob))
             throw "File API not supported by browser.";
@@ -247,6 +276,18 @@ RCloud.create = function(rcloud_ocaps) {
     };
     rcloud.post_comment = function(id, content, k) {
         rcloud_ocaps.comments.post(id, content, k || _.identity);
+    };
+
+    // debugging ocaps
+    rcloud.debug = {};
+    rcloud.debug.raise = function(msg, k) {
+        rcloud_ocaps.debug.raise(msg, k);
+    };
+
+    // graphics
+    rcloud.graphics = {};
+    rcloud.graphics.set_device_pixel_ratio = function(ratio, k) {
+        rcloud_ocaps.graphics.set_device_pixel_ratio(ratio, k);
     };
 
     return rcloud;
@@ -314,6 +355,30 @@ ui_utils.make_prompt_chevron_gutter = function(widget)
             this._emit("changeGutterWidth", gutterWidth);
         }
     };
+};
+var bootstrap_utils = {};
+
+bootstrap_utils.alert = function(opts)
+{
+    opts = _.defaults(opts || {}, {
+        close_button: true
+    });
+    var div = $('<div class="alert"></div>');
+    if (opts.html) div.html(opts.html);
+    if (opts.text) div.text(opts.text);
+    if (opts['class']) div.addClass(opts['class']);
+    if (opts.close_button) 
+        div.prepend($('<button type="button" class="close" data-dismiss="alert">&times;</button>'));
+    return div;
+};
+
+bootstrap_utils.button = function(opts)
+{
+    opts = opts || {}; // _.defaults(opts || {}, {});
+    var a = $('<a class="btn" href="#"></a>');
+    a.text(opts.text);
+    if (opts['class']) a.addClass(opts['class']);
+    return a;
 };
 Notebook = {};
 
@@ -414,12 +479,15 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     // ace_div.css({'background-color': language === 'R' ? "#B1BEA4" : "#F1EDC0"});
     inner_div.append(markdown_div);
     markdown_div.append(ace_div);
+    ace.require("ace/ext/language_tools");
     var widget = ace.edit(ace_div[0]);
     var RMode = require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
     var session = widget.getSession();
     var doc = session.doc;
     widget.setReadOnly(cell_model.parent_model.read_only());
-
+    widget.setOptions({
+        enableBasicAutocompletion: true
+    });
     session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
         notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
@@ -430,7 +498,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     session.setUseWrapMode(true);
     widget.resize();
 
-    widget.commands.addCommand({
+    var Autocomplete = require("ace/autocomplete").Autocomplete;
+
+    widget.commands.addCommands([{
         name: 'sendToR',
         bindKey: {
             win: 'Ctrl-Return',
@@ -440,7 +510,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         exec: function(widget, args, request) {
             execute_cell();
         }
-    });
+    }, {
+        name: 'another autocomplete key',
+        bindKey: 'Ctrl-.',
+        exec: Autocomplete.startCommand.exec
+    }]);
 
     var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
     inner_div.append(r_result_div);
@@ -469,6 +543,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // There's a list of things that we need to do to the output:
             var uuid = rcloud.deferred_knitr_uuid;
 
+            // fix image width so that retina displays are set correctly
+            // FIXME currently assumes that all plots are 72 dpi x 7 inches (which is bad)
+            inner_div.find("img")
+                .attr("width", "504px");
 
             // capture deferred knitr results
             inner_div.find("pre code")
@@ -932,8 +1010,8 @@ Notebook.create_controller = function(model)
         var nf = notebook.files,
             cf = _.extend({}, current_gist_.files); // to keep track of changes
         for(var f in nf) {
-            if(f==='r_type')
-                continue; // artifact of rserve.js
+            if(f==='r_type' || f==='r_attributes')
+                continue; // R metadata
             if(f in cf) {
                 if(cf[f].language != nf[f].language || cf[f].content != nf[f].content) {
                     changes.push([f, cf[f]]);
@@ -1061,7 +1139,7 @@ Notebook.create_controller = function(model)
                 return {files: _.reduce(changes, xlate_change, {})};
             }
             // not awesome to callback to someone else here
-            k = k || _.bind(editor.notebook_loaded, editor, null);
+            k = k || editor.load_callback(null, true);
             var k2 = function(notebook) {
                 current_gist_ = notebook;
                 k(notebook);

@@ -31,6 +31,13 @@ define('ace/mode/r', ['require', 'exports', 'module' , 'ace/range', 'ace/lib/oop
    {
       this.$tokenizer = new Tokenizer(new RHighlightRules().getRules());
       this.$outdent = new MatchingBraceOutdent();
+      this.getCompletions = function(state, session, pos, prefix, callback) {
+          rcloud.get_completions(session.getValue(),
+                                 session.getDocument().positionToIndex(pos),
+                                 function(ret) {
+                                     callback(null, ret);
+                                 });
+      };
    };
    oop.inherits(Mode, TextMode);
 

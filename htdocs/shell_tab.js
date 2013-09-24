@@ -2,7 +2,9 @@ var shell = (function() {
 
     var version_ = null,
         gistname_ = null,
-        is_mine_ = null;
+        is_mine_ = null,
+        github_url_ = null,
+        gist_url_ = null;
 
     function setup_command_entry(entry_div) {
         function set_ace_height() {
@@ -10,12 +12,15 @@ var shell = (function() {
             widget.resize();
         }
         entry_div.css({'background-color': "#E8F1FA"});
+        ace.require("ace/ext/language_tools");
         var widget = ace.edit(entry_div[0]);
         set_ace_height();
         var RMode = require("ace/mode/r").Mode;
         var session = widget.getSession();
         var doc = session.doc;
-
+        widget.setOptions({
+            enableBasicAutocompletion: true
+        });
         session.setMode(new RMode(false, doc, session));
         session.on('change', set_ace_height);
 
@@ -23,6 +28,8 @@ var shell = (function() {
         session.setUseWrapMode(true);
         widget.resize();
         input_widget = widget;
+
+        var Autocomplete = require("ace/autocomplete").Autocomplete;
 
         widget.commands.addCommands([{
             name: 'execute',
@@ -59,6 +66,10 @@ var shell = (function() {
                     $.scrollTo(null, entry_div);
                 });
             }
+        }, {
+            name: 'another autocomplete key',
+            bindKey: 'Ctrl-.',
+            exec: Autocomplete.startCommand.exec
         }]);
         ui_utils.make_prompt_chevron_gutter(widget);
     }
@@ -126,6 +137,10 @@ var shell = (function() {
         version: function() {
             return version_;
         },
+        init: function() {
+            rcloud.get_conf_value("github.base.url", function(url) { github_url_ = url; });
+            rcloud.get_conf_value("github.gist.url", function(url) { gist_url_ = url; });
+        },
         fork_or_revert_button: function() {
             // hmm messages bouncing around everywhere
             editor.fork_or_revert_notebook(is_mine_, gistname_, version_);
@@ -184,6 +199,63 @@ var shell = (function() {
                 version_ = null;
                 on_load.call(that, k, notebook);
             });
+        }, open_in_github: function() {
+            var url;
+            if(gist_url_) {
+                url = gist_url_;
+                url += rcloud.username() + '/';
+            }
+            else
+                url = github_url_ + 'gist/';
+            url += gistname_;
+            if(version_)
+                url += '/' + version_;
+            window.open(url, "_blank");
+        }, open_from_github: function(notebook_or_url) {
+            function isHex(str) {
+                return str.match(/^[a-f0-9]*$/i) !== null;
+            }
+            var ponents;
+            if(notebook_or_url.indexOf('://') > 0) {
+                var prefix = gist_url_ || github_url_;
+                if(notebook_or_url.substring(0, prefix.length) !== prefix) {
+                    alert("Sorry, importing from foreign GitHub instances not supported yet!");
+                    return;
+                }
+                ponents = notebook_or_url.substring(prefix.length).split('/');
+                if(!ponents[0])
+                    ponents.splice(0,1); // prefix may not have trailing '/'
+                if(gist_url_) {
+                    // new format URL
+                    // [{username}/]{gistid}/{version}
+                    // there's an ambiguity between usernames and gist IDs
+                    // so guess that if the first component is not 20 chars of hex, it's a username
+                    if(ponents[0].length != 20 || !isHex(ponents[0]))
+                        ponents.splice(0,1);
+                }
+                else {
+                    // old format URL
+                    // gist/{gistid}/{version}
+                    if(ponents[0] !== 'gist') {
+                        alert("old-format URL path must start with gist/");
+                        return;
+                    }
+                    ponents.splice(0,1);
+                }
+            }
+            else ponents = notebook_or_url.split('/');
+            var notebook = ponents[0],
+                version = null;
+            if(ponents.length>1) {
+                version = ponents[1] || null; // don't take empty string
+                if(ponents.length>2) {
+                    if(ponents[2]) {
+                        alert("Sorry, couldn't parse '" + notebook_or_url + "'");
+                        return;
+                    }
+                }
+            }
+            editor.load_notebook(notebook, version);
         }
     };
 

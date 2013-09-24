@@ -1,4 +1,4 @@
-(function() {
+((function() {
 
 var LuxChart = {};
 
@@ -158,7 +158,7 @@ LuxChart.lux_osm_plot = function(lats, lons, color, width, height)
     });
 
     var globe_zoom = Shade.parameter("float", 3.0);
-    var view_proj = Shade.Camera.perspective({
+    var perspective_scene = Lux.Scene.Transform.Camera.perspective({
         look_at: [Shade.vec(0, 0,  6),
                   Shade.vec(0, 0, -1),
                   Shade.vec(0, 1,  0)],
@@ -166,7 +166,6 @@ LuxChart.lux_osm_plot = function(lats, lons, color, width, height)
     });
 
     var globe = Lux.Marks.globe({ 
-        view_proj: view_proj,
         zoom: globe_zoom,
         polygon_offset: { factor: 0, units: 5 }
     });
@@ -186,17 +185,22 @@ LuxChart.lux_osm_plot = function(lats, lons, color, width, height)
         lons: lons
     });
 
+    var globe_scene = globe.scene();
+
     var dots_actor = Lux.actor({
         model: dots_model, 
         appearance: {
             color: color,
-            point_size: 2,
-            position: globe.lat_lon_position(dots_model.lats.radians(), 
-                                             dots_model.lons.radians())
+            point_size: 2, 
+            position: Shade.vec(dots_model.lats.radians(), 
+                                dots_model.lons.radians())
         }});
 
-    Lux.Scene.add(globe);
-    Lux.Scene.add(dots_actor);
+    Lux.Scene.add(perspective_scene);
+
+    perspective_scene.add(globe);
+    globe_scene.add(dots_actor);
+    perspective_scene.add(globe_scene);
 
     return canvas;
 };
@@ -215,4 +219,6 @@ return {
         var lst = data[1];
         k(function() { return LuxChart.lux_tour_plot(lst); });
     }
-};})
+};
+})())
+

@@ -236,18 +236,13 @@ rect.frame {
     opacity: 0.7;
 }
 
-/*
-how do i just delete their styles which i don't like,
-without modifying jqtree.css?
-
-ul.jqtree-tree li.jqtree-selected > .jqtree-element,
-ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
-    background-color: default;
-    background: default;
-    text-shadow: default;
-    font-weight: bold;
+/* not sure why these got smaller in bootstrap 3? */
+.navbar-brand {
+    font-size: 20px;
 }
-*/
+.navbar-nav {
+    font-size: 13px;
+}
 
 .footer {
     background-color: black; 
@@ -275,6 +270,21 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
 .fa-icon-label {
     padding-left: .2em;
 }
+/******************************************************************************/
+
+ul.jqtree-tree .jqtree-toggler {
+    top: 10%;
+}
+
+
+ul.jqtree-tree li.jqtree-selected > .jqtree-element,
+ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
+    background-color: default;
+    background-image: none;
+    text-shadow: none;
+    font-weight: bold;
+}
+
 
 /******************************************************************************/
 
@@ -294,4 +304,22 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
 
 #comment-entry {
     width: 100%
+}
+
+/******************************************************************************/
+/* Bring in some of bootstrap's more up-to-date CSS */
+
+.dropdown-menu > li > a {
+  display: block;
+  padding: 3px 20px;
+  clear: both;
+  font-weight: normal;
+  line-height: 20px;
+  color: #333333;
+  white-space: nowrap;
+}
+
+a.footer-dropdown-toggle {
+    padding: 5px;
+    color: #999;
 }
