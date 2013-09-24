@@ -191,7 +191,7 @@ var chart_attrs = {
     abstractBubble: {
         supported: true,
         parents: ['color'],
-        r: {required: false}, // radiusValueAccessor
+        r: {default: 2}, // radiusValueAccessor
         'r.scale': {required: false}, // scale component of r 
         'r.domain': {required: false} // domain component of r
     },
