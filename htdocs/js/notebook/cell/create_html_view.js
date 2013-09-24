@@ -186,7 +186,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                                 return data;
                             });
                         }
-                            throw new Error(RCloud.exception_message(future));
                     });
                     // rcloud.resolve_deferred_result(uuids[1], function(data) {
                     //     $(that).replaceWith(function() {
