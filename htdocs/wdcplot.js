@@ -320,6 +320,8 @@ var wdcplot = (function() {
             var definition = {}, divs;
             for(var i = 1; i < arguments.length; ++i) {
                 var arg = arguments[i];
+                if(!arg)
+                    continue;
                 var section = arg[0], section_name;
                 if(_.isArray(section)) {
                     if(section[0] !== null)
@@ -354,7 +356,7 @@ var wdcplot = (function() {
                 }
             }
 
-            var divwrap = $('<div/>',{id:"chartdiv"+chart_group});
+            var divwrap = $('<div/>',{id:"chartdiv"+chart_group, style: "overflow:auto"});
             _.each(divs, function(div) { divwrap.append(div); });
 
             return {dataframe: frame,
