@@ -45106,13 +45106,15 @@ var chart_attrs = {
         supported: true,
         parents: ['color'],
         r: {default: 2}, // radiusValueAccessor
-        'r.scale': {required: false}, // scale component of r 
+        'r.scale': {required: false}, // scale component of r
         'r.domain': {required: false} // domain component of r
     },
     bubble: {
         concrete: true,
         parents: ['coordinateGrid', 'abstractBubble'],
         width: {default: 400},
+        label: {default: null},
+        color: {default: 0},
         supported: true,
         'r.elastic': {required: false}
     },
