@@ -97,7 +97,9 @@ var wdcplot = (function() {
                 var content = sexp.substring(2, sexp.length-2);
                 switch(content) {
                 case 'index': return {lambda: true, text: "frame.index(key)"};
+                case 'value':
                 case 'selected': return {lambda: true, text: "value"};
+                case 'key': return {lambda: true, text: "key"};
                 default: throw "unknown special variable " + sexp;
                 }
             }
@@ -132,7 +134,9 @@ var wdcplot = (function() {
             if(/\.\..*\.\.$/.test(sexp)) {
                 var content = sexp.substring(2, sexp.length-2);
                 switch(content) {
+                case 'value':
                 case 'index': return frame.index;
+                case 'key': return function(k, v) { return k; };
                 default: throw "unknown special variable " + sexp;
                 }
             }
