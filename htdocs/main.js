@@ -49,7 +49,7 @@ var oob_handlers = {
         var width=600;
         var height=500;
         var left=screen.width-width;
-        window.open(x,'','width='+width+',height='+height+',scrollbars=yes,resizable=yes,left='+left);
+        window.open(x,'RCloudHelp','width='+width+',height='+height+',scrollbars=yes,resizable=yes,left='+left);
     }
 };
 
