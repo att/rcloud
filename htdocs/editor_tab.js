@@ -181,6 +181,15 @@ var editor = function () {
         return $tree_.tree('appendNode', data, parent);
     }
 
+    function remove_empty_parents(dp) {
+        // remove any empty notebook hierarchy
+        while(dp.children.length===0 && dp.sort_order===ordering.NOTEBOOK) {
+            var dp2 = dp.parent;
+            $tree_.tree('removeNode', dp);
+            dp = dp2;
+        }
+    }
+
     function update_tree(root, user, gistname, path, last_chance) {
         // make sure parents exist
         var id = user===username_ ? node_id(root) : node_id(root, user),
@@ -227,12 +236,7 @@ var editor = function () {
             var dp = node.parent;
             $tree_.tree('removeNode', node);
             node = insert_alpha(data, parent);
-            // remove any empty notebook hierarchy
-            while(dp.children.length===0 && dp.sort_order===ordering.NOTEBOOK) {
-                var dp2 = dp.parent;
-                $tree_.tree('removeNode', dp);
-                dp = dp2;
-            }
+            remove_empty_parents(dp);
         }
         else
             node = insert_alpha(data, parent);
@@ -532,7 +536,9 @@ var editor = function () {
                     $tree_.tree('removeNode', $tree_.tree('getNodeById', id));
                 }
             }
+            var dp = node.parent;
             $tree_.tree('removeNode', node);
+            remove_empty_parents(dp);
             this.save_config();
         },
         set_visibility: function(node, visibility) {
