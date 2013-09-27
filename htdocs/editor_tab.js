@@ -243,6 +243,21 @@ var editor = function () {
         return node;
     }
 
+    function scroll_into_view(node) {
+        var height = $tree_.parent().css("height").replace("px","");
+        var p = node.parent;
+        while(p.sort_order===ordering.NOTEBOOK) {
+            $tree_.tree('openNode', p);
+            p = p.parent;
+        }
+        if($(node.element).position().top > height)
+            $tree_.parent().scrollTo(null, $tree_.parent().scrollTop()
+                                     + $(node.element).position().top - height + 50);
+        else if($(node.element).position().top < 0)
+            $tree_.parent().scrollTo(null, $tree_.parent().scrollTop()
+                                     + $(node.element).position().top - 100);
+    }
+
     //http://stackoverflow.com/questions/7969031/indexof-element-in-js-array-using-a-truth-function-using-underscore-or-jquery
     function find_index(collection, filter) {
         for (var i = 0; i < collection.length; i++) {
@@ -627,8 +642,10 @@ var editor = function () {
                 config_.all_books[gistname] = entry;
 
             var node = this.update_tree_entry(user, gistname, entry, status.history);
-            if(node)
+            if(node) {
                 $tree_.tree('selectNode', node);
+                scroll_into_view(node);
+            }
         },
         update_tree_entry: function(user, gistname, entry, history) {
             var data = {label: entry.description,
@@ -660,10 +677,7 @@ var editor = function () {
                     $tree_.tree('openNode', node);
                     var n2 = $tree_.tree('getNodeById', node_id('interests', user, gistname, config_.currversion));
                     $tree_.tree('selectNode', n2);
-                    var height = $tree_.parent().css("height").replace("px","");
-                    // are there other cases where the selected notebook is not in view?
-                    if($(n2.element).position().top > height)
-                        $tree_.parent().scrollTo(null, $tree_.parent().scrollTop() + $(n2.element).position().top - height + 50);
+                    scroll_into_view(n2);
                 };
             }
             else if(is_open)
