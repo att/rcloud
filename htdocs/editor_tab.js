@@ -187,6 +187,19 @@ var editor = function () {
             parent = $tree_.tree('getNodeById', id),
             pdat = null,
             node = null;
+        if(!parent) {
+            if(user===username_)
+                throw "my folder should be there at least";
+            parent = $tree_.tree('getNodeById', node_id(root));
+            if(!parent)
+                throw "root '" + root + "' of notebook tree not found!";
+            pdat = {
+                label: someone_elses(user),
+                id: node_id(root, user),
+                sort_order: ordering.SUBFOLDER
+            };
+            parent = insert_alpha(pdat, parent);
+        }
         while('children' in path) {
             node = $tree_.tree('getNodeById', path.id);
             if(!node) {
@@ -221,32 +234,8 @@ var editor = function () {
                 dp = dp2;
             }
         }
-        else {
-            if(user == username_) {
-                parent = $tree_.tree('getNodeById', node_id(root));
-                node = insert_alpha(data, parent);
-            }
-            else {
-                var usernode = $tree_.tree('getNodeById', node_id(root, user));
-                if(usernode)
-                    node = insert_alpha(data, usernode);
-                else {
-                    // creating a subfolder and then using loadData on it
-                    // seems to be *the* way that works
-                    parent = $tree_.tree('getNodeById', node_id(root));
-                    pdat = {
-                        label: someone_elses(user),
-                        id: node_id(root, user),
-                        sort_order: ordering.SUBFOLDER
-                    };
-                    children = [data];
-                    var user_folder = insert_alpha(pdat, parent);
-                    $tree_.tree('loadData', children, user_folder);
-                    $tree_.tree('openNode', user_folder);
-                    node = $tree_.tree('getNodeById',id);
-                }
-            }
-        }
+        else
+            node = insert_alpha(data, parent);
         return node;
     }
 
