@@ -1179,11 +1179,11 @@ Notebook.create_controller = function(model)
 
         hide_r_source: function() {
             this._r_source_visible = false;
-            this.run_all(Notebook.hide_r_source);
+            Notebook.hide_r_source();
         },
         show_r_source: function() {
             this._r_source_visible = true;
-            this.run_all(Notebook.show_r_source);
+            Notebook.show_r_source();
         }
     };
     model.controller = result;
