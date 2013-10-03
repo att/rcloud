@@ -1,5 +1,31 @@
 var ui_utils = {};
 
+$.fn.font_awesome_checkbox = function(opts) {
+    opts = opts || {};
+    if (opts.checked) {
+        this.addClass('icon-check');
+        this.removeClass('icon-check-empty');
+    } else {
+        this.addClass('icon-check-empty');
+        this.removeClass('icon-check');
+    }
+    this.off("click");
+    this.on("click", function() {
+        var this_class = $(this).attr("class");
+        if (this_class === 'icon-check') {
+            $(this).addClass('icon-check-empty');
+            $(this).removeClass('icon-check');
+            opts.click && opts.click(this);
+            opts.uncheck && opts.uncheck(this);
+        } else {
+            $(this).addClass('icon-check');
+            $(this).removeClass('icon-check-empty');
+            opts.click && opts.click(this);
+            opts.check && opts.check(this);
+        }
+    });
+};
+
 ui_utils.fa_button = function(which, title, classname, style)
 {
     var span = $('<span/>', {class: 'fontawesome-button ' + (classname || '')});
