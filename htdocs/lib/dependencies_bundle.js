@@ -46162,11 +46162,14 @@ function read(m)
         },
 
         //////////////////////////////////////////////////////////////////////
+        // these are members of the reader monad
 
         read_null: lift(function(a, l) { return Rserve.Robj.null(a); }),
 
-        //////////////////////////////////////////////////////////////////////
-        // and these return full R objects as well.
+        read_unknown: lift(function(a, l) { 
+            this.offset += l;
+            return Rserve.Robj.null(a); 
+        }),
 
         read_string_array: function(attributes, length) {
             var a = this.read_stream(length).make(Uint8Array);
@@ -46271,6 +46274,7 @@ function read(m)
     that.read_double_array = sl(that.read_double_vector, Rserve.Robj.double_array);
 
     handlers[Rserve.Rsrv.XT_NULL]         = that.read_null;
+    handlers[Rserve.Rsrv.XT_UNKNOWN]      = that.read_unknown;
     handlers[Rserve.Rsrv.XT_VECTOR]       = that.read_vector;
     handlers[Rserve.Rsrv.XT_CLOS]         = that.read_clos;
     handlers[Rserve.Rsrv.XT_SYMNAME]      = that.read_symname;
