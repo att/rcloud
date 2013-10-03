@@ -289,9 +289,46 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud_ocaps.graphics.set_device_pixel_ratio(ratio, k);
     };
 
+    // publishing notebooks
+    rcloud.publish_notebook = function(id, k) {
+        rcloud_ocaps.publish_notebook(id, k);
+    };
+    rcloud.unpublish_notebook = function(id, k) {
+        rcloud_ocaps.unpublish_notebook(id, k);
+    };
+    rcloud.is_notebook_published = function(id, k) {
+        rcloud_ocaps.is_notebook_published(id, k);
+    };
+
     return rcloud;
 };
 var ui_utils = {};
+
+$.fn.font_awesome_checkbox = function(opts) {
+    opts = opts || {};
+    if (opts.checked) {
+        this.addClass('icon-check');
+        this.removeClass('icon-check-empty');
+    } else {
+        this.addClass('icon-check-empty');
+        this.removeClass('icon-check');
+    }
+    this.off("click");
+    this.on("click", function() {
+        var this_class = $(this).attr("class");
+        if (this_class === 'icon-check') {
+            $(this).addClass('icon-check-empty');
+            $(this).removeClass('icon-check');
+            opts.click && opts.click(this);
+            opts.uncheck && opts.uncheck(this);
+        } else {
+            $(this).addClass('icon-check');
+            $(this).removeClass('icon-check-empty');
+            opts.click && opts.click(this);
+            opts.check && opts.check(this);
+        }
+    });
+};
 
 ui_utils.fa_button = function(which, title, classname, style)
 {

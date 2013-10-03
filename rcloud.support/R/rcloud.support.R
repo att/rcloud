@@ -102,6 +102,20 @@ rcloud.fork.notebook <- function(id) fork.gist(.session$rgithub.context, id)
 rcloud.get.users <- function(user) ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
   gsub("/.*","",rcs.list(usr.key("config.json", user="*", notebook="system")))
 
+rcloud.publish.notebook <- function(id) {
+  rcs.set(rcs.key("notebook", id, "public"), 1)
+  TRUE
+}
+
+rcloud.unpublish.notebook <- function(id) {
+  rcs.rm(rcs.key("notebook", id, "public"))
+  TRUE
+}
+
+rcloud.is.notebook.published <- function(id) {
+  !is.null(rcs.get(rcs.key("notebook", id, "public")))
+}
+
 rcloud.setup.dirs <- function() {
     for (data.subdir in c("userfiles", "history", "home"))
         if (!file.exists(fn <- pathConf("data.root", data.subdir)))

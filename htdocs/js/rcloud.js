@@ -191,5 +191,16 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud_ocaps.graphics.set_device_pixel_ratio(ratio, k);
     };
 
+    // publishing notebooks
+    rcloud.publish_notebook = function(id, k) {
+        rcloud_ocaps.publish_notebook(id, k);
+    };
+    rcloud.unpublish_notebook = function(id, k) {
+        rcloud_ocaps.unpublish_notebook(id, k);
+    };
+    rcloud.is_notebook_published = function(id, k) {
+        rcloud_ocaps.is_notebook_published(id, k);
+    };
+
     return rcloud;
 };

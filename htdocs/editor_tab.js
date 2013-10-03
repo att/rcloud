@@ -597,6 +597,18 @@ var editor = function () {
                 rcloud.get_all_comments(result.id, function(data) {
                     populate_comments(JSON.parse(data));
                 });
+                $("#github-notebook-id").text(result.id);
+                rcloud.is_notebook_published(result.id, function(p) {
+                    $("#publish-notebook").font_awesome_checkbox({
+                        checked: p,
+                        check: function() {
+                            rcloud.publish_notebook(result.id);
+                        },
+                        uncheck: function() {
+                            rcloud.unpublish_notebook(result.id);
+                        }
+                    });
+                });
             };
         },
         update_notebook_file_list: function(files) {
