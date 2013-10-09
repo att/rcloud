@@ -80,7 +80,6 @@ function main_init() {
             rcloud = RCloud.create(ocaps.rcloud);
             rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {
                 rclient.post_response(hello);
-                rcloud.graphics.set_device_pixel_ratio(window.devicePixelRatio, function() {});
             });
 
             $("#new-md-cell-button").click(function() {
