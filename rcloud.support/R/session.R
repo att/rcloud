@@ -3,9 +3,17 @@
 ################################################################################
 ## evaluation of R code
 
-session.markdown.eval <- function(command, silent) {
+session.markdown.eval <- function(command, language, silent) {
+  if (language == "R") {
+    command <- paste("```{r}", command, "```\n", sep='\n')
+  } else if (language == "Markdown") {
+    NULL
+  } else
+    stop("Don't know language '" + language + "' - only Markdown or R supported.")
+
   if (!is.null(.session$device.pixel.ratio))
     opts_chunk$set(dpi=72*.session$device.pixel.ratio)
+  
   val <- try(markdownToHTML(text=paste(knit(text=command, envir=.session$knitr.env), collapse="\n"),
                             fragment=TRUE), silent=TRUE)
   if (!inherits(val, "try-error") && !silent && rcloud.debug.level()) print(val)
@@ -27,10 +35,19 @@ session.log <- function(user, v) {
 }
 
 ## WS init
-session.init <- function(...) {
+rcloud.session.init <- function(...) {
   set.seed(Sys.getpid()) # we want different seeds so we get different file names
   .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
   start.rcloud(...)
+  reset.session()
+  paste(R.version.string, " --- welcome, ", .session$username, sep='')
+}
+
+## WS init
+rcloud.anonymous.session.init <- function(...) {
+  set.seed(Sys.getpid()) # we want different seeds so we get different file names
+  .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
+  start.rcloud.anonymously(...)
   reset.session()
   paste(R.version.string, " --- welcome, ", .session$username, sep='')
 }

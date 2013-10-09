@@ -1,6 +1,7 @@
 RClient = {
     create: function(opts) {
         function on_connect() {
+            debugger;
             if (!rserve.ocap_mode) {
                 result.post_error(result.disconnection_error("Expected an object-capability Rserve. Shutting Down!"));
                 shutdown();

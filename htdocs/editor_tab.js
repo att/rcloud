@@ -573,7 +573,8 @@ var editor = function () {
                 $tree_.tree('openNode', node);
             });
         },
-        load_callback: function(version, is_change) {
+        load_callback: function(version, is_change, k) {
+            k = k || _.identity;
             var that = this;
             return function(result) {
                 config_.currbook = result.id;
@@ -609,6 +610,7 @@ var editor = function () {
                         }
                     });
                 });
+                k();
             };
         },
         update_notebook_file_list: function(files) {
