@@ -8,7 +8,7 @@ rcs.redis <- function(host=NULL) {
     host <- "localhost"
     port <- 6379L
   }
-  redisConnect(host, port, timeout=100000000L)
+  redisConnect(host, as.numeric(port), timeout=100000000L)
   structure(list(host=host, port=port, handle=rredis:::.redisEnv$current), class="RCSredis")
 }
 
