@@ -1,0 +1,34 @@
+RCloud 0.8 beta release
+-----------------------
+
+Requirements:
+ - R 3.0.0 or higher
+ - development files for the folllowing libraries:
+   Xt, cairographics, cURL, readline
+
+On Ubuntu you can use
+   sudo apt-get install libxt-dev libcurl4-openssl-dev libcairo2-dev libreadline-dev
+
+On MacOS X no dependencies are needed if you use CRAN package binaries, otherwise
+install XQuartz from http://xquartz.macosforge.org and libcairo+libreadline
+from http://r.research.att.com/libs/
+
+INSTALLATION
+-------------
+
+This release package contains a copy of all direct dependencies, so to bootstrap
+all necessary packages from sources use
+
+sh bootstrapR.sh
+
+in the RCloud root. Once that completes successfully, edit github.client.id and
+github.client.secret entries in
+
+conf/rcloud.conf
+
+to match the application in Github you have created (refer to
+"Github authentication" in https://github.com/cscheid/rcloud)
+Once that is done, you can start up the server using
+
+conf/start
+
