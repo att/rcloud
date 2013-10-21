@@ -16,14 +16,11 @@ run <- function(url, query, body, headers)
     print(content(result))
   }
   token <- content(result)$access_token
-  result <- rgithub.context.from.token(rcloud.config("github.api.url"),
-                                    rcloud.config("github.client.id"),
-                                    rcloud.config("github.client.secret"),
-                                    token)
-  if(!result$ok)
-    stop(paste("login failed: ", result$content$message))
-  else
-    ctx <- result$content
+  result <- create.github.context(rcloud.config("github.api.url"),
+                                  rcloud.config("github.client.id"),
+                                  rcloud.config("github.client.secret"),
+                                  token)
+  ctx <- result
   if (is.null((ret = state$redirect)))
     ret = '/main.html'
   if (rcloud.debug.level()) cat("context: ", ctx$user$login, token, "\n")
