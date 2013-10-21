@@ -14,6 +14,8 @@ rcloud.setup.js.installer <- function(v)
 rcloud.install.js.module <- function(module.name, module.content)
 {
   if (is.null(.rcloud.javascript.session$modules[[module.name]])) {
+    debug.comment <- paste("//@ sourceURL=", module.name, ".js", sep="")
+    module.content <- paste(module.content, debug.comment, sep="\n")
     t <- .rcloud.javascript.session$install(module.name, module.content)
     t <- wrap.all.js.funs(t)
     .rcloud.javascript.session$modules[[module.name]] <- t

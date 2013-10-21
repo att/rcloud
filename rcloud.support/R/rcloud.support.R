@@ -21,6 +21,7 @@ rcloud.load.user.config <- function(user = .session$username, map = FALSE) {
 }
 
 rcloud.load.multiple.user.configs <- function(users) {
+  if (length(users) < 1L) return("{}")
   res <- unlist(lapply(rcs.get(usr.key("config.json", user=users, notebook="system"), TRUE), paste, collapse="\n"))
   paste0('{', paste(paste0('"', users, '": ', res), collapse=','), '}')
 }
