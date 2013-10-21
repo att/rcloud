@@ -152,13 +152,9 @@ start.rcloud <- function(username="", token="", ...) {
     stop("bad username/token pair");
   .session$username <- username
   .session$token <- token
-  res <-
-    rgithub.context.from.token(getConf("github.api.url"), getConf("github.client.id"),
-                               getConf("github.client.secret"), token)
-  if(res$ok)
-    .session$rgithub.context <- res$content
-  else
-    stop(paste('error in rgithub.context.from.token: ', res$content))
+  .session$rgithub.context <- create.github.context(
+                                getConf("github.api.url"), getConf("github.client.id"),
+                                getConf("github.client.secret"), token)
 
   if (is.function(getOption("RCloud.session.auth")))
     getOption("RCloud.session.auth")(username=username, ...)
