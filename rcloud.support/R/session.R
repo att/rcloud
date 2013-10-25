@@ -4,7 +4,7 @@
 ## evaluation of R code
 
 session.markdown.eval <- function(command, silent) {
-  opts_chunk$set(dev="CairoSVG")
+  opts_chunk$set(dev="CairoSVG", tidy=FALSE)
   val <- try(markdownToHTML(text=paste(knit(text=command, envir=.session$knitr.env), collapse="\n"),
                             fragment=TRUE), silent=TRUE)
   if (!inherits(val, "try-error") && !silent && rcloud.debug.level()) print(val)
