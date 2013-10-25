@@ -20,7 +20,7 @@ run <- function(url, query, body, headers)
     if (is.null(.rc.conf$session.server))
       return(list("<html><head></head><body>ERROR: This RCloud instance is not properly configured: Exec.auth is set, but session.server is not!", "text/html"))
     if (length(body) > 2 && "execLogin" %in% body['action']) {
-      res <- unlist(strsplit(RCurl::getURL(paste0(.rc.conf$session.server, "/", .rc.conf$exec.auth, "_token?realm=rcloud.exec&user=", body['user'], "&pwd=", body['pwd'])), "\n"))
+      res <- unlist(strsplit(RCurl::getURL(paste0(.rc.conf$session.server, "/", .rc.conf$exec.auth, "_token?realm=rcloud.exec&user=", URLencode(body['user'], TRUE), "&pwd=", URLencode(body['pwd'], TRUE))), "\n"))
       if (length(res) > 2) {
         extra.headers <- paste0("Set-Cookie: execUser=", res[2], "; domain=", .rc.conf$cookie.domain,"; path=/;\r\nSet-Cookie: execToken=", res[1], "; domain=", .rc.conf$cookie.domain, "; path=/;")
         cookies$execToken <- res[1]
