@@ -10,12 +10,18 @@ var wdcplot = (function() {
         return 'dcplotgroup' + group_no;
     }
 
-    function bin_op(disp) {
+    function bin_op_fun(f) {
         return function(frame, args, ctx) {
             var lhs = expression(frame, args[1], ctx),
                 rhs = expression(frame, args[2], ctx);
-            return {lambda: lhs.lambda || rhs.lambda, text: lhs.text + disp + rhs.text};
+            return {lambda: lhs.lambda || rhs.lambda, text: f(lhs.text, rhs.text)};
         };
+    }
+
+    function bin_op(disp) {
+        return bin_op_fun(function(left, right) {
+            return left + disp + right;
+        });
     }
 
     function una_or_bin_op(disp) {
@@ -38,6 +44,12 @@ var wdcplot = (function() {
         "+": una_or_bin_op('+'),
         "*": bin_op('*'),
         "/": bin_op('/'),
+        "^": bin_op_fun(function(left, right) {
+            return "Math.pow(" + left + ", " + right + ")";
+        }),
+        "**": bin_op_fun(function(left, right) {
+            return "Math.pow(" + left + ", " + right + ")";
+        }),
         "c" : function(frame, args, ctx) {
             return '[' + _.map(args.slice(1), function(arg) {
                 return value(arg); })
