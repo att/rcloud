@@ -23,6 +23,17 @@ function view_init() {
                     cell_view.hide_buttons();
                 });
             });
+        }, on_error: function(msg, status_code) {
+            debugger;
+            if (msg == 'Login failed. Shutting down!') {
+                window.location = 
+                    (window.location.protocol + 
+                     '//' + window.location.host + 
+                     '/login.R?redirect=' + 
+                     encodeURIComponent(window.location.pathname + window.location.search));
+                return true;
+            } else
+                return false;
         }
     });
 }
