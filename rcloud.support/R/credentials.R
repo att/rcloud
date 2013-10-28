@@ -46,7 +46,9 @@ revoke.token <- function(token, realm="rcloud") {
 
 check.user.token.pair <- function(user, token, valid.sources="stored", realm="rcloud")
 {
-  if (!nzConf("session.server")) {
+  if (is.null(token)) {
+    FALSE
+  } else if (!nzConf("session.server")) {
     d <- .get.token.list()
     token.from.user <- d$user.to.token[[user]]
     user.from.token <- d$token.to.user[[token]]
@@ -66,7 +68,9 @@ check.user.token.pair <- function(user, token, valid.sources="stored", realm="rc
 
 check.token <- function(token, valid.sources="stored", realm="rcloud")
 {
-  if (!nzConf("session.server")) {
+  if (is.null(token)) {
+    FALSE
+  } else if (!nzConf("session.server")) {
     d <- .get.token.list()
     user.from.token <- d$token.to.user[[token]]
     if (!is.null(user.from.token))
