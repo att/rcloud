@@ -15,8 +15,7 @@ RClient = {
                     result.running = true;
                     opts.on_connect && opts.on_connect.call(result, ocaps);
                 } else {
-                    result.post_error(result.disconnection_error("Login failed. Shutting down!"));
-                    shutdown();
+                    on_error("Login failed. Shutting down!");
                 }
             });
         }
@@ -30,6 +29,11 @@ RClient = {
         }
 
         function on_error(msg, status_code) {
+            if (opts.on_error) {
+                var result = opts.on_error(msg, status_code);
+                if (result === true)
+                    return;
+            }
             result.post_error(result.disconnection_error(msg));
             shutdown();
         }
@@ -175,6 +179,7 @@ RCloud.create = function(rcloud_ocaps) {
             rcloud_ocaps.setup_js_installer(v, k || _.identity);
         };
 
+        // having this naked eval here makes me very nervous.
         rcloud.modules = {};
         rcloud.setup_js_installer(function(name, content, k) {
             var result = eval(content);
@@ -192,21 +197,6 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.debug.raise = function(msg, k) {
             rcloud_ocaps.debug.raise(msg, k || _.identity);
         };
-
-        // graphics
-        rcloud.graphics = {};
-        rcloud.graphics.set_device_pixel_ratio = function(ratio, k) {
-            rcloud_ocaps.graphics.set_device_pixel_ratio(ratio, k || _.identity);
-        };
-
-        // publishing notebooks
-        rcloud.publish_notebook = function(id, k) {
-            rcloud_ocaps.publish_notebook(id, k || _.identity);
-        };
-        rcloud.unpublish_notebook = function(id, k) {
-            rcloud_ocaps.unpublish_notebook(id, k || _.identity);
-        };
-
     }
 
     function setup_authenticated_ocaps() {
@@ -255,8 +245,8 @@ RCloud.create = function(rcloud_ocaps) {
             k = rcloud_github_handler("rcloud.rename.notebook", k);
             rcloud_ocaps.rename_notebook(id, new_name, k);
         };
-        rcloud.session_markdown_eval = function(command, silent, k) {
-            rcloud_ocaps.session_markdown_eval(command, silent, k || _.identity);
+        rcloud.session_markdown_eval = function(command, language, silent, k) {
+            rcloud_ocaps.session_markdown_eval(command, language, silent, k || _.identity);
         };
         rcloud.upload_file = function(force, on_success, on_failure) {
             on_success = on_success || _.identity;
@@ -282,7 +272,6 @@ RCloud.create = function(rcloud_ocaps) {
                                 fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                             });
                         } else {
-                            //This is just temporary, until we add the nice info messages from bootstrap
                             rcloud_ocaps.file_upload.close(function(){
                                 on_success(path, file);
                             });
@@ -290,6 +279,7 @@ RCloud.create = function(rcloud_ocaps) {
                     };
                 });
             }
+
             if(!(window.File && window.FileReader && window.FileList && window.Blob))
                 throw "File API not supported by browser.";
             else {
@@ -312,8 +302,16 @@ RCloud.create = function(rcloud_ocaps) {
             rcloud_ocaps.comments.post(id, content, k || _.identity);
         };
 
+        // publishing notebooks
         rcloud.is_notebook_published = function(id, k) {
-            rcloud_ocaps.is_notebook_published(id, k || _.identity);
+            rcloud_ocaps.is_notebook_published(id, k);
+        };
+
+        rcloud.publish_notebook = function(id, k) {
+            rcloud_ocaps.publish_notebook(id, k);
+        };
+        rcloud.unpublish_notebook = function(id, k) {
+            rcloud_ocaps.unpublish_notebook(id, k);
         };
     }
 
@@ -830,16 +828,7 @@ Notebook.Cell.create_controller = function(cell_model)
             }
 
             rcloud.record_cell_execution(cell_model);
-
-            if (language === 'Markdown') {
-                rcloud.session_markdown_eval(cell_model.content(), false, callback);
-                // var wrapped_command = rclient.markdown_wrap_command(cell_model.content());
-                // rclient.send_and_callback(wrapped_command, callback, _.identity);
-            } else if (language === 'R') {
-                rcloud.session_markdown_eval("```{r}\n" + cell_model.content() + "\n```\n", false, callback);
-                // var wrapped_command = rclient.markdown_wrap_command("```{r}\n" + cell_model.content() + "\n```\n");
-                // rclient.send_and_callback(wrapped_command, callback, _.identity);
-            } else alert("Don't know language '" + language + "' - can only do Markdown or R for now!");
+            rcloud.session_markdown_eval(cell_model.content(), language, false, callback);
         }
     };
 
@@ -1219,17 +1208,21 @@ Notebook.create_controller = function(model)
             this.update_notebook(model.update_cell(cell_model));
         },
         run_all: function(k) {
-            var changes = this.refresh_cells();
-            this.update_notebook(changes);
-            var n = model.notebook.length;
-            function bump_executed() {
-                --n;
-                if (n === 0)
-                    k && k();
+            if (rcloud.authenticated) {
+                var changes = this.refresh_cells();
+                this.update_notebook(changes);
+                var n = model.notebook.length;
+                function bump_executed() {
+                    --n;
+                    if (n === 0)
+                        k && k();
+                }
+                _.each(model.notebook, function(cell_model) {
+                    cell_model.controller.execute(bump_executed);
+                });
+            } else {
+                
             }
-            _.each(model.notebook, function(cell_model) {
-                cell_model.controller.execute(bump_executed);
-            });
         },
 
         //////////////////////////////////////////////////////////////////////

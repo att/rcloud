@@ -15,8 +15,7 @@ RClient = {
                     result.running = true;
                     opts.on_connect && opts.on_connect.call(result, ocaps);
                 } else {
-                    result.post_error(result.disconnection_error("Login failed. Shutting down!"));
-                    shutdown();
+                    on_error("Login failed. Shutting down!");
                 }
             });
         }
@@ -30,6 +29,11 @@ RClient = {
         }
 
         function on_error(msg, status_code) {
+            if (opts.on_error) {
+                var result = opts.on_error(msg, status_code);
+                if (result === true)
+                    return;
+            }
             result.post_error(result.disconnection_error(msg));
             shutdown();
         }

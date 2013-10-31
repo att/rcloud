@@ -68,13 +68,8 @@ unauthenticated.ocaps <- function()
         ),
 
       # debugging
-      debug = list(
-        raise = make.oc(function(msg) stop(paste("Forced exception", msg)))
-        ),
-
-      # graphics
-      graphics = list(
-        set_device_pixel_ratio = make.oc(rcloud.set.device.pixel.ratio)
+      debug=list(
+        raise=make.oc(function(msg) stop(paste("Forced exception", msg)))
         )
       )
     )
@@ -83,7 +78,7 @@ unauthenticated.ocaps <- function()
 authenticated.ocaps <- function()
 {
   basic.ocaps <- unauthenticated.ocaps()
-  c <- list(
+  changes <- list(
     rcloud = list(
       authenticated = TRUE,
       session_init = make.oc(rcloud.session.init),

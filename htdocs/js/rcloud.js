@@ -76,6 +76,7 @@ RCloud.create = function(rcloud_ocaps) {
             rcloud_ocaps.setup_js_installer(v, k || _.identity);
         };
 
+        // having this naked eval here makes me very nervous.
         rcloud.modules = {};
         rcloud.setup_js_installer(function(name, content, k) {
             var result = eval(content);
@@ -93,21 +94,6 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.debug.raise = function(msg, k) {
             rcloud_ocaps.debug.raise(msg, k || _.identity);
         };
-
-        // graphics
-        rcloud.graphics = {};
-        rcloud.graphics.set_device_pixel_ratio = function(ratio, k) {
-            rcloud_ocaps.graphics.set_device_pixel_ratio(ratio, k || _.identity);
-        };
-
-        // publishing notebooks
-        rcloud.publish_notebook = function(id, k) {
-            rcloud_ocaps.publish_notebook(id, k || _.identity);
-        };
-        rcloud.unpublish_notebook = function(id, k) {
-            rcloud_ocaps.unpublish_notebook(id, k || _.identity);
-        };
-
     }
 
     function setup_authenticated_ocaps() {
@@ -156,8 +142,8 @@ RCloud.create = function(rcloud_ocaps) {
             k = rcloud_github_handler("rcloud.rename.notebook", k);
             rcloud_ocaps.rename_notebook(id, new_name, k);
         };
-        rcloud.session_markdown_eval = function(command, silent, k) {
-            rcloud_ocaps.session_markdown_eval(command, silent, k || _.identity);
+        rcloud.session_markdown_eval = function(command, language, silent, k) {
+            rcloud_ocaps.session_markdown_eval(command, language, silent, k || _.identity);
         };
         rcloud.upload_file = function(force, on_success, on_failure) {
             on_success = on_success || _.identity;
@@ -183,7 +169,6 @@ RCloud.create = function(rcloud_ocaps) {
                                 fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                             });
                         } else {
-                            //This is just temporary, until we add the nice info messages from bootstrap
                             rcloud_ocaps.file_upload.close(function(){
                                 on_success(path, file);
                             });
@@ -191,6 +176,7 @@ RCloud.create = function(rcloud_ocaps) {
                     };
                 });
             }
+
             if(!(window.File && window.FileReader && window.FileList && window.Blob))
                 throw "File API not supported by browser.";
             else {
@@ -213,8 +199,16 @@ RCloud.create = function(rcloud_ocaps) {
             rcloud_ocaps.comments.post(id, content, k || _.identity);
         };
 
+        // publishing notebooks
         rcloud.is_notebook_published = function(id, k) {
-            rcloud_ocaps.is_notebook_published(id, k || _.identity);
+            rcloud_ocaps.is_notebook_published(id, k);
+        };
+
+        rcloud.publish_notebook = function(id, k) {
+            rcloud_ocaps.publish_notebook(id, k);
+        };
+        rcloud.unpublish_notebook = function(id, k) {
+            rcloud_ocaps.unpublish_notebook(id, k);
         };
     }
 

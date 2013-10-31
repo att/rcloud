@@ -169,7 +169,7 @@ var chart_attrs = {
         supported: true,
         concrete: true,
         parents: ['coordinateGrid', 'stackable'],
-        width: {default: 800},
+        width: {default: 700},
         height: {default: 250},
         centerBar: {required: false},
         gap: {required: false},
