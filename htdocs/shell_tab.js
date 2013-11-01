@@ -112,7 +112,21 @@ var shell = (function() {
     }
 
     function on_load(k, notebook) {
+        var is_read_only = result.notebook.model.read_only();
         $("#notebook-title").text(notebook.description);
+
+        if (is_read_only) {
+            $("#notebook-title").off('click');
+        } else {
+            $("#notebook-title").click(function() {
+                var result = prompt("Please enter the new name for this notebook:", $(this).text());
+                if (result !== null) {
+                    $(this).text(result);
+                    editor.rename_notebook(shell.gistname(), result);
+                }
+            });
+        }
+
         is_mine_ = notebook_is_mine(notebook);
         show_fork_or_input_elements(notebook_is_mine(notebook));
         _.each(this.notebook.view.sub_views, function(cell_view) {

@@ -16,16 +16,6 @@ function init_shareable_link_box() {
     });
 }
 
-function init_editable_title_box() {
-    $("#notebook-title").click(function() {
-        var result = prompt("Please enter the new name for this notebook:", $(this).text());
-        if (result !== null) {
-            $(this).text(result);
-            editor.rename_notebook(shell.gistname(), result);
-        }
-    });
-}
-
 function init_fork_revert_button() {
     $("#fork-revert-notebook").click(function() {
         shell.fork_or_revert_button();
@@ -55,7 +45,6 @@ var oob_handlers = {
 
 function main_init() {
     init_shareable_link_box();
-    init_editable_title_box();
     init_fork_revert_button();
     init_github_buttons();
     footer.init();
