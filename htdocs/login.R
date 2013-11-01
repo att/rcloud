@@ -10,17 +10,24 @@ cookies <- function(headers) {
   } else list()
 }
 
+## + is not reserved, but some servers interpret it as ' ' so we have to encode it explicitly
+encode <- function(x) gsub("+", "%2b", URLencode(as.character(x), TRUE), fixed=TRUE)
+
 run <- function(url, query, body, headers)
 {
   cookies <- cookies(headers)
   extra.headers <- character(0)
+  redirect <- query["redirect"]
+  if (is.null(redirect)) redirect <- body["redirect"]
+  if (isTRUE(any(is.na(redirect)))) redirect <- NULL
   if (!is.null(.rc.conf$exec.auth)) {
     ret <- rcloud.support:::getConf("welcome.page")
     if (is.null(ret)) ret <- '/welcome.html'
+    if (!is.null(redirect)) ret <- paste0(ret, "?redirect=", encode(redirect))
     if (is.null(.rc.conf$session.server))
       return(list("<html><head></head><body>ERROR: This RCloud instance is not properly configured: Exec.auth is set, but session.server is not!", "text/html"))
     if (length(body) > 2 && "execLogin" %in% body['action']) {
-      res <- unlist(strsplit(RCurl::getURL(paste0(.rc.conf$session.server, "/", .rc.conf$exec.auth, "_token?realm=rcloud.exec&user=", URLencode(body['user'], TRUE), "&pwd=", URLencode(body['pwd'], TRUE))), "\n"))
+      res <- unlist(strsplit(RCurl::getURL(paste0(.rc.conf$session.server, "/", .rc.conf$exec.auth, "_token?realm=rcloud.exec&user=", encode(body['user']), "&pwd=", encode(body['pwd']))), "\n"))
       if (length(res) > 2) {
         extra.headers <- paste0("Set-Cookie: execUser=", res[2], "; domain=", .rc.conf$cookie.domain,"; path=/;\r\nSet-Cookie: execToken=", res[1], "; domain=", .rc.conf$cookie.domain, "; path=/;")
         cookies$execToken <- res[1]
@@ -35,7 +42,7 @@ run <- function(url, query, body, headers)
       return(list("<html><head></head><body>Invalid or expired execution token, requesting authentication...",
                   "text/html", paste0("Refresh: 0.1; url=", ret)))
   }
-  if (is.null((redirect = query["redirect"])))
+  if (is.null(redirect))
     redirect = '/main.html'
   state <- list(nonce=rnorm(1),
                 redirect=redirect)

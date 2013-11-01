@@ -1,15 +1,13 @@
-make.oc <- function(fun) {
-  f <- function(...) {
-    try(fun(...))
-  }
-  .Call(Rserve_oc_register, f)
+make.oc <- function(fun, name=deparse(substitute(fun))) {
+  f <- function(...) try(fun(...), silent=TRUE)
+  .Call(Rserve_oc_register, f, name)
 }
 
 oc.init <- function(...) { ## this is the payload of the OCinit message
   ## remove myself from the global env since my job is done
   if (identical(.GlobalEnv$oc.init, oc.init)) rm(oc.init, envir=.GlobalEnv)
   ## simply send the cap that authenticates and returns supported caps
-  make.oc(function(v) if (RC.authenticate(v)) initial.ocaps() else NULL)
+  make.oc(function(v) if (RC.authenticate(v)) initial.ocaps() else NULL, "oc.init")
 }
 
 initial.ocaps <- function()

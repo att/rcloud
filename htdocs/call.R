@@ -17,7 +17,7 @@ run <- function(url, query, body, headers)
     c <- RSclient::RS.connect()
     oc.init <- attr(c, "capabilities")
     ## authenticate
-    caps <- RSclient::RS.eval.qap(c, as.call(list(oc.init, as.list(cookies$token, cookies$execToken))))
+    caps <- RSclient::RS.eval.qap(c, as.call(list(oc.init, c(cookies$token, cookies$execToken))))
     ## session init
     RSclient::RS.eval.qap(c, as.call(list(caps$rcloud$session_init, cookies$user, cookies$token)))
     ## ready to get the notebook
