@@ -63,7 +63,13 @@ RClient = {
             // the notebook objects.
 
             string_error: function(msg) {
-                return $("<div class='alert alert-danger'></div>").text(msg);
+                var button = $("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>");
+                var result = $("<div class='alert alert-danger alert-dismissable'></div>");
+                var text = $("<span></span>");
+                result.append(button);
+                result.append(text);
+                text.text(msg);
+                return result;
             },
 
             disconnection_error: function(msg) {

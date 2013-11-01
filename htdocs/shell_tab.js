@@ -185,6 +185,7 @@ var shell = (function() {
             // editor's init load config callback to override the currbook
             gistname_ = gistname;
             version_ = version;
+            $("#output").find(".alert").remove();
             this.notebook.controller.load_notebook(gistname_, version_, _.bind(on_load, this, k));
         }, new_notebook: function(desc, k) {
             var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
