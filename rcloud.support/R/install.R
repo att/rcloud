@@ -1,3 +1,7 @@
+#github.install <- function(user, repo, base, branch="master") {
+#  https://github.research.att.com/_nodeload/kshirley/LDAtool/tar.gz/master
+#}
+
 check.installation <- function(install=TRUE, force.all=FALSE, update=FALSE) {
   ## packages that we have to pull from github
   on.github      <- c("httr",   "github")

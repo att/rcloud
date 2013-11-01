@@ -46512,6 +46512,10 @@ function _encode_bytes(bytes) {
 };
 
 Rserve.create = function(opts) {
+    opts = _.defaults(opts || {}, {
+        host: 'http://127.0.0.1:8081',
+        on_connect: function() {}
+    });
     var host = opts.host;
     var onconnect = opts.on_connect;
     var socket = new WebSocket(host);
@@ -46618,7 +46622,7 @@ Rserve.create = function(opts) {
             if (result.ocap_mode) {
                 var p;
                 try {
-                    p = v.payload.value.json(result.resolve_hash);
+                    p = Rserve.wrap_all_ocaps(result, v.payload); // .value.json(result.resolve_hash);
                 } catch (e) {
                     _send_cmd_now(Rserve.Rsrv.RESP_ERR | Rserve.Rsrv.OOB_MSG, 
                                   _encode_string(String(e)));

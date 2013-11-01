@@ -4,8 +4,10 @@
 ## does not perform any authentication-related actions
 RC.authenticate <- function(v, check.only=FALSE)
 {
+  if (is.null(v[[1]])) return(FALSE)
   ## is execution authentication enabled?
   if (nzConf("exec.auth")) {
+    if (is.null(v[[2]])) return(FALSE)
     exec.usr <- check.token(v[[2]], getConf("exec.auth"), "rcloud.exec")
     if (exec.usr == FALSE) return(FALSE)
     if (identical(getConf("exec.match.user"), "login")) {
