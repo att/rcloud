@@ -14,8 +14,7 @@ RClient = {
                     result.running = true;
                     opts.on_connect && opts.on_connect.call(result, ocaps);
                 } else {
-                    result.post_error(result.disconnection_error("Login failed. Shutting down!"));
-                    shutdown();
+                    on_error("Login failed. Shutting down!");
                 }
             });
         }
@@ -29,6 +28,11 @@ RClient = {
         }
 
         function on_error(msg, status_code) {
+            if (opts.on_error) {
+                var result = opts.on_error(msg, status_code);
+                if (result === true)
+                    return;
+            }
             result.post_error(result.disconnection_error(msg));
             shutdown();
         }
@@ -59,7 +63,13 @@ RClient = {
             // the notebook objects.
 
             string_error: function(msg) {
-                return $("<div class='alert alert-danger'></div>").text(msg);
+                var button = $("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>");
+                var result = $("<div class='alert alert-danger alert-dismissable'></div>");
+                var text = $("<span></span>");
+                result.append(button);
+                result.append(text);
+                text.text(msg);
+                return result;
             },
 
             disconnection_error: function(msg) {

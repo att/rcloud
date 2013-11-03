@@ -13,7 +13,6 @@
 ## is to move all of these to require the session token to match against
 ## the one we have stored during the login process.
 
-
 rcloud.load.user.config <- function(user = .session$username, map = FALSE) {
   payload <- rcs.get(usr.key("config.json", user=user, notebook="system"))
   if (is.null(payload)) payload <- "null"
@@ -21,8 +20,12 @@ rcloud.load.user.config <- function(user = .session$username, map = FALSE) {
 }
 
 rcloud.load.multiple.user.configs <- function(users) {
-  res <- unlist(lapply(rcs.get(usr.key("config.json", user=users, notebook="system"), TRUE), paste, collapse="\n"))
-  paste0('{', paste(paste0('"', users, '": ', res), collapse=','), '}')
+  if (length(users) == 0) {
+    "{}"
+  } else {
+    res <- unlist(lapply(rcs.get(usr.key("config.json", user=users, notebook="system"), TRUE), paste, collapse="\n"))
+    paste0('{', paste(paste0('"', users, '": ', res), collapse=','), '}')
+  }
 }
 
 rcloud.save.user.config <- function(user = .session$username, content) {
@@ -101,6 +104,20 @@ rcloud.fork.notebook <- function(id) fork.gist(.session$rgithub.context, id)
 
 rcloud.get.users <- function(user) ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
   gsub("/.*","",rcs.list(usr.key("config.json", user="*", notebook="system")))
+
+rcloud.publish.notebook <- function(id) {
+  rcs.set(rcs.key("notebook", id, "public"), 1)
+  TRUE
+}
+
+rcloud.unpublish.notebook <- function(id) {
+  rcs.rm(rcs.key("notebook", id, "public"))
+  TRUE
+}
+
+rcloud.is.notebook.published <- function(id) {
+  !is.null(rcs.get(rcs.key("notebook", id, "public")))
+}
 
 rcloud.port.notebooks <- function(url, books) {
   blank <- list(

@@ -1,5 +1,7 @@
 ## RCS (RCloud Storage) methods
 
+rcs.key <- function(...) paste(..., sep='/')
+
 usr.key <- function(..., user=.session$username, notebook=.session$notebook) paste(user, notebook, ..., sep='/')
 
 rcs.get <- function(key, list=FALSE, engine=.session$rcs.engine) UseMethod("rcs.get", engine)

@@ -14,8 +14,7 @@ RClient = {
                     result.running = true;
                     opts.on_connect && opts.on_connect.call(result, ocaps);
                 } else {
-                    result.post_error(result.disconnection_error("Login failed. Shutting down!"));
-                    shutdown();
+                    on_error("Login failed. Shutting down!");
                 }
             });
         }
@@ -29,6 +28,11 @@ RClient = {
         }
 
         function on_error(msg, status_code) {
+            if (opts.on_error) {
+                var result = opts.on_error(msg, status_code);
+                if (result === true)
+                    return;
+            }
             result.post_error(result.disconnection_error(msg));
             shutdown();
         }
@@ -59,7 +63,13 @@ RClient = {
             // the notebook objects.
 
             string_error: function(msg) {
-                return $("<div class='alert alert-danger'></div>").text(msg);
+                var button = $("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>");
+                var result = $("<div class='alert alert-danger alert-dismissable'></div>");
+                var text = $("<span></span>");
+                result.append(button);
+                result.append(text);
+                text.text(msg);
+                return result;
             },
 
             disconnection_error: function(msg) {
@@ -98,15 +108,17 @@ RClient = {
 };
 RCloud = {};
 
+RCloud.is_exception = function(v) {
+    return _.isArray(v) && v.r_attributes && v.r_attributes['class'] === 'try-error';
+};
+
+RCloud.exception_message = function(v) {
+    if (!RCloud.is_exception(v))
+        throw new Error("Not an R exception value");
+    return v[0];
+};
+
 RCloud.create = function(rcloud_ocaps) {
-    function is_exception(v) {
-        return _.isArray(v) && v.r_attributes && v.r_attributes['class'] === 'try-error';
-    }
-    function exception_message(v) {
-        if (!is_exception(v))
-            throw new Error("Not an R exception value");
-        return v[0];
-    }
     function json_k(k) {
         return function(result) {
             k && k(JSON.parse(result));
@@ -213,8 +225,8 @@ RCloud.create = function(rcloud_ocaps) {
         function do_upload(path, file) {
             var upload_name = path + '/' + file.name;
             rcloud_ocaps.file_upload.create(upload_name, force, function(result) {
-                if (is_exception(result)) {
-                    on_failure(exception_message(result));
+                if (RCloud.is_exception(result)) {
+                    on_failure(RCloud.exception_message(result));
                     return;
                 }
                 var fr = new FileReader();
@@ -284,15 +296,46 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud_ocaps.debug.raise(msg, k);
     };
 
-    // graphics
-    rcloud.graphics = {};
-    rcloud.graphics.set_device_pixel_ratio = function(ratio, k) {
-        rcloud_ocaps.graphics.set_device_pixel_ratio(ratio, k);
+    // publishing notebooks
+    rcloud.publish_notebook = function(id, k) {
+        rcloud_ocaps.publish_notebook(id, k);
+    };
+    rcloud.unpublish_notebook = function(id, k) {
+        rcloud_ocaps.unpublish_notebook(id, k);
+    };
+    rcloud.is_notebook_published = function(id, k) {
+        rcloud_ocaps.is_notebook_published(id, k);
     };
 
     return rcloud;
 };
 var ui_utils = {};
+
+$.fn.font_awesome_checkbox = function(opts) {
+    opts = opts || {};
+    if (opts.checked) {
+        this.addClass('icon-check');
+        this.removeClass('icon-check-empty');
+    } else {
+        this.addClass('icon-check-empty');
+        this.removeClass('icon-check');
+    }
+    this.off("click");
+    this.on("click", function() {
+        var this_class = $(this).attr("class");
+        if (this_class === 'icon-check') {
+            $(this).addClass('icon-check-empty');
+            $(this).removeClass('icon-check');
+            opts.click && opts.click(this);
+            opts.uncheck && opts.uncheck(this);
+        } else {
+            $(this).addClass('icon-check');
+            $(this).removeClass('icon-check-empty');
+            opts.click && opts.click(this);
+            opts.check && opts.check(this);
+        }
+    });
+};
 
 ui_utils.fa_button = function(which, title, classname, style)
 {
@@ -564,10 +607,17 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                     var f = rclient._rserve.wrap_ocap(ocap);
 
                     f(function(future) {
-                        var data = future();
-                        $(that).replaceWith(function() {
-                            return data;
-                        });
+                        if (RCloud.is_exception(future)) {
+                            var data = RCloud.exception_message(future);
+                            $(that).replaceWith(function() {
+                                return rclient.string_error(data);
+                            });
+                        } else {
+                            var data = future();
+                            $(that).replaceWith(function() {
+                                return data;
+                            });
+                        }
                     });
                     // rcloud.resolve_deferred_result(uuids[1], function(data) {
                     //     $(that).replaceWith(function() {
@@ -1173,11 +1223,11 @@ Notebook.create_controller = function(model)
 
         hide_r_source: function() {
             this._r_source_visible = false;
-            this.run_all(Notebook.hide_r_source);
+            Notebook.hide_r_source();
         },
         show_r_source: function() {
             this._r_source_visible = true;
-            this.run_all(Notebook.show_r_source);
+            Notebook.show_r_source();
         }
     };
     model.controller = result;

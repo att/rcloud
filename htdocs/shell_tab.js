@@ -112,7 +112,21 @@ var shell = (function() {
     }
 
     function on_load(k, notebook) {
+        var is_read_only = result.notebook.model.read_only();
         $("#notebook-title").text(notebook.description);
+
+        if (is_read_only) {
+            $("#notebook-title").off('click');
+        } else {
+            $("#notebook-title").click(function() {
+                var result = prompt("Please enter the new name for this notebook:", $(this).text());
+                if (result !== null) {
+                    $(this).text(result);
+                    editor.rename_notebook(shell.gistname(), result);
+                }
+            });
+        }
+
         is_mine_ = notebook_is_mine(notebook);
         show_fork_or_input_elements(notebook_is_mine(notebook));
         _.each(this.notebook.view.sub_views, function(cell_view) {
@@ -185,6 +199,7 @@ var shell = (function() {
             // editor's init load config callback to override the currbook
             gistname_ = gistname;
             version_ = version;
+            $("#output").find(".alert").remove();
             this.notebook.controller.load_notebook(gistname_, version_, _.bind(on_load, this, k));
         }, new_notebook: function(desc, k) {
             var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};

@@ -16,16 +16,6 @@ function init_shareable_link_box() {
     });
 }
 
-function init_editable_title_box() {
-    $("#notebook-title").click(function() {
-        var result = prompt("Please enter the new name for this notebook:", $(this).text());
-        if (result !== null) {
-            $(this).text(result);
-            editor.rename_notebook(shell.gistname(), result);
-        }
-    });
-}
-
 function init_fork_revert_button() {
     $("#fork-revert-notebook").click(function() {
         shell.fork_or_revert_button();
@@ -49,29 +39,25 @@ var oob_handlers = {
         var width=600;
         var height=500;
         var left=screen.width-width;
-        window.open(x,'','width='+width+',height='+height+',scrollbars=yes,resizable=yes,left='+left);
+        window.open(x,'RCloudHelp','width='+width+',height='+height+',scrollbars=yes,resizable=yes,left='+left);
     }
 };
 
 function main_init() {
     init_shareable_link_box();
-    init_editable_title_box();
     init_fork_revert_button();
     init_github_buttons();
     footer.init();
     
-    $("#show-source").click(function() {
-        var this_class = $(this).attr("class");
-        if (this_class === 'icon-check') {
-            $(this).addClass('icon-check-empty');
-            $(this).removeClass('icon-check');
-            shell.notebook.controller.hide_r_source();
-        } else {
-            $(this).addClass('icon-check');
-            $(this).removeClass('icon-check-empty');
+    $("#show-source").font_awesome_checkbox({
+        checked: false,
+        check: function() {
             shell.notebook.controller.show_r_source();
+        }, uncheck: function() {
+            shell.notebook.controller.hide_r_source();
         }
     });
+
     $("#comment-submit").click(function() {
         editor.post_comment($("#comment-entry-body").val());
         return false;
@@ -83,7 +69,6 @@ function main_init() {
             rcloud = RCloud.create(ocaps.rcloud);
             rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {
                 rclient.post_response(hello);
-                rcloud.graphics.set_device_pixel_ratio(window.devicePixelRatio, function() {});
             });
 
             $("#new-md-cell-button").click(function() {

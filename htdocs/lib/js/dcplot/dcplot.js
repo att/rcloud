@@ -169,7 +169,7 @@ var chart_attrs = {
         supported: true,
         concrete: true,
         parents: ['coordinateGrid', 'stackable'],
-        width: {default: 800},
+        width: {default: 700},
         height: {default: 250},
         centerBar: {required: false},
         gap: {required: false},
@@ -191,14 +191,16 @@ var chart_attrs = {
     abstractBubble: {
         supported: true,
         parents: ['color'],
-        r: {required: false}, // radiusValueAccessor
-        'r.scale': {required: false}, // scale component of r 
+        r: {default: 2}, // radiusValueAccessor
+        'r.scale': {required: false}, // scale component of r
         'r.domain': {required: false} // domain component of r
     },
     bubble: {
         concrete: true,
         parents: ['coordinateGrid', 'abstractBubble'],
         width: {default: 400},
+        label: {default: null}, // do not label by default; use ..key.. to label with keys
+        color: {default: 0}, // by default use first color in palette
         supported: true,
         'r.elastic': {required: false}
     },
@@ -331,15 +333,23 @@ function dcplot(frame, groupname, definition) {
     }
 
     function accessor(a) {
+        function constant_fn(v) {
+            return function() { return v; };
+        }
         if(_.isFunction(a))
             return a;
         else if(_.isString(a))
-            return frame.access(a);
+            return frame.has(a) ? frame.access(a) : constant_fn(a);
         else if(_.isObject(a)) {
-            var fun = a.fun, arg = a.arg;
-            var resolve = accessor(arg);
-            return fun(resolve);
+            if(('fun' in a) && ('arg' in a)) {
+                var fun = a.fun, arg = a.arg;
+                var resolve = accessor(arg);
+                return fun(resolve);
+            }
+            else return constant_fn(a);
         }
+        else if(_.isNumber(a))
+            return constant_fn(a);
         else throw "illegal accessor " + a.toString();
     }
 

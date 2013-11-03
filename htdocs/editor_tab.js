@@ -181,12 +181,34 @@ var editor = function () {
         return $tree_.tree('appendNode', data, parent);
     }
 
+    function remove_empty_parents(dp) {
+        // remove any empty notebook hierarchy
+        while(dp.children.length===0 && dp.sort_order===ordering.NOTEBOOK) {
+            var dp2 = dp.parent;
+            $tree_.tree('removeNode', dp);
+            dp = dp2;
+        }
+    }
+
     function update_tree(root, user, gistname, path, last_chance) {
         // make sure parents exist
         var id = user===username_ ? node_id(root) : node_id(root, user),
             parent = $tree_.tree('getNodeById', id),
             pdat = null,
             node = null;
+        if(!parent) {
+            if(user===username_)
+                throw "my folder should be there at least";
+            parent = $tree_.tree('getNodeById', node_id(root));
+            if(!parent)
+                throw "root '" + root + "' of notebook tree not found!";
+            pdat = {
+                label: someone_elses(user),
+                id: node_id(root, user),
+                sort_order: ordering.SUBFOLDER
+            };
+            parent = insert_alpha(pdat, parent);
+        }
         while('children' in path) {
             node = $tree_.tree('getNodeById', path.id);
             if(!node) {
@@ -214,40 +236,26 @@ var editor = function () {
             var dp = node.parent;
             $tree_.tree('removeNode', node);
             node = insert_alpha(data, parent);
-            // remove any empty notebook hierarchy
-            while(dp.children.length===0 && dp.sort_order===ordering.NOTEBOOK) {
-                var dp2 = dp.parent;
-                $tree_.tree('removeNode', dp);
-                dp = dp2;
-            }
+            remove_empty_parents(dp);
         }
-        else {
-            if(user == username_) {
-                parent = $tree_.tree('getNodeById', node_id(root));
-                node = insert_alpha(data, parent);
-            }
-            else {
-                var usernode = $tree_.tree('getNodeById', node_id(root, user));
-                if(usernode)
-                    node = insert_alpha(data, usernode);
-                else {
-                    // creating a subfolder and then using loadData on it
-                    // seems to be *the* way that works
-                    parent = $tree_.tree('getNodeById', node_id(root));
-                    pdat = {
-                        label: someone_elses(user),
-                        id: node_id(root, user),
-                        sort_order: ordering.SUBFOLDER
-                    };
-                    children = [data];
-                    var user_folder = insert_alpha(pdat, parent);
-                    $tree_.tree('loadData', children, user_folder);
-                    $tree_.tree('openNode', user_folder);
-                    node = $tree_.tree('getNodeById',id);
-                }
-            }
-        }
+        else
+            node = insert_alpha(data, parent);
         return node;
+    }
+
+    function scroll_into_view(node) {
+        var height = $tree_.parent().css("height").replace("px","");
+        var p = node.parent;
+        while(p.sort_order===ordering.NOTEBOOK) {
+            $tree_.tree('openNode', p);
+            p = p.parent;
+        }
+        if($(node.element).position().top > height)
+            $tree_.parent().scrollTo(null, $tree_.parent().scrollTop()
+                                     + $(node.element).position().top - height + 50);
+        else if($(node.element).position().top < 0)
+            $tree_.parent().scrollTo(null, $tree_.parent().scrollTop()
+                                     + $(node.element).position().top - 100);
     }
 
     //http://stackoverflow.com/questions/7969031/indexof-element-in-js-array-using-a-truth-function-using-underscore-or-jquery
@@ -543,7 +551,9 @@ var editor = function () {
                     $tree_.tree('removeNode', $tree_.tree('getNodeById', id));
                 }
             }
+            var dp = node.parent;
             $tree_.tree('removeNode', node);
+            remove_empty_parents(dp);
             this.save_config();
         },
         set_visibility: function(node, visibility) {
@@ -586,6 +596,18 @@ var editor = function () {
                 that.update_notebook_file_list(result.files);
                 rcloud.get_all_comments(result.id, function(data) {
                     populate_comments(JSON.parse(data));
+                });
+                $("#github-notebook-id").text(result.id);
+                rcloud.is_notebook_published(result.id, function(p) {
+                    $("#publish-notebook").font_awesome_checkbox({
+                        checked: p,
+                        check: function() {
+                            rcloud.publish_notebook(result.id);
+                        },
+                        uncheck: function() {
+                            rcloud.unpublish_notebook(result.id);
+                        }
+                    });
                 });
             };
         },
@@ -632,8 +654,10 @@ var editor = function () {
                 config_.all_books[gistname] = entry;
 
             var node = this.update_tree_entry(user, gistname, entry, status.history);
-            if(node)
+            if(node) {
                 $tree_.tree('selectNode', node);
+                scroll_into_view(node);
+            }
         },
         update_tree_entry: function(user, gistname, entry, history) {
             var data = {label: entry.description,
@@ -665,10 +689,7 @@ var editor = function () {
                     $tree_.tree('openNode', node);
                     var n2 = $tree_.tree('getNodeById', node_id('interests', user, gistname, config_.currversion));
                     $tree_.tree('selectNode', n2);
-                    var height = $tree_.parent().css("height").replace("px","");
-                    // are there other cases where the selected notebook is not in view?
-                    if($(n2.element).position().top > height)
-                        $tree_.parent().scrollTo(null, $tree_.parent().scrollTop() + $(n2.element).position().top - height + 50);
+                    scroll_into_view(n2);
                 };
             }
             else if(is_open)

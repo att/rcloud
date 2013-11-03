@@ -5,12 +5,11 @@
     <link rel="stylesheet" type="text/css" href="css/font-awesome.css"/>
     <link rel="stylesheet" type="text/css" href="css/jqtree.css"/>
     <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
-    <link rel="stylesheet" type="text/css" href="css/bootstrap-responsive.css"/>
     <link rel="stylesheet" type="text/css" href="css/rmarkdown.css"/>
     <link rel="stylesheet" type="text/css" href="css/view.css"/>
     <link rel="stylesheet" type="text/css" href="css/dc.css"/>
 
-    <script type="text/javascript" src="lib/dependencies_bundle.js"></script>
+    <script type="text/javascript" src="lib/dependencies_bundle.js" charset="utf-8"></script>
     <script type="text/javascript">MathJax = undefined;</script>
     <script type="text/javascript"
         src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
@@ -26,6 +25,50 @@
     <script type="text/javascript" src="view.js"></script>
   </head>
 <body>
+<!-- <div class="navbar navbar-inverse navbar-fixed-top"> -->
+<!--   <div class="navbar-inner"> -->
+<!--     <div class="container-fluid"> -->
+<!--       <a class="brand" href="#">RCloud - [<span id="notebook-title">Untitled</span>]</a> -->
+<!--       <div class="nav-collapse collapse"> -->
+<!-- 	<ul class="nav"> -->
+<!-- 	  <li><a href="#" id="view-source">View source</a></li> -->
+<!-- 	</ul> -->
+<!--       </div> -->
+<!--     </div> -->
+<!--   </div> -->
+<!-- </div> -->
+
+<div class="navbar navbar-inverse navbar-fixed-top">
+  <div>
+    <!--div class="container"-->
+      <div class="navbar-header">
+        <a class="navbar-brand" href="#">RCloud - [<span id="notebook-title">Untitled</span>]</a>
+      <!--div class="nav-collapse collapse"-->
+	<ul class="nav navbar-nav">
+	  <li><a href="#" id="view-source">View source</a></li>
+	</ul>
+      <!--/div-->
+      </div>
+    <!--/div-->
+  </div>
+</div>
+
+<div class="container" id="main-div">
+  <div class="row">
+    <!--div class="col-md-1"></div-->
+    <div class="col-md-12">
+      <div id="tabs-1">
+	<div id="output" class="tab-div">
+	</div>
+
+
+	<div style="padding:1em; clear:both"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--
 <div class="navbar navbar-fixed-top">
   <div class="navbar-inner">
     <div class="container-fluid">
@@ -98,7 +141,7 @@
     <div class="span1"></div>
   </div>
 </div>
-
+-->
 <!-- For some bizarre reason, line numbering has garbage characters on --
   -- the minified version, so we use the unminified version instead.
 

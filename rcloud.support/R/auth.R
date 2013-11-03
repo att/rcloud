@@ -4,8 +4,10 @@
 ## does not perform any authentication-related actions
 RC.authenticate <- function(v, check.only=FALSE)
 {
+  if (is.null(v[[1]])) return(FALSE)
   ## is execution authentication enabled?
   if (nzConf("exec.auth")) {
+    if (is.null(v[[2]])) return(FALSE)
     exec.usr <- check.token(v[[2]], getConf("exec.auth"), "rcloud.exec")
     if (exec.usr == FALSE) return(FALSE)
     if (identical(getConf("exec.match.user"), "login")) {
@@ -13,6 +15,7 @@ RC.authenticate <- function(v, check.only=FALSE)
       dir.create(rc.user.home <- pathConf("data.root", "home", exec.usr), FALSE, TRUE, "0700")
       dir.create(td <- paste(tempdir(), exec.usr, sep='-'), FALSE, TRUE, "0700")
       unixtools::chown(c(getwd(), rc.user.home, td), exec.usr, NULL)
+      Sys.chmod(getwd(), "0700") ## also change mode of the Rserve connection directory
       ## switch users
       unixtools::set.user(exec.usr)
       ## also adjust HOME and USER env vars

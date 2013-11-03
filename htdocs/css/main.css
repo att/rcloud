@@ -162,13 +162,6 @@ rect.frame {
     color: blue;
 }
 
-/* .markdown-div { */
-/*     background-color: red; */
-/* } */
-/* .r-result-div { */
-/*     background-color: green; */
-/* } */
-
 .notebook-cell {
     position:relative;
     width:100%;
@@ -322,4 +315,24 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
 a.footer-dropdown-toggle {
     padding: 5px;
     color: #999;
+}
+
+/******************************************************************************/
+/* Fix some of the ugliness caused by the interaction between Bootstrap and
+   Rmarkdown */
+
+div.r-result-div h1,
+div.r-result-div h2,
+div.r-result-div h3,
+div.r-result-div h4,
+div.r-result-div h5 {
+    margin-top: 0;
+}
+
+.r-result-div {
+    padding: 0.5em;
+}
+
+pre {
+    max-width: 100%;
 }

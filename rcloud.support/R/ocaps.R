@@ -1,15 +1,13 @@
-make.oc <- function(fun) {
-  f <- function(...) {
-    try(fun(...))
-  }
-  .Call(Rserve_oc_register, f)
+make.oc <- function(fun, name=deparse(substitute(fun))) {
+  f <- function(...) try(fun(...), silent=TRUE)
+  .Call(Rserve_oc_register, f, name)
 }
 
 oc.init <- function(...) { ## this is the payload of the OCinit message
   ## remove myself from the global env since my job is done
   if (identical(.GlobalEnv$oc.init, oc.init)) rm(oc.init, envir=.GlobalEnv)
   ## simply send the cap that authenticates and returns supported caps
-  make.oc(function(v) if (RC.authenticate(v)) initial.ocaps() else NULL)
+  make.oc(function(v) if (RC.authenticate(v)) initial.ocaps() else NULL, "oc.init")
 }
 
 initial.ocaps <- function()
@@ -31,6 +29,11 @@ initial.ocaps <- function()
       update_notebook=make.oc(rcloud.update.notebook),
       create_notebook=make.oc(rcloud.create.notebook),
       rename_notebook=make.oc(rcloud.rename.notebook),
+      
+      publish_notebook=make.oc(rcloud.publish.notebook),
+      unpublish_notebook=make.oc(rcloud.unpublish.notebook),
+      is_notebook_published=make.oc(rcloud.is.notebook.published),
+      
       fork_notebook=make.oc(rcloud.fork.notebook),
       port_notebooks=make.oc(rcloud.port.notebooks),
       get_users=make.oc(rcloud.get.users),
@@ -62,11 +65,6 @@ initial.ocaps <- function()
       # debugging
       debug=list(
         raise=make.oc(function(msg) stop(paste("Forced exception", msg)))
-        ),
-
-      # graphics
-      graphics=list(
-        set_device_pixel_ratio=make.oc(rcloud.set.device.pixel.ratio)
         )
 
       )
