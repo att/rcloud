@@ -31,6 +31,16 @@ var shell = (function() {
 
         var Autocomplete = require("ace/autocomplete").Autocomplete;
 
+        function execute(widget, args, request) {
+            var code = session.getValue();
+            if(code.length) {
+                result.new_interactive_cell(code).execute(function() {
+                    $.scrollTo(null, entry_div);
+                });
+                session.setValue('');
+            }
+        }
+
         widget.commands.addCommands([{
             name: 'execute',
             bindKey: {
@@ -38,15 +48,15 @@ var shell = (function() {
                 mac: 'Return',
                 sender: 'editor'
             },
-            exec: function(widget, args, request) {
-                var code = session.getValue();
-                if(code.length) {
-                    result.new_interactive_cell(code).execute(function() {
-                        $.scrollTo(null, entry_div);
-                    });
-                    session.setValue('');
-                }
-            }
+            exec: execute
+        }, {
+            name: 'execute-2',
+            bindKey: {
+                win: 'Ctrl-Return',
+                mac: 'Command-Return',
+                sender: 'editor'
+            },
+            exec: execute
         }, {
             name: 'execute-selection-or-line',
             bindKey: {
