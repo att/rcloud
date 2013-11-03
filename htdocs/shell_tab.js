@@ -207,10 +207,27 @@ var shell = (function() {
             // asymetrical: we know the gistname before it's loaded here,
             // but not in new.  and we have to set this here to signal
             // editor's init load config callback to override the currbook
-            gistname_ = gistname;
-            version_ = version;
-            $("#output").find(".alert").remove();
-            this.notebook.controller.load_notebook(gistname_, version_, _.bind(on_load, this, k));
+            rclient.close();
+            // FIXME this is a bit of an annoying duplication of code on main.js and view.js
+            rclient = RClient.create({
+                debug: rclient.debug,
+                host: rclient.host,
+                on_connect: function(ocaps) {
+                    rcloud = RCloud.create(ocaps.rcloud);
+                    rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {});
+
+                    rcloud.init_client_side_data(function() {
+                        gistname_ = gistname;
+                        version_ = version;
+                        $("#output").find(".alert").remove();
+                        that.notebook.controller.load_notebook(gistname_, version_, _.bind(on_load, that, k));
+                    });
+                },
+                on_data: function(v) {
+                    v = v.value.json();
+                    oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
+                }
+            });
         }, new_notebook: function(desc, k) {
             var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
             this.notebook.controller.create_notebook(content, _.bind(on_new, this, k));

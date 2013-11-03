@@ -39,10 +39,12 @@ RCloud.create = function(rcloud_ocaps) {
     rcloud.session_init = function(username, token, k) {
         rcloud_ocaps.session_init(username, token, k || _.identity);
     };
-    rcloud.init_client_side_data = function() {
+    rcloud.init_client_side_data = function(k) {
+        k = k || _.identity;
         var that = this;
         rcloud_ocaps.prefix_uuid(function(v) {
             that.deferred_knitr_uuid = v;
+            k();
         });
     };
     rcloud.search = function(search_string, k) {

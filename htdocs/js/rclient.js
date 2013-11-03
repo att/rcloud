@@ -22,7 +22,9 @@ RClient = {
         // this might be called multiple times; some conditions result
         // in on_error and on_close both being called.
         function shutdown() {
-            $("#input-div").hide();
+            if (!clean) {
+                $("#input-div").hide();
+            }
             if (!rserve.closed)
                 rserve.close();
         }
@@ -38,8 +40,10 @@ RClient = {
         }
 
         function on_close(msg) {
-            result.post_error(result.disconnection_error("Socket was closed. Goodbye!"));
-            shutdown();
+            if (!clean) {
+                result.post_error(result.disconnection_error("Socket was closed. Goodbye!"));
+                shutdown();
+            }
         };
 
         var token = $.cookies.get().token;  // document access token
@@ -53,9 +57,11 @@ RClient = {
         });
 
         var result;
+        var clean = false;
 
         result = {
             _rserve: rserve,
+            host: opts.host,
             running: false,
            
             //////////////////////////////////////////////////////////////////
@@ -101,6 +107,11 @@ RClient = {
                 var d = $("<pre></pre>").html(msg);
                 $("#output").append(d);
                 window.scrollTo(0, document.body.scrollHeight);
+            },
+
+            close: function() {
+                clean = true;
+                shutdown();
             }
         };
         return result;
