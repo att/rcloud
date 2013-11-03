@@ -31,6 +31,9 @@ function init_github_buttons() {
         if(result !== null)
             shell.open_from_github(result);
     });
+    $("#import-notebooks").click(function() {
+        shell.import_notebooks();
+    });
 }
 
 var oob_handlers = {
