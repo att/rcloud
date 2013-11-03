@@ -80,8 +80,8 @@ RCloud.create = function(rcloud_ocaps) {
         k = rcloud_github_handler("rcloud.fork.notebook", k);
         rcloud_ocaps.fork_notebook(id, k);
     };
-    rcloud.port_notebooks = function(source, notebooks, k) {
-        rcloud_ocaps.port_notebooks(source, notebooks, k);
+    rcloud.port_notebooks = function(source, notebooks, prefix, k) {
+        rcloud_ocaps.port_notebooks(source, notebooks, prefix, k);
     };
     rcloud.get_users = function(user, k) {
         rcloud_ocaps.get_users(user, k || _.identity);

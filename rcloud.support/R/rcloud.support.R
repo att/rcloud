@@ -119,11 +119,19 @@ rcloud.is.notebook.published <- function(id) {
   !is.null(rcs.get(rcs.key("notebook", id, "public")))
 }
 
-rcloud.port.notebooks <- function(url, books) {
-  blank <- list(
-  for (notebook in books) {
-    rcloud.create.notebook(
-      git clone https://github.research.att.com/gist/543cdef02e915a29fce0.git gist-543cdef0
+rcloud.port.notebooks <- function(url, books, prefix) {
+  foreign.ctx <- create.github.context(url)
+
+  Map(function(notebook) {
+    getg <- get.gist(foreign.ctx, notebook)
+    if(getg$ok) {
+      gist <- getg$content
+      newgist <- list(description = paste(prefix, gist$description, sep=""),
+                      files = gist$files);
+      rcloud.create.notebook(newgist)
+    }
+    else getg
+  }, books)
 }
 
 rcloud.setup.dirs <- function() {
