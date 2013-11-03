@@ -39,8 +39,5 @@
                 $(dialog).remove();
                 k(result);
             });
-        // });
-        // var x = prompt(v);
-        // k(x);
     }
 })
