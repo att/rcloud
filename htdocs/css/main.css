@@ -203,6 +203,11 @@ rect.frame {
     margin: 0;
 }
 
+.header-button {
+    float: right;
+    font-size: 120%;
+}
+
 /* Ace sets its z-index to something obscene,
    and we need to one-up that obscenity with our own button float; Twitter's
    bootstrap tooltip needs to reflect that and one-up everything else.

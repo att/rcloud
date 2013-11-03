@@ -94,13 +94,6 @@ var editor = function () {
         for (var username in config_.interests) {
             var user_notebooks = config_.interests[username];
             var notebook_nodes = [];
-            if(username === username_) {
-                notebook_nodes.push({
-                    label: "[New Notebook]",
-                    id: "newbook",
-                    sort_order: ordering.HEADER
-                });
-            }
             notebook_nodes = notebook_nodes.concat(convert_notebook_set('interests', username, user_notebooks));
 
             if(username === username_)
@@ -411,6 +404,9 @@ var editor = function () {
                     that.search(new_text);
                 }
             }, 500);
+            $('#new-notebook').click(function() {
+                that.new_notebook();
+            });
         },
         create_book_tree_widget: function(data) {
             var that = this;
@@ -494,9 +490,7 @@ var editor = function () {
             });
             $tree_.bind(
                 'tree.click', function(event) {
-                    if(event.node.id === 'newbook')
-                        that.new_notebook();
-                    else if(event.node.id === 'showmore')
+                    if(event.node.id === 'showmore')
                         that.show_history(event.node.parent, false);
                     else if(event.node.gistname)
                         that.load_notebook(event.node.gistname, event.node.version || null);
