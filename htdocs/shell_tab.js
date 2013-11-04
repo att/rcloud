@@ -6,6 +6,59 @@ var shell = (function() {
         github_url_ = null,
         gist_url_ = null;
 
+    var cmd_history = (function() {
+        var entries_ = [], alt_ = [];
+        var curr_ = 0;
+        function curr_cmd() {
+            return alt_[curr_] || (curr_<entries_.length ? entries_[curr_] : "");
+        }
+        function prefix() {
+            return "rcloud.history." + gistname_ + ".";
+        }
+
+        var result = {
+            init: function() {
+                var pre = prefix();
+                var i = 0;
+                entries_ = [];
+                alt_ = [];
+                while(1) {
+                    var cmd = window.localStorage[pre+i];
+                    if(cmd === undefined)
+                        break;
+                    entries_.push(cmd);
+                    ++i;
+                }
+                curr_ = entries_.length;
+            },
+            execute: function(cmd) {
+                if(cmd==="") return;
+                alt_[entries_.length] = null;
+                entries_.push(cmd);
+                alt_[curr_] = null;
+                curr_ = entries_.length;
+                window.localStorage[prefix()+(curr_-1)] = cmd;
+            },
+            last: function() {
+                if(curr_>0) --curr_;
+                return curr_cmd();
+            },
+            next: function() {
+                if(curr_<entries_.length) ++curr_;
+                return curr_cmd();
+            },
+            change: function(cmd) {
+                alt_[curr_] = cmd;
+            }
+        };
+        return result;
+    })();
+
+    function set_gistname(gistname) {
+        gistname_ = gistname;
+        cmd_history.init();
+    }
+
     function setup_command_entry(entry_div) {
         function set_ace_height() {
             entry_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
@@ -31,15 +84,52 @@ var shell = (function() {
 
         var Autocomplete = require("ace/autocomplete").Autocomplete;
 
+        var change_value = (function(widget) {
+            var listen = true;
+            widget.on('change', function() {
+                if(listen)
+                    cmd_history.change(session.getValue());
+            });
+            return function(value) {
+                listen = false;
+                widget.setValue(value);
+                listen = true;
+            };
+        })(widget);
+
         function execute(widget, args, request) {
             var code = session.getValue();
             if(code.length) {
                 result.new_interactive_cell(code).execute(function() {
                     $.scrollTo(null, entry_div);
                 });
-                session.setValue('');
+                cmd_history.execute(code);
+                change_value('');
             }
         }
+
+        function last_row(widget) {
+            var doc = widget.getSession().getDocument();
+            return doc.getLength()-1;
+        }
+
+        function last_col(widget, row) {
+            var doc = widget.getSession().getDocument();
+            return doc.getLine(row).length;
+        }
+
+        function set_pos(widget, row, column) {
+            var sel = widget.getSelection();
+            var range = sel.getRange();
+            range.setStart(row, column);
+            range.setEnd(row, column);
+            sel.setSelectionRange(range);
+        }
+
+
+        // note ace.js typo which we need to correct when we update ace
+        var up_handler = widget.commands.commmandKeyBinding[0]["up"],
+            down_handler = widget.commands.commmandKeyBinding[0]["down"];
 
         widget.commands.addCommands([{
             name: 'execute',
@@ -72,6 +162,7 @@ var shell = (function() {
                     var range = new Range(pos.row, 0, pos.row+1, 0);
                     code = session.getTextRange(range);
                 }
+                cmd_history.execute(code);
                 result.new_interactive_cell(code).execute(function() {
                     $.scrollTo(null, entry_div);
                 });
@@ -80,7 +171,34 @@ var shell = (function() {
             name: 'another autocomplete key',
             bindKey: 'Ctrl-.',
             exec: Autocomplete.startCommand.exec
-        }]);
+        }, {
+            name: 'up-with-history',
+            bindKey: 'up',
+            exec: function(widget, args, request) {
+                var pos = widget.getCursorPosition();
+                if(pos.row > 0)
+                    up_handler.exec(widget, args, request);
+                else {
+                    change_value(cmd_history.last());
+                    var r = last_row(widget);
+                    set_pos(widget, r, last_col(widget, r));
+                }
+            }
+        }, {
+            name: 'down-with-history',
+            bindKey: 'down',
+            exec: function(widget, args, request) {
+                var pos = widget.getCursorPosition();
+                var r = last_row(widget);
+                if(pos.row < r)
+                    down_handler.exec(widget, args, request);
+                else {
+                    change_value(cmd_history.next());
+                    set_pos(widget, 0, last_col(widget, 0));
+                }
+            }
+        }
+        ]);
         ui_utils.make_prompt_chevron_gutter(widget);
     }
 
@@ -112,7 +230,7 @@ var shell = (function() {
 
     function on_new(k, notebook) {
         $("#notebook-title").text(notebook.description);
-        gistname_ = notebook.id;
+        set_gistname(notebook.id);
         version_ = null;
         is_mine_ = notebook_is_mine(notebook);
         show_fork_or_input_elements();
@@ -217,7 +335,7 @@ var shell = (function() {
                     rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {});
 
                     rcloud.init_client_side_data(function() {
-                        gistname_ = gistname;
+                        set_gistname(gistname);
                         version_ = version;
                         $("#output").find(".alert").remove();
                         that.notebook.controller.load_notebook(gistname_, version_, _.bind(on_load, that, k));
@@ -237,7 +355,7 @@ var shell = (function() {
             var that = this;
             notebook_model.read_only(false);
             this.notebook.controller.fork_or_revert_notebook(is_mine, gistname, version, function(notebook) {
-                gistname_ = notebook.id;
+                set_gistname(notebook.id);
                 version_ = null;
                 on_load.call(that, k, notebook);
             });
