@@ -30,11 +30,8 @@ RClient = {
         }
 
         function on_error(msg, status_code) {
-            if (opts.on_error) {
-                var result = opts.on_error(msg, status_code);
-                if (result === true)
-                    return;
-            }
+            if (opts.on_error && opts.on_error(msg, status_code))
+                return;
             result.post_error(result.disconnection_error(msg));
             shutdown();
         }
@@ -318,6 +315,36 @@ RCloud.create = function(rcloud_ocaps) {
     };
     rcloud.is_notebook_published = function(id, k) {
         rcloud_ocaps.is_notebook_published(id, k);
+    };
+
+    
+    // Progress indication
+    var progress_counter = 0;
+    var curtains_on = false;
+    function show_progress_curtain() {
+        console.log("Please wait!");
+        curtains_on = true;
+    }
+    function hide_progress_curtain() {
+        if (curtains_on) {
+            console.log("Done!");
+            curtains_on = false;
+        }
+    }
+    rcloud.with_progress = function(thunk, delay) {
+        if (_.isUndefined(delay))
+            delay = 2000;
+        function done() {
+            progress_counter -= 1;
+            if (progress_counter === 0)
+                hide_progress_curtain();
+        }
+        _.delay(function() {
+            if (progress_counter > 0)
+                show_progress_curtain();
+        }, delay);
+        progress_counter += 1;
+        thunk(done);
     };
 
     return rcloud;

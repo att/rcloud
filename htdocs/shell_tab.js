@@ -322,29 +322,35 @@ var shell = (function() {
             return notebook_controller.insert_cell("", "Markdown", index);
         }, load_notebook: function(gistname, version, k) {
             var that = this;
-            // asymetrical: we know the gistname before it's loaded here,
-            // but not in new.  and we have to set this here to signal
-            // editor's init load config callback to override the currbook
-            rclient.close();
-            // FIXME this is a bit of an annoying duplication of code on main.js and view.js
-            rclient = RClient.create({
-                debug: rclient.debug,
-                host: rclient.host,
-                on_connect: function(ocaps) {
-                    rcloud = RCloud.create(ocaps.rcloud);
-                    rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {});
-
-                    rcloud.init_client_side_data(function() {
-                        set_gistname(gistname);
-                        version_ = version;
-                        $("#output").find(".alert").remove();
-                        that.notebook.controller.load_notebook(gistname_, version_, _.bind(on_load, that, k));
-                    });
-                },
-                on_data: function(v) {
-                    v = v.value.json();
-                    oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
-                }
+            k = k || _.identity();
+            rcloud.with_progress(function(done) {
+                // asymmetrical: we know the gistname before it's loaded here,
+                // but not in new.  and we have to set this here to signal
+                // editor's init load config callback to override the currbook
+                rclient.close();
+                // FIXME this is a bit of an annoying duplication of code on main.js and view.js
+                rclient = RClient.create({
+                    debug: rclient.debug,
+                    host: rclient.host,
+                    on_connect: function(ocaps) {
+                        rcloud = RCloud.create(ocaps.rcloud);
+                        rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {});
+                        
+                        rcloud.init_client_side_data(function() {
+                            set_gistname(gistname);
+                            version_ = version;
+                            $("#output").find(".alert").remove();
+                            that.notebook.controller.load_notebook(gistname_, version_, function(notebook) {
+                                done();
+                                _.bind(on_load, that, k)(notebook);
+                            });
+                        });
+                    },
+                    on_data: function(v) {
+                        v = v.value.json();
+                        oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
+                    }
+                });
             });
         }, new_notebook: function(desc, k) {
             var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
@@ -472,8 +478,10 @@ var shell = (function() {
     };
 
     $("#run-notebook").click(function() {
-        result.notebook.controller.run_all();
-        result.input_widget.focus(); // surely not the right way to do this
+        rcloud.with_progress(function(done) {
+            result.notebook.controller.run_all(function() { done(); });
+            result.input_widget.focus(); // surely not the right way to do this
+        });
     });
     return result;
 })();
