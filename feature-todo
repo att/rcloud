@@ -1,0 +1,3 @@
+gists only support text, so we need base64 decode and encoding in
+rcloud somewhere, so upload to notebook works seamlessly. How do we do
+that?
