@@ -36,6 +36,41 @@ function init_github_buttons() {
     });
 }
 
+function init_upload_pane() {
+    $("#upload-submit").click(function() {
+        var success = function(path, file) {
+            $("#file-upload-div").append(
+                bootstrap_utils.alert({
+                    "class": 'alert-info',
+                    text: "File " + file.name + " uploaded."
+                })
+            );
+        };
+        rcloud.upload_file(false, success, function() {
+            var overwrite_click = function() {
+                rcloud.upload_file(true, success, function(exception_value) {
+                    var msg = exception_value;
+                    $("#file-upload-div").append(
+                        bootstrap_utils.alert({
+                            "class": 'alert-danger',
+                            text: msg
+                        })
+                    );
+                });
+            };
+            var alert_element = $("<div></div>");
+            var p = $("<p>File exists. </p>");
+            alert_element.append(p);
+            var overwrite = bootstrap_utils
+                .button({"class": 'btn-danger'})
+                .click(overwrite_click)
+                .text("Overwrite");
+            p.append(overwrite);
+            $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
+        });
+    });
+}
+
 var oob_handlers = {
     "browsePath": function(v) {
         var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
@@ -50,6 +85,7 @@ function main_init() {
     init_shareable_link_box();
     init_fork_revert_button();
     init_github_buttons();
+    init_upload_pane();
     footer.init();
     
     $("#show-source").font_awesome_checkbox({
@@ -85,38 +121,6 @@ function main_init() {
                 window.location.href = '/logout.R';
             });
             $(".collapse").collapse();
-            $("#upload-submit").click(function() {
-                var success = function(path, file) {
-                    $("#file-upload-div").append(
-                        bootstrap_utils.alert({
-                            "class": 'alert-info',
-                            text: "File " + file.name + " uploaded."
-                        })
-                    );
-                };
-                rcloud.upload_file(false, success, function() {
-                    var overwrite_click = function() {
-                        rcloud.upload_file(true, success, function(exception_value) {
-                            var msg = exception_value;
-                            $("#file-upload-div").append(
-                                bootstrap_utils.alert({
-                                    "class": 'alert-danger',
-                                    text: msg
-                                })
-                            );
-                        });
-                    };
-                    var alert_element = $("<div></div>");
-                    var p = $("<p>File exists. </p>");
-                    alert_element.append(p);
-                    var overwrite = bootstrap_utils
-                        .button({"class": 'btn-danger'})
-                        .click(overwrite_click)
-                        .text("Overwrite");
-                    p.append(overwrite);
-                    $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
-                });
-            });
             rcloud.init_client_side_data();
 
             editor.init();

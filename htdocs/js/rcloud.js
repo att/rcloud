@@ -114,8 +114,50 @@ RCloud.create = function(rcloud_ocaps) {
     rcloud.session_markdown_eval = function(command, silent, k) {
         rcloud_ocaps.session_markdown_eval(command, silent, k || _.identity);
     };
+
+    rcloud.upload_to_notebook = function(force, on_success, on_failure) {
+        on_success = on_success || _.identity;
+        on_failure = on_failure || _.identity;
+        function do_upload(file) {
+            var fr = new FileReader();
+            var chunk_size = 1024*1024;
+            var f_size = file.size;
+            var file_to_upload = new Uint8Array(f_size);
+            var cur_pos = 0;
+            fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+            fr.onload = function(e) {
+                if (e.target.result.byteLength > 0) {
+                    // still sending data to user agent
+                    var bytes = new Uint8Array(e.target.result);
+                    file_to_upload.set(bytes, cur_pos);
+                    cur_pos += bytes.byteLength;
+                    fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+                } else {
+                    // done, push to notebook.
+                    rcloud_ocaps.notebook_upload(
+                        file_to_upload.buffer, file.name, function(){
+                            on_success(file_to_upload, file);
+                        });
+                }
+            };
+        }
+        if(!(window.File && window.FileReader && window.FileList && window.Blob))
+            throw new Error("File API not supported by browser.");
+        var file=$("#file")[0].files[0];
+        if(_.isUndefined(file))
+            throw new Error("No file selected!");
+        /*FIXME add logged in user */
+        rcloud_ocaps.file_upload.upload_path(function(path) {
+            var file=$("#file")[0].files[0];
+            if(_.isUndefined(file))
+                throw new Error("No file selected!");
+            do_upload(file);
+        });
+    };
+
     rcloud.upload_file = function(force, on_success, on_failure) {
         on_success = on_success || _.identity;
+        on_failure = on_failure || _.identity;
         function do_upload(path, file) {
             var upload_name = path + '/' + file.name;
             rcloud_ocaps.file_upload.create(upload_name, force, function(result) {
@@ -138,7 +180,6 @@ RCloud.create = function(rcloud_ocaps) {
                             fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                         });
                     } else {
-                        //This is just temporary, until we add the nice info messages from bootstrap
                         rcloud_ocaps.file_upload.close(function(){
                             on_success(path, file);
                         });
@@ -147,21 +188,17 @@ RCloud.create = function(rcloud_ocaps) {
             });
         }
         if(!(window.File && window.FileReader && window.FileList && window.Blob))
-            throw "File API not supported by browser.";
-        else {
+            throw new Error("File API not supported by browser.");
+        var file=$("#file")[0].files[0];
+        if(_.isUndefined(file))
+            throw new Error("No file selected!");
+        /*FIXME add logged in user */
+        rcloud_ocaps.file_upload.upload_path(function(path) {
             var file=$("#file")[0].files[0];
             if(_.isUndefined(file))
-                throw "No file selected!";
-            else {
-                /*FIXME add logged in user */
-                rcloud_ocaps.file_upload.upload_path(function(path) {
-                    var file=$("#file")[0].files[0];
-                    if(_.isUndefined(file))
-                        throw new Error("No file selected!");
-                    do_upload(path, file);
-                });
-            }
-        }
+                throw new Error("No file selected!");
+            do_upload(path, file);
+        });
     };
 
     // javascript.R
