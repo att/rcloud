@@ -6,8 +6,7 @@ var shell = (function() {
         github_url_ = null,
         gist_url_ = null,
         prefix_ = null,
-        prompt_widget_ = null,
-        restore_prompt_ = null,
+        prompt_ = null,
         notebook_model_ = Notebook.create_model(),
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
         notebook_controller_ = Notebook.create_controller(notebook_model_);
@@ -208,13 +207,15 @@ var shell = (function() {
         ]);
         ui_utils.make_prompt_chevron_gutter(widget);
 
-        prompt_widget_ = widget;
-        restore_prompt_ = restore_prompt;
+        return {
+            widget: widget,
+            restore: restore_prompt
+        };
     }
 
     var prompt_div = $("#command-prompt");
     if(prompt_div.length)
-        setup_command_prompt(prompt_div);
+        prompt_ = setup_command_prompt(prompt_div);
 
     function show_fork_or_prompt_elements() {
         var fork_revert = $('#fork-revert-notebook');
@@ -239,9 +240,10 @@ var shell = (function() {
         version_ = null;
         is_mine_ = notebook_is_mine(notebook);
         show_fork_or_prompt_elements();
-        if(prompt_widget_)
-            prompt_widget_.focus(); // surely not the right way to do this
-        restore_prompt_();
+        if(prompt_) {
+            prompt_.widget.focus(); // surely not the right way to do this
+            prompt_.restore();
+        }
         k && k(notebook);
     }
 
@@ -266,9 +268,10 @@ var shell = (function() {
         _.each(this.notebook.view.sub_views, function(cell_view) {
             cell_view.show_source();
         });
-        if(prompt_widget_)
-            prompt_widget_.focus(); // surely not the right way to do this
-        restore_prompt_();
+        if(prompt_) {
+            prompt_.widget.focus(); // surely not the right way to do this
+            prompt_.restore();
+        }
         k && k(notebook);
     }
 
@@ -279,7 +282,7 @@ var shell = (function() {
             view: notebook_view_,
             controller: notebook_controller_
         },
-        prompt_widget: prompt_widget_,
+        prompt_widget: prompt_.widget,
         gistname: function() {
             return gistname_;
         },
@@ -480,7 +483,7 @@ var shell = (function() {
 
     $("#run-notebook").click(function() {
         result.notebook.controller.run_all();
-        prompt_widget_.focus(); // surely not the right way to do this
+        prompt_.widget.focus(); // surely not the right way to do this
     });
     return result;
 })();
