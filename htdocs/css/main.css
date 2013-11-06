@@ -341,3 +341,29 @@ div.r-result-div h5 {
 pre {
     max-width: 100%;
 }
+
+/******************************************************************************/
+/* Some pseudo-elements for watermarking the ACE editors
+ */
+
+.r-language-pseudo:after {
+    content: "R";
+    position: absolute;
+    top: 0.2em;
+    right: 0.3em;
+    color: #AAA;
+    text-shadow: 0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white
+;
+    z-index: 20;
+}
+
+.rmarkdown-language-pseudo:after {
+    content: "RMarkdown";
+    position: absolute;
+    top: 0.2em;
+    right: 0.3em;
+    color: #AAA;
+    text-shadow: 0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white
+;
+    z-index: 20;
+}
