@@ -1,6 +1,6 @@
 rcloud.get.comments <- function(id)
 {
-  res <- get.gist.comments(.session$rgithub.context, id)
+  res <- get.gist.comments(id, ctx = .session$rgithub.context)
   if (res$ok)
     toJSON(res$content)
   else
@@ -9,7 +9,7 @@ rcloud.get.comments <- function(id)
 
 rcloud.post.comment <- function(id, content)
 {
-  res <- create.gist.comment(.session$rgithub.context, id, content)
+  res <- create.gist.comment(id, content, ctx = .session$rgithub.context)
   if (!res$ok)
     print(res)
   res$ok

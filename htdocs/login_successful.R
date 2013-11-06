@@ -1,6 +1,7 @@
 require(rcloud.support)
 require(httr)
 require(rjson)
+require(github)
 
 run <- function(url, query, body, headers)
 {
