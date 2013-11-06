@@ -1,6 +1,6 @@
 Notebook.create_model = function()
 {
-    var read_only = false;
+    var readonly_ = false;
 
     /* note, the code below is a little more sophisticated than it needs to be:
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
@@ -123,12 +123,12 @@ Notebook.create_model = function()
         },
         read_only: function(readonly) {
             if(!_.isUndefined(readonly)) {
-                read_only = readonly;
+                readonly_ = readonly;
                 _.each(this.views, function(view) {
-                    view.set_readonly(read_only);
+                    view.set_readonly(readonly_);
                 });
             }
-            return read_only;
+            return readonly_;
         },
         json: function() {
             return _.map(this.notebook, function(cell_model) {
