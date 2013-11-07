@@ -463,6 +463,13 @@ var shell = (function() {
                                 .append($('<div class="modal-content"></div>')
                                         .append(header).append(body).append(footer)));
                 $("body").append(dialog);
+                dialog
+                    .on('show.bs.modal', function() {
+                        $('#import-gists').val('');
+                    })
+                    .on('shown.bs.modal', function() {
+                        $('#import-source').focus().select();
+                    });
                 return dialog;
             }
             var dialog = $("#import-notebook-dialog");

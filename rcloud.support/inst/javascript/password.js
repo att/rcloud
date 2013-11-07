@@ -37,8 +37,7 @@
             $("body").append(dialog);
             dialog
                 .on('shown.bs.modal', function() {
-                    password.focus();
-                    password.select();
+                    password.focus().select();
                 })
                 .on('hide.bs.modal', function() {
                     k(result);
