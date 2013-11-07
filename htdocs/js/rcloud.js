@@ -203,5 +203,47 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud_ocaps.is_notebook_published(id, k);
     };
 
+    // Progress indication
+    var progress_dialog;
+    var progress_counter = 0;
+
+    var curtains_on = false;
+    function show_progress_curtain() {
+        console.log("Please wait!");
+        curtains_on = true;
+        if (_.isUndefined(progress_dialog)) {
+            progress_dialog = $('<div class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-header">Please wait...</div></div></div>');
+        }
+        $("body").append(progress_dialog);
+        progress_dialog.modal({keyboard: true});
+    }
+    function hide_progress_curtain() {
+        if (curtains_on) {
+            console.log("Done!");
+            curtains_on = false;
+            progress_dialog.modal('hide');
+        }
+    }
+    rcloud.with_progress = function(thunk, delay) {
+        if (_.isUndefined(delay))
+            delay = 2000;
+        _.delay(function() {
+            document.body.style.cursor = "wait";
+        }, 0);
+        function done() {
+            progress_counter -= 1;
+            if (progress_counter === 0) {
+                document.body.style.cursor = '';
+                hide_progress_curtain();
+            }
+        }
+        _.delay(function() {
+            if (progress_counter > 0)
+                show_progress_curtain();
+        }, delay);
+        progress_counter += 1;
+        thunk(done);
+    };
+
     return rcloud;
 };
