@@ -492,8 +492,14 @@ var editor = function () {
                 'tree.click', function(event) {
                     if(event.node.id === 'showmore')
                         that.show_history(event.node.parent, false);
-                    else if(event.node.gistname)
-                        that.load_notebook(event.node.gistname, event.node.version || null);
+                    else if(event.node.gistname) {
+                        if(event.click_event.metaKey || event.click_event.ctrlKey) {
+                            var url = window.location.protocol + '//' + window.location.host + '/main.html?notebook=' + event.node.gistname;
+                            window.open(url, "_blank");
+                        }
+                        else
+                            that.load_notebook(event.node.gistname, event.node.version || null);
+                    }
                     return false;
                 }
             );
