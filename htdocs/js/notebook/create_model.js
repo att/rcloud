@@ -13,7 +13,8 @@ Notebook.create_model = function()
     }
     return {
         notebook: [],
-        views: [], // sub list for pubsub
+        views: [], // sub list for cell content pubsub
+        dishers: [], // for dirty bit pubsub
         clear: function() {
             return this.remove_cell(null,last_id(this.notebook));
         },
@@ -129,6 +130,11 @@ Notebook.create_model = function()
                 });
             }
             return readonly_;
+        },
+        on_dirty: function() {
+            _.each(this.dishers, function(disher) {
+                disher.on_dirty();
+            });
         },
         json: function() {
             return _.map(this.notebook, function(cell_model) {

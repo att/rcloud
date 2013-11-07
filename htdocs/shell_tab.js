@@ -80,7 +80,7 @@ var shell = (function() {
         widget.setTheme("ace/theme/chrome");
         session.setUseWrapMode(true);
         widget.resize();
-        var change_prompt = listen_not_to_me(widget);
+        var change_prompt = ui_utils.ignore_programmatic_changes(widget, cmd_history.change.bind(cmd_history));
 
         var Autocomplete = require("ace/autocomplete").Autocomplete;
 
@@ -111,19 +111,6 @@ var shell = (function() {
             range.setStart(row, column);
             range.setEnd(row, column);
             sel.setSelectionRange(range);
-        }
-
-        function listen_not_to_me(widget) {
-            var listen = true;
-            widget.on('change', function() {
-                if(listen)
-                    cmd_history.change(widget.getValue());
-            });
-            return function(value) {
-                listen = false;
-                widget.setValue(value);
-                listen = true;
-            };
         }
 
         function restore_prompt() {
@@ -356,6 +343,8 @@ var shell = (function() {
                     oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
                 }
             });
+        }, save_notebook: function() {
+            notebook_controller_.save();
         }, new_notebook: function(desc, k) {
             var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
             this.notebook.controller.create_notebook(content, _.bind(on_new, this, k));

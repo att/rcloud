@@ -36,6 +36,14 @@ function init_github_buttons() {
     });
 }
 
+function init_save_button() {
+    var saveb = $("#save-notebook");
+    saveb.click(function() {
+        shell.save_notebook();
+    });
+    shell.notebook.controller.save_button(saveb);
+}
+
 var oob_handlers = {
     "browsePath": function(v) {
         var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
@@ -50,8 +58,9 @@ function main_init() {
     init_shareable_link_box();
     init_fork_revert_button();
     init_github_buttons();
+    init_save_button();
     footer.init();
-    
+
     $("#show-source").font_awesome_checkbox({
         checked: false,
         check: function() {

@@ -194,6 +194,15 @@ rect.frame {
     cursor: default;
 }
 
+.navbar .btn-link {
+    color: #ddd;
+    font-size: 120%;
+}
+
+.navbar .btn-link.disabled {
+    color: #999;
+}
+
 .notebook-tree {
     height: 450px;
     overflow-y: scroll;
