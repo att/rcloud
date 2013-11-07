@@ -328,9 +328,9 @@ RCloud.create = function(rcloud_ocaps) {
         console.log("Please wait!");
         curtains_on = true;
         if (_.isUndefined(progress_dialog)) {
-            progress_dialog = $('<div class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-header">Please wait...</div></div></div>');
+            progress_dialog = $('<div id="progress-dialog" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-header">Please wait...</div></div></div>');
+            $("body").append(progress_dialog);
         }
-        $("body").append(progress_dialog);
         progress_dialog.modal({keyboard: true});
     }
     function hide_progress_curtain() {
@@ -341,6 +341,7 @@ RCloud.create = function(rcloud_ocaps) {
         }
     }
     rcloud.with_progress = function(thunk, delay) {
+        debugger;
         if (_.isUndefined(delay))
             delay = 2000;
         _.delay(function() {
@@ -354,6 +355,7 @@ RCloud.create = function(rcloud_ocaps) {
             }
         }
         _.delay(function() {
+            debugger;
             if (progress_counter > 0)
                 show_progress_curtain();
         }, delay);
@@ -570,7 +572,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         result.show_result();
         if(new_content!==null) // if any change (including removing the content)
             cell_model.parent_model.controller.update_cell(cell_model);
-        cell_model.controller.execute();
+        rcloud.with_progress(function(done) {
+            cell_model.controller.execute(function() {
+                done();
+            });
+        });
     }
     run_md_button.click(function(e) {
         execute_cell();

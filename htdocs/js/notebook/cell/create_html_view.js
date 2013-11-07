@@ -51,7 +51,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         result.show_result();
         if(new_content!==null) // if any change (including removing the content)
             cell_model.parent_model.controller.update_cell(cell_model);
-        cell_model.controller.execute();
+        rcloud.with_progress(function(done) {
+            cell_model.controller.execute(function() {
+                done();
+            });
+        });
     }
     run_md_button.click(function(e) {
         execute_cell();

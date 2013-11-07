@@ -209,22 +209,23 @@ RCloud.create = function(rcloud_ocaps) {
 
     var curtains_on = false;
     function show_progress_curtain() {
-        console.log("Please wait!");
+        if (curtains_on)
+            return;
         curtains_on = true;
         if (_.isUndefined(progress_dialog)) {
-            progress_dialog = $('<div class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-header">Please wait...</div></div></div>');
+            progress_dialog = $('<div id="progress-dialog" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-header">Please wait...</div></div></div>');
+            $("body").append(progress_dialog);
         }
-        $("body").append(progress_dialog);
         progress_dialog.modal({keyboard: true});
     }
     function hide_progress_curtain() {
-        if (curtains_on) {
-            console.log("Done!");
-            curtains_on = false;
-            progress_dialog.modal('hide');
-        }
+        if (!curtains_on)
+            return;
+        curtains_on = false;
+        progress_dialog.modal('hide');
     }
     rcloud.with_progress = function(thunk, delay) {
+        debugger;
         if (_.isUndefined(delay))
             delay = 2000;
         _.delay(function() {
@@ -238,6 +239,7 @@ RCloud.create = function(rcloud_ocaps) {
             }
         }
         _.delay(function() {
+            debugger;
             if (progress_counter > 0)
                 show_progress_curtain();
         }, delay);
