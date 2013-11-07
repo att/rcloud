@@ -206,6 +206,8 @@ RCloud.create = function(rcloud_ocaps) {
     };
     rcloud.get_completions = function(text, pos, k) {
         return rcloud_ocaps.get_completions(text, pos, function(comps) {
+            if(_.isString(comps))
+                comps = [comps]; // quirk of rserve.js scalar handling
             // convert to the record format ace.js autocompletion expects
             // meta is what gets displayed at right; name & score might be improved
             k(_.map(comps,
@@ -317,27 +319,39 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud_ocaps.is_notebook_published(id, k);
     };
 
-    
     // Progress indication
+    var progress_dialog;
     var progress_counter = 0;
+
     var curtains_on = false;
     function show_progress_curtain() {
         console.log("Please wait!");
         curtains_on = true;
+        if (_.isUndefined(progress_dialog)) {
+            progress_dialog = $('<div class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-header">Please wait...</div></div></div>');
+        }
+        $("body").append(progress_dialog);
+        progress_dialog.modal({keyboard: true});
     }
     function hide_progress_curtain() {
         if (curtains_on) {
             console.log("Done!");
             curtains_on = false;
+            progress_dialog.modal('hide');
         }
     }
     rcloud.with_progress = function(thunk, delay) {
         if (_.isUndefined(delay))
             delay = 2000;
+        _.delay(function() {
+            document.body.style.cursor = "wait";
+        }, 0);
         function done() {
             progress_counter -= 1;
-            if (progress_counter === 0)
+            if (progress_counter === 0) {
+                document.body.style.cursor = '';
                 hide_progress_curtain();
+            }
         }
         _.delay(function() {
             if (progress_counter > 0)
@@ -391,12 +405,45 @@ ui_utils.fa_button = function(which, title, classname, style)
     return span;
 };
 
+ui_utils.enable_fa_button = function(el) {
+    el.removeClass("button-disabled");
+};
+
+ui_utils.disable_fa_button = function(el) {
+    el.addClass("button-disabled");
+};
+
+ui_utils.enable_bs_button = function(el) {
+    el.removeClass("disabled");
+};
+
+ui_utils.disable_bs_button = function(el) {
+    el.addClass("disabled");
+};
+
+
 ui_utils.ace_editor_height = function(widget)
 {
     var lineHeight = widget.renderer.lineHeight;
     var rows = Math.min(30, widget.getSession().getLength());
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
     return Math.max(75, newHeight);
+};
+
+// bind an ace editor to a listener and return a function to change the
+// editor content without triggering that listener
+ui_utils.ignore_programmatic_changes = function(widget, listener) {
+    var listen = true;
+    widget.on('change', function() {
+        if(listen)
+            listener(widget.getValue());
+    });
+    return function(value) {
+        listen = false;
+        var res = widget.setValue(value);
+        listen = true;
+        return res;
+    };
 };
 
 // this is a hack, but it'll help giving people the right impression.
@@ -489,12 +536,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     function update_model() {
         return cell_model.content(widget.getSession().getValue());
     }
-    function enable(el) {
-        el.removeClass("button-disabled");
-    }
-    function disable(el) {
-        el.addClass("button-disabled");
-    }
+    var enable = ui_utils.enable_fa_button;
+    var disable = ui_utils.disable_fa_button;
 
     insert_cell_button.click(function(e) {
         shell.insert_markdown_cell_before(cell_model.id);
@@ -557,6 +600,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     var ace_div = $('<div style="width:100%; height:100%"></div>');
     ace_div.css({'background-color': language === 'R' ? "#E8F1FA" : "#F7EEE4"});
+    if (language === 'R') {
+        inner_div.addClass("r-language-pseudo");
+    } else {
+        inner_div.addClass("rmarkdown-language-pseudo");
+    }
 
 
     // ace_div.css({'background-color': language === 'R' ? "#B1BEA4" : "#F1EDC0"});
@@ -598,6 +646,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         bindKey: 'Ctrl-.',
         exec: Autocomplete.startCommand.exec
     }]);
+    var change_content = ui_utils.ignore_programmatic_changes(widget, function() {
+        cell_model.parent_model.on_dirty();
+    });
 
     var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
     inner_div.append(r_result_div);
@@ -611,7 +662,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
         content_updated: function() {
             var position = widget.getCursorPosition();
-            var changed = widget.getSession().setValue(cell_model.content());
+            var changed = change_content(cell_model.content());
             widget.getSelection().moveCursorToPosition(position);
             return changed;
         },
@@ -813,6 +864,7 @@ Notebook.Cell.create_model = function(content, language)
     var result = {
         views: [], // sub list for pubsub
         id: -1,
+        parent_model: null,
         language: function() {
             return language;
         },
@@ -920,7 +972,7 @@ Notebook.create_html_view = function(model, root_div)
 };
 Notebook.create_model = function()
 {
-    var read_only = false;
+    var readonly_ = false;
 
     /* note, the code below is a little more sophisticated than it needs to be:
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
@@ -933,7 +985,8 @@ Notebook.create_model = function()
     }
     return {
         notebook: [],
-        views: [], // sub list for pubsub
+        views: [], // sub list for cell content pubsub
+        dishers: [], // for dirty bit pubsub
         clear: function() {
             return this.remove_cell(null,last_id(this.notebook));
         },
@@ -1043,12 +1096,17 @@ Notebook.create_model = function()
         },
         read_only: function(readonly) {
             if(!_.isUndefined(readonly)) {
-                read_only = readonly;
+                readonly_ = readonly;
                 _.each(this.views, function(view) {
-                    view.set_readonly(read_only);
+                    view.set_readonly(readonly_);
                 });
             }
-            return read_only;
+            return readonly_;
+        },
+        on_dirty: function() {
+            _.each(this.dishers, function(disher) {
+                disher.on_dirty();
+            });
         },
         json: function() {
             return _.map(this.notebook, function(cell_model) {
@@ -1059,7 +1117,11 @@ Notebook.create_model = function()
 };
 Notebook.create_controller = function(model)
 {
-    var current_gist_;
+    var current_gist_,
+        dirty_ = false,
+        save_button_ = null,
+        save_timer_ = null,
+        save_timeout_ = 30000; // 30s
 
     function append_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
@@ -1118,7 +1180,29 @@ Notebook.create_controller = function(model)
         return changes;
     }
 
+    function on_dirty() {
+        if(!dirty_) {
+            if(save_button_)
+                ui_utils.enable_bs_button(save_button_);
+            dirty_ = true;
+        }
+        if(save_timer_)
+            window.clearTimeout(save_timer_);
+        save_timer_ = window.setTimeout(function() {
+            result.save();
+            save_timer_ = null;
+        }, save_timeout_);
+    }
+
+    model.dishers.push({on_dirty: on_dirty});
+
     var result = {
+        save_button: function(save_button) {
+            if(arguments.length) {
+                save_button_ = save_button;
+            }
+            return save_button_;
+        },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
             // github gist api will not take empty cells, so drop them
@@ -1134,7 +1218,7 @@ Notebook.create_controller = function(model)
         },
         remove_cell: function(cell_model) {
             var changes = model.remove_cell(cell_model);
-            shell.input_widget.focus(); // there must be a better way
+            shell.prompt_widget.focus(); // there must be a better way
             this.update_notebook(changes);
         },
         clear: function() {
@@ -1243,9 +1327,18 @@ Notebook.create_controller = function(model)
         update_cell: function(cell_model) {
             this.update_notebook(model.update_cell(cell_model));
         },
+        save: function() {
+            if(dirty_) {
+                var changes = this.refresh_cells();
+                this.update_notebook(changes);
+                if(save_button_)
+                    ui_utils.disable_bs_button(save_button_);
+                dirty_ = false;
+            }
+
+        },
         run_all: function(k) {
-            var changes = this.refresh_cells();
-            this.update_notebook(changes);
+            this.save();
             var n = model.notebook.length;
             function bump_executed() {
                 --n;

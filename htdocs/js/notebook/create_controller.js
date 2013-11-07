@@ -1,6 +1,10 @@
 Notebook.create_controller = function(model)
 {
-    var current_gist_;
+    var current_gist_,
+        dirty_ = false,
+        save_button_ = null,
+        save_timer_ = null,
+        save_timeout_ = 30000; // 30s
 
     function append_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
@@ -59,7 +63,29 @@ Notebook.create_controller = function(model)
         return changes;
     }
 
+    function on_dirty() {
+        if(!dirty_) {
+            if(save_button_)
+                ui_utils.enable_bs_button(save_button_);
+            dirty_ = true;
+        }
+        if(save_timer_)
+            window.clearTimeout(save_timer_);
+        save_timer_ = window.setTimeout(function() {
+            result.save();
+            save_timer_ = null;
+        }, save_timeout_);
+    }
+
+    model.dishers.push({on_dirty: on_dirty});
+
     var result = {
+        save_button: function(save_button) {
+            if(arguments.length) {
+                save_button_ = save_button;
+            }
+            return save_button_;
+        },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
             // github gist api will not take empty cells, so drop them
@@ -75,7 +101,7 @@ Notebook.create_controller = function(model)
         },
         remove_cell: function(cell_model) {
             var changes = model.remove_cell(cell_model);
-            shell.input_widget.focus(); // there must be a better way
+            shell.prompt_widget.focus(); // there must be a better way
             this.update_notebook(changes);
         },
         clear: function() {
@@ -184,9 +210,18 @@ Notebook.create_controller = function(model)
         update_cell: function(cell_model) {
             this.update_notebook(model.update_cell(cell_model));
         },
+        save: function() {
+            if(dirty_) {
+                var changes = this.refresh_cells();
+                this.update_notebook(changes);
+                if(save_button_)
+                    ui_utils.disable_bs_button(save_button_);
+                dirty_ = false;
+            }
+
+        },
         run_all: function(k) {
-            var changes = this.refresh_cells();
-            this.update_notebook(changes);
+            this.save();
             var n = model.notebook.length;
             function bump_executed() {
                 --n;
