@@ -468,6 +468,8 @@ var editor = function () {
                         remove.click(function() {
                             $(this).tooltip('hide');
                             that.remove_notebook(node);
+                            if(node.gistname === config_.currbook)
+                                that.new_notebook();
                         });
                         add_buttons(remove);
                     };
