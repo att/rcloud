@@ -64,7 +64,8 @@ var shell = (function() {
             prompt_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
             widget.resize();
         }
-        prompt_div.css({'background-color': "#E8F1FA"});
+        prompt_div.css({'background-color': "#f1f1f1"});
+        prompt_div.addClass("r-language-pseudo");
         ace.require("ace/ext/language_tools");
         var widget = ace.edit(prompt_div[0]);
         set_ace_height();

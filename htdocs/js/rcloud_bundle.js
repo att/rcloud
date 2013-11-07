@@ -561,6 +561,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     var ace_div = $('<div style="width:100%; height:100%"></div>');
     ace_div.css({'background-color': language === 'R' ? "#E8F1FA" : "#F7EEE4"});
+    if (language === 'R') {
+        inner_div.addClass("r-language-pseudo");
+    } else {
+        inner_div.addClass("rmarkdown-language-pseudo");
+    }
 
 
     // ace_div.css({'background-color': language === 'R' ? "#B1BEA4" : "#F1EDC0"});
