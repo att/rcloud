@@ -439,35 +439,36 @@ var shell = (function() {
                                               editor.add_notebook(imported, null, false);
                                           });
                                       });
-                $(dialog).modal('hide');
+                dialog.modal('hide');
             }
-            var body = $('<div class="container"/>').append(
-                $(['<p>Import notebooks from another GitHub instance.  Note: import does not currently preserve history.</p>',
-                   '<p>source repo api url:&nbsp;<input type="text" id="import-source" size="50" value="https://api.github.com"></input></td>',
-                   '<p>notebooks:<br /><textarea rows="10" cols="30" id="import-gists" form="port"></textarea></p>',
-                   '<p>prefix:&nbsp;<input type="text" id="import-prefix" size="50"></input>'].join('')));
+            function create_import_notebook_dialog() {
+                var body = $('<div class="container"/>').append(
+                    $(['<p>Import notebooks from another GitHub instance.  Note: import does not currently preserve history.</p>',
+                       '<p>source repo api url:&nbsp;<input type="text" id="import-source" size="50" value="https://api.github.com"></input></td>',
+                       '<p>notebooks:<br /><textarea rows="10" cols="30" id="import-gists" form="port"></textarea></p>',
+                       '<p>prefix:&nbsp;<input type="text" id="import-prefix" size="50"></input>'].join('')));
 
-            var cancel = $('<span class="btn">Cancel</span>')
-                    .on('click', function() { $(dialog).modal('hide'); });
-            var go = $('<span class="btn btn-primary">Import</span>')
-                    .on('click', do_import);
-            var footer = $('<div class="modal-footer"></div>')
-                    .append(cancel).append(go);
-            var header = $(['<div class="modal-header">',
-                            '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>',
-                            '<h3>Import Notebooks</h3>',
-                            '</div>'].join(''));
-            var dialog = $('<div class="modal fade"></div>')
-                    .append($('<div class="modal-dialog"></div>')
-                            .append($('<div class="modal-content"></div>')
-                                    .append(header).append(body).append(footer)));
-            $("body").append(dialog);
-            $(dialog).modal()
-                .on('hide.bs.modal', function() {
-                    $(dialog).remove();
-                });
-
-
+                var cancel = $('<span class="btn">Cancel</span>')
+                        .on('click', function() { $(dialog).modal('hide'); });
+                var go = $('<span class="btn btn-primary">Import</span>')
+                        .on('click', do_import);
+                var footer = $('<div class="modal-footer"></div>')
+                        .append(cancel).append(go);
+                var header = $(['<div class="modal-header">',
+                                '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>',
+                                '<h3>Import Notebooks</h3>',
+                                '</div>'].join(''));
+                var dialog = $('<div id="import-notebook-dialog" class="modal fade"></div>')
+                        .append($('<div class="modal-dialog"></div>')
+                                .append($('<div class="modal-content"></div>')
+                                        .append(header).append(body).append(footer)));
+                $("body").append(dialog);
+                return dialog;
+            }
+            var dialog = $("#import-notebook-dialog");
+            if(!dialog.length)
+                dialog = create_import_notebook_dialog();
+            dialog.modal({keyboard: true});
         }
     };
 
