@@ -2,15 +2,28 @@ Notebook.create_model = function()
 {
     var readonly_ = false;
 
-    /* note, the code below is a little more sophisticated than it needs to be:
-       allows multiple inserts or removes but currently n is hardcoded as 1.  */
-
     function last_id(notebook) {
         if(notebook.length)
             return notebook[notebook.length-1].id;
         else
             return 0;
     }
+
+    function build_cell_change(id, content, language) {
+        // unfortunately, yet another workaround because github
+        // won't take blank files.  would prefer to make changes
+        // a high-level description but i don't see it yet.
+        var change = {id: id,
+                      language: language};
+        if(content === "")
+            change.erase = true;
+        else
+            change.content = content;
+        return change;
+    }
+
+    /* note, the code below is a little more sophisticated than it needs to be:
+       allows multiple inserts or removes but currently n is hardcoded as 1.  */
     return {
         notebook: [],
         views: [], // sub list for cell content pubsub
@@ -105,9 +118,7 @@ Notebook.create_model = function()
             return changes;
         },
         update_cell: function(cell_model) {
-            return [{id: cell_model.id,
-                     content: cell_model.content(),
-                     language: cell_model.language()}];
+            return [build_cell_change(cell_model.id, cell_model.content(), cell_model.language())];
         },
         reread_cells: function() {
             var that = this;
@@ -118,10 +129,10 @@ Notebook.create_model = function()
                 throw "not expecting more than one notebook view";
             return _.reduce(changed_cells_per_view[0],
                             function(changes, content, index) {
-                                if(content)
-                                    changes.push({id: that.notebook[index].id,
-                                                  content: content,
-                                                  language: that.notebook[index].language()});
+                                if(content !== null)
+                                    changes.push(build_cell_change(that.notebook[index].id,
+                                                                   content,
+                                                                   that.notebook[index].language()));
                                 return changes;
                             },
                             []);
