@@ -88,7 +88,8 @@ Notebook.create_model = function()
                 cell_index = 0;
                 id = 1;
             }
-            var n = n || 1, x = cell_index;
+            n = n || 1;
+            var x = cell_index;
             var changes = [];
             while(x<this.notebook.length && n) {
                 if(this.notebook[x].id == id) {
