@@ -195,9 +195,10 @@ Notebook.create_controller = function(model)
                     var pre_name = partname(change.id, change.language);
                     if(change.erase || !post_names[pre_name])
                         filehash[pre_name] = null;
-                    var post_name = partname(change.rename || change.id, change.language);
-                    if(!change.erase)
+                    if(!change.erase) {
+                        var post_name = partname(change.rename || change.id, change.language);
                         filehash[post_name] = c;
+                    }
                     return filehash;
                 }
                 return {files: _.reduce(changes, xlate_change, {})};
