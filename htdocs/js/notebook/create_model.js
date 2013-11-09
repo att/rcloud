@@ -24,7 +24,7 @@ Notebook.create_model = function()
             id = id || 1;
             id = Math.max(id, last_id(this.notebook)+1);
             while(n) {
-                changes.push([id,{content: cell_model.content(), language: cell_model.language()}]);
+                changes.push({id: id, content: cell_model.content(), language: cell_model.language()});
                 cell_model.id = id;
                 this.notebook.push(cell_model);
                 _.each(this.views, function(view) {
@@ -47,7 +47,7 @@ Notebook.create_model = function()
                 id = Math.max(this.notebook[x].id-n, prev+1);
             }
             for(var j=0; j<n; ++j) {
-                changes.push([id+j, {content: cell_model.content(), language: cell_model.language()}]);
+                changes.push({id: id+j, content: cell_model.content(), language: cell_model.language()});
                 cell_model.id = id+j;
                 this.notebook.splice(x, 0, cell_model);
                 _.each(this.views, function(view) {
@@ -63,9 +63,10 @@ Notebook.create_model = function()
                 }
                 if(n<=0)
                     break;
-                changes.push([this.notebook[x].id,{content: this.notebook[x].content(),
-                                                   rename: this.notebook[x].id+n,
-                                                   language: this.notebook[x].language()}]);
+                changes.push({id: this.notebook[x].id,
+                              content: this.notebook[x].content(),
+                              rename: this.notebook[x].id+n,
+                              language: this.notebook[x].language()});
                 this.notebook[x].id += n;
                 ++x;
                 ++id;
@@ -93,7 +94,7 @@ Notebook.create_model = function()
                     _.each(this.views, function(view) {
                         view.cell_removed(that.notebook[x], x);
                     });
-                    changes.push([id, {erase: 1, language: that.notebook[x].language()} ]);
+                    changes.push({id: id, erase: 1, language: that.notebook[x].language()});
                     this.notebook.splice(x, 1);
                 }
                 ++id;
@@ -102,8 +103,9 @@ Notebook.create_model = function()
             return changes;
         },
         update_cell: function(cell_model) {
-            return [[cell_model.id, {content: cell_model.content(),
-                                     language: cell_model.language()}]];
+            return [{id: cell_model.id,
+                     content: cell_model.content(),
+                     language: cell_model.language()}];
         },
         reread_cells: function() {
             var that = this;
@@ -115,8 +117,9 @@ Notebook.create_model = function()
             return _.reduce(changed_cells_per_view[0],
                             function(changes, content, index) {
                                 if(content)
-                                    changes.push([that.notebook[index].id, {content: content,
-                                                                            language: that.notebook[index].language()}]);
+                                    changes.push({id: that.notebook[index].id,
+                                                  content: content,
+                                                  language: that.notebook[index].language()});
                                 return changes;
                             },
                             []);
