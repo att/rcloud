@@ -94,15 +94,12 @@ Notebook.create_controller = function(model)
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
-            // github gist api will not take empty cells, so drop them
-            if(content.length)
-                this.update_notebook(cch.changes);
+            this.update_notebook(cch.changes);
             return cch.controller;
         },
         insert_cell: function(content, type, id) {
             var cch = insert_cell_helper(content, type, id);
-            if(content.length)
-                this.update_notebook(cch.changes);
+            this.update_notebook(cch.changes);
             return cch.controller;
         },
         remove_cell: function(cell_model) {
@@ -153,6 +150,10 @@ Notebook.create_controller = function(model)
                 });
         },
         update_notebook: function(changes, gistname, k) {
+            // remove any "empty" changes.  we can keep empty cells on the
+            // screen but github will refuse them.  if the user doesn't enter
+            // stuff in them before saving, they will disappear on next session
+            changes = changes.filter(function(change) { return !!change.content || change.erase; });
             if(!changes.length)
                 return;
             if(model.read_only())
