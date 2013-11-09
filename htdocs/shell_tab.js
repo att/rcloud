@@ -218,6 +218,16 @@ var shell = (function() {
         }
     }
 
+    function sanitize_notebook(notebook) {
+        notebook = _.pick(notebook, 'description', 'files');
+        var files = notebook.files;
+        delete files.r_attributes;
+        delete files.r_type;
+        for(var fn in files)
+            files[fn] = _.pick(files[fn], 'content');
+        return notebook;
+    }
+
     function notebook_is_mine(notebook) {
         return rcloud.username() === notebook.user.login;
     }
@@ -253,7 +263,7 @@ var shell = (function() {
 
         is_mine_ = notebook_is_mine(notebook);
         show_fork_or_prompt_elements(notebook_is_mine(notebook));
-        _.each(this.notebook.view.sub_views, function(cell_view) {
+        _.each(notebook_view_.sub_views, function(cell_view) {
             cell_view.show_source();
         });
         if(prompt_) {
@@ -265,7 +275,6 @@ var shell = (function() {
 
     var result = {
         notebook: {
-            // very convenient for debugging
             model: notebook_model_,
             view: notebook_view_,
             controller: notebook_controller_
@@ -348,13 +357,13 @@ var shell = (function() {
             notebook_controller_.save();
         }, new_notebook: function(desc, k) {
             var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
-            this.notebook.controller.create_notebook(content, _.bind(on_new, this, k));
+            notebook_controller_.create_notebook(content, _.bind(on_new, this, k));
         }, fork_or_revert_notebook: function(is_mine, gistname, version, k) {
             if(is_mine && !version)
                 throw "unexpected revert of current version";
             var that = this;
             notebook_model_.read_only(false);
-            this.notebook.controller.fork_or_revert_notebook(is_mine, gistname, version, function(notebook) {
+            notebook_controller_.fork_or_revert_notebook(is_mine, gistname, version, function(notebook) {
                 gistname_ = notebook.id;
                 version_ = null;
                 on_load.call(that, k, notebook);
@@ -416,8 +425,101 @@ var shell = (function() {
                 }
             }
             editor.load_notebook(notebook, version);
+        }, export_notebook_file: function() {
+            this.load_notebook(gistname_, version_, function(notebook) {
+                notebook = sanitize_notebook(notebook);
+                var gisttext = JSON.stringify(notebook);
+                var a=document.createElement('a');
+                a.textContent='download';
+                a.download=notebook.description + ".gist";
+                a.href='data:text/json;charset=utf-8,'+escape(gisttext);
+                a.click();
+            });
+        }, import_notebook_file: function() {
+            var that = this;
+            var notebook = null;
+            function create_import_file_dialog() {
+                function do_upload(file) {
+                    var fr = new FileReader();
+                    fr.onloadend = function(e) {
+                        notebook_status.show();
+                        notebook_desc.show();
+                        try {
+                            notebook = JSON.parse(fr.result);
+                        }
+                        catch(x) {
+                            notebook_status_content.val('Bad JSON');
+                            return;
+                        }
+                        if(!notebook.description) {
+                            notebook_status_content.text('No description');
+                            notebook = null;
+                            return;
+                        }
+                        notebook_desc_content.val(notebook.description);
+                        if(!notebook.files) {
+                            notebook_status_content.text('No files');
+                            notebook = null;
+                            return;
+                        }
+                        notebook_status_content.text('OK');
+                        notebook = sanitize_notebook(notebook);
+                        ui_utils.enable_bs_button(go);
+                    };
+                    fr.readAsText(file);
+                }
+                function do_import() {
+                    if(notebook) {
+                        notebook.description = notebook_desc_content.val();
+                        rcloud.create_notebook(notebook, function(notebook) {
+                            editor.add_notebook(notebook);
+                        });
+                    }
+                    dialog.modal('hide');
+                }
+                var body = $('<div class="container"/>');
+                var file_select = $('<input type="file" id="notebook-file-upload" />');
+                var file_upload = $('<span class="btn">Upload</span>')
+                        .click(function() { do_upload(file_select[0].files[0]); });
+                var notebook_status = $('<p>Verified: </p>');
+                var notebook_status_content = $('<span />');
+                notebook_status.append(notebook_status_content);
+                var notebook_desc = $('<p>Notebook description: </p>');
+                var notebook_desc_content = $('<input type="text" size="50"></input>');
+                notebook_desc.append(notebook_desc_content);
+                body.append($('<span />').append(file_select).append(file_upload))
+                    .append(notebook_status.hide())
+                    .append(notebook_desc.hide());
+                var cancel = $('<span class="btn">Cancel</span>')
+                        .on('click', function() { $(dialog).modal('hide'); });
+                var go = $('<span class="btn btn-primary">Import</span>')
+                        .on('click', do_import);
+                ui_utils.disable_bs_button(go);
+                var footer = $('<div class="modal-footer"></div>')
+                        .append(cancel).append(go);
+                var header = $(['<div class="modal-header">',
+                                '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>',
+                                '<h3>Import Notebook File</h3>',
+                                '</div>'].join(''));
+                var dialog = $('<div id="import-notebook-dialog" class="modal fade"></div>')
+                        .append($('<div class="modal-dialog"></div>')
+                                .append($('<div class="modal-content"></div>')
+                                        .append(header).append(body).append(footer)));
+                $("body").append(dialog);
+                dialog
+                    .on('show.bs.modal', function() {
+                        notebook_status_content.text('');
+                        notebook_status.hide();
+                        notebook_desc_content.val('');
+                        notebook_desc.hide();
+                    });
+                return dialog;
+            }
+            var dialog = $("#import-notebook-dialog");
+            if(!dialog.length)
+                dialog = create_import_file_dialog();
+            dialog.modal({keyboard: true});
         }, import_notebooks: function() {
-
             function do_import() {
                 var url = $('#import-source').val(),
                     notebooks = $('#import-gists').val(),
@@ -443,7 +545,7 @@ var shell = (function() {
             }
             function create_import_notebook_dialog() {
                 var body = $('<div class="container"/>').append(
-                    $(['<p>Import notebooks from another GitHub instance.  Note: import does not currently preserve history.</p>',
+                    $(['<p>Import notebooks from another GitHub instance.  Currently import does not preserve history.</p>',
                        '<p>source repo api url:&nbsp;<input type="text" id="import-source" size="50" value="https://api.github.com"></input></td>',
                        '<p>notebooks:<br /><textarea rows="10" cols="30" id="import-gists" form="port"></textarea></p>',
                        '<p>prefix:&nbsp;<input type="text" id="import-prefix" size="50"></input>'].join('')));

@@ -44,6 +44,24 @@ function init_save_button() {
     shell.notebook.controller.save_button(saveb);
 }
 
+function init_port_file_buttons() {
+    $('#export-notebook-file').click(function() {
+        shell.export_notebook_file();
+    });
+    $('#import-notebook-file').click(function() {
+        shell.import_notebook_file();
+    });
+}
+
+
+function init_navbar_buttons() {
+    init_shareable_link_box();
+    init_fork_revert_button();
+    init_github_buttons();
+    init_save_button();
+    init_port_file_buttons();
+}
+
 var oob_handlers = {
     "browsePath": function(v) {
         var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
@@ -55,10 +73,7 @@ var oob_handlers = {
 };
 
 function main_init() {
-    init_shareable_link_box();
-    init_fork_revert_button();
-    init_github_buttons();
-    init_save_button();
+    init_navbar_buttons();
     footer.init();
 
     $("#show-source").font_awesome_checkbox({
