@@ -225,7 +225,6 @@ RCloud.create = function(rcloud_ocaps) {
         progress_dialog.modal('hide');
     }
     rcloud.with_progress = function(thunk, delay) {
-        debugger;
         if (_.isUndefined(delay))
             delay = 2000;
         _.delay(function() {
@@ -239,7 +238,6 @@ RCloud.create = function(rcloud_ocaps) {
             }
         }
         _.delay(function() {
-            debugger;
             if (progress_counter > 0)
                 show_progress_curtain();
         }, delay);
