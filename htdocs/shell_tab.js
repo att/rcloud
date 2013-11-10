@@ -279,7 +279,7 @@ var shell = (function() {
             view: notebook_view_,
             controller: notebook_controller_
         },
-        prompt_widget: prompt_.widget,
+        prompt_widget: prompt_? prompt_.widget : null,
         gistname: function() {
             return gistname_;
         },
