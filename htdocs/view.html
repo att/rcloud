@@ -43,11 +43,19 @@
     <!--div class="container"-->
       <div class="navbar-header">
         <a class="navbar-brand" href="#">RCloud - [<span id="notebook-title">Untitled</span>]</a>
-      <!--div class="nav-collapse collapse"-->
-	<ul class="nav navbar-nav">
+      </div>
+      <div class="nav-collapse "> <!-- why collapse not work here worx in main -->
+        <ul class="nav navbar-nav">
 	  <li><a href="#" id="view-source">View source</a></li>
 	</ul>
-      <!--/div-->
+        <ul class="nav navbar-nav navbar-right">
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Advanced <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li><a href="#" id="open-in-github">Open in GitHub</a></li>
+            </ul>
+          </li>
+	</ul>
       </div>
     <!--/div-->
   </div>
