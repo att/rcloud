@@ -76,12 +76,19 @@ function main_init() {
     init_navbar_buttons();
     footer.init();
 
-    $("#show-source").font_awesome_checkbox({
-        checked: false,
-        check: function() {
+    var show_source = $("#show-source");
+    show_source[0].checked = true;
+    show_source.click(function() {
+        this.checked = !this.checked;
+        var icon = $('#show-source i');
+        icon.removeClass();
+        if(this.checked) {
             shell.notebook.controller.show_r_source();
-        }, uncheck: function() {
+            icon.addClass('icon-check');
+        }
+        else {
             shell.notebook.controller.hide_r_source();
+            icon.addClass('icon-check-empty');
         }
     });
 
