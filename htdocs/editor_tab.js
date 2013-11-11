@@ -220,15 +220,11 @@ var editor = function () {
         data.root = root;
         data.user = user;
         if(node) {
-            // the update stuff doesn't exist in the jqtree version
-            // we're using, and the latest jqtree didn't seem to work
-            // at all, so.. blunt stupid approach here:
             children = node.children;
             if(last_chance)
                 last_chance(node); // hacky
             var dp = node.parent;
-            $tree_.tree('removeNode', node);
-            node = insert_alpha(data, parent);
+            $tree_.tree('updateNode', node, data);
             remove_empty_parents(dp);
         }
         else
@@ -251,7 +247,6 @@ var editor = function () {
                                      + $(node.element).position().top - 100);
     }
 
-    //http://stackoverflow.com/questions/7969031/indexof-element-in-js-array-using-a-truth-function-using-underscore-or-jquery
     function find_index(collection, filter) {
         for (var i = 0; i < collection.length; i++) {
             if(filter(collection[i], i, collection))
@@ -306,9 +301,12 @@ var editor = function () {
         if(_.isNumber(where)) {
             if(0 < where && where < INCR)
                 where = INCR;
-            if(node.children.length)
-                for(var i = node.children.length - 1; i >= 0; --i)
+            if(node.children.length) {
+                var i = node.children.length - 1;
+                if(ellipsis) --i;
+                for(; i >= 0; --i)
                     $tree_.tree('removeNode', node.children[i]);
+            }
             if(where==0)
                 return;
             begin = 0; // skip first which is current
@@ -661,7 +659,7 @@ var editor = function () {
             if(where===0 && gistname===config_.currbook && config_.currversion)
                 where = config_.currversion;
             var k = null;
-            if(config_.currversion) {
+            if(config_.currversion)
                 k = function(node) {
                     $tree_.tree('openNode', node);
                     var n2 = $tree_.tree('getNodeById', node_id('interests', user, gistname, config_.currversion));
@@ -670,7 +668,6 @@ var editor = function () {
                         scroll_into_view(n2);
                     }
                 };
-            }
             else if(is_open)
                 k = function(node) { $tree_.tree('openNode', node); };
             add_history_nodes(node, where, k);
