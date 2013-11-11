@@ -249,9 +249,10 @@ var shell = (function() {
         var is_read_only = result.notebook.model.read_only();
         $("#notebook-title").text(notebook.description);
 
-        if (is_read_only) {
-            $("#notebook-title").off('click');
-        } else {
+        // remove any existing handler
+        $("#notebook-title").off('click');
+        // then add one if editable
+        if (!is_read_only) {
             $("#notebook-title").click(function() {
                 var result = prompt("Please enter the new name for this notebook:", $(this).text());
                 if (result !== null) {
