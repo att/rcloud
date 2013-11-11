@@ -72,7 +72,8 @@ initial.ocaps <- function()
         star_notebook=make.oc(rcloud.star.notebook), 
         unstar_notebook=make.oc(rcloud.unstar.notebook),
         is_notebook_starred=make.oc(rcloud.is.notebook.starred),
-        get_notebook_star_count=make.oc(rcloud.notebook.star.count)
+        get_notebook_star_count=make.oc(rcloud.notebook.star.count),
+        get_my_starred_notebooks=make.oc(rcloud.get.my.starred.notebooks)
         )
 
       )

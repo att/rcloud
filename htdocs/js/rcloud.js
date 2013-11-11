@@ -217,6 +217,9 @@ RCloud.create = function(rcloud_ocaps) {
     rcloud.stars.get_notebook_star_count = function(id, k) {
         rcloud_ocaps.stars.get_notebook_star_count(id, k);
     };
+    rcloud.stars.get_my_starred_notebooks = function(k) {
+        rcloud_ocaps.stars.get_my_starred_notebooks(k);
+    };
 
     // Progress indication
     var progress_dialog;

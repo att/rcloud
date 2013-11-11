@@ -212,3 +212,8 @@ rcloud.unstar.notebook <- function(notebook)
     rcs.decr(star.count.key(notebook))
   }
 }
+
+rcloud.get.my.starred.notebooks <- function()
+{
+  rcs.list(star.key("*"))
+}
