@@ -194,13 +194,28 @@ RCloud.create = function(rcloud_ocaps) {
 
     // publishing notebooks
     rcloud.publish_notebook = function(id, k) {
-        rcloud_ocaps.publish_notebook(id, k);
+        rcloud_ocaps.publish_notebook(id, k || _.identity);
     };
     rcloud.unpublish_notebook = function(id, k) {
-        rcloud_ocaps.unpublish_notebook(id, k);
+        rcloud_ocaps.unpublish_notebook(id, k || _.identity);
     };
     rcloud.is_notebook_published = function(id, k) {
         rcloud_ocaps.is_notebook_published(id, k);
+    };
+
+    // stars
+    rcloud.stars = {};
+    rcloud.stars.star_notebook = function(id, k) {
+        rcloud_ocaps.stars.star_notebook(id, k || _.identity);
+    };
+    rcloud.stars.unstar_notebook = function(id, k) {
+        rcloud_ocaps.stars.unstar_notebook(id, k || _.identity);
+    };
+    rcloud.stars.is_notebook_starred = function(id, k) {
+        rcloud_ocaps.stars.is_notebook_starred(id, k);
+    };
+    rcloud.stars.get_notebook_star_count = function(id, k) {
+        rcloud_ocaps.stars.get_notebook_star_count(id, k);
     };
 
     // Progress indication

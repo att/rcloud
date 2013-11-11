@@ -171,3 +171,44 @@ rcloud.record.cell.execution <- function(user = .session$username, json.string) 
 }
 
 rcloud.debug.level <- function() if (hasConf("debug")) getConf("debug") else 0L
+
+################################################################################
+# stars
+
+star.key <- function(notebook)
+{
+  user <- .session$username
+  rcs.key("notebook", notebook, "stars", user)
+}
+
+star.count.key <- function(notebook)
+{
+  rcs.key("notebook", notebook, "starcount")
+}
+
+rcloud.notebook.star.count <- function(notebook)
+{
+  result <- rcs.get(star.count.key(notebook))
+  if (is.null(result)) 0 else result
+}
+
+rcloud.is.notebook.starred <- function(notebook)
+{
+  !is.null(rcs.get(star.key(notebook)))
+}
+
+rcloud.star.notebook <- function(notebook)
+{
+  if (!rcloud.is.notebook.starred(notebook)) {
+    rcs.set(star.key(notebook), TRUE)
+    rcs.incr(star.count.key(notebook))
+  }
+}
+
+rcloud.unstar.notebook <- function(notebook)
+{
+  if (rcloud.is.notebook.starred(notebook)) {
+    rcs.rm(star.key(notebook))
+    rcs.decr(star.count.key(notebook))
+  }
+}
