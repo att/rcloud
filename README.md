@@ -3,6 +3,7 @@
 ## Installation requirements
 
 Forgive us for the current mess. This is temporary.
+
 Please use R 3.0.0 or later. It'll make your life easier, we promise.
 
 As for library dependencies - you will need several headers and libraries to compile dependent

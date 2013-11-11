@@ -36,7 +36,7 @@ rcloud.save.user.config <- function(user = .session$username, content) {
 rcloud.get.conf.value <- function(key) getConf(key)
 
 rcloud.get.notebook <- function(id, version = NULL) {
-  res <- get.gist(.session$rgithub.context, id, version)
+  res <- get.gist(id, version, ctx = .session$rgithub.context)
   if (rcloud.debug.level() > 1L) {
     if(res$ok) {
       cat("==== GOT GIST ====\n")
@@ -56,7 +56,7 @@ rcloud.get.notebook <- function(id, version = NULL) {
 ## the meaining of args is ambiguous and probably a bad idea - it jsut makes the client code a bit easier to write ...
 
 rcloud.call.notebook <- function(id, version = NULL, args = NULL) {
-  res <- get.gist(.session$rgithub.context, id, version)
+  res <- get.gist(id, version, ctx = .session$rgithub.context)
   if (res$ok) {
     args <- as.list(args)
     ## this is a hack for now - we should have a more general infrastructure for this ...
@@ -68,7 +68,7 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL) {
     result <- NULL
     e <- new.env(parent=.GlobalEnv)
     if (is.list(args) && length(args)) for (i in names(args)) e[[i]] <- args[[i]]
-    ## sort 
+    ## sort
     for (o in p[match(sort.int(i), i)]) {
       if (grepl("^part.*\\.R$", o$filename)) { ## R code
         expr <- parse(text=o$content)
@@ -91,16 +91,16 @@ rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
   } else result
 }
 
-rcloud.update.notebook <- function(id, content) update.gist(.session$rgithub.context, id, content)
+rcloud.update.notebook <- function(id, content) update.gist(id, content, ctx = .session$rgithub.context)
 
-rcloud.create.notebook <- function(content) create.gist(.session$rgithub.context, content)
+rcloud.create.notebook <- function(content) create.gist(content, ctx = .session$rgithub.context)
 
 rcloud.rename.notebook <- function(id, new.name)
-  update.gist(.session$rgithub.context,
-              id,
-              list(description=new.name))
+  update.gist(id,
+              list(description=new.name),
+              ctx = .session$rgithub.context)
 
-rcloud.fork.notebook <- function(id) fork.gist(.session$rgithub.context, id)
+rcloud.fork.notebook <- function(id) fork.gist(id, ctx = .session$rgithub.context)
 
 rcloud.get.users <- function(user) ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
   gsub("/.*","",rcs.list(usr.key("config.json", user="*", notebook="system")))
@@ -117,6 +117,21 @@ rcloud.unpublish.notebook <- function(id) {
 
 rcloud.is.notebook.published <- function(id) {
   !is.null(rcs.get(rcs.key("notebook", id, "public")))
+}
+
+rcloud.port.notebooks <- function(url, books, prefix) {
+  foreign.ctx <- create.github.context(url)
+
+  Map(function(notebook) {
+    getg <- get.gist(notebook, ctx = foreign.ctx)
+    if(getg$ok) {
+      gist <- getg$content
+      newgist <- list(description = paste(prefix, gist$description, sep=""),
+                      files = gist$files);
+      rcloud.create.notebook(newgist)
+    }
+    else getg
+  }, books)
 }
 
 rcloud.setup.dirs <- function() {
@@ -156,3 +171,49 @@ rcloud.record.cell.execution <- function(user = .session$username, json.string) 
 }
 
 rcloud.debug.level <- function() if (hasConf("debug")) getConf("debug") else 0L
+
+################################################################################
+# stars
+
+star.key <- function(notebook)
+{
+  user <- .session$username
+  rcs.key("notebook", notebook, "stars", user)
+}
+
+star.count.key <- function(notebook)
+{
+  rcs.key("notebook", notebook, "starcount")
+}
+
+rcloud.notebook.star.count <- function(notebook)
+{
+  result <- rcs.get(star.count.key(notebook))
+  if (is.null(result)) 0 else result
+}
+
+rcloud.is.notebook.starred <- function(notebook)
+{
+  !is.null(rcs.get(star.key(notebook)))
+}
+
+rcloud.star.notebook <- function(notebook)
+{
+  if (!rcloud.is.notebook.starred(notebook)) {
+    rcs.set(star.key(notebook), TRUE)
+    rcs.incr(star.count.key(notebook))
+  }
+}
+
+rcloud.unstar.notebook <- function(notebook)
+{
+  if (rcloud.is.notebook.starred(notebook)) {
+    rcs.rm(star.key(notebook))
+    rcs.decr(star.count.key(notebook))
+  }
+}
+
+rcloud.get.my.starred.notebooks <- function()
+{
+  rcs.list(star.key("*"))
+}

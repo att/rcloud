@@ -1,8 +1,6 @@
-make.oc <- function(fun) {
-  f <- function(...) {
-    try(fun(...))
-  }
-  .Call(Rserve_oc_register, f)
+make.oc <- function(fun, name=deparse(substitute(fun))) {
+  f <- function(...) try(fun(...), silent=TRUE)
+  .Call(Rserve_oc_register, f, name)
 }
 
 wrap.js.fun <- function(s)
@@ -35,7 +33,7 @@ oc.init <- function(...) { ## this is the payload of the OCinit message
       cat("UNAUTHENTICATED!")
       unauthenticated.ocaps()
     }
-  })
+  }, "oc.init")
 }
 
 unauthenticated.ocaps <- function()
@@ -70,6 +68,15 @@ unauthenticated.ocaps <- function()
       # debugging
       debug=list(
         raise=make.oc(function(msg) stop(paste("Forced exception", msg)))
+        ),
+
+      # stars
+      stars=list(
+        star_notebook=make.oc(rcloud.star.notebook), 
+        unstar_notebook=make.oc(rcloud.unstar.notebook),
+        is_notebook_starred=make.oc(rcloud.is.notebook.starred),
+        get_notebook_star_count=make.oc(rcloud.notebook.star.count),
+        get_my_starred_notebooks=make.oc(rcloud.get.my.starred.notebooks)
         )
       )
     )
@@ -93,8 +100,12 @@ authenticated.ocaps <- function()
       publish_notebook = make.oc(rcloud.publish.notebook),
       unpublish_notebook = make.oc(rcloud.unpublish.notebook),
       fork_notebook = make.oc(rcloud.fork.notebook),
+      port_notebooks = make.oc(rcloud.port.notebooks),
       call_notebook = make.oc(rcloud.call.notebook),
       get_completions = make.oc(rcloud.get.completions),
+
+      # This will cause bugs, because some notebooks want a
+      # call_fastrweb_notebook...
       call_fastrweb_notebook = make.oc(rcloud.call.FastRWeb.notebook),
       
       # file upload ocaps

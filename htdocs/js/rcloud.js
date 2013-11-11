@@ -42,12 +42,14 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.github_token = function() {
             return $.cookies.get('token');
         };
-        rcloud.init_client_side_data = function() {
+        rcloud.init_client_side_data = function(k) {
             var that = this;
             rcloud_ocaps.prefix_uuid(function(v) {
                 that.deferred_knitr_uuid = v;
+                k();
             });
         };
+
         rcloud.get_conf_value = function(key, k) {
             rcloud_ocaps.get_conf_value(key, k);
         };
@@ -94,6 +96,16 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.debug.raise = function(msg, k) {
             rcloud_ocaps.debug.raise(msg, k || _.identity);
         };
+
+        // stars
+        rcloud.stars = {};
+        rcloud.stars.is_notebook_starred = function(id, k) {
+            rcloud_ocaps.stars.is_notebook_starred(id, k);
+        };
+        rcloud.stars.get_notebook_star_count = function(id, k) {
+            rcloud_ocaps.stars.get_notebook_star_count(id, k);
+        };
+
     }
 
     function setup_authenticated_ocaps() {
@@ -124,8 +136,13 @@ RCloud.create = function(rcloud_ocaps) {
             k = rcloud_github_handler("rcloud.fork.notebook", k);
             rcloud_ocaps.fork_notebook(id, k);
         };
+        rcloud.port_notebooks = function(source, notebooks, prefix, k) {
+            rcloud_ocaps.port_notebooks(source, notebooks, prefix, k);
+        };
         rcloud.get_completions = function(text, pos, k) {
             return rcloud_ocaps.get_completions(text, pos, function(comps) {
+                if(_.isString(comps))
+                    comps = [comps]; // quirk of rserve.js scalar handling
                 // convert to the record format ace.js autocompletion expects
                 // meta is what gets displayed at right; name & score might be improved
                 k(_.map(comps,
@@ -138,6 +155,7 @@ RCloud.create = function(rcloud_ocaps) {
                         }));
             });
         };
+
         rcloud.rename_notebook = function(id, new_name, k) {
             k = rcloud_github_handler("rcloud.rename.notebook", k);
             rcloud_ocaps.rename_notebook(id, new_name, k);
@@ -210,12 +228,76 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.unpublish_notebook = function(id, k) {
             rcloud_ocaps.unpublish_notebook(id, k);
         };
+
+        // stars
+        rcloud.stars = {};
+        rcloud.stars.star_notebook = function(id, k) {
+            rcloud_ocaps.stars.star_notebook(id, k || _.identity);
+        };
+        rcloud.stars.unstar_notebook = function(id, k) {
+            rcloud_ocaps.stars.unstar_notebook(id, k || _.identity);
+        };
+        rcloud.stars.is_notebook_starred = function(id, k) {
+            rcloud_ocaps.stars.is_notebook_starred(id, k);
+        };
+        rcloud.stars.get_notebook_star_count = function(id, k) {
+            rcloud_ocaps.stars.get_notebook_star_count(id, k);
+        };
+        rcloud.stars.get_my_starred_notebooks = function(k) {
+            rcloud_ocaps.stars.get_my_starred_notebooks(k);
+        };
+
     }
 
     rcloud.authenticated = rcloud_ocaps.authenticated;
     setup_unauthenticated_ocaps();
     if (rcloud.authenticated)
         setup_authenticated_ocaps();
+
+    // FIXME this doesn't feel like it belongs on rcloud, but then again,
+    // where would it?
+    // 
+    // Progress indication
+    var progress_dialog;
+    var progress_counter = 0;
+
+    var curtains_on = false;
+    function show_progress_curtain() {
+        if (curtains_on)
+            return;
+        curtains_on = true;
+        if (_.isUndefined(progress_dialog)) {
+            progress_dialog = $('<div id="progress-dialog" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-header">Please wait...</div></div></div>');
+            $("body").append(progress_dialog);
+        }
+        progress_dialog.modal({keyboard: true});
+    }
+    function hide_progress_curtain() {
+        if (!curtains_on)
+            return;
+        curtains_on = false;
+        progress_dialog.modal('hide');
+    }
+    rcloud.with_progress = function(thunk, delay) {
+        if (_.isUndefined(delay))
+            delay = 2000;
+        _.delay(function() {
+            document.body.style.cursor = "wait";
+        }, 0);
+        function done() {
+            progress_counter -= 1;
+            if (progress_counter === 0) {
+                document.body.style.cursor = '';
+                hide_progress_curtain();
+            }
+        }
+        _.delay(function() {
+            if (progress_counter > 0)
+                show_progress_curtain();
+        }, delay);
+        progress_counter += 1;
+        thunk(done);
+    };
 
     return rcloud;
 };

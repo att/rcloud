@@ -94,13 +94,6 @@ var editor = function () {
         for (var username in config_.interests) {
             var user_notebooks = config_.interests[username];
             var notebook_nodes = [];
-            if(username === username_) {
-                notebook_nodes.push({
-                    label: "[New Notebook]",
-                    id: "newbook",
-                    sort_order: ordering.HEADER
-                });
-            }
             notebook_nodes = notebook_nodes.concat(convert_notebook_set('interests', username, user_notebooks));
 
             if(username === username_)
@@ -411,6 +404,9 @@ var editor = function () {
                     that.search(new_text);
                 }
             }, 500);
+            $('#new-notebook').click(function() {
+                that.new_notebook();
+            });
         },
         create_book_tree_widget: function(data) {
             var that = this;
@@ -472,6 +468,8 @@ var editor = function () {
                         remove.click(function() {
                             $(this).tooltip('hide');
                             that.remove_notebook(node);
+                            if(node.gistname === config_.currbook)
+                                that.new_notebook();
                         });
                         add_buttons(remove);
                     };
@@ -494,12 +492,16 @@ var editor = function () {
             });
             $tree_.bind(
                 'tree.click', function(event) {
-                    if(event.node.id === 'newbook')
-                        that.new_notebook();
-                    else if(event.node.id === 'showmore')
+                    if(event.node.id === 'showmore')
                         that.show_history(event.node.parent, false);
-                    else if(event.node.gistname)
-                        that.load_notebook(event.node.gistname, event.node.version || null);
+                    else if(event.node.gistname) {
+                        if(event.click_event.metaKey || event.click_event.ctrlKey) {
+                            var url = window.location.protocol + '//' + window.location.host + '/main.html?notebook=' + event.node.gistname;
+                            window.open(url, "_blank");
+                        }
+                        else
+                            that.load_notebook(event.node.gistname, event.node.version || null);
+                    }
                     return false;
                 }
             );
@@ -562,7 +564,7 @@ var editor = function () {
             var entry = config_.interests[username_][node.gistname];
             entry.visibility = visibility;
             config_.all_books[node.gistname] = entry;
-            this.update_tree_entry(username_, node.gistname, entry);
+            this.update_tree_entry(username_, node.gistname, entry, false);
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
             shell.fork_or_revert_notebook(is_mine, gistname, version, this.load_callback(null, is_mine));
@@ -589,11 +591,7 @@ var editor = function () {
                     history = result.history;
                 else
                     history = result.history.slice(1);
-                that.update_notebook_status(result.user.login,
-                                            result.id,
-                                            {description: result.description,
-                                             last_commit: result.updated_at || result.history[0].committed_at,
-                                             history:history});
+                that.add_notebook(result, history, true);
                 that.update_notebook_file_list(result.files);
                 rcloud.get_all_comments(result.id, function(data) {
                     populate_comments(JSON.parse(data));
@@ -612,6 +610,14 @@ var editor = function () {
                 });
                 k();
             };
+        },
+        add_notebook: function(result, history, do_select) {
+            this.update_notebook_status(result.user.login,
+                                        result.id,
+                                        {description: result.description,
+                                         last_commit: result.updated_at || result.history[0].committed_at,
+                                         history: history},
+                                        do_select);
         },
         update_notebook_file_list: function(files) {
             // FIXME natural sort!
@@ -638,7 +644,7 @@ var editor = function () {
 
                 // .text(function(d, i) { return String(i); });
         },
-        update_notebook_status: function(user, gistname, status) {
+        update_notebook_status: function(user, gistname, status, do_select) {
             // this is almost a task for d3 or mvc on its own
             var iu = config_.interests[user];
             if(!iu)
@@ -655,13 +661,9 @@ var editor = function () {
             if(user === username_)
                 config_.all_books[gistname] = entry;
 
-            var node = this.update_tree_entry(user, gistname, entry, status.history);
-            if(node) {
-                $tree_.tree('selectNode', node);
-                scroll_into_view(node);
-            }
+            var node = this.update_tree_entry(user, gistname, entry, status.history, do_select);
         },
-        update_tree_entry: function(user, gistname, entry, history) {
+        update_tree_entry: function(user, gistname, entry, history, do_select) {
             var data = {label: entry.description,
                         last_commit: entry.last_commit,
                         sort_order: ordering.NOTEBOOK,
@@ -683,15 +685,17 @@ var editor = function () {
                                            --where;
                                        is_open = node.is_open;
                                    });
-            if(where===0 && config_.currversion)
+            if(where===0 && gistname===config_.currbook && config_.currversion)
                 where = config_.currversion;
             var k = null;
             if(config_.currversion) {
                 k = function(node) {
                     $tree_.tree('openNode', node);
                     var n2 = $tree_.tree('getNodeById', node_id('interests', user, gistname, config_.currversion));
-                    $tree_.tree('selectNode', n2);
-                    scroll_into_view(n2);
+                    if(do_select) {
+                        $tree_.tree('selectNode', n2);
+                        scroll_into_view(n2);
+                    }
                 };
             }
             else if(is_open)
@@ -703,6 +707,10 @@ var editor = function () {
             update_tree('alls', user, gistname, alls_path);
 
             this.save_config();
+            if(node && do_select) {
+                $tree_.tree('selectNode', node);
+                scroll_into_view(node);
+            }
             return node;
         },
         post_comment: function(comment) {

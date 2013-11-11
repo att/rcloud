@@ -52,17 +52,29 @@
     <!--div class="container"-->
       <div class="navbar-header">
         <a class="navbar-brand" href="#">RCloud - [<span id="notebook-title">Untitled</span>]</a>
-      <!--div class="nav-collapse collapse"-->
+      </div>
+      <div class="nav-collapse collapse">
 	<ul class="nav navbar-nav">
 	  <li><a href="#" id="run-notebook">Run</a></li>
 	  <li><a href="#" id="share-notebook" class="embed-link">Get Link</a><input class="embed-box" type="text" size="25" style="display:none;margin-top:0.7em;"></li>
           <li><a href="#" id="fork-revert-notebook" style="display:none;">Fork</a></li>
-          <li><a href="#" id="open-in-github">To GitHub</a></li>
-          <li><a href="#" id="open-from-github">From GitHub</a></li>
+	  <li class="divider-vertical"></li>
+          <li><button id="save-notebook"  type="button" class="btn btn-link navbar-btn disabled"><i class="icon-save"></i></button></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Advanced <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li><a href="#" id="open-in-github">Open in GitHub</a></li>
+              <li><a href="#" id="open-from-github">Add Existing Notebook</a></li>
+              <li><a href="#" id="import-notebooks">Import External Notebooks</a></li>
+              <li><a href="#" id="export-notebook-file">Export Notebook to File</a></li>
+              <li><a href="#" id="import-notebook-file">Import Notebook from File</a></li>
+            </ul>
+          </li>
 	  <li class="divider-vertical"></li>
 	  <li><a href="#" id="rcloud-logout">Logout</a></li>
 	</ul>
-      <!--/div-->
       </div>
     <!--/div-->
   </div>
@@ -76,9 +88,9 @@
 	<div id="output" class="tab-div">
 	</div>
 
-	<div id="input-div">
+	<div id="prompt-div">
 	  <button style="float: right; width:20%;" id="new-md-cell-button">New RMarkdown cell</button>
-	  <div id="command-entry"
+	  <div id="command-prompt"
 	       style="float: left; width:79%; height: 50px; background:#FFFFFF; border:1px solid #DDDDDD"></div>
 	</div>
 	<div style="padding:1em; clear:both"></div>
@@ -91,6 +103,7 @@
 	    <div class="panel panel-default">
 	      <div class="panel-heading">
 		<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">Notebooks</a>
+                <a class="header-button" href="#" id="new-notebook"><i class="icon-plus"></i></a>
 	      </div>
 	      <div id="collapseOne" class="panel-collapse collapse">
 		<div class="panel-body notebook-tree">

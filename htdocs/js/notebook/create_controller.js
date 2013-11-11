@@ -1,19 +1,23 @@
 Notebook.create_controller = function(model)
 {
-    var current_gist_;
+    var current_gist_,
+        dirty_ = false,
+        save_button_ = null,
+        save_timer_ = null,
+        save_timeout_ = 30000; // 30s
 
     function append_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
         var cell_controller = Notebook.Cell.create_controller(cell_model);
         cell_model.controller = cell_controller;
-        return [cell_controller, model.append_cell(cell_model, id)];
+        return {controller: cell_controller, changes: model.append_cell(cell_model, id)};
     }
 
     function insert_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
         var cell_controller = Notebook.Cell.create_controller(cell_model);
         cell_model.controller = cell_controller;
-        return [cell_controller, model.insert_cell(cell_model, id)];
+        return {controller: cell_controller, changes: model.insert_cell(cell_model, id)};
     }
 
     function on_load(k, version, notebook) {
@@ -36,6 +40,8 @@ Notebook.create_controller = function(model)
         k && k(notebook);
     }
 
+    // calculate the changes needed to get back from the newest version in notebook
+    // back to what we are presently displaying (current_gist_)
     function find_changes_from(notebook) {
         var changes = [];
         var nf = notebook.files,
@@ -45,37 +51,60 @@ Notebook.create_controller = function(model)
                 continue; // R metadata
             if(f in cf) {
                 if(cf[f].language != nf[f].language || cf[f].content != nf[f].content) {
-                    changes.push([f, cf[f]]);
+                    changes.push({id: f,
+                                  language: cf[f].language,
+                                  content: cf[f].content});
                 }
                 delete cf[f];
             }
-            else changes.push([f, {erase: true, language: nf[f].language}]);
+            else changes.push({id: f, erase: true, language: nf[f].language});
         }
         for(f in cf) {
-            if(f==='r_type')
+            if(f==='r_type' || f==='r_attributes')
                 continue; // artifact of rserve.js
-            changes.push([f, cf[f]]);
+            changes.push({id: f,
+                          language: cf[f].language,
+                          content: cf[f].content});
         }
         return changes;
     }
 
+    function on_dirty() {
+        if(!dirty_) {
+            if(save_button_)
+                ui_utils.enable_bs_button(save_button_);
+            dirty_ = true;
+        }
+        if(save_timer_)
+            window.clearTimeout(save_timer_);
+        save_timer_ = window.setTimeout(function() {
+            result.save();
+            save_timer_ = null;
+        }, save_timeout_);
+    }
+
+    model.dishers.push({on_dirty: on_dirty});
+
     var result = {
+        save_button: function(save_button) {
+            if(arguments.length) {
+                save_button_ = save_button;
+            }
+            return save_button_;
+        },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
-            // github gist api will not take empty cells, so drop them
-            if(content.length)
-                this.update_notebook(cch[1]);
-            return cch[0];
+            this.update_notebook(cch.changes);
+            return cch.controller;
         },
         insert_cell: function(content, type, id) {
             var cch = insert_cell_helper(content, type, id);
-            if(content.length)
-                this.update_notebook(cch[1]);
-            return cch[0];
+            this.update_notebook(cch.changes);
+            return cch.controller;
         },
         remove_cell: function(cell_model) {
             var changes = model.remove_cell(cell_model);
-            shell.input_widget.focus(); // there must be a better way
+            shell.prompt_widget.focus(); // there must be a better way
             this.update_notebook(changes);
         },
         clear: function() {
@@ -121,6 +150,10 @@ Notebook.create_controller = function(model)
                 });
         },
         update_notebook: function(changes, gistname, k) {
+            // remove any "empty" changes.  we can keep empty cells on the
+            // screen but github will refuse them.  if the user doesn't enter
+            // stuff in them before saving, they will disappear on next session
+            changes = changes.filter(function(change) { return !!change.content || change.erase; });
             if(!changes.length)
                 return;
             if(model.read_only())
@@ -149,22 +182,23 @@ Notebook.create_controller = function(model)
                 // instead, create y and if there is no longer any x, erase it
                 var post_names = _.reduce(changes,
                                          function(names, change) {
-                                             if(!change[1].erase) {
-                                                 var after = change[1].rename || change[0];
-                                                 names[partname(after, change[1].language)] = 1;
+                                             if(!change.erase) {
+                                                 var after = change.rename || change.id;
+                                                 names[partname(after, change.language)] = 1;
                                              }
                                              return names;
                                          }, {});
                 function xlate_change(filehash, change) {
                     var c = {};
-                    if(change[1].content !== undefined)
-                        c.content = change[1].content;
-                    var pre_name = partname(change[0], change[1].language);
-                    if(change[1].erase || !post_names[pre_name])
+                    if(change.content !== undefined)
+                        c.content = change.content;
+                    var pre_name = partname(change.id, change.language);
+                    if(change.erase || !post_names[pre_name])
                         filehash[pre_name] = null;
-                    var post_name = partname(change[1].rename || change[0], change[1].language);
-                    if(!change[1].erase)
+                    if(!change.erase) {
+                        var post_name = partname(change.rename || change.id, change.language);
                         filehash[post_name] = c;
+                    }
                     return filehash;
                 }
                 return {files: _.reduce(changes, xlate_change, {})};
@@ -184,10 +218,20 @@ Notebook.create_controller = function(model)
         update_cell: function(cell_model) {
             this.update_notebook(model.update_cell(cell_model));
         },
+        save: function() {
+            if(dirty_) {
+                var changes = this.refresh_cells();
+                this.update_notebook(changes);
+                if(save_button_)
+                    ui_utils.disable_bs_button(save_button_);
+                dirty_ = false;
+            }
+
+        },
         run_all: function(k) {
             if (rcloud.authenticated) {
                 var changes = this.refresh_cells();
-                this.update_notebook(changes);
+                this.save();
                 var n = model.notebook.length;
                 function bump_executed() {
                     --n;
@@ -198,7 +242,6 @@ Notebook.create_controller = function(model)
                     cell_model.controller.execute(bump_executed);
                 });
             } else {
-                
             }
         },
 

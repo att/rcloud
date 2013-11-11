@@ -40,12 +40,45 @@ ui_utils.fa_button = function(which, title, classname, style)
     return span;
 };
 
+ui_utils.enable_fa_button = function(el) {
+    el.removeClass("button-disabled");
+};
+
+ui_utils.disable_fa_button = function(el) {
+    el.addClass("button-disabled");
+};
+
+ui_utils.enable_bs_button = function(el) {
+    el.removeClass("disabled");
+};
+
+ui_utils.disable_bs_button = function(el) {
+    el.addClass("disabled");
+};
+
+
 ui_utils.ace_editor_height = function(widget)
 {
     var lineHeight = widget.renderer.lineHeight;
     var rows = Math.min(30, widget.getSession().getLength());
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
     return Math.max(75, newHeight);
+};
+
+// bind an ace editor to a listener and return a function to change the
+// editor content without triggering that listener
+ui_utils.ignore_programmatic_changes = function(widget, listener) {
+    var listen = true;
+    widget.on('change', function() {
+        if(listen)
+            listener(widget.getValue());
+    });
+    return function(value) {
+        listen = false;
+        var res = widget.setValue(value);
+        listen = true;
+        return res;
+    };
 };
 
 // this is a hack, but it'll help giving people the right impression.

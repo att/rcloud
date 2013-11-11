@@ -16,16 +16,6 @@ function init_shareable_link_box() {
     });
 }
 
-function init_editable_title_box() {
-    $("#notebook-title").click(function() {
-        var result = prompt("Please enter the new name for this notebook:", $(this).text());
-        if (result !== null) {
-            $(this).text(result);
-            editor.rename_notebook(shell.gistname(), result);
-        }
-    });
-}
-
 function init_fork_revert_button() {
     $("#fork-revert-notebook").click(function() {
         shell.fork_or_revert_button();
@@ -41,6 +31,35 @@ function init_github_buttons() {
         if(result !== null)
             shell.open_from_github(result);
     });
+    $("#import-notebooks").click(function() {
+        shell.import_notebooks();
+    });
+}
+
+function init_save_button() {
+    var saveb = $("#save-notebook");
+    saveb.click(function() {
+        shell.save_notebook();
+    });
+    shell.notebook.controller.save_button(saveb);
+}
+
+function init_port_file_buttons() {
+    $('#export-notebook-file').click(function() {
+        shell.export_notebook_file();
+    });
+    $('#import-notebook-file').click(function() {
+        shell.import_notebook_file();
+    });
+}
+
+
+function init_navbar_buttons() {
+    init_shareable_link_box();
+    init_fork_revert_button();
+    init_github_buttons();
+    init_save_button();
+    init_port_file_buttons();
 }
 
 var oob_handlers = {
@@ -54,12 +73,9 @@ var oob_handlers = {
 };
 
 function main_init() {
-    init_shareable_link_box();
-    init_editable_title_box();
-    init_fork_revert_button();
-    init_github_buttons();
+    init_navbar_buttons();
     footer.init();
-    
+
     $("#show-source").font_awesome_checkbox({
         checked: false,
         check: function() {

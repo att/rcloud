@@ -23,24 +23,25 @@ RClient = {
         // this might be called multiple times; some conditions result
         // in on_error and on_close both being called.
         function shutdown() {
-            $("#input-div").hide();
+            if (!clean) {
+                $("#input-div").hide();
+            }
             if (!rserve.closed)
                 rserve.close();
         }
 
         function on_error(msg, status_code) {
-            if (opts.on_error) {
-                var result = opts.on_error(msg, status_code);
-                if (result === true)
-                    return;
-            }
+            if (opts.on_error && opts.on_error(msg, status_code))
+                return;
             result.post_error(result.disconnection_error(msg));
             shutdown();
         }
 
         function on_close(msg) {
-            result.post_error(result.disconnection_error("Socket was closed. Goodbye!"));
-            shutdown();
+            if (!clean) {
+                result.post_error(result.disconnection_error("Socket was closed. Goodbye!"));
+                shutdown();
+            }
         };
 
         var token = $.cookies.get().token;  // document access token
@@ -54,9 +55,11 @@ RClient = {
         });
 
         var result;
+        var clean = false;
 
         result = {
             _rserve: rserve,
+            host: opts.host,
             running: false,
            
             //////////////////////////////////////////////////////////////////
@@ -64,7 +67,13 @@ RClient = {
             // the notebook objects.
 
             string_error: function(msg) {
-                return $("<div class='alert alert-danger'></div>").text(msg);
+                var button = $("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>");
+                var result = $("<div class='alert alert-danger alert-dismissable'></div>");
+                var text = $("<span></span>");
+                result.append(button);
+                result.append(text);
+                text.text(msg);
+                return result;
             },
 
             disconnection_error: function(msg) {
@@ -96,6 +105,11 @@ RClient = {
                 var d = $("<pre></pre>").html(msg);
                 $("#output").append(d);
                 window.scrollTo(0, document.body.scrollHeight);
+            },
+
+            close: function() {
+                clean = true;
+                shutdown();
             }
         };
         return result;
@@ -145,12 +159,14 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.github_token = function() {
             return $.cookies.get('token');
         };
-        rcloud.init_client_side_data = function() {
+        rcloud.init_client_side_data = function(k) {
             var that = this;
             rcloud_ocaps.prefix_uuid(function(v) {
                 that.deferred_knitr_uuid = v;
+                k();
             });
         };
+
         rcloud.get_conf_value = function(key, k) {
             rcloud_ocaps.get_conf_value(key, k);
         };
@@ -197,6 +213,16 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.debug.raise = function(msg, k) {
             rcloud_ocaps.debug.raise(msg, k || _.identity);
         };
+
+        // stars
+        rcloud.stars = {};
+        rcloud.stars.is_notebook_starred = function(id, k) {
+            rcloud_ocaps.stars.is_notebook_starred(id, k);
+        };
+        rcloud.stars.get_notebook_star_count = function(id, k) {
+            rcloud_ocaps.stars.get_notebook_star_count(id, k);
+        };
+
     }
 
     function setup_authenticated_ocaps() {
@@ -227,8 +253,13 @@ RCloud.create = function(rcloud_ocaps) {
             k = rcloud_github_handler("rcloud.fork.notebook", k);
             rcloud_ocaps.fork_notebook(id, k);
         };
+        rcloud.port_notebooks = function(source, notebooks, prefix, k) {
+            rcloud_ocaps.port_notebooks(source, notebooks, prefix, k);
+        };
         rcloud.get_completions = function(text, pos, k) {
             return rcloud_ocaps.get_completions(text, pos, function(comps) {
+                if(_.isString(comps))
+                    comps = [comps]; // quirk of rserve.js scalar handling
                 // convert to the record format ace.js autocompletion expects
                 // meta is what gets displayed at right; name & score might be improved
                 k(_.map(comps,
@@ -241,6 +272,7 @@ RCloud.create = function(rcloud_ocaps) {
                         }));
             });
         };
+
         rcloud.rename_notebook = function(id, new_name, k) {
             k = rcloud_github_handler("rcloud.rename.notebook", k);
             rcloud_ocaps.rename_notebook(id, new_name, k);
@@ -313,12 +345,76 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.unpublish_notebook = function(id, k) {
             rcloud_ocaps.unpublish_notebook(id, k);
         };
+
+        // stars
+        rcloud.stars = {};
+        rcloud.stars.star_notebook = function(id, k) {
+            rcloud_ocaps.stars.star_notebook(id, k || _.identity);
+        };
+        rcloud.stars.unstar_notebook = function(id, k) {
+            rcloud_ocaps.stars.unstar_notebook(id, k || _.identity);
+        };
+        rcloud.stars.is_notebook_starred = function(id, k) {
+            rcloud_ocaps.stars.is_notebook_starred(id, k);
+        };
+        rcloud.stars.get_notebook_star_count = function(id, k) {
+            rcloud_ocaps.stars.get_notebook_star_count(id, k);
+        };
+        rcloud.stars.get_my_starred_notebooks = function(k) {
+            rcloud_ocaps.stars.get_my_starred_notebooks(k);
+        };
+
     }
 
     rcloud.authenticated = rcloud_ocaps.authenticated;
     setup_unauthenticated_ocaps();
     if (rcloud.authenticated)
         setup_authenticated_ocaps();
+
+    // FIXME this doesn't feel like it belongs on rcloud, but then again,
+    // where would it?
+    // 
+    // Progress indication
+    var progress_dialog;
+    var progress_counter = 0;
+
+    var curtains_on = false;
+    function show_progress_curtain() {
+        if (curtains_on)
+            return;
+        curtains_on = true;
+        if (_.isUndefined(progress_dialog)) {
+            progress_dialog = $('<div id="progress-dialog" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-header">Please wait...</div></div></div>');
+            $("body").append(progress_dialog);
+        }
+        progress_dialog.modal({keyboard: true});
+    }
+    function hide_progress_curtain() {
+        if (!curtains_on)
+            return;
+        curtains_on = false;
+        progress_dialog.modal('hide');
+    }
+    rcloud.with_progress = function(thunk, delay) {
+        if (_.isUndefined(delay))
+            delay = 2000;
+        _.delay(function() {
+            document.body.style.cursor = "wait";
+        }, 0);
+        function done() {
+            progress_counter -= 1;
+            if (progress_counter === 0) {
+                document.body.style.cursor = '';
+                hide_progress_curtain();
+            }
+        }
+        _.delay(function() {
+            if (progress_counter > 0)
+                show_progress_curtain();
+        }, delay);
+        progress_counter += 1;
+        thunk(done);
+    };
 
     return rcloud;
 };
@@ -364,12 +460,45 @@ ui_utils.fa_button = function(which, title, classname, style)
     return span;
 };
 
+ui_utils.enable_fa_button = function(el) {
+    el.removeClass("button-disabled");
+};
+
+ui_utils.disable_fa_button = function(el) {
+    el.addClass("button-disabled");
+};
+
+ui_utils.enable_bs_button = function(el) {
+    el.removeClass("disabled");
+};
+
+ui_utils.disable_bs_button = function(el) {
+    el.addClass("disabled");
+};
+
+
 ui_utils.ace_editor_height = function(widget)
 {
     var lineHeight = widget.renderer.lineHeight;
     var rows = Math.min(30, widget.getSession().getLength());
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
     return Math.max(75, newHeight);
+};
+
+// bind an ace editor to a listener and return a function to change the
+// editor content without triggering that listener
+ui_utils.ignore_programmatic_changes = function(widget, listener) {
+    var listen = true;
+    widget.on('change', function() {
+        if(listen)
+            listener(widget.getValue());
+    });
+    return function(value) {
+        listen = false;
+        var res = widget.setValue(value);
+        listen = true;
+        return res;
+    };
 };
 
 // this is a hack, but it'll help giving people the right impression.
@@ -462,12 +591,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     function update_model() {
         return cell_model.content(widget.getSession().getValue());
     }
-    function enable(el) {
-        el.removeClass("button-disabled");
-    }
-    function disable(el) {
-        el.addClass("button-disabled");
-    }
+    var enable = ui_utils.enable_fa_button;
+    var disable = ui_utils.disable_fa_button;
 
     insert_cell_button.click(function(e) {
         shell.insert_markdown_cell_before(cell_model.id);
@@ -500,7 +625,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         result.show_result();
         if(new_content!==null) // if any change (including removing the content)
             cell_model.parent_model.controller.update_cell(cell_model);
-        cell_model.controller.execute();
+        rcloud.with_progress(function(done) {
+            cell_model.controller.execute(function() {
+                done();
+            });
+        });
     }
     run_md_button.click(function(e) {
         execute_cell();
@@ -530,6 +659,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     var ace_div = $('<div style="width:100%; height:100%"></div>');
     ace_div.css({'background-color': language === 'R' ? "#E8F1FA" : "#F7EEE4"});
+    if (language === 'R') {
+        inner_div.addClass("r-language-pseudo");
+    } else {
+        inner_div.addClass("rmarkdown-language-pseudo");
+    }
 
 
     // ace_div.css({'background-color': language === 'R' ? "#B1BEA4" : "#F1EDC0"});
@@ -571,6 +705,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         bindKey: 'Ctrl-.',
         exec: Autocomplete.startCommand.exec
     }]);
+    var change_content = ui_utils.ignore_programmatic_changes(widget, function() {
+        cell_model.parent_model.on_dirty();
+    });
 
     var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
     inner_div.append(r_result_div);
@@ -584,7 +721,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
         content_updated: function() {
             var position = widget.getCursorPosition();
-            var changed = widget.getSession().setValue(cell_model.content());
+            var changed = change_content(cell_model.content());
             widget.getSelection().moveCursorToPosition(position);
             return changed;
         },
@@ -786,6 +923,7 @@ Notebook.Cell.create_model = function(content, language)
     var result = {
         views: [], // sub list for pubsub
         id: -1,
+        parent_model: null,
         language: function() {
             return language;
         },
@@ -884,10 +1022,7 @@ Notebook.create_html_view = function(model, root_div)
 };
 Notebook.create_model = function()
 {
-    var read_only = false;
-
-    /* note, the code below is a little more sophisticated than it needs to be:
-       allows multiple inserts or removes but currently n is hardcoded as 1.  */
+    var readonly_ = false;
 
     function last_id(notebook) {
         if(notebook.length)
@@ -895,9 +1030,26 @@ Notebook.create_model = function()
         else
             return 0;
     }
+
+    function build_cell_change(id, content, language) {
+        // unfortunately, yet another workaround because github
+        // won't take blank files.  would prefer to make changes
+        // a high-level description but i don't see it yet.
+        var change = {id: id,
+                      language: language};
+        if(content === "")
+            change.erase = true;
+        else
+            change.content = content;
+        return change;
+    }
+
+    /* note, the code below is a little more sophisticated than it needs to be:
+       allows multiple inserts or removes but currently n is hardcoded as 1.  */
     return {
         notebook: [],
-        views: [], // sub list for pubsub
+        views: [], // sub list for cell content pubsub
+        dishers: [], // for dirty bit pubsub
         clear: function() {
             return this.remove_cell(null,last_id(this.notebook));
         },
@@ -908,7 +1060,7 @@ Notebook.create_model = function()
             id = id || 1;
             id = Math.max(id, last_id(this.notebook)+1);
             while(n) {
-                changes.push([id,{content: cell_model.content(), language: cell_model.language()}]);
+                changes.push({id: id, content: cell_model.content(), language: cell_model.language()});
                 cell_model.id = id;
                 this.notebook.push(cell_model);
                 _.each(this.views, function(view) {
@@ -931,7 +1083,7 @@ Notebook.create_model = function()
                 id = Math.max(this.notebook[x].id-n, prev+1);
             }
             for(var j=0; j<n; ++j) {
-                changes.push([id+j, {content: cell_model.content(), language: cell_model.language()}]);
+                changes.push({id: id+j, content: cell_model.content(), language: cell_model.language()});
                 cell_model.id = id+j;
                 this.notebook.splice(x, 0, cell_model);
                 _.each(this.views, function(view) {
@@ -947,9 +1099,10 @@ Notebook.create_model = function()
                 }
                 if(n<=0)
                     break;
-                changes.push([this.notebook[x].id,{content: this.notebook[x].content(),
-                                                   rename: this.notebook[x].id+n,
-                                                   language: this.notebook[x].language()}]);
+                changes.push({id: this.notebook[x].id,
+                              content: this.notebook[x].content(),
+                              rename: this.notebook[x].id+n,
+                              language: this.notebook[x].language()});
                 this.notebook[x].id += n;
                 ++x;
                 ++id;
@@ -970,14 +1123,15 @@ Notebook.create_model = function()
                 cell_index = 0;
                 id = 1;
             }
-            var n = n || 1, x = cell_index;
+            n = n || 1;
+            var x = cell_index;
             var changes = [];
             while(x<this.notebook.length && n) {
                 if(this.notebook[x].id == id) {
                     _.each(this.views, function(view) {
                         view.cell_removed(that.notebook[x], x);
                     });
-                    changes.push([id, {erase: 1, language: that.notebook[x].language()} ]);
+                    changes.push({id: id, erase: 1, language: that.notebook[x].language()});
                     this.notebook.splice(x, 1);
                 }
                 ++id;
@@ -986,8 +1140,7 @@ Notebook.create_model = function()
             return changes;
         },
         update_cell: function(cell_model) {
-            return [[cell_model.id, {content: cell_model.content(),
-                                     language: cell_model.language()}]];
+            return [build_cell_change(cell_model.id, cell_model.content(), cell_model.language())];
         },
         reread_cells: function() {
             var that = this;
@@ -998,21 +1151,27 @@ Notebook.create_model = function()
                 throw "not expecting more than one notebook view";
             return _.reduce(changed_cells_per_view[0],
                             function(changes, content, index) {
-                                if(content)
-                                    changes.push([that.notebook[index].id, {content: content,
-                                                                            language: that.notebook[index].language()}]);
+                                if(content !== null)
+                                    changes.push(build_cell_change(that.notebook[index].id,
+                                                                   content,
+                                                                   that.notebook[index].language()));
                                 return changes;
                             },
                             []);
         },
         read_only: function(readonly) {
             if(!_.isUndefined(readonly)) {
-                read_only = readonly;
+                readonly_ = readonly;
                 _.each(this.views, function(view) {
-                    view.set_readonly(read_only);
+                    view.set_readonly(readonly_);
                 });
             }
-            return read_only;
+            return readonly_;
+        },
+        on_dirty: function() {
+            _.each(this.dishers, function(disher) {
+                disher.on_dirty();
+            });
         },
         json: function() {
             return _.map(this.notebook, function(cell_model) {
@@ -1023,20 +1182,24 @@ Notebook.create_model = function()
 };
 Notebook.create_controller = function(model)
 {
-    var current_gist_;
+    var current_gist_,
+        dirty_ = false,
+        save_button_ = null,
+        save_timer_ = null,
+        save_timeout_ = 30000; // 30s
 
     function append_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
         var cell_controller = Notebook.Cell.create_controller(cell_model);
         cell_model.controller = cell_controller;
-        return [cell_controller, model.append_cell(cell_model, id)];
+        return {controller: cell_controller, changes: model.append_cell(cell_model, id)};
     }
 
     function insert_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
         var cell_controller = Notebook.Cell.create_controller(cell_model);
         cell_model.controller = cell_controller;
-        return [cell_controller, model.insert_cell(cell_model, id)];
+        return {controller: cell_controller, changes: model.insert_cell(cell_model, id)};
     }
 
     function on_load(k, version, notebook) {
@@ -1059,6 +1222,8 @@ Notebook.create_controller = function(model)
         k && k(notebook);
     }
 
+    // calculate the changes needed to get back from the newest version in notebook
+    // back to what we are presently displaying (current_gist_)
     function find_changes_from(notebook) {
         var changes = [];
         var nf = notebook.files,
@@ -1068,37 +1233,60 @@ Notebook.create_controller = function(model)
                 continue; // R metadata
             if(f in cf) {
                 if(cf[f].language != nf[f].language || cf[f].content != nf[f].content) {
-                    changes.push([f, cf[f]]);
+                    changes.push({id: f,
+                                  language: cf[f].language,
+                                  content: cf[f].content});
                 }
                 delete cf[f];
             }
-            else changes.push([f, {erase: true, language: nf[f].language}]);
+            else changes.push({id: f, erase: true, language: nf[f].language});
         }
         for(f in cf) {
-            if(f==='r_type')
+            if(f==='r_type' || f==='r_attributes')
                 continue; // artifact of rserve.js
-            changes.push([f, cf[f]]);
+            changes.push({id: f,
+                          language: cf[f].language,
+                          content: cf[f].content});
         }
         return changes;
     }
 
+    function on_dirty() {
+        if(!dirty_) {
+            if(save_button_)
+                ui_utils.enable_bs_button(save_button_);
+            dirty_ = true;
+        }
+        if(save_timer_)
+            window.clearTimeout(save_timer_);
+        save_timer_ = window.setTimeout(function() {
+            result.save();
+            save_timer_ = null;
+        }, save_timeout_);
+    }
+
+    model.dishers.push({on_dirty: on_dirty});
+
     var result = {
+        save_button: function(save_button) {
+            if(arguments.length) {
+                save_button_ = save_button;
+            }
+            return save_button_;
+        },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
-            // github gist api will not take empty cells, so drop them
-            if(content.length)
-                this.update_notebook(cch[1]);
-            return cch[0];
+            this.update_notebook(cch.changes);
+            return cch.controller;
         },
         insert_cell: function(content, type, id) {
             var cch = insert_cell_helper(content, type, id);
-            if(content.length)
-                this.update_notebook(cch[1]);
-            return cch[0];
+            this.update_notebook(cch.changes);
+            return cch.controller;
         },
         remove_cell: function(cell_model) {
             var changes = model.remove_cell(cell_model);
-            shell.input_widget.focus(); // there must be a better way
+            shell.prompt_widget.focus(); // there must be a better way
             this.update_notebook(changes);
         },
         clear: function() {
@@ -1144,6 +1332,10 @@ Notebook.create_controller = function(model)
                 });
         },
         update_notebook: function(changes, gistname, k) {
+            // remove any "empty" changes.  we can keep empty cells on the
+            // screen but github will refuse them.  if the user doesn't enter
+            // stuff in them before saving, they will disappear on next session
+            changes = changes.filter(function(change) { return !!change.content || change.erase; });
             if(!changes.length)
                 return;
             if(model.read_only())
@@ -1172,22 +1364,23 @@ Notebook.create_controller = function(model)
                 // instead, create y and if there is no longer any x, erase it
                 var post_names = _.reduce(changes,
                                          function(names, change) {
-                                             if(!change[1].erase) {
-                                                 var after = change[1].rename || change[0];
-                                                 names[partname(after, change[1].language)] = 1;
+                                             if(!change.erase) {
+                                                 var after = change.rename || change.id;
+                                                 names[partname(after, change.language)] = 1;
                                              }
                                              return names;
                                          }, {});
                 function xlate_change(filehash, change) {
                     var c = {};
-                    if(change[1].content !== undefined)
-                        c.content = change[1].content;
-                    var pre_name = partname(change[0], change[1].language);
-                    if(change[1].erase || !post_names[pre_name])
+                    if(change.content !== undefined)
+                        c.content = change.content;
+                    var pre_name = partname(change.id, change.language);
+                    if(change.erase || !post_names[pre_name])
                         filehash[pre_name] = null;
-                    var post_name = partname(change[1].rename || change[0], change[1].language);
-                    if(!change[1].erase)
+                    if(!change.erase) {
+                        var post_name = partname(change.rename || change.id, change.language);
                         filehash[post_name] = c;
+                    }
                     return filehash;
                 }
                 return {files: _.reduce(changes, xlate_change, {})};
@@ -1207,10 +1400,20 @@ Notebook.create_controller = function(model)
         update_cell: function(cell_model) {
             this.update_notebook(model.update_cell(cell_model));
         },
+        save: function() {
+            if(dirty_) {
+                var changes = this.refresh_cells();
+                this.update_notebook(changes);
+                if(save_button_)
+                    ui_utils.disable_bs_button(save_button_);
+                dirty_ = false;
+            }
+
+        },
         run_all: function(k) {
             if (rcloud.authenticated) {
                 var changes = this.refresh_cells();
-                this.update_notebook(changes);
+                this.save();
                 var n = model.notebook.length;
                 function bump_executed() {
                     --n;
@@ -1221,7 +1424,6 @@ Notebook.create_controller = function(model)
                     cell_model.controller.execute(bump_executed);
                 });
             } else {
-                
             }
         },
 

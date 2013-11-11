@@ -141,6 +141,8 @@ configure.rcloud <- function () {
   
   setConf("instanceID", generate.uuid())
 
+  options(HTTPUserAgent=paste(getOption("HTTPUserAgent"), "- RCloud (http://github.com/cscheid/rcloud)"))
+
   TRUE
 }
 
