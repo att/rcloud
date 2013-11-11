@@ -617,31 +617,6 @@ var editor = function () {
                                          history: history},
                                         do_select);
         },
-        update_notebook_file_list: function(files) {
-            // FIXME natural sort!
-            var files_out = _(files).pairs().filter(function(v) {
-                var k = v[0];
-                return !k.match(/\.([rR]|[mM][dD])$/) && k !== "r_type" && k !== "r_attributes";
-            });
-
-            d3.select("#notebook-assets")
-                .selectAll("li")
-                .remove();
-            var s = d3.select("#notebook-assets")
-                .selectAll("li")
-                .data(files_out)
-                .enter()
-                .append("li")
-                .append("a")
-                .attr("tabindex", "-1")
-                .attr("href", "#");
-            s.append("a")
-                .text(function(d) { return d[0]; })
-                .attr("href", function(d) { return d[1].raw_url; })
-                .attr("target", "_blank");
-
-                // .text(function(d, i) { return String(i); });
-        },
         update_notebook_status: function(user, gistname, status, do_select) {
             // this is almost a task for d3 or mvc on its own
             var iu = config_.interests[user];
@@ -710,6 +685,31 @@ var editor = function () {
                 scroll_into_view(node);
             }
             return node;
+        },
+        update_notebook_file_list: function(files) {
+            // FIXME natural sort!
+            var files_out = _(files).pairs().filter(function(v) {
+                var k = v[0];
+                return !k.match(/\.([rR]|[mM][dD])$/) && k !== "r_type" && k !== "r_attributes";
+            });
+
+            d3.select("#notebook-assets")
+                .selectAll("li")
+                .remove();
+            var s = d3.select("#notebook-assets")
+                .selectAll("li")
+                .data(files_out)
+                .enter()
+                .append("li")
+                .append("a")
+                .attr("tabindex", "-1")
+                .attr("href", "#");
+            s.append("a")
+                .text(function(d) { return d[0]; })
+                .attr("href", function(d) { return d[1].raw_url; })
+                .attr("target", "_blank");
+
+                // .text(function(d, i) { return String(i); });
         },
         post_comment: function(comment) {
             comment = JSON.stringify({"body":comment});
