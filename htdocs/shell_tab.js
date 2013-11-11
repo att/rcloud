@@ -273,6 +273,7 @@ var shell = (function() {
         k && k(notebook);
     }
 
+    var first = true;
     var result = {
         notebook: {
             model: notebook_model_,
@@ -331,35 +332,47 @@ var shell = (function() {
             var that = this;
             k = k || _.identity();
 
-            rcloud.with_progress(function(done) {
-                // asymmetrical: we know the gistname before it's loaded here,
-                // but not in new.  and we have to set this here to signal
-                // editor's init load config callback to override the currbook
-                rclient.close();
-                // FIXME this is a bit of an annoying duplication of code on main.js and view.js
-                rclient = RClient.create({
-                    debug: rclient.debug,
-                    host: rclient.host,
-                    on_connect: function(ocaps) {
-                        rcloud = RCloud.create(ocaps.rcloud);
-                        rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {});
-                        
-                        rcloud.init_client_side_data(function() {
-                            gistname_ = gistname;
-                            version_ = version;
-                            $("#output").find(".alert").remove();
-                            that.notebook.controller.load_notebook(gistname_, version_, function(notebook) {
-                                done();
-                                on_load.bind(that, k)(notebook);
-                            });
-                        });
-                    },
-                    on_data: function(v) {
-                        v = v.value.json();
-                        oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
-                    }
+            function do_load(done) {
+                gistname_ = gistname;
+                version_ = version;
+                that.notebook.controller.load_notebook(gistname_, version_, function(notebook) {
+                    done();
+                    on_load.bind(that, k)(notebook);
                 });
-            });
+            }
+
+            if (first) {
+                first = false;
+                rcloud.with_progress(function(done) {
+                    do_load(done);
+                });
+            } else {
+                rcloud.with_progress(function(done) {
+                    // asymmetrical: we know the gistname before it's loaded here,
+                    // but not in new.  and we have to set this here to signal
+                    // editor's init load config callback to override the currbook
+                    rclient.close();
+                    // FIXME this is a bit of an annoying duplication of code on main.js and view.js
+                    rclient = RClient.create({
+                        debug: rclient.debug,
+                        host: rclient.host,
+                        on_connect: function(ocaps) {
+                            rcloud = RCloud.create(ocaps.rcloud);
+                            rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {});
+                            
+                            rcloud.init_client_side_data(function() {
+                                $("#output").find(".alert").remove();
+                                do_load(done);
+                            });
+                        },
+                        on_data: function(v) {
+                            v = v.value.json();
+                            oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
+                        }
+                    });
+                });
+            }
+
         }, save_notebook: function() {
             notebook_controller_.save();
         }, new_notebook: function(desc, k) {
