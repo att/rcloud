@@ -33,7 +33,13 @@ rcloud.save.user.config <- function(user = .session$username, content) {
   invisible(rcs.set(usr.key("config.json", user=user, notebook="system"), content))
 }
 
-rcloud.get.conf.value <- function(key) getConf(key)
+rcloud.get.conf.value <- function(key) {
+  Allowed <- c('host', 'github.base.url', 'github.api.url', 'github.gist.url')
+  if(key %in% Allowed)
+    getConf(key)
+  else
+    NULL
+}
 
 rcloud.get.notebook <- function(id, version = NULL) {
   res <- get.gist(id, version, ctx = .session$rgithub.context)
@@ -171,3 +177,49 @@ rcloud.record.cell.execution <- function(user = .session$username, json.string) 
 }
 
 rcloud.debug.level <- function() if (hasConf("debug")) getConf("debug") else 0L
+
+################################################################################
+# stars
+
+star.key <- function(notebook)
+{
+  user <- .session$username
+  rcs.key("notebook", notebook, "stars", user)
+}
+
+star.count.key <- function(notebook)
+{
+  rcs.key("notebook", notebook, "starcount")
+}
+
+rcloud.notebook.star.count <- function(notebook)
+{
+  result <- rcs.get(star.count.key(notebook))
+  if (is.null(result)) 0 else result
+}
+
+rcloud.is.notebook.starred <- function(notebook)
+{
+  !is.null(rcs.get(star.key(notebook)))
+}
+
+rcloud.star.notebook <- function(notebook)
+{
+  if (!rcloud.is.notebook.starred(notebook)) {
+    rcs.set(star.key(notebook), TRUE)
+    rcs.incr(star.count.key(notebook))
+  }
+}
+
+rcloud.unstar.notebook <- function(notebook)
+{
+  if (rcloud.is.notebook.starred(notebook)) {
+    rcs.rm(star.key(notebook))
+    rcs.decr(star.count.key(notebook))
+  }
+}
+
+rcloud.get.my.starred.notebooks <- function()
+{
+  rcs.list(star.key("*"))
+}

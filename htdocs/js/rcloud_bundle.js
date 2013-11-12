@@ -310,13 +310,31 @@ RCloud.create = function(rcloud_ocaps) {
 
     // publishing notebooks
     rcloud.publish_notebook = function(id, k) {
-        rcloud_ocaps.publish_notebook(id, k);
+        rcloud_ocaps.publish_notebook(id, k || _.identity);
     };
     rcloud.unpublish_notebook = function(id, k) {
-        rcloud_ocaps.unpublish_notebook(id, k);
+        rcloud_ocaps.unpublish_notebook(id, k || _.identity);
     };
     rcloud.is_notebook_published = function(id, k) {
         rcloud_ocaps.is_notebook_published(id, k);
+    };
+
+    // stars
+    rcloud.stars = {};
+    rcloud.stars.star_notebook = function(id, k) {
+        rcloud_ocaps.stars.star_notebook(id, k || _.identity);
+    };
+    rcloud.stars.unstar_notebook = function(id, k) {
+        rcloud_ocaps.stars.unstar_notebook(id, k || _.identity);
+    };
+    rcloud.stars.is_notebook_starred = function(id, k) {
+        rcloud_ocaps.stars.is_notebook_starred(id, k);
+    };
+    rcloud.stars.get_notebook_star_count = function(id, k) {
+        rcloud_ocaps.stars.get_notebook_star_count(id, k);
+    };
+    rcloud.stars.get_my_starred_notebooks = function(k) {
+        rcloud_ocaps.stars.get_my_starred_notebooks(k);
     };
 
     // Progress indication
@@ -904,9 +922,7 @@ Notebook.Cell.create_controller = function(cell_model)
             var that = this;
             var language = cell_model.language();
             function callback(r) {
-                _.each(cell_model.views, function(view) {
-                    view.result_updated(r);
-                });
+                that.set_status_message(r);
                 k && k();
             }
 
@@ -921,6 +937,11 @@ Notebook.Cell.create_controller = function(cell_model)
                 // var wrapped_command = rclient.markdown_wrap_command("```{r}\n" + cell_model.content() + "\n```\n");
                 // rclient.send_and_callback(wrapped_command, callback, _.identity);
             } else alert("Don't know language '" + language + "' - can only do Markdown or R for now!");
+        },
+        set_status_message: function(msg) {
+            _.each(cell_model.views, function(view) {
+                view.result_updated(msg);
+            });
         }
     };
 
@@ -1367,11 +1388,24 @@ Notebook.create_controller = function(model)
         run_all: function(k) {
             this.save();
             var n = model.notebook.length;
+            var disp;
             function bump_executed() {
                 --n;
+                if(disp.length)
+                    disp.shift()();
                 if (n === 0)
                     k && k();
             }
+            _.each(model.notebook, function(cell_model) {
+                cell_model.controller.set_status_message("Waiting...");
+            });
+            // yes this is a joke
+            disp = _.map(model.notebook, function(cell_model) {
+                return function() {
+                    cell_model.controller.set_status_message("Computing...");
+                };
+            });
+            disp.shift()();
             _.each(model.notebook, function(cell_model) {
                 cell_model.controller.execute(bump_executed);
             });
