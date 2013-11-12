@@ -231,11 +231,24 @@ Notebook.create_controller = function(model)
         run_all: function(k) {
             this.save();
             var n = model.notebook.length;
+            var disp;
             function bump_executed() {
                 --n;
+                if(disp.length)
+                    disp.shift()();
                 if (n === 0)
                     k && k();
             }
+            _.each(model.notebook, function(cell_model) {
+                cell_model.controller.set_status_message("Waiting...");
+            });
+            // yes this is a joke
+            disp = _.map(model.notebook, function(cell_model) {
+                return function() {
+                    cell_model.controller.set_status_message("Computing...");
+                };
+            });
+            disp.shift()();
             _.each(model.notebook, function(cell_model) {
                 cell_model.controller.execute(bump_executed);
             });
