@@ -922,9 +922,7 @@ Notebook.Cell.create_controller = function(cell_model)
             var that = this;
             var language = cell_model.language();
             function callback(r) {
-                _.each(cell_model.views, function(view) {
-                    view.result_updated(r);
-                });
+                that.set_status_message(r);
                 k && k();
             }
 
@@ -939,6 +937,11 @@ Notebook.Cell.create_controller = function(cell_model)
                 // var wrapped_command = rclient.markdown_wrap_command("```{r}\n" + cell_model.content() + "\n```\n");
                 // rclient.send_and_callback(wrapped_command, callback, _.identity);
             } else alert("Don't know language '" + language + "' - can only do Markdown or R for now!");
+        },
+        set_status_message: function(msg) {
+            _.each(cell_model.views, function(view) {
+                view.result_updated(msg);
+            });
         }
     };
 
@@ -1385,11 +1388,24 @@ Notebook.create_controller = function(model)
         run_all: function(k) {
             this.save();
             var n = model.notebook.length;
+            var disp;
             function bump_executed() {
                 --n;
+                if(disp.length)
+                    disp.shift()();
                 if (n === 0)
                     k && k();
             }
+            _.each(model.notebook, function(cell_model) {
+                cell_model.controller.set_status_message("Waiting...");
+            });
+            // yes this is a joke
+            disp = _.map(model.notebook, function(cell_model) {
+                return function() {
+                    cell_model.controller.set_status_message("Computing...");
+                };
+            });
+            disp.shift()();
             _.each(model.notebook, function(cell_model) {
                 cell_model.controller.execute(bump_executed);
             });
