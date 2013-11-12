@@ -224,8 +224,13 @@ var editor = function () {
             if(last_chance)
                 last_chance(node); // hacky
             var dp = node.parent;
-            $tree_.tree('updateNode', node, data);
-            remove_empty_parents(dp);
+            if(dp===parent)
+                $tree_.tree('updateNode', node, data);
+            else {
+                $tree_.tree('removeNode', node);
+                node = insert_alpha(data, parent);
+                remove_empty_parents(dp);
+            }
         }
         else
             node = insert_alpha(data, parent);
