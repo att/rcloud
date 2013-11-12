@@ -33,7 +33,13 @@ rcloud.save.user.config <- function(user = .session$username, content) {
   invisible(rcs.set(usr.key("config.json", user=user, notebook="system"), content))
 }
 
-rcloud.get.conf.value <- function(key) getConf(key)
+rcloud.get.conf.value <- function(key) {
+  Allowed <- c('host', 'github.base.url', 'github.api.url', 'github.gist.url')
+  if(key %in% Allowed)
+    getConf(key)
+  else
+    NULL
+}
 
 rcloud.get.notebook <- function(id, version = NULL) {
   res <- get.gist(id, version, ctx = .session$rgithub.context)
