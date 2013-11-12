@@ -256,37 +256,85 @@ var editor = function () {
     }
 
 
-    // add_history_nodes:
-    // - tries to add a constant INCR number of nodes
-    // - or pass it a length or sha and it erases and rebuilds to there
-    // d3 anyone?
-    function add_history_nodes(node, where, k) {
+    // add_history_nodes
+    // whither is 'hide' - erase all, 'index' - show thru index, 'sha' - show thru sha, 'more' - show INCR more
+    function add_history_nodes(node, whither, where, k) {
         const INCR = 5;
-        var begin, end; // range [begin,end)
+        var debug_colors = false;
         var ellipsis = null;
-        if(node.children && node.children.length && node.children[node.children.length-1].id == 'showmore')
+        if(node.children.length && node.children[node.children.length-1].id == 'showmore')
             ellipsis = node.children[node.children.length-1];
+        function curr_count() {
+            var n = node.children.length;
+            return ellipsis ? n-1 : n;
+        }
+        function show_sha(history, sha) {
+            var sha_ind = find_index(history, function(hist) { return hist.version===sha; });
+            if(sha_ind<0)
+                throw "didn't find sha " + where + " in history";
+            return sha_ind + INCR - 1; // show this many including curr (?)
+        }
 
-        function process_history() {
-            var history = node.history;
+
+        function process_history(nshow) {
+            function do_color(dat, color) {
+                if(debug_colors)
+                    dat.color = color;
+            }
+            function add_hist_node(hist, insf, color) {
+                var hdat = _.clone(node);
+                var sha = hist.version.substring(0, 10);
+                hdat.label = sha;
+                hdat.version = hist.version;
+                hdat.last_commit = hist.committed_at;
+                hdat.id = node.id + '/' + hdat.version;
+                do_color(hdat, color);
+                var nn = insf(hdat);
+            }
+            var history = node.history.slice(1); // first item is current version
             if(!history)
                 return;
             var children = [];
-            end = Math.min(end, history.length);
-            for(var i=begin; i<end; ++i) {
-                var hdat = _.clone(node);
-                var sha = history[i].version.substring(0, 10);
-                hdat.label = sha;
-                hdat.version = history[i].version;
-                hdat.last_commit = history[i].committed_at;
-                hdat.id = node.id + '/' + hdat.version;
-                if(ellipsis)
-                    $tree_.tree('addNodeBefore', hdat, ellipsis);
-                else
-                    $tree_.tree('appendNode', hdat, node);
+            nshow = Math.min(nshow, history.length);
+
+            if(debug_colors)
+                for(var ii = 0, ee = curr_count(); ii<ee; ++ii)
+                    $tree_.tree('updateNode', node.children[ii], {color: ''});
+
+            // insert at top
+            var nins, insf = null;
+            if(node.children.length) {
+                var first = node.children[0];
+                nins = find_index(history, function(h) { return h.version==first.version; });
+                insf = function(dat) { return $tree_.tree('addNodeBefore', dat, first); };
             }
-            if(!ellipsis) {
-                if(end < history.length) {
+            else {
+                nins = nshow;
+                insf = function(dat) { return $tree_.tree('appendNode', dat, node); };
+            }
+            for(var i=0; i<nins; ++i)
+                add_hist_node(history[i], insf, 'green');
+
+            var count = curr_count();
+            if(count < nshow) { // top up
+                if(ellipsis)
+                    insf = function(dat) { return $tree_.tree('addNodeBefore', dat, ellipsis); };
+                else
+                    insf = function(dat) { return $tree_.tree('appendNode', dat, node); };
+                for(i=count; i<nshow; ++i)
+                    add_hist_node(history[i], insf, 'mediumpurple');
+            }
+            else if(count > nshow) // trim any excess
+                for(i=count-1; i>=nshow; --i)
+                    $tree_.tree('removeNode', node.children[i]);
+
+            // hide or show ellipsis
+            if(ellipsis) {
+                if(nshow === history.length)
+                    $tree_.tree('removeNode', ellipsis);
+            }
+            else {
+                if(nshow < history.length) {
                     var data = {
                         label: '...',
                         id: 'showmore'
@@ -294,50 +342,33 @@ var editor = function () {
                     $tree_.tree('appendNode', data, node);
                 }
             }
-            else if(end === history.length)
-                $tree_.tree('removeNode', ellipsis);
         }
-
-        if(_.isNumber(where)) {
-            if(0 < where && where < INCR)
-                where = INCR;
-            if(node.children.length) {
-                var i = node.children.length - 1;
-                if(ellipsis) --i;
-                for(; i >= 0; --i)
-                    $tree_.tree('removeNode', node.children[i]);
-            }
-            if(where==0)
-                return;
-            begin = 0; // skip first which is current
-            end = where;
+        var nshow = undefined;
+        if(whither==='hide') {
+            for(var i = node.children.length-1; i >= 0; --i)
+                $tree_.tree('removeNode', node.children[i]);
+            return;
         }
-        else if(_.isString(where)) {
-            if(where==='more') {
-                begin = node.children.length;
-                if(ellipsis) --begin;
-                end = begin + INCR;
-            }
-            else
-                begin = null;
+        else if(whither==='index')
+            nshow = Math.max(where, INCR);
+        else if(whither==='more')
+            nshow = curr_count() + INCR;
+        else if(whither==='sha') {
+            if(node.history)
+                nshow = show_sha(node.history, where);
         }
-        else throw "add_history_nodes don't understand where '" + where + "'";
+        else throw "add_history_nodes don't understand how to seek '" + whither + "'";
 
         if(node.history) {
-            process_history();
+            process_history(nshow);
             k && k(node);
         }
         else
             rcloud.load_notebook(node.gistname, null, function(notebook) {
-                node.history = notebook.history;
-                if(begin === null) {
-                    var sha_ind = find_index(node.history, function(hist) { return hist.version===where; });
-                    if(sha_ind<0)
-                        throw "didn't find sha " + where + " in history";
-                    begin = 1;
-                    end = sha_ind + INCR;
-                }
-                process_history();
+                $tree_.tree('updateNode', node, {history: notebook.history});
+                if(whither==='sha')
+                    nshow = show_sha(node.history, where);
+                process_history(nshow);
                 k && k(node);
             });
     }
@@ -412,6 +443,7 @@ var editor = function () {
 
             function onCreateLiHandler(node, $li) {
                 var title = $li.find('.jqtree-title');
+                title.css('color', node.color);
                 if(node.visibility==='private')
                     title.wrap('<i/>');
                 if(node.last_commit && (!node.version ||
@@ -420,7 +452,7 @@ var editor = function () {
                                              + display_date(node.last_commit) + '</span>');
                 }
                 if(node.version)
-                    title.css({color: '#7CB9E8'});
+                    title.addClass('history');
                 if(node.gistname && !node.version) {
                     var commands = $('<span/>', {class: 'notebook-commands'});
                     function add_buttons() {
@@ -568,8 +600,8 @@ var editor = function () {
             shell.fork_or_revert_notebook(is_mine, gistname, version, this.load_callback(null, is_mine));
         },
         show_history: function(node, toggle) {
-            var where = node.children.length && toggle ? 0 : "more";
-            add_history_nodes(node, where, function(node) {
+            var whither = node.children.length && toggle ? 'hide' : 'more';
+            add_history_nodes(node, whither, null, function(node) {
                 $tree_.tree('openNode', node);
             });
         },
@@ -579,15 +611,16 @@ var editor = function () {
                 config_.currbook = result.id;
                 config_.currversion = version;
                 var history;
-                // oddly when you make a change you get only prior history
-                // but when loading you get the entire history
-                // also we don't want the truncated history at all if loading old version
+                // when loading an old version you get truncated history
+                // we don't want that, even if it means an extra fetch
                 if(version)
                     history = null;
-                else if(is_change)
-                    history = result.history;
                 else
-                    history = result.history.slice(1);
+                    history = result.history;
+                // there is a bug in old github where if you make a change you only
+                // get the old history and not the current
+                if(is_change && shell.is_old_github())
+                    history.unshift({version:'blah'});
                 that.add_notebook(result, history, true);
                 that.update_notebook_file_list(result.files);
                 rcloud.get_all_comments(result.id, function(data) {
@@ -646,31 +679,39 @@ var editor = function () {
             // add_history_nodes will do an async call to get the history.
             // always show the same number of history nodes as before, unless
             // we're starting out and looking at an old version
-            var where = 0, is_open = false;
+            var whither = 'hide', where = null, is_open = false;
             var inter_path = as_folder_hierarchy([data], node_id('interests', user))[0];
             var node = update_tree('interests', user, gistname, inter_path,
                                    function(node) {
                                        data.history = data.history || node.history;
-                                       where = node.children.length;
-                                       if(where && node.children[where-1].id==='showmore')
-                                           --where;
+                                       if(node.children.length) {
+                                           whither = 'index';
+                                           where = node.children.length;
+                                           if(node.children[where-1].id==='showmore')
+                                               --where;
+                                       }
                                        is_open = node.is_open;
                                    });
-            if(where===0 && gistname===config_.currbook && config_.currversion)
+            if(gistname===config_.currbook && config_.currversion) {
+                whither = 'sha';
                 where = config_.currversion;
+            }
             var k = null;
             if(config_.currversion)
                 k = function(node) {
                     $tree_.tree('openNode', node);
-                    var n2 = $tree_.tree('getNodeById', node_id('interests', user, gistname, config_.currversion));
                     if(do_select) {
+                        var n2 = $tree_.tree('getNodeById',
+                                             node_id('interests', user, gistname, config_.currversion));
+                        if(!n2)
+                            throw 'tree node was not created for current history';
                         $tree_.tree('selectNode', n2);
                         scroll_into_view(n2);
                     }
                 };
             else if(is_open)
                 k = function(node) { $tree_.tree('openNode', node); };
-            add_history_nodes(node, where, k);
+            add_history_nodes(node, whither, where, k);
             if(config_.currversion)
                 node = null; // don't select
             var alls_path = as_folder_hierarchy([data], node_id('alls', user))[0];

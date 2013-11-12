@@ -292,6 +292,9 @@ var shell = (function() {
             rcloud.get_conf_value("github.base.url", function(url) { github_url_ = url; });
             rcloud.get_conf_value("github.gist.url", function(url) { gist_url_ = url; });
         },
+        is_old_github: function() {
+            return !gist_url_;
+        },
         fork_or_revert_button: function() {
             // hmm messages bouncing around everywhere
             editor.fork_or_revert_notebook(is_mine_, gistname_, version_);

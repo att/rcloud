@@ -291,6 +291,9 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
     text-shadow: none;
     font-weight: bold;
 }
+.jqtree-title.jqtree_common.history {
+    color: #7CB9E8
+}
 
 
 /******************************************************************************/
