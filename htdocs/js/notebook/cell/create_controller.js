@@ -5,9 +5,7 @@ Notebook.Cell.create_controller = function(cell_model)
             var that = this;
             var language = cell_model.language();
             function callback(r) {
-                _.each(cell_model.views, function(view) {
-                    view.result_updated(r);
-                });
+                that.set_status_message(r);
                 k && k();
             }
 
@@ -22,6 +20,11 @@ Notebook.Cell.create_controller = function(cell_model)
                 // var wrapped_command = rclient.markdown_wrap_command("```{r}\n" + cell_model.content() + "\n```\n");
                 // rclient.send_and_callback(wrapped_command, callback, _.identity);
             } else alert("Don't know language '" + language + "' - can only do Markdown or R for now!");
+        },
+        set_status_message: function(msg) {
+            _.each(cell_model.views, function(view) {
+                view.result_updated(msg);
+            });
         }
     };
 
