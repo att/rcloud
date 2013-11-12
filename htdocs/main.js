@@ -1,3 +1,8 @@
+function resize_side_panel() {
+    var non_notebook_panel_height = 246;
+    $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
+}
+
 function init_shareable_link_box() {
     $("#share-notebook").each(function() {
         var t = $(this), n = t.next(".embed-box"), f = function() {
@@ -73,6 +78,7 @@ var oob_handlers = {
 };
 
 function main_init() {
+    resize_side_panel();
     init_navbar_buttons();
     footer.init();
 
