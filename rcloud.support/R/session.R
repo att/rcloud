@@ -51,7 +51,7 @@ rcloud.anonymous.session.init <- function(...) {
   .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
   start.rcloud.anonymously(...)
   reset.session()
-  paste(R.version.string, " --- welcome, ", .session$username, sep='')
+  paste(R.version.string, " --- welcome, anonymous user", sep='')
 }
 
 reset.session <- function() {
