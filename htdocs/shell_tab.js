@@ -340,7 +340,6 @@ var shell = (function() {
             function do_load(done) {
                 gistname_ = gistname;
                 version_ = version;
-                console.log("here");
                 that.notebook.controller.load_notebook(gistname_, version_, function(notebook) {
                     done();
                     on_load.bind(that, k)(notebook);
