@@ -4,7 +4,8 @@ Notebook.create_controller = function(model)
         dirty_ = false,
         save_button_ = null,
         save_timer_ = null,
-        save_timeout_ = 30000; // 30s
+        save_timeout_ = 30000, // 30s
+        show_source_checkbox_ = null;
 
     function append_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
@@ -83,6 +84,14 @@ Notebook.create_controller = function(model)
         }, save_timeout_);
     }
 
+    function setup_show_source() {
+        show_source_checkbox_ = ui_utils.checkbox_menu_item($("#show-source"),
+           function() {result.show_r_source();},
+           function() {result.hide_r_source();});
+        show_source_checkbox_(true);
+    }
+
+    setup_show_source();
     model.dishers.push({on_dirty: on_dirty});
 
     var result = {
@@ -260,10 +269,12 @@ Notebook.create_controller = function(model)
 
         hide_r_source: function() {
             this._r_source_visible = false;
+            show_source_checkbox_(this._r_source_visible);
             Notebook.hide_r_source();
         },
         show_r_source: function() {
             this._r_source_visible = true;
+            show_source_checkbox_(this._r_source_visible);
             Notebook.show_r_source();
         }
     };

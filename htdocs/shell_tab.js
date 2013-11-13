@@ -270,17 +270,10 @@ var shell = (function() {
         k && k(notebook);
     }
 
-    function setup_show_source() {
-        var show = ui_utils.checkbox_menu_item($("#show-source"),
-           function() {notebook_controller_.show_r_source();},
-           function() {notebook_controller_.hide_r_source();});
-        show(true);
-    }
 
     var prompt_div = $("#command-prompt");
     if(prompt_div.length)
         prompt_ = setup_command_prompt(prompt_div);
-    setup_show_source();
 
     var first = true;
     var result = {
