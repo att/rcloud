@@ -464,6 +464,24 @@ ui_utils.ignore_programmatic_changes = function(widget, listener) {
     };
 };
 
+// not that i'm at all happy with the look
+ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
+    function set_state(state) {
+        item[0].checked = state;
+        var icon = item.find('i');
+        icon.attr('class', state ? 'icon-check' : 'icon-check-empty');
+    }
+    item.click(function() {
+        var state = !this.checked;
+        set_state(state);
+        if(state)
+            on_check();
+        else
+            on_uncheck();
+    });
+    return set_state;
+};
+
 // this is a hack, but it'll help giving people the right impression.
 // I'm happy to replace it witht the Right Way to do it when we learn
 // how to do it.
@@ -484,16 +502,16 @@ ui_utils.make_prompt_chevron_gutter = function(widget)
         var lastLineNumber = 0;
         html.push(
             "<div class='ace_gutter-cell ",
-            "' style='height:", this.session.getRowLength(0) * config.lineHeight, "px;'>", 
+            "' style='height:", this.session.getRowLength(0) * config.lineHeight, "px;'>",
             "&gt;", "</div>"
         );
 
         this.element = dom.setInnerHtml(this.element, html.join(""));
         this.element.style.height = config.minHeight + "px";
-        
+
         if (this.session.$useWrapMode)
             lastLineNumber = this.session.getLength();
-        
+
         var gutterWidth = ("" + lastLineNumber).length * config.characterWidth;
         var padding = this.$padding || this.$computePadding();
         gutterWidth += padding.left + padding.right;
