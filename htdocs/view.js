@@ -15,9 +15,15 @@ function view_init() {
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
         on_connect: function(ocaps) {
             rcloud = RCloud.create(ocaps.rcloud);
-            rcloud.anonymous_session_init(rcloud.username(), rcloud.github_token(), function(hello) {
-                rclient.post_response(hello);
-            });
+            if (rcloud.authenticated) {
+                rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {
+                    rclient.post_response(hello);
+                });
+            } else {
+                rcloud.anonymous_session_init(function(hello) {
+                    rclient.post_response(hello);
+                });
+            }
             $("#view-source").click(function() {
                 window.location = "main.html?notebook=" + shell.gistname();
             });

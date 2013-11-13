@@ -3,14 +3,34 @@
 ################################################################################
 ## evaluation of R code
 
-session.markdown.eval <- function(command, language, silent) {
+canonicalize.command <- function(command, language) {
   if (language == "R") {
     command <- paste("```{r}", command, "```\n", sep='\n')
   } else if (language == "Markdown") {
-    NULL
+    command
   } else
     stop("Don't know language '" + language + "' - only Markdown or R supported.")
+}
 
+rcloud.get.gist.part <- function(partname) {
+  .session$current.notebook$content$files[[partname]]$content
+}
+
+rcloud.unauthenticated.session.cell.eval <- function(partname, language, silent) {
+  notebook.id <- .session$current.notebook$content$id
+  if (rcloud.is.notebook.published(notebook.id))
+    rcloud.session.cell.eval(partname, language, silent)
+  else
+    stop("Notebook does not exist or is not published.")
+}
+
+rcloud.session.cell.eval <- function(partname, language, silent) {
+  command <- rcloud.get.gist.part(partname)
+  session.markdown.eval(command, language, silent)
+}
+
+session.markdown.eval <- function(command, language, silent) {
+  command <- canonicalize.command(command, language)
   if (!is.null(.session$device.pixel.ratio))
     opts_chunk$set(dpi=72*.session$device.pixel.ratio)
   
@@ -41,7 +61,7 @@ rcloud.session.init <- function(...) {
   set.seed(Sys.getpid()) # we want different seeds so we get different file names
   .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
   start.rcloud(...)
-  reset.session()
+  rcloud.reset.session()
   paste(R.version.string, " --- welcome, ", .session$username, sep='')
 }
 
@@ -50,11 +70,11 @@ rcloud.anonymous.session.init <- function(...) {
   set.seed(Sys.getpid()) # we want different seeds so we get different file names
   .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
   start.rcloud.anonymously(...)
-  reset.session()
+  rcloud.reset.session()
   paste(R.version.string, " --- welcome, anonymous user", sep='')
 }
 
-reset.session <- function() {
+rcloud.reset.session <- function() {
   ## use the global workspace as the parent to avoid long lookups across irrelevant namespaces
   .session$knitr.env <- new.env(parent=.GlobalEnv)
   ## FIXME: we should reset the knitr graphics state which lingers as well as the current device which is dirty at this point

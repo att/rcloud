@@ -12,7 +12,15 @@ Notebook.Cell.create_controller = function(cell_model)
             }
 
             rcloud.record_cell_execution(cell_model);
-            rcloud.session_markdown_eval(cell_model.content(), language, false, callback);
+            if (rcloud.authenticated) {
+                rcloud.session_markdown_eval(cell_model.content(), language, false, callback);
+            } else {
+                rcloud.session_cell_eval(Notebook.part_name(cell_model.id,
+                                                            cell_model.language()),
+                                         cell_model.language(),
+                                         false,
+                                         callback);
+            }
         }
     };
 

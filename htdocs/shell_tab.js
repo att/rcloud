@@ -330,11 +330,12 @@ var shell = (function() {
             return notebook_controller_.insert_cell("", "Markdown", index);
         }, load_notebook: function(gistname, version, k) {
             var that = this;
-            k = k || _.identity();
+            k = k || _.identity;
 
             function do_load(done) {
                 gistname_ = gistname;
                 version_ = version;
+                console.log("here");
                 that.notebook.controller.load_notebook(gistname_, version_, function(notebook) {
                     done();
                     on_load.bind(that, k)(notebook);
@@ -446,7 +447,7 @@ var shell = (function() {
             }
             editor.load_notebook(notebook, version);
         }, export_notebook_file: function() {
-            this.load_notebook(gistname_, version_, function(notebook) {
+            rcloud.get_notebook(gistname_, version_, function(notebook) {
                 notebook = sanitize_notebook(notebook);
                 var gisttext = JSON.stringify(notebook);
                 var a=document.createElement('a');

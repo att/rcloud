@@ -27,10 +27,8 @@ oc.init <- function(...) { ## this is the payload of the OCinit message
   ## simply send the cap that authenticates and returns supported caps
   make.oc(function(v) {
     if (RC.authenticate(v)) {
-      cat("AUTHENTICATED!")
       authenticated.ocaps()
     } else {
-      cat("UNAUTHENTICATED!")
       unauthenticated.ocaps()
     }
   }, "oc.init")
@@ -44,9 +42,10 @@ unauthenticated.ocaps <- function()
       authenticated = FALSE,
       anonymous_session_init = make.oc(rcloud.anonymous.session.init),
       prefix_uuid = make.oc(rcloud.prefix.uuid),
-      reset_session = make.oc(reset.session),
+      reset_session = make.oc(rcloud.reset.session),
       get_conf_value = make.oc(rcloud.get.conf.value),
-      get_notebook = make.oc(rcloud.get.notebook),
+      get_notebook = make.oc(rcloud.unauthenticated.get.notebook),
+      load_notebook = make.oc(rcloud.unauthenticated.load.notebook),
       
       is_notebook_published = make.oc(rcloud.is.notebook.published),
       
@@ -72,12 +71,14 @@ unauthenticated.ocaps <- function()
 
       # stars
       stars=list(
-        star_notebook=make.oc(rcloud.star.notebook), 
-        unstar_notebook=make.oc(rcloud.unstar.notebook),
-        is_notebook_starred=make.oc(rcloud.is.notebook.starred),
-        get_notebook_star_count=make.oc(rcloud.notebook.star.count),
-        get_my_starred_notebooks=make.oc(rcloud.get.my.starred.notebooks)
-        )
+        star_notebook = make.oc(rcloud.star.notebook), 
+        unstar_notebook = make.oc(rcloud.unstar.notebook),
+        is_notebook_starred = make.oc(rcloud.is.notebook.starred),
+        get_notebook_star_count = make.oc(rcloud.notebook.star.count),
+        get_my_starred_notebooks = make.oc(rcloud.get.my.starred.notebooks)
+        ),
+
+      session_cell_eval = make.oc(rcloud.unauthenticated.session.cell.eval)
       )
     )
 }
@@ -94,6 +95,8 @@ authenticated.ocaps <- function()
       save_user_config = make.oc(rcloud.save.user.config),
       load_multiple_user_configs = make.oc(rcloud.load.multiple.user.configs),
       search = make.oc(rcloud.search),
+      get_notebook = make.oc(rcloud.get.notebook),
+      load_notebook = make.oc(rcloud.load.notebook),
       update_notebook = make.oc(rcloud.update.notebook),
       create_notebook = make.oc(rcloud.create.notebook),
       rename_notebook = make.oc(rcloud.rename.notebook),

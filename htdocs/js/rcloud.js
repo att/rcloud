@@ -43,6 +43,7 @@ RCloud.create = function(rcloud_ocaps) {
             return $.cookies.get('token');
         };
         rcloud.init_client_side_data = function(k) {
+            k = k || _.identity;
             var that = this;
             rcloud_ocaps.prefix_uuid(function(v) {
                 that.deferred_knitr_uuid = v;
@@ -54,12 +55,17 @@ RCloud.create = function(rcloud_ocaps) {
             rcloud_ocaps.get_conf_value(key, k);
         };
 
-        rcloud.load_notebook = function(id, version, k) {
+        rcloud.get_notebook = function(id, version, k) {
             k = rcloud_github_handler("rcloud.get.notebook " + id, k);
             rcloud_ocaps.get_notebook(id, version, function(notebook) {
-                rcloud_ocaps.reset_session(function() {
-                    k(notebook);
-                });
+                k(notebook);
+            });
+        };
+
+        rcloud.load_notebook = function(id, version, k) {
+            k = rcloud_github_handler("rcloud.load.notebook " + id, k);
+            rcloud_ocaps.load_notebook(id, version, function(notebook) {
+                k(notebook);
             });
         };
 
@@ -106,6 +112,14 @@ RCloud.create = function(rcloud_ocaps) {
             rcloud_ocaps.stars.get_notebook_star_count(id, k);
         };
 
+        rcloud.session_cell_eval = function(filename, language, silent, k) {
+            rcloud_ocaps.session_cell_eval(filename, language, silent, k);
+        };
+
+        rcloud.reset_session = function(k) {
+            k = k || _.identity;
+            rcloud_ocaps.reset_session(k);
+        };
     }
 
     function setup_authenticated_ocaps() {
