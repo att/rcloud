@@ -80,7 +80,6 @@ var oob_handlers = {
 function main_init() {
     resize_side_panel();
     init_navbar_buttons();
-    footer.init();
 
     var show_source = $("#show-source");
     show_source[0].checked = true;

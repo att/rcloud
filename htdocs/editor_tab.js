@@ -736,14 +736,15 @@ var editor = function () {
                 return !k.match(/\.([rR]|[mM][dD])$/) && k !== "r_type" && k !== "r_attributes";
             });
 
-            d3.select("#notebook-assets")
-                .selectAll("li")
+            d3.select("#advanced-menu")
+                .selectAll("li .notebook-assets")
                 .remove();
-            var s = d3.select("#notebook-assets")
-                .selectAll("li")
+            var s = d3.select("#advanced-menu")
+                .selectAll("li .notebook-assets")
                 .data(files_out)
                 .enter()
                 .append("li")
+                .classed("notebook-assets", true)
                 .append("a")
                 .attr("tabindex", "-1")
                 .attr("href", "#");
