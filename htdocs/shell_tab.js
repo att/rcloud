@@ -201,10 +201,6 @@ var shell = (function() {
         };
     }
 
-    var prompt_div = $("#command-prompt");
-    if(prompt_div.length)
-        prompt_ = setup_command_prompt(prompt_div);
-
     function show_fork_or_prompt_elements() {
         var fork_revert = $('#fork-revert-notebook');
         if(notebook_model_.read_only()) {
@@ -273,6 +269,11 @@ var shell = (function() {
         }
         k && k(notebook);
     }
+
+
+    var prompt_div = $("#command-prompt");
+    if(prompt_div.length)
+        prompt_ = setup_command_prompt(prompt_div);
 
     var first = true;
     var result = {
@@ -363,7 +364,7 @@ var shell = (function() {
                         on_connect: function(ocaps) {
                             rcloud = RCloud.create(ocaps.rcloud);
                             rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {});
-                            
+
                             rcloud.init_client_side_data(function() {
                                 $("#output").find(".alert").remove();
                                 do_load(done);
