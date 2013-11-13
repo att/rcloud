@@ -168,23 +168,6 @@ Notebook.create_controller = function(model)
             if(model.read_only())
                 throw "attempted to update read-only notebook";
             gistname = gistname || shell.gistname();
-            function partname(id, language) {
-                // yuk
-                if(_.isString(id))
-                    return id;
-                var ext;
-                switch(language) {
-                case 'R':
-                    ext = 'R';
-                    break;
-                case 'Markdown':
-                    ext = 'md';
-                    break;
-                default:
-                    throw "Unknown language " + language;
-                }
-                return 'part' + id + '.' + ext;
-            }
             function changes_to_gist(changes) {
                 // we don't use the gist rename feature because it doesn't
                 // allow renaming x -> y and creating a new x at the same time
@@ -193,7 +176,7 @@ Notebook.create_controller = function(model)
                                          function(names, change) {
                                              if(!change.erase) {
                                                  var after = change.rename || change.id;
-                                                 names[partname(after, change.language)] = 1;
+                                                 names[Notebook.part_name(after, change.language)] = 1;
                                              }
                                              return names;
                                          }, {});
@@ -201,11 +184,11 @@ Notebook.create_controller = function(model)
                     var c = {};
                     if(change.content !== undefined)
                         c.content = change.content;
-                    var pre_name = partname(change.id, change.language);
+                    var pre_name = Notebook.part_name(change.id, change.language);
                     if(change.erase || !post_names[pre_name])
                         filehash[pre_name] = null;
                     if(!change.erase) {
-                        var post_name = partname(change.rename || change.id, change.language);
+                        var post_name = Notebook.part_name(change.rename || change.id, change.language);
                         filehash[post_name] = c;
                     }
                     return filehash;
@@ -238,6 +221,7 @@ Notebook.create_controller = function(model)
 
         },
         run_all: function(k) {
+            var changes = this.refresh_cells();
             this.save();
             var n = model.notebook.length;
             var disp;

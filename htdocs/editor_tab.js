@@ -614,7 +614,8 @@ var editor = function () {
                 $tree_.tree('openNode', node);
             });
         },
-        load_callback: function(version, is_change) {
+        load_callback: function(version, is_change, k) {
+            k = k || _.identity;
             var that = this;
             return function(result) {
                 config_.currbook = result.id;
@@ -639,6 +640,7 @@ var editor = function () {
                 rcloud.is_notebook_published(result.id, function(p) {
                     publish_notebook_checkbox_(p);
                 });
+                k();
             };
         },
         add_notebook: function(result, history, do_select) {
