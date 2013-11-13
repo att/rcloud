@@ -514,6 +514,24 @@ ui_utils.ignore_programmatic_changes = function(widget, listener) {
     };
 };
 
+// not that i'm at all happy with the look
+ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
+    function set_state(state) {
+        item[0].checked = state;
+        var icon = item.find('i');
+        icon.attr('class', state ? 'icon-check' : 'icon-check-empty');
+    }
+    item.click(function() {
+        var state = !this.checked;
+        set_state(state);
+        if(state)
+            on_check();
+        else
+            on_uncheck();
+    });
+    return set_state;
+};
+
 // this is a hack, but it'll help giving people the right impression.
 // I'm happy to replace it witht the Right Way to do it when we learn
 // how to do it.
@@ -534,16 +552,16 @@ ui_utils.make_prompt_chevron_gutter = function(widget)
         var lastLineNumber = 0;
         html.push(
             "<div class='ace_gutter-cell ",
-            "' style='height:", this.session.getRowLength(0) * config.lineHeight, "px;'>", 
+            "' style='height:", this.session.getRowLength(0) * config.lineHeight, "px;'>",
             "&gt;", "</div>"
         );
 
         this.element = dom.setInnerHtml(this.element, html.join(""));
         this.element.style.height = config.minHeight + "px";
-        
+
         if (this.session.$useWrapMode)
             lastLineNumber = this.session.getLength();
-        
+
         var gutterWidth = ("" + lastLineNumber).length * config.characterWidth;
         var padding = this.$padding || this.$computePadding();
         gutterWidth += padding.left + padding.right;
@@ -972,9 +990,7 @@ Notebook.Cell.create_controller = function(cell_model)
             var that = this;
             var language = cell_model.language();
             function callback(r) {
-                _.each(cell_model.views, function(view) {
-                    view.result_updated(r);
-                });
+                that.set_status_message(r);
                 k && k();
             }
 
@@ -988,6 +1004,11 @@ Notebook.Cell.create_controller = function(cell_model)
                                          false,
                                          callback);
             }
+        },
+        set_status_message: function(msg) {
+            _.each(cell_model.views, function(view) {
+                view.result_updated(msg);
+            });
         }
     };
 
@@ -1207,7 +1228,8 @@ Notebook.create_controller = function(model)
         dirty_ = false,
         save_button_ = null,
         save_timer_ = null,
-        save_timeout_ = 30000; // 30s
+        save_timeout_ = 30000, // 30s
+        show_source_checkbox_ = null;
 
     function append_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
@@ -1286,6 +1308,14 @@ Notebook.create_controller = function(model)
         }, save_timeout_);
     }
 
+    function setup_show_source() {
+        show_source_checkbox_ = ui_utils.checkbox_menu_item($("#show-source"),
+           function() {result.show_r_source();},
+           function() {result.hide_r_source();});
+        show_source_checkbox_(true);
+    }
+
+    setup_show_source();
     model.dishers.push({on_dirty: on_dirty});
 
     var result = {
@@ -1418,11 +1448,24 @@ Notebook.create_controller = function(model)
             var changes = this.refresh_cells();
             this.save();
             var n = model.notebook.length;
+            var disp;
             function bump_executed() {
                 --n;
+                if(disp.length)
+                    disp.shift()();
                 if (n === 0)
                     k && k();
             }
+            _.each(model.notebook, function(cell_model) {
+                cell_model.controller.set_status_message("Waiting...");
+            });
+            // yes this is a joke
+            disp = _.map(model.notebook, function(cell_model) {
+                return function() {
+                    cell_model.controller.set_status_message("Computing...");
+                };
+            });
+            disp.shift()();
             _.each(model.notebook, function(cell_model) {
                 cell_model.controller.execute(bump_executed);
             });
@@ -1434,10 +1477,12 @@ Notebook.create_controller = function(model)
 
         hide_r_source: function() {
             this._r_source_visible = false;
+            show_source_checkbox_(this._r_source_visible);
             Notebook.hide_r_source();
         },
         show_r_source: function() {
             this._r_source_visible = true;
+            show_source_checkbox_(this._r_source_visible);
             Notebook.show_r_source();
         }
     };

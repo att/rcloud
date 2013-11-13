@@ -201,10 +201,6 @@ var shell = (function() {
         };
     }
 
-    var prompt_div = $("#command-prompt");
-    if(prompt_div.length)
-        prompt_ = setup_command_prompt(prompt_div);
-
     function show_fork_or_prompt_elements() {
         var fork_revert = $('#fork-revert-notebook');
         if(notebook_model_.read_only()) {
@@ -249,9 +245,10 @@ var shell = (function() {
         var is_read_only = result.notebook.model.read_only();
         $("#notebook-title").text(notebook.description);
 
-        if (is_read_only) {
-            $("#notebook-title").off('click');
-        } else {
+        // remove any existing handler
+        $("#notebook-title").off('click');
+        // then add one if editable
+        if (!is_read_only) {
             $("#notebook-title").click(function() {
                 var result = prompt("Please enter the new name for this notebook:", $(this).text());
                 if (result !== null) {
@@ -273,6 +270,11 @@ var shell = (function() {
         k && k(notebook);
     }
 
+
+    var prompt_div = $("#command-prompt");
+    if(prompt_div.length)
+        prompt_ = setup_command_prompt(prompt_div);
+
     var first = true;
     var result = {
         notebook: {
@@ -290,6 +292,9 @@ var shell = (function() {
         init: function() {
             rcloud.get_conf_value("github.base.url", function(url) { github_url_ = url; });
             rcloud.get_conf_value("github.gist.url", function(url) { gist_url_ = url; });
+        },
+        is_old_github: function() {
+            return !gist_url_;
         },
         fork_or_revert_button: function() {
             // hmm messages bouncing around everywhere
@@ -360,7 +365,7 @@ var shell = (function() {
                         on_connect: function(ocaps) {
                             rcloud = RCloud.create(ocaps.rcloud);
                             rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {});
-                            
+
                             rcloud.init_client_side_data(function() {
                                 $("#output").find(".alert").remove();
                                 do_load(done);
