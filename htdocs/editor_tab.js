@@ -1,7 +1,7 @@
 var editor = function () {
     // major key is sort_order and minor key is name (label)
     var ordering = {
-        HEADER: 0, // like [New Notebook]
+        HEADER: 0, // at top (unused)
         NOTEBOOK: 1,
         SUBFOLDER: 2
     };
@@ -9,7 +9,8 @@ var editor = function () {
     // "private members"
     var username_ = null,
         $tree_ = undefined,
-        config_ = undefined;
+        config_ = undefined,
+        publish_notebook_checkbox_ = null;
 
     function compare_nodes(a, b) {
         var so = a.sort_order-b.sort_order;
@@ -441,6 +442,9 @@ var editor = function () {
             $('#new-notebook').click(function() {
                 that.new_notebook();
             });
+            publish_notebook_checkbox_ = ui_utils.checkbox_menu_item($("#publish-notebook"),
+               function() { rcloud.publish_notebook(result.id); },
+               function() { rcloud.unpublish_notebook(result.id); });
         },
         create_book_tree_widget: function(data) {
             var that = this;
@@ -633,15 +637,7 @@ var editor = function () {
                 });
                 $("#github-notebook-id").text(result.id);
                 rcloud.is_notebook_published(result.id, function(p) {
-                    $("#publish-notebook").font_awesome_checkbox({
-                        checked: p,
-                        check: function() {
-                            rcloud.publish_notebook(result.id);
-                        },
-                        uncheck: function() {
-                            rcloud.unpublish_notebook(result.id);
-                        }
-                    });
+                    publish_notebook_checkbox_(p);
                 });
             };
         },
@@ -735,6 +731,10 @@ var editor = function () {
                 var k = v[0];
                 return !k.match(/\.([rR]|[mM][dD])$/) && k !== "r_type" && k !== "r_attributes";
             });
+            if(files_out.length)
+                $("#notebook-assets-header").show();
+            else
+                $("#notebook-assets-header").hide();
 
             d3.select("#advanced-menu")
                 .selectAll("li .notebook-assets")

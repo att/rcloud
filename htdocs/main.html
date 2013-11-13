@@ -71,8 +71,10 @@
               <li><a href="#" id="export-notebook-file">Export Notebook to File</a></li>
               <li><a href="#" id="import-notebook-file">Import Notebook from File</a></li>
               <li><a href="#" id="show-source"><i class="icon-check"></i>&nbsp;Show Source</a></li>
+	      <li><a href="#" id="publish-notebook"><i class="icon-check"></i>&nbsp;Publish notebook</a></li>
               <li class="divider"></li>
-              <li><span class="disabled">&nbsp;&nbsp;&nbsp;Notebook assets</span></li>
+	      <li><span class="disabled"><div>&nbsp;&nbsp;ID: <span id="github-notebook-id"></span></li>
+              <li><span class="disabled" id="notebook-assets-header">&nbsp;&nbsp;&nbsp;Notebook assets</span></li>
             </ul>
           </li>
 	  <li class="divider-vertical"></li>
@@ -158,18 +160,6 @@
 		    <textarea id="comment-entry-body"></textarea>
    	            <input type="button" id="comment-submit" value="comment"></input>
 	          </div>
-		</div>
-	      </div>
-	    </div>
-	    <div class="panel panel-default">
-	      <div class="panel-heading">
-		<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion"
-		   href="#collapseSix">Notebook properties</a>
-	      </div>
-	      <div id="collapseSix" class="panel-collapse collapse in">
-		<div class="panel-body">
-		  <div>Github ID: <span id="github-notebook-id"></span></div>
-		  <div id="publish-notebook" class="icon-check"><span class="fa-icon-label">Publish notebook</span></div>
 		</div>
 	      </div>
 	    </div>
