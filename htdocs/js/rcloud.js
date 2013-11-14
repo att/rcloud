@@ -13,7 +13,19 @@ RCloud.exception_message = function(v) {
 RCloud.create = function(rcloud_ocaps) {
     function json_k(k) {
         return function(result) {
-            k && k(JSON.parse(result));
+            var json_result = {};
+            try {
+                json_result = JSON.parse(result);
+            } catch (e) {
+                rclient.post_error(e.message);
+            }
+            // FIXME: I must still call the continuation,
+            // because bad things might happen otherwise. But calling
+            // this means that I'm polluting the 
+            // space of possible JSON answers with the error.
+            // For example, right now a return string "{}" is indistinguishable
+            // from an error
+            k && k(json_result);
         };
     }
 

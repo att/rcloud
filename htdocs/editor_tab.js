@@ -396,6 +396,12 @@ var editor = function () {
     }
 
     function populate_comments(comments) {
+        try {
+            comments = JSON.parse(comments);
+        } catch (e) {
+            rclient.post_error("populate comments: " + e.message);
+            return;
+        }
         d3.select("#comment-count")
             .text(String(comments.length));
         // no update logic, clearing/rebuilding is easier
@@ -634,7 +640,7 @@ var editor = function () {
                 that.add_notebook(result, history, true);
                 that.update_notebook_file_list(result.files);
                 rcloud.get_all_comments(result.id, function(data) {
-                    populate_comments(JSON.parse(data));
+                    populate_comments(data);
                 });
                 $("#github-notebook-id").text(result.id);
                 rcloud.is_notebook_published(result.id, function(p) {
@@ -763,7 +769,7 @@ var editor = function () {
                 if (!result)
                     return;
                 rcloud.get_all_comments(config_.currbook, function(data) {
-                    populate_comments(JSON.parse(data));
+                    populate_comments(data);
                     $('#comment-entry-body').val('');
                 });
             });
