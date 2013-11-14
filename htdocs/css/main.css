@@ -194,15 +194,6 @@ rect.frame {
     cursor: default;
 }
 
-.navbar .btn-link {
-    color: #ddd;
-    font-size: 120%;
-}
-
-.navbar .btn-link.disabled {
-    color: #aaa;
-}
-
 .notebook-tree {
     height: 450px;
     overflow-y: scroll;
@@ -278,8 +269,19 @@ rect.frame {
     padding-left: .2em;
 }
 
+.navbar .btn-link {
+    color: #ddd;
+    font-size: 120%;
+    margin-top: .6em;
+}
+
+.navbar .btn-link.disabled {
+    color: #aaa;
+}
+
 form input.linkbox {
     margin-top: 1em;
+    margin-left: 1em;
     height: 25px;
     padding: 2px;
 }
