@@ -13,7 +13,17 @@ function init_shareable_link_box() {
                 link += '&version='+v;
             linkbox.val(link);
             linkbox.select();
+            linkbox.css({cursor:"text"});
             return false;
+        });
+        linkbox.blur(function() {
+            linkbox.val('Get View Link');
+            linkbox.css({cursor:"pointer"});
+        });
+        linkbox.keyup(function(e) {
+            if(e.which === 27)
+                linkbox.blur();
+            return true;
         });
     });
 }

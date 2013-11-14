@@ -277,6 +277,18 @@ rect.frame {
 .fa-icon-label {
     padding-left: .2em;
 }
+
+form input.linkbox {
+    margin-top: 1em;
+    height: 25px;
+    padding: 2px;
+}
+
+#share-link {
+    background-color: darkgrey;
+    cursor: pointer;
+}
+
 /******************************************************************************/
 
 ul.jqtree-tree .jqtree-toggler {
