@@ -252,12 +252,12 @@ rect.frame {
 }
 
 .footer {
-    background-color: black; 
+    background-color: black;
     color: #999;
-    height: 2.5em; 
+    height: 2.5em;
     bottom: 0;
     right: -50px;
-    position: fixed; 
+    position: fixed;
     width: 50px;
     z-index: 1030;
     margin: 0;
