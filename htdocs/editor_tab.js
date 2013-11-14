@@ -449,8 +449,8 @@ var editor = function () {
                 that.new_notebook();
             });
             publish_notebook_checkbox_ = ui_utils.checkbox_menu_item($("#publish-notebook"),
-               function() { rcloud.publish_notebook(result.id); },
-               function() { rcloud.unpublish_notebook(result.id); });
+               function() { rcloud.publish_notebook(shell.gistname()); },
+               function() { rcloud.unpublish_notebook(shell.gistname()); });
         },
         create_book_tree_widget: function(data) {
             var that = this;

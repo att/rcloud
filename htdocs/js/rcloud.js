@@ -249,10 +249,10 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         rcloud.publish_notebook = function(id, k) {
-            rcloud_ocaps.publish_notebook(id, k);
+            rcloud_ocaps.publish_notebook(id, k || _.identity);
         };
         rcloud.unpublish_notebook = function(id, k) {
-            rcloud_ocaps.unpublish_notebook(id, k);
+            rcloud_ocaps.unpublish_notebook(id, k || _.identity);
         };
 
         // stars
