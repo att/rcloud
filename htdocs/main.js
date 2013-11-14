@@ -4,20 +4,17 @@ function resize_side_panel() {
 }
 
 function init_shareable_link_box() {
-    $("#share-notebook").each(function() {
-        var t = $(this), n = t.next(".embed-box"), f = function() {
-            t.toggle();
-            n.toggle();
-            if (n.is(":visible")) {
-                n.get(0).value = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
-                var v = shell.version();
-                if(v)
-                    n.get(0).value = n.get(0).value + '&version='+v;
-                n.get(0).select();
-            }
+    $("#share-link").each(function() {
+        var linkbox = $(this);
+        linkbox.click(function() {
+            var link = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
+            var v = shell.version();
+            if(v)
+                link += '&version='+v;
+            linkbox.val(link);
+            linkbox.select();
             return false;
-        };
-        t.click(f); n.blur(f);
+        });
     });
 }
 
