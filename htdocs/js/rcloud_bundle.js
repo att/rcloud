@@ -129,7 +129,19 @@ RCloud.exception_message = function(v) {
 RCloud.create = function(rcloud_ocaps) {
     function json_k(k) {
         return function(result) {
-            k && k(JSON.parse(result));
+            var json_result = {};
+            try {
+                json_result = JSON.parse(result);
+            } catch (e) {
+                rclient.post_error(e.message);
+            }
+            // FIXME: I must still call the continuation,
+            // because bad things might happen otherwise. But calling
+            // this means that I'm polluting the 
+            // space of possible JSON answers with the error.
+            // For example, right now a return string "{}" is indistinguishable
+            // from an error
+            k && k(json_result);
         };
     }
 
@@ -146,203 +158,256 @@ RCloud.create = function(rcloud_ocaps) {
     }
 
     var rcloud = {};
-    rcloud.username = function() {
-        return $.cookies.get('user');
-    };
-    rcloud.github_token = function() {
-        return $.cookies.get('token');
-    };
-    rcloud.session_init = function(username, token, k) {
-        rcloud_ocaps.session_init(username, token, k || _.identity);
-    };
-    rcloud.init_client_side_data = function(k) {
-        k = k || _.identity;
-        var that = this;
-        rcloud_ocaps.prefix_uuid(function(v) {
-            that.deferred_knitr_uuid = v;
-            k();
-        });
-    };
-    rcloud.search = function(search_string, k) {
-        rcloud_ocaps.search(search_string, k || _.identity);
-    };
-    rcloud.load_user_config = function(user, k) {
-        rcloud_ocaps.load_user_config(user, json_k(k));
-    };
-    rcloud.load_multiple_user_configs = function(users, k) {
-        rcloud_ocaps.load_multiple_user_configs(users, json_k(k));
-    };
-    rcloud.save_user_config = function(user, content, k) {
-        rcloud_ocaps.save_user_config(user, JSON.stringify(content), json_k(k));
-    };
-    rcloud.get_conf_value = function(key, k) {
-        rcloud_ocaps.get_conf_value(key, k);
-    };
-    rcloud.load_notebook = function(id, version, k) {
-        k = rcloud_github_handler("rcloud.get.notebook " + id, k);
-        rcloud_ocaps.get_notebook(id, version, function(notebook) {
-            rcloud_ocaps.reset_session(function() {
+
+    function setup_unauthenticated_ocaps() {
+        rcloud.anonymous_session_init = function(k) {
+            rcloud_ocaps.anonymous_session_init(k || _.identity);
+        };
+        
+        rcloud.username = function() {
+            return $.cookies.get('user');
+        };
+        rcloud.github_token = function() {
+            return $.cookies.get('token');
+        };
+        rcloud.init_client_side_data = function(k) {
+            k = k || _.identity;
+            var that = this;
+            rcloud_ocaps.prefix_uuid(function(v) {
+                that.deferred_knitr_uuid = v;
+                k();
+            });
+        };
+
+        rcloud.get_conf_value = function(key, k) {
+            rcloud_ocaps.get_conf_value(key, k);
+        };
+
+        rcloud.get_notebook = function(id, version, k) {
+            k = rcloud_github_handler("rcloud.get.notebook " + id, k);
+            rcloud_ocaps.get_notebook(id, version, function(notebook) {
                 k(notebook);
             });
-        });
-    };
-    rcloud.update_notebook = function(id, content, k) {
-        k = rcloud_github_handler("rcloud.update.notebook", k);
-        rcloud_ocaps.update_notebook(id, JSON.stringify(content), k);
-    };
-    rcloud.create_notebook = function(content, k) {
-        k = rcloud_github_handler("rcloud.create.notebook", k);
-        rcloud_ocaps.create_notebook(JSON.stringify(content), k);
-    };
-    rcloud.fork_notebook = function(id, k) {
-        k = rcloud_github_handler("rcloud.fork.notebook", k);
-        rcloud_ocaps.fork_notebook(id, k);
-    };
-    rcloud.port_notebooks = function(source, notebooks, prefix, k) {
-        rcloud_ocaps.port_notebooks(source, notebooks, prefix, k);
-    };
-    rcloud.get_users = function(user, k) {
-        rcloud_ocaps.get_users(user, k || _.identity);
-    };
-    rcloud.get_completions = function(text, pos, k) {
-        return rcloud_ocaps.get_completions(text, pos, function(comps) {
-            if(_.isString(comps))
-                comps = [comps]; // quirk of rserve.js scalar handling
-            // convert to the record format ace.js autocompletion expects
-            // meta is what gets displayed at right; name & score might be improved
-            k(_.map(comps,
-                    function(comp) {
-                        return {meta: "local",
-                                name: "library",
-                                score: 3,
-                                value: comp
-                               };
-                    }));
-        });
-    };
-    rcloud.rename_notebook = function(id, new_name, k) {
-        k = rcloud_github_handler("rcloud.rename.notebook", k);
-        rcloud_ocaps.rename_notebook(id, new_name, k);
-    };
-    rcloud.record_cell_execution = function(cell_model) {
-        var k = _.identity;
-        var json_rep = JSON.stringify(cell_model.json());
-        rcloud_ocaps.log.record_cell_execution(rcloud.username(), json_rep, k);
-    };
-    rcloud.session_markdown_eval = function(command, silent, k) {
-        rcloud_ocaps.session_markdown_eval(command, silent, k || _.identity);
-    };
-    rcloud.upload_file = function(force, on_success, on_failure) {
-        on_success = on_success || _.identity;
-        function do_upload(path, file) {
-            var upload_name = path + '/' + file.name;
-            rcloud_ocaps.file_upload.create(upload_name, force, function(result) {
-                if (RCloud.is_exception(result)) {
-                    on_failure(RCloud.exception_message(result));
-                    return;
-                }
-                var fr = new FileReader();
-                var chunk_size = 1024*1024;
-                var f_size=file.size;
-                var cur_pos=0;
-                //initiate the first chunk, and then another, and then another ...
-                // ...while waiting for one to complete before reading another
-                fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-                fr.onload = function(e) {
-                    if (e.target.result.byteLength > 0) {
-                        var bytes = new Uint8Array(e.target.result);
-                        rcloud_ocaps.file_upload.write(bytes.buffer, function() {
-                            cur_pos += chunk_size;
-                            fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-                        });
-                    } else {
-                        //This is just temporary, until we add the nice info messages from bootstrap
-                        rcloud_ocaps.file_upload.close(function(){
-                            on_success(path, file);
-                        });
-                    }
-                };
+        };
+
+        rcloud.load_notebook = function(id, version, k) {
+            k = rcloud_github_handler("rcloud.load.notebook " + id, k);
+            rcloud_ocaps.load_notebook(id, version, function(notebook) {
+                k(notebook);
             });
-        }
-        if(!(window.File && window.FileReader && window.FileList && window.Blob))
-            throw "File API not supported by browser.";
-        else {
-            var file=$("#file")[0].files[0];
-            if(_.isUndefined(file))
-                throw "No file selected!";
-            else {
-                /*FIXME add logged in user */
-                rcloud_ocaps.file_upload.upload_path(function(path) {
-                    var file=$("#file")[0].files[0];
-                    if(_.isUndefined(file))
-                        throw new Error("No file selected!");
-                    do_upload(path, file);
+        };
+
+        rcloud.get_users = function(user, k) {
+            rcloud_ocaps.get_users(user, k || _.identity);
+        };
+
+        rcloud.record_cell_execution = function(cell_model) {
+            var k = _.identity;
+            var json_rep = JSON.stringify(cell_model.json());
+            rcloud_ocaps.log.record_cell_execution(rcloud.username(), json_rep, k);
+        };
+
+        // javascript.R
+        rcloud.setup_js_installer = function(v, k) {
+            rcloud_ocaps.setup_js_installer(v, k || _.identity);
+        };
+
+        // having this naked eval here makes me very nervous.
+        rcloud.modules = {};
+        rcloud.setup_js_installer(function(name, content, k) {
+            var result = eval(content);
+            rcloud.modules[name] = result;
+            k(result);
+        });
+
+        // notebook.comments.R
+        rcloud.get_all_comments = function(id, k) {
+            rcloud_ocaps.comments.get_all(id, k || _.identity);
+        };
+
+        // debugging ocaps
+        rcloud.debug = {};
+        rcloud.debug.raise = function(msg, k) {
+            rcloud_ocaps.debug.raise(msg, k || _.identity);
+        };
+
+        // stars
+        rcloud.stars = {};
+        rcloud.stars.is_notebook_starred = function(id, k) {
+            rcloud_ocaps.stars.is_notebook_starred(id, k);
+        };
+        rcloud.stars.get_notebook_star_count = function(id, k) {
+            rcloud_ocaps.stars.get_notebook_star_count(id, k);
+        };
+
+        rcloud.session_cell_eval = function(filename, language, silent, k) {
+            rcloud_ocaps.session_cell_eval(filename, language, silent, k);
+        };
+
+        rcloud.reset_session = function(k) {
+            k = k || _.identity;
+            rcloud_ocaps.reset_session(k);
+        };
+    }
+
+    function setup_authenticated_ocaps() {
+        rcloud.session_init = function(username, token, k) {
+            rcloud_ocaps.session_init(username, token, k || _.identity);
+        };
+        rcloud.search = function(search_string, k) {
+            rcloud_ocaps.search(search_string, k || _.identity);
+        };
+        rcloud.load_user_config = function(user, k) {
+            rcloud_ocaps.load_user_config(user, json_k(k));
+        };
+        rcloud.load_multiple_user_configs = function(users, k) {
+            rcloud_ocaps.load_multiple_user_configs(users, json_k(k));
+        };
+        rcloud.save_user_config = function(user, content, k) {
+            rcloud_ocaps.save_user_config(user, JSON.stringify(content), json_k(k));
+        };
+        rcloud.update_notebook = function(id, content, k) {
+            k = rcloud_github_handler("rcloud.update.notebook", k);
+            rcloud_ocaps.update_notebook(id, JSON.stringify(content), k);
+        };
+        rcloud.create_notebook = function(content, k) {
+            k = rcloud_github_handler("rcloud.create.notebook", k);
+            rcloud_ocaps.create_notebook(JSON.stringify(content), k);
+        };
+        rcloud.fork_notebook = function(id, k) {
+            k = rcloud_github_handler("rcloud.fork.notebook", k);
+            rcloud_ocaps.fork_notebook(id, k);
+        };
+        rcloud.port_notebooks = function(source, notebooks, prefix, k) {
+            rcloud_ocaps.port_notebooks(source, notebooks, prefix, k);
+        };
+        rcloud.get_completions = function(text, pos, k) {
+            return rcloud_ocaps.get_completions(text, pos, function(comps) {
+                if(_.isString(comps))
+                    comps = [comps]; // quirk of rserve.js scalar handling
+                // convert to the record format ace.js autocompletion expects
+                // meta is what gets displayed at right; name & score might be improved
+                k(_.map(comps,
+                        function(comp) {
+                            return {meta: "local",
+                                    name: "library",
+                                    score: 3,
+                                    value: comp
+                                   };
+                        }));
+            });
+        };
+
+        rcloud.rename_notebook = function(id, new_name, k) {
+            k = rcloud_github_handler("rcloud.rename.notebook", k);
+            rcloud_ocaps.rename_notebook(id, new_name, k);
+        };
+        rcloud.session_markdown_eval = function(command, language, silent, k) {
+            rcloud_ocaps.session_markdown_eval(command, language, silent, k || _.identity);
+        };
+        rcloud.upload_file = function(force, on_success, on_failure) {
+            on_success = on_success || _.identity;
+            function do_upload(path, file) {
+                var upload_name = path + '/' + file.name;
+                rcloud_ocaps.file_upload.create(upload_name, force, function(result) {
+                    if (RCloud.is_exception(result)) {
+                        on_failure(RCloud.exception_message(result));
+                        return;
+                    }
+                    var fr = new FileReader();
+                    var chunk_size = 1024*1024;
+                    var f_size=file.size;
+                    var cur_pos=0;
+                    //initiate the first chunk, and then another, and then another ...
+                    // ...while waiting for one to complete before reading another
+                    fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+                    fr.onload = function(e) {
+                        if (e.target.result.byteLength > 0) {
+                            var bytes = new Uint8Array(e.target.result);
+                            rcloud_ocaps.file_upload.write(bytes.buffer, function() {
+                                cur_pos += chunk_size;
+                                fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+                            });
+                        } else {
+                            rcloud_ocaps.file_upload.close(function(){
+                                on_success(path, file);
+                            });
+                        }
+                    };
                 });
             }
-        }
-    };
 
-    // javascript.R
-    rcloud.setup_js_installer = function(v, k) {
-        rcloud_ocaps.setup_js_installer(v, k || _.identity);
-    };
+            if(!(window.File && window.FileReader && window.FileList && window.Blob))
+                throw "File API not supported by browser.";
+            else {
+                var file=$("#file")[0].files[0];
+                if(_.isUndefined(file))
+                    throw "No file selected!";
+                else {
+                    /*FIXME add logged in user */
+                    rcloud_ocaps.file_upload.upload_path(function(path) {
+                        var file=$("#file")[0].files[0];
+                        if(_.isUndefined(file))
+                            throw new Error("No file selected!");
+                        do_upload(path, file);
+                    });
+                }
+            }
+        };
 
-    rcloud.modules = {};
-    rcloud.setup_js_installer(function(name, content, k) {
-        var result = eval(content);
-        rcloud.modules[name] = result;
-        k(result);
-    });
+        rcloud.post_comment = function(id, content, k) {
+            rcloud_ocaps.comments.post(id, content, k || _.identity);
+        };
 
-    // notebook.comments.R
-    rcloud.get_all_comments = function(id, k) {
-        rcloud_ocaps.comments.get_all(id, k || _.identity);
-    };
-    rcloud.post_comment = function(id, content, k) {
-        rcloud_ocaps.comments.post(id, content, k || _.identity);
-    };
+        // publishing notebooks
+        rcloud.is_notebook_published = function(id, k) {
+            rcloud_ocaps.is_notebook_published(id, k);
+        };
 
-    // debugging ocaps
-    rcloud.debug = {};
-    rcloud.debug.raise = function(msg, k) {
-        rcloud_ocaps.debug.raise(msg, k);
-    };
+        rcloud.publish_notebook = function(id, k) {
+            rcloud_ocaps.publish_notebook(id, k || _.identity);
+        };
+        rcloud.unpublish_notebook = function(id, k) {
+            rcloud_ocaps.unpublish_notebook(id, k || _.identity);
+        };
 
-    // publishing notebooks
-    rcloud.publish_notebook = function(id, k) {
-        rcloud_ocaps.publish_notebook(id, k || _.identity);
-    };
-    rcloud.unpublish_notebook = function(id, k) {
-        rcloud_ocaps.unpublish_notebook(id, k || _.identity);
-    };
-    rcloud.is_notebook_published = function(id, k) {
-        rcloud_ocaps.is_notebook_published(id, k);
-    };
+        // stars
+        rcloud.stars = {};
+        rcloud.stars.star_notebook = function(id, k) {
+            rcloud_ocaps.stars.star_notebook(id, k || _.identity);
+        };
+        rcloud.stars.unstar_notebook = function(id, k) {
+            rcloud_ocaps.stars.unstar_notebook(id, k || _.identity);
+        };
+        rcloud.stars.is_notebook_starred = function(id, k) {
+            rcloud_ocaps.stars.is_notebook_starred(id, k);
+        };
+        rcloud.stars.get_notebook_star_count = function(id, k) {
+            rcloud_ocaps.stars.get_notebook_star_count(id, k);
+        };
+        rcloud.stars.get_my_starred_notebooks = function(k) {
+            rcloud_ocaps.stars.get_my_starred_notebooks(k);
+        };
 
-    // stars
-    rcloud.stars = {};
-    rcloud.stars.star_notebook = function(id, k) {
-        rcloud_ocaps.stars.star_notebook(id, k || _.identity);
-    };
-    rcloud.stars.unstar_notebook = function(id, k) {
-        rcloud_ocaps.stars.unstar_notebook(id, k || _.identity);
-    };
-    rcloud.stars.is_notebook_starred = function(id, k) {
-        rcloud_ocaps.stars.is_notebook_starred(id, k);
-    };
-    rcloud.stars.get_notebook_star_count = function(id, k) {
-        rcloud_ocaps.stars.get_notebook_star_count(id, k);
-    };
-    rcloud.stars.get_my_starred_notebooks = function(k) {
-        rcloud_ocaps.stars.get_my_starred_notebooks(k);
-    };
+    }
 
+    rcloud.authenticated = rcloud_ocaps.authenticated;
+    setup_unauthenticated_ocaps();
+    if (rcloud.authenticated)
+        setup_authenticated_ocaps();
+
+    //////////////////////////////////////////////////////////////////////////
     // Progress indication
+
+    // FIXME this doesn't feel like it belongs on rcloud, but then again,
+    // where would it?
+
     var progress_dialog;
     var progress_counter = 0;
-
+    var allowed = 1;
     var curtains_on = false;
-    function show_progress_curtain() {
+
+    function set_curtain() {
         if (curtains_on)
             return;
         curtains_on = true;
@@ -352,31 +417,57 @@ RCloud.create = function(rcloud_ocaps) {
         }
         progress_dialog.modal({keyboard: true});
     }
-    function hide_progress_curtain() {
+    function clear_curtain() {
         if (!curtains_on)
             return;
         curtains_on = false;
         progress_dialog.modal('hide');
     }
-    rcloud.with_progress = function(thunk, delay) {
-        if (_.isUndefined(delay))
-            delay = 2000;
+    function set_cursor() {
         _.delay(function() {
             document.body.style.cursor = "wait";
         }, 0);
+    }
+    function clear_cursor() {
+        _.delay(function() {
+            document.body.style.cursor = '';
+        }, 0);
+    }
+    rcloud.with_progress = function(thunk, delay) {
+        if (_.isUndefined(delay))
+            delay = 2000;
+        set_cursor();
         function done() {
             progress_counter -= 1;
             if (progress_counter === 0) {
-                document.body.style.cursor = '';
-                hide_progress_curtain();
+                clear_cursor();
+                clear_curtain();
             }
         }
         _.delay(function() {
-            if (progress_counter > 0)
-                show_progress_curtain();
+            if (progress_counter > 0 && allowed > 0)
+                set_curtain();
         }, delay);
         progress_counter += 1;
         thunk(done);
+    };
+    rcloud.prevent_progress_modal = function() {
+        if (allowed === 1) {
+            if (progress_counter > 0) {
+                clear_cursor();
+                clear_curtain();
+            }
+        }
+        allowed -= 1;
+    };
+    rcloud.allow_progress_modal = function() {
+        if (allowed === 0) {
+            if (progress_counter > 0) {
+                set_cursor();
+                set_curtain();
+            }
+        }
+        allowed += 1;
     };
 
     return rcloud;
@@ -945,16 +1036,15 @@ Notebook.Cell.create_controller = function(cell_model)
             }
 
             rcloud.record_cell_execution(cell_model);
-
-            if (language === 'Markdown') {
-                rcloud.session_markdown_eval(cell_model.content(), false, callback);
-                // var wrapped_command = rclient.markdown_wrap_command(cell_model.content());
-                // rclient.send_and_callback(wrapped_command, callback, _.identity);
-            } else if (language === 'R') {
-                rcloud.session_markdown_eval("```{r}\n" + cell_model.content() + "\n```\n", false, callback);
-                // var wrapped_command = rclient.markdown_wrap_command("```{r}\n" + cell_model.content() + "\n```\n");
-                // rclient.send_and_callback(wrapped_command, callback, _.identity);
-            } else alert("Don't know language '" + language + "' - can only do Markdown or R for now!");
+            if (rcloud.authenticated) {
+                rcloud.session_markdown_eval(cell_model.content(), language, false, callback);
+            } else {
+                rcloud.session_cell_eval(Notebook.part_name(cell_model.id,
+                                                            cell_model.language()),
+                                         cell_model.language(),
+                                         false,
+                                         callback);
+            }
         },
         set_status_message: function(msg) {
             _.each(cell_model.views, function(view) {
@@ -1343,23 +1433,6 @@ Notebook.create_controller = function(model)
             if(model.read_only())
                 throw "attempted to update read-only notebook";
             gistname = gistname || shell.gistname();
-            function partname(id, language) {
-                // yuk
-                if(_.isString(id))
-                    return id;
-                var ext;
-                switch(language) {
-                case 'R':
-                    ext = 'R';
-                    break;
-                case 'Markdown':
-                    ext = 'md';
-                    break;
-                default:
-                    throw "Unknown language " + language;
-                }
-                return 'part' + id + '.' + ext;
-            }
             function changes_to_gist(changes) {
                 // we don't use the gist rename feature because it doesn't
                 // allow renaming x -> y and creating a new x at the same time
@@ -1368,7 +1441,7 @@ Notebook.create_controller = function(model)
                                          function(names, change) {
                                              if(!change.erase) {
                                                  var after = change.rename || change.id;
-                                                 names[partname(after, change.language)] = 1;
+                                                 names[Notebook.part_name(after, change.language)] = 1;
                                              }
                                              return names;
                                          }, {});
@@ -1376,11 +1449,11 @@ Notebook.create_controller = function(model)
                     var c = {};
                     if(change.content !== undefined)
                         c.content = change.content;
-                    var pre_name = partname(change.id, change.language);
+                    var pre_name = Notebook.part_name(change.id, change.language);
                     if(change.erase || !post_names[pre_name])
                         filehash[pre_name] = null;
                     if(!change.erase) {
-                        var post_name = partname(change.rename || change.id, change.language);
+                        var post_name = Notebook.part_name(change.rename || change.id, change.language);
                         filehash[post_name] = c;
                     }
                     return filehash;
@@ -1413,6 +1486,7 @@ Notebook.create_controller = function(model)
 
         },
         run_all: function(k) {
+            var changes = this.refresh_cells();
             this.save();
             var n = model.notebook.length;
             var disp;
@@ -1472,4 +1546,21 @@ Notebook.show_r_source = function(selection)
     else
         selection = $(".r");
     selection.parent().show();
+};
+Notebook.part_name = function(id, language) {
+    // yuk
+    if(_.isString(id))
+        return id;
+    var ext;
+    switch(language) {
+    case 'R':
+        ext = 'R';
+        break;
+    case 'Markdown':
+        ext = 'md';
+        break;
+    default:
+        throw "Unknown language " + language;
+    }
+    return 'part' + id + '.' + ext;
 };

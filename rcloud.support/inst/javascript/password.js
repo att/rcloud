@@ -5,6 +5,7 @@
         function done() {
             result = password.val();
             dialog.modal('hide');
+            rcloud.allow_progress_modal();
         }
 
         function create_password_dialog() {
@@ -49,6 +50,7 @@
         if(!dialog.length)
             dialog = create_password_dialog();
         password = dialog.find("#password-input");
+        rcloud.prevent_progress_modal();
         dialog.modal({keyboard: true});
     }
 })

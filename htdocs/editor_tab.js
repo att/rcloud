@@ -396,6 +396,12 @@ var editor = function () {
     }
 
     function populate_comments(comments) {
+        try {
+            comments = JSON.parse(comments);
+        } catch (e) {
+            rclient.post_error("populate comments: " + e.message);
+            return;
+        }
         d3.select("#comment-count")
             .text(String(comments.length));
         // no update logic, clearing/rebuilding is easier
@@ -443,8 +449,8 @@ var editor = function () {
                 that.new_notebook();
             });
             publish_notebook_checkbox_ = ui_utils.checkbox_menu_item($("#publish-notebook"),
-               function() { rcloud.publish_notebook(result.id); },
-               function() { rcloud.unpublish_notebook(result.id); });
+               function() { rcloud.publish_notebook(config_.currbook); },
+               function() { rcloud.unpublish_notebook(config_.currbook); });
         },
         create_book_tree_widget: function(data) {
             var that = this;
@@ -614,7 +620,8 @@ var editor = function () {
                 $tree_.tree('openNode', node);
             });
         },
-        load_callback: function(version, is_change) {
+        load_callback: function(version, is_change, k) {
+            k = k || _.identity;
             var that = this;
             return function(result) {
                 config_.currbook = result.id;
@@ -633,12 +640,13 @@ var editor = function () {
                 that.add_notebook(result, history, true);
                 that.update_notebook_file_list(result.files);
                 rcloud.get_all_comments(result.id, function(data) {
-                    populate_comments(JSON.parse(data));
+                    populate_comments(data);
                 });
                 $("#github-notebook-id").text(result.id);
                 rcloud.is_notebook_published(result.id, function(p) {
                     publish_notebook_checkbox_(p);
                 });
+                k();
             };
         },
         add_notebook: function(result, history, do_select) {
@@ -761,7 +769,7 @@ var editor = function () {
                 if (!result)
                     return;
                 rcloud.get_all_comments(config_.currbook, function(data) {
-                    populate_comments(JSON.parse(data));
+                    populate_comments(data);
                     $('#comment-entry-body').val('');
                 });
             });

@@ -45,7 +45,7 @@ run <- function(url, query, body, headers)
   if (is.null(redirect))
     redirect = '/main.html'
   state <- list(nonce=rnorm(1),
-                redirect=redirect)
+                redirect=as.vector(redirect))
   list(paste("<html><head><meta http-equiv='refresh' content='0;URL=\"",rcloud.support:::.rc.conf$github.base.url,
              "login/oauth/authorize?client_id=", rcloud.support:::.rc.conf$github.client.id, 
              "&state=",URLencode(toJSON(state)),

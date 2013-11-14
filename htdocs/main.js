@@ -87,6 +87,11 @@ function main_init() {
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
         on_connect: function(ocaps) {
             rcloud = RCloud.create(ocaps.rcloud);
+            if (!rcloud.authenticated) {
+                rclient.post_error(rclient.disconnection_error("Please login first!"));
+                rclient.close();
+                return;
+            }
             rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {
                 rclient.post_response(hello);
             });

@@ -10,16 +10,15 @@ Notebook.Cell.create_controller = function(cell_model)
             }
 
             rcloud.record_cell_execution(cell_model);
-
-            if (language === 'Markdown') {
-                rcloud.session_markdown_eval(cell_model.content(), false, callback);
-                // var wrapped_command = rclient.markdown_wrap_command(cell_model.content());
-                // rclient.send_and_callback(wrapped_command, callback, _.identity);
-            } else if (language === 'R') {
-                rcloud.session_markdown_eval("```{r}\n" + cell_model.content() + "\n```\n", false, callback);
-                // var wrapped_command = rclient.markdown_wrap_command("```{r}\n" + cell_model.content() + "\n```\n");
-                // rclient.send_and_callback(wrapped_command, callback, _.identity);
-            } else alert("Don't know language '" + language + "' - can only do Markdown or R for now!");
+            if (rcloud.authenticated) {
+                rcloud.session_markdown_eval(cell_model.content(), language, false, callback);
+            } else {
+                rcloud.session_cell_eval(Notebook.part_name(cell_model.id,
+                                                            cell_model.language()),
+                                         cell_model.language(),
+                                         false,
+                                         callback);
+            }
         },
         set_status_message: function(msg) {
             _.each(cell_model.views, function(view) {

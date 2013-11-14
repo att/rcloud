@@ -41,6 +41,25 @@ rcloud.get.conf.value <- function(key) {
     NULL
 }
 
+rcloud.unauthenticated.load.notebook <- function(id, version = NULL) {
+  if (!rcloud.is.notebook.published(id))
+    stop("Notebook does not exist or has not been published")
+  rcloud.load.notebook(id, version)
+}
+
+rcloud.load.notebook <- function(id, version = NULL) {
+  res <- rcloud.get.notebook(id, version)
+  .session$current.notebook <- res
+  rcloud.reset.session()
+  res
+}
+
+rcloud.unauthenticated.get.notebook <- function(id, version = NULL) {
+  if (!rcloud.is.notebook.published(id))
+    stop("Notebook does not exist or has not been published")
+  rcloud.get.notebook(id, version)
+}
+
 rcloud.get.notebook <- function(id, version = NULL) {
   res <- get.gist(id, version, ctx = .session$rgithub.context)
   if (rcloud.debug.level() > 1L) {
@@ -50,8 +69,8 @@ rcloud.get.notebook <- function(id, version = NULL) {
       cat("==== END GIST ====\n")
     }
     else {
-      cat("==== GET NOTEBOOK FAILED ====\n");
-      print(res);
+      cat("==== GET NOTEBOOK FAILED ====\n")
+      print(res)
     }
   }
   res
