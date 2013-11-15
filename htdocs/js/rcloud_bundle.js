@@ -412,7 +412,7 @@ RCloud.create = function(rcloud_ocaps) {
             return;
         curtains_on = true;
         if (_.isUndefined(progress_dialog)) {
-            progress_dialog = $('<div id="progress-dialog" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-header">Please wait...</div></div></div>');
+            progress_dialog = $('<div id="progress-dialog" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-body">Please wait...</div></div></div>');
             $("body").append(progress_dialog);
         }
         progress_dialog.modal({keyboard: true});
@@ -807,8 +807,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
             // There's a list of things that we need to do to the output:
             var uuid = rcloud.deferred_knitr_uuid;
-
-            debugger;
 
             if (inner_div.find("pre code").length === 0) {
                 r_result_div.prepend("<pre><code>" + cell_model.content() + "</code></pre>");
