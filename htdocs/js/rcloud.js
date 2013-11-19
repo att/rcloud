@@ -296,7 +296,7 @@ RCloud.create = function(rcloud_ocaps) {
             return;
         curtains_on = true;
         if (_.isUndefined(progress_dialog)) {
-            progress_dialog = $('<div id="progress-dialog" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-header">Please wait...</div></div></div>');
+            progress_dialog = $('<div id="progress-dialog" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-body">Please wait...</div></div></div>');
             $("body").append(progress_dialog);
         }
         progress_dialog.modal({keyboard: true});
