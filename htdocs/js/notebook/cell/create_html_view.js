@@ -175,7 +175,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             inner_div.find("pre code")
                 .contents()
                 .filter(function() {
-                    return this.nodeValue.indexOf(uuid) !== -1;
+                    return this.nodeValue ? this.nodeValue.indexOf(uuid) !== -1 : false;
                 }).parent().parent()
                 .each(function() {
                     var that = this;
