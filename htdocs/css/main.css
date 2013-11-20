@@ -286,11 +286,6 @@ form input.linkbox {
     padding: 2px;
 }
 
-#share-link {
-    background-color: darkgrey;
-    cursor: pointer;
-}
-
 /******************************************************************************/
 
 ul.jqtree-tree .jqtree-toggler {
