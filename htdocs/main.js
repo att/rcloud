@@ -66,6 +66,19 @@ function main_init() {
         editor.post_comment($("#comment-entry-body").val());
         return false;
     });
+
+    ui_utils.checkbox_menu_item($("#toggle-scratchpad"),
+        function() {
+            $("#middle-column").removeClass("col-md-9").addClass("col-md-5");
+            $("#fake-left-column").show();
+            $("#left-column").show();
+        },
+        function() { 
+            $("#middle-column").removeClass("col-md-5").addClass("col-md-9");
+            $("#fake-left-column").hide();
+            $("#left-column").hide();
+        })(false);
+
     rclient = RClient.create({
         debug: false,
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),

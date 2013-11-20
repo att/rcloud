@@ -55,7 +55,7 @@
       </div>
       <div class="nav-collapse collapse">
 	<ul class="nav navbar-nav">
-          <li><button id="save-notebook"  type="button" class="btn btn-link navbar-btn disabled"><i class="icon-save"></i></button></li>
+          <li><button id="save-notebook" type="button" class="btn btn-link navbar-btn disabled"><i class="icon-save"></i></button></li>
           <li><a href="#" id="fork-revert-notebook" style="display:none;">Fork</a></li>
 	  <li><a href="#" id="run-notebook">Run</a></li>
 	  <li><a href="#" id="share-link" target="_blank">View</a></li>
@@ -69,6 +69,7 @@
               <li><a href="#" id="import-notebooks">Import External Notebooks</a></li>
               <li><a href="#" id="export-notebook-file">Export Notebook to File</a></li>
               <li><a href="#" id="import-notebook-file">Import Notebook from File</a></li>
+	      <li><a href="#" id="toggle-scratchpad"><i class="icon-check-empty"></i>&nbsp;Show Scratch Pad</a></li>
               <li><a href="#" id="show-source"><i class="icon-check"></i>&nbsp;Show Source</a></li>
 	      <li><a href="#" id="publish-notebook"><i class="icon-check"></i>&nbsp;Publish notebook</a></li>
               <li class="divider"></li>
@@ -86,8 +87,20 @@
 
 <div class="container" id="main-div">
   <div class="row">
-    <!--div class="col-md-1"></div-->
-    <div class="col-md-8">
+    <div class="col-md-4" style="position:fixed; top: 60; left: 10;
+    				 margin: 6; height: 80%; display: none" id="left-column">
+      <div class="panel panel-default">
+    	<div class="panel-heading">Scratch</div>
+    	<div class="panel-body">
+    	  <div style="padding:1px;margin:0px;background-color:#ddd">
+    	    <div id="scratchpad-editor" style="height: 100%"></div>
+    	  </div>
+    	</div>
+      </div>
+    </div>
+    <div class="col-md-4" id="fake-left-column" style="display:none">
+    </div>
+    <div class="col-md-9" id="middle-column">
       <div id="tabs-1">
 	<div id="output" class="tab-div">
 	</div>
@@ -166,7 +179,6 @@
 	</div>
       </div>
     </div>
-    <div class="col-md-1"></div>
   </div>
 </div>
 
