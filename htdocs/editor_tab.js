@@ -424,7 +424,7 @@ var editor = function () {
     }
 
     var result = {
-        init: function() {
+        init: function(k) {
             var that = this;
             username_ = rcloud.username();
             $("#input-text-source-results-title").css("display", "none");
@@ -436,6 +436,7 @@ var editor = function () {
                     that.load_notebook(config_.currbook, config_.currversion);
                 else // brand new config
                     that.new_notebook();
+                k && k();
             });
             var old_text = "";
             window.setInterval(function() {
