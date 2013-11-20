@@ -33,7 +33,14 @@ RC.authenticate <- function(v, check.only=FALSE)
       if (rcloud.debug.level()) cat(" - setuid/gid, now running as", exec.usr, "\n")
     }
   }
-  ## if not, jsut check the first token
-  check.token(v[[1]]) != FALSE
+
+  ## if not, just check the first token.
+  user <- check.token(v[[1]])
+  if (user == FALSE) return(FALSE)
+  ## but if we have a github user whitelist, check against that as well.
+  if (!hasConf("github.user.whitelist")) return(TRUE)
+  userlist <- strsplit(getConf("github.user.whitelist")[1], ',')
+  r <- grep(user, userlist)
+  length(r) != 0
 }
 

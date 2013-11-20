@@ -79,7 +79,17 @@ If you're using github.com, then your file will look like this:
 The third and fourth lines are the base URL of the github website and
 the entry point for the github API (these might differ in
 [Enterprise Github](http://enterprise.github.com) deployments -
-they are optional if you use the public GitHub).
+they are optional if you use the public GitHub). On Enterprise Github
+deployments, you'll need to include a line pointing to the gist URLs
+as well, which we occasionally need to use in RCloud. It will look
+something like this:
+
+    github.gist.url: https://yourenterprisegithub.corporate.com/gist/
+
+If you'd like to control which Github users are allowed to log in to
+your RCloud deployment, you can add a whitelist to your configuration:
+
+    github.user.whitelist: user1,user2,user3,etc
 
 If your computer doesn't resolve its hostname to what you will be using,
 (let's say `127.0.0.1`) you may also want to add:
@@ -96,7 +106,7 @@ be hacking the code, you'll need to install a recent version of
 [node.js](http://nodejs.org). Then, in your shell:
 
     $ cd rcloud/htdocs/js
-	$ npm install
+	$ npm install	
 
 This will install the node.js dependencies necessary to create the
 minified javascript files used in Rcloud.
