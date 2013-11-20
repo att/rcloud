@@ -259,10 +259,10 @@ var shell = (function() {
     function on_load(k, notebook) {
         var is_read_only = result.notebook.model.read_only();
         $("#notebook-title").text(notebook.description);
-            var link = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
-            var v = shell.version();
-            if(v)
-                link += '&version='+v;
+        var link = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
+        var v = shell.version();
+        if(v)
+            link += '&version='+v;
 
         $("#share-link").attr("href", link);
 
