@@ -3,31 +3,6 @@ function resize_side_panel() {
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
 }
 
-function init_shareable_link_box() {
-    $("#share-link").each(function() {
-        var linkbox = $(this);
-        linkbox.click(function() {
-            var link = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
-            var v = shell.version();
-            if(v)
-                link += '&version='+v;
-            linkbox.val(link);
-            linkbox.select();
-            linkbox.css({cursor:"text"});
-            return false;
-        });
-        linkbox.blur(function() {
-            linkbox.val('Get View Link');
-            linkbox.css({cursor:"pointer"});
-        });
-        linkbox.keyup(function(e) {
-            if(e.which === 27)
-                linkbox.blur();
-            return true;
-        });
-    });
-}
-
 function init_fork_revert_button() {
     $("#fork-revert-notebook").click(function() {
         shell.fork_or_revert_button();
@@ -67,7 +42,6 @@ function init_port_file_buttons() {
 
 
 function init_navbar_buttons() {
-    init_shareable_link_box();
     init_fork_revert_button();
     init_github_buttons();
     init_save_button();
