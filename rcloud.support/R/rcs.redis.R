@@ -17,8 +17,10 @@ rcs.set.RCSredis <- function(key, value, engine=.session$rcs.engine) if (missing
 
 rcs.rm.RCSredis <- function(key, engine=.session$rcs.engine) redis.rm(engine$handle, key)
 
-rcs.incr.RCSredis <- function(key, engine=.session$rcs.engine) stop("unimplemented")
+rcs.incr.RCSredis <- function(key, engine=.session$rcs.engine) redis.inc(engine$handle, key)
 
-rcs.decr.RCSredis <- function(key, engine=.session$rcs.engine) stop("unimplemented")
+rcs.decr.RCSredis <- function(key, engine=.session$rcs.engine) redis.dec(engine$handle, key, TRUE)
+
+rcs.zero.RCSredis <- function(key, engine=.session$rcs.engine) redis.zero(engine$handle, key)
 
 rcs.list.RCSredis <- function(pattern="*", engine=.session$rcs.engine) redis.keys(engine$handle, pattern)

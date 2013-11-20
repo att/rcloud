@@ -424,7 +424,7 @@ var editor = function () {
     }
 
     var result = {
-        init: function() {
+        init: function(k) {
             var that = this;
             username_ = rcloud.username();
             $("#input-text-source-results-title").css("display", "none");
@@ -436,6 +436,7 @@ var editor = function () {
                     that.load_notebook(config_.currbook, config_.currversion);
                 else // brand new config
                     that.new_notebook();
+                k && k();
             });
             var old_text = "";
             window.setInterval(function() {
@@ -642,7 +643,7 @@ var editor = function () {
                 rcloud.get_all_comments(result.id, function(data) {
                     populate_comments(data);
                 });
-                $("#github-notebook-id").text(result.id);
+                $("#github-notebook-id").text(result.id).click(false);
                 rcloud.is_notebook_published(result.id, function(p) {
                     publish_notebook_checkbox_(p);
                 });
