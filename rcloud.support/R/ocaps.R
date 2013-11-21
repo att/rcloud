@@ -46,6 +46,7 @@ unauthenticated.ocaps <- function()
       get_conf_value = make.oc(rcloud.get.conf.value),
       get_notebook = make.oc(rcloud.unauthenticated.get.notebook),
       load_notebook = make.oc(rcloud.unauthenticated.load.notebook),
+      install_notebook_stylesheets = make.oc(rcloud.install.notebook.stylesheets),
       
       is_notebook_published = make.oc(rcloud.is.notebook.published),
       

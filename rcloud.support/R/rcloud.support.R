@@ -54,6 +54,14 @@ rcloud.load.notebook <- function(id, version = NULL) {
   res
 }
 
+rcloud.install.notebook.stylesheets <- function() {
+  n <- .session$current.notebook$content
+  urls <- sapply(grep('css$', names(n$files)), function(v) {
+    n$files[[v]]$raw_url
+  })
+  rcloud.install.css(urls)
+}
+
 rcloud.unauthenticated.get.notebook <- function(id, version = NULL) {
   if (!rcloud.is.notebook.published(id))
     stop("Notebook does not exist or has not been published")
