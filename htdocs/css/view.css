@@ -162,6 +162,11 @@ rect.frame {
     color: blue;
 }
 
+a.unclickable {
+    pointer-events: none;
+    cursor: default;
+}
+
 /* .markdown-div { */
 /*     background-color: red; */
 /* } */
