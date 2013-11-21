@@ -30,8 +30,16 @@ function view_init() {
             rcloud.init_client_side_data();
             shell.init();
             var notebook = getURLParameter("notebook"),
-                version = getURLParameter("version");
+                version = getURLParameter("version"),
+                quiet = getURLParameter("quiet");
+            if (Number(quiet)) {
+                $(".navbar").hide();
+                $("body").css("padding-top", "0");
+            }
             shell.load_notebook(notebook, version, function() {
+                if (Number(quiet)) {
+                    $("#output > pre").first().hide();
+                }
                 shell.notebook.controller.run_all(function() {
                     shell.notebook.controller.hide_r_source();
                 });

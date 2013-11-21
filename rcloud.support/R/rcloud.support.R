@@ -116,7 +116,11 @@ rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
   } else result
 }
 
-rcloud.update.notebook <- function(id, content) update.gist(id, content, ctx = .session$rgithub.context)
+rcloud.update.notebook <- function(id, content) {
+  res <- update.gist(id, content, ctx = .session$rgithub.context)
+  .session$current.notebook <- res
+  res
+}
 
 rcloud.create.notebook <- function(content) create.gist(content, ctx = .session$rgithub.context)
 
