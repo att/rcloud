@@ -8,7 +8,7 @@ wdcchart <- function(data, dcexpr)
   deferred.rcloud.result(function() caps$handle_dcchart(list("dcchart", data, dcexpr2)))
 }
 
-wdcplot <- function(data, dims=NULL, grps=NULL, chrts=NULL)
+wdcplot <- function(data, dims=NULL, groups=NULL, charts=NULL)
 {
 
   path <- system.file("javascript", "dc_chart.js", package="rcloud.support");
@@ -16,8 +16,8 @@ wdcplot <- function(data, dims=NULL, grps=NULL, chrts=NULL)
                                    paste(readLines(path), collapse='\n'))
 
   dims2 <- substitute(dims)
-  groups2 <- substitute(grps)
-  charts2 <- substitute(chrts)
+  groups2 <- substitute(groups)
+  charts2 <- substitute(charts)
 
   # Enable use of R variables as parameters in chart definitions, i.e. width = mywidth
   dims2 <- do.call("substitute",list(dims2,parent.frame()))
