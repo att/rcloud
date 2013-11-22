@@ -214,8 +214,13 @@ var chart_attrs = {
     dataCount: {
         supported: false
     },
-    dataTableWidget: {
-        supported: false
+    dataTable: {
+        supported: true,
+        concrete: true,
+        parents: ['base'],
+        columns: {required: true},
+        size: {required: false},
+        sortBy: {required: false}
     }
 };
 
@@ -464,6 +469,16 @@ function dcplot(frame, groupname, definition) {
             abstractBubble: function() {
             },
             bubble: function() {
+            },
+            dataTable: function() {
+                columns = [ ]
+
+                for (var i = 0; i < defn['columns'].length; i++) {
+                    var dim = defn['columns'][i];
+                    if(!_.has(dims,dim)) throw dim + " not a valid dimension!";
+                    columns.push(accessor(dim));
+                }
+                defn['columns'] = columns;
             }
         };
         preorder_traversal(chart_attrs, defn.type, callbacks);
@@ -568,6 +583,8 @@ function dcplot(frame, groupname, definition) {
             abstractBubble: function() {
             },
             bubble: function() {
+            },
+            dataTable: function() {
             }
         };
 
@@ -732,13 +749,28 @@ function dcplot(frame, groupname, definition) {
                     rtrans.domain(defn['r.domain'] || [0,100]);
                     chart.r(rtrans);
                 }
+            },
+            dataTable: function() {
+                chart.group(accessor(defn.dimension));
+                chart.columns(defn['columns']);
+
+                chart.size(defn['size']);
+                if(_.has(defn,'size')) {
+                    chart.size(defn['size']);
+                }
+                else {
+                    chart.size(frame.records().length);
+                }
+
+                if(_.has(defn,'sortBy')) chart.sortBy(accessor(defn['sortBy']));
             }
         };
         ctor = {
             pie: dc.pieChart,
             bar: dc.barChart,
             line: dc.lineChart,
-            bubble: dc.bubbleChart
+            bubble: dc.bubbleChart,
+            dataTable: dc.dataTable
         }[defn.type];
 
         preorder_traversal(chart_attrs, defn.type, callbacks);
@@ -837,6 +869,7 @@ function dcplot(frame, groupname, definition) {
         defn = definition.groups[g];
         groups[g] = create_group(defn, dimensions);
     }
+
     for(c in definition.charts) {
         defn = definition.charts[c];
         charts[c] = create_chart(groupname, defn, dimensions, groups);

@@ -307,9 +307,24 @@ var wdcplot = (function() {
         }
         return ret;
     }
-    function make_chart_div(name, title) {
-        return $('<div/>',
-                 {id: name, style: "float:left"})
+    function make_chart_div(name, definition) {
+
+        var title = definition.title;
+        var table = '';
+        var props = {id: name, style: "float:left"}
+
+        if(_.has(definition,'columns')) {
+            chartname = name + "Div"
+            header = $('<tr/>', { class: 'header'});
+            for (var col in definition['columns']) {
+                header.append($('<th/>').append(definition['columns'][col]));
+            }
+            table = ($('<thead/>')
+                .append(header));
+            props['class'] = 'table table-hover'
+        }
+
+        return $('<div/>',props)
             .append($('<div/>')
                     .append($('<strong/>').append(title))
                     .append('&nbsp;&nbsp;')
@@ -322,7 +337,8 @@ var wdcplot = (function() {
                                href: "javascript:window.charts['"+name+"'].filterAll(); dc.redrawAll('" + chart_group_name(chart_group) + "');",
                                style: "display: none;"})
                             .append("reset"))
-                   );
+
+        ).append(table);
     }
 
     var result = {
@@ -365,7 +381,7 @@ var wdcplot = (function() {
                     divs = _.map(_.keys(definition.charts),
                                  function(key) {
                                      return definition.charts[key].div
-                                         = make_chart_div(key, definition.charts[key].title)[0];
+                                         = make_chart_div(key, definition.charts[key])[0];
                                  });
                     break;
                 default: throw "unexpected section " + section[1];
