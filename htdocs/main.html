@@ -14,13 +14,13 @@
 
     jquery,                             http://jquery.com
     jquery-ui,                          http://jqueryui.com
-    jquery.cookies,			http://code.google.com/p/cookies/wiki/License
-    tree.jquery.js,			http://mbraak.github.com/jqTree/
+    jquery.cookies,                     http://code.google.com/p/cookies/wiki/License
+    tree.jquery.js,                     http://mbraak.github.com/jqTree/
     underscore.js,                      http://underscorejs.org
     d3 (and its colorbrewer colormaps), http://d3js.org
     crossfilter,                        http://square.github.com/crossfilter/
     dc.js,                              http://nickqizhu.github.com/dc.js/
-    facet,				http://cscheid.github.com/facet
+    facet,                              http://cscheid.github.com/facet
     twitter's bootstrap                 http://twitter.github.com/bootstrap/
        bootstrap-transition
        bootstrap-collapse
@@ -54,8 +54,8 @@
         <a class="navbar-brand" href="#">RCloud</a>
       </div>
       <div class="nav-collapse collapse">
-	<ul class="nav navbar-nav">
-	  <li><a href="#" id="share-link" title="Shareable Link" target="_blank">Share</a></li>
+        <ul class="nav navbar-nav">
+          <li><a href="#" id="share-link" title="Shareable Link" target="_blank">Share</a></li>
           <li><a href="#" id="fork-revert-notebook" style="display:none;">Fork</a></li>
           <li><button id="save-notebook" title="Save" type="button" class="btn btn-link navbar-btn disabled"><i class="icon-save"></i></button></li>
           <li><button id="run-notebook" title="Run All" type="button" class="btn btn-link navbar-btn"><i class="icon-play"></i></button></li>
@@ -71,15 +71,15 @@
               <li><a href="#" id="export-notebook-file">Export Notebook to File</a></li>
               <li><a href="#" id="import-notebook-file">Import Notebook from File</a></li>
               <li><a href="#" id="show-source"><i class="icon-check"></i>&nbsp;Show Source</a></li>
-	      <li><a href="#" id="publish-notebook"><i class="icon-check"></i>&nbsp;Publish notebook</a></li>
+              <li><a href="#" id="publish-notebook"><i class="icon-check"></i>&nbsp;Publish notebook</a></li>
               <li class="divider"></li>
-	      <li><span class="disabled"><div>&nbsp;&nbsp;ID: <span id="github-notebook-id"></span></li>
+              <li><span class="disabled"><div>&nbsp;&nbsp;ID: <span id="github-notebook-id"></span></li>
               <li><span class="disabled" id="notebook-assets-header">&nbsp;&nbsp;&nbsp;Notebook assets</span></li>
             </ul>
           </li>
-	  <li class="divider-vertical"></li>
-	  <li><a href="#" id="rcloud-logout">Logout</a></li>
-	</ul>
+          <li class="divider-vertical"></li>
+          <li><a href="#" id="rcloud-logout">Logout</a></li>
+        </ul>
       </div>
     <!--/div-->
   </div>
@@ -90,81 +90,81 @@
     <!--div class="col-md-1"></div-->
     <div class="col-md-8">
       <div id="tabs-1">
-	<div id="output" class="tab-div">
-	</div>
+        <div id="output" class="tab-div">
+        </div>
 
-	<div id="prompt-div">
-	  <button style="float: right; width:20%;" id="new-md-cell-button">New RMarkdown cell</button>
-	  <div id="command-prompt"
-	       style="float: left; width:79%; height: 50px; background:#FFFFFF; border:1px solid #DDDDDD"></div>
-	</div>
-	<div style="padding:1em; clear:both"></div>
+        <div id="prompt-div">
+          <button style="float: right; width:20%;" id="new-md-cell-button">New RMarkdown cell</button>
+          <div id="command-prompt"
+               style="float: left; width:79%; height: 50px; background:#FFFFFF; border:1px solid #DDDDDD"></div>
+        </div>
+        <div style="padding:1em; clear:both"></div>
       </div>
     </div>
     <div class="col-md-3" style="position:fixed;top:60;right:10">
       <div id="tabs-2">
-	<div class="tab-div">
-	  <div class="panel-group" id="accordion">
-	    <div class="panel panel-default">
-	      <div class="panel-heading">
-		<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">Notebooks</a>
-                <a class="header-button" href="#" id="new-notebook"><i class="icon-plus"></i></a>
-	      </div>
-	      <div id="collapseOne" class="panel-collapse collapse">
-		<div class="panel-body notebook-tree">
-		  <div id="editor-book-tree"></div>
-		</div>
-	      </div>
-	    </div>
+        <div class="tab-div">
+          <div class="panel-group" id="accordion">
             <div class="panel panel-default">
-	      <div class="panel-heading">
-		<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseFour">File Upload</a>
-	      </div>
-	      <div id="collapseFour" class="panel-collapse collapse in">
-		<div class="panel-body">
-		  <div id="file-upload-div">
+              <div class="panel-heading">
+                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">Notebooks</a>
+                <a class="header-button" href="#" id="new-notebook"><i class="icon-plus"></i></a>
+              </div>
+              <div id="collapseOne" class="panel-collapse collapse">
+                <div class="panel-body notebook-tree">
+                  <div id="editor-book-tree"></div>
+                </div>
+              </div>
+            </div>
+            <div class="panel panel-default">
+              <div class="panel-heading">
+                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseFour">File Upload</a>
+              </div>
+              <div id="collapseFour" class="panel-collapse collapse in">
+                <div class="panel-body">
+                  <div id="file-upload-div">
                     <div class="progress-bar" id="file-progress"style="height: 5px;"></div>
-		    <input type="file" id="file"></input>
-		    <input type="submit" id="upload-submit" value="Upload" style="float: right;"></input>
-		    <div style="clear: both"></div>
-		  </div>
-		</div>
-	      </div>
-	    </div>
-	    <div class="panel panel-default">
-	      <div class="panel-heading">
-		<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">Search</a>
-	      </div>
-	      <div id="collapseTwo" class="panel-collapse collapse in">
-		<div class="panel-body">
-		  <div>Full-text search for <input type="text" value="" id="input-text-search"></input></div>
-		  <h4 id="input-text-source-results-title" style="padding-bottom: 0; margin-bottom: 0">Source results</h4>
-		  <table id="input-text-source-results-table">
-		  </table>
-		  <h4 id="input-text-history-results-title" style="padding-bottom: 0; margin-bottom: 0">History results</h4>
-		  <table id="input-text-history-results-table">
-		  </table>
-		</div>
-	      </div>
-	    </div>
-	    <div class="panel panel-default">
-	      <div class="panel-heading">
-		<a class="accordion-toggle" data-toggle="collapse"
-		   data-parent="#accordion"
-		   href="#collapseFive">Comments (<span id="comment-count">0</span>)</a>
-	      </div>
-	      <div id="collapseFive" class="panel-collapse collapse in">
-		<div class="panel-body">
-		  <div id="comments-container"></div>
+                    <input type="file" id="file"></input>
+                    <input type="submit" id="upload-submit" value="Upload" style="float: right;"></input>
+                    <div style="clear: both"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="panel panel-default">
+              <div class="panel-heading">
+                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">Search</a>
+              </div>
+              <div id="collapseTwo" class="panel-collapse collapse in">
+                <div class="panel-body">
+                  <div>Full-text search for <input type="text" value="" id="input-text-search"></input></div>
+                  <h4 id="input-text-source-results-title" style="padding-bottom: 0; margin-bottom: 0">Source results</h4>
+                  <table id="input-text-source-results-table">
+                  </table>
+                  <h4 id="input-text-history-results-title" style="padding-bottom: 0; margin-bottom: 0">History results</h4>
+                  <table id="input-text-history-results-table">
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="panel panel-default">
+              <div class="panel-heading">
+                <a class="accordion-toggle" data-toggle="collapse"
+                   data-parent="#accordion"
+                   href="#collapseFive">Comments (<span id="comment-count">0</span>)</a>
+              </div>
+              <div id="collapseFive" class="panel-collapse collapse in">
+                <div class="panel-body">
+                  <div id="comments-container"></div>
                   <div id="comment-entry">
-		    <textarea id="comment-entry-body"></textarea>
-   	            <input type="button" id="comment-submit" value="comment"></input>
-	          </div>
-		</div>
-	      </div>
-	    </div>
-	  </div>
-	</div>
+                    <textarea id="comment-entry-body"></textarea>
+                    <input type="button" id="comment-submit" value="comment"></input>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="col-md-1"></div>
