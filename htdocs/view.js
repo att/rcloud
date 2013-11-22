@@ -30,13 +30,23 @@ function view_init() {
             rcloud.init_client_side_data();
             shell.init();
             var notebook = getURLParameter("notebook"),
-                version = getURLParameter("version");
+                version = getURLParameter("version"),
+                quiet = getURLParameter("quiet");
+            if (Number(quiet)) {
+                $(".navbar").hide();
+                $("body").css("padding-top", "0");
+            }
             shell.load_notebook(notebook, version, function() {
-                shell.notebook.controller.run_all(function() {
-                    shell.notebook.controller.hide_r_source();
-                });
-                _.each(shell.notebook.view.sub_views, function(cell_view) {
-                    cell_view.hide_buttons();
+                if (Number(quiet)) {
+                    $("#output > pre").first().hide();
+                }
+                rcloud.install_notebook_stylesheets(function() {
+                    shell.notebook.controller.run_all(function() {
+                        shell.notebook.controller.hide_r_source();
+                    });
+                    _.each(shell.notebook.view.sub_views, function(cell_view) {
+                        cell_view.hide_buttons();
+                    });
                 });
             });
         }, on_error: function(msg, status_code) {

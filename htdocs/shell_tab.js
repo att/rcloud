@@ -228,8 +228,18 @@ var shell = (function() {
         return rcloud.username() === notebook.user.login;
     }
 
+    function set_share_link() {
+        var link = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
+        var v = shell.version();
+        if(v)
+            link += '&version='+v;
+
+        $("#share-link").attr("href", link);
+    }
+
     function on_new(k, notebook) {
         $("#notebook-title").text(notebook.description);
+        set_share_link();
         gistname_ = notebook.id;
         version_ = null;
         is_mine_ = notebook_is_mine(notebook);
@@ -244,7 +254,6 @@ var shell = (function() {
     function on_load(k, notebook) {
         var is_read_only = result.notebook.model.read_only();
         $("#notebook-title").text(notebook.description);
-
         // remove any existing handler
         $("#notebook-title").off('click');
         // then add one if editable
@@ -257,6 +266,7 @@ var shell = (function() {
                 }
             });
         }
+        set_share_link();
 
         is_mine_ = notebook_is_mine(notebook);
         show_fork_or_prompt_elements(notebook_is_mine(notebook));

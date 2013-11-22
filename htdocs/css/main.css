@@ -273,6 +273,7 @@ rect.frame {
     color: #ddd;
     font-size: 120%;
     margin-top: .65em;
+    text-decoration: none;
 }
 
 .navbar .btn-link.disabled {
@@ -284,11 +285,6 @@ form input.linkbox {
     margin-left: 1em;
     height: 25px;
     padding: 2px;
-}
-
-#share-link {
-    background-color: darkgrey;
-    cursor: pointer;
 }
 
 /******************************************************************************/

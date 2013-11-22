@@ -3,31 +3,6 @@ function resize_side_panel() {
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
 }
 
-function init_shareable_link_box() {
-    $("#share-link").each(function() {
-        var linkbox = $(this);
-        linkbox.click(function() {
-            var link = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
-            var v = shell.version();
-            if(v)
-                link += '&version='+v;
-            linkbox.val(link);
-            linkbox.select();
-            linkbox.css({cursor:"text"});
-            return false;
-        });
-        linkbox.blur(function() {
-            linkbox.val('Get View Link');
-            linkbox.css({cursor:"pointer"});
-        });
-        linkbox.keyup(function(e) {
-            if(e.which === 27)
-                linkbox.blur();
-            return true;
-        });
-    });
-}
-
 function init_fork_revert_button() {
     $("#fork-revert-notebook").click(function() {
         shell.fork_or_revert_button();
@@ -67,7 +42,6 @@ function init_port_file_buttons() {
 
 
 function init_navbar_buttons() {
-    init_shareable_link_box();
     init_fork_revert_button();
     init_github_buttons();
     init_save_button();
@@ -151,16 +125,16 @@ function main_init() {
             });
             rcloud.init_client_side_data();
 
-            editor.init();
             shell.init();
-
-            if (location.search.length > 0) {
-                function getURLParameter(name) {
-                    return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+            editor.init(function() {
+                if (location.search.length > 0) {
+                    function getURLParameter(name) {
+                        return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+                    }
+                    editor.load_notebook(getURLParameter("notebook"), getURLParameter("version"));
+                    $("#tabs").tabs("select", "#tabs-2");
                 }
-                editor.load_notebook(getURLParameter("notebook"), getURLParameter("version"));
-                $("#tabs").tabs("select", "#tabs-2");
-            }
+            });
         },
         on_data: function(v) {
             v = v.value.json();

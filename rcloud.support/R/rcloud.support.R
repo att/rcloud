@@ -54,6 +54,14 @@ rcloud.load.notebook <- function(id, version = NULL) {
   res
 }
 
+rcloud.install.notebook.stylesheets <- function() {
+  n <- .session$current.notebook$content
+  urls <- sapply(grep('css$', names(n$files)), function(v) {
+    n$files[[v]]$raw_url
+  })
+  rcloud.install.css(urls)
+}
+
 rcloud.unauthenticated.get.notebook <- function(id, version = NULL) {
   if (!rcloud.is.notebook.published(id))
     stop("Notebook does not exist or has not been published")
@@ -116,7 +124,11 @@ rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
   } else result
 }
 
-rcloud.update.notebook <- function(id, content) update.gist(id, content, ctx = .session$rgithub.context)
+rcloud.update.notebook <- function(id, content) {
+  res <- update.gist(id, content, ctx = .session$rgithub.context)
+  .session$current.notebook <- res
+  res
+}
 
 rcloud.create.notebook <- function(content) create.gist(content, ctx = .session$rgithub.context)
 
