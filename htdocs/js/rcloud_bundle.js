@@ -197,6 +197,10 @@ RCloud.create = function(rcloud_ocaps) {
             });
         };
 
+        rcloud.install_notebook_stylesheets = function(k) {
+            rcloud_ocaps.install_notebook_stylesheets(k || _.identity);
+        };
+
         rcloud.get_users = function(user, k) {
             rcloud_ocaps.get_users(user, k || _.identity);
         };
@@ -214,10 +218,27 @@ RCloud.create = function(rcloud_ocaps) {
 
         // having this naked eval here makes me very nervous.
         rcloud.modules = {};
-        rcloud.setup_js_installer(function(name, content, k) {
-            var result = eval(content);
-            rcloud.modules[name] = result;
-            k(result);
+        rcloud.setup_js_installer({
+            install_js: function(name, content, k) {
+                var result = eval(content);
+                rcloud.modules[name] = result;
+                k(result);
+            },
+            clear_css: function(current_notebook, k) {
+                k();
+            },
+            install_css: function(urls, k) {
+                if (_.isString(urls))
+                    urls = [urls];
+                _.each(urls, function(url) {
+                    var link = document.createElement("link");
+                    link.type = 'text/css';
+                    link.rel = 'stylesheet';
+                    link.href = url;
+                    document.getElementsByTagName("head")[0].appendChild(link);
+                });
+                k();
+            }
         });
 
         // notebook.comments.R

@@ -40,11 +40,13 @@ function view_init() {
                 if (Number(quiet)) {
                     $("#output > pre").first().hide();
                 }
-                shell.notebook.controller.run_all(function() {
-                    shell.notebook.controller.hide_r_source();
-                });
-                _.each(shell.notebook.view.sub_views, function(cell_view) {
-                    cell_view.hide_buttons();
+                rcloud.install_notebook_stylesheets(function() {
+                    shell.notebook.controller.run_all(function() {
+                        shell.notebook.controller.hide_r_source();
+                    });
+                    _.each(shell.notebook.view.sub_views, function(cell_view) {
+                        cell_view.hide_buttons();
+                    });
                 });
             });
         }, on_error: function(msg, status_code) {
