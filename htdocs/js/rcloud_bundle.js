@@ -576,22 +576,35 @@ ui_utils.ignore_programmatic_changes = function(widget, listener) {
     };
 };
 
-// not that i'm at all happy with the look
-ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
+ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
+                                  active_icon, inactive_icon) {
     function set_state(state) {
         item[0].checked = state;
         var icon = item.find('i');
-        icon.attr('class', state ? 'icon-check' : 'icon-check-empty');
+        if(state) {
+            icon.removeClass(inactive_icon);
+            icon.addClass(active_icon);
+        }
+        else {
+            icon.removeClass(active_icon);
+            icon.addClass(inactive_icon);
+        }
     }
     item.click(function() {
         var state = !this.checked;
         set_state(state);
         if(state)
-            on_check();
+            on_activate();
         else
-            on_uncheck();
+            on_deactivate();
     });
     return set_state;
+};
+
+// not that i'm at all happy with the look
+ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
+    return ui_utils.twostate_icon(item, on_check, on_uncheck,
+                                  'icon-check', 'icon-check-empty');
 };
 
 // this is a hack, but it'll help giving people the right impression.
