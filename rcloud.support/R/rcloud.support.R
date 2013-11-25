@@ -145,13 +145,21 @@ rcloud.get.users <- function(user) ## NOTE: this is a bit of a hack, because it 
   gsub("/.*","",rcs.list(usr.key("config.json", user="*", notebook="system")))
 
 rcloud.publish.notebook <- function(id) {
-  rcs.set(rcs.key("notebook", id, "public"), 1)
-  TRUE
+  nb <- rcloud.get.notebook(id)
+  if (nb$content$user$login == .session$rgithub.context$user$login) {
+    rcs.set(rcs.key("notebook", id, "public"), 1)
+    TRUE
+  } else
+    FALSE
 }
 
 rcloud.unpublish.notebook <- function(id) {
-  rcs.rm(rcs.key("notebook", id, "public"))
-  TRUE
+  nb <- rcloud.get.notebook(id)
+  if (nb$content$user$login == .session$rgithub.context$user$login) {
+    rcs.rm(rcs.key("notebook", id, "public"))
+    TRUE
+  } else
+    FALSE
 }
 
 rcloud.is.notebook.published <- function(id) {
