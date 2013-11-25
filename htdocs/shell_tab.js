@@ -509,7 +509,7 @@ var shell = (function() {
                     if(notebook) {
                         notebook.description = notebook_desc_content.val();
                         rcloud.create_notebook(notebook, function(notebook) {
-                            editor.star_notebook(true, notebook.user.login, notebook.id, notebook);
+                            editor.star_notebook(true, {notebook: notebook});
                         });
                     }
                     dialog.modal('hide');
@@ -582,7 +582,7 @@ var shell = (function() {
                                           }
                                           // TODO: tell user about failed imports
                                           succeeded.forEach(function(notebook) {
-                                              editor.star_notebook(true, notebook.user.login, notebook.id, notebook);
+                                              editor.star_notebook(true, {notebook: notebook});
                                           });
                                       });
                 dialog.modal('hide');

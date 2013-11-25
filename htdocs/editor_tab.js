@@ -748,13 +748,21 @@ var editor = function () {
         rename_notebook: function(gistname, newname) {
             rcloud.rename_notebook(gistname, newname, this.load_callback(null, true));
         },
-        star_notebook: function(b, user, gistname, notebook) {
-            user = user || config_.bookuser;
-            gistname = gistname || config_.currbook;
-            if(b) {
+        star_notebook: function(star, opts) {
+            // if opts has user and gistname use those
+            // else if opts has notebook, use notebook id & user
+            // else use current notebook & user
+            opts = opts || {};
+            var user = opts.user
+                    || opts.notebook&&opts.notebook.user&&opts.notebook.user.login
+                    || config_.bookuser;
+            var gistname = opts.gistname
+                    || opts.notebook&&opts.notebook.id
+                    || config_.currbook;
+            if(star) {
                 rcloud.stars.star_notebook(gistname);
-                if(notebook)
-                    editor.update_notebook_from_gist(notebook, notebook.history, null, true);
+                if(opts.notebook)
+                    editor.update_notebook_from_gist(opts.notebook, opts.notebook.history, null, true);
                 else {
                     var entry = get_notebook_status(user, gistname);
                     add_interest(user, gistname, entry);
