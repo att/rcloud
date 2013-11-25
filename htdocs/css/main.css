@@ -199,6 +199,18 @@ rect.frame {
     overflow-y: scroll;
 }
 
+.jqtree-title {
+    position: relative;
+}
+
+.notebook-commands {
+    position: absolute;
+    bottom: -2px;
+    right: -50px;
+    width: 50px;
+    background-color: white;
+}
+
 .notebook-commands .fontawesome-button {
     margin: 0;
 }
