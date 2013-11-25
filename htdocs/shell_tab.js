@@ -202,8 +202,10 @@ var shell = (function() {
             $('#prompt-div').hide();
             fork_revert.text(is_mine_ ? 'Revert' : 'Fork');
             fork_revert.show();
+            $('#save-notebook').hide();
         }
         else {
+            $('#save-notebook').show();
             $('#prompt-div').show();
             fork_revert.hide();
         }
@@ -284,7 +286,7 @@ var shell = (function() {
         set_share_link();
 
         is_mine_ = notebook_is_mine(notebook);
-        show_fork_or_prompt_elements(notebook_is_mine(notebook));
+        show_fork_or_prompt_elements();
         _.each(notebook_view_.sub_views, function(cell_view) {
             cell_view.show_source();
         });
