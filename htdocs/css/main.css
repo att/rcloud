@@ -211,6 +211,10 @@ rect.frame {
     background-color: white;
 }
 
+li.jqtree-selected .notebook-commands {
+    bottom: -1px;
+}
+
 .notebook-commands .fontawesome-button {
     margin: 0;
 }
