@@ -778,7 +778,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     ace.require("ace/ext/language_tools");
     var widget = ace.edit(ace_div[0]);
     var RMode = require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
-    var session = widget.getSession();
+
+    // set initial content with a new session to not undo to blank
+    var EditSession = require('ace/edit_session').EditSession;
+    var session = new EditSession(cell_model.content());
+    widget.setSession(session);
     var doc = session.doc;
     widget.setReadOnly(cell_model.parent_model.read_only());
     widget.setOptions({
@@ -1013,7 +1017,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     };
 
     result.show_result();
-    result.content_updated();
     return result;
 }};
 

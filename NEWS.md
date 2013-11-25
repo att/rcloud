@@ -1,3 +1,7 @@
+* Feature: In view mode (view.html), appending &quiet=1 will hide the
+  navbar and greeting message. This makes it easier for view.html URLs
+  to be effectively used as iframes in different websites.
+
 * Feature: In view mode (view.html), rcloud inserts any stylesheets
   present in the notebook into the main document. Currently, the only way
   to add stylesheets to a notebook is to directly edit the github
