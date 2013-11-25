@@ -225,7 +225,23 @@ var shell = (function() {
 
     function set_notebook_title(notebook) {
         var is_read_only = result.notebook.model.read_only();
-        $("#notebook-title").text(notebook.description);
+        var desc = notebook.description;
+        $("#notebook-title").text(desc);
+        var ellipt_start = false, ellipt_end = false;
+        while(window.innerWidth - $("#notebook-title").width() < 505) {
+            var slash = desc.search('/');
+            if(slash >= 0) {
+                ellipt_start = true;
+                desc = desc.slice(slash+1);
+            }
+            else {
+                ellipt_end = true;
+                desc = desc.substr(0, desc.length - 2);
+            }
+            $("#notebook-title").text((ellipt_start ? '.../' : '')
+                                      + desc +
+                                      (ellipt_end ? '...' : ''));
+        }
         // remove any existing handler
         $("#notebook-title").off('click');
         // then add one if editable
