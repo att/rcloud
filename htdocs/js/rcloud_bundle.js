@@ -560,6 +560,25 @@ ui_utils.ace_editor_height = function(widget)
     return Math.max(75, newHeight);
 };
 
+ui_utils.install_common_ace_key_bindings = function(widget) {
+    var Autocomplete = require("ace/autocomplete").Autocomplete;
+    widget.commands.addCommands([
+        {
+            name: 'another autocomplete key',
+            bindKey: 'Ctrl-.',
+            exec: Autocomplete.startCommand.exec
+        },
+        {
+            name: 'disable gotoline',
+            bindKey: {
+                win: "Ctrl-L",
+                mac: "Command-L"
+            },
+            exec: function() { return false; }
+        }
+    ]);
+}
+
 // bind an ace editor to a listener and return a function to change the
 // editor content without triggering that listener
 ui_utils.ignore_programmatic_changes = function(widget, listener) {
@@ -798,8 +817,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     session.setUseWrapMode(true);
     widget.resize();
 
-    var Autocomplete = require("ace/autocomplete").Autocomplete;
-
+    ui_utils.install_common_ace_key_bindings(widget);
     widget.commands.addCommands([{
         name: 'sendToR',
         bindKey: {
@@ -810,10 +828,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         exec: function(widget, args, request) {
             execute_cell();
         }
-    }, {
-        name: 'another autocomplete key',
-        bindKey: 'Ctrl-.',
-        exec: Autocomplete.startCommand.exec
     }]);
     var change_content = ui_utils.ignore_programmatic_changes(widget, function() {
         cell_model.parent_model.on_dirty();

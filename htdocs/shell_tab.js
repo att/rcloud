@@ -83,8 +83,6 @@ var shell = (function() {
         widget.resize();
         var change_prompt = ui_utils.ignore_programmatic_changes(widget, cmd_history.change.bind(cmd_history));
 
-        var Autocomplete = require("ace/autocomplete").Autocomplete;
-
         function execute(widget, args, request) {
             var code = session.getValue();
             if(code.length) {
@@ -121,10 +119,11 @@ var shell = (function() {
             set_pos(widget, r, last_col(widget, r));
         }
 
+        ui_utils.install_common_ace_key_bindings(widget);
+
         // note ace.js typo which we need to correct when we update ace
         var up_handler = widget.commands.commmandKeyBinding[0]["up"],
             down_handler = widget.commands.commmandKeyBinding[0]["down"];
-
         widget.commands.addCommands([{
             name: 'execute',
             bindKey: {
@@ -161,10 +160,6 @@ var shell = (function() {
                     $.scrollTo(null, prompt_div);
                 });
             }
-        }, {
-            name: 'another autocomplete key',
-            bindKey: 'Ctrl-.',
-            exec: Autocomplete.startCommand.exec
         }, {
             name: 'up-with-history',
             bindKey: 'up',
@@ -228,6 +223,39 @@ var shell = (function() {
         return rcloud.username() === notebook.user.login;
     }
 
+    function set_notebook_title(notebook) {
+        var is_read_only = result.notebook.model.read_only();
+        var desc = notebook.description;
+        $("#notebook-title").text(desc);
+        var ellipt_start = false, ellipt_end = false;
+        while(window.innerWidth - $("#notebook-title").width() < 505) {
+            var slash = desc.search('/');
+            if(slash >= 0) {
+                ellipt_start = true;
+                desc = desc.slice(slash+1);
+            }
+            else {
+                ellipt_end = true;
+                desc = desc.substr(0, desc.length - 2);
+            }
+            $("#notebook-title").text((ellipt_start ? '.../' : '')
+                                      + desc +
+                                      (ellipt_end ? '...' : ''));
+        }
+        // remove any existing handler
+        $("#notebook-title").off('click');
+        // then add one if editable
+        if (!is_read_only) {
+            $("#notebook-title").click(function() {
+                var result = prompt("Please enter the new name for this notebook:", $(this).text());
+                if (result !== null) {
+                    $(this).text(result);
+                    editor.rename_notebook(shell.gistname(), result);
+                }
+            });
+        }
+    }
+
     function set_share_link() {
         var link = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
         var v = shell.version();
@@ -238,7 +266,7 @@ var shell = (function() {
     }
 
     function on_new(k, notebook) {
-        $("#notebook-title").text(notebook.description);
+        set_notebook_title(notebook);
         set_share_link();
         gistname_ = notebook.id;
         version_ = null;
@@ -252,20 +280,7 @@ var shell = (function() {
     }
 
     function on_load(k, notebook) {
-        var is_read_only = result.notebook.model.read_only();
-        $("#notebook-title").text(notebook.description);
-        // remove any existing handler
-        $("#notebook-title").off('click');
-        // then add one if editable
-        if (!is_read_only) {
-            $("#notebook-title").click(function() {
-                var result = prompt("Please enter the new name for this notebook:", $(this).text());
-                if (result !== null) {
-                    $(this).text(result);
-                    editor.rename_notebook(shell.gistname(), result);
-                }
-            });
-        }
+        set_notebook_title(notebook);
         set_share_link();
 
         is_mine_ = notebook_is_mine(notebook);
