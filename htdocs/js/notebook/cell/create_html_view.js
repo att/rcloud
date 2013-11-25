@@ -118,8 +118,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     session.setUseWrapMode(true);
     widget.resize();
 
-    var Autocomplete = require("ace/autocomplete").Autocomplete;
-
+    ui_utils.install_common_ace_key_bindings(widget);
     widget.commands.addCommands([{
         name: 'sendToR',
         bindKey: {
@@ -130,10 +129,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         exec: function(widget, args, request) {
             execute_cell();
         }
-    }, {
-        name: 'another autocomplete key',
-        bindKey: 'Ctrl-.',
-        exec: Autocomplete.startCommand.exec
     }]);
     var change_content = ui_utils.ignore_programmatic_changes(widget, function() {
         cell_model.parent_model.on_dirty();

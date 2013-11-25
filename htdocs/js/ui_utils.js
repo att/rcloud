@@ -65,6 +65,25 @@ ui_utils.ace_editor_height = function(widget)
     return Math.max(75, newHeight);
 };
 
+ui_utils.install_common_ace_key_bindings = function(widget) {
+    var Autocomplete = require("ace/autocomplete").Autocomplete;
+    widget.commands.addCommands([
+        {
+            name: 'another autocomplete key',
+            bindKey: 'Ctrl-.',
+            exec: Autocomplete.startCommand.exec
+        },
+        {
+            name: 'disable gotoline',
+            bindKey: {
+                win: "Ctrl-L",
+                mac: "Command-L"
+            },
+            exec: function() { return false; }
+        }
+    ]);
+}
+
 // bind an ace editor to a listener and return a function to change the
 // editor content without triggering that listener
 ui_utils.ignore_programmatic_changes = function(widget, listener) {

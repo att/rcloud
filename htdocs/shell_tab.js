@@ -83,8 +83,6 @@ var shell = (function() {
         widget.resize();
         var change_prompt = ui_utils.ignore_programmatic_changes(widget, cmd_history.change.bind(cmd_history));
 
-        var Autocomplete = require("ace/autocomplete").Autocomplete;
-
         function execute(widget, args, request) {
             var code = session.getValue();
             if(code.length) {
@@ -121,10 +119,11 @@ var shell = (function() {
             set_pos(widget, r, last_col(widget, r));
         }
 
+        ui_utils.install_common_ace_key_bindings(widget);
+
         // note ace.js typo which we need to correct when we update ace
         var up_handler = widget.commands.commmandKeyBinding[0]["up"],
             down_handler = widget.commands.commmandKeyBinding[0]["down"];
-
         widget.commands.addCommands([{
             name: 'execute',
             bindKey: {
@@ -161,10 +160,6 @@ var shell = (function() {
                     $.scrollTo(null, prompt_div);
                 });
             }
-        }, {
-            name: 'another autocomplete key',
-            bindKey: 'Ctrl-.',
-            exec: Autocomplete.startCommand.exec
         }, {
             name: 'up-with-history',
             bindKey: 'up',
