@@ -424,14 +424,14 @@ var editor = function () {
     }
 
     var result = {
-        init: function(k) {
+        init: function(gistname, version, k) {
             var that = this;
             username_ = rcloud.username();
             $("#input-text-source-results-title").css("display", "none");
             $("#input-text-history-results-title").css("display", "none");
             this.load_config(function() {
-                if(shell.gistname()) // notebook specified in url
-                    config_.currbook = shell.gistname();
+                if(gistname) // notebook specified in url
+                    that.load_notebook(gistname, version);
                 else if(config_.currbook)
                     that.load_notebook(config_.currbook, config_.currversion);
                 else // brand new config

@@ -390,9 +390,6 @@ var shell = (function() {
                 });
             } else {
                 rcloud.with_progress(function(done) {
-                    // asymmetrical: we know the gistname before it's loaded here,
-                    // but not in new.  and we have to set this here to signal
-                    // editor's init load config callback to override the currbook
                     rclient.close();
                     // FIXME this is a bit of an annoying duplication of code on main.js and view.js
                     rclient = RClient.create({
