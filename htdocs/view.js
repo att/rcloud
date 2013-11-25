@@ -24,7 +24,7 @@ function view_init() {
                     rclient.post_response(hello);
                 });
             }
-            $("#view-source").click(function() {
+            $("#edit-notebook").click(function() {
                 window.location = "main.html?notebook=" + shell.gistname();
             });
             rcloud.init_client_side_data();
