@@ -225,17 +225,15 @@ RCloud.create = function(rcloud_ocaps) {
                 k(result);
             },
             clear_css: function(current_notebook, k) {
+                $(".rcloud-user-defined-css").remove();
                 k();
             },
             install_css: function(urls, k) {
                 if (_.isString(urls))
                     urls = [urls];
                 _.each(urls, function(url) {
-                    var link = document.createElement("link");
-                    link.type = 'text/css';
-                    link.rel = 'stylesheet';
-                    link.href = url;
-                    document.getElementsByTagName("head")[0].appendChild(link);
+                    $("head").append($('<link type="text/css" rel="stylesheet" class="rcloud-user-defined-css" href="' +
+                                       url + '"/>'));
                 });
                 k();
             }

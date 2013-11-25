@@ -366,8 +366,11 @@ var shell = (function() {
                 gistname_ = gistname;
                 version_ = version;
                 that.notebook.controller.load_notebook(gistname_, version_, function(notebook) {
-                    done();
-                    on_load.bind(that, k)(notebook);
+                    $(".rcloud-user-defined-css").remove();
+                    rcloud.install_notebook_stylesheets(function() {
+                        done();
+                        on_load.bind(that, k)(notebook);
+                    });
                 });
             }
 
