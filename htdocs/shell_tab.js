@@ -363,9 +363,16 @@ var shell = (function() {
             k = k || _.identity;
 
             function do_load(done) {
+                var oldname = gistname_, oldversion = version_;
                 gistname_ = gistname;
                 version_ = version;
                 that.notebook.controller.load_notebook(gistname_, version_, function(notebook) {
+                    if (!_.isUndefined(notebook.error)) {
+                        done();
+                        gistname_ = oldname;
+                        version_ = oldversion;
+                        return;
+                    }
                     $(".rcloud-user-defined-css").remove();
                     rcloud.install_notebook_stylesheets(function() {
                         done();

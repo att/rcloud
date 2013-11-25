@@ -22,22 +22,24 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(k, version, notebook) {
-        this.clear();
-        var parts = {}; // could rely on alphabetic input instead of gathering
-        _.each(notebook.files, function (file) {
-            var filename = file.filename;
-            if(/^part/.test(filename)) {
-                var number = parseInt(filename.slice(4).split('.')[0]);
-                if(number !== NaN)
-                    parts[number] = [file.content, file.language, number];
-            }
-            // style..
-        });
-        for(var i in parts)
-            append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
-        // is there anything else to gist permissions?
-        model.read_only(version != null || notebook.user.login != rcloud.username());
-        current_gist_ = notebook;
+        if (!_.isUndefined(notebook.files)) {
+            this.clear();
+            var parts = {}; // could rely on alphabetic input instead of gathering
+            _.each(notebook.files, function (file) {
+                var filename = file.filename;
+                if(/^part/.test(filename)) {
+                    var number = parseInt(filename.slice(4).split('.')[0]);
+                    if(number !== NaN)
+                        parts[number] = [file.content, file.language, number];
+                }
+                // style..
+            });
+            for(var i in parts)
+                append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
+            // is there anything else to gist permissions?
+            model.read_only(version != null || notebook.user.login != rcloud.username());
+            current_gist_ = notebook;
+        }
         k && k(notebook);
     }
 

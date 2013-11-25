@@ -49,8 +49,10 @@ rcloud.unauthenticated.load.notebook <- function(id, version = NULL) {
 
 rcloud.load.notebook <- function(id, version = NULL) {
   res <- rcloud.get.notebook(id, version)
-  .session$current.notebook <- res
-  rcloud.reset.session()
+  if (res$ok) {
+    .session$current.notebook <- res
+    rcloud.reset.session()
+  }
   res
 }
 

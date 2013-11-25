@@ -37,6 +37,13 @@ RCloud.create = function(rcloud_ocaps) {
                 var message = _.isObject(result) && 'ok' in result
                     ? result.content.message : result.toString();
                 rclient.post_error(command + ': ' + message);
+                // FIXME: I must still call the continuation,
+                // because bad things might happen otherwise. But calling
+                // this means that I'm polluting the 
+                // space of possible JSON answers with the error.
+                // For example, right now a return string "{}" is indistinguishable
+                // from an error
+                k && k({ error: result.content });
             }
         };
     }
