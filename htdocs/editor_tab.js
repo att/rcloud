@@ -107,6 +107,8 @@ var editor = function () {
     }
 
     function remove_node(node) {
+        if(!node)
+            throw "removing non-existent node (star inconsistency?)";
         if(node.root === 'alls')
             remove_all(node.user, node.gistname);
         else if(node.root === 'interests')
@@ -739,11 +741,16 @@ var editor = function () {
             }
         },
         new_notebook: function() {
+            var that = this;
             if(isNaN(config_.nextwork))
                 config_.nextwork = 1;
             var desc = "Notebook " + config_.nextwork;
             ++config_.nextwork;
-            shell.new_notebook(desc, this.load_callback(null, false, 'interests', true));
+            shell.new_notebook(desc, function(notebook) {
+                var k = that.load_callback(null, false, 'interests', true);
+                rcloud.stars.star_notebook(notebook.id);
+                k(notebook);
+            });
         },
         rename_notebook: function(gistname, newname) {
             rcloud.rename_notebook(gistname, newname, this.load_callback(null, true));
@@ -777,6 +784,8 @@ var editor = function () {
             }
         },
         remove_notebook: function(node) {
+            if(node.root === 'interests')
+                rcloud.stars.unstar_notebook(node.gistname);
             remove_node(node);
             if(node.gistname === config_.currbook)
                 this.new_notebook();
