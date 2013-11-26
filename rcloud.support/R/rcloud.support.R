@@ -56,6 +56,29 @@ rcloud.load.notebook <- function(id, version = NULL) {
   res
 }
 
+## stash the notebook into RCS such that it can ge used in non-github execution
+## environment
+rcloud.stash.notebook <- function(stash, id = .session$current.notebook$content$id, version = NULL) {
+  res <- rcloud.get.notebook(id, version)
+  if (res$ok) {
+    tag <- NULL
+    ## FIXME: maybe we should set HEAD even if the version is specified such
+    ##        that a get without version succeeds even if only a
+    ##        specific version is stashed
+    ##        But that will require us to fetch the current HEAD
+    ##        entry and compare commit timestamps or some such nonsense ...
+    if (is.null(version)) {
+      version <- res$content$history[[1L]]$version
+      tag <- "HEAD"
+    }
+    stu <- paste0(".stash.", gsub("[-/]","_", stash))
+    rcs.set(usr.key(paste0(version, ".gist"), user=stu, notebook=id), res)
+    if (!is.null(tag))
+      rcs.set(usr.key(paste0(tag, ".tag"), user=stu, notebook=id), version)
+    TRUE
+  } else FALSE
+}
+
 rcloud.install.notebook.stylesheets <- function() {
   n <- .session$current.notebook$content
   urls <- sapply(grep('css$', names(n$files)), function(v) {
@@ -71,7 +94,14 @@ rcloud.unauthenticated.get.notebook <- function(id, version = NULL) {
 }
 
 rcloud.get.notebook <- function(id, version = NULL) {
-  res <- get.gist(id, version, ctx = .session$rgithub.context)
+  res <- if (!is.null(.session$deployment.stash)) {
+    stu <- paste0(".stash.",gsub("[-/]","_",.session$deployment.stash))
+    if (is.null(version))
+      version <- rcs.get(usr.key("HEAD.tag", user=stu, notebook=id))
+    res <- rcs.get(usr.key(paste0(version, ".gist"), user=stu, notebook=id))
+    if (is.null(res$ok)) res$ok <- FALSE
+    res
+  } else get.gist(id, version, ctx = .session$rgithub.context)
   if (rcloud.debug.level() > 1L) {
     if(res$ok) {
       cat("==== GOT GIST ====\n")
@@ -91,7 +121,7 @@ rcloud.get.notebook <- function(id, version = NULL) {
 ## the meaining of args is ambiguous and probably a bad idea - it jsut makes the client code a bit easier to write ...
 
 rcloud.call.notebook <- function(id, version = NULL, args = NULL) {
-  res <- get.gist(id, version, ctx = .session$rgithub.context)
+  res <- rcloud.get.notebook(id, version)
   if (res$ok) {
     args <- as.list(args)
     ## this is a hack for now - we should have a more general infrastructure for this ...
