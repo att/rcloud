@@ -638,7 +638,6 @@ var editor = function () {
                            history.addClass('button-disabled');
                         history.click(function() {
                             if(!disable) {
-                                $(this).tooltip('hide');
                                 that.show_history(node, true);
                             }
                             return false;
@@ -654,11 +653,9 @@ var editor = function () {
                         else
                             make_private.hide();
                         make_private.click(function() {
-                            $(this).tooltip('hide');
                             that.set_visibility(node, 'private');
                         });
                         make_public.click(function() {
-                            $(this).tooltip('hide');
                             that.set_visibility(node, 'public');
                         });
                         add_buttons(make_private, make_public);
@@ -666,7 +663,6 @@ var editor = function () {
                     if(node.root==='interests' || node.user===username_) {
                         var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style);
                         remove.click(function() {
-                            $(this).tooltip('hide');
                             that.remove_notebook(node);
                         });
                         add_buttons(remove);
