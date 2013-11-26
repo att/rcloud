@@ -203,7 +203,7 @@ rect.frame {
     position: relative;
 }
 
-.notebook-commands {
+.notebook-commands.appear {
     position: absolute;
     bottom: -2px;
     right: -50px;

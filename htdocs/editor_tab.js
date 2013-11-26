@@ -624,11 +624,24 @@ var editor = function () {
                 if(node.version)
                     title.addClass('history');
                 if(node.gistname && !node.version) {
-                    var commands = $('<span/>', {class: 'notebook-commands'});
-                    function add_buttons() {
-                        commands.append('&nbsp;');
-                        commands.append.apply(commands, arguments);
+                    var add_buttons = function() {
+                        add_buttons.target.append('&nbsp;');
+                        add_buttons.target.append.apply(add_buttons.target, arguments);
+                    };
+                    // commands that are always there
+                    var always = $('<span/>', {class: 'notebook-commands'});
+                    add_buttons.target = always;
+                    if(node.root==='interests') {
+                        var unstar = ui_utils.fa_button('icon-star', 'unstar');
+                        unstar.click(function() {
+                            that.star_notebook(false, {gistname: node.gistname, user: node.user});
+                        });
+                        add_buttons(unstar);
                     }
+
+                    // commands that appear
+                    var commands = $('<span/>', {class: 'notebook-commands appear'});
+                    add_buttons.target = commands;
                     if(true) { // all notebooks have history - should it always be accessible?
                         var disable = config_.currbook===node.gistname && config_.currversion;
                         var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style);
@@ -660,14 +673,7 @@ var editor = function () {
                         });
                         add_buttons(make_private, make_public);
                     }
-                    if(node.root==='interests') {
-                        var unstar = ui_utils.fa_button('icon-star', 'unstar');
-                        unstar.click(function() {
-                            that.star_notebook(false, {gistname: node.gistname, user: node.user});
-                        });
-                        add_buttons(unstar);
-                    }
-                    else if(node.user===username_) {
+                    if(node.root != 'interests' && node.user===username_) {
                         var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style);
                         remove.click(function() {
                             that.remove_notebook(node);
@@ -675,13 +681,13 @@ var editor = function () {
                         add_buttons(remove);
                     };
                     commands.hide();
-                    title.append('&nbsp;', commands);
+                    title.append('&nbsp;', always, commands);
                     $li.hover(
                         function() {
-                            $('.notebook-commands', this).show();
+                            $('.notebook-commands.appear', this).show();
                         },
                         function() {
-                            $('.notebook-commands', this).hide();
+                            $('.notebook-commands.appear', this).hide();
                         });
                 }
             }
