@@ -126,15 +126,16 @@ function main_init() {
             rcloud.init_client_side_data();
 
             shell.init();
-            editor.init(function() {
-                if (location.search.length > 0) {
-                    function getURLParameter(name) {
-                        return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
-                    }
-                    editor.load_notebook(getURLParameter("notebook"), getURLParameter("version"));
-                    $("#tabs").tabs("select", "#tabs-2");
+            var notebook = null, version = null;
+            if (location.search.length > 0) {
+                function getURLParameter(name) {
+                    return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
                 }
-            });
+                notebook = getURLParameter("notebook");
+                version = getURLParameter("version");
+            }
+            editor.init(notebook, version);
+            $("#tabs").tabs("select", "#tabs-2");
         },
         on_data: function(v) {
             v = v.value.json();

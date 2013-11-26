@@ -162,6 +162,14 @@ rect.frame {
     color: blue;
 }
 
+.navbar-brand {
+    font-size: 20px;
+}
+
+.navbar-nav {
+    font-size: 13px;
+}
+
 .navbar .btn-link {
     color: #ddd;
     font-size: 120%;

@@ -1,6 +1,6 @@
 make.oc <- function(fun, name=deparse(substitute(fun))) {
   f <- function(...) try(fun(...), silent=TRUE)
-  .Call(Rserve_oc_register, f, name)
+  Rserve:::ocap(f, name)
 }
 
 wrap.js.fun <- function(s)

@@ -37,6 +37,13 @@ RCloud.create = function(rcloud_ocaps) {
                 var message = _.isObject(result) && 'ok' in result
                     ? result.content.message : result.toString();
                 rclient.post_error(command + ': ' + message);
+                // FIXME: I must still call the continuation,
+                // because bad things might happen otherwise. But calling
+                // this means that I'm polluting the 
+                // space of possible JSON answers with the error.
+                // For example, right now a return string "{}" is indistinguishable
+                // from an error
+                k && k({ error: result.content });
             }
         };
     }
@@ -109,17 +116,15 @@ RCloud.create = function(rcloud_ocaps) {
                 k(result);
             },
             clear_css: function(current_notebook, k) {
+                $(".rcloud-user-defined-css").remove();
                 k();
             },
             install_css: function(urls, k) {
                 if (_.isString(urls))
                     urls = [urls];
                 _.each(urls, function(url) {
-                    var link = document.createElement("link");
-                    link.type = 'text/css';
-                    link.rel = 'stylesheet';
-                    link.href = url;
-                    document.getElementsByTagName("head")[0].appendChild(link);
+                    $("head").append($('<link type="text/css" rel="stylesheet" class="rcloud-user-defined-css" href="' +
+                                       url + '"/>'));
                 });
                 k();
             }

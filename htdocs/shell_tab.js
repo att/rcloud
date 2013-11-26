@@ -202,8 +202,10 @@ var shell = (function() {
             $('#prompt-div').hide();
             fork_revert.text(is_mine_ ? 'Revert' : 'Fork');
             fork_revert.show();
+            $('#save-notebook').hide();
         }
         else {
+            $('#save-notebook').show();
             $('#prompt-div').show();
             fork_revert.hide();
         }
@@ -284,7 +286,7 @@ var shell = (function() {
         set_share_link();
 
         is_mine_ = notebook_is_mine(notebook);
-        show_fork_or_prompt_elements(notebook_is_mine(notebook));
+        show_fork_or_prompt_elements();
         _.each(notebook_view_.sub_views, function(cell_view) {
             cell_view.show_source();
         });
@@ -363,11 +365,21 @@ var shell = (function() {
             k = k || _.identity;
 
             function do_load(done) {
+                var oldname = gistname_, oldversion = version_;
                 gistname_ = gistname;
                 version_ = version;
                 that.notebook.controller.load_notebook(gistname_, version_, function(notebook) {
-                    done();
-                    on_load.bind(that, k)(notebook);
+                    if (!_.isUndefined(notebook.error)) {
+                        done();
+                        gistname_ = oldname;
+                        version_ = oldversion;
+                        return;
+                    }
+                    $(".rcloud-user-defined-css").remove();
+                    rcloud.install_notebook_stylesheets(function() {
+                        done();
+                        on_load.bind(that, k)(notebook);
+                    });
                 });
             }
 
@@ -378,9 +390,6 @@ var shell = (function() {
                 });
             } else {
                 rcloud.with_progress(function(done) {
-                    // asymmetrical: we know the gistname before it's loaded here,
-                    // but not in new.  and we have to set this here to signal
-                    // editor's init load config callback to override the currbook
                     rclient.close();
                     // FIXME this is a bit of an annoying duplication of code on main.js and view.js
                     rclient = RClient.create({

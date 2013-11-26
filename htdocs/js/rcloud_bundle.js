@@ -153,6 +153,13 @@ RCloud.create = function(rcloud_ocaps) {
                 var message = _.isObject(result) && 'ok' in result
                     ? result.content.message : result.toString();
                 rclient.post_error(command + ': ' + message);
+                // FIXME: I must still call the continuation,
+                // because bad things might happen otherwise. But calling
+                // this means that I'm polluting the 
+                // space of possible JSON answers with the error.
+                // For example, right now a return string "{}" is indistinguishable
+                // from an error
+                k && k({ error: result.content });
             }
         };
     }
@@ -225,17 +232,15 @@ RCloud.create = function(rcloud_ocaps) {
                 k(result);
             },
             clear_css: function(current_notebook, k) {
+                $(".rcloud-user-defined-css").remove();
                 k();
             },
             install_css: function(urls, k) {
                 if (_.isString(urls))
                     urls = [urls];
                 _.each(urls, function(url) {
-                    var link = document.createElement("link");
-                    link.type = 'text/css';
-                    link.rel = 'stylesheet';
-                    link.href = url;
-                    document.getElementsByTagName("head")[0].appendChild(link);
+                    $("head").append($('<link type="text/css" rel="stylesheet" class="rcloud-user-defined-css" href="' +
+                                       url + '"/>'));
                 });
                 k();
             }
@@ -1342,22 +1347,24 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(k, version, notebook) {
-        this.clear();
-        var parts = {}; // could rely on alphabetic input instead of gathering
-        _.each(notebook.files, function (file) {
-            var filename = file.filename;
-            if(/^part/.test(filename)) {
-                var number = parseInt(filename.slice(4).split('.')[0]);
-                if(number !== NaN)
-                    parts[number] = [file.content, file.language, number];
-            }
-            // style..
-        });
-        for(var i in parts)
-            append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
-        // is there anything else to gist permissions?
-        model.read_only(version != null || notebook.user.login != rcloud.username());
-        current_gist_ = notebook;
+        if (!_.isUndefined(notebook.files)) {
+            this.clear();
+            var parts = {}; // could rely on alphabetic input instead of gathering
+            _.each(notebook.files, function (file) {
+                var filename = file.filename;
+                if(/^part/.test(filename)) {
+                    var number = parseInt(filename.slice(4).split('.')[0]);
+                    if(number !== NaN)
+                        parts[number] = [file.content, file.language, number];
+                }
+                // style..
+            });
+            for(var i in parts)
+                append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
+            // is there anything else to gist permissions?
+            model.read_only(version != null || notebook.user.login != rcloud.username());
+            current_gist_ = notebook;
+        }
         k && k(notebook);
     }
 
