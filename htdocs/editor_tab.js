@@ -660,7 +660,14 @@ var editor = function () {
                         });
                         add_buttons(make_private, make_public);
                     }
-                    if(node.root==='interests' || node.user===username_) {
+                    if(node.root==='interests') {
+                        var unstar = ui_utils.fa_button('icon-star', 'unstar');
+                        unstar.click(function() {
+                            that.star_notebook(false, {gistname: node.gistname, user: node.user});
+                        });
+                        add_buttons(unstar);
+                    }
+                    else if(node.user===username_) {
                         var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style);
                         remove.click(function() {
                             that.remove_notebook(node);
@@ -762,6 +769,8 @@ var editor = function () {
             var gistname = opts.gistname
                     || opts.notebook&&opts.notebook.id
                     || config_.currbook;
+            if(config_.currbook === gistname)
+                star_notebook_button_(star); // redundant if it came from button but ok
             if(star) {
                 rcloud.stars.star_notebook(gistname);
                 if(opts.notebook)
