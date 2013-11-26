@@ -632,7 +632,8 @@ var editor = function () {
                     var always = $('<span/>', {class: 'notebook-commands'});
                     add_buttons.target = always;
                     if(node.root==='interests') {
-                        var unstar = ui_utils.fa_button('icon-star', 'unstar');
+                        var star_style = {'font-size': '80%'};
+                        var unstar = ui_utils.fa_button('icon-star', 'unstar', 'unstar', star_style);
                         unstar.click(function() {
                             that.star_notebook(false, {gistname: node.gistname, user: node.user});
                         });
