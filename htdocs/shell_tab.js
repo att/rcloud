@@ -569,7 +569,7 @@ var shell = (function() {
                                 '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>',
                                 '<h3>Import Notebook File</h3>',
                                 '</div>'].join(''));
-                var dialog = $('<div id="import-notebook-dialog" class="modal fade"></div>')
+                var dialog = $('<div id="import-notebook-file-dialog" class="modal fade"></div>')
                         .append($('<div class="modal-dialog"></div>')
                                 .append($('<div class="modal-content"></div>')
                                         .append(header).append(body).append(footer)));
@@ -583,7 +583,7 @@ var shell = (function() {
                     });
                 return dialog;
             }
-            var dialog = $("#import-notebook-dialog");
+            var dialog = $("#import-notebook-file-dialog");
             if(!dialog.length)
                 dialog = create_import_file_dialog();
             dialog.modal({keyboard: true});
@@ -628,7 +628,7 @@ var shell = (function() {
                                 '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>',
                                 '<h3>Import Notebooks</h3>',
                                 '</div>'].join(''));
-                var dialog = $('<div id="import-notebook-dialog" class="modal fade"></div>')
+                var dialog = $('<div id="import-notebooks-dialog" class="modal fade"></div>')
                         .append($('<div class="modal-dialog"></div>')
                                 .append($('<div class="modal-content"></div>')
                                         .append(header).append(body).append(footer)));
@@ -642,7 +642,7 @@ var shell = (function() {
                     });
                 return dialog;
             }
-            var dialog = $("#import-notebook-dialog");
+            var dialog = $("#import-notebooks-dialog");
             if(!dialog.length)
                 dialog = create_import_notebook_dialog();
             dialog.modal({keyboard: true});
