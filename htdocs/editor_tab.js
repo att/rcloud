@@ -14,7 +14,8 @@ var editor = function () {
         publish_notebook_checkbox_ = null,
         star_notebook_button_ = null,
         histories_ = {},
-        other_alls_ = {}; // notebooks of other users we have browsed (not persisted)
+        other_alls_ = {}, // notebooks of other users we have browsed (not persisted)
+        i_starred_ = {};
 
     function compare_nodes(a, b) {
         var so = a.sort_order-b.sort_order;
@@ -32,6 +33,27 @@ var editor = function () {
         }
     }
 
+    /* an interest ("star") is reflected in 7 places:
+     - the star in rcs (logically in github but they don't have the necessary APIs)
+     - the count in rcs
+     - the entry in config_.interests[]
+     - the bit in i_starred[] (for efficiency)
+     - the node under My Interests in the notebook tree UI
+     - the star icon next to the node under All Notebooks in the tree UI
+     - the star icon in the navbar (if current notebook)
+     */
+
+    function do_star_notebook(n) {
+        rcloud.stars.star_notebook(n, function() {
+            i_starred_[n] = true;
+        });
+    }
+    function do_unstar_notebook(n) {
+        rcloud.stars.unstar_notebook(n, function() {
+            delete i_starred_[n];
+        });
+    }
+
     // do a depth-first search to find a migration path from one version to another,
     // then apply all the migration functions.  obviously results will be unpredictable
     // if there is more than one path.
@@ -46,7 +68,7 @@ var editor = function () {
                     // star all notebooks in interests
                     for(var u in config.interests)
                         for(var n in config.interests[u])
-                            rcloud.stars.star_notebook(n);
+                            do_star_notebook(n);
                 }
             }
         };
@@ -185,6 +207,9 @@ var editor = function () {
             config_.interests[username_] = {};
         for (var username in config_.interests) {
             var user_notebooks = config_.interests[username];
+            for(var gistname in user_notebooks) {
+                i_starred_[gistname] = true;
+            }
             var notebook_nodes = [];
             notebook_nodes = notebook_nodes.concat(convert_notebook_set('interests', username, user_notebooks));
 
@@ -631,13 +656,38 @@ var editor = function () {
                     // commands that are always there
                     var always = $('<span/>', {class: 'notebook-commands'});
                     add_buttons.target = always;
+                    var star_style = _.extend({'font-size': '80%'}, icon_style);
                     if(node.root==='interests') {
-                        var star_style = {'font-size': '80%'};
                         var unstar = ui_utils.fa_button('icon-star', 'unstar', 'unstar', star_style);
                         unstar.click(function() {
                             that.star_notebook(false, {gistname: node.gistname, user: node.user});
+                            return false;
                         });
                         add_buttons(unstar);
+                    }
+                    else {
+                        var states = {true: {class: 'icon-star', title: 'unstar'},
+                                      false: {class: 'icon-star-empty', title: 'star'}};
+                        var start = i_starred_[node.gistname] || false,
+                            starte = states[start];
+                        var star_unstar = ui_utils.fa_button(starte.class,
+                                                             function(e) { return states[star_unstar[0].state].title; },
+                                                             null,
+                                                             star_style);
+                        // sigh, ui_utils.twostate_icon should be a mixin or something
+                        star_unstar[0].state = start;
+                        star_unstar.click(function() {
+                            try {
+                                var state = this.state = !this.state;
+                                that.star_notebook(state, {gistname: node.gistname, user: node.user});
+                                //$(this).attr('class', states[state].class);
+                            }
+                            catch(x) {// whatever you do, don't let this event percolate
+                                rclient.post_error(x);
+                            }
+                            return false;
+                        });
+                        add_buttons(star_unstar);
                     }
 
                     // commands that appear
@@ -671,6 +721,7 @@ var editor = function () {
                         });
                         make_public.click(function() {
                             that.set_visibility(node, 'public');
+                            return false;
                         });
                         add_buttons(make_private, make_public);
                     }
@@ -678,6 +729,7 @@ var editor = function () {
                         var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style);
                         remove.click(function() {
                             that.remove_notebook(node);
+                            return false;
                         });
                         add_buttons(remove);
                     };
@@ -758,7 +810,7 @@ var editor = function () {
             ++config_.nextwork;
             shell.new_notebook(desc, function(notebook) {
                 var k = that.load_callback(null, false, 'interests', true);
-                rcloud.stars.star_notebook(notebook.id);
+                do_star_notebook(notebook.id);
                 k(notebook);
             });
         },
@@ -779,7 +831,7 @@ var editor = function () {
             if(config_.currbook === gistname)
                 star_notebook_button_(star); // redundant if it came from button but ok
             if(star) {
-                rcloud.stars.star_notebook(gistname);
+                do_star_notebook(gistname);
                 if(opts.notebook)
                     editor.update_notebook_from_gist(opts.notebook, opts.notebook.history, null, true);
                 else {
@@ -790,14 +842,14 @@ var editor = function () {
                 }
             }
             else {
-                rcloud.stars.unstar_notebook(gistname);
+                do_unstar_notebook(gistname);
                 var node = $tree_.tree('getNodeById', node_id('interests', user, gistname));
                 remove_node(node);
             }
         },
         remove_notebook: function(node) {
             if(node.root === 'interests')
-                rcloud.stars.unstar_notebook(node.gistname);
+                do_unstar_notebook(node.gistname);
             remove_node(node);
             if(node.gistname === config_.currbook)
                 this.new_notebook();
