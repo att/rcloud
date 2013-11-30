@@ -552,6 +552,33 @@ var editor = function () {
         return node;
     }
 
+    function update_notebook_status(user, gistname, status, selroot, create_interest) {
+        var entry = get_notebook_status(user, gistname);
+
+        entry.description = status.description;
+        entry.last_commit = status.last_commit;
+        entry.visibility = entry.visibility || 'public';
+
+        if(create_interest)
+            add_interest(user, gistname, entry);
+        update_tree_entry('interests', user, gistname, entry, status.history,
+                          selroot==='interests', create_interest);
+
+        add_all(user, gistname, entry);
+        update_tree_entry('alls', user, gistname, entry, status.history,
+                          selroot==='alls', true);
+        result.save_config();
+    }
+
+    function update_notebook_from_gist(result, history, selroot, create_interest) {
+        update_notebook_status(result.user.login,
+                               result.id,
+                               {description: result.description,
+                                last_commit: result.updated_at || result.history[0].committed_at,
+                                history: history},
+                               selroot,
+                               create_interest);
+    }
 
     function display_date(ds) {
         function pad(n) { return n<10 ? '0'+n : n; }
@@ -833,7 +860,7 @@ var editor = function () {
             if(star) {
                 do_star_notebook(gistname);
                 if(opts.notebook)
-                    editor.update_notebook_from_gist(opts.notebook, opts.notebook.history, null, true);
+                    update_notebook_from_gist(opts.notebook, opts.notebook.history, null, true);
                 else {
                     var entry = get_notebook_status(user, gistname);
                     add_interest(user, gistname, entry);
@@ -891,7 +918,7 @@ var editor = function () {
                 // get the old history and not the current
                 if(is_change && shell.is_old_github())
                     history.unshift({version:'blah'});
-                that.update_notebook_from_gist(result, history, selroot, create_interest);
+                update_notebook_from_gist(result, history, selroot, create_interest);
                 that.update_notebook_file_list(result.files);
                 rcloud.get_all_comments(result.id, function(data) {
                     populate_comments(data);
@@ -905,32 +932,6 @@ var editor = function () {
                 });
                 k && k();
             };
-        },
-        update_notebook_from_gist: function(result, history, selroot, create_interest) {
-            this.update_notebook_status(result.user.login,
-                                        result.id,
-                                        {description: result.description,
-                                         last_commit: result.updated_at || result.history[0].committed_at,
-                                         history: history},
-                                        selroot,
-                                        create_interest);
-        },
-        update_notebook_status: function(user, gistname, status, selroot, create_interest) {
-            var entry = get_notebook_status(user, gistname);
-
-            entry.description = status.description;
-            entry.last_commit = status.last_commit;
-            entry.visibility = entry.visibility || 'public';
-
-            if(create_interest)
-                add_interest(user, gistname, entry);
-            update_tree_entry('interests', user, gistname, entry, status.history,
-                              selroot==='interests', create_interest);
-
-            add_all(user, gistname, entry);
-            update_tree_entry('alls', user, gistname, entry, status.history,
-                              selroot==='alls', true);
-            this.save_config();
         },
         update_notebook_file_list: function(files) {
             // FIXME natural sort!
