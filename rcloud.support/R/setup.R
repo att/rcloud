@@ -213,7 +213,10 @@ start.rcloud <- function(username="", token="", ...) {
     stop("bad username/token pair");
   .session$username <- username
   .session$token <- token
-  .session$rgithub.context <- create.github.context(
+  if (nzConf("gist.deployment.stash"))
+    .session$deployment.stash <- getConf("gist.deployment.stash")
+  else
+    .session$rgithub.context <- create.github.context(
                                 getConf("github.api.url"), getConf("github.client.id"),
                                 getConf("github.client.secret"), token)
 
@@ -224,7 +227,10 @@ start.rcloud <- function(username="", token="", ...) {
 
 start.rcloud.anonymously <- function(...) {
   if (rcloud.debug.level()) cat("start.rcloud.anonymously()")
-  .session$rgithub.context <- create.github.context(
+  if (nzConf("gist.deployment.stash"))
+    .session$deployment.stash <- getConf("gist.deployment.stash")
+  else
+    .session$rgithub.context <- create.github.context(
                                 getConf("github.api.url"), getConf("github.client.id"),
                                 getConf("github.client.secret"))
   .session$username <- ""
