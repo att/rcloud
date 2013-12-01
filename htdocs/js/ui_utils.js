@@ -37,6 +37,13 @@ ui_utils.fa_button = function(which, title, classname, style)
             title: title,
             delay: { show: 250, hide: 0 }
         });
+    /*
+    var old_click = span.click;
+    span.click = function() {
+        $(this).tooltip('hide');
+        old_click.apply(this, arguments);
+    };
+     */
     return span;
 };
 
