@@ -857,9 +857,7 @@ var editor = function () {
             var desc = "Notebook " + config_.nextwork;
             ++config_.nextwork;
             shell.new_notebook(desc, function(notebook) {
-                rcloud.stars.star_notebook(notebook.id, function() {
-                    that.load_callback(null, false, 'interests') (notebook);
-                });
+                that.star_notebook(true, {notebook: notebook, make_current: true, version: null});
             });
         },
         rename_notebook: function(gistname, newname) {
@@ -884,8 +882,12 @@ var editor = function () {
                     var entry = get_notebook_status(user, gistname);
                     add_interest(user, gistname, entry);
 
-                    if(opts.notebook)
-                        update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
+                    if(opts.notebook) {
+                        if(opts.make_current)
+                            that.load_callback(opts.version, false, 'interests') (opts.notebook);
+                        else
+                            update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
+                    }
                     else {
                         that.save_config();
                         update_notebook_view(user, gistname, entry, opts.selroot);
@@ -932,9 +934,11 @@ var editor = function () {
             return function(result) {
                 if(!result.description)
                     throw "Invalid notebook (must have description)";
+
                 config_.currbook = result.id;
                 config_.currversion = version;
                 config_.bookuser = result.user.login;
+
                 var history;
                 // when loading an old version you get truncated history
                 // we don't want that, even if it means an extra fetch
