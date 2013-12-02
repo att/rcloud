@@ -54,7 +54,7 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.anonymous_session_init = function(k) {
             rcloud_ocaps.anonymous_session_init(k || _.identity);
         };
-        
+
         rcloud.username = function() {
             return $.cookies.get('user');
         };
@@ -148,6 +148,9 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.stars.get_notebook_star_count = function(id, k) {
             rcloud_ocaps.stars.get_notebook_star_count(id, k);
+        };
+        rcloud.stars.get_multiple_notebook_star_counts = function(id, k) {
+            rcloud_ocaps.stars.get_multiple_notebook_star_counts(id, k);
         };
 
         rcloud.session_cell_eval = function(filename, language, silent, k) {
@@ -294,6 +297,9 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.stars.get_notebook_star_count = function(id, k) {
             rcloud_ocaps.stars.get_notebook_star_count(id, k);
+        };
+        rcloud.stars.get_multiple_notebook_star_counts = function(ids, k) {
+            rcloud_ocaps.stars.get_multiple_notebook_star_counts(ids, k);
         };
         rcloud.stars.get_my_starred_notebooks = function(k) {
             rcloud_ocaps.stars.get_my_starred_notebooks(k);
