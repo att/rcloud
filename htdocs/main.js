@@ -33,7 +33,11 @@ function init_upload_pane() {
                 })
             );
         };
-        rcloud.upload_file(false, success, function() {
+        var upload_function = ($('#upload-to-notebook').is(':checked')) 
+            ? rcloud.upload_to_notebook
+            : rcloud.upload_file;
+
+        upload_function(false, success, function() {
             var overwrite_click = function() {
                 rcloud.upload_file(true, success, function(exception_value) {
                     var msg = exception_value;
