@@ -28,7 +28,7 @@ var editor = function () {
     // local model
     var username_ = null,
         histories_ = {},
-        other_alls_ = {}, // notebooks of other users we have browsed (not persisted)
+        other_alls_ = {}, // notebooks of other users
         i_starred_ = {};
 
     // view
@@ -257,6 +257,7 @@ var editor = function () {
                         my_alls = notebook_nodes;
                     }
                     else {
+                        _.extend(other_alls_, user_config.all_books);
                         var id = node_id('alls', username);
                         var node = {
                             label: someone_elses(username),
