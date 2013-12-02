@@ -33,10 +33,53 @@ rcloud.save.user.config <- function(user = .session$username, content) {
   invisible(rcs.set(usr.key("config.json", user=user, notebook="system"), content))
 }
 
-rcloud.get.conf.value <- function(key) getConf(key)
+rcloud.get.conf.value <- function(key) {
+  Allowed <- c('host', 'github.base.url', 'github.api.url', 'github.gist.url')
+  if(key %in% Allowed)
+    getConf(key)
+  else
+    NULL
+}
+
+rcloud.unauthenticated.load.notebook <- function(id, version = NULL) {
+  if (!rcloud.is.notebook.published(id))
+    stop("Notebook does not exist or has not been published")
+  rcloud.load.notebook(id, version)
+}
+
+rcloud.load.notebook <- function(id, version = NULL) {
+  res <- rcloud.get.notebook(id, version)
+  if (res$ok) {
+    .session$current.notebook <- res
+    rcloud.reset.session()
+  }
+  res
+}
+
+rcloud.install.notebook.stylesheets <- function() {
+  n <- .session$current.notebook$content
+  urls <- sapply(grep('css$', names(n$files)), function(v) {
+    n$files[[v]]$raw_url
+  })
+  rcloud.install.css(urls)
+}
+
+rcloud.unauthenticated.get.notebook <- function(id, version = NULL) {
+  if (!rcloud.is.notebook.published(id))
+    stop("Notebook does not exist or has not been published")
+  rcloud.get.notebook(id, version)
+}
 
 rcloud.get.notebook <- function(id, version = NULL) {
-  res <- get.gist(id, version, ctx = .session$rgithub.context)
+  res <- if (!is.null(stash <- .session$deployment.stash)) {
+    if (is.null(version))
+      version <- rcs.get(stash.key(stash, id, "HEAD", type="tag"))
+    res <- rcs.get(stash.key(stash, id, version))
+    if (is.null(res$ok)) res <- list(ok=FALSE)
+    res
+  } else suppressWarnings(get.gist(id, version, ctx = .session$rgithub.context))
+  ## FIXME: suppressWarnings is a hack to get rid of the stupid "Duplicated curl options"
+  ##        which seem to be a httr bug
   if (rcloud.debug.level() > 1L) {
     if(res$ok) {
       cat("==== GOT GIST ====\n")
@@ -44,8 +87,8 @@ rcloud.get.notebook <- function(id, version = NULL) {
       cat("==== END GIST ====\n")
     }
     else {
-      cat("==== GET NOTEBOOK FAILED ====\n");
-      print(res);
+      cat("==== GET NOTEBOOK FAILED ====\n")
+      print(res)
     }
   }
   res
@@ -56,7 +99,7 @@ rcloud.get.notebook <- function(id, version = NULL) {
 ## the meaining of args is ambiguous and probably a bad idea - it jsut makes the client code a bit easier to write ...
 
 rcloud.call.notebook <- function(id, version = NULL, args = NULL) {
-  res <- get.gist(id, version, ctx = .session$rgithub.context)
+  res <- rcloud.get.notebook(id, version)
   if (res$ok) {
     args <- as.list(args)
     ## this is a hack for now - we should have a more general infrastructure for this ...
@@ -91,7 +134,11 @@ rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
   } else result
 }
 
-rcloud.update.notebook <- function(id, content) update.gist(id, content, ctx = .session$rgithub.context)
+rcloud.update.notebook <- function(id, content) {
+  res <- update.gist(id, content, ctx = .session$rgithub.context)
+  .session$current.notebook <- res
+  res
+}
 
 rcloud.create.notebook <- function(content) create.gist(content, ctx = .session$rgithub.context)
 
@@ -106,13 +153,21 @@ rcloud.get.users <- function(user) ## NOTE: this is a bit of a hack, because it 
   gsub("/.*","",rcs.list(usr.key("config.json", user="*", notebook="system")))
 
 rcloud.publish.notebook <- function(id) {
-  rcs.set(rcs.key("notebook", id, "public"), 1)
-  TRUE
+  nb <- rcloud.get.notebook(id)
+  if (nb$content$user$login == .session$rgithub.context$user$login) {
+    rcs.set(rcs.key("notebook", id, "public"), 1)
+    TRUE
+  } else
+    FALSE
 }
 
 rcloud.unpublish.notebook <- function(id) {
-  rcs.rm(rcs.key("notebook", id, "public"))
-  TRUE
+  nb <- rcloud.get.notebook(id)
+  if (nb$content$user$login == .session$rgithub.context$user$login) {
+    rcs.rm(rcs.key("notebook", id, "public"))
+    TRUE
+  } else
+    FALSE
 }
 
 rcloud.is.notebook.published <- function(id) {
@@ -171,3 +226,54 @@ rcloud.record.cell.execution <- function(user = .session$username, json.string) 
 }
 
 rcloud.debug.level <- function() if (hasConf("debug")) getConf("debug") else 0L
+
+################################################################################
+# stars
+
+star.key <- function(notebook)
+{
+  user <- .session$username
+  rcs.key("notebook", notebook, "stars", user)
+}
+
+star.count.key <- function(notebook)
+{
+  rcs.key("notebook", notebook, "starcount")
+}
+
+rcloud.notebook.star.count <- function(notebook)
+{
+  result <- rcs.get(star.count.key(notebook))
+  if (is.null(result)) 0 else result
+}
+
+rcloud.multiple.notebook.star.counts <- function(notebooks)
+{
+  Map(rcloud.notebook.star.count, notebooks)
+}
+
+rcloud.is.notebook.starred <- function(notebook)
+{
+  !is.null(rcs.get(star.key(notebook)))
+}
+
+rcloud.star.notebook <- function(notebook)
+{
+  if (!rcloud.is.notebook.starred(notebook)) {
+    rcs.set(star.key(notebook), TRUE)
+    rcs.incr(star.count.key(notebook))
+  }
+}
+
+rcloud.unstar.notebook <- function(notebook)
+{
+  if (rcloud.is.notebook.starred(notebook)) {
+    rcs.rm(star.key(notebook))
+    rcs.decr(star.count.key(notebook))
+  }
+}
+
+rcloud.get.my.starred.notebooks <- function()
+{
+  rcs.list(star.key("*"))
+}

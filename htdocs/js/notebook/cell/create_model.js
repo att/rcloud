@@ -3,6 +3,7 @@ Notebook.Cell.create_model = function(content, language)
     var result = {
         views: [], // sub list for pubsub
         id: -1,
+        parent_model: null,
         language: function() {
             return language;
         },

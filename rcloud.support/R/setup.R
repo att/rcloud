@@ -146,20 +146,8 @@ configure.rcloud <- function () {
   TRUE
 }
 
-## --- RCloud part folows ---
-## this is called by session.init() on per-connection basis
-start.rcloud <- function(username="", token="", ...) {
-  if (rcloud.debug.level()) cat("start.rcloud(", username, ", ", token, ")\n", sep='')
-  if (!check.user.token.pair(username, token))
-    stop("bad username/token pair");
-  .session$username <- username
-  .session$token <- token
-  .session$rgithub.context <- create.github.context(
-                                getConf("github.api.url"), getConf("github.client.id"),
-                                getConf("github.client.secret"), token)
 
-  if (is.function(getOption("RCloud.session.auth")))
-    getOption("RCloud.session.auth")(username=username, ...)
+start.rcloud.common <- function(...) {
 
   ## This is a bit of a hack (errr.. I mean a serious hack)
   ## we fake out R to think that Rhttpd is running and hijack the browser
@@ -213,5 +201,42 @@ start.rcloud <- function(username="", token="", ...) {
     if (!file.exists(fn <- pathConf("data.root", "userfiles", .session$username)))
       dir.create(fn, FALSE, TRUE, "0770")
   }
+
   TRUE
+}
+
+## --- RCloud part folows ---
+## this is called by session.init() on per-connection basis
+start.rcloud <- function(username="", token="", ...) {
+  if (rcloud.debug.level()) cat("start.rcloud(", username, ", ", token, ")\n", sep='')
+  if (!check.user.token.pair(username, token))
+    stop("bad username/token pair");
+  .session$username <- username
+  .session$token <- token
+  if (nzConf("gist.deployment.stash"))
+    .session$deployment.stash <- getConf("gist.deployment.stash")
+  else
+    .session$rgithub.context <- create.github.context(
+                                getConf("github.api.url"), getConf("github.client.id"),
+                                getConf("github.client.secret"), token)
+
+  if (is.function(getOption("RCloud.session.auth")))
+    getOption("RCloud.session.auth")(username=username, ...)
+  start.rcloud.common(...)
+}
+
+start.rcloud.anonymously <- function(...) {
+  if (rcloud.debug.level()) cat("start.rcloud.anonymously()")
+  if (nzConf("gist.deployment.stash"))
+    .session$deployment.stash <- getConf("gist.deployment.stash")
+  else
+    .session$rgithub.context <- create.github.context(
+                                getConf("github.api.url"), getConf("github.client.id"),
+                                getConf("github.client.secret"))
+  .session$username <- ""
+  .session$token <- ""
+
+  if (is.function(getOption("RCloud.session.auth")))
+    getOption("RCloud.session.auth")(username=username, ...)
+  start.rcloud.common(...)
 }

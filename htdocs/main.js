@@ -1,19 +1,6 @@
-function init_shareable_link_box() {
-    $("#share-notebook").each(function() {
-        var t = $(this), n = t.next(".embed-box"), f = function() {
-            t.toggle();
-            n.toggle();
-            if (n.is(":visible")) {
-                n.get(0).value = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
-                var v = shell.version();
-                if(v)
-                    n.get(0).value = n.get(0).value + '&version='+v;
-                n.get(0).select();
-            }
-            return false;
-        };
-        t.click(f); n.blur(f);
-    });
+function resize_side_panel() {
+    var non_notebook_panel_height = 246;
+    $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
 }
 
 function init_fork_revert_button() {
@@ -71,6 +58,31 @@ function init_upload_pane() {
     });
 }
 
+function init_save_button() {
+    var saveb = $("#save-notebook");
+    saveb.click(function() {
+        shell.save_notebook();
+    });
+    shell.notebook.controller.save_button(saveb);
+}
+
+function init_port_file_buttons() {
+    $('#export-notebook-file').click(function() {
+        shell.export_notebook_file();
+    });
+    $('#import-notebook-file').click(function() {
+        shell.import_notebook_file();
+    });
+}
+
+function init_navbar_buttons() {
+    init_fork_revert_button();
+    init_github_buttons();
+    init_save_button();
+    init_port_file_buttons();
+    init_upload_pane();
+}
+
 var oob_handlers = {
     "browsePath": function(v) {
         var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
@@ -82,12 +94,9 @@ var oob_handlers = {
 };
 
 function main_init() {
-    init_shareable_link_box();
-    init_fork_revert_button();
-    init_github_buttons();
-    init_upload_pane();
-    footer.init();
-    
+    resize_side_panel();
+    init_navbar_buttons();
+
     $("#show-source").font_awesome_checkbox({
         checked: false,
         check: function() {
@@ -106,6 +115,11 @@ function main_init() {
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
         on_connect: function(ocaps) {
             rcloud = RCloud.create(ocaps.rcloud);
+            if (!rcloud.authenticated) {
+                rclient.post_error(rclient.disconnection_error("Please login first!"));
+                rclient.close();
+                return;
+            }
             rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {
                 rclient.post_response(hello);
             });
@@ -123,16 +137,17 @@ function main_init() {
             $(".collapse").collapse();
             rcloud.init_client_side_data();
 
-            editor.init();
             shell.init();
-
+            var notebook = null, version = null;
             if (location.search.length > 0) {
                 function getURLParameter(name) {
                     return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
                 }
-                editor.load_notebook(getURLParameter("notebook"), getURLParameter("version"));
-                $("#tabs").tabs("select", "#tabs-2");
+                notebook = getURLParameter("notebook");
+                version = getURLParameter("version");
             }
+            editor.init(notebook, version);
+            $("#tabs").tabs("select", "#tabs-2");
         },
         on_data: function(v) {
             v = v.value.json();

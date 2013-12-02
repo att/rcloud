@@ -199,10 +199,6 @@ rect.frame {
     overflow-y: scroll;
 }
 
-.notebook-commands .fontawesome-button {
-    margin: 0;
-}
-
 .header-button {
     float: right;
     font-size: 120%;
@@ -243,12 +239,12 @@ rect.frame {
 }
 
 .footer {
-    background-color: black; 
+    background-color: black;
     color: #999;
-    height: 2.5em; 
+    height: 2.5em;
     bottom: 0;
     right: -50px;
-    position: fixed; 
+    position: fixed;
     width: 50px;
     z-index: 1030;
     margin: 0;
@@ -268,6 +264,29 @@ rect.frame {
 .fa-icon-label {
     padding-left: .2em;
 }
+
+.navbar .btn-link {
+    color: #ddd;
+    font-size: 120%;
+    margin-top: .65em;
+    text-decoration: none;
+}
+
+.navbar .btn-link.disabled {
+    color: #aaa;
+}
+
+form input.linkbox {
+    margin-top: 1em;
+    margin-left: 1em;
+    height: 25px;
+    padding: 2px;
+}
+
+.nav li sub {
+    color: #ddd;
+}
+
 /******************************************************************************/
 
 ul.jqtree-tree .jqtree-toggler {
@@ -282,6 +301,39 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
     text-shadow: none;
     font-weight: bold;
 }
+
+.jqtree-title.jqtree_common.history {
+    color: #7CB9E8
+}
+
+.jqtree-title {
+    position: relative;
+}
+
+ul.jqtree-tree .jqtree-title.private {
+    color: #aaa;
+}
+
+.notebook-commands {
+    color: black;
+}
+
+.notebook-commands.appear {
+    position: absolute;
+    bottom: -2px;
+    right: -50px;
+    width: 50px;
+    background-color: white;
+}
+
+li.jqtree-selected .notebook-commands {
+    bottom: -1px;
+}
+
+.notebook-commands .fontawesome-button {
+    margin: 0;
+}
+
 
 
 /******************************************************************************/
@@ -340,4 +392,30 @@ div.r-result-div h5 {
 
 pre {
     max-width: 100%;
+}
+
+/******************************************************************************/
+/* Some pseudo-elements for watermarking the ACE editors
+ */
+
+.r-language-pseudo:after {
+    content: "R";
+    position: absolute;
+    top: 0.2em;
+    right: 0.3em;
+    color: #AAA;
+    text-shadow: 0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white
+;
+    z-index: 20;
+}
+
+.rmarkdown-language-pseudo:after {
+    content: "RMarkdown";
+    position: absolute;
+    top: 0.2em;
+    right: 0.3em;
+    color: #AAA;
+    text-shadow: 0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white
+;
+    z-index: 20;
 }

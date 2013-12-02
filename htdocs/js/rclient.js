@@ -30,11 +30,8 @@ RClient = {
         }
 
         function on_error(msg, status_code) {
-            if (opts.on_error) {
-                var result = opts.on_error(msg, status_code);
-                if (result === true)
-                    return;
-            }
+            if (opts.on_error && opts.on_error(msg, status_code))
+                return;
             result.post_error(result.disconnection_error(msg));
             shutdown();
         }
