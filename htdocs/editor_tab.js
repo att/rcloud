@@ -308,8 +308,6 @@ var editor = function () {
             $tree_.tree('removeNode', dp);
             dp = dp2;
         }
-        if(dp.root === 'interests' && dp.user !== username_ && dp.children.length === 0)
-            $tree_.tree('removeNode', dp);
     }
 
     function update_tree(root, user, gistname, path, last_chance, create) {
@@ -577,15 +575,20 @@ var editor = function () {
     }
 
     function remove_node(node) {
-        if(!node)
-            throw "removing non-existent node (star inconsistency?)";
         var dp = node.parent;
         $tree_.tree('removeNode', node);
         remove_empty_parents(dp);
+        if(node.root === 'interests' && node.user !== username_ && dp.children.length === 0)
+            $tree_.tree('removeNode', dp);
     }
 
     function unstar_notebook_view(user, gistname) {
-        var node = $tree_.tree('getNodeById', node_id('interests', user, gistname));
+        var inter_id = node_id('interests', user, gistname);
+        var node = $tree_.tree('getNodeById', inter_id);
+        if(!node) {
+            console.log("attempt to unstar notebook we didn't know was starred", inter_id);
+            return;
+        }
         remove_node(node);
         if(gistname === config_.currbook)
             star_notebook_button_(false);
@@ -880,9 +883,12 @@ var editor = function () {
                     || config_.currbook;
             if(star) {
                 rcloud.stars.star_notebook(gistname, function() {
-                    // this would blow up if we ever tried to star a notebook
-                    // that's not passed in or already in the tree
                     var entry = get_notebook_status(user, gistname);
+                    if(!entry.description && !opts.notebook) {
+                        console.log("attempt to star notebook we have no record of",
+                                    node_id('interests', user, gistname));
+                        return;
+                    }
                     add_interest(user, gistname, entry);
 
                     if(opts.notebook) {
