@@ -1,3 +1,11 @@
+* Convention: the `call.R` entry point is used for general RPC into R.
+  Documentation for notebooks that are intended to be used as `call.R`
+  targets should be in the form of RMarkdown cells, so that
+  `view.html?notebook=` shows the documentation for
+  `call.R?notebook=`. KNOWN BUG: `call.R` currently ignores all
+  RMarkdown cells, so if you mix R content into your cells, they will
+  currently be ignored.
+
 * Feature: File upload now supports upload-to-notebook. When the
   "upload to notebook" checkbox is selected, the file is uploaded
   to the github gist instead of to the local filesystem. As a result,
