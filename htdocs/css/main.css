@@ -199,26 +199,6 @@ rect.frame {
     overflow-y: scroll;
 }
 
-.jqtree-title {
-    position: relative;
-}
-
-.notebook-commands.appear {
-    position: absolute;
-    bottom: -2px;
-    right: -50px;
-    width: 50px;
-    background-color: white;
-}
-
-li.jqtree-selected .notebook-commands {
-    bottom: -1px;
-}
-
-.notebook-commands .fontawesome-button {
-    margin: 0;
-}
-
 .header-button {
     float: right;
     font-size: 120%;
@@ -321,9 +301,39 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
     text-shadow: none;
     font-weight: bold;
 }
+
 .jqtree-title.jqtree_common.history {
     color: #7CB9E8
 }
+
+.jqtree-title {
+    position: relative;
+}
+
+ul.jqtree-tree .jqtree-title.private {
+    color: #aaa;
+}
+
+.notebook-commands {
+    color: black;
+}
+
+.notebook-commands.appear {
+    position: absolute;
+    bottom: -2px;
+    right: -50px;
+    width: 50px;
+    background-color: white;
+}
+
+li.jqtree-selected .notebook-commands {
+    bottom: -1px;
+}
+
+.notebook-commands .fontawesome-button {
+    margin: 0;
+}
+
 
 
 /******************************************************************************/

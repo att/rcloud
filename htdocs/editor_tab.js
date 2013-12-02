@@ -708,7 +708,7 @@ var editor = function () {
                 var title = $li.find('.jqtree-title');
                 title.css('color', node.color);
                 if(node.visibility==='private')
-                    title.wrap('<i/>');
+                    title.addClass('private');
                 if(node.last_commit && (!node.version ||
                                         display_date(node.last_commit) != display_date(node.parent.last_commit))) {
                     title.after('<span style="float: right" id="date">'
