@@ -303,6 +303,10 @@ form input.linkbox {
     padding: 2px;
 }
 
+.nav li sub {
+    color: #ddd;
+}
+
 /******************************************************************************/
 
 ul.jqtree-tree .jqtree-toggler {

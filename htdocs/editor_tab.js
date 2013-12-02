@@ -29,6 +29,7 @@ var editor = function () {
     var username_ = null,
         histories_ = {},
         other_alls_ = {}, // notebooks of other users
+        num_stars_ = {}, // number of stars for all known notebooks
         i_starred_ = {};
 
     // view
@@ -284,6 +285,10 @@ var editor = function () {
                         children: children
                     }
                 ];
+                var all_notebooks = _.keys(_.extend(_.clone(other_alls_), my_config.all_books));
+                rcloud.stars.get_multiple_notebook_star_counts(all_notebooks, function(counts) {
+                    num_stars_ = counts;
+                });
                 k && k(my_config, root_data);
             });
         });
@@ -564,8 +569,10 @@ var editor = function () {
         if(i_starred_[gistname]) {
             update_tree_entry('interests', user, gistname, entry, true,
                               selroot==='interests' ? select_node : null);
-            if(gistname === config_.currbook)
+            if(gistname === config_.currbook) {
                 star_notebook_button_(true);
+                $('#curr-star-count').text(num_stars_[gistname]);
+            }
         }
 
         var node = update_tree_entry('alls', user, gistname, entry, true,
@@ -590,8 +597,10 @@ var editor = function () {
             return;
         }
         remove_node(node);
-        if(gistname === config_.currbook)
+        if(gistname === config_.currbook) {
             star_notebook_button_(false);
+            $('#curr-star-count').text(num_stars_[gistname]);
+        }
         /* not needed in practice because remove_node forces refresh
         node = $tree_.tree('getNodeById', node_id('alls', user, gistname));
         $(node.element).find('.fontawesome-button.star')[0].set_state(false); */
@@ -723,6 +732,7 @@ var editor = function () {
                             return false;
                         });
                         add_buttons(unstar);
+                        always.append($('<sub/>').append(num_stars_[node.gistname]));
                     }
                     else {
                         var states = {true: {class: 'icon-star', title: 'unstar'},
@@ -748,6 +758,7 @@ var editor = function () {
                             $(this).find('i').attr('class', states[state].class);
                         };
                         add_buttons(star_unstar);
+                        always.append($('<sub/>').append(num_stars_[node.gistname]));
                     }
 
                     // commands that appear
@@ -882,7 +893,8 @@ var editor = function () {
                     || opts.notebook&&opts.notebook.id
                     || config_.currbook;
             if(star) {
-                rcloud.stars.star_notebook(gistname, function() {
+                rcloud.stars.star_notebook(gistname, function(count) {
+                    num_stars_[gistname] = count;
                     var entry = get_notebook_status(user, gistname);
                     if(!entry.description && !opts.notebook) {
                         console.log("attempt to star notebook we have no record of",
@@ -904,7 +916,8 @@ var editor = function () {
                 });
             }
             else {
-                rcloud.stars.unstar_notebook(gistname, function() {
+                rcloud.stars.unstar_notebook(gistname, function(count) {
+                    num_stars_[gistname] = count;
                     remove_interest(user, gistname);
                     that.save_config();
                     unstar_notebook_view(user, gistname);
