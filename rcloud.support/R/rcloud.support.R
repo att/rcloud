@@ -134,6 +134,18 @@ rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
   } else result
 }
 
+rcloud.upload.to.notebook <- function(file, name) {
+  if (is.null(.session$current.notebook))
+    stop("Notebook must be loaded")
+  id <- .session$current.notebook$content$id
+  files <- list()
+  files[[name]] <- list(content=rawToChar(file))
+  content <- list(files = files)
+  res <- rcloud.update.notebook(id, content)
+  .session$current.notebook <- res
+  res
+}
+
 rcloud.update.notebook <- function(id, content) {
   res <- update.gist(id, content, ctx = .session$rgithub.context)
   .session$current.notebook <- res

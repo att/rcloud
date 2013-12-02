@@ -120,6 +120,7 @@ authenticated.ocaps <- function()
         close = make.oc(rcloud.upload.close.file),
         upload_path = make.oc(rcloud.upload.path)
         ),
+      notebook_upload = make.oc(rcloud.upload.to.notebook),
       
       # commenting ocaps
       comments = list(
