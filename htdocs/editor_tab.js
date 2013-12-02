@@ -158,8 +158,6 @@ var editor = function () {
     function as_folder_hierarchy(nodes, prefix) {
         function is_in_folder(v) { return v.label.match(/([^/]+)\/(.+)/); }
         var in_folders = nodes;
-        // just stay in bounds here
-        in_folders.forEach(function(n) { if(n.label === undefined) n.label = "(no description)"; } );
         in_folders = _.filter(in_folders, is_in_folder);
         in_folders = _.map(in_folders, function(v) {
             var m = v.label.match(/([^/]+)\/(.+)/);
@@ -214,8 +212,12 @@ var editor = function () {
         var my_notebooks, user_nodes = [];
         for (var username in config_.interests) {
             var user_notebooks = config_.interests[username];
-            for(var gistname in user_notebooks)
+            for(var gistname in user_notebooks) {
                 i_starred_[gistname] = true;
+                // sanitize... this shouldn't really happen...
+                if(!user_notebooks[gistname].description)
+                    user_notebooks[gistname].description = "(no description)";
+            }
 
             var notebook_nodes = [];
             notebook_nodes = notebook_nodes.concat(convert_notebook_set('interests', username, user_notebooks));
