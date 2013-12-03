@@ -314,6 +314,18 @@ ul.jqtree-tree .jqtree-title.private {
     color: #aaa;
 }
 
+.notebook-date {
+}
+
+.notebook-right {
+    float: right;
+}
+
+.notebook-commands-right {
+    display: inline-block;
+    width: 30px;
+}
+
 .notebook-commands {
     color: black;
 }

@@ -664,6 +664,126 @@ var editor = function () {
             .text(function(d) { return d.body; });
     }
 
+    const icon_style = {'line-height': '90%'};
+    function on_create_tree_li(node, $li) {
+        var element = $li.find('.jqtree-element'),
+            title = element.find('.jqtree-title');
+        title.css('color', node.color);
+        if(node.visibility==='private')
+            title.addClass('private');
+        if(node.version)
+            title.addClass('history');
+        var right = $('<span/>', {class: 'notebook-right'});
+        if(node.last_commit && (!node.version ||
+                                display_date(node.last_commit) != display_date(node.parent.last_commit))) {
+            right.append('<span id="date" class="notebook-date">'
+                        + display_date(node.last_commit) + '</span>');
+        }
+        if(node.gistname && !node.version) {
+            var adder = function(target) {
+                function add(items) {
+                    target.append('&nbsp;');
+                    target.append.apply(target, arguments);
+                }
+                return add;
+            };
+            // commands for the right column, always shown
+            var always = $('<span/>', {class: 'notebook-commands-right'});
+            var add_buttons = adder(always);
+            var star_style = _.extend({'font-size': '80%'}, icon_style);
+            if(node.root==='interests') {
+                var unstar = ui_utils.fa_button('icon-star', 'unstar', 'unstar', star_style);
+                unstar.click(function() {
+                    result.star_notebook(false, {gistname: node.gistname, user: node.user});
+                    return false;
+                });
+                unstar.append($('<sub/>').append(num_stars_[node.gistname]));
+                add_buttons(unstar);
+            }
+            else {
+                var states = {true: {class: 'icon-star', title: 'unstar'},
+                              false: {class: 'icon-star-empty', title: 'star'}};
+                var state = i_starred_[node.gistname] || false,
+                    starte = states[state];
+                var star_unstar = ui_utils.fa_button(starte.class,
+                                                     function(e) { return states[state].title; },
+                                                     'star',
+                                                     star_style);
+                // sigh, ui_utils.twostate_icon should be a mixin or something
+                star_unstar.click(function() {
+                    try {
+                        var new_state = !state;
+                        result.star_notebook(new_state, {gistname: node.gistname, user: node.user});
+                    }
+                    catch(x) {// whatever you do, don't let this event percolate
+                        rclient.post_error(x);
+                    }
+                    return false;
+                });
+                star_unstar[0].set_state = function() {
+                    $(this).find('i').attr('class', states[state].class);
+                };
+                star_unstar.append($('<sub/>').append(num_stars_[node.gistname]));
+                add_buttons(star_unstar);
+            }
+            right.append(always);
+
+            // commands that appear
+            var commands = $('<span/>', {class: 'notebook-commands appear'});
+            add_buttons = adder(commands);
+            if(true) { // all notebooks have history - should it always be accessible?
+                var disable = config_.currbook===node.gistname && config_.currversion;
+                var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style);
+                // jqtree recreates large portions of the tree whenever anything changes
+                // so far this seems safe but might need revisiting if that improves
+                if(disable)
+                    history.addClass('button-disabled');
+                history.click(function() {
+                    if(!disable) {
+                        result.show_history(node, true);
+                    }
+                    return false;
+                });
+
+                add_buttons(history);
+            }
+            if(node.user===username_) {
+                var make_private = ui_utils.fa_button('icon-eye-close', 'make private', 'private', icon_style),
+                    make_public = ui_utils.fa_button('icon-eye-open', 'make public', 'public', icon_style);
+                if(node.visibility=='public')
+                    make_public.hide();
+                else
+                    make_private.hide();
+                make_private.click(function() {
+                    result.set_visibility(node, 'private');
+                });
+                make_public.click(function() {
+                    result.set_visibility(node, 'public');
+                    return false;
+                });
+                add_buttons(make_private, make_public);
+            }
+            if(node.root != 'interests' && node.user===username_) {
+                var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style);
+                remove.click(function() {
+                    result.remove_notebook(node);
+                    return false;
+                });
+                add_buttons(remove);
+            };
+            commands.hide();
+            title.append('&nbsp;', commands);
+            $li.hover(
+                function() {
+                    $('.notebook-commands.appear', this).show();
+                },
+                function() {
+                    $('.notebook-commands.appear', this).hide();
+                });
+        }
+        element.append(right);
+    }
+
     var result = {
         init: function(gistname, version, k) {
             var that = this;
@@ -701,123 +821,11 @@ var editor = function () {
         },
         create_book_tree_widget: function(data) {
             var that = this;
-            const icon_style = {'line-height': '90%'};
 
-            function onCreateLiHandler(node, $li) {
-                var title = $li.find('.jqtree-title');
-                title.css('color', node.color);
-                if(node.visibility==='private')
-                    title.addClass('private');
-                if(node.last_commit && (!node.version ||
-                                        display_date(node.last_commit) != display_date(node.parent.last_commit))) {
-                    title.after('<span style="float: right" id="date">'
-                                             + display_date(node.last_commit) + '</span>');
-                }
-                if(node.version)
-                    title.addClass('history');
-                if(node.gistname && !node.version) {
-                    var add_buttons = function() {
-                        add_buttons.target.append('&nbsp;');
-                        add_buttons.target.append.apply(add_buttons.target, arguments);
-                    };
-                    // commands that are always there
-                    var always = $('<span/>', {class: 'notebook-commands'});
-                    add_buttons.target = always;
-                    var star_style = _.extend({'font-size': '80%'}, icon_style);
-                    if(node.root==='interests') {
-                        var unstar = ui_utils.fa_button('icon-star', 'unstar', 'unstar', star_style);
-                        unstar.click(function() {
-                            that.star_notebook(false, {gistname: node.gistname, user: node.user});
-                            return false;
-                        });
-                        add_buttons(unstar);
-                        always.append($('<sub/>').append(num_stars_[node.gistname]));
-                    }
-                    else {
-                        var states = {true: {class: 'icon-star', title: 'unstar'},
-                                      false: {class: 'icon-star-empty', title: 'star'}};
-                        var state = i_starred_[node.gistname] || false,
-                            starte = states[state];
-                        var star_unstar = ui_utils.fa_button(starte.class,
-                                                             function(e) { return states[state].title; },
-                                                             'star',
-                                                             star_style);
-                        // sigh, ui_utils.twostate_icon should be a mixin or something
-                        star_unstar.click(function() {
-                            try {
-                                var new_state = !state;
-                                that.star_notebook(new_state, {gistname: node.gistname, user: node.user});
-                            }
-                            catch(x) {// whatever you do, don't let this event percolate
-                                rclient.post_error(x);
-                            }
-                            return false;
-                        });
-                        star_unstar[0].set_state = function() {
-                            $(this).find('i').attr('class', states[state].class);
-                        };
-                        add_buttons(star_unstar);
-                        always.append($('<sub/>').append(num_stars_[node.gistname]));
-                    }
-
-                    // commands that appear
-                    var commands = $('<span/>', {class: 'notebook-commands appear'});
-                    add_buttons.target = commands;
-                    if(true) { // all notebooks have history - should it always be accessible?
-                        var disable = config_.currbook===node.gistname && config_.currversion;
-                        var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style);
-                        // jqtree recreates large portions of the tree whenever anything changes
-                        // so far this seems safe but might need revisiting if that improves
-                        if(disable)
-                           history.addClass('button-disabled');
-                        history.click(function() {
-                            if(!disable) {
-                                that.show_history(node, true);
-                            }
-                            return false;
-                        });
-
-                        add_buttons(history);
-                    }
-                    if(node.user===username_) {
-                        var make_private = ui_utils.fa_button('icon-eye-close', 'make private', 'private', icon_style),
-                            make_public = ui_utils.fa_button('icon-eye-open', 'make public', 'public', icon_style);
-                        if(node.visibility=='public')
-                            make_public.hide();
-                        else
-                            make_private.hide();
-                        make_private.click(function() {
-                            that.set_visibility(node, 'private');
-                        });
-                        make_public.click(function() {
-                            that.set_visibility(node, 'public');
-                            return false;
-                        });
-                        add_buttons(make_private, make_public);
-                    }
-                    if(node.root != 'interests' && node.user===username_) {
-                        var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style);
-                        remove.click(function() {
-                            that.remove_notebook(node);
-                            return false;
-                        });
-                        add_buttons(remove);
-                    };
-                    commands.hide();
-                    title.append('&nbsp;', always, commands);
-                    $li.hover(
-                        function() {
-                            $('.notebook-commands.appear', this).show();
-                        },
-                        function() {
-                            $('.notebook-commands.appear', this).hide();
-                        });
-                }
-            }
             $tree_ = $("#editor-book-tree");
             $tree_.tree({
                 data: data,
-                onCreateLi: onCreateLiHandler,
+                onCreateLi: on_create_tree_li,
                 selectable: true
             });
             $tree_.bind(
