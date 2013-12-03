@@ -28,7 +28,7 @@ var editor = function () {
     // local model
     var username_ = null,
         histories_ = {},
-        other_alls_ = {}, // notebooks of other users
+        all_entries_ = {}, // all notebooks we are aware of
         num_stars_ = {}, // number of stars for all known notebooks
         i_starred_ = {};
 
@@ -84,7 +84,7 @@ var editor = function () {
 
     function get_notebook_status(user, gistname) {
         var iu = config_.interests[user];
-        return (iu && iu[gistname]) || config_.all_books[gistname] || other_alls_[gistname] || {};
+        return (iu && iu[gistname]) || all_entries_[gistname] || {};
     }
 
     function add_interest(user, gistname, entry) {
@@ -106,8 +106,7 @@ var editor = function () {
     function add_all(user, gistname, entry) {
         if(user === username_)
             config_.all_books[gistname] = entry;
-        else
-            other_alls_[gistname] = entry;
+        all_entries_[gistname] = entry;
     }
 
     function remove_all(user, gistname) {
@@ -252,13 +251,13 @@ var editor = function () {
                     var user_config = configset[username];
                     if(!user_config)
                         continue;
+                    _.extend(all_entries_, user_config.all_books);
                     var notebook_nodes = convert_notebook_set('alls', username, user_config.all_books);
                     if(username === username_) {
                         my_config = user_config;
                         my_alls = notebook_nodes;
                     }
                     else {
-                        _.extend(other_alls_, user_config.all_books);
                         var id = node_id('alls', username);
                         var node = {
                             label: someone_elses(username),
@@ -285,7 +284,7 @@ var editor = function () {
                         children: children
                     }
                 ];
-                var all_notebooks = _.keys(_.extend(_.clone(other_alls_), my_config.all_books));
+                var all_notebooks = _.keys(all_entries_);
                 rcloud.stars.get_multiple_notebook_star_counts(all_notebooks, function(counts) {
                     num_stars_ = counts;
                 });
