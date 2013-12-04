@@ -147,7 +147,7 @@ rcloud.upload.to.notebook <- function(file, name) {
 }
 
 rcloud.update.notebook <- function(id, content) {
-  res <- update.gist(id, content, ctx = .session$rgithub.context)
+  res <- modify.gist(id, content, ctx = .session$rgithub.context)
   .session$current.notebook <- res
   res
 }
@@ -155,7 +155,7 @@ rcloud.update.notebook <- function(id, content) {
 rcloud.create.notebook <- function(content) create.gist(content, ctx = .session$rgithub.context)
 
 rcloud.rename.notebook <- function(id, new.name)
-  update.gist(id,
+  modify.gist(id,
               list(description=new.name),
               ctx = .session$rgithub.context)
 
