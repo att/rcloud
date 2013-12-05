@@ -60,9 +60,11 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL) {
     ## this is a hack for now - we should have a more general infrastructure for this ...
     ## get all files
     p <- res$content$files
+    p <- p[grep("^part", names(p))]
     n <- names(p)
+    if (!length(n)) return(NULL)
     ## extract the integer number
-    i <- as.integer(gsub("^\\D+(\\d+)\\..*", "\\1", n))
+    i <- suppressWarnings(as.integer(gsub("^\\D+(\\d+)\\..*", "\\1", n)))
     result <- NULL
     e <- new.env(parent=.GlobalEnv)
     if (is.list(args) && length(args)) for (i in names(args)) e[[i]] <- args[[i]]
