@@ -112,7 +112,7 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL) {
     i <- suppressWarnings(as.integer(gsub("^\\D+(\\d+)\\..*", "\\1", n)))
     result <- NULL
     e <- new.env(parent=.GlobalEnv)
-    if (is.list(args) && length(args)) for (i in names(args)) e[[i]] <- args[[i]]
+    if (is.list(args) && length(args)) for (i in names(args)) if (nzchar(i)) e[[i]] <- args[[i]]
     ## sort
     for (o in p[match(sort.int(i), i)]) {
       if (grepl("^part.*\\.R$", o$filename)) { ## R code
