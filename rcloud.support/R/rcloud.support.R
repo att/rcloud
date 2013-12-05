@@ -67,7 +67,7 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL) {
     i <- suppressWarnings(as.integer(gsub("^\\D+(\\d+)\\..*", "\\1", n)))
     result <- NULL
     e <- new.env(parent=.GlobalEnv)
-    if (is.list(args) && length(args)) for (i in names(args)) e[[i]] <- args[[i]]
+    if (is.list(args) && length(args)) for (i in names(args)) if (nzchar(i)) e[[i]] <- args[[i]]
     ## sort 
     for (o in p[match(sort.int(i), i)]) {
       if (grepl("^part.*\\.R$", o$filename)) { ## R code
@@ -86,6 +86,15 @@ rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
   if (is.function(result)) {
     require(FastRWeb)
     l <- as.list(as.WebResult(do.call(result, args, envir=environment(result))))
+    if (isTRUE(l[[1]] == "tmpfile")) {
+      fn <- file.path(getwd(), gsub("/","_",l[[2]],fixed=TRUE))
+      cat("rcloud.call.FastRWeb.notebook: file is", fn,"\n")
+      sz <- file.info(fn)$size
+      if (any(is.na(sz))) stop("Error reading temporary file ",fn)
+      r <- readBin(fn, raw(), sz)
+      unlink(fn)
+      return(c(list(r), l[-(1:2)]))
+    }
     l[[1]] <- NULL ## FIXME: we assume "html" type here .. need to implement others ...
     l
   } else result
