@@ -703,9 +703,8 @@ var editor = function () {
             else {
                 var states = {true: {class: 'icon-star', title: 'unstar'},
                               false: {class: 'icon-star-empty', title: 'star'}};
-                var state = i_starred_[node.gistname] || false,
-                    starte = states[state];
-                var star_unstar = ui_utils.fa_button(starte.class,
+                var state = i_starred_[node.gistname] || false;
+                var star_unstar = ui_utils.fa_button(states[state].class,
                                                      function(e) { return states[state].title; },
                                                      'star',
                                                      star_style);
@@ -960,11 +959,11 @@ var editor = function () {
         },
         load_callback: function(version, is_change, selroot, k) {
             var that = this;
+            return function(result) {
                 if('error' in result) {
                     k && k();
                     return;
                 }
-            return function(result) {
                 if(!result.description)
                     throw "Invalid notebook (must have description)";
 
