@@ -1,31 +1,5 @@
 var ui_utils = {};
 
-$.fn.font_awesome_checkbox = function(opts) {
-    opts = opts || {};
-    if (opts.checked) {
-        this.addClass('icon-check');
-        this.removeClass('icon-check-empty');
-    } else {
-        this.addClass('icon-check-empty');
-        this.removeClass('icon-check');
-    }
-    this.off("click");
-    this.on("click", function() {
-        var this_class = $(this).attr("class");
-        if (this_class === 'icon-check') {
-            $(this).addClass('icon-check-empty');
-            $(this).removeClass('icon-check');
-            opts.click && opts.click(this);
-            opts.uncheck && opts.uncheck(this);
-        } else {
-            $(this).addClass('icon-check');
-            $(this).removeClass('icon-check-empty');
-            opts.click && opts.click(this);
-            opts.check && opts.check(this);
-        }
-    });
-};
-
 ui_utils.fa_button = function(which, title, classname, style)
 {
     var span = $('<span/>', {class: 'fontawesome-button ' + (classname || '')});
@@ -37,15 +11,6 @@ ui_utils.fa_button = function(which, title, classname, style)
             title: title,
             delay: { show: 250, hide: 0 }
         });
-    /*
-     // patch to remove tooltip when button clicked
-     // (not needed anymore with later jquery?)
-    var old_click = span.click;
-    span.click = function() {
-        $(this).tooltip('hide');
-        old_click.apply(this, arguments);
-    };
-     */
     return span;
 };
 
@@ -72,6 +37,15 @@ ui_utils.ace_editor_height = function(widget)
     var rows = Math.min(30, widget.getSession().getLength());
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
     return Math.max(75, newHeight);
+    /*
+     // patch to remove tooltip when button clicked
+     // (not needed anymore with later jquery?)
+    var old_click = span.click;
+    span.click = function() {
+        $(this).tooltip('hide');
+        old_click.apply(this, arguments);
+    };
+     */
 };
 
 ui_utils.install_common_ace_key_bindings = function(widget) {
