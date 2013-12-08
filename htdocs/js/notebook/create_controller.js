@@ -200,6 +200,10 @@ Notebook.create_controller = function(model)
             // not awesome to callback to someone else here
             k = k || editor.load_callback(null, true);
             var k2 = function(notebook) {
+                if('error' in notebook) {
+                    k(notebook);
+                    return;
+                }
                 current_gist_ = notebook;
                 k(notebook);
             };

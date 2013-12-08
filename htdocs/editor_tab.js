@@ -960,6 +960,10 @@ var editor = function () {
         },
         load_callback: function(version, is_change, selroot, k) {
             var that = this;
+                if('error' in result) {
+                    k && k();
+                    return;
+                }
             return function(result) {
                 if(!result.description)
                     throw "Invalid notebook (must have description)";
