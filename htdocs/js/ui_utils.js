@@ -38,6 +38,8 @@ ui_utils.fa_button = function(which, title, classname, style)
             delay: { show: 250, hide: 0 }
         });
     /*
+     // patch to remove tooltip when button clicked
+     // (not needed anymore with later jquery?)
     var old_click = span.click;
     span.click = function() {
         $(this).tooltip('hide');
