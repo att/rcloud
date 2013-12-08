@@ -101,15 +101,6 @@ function main_init() {
     resize_side_panel();
     init_navbar_buttons();
 
-    $("#show-source").font_awesome_checkbox({
-        checked: false,
-        check: function() {
-            shell.notebook.controller.show_r_source();
-        }, uncheck: function() {
-            shell.notebook.controller.hide_r_source();
-        }
-    });
-
     $("#comment-submit").click(function() {
         editor.post_comment($("#comment-entry-body").val());
         return false;
