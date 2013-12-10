@@ -593,6 +593,14 @@ ui_utils.ace_editor_height = function(widget)
      */
 };
 
+ui_utils.ace_set_pos = function(widget, row, column) {
+    var sel = widget.getSelection();
+    var range = sel.getRange();
+    range.setStart(row, column);
+    range.setEnd(row, column);
+    sel.setSelectionRange(range);
+}
+
 ui_utils.install_common_ace_key_bindings = function(widget) {
     var Autocomplete = require("ace/autocomplete").Autocomplete;
     widget.commands.addCommands([
@@ -832,6 +840,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var RMode = require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
     var session = widget.getSession();
     widget.setValue(cell_model.content());
+    ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
     // erase undo state so that undo doesn't erase all
     window.setTimeout(function() {
         session.getUndoManager().reset();
