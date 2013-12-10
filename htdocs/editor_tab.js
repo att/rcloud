@@ -911,7 +911,7 @@ var editor = function () {
 
                     if(opts.notebook) {
                         if(opts.make_current)
-                            that.load_callback(opts.version, false, 'interests') (opts.notebook);
+                            that.load_callback(opts.version, opts.is_change || false, 'interests') (opts.notebook);
                         else
                             update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
                     }
@@ -952,7 +952,10 @@ var editor = function () {
             var that = this;
             var k = is_mine ? this.load_callback(null, true, true) :
                     function(notebook) {
-                        that.star_notebook(true, {notebook: notebook, make_current: true, version: null});
+                        that.star_notebook(true, {notebook: notebook,
+                                                  make_current: true,
+                                                  is_change: !!version,
+                                                  version: null});
                     };
             shell.fork_or_revert_notebook(is_mine, gistname, version, k);
         },
