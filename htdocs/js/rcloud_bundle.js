@@ -887,9 +887,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         // pubsub event handlers
 
         content_updated: function() {
-            var position = widget.getCursorPosition();
+            var range = widget.getSelection().getRange();
             var changed = change_content(cell_model.content());
-            widget.getSelection().moveCursorToPosition(position);
+            widget.getSelection().setSelectionRange(range);
             return changed;
         },
         self_removed: function() {
