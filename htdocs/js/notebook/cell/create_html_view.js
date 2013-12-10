@@ -100,6 +100,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var RMode = require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
     var session = widget.getSession();
     widget.setValue(cell_model.content());
+    ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
     // erase undo state so that undo doesn't erase all
     window.setTimeout(function() {
         session.getUndoManager().reset();
