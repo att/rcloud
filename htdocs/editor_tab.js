@@ -949,7 +949,12 @@ var editor = function () {
             this.save_config();
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
-            shell.fork_or_revert_notebook(is_mine, gistname, version, this.load_callback(null, is_mine, true));
+            var that = this;
+            var k = is_mine ? this.load_callback(null, true, true) :
+                    function(notebook) {
+                        that.star_notebook(true, {notebook: notebook, make_current: true, version: null});
+                    };
+            shell.fork_or_revert_notebook(is_mine, gistname, version, k);
         },
         show_history: function(node, toggle) {
             var whither = node.children.length && toggle ? 'hide' : 'more';
