@@ -104,19 +104,11 @@ var shell = (function() {
             return doc.getLine(row).length;
         }
 
-        function set_pos(widget, row, column) {
-            var sel = widget.getSelection();
-            var range = sel.getRange();
-            range.setStart(row, column);
-            range.setEnd(row, column);
-            sel.setSelectionRange(range);
-        }
-
         function restore_prompt() {
             var cmd = cmd_history.init();
             change_prompt(cmd);
             var r = last_row(widget);
-            set_pos(widget, r, last_col(widget, r));
+            ui_utils.ace_set_pos(widget, r, last_col(widget, r));
         }
 
         ui_utils.install_common_ace_key_bindings(widget);
@@ -170,7 +162,7 @@ var shell = (function() {
                 else {
                     change_prompt(cmd_history.last());
                     var r = last_row(widget);
-                    set_pos(widget, r, last_col(widget, r));
+                    ui_utils.ace_set_pos(widget, r, last_col(widget, r));
                 }
             }
         }, {
@@ -183,7 +175,7 @@ var shell = (function() {
                     down_handler.exec(widget, args, request);
                 else {
                     change_prompt(cmd_history.next());
-                    set_pos(widget, 0, last_col(widget, 0));
+                    ui_utils.ace_set_pos(widget, 0, last_col(widget, 0));
                 }
             }
         }

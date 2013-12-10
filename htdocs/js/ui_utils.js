@@ -48,6 +48,14 @@ ui_utils.ace_editor_height = function(widget)
      */
 };
 
+ui_utils.ace_set_pos = function(widget, row, column) {
+    var sel = widget.getSelection();
+    var range = sel.getRange();
+    range.setStart(row, column);
+    range.setEnd(row, column);
+    sel.setSelectionRange(range);
+}
+
 ui_utils.install_common_ace_key_bindings = function(widget) {
     var Autocomplete = require("ace/autocomplete").Autocomplete;
     widget.commands.addCommands([
