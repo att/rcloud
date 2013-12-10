@@ -988,6 +988,8 @@ var editor = function () {
                     history = result.history;
                 // there is a bug in old github where if you make a change you only
                 // get the old history and not the current
+                // this may be the same bug where the latest version doesn't always
+                // show in github
                 if(is_change && shell.is_old_github())
                     history.unshift({version:'blah'});
 
