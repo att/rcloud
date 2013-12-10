@@ -1590,7 +1590,6 @@ Notebook.create_controller = function(model)
 
         },
         run_all: function(k) {
-            var changes = this.refresh_cells();
             this.save();
             var n = model.notebook.length;
             var disp;
