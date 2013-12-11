@@ -1,0 +1,8 @@
+[test]
+Driver  = FreeTDS
+Description     = tcd188
+Trace   = No
+Server      = 155.175.64.188
+Port      = 1433
+Database        = cing_sideA
+

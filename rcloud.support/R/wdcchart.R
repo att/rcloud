@@ -19,7 +19,7 @@ wdcplot <- function(data, dims=NULL, groups=NULL, charts=NULL)
   groups2 <- substitute(groups)
   charts2 <- substitute(charts)
 
-  # Enable use of R variables as parameters in chart definitions, i.e. width = mywidth
+  # Enable use of R variables as parameters in definitions, i.e. width = mywidth
   dims2 <- do.call("substitute",list(dims2,parent.frame()))
   groups2 <- do.call("substitute",list(groups2,parent.frame()))
   charts2 <- do.call("substitute",list(charts2,parent.frame()))

@@ -175,6 +175,10 @@ var wdcplot = (function() {
         }
     }
 
+    function constant_fn(arg) {
+        return function (a) { return arg; }
+    }
+
     // are these recursive or is this top-level catch enough?
     function group_constructor(frame, sexp) {
         switch(sexp[0]) {
@@ -184,12 +188,23 @@ var wdcplot = (function() {
         }
     }
 
-    function reduce_constructor(frame, sexp) {
-        switch(sexp[0]) {
-        case 'count': return reduce.count;
-        case 'sum': return reduce.sum(argument(frame, sexp[1]));
+    function reduce_constructor(frame, sexp, weight) {
+        w = weight;
+        fname = sexp[0]; 
+        if(_.isArray(sexp)) {
+            if(sexp[2] != undefined) w = sexp[2];
+            if(sexp[0] == 'count' && sexp[1] != undefined) w = sexp[1];
+        }
+        else fname = sexp;
+
+        wacc = (w == undefined) ? undefined: argument(frame, w);
+        if(_.isNumber(wacc)) wacc = constant_fn(wacc);
+
+        switch(fname) {
+        case 'count': return (w == undefined) ? reduce.count : reduce.sum(wacc);
+        case 'sum': return reduce.sum(argument(frame, sexp[1]),wacc);
         case 'any': return reduce.any(argument(frame, sexp[1]));
-        case 'avg': return reduce.avg(argument(frame, sexp[1]));
+        case 'avg': return reduce.avg(argument(frame, sexp[1]),wacc);
         default: return argument(frame, sexp);
         }
     }
@@ -252,11 +267,22 @@ var wdcplot = (function() {
         return ret;
     }
 
-    function do_groups(frame, sexps) {
+    function do_weight(frame, sexps) {
+        // Do custom record weights, if specified
+        for(var i = 0; i < sexps.length; ++i) {
+            var name = sexps[i][0], defn = sexps[i][1];
+            if(name != "weight") continue;
+            return defn;
+        }
+        return undefined;
+    }
+
+    function do_groups(frame, sexps, weight) {
         var ret = {};
         for(var i = 0; i < sexps.length; ++i) {
             var name = sexps[i][0], defn = sexps[i][1];
-            defn = positionals(defn, [null, 'dimension', 'group', 'reduce']);
+            if(name == "weight") continue;
+            defn = positionals(defn, [null, 'dimension', 'group', 'reduce', 'weight']);
             if(defn[0][0] !== null)
                 throw "expected a null here";
             if(defn[0][1] !== "group")
@@ -272,7 +298,7 @@ var wdcplot = (function() {
                     val = group_constructor(frame, defn[j][1]);
                     break;
                 case 'reduce':
-                    val = reduce_constructor(frame, defn[j][1]);
+                    val = reduce_constructor(frame, defn[j][1], weight);
                     break;
                 }
                 group[field] = val;
@@ -374,7 +400,9 @@ var wdcplot = (function() {
                     definition.dimensions = do_dimensions(frame, secdata);
                     break;
                 case 'groups':
-                    definition.groups = do_groups(frame, secdata);
+                    weight = do_weight(frame, secdata);
+                    definition.defreduce = (weight == undefined) ? reduce.count : reduce.sum(argument(frame, weight));
+                    definition.groups = do_groups(frame, secdata, weight);
                     break;
                 case 'charts':
                     definition.charts = do_charts(frame, secdata);

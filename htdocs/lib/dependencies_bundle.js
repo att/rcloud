@@ -42622,6 +42622,7 @@ dc.stackableChart = function (_chart) {
     };
 
     function flattenStack() {
+
         var all = [];
 
         if (_chart.x()) {
@@ -42636,6 +42637,7 @@ dc.stackableChart = function (_chart) {
             else test = function(p) {
                 return p.x >= xDomain[0] && p.x <= xDomain[xDomain.length-1];
             };
+            
             _chart.stackLayers().forEach(function (e) {
                 e.points.forEach(function (p) {
                     if (test(p))
@@ -43188,7 +43190,8 @@ dc.pieChart = function (parent, chartGroup) {
     };
 
     function calculateDataPie() {
-        return d3.layout.pie().sort(null).value(function (d) {
+
+        return d3.layout.pie().sort(function(a, b) { return _chart.ordering()(b) - _chart.ordering()(a); }).value(function (d) {
             return _chart.valueAccessor()(d);
         });
     }
@@ -43252,6 +43255,7 @@ dc.barChart = function (parent, chartGroup) {
     });
 
     _chart.plotData = function () {
+
         var layers = _chart.chartBodyG().selectAll("g.stack")
             .data(_chart.stackLayers());
 
@@ -43278,6 +43282,7 @@ dc.barChart = function (parent, chartGroup) {
     }
 
     function renderBars(layer, d, i) {
+
         var bars = layer.selectAll("rect.bar")
             .data(d.points);
 
@@ -44943,16 +44948,48 @@ var group = {
 // and pass it the functions it composes to call the true accessor
 var reduce = {
     count: function(group) { return group.reduceCount(); },
-    sum: function(access) {
+    countFilter: function(access, level) {
+        return reduce.sum(function (a) { 
+            if(access(a) == level) return 1;
+            else return 0;
+        });
+    },
+    filter: function(reduce, access, level) {
+        function wrapper(acc) {
+            return function (a) {
+                if(access(a) == level) return acc(a);
+                else return 0;                
+            }
+        }
+        return {
+            arg: reduce.arg,
+            fun: function(acc) { return reduce.fun(wrapper(acc)); }
+        }
+    },
+    sum: function(access, wacc) {
         return {
             arg: access,
             fun: function(acc2) {
-                return function(group) {
+                if(wacc == undefined) return function(group) {
                     return group.reduceSum(
                         function(item) {
                             return acc2(item);
                         }
                     );
+                };
+                else return function(group) {
+                    return group.reduce(
+                        function(p, v) {
+                            p.sum += (acc2(v)*wacc(v));
+                            return p;
+                        },
+                        function(p, v) {
+                            p.sum -= (acc2(v)*wacc(v));
+                            return p;
+                        },
+                        function(p, v) {
+                            return {sum: 0, valueOf: function() { return this.sum; }};
+                        });
                 };
             }
         };
@@ -44976,11 +45013,11 @@ var reduce = {
             }
         };
     },
-    avg: function(access) {
+    avg: function(access, wacc) {
         return {
             arg: access,
             fun: function(acc2) {
-                return function(group) {
+                if(wacc == undefined) return function(group) {
                     return group.reduce(
                         function(p, v) {
                             ++p.count;
@@ -44991,6 +45028,24 @@ var reduce = {
                         function(p, v) {
                             --p.count;
                             p.sum -= acc2(v);
+                            p.avg = p.count ? p.sum / p.count : 0;
+                            return p;
+                        },
+                        function(p, v) {
+                            return {count: 0, sum: 0, avg: 0, valueOf: function() { return this.avg; }};
+                        });
+                };
+                else return function(group) {
+                    return group.reduce(
+                        function(p, v) {
+                            p.count += wacc(v);
+                            p.sum += (acc2(v)*wacc(v));
+                            p.avg = p.sum / p.count;
+                            return p;
+                        },
+                        function(p, v) {
+                            p.count -= wacc(v);
+                            p.sum -= (acc2(v)*wacc(v));
                             p.avg = p.count ? p.sum / p.count : 0;
                             return p;
                         },
@@ -45039,15 +45094,17 @@ var chart_attrs = {
         color: {required: false}, // colorAccessor
         'color.scale': {required: false}, // the d3 way not the dc way
         'color.domain': {required: false},
-        'color.range': {required: false}
+        'color.range': {required: false},
+        'color.defscale': {required: false}
     },
     stackable: {
         supported: true,
-        stack: {required: false}
+        stack: {required: false},
+        'stack.levels': {required: false}
     },
     coordinateGrid: {
         supported: true,
-        parents: ['base'],
+        parents: ['base', 'color'],
         margins: {required: false},
         x: {required: false}, // keyAccessor
         y: {required: false}, // valueAccessor
@@ -45223,12 +45280,12 @@ function dcplot(frame, groupname, definition) {
     function default_dimension(name, defn) {
         // nothing (yet?)
     }
-    function default_group(name, defn, dims) {
+    function default_group(name, defn, dims, defreduce) {
         var errors = [];
         if(!_.has(defn, 'group'))
             defn.group = group.identity;
         if(!_.has(defn, 'reduce'))
-            defn.reduce = reduce.count;
+            defn.reduce = defreduce;
 
         if(errors.length)
             throw errors;
@@ -45279,7 +45336,7 @@ function dcplot(frame, groupname, definition) {
     function infer_dimension(name, defn) {
         // nothing (yet?)
     }
-    function infer_group(name, defn, dims) {
+    function infer_group(name, defn, dims, defreduce) {
         var errors = [];
         if(!_.has(defn, 'dimension'))
             errors.push('group needs dimension');
@@ -45288,7 +45345,7 @@ function dcplot(frame, groupname, definition) {
         if(!_.has(defn, 'group'))
             defn.group = group.identity;
         if(!_.has(defn, 'reduce'))
-            defn.reduce = reduce.count;
+            defn.reduce = defreduce;
 
         if(errors.length)
             throw errors;
@@ -45304,8 +45361,9 @@ function dcplot(frame, groupname, definition) {
         }
         function get_levels(dim) {
             var levels = null;
-            if(_.has(dims, dim) && mhas(accessor(dims[dim]), 'attrs', 'levels'))
-                levels = accessor(dims[dim]).attrs.levels;
+            if(_.isFunction(dim)) levels = dim.attrs.r_attributes.levels;
+            else if(_.has(dims, dim) && mhas(accessor(dims[dim]), 'attrs', 'r_attributes', 'levels'))
+                levels = accessor(dims[dim]).attrs.r_attributes.levels;
             return levels;
         }
         function looks_ordinal(dim) {
@@ -45325,13 +45383,13 @@ function dcplot(frame, groupname, definition) {
                     defn.group = find_unused(groups, defn.dimension);
                     var g = groups[defn.group] = {};
                     g.dimension = defn.dimension;
-                    infer_group(defn.group, g, dims);
+                    infer_group(defn.group, g, dims, defn.defreduce);
                 }
                 if(!_.has(defn, 'ordering')) {
                     // note it's a little messy to have this as a property of the chart rather than
                     // the group, but dc.js sometimes needs an ordering and sometimes doesn't
                     var levels = get_levels(defn.dimension);
-                    if(levels) {
+                    if(levels != null) {
                         var rmap = _.object(levels, _.range(levels.length));
                         // the ordering function uses a reverse map of the levels
                         defn.ordering = function(p) {
@@ -45342,8 +45400,34 @@ function dcplot(frame, groupname, definition) {
 
             },
             color: function() {
+                defn['color.defscale'] = d3.scale.category10();
+                var levels = get_levels(defn.dimension);
+                if(levels != null) {
+                    if(levels.length>10) defn['color.defscale'] = d3.scale.category20();
+                }
             },
             stackable: function() {
+                if(_.has(defn,'stack')) {
+                    if(!_.has(defn,'stack.levels')) defn['stack.levels'] = get_levels(defn['stack']);
+                    var levels = defn['stack.levels'];
+
+                    if(levels != null && levels.length > 1) {
+                        defn['color.defscale'] = d3.scale.category10();
+                        if(levels != null && levels.length > 10) defn['color.defscale'] = d3.scale.category20();
+                    }
+
+                    //Change reduce functions to filter on stack levels
+                    for(var s = 0; s<defn['stack.levels'].length; s++) {
+                        newName = defn.group+defn['stack.levels'][s];
+                        newGroupDefn = jQuery.extend({},groups[defn.group]);
+
+                        //Special treatment for counts, otherwise generic filter wrapper
+                        if(newGroupDefn.reduce == reduce.count) newGroupDefn.reduce = reduce.countFilter(defn['stack'],defn['stack.levels'][s]);
+                        else newGroupDefn.reduce = reduce.filter(newGroupDefn.reduce,defn['stack'],defn['stack.levels'][s]);
+
+                        groups[newName] = newGroupDefn;
+                    }
+                }
             },
             coordinateGrid: function() {
                 var levels = get_levels(defn.dimension);
@@ -45571,7 +45655,8 @@ function dcplot(frame, groupname, definition) {
                 // to serve the purpose. so just plug a d3 scale into colors
                 // and override the calculator to use it
                 // also default to category10 which seems better for discrete colors
-                var scale = defn['color.scale'] || d3.scale.category10();
+
+                var scale = defn['color.scale'] || defn['color.defscale'];
                 if(_.has(defn, 'color.domain'))
                     scale.domain(defn['color.domain']);
                 else if(mhas(defn, 'color', 'attrs', 'levels'))
@@ -45582,19 +45667,34 @@ function dcplot(frame, groupname, definition) {
                 chart.colorCalculator(function(x) { return chart.colors()(x); });
             },
             stackable: function() {
-                if(_.has(defn, 'stack'))
-                    for(var s in defn.stack) {
-                        var stack = defn.stack[s];
-                        if(_.isArray(stack))
-                            chart.stack(stack[0], stack[1]);
-                        else
-                            chart.stack(stack);
+                if(_.has(defn, 'stack') && _.has(defn, 'stack.levels')) {
+                    for(var s = 0; s<defn['stack.levels'].length; s++) {
+                        stackGroup = groups[defn.group+defn['stack.levels'][s]];
+
+                        if(s == 0) chart.group(stackGroup);
+                        else chart.stack(stackGroup);
                     }
+                    if(defn['stack.levels'].length > 1) {
+                        chart.renderlet( function(chart) {
+                            // Hack for coloring stacked bar charts
+                            var stacks = chart.selectAll("g."+dc.constants.STACK_CLASS).selectAll("rect.bar");
+                            var stackstitles = chart.selectAll("g."+dc.constants.STACK_CLASS).selectAll("rect.bar title");
+                            for (var i = 0; i<stacks.length; i++) {
+                                for(var j = 0; j<stacks[i].length; j++) {
+                                    // Avoid coloring deselected elements
+                                    if(stacks[i][j].classList.contains(dc.constants.DESELECTED_CLASS)) stacks[i][j].removeAttribute('style');
+                                    else stacks[i][j].setAttribute('style', 'fill: '+chart.colors()(i));
+                                    // Add stack name to title/mouseover
+                                    stackstitles[i][j].childNodes[0].nodeValue = defn['stack.levels'][i] + ", " + stackstitles[i][j].childNodes[0].nodeValue;
+                                }
+                            }
+                        });
+                    }
+                }
             },
             coordinateGrid: function() {
-                if(_.has(defn, 'margins'))
-                    chart.margins(defn.margins);
-
+                if(_.has(defn, 'margins')) chart.margins(defn.margins);
+                else chart.margins({top: 10, right: 50, bottom: 30, left: 50});
                 if(_.has(defn, 'x'))
                     chart.keyAccessor(key_value(accessor(defn.x)));
                 if(_.has(defn, 'y'))
@@ -45632,6 +45732,18 @@ function dcplot(frame, groupname, definition) {
                 }
                 if(_.has(defn, 'brush'))
                     chart.brushOn(defn.brush);
+                if(_.has(defn,'x.ordinal') && defn['x.ordinal'] && (!_.has(defn,'stack.levels') || 
+                    (_.has(defn,'stack.levels') && defn['stack.levels'].length == 1))) {
+                    // Hack for coloring non-stacked ordinal x charts
+                    chart.renderlet( function(chart) {
+                        var all = chart.selectAll("rect.bar")[0];
+                        all.sort(function (a,b) { return a.x.baseVal.value - b.x.baseVal.value; });
+                        for (var i = 0; i<all.length; i++) {
+                            if(all[i].classList.contains(dc.constants.DESELECTED_CLASS)) all[i].removeAttribute('style');
+                            else all[i].setAttribute('style', 'fill: '+chart.colors()(i));
+                        }
+                    });
+                }
             },
             pie: function() {
                 if(_.has(defn, 'wedge'))
@@ -45716,7 +45828,7 @@ function dcplot(frame, groupname, definition) {
         for(var g in definition.groups) {
             defn = definition.groups[g];
             try {
-                group_fn(g, defn, definition.dimensions);
+                group_fn(g, defn, definition.dimensions, definition.defreduce);
             }
             catch(e) {
                 errors.push({type: 'group', name: g, errors: e});

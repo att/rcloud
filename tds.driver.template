@@ -1,0 +1,4 @@
+[FreeTDS]
+Description     = FreeTDS
+Driver          = /opt/local/lib/libtdsodbc.so
+
