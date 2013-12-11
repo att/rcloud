@@ -885,7 +885,7 @@ var editor = function () {
             });
         },
         rename_notebook: function(gistname, newname) {
-            rcloud.rename_notebook(gistname, newname, this.load_callback(null, true));
+            rcloud.rename_notebook(gistname, newname, this.load_callback(null, true, true));
         },
         star_notebook: function(star, opts) {
             var that = this;

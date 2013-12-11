@@ -198,7 +198,7 @@ Notebook.create_controller = function(model)
                 return {files: _.reduce(changes, xlate_change, {})};
             }
             // not awesome to callback to someone else here
-            k = k || editor.load_callback(null, true);
+            k = k || editor.load_callback(null, true, true);
             var k2 = function(notebook) {
                 if('error' in notebook) {
                     k(notebook);
