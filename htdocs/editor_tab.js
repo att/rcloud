@@ -681,10 +681,15 @@ var editor = function () {
         }
         if(node.gistname && !node.version) {
             var adder = function(target) {
+                var count = 0;
                 function add(items) {
                     target.append('&nbsp;');
                     target.append.apply(target, arguments);
+                    ++count;
                 }
+                add.width = function() {
+                    return count*15;
+                };
                 return add;
             };
             // commands for the right column, always shown
@@ -728,8 +733,8 @@ var editor = function () {
             right.append(always);
 
             // commands that appear
-            var commands = $('<span/>', {class: 'notebook-commands appear'});
-            add_buttons = adder(commands);
+            var appear = $('<span/>', {class: 'notebook-commands appear'});
+            add_buttons = adder(appear);
             if(true) { // all notebooks have history - should it always be accessible?
                 var disable = config_.currbook===node.gistname && config_.currversion;
                 var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style);
@@ -770,8 +775,10 @@ var editor = function () {
                 });
                 add_buttons(remove);
             };
-            commands.hide();
-            title.append('&nbsp;', commands);
+            var wid = add_buttons.width()+'px';
+            appear.css({left: '-'+wid, width: wid});
+            appear.hide();
+            always.append(appear);
             $li.hover(
                 function() {
                     $('.notebook-commands.appear', this).show();

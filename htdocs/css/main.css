@@ -307,7 +307,6 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
 }
 
 .jqtree-title {
-    position: relative;
 }
 
 ul.jqtree-tree .jqtree-title.private {
@@ -322,6 +321,7 @@ ul.jqtree-tree .jqtree-title.private {
 }
 
 .notebook-commands-right {
+    position: relative;
     display: inline-block;
     width: 30px;
 }
@@ -332,9 +332,7 @@ ul.jqtree-tree .jqtree-title.private {
 
 .notebook-commands.appear {
     position: absolute;
-    bottom: -2px;
-    right: -50px;
-    width: 50px;
+    bottom: 0px;
     background-color: white;
 }
 
