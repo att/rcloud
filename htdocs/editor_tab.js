@@ -782,6 +782,21 @@ var editor = function () {
         }
         element.append(right);
     }
+    function tree_click(event) {
+        if(event.node.id === 'showmore')
+            result.show_history(event.node.parent, false);
+        else if(event.node.gistname) {
+            if(event.click_event.metaKey || event.click_event.ctrlKey) {
+                var url = window.location.protocol + '//' + window.location.host + '/main.html?notebook=' + event.node.gistname;
+                window.open(url, "_blank");
+            }
+            else {
+                // possibly erase query parameters here, but that requires a reload
+                result.load_notebook(event.node.gistname, event.node.version || null, event.node.root);
+            }
+        }
+        return false;
+    }
 
     var result = {
         init: function(gistname, version, k) {
@@ -827,21 +842,7 @@ var editor = function () {
                 onCreateLi: on_create_tree_li,
                 selectable: true
             });
-            $tree_.bind(
-                'tree.click', function(event) {
-                    if(event.node.id === 'showmore')
-                        that.show_history(event.node.parent, false);
-                    else if(event.node.gistname) {
-                        if(event.click_event.metaKey || event.click_event.ctrlKey) {
-                            var url = window.location.protocol + '//' + window.location.host + '/main.html?notebook=' + event.node.gistname;
-                            window.open(url, "_blank");
-                        }
-                        else
-                            that.load_notebook(event.node.gistname, event.node.version || null, event.node.root);
-                    }
-                    return false;
-                }
-            );
+            $tree_.bind('tree.click', tree_click);
         },
         load_config: function(k) {
             var that = this;
