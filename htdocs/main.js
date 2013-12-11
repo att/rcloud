@@ -25,15 +25,18 @@ function init_github_buttons() {
 
 function init_upload_pane() {
     $("#upload-submit").click(function() {
-        var success = function(path, file) {
+        var to_notebook = ($('#upload-to-notebook').is(':checked'));
+        var success = function(path, file, notebook) {
             $("#file-upload-div").append(
                 bootstrap_utils.alert({
                     "class": 'alert-info',
-                    text: "File " + file.name + " uploaded."
+                    text: (to_notebook ? "Asset " : "File ") + file.name + " uploaded."
                 })
             );
+            if(to_notebook)
+                editor.update_notebook_file_list(notebook.files);
         };
-        var upload_function = ($('#upload-to-notebook').is(':checked')) 
+        var upload_function = to_notebook
             ? rcloud.upload_to_notebook
             : rcloud.upload_file;
 
