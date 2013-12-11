@@ -354,8 +354,8 @@ RCloud.create = function(rcloud_ocaps) {
                     } else {
                         // done, push to notebook.
                         rcloud_ocaps.notebook_upload(
-                            file_to_upload.buffer, file.name, function(){
-                                on_success(file_to_upload, file);
+                            file_to_upload.buffer, file.name, function(result){
+                                on_success(file_to_upload, file, result.content);
                             });
                     }
                 };
