@@ -42622,7 +42622,6 @@ dc.stackableChart = function (_chart) {
     };
 
     function flattenStack() {
-
         var all = [];
 
         if (_chart.x()) {
@@ -42637,7 +42636,6 @@ dc.stackableChart = function (_chart) {
             else test = function(p) {
                 return p.x >= xDomain[0] && p.x <= xDomain[xDomain.length-1];
             };
-            
             _chart.stackLayers().forEach(function (e) {
                 e.points.forEach(function (p) {
                     if (test(p))
@@ -43255,7 +43253,6 @@ dc.barChart = function (parent, chartGroup) {
     });
 
     _chart.plotData = function () {
-
         var layers = _chart.chartBodyG().selectAll("g.stack")
             .data(_chart.stackLayers());
 
@@ -43282,7 +43279,6 @@ dc.barChart = function (parent, chartGroup) {
     }
 
     function renderBars(layer, d, i) {
-
         var bars = layer.selectAll("rect.bar")
             .data(d.points);
 
