@@ -237,13 +237,14 @@ var shell = (function() {
                                       (ellipt_end ? '...' : ''));
         }
         // remove any existing handler
-        $("#notebook-title").off('click');
+        $("#rename-notebook").off('click');
         // then add one if editable
         if (!is_read_only) {
-            $("#notebook-title").click(function() {
-                var result = prompt("Please enter the new name for this notebook:", $(this).text());
-                if (result !== null) {
-                    $(this).text(result);
+            var title = $('#notebook-title');
+            $("#rename-notebook").click(function() {
+                var result = prompt("Please enter the new name for this notebook:", title.text());
+                if (result && !/^\s+$/.test(result)) { // not null and not empty or just whitespace
+                    title.text(result);
                     editor.rename_notebook(shell.gistname(), result);
                 }
             });

@@ -1603,16 +1603,19 @@ Notebook.create_controller = function(model)
             _.each(model.notebook, function(cell_model) {
                 cell_model.controller.set_status_message("Waiting...");
             });
-            // yes this is a joke
+            // this is silly.
             disp = _.map(model.notebook, function(cell_model) {
                 return function() {
                     cell_model.controller.set_status_message("Computing...");
                 };
             });
-            disp.shift()();
-            _.each(model.notebook, function(cell_model) {
-                cell_model.controller.execute(bump_executed);
-            });
+            if(disp.length) {
+                disp.shift()();
+                _.each(model.notebook, function(cell_model) {
+                    cell_model.controller.execute(bump_executed);
+                });
+            }
+            else k && k();
         },
 
         //////////////////////////////////////////////////////////////////////
