@@ -57,6 +57,8 @@ run <- function(url, query, body, headers)
       extra.path <- if (nbs[ok] == nb.name) NULL else substr(nb.name, nchar(nbs[ok]) + 1L, nchar(nb.name))
     }
 
+    query$notebook <- notebook
+    if (!is.null(version)) query$.version <- version
     if (is.null(extra.path)) { ## no extra path => call
       RSclient::RS.eval.qap(c, as.call(list(caps$rcloud$call_fastrweb_notebook, notebook, version, query)))
     } else { ## extra path => get the contents
