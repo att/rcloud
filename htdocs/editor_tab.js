@@ -714,15 +714,11 @@ var editor = function () {
                                                      'star',
                                                      star_style);
                 // sigh, ui_utils.twostate_icon should be a mixin or something
-                star_unstar.click(function() {
-                    try {
-                        var new_state = !state;
-                        result.star_notebook(new_state, {gistname: node.gistname, user: node.user});
-                    }
-                    catch(x) {// whatever you do, don't let this event percolate
-                        rclient.post_error(x);
-                    }
-                    return false;
+                star_unstar.click(function(e) {
+                    e.preventDefault();
+                    e.stopPropagation(); // whatever you do, don't let this event percolate
+                    var new_state = !state;
+                    result.star_notebook(new_state, {gistname: node.gistname, user: node.user});
                 });
                 star_unstar[0].set_state = function() {
                     $(this).find('i').attr('class', states[state].class);
