@@ -9,7 +9,8 @@ var shell = (function() {
         prompt_ = null,
         notebook_model_ = Notebook.create_model(),
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
-        notebook_controller_ = Notebook.create_controller(notebook_model_);
+        notebook_controller_ = Notebook.create_controller(notebook_model_),
+        first_session_ = true;
 
     var cmd_history = (function() {
         var entries_ = [], alt_ = [];
@@ -260,6 +261,37 @@ var shell = (function() {
         $("#share-link").attr("href", link);
     }
 
+    function reset_session(k) {
+        if (first_session_) {
+            first_session_ = false;
+            rcloud.with_progress(function(done) {
+                k(done);
+            });
+        } else {
+            rcloud.with_progress(function(done) {
+                rclient.close();
+                // FIXME this is a bit of an annoying duplication of code on main.js and view.js
+                rclient = RClient.create({
+                    debug: rclient.debug,
+                    host: rclient.host,
+                    on_connect: function(ocaps) {
+                        rcloud = RCloud.create(ocaps.rcloud);
+                        rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {});
+
+                        rcloud.init_client_side_data(function() {
+                            $("#output").find(".alert").remove();
+                            k(done);
+                        });
+                    },
+                    on_data: function(v) {
+                        v = v.value.json();
+                        oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
+                    }
+                });
+            });
+        }
+    }
+
     function on_new(k, notebook) {
         set_notebook_title(notebook);
         set_share_link();
@@ -295,7 +327,6 @@ var shell = (function() {
     if(prompt_div.length)
         prompt_ = setup_command_prompt(prompt_div);
 
-    var first = true;
     var result = {
         notebook: {
             model: notebook_model_,
@@ -375,50 +406,27 @@ var shell = (function() {
                     });
                 });
             }
-
-            if (first) {
-                first = false;
-                rcloud.with_progress(function(done) {
-                    do_load(done);
-                });
-            } else {
-                rcloud.with_progress(function(done) {
-                    rclient.close();
-                    // FIXME this is a bit of an annoying duplication of code on main.js and view.js
-                    rclient = RClient.create({
-                        debug: rclient.debug,
-                        host: rclient.host,
-                        on_connect: function(ocaps) {
-                            rcloud = RCloud.create(ocaps.rcloud);
-                            rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {});
-
-                            rcloud.init_client_side_data(function() {
-                                $("#output").find(".alert").remove();
-                                do_load(done);
-                            });
-                        },
-                        on_data: function(v) {
-                            v = v.value.json();
-                            oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
-                        }
-                    });
-                });
-            }
-
+            reset_session(do_load);
         }, save_notebook: function() {
             notebook_controller_.save();
         }, new_notebook: function(desc, k) {
-            var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
-            notebook_controller_.create_notebook(content, _.bind(on_new, this, k));
+            reset_session(function(done) {
+                var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
+                done(); // well not really done (just done with cps bleh)
+                notebook_controller_.create_notebook(content, _.bind(on_new, this, k));
+            });
         }, fork_or_revert_notebook: function(is_mine, gistname, version, k) {
             if(is_mine && !version)
                 throw "unexpected revert of current version";
-            var that = this;
-            notebook_model_.read_only(false);
-            notebook_controller_.fork_or_revert_notebook(is_mine, gistname, version, function(notebook) {
-                gistname_ = notebook.id;
-                version_ = null;
-                on_load.call(that, k, notebook);
+            reset_session(function(done) {
+                var that = this;
+                notebook_model_.read_only(false);
+                notebook_controller_.fork_or_revert_notebook(is_mine, gistname, version, function(notebook) {
+                    gistname_ = notebook.id;
+                    version_ = null;
+                    done(); // again, not really done - just too nasty to compose done with k
+                    on_load.call(that, k, notebook);
+                });
             });
         }, open_in_github: function() {
             var url;
