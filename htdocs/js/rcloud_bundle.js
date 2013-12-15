@@ -1499,28 +1499,36 @@ Notebook.create_controller = function(model)
         },
         fork_or_revert_notebook: function(is_mine, gistname, version, k) {
             var that = this;
-            function update_if(changes, gistname, k) {
-                // if there are no changes, just load the gist so that we are sending along
-                // the latest history, timestamp, etc.
+            function update_and_load(changes, gistname, k) {
+                // force a full reload in all cases, as a sanity check
+                // i.e. we might know what the notebook state should be,
+                // but load the notebook to make sure
+                var k2 = function() {
+                    that.load_notebook(gistname, null, k);
+                };
                 if(changes.length)
-                    that.update_notebook(changes, gistname, k);
+                    that.update_notebook(changes, gistname, k2);
                 else
-                    rcloud.load_notebook(gistname, null, k);
+                    k2();
+
             }
             if(is_mine) // revert: get HEAD, calculate changes from there to here, and apply
                 rcloud.load_notebook(gistname, null, function(notebook) {
                     var changes = find_changes_from(notebook);
-                    update_if(changes, gistname, k);
+                    update_and_load(changes, gistname, k);
                 });
             else // fork:
                 rcloud.fork_notebook(gistname, function(notebook) {
                     if(version) {
-                        // fork, then get changes from there to here, and apply
-                        var changes = find_changes_from(notebook);
-                        update_if(changes, notebook.id, k);
+                        // fork, then get changes from there to where we are in the past, and apply
+                        // git api does not return the files on fork, so load
+                        rcloud.get_notebook(notebook.id, null, function(notebook2) {
+                            var changes = find_changes_from(notebook2);
+                            update_and_load(changes, notebook2.id, k);
+                        });
                     }
                     else
-                        that.load_notebook(notebook.id, null, k);
+                        update_and_load([], notebook.id, k);
                 });
         },
         update_notebook: function(changes, gistname, k) {
