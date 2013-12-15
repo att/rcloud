@@ -152,9 +152,12 @@ Notebook.create_controller = function(model)
             else // fork:
                 rcloud.fork_notebook(gistname, function(notebook) {
                     if(version) {
-                        // fork, then get changes from there to here, and apply
-                        var changes = find_changes_from(notebook);
-                        update_if(changes, notebook.id, k);
+                        // fork, then get changes from there to where we are in the past, and apply
+                        // git api does not return the files on fork, so load
+                        rcloud.get_notebook(notebook.id, null, function(notebook2) {
+                            var changes = find_changes_from(notebook2);
+                            update_if(changes, notebook2.id, k);
+                        });
                     }
                     else
                         that.load_notebook(notebook.id, null, k);
