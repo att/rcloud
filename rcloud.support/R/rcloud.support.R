@@ -163,7 +163,14 @@ rcloud.update.notebook <- function(id, content) {
   res
 }
 
-rcloud.create.notebook <- function(content) create.gist(content, ctx = .session$rgithub.context)
+rcloud.create.notebook <- function(content) {
+  res <- create.gist(content, ctx = .session$rgithub.context)
+  if (res$ok) {
+    .session$current.notebook <- res
+    rcloud.reset.session()
+  }
+  res
+}
 
 rcloud.rename.notebook <- function(id, new.name)
   modify.gist(id,
