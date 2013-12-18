@@ -45690,7 +45690,7 @@ function dcplot(frame, groupname, definition) {
             },
             coordinateGrid: function() {
                 if(_.has(defn, 'margins')) chart.margins(defn.margins);
-                else chart.margins({top: 10, right: 50, bottom: 30, left: 50});
+                else chart.margins({top: 10, right: 50, bottom: 30, left: 60});
                 if(_.has(defn, 'x'))
                     chart.keyAccessor(key_value(accessor(defn.x)));
                 if(_.has(defn, 'y'))
