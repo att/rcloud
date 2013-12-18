@@ -37,6 +37,13 @@ RCloud.create = function(rcloud_ocaps) {
                 var message = _.isObject(result) && 'ok' in result
                     ? result.content.message : result.toString();
                 rclient.post_error(command + ': ' + message);
+                // FIXME: I must still call the continuation,
+                // because bad things might happen otherwise. But calling
+                // this means that I'm polluting the 
+                // space of possible JSON answers with the error.
+                // For example, right now a return string "{}" is indistinguishable
+                // from an error
+                k && k({ error: result.content });
             }
         };
     }
@@ -47,7 +54,7 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.anonymous_session_init = function(k) {
             rcloud_ocaps.anonymous_session_init(k || _.identity);
         };
-        
+
         rcloud.username = function() {
             return $.cookies.get('user');
         };
@@ -109,17 +116,15 @@ RCloud.create = function(rcloud_ocaps) {
                 k(result);
             },
             clear_css: function(current_notebook, k) {
+                $(".rcloud-user-defined-css").remove();
                 k();
             },
             install_css: function(urls, k) {
                 if (_.isString(urls))
                     urls = [urls];
                 _.each(urls, function(url) {
-                    var link = document.createElement("link");
-                    link.type = 'text/css';
-                    link.rel = 'stylesheet';
-                    link.href = url;
-                    document.getElementsByTagName("head")[0].appendChild(link);
+                    $("head").append($('<link type="text/css" rel="stylesheet" class="rcloud-user-defined-css" href="' +
+                                       url + '"/>'));
                 });
                 k();
             }
@@ -143,6 +148,9 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.stars.get_notebook_star_count = function(id, k) {
             rcloud_ocaps.stars.get_notebook_star_count(id, k);
+        };
+        rcloud.stars.get_multiple_notebook_star_counts = function(id, k) {
+            rcloud_ocaps.stars.get_multiple_notebook_star_counts(id, k);
         };
 
         rcloud.session_cell_eval = function(filename, language, silent, k) {
@@ -209,6 +217,45 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.session_markdown_eval = function(command, language, silent, k) {
             rcloud_ocaps.session_markdown_eval(command, language, silent, k || _.identity);
+        };
+        rcloud.upload_to_notebook = function(force, on_success, on_failure) {
+            on_success = on_success || _.identity;
+            on_failure = on_failure || _.identity;
+            function do_upload(file) {
+                var fr = new FileReader();
+                var chunk_size = 1024*1024;
+                var f_size = file.size;
+                var file_to_upload = new Uint8Array(f_size);
+                var cur_pos = 0;
+                fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+                fr.onload = function(e) {
+                    if (e.target.result.byteLength > 0) {
+                        // still sending data to user agent
+                        var bytes = new Uint8Array(e.target.result);
+                        file_to_upload.set(bytes, cur_pos);
+                        cur_pos += bytes.byteLength;
+                        fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+                    } else {
+                        // done, push to notebook.
+                        rcloud_ocaps.notebook_upload(
+                            file_to_upload.buffer, file.name, function(result){
+                                on_success(file_to_upload, file, result.content);
+                            });
+                    }
+                };
+            }
+            if(!(window.File && window.FileReader && window.FileList && window.Blob))
+                throw new Error("File API not supported by browser.");
+            var file=$("#file")[0].files[0];
+            if(_.isUndefined(file))
+                throw new Error("No file selected!");
+            /*FIXME add logged in user */
+            rcloud_ocaps.file_upload.upload_path(function(path) {
+                var file=$("#file")[0].files[0];
+                if(_.isUndefined(file))
+                    throw new Error("No file selected!");
+                do_upload(file);
+            });
         };
         rcloud.upload_file = function(force, on_success, on_failure) {
             on_success = on_success || _.identity;
@@ -289,6 +336,9 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.stars.get_notebook_star_count = function(id, k) {
             rcloud_ocaps.stars.get_notebook_star_count(id, k);
+        };
+        rcloud.stars.get_multiple_notebook_star_counts = function(ids, k) {
+            rcloud_ocaps.stars.get_multiple_notebook_star_counts(ids, k);
         };
         rcloud.stars.get_my_starred_notebooks = function(k) {
             rcloud_ocaps.stars.get_my_starred_notebooks(k);

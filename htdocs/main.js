@@ -23,6 +23,48 @@ function init_github_buttons() {
     });
 }
 
+function init_upload_pane() {
+    $("#upload-submit").click(function() {
+        var to_notebook = ($('#upload-to-notebook').is(':checked'));
+        var success = function(path, file, notebook) {
+            $("#file-upload-div").append(
+                bootstrap_utils.alert({
+                    "class": 'alert-info',
+                    text: (to_notebook ? "Asset " : "File ") + file.name + " uploaded."
+                })
+            );
+            if(to_notebook)
+                editor.update_notebook_file_list(notebook.files);
+        };
+        var upload_function = to_notebook
+            ? rcloud.upload_to_notebook
+            : rcloud.upload_file;
+
+        upload_function(false, success, function() {
+            var overwrite_click = function() {
+                rcloud.upload_file(true, success, function(exception_value) {
+                    var msg = exception_value;
+                    $("#file-upload-div").append(
+                        bootstrap_utils.alert({
+                            "class": 'alert-danger',
+                            text: msg
+                        })
+                    );
+                });
+            };
+            var alert_element = $("<div></div>");
+            var p = $("<p>File exists. </p>");
+            alert_element.append(p);
+            var overwrite = bootstrap_utils
+                .button({"class": 'btn-danger'})
+                .click(overwrite_click)
+                .text("Overwrite");
+            p.append(overwrite);
+            $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
+        });
+    });
+}
+
 function init_save_button() {
     var saveb = $("#save-notebook");
     saveb.click(function() {
@@ -40,12 +82,12 @@ function init_port_file_buttons() {
     });
 }
 
-
 function init_navbar_buttons() {
     init_fork_revert_button();
     init_github_buttons();
     init_save_button();
     init_port_file_buttons();
+    init_upload_pane();
 }
 
 var oob_handlers = {
@@ -91,50 +133,19 @@ function main_init() {
                 window.location.href = '/logout.R';
             });
             $(".collapse").collapse();
-            $("#upload-submit").click(function() {
-                var success = function(path, file) {
-                    $("#file-upload-div").append(
-                        bootstrap_utils.alert({
-                            "class": 'alert-info',
-                            text: "File " + file.name + " uploaded."
-                        })
-                    );
-                };
-                rcloud.upload_file(false, success, function() {
-                    var overwrite_click = function() {
-                        rcloud.upload_file(true, success, function(exception_value) {
-                            var msg = exception_value;
-                            $("#file-upload-div").append(
-                                bootstrap_utils.alert({
-                                    "class": 'alert-danger',
-                                    text: msg
-                                })
-                            );
-                        });
-                    };
-                    var alert_element = $("<div></div>");
-                    var p = $("<p>File exists. </p>");
-                    alert_element.append(p);
-                    var overwrite = bootstrap_utils
-                        .button({"class": 'btn-danger'})
-                        .click(overwrite_click)
-                        .text("Overwrite");
-                    p.append(overwrite);
-                    $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
-                });
-            });
             rcloud.init_client_side_data();
 
             shell.init();
-            editor.init(function() {
-                if (location.search.length > 0) {
-                    function getURLParameter(name) {
-                        return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
-                    }
-                    editor.load_notebook(getURLParameter("notebook"), getURLParameter("version"));
-                    $("#tabs").tabs("select", "#tabs-2");
+            var notebook = null, version = null;
+            if (location.search.length > 0) {
+                function getURLParameter(name) {
+                    return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
                 }
-            });
+                notebook = getURLParameter("notebook");
+                version = getURLParameter("version");
+            }
+            editor.init(notebook, version);
+            $("#tabs").tabs("select", "#tabs-2");
         },
         on_data: function(v) {
             v = v.value.json();

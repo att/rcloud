@@ -199,10 +199,6 @@ rect.frame {
     overflow-y: scroll;
 }
 
-.notebook-commands .fontawesome-button {
-    margin: 0;
-}
-
 .header-button {
     float: right;
     font-size: 120%;
@@ -287,6 +283,10 @@ form input.linkbox {
     padding: 2px;
 }
 
+.nav li sub {
+    color: #ddd;
+}
+
 /******************************************************************************/
 
 ul.jqtree-tree .jqtree-toggler {
@@ -301,9 +301,49 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
     text-shadow: none;
     font-weight: bold;
 }
+
 .jqtree-title.jqtree_common.history {
     color: #7CB9E8
 }
+
+.jqtree-title {
+}
+
+ul.jqtree-tree .jqtree-title.private {
+    color: #aaa;
+}
+
+.notebook-date {
+}
+
+.notebook-right {
+    float: right;
+}
+
+.notebook-commands-right {
+    position: relative;
+    display: inline-block;
+    width: 30px;
+}
+
+.notebook-commands {
+    color: black;
+}
+
+.notebook-commands.appear {
+    position: absolute;
+    bottom: 0px;
+    background-color: white;
+}
+
+li.jqtree-selected .notebook-commands {
+    bottom: -1px;
+}
+
+.notebook-commands .fontawesome-button {
+    margin: 0;
+}
+
 
 
 /******************************************************************************/

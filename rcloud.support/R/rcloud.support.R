@@ -49,8 +49,10 @@ rcloud.unauthenticated.load.notebook <- function(id, version = NULL) {
 
 rcloud.load.notebook <- function(id, version = NULL) {
   res <- rcloud.get.notebook(id, version)
-  .session$current.notebook <- res
-  rcloud.reset.session()
+  if (res$ok) {
+    .session$current.notebook <- res
+    rcloud.reset.session()
+  }
   res
 }
 
@@ -69,7 +71,15 @@ rcloud.unauthenticated.get.notebook <- function(id, version = NULL) {
 }
 
 rcloud.get.notebook <- function(id, version = NULL) {
-  res <- get.gist(id, version, ctx = .session$rgithub.context)
+  res <- if (!is.null(stash <- .session$deployment.stash)) {
+    if (is.null(version))
+      version <- rcs.get(stash.key(stash, id, "HEAD", type="tag"))
+    res <- rcs.get(stash.key(stash, id, version))
+    if (is.null(res$ok)) res <- list(ok=FALSE)
+    res
+  } else suppressWarnings(get.gist(id, version, ctx = .session$rgithub.context))
+  ## FIXME: suppressWarnings is a hack to get rid of the stupid "Duplicated curl options"
+  ##        which seem to be a httr bug
   if (rcloud.debug.level() > 1L) {
     if(res$ok) {
       cat("==== GOT GIST ====\n")
@@ -89,18 +99,20 @@ rcloud.get.notebook <- function(id, version = NULL) {
 ## the meaining of args is ambiguous and probably a bad idea - it jsut makes the client code a bit easier to write ...
 
 rcloud.call.notebook <- function(id, version = NULL, args = NULL) {
-  res <- get.gist(id, version, ctx = .session$rgithub.context)
+  res <- rcloud.get.notebook(id, version)
   if (res$ok) {
     args <- as.list(args)
     ## this is a hack for now - we should have a more general infrastructure for this ...
     ## get all files
     p <- res$content$files
+    p <- p[grep("^part", names(p))]
     n <- names(p)
+    if (!length(n)) return(NULL)
     ## extract the integer number
-    i <- as.integer(gsub("^\\D+(\\d+)\\..*", "\\1", n))
+    i <- suppressWarnings(as.integer(gsub("^\\D+(\\d+)\\..*", "\\1", n)))
     result <- NULL
     e <- new.env(parent=.GlobalEnv)
-    if (is.list(args) && length(args)) for (i in names(args)) e[[i]] <- args[[i]]
+    if (is.list(args) && length(args)) for (i in names(args)) if (nzchar(i)) e[[i]] <- args[[i]]
     ## sort
     for (o in p[match(sort.int(i), i)]) {
       if (grepl("^part.*\\.R$", o$filename)) { ## R code
@@ -119,21 +131,49 @@ rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
   if (is.function(result)) {
     require(FastRWeb)
     l <- as.list(as.WebResult(do.call(result, args, envir=environment(result))))
+    if (isTRUE(l[[1]] == "tmpfile")) {
+      fn <- file.path(getwd(), gsub("/","_",l[[2]],fixed=TRUE))
+      cat("rcloud.call.FastRWeb.notebook: file is", fn,"\n")
+      sz <- file.info(fn)$size
+      if (any(is.na(sz))) stop("Error reading temporary file ",fn)
+      r <- readBin(fn, raw(), sz)
+      unlink(fn)
+      return(c(list(r), l[-(1:2)]))
+    }
     l[[1]] <- NULL ## FIXME: we assume "html" type here .. need to implement others ...
     l
   } else result
 }
 
-rcloud.update.notebook <- function(id, content) {
-  res <- update.gist(id, content, ctx = .session$rgithub.context)
+rcloud.upload.to.notebook <- function(file, name) {
+  if (is.null(.session$current.notebook))
+    stop("Notebook must be loaded")
+  id <- .session$current.notebook$content$id
+  files <- list()
+  files[[name]] <- list(content=rawToChar(file))
+  content <- list(files = files)
+  res <- rcloud.update.notebook(id, content)
   .session$current.notebook <- res
   res
 }
 
-rcloud.create.notebook <- function(content) create.gist(content, ctx = .session$rgithub.context)
+rcloud.update.notebook <- function(id, content) {
+  res <- modify.gist(id, content, ctx = .session$rgithub.context)
+  .session$current.notebook <- res
+  res
+}
+
+rcloud.create.notebook <- function(content) {
+  res <- create.gist(content, ctx = .session$rgithub.context)
+  if (res$ok) {
+    .session$current.notebook <- res
+    rcloud.reset.session()
+  }
+  res
+}
 
 rcloud.rename.notebook <- function(id, new.name)
-  update.gist(id,
+  modify.gist(id,
               list(description=new.name),
               ctx = .session$rgithub.context)
 
@@ -143,13 +183,21 @@ rcloud.get.users <- function(user) ## NOTE: this is a bit of a hack, because it 
   gsub("/.*","",rcs.list(usr.key("config.json", user="*", notebook="system")))
 
 rcloud.publish.notebook <- function(id) {
-  rcs.set(rcs.key("notebook", id, "public"), 1)
-  TRUE
+  nb <- rcloud.get.notebook(id)
+  if (nb$content$user$login == .session$rgithub.context$user$login) {
+    rcs.set(rcs.key("notebook", id, "public"), 1)
+    TRUE
+  } else
+    FALSE
 }
 
 rcloud.unpublish.notebook <- function(id) {
-  rcs.rm(rcs.key("notebook", id, "public"))
-  TRUE
+  nb <- rcloud.get.notebook(id)
+  if (nb$content$user$login == .session$rgithub.context$user$login) {
+    rcs.rm(rcs.key("notebook", id, "public"))
+    TRUE
+  } else
+    FALSE
 }
 
 rcloud.is.notebook.published <- function(id) {
@@ -227,6 +275,11 @@ rcloud.notebook.star.count <- function(notebook)
 {
   result <- rcs.get(star.count.key(notebook))
   if (is.null(result)) 0 else result
+}
+
+rcloud.multiple.notebook.star.counts <- function(notebooks)
+{
+  Map(rcloud.notebook.star.count, notebooks)
 }
 
 rcloud.is.notebook.starred <- function(notebook)
