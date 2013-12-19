@@ -52,9 +52,9 @@ run <- function(url, query, body, headers)
       ok <- sapply(nbs, function(s) (nb.name == s || (substr(nb.name, 1, nchar(s)) == s && substr(nb.name, nchar(s)+1L, nchar(s)+1L) == "/")))
       if (!any(ok)) stop("notebook `", nb.name,"' not found")
       ok <- which(ok)[1L] ## pick the first one if there are multiple
-      nb.name <- nbs[ok][1L]
       notebook <- as.character(names(nbs)[ok])
       extra.path <- if (nbs[ok] == nb.name) NULL else substr(nb.name, nchar(nbs[ok]) + 1L, nchar(nb.name))
+      nb.name <- nbs[ok]
     }
 
     query$notebook <- notebook
