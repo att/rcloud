@@ -73,7 +73,8 @@ configure.rcloud <- function () {
   if (!nzConf("github.base.url")) setConf("github.base.url", "https://github.com/")
   if (!nzConf("github.api.url")) setConf("github.api.url", "https://api.github.com/")
   
-  if (!all(sapply(c("github.client.id", "github.client.secret"), nzConf)))
+  if (!all(sapply(c("github.client.id", "github.client.secret"), nzConf))
+      && !nzConf("gist.deployment.stash"))
     stop("*** ERROR: You need a GitHub configuration in rcloud.conf! Please refer to README.md for more instructions.")
 
   ## set locale - default is UTF-8
