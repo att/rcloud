@@ -3,15 +3,15 @@
 ### Features
 
 * Feature: `notebook.R` HTTP entry point added. It uses `path.info` to
-  match a notebook name and (optionally) a file within the
-  notebook. Possible uses:
+   match a notebook name and (optionally) a file within the
+   notebook. Possible uses:
 
-    `/notebook.R/<notebook-hash>`
-    `/notebook.R/<notebook-hash>/<version-hash>`
-    `/notebook.R/<notebook-hash>/<filename>`
-    `/notebook.R/<notebook-hash>/<version-hash>/<filename>`
-    `/notebook.R/<user>/<notebook-name>`
-    `/notebook.R/<user>/<notebook-name>/<filename>`
+       /notebook.R/<notebook-hash>
+       /notebook.R/<notebook-hash>/<version-hash>
+       /notebook.R/<notebook-hash>/<filename>
+       /notebook.R/<notebook-hash>/<version-hash>/<filename>
+       /notebook.R/<user>/<notebook-name>
+       /notebook.R/<user>/<notebook-name>/<filename>
 
   To avoid ambiguity usernames should not match exactly `[0-9a-f]{20}`
   and filenames should not match exactly `[0-9a-f]{40}` since hashes
