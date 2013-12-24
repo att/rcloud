@@ -97,6 +97,7 @@ authenticated.ocaps <- function()
       save_user_config = make.oc(rcloud.save.user.config),
       load_multiple_user_configs = make.oc(rcloud.load.multiple.user.configs),
       search = make.oc(rcloud.search),
+      custom_search = make.oc(rcloud.custom.search),
       get_notebook = make.oc(rcloud.get.notebook),
       load_notebook = make.oc(rcloud.load.notebook),
       update_notebook = make.oc(rcloud.update.notebook),
@@ -125,9 +126,8 @@ authenticated.ocaps <- function()
       # commenting ocaps
       comments = list(
         post = make.oc(rcloud.post.comment)
-        )
-           
-      )
+        )           
+     )
   )
   modifyList(basic.ocaps, changes)
 }

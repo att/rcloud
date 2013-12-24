@@ -1,0 +1,78 @@
+<html>
+  <head>
+    <title>RCloud</title>
+    <link rel="stylesheet" type="text/css" href="css/custom-theme/jquery-ui-1.8.18.custom.css" />
+    <link rel="stylesheet" type="text/css" href="css/font-awesome.css"/>
+    <link rel="stylesheet" type="text/css" href="css/jqtree.css"/>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="css/rmarkdown.css"/>
+    <link rel="stylesheet" type="text/css" href="css/view.css"/>
+    <link rel="stylesheet" type="text/css" href="css/dc.css"/>
+
+    <script type="text/javascript" src="lib/dependencies_bundle.js" charset="utf-8"></script>
+    <script type="text/javascript">MathJax = undefined;</script>
+    <script type="text/javascript"
+        src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script type="text/javascript">MathJax && MathJax.Hub.Config({tex2jax: {processEscapes: true, 
+        processEnvironments: false, inlineMath: [ ['\\(','\\)'] ], 
+        displayMath: [ ['\\[','\\]'] ] },
+        "HTML-CSS": { minScaleAdjust: 125 } });
+    </script>
+
+    <script type="text/javascript" src="js/rcloud_bundle.js"></script>
+
+    <script type="text/javascript" src="view.js"></script>
+  </head>
+<body>
+
+<div class="navbar navbar-inverse navbar-fixed-top">
+  <div>
+    <!--div class="container"-->
+      <div class="navbar-header">
+        <a class="navbar-brand" href="#">RCloud</a>
+      </div>
+      <div class="nav-collapse "> <!-- why collapse not work here worx in main -->
+        <ul class="nav navbar-nav">
+          <li><button id="edit-notebook" title="Edit Notebook" type="button" class="btn btn-link navbar-btn"><i class="icon-edit"></i></button></li>
+          <li><button id="run-notebook" title="Run All" type="button" class="btn btn-link navbar-btn"><i class="icon-play"></i></button></li>
+          <li><a href="#" class="unclickable">[<span id="notebook-title">Untitled</span>]</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Advanced <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li><a href="#" id="open-in-github">Open in GitHub</a></li>
+              <li><a href="#" id="show-source"><i class="icon-check"></i>&nbsp;Show Source</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    <!--/div-->
+  </div>
+</div>
+
+<div class="container" id="main-div">
+  <div class="row">
+    <!--div class="col-md-1"></div-->
+    <div class="col-md-12">
+      <div id="tabs-1">
+        <div id="output" class="tab-div">
+        </div>
+
+
+        <div style="padding:1em; clear:both"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script src="lib/ace_bundle.js" charset="utf-8"></script>
+
+<script src="editor_tab.js"></script>
+<script src="shell_tab.js"></script>
+<script src="dcrchart.js"></script>
+<script src="wdcplot.js"></script>
+
+</body></html>
