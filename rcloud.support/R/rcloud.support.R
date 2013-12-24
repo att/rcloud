@@ -158,9 +158,75 @@ rcloud.upload.to.notebook <- function(file, name) {
 }
 
 rcloud.update.notebook <- function(id, content) {
+  myctx <- .session$rgithub.context
   res <- modify.gist(id, content, ctx = .session$rgithub.context)
   .session$current.notebook <- res
   res
+  
+  #1910 : APPENDED THIS PART FOR SEARCH FUNCTIONALITY
+  library("rjson")
+  parser<-newJSONParser()
+  parser$addData(content)
+  jsoncontent<-parser$getObject()
+  jsonData <- paste("{\"id\":\"",id,"\",\"content\":\"",jsoncontent[[1]][[1]],"\",\"user\":\"",myctx$user$login,"\"}",sep="");
+  pushDataToRedis(id, jsonData)
+}
+
+# 1910 : ADDED THIS FUNCTIONS TO SUPPORT SOLR SEARCH FUNCTIONALITY [Line : 176 TO 240]
+pushDataToRedis<-function(id,d)
+{
+	library("rjson")
+	library("rredis")
+	redisConnect(host="localhost",port=6379, password=NULL, returnRef= FALSE, nodelay=FALSE, timeout=2678399L)
+	r <- redisGet(id)
+	if(is.null(r)){
+		parser<-newJSONParser()
+		parser$addData(d)
+		r<-parser$getObject()
+	}else if(typeof(r)=="list"){
+		parser<-newJSONParser()
+		parser$addData(d)
+		d<-parser$getObject()
+		r$content <- paste(r$content,d$content,sep=" ")
+	}
+	redisSet(id,r)
+	pushDataToSolrFromRedis(id)
+}
+
+pushDataToSolrFromRedis<-function(id)
+{
+	library("rjson")
+	library("rredis")
+	redisConnect(host="localhost",port=6379, password=NULL, returnRef= FALSE, nodelay=FALSE, timeout=2678399L)
+	redis_res<-redisGet(id)	
+	valid_redis_res<-redis_res	
+	curlTemplate <- "curl http://localhost:8983/solr/update?commitWithin=5000 -H 'Content-type:application/json' -d '[{\"id\":\"v_id\", \"user\":\"v_user\", \"user_url\":\"v_user_url\", \"created_at\":\"v_created_at\", \"updated_at\":\"v_updated_at\", \"commited_at\":\"v_commited_at\", \"content\":\"v_content\", \"url\":\"v_url\", \"avatar_url\":\"v_avatar_url\", \"followers\":\"v_followers\", \"description\":\"v_description\", \"size\":\"v_size\", \"public\":\"v_public\"}]'" 
+	curlCommand <- gsub("v_id",valid_redis_res$id,curlTemplate)
+	curlCommand <- gsub("v_user_url","XX-USER-URL",curlCommand)
+	curlCommand <- gsub("v_user",valid_redis_res$user,curlCommand)	
+	curlCommand <- gsub("v_created_at","2013-12-17T13:48:48Z",curlCommand)
+	curlCommand <- gsub("v_updated_at","2013-12-17T13:48:48Z",curlCommand)
+	curlCommand <- gsub("v_commited_at","2013-12-17T13:48:48Z",curlCommand)
+	curlCommand <- gsub("v_content",valid_redis_res$content,curlCommand)
+	curlCommand <- gsub("v_url","valid_redis_res$url",curlCommand)
+	curlCommand <- gsub("v_avatar_url","valid_redis_res$user$avatar_url",curlCommand)
+	curlCommand <- gsub("v_followers","0",curlCommand)
+	curlCommand <- gsub("v_description","valid_redis_res$description",curlCommand)
+	curlCommand <- gsub("v_size","10",curlCommand)
+	curlCommand <- gsub("v_public","TRUE",curlCommand)
+	system(curlCommand)
+	redisClose()
+}
+
+#1910 ::: This code pulling the data from Redis and push it in SOLR, this has to be called as backend process
+#1910 ::: need to have error handling : as of now not implemented yet.
+pullDataFromSolr<-function(q){
+	library("rjson")
+	library("RCurl")
+	solr_url <- paste("http://localhost:8983/solr/select?q=",q,"&wt=json",sep="")
+	solr_res<-getURL(solr_url)
+#1910 ::: Attempting to send a response as JSON object
+	return(solr_res)
 }
 
 rcloud.create.notebook <- function(content) {
@@ -234,6 +300,11 @@ rcloud.get.completions <- function(text, pos) {
   utils:::.CompletionEnv[["comps"]]
 }
 
+#ADDED THIS FUNCTION FOR SOLR SEARCH FUNCTIONALITY
+rcloud.custom.search <-function(qry){
+	pullDataFromSolr(qry)
+}
+#END
 rcloud.search <- function(search.string) {
   if (nchar(search.string) == 0)
     list(NULL, NULL)

@@ -1,0 +1,431 @@
+body {
+    font-family: Helvetica Neue, Verdana, Helvetica, Arial, sans-serif;
+    padding-top: 65px;
+}
+
+.tab-div {
+    margin: 0.5em;
+}
+
+.internals-float {
+    float: left;
+    background-color: #eee;
+    border-color: #ccc;
+    border-style: solid;
+    border-width: 1px;
+    padding-left: 2em;
+    padding-right: 2em;
+}
+
+.key {
+    font-family: monospace;
+    color: #008;
+    margin-left: 0.1em;
+}
+
+.string-value {
+    font-family: monospace;
+    color: #800;
+    margin-left: 0.3em;
+}
+
+.obj {
+    margin: 0.5em;
+}
+
+.r-sent-command {
+    font-family: "Monaco", "Courier New", monospace;
+    color: #000;
+}
+
+.error-message {
+    font-family: monospace;
+    font-weight: bold;
+    color: #800;
+}
+
+.rule-text {
+    font: 10px sans-serif;
+}
+
+.x line, .y line {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+path.dot {
+  fill: black;
+  stroke-width: 1.5px;
+  stroke: white;
+}
+
+rect.extent {
+    fill: #000;
+    fill-opacity: .1;
+    stroke: #fff;
+}
+
+rect.frame {
+  fill: #fff;
+  fill-opacity: .7;
+  stroke: #aaa;
+}
+
+.detachable {
+    background-color: #fff;
+    margin: 10px;
+    padding: 10px;
+    display: inline-block;
+    border-color: #fff;
+    border-style: solid;
+    border-width: 1px;
+}
+
+.detachable:hover {
+    border-color: #ddd;
+    border-style: solid;
+    border-width: 1px;
+}
+
+.figure-icon {
+    color: #ddd;
+}
+
+.left-pane-header {
+    width:100%;
+    background-color:#ddd;
+}
+
+.text-result-table-date {
+    font-size: 11px;
+}
+
+.text-result-table-same-date {
+    font-size: 11px;
+    color: #ddd;
+}
+
+.text-result-table-user {
+    font-size: 11px;
+}
+
+.text-result-table-same-user {
+    font-size: 11px;
+    color: #ddd;
+}
+
+.text-result-table-filename {
+    font-size: 11px;
+}
+
+.text-result-table-same-filename {
+    font-size: 11px;
+    color: #ddd;
+}
+
+.text-result-table-filename:hover {
+    font-size: 11px;
+    text-decoration: underline;
+    cursor: pointer;
+    color: blue;
+}
+
+.text-result-table-linenumber {
+    font-size: 11px;
+    padding-left: 3em;
+}
+
+.text-result-table-same-linenumber {
+    font-size: 11px;
+    padding-left: 3em;
+}
+
+.text-result-table-loc {
+    font-family: "Monaco", "Courier New", monospace;
+    font-size: 12px;
+}
+
+.text-result-table-loc:hover {
+    text-decoration: underline;
+    cursor: pointer;
+    color: blue;
+}
+
+.text-result-table-same-loc {
+    font-family: "Monaco", "Courier New", monospace;
+    font-size: 12px;
+}
+
+.text-result-table-same-loc:hover {
+    text-decoration: underline;
+    cursor: pointer;
+    color: blue;
+}
+
+.notebook-cell {
+    position:relative;
+    width:100%;
+    border-width: 1px;
+    padding: 1px;
+    border-color: #eee;
+    border-style: solid;
+    margin-top: 1.2em;
+    min-height: 75px;
+}
+
+.notebook-cell .cell-controls {
+    position: absolute;
+    right: -2em;
+    top: .1em;
+}
+
+.notebook-cell .cell-insert-control {
+    position: absolute;
+    right: -0.5em;
+    top: -1.3em;
+}
+
+.fontawesome-button {
+    margin: 0.25em;
+    cursor: pointer;
+}
+.button-disabled {
+    color: #ddd;
+    cursor: default;
+}
+
+.notebook-tree {
+    height: 450px;
+    overflow-y: scroll;
+}
+
+.header-button {
+    float: right;
+    font-size: 120%;
+}
+
+/* Ace sets its z-index to something obscene,
+   and we need to one-up that obscenity with our own button float; Twitter's
+   bootstrap tooltip needs to reflect that and one-up everything else.
+*/
+
+.tooltip {
+    z-index: 100000;
+}
+
+.help-iframe {
+    width: 100%;
+    height: 100%;
+}
+
+/**********************************************************************
+ Override some of bootstrap's css
+*/
+
+.close {
+    opacity: 0.5;
+}
+
+.close:hover {
+    opacity: 0.7;
+}
+
+/* not sure why these got smaller in bootstrap 3? */
+.navbar-brand {
+    font-size: 20px;
+}
+.navbar-nav {
+    font-size: 13px;
+}
+
+.footer {
+    background-color: black;
+    color: #999;
+    height: 2.5em;
+    bottom: 0;
+    right: -50px;
+    position: fixed;
+    width: 50px;
+    z-index: 1030;
+    margin: 0;
+    padding: 0;
+}
+
+#main-div {
+    padding-bottom: 2.5em; /* must be .footer height + 2 * .footer.padding */
+}
+
+.icon-check,
+.icon-check-empty,
+#cog {
+    cursor: pointer;
+}
+
+.fa-icon-label {
+    padding-left: .2em;
+}
+
+.navbar .btn-link {
+    color: #ddd;
+    font-size: 120%;
+    margin-top: .65em;
+    text-decoration: none;
+}
+
+.navbar .btn-link.disabled {
+    color: #aaa;
+}
+
+form input.linkbox {
+    margin-top: 1em;
+    margin-left: 1em;
+    height: 25px;
+    padding: 2px;
+}
+
+.nav li sub {
+    color: #ddd;
+}
+
+/******************************************************************************/
+
+ul.jqtree-tree .jqtree-toggler {
+    top: 10%;
+}
+
+
+ul.jqtree-tree li.jqtree-selected > .jqtree-element,
+ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
+    background-color: default;
+    background-image: none;
+    text-shadow: none;
+    font-weight: bold;
+}
+
+.jqtree-title.jqtree_common.history {
+    color: #7CB9E8
+}
+
+.jqtree-title {
+}
+
+ul.jqtree-tree .jqtree-title.private {
+    color: #aaa;
+}
+
+.notebook-date {
+}
+
+.notebook-right {
+    float: right;
+}
+
+.notebook-commands-right {
+    position: relative;
+    display: inline-block;
+    width: 30px;
+}
+
+.notebook-commands {
+    color: black;
+}
+
+.notebook-commands.appear {
+    position: absolute;
+    bottom: 0px;
+    background-color: white;
+}
+
+li.jqtree-selected .notebook-commands {
+    bottom: -1px;
+}
+
+.notebook-commands .fontawesome-button {
+    margin: 0;
+}
+
+
+
+/******************************************************************************/
+
+.comment-container {
+    margin-bottom: .4em;
+    clear: both;
+}
+
+.comment-header {
+    float: right;
+    color: #aaa
+}
+
+.comment-body {
+    color: #555
+}
+
+#comment-entry {
+    width: 100%
+}
+
+/******************************************************************************/
+/* Bring in some of bootstrap's more up-to-date CSS */
+
+.dropdown-menu > li > a {
+  display: block;
+  padding: 3px 20px;
+  clear: both;
+  font-weight: normal;
+  line-height: 20px;
+  color: #333333;
+  white-space: nowrap;
+}
+
+a.footer-dropdown-toggle {
+    padding: 5px;
+    color: #999;
+}
+
+/******************************************************************************/
+/* Fix some of the ugliness caused by the interaction between Bootstrap and
+   Rmarkdown */
+
+div.r-result-div h1,
+div.r-result-div h2,
+div.r-result-div h3,
+div.r-result-div h4,
+div.r-result-div h5 {
+    margin-top: 0;
+}
+
+.r-result-div {
+    padding: 0.5em;
+}
+
+pre {
+    max-width: 100%;
+}
+
+/******************************************************************************/
+/* Some pseudo-elements for watermarking the ACE editors
+ */
+
+.r-language-pseudo:after {
+    content: "R";
+    position: absolute;
+    top: 0.2em;
+    right: 0.3em;
+    color: #AAA;
+    text-shadow: 0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white
+;
+    z-index: 20;
+}
+
+.rmarkdown-language-pseudo:after {
+    content: "RMarkdown";
+    position: absolute;
+    top: 0.2em;
+    right: 0.3em;
+    color: #AAA;
+    text-shadow: 0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white
+;
+    z-index: 20;
+}
