@@ -27,7 +27,7 @@ var group = {
 var reduce = {
     count: function(group) { return group.reduceCount(); },
     countFilter: function(access, level) {
-        return reduce.sum(function (a) { 
+        return reduce.sum(function (a) {
             if(access(a) == level) return 1;
             else return 0;
         });
@@ -36,13 +36,13 @@ var reduce = {
         function wrapper(acc) {
             return function (a) {
                 if(access(a) == level) return acc(a);
-                else return 0;                
-            }
+                else return 0;
+            };
         }
         return {
             arg: reduce.arg,
             fun: function(acc) { return reduce.fun(wrapper(acc)); }
-        }
+        };
     },
     sum: function(access, wacc) {
         return {
@@ -810,7 +810,7 @@ function dcplot(frame, groupname, definition) {
                 }
                 if(_.has(defn, 'brush'))
                     chart.brushOn(defn.brush);
-                if(_.has(defn,'x.ordinal') && defn['x.ordinal'] && (!_.has(defn,'stack.levels') || 
+                if(_.has(defn,'x.ordinal') && defn['x.ordinal'] && (!_.has(defn,'stack.levels') ||
                     (_.has(defn,'stack.levels') && defn['stack.levels'].length == 1))) {
                     // Hack for coloring non-stacked ordinal x charts
                     chart.renderlet( function(chart) {
