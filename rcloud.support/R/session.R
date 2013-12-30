@@ -34,7 +34,7 @@ session.markdown.eval <- function(command, language, silent) {
   if (!is.null(.session$device.pixel.ratio))
     opts_chunk$set(dpi=72*.session$device.pixel.ratio)
   
-  opts_chunk$set(dev="CairoSVG", tidy=FALSE)
+  opts_chunk$set(dev="CairoPNG", tidy=FALSE)
 
   val <- try(markdownToHTML(text=paste(knit(text=command, envir=.session$knitr.env), collapse="\n"),
                             fragment=TRUE), silent=TRUE)
