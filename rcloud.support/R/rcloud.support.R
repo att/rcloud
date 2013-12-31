@@ -98,6 +98,12 @@ rcloud.get.notebook <- function(id, version = NULL) {
 ## this is extremely experimental -- use at your own risk
 ## the meaining of args is ambiguous and probably a bad idea - it jsut makes the client code a bit easier to write ...
 
+rcloud.unauthenticated.call.notebook <- function(id, version = NULL, args = NULL) {
+  if (!rcloud.is.notebook.published(id))
+    stop("Notebook does not exist or has not been published")
+  rcloud.call.notebook(id, version, args)
+}
+
 rcloud.call.notebook <- function(id, version = NULL, args = NULL) {
   res <- rcloud.get.notebook(id, version)
   if (res$ok) {
@@ -124,6 +130,12 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL) {
     }
     result
   } else NULL
+}
+
+rcloud.unauthenticated.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
+  if (!rcloud.is.notebook.published(id))
+    stop("Notebook does not exist or has not been published")
+  rcloud.call.FastRWeb.notebook(id, version, args)
 }
 
 rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
@@ -168,7 +180,7 @@ rcloud.unauthenticated.notebook.by.name <- function(name, user=.session$username
   id <- if (vec) candidates else candidates[,1L]
   pub <- sapply(id, rcloud.is.notebook.published)
   if (all(!pub)) return(if(vec) character(0) else NULL)
-  if (vec) candidates[pub] else candidates[pub,]
+  if (vec) candidates[pub] else candidates[pub,,drop=FALSE]
 }
 
 rcloud.upload.to.notebook <- function(file, name) {
