@@ -461,7 +461,7 @@ function dcplot(frame, groupname, definition) {
                     defn.group = find_unused(groups, defn.dimension);
                     var g = groups[defn.group] = {};
                     g.dimension = defn.dimension;
-                    infer_group(defn.group, g, dims, defn.defreduce);
+                    infer_group(defn.group, g, dims, definition.defreduce);
                 }
                 if(!_.has(defn, 'ordering')) {
                     // note it's a little messy to have this as a property of the chart rather than
