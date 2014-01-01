@@ -430,7 +430,7 @@ var wdcplot = (function() {
                     definition.dimensions = do_dimensions(frame, secdata);
                     break;
                 case 'groups':
-                    weight = do_weight(frame, secdata);
+                    var weight = do_weight(frame, secdata);
                     definition.defreduce = (weight == undefined) ? reduce.count : reduce.sum(argument(frame, weight));
                     definition.groups = do_groups(frame, secdata, weight);
                     break;
