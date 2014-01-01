@@ -415,6 +415,8 @@ var wdcplot = (function() {
                 default: throw "unexpected section " + section[1];
                 }
             }
+            if(!definition.defreduce)
+                definition.defreduce = reduce.count;
 
             var divwrap = $('<div/>',{id:"chartdiv"+chart_group, style: "overflow:auto"});
             _.each(divs, function(div) { divwrap.append(div); });
