@@ -2,6 +2,13 @@
 
 ### Features
 
+* RCloud now supports anonymous access to with user switching.
+  When user switching is enabled (`Exec.auth`), then execution
+  token will be honored even without GitHub tokens. In addtion,
+  fully anonymous access (no tokens at all) will be allowed if
+  `Exec.anon.user` configuration is set and anonymous users
+  will switch to that account.
+
 * Feature: `notebook.R` HTTP entry point added. It uses `path.info` to
   match a notebook name and (optionally) a file within the
   notebook. Possible uses:
