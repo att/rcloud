@@ -497,7 +497,7 @@ function dcplot(frame, groupname, definition) {
                     //Change reduce functions to filter on stack levels
                     for(var s = 0; s<defn['stack.levels'].length; s++) {
                         var newName = defn.group+defn['stack.levels'][s];
-                        var newGroupDefn = jQuery.extend({},groups[defn.group]);
+                        var newGroupDefn = _.clone(groups[defn.group]);
 
                         //Special treatment for counts, otherwise generic filter wrapper
                         if(newGroupDefn.reduce == reduce.count) newGroupDefn.reduce = reduce.countFilter(defn['stack'],defn['stack.levels'][s]);
