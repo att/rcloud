@@ -268,13 +268,8 @@ var wdcplot = (function() {
     }
 
     function do_weight(frame, sexps) {
-        // Do custom record weights, if specified
-        for(var i = 0; i < sexps.length; ++i) {
-            var name = sexps[i][0], defn = sexps[i][1];
-            if(name != "weight") continue;
-            return defn;
-        }
-        return undefined;
+        // find custom record weights, if specified
+        return _.find(sexps, function(exp) { return exp[0] === "weight"; });
     }
 
     function do_groups(frame, sexps, weight) {
