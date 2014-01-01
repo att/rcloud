@@ -486,7 +486,8 @@ function dcplot(frame, groupname, definition) {
             },
             stackable: function() {
                 if(_.has(defn,'stack')) {
-                    if(!_.has(defn,'stack.levels')) defn['stack.levels'] = get_levels(defn['stack']);
+                    if(!_.has(defn,'stack.levels'))
+                        defn['stack.levels'] = get_levels(defn['stack']);
                     var levels = defn['stack.levels'];
 
                     if(levels != null && levels.length > 1) {
@@ -500,7 +501,8 @@ function dcplot(frame, groupname, definition) {
                         var newGroupDefn = _.clone(groups[defn.group]);
 
                         //Special treatment for counts, otherwise generic filter wrapper
-                        if(newGroupDefn.reduce == reduce.count) newGroupDefn.reduce = reduce.countFilter(defn['stack'],defn['stack.levels'][s]);
+                        if(newGroupDefn.reduce == reduce.count)
+                            newGroupDefn.reduce = reduce.countFilter(defn['stack'],defn['stack.levels'][s]);
                         else newGroupDefn.reduce = reduce.filter(newGroupDefn.reduce,defn['stack'],defn['stack.levels'][s]);
 
                         groups[newName] = newGroupDefn;
