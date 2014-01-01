@@ -100,14 +100,48 @@ var wdcplot = (function() {
         return op(frame, sexp, ctx);
     }
 
+    function is_r_class(sexp) {
+        return sexp.r_attributes && sexp.r_attributes.class;
+    }
+
+    function special_function(sexp) {
+        return is_r_class(sexp) && sexp.r_attributes.class === 'wdcplot.special'
+            ? sexp[0] : undefined;
+    }
+
+    function dataframe_column(sexp) {
+        return is_r_class(sexp) && sexp.r_attributes.class === 'dataframe.column'
+            ? sexp[0] : undefined;
+    }
+
+    function dim_name(elem) {
+        var place;
+        if((place = special_function(elem)))
+            return '..' + place + '..';
+        else if((place = dataframe_column(elem)))
+            return place;
+        return null;
+    }
+
+    function dim_ref(elem) {
+        var placeholder = dim_name(elem);
+        if(placeholder)
+            return placeholder;
+        else {
+            if(!_.isString(elem))
+                throw "dimension reference must be placeholder or string";
+            return elem;
+        }
+    }
+
     function leaf(frame, sexp, ctx) {
         if($.isPlainObject(sexp)) {
             return {lambda: false, text: JSON.stringify(sexp)};
         }
-        else if(_.isString(sexp)) {
-            if(/\.\..*\.\.$/.test(sexp)) {
-                var content = sexp.substring(2, sexp.length-2);
-                switch(content) {
+        else if(_.isArray(sexp)) {
+            var place;
+            if((place = special_function(sexp))) {
+                switch(place) {
                 case 'index': return {lambda: true, text: "frame.index(key)"};
                 case 'value':
                 case 'selected': return {lambda: true, text: "value"};
@@ -115,15 +149,16 @@ var wdcplot = (function() {
                 default: throw "unknown special variable " + sexp;
                 }
             }
-            else if(frame.has(sexp))
-                return {lambda: true, text: "frame.access('" + sexp + "')(key)"};
+            else if((place = dataframe_column(sexp)))
+                return {lambda: true, text: "frame.access('" + place + "')(key)"};
             else return {lambda: false, text: sexp};
         }
         else return {lambda: false, text: sexp};
     }
 
     function expression(frame, sexp, ctx) {
-        if($.isArray(sexp))
+        // not dealing with cases where r classes are not terminals yet
+        if($.isArray(sexp) && !is_r_class(sexp))
             return node(frame, sexp, ctx);
         else
             return leaf(frame, sexp, ctx);
@@ -131,35 +166,34 @@ var wdcplot = (function() {
 
     /* a wdcplot argument may be
      - null
-     - a simple field accessor (if it's a string which is a field name in the dataframe)
-     - a string (if it's any other string)
-     - a number
+     - a column accessor or special variable marked with class attribute
      - an array (we assume any top-level array contains only literals)
+     - a string or a number
      - otherwise we build javascript from the expression tree; if it contains
      field names identifiers, it's a lambda(key,value) else execute it immediately
      */
     function argument(frame, sexp) {
         if(sexp==null)
             return null;
-        else if(_.isString(sexp)) {
-            // special-case simple string field access for efficiency
-            if(/\.\..*\.\.$/.test(sexp)) {
-                var content = sexp.substring(2, sexp.length-2);
-                switch(content) {
+        else if(_.isArray(sexp)) {
+            // bypass eval for bare special variables and columns
+            var place;
+            if((place = special_function(sexp))) {
+                switch(place) {
                 case 'value':
                 case 'index': return frame.index;
                 case 'key': return function(k, v) { return k; };
                 default: throw "unknown special variable " + sexp;
                 }
             }
-            else if(frame.has(sexp))
-                return frame.access(sexp);
-            else return sexp;
+            else if((place = dataframe_column(sexp)))
+                return frame.access(place);
+            else if(sexp[0]==='c')
+                return sexp.slice(1);
+            // else we'll process as expression below
         }
-        else if(_.isNumber(sexp))
+        else if(_.isNumber(sexp) || _.isString(sexp))
             return sexp;
-        else if(_.isArray(sexp) && sexp[0]==='c')
-            return sexp.slice(1);
         var ctx = {indent:0};
         var js_expr = expression(frame, sexp, ctx);
         if(js_expr.lambda) {
@@ -249,17 +283,18 @@ var wdcplot = (function() {
         for(var i = 0; i < sexps.length; ++i) {
             var elem = sexps[i], key, value;
             if(_.isArray(elem)) {
-                value = elem[1];
-                if(elem[0] !== null)
-                    key = elem[0];
+                var placeholder = dim_name(elem);
+                if(placeholder) {
+                    key = placeholder;
+                    value = elem;
+                }
                 else {
-                    if(!_.isString(value))
-                        throw "must specify dimension name if value isn't a field name (" + value.toString() + ')';
-                    key = value;
+                    value = elem[1];
+                    if(elem[0] !== null)
+                        key = elem[0];
+                    else throw "must specify dimension name unless expression is column or special variable (" + value.toString() + ')';
                 }
             }
-            else if(_.isString(elem))
-                key = value = elem;
             else throw 'illegal dimension specification ' + elem.toString();
 
             ret[key] = argument(frame, value);
@@ -287,7 +322,7 @@ var wdcplot = (function() {
                 var field = defn[j][0], val;
                 switch(field) {
                 case 'dimension':
-                    val = defn[j][1];
+                    val = dim_ref(defn[j][1]);
                     break;
                 case 'group':
                     val = group_constructor(frame, defn[j][1]);
@@ -317,7 +352,7 @@ var wdcplot = (function() {
             for(var j = 1; j < val.length; ++j) {
                 var key = val[j][0], value = val[j][1];
                 switch(key) {
-                case 'dimension': defn[key] = value; // don't allow lambdas here
+                case 'dimension': defn[key] = dim_ref(value); // don't allow lambdas here
                     break;
                 default:
                     defn[key] = argument(frame, value);
