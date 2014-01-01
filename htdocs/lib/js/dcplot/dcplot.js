@@ -495,12 +495,12 @@ function dcplot(frame, groupname, definition) {
                         if(levels != null && levels.length > 10) defn['color.defscale'] = d3.scale.category20();
                     }
 
-                    //Change reduce functions to filter on stack levels
+                    // Change reduce functions to filter on stack levels
                     for(var s = 0; s<defn['stack.levels'].length; s++) {
                         var newName = defn.group+defn['stack.levels'][s];
                         var newGroupDefn = _.clone(groups[defn.group]);
 
-                        //Special treatment for counts, otherwise generic filter wrapper
+                        // Special treatment for counts, otherwise generic filter wrapper
                         if(newGroupDefn.reduce == reduce.count)
                             newGroupDefn.reduce = reduce.countFilter(defn['stack'],defn['stack.levels'][s]);
                         else newGroupDefn.reduce = reduce.filter(newGroupDefn.reduce,defn['stack'],defn['stack.levels'][s]);
@@ -552,7 +552,7 @@ function dcplot(frame, groupname, definition) {
             bubble: function() {
             },
             dataTable: function() {
-                columns = [ ]
+                var columns = [];
 
                 for (var i = 0; i < defn['columns'].length; i++) {
                     var dim = defn['columns'][i];
@@ -749,7 +749,7 @@ function dcplot(frame, groupname, definition) {
             stackable: function() {
                 if(_.has(defn, 'stack') && _.has(defn, 'stack.levels')) {
                     for(var s = 0; s<defn['stack.levels'].length; s++) {
-                        stackGroup = groups[defn.group+defn['stack.levels'][s]];
+                        var stackGroup = groups[defn.group+defn['stack.levels'][s]];
 
                         if(s == 0) chart.group(stackGroup);
                         else chart.stack(stackGroup);
