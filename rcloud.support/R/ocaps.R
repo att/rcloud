@@ -28,9 +28,9 @@ oc.init <- function(...) { ## this is the payload of the OCinit message
   make.oc(function(v) {
     if (RC.authenticate(v)) {
       authenticated.ocaps()
-    } else {
+    } else if (RC.auth.anonymous(v)) {
       unauthenticated.ocaps()
-    }
+    } else list() ## we don't allow anything if the access was denied
   }, "oc.init")
 }
 
