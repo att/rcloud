@@ -190,7 +190,7 @@ var wdcplot = (function() {
 
     function reduce_constructor(frame, sexp, weight) {
         w = weight;
-        fname = sexp[0]; 
+        fname = sexp[0];
         if(_.isArray(sexp)) {
             if(sexp[2] != undefined) w = sexp[2];
             if(sexp[0] == 'count' && sexp[1] != undefined) w = sexp[1];
