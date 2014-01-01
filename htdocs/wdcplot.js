@@ -332,17 +332,17 @@ var wdcplot = (function() {
 
         var title = definition.title;
         var table = '';
-        var props = {id: name, style: "float:left"}
+        var props = {id: name, style: "float:left"};
 
         if(_.has(definition,'columns')) {
-            chartname = name + "Div"
-            header = $('<tr/>', { class: 'header'});
+            var chartname = name + "Div";
+            var header = $('<tr/>', { class: 'header'});
             for (var col in definition['columns']) {
                 header.append($('<th/>').append(definition['columns'][col]));
             }
             table = ($('<thead/>')
                 .append(header));
-            props['class'] = 'table table-hover'
+            props['class'] = 'table table-hover';
         }
 
         return $('<div/>',props)
