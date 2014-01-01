@@ -48,13 +48,14 @@ var reduce = {
         return {
             arg: access,
             fun: function(acc2) {
-                if(wacc == undefined) return function(group) {
-                    return group.reduceSum(
-                        function(item) {
-                            return acc2(item);
-                        }
-                    );
-                };
+                if(wacc == undefined)
+                    return function(group) {
+                        return group.reduceSum(
+                            function(item) {
+                                return acc2(item);
+                            }
+                        );
+                    };
                 else return function(group) {
                     return group.reduce(
                         function(p, v) {
@@ -752,7 +753,8 @@ function dcplot(frame, groupname, definition) {
                     for(var s = 0; s<defn['stack.levels'].length; s++) {
                         var stackGroup = groups[defn.group+defn['stack.levels'][s]];
 
-                        if(s == 0) chart.group(stackGroup);
+                        if(s == 0)
+                            chart.group(stackGroup);
                         else chart.stack(stackGroup);
                     }
                     if(defn['stack.levels'].length > 1) {
@@ -763,10 +765,12 @@ function dcplot(frame, groupname, definition) {
                             for (var i = 0; i<stacks.length; i++) {
                                 for(var j = 0; j<stacks[i].length; j++) {
                                     // Avoid coloring deselected elements
-                                    if(stacks[i][j].classList.contains(dc.constants.DESELECTED_CLASS)) stacks[i][j].removeAttribute('style');
+                                    if(stacks[i][j].classList.contains(dc.constants.DESELECTED_CLASS))
+                                        stacks[i][j].removeAttribute('style');
                                     else stacks[i][j].setAttribute('style', 'fill: '+chart.colors()(i));
                                     // Add stack name to title/mouseover
-                                    stackstitles[i][j].childNodes[0].nodeValue = defn['stack.levels'][i] + ", " + stackstitles[i][j].childNodes[0].nodeValue;
+                                    stackstitles[i][j].childNodes[0].nodeValue =
+                                        defn['stack.levels'][i] + ", " + stackstitles[i][j].childNodes[0].nodeValue;
                                 }
                             }
                         });
@@ -820,7 +824,8 @@ function dcplot(frame, groupname, definition) {
                         var all = chart.selectAll("rect.bar")[0];
                         all.sort(function (a,b) { return a.x.baseVal.value - b.x.baseVal.value; });
                         for (var i = 0; i<all.length; i++) {
-                            if(all[i].classList.contains(dc.constants.DESELECTED_CLASS)) all[i].removeAttribute('style');
+                            if(all[i].classList.contains(dc.constants.DESELECTED_CLASS))
+                                all[i].removeAttribute('style');
                             else all[i].setAttribute('style', 'fill: '+chart.colors()(i));
                         }
                     });
