@@ -43,8 +43,8 @@ RC.authenticate <- function(v, check.only=FALSE)
   if (user == FALSE) return(FALSE)
   ## but if we have a github user whitelist, check against that as well.
   if (!hasConf("github.user.whitelist")) return(TRUE)
-  userlist <- unlist(strsplit(getConf("github.user.whitelist"), ','))
-  any(grepl(user, userlist, fixed=TRUE))
+  userlist <- gsub("^\\s+","",gsub("\\s+$","",unlist(strsplit(getConf("github.user.whitelist"), ','))))
+  user %in% userlist
 }
 
 ## attempts to setup anonymous (non-GitHub) access. Returns FALSE if not allowed,
