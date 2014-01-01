@@ -437,6 +437,7 @@ function dcplot(frame, groupname, definition) {
             while(hash[base + n]) ++n;
             return base + n;
         }
+        // abstract this into a plugin - this is RCloud-specific (rserve.js)
         function get_levels(dim) {
             var levels = null;
             if(_.isFunction(dim)) levels = dim.attrs.r_attributes.levels;
