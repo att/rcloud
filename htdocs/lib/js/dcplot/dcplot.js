@@ -142,11 +142,14 @@ var reduce = {
     }
 };
 
-/* forgive me for overengineering this a little bit
+/*
+ many stages of filling in the blanks for dimensions, groups, and charts
 
- 1. generate a complete definition by using defaults and inference
- 2. check for required and unknown attributes
- 3. generate the dimensions, groups, and charts
+ 1. fill in defaults for missing attributes
+ 2. infer other missing attributes from what's there
+ 3. check for required and unknown attributes
+ 4. check for logical errors
+ 5. finally, generate
 
  */
 
