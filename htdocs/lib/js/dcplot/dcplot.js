@@ -173,8 +173,7 @@ var chart_attrs = {
         color: {required: false}, // colorAccessor
         'color.scale': {required: false}, // the d3 way not the dc way
         'color.domain': {required: false},
-        'color.range': {required: false},
-        'color.defscale': {required: false}
+        'color.range': {required: false}
     },
     stackable: {
         supported: true,
@@ -449,6 +448,9 @@ function dcplot(frame, groupname, definition) {
         function looks_ordinal(dim) {
             return _.has(dims, dim) && _.isString(accessor(dims[dim])(0));
         }
+        function default_color_scale(levels) {
+            return (levels != null && levels.length>10) ? d3.scale.category20() : d3.scale.category10();
+        }
         var callbacks = {
             base: function() {
                 if(!('div' in defn))
@@ -480,10 +482,9 @@ function dcplot(frame, groupname, definition) {
 
             },
             color: function() {
-                defn['color.defscale'] = d3.scale.category10();
-                var levels = get_levels(defn.dimension);
-                if(levels != null) {
-                    if(levels.length>10) defn['color.defscale'] = d3.scale.category20();
+                if(!defn['color.scale']) {
+                    var levels = get_levels(defn.dimension);
+                    defn['color.scale'] = default_color_scale(levels);
                 }
             },
             stackable: function() {
@@ -492,10 +493,8 @@ function dcplot(frame, groupname, definition) {
                         defn['stack.levels'] = get_levels(defn['stack']);
                     var levels = defn['stack.levels'];
 
-                    if(levels != null && levels.length > 1) {
-                        defn['color.defscale'] = d3.scale.category10();
-                        if(levels != null && levels.length > 10) defn['color.defscale'] = d3.scale.category20();
-                    }
+                    if(!defn['color.scale'])
+                        defn['color.scale'] = default_color_scale(levels);
 
                     // Change reduce functions to filter on stack levels
                     for(var s = 0; s<defn['stack.levels'].length; s++) {
