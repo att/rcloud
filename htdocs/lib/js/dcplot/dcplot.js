@@ -448,9 +448,6 @@ function dcplot(frame, groupname, definition) {
         function looks_ordinal(dim) {
             return _.has(dims, dim) && _.isString(accessor(dims[dim])(0));
         }
-        function default_color_scale(levels) {
-            return (levels != null && levels.length>10) ? d3.scale.category20() : d3.scale.category10();
-        }
         var callbacks = {
             base: function() {
                 if(!('div' in defn))
@@ -483,8 +480,12 @@ function dcplot(frame, groupname, definition) {
             },
             color: function() {
                 if(!defn['color.scale']) {
-                    var levels = get_levels(defn.dimension);
-                    defn['color.scale'] = default_color_scale(levels);
+                    // note stackable bleeds in here: since they are on different branches
+                    // of the hierarchy, there is no sensible way for stackable to override
+                    // color here
+                    var levels = get_levels(defn.stack || defn.dimension);
+                    defn['color.scale'] = (levels != null && levels.length>10)
+                        ? d3.scale.category20() : d3.scale.category10();
                 }
             },
             stackable: function() {
@@ -492,9 +493,6 @@ function dcplot(frame, groupname, definition) {
                     if(!_.has(defn,'stack.levels'))
                         defn['stack.levels'] = get_levels(defn['stack']);
                     var levels = defn['stack.levels'];
-
-                    if(!defn['color.scale'])
-                        defn['color.scale'] = default_color_scale(levels);
 
                     // Change reduce functions to filter on stack levels
                     for(var s = 0; s<defn['stack.levels'].length; s++) {
@@ -737,7 +735,7 @@ function dcplot(frame, groupname, definition) {
                 // and override the calculator to use it
                 // also default to category10 which seems better for discrete colors
 
-                var scale = defn['color.scale'] || defn['color.defscale'];
+                var scale = defn['color.scale'];
                 if(_.has(defn, 'color.domain'))
                     scale.domain(defn['color.domain']);
                 else if(mhas(defn, 'color', 'attrs', 'levels'))
