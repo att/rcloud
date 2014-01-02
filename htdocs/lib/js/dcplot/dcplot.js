@@ -280,23 +280,23 @@ function skip_attr(a) {
     return a==='supported' || a=='concrete' || a==='parents';
 }
 
-function preorder_traversal(map, iter, callbacks) {
+function parents_first_traversal(map, iter, callbacks) {
     if(!(iter in map))
         throw 'unknown chart type ' + defn.type;
     var curr = map[iter];
     if('parents' in curr)
         for(var i = 0; i < curr.parents.length; ++i)
-            preorder_traversal(map, curr.parents[i], callbacks);
+            parents_first_traversal(map, curr.parents[i], callbacks);
     callbacks[iter]();
 }
-function postorder_traversal(map, iter, callbacks) {
+function parents_last_traversal(map, iter, callbacks) {
     if(!(iter in map))
         throw 'unknown chart type ' + defn.type;
     callbacks[iter]();
     var curr = map[iter];
     if('parents' in curr)
         for(var i = 0; i < curr.parents.length; ++i)
-            postorder_traversal(map, curr.parents[i], callbacks);
+            parents_last_traversal(map, curr.parents[i], callbacks);
 }
 
 // dc.js formats all numbers as ints - override
@@ -380,7 +380,7 @@ function dcplot(frame, groupname, definition) {
                 if(_.has(cattrs[a], 'default') && defn[a]===undefined)
                     defn[a] = cattrs[a].default;
             }
-            // postorder
+            // parents last
             if('parents' in cattrs)
                 for(var i = 0; i < cattrs.parents.length; ++i)
                     do_defaults(defn, cattrs.parents[i]);
@@ -563,7 +563,7 @@ function dcplot(frame, groupname, definition) {
                 defn['columns'] = columns;
             }
         };
-        preorder_traversal(chart_attrs, defn.type, callbacks);
+        parents_first_traversal(chart_attrs, defn.type, callbacks);
 
         if(errors.length)
             throw errors;
@@ -670,7 +670,7 @@ function dcplot(frame, groupname, definition) {
             }
         };
 
-        preorder_traversal(chart_attrs, defn.type, callbacks);
+        parents_first_traversal(chart_attrs, defn.type, callbacks);
 
         if(errors.length)
             throw errors;
@@ -887,7 +887,7 @@ function dcplot(frame, groupname, definition) {
             dataTable: dc.dataTable
         }[defn.type];
 
-        preorder_traversal(chart_attrs, defn.type, callbacks);
+        parents_first_traversal(chart_attrs, defn.type, callbacks);
 
         // perform any extra post-processing
         if(_.has(defn, 'more'))
