@@ -6,18 +6,18 @@
   match a notebook name and (optionally) a file within the
   notebook. Possible uses:
 
-    /notebook.R/<notebook-hash>
-    /notebook.R/<notebook-hash>/<version-hash>
-    /notebook.R/<notebook-hash>/<filename>
-    /notebook.R/<notebook-hash>/<version-hash>/<filename>
-    /notebook.R/<user>/<notebook-name>
-    /notebook.R/<user>/<notebook-name>/<filename>
+         /notebook.R/<notebook-hash>
+         /notebook.R/<notebook-hash>/<version-hash>
+         /notebook.R/<notebook-hash>/<filename>
+         /notebook.R/<notebook-hash>/<version-hash>/<filename>
+         /notebook.R/<user>/<notebook-name>
+         /notebook.R/<user>/<notebook-name>/<filename>
 
-  To avoid ambiguity usernames should not match exactly [0-9a-f]{20}
-  and filenames should not match exactly [0-9a-f]{40} since hashes
+  To avoid ambiguity usernames should not match exactly `[0-9a-f]{20}`
+  and filenames should not match exactly `[0-9a-f]{40}` since hashes
   have higher priority than names.
 
-  All above uses that end with <filename> will attempt to fetch the
+  All above uses that end with `<filename>` will attempt to fetch the
   file of that name from the notebook. All other uses call the
   corresponding notebook, i.e. return the evaluation result.
 

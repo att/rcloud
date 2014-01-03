@@ -88,6 +88,13 @@ RCloud.create = function(rcloud_ocaps) {
             });
         };
 
+        rcloud.call_notebook = function(id, version, k) {
+            k = rcloud_github_handler("rcloud.call.notebook " + id, k);
+            rcloud_ocaps.call_notebook(id, version, function(notebook) {
+                k(notebook);
+            });
+        };
+
         rcloud.install_notebook_stylesheets = function(k) {
             rcloud_ocaps.install_notebook_stylesheets(k || _.identity);
         };
