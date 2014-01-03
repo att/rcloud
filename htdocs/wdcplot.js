@@ -302,11 +302,6 @@ var wdcplot = (function() {
         return ret;
     }
 
-    function do_weight(frame, sexps) {
-        // find custom record weights, if specified
-        return _.find(sexps, function(exp) { return exp[0] === "weight"; });
-    }
-
     function do_groups(frame, sexps, weight) {
         var ret = {};
         for(var i = 0; i < sexps.length; ++i) {
@@ -431,8 +426,10 @@ var wdcplot = (function() {
                     definition.dimensions = do_dimensions(frame, secdata);
                     break;
                 case 'groups':
-                    var weight = do_weight(frame, secdata);
-                    definition.defreduce = (weight == undefined) ? reduce.count : reduce.sum(argument(frame, weight));
+                    var weight = _.find(secdata, function(exp) { return exp[0] === "weight"; });
+                    definition.defreduce = (weight == undefined)
+                        ? reduce.count
+                        : reduce.sum(argument(frame, weight[1]));
                     definition.groups = do_groups(frame, secdata, weight);
                     break;
                 case 'charts':

@@ -359,12 +359,12 @@ function dcplot(frame, groupname, definition) {
     function default_dimension(name, defn) {
         // nothing (yet?)
     }
-    function default_group(name, defn, dims, defreduce) {
+    function default_group(name, defn, dims) {
         var errors = [];
         if(!_.has(defn, 'group'))
             defn.group = group.identity;
         if(!_.has(defn, 'reduce'))
-            defn.reduce = defreduce;
+            defn.reduce = definition.defreduce;
 
         if(errors.length)
             throw errors;
@@ -415,19 +415,7 @@ function dcplot(frame, groupname, definition) {
     function infer_dimension(name, defn) {
         // nothing (yet?)
     }
-    function infer_group(name, defn, dims, defreduce) {
-        var errors = [];
-        if(!_.has(defn, 'dimension'))
-            errors.push('group needs dimension');
-        if(!_.has(dims, defn.dimension))
-            errors.push('unknown dimension "' + defn.dimension + '"');
-        if(!_.has(defn, 'group'))
-            defn.group = group.identity;
-        if(!_.has(defn, 'reduce'))
-            defn.reduce = defreduce;
-
-        if(errors.length)
-            throw errors;
+    function infer_group(name, defn, dims) {
     }
     function infer_chart(name, defn, dims, groups) {
         var errors = [];
@@ -466,7 +454,8 @@ function dcplot(frame, groupname, definition) {
                         defn.group = find_unused(groups, defn.dimension);
                         var g = groups[defn.group] = {};
                         g.dimension = defn.dimension;
-                        infer_group(defn.group, g, dims, definition.defreduce);
+                        default_group(defn.group, g, dims);
+                        infer_group(defn.group, g, dims);
                     }
                 }
                 if(!_.has(defn, 'ordering')) {
@@ -905,7 +894,7 @@ function dcplot(frame, groupname, definition) {
         for(var g in definition.groups) {
             defn = definition.groups[g];
             try {
-                group_fn(g, defn, definition.dimensions, definition.defreduce);
+                group_fn(g, defn, definition.dimensions);
             }
             catch(e) {
                 errors.push({type: 'group', name: g, errors: e});
