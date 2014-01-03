@@ -1,8 +1,8 @@
 wdcplot <- function(data, dims=NULL, groups=NULL, charts=NULL)
 {
 
-  path <- system.file("javascript", "dc_chart.js", package="rcloud.support");
-  caps <- rcloud.install.js.module("dc_chart",
+  path <- system.file("javascript", "wdcplot-rcloud.js", package="rcloud.support");
+  caps <- rcloud.install.js.module("wdcplot",
                                    paste(readLines(path), collapse='\n'))
 
   # make a pseudo-environment which maps columns and special variables to placeholders
