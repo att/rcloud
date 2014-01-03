@@ -223,15 +223,15 @@ var wdcplot = (function() {
     }
 
     function reduce_constructor(frame, sexp, weight) {
-        w = weight;
-        fname = sexp[0];
+        var w = weight;
+        var fname = sexp[0];
         if(_.isArray(sexp)) {
             if(sexp[2] != undefined) w = sexp[2];
             if(sexp[0] == 'count' && sexp[1] != undefined) w = sexp[1];
         }
         else fname = sexp;
 
-        wacc = (w == undefined) ? undefined: argument(frame, w);
+        var wacc = (w == undefined) ? undefined: argument(frame, w);
         if(_.isNumber(wacc)) wacc = constant_fn(wacc);
 
         switch(fname) {
