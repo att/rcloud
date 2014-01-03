@@ -45277,12 +45277,12 @@ function dcplot(frame, groupname, definition) {
     function default_dimension(name, defn) {
         // nothing (yet?)
     }
-    function default_group(name, defn, dims, defreduce) {
+    function default_group(name, defn, dims) {
         var errors = [];
         if(!_.has(defn, 'group'))
             defn.group = group.identity;
         if(!_.has(defn, 'reduce'))
-            defn.reduce = defreduce;
+            defn.reduce = definition.defreduce;
 
         if(errors.length)
             throw errors;
@@ -45333,19 +45333,7 @@ function dcplot(frame, groupname, definition) {
     function infer_dimension(name, defn) {
         // nothing (yet?)
     }
-    function infer_group(name, defn, dims, defreduce) {
-        var errors = [];
-        if(!_.has(defn, 'dimension'))
-            errors.push('group needs dimension');
-        if(!_.has(dims, defn.dimension))
-            errors.push('unknown dimension "' + defn.dimension + '"');
-        if(!_.has(defn, 'group'))
-            defn.group = group.identity;
-        if(!_.has(defn, 'reduce'))
-            defn.reduce = defreduce;
-
-        if(errors.length)
-            throw errors;
+    function infer_group(name, defn, dims) {
     }
     function infer_chart(name, defn, dims, groups) {
         var errors = [];
@@ -45372,16 +45360,21 @@ function dcplot(frame, groupname, definition) {
                 if(!('div' in defn))
                     defn.div = '#' + name;
                 if(defn.group) {
-                    if(!defn.dimension)
+                    if(!groups[defn.group])
+                        errors.push('unknown group "' + defn.group + '"');
+                    else if(!defn.dimension)
                         defn.dimension = groups[defn.group].dimension;
                 }
                 else if(defn.dimension) {
                     if(!dims[defn.dimension])
                         errors.push('unknown dimension "' + defn.dimension + '"');
-                    defn.group = find_unused(groups, defn.dimension);
-                    var g = groups[defn.group] = {};
-                    g.dimension = defn.dimension;
-                    infer_group(defn.group, g, dims, definition.defreduce);
+                    else {
+                        defn.group = find_unused(groups, defn.dimension);
+                        var g = groups[defn.group] = {};
+                        g.dimension = defn.dimension;
+                        default_group(defn.group, g, dims);
+                        infer_group(defn.group, g, dims);
+                    }
                 }
                 if(!_.has(defn, 'ordering')) {
                     // note it's a little messy to have this as a property of the chart rather than
@@ -45470,14 +45463,10 @@ function dcplot(frame, groupname, definition) {
             bubble: function() {
             },
             dataTable: function() {
-                var columns = [];
-
-                for (var i = 0; i < defn['columns'].length; i++) {
-                    var dim = defn['columns'][i];
-                    if(!_.has(dims,dim)) throw dim + " not a valid dimension!";
-                    columns.push(accessor(dim));
-                }
-                defn['columns'] = columns;
+                var bad = _.find(defn.columns,
+                                 function(col) { return !frame.has(col); });
+                if(bad)
+                    throw bad + " not a valid column!";
             }
         };
         parents_first_traversal(chart_attrs, defn.type, callbacks);
@@ -45783,17 +45772,10 @@ function dcplot(frame, groupname, definition) {
             },
             dataTable: function() {
                 chart.group(accessor(defn.dimension));
-                chart.columns(defn['columns']);
-
-                chart.size(defn['size']);
-                if(_.has(defn,'size')) {
-                    chart.size(defn['size']);
-                }
-                else {
-                    chart.size(frame.records().length);
-                }
-
-                if(_.has(defn,'sortBy')) chart.sortBy(accessor(defn['sortBy']));
+                chart.columns(defn['columns'].map(accessor));
+                chart.size(defn.size || frame.records().length);
+                if(_.has(defn,'sortBy'))
+                    chart.sortBy(accessor(defn['sortBy']));
             }
         };
         ctor = {
@@ -45830,7 +45812,7 @@ function dcplot(frame, groupname, definition) {
         for(var g in definition.groups) {
             defn = definition.groups[g];
             try {
-                group_fn(g, defn, definition.dimensions, definition.defreduce);
+                group_fn(g, defn, definition.dimensions);
             }
             catch(e) {
                 errors.push({type: 'group', name: g, errors: e});
