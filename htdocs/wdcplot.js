@@ -368,7 +368,7 @@ var wdcplot = (function() {
     function make_chart_div(name, definition) {
 
         var title = definition.title;
-        var table = '';
+        var table = $();
         var props = {id: name, style: "float:left"};
 
         if(_.has(definition,'columns')) {
