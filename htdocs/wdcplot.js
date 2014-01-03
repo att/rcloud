@@ -114,7 +114,7 @@ var wdcplot = (function() {
             ? sexp[0] : undefined;
     }
 
-    function dim_name(elem) {
+    function col_name(elem) {
         var place;
         if((place = special_function(elem)))
             return '..' + place + '..';
@@ -123,13 +123,13 @@ var wdcplot = (function() {
         return null;
     }
 
-    function dim_ref(elem) {
-        var placeholder = dim_name(elem);
+    function col_ref(elem, field) {
+        var placeholder = col_name(elem);
         if(placeholder)
             return placeholder;
         else {
             if(!_.isString(elem))
-                throw "dimension reference must be placeholder or string";
+                throw field + " expects column, special, or string, got: " + elem;
             return elem;
         }
     }
@@ -283,7 +283,7 @@ var wdcplot = (function() {
         for(var i = 0; i < sexps.length; ++i) {
             var elem = sexps[i], key, value;
             if(_.isArray(elem)) {
-                var placeholder = dim_name(elem);
+                var placeholder = col_name(elem);
                 if(placeholder) {
                     key = placeholder;
                     value = elem;
@@ -322,7 +322,7 @@ var wdcplot = (function() {
                 var field = defn[j][0], val;
                 switch(field) {
                 case 'dimension':
-                    val = dim_ref(defn[j][1]);
+                    val = col_ref(defn[j][1], "dimension");
                     break;
                 case 'group':
                     val = group_constructor(frame, defn[j][1]);
@@ -352,7 +352,9 @@ var wdcplot = (function() {
             for(var j = 1; j < val.length; ++j) {
                 var key = val[j][0], value = val[j][1];
                 switch(key) {
-                case 'dimension': defn[key] = dim_ref(value); // don't allow lambdas here
+                case 'dimension': defn[key] = col_ref(value, "dimension"); // don't allow lambdas here
+                    break;
+                case 'group': defn[key] = col_ref(value, "group");
                     break;
                 default:
                     defn[key] = argument(frame, value);

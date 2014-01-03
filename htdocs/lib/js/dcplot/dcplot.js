@@ -454,16 +454,20 @@ function dcplot(frame, groupname, definition) {
                 if(!('div' in defn))
                     defn.div = '#' + name;
                 if(defn.group) {
-                    if(!defn.dimension)
+                    if(!groups[defn.group])
+                        errors.push('unknown group "' + defn.group + '"');
+                    else if(!defn.dimension)
                         defn.dimension = groups[defn.group].dimension;
                 }
                 else if(defn.dimension) {
                     if(!dims[defn.dimension])
                         errors.push('unknown dimension "' + defn.dimension + '"');
-                    defn.group = find_unused(groups, defn.dimension);
-                    var g = groups[defn.group] = {};
-                    g.dimension = defn.dimension;
-                    infer_group(defn.group, g, dims, definition.defreduce);
+                    else {
+                        defn.group = find_unused(groups, defn.dimension);
+                        var g = groups[defn.group] = {};
+                        g.dimension = defn.dimension;
+                        infer_group(defn.group, g, dims, definition.defreduce);
+                    }
                 }
                 if(!_.has(defn, 'ordering')) {
                     // note it's a little messy to have this as a property of the chart rather than
