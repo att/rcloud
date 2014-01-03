@@ -556,14 +556,10 @@ function dcplot(frame, groupname, definition) {
             bubble: function() {
             },
             dataTable: function() {
-                var columns = [];
-
-                for (var i = 0; i < defn['columns'].length; i++) {
-                    var dim = defn['columns'][i];
-                    if(!_.has(dims,dim)) throw dim + " not a valid dimension!";
-                    columns.push(accessor(dim));
-                }
-                defn['columns'] = columns;
+                var bad = _.find(defn.columns,
+                                 function(col) { return !frame.has(col); });
+                if(bad)
+                    throw bad + " not a valid column!";
             }
         };
         parents_first_traversal(chart_attrs, defn.type, callbacks);
@@ -869,17 +865,10 @@ function dcplot(frame, groupname, definition) {
             },
             dataTable: function() {
                 chart.group(accessor(defn.dimension));
-                chart.columns(defn['columns']);
-
-                chart.size(defn['size']);
-                if(_.has(defn,'size')) {
-                    chart.size(defn['size']);
-                }
-                else {
-                    chart.size(frame.records().length);
-                }
-
-                if(_.has(defn,'sortBy')) chart.sortBy(accessor(defn['sortBy']));
+                chart.columns(defn['columns'].map(accessor));
+                chart.size(defn.size || frame.records().length);
+                if(_.has(defn,'sortBy'))
+                    chart.sortBy(accessor(defn['sortBy']));
             }
         };
         ctor = {
