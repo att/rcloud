@@ -28,15 +28,13 @@ var reduce = {
     count: function(group) { return group.reduceCount(); },
     countFilter: function(access, level) {
         return reduce.sum(function (a) {
-            if(access(a) == level) return 1;
-            else return 0;
+            return (access(a) == level) ? 1 : 0;
         });
     },
     filter: function(reduce, access, level) {
         function wrapper(acc) {
             return function (a) {
-                if(access(a) == level) return acc(a);
-                else return 0;
+                return (access(a) == level) ? acc(a) : 0;
             };
         }
         return {
