@@ -374,9 +374,8 @@ var wdcplot = (function() {
         if(_.has(definition,'columns')) {
             var chartname = name + "Div";
             var header = $('<tr/>', { class: 'header'});
-            for (var col in definition['columns']) {
+            for(var col in definition['columns'])
                 header.append($('<th/>').append(definition['columns'][col]));
-            }
             table = ($('<thead/>')
                 .append(header));
             props['class'] = 'table table-hover';
