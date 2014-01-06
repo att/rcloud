@@ -45144,6 +45144,7 @@ var chart_attrs = {
         height: {default: 250},
         centerBar: {required: false},
         gap: {required: false},
+        'color.x': {default: true}, // color bars individually when not stacked
         'x.units': {required: true} // the most horrible thing EVER
     },
     line: {
@@ -45329,6 +45330,11 @@ function dcplot(frame, groupname, definition) {
         else throw "illegal accessor " + a.toString();
     }
 
+    function one_stack(defn) {
+        return !_.has(defn,'stack.levels') ||
+            (_.has(defn,'stack.levels') && defn['stack.levels'].length == 1);
+    }
+
     // inferences
     function infer_dimension(name, defn) {
         // nothing (yet?)
@@ -45355,6 +45361,7 @@ function dcplot(frame, groupname, definition) {
         function looks_ordinal(dim) {
             return _.has(dims, dim) && _.isString(accessor(dims[dim])(0));
         }
+
         var callbacks = {
             base: function() {
                 if(!('div' in defn))
@@ -45398,6 +45405,11 @@ function dcplot(frame, groupname, definition) {
                     var levels = get_levels(defn.stack || defn.dimension);
                     defn['color.scale'] = (levels != null && levels.length>10)
                         ? d3.scale.category20() : d3.scale.category10();
+                }
+                if(!defn['color.domain']) {
+                    // this also should be abstracted out into a plugin (RCloud-specific)
+                    if(mhas(defn, 'color', 'attrs', 'r_attributes', 'levels'))
+                        defn['color.domain'] = defn.color.attrs.r_attributes.levels;
                 }
             },
             stackable: function() {
@@ -45454,6 +45466,14 @@ function dcplot(frame, groupname, definition) {
                     var group = groups[defn.group];
                     if(mhas(group, 'group', 'binwidth'))
                         defn['x.units'] = dc.units.fp.precision(group.group.binwidth);
+                }
+                if(!_.has(defn, 'color.domain')) {
+                    if(one_stack(defn)) {
+                        if(defn['color.x'])
+                            defn['color.domain'] = get_levels(defn.dimension);
+                    }
+                    else
+                        defn['color.domain'] = get_levels(defn.stack);
                 }
             },
             line: function() {
@@ -45646,8 +45666,6 @@ function dcplot(frame, groupname, definition) {
                 var scale = defn['color.scale'];
                 if(_.has(defn, 'color.domain'))
                     scale.domain(defn['color.domain']);
-                else if(mhas(defn, 'color', 'attrs', 'levels'))
-                    scale.domain(defn.color.attrs.levels);
                 if(_.has(defn, 'color.range'))
                     scale.range(defn['color.range']);
                 chart.colors(scale);
@@ -45661,24 +45679,6 @@ function dcplot(frame, groupname, definition) {
                         if(s == 0)
                             chart.group(stackGroup);
                         else chart.stack(stackGroup);
-                    }
-                    if(defn['stack.levels'].length > 1) {
-                        chart.renderlet( function(chart) {
-                            // Hack for coloring stacked bar charts
-                            var stacks = chart.selectAll("g."+dc.constants.STACK_CLASS).selectAll("rect.bar");
-                            var stackstitles = chart.selectAll("g."+dc.constants.STACK_CLASS).selectAll("rect.bar title");
-                            for (var i = 0; i<stacks.length; i++) {
-                                for(var j = 0; j<stacks[i].length; j++) {
-                                    // Avoid coloring deselected elements
-                                    if(stacks[i][j].classList.contains(dc.constants.DESELECTED_CLASS))
-                                        stacks[i][j].removeAttribute('style');
-                                    else stacks[i][j].setAttribute('style', 'fill: '+chart.colors()(i));
-                                    // Add stack name to title/mouseover
-                                    stackstitles[i][j].childNodes[0].nodeValue =
-                                        defn['stack.levels'][i] + ", " + stackstitles[i][j].childNodes[0].nodeValue;
-                                }
-                            }
-                        });
                     }
                 }
             },
@@ -45722,19 +45722,6 @@ function dcplot(frame, groupname, definition) {
                 }
                 if(_.has(defn, 'brush'))
                     chart.brushOn(defn.brush);
-                if(_.has(defn,'x.ordinal') && defn['x.ordinal'] && (!_.has(defn,'stack.levels') ||
-                    (_.has(defn,'stack.levels') && defn['stack.levels'].length == 1))) {
-                    // Hack for coloring non-stacked ordinal x charts
-                    chart.renderlet( function(chart) {
-                        var all = chart.selectAll("rect.bar")[0];
-                        all.sort(function (a,b) { return a.x.baseVal.value - b.x.baseVal.value; });
-                        for (var i = 0; i<all.length; i++) {
-                            if(all[i].classList.contains(dc.constants.DESELECTED_CLASS))
-                                all[i].removeAttribute('style');
-                            else all[i].setAttribute('style', 'fill: '+chart.colors()(i));
-                        }
-                    });
-                }
             },
             pie: function() {
                 if(_.has(defn, 'wedge'))
@@ -45752,6 +45739,52 @@ function dcplot(frame, groupname, definition) {
                     chart.centerBar(defn.centerBar);
                 if(_.has(defn, 'gap'))
                     chart.gap(defn.gap);
+                // optionally color the bars when ordinal and not stacked or one stack
+                if(_.has(defn,'x.ordinal') && defn['x.ordinal'] && defn['color.x'] && one_stack(defn)) {
+                    chart.renderlet(function(chart) {
+                        chart.selectAll("rect.bar").style('fill', function(d,i) {
+                            if(d3.select(this).classed(dc.constants.DESELECTED_CLASS))
+                                return null;
+                            else return chart.colors()(d.x);
+                        });
+                    });
+                }
+                else if(!one_stack(defn)) {
+                    // dc.js does not automatically color the stacks different colors (!)
+                    chart.renderlet(function(chart) {
+                        chart.selectAll("g."+dc.constants.STACK_CLASS)
+                            .each(function(d,i) {
+                                var stack = defn['stack.levels'][i];
+                                d3.select(this).selectAll("rect.bar")
+                                    .style('fill', function(d,i) {
+                                        if(d3.select(this).classed(dc.constants.DESELECTED_CLASS))
+                                            return null;
+                                        else return chart.colors()(stack);
+                                    })
+                                    .select('title')
+                                    .text(function(d,i) {
+                                        return stack + ", " + d3.select(this).text();
+                                    });
+                            });
+                        /*
+                        // Hack for coloring stacked bar charts
+                        var stacks = chart.selectAll("g."+dc.constants.STACK_CLASS).selectAll("rect.bar");
+                        var stackstitles = chart.selectAll("g."+dc.constants.STACK_CLASS).selectAll("rect.bar title");
+                        for (var i = 0; i<stacks.length; i++) {
+                            for(var j = 0; j<stacks[i].length; j++) {
+                                // Avoid coloring deselected elements
+                                if(stacks[i][j].classList.contains(dc.constants.DESELECTED_CLASS))
+                                    stacks[i][j].removeAttribute('style');
+                                else stacks[i][j].setAttribute('style', 'fill: '+chart.colors()(i));
+                                // Add stack name to title/mouseover
+                                stackstitles[i][j].childNodes[0].nodeValue =
+                                    defn['stack.levels'][i] + ", " + stackstitles[i][j].childNodes[0].nodeValue;
+                            }
+                         }
+                         */
+                    });
+                }
+
             },
             line: function() {
                 if(_.has(defn, 'area'))
