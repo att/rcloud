@@ -832,21 +832,22 @@ function dcplot(frame, groupname, definition) {
                     });
                 }
                 else if(!one_stack(defn)) {
+                    // dc.js does not automatically color the stacks different colors (!)
                     chart.renderlet(function(chart) {
-                        // Hack for coloring stacked bar charts
-                        var stacks = chart.selectAll("g."+dc.constants.STACK_CLASS).selectAll("rect.bar");
-                        var stackstitles = chart.selectAll("g."+dc.constants.STACK_CLASS).selectAll("rect.bar title");
-                        for (var i = 0; i<stacks.length; i++) {
-                            for(var j = 0; j<stacks[i].length; j++) {
-                                // Avoid coloring deselected elements
-                                if(stacks[i][j].classList.contains(dc.constants.DESELECTED_CLASS))
-                                    stacks[i][j].removeAttribute('style');
-                                else stacks[i][j].setAttribute('style', 'fill: '+chart.colors()(i));
-                                // Add stack name to title/mouseover
-                                stackstitles[i][j].childNodes[0].nodeValue =
-                                    defn['stack.levels'][i] + ", " + stackstitles[i][j].childNodes[0].nodeValue;
-                            }
-                        }
+                        chart.selectAll("g."+dc.constants.STACK_CLASS)
+                            .each(function(d,i) {
+                                var stack = defn['stack.levels'][i];
+                                d3.select(this).selectAll("rect.bar")
+                                    .style('fill', function(d,i) {
+                                        if(d3.select(this).classed(dc.constants.DESELECTED_CLASS))
+                                            return null;
+                                        else return chart.colors()(stack);
+                                    })
+                                    .select('title')
+                                    .text(function(d,i) {
+                                        return stack + ", " + d3.select(this).text();
+                                    });
+                            });
                     });
                 }
 
