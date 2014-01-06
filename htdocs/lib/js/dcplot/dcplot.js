@@ -488,6 +488,11 @@ function dcplot(frame, groupname, definition) {
                         defn['stack.levels'] = get_levels(defn['stack']);
                     var levels = defn['stack.levels'];
 
+                if(!defn['color.domain']) {
+                    // this also should be abstracted out into a plugin (RCloud-specific)
+                    if(mhas(defn, 'color', 'attrs', 'r_attributes', 'levels'))
+                        defn['color.domain'] = defn.color.attrs.r_attributes.levels;
+                }
                     // Change reduce functions to filter on stack levels
                     for(var s = 0; s<defn['stack.levels'].length; s++) {
                         var newName = defn.group+defn['stack.levels'][s];
@@ -728,8 +733,6 @@ function dcplot(frame, groupname, definition) {
                 var scale = defn['color.scale'];
                 if(_.has(defn, 'color.domain'))
                     scale.domain(defn['color.domain']);
-                else if(mhas(defn, 'color', 'attrs', 'levels'))
-                    scale.domain(defn.color.attrs.levels);
                 if(_.has(defn, 'color.range'))
                     scale.range(defn['color.range']);
                 chart.colors(scale);
