@@ -585,6 +585,9 @@ var shell = (function() {
                         notebook_desc_content.val('');
                         notebook_desc.hide();
                     });
+
+                // keep selected file, in case repeatedly importing is helpful
+                // but do reset Import button!
                 dialog.data("reset", function() {
                     notebook = null;
                     ui_utils.disable_bs_button(import_button);
@@ -643,6 +646,8 @@ var shell = (function() {
                                 .append($('<div class="modal-content"></div>')
                                         .append(header).append(body).append(footer)));
                 $("body").append(dialog);
+
+                // clear gists list but keep the other fields, to aide repetitive operations
                 dialog
                     .on('show.bs.modal', function() {
                         $('#import-gists').val('');
