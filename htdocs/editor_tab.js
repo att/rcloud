@@ -891,7 +891,7 @@ var editor = function () {
         rename_notebook: function(gistname, newname) {
             rcloud.rename_notebook(gistname, newname, this.load_callback(null, true, true));
         },
-        star_notebook: function(star, opts) {
+        star_notebook: function(star, opts, k) {
             var that = this;
             // if opts has user and gistname use those
             // else if opts has notebook, use notebook id & user
@@ -924,6 +924,7 @@ var editor = function () {
                         that.save_config();
                         update_notebook_view(user, gistname, entry, opts.selroot);
                     }
+                    k && k();
                 });
             }
             else {
@@ -932,18 +933,24 @@ var editor = function () {
                     remove_interest(user, gistname);
                     that.save_config();
                     unstar_notebook_view(user, gistname);
+                    k && k();
                 });
             }
         },
         remove_notebook: function(node) {
+            var that = this;
+            var k = function() {
+                remove_node(node);
+                if(node.gistname === config_.currbook)
+                    that.new_notebook();
+            };
             remove_all(node.user, node.gistname);
             if(i_starred_[node.gistname])
-                this.star_notebook(false, {user: node.user, gistname: node.gistname});
-            else
+                this.star_notebook(false, {user: node.user, gistname: node.gistname}, k);
+            else {
                 result.save_config();
-            remove_node(node);
-            if(node.gistname === config_.currbook)
-                this.new_notebook();
+                k();
+            }
         },
         set_visibility: function(node, visibility) {
             if(node.user !== username_)
