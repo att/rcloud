@@ -830,9 +830,20 @@ var editor = function () {
             $('#new-notebook').click(function() {
                 that.new_notebook();
             });
+            function publish_success(gistname, un) {
+                return function(val) {
+                    var verb = (un ? "un" : "") + "publish";
+                    if(!val)
+                        console.log("Failed to " + verb + " notebook " + gistname);
+                };
+            }
             publish_notebook_checkbox_ = ui_utils.checkbox_menu_item($("#publish-notebook"),
-               function() { rcloud.publish_notebook(config_.currbook); },
-               function() { rcloud.unpublish_notebook(config_.currbook); });
+               function() {
+                   rcloud.publish_notebook(config_.currbook, publish_success(config_.currbook, false));
+               },
+               function() {
+                   rcloud.unpublish_notebook(config_.currbook, publish_success(config_.currbook, true));
+               });
             var snf = result.star_notebook;
             star_notebook_button_ =
                 ui_utils.twostate_icon($("#star-notebook"),
