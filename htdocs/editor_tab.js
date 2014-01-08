@@ -565,13 +565,12 @@ var editor = function () {
     function update_notebook_view(user, gistname, entry, selroot) {
         if(selroot === true)
             selroot = i_starred_[gistname] ? 'interests' : 'alls';
-        if(i_starred_[gistname]) {
+        if(i_starred_[gistname])
             update_tree_entry('interests', user, gistname, entry, true,
                               selroot==='interests' ? select_node : null);
-            if(gistname === config_.currbook) {
-                star_notebook_button_(true);
-                $('#curr-star-count').text(num_stars_[gistname]);
-            }
+        if(gistname === config_.currbook) {
+            star_notebook_button_(i_starred_[gistname]);
+            $('#curr-star-count').text(num_stars_[gistname]);
         }
 
         var node = update_tree_entry('alls', user, gistname, entry, true,
