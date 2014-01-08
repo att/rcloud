@@ -934,10 +934,11 @@ var editor = function () {
             }
         },
         remove_notebook: function(node) {
-            remove_interest(node.user, node.gistname);
             remove_all(node.user, node.gistname);
-            result.save_config();
-            unstar_notebook_view(node.user, node.gistname);
+            if(i_starred_[node.gistname])
+                this.star_notebook(false, {user: node.user, gistname: node.gistname});
+            else
+                result.save_config();
             remove_node(node);
             if(node.gistname === config_.currbook)
                 this.new_notebook();
