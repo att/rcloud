@@ -98,6 +98,12 @@ rcloud.get.notebook <- function(id, version = NULL) {
 ## this is extremely experimental -- use at your own risk
 ## the meaining of args is ambiguous and probably a bad idea - it jsut makes the client code a bit easier to write ...
 
+rcloud.unauthenticated.call.notebook <- function(id, version = NULL, args = NULL) {
+  if (!rcloud.is.notebook.published(id))
+    stop("Notebook does not exist or has not been published")
+  rcloud.call.notebook(id, version, args)
+}
+
 rcloud.call.notebook <- function(id, version = NULL, args = NULL) {
   res <- rcloud.get.notebook(id, version)
   if (res$ok) {
@@ -126,6 +132,12 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL) {
   } else NULL
 }
 
+rcloud.unauthenticated.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
+  if (!rcloud.is.notebook.published(id))
+    stop("Notebook does not exist or has not been published")
+  rcloud.call.FastRWeb.notebook(id, version, args)
+}
+
 rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
   result <- rcloud.call.notebook(id, version, args)
   if (is.function(result)) {
@@ -143,6 +155,32 @@ rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
     l[[1]] <- NULL ## FIXME: we assume "html" type here .. need to implement others ...
     l
   } else result
+}
+
+rcloud.notebook.by.name <- function(name, user=.session$username, path=TRUE) {
+  cfg <- rcloud.load.user.config(user)
+  if (cfg == "null") stop("user `", user, "' not found")
+  if (inherits(cfg, "try-error")) stop("Error while loading user `", user, "' configuration: ", cfg)
+  cfg <- rjson::fromJSON(cfg)
+  nbs <- lapply(cfg$all_books, function(o) o$description)
+  ok <- sapply(nbs, function(s) (name == s || (path && substr(name, 1, nchar(s)) == s && substr(name, nchar(s)+1L, nchar(s)+1L) == "/")))
+  if (!any(ok)) return(if(path) NULL else character(0))
+  notebook <- as.character(names(nbs)[ok])
+  if (!path) return(notebook)
+  extra.path <- sapply(nbs[ok], function(nmatch) if (nmatch == name) "" else substr(name, nchar(nmatch) + 1L, nchar(name)))
+  m <- matrix(c(notebook, extra.path),,2)
+  colnames(m) <- c("id", "extra.path")
+  m
+}
+
+rcloud.unauthenticated.notebook.by.name <- function(name, user=.session$username, path=TRUE) {
+  candidates <- rcloud.notebook.by.name(name, user)
+  if (length(candidates) < 1L) return(candidates)
+  vec <- is.null(dim(candidates))
+  id <- if (vec) candidates else candidates[,1L]
+  pub <- sapply(id, rcloud.is.notebook.published)
+  if (all(!pub)) return(if(vec) character(0) else NULL)
+  if (vec) candidates[pub] else candidates[pub,,drop=FALSE]
 }
 
 rcloud.upload.to.notebook <- function(file, name) {

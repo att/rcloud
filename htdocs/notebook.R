@@ -27,7 +27,15 @@ run <- function(url, query, body, headers)
     ## authenticate
     caps <- RSclient::RS.eval.qap(c, as.call(list(oc.init, c(cookies$token, cookies$execToken))))
     ## session init
-    RSclient::RS.eval.qap(c, as.call(list(caps$rcloud$session_init, cookies$user, cookies$token)))
+    if (!is.list(caps)) return(list(paste0(et, "<p><!-- error: ", as.character(caps)[1], " -->"), "text/html"))
+    anonymous <- FALSE
+    init.cap <- caps$rcloud$session_init
+    if (is.null(init.cap)) {
+      init.cap <- caps$rcloud$anonymous_session_init
+      anonymous <- TRUE
+    }
+    if (is.null(init.cap)) stop("Server refused to provide RCloud session initialization capabilites - access denied")
+    RSclient::RS.eval.qap(c, as.call(list(init.cap, cookies$user, cookies$token)))
     et <- "Error fetching content:"
     version <- NULL
     ## is this first part a notebook hash?
@@ -45,16 +53,14 @@ run <- function(url, query, body, headers)
       user <- pex[1L]
       pex <- pex[-1L]
       nb.name <- paste(pex, collapse="/")
-      cfg <- RSclient::RS.eval.qap(c, as.call(list(caps$rcloud$load_user_config, user)))
-      if (cfg == "null") stop("user `", user, "' not found")
-      cfg <- rjson::fromJSON(cfg)
-      nbs <- lapply(cfg$all_books, function(o) o$description)
-      ok <- sapply(nbs, function(s) (nb.name == s || (substr(nb.name, 1, nchar(s)) == s && substr(nb.name, nchar(s)+1L, nchar(s)+1L) == "/")))
-      if (!any(ok)) stop("notebook `", nb.name,"' not found")
-      ok <- which(ok)[1L] ## pick the first one if there are multiple
-      notebook <- as.character(names(nbs)[ok])
-      extra.path <- if (nbs[ok] == nb.name) NULL else substr(nb.name, nchar(nbs[ok]) + 1L, nchar(nb.name))
-      nb.name <- nbs[ok]
+      if (is.null(caps$rcloud$notebook_by_name)) stop("Anonymous users are not allowed to use notebooks by path - try authenticating")
+      nb <- RSclient::RS.eval.qap(c, as.call(list(caps$rcloud$notebook_by_name, nb.name, user)))
+      if (inherits(nb, "try-error")) stop("Error finding notebook: ", nb)
+      if (is.null(nb)) stop("Notebook `", nb.name, "' by user `", user, "' not found", if (anonymous) " or not published" else "")
+      extra.path <- nb[1L, 2L]
+      nb.name <- substr(nb.name, 1, nchar(nb.name) - nchar(extra.path))
+      notebook <- nb[1L, 1L]
+      if (!nzchar(extra.path)) extra.path <- NULL
     }
 
     query$notebook <- notebook

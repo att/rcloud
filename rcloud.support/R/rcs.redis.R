@@ -8,7 +8,7 @@ rcs.redis <- function(host=NULL) {
     host <- "localhost"
     port <- 6379L
   }
-  structure(list(host=host, port=port, handle=redis.connect(host, port, 3, TRUE)), class="RCSredis")
+  structure(list(host=host, port=port, handle=redis.connect(host, port, 3, TRUE, TRUE)), class="RCSredis")
 }
 
 rcs.get.RCSredis <- function(key, list=FALSE, engine=.session$rcs.engine) redis.get(engine$handle, key, list)
