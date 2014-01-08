@@ -76,6 +76,16 @@
   allow only a subset of Github users to login to any given rcloud
   deployment. If no whitelist is given, all users are allowed in
 
+* Notebooks can be stored to "stashes" via `rcloud.stash.notebook()`
+  and then deployed in a read-only RCloud instance by using
+  `gist.deployment.stash` directive in `rcloud.conf` instead of
+  a GitHub back-end. Such service instances only support `view` and
+  `notebook.R` access.
+  Stashes are stored in RCS and helper functions `rcloud.extract.stash()`
+  and `rcloud.restore.stash()` can be used to transfer stashes from a
+  regular RCloud instance to a service depolyment instance.
+
+
 ### Bugfixes
 
 * Bugfix: `rcloud.call.notebook` would break on arguments with empty
