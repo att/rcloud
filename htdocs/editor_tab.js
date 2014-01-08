@@ -817,6 +817,7 @@ var editor = function () {
                     that.new_notebook();
                 k && k();
             });
+            /* Search disabled for Version 0.9
             var old_text = "";
             window.setInterval(function() {
                 var new_text = $("#input-text-search").val();
@@ -825,6 +826,7 @@ var editor = function () {
                     that.search(new_text);
                 }
             }, 500);
+             */
             $('#new-notebook').click(function() {
                 that.new_notebook();
             });
