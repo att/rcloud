@@ -599,9 +599,10 @@ var editor = function () {
             star_notebook_button_(false);
             $('#curr-star-count').text(num_stars_[gistname]);
         }
-        /* not needed in practice because remove_node forces refresh
         node = $tree_.tree('getNodeById', node_id('alls', user, gistname));
-        $(node.element).find('.fontawesome-button.star')[0].set_state(false); */
+        var all_star = $(node.element).find('.fontawesome-button.star');
+        all_star[0].set_state(false);
+        all_star.find('sub').text(num_stars_[gistname]);
     }
 
     function update_notebook_from_gist(result, history, selroot) {
