@@ -497,11 +497,11 @@ var shell = (function() {
             });
         }, import_notebook_file: function() {
             var that = this;
-            var notebook = null;
-            var notebook_status_content = null;
-            var notebook_desc_content = null;
-            var import_button = null;
             function create_import_file_dialog() {
+                var notebook = null;
+                var notebook_status_content = null;
+                var notebook_desc_content = null;
+                var import_button = null;
                 function do_upload(file) {
                     notebook_status.hide();
                     notebook_desc.hide();
@@ -585,16 +585,17 @@ var shell = (function() {
                         notebook_desc_content.val('');
                         notebook_desc.hide();
                     });
+                dialog.data("reset", function() {
+                    notebook = null;
+                    ui_utils.disable_bs_button(import_button);
+                });
                 return dialog;
             }
             var dialog = $("#import-notebook-file-dialog");
             if(!dialog.length)
                 dialog = create_import_file_dialog();
-            else {
-                ui_utils.disable_bs_button(import_button);
-                notebook_status_content.text('not good');
-                notebook_desc_content.text("you can't see me");
-            }
+            else
+                dialog.data().reset();
             dialog.modal({keyboard: true});
         }, import_notebooks: function() {
             function do_import() {
