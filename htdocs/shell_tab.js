@@ -2,6 +2,7 @@ var shell = (function() {
 
     var version_ = null,
         gistname_ = null,
+        notebook_user_ = null,
         is_mine_ = null,
         github_url_ = null,
         gist_url_ = null,
@@ -311,6 +312,7 @@ var shell = (function() {
         set_share_link();
 
         is_mine_ = notebook_is_mine(notebook);
+        notebook_user_ = notebook.user.login;
         show_fork_or_prompt_elements();
         _.each(notebook_view_.sub_views, function(cell_view) {
             cell_view.show_source();
@@ -430,9 +432,9 @@ var shell = (function() {
             });
         }, open_in_github: function() {
             var url;
-            if(gist_url_) {
+            if(!this.is_old_github()) {
                 url = gist_url_;
-                url += rcloud.username() + '/';
+                url += notebook_user_ + '/';
             }
             else
                 url = github_url_ + 'gist/';
