@@ -714,6 +714,7 @@ var editor = function () {
                                                      'star',
                                                      star_style);
                 // sigh, ui_utils.twostate_icon should be a mixin or something
+                // ... why does this code exist?
                 star_unstar.click(function(e) {
                     e.preventDefault();
                     e.stopPropagation(); // whatever you do, don't let this event percolate
