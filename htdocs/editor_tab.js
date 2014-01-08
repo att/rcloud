@@ -720,7 +720,8 @@ var editor = function () {
                     var new_state = !state;
                     result.star_notebook(new_state, {gistname: node.gistname, user: node.user});
                 });
-                star_unstar[0].set_state = function() {
+                star_unstar[0].set_state = function(val) {
+                    state = !!val;
                     $(this).find('i').attr('class', states[state].class);
                 };
                 star_unstar.append($('<sub/>').append(num_stars_[node.gistname]));
