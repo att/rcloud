@@ -497,8 +497,11 @@ var shell = (function() {
             });
         }, import_notebook_file: function() {
             var that = this;
-            var notebook = null;
             function create_import_file_dialog() {
+                var notebook = null;
+                var notebook_status_content = null;
+                var notebook_desc_content = null;
+                var import_button = null;
                 function do_upload(file) {
                     notebook_status.hide();
                     notebook_desc.hide();
@@ -526,7 +529,7 @@ var shell = (function() {
                         notebook_desc_content.val(notebook.description);
                         notebook_desc.show();
                         notebook = sanitize_notebook(notebook);
-                        ui_utils.enable_bs_button(go);
+                        ui_utils.enable_bs_button(import_button);
                     };
                     fr.readAsText(file);
                 }
@@ -544,10 +547,10 @@ var shell = (function() {
                 var file_upload = $('<span class="btn">Validate</span>')
                         .click(function() { do_upload(file_select[0].files[0]); });
                 var notebook_status = $('<span>Validation: </span>');
-                var notebook_status_content = $('<span />');
+                notebook_status_content = $('<span />');
                 notebook_status.append(notebook_status_content);
                 var notebook_desc = $('<span>Notebook description: </span>');
-                var notebook_desc_content = $('<input type="text" size="50"></input>')
+                notebook_desc_content = $('<input type="text" size="50"></input>')
                     .keypress(function(e) {
                         if (e.which === 13) {
                             do_import();
@@ -561,11 +564,11 @@ var shell = (function() {
                     .append($('<p/>').append(notebook_desc.hide()));
                 var cancel = $('<span class="btn">Cancel</span>')
                         .on('click', function() { $(dialog).modal('hide'); });
-                var go = $('<span class="btn btn-primary">Import</span>')
+                import_button = $('<span class="btn btn-primary">Import</span>')
                         .on('click', do_import);
-                ui_utils.disable_bs_button(go);
+                ui_utils.disable_bs_button(import_button);
                 var footer = $('<div class="modal-footer"></div>')
-                        .append(cancel).append(go);
+                        .append(cancel).append(import_button);
                 var header = $(['<div class="modal-header">',
                                 '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>',
                                 '<h3>Import Notebook File</h3>',
@@ -582,11 +585,20 @@ var shell = (function() {
                         notebook_desc_content.val('');
                         notebook_desc.hide();
                     });
+
+                // keep selected file, in case repeatedly importing is helpful
+                // but do reset Import button!
+                dialog.data("reset", function() {
+                    notebook = null;
+                    ui_utils.disable_bs_button(import_button);
+                });
                 return dialog;
             }
             var dialog = $("#import-notebook-file-dialog");
             if(!dialog.length)
                 dialog = create_import_file_dialog();
+            else
+                dialog.data().reset();
             dialog.modal({keyboard: true});
         }, import_notebooks: function() {
             function do_import() {
@@ -634,6 +646,8 @@ var shell = (function() {
                                 .append($('<div class="modal-content"></div>')
                                         .append(header).append(body).append(footer)));
                 $("body").append(dialog);
+
+                // clear gists list but keep the other fields, to aide repetitive operations
                 dialog
                     .on('show.bs.modal', function() {
                         $('#import-gists').val('');
