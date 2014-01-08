@@ -569,7 +569,7 @@ var editor = function () {
             update_tree_entry('interests', user, gistname, entry, true,
                               selroot==='interests' ? select_node : null);
         if(gistname === config_.currbook) {
-            star_notebook_button_(i_starred_[gistname]);
+            star_notebook_button_.set_state(i_starred_[gistname]);
             $('#curr-star-count').text(num_stars_[gistname]);
         }
 
@@ -596,7 +596,7 @@ var editor = function () {
         }
         remove_node(node);
         if(gistname === config_.currbook) {
-            star_notebook_button_(false);
+            star_notebook_button_.set_state(false);
             $('#curr-star-count').text(num_stars_[gistname]);
         }
         node = $tree_.tree('getNodeById', node_id('alls', user, gistname));
@@ -1016,7 +1016,9 @@ var editor = function () {
                 });
                 $("#github-notebook-id").text(result.id).click(false);
                 rcloud.is_notebook_published(result.id, function(p) {
-                    publish_notebook_checkbox_(p);
+                    publish_notebook_checkbox_.set_state(p);
+                    publish_notebook_checkbox_.enable(result.user.login === username_);
+
                 });
                 k && k();
             };

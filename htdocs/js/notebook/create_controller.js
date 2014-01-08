@@ -90,7 +90,7 @@ Notebook.create_controller = function(model)
         show_source_checkbox_ = ui_utils.checkbox_menu_item($("#show-source"),
            function() {result.show_r_source();},
            function() {result.hide_r_source();});
-        show_source_checkbox_(true);
+        show_source_checkbox_.set_state(true);
     }
 
     setup_show_source();
@@ -269,12 +269,12 @@ Notebook.create_controller = function(model)
 
         hide_r_source: function() {
             this._r_source_visible = false;
-            show_source_checkbox_(this._r_source_visible);
+            show_source_checkbox_.set_state(this._r_source_visible);
             Notebook.hide_r_source();
         },
         show_r_source: function() {
             this._r_source_visible = true;
-            show_source_checkbox_(this._r_source_visible);
+            show_source_checkbox_.set_state(this._r_source_visible);
             Notebook.show_r_source();
         }
     };
