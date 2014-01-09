@@ -657,21 +657,35 @@ ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
             icon.addClass(inactive_icon);
         }
     }
-    item.click(function() {
+    function on_click() {
         var state = !this.checked;
         set_state(state);
         if(state)
             on_activate();
         else
             on_deactivate();
-    });
-    return set_state;
+    }
+    function enable(val) {
+        if(val)
+            item.click(on_click);
+        else
+            item.off('click');
+    }
+    enable(true);
+    return {set_state: set_state, enable: enable};
 };
 
 // not that i'm at all happy with the look
 ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
-    return ui_utils.twostate_icon(item, on_check, on_uncheck,
-                                  'icon-check', 'icon-check-empty');
+    var ret = ui_utils.twostate_icon(item, on_check, on_uncheck,
+                                     'icon-check', 'icon-check-empty');
+    var base_enable = ret.enable;
+    ret.enable = function(val) {
+        // bootstrap menu items go in in an <li /> that takes the disabled class
+        $("#publish-notebook").parent().toggleClass('disabled', !val);
+        base_enable(val);
+    };
+    return ret;
 };
 
 // this is a hack, but it'll help giving people the right impression.
@@ -1460,7 +1474,7 @@ Notebook.create_controller = function(model)
         show_source_checkbox_ = ui_utils.checkbox_menu_item($("#show-source"),
            function() {result.show_r_source();},
            function() {result.hide_r_source();});
-        show_source_checkbox_(true);
+        show_source_checkbox_.set_state(true);
     }
 
     setup_show_source();
@@ -1639,12 +1653,12 @@ Notebook.create_controller = function(model)
 
         hide_r_source: function() {
             this._r_source_visible = false;
-            show_source_checkbox_(this._r_source_visible);
+            show_source_checkbox_.set_state(this._r_source_visible);
             Notebook.hide_r_source();
         },
         show_r_source: function() {
             this._r_source_visible = true;
-            show_source_checkbox_(this._r_source_visible);
+            show_source_checkbox_.set_state(this._r_source_visible);
             Notebook.show_r_source();
         }
     };
