@@ -11,9 +11,10 @@ var shell = (function() {
         notebook_model_ = Notebook.create_model(),
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
         notebook_controller_ = Notebook.create_controller(notebook_model_),
-        first_session_ = true;
+        first_session_ = true,
+        prompt_history_ = null;
 
-    var cmd_history = (function() {
+    prompt_history_ = (function() {
         var entries_ = [], alt_ = [];
         var curr_ = 0;
         function curr_cmd() {
@@ -83,15 +84,12 @@ var shell = (function() {
         widget.setTheme("ace/theme/chrome");
         session.setUseWrapMode(true);
         widget.resize();
-        var change_prompt = ui_utils.ignore_programmatic_changes(widget, cmd_history.change.bind(cmd_history));
+        var change_prompt = ui_utils.ignore_programmatic_changes(widget, prompt_history_.change.bind(prompt_history_));
 
         function execute(widget, args, request) {
             var code = session.getValue();
             if(code.length) {
-                result.new_interactive_cell(code).execute(function() {
-                    $.scrollTo(null, prompt_div);
-                });
-                cmd_history.execute(code);
+                result.new_interactive_cell(code, true);
                 change_prompt('');
             }
         }
@@ -107,7 +105,7 @@ var shell = (function() {
         }
 
         function restore_prompt() {
-            var cmd = cmd_history.init();
+            var cmd = prompt_history_.init();
             change_prompt(cmd);
             var r = last_row(widget);
             ui_utils.ace_set_pos(widget, r, last_col(widget, r));
@@ -135,26 +133,6 @@ var shell = (function() {
             },
             exec: execute
         }, {
-            name: 'execute-selection-or-line',
-            bindKey: {
-                win: 'Alt-Return',
-                mac: 'Alt-Return',
-                sender: 'editor'
-            },
-            exec: function(widget, args, request) {
-                var code = session.getTextRange(widget.getSelectionRange());
-                if(code.length==0) {
-                    var pos = widget.getCursorPosition();
-                    var Range = require('ace/range').Range;
-                    var range = new Range(pos.row, 0, pos.row+1, 0);
-                    code = session.getTextRange(range);
-                }
-                cmd_history.execute(code);
-                result.new_interactive_cell(code).execute(function() {
-                    $.scrollTo(null, prompt_div);
-                });
-            }
-        }, {
             name: 'up-with-history',
             bindKey: 'up',
             exec: function(widget, args, request) {
@@ -162,7 +140,7 @@ var shell = (function() {
                 if(pos.row > 0)
                     up_handler.exec(widget, args, request);
                 else {
-                    change_prompt(cmd_history.last());
+                    change_prompt(prompt_history_.last());
                     var r = last_row(widget);
                     ui_utils.ace_set_pos(widget, r, last_col(widget, r));
                 }
@@ -176,7 +154,7 @@ var shell = (function() {
                 if(pos.row < r)
                     down_handler.exec(widget, args, request);
                 else {
-                    change_prompt(cmd_history.next());
+                    change_prompt(prompt_history_.next());
                     ui_utils.ace_set_pos(widget, 0, last_col(widget, 0));
                 }
             }
@@ -382,8 +360,13 @@ var shell = (function() {
             return result[0];
         }, new_markdown_cell: function(content) {
             return notebook_controller_.append_cell(content, "Markdown");
-        }, new_interactive_cell: function(content) {
-            return notebook_controller_.append_cell(content, "R");
+        }, new_interactive_cell: function(content, execute) {
+            var cell = notebook_controller_.append_cell(content, "R");
+            prompt_history_.execute(content);
+            if(execute)
+                cell.execute(function() {
+                    $.scrollTo(null, prompt_div);
+                });
         }, insert_markdown_cell_before: function(index) {
             return notebook_controller_.insert_cell("", "Markdown", index);
         }, load_notebook: function(gistname, version, k) {
