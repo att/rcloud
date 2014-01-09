@@ -114,10 +114,9 @@ ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
             on_deactivate();
     }
     function enable(val) {
+        item.off('click');
         if(val)
             item.click(on_click);
-        else
-            item.off('click');
     }
     enable(true);
     return {set_state: set_state, enable: enable};
