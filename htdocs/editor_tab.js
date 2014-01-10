@@ -151,6 +151,8 @@ var editor = function () {
                     return an-bn;
             }
             var lc = alab.localeCompare(blab);
+            if(lc === 0) // make sort stable on gist id (creation time would be better)
+                lc = a.gistname.localeCompare(b.gistname);
             return lc;
         }
     }
