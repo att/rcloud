@@ -795,7 +795,8 @@ var editor = function () {
                 // workaround: it's weird that a notebook exists in two trees but only one is selected (#220)
                 // and some would like clicking on the active notebook to edit the name (#252)
                 // for now, just select
-                if(event.node.gistname === config_.currbook)
+                if(event.node.gistname === config_.currbook
+                   && event.node.version == config_.currversion) // nulliness ok here
                     select_node(event.node);
                 else {
                     // possibly erase query parameters here, but that requires a reload
