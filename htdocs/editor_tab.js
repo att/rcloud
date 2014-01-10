@@ -757,10 +757,12 @@ var editor = function () {
                 });
                 add_buttons(make_private, make_public);
             }
-            if(node.root != 'interests' && node.user===username_) {
+            if(node.user===username_) {
                 var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style);
-                remove.click(function() {
-                    result.remove_notebook(node);
+                remove.click(function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    result.remove_notebook(node.user, node.gistname);
                     return false;
                 });
                 add_buttons(remove);
@@ -883,8 +885,8 @@ var editor = function () {
                 k && k();
             });
         },
-        save_config: function() {
-            rcloud.save_user_config(username_, config_);
+        save_config: function(k) {
+            rcloud.save_user_config(username_, config_, k);
         },
         load_notebook: function(gistname, version, selroot) {
             var that = this;
@@ -940,6 +942,9 @@ var editor = function () {
                         that.save_config();
                         update_notebook_view(user, gistname, entry, opts.selroot);
                     }
+                    // this continuation is not strictly correct, because
+                    // the above make asynchronous calls to save_config and perhaps others
+                    // (but we don't use this continuation so: yuk)
                     k && k();
                 });
             }
@@ -947,26 +952,26 @@ var editor = function () {
                 rcloud.stars.unstar_notebook(gistname, function(count) {
                     num_stars_[gistname] = count;
                     remove_interest(user, gistname);
-                    that.save_config();
-                    unstar_notebook_view(user, gistname, opts.selroot);
-                    k && k();
+                    that.save_config(function() {
+                        unstar_notebook_view(user, gistname, opts.selroot);
+                        k && k();
+                    });
                 });
             }
         },
-        remove_notebook: function(node) {
+        remove_notebook: function(user, gistname) {
             var that = this;
-            var k = function() {
-                remove_node(node);
-                if(node.gistname === config_.currbook)
+            function do_rest() {
+                remove_all(user, gistname);
+                remove_node($tree_.tree('getNodeById', node_id('alls', user, gistname)));
+                result.save_config();
+                if(gistname === config_.currbook)
                     that.new_notebook();
             };
-            remove_all(node.user, node.gistname);
-            if(i_starred_[node.gistname])
-                this.star_notebook(false, {user: node.user, gistname: node.gistname}, k);
-            else {
-                result.save_config();
-                k();
-            }
+            if(i_starred_[gistname])
+                this.star_notebook(false, {user: user, gistname: gistname}, do_rest);
+            else
+                do_rest();
         },
         set_visibility: function(node, visibility) {
             if(node.user !== username_)
