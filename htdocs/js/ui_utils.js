@@ -58,6 +58,8 @@ ui_utils.ace_set_pos = function(widget, row, column) {
 
 ui_utils.install_common_ace_key_bindings = function(widget) {
     var Autocomplete = require("ace/autocomplete").Autocomplete;
+    var session = widget.getSession();
+
     widget.commands.addCommands([
         {
             name: 'another autocomplete key',
@@ -71,6 +73,23 @@ ui_utils.install_common_ace_key_bindings = function(widget) {
                 mac: "Command-L"
             },
             exec: function() { return false; }
+        }, {
+            name: 'execute-selection-or-line',
+            bindKey: {
+                win: 'Alt-Return',
+                mac: 'Alt-Return',
+                sender: 'editor'
+            },
+            exec: function(widget, args, request) {
+                var code = session.getTextRange(widget.getSelectionRange());
+                if(code.length==0) {
+                    var pos = widget.getCursorPosition();
+                    var Range = require('ace/range').Range;
+                    var range = new Range(pos.row, 0, pos.row+1, 0);
+                    code = session.getTextRange(range);
+                }
+                shell.new_interactive_cell(code, true);
+            }
         }
     ]);
 }
@@ -114,10 +133,9 @@ ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
             on_deactivate();
     }
     function enable(val) {
+        item.off('click');
         if(val)
             item.click(on_click);
-        else
-            item.off('click');
     }
     enable(true);
     return {set_state: set_state, enable: enable};
