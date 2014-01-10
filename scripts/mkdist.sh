@@ -79,6 +79,9 @@ for i in $dist_files; do
     cp -pR "$SRC/$i" "$DST/rcloud/$i"
 done
 
+echo $BRANCH > "$DST/rcloud/REVISION"
+echo $REV >> "$DST/rcloud/REVISION"
+
 rm -rf "$DST/tmp"
 
 ( cd "$DST"; tar fcz rcloud-$BRANCH-$REV.tar.gz rcloud pkg.repos )
