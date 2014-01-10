@@ -550,12 +550,19 @@ function dcplot(frame, groupname, definition) {
                         defn['x.units'] = dc.units.fp.precision(group.group.binwidth);
                 }
                 if(!_.has(defn, 'color.domain')) {
+                    var levels;
                     if(one_stack(defn)) {
-                        if(defn['color.x'])
-                            defn['color.domain'] = get_levels(defn.dimension);
+                        if(defn['color.x']) {
+                            levels = get_levels(defn.dimension);
+                            if(levels)
+                                defn['color.domain'] = levels;
+                        }
                     }
-                    else
-                        defn['color.domain'] = get_levels(defn.stack);
+                    else {
+                        levels = get_levels(defn.stack);
+                        if(levels)
+                            defn['color.domain'] = levels;
+                    }
                 }
             },
             line: function() {
