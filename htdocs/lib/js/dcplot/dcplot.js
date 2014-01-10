@@ -351,8 +351,8 @@ function dcplot(frame, groupname, definition) {
     function mhas(obj) {
         for(var i=1; i<arguments.length; ++i)
             if(!_.has(obj, arguments[i]) || obj[arguments[i]] == undefined)
-                return false
-        else obj = obj[arguments[i]];
+                return false;
+            else obj = obj[arguments[i]];
         return true;
     }
 
