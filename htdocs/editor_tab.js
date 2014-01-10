@@ -690,7 +690,7 @@ var editor = function () {
                     ++count;
                 }
                 add.width = function() {
-                    return count*15;
+                    return count*14;
                 };
                 return add;
             };
