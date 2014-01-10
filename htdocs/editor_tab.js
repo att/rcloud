@@ -698,38 +698,28 @@ var editor = function () {
             var always = $('<span/>', {class: 'notebook-commands-right'});
             var add_buttons = adder(always);
             var star_style = _.extend({'font-size': '80%'}, icon_style);
-            if(node.root==='interests') {
-                var unstar = ui_utils.fa_button('icon-star', 'unstar', 'unstar', star_style);
-                unstar.click(function() {
-                    result.star_notebook(false, {gistname: node.gistname, user: node.user});
-                    return false;
-                });
-                unstar.append($('<sub/>').append(num_stars_[node.gistname]));
-                add_buttons(unstar);
-            }
-            else {
-                var states = {true: {class: 'icon-star', title: 'unstar'},
-                              false: {class: 'icon-star-empty', title: 'star'}};
-                var state = i_starred_[node.gistname] || false;
-                var star_unstar = ui_utils.fa_button(states[state].class,
-                                                     function(e) { return states[state].title; },
-                                                     'star',
-                                                     star_style);
-                // sigh, ui_utils.twostate_icon should be a mixin or something
-                // ... why does this code exist?
-                star_unstar.click(function(e) {
-                    e.preventDefault();
-                    e.stopPropagation(); // whatever you do, don't let this event percolate
-                    var new_state = !state;
-                    result.star_notebook(new_state, {gistname: node.gistname, user: node.user});
-                });
-                star_unstar[0].set_state = function(val) {
-                    state = !!val;
-                    $(this).find('i').attr('class', states[state].class);
-                };
-                star_unstar.append($('<sub/>').append(num_stars_[node.gistname]));
-                add_buttons(star_unstar);
-            }
+            var states = {true: {class: 'icon-star', title: 'unstar'},
+                          false: {class: 'icon-star-empty', title: 'star'}};
+            var state = i_starred_[node.gistname] || false;
+            var star_unstar = ui_utils.fa_button(states[state].class,
+                                                 function(e) { return states[state].title; },
+                                                 'star',
+                                                 star_style);
+            // sigh, ui_utils.twostate_icon should be a mixin or something
+            // ... why does this code exist?
+            star_unstar.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation(); // whatever you do, don't let this event percolate
+                var new_state = !state;
+                result.star_notebook(new_state, {gistname: node.gistname, user: node.user});
+            });
+            star_unstar[0].set_state = function(val) {
+                state = !!val;
+                $(this).find('i').attr('class', states[state].class);
+            };
+            star_unstar.append($('<sub/>').append(num_stars_[node.gistname]));
+            add_buttons(star_unstar);
+
             right.append(always);
 
             // commands that appear
