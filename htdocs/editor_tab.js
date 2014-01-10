@@ -798,8 +798,15 @@ var editor = function () {
                 window.open(url, "_blank");
             }
             else {
-                // possibly erase query parameters here, but that requires a reload
-                result.load_notebook(event.node.gistname, event.node.version || null, event.node.root);
+                // workaround: it's weird that a notebook exists in two trees but only one is selected (#220)
+                // and some would like clicking on the active notebook to edit the name (#252)
+                // for now, just select
+                if(event.node.gistname === config_.currbook)
+                    select_node(event.node);
+                else {
+                    // possibly erase query parameters here, but that requires a reload
+                    result.load_notebook(event.node.gistname, event.node.version || null, event.node.root);
+                }
             }
         }
         return false;
