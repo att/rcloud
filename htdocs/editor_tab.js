@@ -587,7 +587,7 @@ var editor = function () {
             $tree_.tree('removeNode', dp);
     }
 
-    function unstar_notebook_view(user, gistname) {
+    function unstar_notebook_view(user, gistname, select) {
         var inter_id = node_id('interests', user, gistname);
         var node = $tree_.tree('getNodeById', inter_id);
         if(!node) {
@@ -600,6 +600,8 @@ var editor = function () {
             $('#curr-star-count').text(num_stars_[gistname]);
         }
         node = $tree_.tree('getNodeById', node_id('alls', user, gistname));
+        if(select)
+            select_node(node);
         var all_star = $(node.element).find('.fontawesome-button.star');
         all_star[0].set_state(false);
         all_star.find('sub').text(num_stars_[gistname]);
@@ -917,6 +919,9 @@ var editor = function () {
             var gistname = opts.gistname
                     || opts.notebook&&opts.notebook.id
                     || config_.currbook;
+            // keep selected if was
+            if(gistname === config_.currbook)
+                opts.selroot = opts.selroot || true;
             if(star) {
                 rcloud.stars.star_notebook(gistname, function(count) {
                     num_stars_[gistname] = count;
@@ -946,7 +951,7 @@ var editor = function () {
                     num_stars_[gistname] = count;
                     remove_interest(user, gistname);
                     that.save_config();
-                    unstar_notebook_view(user, gistname);
+                    unstar_notebook_view(user, gistname, opts.selroot);
                     k && k();
                 });
             }
