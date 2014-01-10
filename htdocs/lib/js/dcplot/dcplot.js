@@ -350,8 +350,8 @@ function dcplot(frame, groupname, definition) {
     // generalization of _.has
     function mhas(obj) {
         for(var i=1; i<arguments.length; ++i)
-            if(!_.has(obj, arguments[i]) || obj[arguments[i]] == undefined)
-                return false
+            if(!_.has(obj, arguments[i]) || !obj[arguments[i]])
+                return false; // not there, undefined, or null
         else obj = obj[arguments[i]];
         return true;
     }
