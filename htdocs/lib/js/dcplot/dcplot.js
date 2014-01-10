@@ -352,7 +352,7 @@ function dcplot(frame, groupname, definition) {
         for(var i=1; i<arguments.length; ++i)
             if(!_.has(obj, arguments[i]) || !obj[arguments[i]])
                 return false; // not there, undefined, or null
-            else obj = obj[arguments[i]];
+        else obj = obj[arguments[i]];
         return true;
     }
 
