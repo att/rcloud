@@ -151,6 +151,8 @@ var editor = function () {
                     return an-bn;
             }
             var lc = alab.localeCompare(blab);
+            if(lc === 0) // make sort stable on gist id (creation time would be better)
+                lc = a.gistname.localeCompare(b.gistname);
             return lc;
         }
     }
@@ -587,7 +589,7 @@ var editor = function () {
             $tree_.tree('removeNode', dp);
     }
 
-    function unstar_notebook_view(user, gistname) {
+    function unstar_notebook_view(user, gistname, select) {
         var inter_id = node_id('interests', user, gistname);
         var node = $tree_.tree('getNodeById', inter_id);
         if(!node) {
@@ -600,6 +602,8 @@ var editor = function () {
             $('#curr-star-count').text(num_stars_[gistname]);
         }
         node = $tree_.tree('getNodeById', node_id('alls', user, gistname));
+        if(select)
+            select_node(node);
         var all_star = $(node.element).find('.fontawesome-button.star');
         all_star[0].set_state(false);
         all_star.find('sub').text(num_stars_[gistname]);
@@ -688,7 +692,7 @@ var editor = function () {
                     ++count;
                 }
                 add.width = function() {
-                    return count*15;
+                    return count*14;
                 };
                 return add;
             };
@@ -696,38 +700,28 @@ var editor = function () {
             var always = $('<span/>', {class: 'notebook-commands-right'});
             var add_buttons = adder(always);
             var star_style = _.extend({'font-size': '80%'}, icon_style);
-            if(node.root==='interests') {
-                var unstar = ui_utils.fa_button('icon-star', 'unstar', 'unstar', star_style);
-                unstar.click(function() {
-                    result.star_notebook(false, {gistname: node.gistname, user: node.user});
-                    return false;
-                });
-                unstar.append($('<sub/>').append(num_stars_[node.gistname]));
-                add_buttons(unstar);
-            }
-            else {
-                var states = {true: {class: 'icon-star', title: 'unstar'},
-                              false: {class: 'icon-star-empty', title: 'star'}};
-                var state = i_starred_[node.gistname] || false;
-                var star_unstar = ui_utils.fa_button(states[state].class,
-                                                     function(e) { return states[state].title; },
-                                                     'star',
-                                                     star_style);
-                // sigh, ui_utils.twostate_icon should be a mixin or something
-                // ... why does this code exist?
-                star_unstar.click(function(e) {
-                    e.preventDefault();
-                    e.stopPropagation(); // whatever you do, don't let this event percolate
-                    var new_state = !state;
-                    result.star_notebook(new_state, {gistname: node.gistname, user: node.user});
-                });
-                star_unstar[0].set_state = function(val) {
-                    state = !!val;
-                    $(this).find('i').attr('class', states[state].class);
-                };
-                star_unstar.append($('<sub/>').append(num_stars_[node.gistname]));
-                add_buttons(star_unstar);
-            }
+            var states = {true: {class: 'icon-star', title: 'unstar'},
+                          false: {class: 'icon-star-empty', title: 'star'}};
+            var state = i_starred_[node.gistname] || false;
+            var star_unstar = ui_utils.fa_button(states[state].class,
+                                                 function(e) { return states[state].title; },
+                                                 'star',
+                                                 star_style);
+            // sigh, ui_utils.twostate_icon should be a mixin or something
+            // ... why does this code exist?
+            star_unstar.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation(); // whatever you do, don't let this event percolate
+                var new_state = !state;
+                result.star_notebook(new_state, {gistname: node.gistname, user: node.user});
+            });
+            star_unstar[0].set_state = function(val) {
+                state = !!val;
+                $(this).find('i').attr('class', states[state].class);
+            };
+            star_unstar.append($('<sub/>').append(num_stars_[node.gistname]));
+            add_buttons(star_unstar);
+
             right.append(always);
 
             // commands that appear
@@ -765,10 +759,12 @@ var editor = function () {
                 });
                 add_buttons(make_private, make_public);
             }
-            if(node.root != 'interests' && node.user===username_) {
+            if(node.user===username_) {
                 var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style);
-                remove.click(function() {
-                    result.remove_notebook(node);
+                remove.click(function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    result.remove_notebook(node.user, node.gistname);
                     return false;
                 });
                 add_buttons(remove);
@@ -796,8 +792,16 @@ var editor = function () {
                 window.open(url, "_blank");
             }
             else {
-                // possibly erase query parameters here, but that requires a reload
-                result.load_notebook(event.node.gistname, event.node.version || null, event.node.root);
+                // workaround: it's weird that a notebook exists in two trees but only one is selected (#220)
+                // and some would like clicking on the active notebook to edit the name (#252)
+                // for now, just select
+                if(event.node.gistname === config_.currbook
+                   && event.node.version == config_.currversion) // nulliness ok here
+                    select_node(event.node);
+                else {
+                    // possibly erase query parameters here, but that requires a reload
+                    result.load_notebook(event.node.gistname, event.node.version || null, event.node.root);
+                }
             }
         }
         return false;
@@ -884,8 +888,8 @@ var editor = function () {
                 k && k();
             });
         },
-        save_config: function() {
-            rcloud.save_user_config(username_, config_);
+        save_config: function(k) {
+            rcloud.save_user_config(username_, config_, k);
         },
         load_notebook: function(gistname, version, selroot) {
             var that = this;
@@ -917,6 +921,9 @@ var editor = function () {
             var gistname = opts.gistname
                     || opts.notebook&&opts.notebook.id
                     || config_.currbook;
+            // keep selected if was
+            if(gistname === config_.currbook)
+                opts.selroot = opts.selroot || true;
             if(star) {
                 rcloud.stars.star_notebook(gistname, function(count) {
                     num_stars_[gistname] = count;
@@ -938,6 +945,9 @@ var editor = function () {
                         that.save_config();
                         update_notebook_view(user, gistname, entry, opts.selroot);
                     }
+                    // this continuation is not strictly correct, because
+                    // the above make asynchronous calls to save_config and perhaps others
+                    // (but we don't use this continuation so: yuk)
                     k && k();
                 });
             }
@@ -945,26 +955,26 @@ var editor = function () {
                 rcloud.stars.unstar_notebook(gistname, function(count) {
                     num_stars_[gistname] = count;
                     remove_interest(user, gistname);
-                    that.save_config();
-                    unstar_notebook_view(user, gistname);
-                    k && k();
+                    that.save_config(function() {
+                        unstar_notebook_view(user, gistname, opts.selroot);
+                        k && k();
+                    });
                 });
             }
         },
-        remove_notebook: function(node) {
+        remove_notebook: function(user, gistname) {
             var that = this;
-            var k = function() {
-                remove_node(node);
-                if(node.gistname === config_.currbook)
+            function do_rest() {
+                remove_all(user, gistname);
+                remove_node($tree_.tree('getNodeById', node_id('alls', user, gistname)));
+                result.save_config();
+                if(gistname === config_.currbook)
                     that.new_notebook();
             };
-            remove_all(node.user, node.gistname);
-            if(i_starred_[node.gistname])
-                this.star_notebook(false, {user: node.user, gistname: node.gistname}, k);
-            else {
-                result.save_config();
-                k();
-            }
+            if(i_starred_[gistname])
+                this.star_notebook(false, {user: user, gistname: gistname}, do_rest);
+            else
+                do_rest();
         },
         set_visibility: function(node, visibility) {
             if(node.user !== username_)

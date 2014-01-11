@@ -9,6 +9,11 @@
   `Exec.anon.user` configuration is set and anonymous users
   will switch to that account.
 
+* There is now a deployment script `scripts/mkdist.sh` which
+  takes the current checkout, computes and downloads all dependency
+  packages and creates a distribution tar ball containing a repository
+  of dependend packages and the RCloud distribution.
+
 * Feature: `notebook.R` HTTP entry point added. It uses `path.info` to
   match a notebook name and (optionally) a file within the
   notebook. Possible uses:
