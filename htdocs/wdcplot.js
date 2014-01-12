@@ -209,7 +209,7 @@ var wdcplot = (function() {
     }
 
     function constant_fn(arg) {
-        return function (a) { return arg; }
+        return function (a) { return arg; };
     }
 
     // are these recursive or is this top-level catch enough?
