@@ -99,17 +99,17 @@ var wdcplot = (function() {
         return op(frame, sexp, ctx);
     }
 
-    function is_r_class(sexp) {
-        return sexp.r_attributes && sexp.r_attributes.class;
+    function is_wdcplot_placeholder(sexp) {
+        return sexp.r_attributes && sexp.r_attributes['wdcplot.placeholder'];
     }
 
     function special_function(sexp) {
-        return is_r_class(sexp) && sexp.r_attributes.class === 'wdcplot.special'
+        return is_wdcplot_placeholder(sexp) && sexp.r_attributes['wdcplot.placeholder'] === 'special'
             ? sexp[0] : undefined;
     }
 
     function dataframe_column(sexp) {
-        return is_r_class(sexp) && sexp.r_attributes.class === 'dataframe.column'
+        return is_wdcplot_placeholder(sexp) && sexp.r_attributes['wdcplot.placeholder'] === 'column'
             ? sexp[0] : undefined;
     }
 
@@ -157,7 +157,7 @@ var wdcplot = (function() {
 
     function expression(frame, sexp, ctx) {
         // not dealing with cases where r classes are not terminals yet
-        if($.isArray(sexp) && !is_r_class(sexp))
+        if($.isArray(sexp) && !is_wdcplot_placeholder(sexp))
             return node(frame, sexp, ctx);
         else
             return leaf(frame, sexp, ctx);
