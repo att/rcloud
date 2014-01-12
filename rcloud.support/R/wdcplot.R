@@ -1,3 +1,6 @@
+wdcplot.special.variable <- function(name) structure(name, wdcplot.placeholder = "special")
+wdcplot.column <- function(name) structure(name, wdcplot.placeholder = "column")
+
 wdcplot <- function(data, dims=NULL, groups=NULL, charts=NULL)
 {
 
@@ -6,11 +9,11 @@ wdcplot <- function(data, dims=NULL, groups=NULL, charts=NULL)
                                    paste(readLines(path), collapse='\n'))
 
   # make a pseudo-environment which maps columns and special variables to placeholders
-  specials <- list(..index.. = structure('index', class = "wdcplot.special"),
-                   ..value.. = structure('value', class = "wdcplot.special"),
-                   ..selected.. = structure('selected', class = "wdcplot.special"),
-                   ..key.. = structure('key', class = 'wdcplot.special'))
-  cols2placeholders <- Map(function(n) { structure(n, class = "dataframe.column") }, names(data))
+  specials <- list(..index.. = wdcplot.special.variable('index'),
+                   ..value.. = wdcplot.special.variable('value'),
+                   ..selected.. = wdcplot.special.variable('selected'),
+                   ..key.. = wdcplot.special.variable('key'))
+  cols2placeholders <- Map(wdcplot.column, names(data))
   looksee <- list2env(c(cols2placeholders, specials))
 
   # substitute in this order:

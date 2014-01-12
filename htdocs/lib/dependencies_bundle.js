@@ -45268,9 +45268,9 @@ function dcplot(frame, groupname, definition) {
     // generalization of _.has
     function mhas(obj) {
         for(var i=1; i<arguments.length; ++i)
-            if(!_.has(obj, arguments[i]))
-                return false
-        else obj = obj[arguments[i]];
+            if(!_.has(obj, arguments[i]) || obj[arguments[i]] == undefined)
+                return false;
+            else obj = obj[arguments[i]];
         return true;
     }
 
@@ -45468,12 +45468,19 @@ function dcplot(frame, groupname, definition) {
                         defn['x.units'] = dc.units.fp.precision(group.group.binwidth);
                 }
                 if(!_.has(defn, 'color.domain')) {
+                    var levels;
                     if(one_stack(defn)) {
-                        if(defn['color.x'])
-                            defn['color.domain'] = get_levels(defn.dimension);
+                        if(defn['color.x']) {
+                            levels = get_levels(defn.dimension);
+                            if(levels)
+                                defn['color.domain'] = levels;
+                        }
                     }
-                    else
-                        defn['color.domain'] = get_levels(defn.stack);
+                    else {
+                        levels = get_levels(defn.stack);
+                        if(levels)
+                            defn['color.domain'] = levels;
+                    }
                 }
             },
             line: function() {
@@ -45766,22 +45773,6 @@ function dcplot(frame, groupname, definition) {
                                         return stack + ", " + d3.select(this).text();
                                     });
                             });
-                        /*
-                        // Hack for coloring stacked bar charts
-                        var stacks = chart.selectAll("g."+dc.constants.STACK_CLASS).selectAll("rect.bar");
-                        var stackstitles = chart.selectAll("g."+dc.constants.STACK_CLASS).selectAll("rect.bar title");
-                        for (var i = 0; i<stacks.length; i++) {
-                            for(var j = 0; j<stacks[i].length; j++) {
-                                // Avoid coloring deselected elements
-                                if(stacks[i][j].classList.contains(dc.constants.DESELECTED_CLASS))
-                                    stacks[i][j].removeAttribute('style');
-                                else stacks[i][j].setAttribute('style', 'fill: '+chart.colors()(i));
-                                // Add stack name to title/mouseover
-                                stackstitles[i][j].childNodes[0].nodeValue =
-                                    defn['stack.levels'][i] + ", " + stackstitles[i][j].childNodes[0].nodeValue;
-                            }
-                         }
-                         */
                     });
                 }
 

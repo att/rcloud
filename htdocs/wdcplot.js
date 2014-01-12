@@ -44,10 +44,7 @@ var wdcplot = (function() {
         "+": una_or_bin_op('+'),
         "*": bin_op('*'),
         "/": bin_op('/'),
-        "^": bin_op_fun(function(left, right) {
-            return "Math.pow(" + left + ", " + right + ")";
-        }),
-        "**": bin_op_fun(function(left, right) {
+        "^": bin_op_fun(function(left, right) { // note: ** gets converted to ^
             return "Math.pow(" + left + ", " + right + ")";
         }),
         "c" : function(frame, args, ctx) {
@@ -61,12 +58,14 @@ var wdcplot = (function() {
             return {lambda: ray.lambda || sub.lambda,
                     text: ray.text + '[' + sub.text + ']'};
         },
-        default: function(frame, args, ctx) { // function call operator()
+        default: function(frame, args, ctx) { // parens or function application
             var fun = expression(frame, args[0], ctx),
-                call = _.foldl(args.slice(1), function(mem) {
-                    var arg = expression(frame, arg, ctx);
-                    return {lambda: mem.lambda || arg.lambda, text: mem.text + ', ' + arg.text};
-                }, {lambda: fun.lambda, text: fun.text + '('});
+                memo = {lambda: fun.lambda, text: (fun.text==='(' ? '' : fun.text) + '('};
+            var call = _.foldl(args.slice(1), function(mem, arg, i) {
+                var expr = expression(frame, arg, ctx),
+                    comma = i>0 ? ', ' : '';
+                return {lambda: mem.lambda || expr.lambda, text: mem.text + comma + expr.text};
+            }, memo);
             call.text += ')';
             return call;
         }
@@ -100,17 +99,17 @@ var wdcplot = (function() {
         return op(frame, sexp, ctx);
     }
 
-    function is_r_class(sexp) {
-        return sexp.r_attributes && sexp.r_attributes.class;
+    function is_wdcplot_placeholder(sexp) {
+        return sexp.r_attributes && sexp.r_attributes['wdcplot.placeholder'];
     }
 
     function special_function(sexp) {
-        return is_r_class(sexp) && sexp.r_attributes.class === 'wdcplot.special'
+        return is_wdcplot_placeholder(sexp) && sexp.r_attributes['wdcplot.placeholder'] === 'special'
             ? sexp[0] : undefined;
     }
 
     function dataframe_column(sexp) {
-        return is_r_class(sexp) && sexp.r_attributes.class === 'dataframe.column'
+        return is_wdcplot_placeholder(sexp) && sexp.r_attributes['wdcplot.placeholder'] === 'column'
             ? sexp[0] : undefined;
     }
 
@@ -158,7 +157,7 @@ var wdcplot = (function() {
 
     function expression(frame, sexp, ctx) {
         // not dealing with cases where r classes are not terminals yet
-        if($.isArray(sexp) && !is_r_class(sexp))
+        if($.isArray(sexp) && !is_wdcplot_placeholder(sexp))
             return node(frame, sexp, ctx);
         else
             return leaf(frame, sexp, ctx);
