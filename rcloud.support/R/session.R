@@ -1,4 +1,5 @@
 .session <- new.env(parent=emptyenv())
+.session$device.pixel.ratio <- 1
 
 ################################################################################
 ## evaluation of R code
@@ -27,6 +28,10 @@ rcloud.unauthenticated.session.cell.eval <- function(partname, language, silent)
 rcloud.session.cell.eval <- function(partname, language, silent) {
   command <- rcloud.get.gist.part(partname)
   session.markdown.eval(command, language, silent)
+}
+
+rcloud.set.device.pixel.ratio <- function(ratio) {
+  .session$device.pixel.ratio <- ratio
 }
 
 session.markdown.eval <- function(command, language, silent) {
