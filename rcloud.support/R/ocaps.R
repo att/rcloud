@@ -82,7 +82,10 @@ unauthenticated.ocaps <- function()
         get_my_starred_notebooks = make.oc(rcloud.get.my.starred.notebooks)
         ),
 
-      session_cell_eval = make.oc(rcloud.unauthenticated.session.cell.eval)
+      session_cell_eval = make.oc(rcloud.unauthenticated.session.cell.eval),
+
+      # display info
+      set_device_pixel_ratio = make.oc(rcloud.set.device.pixel.ratio)
       )
     )
 }
