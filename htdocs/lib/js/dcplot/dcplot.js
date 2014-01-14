@@ -816,7 +816,7 @@ function dcplot(frame, groupname, definition) {
                 if(_.has(defn, 'wedge'))
                     chart.keyAccessor(key_value(defn.wedge));
                 if(_.has(defn, 'size'))
-                    chart.keyAccessor(key_value(defn.size));
+                    chart.valueAccessor(key_value(defn.size));
 
                 if(_.has(defn, 'radius'))
                     chart.radius(defn.radius);
