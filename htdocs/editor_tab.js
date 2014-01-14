@@ -1030,9 +1030,20 @@ var editor = function () {
                 if(is_change && shell.is_old_github())
                     history.unshift({version:'blah'});
 
-                // could double-check star here
-                update_notebook_from_gist(result, history, selroot);
-                that.update_notebook_file_list(result.files);
+                // check star count if we don't have it in the cache
+                // could always double check here but the thought is that it won't
+                // be terribly out of date
+                var update = function() {
+                    update_notebook_from_gist(result, history, selroot);
+                    that.update_notebook_file_list(result.files);
+                };
+                if(!_.has(num_stars_, result.id))
+                    rcloud.stars.get_notebook_star_count(result.id, function(count) {
+                        num_stars_[result.id] = count;
+                        update();
+                    });
+                else
+                    update();
                 rcloud.get_all_comments(result.id, function(data) {
                     populate_comments(data);
                 });
