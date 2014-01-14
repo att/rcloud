@@ -168,6 +168,11 @@ RCloud.create = function(rcloud_ocaps) {
             k = k || _.identity;
             rcloud_ocaps.reset_session(k);
         };
+
+        rcloud.display = {};
+        rcloud.display.set_device_pixel_ratio = function(k) {
+            rcloud_ocaps.set_device_pixel_ratio(window.devicePixelRatio, k || _.identity);
+        };
     }
 
     function setup_authenticated_ocaps() {

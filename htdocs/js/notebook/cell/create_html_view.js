@@ -168,9 +168,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             }
 
             // fix image width so that retina displays are set correctly
-            // FIXME currently assumes that all plots are 72 dpi x 7 inches (which is bad)
             inner_div.find("img")
-                .attr("width", "504px");
+                .each(function(i, img) { img.style.width = img.width / window.devicePixelRatio; });
 
             // capture deferred knitr results
             inner_div.find("pre code")

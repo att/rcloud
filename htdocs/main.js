@@ -121,6 +121,7 @@ function main_init() {
             rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {
                 rclient.post_response(hello);
             });
+            rcloud.display.set_device_pixel_ratio();
 
             $("#new-md-cell-button").click(function() {
                 shell.new_markdown_cell("", "markdown");
