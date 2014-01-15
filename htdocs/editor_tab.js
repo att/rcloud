@@ -359,7 +359,7 @@ var editor = function () {
             if(last_chance)
                 last_chance(node); // hacky
             var dp = node.parent;
-            if(dp===parent && node.label===data.label)
+            if(dp===parent && node.name===data.label)
                 $tree_.tree('updateNode', node, data);
             else {
                 $tree_.tree('removeNode', node);
