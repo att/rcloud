@@ -22,24 +22,25 @@ RClient = {
         // this might be called multiple times; some conditions result
         // in on_error and on_close both being called.
         function shutdown() {
-            $("#input-div").hide();
+            if (!clean) {
+                $("#input-div").hide();
+            }
             if (!rserve.closed)
                 rserve.close();
         }
 
         function on_error(msg, status_code) {
-            if (opts.on_error) {
-                var result = opts.on_error(msg, status_code);
-                if (result === true)
-                    return;
-            }
+            if (opts.on_error && opts.on_error(msg, status_code))
+                return;
             result.post_error(result.disconnection_error(msg));
             shutdown();
         }
 
         function on_close(msg) {
-            result.post_error(result.disconnection_error("Socket was closed. Goodbye!"));
-            shutdown();
+            if (!clean) {
+                result.post_error(result.disconnection_error("Socket was closed. Goodbye!"));
+                shutdown();
+            }
         };
 
         var token = $.cookies.get().token;  // document access token
@@ -53,9 +54,11 @@ RClient = {
         });
 
         var result;
+        var clean = false;
 
         result = {
             _rserve: rserve,
+            host: opts.host,
             running: false,
            
             //////////////////////////////////////////////////////////////////
@@ -63,7 +66,13 @@ RClient = {
             // the notebook objects.
 
             string_error: function(msg) {
-                return $("<div class='alert alert-danger'></div>").text(msg);
+                var button = $("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>");
+                var result = $("<div class='alert alert-danger alert-dismissable'></div>");
+                var text = $("<span></span>");
+                result.append(button);
+                result.append(text);
+                text.text(msg);
+                return result;
             },
 
             disconnection_error: function(msg) {
@@ -95,6 +104,11 @@ RClient = {
                 var d = $("<pre></pre>").html(msg);
                 $("#output").append(d);
                 window.scrollTo(0, document.body.scrollHeight);
+            },
+
+            close: function() {
+                clean = true;
+                shutdown();
             }
         };
         return result;

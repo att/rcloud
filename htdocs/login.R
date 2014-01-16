@@ -49,7 +49,7 @@ run <- function(url, query, body, headers)
   list(paste("<html><head><meta http-equiv='refresh' content='0;URL=\"",rcloud.support:::.rc.conf$github.base.url,
              "login/oauth/authorize?client_id=", rcloud.support:::.rc.conf$github.client.id, 
              "&state=",URLencode(toJSON(state)),
-             "&scope=gist,user",
+             "&scope=gist,user:email",
              "\"'></head></html>", sep=''),
        "text/html", extra.headers)
 }

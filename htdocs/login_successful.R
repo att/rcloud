@@ -1,6 +1,7 @@
 require(rcloud.support)
 require(httr)
 require(rjson)
+require(github)
 
 run <- function(url, query, body, headers)
 {
@@ -16,13 +17,13 @@ run <- function(url, query, body, headers)
     print(content(result))
   }
   token <- content(result)$access_token
-  result <- create.github.context(rcloud.config("github.api.url"),
-                                  rcloud.config("github.client.id"),
-                                  rcloud.config("github.client.secret"),
-                                  token)
-  ctx <- result
+  ctx <- create.github.context(rcloud.config("github.api.url"),
+                               rcloud.config("github.client.id"),
+                               rcloud.config("github.client.secret"),
+                               token)
 
   if (!is.character(ret <- state$redirect) || !length(ret) || !nzchar(ret[1L])) ret <- '/main.html'
+  
   if (rcloud.debug.level()) cat("context: ", ctx$user$login, token, "\n")
   rcloud.support:::set.token(ctx$user$login, token)
   list(paste("<html><head></head><body>",

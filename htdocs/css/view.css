@@ -162,6 +162,26 @@ rect.frame {
     color: blue;
 }
 
+.navbar-brand {
+    font-size: 20px;
+}
+
+.navbar-nav {
+    font-size: 13px;
+}
+
+.navbar .btn-link {
+    color: #ddd;
+    font-size: 120%;
+    margin-top: .65em;
+    text-decoration: none;
+}
+
+a.unclickable {
+    pointer-events: none;
+    cursor: default;
+}
+
 /* .markdown-div { */
 /*     background-color: red; */
 /* } */
