@@ -7450,7 +7450,6 @@ jQuery.each({
 
 	if ( !rmargin.test( prefix ) ) {
 		jQuery.cssHooks[ prefix + suffix ].set = setPositiveNumber;
-<<<<<<< HEAD
 	}
 });
 var r20 = /%20/g,
@@ -7504,60 +7503,8 @@ jQuery.param = function( a, traditional ) {
 	// Set traditional to true for jQuery <= 1.3.2 behavior.
 	if ( traditional === undefined ) {
 		traditional = jQuery.ajaxSettings && jQuery.ajaxSettings.traditional;
-=======
->>>>>>> release/0.9
 	}
 
-<<<<<<< HEAD
-=======
-jQuery.fn.extend({
-	serialize: function() {
-		return jQuery.param( this.serializeArray() );
-	},
-	serializeArray: function() {
-		return this.map(function(){
-			// Can add propHook for "elements" to filter or add form elements
-			var elements = jQuery.prop( this, "elements" );
-			return elements ? jQuery.makeArray( elements ) : this;
-		})
-		.filter(function(){
-			var type = this.type;
-			// Use .is(":disabled") so that fieldset[disabled] works
-			return this.name && !jQuery( this ).is( ":disabled" ) &&
-				rsubmittable.test( this.nodeName ) && !rsubmitterTypes.test( type ) &&
-				( this.checked || !manipulation_rcheckableType.test( type ) );
-		})
-		.map(function( i, elem ){
-			var val = jQuery( this ).val();
-
-			return val == null ?
-				null :
-				jQuery.isArray( val ) ?
-					jQuery.map( val, function( val ){
-						return { name: elem.name, value: val.replace( rCRLF, "\r\n" ) };
-					}) :
-					{ name: elem.name, value: val.replace( rCRLF, "\r\n" ) };
-		}).get();
-	}
-});
-
-//Serialize an array of form elements or a set of
-//key/values into a query string
-jQuery.param = function( a, traditional ) {
-	var prefix,
-		s = [],
-		add = function( key, value ) {
-			// If value is a function, invoke it and return its value
-			value = jQuery.isFunction( value ) ? value() : ( value == null ? "" : value );
-			s[ s.length ] = encodeURIComponent( key ) + "=" + encodeURIComponent( value );
-		};
-
-	// Set traditional to true for jQuery <= 1.3.2 behavior.
-	if ( traditional === undefined ) {
-		traditional = jQuery.ajaxSettings && jQuery.ajaxSettings.traditional;
-	}
-
->>>>>>> release/0.9
 	// If an array was passed in, assume that it is an array of form elements.
 	if ( jQuery.isArray( a ) || ( a.jquery && !jQuery.isPlainObject( a ) ) ) {
 		// Serialize the form elements
