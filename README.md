@@ -1,20 +1,31 @@
-# Getting it to work
+# RCloud, an HTML5 frontend for collaborative data analysis in R
 
-## Installation requirements
+RCloud is an environment for collaboratively creating and sharing data
+analysis scripts in R. Much like [Sage](http://www.sagemath.org/),
+[iPython notebooks](http://ipython.org/ipython-doc/stable/interactive/notebook.html)
+and [Mathematica](http://www.wolfram.com/mathematica/), RCloud
+provides a notebook interface that lets you easily record a session
+and annotate it with text, equations, and supporting images.
 
-Forgive us for the current mess. This is temporary.
+Unlike these other systems, RCloud:
 
-Please use R 3.0.0 or later. It'll make your life easier, we promise.
+* lets you easily browse other users's notebooks, comment on
+  notebooks, fork notebooks, star notebooks, and use them as function
+  calls in your own notebooks.
 
-As for library dependencies - you will need several headers and libraries to compile dependent
-R packages (as well as R) -- on Debian/Ubuntu, you can use
+* provides an environment in which R packages can create rich HTML
+  content (using, for example, [d3](http://d3js.org) and
+  [dc.js](http://nickqizhu.github.io/dc.js/)).
 
-    $ sudo apt-get install libxt-dev libcurl4-openssl-dev libcairo2-dev libreadline-dev
+* provides a transparent, integrated version control system. In
+  essence, RCloud never forgets what you did. If you need low-level
+  access to RCloud notebooks, you can simply clone the associated git
+  repository. This is because RCloud notebooks are
+  [Github gists](https://gist.github.com)
 
-to install the dependencies (also `git`, if you don't have it already).
-If you are using other Linux systems, the names may vary.
-On Mac OS X all packages should be available in binary form so no dependencies should be needed
-(other than Xcode Command Line tools).
+Interested? Read on.
+
+# Setting up RCloud
 
 ### Checking out the code
 
@@ -31,11 +42,24 @@ Or, if you already have an RCloud source tree, run
 
 to just get the dependencies.
 
+## Installation requirements
+
+Please use R 3.0.0 or later. It'll make your life easier, we promise.
+
+You will need several headers and libraries to compile dependent
+R packages (as well as R) -- on Debian/Ubuntu, you can use
+
+    $ sudo apt-get install libxt-dev libcurl4-openssl-dev libcairo2-dev libreadline-dev git
+
+to install the dependencies.
+If you are using other Linux systems, the names may vary.
+On Mac OS X all packages should be available in binary form so no dependencies should be needed
+(other than Xcode Command Line tools).
 
 ### Packages
 
-RCloud provides the `rcloud.support` which contains supporting code but also authmated installation.
-In R type:
+RCloud provides the `rcloud.support` package which contains supporting
+code but also automated installation.  In R type:
 
     install.packages("rcloud.support", repos=c("http://RForge.net",
                      "http://R.research.att.com"), type="source")
@@ -47,9 +71,10 @@ start of RCloud. You can also install them by hand by running
 
      rcloud.support:::check.installation()
 
-Add `force.all=TRUE` argument to reinstall all packages - always try that
-when you encounter issues. It is useful for keeping up with the development
-as we don't always bump the versions.
+Add `force.all=TRUE` argument to reinstall all packages - always try
+that when you encounter issues. It is useful for keeping up with the
+development on the `develop` branch as we don't always bump the
+versions.
 
 ### Github authentication
 
@@ -62,7 +87,7 @@ github application will need to point to the location you will deploy
 RCloud (let's assume you're only testing it for now, so 127.0.0.1
 works). In that case, your application's URL will most likely be
 `http://127.0.0.1:8080`, and your Callback URL *must* be
-`http://127.0.0.1:8080/login_successful.R`. (the host and port needs
+`http://127.0.0.1:8080/login_successful.R`. (the host and port need
 to match the application URL, and the path must be `login_successful.R`).
 
 Then, you need to create a file under your configuration root
@@ -75,21 +100,23 @@ If you're using github.com, then your file will look like this:
     github.client.secret: your.40.character.client.secret
     github.base.url: https://github.com/
     github.api.url: https://api.github.com/
+    github.gist.url: https://gist.github.com/
 
-The third and fourth lines are the base URL of the github website and
-the entry point for the github API (these might differ in
-[Enterprise Github](http://enterprise.github.com) deployments -
-they are optional if you use the public GitHub). On Enterprise Github
-deployments, you'll need to include a line pointing to the gist URLs
-as well, which we occasionally need to use in RCloud. It will look
-something like this:
+The last three lines are the base URL of the github website,
+the entry point for the github API and the entry point for gists.
 
-    github.gist.url: https://yourenterprisegithub.corporate.com/gist/
+#### Enterprise Github deployment
+
+If you have an enterprise github deployment where the gists URL
+ends with `/gist` instead of beginning with `gist.`, you
+may need to omit `github.gist.url`.
 
 If you'd like to control which Github users are allowed to log in to
 your RCloud deployment, you can add a whitelist to your configuration:
 
     github.user.whitelist: user1,user2,user3,etc
+
+#### hostnames
 
 If your computer doesn't resolve its hostname to what you will be using,
 (let's say `127.0.0.1`) you may also want to add:
@@ -106,7 +133,7 @@ be hacking the code, you'll need to install a recent version of
 [node.js](http://nodejs.org). Then, in your shell:
 
     $ cd rcloud/htdocs/js
-	$ npm install	
+	$ npm install
 
 This will install the node.js dependencies necessary to create the
 minified javascript files used in Rcloud.
