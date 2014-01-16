@@ -289,8 +289,8 @@ var editor = function () {
                 var all_notebooks = _.keys(all_entries_);
                 rcloud.stars.get_multiple_notebook_star_counts(all_notebooks, function(counts) {
                     num_stars_ = counts;
+                    k && k(my_config, root_data);
                 });
-                k && k(my_config, root_data);
             });
         });
     }
