@@ -11205,6 +11205,9 @@ limitations under the License.
 
     JqTreeWidget.prototype._loadData = function(data, parent_node) {
       var n, selected_nodes_under_parent, _i, _len;
+      if (!data) {
+        return;
+      }
       this._triggerEvent('tree.load_data', {
         tree_data: data
       });
@@ -11654,7 +11657,8 @@ limitations under the License.
         } else if (click_target.type === 'label') {
           node = click_target.node;
           event = this._triggerEvent('tree.click', {
-            node: node
+            node: node,
+            click_event: e
           });
           if (!event.isDefaultPrevented()) {
             return this._selectNode(node, true);
@@ -11668,7 +11672,8 @@ limitations under the License.
       click_target = this._getClickTarget(e.target);
       if (click_target && click_target.type === 'label') {
         return this._triggerEvent('tree.dblclick', {
-          node: click_target.node
+          node: click_target.node,
+          click_event: e
         });
       }
     };
@@ -12233,7 +12238,7 @@ limitations under the License.
         include_children = false;
       }
       if (!node.id) {
-        if (node.element === this.selected_single_node.element) {
+        if (this.selected_single_node && node.element === this.selected_single_node.element) {
           return this.selected_single_node = null;
         }
       } else {
@@ -12419,6 +12424,7 @@ limitations under the License.
           return _this.updateDropHint();
         });
       };
+      this.stopOpenFolderTimer();
       return this.open_folder_timer = setTimeout(openFolder, 500);
     };
 
@@ -12486,7 +12492,7 @@ limitations under the License.
         _this = this;
       is_first_node = true;
       _iterateNode = function(node, next_node) {
-        var $element, child, children_length, i, must_iterate_inside, _i, _len, _ref3;
+        var $element, child, children_length, i, must_iterate_inside, _i, _len, _ref3, _results;
         must_iterate_inside = (node.is_open || !node.element) && node.hasChildren();
         if (node.element) {
           $element = $(node.element);
@@ -12510,17 +12516,16 @@ limitations under the License.
         if (must_iterate_inside) {
           children_length = node.children.length;
           _ref3 = node.children;
+          _results = [];
           for (i = _i = 0, _len = _ref3.length; _i < _len; i = ++_i) {
             child = _ref3[i];
             if (i === (children_length - 1)) {
-              _iterateNode(node.children[i], null);
+              _results.push(_iterateNode(node.children[i], null));
             } else {
-              _iterateNode(node.children[i], node.children[i + 1]);
+              _results.push(_iterateNode(node.children[i], node.children[i + 1]));
             }
           }
-          if (node.is_open) {
-            return _this.handleAfterOpenFolder(node, next_node, $element);
-          }
+          return _results;
         }
       };
       return _iterateNode(this.tree, null);
@@ -12531,8 +12536,6 @@ limitations under the License.
     VisibleNodeIterator.prototype.handleOpenFolder = function(node, $element) {};
 
     VisibleNodeIterator.prototype.handleClosedFolder = function(node, next_node, $element) {};
-
-    VisibleNodeIterator.prototype.handleAfterOpenFolder = function(node, next_node, $element) {};
 
     VisibleNodeIterator.prototype.handleFirstNode = function(node, $element) {};
 
@@ -12604,14 +12607,6 @@ limitations under the License.
         if (next_node !== this.current_node) {
           return this.addPosition(node, Position.AFTER, top);
         }
-      }
-    };
-
-    HitAreasGenerator.prototype.handleAfterOpenFolder = function(node, next_node, $element) {
-      if (node === this.current_node || next_node === this.current_node) {
-        return this.addPosition(node, Position.NONE, this.last_top);
-      } else {
-        return this.addPosition(node, Position.AFTER, this.last_top);
       }
     };
 
@@ -12761,17 +12756,26 @@ limitations under the License.
       var $scroll_parent, getParentWithOverflow, setDocumentAsScrollParent,
         _this = this;
       getParentWithOverflow = function() {
-        var css_value, css_values, parent, scroll_parent, _i, _j, _len, _len1, _ref3, _ref4;
+        var css_values, el, hasOverFlow, _i, _len, _ref3;
         css_values = ['overflow', 'overflow-y'];
-        scroll_parent = null;
+        hasOverFlow = function(el) {
+          var css_value, _i, _len, _ref3;
+          for (_i = 0, _len = css_values.length; _i < _len; _i++) {
+            css_value = css_values[_i];
+            if ((_ref3 = $.css(el, css_value)) === 'auto' || _ref3 === 'scroll') {
+              return true;
+            }
+          }
+          return false;
+        };
+        if (hasOverFlow(_this.tree_widget.$el[0])) {
+          return _this.tree_widget.$el;
+        }
         _ref3 = _this.tree_widget.$el.parents();
         for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
-          parent = _ref3[_i];
-          for (_j = 0, _len1 = css_values.length; _j < _len1; _j++) {
-            css_value = css_values[_j];
-            if ((_ref4 = $.css(parent, css_value)) === 'auto' || _ref4 === 'scroll') {
-              return $(parent);
-            }
+          el = _ref3[_i];
+          if (hasOverFlow(el)) {
+            return $(el);
           }
         }
         return null;
@@ -43184,7 +43188,8 @@ dc.pieChart = function (parent, chartGroup) {
     };
 
     function calculateDataPie() {
-        return d3.layout.pie().sort(null).value(function (d) {
+
+        return d3.layout.pie().sort(function(a, b) { return _chart.ordering()(b) - _chart.ordering()(a); }).value(function (d) {
             return _chart.valueAccessor()(d);
         });
     }
@@ -43717,7 +43722,6 @@ dc.dataTable = function(parent, chartGroup) {
         return d3.nest()
             .key(_chart.group())
             .sortKeys(_order)
-            .sortValues(_order)
             .entries(_sort(entries, 0, entries.length));
     }
 
@@ -44940,16 +44944,47 @@ var group = {
 // and pass it the functions it composes to call the true accessor
 var reduce = {
     count: function(group) { return group.reduceCount(); },
-    sum: function(access) {
+    countFilter: function(access, level) {
+        return reduce.sum(function (a) {
+            return (access(a) == level) ? 1 : 0;
+        });
+    },
+    filter: function(reduce, access, level) {
+        function wrapper(acc) {
+            return function (a) {
+                return (access(a) == level) ? acc(a) : 0;
+            };
+        }
+        return {
+            arg: reduce.arg,
+            fun: function(acc) { return reduce.fun(wrapper(acc)); }
+        };
+    },
+    sum: function(access, wacc) {
         return {
             arg: access,
             fun: function(acc2) {
-                return function(group) {
-                    return group.reduceSum(
-                        function(item) {
-                            return acc2(item);
-                        }
-                    );
+                if(wacc == undefined)
+                    return function(group) {
+                        return group.reduceSum(
+                            function(item) {
+                                return acc2(item);
+                            }
+                        );
+                    };
+                else return function(group) {
+                    return group.reduce(
+                        function(p, v) {
+                            p.sum += (acc2(v)*wacc(v));
+                            return p;
+                        },
+                        function(p, v) {
+                            p.sum -= (acc2(v)*wacc(v));
+                            return p;
+                        },
+                        function(p, v) {
+                            return {sum: 0, valueOf: function() { return this.sum; }};
+                        });
                 };
             }
         };
@@ -44973,11 +45008,11 @@ var reduce = {
             }
         };
     },
-    avg: function(access) {
+    avg: function(access, wacc) {
         return {
             arg: access,
             fun: function(acc2) {
-                return function(group) {
+                if(wacc == undefined) return function(group) {
                     return group.reduce(
                         function(p, v) {
                             ++p.count;
@@ -44995,6 +45030,24 @@ var reduce = {
                             return {count: 0, sum: 0, avg: 0, valueOf: function() { return this.avg; }};
                         });
                 };
+                else return function(group) {
+                    return group.reduce(
+                        function(p, v) {
+                            p.count += wacc(v);
+                            p.sum += (acc2(v)*wacc(v));
+                            p.avg = p.sum / p.count;
+                            return p;
+                        },
+                        function(p, v) {
+                            p.count -= wacc(v);
+                            p.sum -= (acc2(v)*wacc(v));
+                            p.avg = p.count ? p.sum / p.count : 0;
+                            return p;
+                        },
+                        function(p, v) {
+                            return {count: 0, sum: 0, avg: 0, valueOf: function() { return this.avg; }};
+                        });
+                };
             }
         };
     },
@@ -45005,11 +45058,14 @@ var reduce = {
     }
 };
 
-/* forgive me for overengineering this a little bit
+/*
+ many stages of filling in the blanks for dimensions, groups, and charts
 
- 1. generate a complete definition by using defaults and inference
- 2. check for required and unknown attributes
- 3. generate the dimensions, groups, and charts
+ 1. fill in defaults for missing attributes
+ 2. infer other missing attributes from what's there
+ 3. check for required and unknown attributes
+ 4. check for logical errors
+ 5. finally, generate
 
  */
 
@@ -45040,11 +45096,12 @@ var chart_attrs = {
     },
     stackable: {
         supported: true,
-        stack: {required: false}
+        stack: {required: false},
+        'stack.levels': {required: false}
     },
     coordinateGrid: {
         supported: true,
-        parents: ['base'],
+        parents: ['base', 'color'],
         margins: {required: false},
         x: {required: false}, // keyAccessor
         y: {required: false}, // valueAccessor
@@ -45083,10 +45140,11 @@ var chart_attrs = {
         supported: true,
         concrete: true,
         parents: ['coordinateGrid', 'stackable'],
-        width: {default: 800},
+        width: {default: 700},
         height: {default: 250},
         centerBar: {required: false},
         gap: {required: false},
+        'color.x': {default: true}, // color bars individually when not stacked
         'x.units': {required: true} // the most horrible thing EVER
     },
     line: {
@@ -45128,8 +45186,13 @@ var chart_attrs = {
     dataCount: {
         supported: false
     },
-    dataTableWidget: {
-        supported: false
+    dataTable: {
+        supported: true,
+        concrete: true,
+        parents: ['base'],
+        columns: {required: true},
+        size: {required: false},
+        sortBy: {required: false}
     }
 };
 
@@ -45137,23 +45200,23 @@ function skip_attr(a) {
     return a==='supported' || a=='concrete' || a==='parents';
 }
 
-function preorder_traversal(map, iter, callbacks) {
+function parents_first_traversal(map, iter, callbacks) {
     if(!(iter in map))
         throw 'unknown chart type ' + defn.type;
     var curr = map[iter];
     if('parents' in curr)
         for(var i = 0; i < curr.parents.length; ++i)
-            preorder_traversal(map, curr.parents[i], callbacks);
+            parents_first_traversal(map, curr.parents[i], callbacks);
     callbacks[iter]();
 }
-function postorder_traversal(map, iter, callbacks) {
+function parents_last_traversal(map, iter, callbacks) {
     if(!(iter in map))
         throw 'unknown chart type ' + defn.type;
     callbacks[iter]();
     var curr = map[iter];
     if('parents' in curr)
         for(var i = 0; i < curr.parents.length; ++i)
-            postorder_traversal(map, curr.parents[i], callbacks);
+            parents_last_traversal(map, curr.parents[i], callbacks);
 }
 
 // dc.js formats all numbers as ints - override
@@ -45205,9 +45268,9 @@ function dcplot(frame, groupname, definition) {
     // generalization of _.has
     function mhas(obj) {
         for(var i=1; i<arguments.length; ++i)
-            if(!_.has(obj, arguments[i]))
-                return false
-        else obj = obj[arguments[i]];
+            if(!_.has(obj, arguments[i]) || obj[arguments[i]] == undefined)
+                return false;
+            else obj = obj[arguments[i]];
         return true;
     }
 
@@ -45220,7 +45283,7 @@ function dcplot(frame, groupname, definition) {
         if(!_.has(defn, 'group'))
             defn.group = group.identity;
         if(!_.has(defn, 'reduce'))
-            defn.reduce = reduce.count;
+            defn.reduce = definition.defreduce;
 
         if(errors.length)
             throw errors;
@@ -45237,7 +45300,7 @@ function dcplot(frame, groupname, definition) {
                 if(_.has(cattrs[a], 'default') && defn[a]===undefined)
                     defn[a] = cattrs[a].default;
             }
-            // postorder
+            // parents last
             if('parents' in cattrs)
                 for(var i = 0; i < cattrs.parents.length; ++i)
                     do_defaults(defn, cattrs.parents[i]);
@@ -45267,23 +45330,16 @@ function dcplot(frame, groupname, definition) {
         else throw "illegal accessor " + a.toString();
     }
 
+    function one_stack(defn) {
+        return !_.has(defn,'stack.levels') ||
+            (_.has(defn,'stack.levels') && defn['stack.levels'].length == 1);
+    }
+
     // inferences
     function infer_dimension(name, defn) {
         // nothing (yet?)
     }
     function infer_group(name, defn, dims) {
-        var errors = [];
-        if(!_.has(defn, 'dimension'))
-            errors.push('group needs dimension');
-        if(!_.has(dims, defn.dimension))
-            errors.push('unknown dimension "' + defn.dimension + '"');
-        if(!_.has(defn, 'group'))
-            defn.group = group.identity;
-        if(!_.has(defn, 'reduce'))
-            defn.reduce = reduce.count;
-
-        if(errors.length)
-            throw errors;
     }
     function infer_chart(name, defn, dims, groups) {
         var errors = [];
@@ -45294,36 +45350,44 @@ function dcplot(frame, groupname, definition) {
             while(hash[base + n]) ++n;
             return base + n;
         }
+        // abstract this into a plugin - this is RCloud-specific (rserve.js)
         function get_levels(dim) {
             var levels = null;
-            if(_.has(dims, dim) && mhas(accessor(dims[dim]), 'attrs', 'levels'))
-                levels = accessor(dims[dim]).attrs.levels;
+            if(_.isFunction(dim)) levels = dim.attrs.r_attributes.levels;
+            else if(_.has(dims, dim) && mhas(accessor(dims[dim]), 'attrs', 'r_attributes', 'levels'))
+                levels = accessor(dims[dim]).attrs.r_attributes.levels;
             return levels;
         }
         function looks_ordinal(dim) {
             return _.has(dims, dim) && _.isString(accessor(dims[dim])(0));
         }
+
         var callbacks = {
             base: function() {
                 if(!('div' in defn))
                     defn.div = '#' + name;
                 if(defn.group) {
-                    if(!defn.dimension)
+                    if(!groups[defn.group])
+                        errors.push('unknown group "' + defn.group + '"');
+                    else if(!defn.dimension)
                         defn.dimension = groups[defn.group].dimension;
                 }
                 else if(defn.dimension) {
                     if(!dims[defn.dimension])
                         errors.push('unknown dimension "' + defn.dimension + '"');
-                    defn.group = find_unused(groups, defn.dimension);
-                    var g = groups[defn.group] = {};
-                    g.dimension = defn.dimension;
-                    infer_group(defn.group, g, dims);
+                    else {
+                        defn.group = find_unused(groups, defn.dimension);
+                        var g = groups[defn.group] = {};
+                        g.dimension = defn.dimension;
+                        default_group(defn.group, g, dims);
+                        infer_group(defn.group, g, dims);
+                    }
                 }
                 if(!_.has(defn, 'ordering')) {
                     // note it's a little messy to have this as a property of the chart rather than
                     // the group, but dc.js sometimes needs an ordering and sometimes doesn't
                     var levels = get_levels(defn.dimension);
-                    if(levels) {
+                    if(levels != null) {
                         var rmap = _.object(levels, _.range(levels.length));
                         // the ordering function uses a reverse map of the levels
                         defn.ordering = function(p) {
@@ -45334,8 +45398,39 @@ function dcplot(frame, groupname, definition) {
 
             },
             color: function() {
+                if(!defn['color.scale']) {
+                    // note stackable bleeds in here: since they are on different branches
+                    // of the hierarchy, there is no sensible way for stackable to override
+                    // color here
+                    var levels = get_levels(defn.stack || defn.dimension);
+                    defn['color.scale'] = (levels != null && levels.length>10)
+                        ? d3.scale.category20() : d3.scale.category10();
+                }
+                if(!defn['color.domain']) {
+                    // this also should be abstracted out into a plugin (RCloud-specific)
+                    if(mhas(defn, 'color', 'attrs', 'r_attributes', 'levels'))
+                        defn['color.domain'] = defn.color.attrs.r_attributes.levels;
+                }
             },
             stackable: function() {
+                if(_.has(defn,'stack')) {
+                    if(!_.has(defn,'stack.levels'))
+                        defn['stack.levels'] = get_levels(defn['stack']);
+                    var levels = defn['stack.levels'];
+
+                    // Change reduce functions to filter on stack levels
+                    for(var s = 0; s<defn['stack.levels'].length; s++) {
+                        var newName = defn.group+defn['stack.levels'][s];
+                        var newGroupDefn = _.clone(groups[defn.group]);
+
+                        // Special treatment for counts, otherwise generic filter wrapper
+                        if(newGroupDefn.reduce == reduce.count)
+                            newGroupDefn.reduce = reduce.countFilter(defn['stack'],defn['stack.levels'][s]);
+                        else newGroupDefn.reduce = reduce.filter(newGroupDefn.reduce,defn['stack'],defn['stack.levels'][s]);
+
+                        groups[newName] = newGroupDefn;
+                    }
+                }
             },
             coordinateGrid: function() {
                 var levels = get_levels(defn.dimension);
@@ -45372,15 +45467,36 @@ function dcplot(frame, groupname, definition) {
                     if(mhas(group, 'group', 'binwidth'))
                         defn['x.units'] = dc.units.fp.precision(group.group.binwidth);
                 }
+                if(!_.has(defn, 'color.domain')) {
+                    var levels;
+                    if(one_stack(defn)) {
+                        if(defn['color.x']) {
+                            levels = get_levels(defn.dimension);
+                            if(levels)
+                                defn['color.domain'] = levels;
+                        }
+                    }
+                    else {
+                        levels = get_levels(defn.stack);
+                        if(levels)
+                            defn['color.domain'] = levels;
+                    }
+                }
             },
             line: function() {
             },
             abstractBubble: function() {
             },
             bubble: function() {
+            },
+            dataTable: function() {
+                var bad = _.find(defn.columns,
+                                 function(col) { return !frame.has(col); });
+                if(bad)
+                    throw bad + " not a valid column!";
             }
         };
-        preorder_traversal(chart_attrs, defn.type, callbacks);
+        parents_first_traversal(chart_attrs, defn.type, callbacks);
 
         if(errors.length)
             throw errors;
@@ -45482,10 +45598,12 @@ function dcplot(frame, groupname, definition) {
             abstractBubble: function() {
             },
             bubble: function() {
+            },
+            dataTable: function() {
             }
         };
 
-        preorder_traversal(chart_attrs, defn.type, callbacks);
+        parents_first_traversal(chart_attrs, defn.type, callbacks);
 
         if(errors.length)
             throw errors;
@@ -45551,30 +45669,29 @@ function dcplot(frame, groupname, definition) {
                 // to serve the purpose. so just plug a d3 scale into colors
                 // and override the calculator to use it
                 // also default to category10 which seems better for discrete colors
-                var scale = defn['color.scale'] || d3.scale.category10();
+
+                var scale = defn['color.scale'];
                 if(_.has(defn, 'color.domain'))
                     scale.domain(defn['color.domain']);
-                else if(mhas(defn, 'color', 'attrs', 'levels'))
-                    scale.domain(defn.color.attrs.levels);
                 if(_.has(defn, 'color.range'))
                     scale.range(defn['color.range']);
                 chart.colors(scale);
                 chart.colorCalculator(function(x) { return chart.colors()(x); });
             },
             stackable: function() {
-                if(_.has(defn, 'stack'))
-                    for(var s in defn.stack) {
-                        var stack = defn.stack[s];
-                        if(_.isArray(stack))
-                            chart.stack(stack[0], stack[1]);
-                        else
-                            chart.stack(stack);
+                if(_.has(defn, 'stack') && _.has(defn, 'stack.levels')) {
+                    for(var s = 0; s<defn['stack.levels'].length; s++) {
+                        var stackGroup = groups[defn.group+defn['stack.levels'][s]];
+
+                        if(s == 0)
+                            chart.group(stackGroup);
+                        else chart.stack(stackGroup);
                     }
+                }
             },
             coordinateGrid: function() {
-                if(_.has(defn, 'margins'))
-                    chart.margins(defn.margins);
-
+                if(_.has(defn, 'margins')) chart.margins(defn.margins);
+                else chart.margins({top: 10, right: 50, bottom: 30, left: 60});
                 if(_.has(defn, 'x'))
                     chart.keyAccessor(key_value(accessor(defn.x)));
                 if(_.has(defn, 'y'))
@@ -45617,7 +45734,7 @@ function dcplot(frame, groupname, definition) {
                 if(_.has(defn, 'wedge'))
                     chart.keyAccessor(key_value(defn.wedge));
                 if(_.has(defn, 'size'))
-                    chart.keyAccessor(key_value(defn.size));
+                    chart.valueAccessor(key_value(defn.size));
 
                 if(_.has(defn, 'radius'))
                     chart.radius(defn.radius);
@@ -45629,6 +45746,36 @@ function dcplot(frame, groupname, definition) {
                     chart.centerBar(defn.centerBar);
                 if(_.has(defn, 'gap'))
                     chart.gap(defn.gap);
+                // optionally color the bars when ordinal and not stacked or one stack
+                if(_.has(defn,'x.ordinal') && defn['x.ordinal'] && defn['color.x'] && one_stack(defn)) {
+                    chart.renderlet(function(chart) {
+                        chart.selectAll("rect.bar").style('fill', function(d,i) {
+                            if(d3.select(this).classed(dc.constants.DESELECTED_CLASS))
+                                return null;
+                            else return chart.colors()(d.x);
+                        });
+                    });
+                }
+                else if(!one_stack(defn)) {
+                    // dc.js does not automatically color the stacks different colors (!)
+                    chart.renderlet(function(chart) {
+                        chart.selectAll("g."+dc.constants.STACK_CLASS)
+                            .each(function(d,i) {
+                                var stack = defn['stack.levels'][i];
+                                d3.select(this).selectAll("rect.bar")
+                                    .style('fill', function(d,i) {
+                                        if(d3.select(this).classed(dc.constants.DESELECTED_CLASS))
+                                            return null;
+                                        else return chart.colors()(stack);
+                                    })
+                                    .select('title')
+                                    .text(function(d,i) {
+                                        return stack + ", " + d3.select(this).text();
+                                    });
+                            });
+                    });
+                }
+
             },
             line: function() {
                 if(_.has(defn, 'area'))
@@ -45646,16 +45793,24 @@ function dcplot(frame, groupname, definition) {
                     rtrans.domain(defn['r.domain'] || [0,100]);
                     chart.r(rtrans);
                 }
+            },
+            dataTable: function() {
+                chart.group(accessor(defn.dimension));
+                chart.columns(defn['columns'].map(accessor));
+                chart.size(defn.size || frame.records().length);
+                if(_.has(defn,'sortBy'))
+                    chart.sortBy(accessor(defn['sortBy']));
             }
         };
         ctor = {
             pie: dc.pieChart,
             bar: dc.barChart,
             line: dc.lineChart,
-            bubble: dc.bubbleChart
+            bubble: dc.bubbleChart,
+            dataTable: dc.dataTable
         }[defn.type];
 
-        preorder_traversal(chart_attrs, defn.type, callbacks);
+        parents_first_traversal(chart_attrs, defn.type, callbacks);
 
         // perform any extra post-processing
         if(_.has(defn, 'more'))
@@ -45751,6 +45906,7 @@ function dcplot(frame, groupname, definition) {
         defn = definition.groups[g];
         groups[g] = create_group(defn, dimensions);
     }
+
     for(c in definition.charts) {
         defn = definition.charts[c];
         charts[c] = create_chart(groupname, defn, dimensions, groups);

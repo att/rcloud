@@ -16,7 +16,7 @@ Unlike these other systems, RCloud:
 * provides an environment in which R packages can create rich HTML
   content (using, for example, [d3](http://d3js.org) and
   [dc.js](http://nickqizhu.github.io/dc.js/)).
-  
+
 * provides a transparent, integrated version control system. In
   essence, RCloud never forgets what you did. If you need low-level
   access to RCloud notebooks, you can simply clone the associated git
@@ -43,6 +43,8 @@ Or, if you already have an RCloud source tree, run
 to just get the dependencies.
 
 ## Installation requirements
+
+Please use R 3.0.0 or later. It'll make your life easier, we promise.
 
 You will need several headers and libraries to compile dependent
 R packages (as well as R) -- on Debian/Ubuntu, you can use
@@ -98,16 +100,21 @@ If you're using github.com, then your file will look like this:
     github.client.secret: your.40.character.client.secret
     github.base.url: https://github.com/
     github.api.url: https://api.github.com/
-	github.gist.url: https://gist.github.com/
+    github.gist.url: https://gist.github.com/
 
 The last three lines are the base URL of the github website,
 the entry point for the github API and the entry point for gists.
 
 #### Enterprise Github deployment
 
-For the current version of enterprise github deployments, you
-can omit
-`github.gist.url`.
+If you have an enterprise github deployment where the gists URL
+ends with `/gist` instead of beginning with `gist.`, you
+may need to omit `github.gist.url`.
+
+If you'd like to control which Github users are allowed to log in to
+your RCloud deployment, you can add a whitelist to your configuration:
+
+    github.user.whitelist: user1,user2,user3,etc
 
 #### hostnames
 

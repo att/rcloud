@@ -1,29 +1,6 @@
-function init_shareable_link_box() {
-    $("#share-notebook").each(function() {
-        var t = $(this), n = t.next(".embed-box"), f = function() {
-            t.toggle();
-            n.toggle();
-            if (n.is(":visible")) {
-                n.get(0).value = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
-                var v = shell.version();
-                if(v)
-                    n.get(0).value = n.get(0).value + '&version='+v;
-                n.get(0).select();
-            }
-            return false;
-        };
-        t.click(f); n.blur(f);
-    });
-}
-
-function init_editable_title_box() {
-    $("#notebook-title").click(function() {
-        var result = prompt("Please enter the new name for this notebook:", $(this).text());
-        if (result !== null) {
-            $(this).text(result);
-            editor.rename_notebook(shell.gistname(), result);
-        }
-    });
+function resize_side_panel() {
+    var non_notebook_panel_height = 246;
+    $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
 }
 
 function init_fork_revert_button() {
@@ -41,6 +18,76 @@ function init_github_buttons() {
         if(result !== null)
             shell.open_from_github(result);
     });
+    $("#import-notebooks").click(function() {
+        shell.import_notebooks();
+    });
+}
+
+function init_upload_pane() {
+    $("#upload-submit").click(function() {
+        var to_notebook = ($('#upload-to-notebook').is(':checked'));
+        var success = function(path, file, notebook) {
+            $("#file-upload-div").append(
+                bootstrap_utils.alert({
+                    "class": 'alert-info',
+                    text: (to_notebook ? "Asset " : "File ") + file.name + " uploaded."
+                })
+            );
+            if(to_notebook)
+                editor.update_notebook_file_list(notebook.files);
+        };
+        var upload_function = to_notebook
+            ? rcloud.upload_to_notebook
+            : rcloud.upload_file;
+
+        upload_function(false, success, function() {
+            var overwrite_click = function() {
+                rcloud.upload_file(true, success, function(exception_value) {
+                    var msg = exception_value;
+                    $("#file-upload-div").append(
+                        bootstrap_utils.alert({
+                            "class": 'alert-danger',
+                            text: msg
+                        })
+                    );
+                });
+            };
+            var alert_element = $("<div></div>");
+            var p = $("<p>File exists. </p>");
+            alert_element.append(p);
+            var overwrite = bootstrap_utils
+                .button({"class": 'btn-danger'})
+                .click(overwrite_click)
+                .text("Overwrite");
+            p.append(overwrite);
+            $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
+        });
+    });
+}
+
+function init_save_button() {
+    var saveb = $("#save-notebook");
+    saveb.click(function() {
+        shell.save_notebook();
+    });
+    shell.notebook.controller.save_button(saveb);
+}
+
+function init_port_file_buttons() {
+    $('#export-notebook-file').click(function() {
+        shell.export_notebook_file();
+    });
+    $('#import-notebook-file').click(function() {
+        shell.import_notebook_file();
+    });
+}
+
+function init_navbar_buttons() {
+    init_fork_revert_button();
+    init_github_buttons();
+    init_save_button();
+    init_port_file_buttons();
+    init_upload_pane();
 }
 
 var oob_handlers = {
@@ -54,24 +101,9 @@ var oob_handlers = {
 };
 
 function main_init() {
-    init_shareable_link_box();
-    init_editable_title_box();
-    init_fork_revert_button();
-    init_github_buttons();
-    footer.init();
-    
-    $("#show-source").click(function() {
-        var this_class = $(this).attr("class");
-        if (this_class === 'icon-check') {
-            $(this).addClass('icon-check-empty');
-            $(this).removeClass('icon-check');
-            shell.notebook.controller.hide_r_source();
-        } else {
-            $(this).addClass('icon-check');
-            $(this).removeClass('icon-check-empty');
-            shell.notebook.controller.show_r_source();
-        }
-    });
+    resize_side_panel();
+    init_navbar_buttons();
+
     $("#comment-submit").click(function() {
         editor.post_comment($("#comment-entry-body").val());
         return false;
@@ -81,10 +113,15 @@ function main_init() {
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
         on_connect: function(ocaps) {
             rcloud = RCloud.create(ocaps.rcloud);
+            if (!rcloud.authenticated) {
+                rclient.post_error(rclient.disconnection_error("Please login first!"));
+                rclient.close();
+                return;
+            }
             rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {
                 rclient.post_response(hello);
-                rcloud.graphics.set_device_pixel_ratio(window.devicePixelRatio, function() {});
             });
+            rcloud.display.set_device_pixel_ratio();
 
             $("#new-md-cell-button").click(function() {
                 shell.new_markdown_cell("", "markdown");
@@ -97,50 +134,19 @@ function main_init() {
                 window.location.href = '/logout.R';
             });
             $(".collapse").collapse();
-            $("#upload-submit").click(function() {
-                var success = function(path, file) {
-                    $("#file-upload-div").append(
-                        bootstrap_utils.alert({
-                            "class": 'alert-info',
-                            text: "File " + file.name + " uploaded."
-                        })
-                    );
-                };
-                rcloud.upload_file(false, success, function() {
-                    var overwrite_click = function() {
-                        rcloud.upload_file(true, success, function(exception_value) {
-                            var msg = exception_value;
-                            $("#file-upload-div").append(
-                                bootstrap_utils.alert({
-                                    "class": 'alert-danger',
-                                    text: msg
-                                })
-                            );
-                        });
-                    };
-                    var alert_element = $("<div></div>");
-                    var p = $("<p>File exists. </p>");
-                    alert_element.append(p);
-                    var overwrite = bootstrap_utils
-                        .button({"class": 'btn-danger'})
-                        .click(overwrite_click)
-                        .text("Overwrite");
-                    p.append(overwrite);
-                    $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
-                });
-            });
             rcloud.init_client_side_data();
 
-            editor.init();
             shell.init();
-
+            var notebook = null, version = null;
             if (location.search.length > 0) {
                 function getURLParameter(name) {
                     return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
                 }
-                editor.load_notebook(getURLParameter("notebook"), getURLParameter("version"));
-                $("#tabs").tabs("select", "#tabs-2");
+                notebook = getURLParameter("notebook");
+                version = getURLParameter("version");
             }
+            editor.init(notebook, version);
+            $("#tabs").tabs("select", "#tabs-2");
         },
         on_data: function(v) {
             v = v.value.json();

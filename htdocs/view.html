@@ -25,29 +25,28 @@
     <script type="text/javascript" src="view.js"></script>
   </head>
 <body>
-<!-- <div class="navbar navbar-inverse navbar-fixed-top"> -->
-<!--   <div class="navbar-inner"> -->
-<!--     <div class="container-fluid"> -->
-<!--       <a class="brand" href="#">RCloud - [<span id="notebook-title">Untitled</span>]</a> -->
-<!--       <div class="nav-collapse collapse"> -->
-<!-- 	<ul class="nav"> -->
-<!-- 	  <li><a href="#" id="view-source">View source</a></li> -->
-<!-- 	</ul> -->
-<!--       </div> -->
-<!--     </div> -->
-<!--   </div> -->
-<!-- </div> -->
 
 <div class="navbar navbar-inverse navbar-fixed-top">
   <div>
     <!--div class="container"-->
       <div class="navbar-header">
-        <a class="navbar-brand" href="#">RCloud - [<span id="notebook-title">Untitled</span>]</a>
-      <!--div class="nav-collapse collapse"-->
-	<ul class="nav navbar-nav">
-	  <li><a href="#" id="view-source">View source</a></li>
-	</ul>
-      <!--/div-->
+        <a class="navbar-brand" href="#">RCloud</a>
+      </div>
+      <div class="nav-collapse "> <!-- why collapse not work here worx in main -->
+        <ul class="nav navbar-nav">
+          <li><button id="edit-notebook" title="Edit Notebook" type="button" class="btn btn-link navbar-btn"><i class="icon-edit"></i></button></li>
+          <li><button id="run-notebook" title="Run All" type="button" class="btn btn-link navbar-btn"><i class="icon-play"></i></button></li>
+          <li><a href="#" class="unclickable">[<span id="notebook-title">Untitled</span>]</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Advanced <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li><a href="#" id="open-in-github">Open in GitHub</a></li>
+              <li><a href="#" id="show-source"><i class="icon-check"></i>&nbsp;Show Source</a></li>
+            </ul>
+          </li>
+        </ul>
       </div>
     <!--/div-->
   </div>
@@ -58,106 +57,21 @@
     <!--div class="col-md-1"></div-->
     <div class="col-md-12">
       <div id="tabs-1">
-	<div id="output" class="tab-div">
-	</div>
+        <div id="output" class="tab-div">
+        </div>
 
 
-	<div style="padding:1em; clear:both"></div>
+        <div style="padding:1em; clear:both"></div>
       </div>
     </div>
   </div>
 </div>
 
-<!--
-<div class="navbar navbar-fixed-top">
-  <div class="navbar-inner">
-    <div class="container-fluid">
-      <a class="brand" href="#">RCloud - [<span id="notebook_title">Untitled</span>]</a>
-      <div class="nav-collapse collapse">
-	<ul class="nav">
-	  <li><a href="#" id="view-source">View source</a></li>
-	</ul>
-      </div>
-    </div>
-  </div>
-</div>
 
-<div class="container-fluid">
-  <div class="row-fluid">
-    <div class="span1"></div>
-    <div class="span7">
-      <div id="tabs-1">
-	<div id="output" class="tab-div">
-	</div>
-
-	<div style="padding:1em; clear:both"></div>
-      </div>
-    </div>
-    <div class="span3" style="position:fixed;top:60;right:10">
-      <div id="tabs-2">
-	<div class="tab-div">
-	  <div class="accordion" id="accordion">
-	    <div class="accordion-group">
-	      <div class="accordion-heading">
-		<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">Notebooks</a>
-	      </div>
-	      <div id="collapseOne" class="accordion-body collapse">
-		<div class="accordion-inner">
-		  <div id="editor-book-tree"></div>
-		</div>
-	      </div>
-	    </div>
-	    <div class="accordion-group">
-	      <div class="accordion-heading">
-		<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">Search</a>
-	      </div>
-	      <div id="collapseTwo" class="accordion-body collapse in">
-		<div class="accordion-inner">
-		  <div>Full-text search for <input type="text" value="" id="input-text-search"></input></div>
-		  <h4 id="input-text-source-results-title" style="padding-bottom: 0; margin-bottom: 0">Source results</h4>
-		  <table id="input-text-source-results-table">
-		  </table>
-		  <h4 id="input-text-history-results-title" style="padding-bottom: 0; margin-bottom: 0">History results</h4>
-		  <table id="input-text-history-results-table">
-		  </table>
-		</div>
-	      </div>
-	    </div>
-	    <div class="accordion-group">
-	      <div class="accordion-heading">
-		<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseThree">Help</a>
-	      </div>
-	      <div id="collapseThree" class="accordion-body collapse in">
-		<div class="accordion-inner">
-		  <div>Help for <input type="text" value="" id="input-text-help"></input></div>
-		  <div id="help-output"></div>
-		</div>
-	      </div>
-	    </div>
-	  </div>
-	</div>
-      </div>
-    </div>
-    <div class="span1"></div>
-  </div>
-</div>
--->
-<!-- For some bizarre reason, line numbering has garbage characters on --
-  -- the minified version, so we use the unminified version instead.
-
-  -- We use a bundle version of ace and the bindings from RStudio
-  -- to reduce the number of HTTP requests
-  -- going out. Shouldn't be an issue when SPDY becomes the new
-  -- standard, but until then...
-
-    ace.js                              http://ace.ajax.org
-
-  -->
 <script src="lib/ace_bundle.js" charset="utf-8"></script>
 
 <script src="editor_tab.js"></script>
 <script src="shell_tab.js"></script>
-<script src="dcrchart.js"></script>
 <script src="wdcplot.js"></script>
 
 </body></html>

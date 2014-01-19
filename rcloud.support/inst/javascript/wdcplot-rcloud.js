@@ -1,17 +1,4 @@
 ({
-    handle_dcchart: function(data, k) {
-        var charts;
-        try {
-            charts = dcrchart.translate(data[2]);
-        }
-        catch(e) {
-            k(function() { $('<p/>').append("Exception creating dc code: " + e); });
-            return;
-        }
-        var rdata = data[1];
-        setTimeout(function() { charts.dcfunc(rdata); }, 10);
-        k(function() { return charts.elem; });
-    },
     handle_dcplot: function(data, k) {
         var charts, elem;
         try {

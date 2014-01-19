@@ -1,6 +1,6 @@
 Notebook.create_model = function()
 {
-    var read_only = false;
+    var readonly_ = false;
 
     function last_id(notebook) {
         if(notebook.length)
@@ -26,7 +26,8 @@ Notebook.create_model = function()
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
     return {
         notebook: [],
-        views: [], // sub list for pubsub
+        views: [], // sub list for cell content pubsub
+        dishers: [], // for dirty bit pubsub
         clear: function() {
             return this.remove_cell(null,last_id(this.notebook));
         },
@@ -138,12 +139,17 @@ Notebook.create_model = function()
         },
         read_only: function(readonly) {
             if(!_.isUndefined(readonly)) {
-                read_only = readonly;
+                readonly_ = readonly;
                 _.each(this.views, function(view) {
-                    view.set_readonly(read_only);
+                    view.set_readonly(readonly_);
                 });
             }
-            return read_only;
+            return readonly_;
+        },
+        on_dirty: function() {
+            _.each(this.dishers, function(disher) {
+                disher.on_dirty();
+            });
         },
         json: function() {
             return _.map(this.notebook, function(cell_model) {
