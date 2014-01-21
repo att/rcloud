@@ -947,7 +947,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // There's a list of things that we need to do to the output:
             var uuid = rcloud.deferred_knitr_uuid;
 
-            if (inner_div.find("pre code").length === 0) {
+            if (cell_model.language() === 'R' && inner_div.find("pre code").length === 0) {
                 r_result_div.prepend("<pre><code>" + cell_model.content() + "</code></pre>");
             }
 

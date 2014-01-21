@@ -27,8 +27,8 @@ dependencies_bundle.js: \
 	js/crossfilter.js \
 	js/dc.js \
 	js/colorbrewer.js \
-	js/dcplot/dataframe.js \
-	js/dcplot/dcplot.js \
+	js/dataframe.js \
+	js/dcplot.js \
 	js/rserve.js \
 	js/hl.min.js \
 	js/bootstrap.js

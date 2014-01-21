@@ -4,3 +4,6 @@
 [submodule "htdocs/lib/js/lux"]
 	path = htdocs/lib/js/lux
 	url = ssh://git@github.com/cscheid/lux.git
+[submodule "htdocs/lib/js/dcplot"]
+	path = htdocs/lib/js/dcplot
+	url = git@github.com:att/dcplot.js
