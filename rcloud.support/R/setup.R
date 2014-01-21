@@ -72,6 +72,10 @@ configure.rcloud <- function () {
   ## use public github by default
   if (!nzConf("github.base.url")) setConf("github.base.url", "https://github.com/")
   if (!nzConf("github.api.url")) setConf("github.api.url", "https://api.github.com/")
+  #Creating custom path to use rserve.conf
+  if (!nzConf("rserve")) setConf("rserve", pathConf("configuration.root", "rserve.conf"))
+  if (!nzConf("path")) setConf("path", pathConf("configuration.root", "content.txt"))
+  #End
   
   if (!all(sapply(c("github.client.id", "github.client.secret"), nzConf))
       && !nzConf("gist.deployment.stash"))
@@ -214,6 +218,15 @@ start.rcloud <- function(username="", token="", ...) {
     stop("bad username/token pair");
   .session$username <- username
   .session$token <- token
+   #Getting these parameters from configuration files
+  .session$rhost <- getConf("host")
+  .session$redis.host <- getConf("redis.host")
+  .session$redis.port <- getConf("redis.port")
+  .session$solr.host <- getConf("solr.host")
+  .session$solr.port <- getConf("solr.port")
+  .session$path<-getConf("rserve")
+  .session$content_path<-getConf("path")
+  #End
   if (nzConf("gist.deployment.stash"))
     .session$deployment.stash <- getConf("gist.deployment.stash")
   else

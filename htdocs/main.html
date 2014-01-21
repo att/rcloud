@@ -85,7 +85,12 @@
     <!--/div-->
   </div>
 </div>
-
+<!-- Added for search functionality -->
+<div id="Pop-up" style="height:auto;width:auto;" class="modal">
+	<div id="divClose" class="closeButtonDiv" data-dismiss="modal" style="display:none;" onclick="hidePopup();">hide</div>
+	<div id="divPopup" class="headerDiv" style="display:none;"></div>
+</div>
+<!-- End -->
 <div class="container" id="main-div">
   <div class="row">
     <!--div class="col-md-1"></div-->
@@ -139,17 +144,18 @@
               </div>
               <div id="collapseTwo" class="panel-collapse collapse in">
                 <div class="panel-body">
-                  Coming soon!
-                  <!--  Search disabled for Version 0.9
-                  <div>Full-text search for <input type="text" value="" id="input-text-search"></input></div>
+                 <!--Added for search functionality -->
+                 <div>Full-text search for <input type="text" value="" id="input-text-search" onkeydown="getTextBoxData(event)"></input><button id='search-button' onclick="search();">search</button></div>
                   <h4 id="input-text-source-results-title" style="padding-bottom: 0; margin-bottom: 0">Source results</h4>
                   <table id="input-text-source-results-table">
                   </table>
                   <h4 id="input-text-history-results-title" style="padding-bottom: 0; margin-bottom: 0">History results</h4>
                   <table id="input-text-history-results-table">
-                  </table>
-                  -->
+                  </table>				  
                 </div>
+				<!-- 1910 : added this div to show the search results-->
+                <div id="custom-search-result"></div>
+				<!--End -->
               </div>
             </div>
             <div class="panel panel-default">

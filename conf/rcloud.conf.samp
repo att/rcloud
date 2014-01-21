@@ -1,8 +1,13 @@
 ##------RCloud Configuration: copy into rcloud.conf and edit! ------
 ##: GitHub info below must be modified in order for RCloud to work!
 ## Only set Host: if it doesn't match the canonical name of your machine
-##Host: 127.0.0.1
-github.client.id: xxxxxxxxxxx
-github.client.secret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+host: 127.0.0.1
+github.client.id: XXXXXXXXXXXXXXXXXXXXXXXXXXX
+github.client.secret: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 github.base.url: https://github.com/
 github.api.url: https://api.github.com/
+rcs.engine: redis
+solr.host: 127.0.0.1
+solr.port: 8983
+redis.host: 127.0.0.1
+redis.port: 6379

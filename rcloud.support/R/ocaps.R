@@ -102,6 +102,11 @@ authenticated.ocaps <- function()
       save_user_config = make.oc(rcloud.save.user.config),
       load_multiple_user_configs = make.oc(rcloud.load.multiple.user.configs),
       search = make.oc(rcloud.search),
+#Added custom functions for search functionality
+	  custom_search = make.oc(rcloud.custom.search),
+	  load_search_notebook = make.oc(rcloud.load.search.notebook),
+      query_solr = make.oc(rcloud.query.solr),
+#End
       get_notebook = make.oc(rcloud.get.notebook),
       load_notebook = make.oc(rcloud.load.notebook),
       notebook_by_name = make.oc(rcloud.notebook.by.name),
