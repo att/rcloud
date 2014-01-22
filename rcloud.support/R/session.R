@@ -41,6 +41,7 @@ session.markdown.eval <- function(command, language, silent) {
   
   opts_chunk$set(dev="CairoPNG", tidy=FALSE)
 
+  if (command == "") command <- " "
   val <- try(markdownToHTML(text=paste(knit(text=command, envir=.session$knitr.env), collapse="\n"),
                             fragment=TRUE), silent=TRUE)
   if (!inherits(val, "try-error") && !silent && rcloud.debug.level()) print(val)
