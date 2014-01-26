@@ -17,3 +17,12 @@ if [ -e internal ]; then
 	(cd internal && R CMD build $pkg && R CMD INSTALL `sed -n 's/Package: *//p' $pkg/DESCRIPTION`_`sed -n 's/Version: *//p' $pkg/DESCRIPTION`.tar.gz)
     done
 fi
+
+# update branch/revision info
+REV=`( git rev-list --abbrev-commit -n 1 HEAD )`
+BRANCH=`( git status | sed -n 's:.*On branch ::p' | sed 's:/:-:g' )`
+
+if [ -n "$REV" ]; then
+    echo "$BRANCH" > REVISION
+    echo "$REV" >> REVISION
+fi
