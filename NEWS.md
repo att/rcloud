@@ -1,5 +1,24 @@
 ## RCloud develop branch
 
+## RCloud 0.9.1
+
+### Features
+
+* RCloud branch and revision are now displayed on startup (#277).
+  The `scripts/build.sh` script updates the `REVISION` file used for this.
+  Previously, only the distribution script created that file.
+
+* Logout page includes a link to GitHub logout as well (#294)
+  Note that the default for `goodbye.page` has changed to `/goodbye.R`
+
+
+### Buxfixes
+
+* empty markdown cells no longer cause an error (#173)
+
+
+## RCloud 0.9
+
 ### Features
 
 * RCloud now supports anonymous access to with user switching.
