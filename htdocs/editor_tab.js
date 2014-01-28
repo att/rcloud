@@ -359,8 +359,10 @@ var editor = function () {
             if(last_chance)
                 last_chance(node); // hacky
             var dp = node.parent;
-            if(dp===parent && node.name===data.label)
-                $tree_.tree('updateNode', node, data);
+            if(dp===parent && node.name===data.label) {
+                // too slow! $tree_.tree('updateNode', node, data);
+                update_tree_li(node, node.element, data);
+            }
             else {
                 $tree_.tree('removeNode', node);
                 node = insert_alpha(data, parent);
@@ -782,6 +784,13 @@ var editor = function () {
                 });
         }
         element.append(right);
+    }
+
+    function update_tree_li(node, $li, data) {
+        node.last_commit = data.last_commit;
+        if(node.last_commit && (!node.version ||
+                                display_date(node.last_commit) != display_date(node.parent.last_commit)))
+            $('.notebook-date', $li).text(display_date(node.last_commit));
     }
     function tree_click(event) {
         if(event.node.id === 'showmore')
