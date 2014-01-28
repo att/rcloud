@@ -1,4 +1,6 @@
-<html>
+run <- function(...)
+list(paste0(
+'<html>
   <head>
     <title>RCloud</title>
     <link rel="stylesheet" type="text/css" href="css/custom-theme/jquery-ui-1.8.18.custom.css" />
@@ -17,6 +19,8 @@
     </div>
     <div class="container" id="main-div">
       <p>You are now logged out of RCloud. <a href="/login.R">Log back in.</a></p>
+      <p>However, you may still be logged into <a href="',rcloud.config('github.base.url'),'">GitHub</a>,
+      use <a href="',gsub("/+$","",rcloud.config('github.base.url')),'/logout">GitHub Logout</a> to log out of there as well.
     </div>
   </body>
-</html>
+</html>'), "text/html")

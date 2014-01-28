@@ -15,7 +15,7 @@ Unlike these other systems, RCloud:
 
 * provides an environment in which R packages can create rich HTML
   content (using, for example, [d3](http://d3js.org) and
-  [dc.js](http://nickqizhu.github.io/dc.js/)).
+  [dc.js](http://dc-js.github.io/dc.js/)).
 
 * provides a transparent, integrated version control system. In
   essence, RCloud never forgets what you did. If you need low-level
