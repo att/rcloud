@@ -2,6 +2,7 @@ var shell = (function() {
 
     var version_ = null,
         gistname_ = null,
+        notebook_user_ = null,
         is_mine_ = null,
         github_url_ = null,
         gist_url_ = null,
@@ -9,9 +10,11 @@ var shell = (function() {
         prompt_ = null,
         notebook_model_ = Notebook.create_model(),
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
-        notebook_controller_ = Notebook.create_controller(notebook_model_);
+        notebook_controller_ = Notebook.create_controller(notebook_model_),
+        first_session_ = true,
+        prompt_history_ = null;
 
-    var cmd_history = (function() {
+    prompt_history_ = (function() {
         var entries_ = [], alt_ = [];
         var curr_ = 0;
         function curr_cmd() {
@@ -96,17 +99,12 @@ var shell = (function() {
         widget.setTheme("ace/theme/chrome");
         session.setUseWrapMode(true);
         widget.resize();
-        var change_prompt = ui_utils.ignore_programmatic_changes(widget, cmd_history.change.bind(cmd_history));
-
-        var Autocomplete = require("ace/autocomplete").Autocomplete;
+        var change_prompt = ui_utils.ignore_programmatic_changes(widget, prompt_history_.change.bind(prompt_history_));
 
         function execute(widget, args, request) {
             var code = session.getValue();
             if(code.length) {
-                result.new_interactive_cell(code).execute(function() {
-                    $.scrollTo(null, prompt_div);
-                });
-                cmd_history.execute(code);
+                result.new_interactive_cell(code, true);
                 change_prompt('');
             }
         }
@@ -121,25 +119,18 @@ var shell = (function() {
             return doc.getLine(row).length;
         }
 
-        function set_pos(widget, row, column) {
-            var sel = widget.getSelection();
-            var range = sel.getRange();
-            range.setStart(row, column);
-            range.setEnd(row, column);
-            sel.setSelectionRange(range);
-        }
-
         function restore_prompt() {
-            var cmd = cmd_history.init();
+            var cmd = prompt_history_.init();
             change_prompt(cmd);
             var r = last_row(widget);
-            set_pos(widget, r, last_col(widget, r));
+            ui_utils.ace_set_pos(widget, r, last_col(widget, r));
         }
+
+        ui_utils.install_common_ace_key_bindings(widget);
 
         // note ace.js typo which we need to correct when we update ace
         var up_handler = widget.commands.commmandKeyBinding[0]["up"],
             down_handler = widget.commands.commmandKeyBinding[0]["down"];
-
         widget.commands.addCommands([{
             name: 'execute',
             bindKey: {
@@ -157,30 +148,6 @@ var shell = (function() {
             },
             exec: execute
         }, {
-            name: 'execute-selection-or-line',
-            bindKey: {
-                win: 'Alt-Return',
-                mac: 'Alt-Return',
-                sender: 'editor'
-            },
-            exec: function(widget, args, request) {
-                var code = session.getTextRange(widget.getSelectionRange());
-                if(code.length==0) {
-                    var pos = widget.getCursorPosition();
-                    var Range = require('ace/range').Range;
-                    var range = new Range(pos.row, 0, pos.row+1, 0);
-                    code = session.getTextRange(range);
-                }
-                cmd_history.execute(code);
-                result.new_interactive_cell(code).execute(function() {
-                    $.scrollTo(null, prompt_div);
-                });
-            }
-        }, {
-            name: 'another autocomplete key',
-            bindKey: 'Ctrl-.',
-            exec: Autocomplete.startCommand.exec
-        }, {
             name: 'up-with-history',
             bindKey: 'up',
             exec: function(widget, args, request) {
@@ -188,9 +155,9 @@ var shell = (function() {
                 if(pos.row > 0)
                     up_handler.exec(widget, args, request);
                 else {
-                    change_prompt(cmd_history.last());
+                    change_prompt(prompt_history_.last());
                     var r = last_row(widget);
-                    set_pos(widget, r, last_col(widget, r));
+                    ui_utils.ace_set_pos(widget, r, last_col(widget, r));
                 }
             }
         }, {
@@ -202,8 +169,8 @@ var shell = (function() {
                 if(pos.row < r)
                     down_handler.exec(widget, args, request);
                 else {
-                    change_prompt(cmd_history.next());
-                    set_pos(widget, 0, last_col(widget, 0));
+                    change_prompt(prompt_history_.next());
+                    ui_utils.ace_set_pos(widget, 0, last_col(widget, 0));
                 }
             }
         }
@@ -222,8 +189,10 @@ var shell = (function() {
             $('#prompt-div').hide();
             fork_revert.text(is_mine_ ? 'Revert' : 'Fork');
             fork_revert.show();
+            $('#save-notebook').hide();
         }
         else {
+            $('#save-notebook').show();
             $('#prompt-div').show();
             fork_revert.hide();
         }
@@ -243,8 +212,83 @@ var shell = (function() {
         return rcloud.username() === notebook.user.login;
     }
 
+    function set_notebook_title(notebook) {
+        var is_read_only = result.notebook.model.read_only();
+        var desc = notebook.description;
+        $("#notebook-title").text(desc);
+        var ellipt_start = false, ellipt_end = false;
+        while(window.innerWidth - $("#notebook-title").width() < 505) {
+            var slash = desc.search('/');
+            if(slash >= 0) {
+                ellipt_start = true;
+                desc = desc.slice(slash+1);
+            }
+            else {
+                ellipt_end = true;
+                desc = desc.substr(0, desc.length - 2);
+            }
+            $("#notebook-title").text((ellipt_start ? '.../' : '')
+                                      + desc +
+                                      (ellipt_end ? '...' : ''));
+        }
+        // remove any existing handler
+        $("#rename-notebook").off('click');
+        // then add one if editable
+        if (!is_read_only) {
+            var title = $('#notebook-title');
+            $("#rename-notebook").click(function() {
+                var result = prompt("Please enter the new name for this notebook:", title.text());
+                if (result && !/^\s+$/.test(result)) { // not null and not empty or just whitespace
+                    title.text(result);
+                    editor.rename_notebook(shell.gistname(), result);
+                }
+            });
+        }
+    }
+
+    function set_share_link() {
+        var link = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
+        var v = shell.version();
+        if(v)
+            link += '&version='+v;
+
+        $("#share-link").attr("href", link);
+    }
+
+    function reset_session(k) {
+        if (first_session_) {
+            first_session_ = false;
+            rcloud.with_progress(function(done) {
+                k(done);
+            });
+        } else {
+            rcloud.with_progress(function(done) {
+                rclient.close();
+                // FIXME this is a bit of an annoying duplication of code on main.js and view.js
+                rclient = RClient.create({
+                    debug: rclient.debug,
+                    host: rclient.host,
+                    on_connect: function(ocaps) {
+                        rcloud = RCloud.create(ocaps.rcloud);
+                        rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {});
+
+                        rcloud.init_client_side_data(function() {
+                            $("#output").find(".alert").remove();
+                            k(done);
+                        });
+                    },
+                    on_data: function(v) {
+                        v = v.value.json();
+                        oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
+                    }
+                });
+            });
+        }
+    }
+
     function on_new(k, notebook) {
-        $("#notebook-title").text(notebook.description);
+        set_notebook_title(notebook);
+        set_share_link();
         gistname_ = notebook.id;
         version_ = null;
         is_mine_ = notebook_is_mine(notebook);
@@ -257,30 +301,12 @@ var shell = (function() {
     }
 
     function on_load(k, notebook) {
-        var is_read_only = result.notebook.model.read_only();
-        $("#notebook-title").text(notebook.description);
-        var link = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
-        var v = shell.version();
-        if(v)
-            link += '&version='+v;
-
-        $("#share-link").attr("href", link);
-
-        // remove any existing handler
-        $("#notebook-title").off('click');
-        // then add one if editable
-        if (!is_read_only) {
-            $("#notebook-title").click(function() {
-                var result = prompt("Please enter the new name for this notebook:", $(this).text());
-                if (result !== null) {
-                    $(this).text(result);
-                    editor.rename_notebook(shell.gistname(), result);
-                }
-            });
-        }
+        set_notebook_title(notebook);
+        set_share_link();
 
         is_mine_ = notebook_is_mine(notebook);
-        show_fork_or_prompt_elements(notebook_is_mine(notebook));
+        notebook_user_ = notebook.user.login;
+        show_fork_or_prompt_elements();
         _.each(notebook_view_.sub_views, function(cell_view) {
             cell_view.show_source();
         });
@@ -354,8 +380,13 @@ var shell = (function() {
             return result[0];
         }, new_markdown_cell: function(content) {
             return notebook_controller_.append_cell(content, "Markdown");
-        }, new_interactive_cell: function(content) {
-            return notebook_controller_.append_cell(content, "R");
+        }, new_interactive_cell: function(content, execute) {
+            var cell = notebook_controller_.append_cell(content, "R");
+            prompt_history_.execute(content);
+            if(execute)
+                cell.execute(function() {
+                    $.scrollTo(null, prompt_div);
+                });
         }, insert_markdown_cell_before: function(index) {
             return notebook_controller_.insert_cell("", "Markdown", index);
         }, load_notebook: function(gistname, version, k) {
@@ -363,66 +394,50 @@ var shell = (function() {
             k = k || _.identity;
 
             function do_load(done) {
+                var oldname = gistname_, oldversion = version_;
                 gistname_ = gistname;
                 version_ = version;
                 that.notebook.controller.load_notebook(gistname_, version_, function(notebook) {
-                    done();
-                    on_load.bind(that, k)(notebook);
-                });
-            }
-
-            if (first) {
-                first = false;
-                rcloud.with_progress(function(done) {
-                    do_load(done);
-                });
-            } else {
-                rcloud.with_progress(function(done) {
-                    // asymmetrical: we know the gistname before it's loaded here,
-                    // but not in new.  and we have to set this here to signal
-                    // editor's init load config callback to override the currbook
-                    rclient.close();
-                    // FIXME this is a bit of an annoying duplication of code on main.js and view.js
-                    rclient = RClient.create({
-                        debug: rclient.debug,
-                        host: rclient.host,
-                        on_connect: function(ocaps) {
-                            rcloud = RCloud.create(ocaps.rcloud);
-                            rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {});
-
-                            rcloud.init_client_side_data(function() {
-                                $("#output").find(".alert").remove();
-                                do_load(done);
-                            });
-                        },
-                        on_data: function(v) {
-                            v = v.value.json();
-                            oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
-                        }
+                    if (!_.isUndefined(notebook.error)) {
+                        done();
+                        gistname_ = oldname;
+                        version_ = oldversion;
+                        return;
+                    }
+                    $(".rcloud-user-defined-css").remove();
+                    rcloud.install_notebook_stylesheets(function() {
+                        done();
+                        on_load.bind(that, k)(notebook);
                     });
                 });
             }
-
+            reset_session(do_load);
         }, save_notebook: function() {
             notebook_controller_.save();
         }, new_notebook: function(desc, k) {
-            var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
-            notebook_controller_.create_notebook(content, _.bind(on_new, this, k));
+            reset_session(function(done) {
+                var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
+                done(); // well not really done (just done with cps bleh)
+                notebook_controller_.create_notebook(content, _.bind(on_new, this, k));
+            });
         }, fork_or_revert_notebook: function(is_mine, gistname, version, k) {
             if(is_mine && !version)
                 throw "unexpected revert of current version";
-            var that = this;
-            notebook_model_.read_only(false);
-            notebook_controller_.fork_or_revert_notebook(is_mine, gistname, version, function(notebook) {
-                gistname_ = notebook.id;
-                version_ = null;
-                on_load.call(that, k, notebook);
+            reset_session(function(done) {
+                var that = this;
+                notebook_model_.read_only(false);
+                notebook_controller_.fork_or_revert_notebook(is_mine, gistname, version, function(notebook) {
+                    gistname_ = notebook.id;
+                    version_ = null;
+                    done(); // again, not really done - just too nasty to compose done with k
+                    on_load.call(that, k, notebook);
+                });
             });
         }, open_in_github: function() {
             var url;
-            if(gist_url_) {
+            if(!this.is_old_github()) {
                 url = gist_url_;
-                url += rcloud.username() + '/';
+                url += notebook_user_ + '/';
             }
             else
                 url = github_url_ + 'gist/';
@@ -487,8 +502,11 @@ var shell = (function() {
             });
         }, import_notebook_file: function() {
             var that = this;
-            var notebook = null;
             function create_import_file_dialog() {
+                var notebook = null;
+                var notebook_status_content = null;
+                var notebook_desc_content = null;
+                var import_button = null;
                 function do_upload(file) {
                     notebook_status.hide();
                     notebook_desc.hide();
@@ -516,7 +534,7 @@ var shell = (function() {
                         notebook_desc_content.val(notebook.description);
                         notebook_desc.show();
                         notebook = sanitize_notebook(notebook);
-                        ui_utils.enable_bs_button(go);
+                        ui_utils.enable_bs_button(import_button);
                     };
                     fr.readAsText(file);
                 }
@@ -524,7 +542,7 @@ var shell = (function() {
                     if(notebook) {
                         notebook.description = notebook_desc_content.val();
                         rcloud.create_notebook(notebook, function(notebook) {
-                            editor.add_notebook(notebook);
+                            editor.star_notebook(true, {notebook: notebook});
                         });
                     }
                     dialog.modal('hide');
@@ -534,10 +552,10 @@ var shell = (function() {
                 var file_upload = $('<span class="btn">Validate</span>')
                         .click(function() { do_upload(file_select[0].files[0]); });
                 var notebook_status = $('<span>Validation: </span>');
-                var notebook_status_content = $('<span />');
+                notebook_status_content = $('<span />');
                 notebook_status.append(notebook_status_content);
                 var notebook_desc = $('<span>Notebook description: </span>');
-                var notebook_desc_content = $('<input type="text" size="50"></input>')
+                notebook_desc_content = $('<input type="text" size="50"></input>')
                     .keypress(function(e) {
                         if (e.which === 13) {
                             do_import();
@@ -551,16 +569,16 @@ var shell = (function() {
                     .append($('<p/>').append(notebook_desc.hide()));
                 var cancel = $('<span class="btn">Cancel</span>')
                         .on('click', function() { $(dialog).modal('hide'); });
-                var go = $('<span class="btn btn-primary">Import</span>')
+                import_button = $('<span class="btn btn-primary">Import</span>')
                         .on('click', do_import);
-                ui_utils.disable_bs_button(go);
+                ui_utils.disable_bs_button(import_button);
                 var footer = $('<div class="modal-footer"></div>')
-                        .append(cancel).append(go);
+                        .append(cancel).append(import_button);
                 var header = $(['<div class="modal-header">',
                                 '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>',
                                 '<h3>Import Notebook File</h3>',
                                 '</div>'].join(''));
-                var dialog = $('<div id="import-notebook-dialog" class="modal fade"></div>')
+                var dialog = $('<div id="import-notebook-file-dialog" class="modal fade"></div>')
                         .append($('<div class="modal-dialog"></div>')
                                 .append($('<div class="modal-content"></div>')
                                         .append(header).append(body).append(footer)));
@@ -572,11 +590,20 @@ var shell = (function() {
                         notebook_desc_content.val('');
                         notebook_desc.hide();
                     });
+
+                // keep selected file, in case repeatedly importing is helpful
+                // but do reset Import button!
+                dialog.data("reset", function() {
+                    notebook = null;
+                    ui_utils.disable_bs_button(import_button);
+                });
                 return dialog;
             }
-            var dialog = $("#import-notebook-dialog");
+            var dialog = $("#import-notebook-file-dialog");
             if(!dialog.length)
                 dialog = create_import_file_dialog();
+            else
+                dialog.data().reset();
             dialog.modal({keyboard: true});
         }, import_notebooks: function() {
             function do_import() {
@@ -596,8 +623,8 @@ var shell = (function() {
                                                   failed.push(res);
                                           }
                                           // TODO: tell user about failed imports
-                                          succeeded.forEach(function(imported) {
-                                              editor.add_notebook(imported, null, false);
+                                          succeeded.forEach(function(notebook) {
+                                              editor.star_notebook(true, {notebook: notebook});
                                           });
                                       });
                 dialog.modal('hide');
@@ -619,11 +646,13 @@ var shell = (function() {
                                 '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>',
                                 '<h3>Import Notebooks</h3>',
                                 '</div>'].join(''));
-                var dialog = $('<div id="import-notebook-dialog" class="modal fade"></div>')
+                var dialog = $('<div id="import-notebooks-dialog" class="modal fade"></div>')
                         .append($('<div class="modal-dialog"></div>')
                                 .append($('<div class="modal-content"></div>')
                                         .append(header).append(body).append(footer)));
                 $("body").append(dialog);
+
+                // clear gists list but keep the other fields, to aide repetitive operations
                 dialog
                     .on('show.bs.modal', function() {
                         $('#import-gists').val('');
@@ -633,7 +662,7 @@ var shell = (function() {
                     });
                 return dialog;
             }
-            var dialog = $("#import-notebook-dialog");
+            var dialog = $("#import-notebooks-dialog");
             if(!dialog.length)
                 dialog = create_import_notebook_dialog();
             dialog.modal({keyboard: true});
@@ -643,7 +672,7 @@ var shell = (function() {
     $("#run-notebook").click(function() {
         rcloud.with_progress(function(done) {
             result.notebook.controller.run_all(function() { done(); });
-            prompt_.widget.focus(); // surely not the right way to do this
+            prompt_ && prompt_.widget.focus(); // surely not the right way to do this
         });
     });
     return result;

@@ -22,22 +22,24 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(k, version, notebook) {
-        this.clear();
-        var parts = {}; // could rely on alphabetic input instead of gathering
-        _.each(notebook.files, function (file) {
-            var filename = file.filename;
-            if(/^part/.test(filename)) {
-                var number = parseInt(filename.slice(4).split('.')[0]);
-                if(number !== NaN)
-                    parts[number] = [file.content, file.language, number];
-            }
-            // style..
-        });
-        for(var i in parts)
-            append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
-        // is there anything else to gist permissions?
-        model.read_only(version != null || notebook.user.login != rcloud.username());
-        current_gist_ = notebook;
+        if (!_.isUndefined(notebook.files)) {
+            this.clear();
+            var parts = {}; // could rely on alphabetic input instead of gathering
+            _.each(notebook.files, function (file) {
+                var filename = file.filename;
+                if(/^part/.test(filename)) {
+                    var number = parseInt(filename.slice(4).split('.')[0]);
+                    if(number !== NaN)
+                        parts[number] = [file.content, file.language, number];
+                }
+                // style..
+            });
+            for(var i in parts)
+                append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
+            // is there anything else to gist permissions?
+            model.read_only(version != null || notebook.user.login != rcloud.username());
+            current_gist_ = notebook;
+        }
         k && k(notebook);
     }
 
@@ -88,7 +90,7 @@ Notebook.create_controller = function(model)
         show_source_checkbox_ = ui_utils.checkbox_menu_item($("#show-source"),
            function() {result.show_r_source();},
            function() {result.hide_r_source();});
-        show_source_checkbox_(true);
+        show_source_checkbox_.set_state(true);
     }
 
     setup_show_source();
@@ -134,28 +136,36 @@ Notebook.create_controller = function(model)
         },
         fork_or_revert_notebook: function(is_mine, gistname, version, k) {
             var that = this;
-            function update_if(changes, gistname, k) {
-                // if there are no changes, just load the gist so that we are sending along
-                // the latest history, timestamp, etc.
+            function update_and_load(changes, gistname, k) {
+                // force a full reload in all cases, as a sanity check
+                // i.e. we might know what the notebook state should be,
+                // but load the notebook to make sure
+                var k2 = function() {
+                    that.load_notebook(gistname, null, k);
+                };
                 if(changes.length)
-                    that.update_notebook(changes, gistname, k);
+                    that.update_notebook(changes, gistname, k2);
                 else
-                    rcloud.load_notebook(gistname, null, k);
+                    k2();
+
             }
             if(is_mine) // revert: get HEAD, calculate changes from there to here, and apply
                 rcloud.load_notebook(gistname, null, function(notebook) {
                     var changes = find_changes_from(notebook);
-                    update_if(changes, gistname, k);
+                    update_and_load(changes, gistname, k);
                 });
             else // fork:
                 rcloud.fork_notebook(gistname, function(notebook) {
                     if(version) {
-                        // fork, then get changes from there to here, and apply
-                        var changes = find_changes_from(notebook);
-                        update_if(changes, notebook.id, k);
+                        // fork, then get changes from there to where we are in the past, and apply
+                        // git api does not return the files on fork, so load
+                        rcloud.get_notebook(notebook.id, null, function(notebook2) {
+                            var changes = find_changes_from(notebook2);
+                            update_and_load(changes, notebook2.id, k);
+                        });
                     }
                     else
-                        that.load_notebook(notebook.id, null, k);
+                        update_and_load([], notebook.id, k);
                 });
         },
         update_notebook: function(changes, gistname, k) {
@@ -196,8 +206,12 @@ Notebook.create_controller = function(model)
                 return {files: _.reduce(changes, xlate_change, {})};
             }
             // not awesome to callback to someone else here
-            k = k || editor.load_callback(null, true);
+            k = k || editor.load_callback(null, true, true);
             var k2 = function(notebook) {
+                if('error' in notebook) {
+                    k(notebook);
+                    return;
+                }
                 current_gist_ = notebook;
                 k(notebook);
             };
@@ -221,7 +235,6 @@ Notebook.create_controller = function(model)
 
         },
         run_all: function(k) {
-            var changes = this.refresh_cells();
             this.save();
             var n = model.notebook.length;
             var disp;
@@ -235,16 +248,19 @@ Notebook.create_controller = function(model)
             _.each(model.notebook, function(cell_model) {
                 cell_model.controller.set_status_message("Waiting...");
             });
-            // yes this is a joke
+            // this is silly.
             disp = _.map(model.notebook, function(cell_model) {
                 return function() {
                     cell_model.controller.set_status_message("Computing...");
                 };
             });
-            disp.shift()();
-            _.each(model.notebook, function(cell_model) {
-                cell_model.controller.execute(bump_executed);
-            });
+            if(disp.length) {
+                disp.shift()();
+                _.each(model.notebook, function(cell_model) {
+                    cell_model.controller.execute(bump_executed);
+                });
+            }
+            else k && k();
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -253,12 +269,12 @@ Notebook.create_controller = function(model)
 
         hide_r_source: function() {
             this._r_source_visible = false;
-            show_source_checkbox_(this._r_source_visible);
+            show_source_checkbox_.set_state(this._r_source_visible);
             Notebook.hide_r_source();
         },
         show_r_source: function() {
             this._r_source_visible = true;
-            show_source_checkbox_(this._r_source_visible);
+            show_source_checkbox_.set_state(this._r_source_visible);
             Notebook.show_r_source();
         }
     };

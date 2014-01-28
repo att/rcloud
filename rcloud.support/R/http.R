@@ -19,8 +19,30 @@
     ## process everything else
     if (isTRUE(url == "") || isTRUE(url == "/")) url <- "/index.html"
 
+    path.info <- NULL
     ## serve files from the htdocs directory
     fn <- pathConf("root", "htdocs", url)
+    self.path <- gsub("//+", "/", file.path("/", url))
+    if (!file.exists(fn)) {
+      ## try to support PATH_INFO-like access
+      htdocs <- pathConf("root", "htdocs")
+      if (file.exists(htdocs)) {
+        exf <- strsplit(url, "/", TRUE)[[1L]]
+        valid <- htdocs
+        self.path <- "/"
+        while (length(exf) && isTRUE(file.info(valid)$isdir)) {
+          valid <- file.path(valid, exf[1L])
+          self.path <- file.path(self.path, exf[1L])
+          exf <- exf[-1L]
+        }
+        if (isTRUE(!file.info(valid)$isdir)) {
+          fn <- valid
+          path.info <- paste(exf, collapse=.Platform$file.sep)
+          self.path <- gsub("//+", "/", self.path)
+        }
+      }
+    }
+    fn <- gsub("//+", "/", fn)
     if (!file.exists(fn))
         list(paste("ERROR: item '", fn, "' not found!", sep=''),"text/html", character(), 404L)
     else {

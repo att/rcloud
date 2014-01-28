@@ -99,6 +99,12 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var widget = ace.edit(ace_div[0]);
     var RMode = require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
     var session = widget.getSession();
+    widget.setValue(cell_model.content());
+    ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
+    // erase undo state so that undo doesn't erase all
+    window.setTimeout(function() {
+        session.getUndoManager().reset();
+    }, 0);
     var doc = session.doc;
     widget.setReadOnly(cell_model.parent_model.read_only());
     widget.setOptions({
@@ -114,8 +120,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     session.setUseWrapMode(true);
     widget.resize();
 
-    var Autocomplete = require("ace/autocomplete").Autocomplete;
-
+    ui_utils.install_common_ace_key_bindings(widget);
     widget.commands.addCommands([{
         name: 'sendToR',
         bindKey: {
@@ -126,10 +131,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         exec: function(widget, args, request) {
             execute_cell();
         }
-    }, {
-        name: 'another autocomplete key',
-        bindKey: 'Ctrl-.',
-        exec: Autocomplete.startCommand.exec
     }]);
     var change_content = ui_utils.ignore_programmatic_changes(widget, function() {
         cell_model.parent_model.on_dirty();
@@ -146,9 +147,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         // pubsub event handlers
 
         content_updated: function() {
-            var position = widget.getCursorPosition();
+            var range = widget.getSelection().getRange();
             var changed = change_content(cell_model.content());
-            widget.getSelection().moveCursorToPosition(position);
+            widget.getSelection().setSelectionRange(range);
             return changed;
         },
         self_removed: function() {
@@ -162,14 +163,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // There's a list of things that we need to do to the output:
             var uuid = rcloud.deferred_knitr_uuid;
 
-            if (inner_div.find("pre code").length === 0) {
+            if (cell_model.language() === 'R' && inner_div.find("pre code").length === 0) {
                 r_result_div.prepend("<pre><code>" + cell_model.content() + "</code></pre>");
             }
 
             // fix image width so that retina displays are set correctly
-            // FIXME currently assumes that all plots are 72 dpi x 7 inches (which is bad)
             inner_div.find("img")
-                .attr("width", "504px");
+                .each(function(i, img) { img.style.width = img.width / window.devicePixelRatio; });
 
             // capture deferred knitr results
             inner_div.find("pre code")
@@ -333,7 +333,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     };
 
     result.show_result();
-    result.content_updated();
     return result;
 }};
 

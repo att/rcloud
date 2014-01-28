@@ -26,13 +26,13 @@ rcs.rm.RCSff <- function(key, engine=.session$rcs.engine)
   tryCatch(file.remove(.ffpath(key, engine)), warning=function(w) FALSE, error=function(e) FALSE)
 
 rcs.incr.RCSff <- function(key, engine=.session$rcs.engine) {
-  x <- tryCatch(as.integer(rcs.get(key, engine)), warning=function(w) 0L, error=function(w) 0L)
+  x <- tryCatch(as.integer(rcs.get(key, engine=engine)), warning=function(w) 0L, error=function(w) 0L)
   if (length(x) != 1L) x <- 0L
   rcs.set(key, x + 1L, engine)
 }
 
 rcs.decr.RCSff <- function(key, engine=.session$rcs.engine) {
-  x <- tryCatch(as.integer(rcs.get(key, engine)), warning=function(w) 0L, error=function(w) 0L)
+  x <- tryCatch(as.integer(rcs.get(key, engine=engine)), warning=function(w) 0L, error=function(w) 0L)
   if (length(x) != 1L) x <- 0L
   if (x < 1L) x <- 0L else x <- x - 1L
   rcs.set(key, x, engine)

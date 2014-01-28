@@ -43188,7 +43188,8 @@ dc.pieChart = function (parent, chartGroup) {
     };
 
     function calculateDataPie() {
-        return d3.layout.pie().sort(null).value(function (d) {
+
+        return d3.layout.pie().sort(function(a, b) { return _chart.ordering()(b) - _chart.ordering()(a); }).value(function (d) {
             return _chart.valueAccessor()(d);
         });
     }
@@ -43721,7 +43722,6 @@ dc.dataTable = function(parent, chartGroup) {
         return d3.nest()
             .key(_chart.group())
             .sortKeys(_order)
-            .sortValues(_order)
             .entries(_sort(entries, 0, entries.length));
     }
 
@@ -44854,7 +44854,6 @@ Spectral:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(153,213,148)"],4:["rgb(21
 RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,25,28)","rgb(253,174,97)","rgb(166,217,106)","rgb(26,150,65)"],5:["rgb(215,25,28)","rgb(253,174,97)","rgb(255,255,191)","rgb(166,217,106)","rgb(26,150,65)"],6:["rgb(215,48,39)","rgb(252,141,89)","rgb(254,224,139)","rgb(217,239,139)","rgb(145,207,96)","rgb(26,152,80)"],7:["rgb(215,48,39)","rgb(252,141,89)","rgb(254,224,139)","rgb(255,255,191)","rgb(217,239,139)","rgb(145,207,96)","rgb(26,152,80)"],8:["rgb(215,48,39)","rgb(244,109,67)","rgb(253,174,97)","rgb(254,224,139)","rgb(217,239,139)","rgb(166,217,106)","rgb(102,189,99)","rgb(26,152,80)"],9:["rgb(215,48,39)","rgb(244,109,67)","rgb(253,174,97)","rgb(254,224,139)","rgb(255,255,191)","rgb(217,239,139)","rgb(166,217,106)","rgb(102,189,99)","rgb(26,152,80)"],10:["rgb(165,0,38)","rgb(215,48,39)","rgb(244,109,67)","rgb(253,174,97)","rgb(254,224,139)","rgb(217,239,139)","rgb(166,217,106)","rgb(102,189,99)","rgb(26,152,80)","rgb(0,104,55)"],11:["rgb(165,0,38)","rgb(215,48,39)","rgb(244,109,67)","rgb(253,174,97)","rgb(254,224,139)","rgb(255,255,191)","rgb(217,239,139)","rgb(166,217,106)","rgb(102,189,99)","rgb(26,152,80)","rgb(0,104,55)"]}};
 /* an attempt to wrap dataframe access in an abstract
  interface that should work for other data too (?)
- note: test on array-of-records data!
  */
 var dataframe = {
     cols: function(data) {
@@ -44944,16 +44943,47 @@ var group = {
 // and pass it the functions it composes to call the true accessor
 var reduce = {
     count: function(group) { return group.reduceCount(); },
-    sum: function(access) {
+    countFilter: function(access, level) {
+        return reduce.sum(function (a) {
+            return (access(a) == level) ? 1 : 0;
+        });
+    },
+    filter: function(reduce, access, level) {
+        function wrapper(acc) {
+            return function (a) {
+                return (access(a) == level) ? acc(a) : 0;
+            };
+        }
+        return {
+            arg: reduce.arg,
+            fun: function(acc) { return reduce.fun(wrapper(acc)); }
+        };
+    },
+    sum: function(access, wacc) {
         return {
             arg: access,
             fun: function(acc2) {
-                return function(group) {
-                    return group.reduceSum(
-                        function(item) {
-                            return acc2(item);
-                        }
-                    );
+                if(wacc == undefined)
+                    return function(group) {
+                        return group.reduceSum(
+                            function(item) {
+                                return acc2(item);
+                            }
+                        );
+                    };
+                else return function(group) {
+                    return group.reduce(
+                        function(p, v) {
+                            p.sum += (acc2(v)*wacc(v));
+                            return p;
+                        },
+                        function(p, v) {
+                            p.sum -= (acc2(v)*wacc(v));
+                            return p;
+                        },
+                        function(p, v) {
+                            return {sum: 0, valueOf: function() { return this.sum; }};
+                        });
                 };
             }
         };
@@ -44977,11 +45007,11 @@ var reduce = {
             }
         };
     },
-    avg: function(access) {
+    avg: function(access, wacc) {
         return {
             arg: access,
             fun: function(acc2) {
-                return function(group) {
+                if(wacc == undefined) return function(group) {
                     return group.reduce(
                         function(p, v) {
                             ++p.count;
@@ -44999,6 +45029,24 @@ var reduce = {
                             return {count: 0, sum: 0, avg: 0, valueOf: function() { return this.avg; }};
                         });
                 };
+                else return function(group) {
+                    return group.reduce(
+                        function(p, v) {
+                            p.count += wacc(v);
+                            p.sum += (acc2(v)*wacc(v));
+                            p.avg = p.sum / p.count;
+                            return p;
+                        },
+                        function(p, v) {
+                            p.count -= wacc(v);
+                            p.sum -= (acc2(v)*wacc(v));
+                            p.avg = p.count ? p.sum / p.count : 0;
+                            return p;
+                        },
+                        function(p, v) {
+                            return {count: 0, sum: 0, avg: 0, valueOf: function() { return this.avg; }};
+                        });
+                };
             }
         };
     },
@@ -45009,11 +45057,14 @@ var reduce = {
     }
 };
 
-/* forgive me for overengineering this a little bit
+/*
+ many stages of filling in the blanks for dimensions, groups, and charts
 
- 1. generate a complete definition by using defaults and inference
- 2. check for required and unknown attributes
- 3. generate the dimensions, groups, and charts
+ 1. fill in defaults for missing attributes
+ 2. infer other missing attributes from what's there
+ 3. check for required and unknown attributes
+ 4. check for logical errors
+ 5. finally, generate
 
  */
 
@@ -45044,11 +45095,12 @@ var chart_attrs = {
     },
     stackable: {
         supported: true,
-        stack: {required: false}
+        stack: {required: false},
+        'stack.levels': {required: false}
     },
     coordinateGrid: {
         supported: true,
-        parents: ['base'],
+        parents: ['base', 'color'],
         margins: {required: false},
         x: {required: false}, // keyAccessor
         y: {required: false}, // valueAccessor
@@ -45091,6 +45143,7 @@ var chart_attrs = {
         height: {default: 250},
         centerBar: {required: false},
         gap: {required: false},
+        'color.x': {default: true}, // color bars individually when not stacked
         'x.units': {required: true} // the most horrible thing EVER
     },
     line: {
@@ -45132,8 +45185,13 @@ var chart_attrs = {
     dataCount: {
         supported: false
     },
-    dataTableWidget: {
-        supported: false
+    dataTable: {
+        supported: true,
+        concrete: true,
+        parents: ['base'],
+        columns: {required: true},
+        size: {required: false},
+        sortBy: {required: false}
     }
 };
 
@@ -45141,23 +45199,23 @@ function skip_attr(a) {
     return a==='supported' || a=='concrete' || a==='parents';
 }
 
-function preorder_traversal(map, iter, callbacks) {
+function parents_first_traversal(map, iter, callbacks) {
     if(!(iter in map))
         throw 'unknown chart type ' + defn.type;
     var curr = map[iter];
     if('parents' in curr)
         for(var i = 0; i < curr.parents.length; ++i)
-            preorder_traversal(map, curr.parents[i], callbacks);
+            parents_first_traversal(map, curr.parents[i], callbacks);
     callbacks[iter]();
 }
-function postorder_traversal(map, iter, callbacks) {
+function parents_last_traversal(map, iter, callbacks) {
     if(!(iter in map))
         throw 'unknown chart type ' + defn.type;
     callbacks[iter]();
     var curr = map[iter];
     if('parents' in curr)
         for(var i = 0; i < curr.parents.length; ++i)
-            postorder_traversal(map, curr.parents[i], callbacks);
+            parents_last_traversal(map, curr.parents[i], callbacks);
 }
 
 // dc.js formats all numbers as ints - override
@@ -45209,9 +45267,9 @@ function dcplot(frame, groupname, definition) {
     // generalization of _.has
     function mhas(obj) {
         for(var i=1; i<arguments.length; ++i)
-            if(!_.has(obj, arguments[i]))
-                return false
-        else obj = obj[arguments[i]];
+            if(!_.has(obj, arguments[i]) || obj[arguments[i]] == undefined)
+                return false;
+            else obj = obj[arguments[i]];
         return true;
     }
 
@@ -45224,7 +45282,7 @@ function dcplot(frame, groupname, definition) {
         if(!_.has(defn, 'group'))
             defn.group = group.identity;
         if(!_.has(defn, 'reduce'))
-            defn.reduce = reduce.count;
+            defn.reduce = definition.defreduce;
 
         if(errors.length)
             throw errors;
@@ -45241,7 +45299,7 @@ function dcplot(frame, groupname, definition) {
                 if(_.has(cattrs[a], 'default') && defn[a]===undefined)
                     defn[a] = cattrs[a].default;
             }
-            // postorder
+            // parents last
             if('parents' in cattrs)
                 for(var i = 0; i < cattrs.parents.length; ++i)
                     do_defaults(defn, cattrs.parents[i]);
@@ -45271,23 +45329,16 @@ function dcplot(frame, groupname, definition) {
         else throw "illegal accessor " + a.toString();
     }
 
+    function one_stack(defn) {
+        return !_.has(defn,'stack.levels') ||
+            (_.has(defn,'stack.levels') && defn['stack.levels'].length == 1);
+    }
+
     // inferences
     function infer_dimension(name, defn) {
         // nothing (yet?)
     }
     function infer_group(name, defn, dims) {
-        var errors = [];
-        if(!_.has(defn, 'dimension'))
-            errors.push('group needs dimension');
-        if(!_.has(dims, defn.dimension))
-            errors.push('unknown dimension "' + defn.dimension + '"');
-        if(!_.has(defn, 'group'))
-            defn.group = group.identity;
-        if(!_.has(defn, 'reduce'))
-            defn.reduce = reduce.count;
-
-        if(errors.length)
-            throw errors;
     }
     function infer_chart(name, defn, dims, groups) {
         var errors = [];
@@ -45298,36 +45349,45 @@ function dcplot(frame, groupname, definition) {
             while(hash[base + n]) ++n;
             return base + n;
         }
+        // abstract this into a plugin - this is RCloud-specific (rserve.js)
         function get_levels(dim) {
             var levels = null;
-            if(_.has(dims, dim) && mhas(accessor(dims[dim]), 'attrs', 'levels'))
-                levels = accessor(dims[dim]).attrs.levels;
+            if(_.isFunction(dim))
+                levels = dim.attrs.r_attributes.levels;
+            else if(_.has(dims, dim) && mhas(accessor(dims[dim]), 'attrs', 'r_attributes', 'levels'))
+                levels = accessor(dims[dim]).attrs.r_attributes.levels;
             return levels;
         }
         function looks_ordinal(dim) {
             return _.has(dims, dim) && _.isString(accessor(dims[dim])(0));
         }
+
         var callbacks = {
             base: function() {
                 if(!('div' in defn))
                     defn.div = '#' + name;
                 if(defn.group) {
-                    if(!defn.dimension)
+                    if(!groups[defn.group])
+                        errors.push('unknown group "' + defn.group + '"');
+                    else if(!defn.dimension)
                         defn.dimension = groups[defn.group].dimension;
                 }
                 else if(defn.dimension) {
                     if(!dims[defn.dimension])
                         errors.push('unknown dimension "' + defn.dimension + '"');
-                    defn.group = find_unused(groups, defn.dimension);
-                    var g = groups[defn.group] = {};
-                    g.dimension = defn.dimension;
-                    infer_group(defn.group, g, dims);
+                    else {
+                        defn.group = find_unused(groups, defn.dimension);
+                        var g = groups[defn.group] = {};
+                        g.dimension = defn.dimension;
+                        default_group(defn.group, g, dims);
+                        infer_group(defn.group, g, dims);
+                    }
                 }
                 if(!_.has(defn, 'ordering')) {
                     // note it's a little messy to have this as a property of the chart rather than
                     // the group, but dc.js sometimes needs an ordering and sometimes doesn't
                     var levels = get_levels(defn.dimension);
-                    if(levels) {
+                    if(levels != null) {
                         var rmap = _.object(levels, _.range(levels.length));
                         // the ordering function uses a reverse map of the levels
                         defn.ordering = function(p) {
@@ -45338,8 +45398,39 @@ function dcplot(frame, groupname, definition) {
 
             },
             color: function() {
+                if(!defn['color.scale']) {
+                    // note stackable bleeds in here: since they are on different branches
+                    // of the hierarchy, there is no sensible way for stackable to override
+                    // color here
+                    var levels = get_levels(defn.stack || defn.dimension);
+                    defn['color.scale'] = (levels != null && levels.length>10)
+                        ? d3.scale.category20() : d3.scale.category10();
+                }
+                if(!defn['color.domain']) {
+                    // this also should be abstracted out into a plugin (RCloud-specific)
+                    if(mhas(defn, 'color', 'attrs', 'r_attributes', 'levels'))
+                        defn['color.domain'] = defn.color.attrs.r_attributes.levels;
+                }
             },
             stackable: function() {
+                if(_.has(defn,'stack')) {
+                    if(!_.has(defn,'stack.levels'))
+                        defn['stack.levels'] = get_levels(defn['stack']);
+                    var levels = defn['stack.levels'];
+
+                    // Change reduce functions to filter on stack levels
+                    for(var s = 0; s<defn['stack.levels'].length; s++) {
+                        var newName = defn.group+defn['stack.levels'][s];
+                        var newGroupDefn = _.clone(groups[defn.group]);
+
+                        // Special treatment for counts, otherwise generic filter wrapper
+                        if(newGroupDefn.reduce == reduce.count)
+                            newGroupDefn.reduce = reduce.countFilter(defn['stack'],defn['stack.levels'][s]);
+                        else newGroupDefn.reduce = reduce.filter(newGroupDefn.reduce,defn['stack'],defn['stack.levels'][s]);
+
+                        groups[newName] = newGroupDefn;
+                    }
+                }
             },
             coordinateGrid: function() {
                 var levels = get_levels(defn.dimension);
@@ -45376,15 +45467,36 @@ function dcplot(frame, groupname, definition) {
                     if(mhas(group, 'group', 'binwidth'))
                         defn['x.units'] = dc.units.fp.precision(group.group.binwidth);
                 }
+                if(!_.has(defn, 'color.domain')) {
+                    var levels;
+                    if(one_stack(defn)) {
+                        if(defn['color.x']) {
+                            levels = get_levels(defn.dimension);
+                            if(levels)
+                                defn['color.domain'] = levels;
+                        }
+                    }
+                    else {
+                        levels = get_levels(defn.stack);
+                        if(levels)
+                            defn['color.domain'] = levels;
+                    }
+                }
             },
             line: function() {
             },
             abstractBubble: function() {
             },
             bubble: function() {
+            },
+            dataTable: function() {
+                var bad = _.find(defn.columns,
+                                 function(col) { return !frame.has(col); });
+                if(bad)
+                    throw bad + " not a valid column!";
             }
         };
-        preorder_traversal(chart_attrs, defn.type, callbacks);
+        parents_first_traversal(chart_attrs, defn.type, callbacks);
 
         if(errors.length)
             throw errors;
@@ -45486,10 +45598,12 @@ function dcplot(frame, groupname, definition) {
             abstractBubble: function() {
             },
             bubble: function() {
+            },
+            dataTable: function() {
             }
         };
 
-        preorder_traversal(chart_attrs, defn.type, callbacks);
+        parents_first_traversal(chart_attrs, defn.type, callbacks);
 
         if(errors.length)
             throw errors;
@@ -45555,30 +45669,29 @@ function dcplot(frame, groupname, definition) {
                 // to serve the purpose. so just plug a d3 scale into colors
                 // and override the calculator to use it
                 // also default to category10 which seems better for discrete colors
-                var scale = defn['color.scale'] || d3.scale.category10();
+
+                var scale = defn['color.scale'];
                 if(_.has(defn, 'color.domain'))
                     scale.domain(defn['color.domain']);
-                else if(mhas(defn, 'color', 'attrs', 'levels'))
-                    scale.domain(defn.color.attrs.levels);
                 if(_.has(defn, 'color.range'))
                     scale.range(defn['color.range']);
                 chart.colors(scale);
                 chart.colorCalculator(function(x) { return chart.colors()(x); });
             },
             stackable: function() {
-                if(_.has(defn, 'stack'))
-                    for(var s in defn.stack) {
-                        var stack = defn.stack[s];
-                        if(_.isArray(stack))
-                            chart.stack(stack[0], stack[1]);
-                        else
-                            chart.stack(stack);
+                if(_.has(defn, 'stack') && _.has(defn, 'stack.levels')) {
+                    for(var s = 0; s<defn['stack.levels'].length; s++) {
+                        var stackGroup = groups[defn.group+defn['stack.levels'][s]];
+
+                        if(s == 0)
+                            chart.group(stackGroup);
+                        else chart.stack(stackGroup);
                     }
+                }
             },
             coordinateGrid: function() {
-                if(_.has(defn, 'margins'))
-                    chart.margins(defn.margins);
-
+                if(_.has(defn, 'margins')) chart.margins(defn.margins);
+                else chart.margins({top: 10, right: 50, bottom: 30, left: 60});
                 if(_.has(defn, 'x'))
                     chart.keyAccessor(key_value(accessor(defn.x)));
                 if(_.has(defn, 'y'))
@@ -45621,7 +45734,7 @@ function dcplot(frame, groupname, definition) {
                 if(_.has(defn, 'wedge'))
                     chart.keyAccessor(key_value(defn.wedge));
                 if(_.has(defn, 'size'))
-                    chart.keyAccessor(key_value(defn.size));
+                    chart.valueAccessor(key_value(defn.size));
 
                 if(_.has(defn, 'radius'))
                     chart.radius(defn.radius);
@@ -45633,6 +45746,36 @@ function dcplot(frame, groupname, definition) {
                     chart.centerBar(defn.centerBar);
                 if(_.has(defn, 'gap'))
                     chart.gap(defn.gap);
+                // optionally color the bars when ordinal and not stacked or one stack
+                if(_.has(defn,'x.ordinal') && defn['x.ordinal'] && defn['color.x'] && one_stack(defn)) {
+                    chart.renderlet(function(chart) {
+                        chart.selectAll("rect.bar").style('fill', function(d,i) {
+                            if(d3.select(this).classed(dc.constants.DESELECTED_CLASS))
+                                return null;
+                            else return chart.colors()(d.x);
+                        });
+                    });
+                }
+                else if(!one_stack(defn)) {
+                    // dc.js does not automatically color the stacks different colors (!)
+                    chart.renderlet(function(chart) {
+                        chart.selectAll("g."+dc.constants.STACK_CLASS)
+                            .each(function(d,i) {
+                                var stack = defn['stack.levels'][i];
+                                d3.select(this).selectAll("rect.bar")
+                                    .style('fill', function(d,i) {
+                                        if(d3.select(this).classed(dc.constants.DESELECTED_CLASS))
+                                            return null;
+                                        else return chart.colors()(stack);
+                                    })
+                                    .select('title')
+                                    .text(function(d,i) {
+                                        return stack + ", " + d3.select(this).text();
+                                    });
+                            });
+                    });
+                }
+
             },
             line: function() {
                 if(_.has(defn, 'area'))
@@ -45650,16 +45793,24 @@ function dcplot(frame, groupname, definition) {
                     rtrans.domain(defn['r.domain'] || [0,100]);
                     chart.r(rtrans);
                 }
+            },
+            dataTable: function() {
+                chart.group(accessor(defn.dimension));
+                chart.columns(defn['columns'].map(accessor));
+                chart.size(defn.size || frame.records().length);
+                if(_.has(defn,'sortBy'))
+                    chart.sortBy(accessor(defn['sortBy']));
             }
         };
         ctor = {
             pie: dc.pieChart,
             bar: dc.barChart,
             line: dc.lineChart,
-            bubble: dc.bubbleChart
+            bubble: dc.bubbleChart,
+            dataTable: dc.dataTable
         }[defn.type];
 
-        preorder_traversal(chart_attrs, defn.type, callbacks);
+        parents_first_traversal(chart_attrs, defn.type, callbacks);
 
         // perform any extra post-processing
         if(_.has(defn, 'more'))
@@ -45755,6 +45906,7 @@ function dcplot(frame, groupname, definition) {
         defn = definition.groups[g];
         groups[g] = create_group(defn, dimensions);
     }
+
     for(c in definition.charts) {
         defn = definition.charts[c];
         charts[c] = create_chart(groupname, defn, dimensions, groups);
@@ -46066,8 +46218,8 @@ Rserve.Rsrv = {
 
     GET_XT: function(x) { return x & 63; },
     GET_DT: function(x) { return x & 63; },
-    HAS_ATTR: function(x) { return (x & Rsrv.XT_HAS_ATTR) > 0; },
-    IS_LARGE: function(x) { return (x & Rsrv.XT_LARGE) > 0; },
+    HAS_ATTR: function(x) { return (x & Rserve.Rsrv.XT_HAS_ATTR) > 0; },
+    IS_LARGE: function(x) { return (x & Rserve.Rsrv.XT_LARGE) > 0; },
 
     // # FIXME A WHOLE LOT OF MACROS HERE WHICH ARE PROBABLY IMPORTANT
     // ##############################################################################
@@ -46209,6 +46361,12 @@ function read(m)
             var t = _[0], l = _[1];
             var total_read = 4;
             var attributes = undefined;
+            if (Rserve.Rsrv.IS_LARGE(t)) {
+                var extra_length = this.read_int();
+                total_read += 4;
+                l += extra_length * Math.pow(2, 24);
+                t &= ~64;
+            }
             if (t & Rserve.Rsrv.XT_HAS_ATTR) {
                 t = t & ~Rserve.Rsrv.XT_HAS_ATTR;
                 var attr_result = this.read_sexp();
@@ -46321,8 +46479,13 @@ function parse(msg)
         result.message = "Unexpected response from RServe: " + result.header[0] + " status: " + Rserve.Rsrv.status_codes[status_code];
         return result;
     }
-    result.ok = true;
-    result.payload = parse_payload(msg);
+    try {
+        result.payload = parse_payload(msg);
+        result.ok = true;
+    } catch (e) {
+        result.ok = false;
+        result.message = e.message;
+    }
     return result;
 }
 
@@ -46337,6 +46500,16 @@ function parse_payload(msg)
     var d = reader.read_int();
     var _ = Rserve.Rsrv.par_parse(d);
     var t = _[0], l = _[1];
+    if (Rserve.Rsrv.IS_LARGE(t)) {
+        var more_length = reader.read_int();
+        l += more_length * Math.pow(2, 24);
+        if (l > (Math.pow(2, 32))) { // resist the 1 << 32 temptation here!
+            // total_length is greater than 2^32.. bail out because of node limits
+            // even though in theory we could go higher than that.
+            throw new Error("Payload too large: " + l + " bytes");
+        }
+        t &= ~64;
+    }
     if (t === Rserve.Rsrv.DT_INT) {
         return { type: "int", value: reader.read_int() };
     } else if (t === Rserve.Rsrv.DT_STRING) {
@@ -46552,11 +46725,23 @@ Rserve.create = function(opts) {
     function _encode_value(value, forced_type)
     {
         var sz = Rserve.determine_size(value, forced_type);
-        var buffer = new ArrayBuffer(sz + 4);
-        var view = Rserve.my_ArrayBufferView(buffer);
-        view.data_view().setInt32(0, Rserve.Rsrv.DT_SEXP + (sz << 8));
-        Rserve.write_into_view(value, view.skip(4), forced_type, convert_to_hash);
-        return buffer;
+        // all this will still break if sz is, say, >= 2^31.
+        if (sz > 16777215) {
+            var buffer = new ArrayBuffer(sz + 8);
+            var view = Rserve.my_ArrayBufferView(buffer);
+            // can't left shift value here because value will have bit 32 set and become signed..
+            view.data_view().setInt32(0, Rserve.Rsrv.DT_SEXP + ((sz & 16777215) * Math.pow(2, 8)) + Rserve.Rsrv.DT_LARGE);
+            // but *can* right shift because we assume sz is less than 2^31 or so to begin with
+            view.data_view().setInt32(4, sz >> 24);
+            Rserve.write_into_view(value, view.skip(8), forced_type, convert_to_hash);
+            return buffer;
+        } else {
+            var buffer = new ArrayBuffer(sz + 4);
+            var view = Rserve.my_ArrayBufferView(buffer);
+            view.data_view().setInt32(0, Rserve.Rsrv.DT_SEXP + (sz << 8));
+            Rserve.write_into_view(value, view.skip(4), forced_type, convert_to_hash);
+            return buffer;
+        }
     }
     
     function hand_shake(msg)
@@ -46744,10 +46929,12 @@ Rserve.create = function(opts) {
                 is_ocap |= ocap.r_attributes['class'] === 'OCref';
                 str = ocap[0];
             } catch (e) {};
-            try {
-                is_ocap |= ocap.attributes.value[0].value.value[0] === 'OCref';
-                str = ocap.value[0];
-            } catch (e) {};
+            if(!is_ocap) {
+                try {
+                    is_ocap |= ocap.attributes.value[0].value.value[0] === 'OCref';
+                    str = ocap.value[0];
+                } catch (e) {};
+            }
             if (!is_ocap)
                 throw new Error("Expected an ocap, instead got " + ocap);
             var params = [str];
@@ -46799,6 +46986,9 @@ Rserve.wrap_all_ocaps = function(s, v) {
 Rserve.wrap_ocap = function(s, ocap) {
     var wrapped_ocap = function() {
         var values = _.toArray(arguments);
+        // common error (tho this won't catch the case where last arg is a function)
+        if(!values.length || !_.isFunction(values[values.length-1]))
+            throw new Error("forgot to pass continuation to ocap");
         var k = values.pop();
         s.OCcall(ocap, values, function(v) {
             k(Rserve.wrap_all_ocaps(s, v));
@@ -46878,40 +47068,52 @@ Rserve.determine_size = function(value, forced_type)
             return memo + Rserve.determine_size(el);
         }, 0);
     }
+    function final_size(payload_size) {
+        if (payload_size > (1 << 24))
+            return payload_size + 8; // large header
+        else
+            return payload_size + 4;
+    }
     var header_size = 4, t = forced_type || Rserve.type_id(value);
-    switch (t) {
+
+    switch (t & ~Rserve.Rsrv.XT_LARGE) {
     case Rserve.Rsrv.XT_NULL:
-        return header_size + 0;
+        return final_size(0);
     case Rserve.Rsrv.XT_ARRAY_BOOL:
         if (_.isBoolean(value))
-            return header_size + 8;
+            return final_size(8);
         else
-            return header_size + ((value.length + 7) & ~3);
+            return final_size((value.length + 7) & ~3);
     case Rserve.Rsrv.XT_ARRAY_STR:
         if (_.isArray(value))
-            return header_size + _.reduce(value, function(memo, str) {
+            return final_size(_.reduce(value, function(memo, str) {
                 return memo + str.length + 1;
-            }, 0);
+            }, 0));
         else
-            return header_size + value.length + 1;
+            return final_size(value.length + 1);
     case Rserve.Rsrv.XT_ARRAY_DOUBLE:
         if (_.isNumber(value))
-            return header_size + 8;
+            return final_size(8);
         else
-            return header_size + 8 * value.length;
+            return final_size(8 * value.length);
     case Rserve.Rsrv.XT_RAW:
-        return header_size + 4 + value.byteLength;
+        return final_size(4 + value.byteLength);
     case Rserve.Rsrv.XT_VECTOR:
     case Rserve.Rsrv.XT_LANG_NOTAG:
-        return header_size + list_size(value);
-    case Rserve.Rsrv.XT_VECTOR | Rserve.Rsrv.XT_HAS_ATTR:
-        return header_size // XT_VECTOR | XT_HAS_ATTR
+        return final_size(list_size(value));
+    case Rserve.Rsrv.XT_VECTOR | Rserve.Rsrv.XT_HAS_ATTR: // a named list (that is, a js object)
+        var names_size_1 = final_size("names".length + 3);
+        var names_size_2 = Rserve.determine_size(_.keys(value));
+        var names_size = final_size(names_size_1 + names_size_2);
+        return final_size(names_size + list_size(_.values(value)));
+/*        return header_size // XT_VECTOR | XT_HAS_ATTR
             + header_size // XT_LIST_TAG (attribute)
               + header_size + "names".length + 3 // length of 'names' + padding (tag as XT_SYMNAME)
               + Rserve.determine_size(_.keys(value)) // length of names
             + list_size(_.values(value)); // length of values
-    case Rserve.Rsrv.XT_ARRAY_STR | Rserve.Rsrv.XT_HAS_ATTR:
-        return Rserve.determine_size("0403556553") // length of string 
+*/
+    case Rserve.Rsrv.XT_ARRAY_STR | Rserve.Rsrv.XT_HAS_ATTR: // js->r ocap (that is, a js function)
+        return Rserve.determine_size("0403556553") // length of ocap nonce; that number is meaningless aside from length
             + header_size // XT_LIST_TAG (attribute)
               + header_size + "class".length + 3 // length of 'class' + padding (tag as XT_SYMNAME)
               + Rserve.determine_size(["javascript_function"]); // length of class name
@@ -46924,29 +47126,40 @@ Rserve.determine_size = function(value, forced_type)
 Rserve.write_into_view = function(value, array_buffer_view, forced_type, convert)
 {
     var size = Rserve.determine_size(value, forced_type);
-    if (size > 16777215)
-        throw new Rserve.RserveError("Can't currently handle objects >16MB");
+    var is_large = size > 16777215;
+    // if (size > 16777215)
+    //     throw new Rserve.RserveError("Can't currently handle objects >16MB");
     var t = forced_type || Rserve.type_id(value), i, current_offset, lbl;
+    if (is_large)
+        t = t | Rserve.Rsrv.XT_LARGE;
     var read_view;
     var write_view = array_buffer_view.data_view();
-    write_view.setInt32(0, t + ((size - 4) << 8));
+    var payload_start;
+    if (is_large) {
+        payload_start = 8;
+        write_view.setInt32(0, t + ((size - 8) << 8));
+        write_view.setInt32(4, (size - 8) >> 24);
+    } else { 
+        payload_start = 4;
+        write_view.setInt32(0, t + ((size - 4) << 8));
+    }
 
-    switch (t) {
+    switch (t & ~Rserve.Rsrv.XT_LARGE) {
     case Rserve.Rsrv.XT_NULL:
         break;
     case Rserve.Rsrv.XT_ARRAY_BOOL:
         if (_.isBoolean(value)) {
-            write_view.setInt32(4, 1);
-            write_view.setInt8(8, value ? 1 : 0);
+            write_view.setInt32(payload_start, 1);
+            write_view.setInt8(payload_start + 4, value ? 1 : 0);
         } else {
-            write_view.setInt32(4, value.length);
+            write_view.setInt32(payload_start, value.length);
             for (i=0; i<value.length; ++i)
-                write_view.setInt8(8 + i, value[i] ? 1 : 0);
+                write_view.setInt8(payload_start + 4 + i, value[i] ? 1 : 0);
         }
         break;
     case Rserve.Rsrv.XT_ARRAY_STR:
         if (_.isArray(value)) {
-            var offset = 4;
+            var offset = payload_start;
             _.each(value, function(el) {
                 for (var i=0; i<el.length; ++i, ++offset)
                     write_view.setUint8(offset, el.charCodeAt(i));
@@ -46954,27 +47167,28 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type, convert
             });
         } else {
             for (i=0; i<value.length; ++i)
-                write_view.setUint8(4 + i, value.charCodeAt(i));
-            write_view.setUint8(4 + value.length, 0);
+                write_view.setUint8(payload_start + i, value.charCodeAt(i));
+            write_view.setUint8(payload_start + value.length, 0);
         }
         break;
     case Rserve.Rsrv.XT_ARRAY_DOUBLE:
         if (_.isNumber(value))
-            write_view.setFloat64(4, value);
-        else
+            write_view.setFloat64(payload_start, value);
+        else {
             for (i=0; i<value.length; ++i)
-                write_view.setFloat64(4 + 8 * i, value[i]);
+                write_view.setFloat64(payload_start + 8 * i, value[i]);
+        }
         break;
     case Rserve.Rsrv.XT_RAW:
         read_view = new Rserve.EndianAwareDataView(value);
-        write_view.setUint32(4, value.byteLength);
+        write_view.setUint32(payload_start, value.byteLength);
         for (i=0; i<value.byteLength; ++i) {
-            write_view.setUint8(8 + i, read_view.getUint8(i));
+            write_view.setUint8(payload_start + 4 + i, read_view.getUint8(i));
         }
         break;
     case Rserve.Rsrv.XT_VECTOR:
     case Rserve.Rsrv.XT_LANG_NOTAG:
-        current_offset = 4;
+        current_offset = payload_start;
         _.each(value, function(el) {
             var sz = Rserve.determine_size(el);
             Rserve.write_into_view(el, array_buffer_view.skip(
@@ -46983,13 +47197,13 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type, convert
         });
         break;
     case Rserve.Rsrv.XT_VECTOR | Rserve.Rsrv.XT_HAS_ATTR:
-        current_offset = 12;
+        current_offset = payload_start + 8;
         _.each(_.keys(value), function(el) {
             for (var i=0; i<el.length; ++i, ++current_offset)
                 write_view.setUint8(current_offset, el.charCodeAt(i));
             write_view.setUint8(current_offset++, 0);
         });
-        write_view.setUint32(8, Rserve.Rsrv.XT_ARRAY_STR + ((current_offset - 12) << 8));
+        write_view.setUint32(payload_start + 4, Rserve.Rsrv.XT_ARRAY_STR + ((current_offset - (payload_start + 8)) << 8));
 
         write_view.setUint32(current_offset, Rserve.Rsrv.XT_SYMNAME + (8 << 8));
         current_offset += 4;
@@ -46998,7 +47212,7 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type, convert
             write_view.setUint8(current_offset, lbl.charCodeAt(i));
         current_offset += 3;
 
-        write_view.setUint32(4, Rserve.Rsrv.XT_LIST_TAG + ((current_offset - 8) << 8));
+        write_view.setUint32(payload_start, Rserve.Rsrv.XT_LIST_TAG + ((current_offset - (payload_start + 4)) << 8));
 
         _.each(_.values(value), function(el) {
             var sz = Rserve.determine_size(el);
@@ -47010,22 +47224,19 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type, convert
 
     case Rserve.Rsrv.XT_ARRAY_STR | Rserve.Rsrv.XT_HAS_ATTR:
         var converted_function = convert(value);
-        current_offset = 12;
+        current_offset = payload_start + 8;
         var class_name = "javascript_function";
         for (i=0; i<class_name.length; ++i, ++current_offset)
             write_view.setUint8(current_offset, class_name.charCodeAt(i));
         write_view.setUint8(current_offset++, 0);
-        write_view.setUint32(8, Rserve.Rsrv.XT_ARRAY_STR + ((current_offset - 12) << 8));
-
+        write_view.setUint32(8, Rserve.Rsrv.XT_ARRAY_STR + ((current_offset - (payload_start + 8)) << 8));
         write_view.setUint32(current_offset, Rserve.Rsrv.XT_SYMNAME + (8 << 8));
         current_offset += 4;
         lbl = "class";
         for (i=0; i<lbl.length; ++i, ++current_offset)
             write_view.setUint8(current_offset, lbl.charCodeAt(i));
         current_offset += 3;
-
-        write_view.setUint32(4, Rserve.Rsrv.XT_LIST_TAG + ((current_offset - 8) << 8));
-
+        write_view.setUint32(4, Rserve.Rsrv.XT_LIST_TAG + ((current_offset - (payload_start + 4)) << 8));
         for (i=0; i<converted_function.length; ++i)
             write_view.setUint8(current_offset + i, converted_function.charCodeAt(i));
         write_view.setUint8(current_offset + converted_function.length, 0);

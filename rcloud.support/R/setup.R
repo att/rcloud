@@ -73,7 +73,8 @@ configure.rcloud <- function () {
   if (!nzConf("github.base.url")) setConf("github.base.url", "https://github.com/")
   if (!nzConf("github.api.url")) setConf("github.api.url", "https://api.github.com/")
   
-  if (!all(sapply(c("github.client.id", "github.client.secret"), nzConf)))
+  if (!all(sapply(c("github.client.id", "github.client.secret"), nzConf))
+      && !nzConf("gist.deployment.stash"))
     stop("*** ERROR: You need a GitHub configuration in rcloud.conf! Please refer to README.md for more instructions.")
 
   ## set locale - default is UTF-8
@@ -213,7 +214,10 @@ start.rcloud <- function(username="", token="", ...) {
     stop("bad username/token pair");
   .session$username <- username
   .session$token <- token
-  .session$rgithub.context <- create.github.context(
+  if (nzConf("gist.deployment.stash"))
+    .session$deployment.stash <- getConf("gist.deployment.stash")
+  else
+    .session$rgithub.context <- create.github.context(
                                 getConf("github.api.url"), getConf("github.client.id"),
                                 getConf("github.client.secret"), token)
 
@@ -224,7 +228,10 @@ start.rcloud <- function(username="", token="", ...) {
 
 start.rcloud.anonymously <- function(...) {
   if (rcloud.debug.level()) cat("start.rcloud.anonymously()")
-  .session$rgithub.context <- create.github.context(
+  if (nzConf("gist.deployment.stash"))
+    .session$deployment.stash <- getConf("gist.deployment.stash")
+  else
+    .session$rgithub.context <- create.github.context(
                                 getConf("github.api.url"), getConf("github.client.id"),
                                 getConf("github.client.secret"))
   .session$username <- ""

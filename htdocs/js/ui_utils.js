@@ -1,31 +1,5 @@
 var ui_utils = {};
 
-$.fn.font_awesome_checkbox = function(opts) {
-    opts = opts || {};
-    if (opts.checked) {
-        this.addClass('icon-check');
-        this.removeClass('icon-check-empty');
-    } else {
-        this.addClass('icon-check-empty');
-        this.removeClass('icon-check');
-    }
-    this.off("click");
-    this.on("click", function() {
-        var this_class = $(this).attr("class");
-        if (this_class === 'icon-check') {
-            $(this).addClass('icon-check-empty');
-            $(this).removeClass('icon-check');
-            opts.click && opts.click(this);
-            opts.uncheck && opts.uncheck(this);
-        } else {
-            $(this).addClass('icon-check');
-            $(this).removeClass('icon-check-empty');
-            opts.click && opts.click(this);
-            opts.check && opts.check(this);
-        }
-    });
-};
-
 ui_utils.fa_button = function(which, title, classname, style)
 {
     var span = $('<span/>', {class: 'fontawesome-button ' + (classname || '')});
@@ -63,7 +37,62 @@ ui_utils.ace_editor_height = function(widget)
     var rows = Math.min(30, widget.getSession().getLength());
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
     return Math.max(75, newHeight);
+    /*
+     // patch to remove tooltip when button clicked
+     // (not needed anymore with later jquery?)
+    var old_click = span.click;
+    span.click = function() {
+        $(this).tooltip('hide');
+        old_click.apply(this, arguments);
+    };
+     */
 };
+
+ui_utils.ace_set_pos = function(widget, row, column) {
+    var sel = widget.getSelection();
+    var range = sel.getRange();
+    range.setStart(row, column);
+    range.setEnd(row, column);
+    sel.setSelectionRange(range);
+}
+
+ui_utils.install_common_ace_key_bindings = function(widget) {
+    var Autocomplete = require("ace/autocomplete").Autocomplete;
+    var session = widget.getSession();
+
+    widget.commands.addCommands([
+        {
+            name: 'another autocomplete key',
+            bindKey: 'Ctrl-.',
+            exec: Autocomplete.startCommand.exec
+        },
+        {
+            name: 'disable gotoline',
+            bindKey: {
+                win: "Ctrl-L",
+                mac: "Command-L"
+            },
+            exec: function() { return false; }
+        }, {
+            name: 'execute-selection-or-line',
+            bindKey: {
+                win: 'Alt-Return',
+                mac: 'Alt-Return',
+                sender: 'editor'
+            },
+            exec: function(widget, args, request) {
+                var code = session.getTextRange(widget.getSelectionRange());
+                if(code.length==0) {
+                    var pos = widget.getCursorPosition();
+                    var Range = require('ace/range').Range;
+                    var range = new Range(pos.row, 0, pos.row+1, 0);
+                    code = session.getTextRange(range);
+                }
+                shell.new_interactive_cell(code, true);
+            }
+        }
+    ]);
+}
 
 // bind an ace editor to a listener and return a function to change the
 // editor content without triggering that listener
@@ -81,22 +110,48 @@ ui_utils.ignore_programmatic_changes = function(widget, listener) {
     };
 };
 
-// not that i'm at all happy with the look
-ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
+ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
+                                  active_icon, inactive_icon) {
     function set_state(state) {
         item[0].checked = state;
         var icon = item.find('i');
-        icon.attr('class', state ? 'icon-check' : 'icon-check-empty');
+        if(state) {
+            icon.removeClass(inactive_icon);
+            icon.addClass(active_icon);
+        }
+        else {
+            icon.removeClass(active_icon);
+            icon.addClass(inactive_icon);
+        }
     }
-    item.click(function() {
+    function on_click() {
         var state = !this.checked;
         set_state(state);
         if(state)
-            on_check();
+            on_activate();
         else
-            on_uncheck();
-    });
-    return set_state;
+            on_deactivate();
+    }
+    function enable(val) {
+        item.off('click');
+        if(val)
+            item.click(on_click);
+    }
+    enable(true);
+    return {set_state: set_state, enable: enable};
+};
+
+// not that i'm at all happy with the look
+ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
+    var ret = ui_utils.twostate_icon(item, on_check, on_uncheck,
+                                     'icon-check', 'icon-check-empty');
+    var base_enable = ret.enable;
+    ret.enable = function(val) {
+        // bootstrap menu items go in in an <li /> that takes the disabled class
+        $("#publish-notebook").parent().toggleClass('disabled', !val);
+        base_enable(val);
+    };
+    return ret;
 };
 
 // this is a hack, but it'll help giving people the right impression.

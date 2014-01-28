@@ -1,6 +1,6 @@
 make.oc <- function(fun, name=deparse(substitute(fun))) {
   f <- function(...) try(fun(...), silent=TRUE)
-  .Call(Rserve_oc_register, f, name)
+  Rserve:::ocap(f, name)
 }
 
 wrap.js.fun <- function(s)
@@ -28,9 +28,9 @@ oc.init <- function(...) { ## this is the payload of the OCinit message
   make.oc(function(v) {
     if (RC.authenticate(v)) {
       authenticated.ocaps()
-    } else {
+    } else if (RC.auth.anonymous(v)) {
       unauthenticated.ocaps()
-    }
+    } else list() ## we don't allow anything if the access was denied
   }, "oc.init")
 }
 
@@ -46,7 +46,10 @@ unauthenticated.ocaps <- function()
       get_conf_value = make.oc(rcloud.get.conf.value),
       get_notebook = make.oc(rcloud.unauthenticated.get.notebook),
       load_notebook = make.oc(rcloud.unauthenticated.load.notebook),
-      
+      call_notebook = make.oc(rcloud.unauthenticated.call.notebook),
+      call_fastrweb_notebook = make.oc(rcloud.unauthenticated.call.FastRWeb.notebook),
+      notebook_by_name = make.oc(rcloud.unauthenticated.notebook.by.name),
+      install_notebook_stylesheets = make.oc(rcloud.install.notebook.stylesheets),
       is_notebook_published = make.oc(rcloud.is.notebook.published),
       
       get_users = make.oc(rcloud.get.users),
@@ -75,10 +78,14 @@ unauthenticated.ocaps <- function()
         unstar_notebook = make.oc(rcloud.unstar.notebook),
         is_notebook_starred = make.oc(rcloud.is.notebook.starred),
         get_notebook_star_count = make.oc(rcloud.notebook.star.count),
+        get_multiple_notebook_star_counts = make.oc(rcloud.multiple.notebook.star.counts),
         get_my_starred_notebooks = make.oc(rcloud.get.my.starred.notebooks)
         ),
 
-      session_cell_eval = make.oc(rcloud.unauthenticated.session.cell.eval)
+      session_cell_eval = make.oc(rcloud.unauthenticated.session.cell.eval),
+
+      # display info
+      set_device_pixel_ratio = make.oc(rcloud.set.device.pixel.ratio)
       )
     )
 }
@@ -97,6 +104,7 @@ authenticated.ocaps <- function()
       search = make.oc(rcloud.search),
       get_notebook = make.oc(rcloud.get.notebook),
       load_notebook = make.oc(rcloud.load.notebook),
+      notebook_by_name = make.oc(rcloud.notebook.by.name),
       update_notebook = make.oc(rcloud.update.notebook),
       create_notebook = make.oc(rcloud.create.notebook),
       rename_notebook = make.oc(rcloud.rename.notebook),
@@ -118,6 +126,7 @@ authenticated.ocaps <- function()
         close = make.oc(rcloud.upload.close.file),
         upload_path = make.oc(rcloud.upload.path)
         ),
+      notebook_upload = make.oc(rcloud.upload.to.notebook),
       
       # commenting ocaps
       comments = list(

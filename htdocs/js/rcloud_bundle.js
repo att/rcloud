@@ -153,6 +153,13 @@ RCloud.create = function(rcloud_ocaps) {
                 var message = _.isObject(result) && 'ok' in result
                     ? result.content.message : result.toString();
                 rclient.post_error(command + ': ' + message);
+                // FIXME: I must still call the continuation,
+                // because bad things might happen otherwise. But calling
+                // this means that I'm polluting the 
+                // space of possible JSON answers with the error.
+                // For example, right now a return string "{}" is indistinguishable
+                // from an error
+                k && k({ error: result.content });
             }
         };
     }
@@ -163,7 +170,7 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.anonymous_session_init = function(k) {
             rcloud_ocaps.anonymous_session_init(k || _.identity);
         };
-        
+
         rcloud.username = function() {
             return $.cookies.get('user');
         };
@@ -197,6 +204,17 @@ RCloud.create = function(rcloud_ocaps) {
             });
         };
 
+        rcloud.call_notebook = function(id, version, k) {
+            k = rcloud_github_handler("rcloud.call.notebook " + id, k);
+            rcloud_ocaps.call_notebook(id, version, function(notebook) {
+                k(notebook);
+            });
+        };
+
+        rcloud.install_notebook_stylesheets = function(k) {
+            rcloud_ocaps.install_notebook_stylesheets(k || _.identity);
+        };
+
         rcloud.get_users = function(user, k) {
             rcloud_ocaps.get_users(user, k || _.identity);
         };
@@ -214,10 +232,25 @@ RCloud.create = function(rcloud_ocaps) {
 
         // having this naked eval here makes me very nervous.
         rcloud.modules = {};
-        rcloud.setup_js_installer(function(name, content, k) {
-            var result = eval(content);
-            rcloud.modules[name] = result;
-            k(result);
+        rcloud.setup_js_installer({
+            install_js: function(name, content, k) {
+                var result = eval(content);
+                rcloud.modules[name] = result;
+                k(result);
+            },
+            clear_css: function(current_notebook, k) {
+                $(".rcloud-user-defined-css").remove();
+                k();
+            },
+            install_css: function(urls, k) {
+                if (_.isString(urls))
+                    urls = [urls];
+                _.each(urls, function(url) {
+                    $("head").append($('<link type="text/css" rel="stylesheet" class="rcloud-user-defined-css" href="' +
+                                       url + '"/>'));
+                });
+                k();
+            }
         });
 
         // notebook.comments.R
@@ -239,6 +272,9 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.stars.get_notebook_star_count = function(id, k) {
             rcloud_ocaps.stars.get_notebook_star_count(id, k);
         };
+        rcloud.stars.get_multiple_notebook_star_counts = function(id, k) {
+            rcloud_ocaps.stars.get_multiple_notebook_star_counts(id, k);
+        };
 
         rcloud.session_cell_eval = function(filename, language, silent, k) {
             rcloud_ocaps.session_cell_eval(filename, language, silent, k);
@@ -247,6 +283,11 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.reset_session = function(k) {
             k = k || _.identity;
             rcloud_ocaps.reset_session(k);
+        };
+
+        rcloud.display = {};
+        rcloud.display.set_device_pixel_ratio = function(k) {
+            rcloud_ocaps.set_device_pixel_ratio(window.devicePixelRatio, k || _.identity);
         };
     }
 
@@ -304,6 +345,45 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.session_markdown_eval = function(command, language, silent, k) {
             rcloud_ocaps.session_markdown_eval(command, language, silent, k || _.identity);
+        };
+        rcloud.upload_to_notebook = function(force, on_success, on_failure) {
+            on_success = on_success || _.identity;
+            on_failure = on_failure || _.identity;
+            function do_upload(file) {
+                var fr = new FileReader();
+                var chunk_size = 1024*1024;
+                var f_size = file.size;
+                var file_to_upload = new Uint8Array(f_size);
+                var cur_pos = 0;
+                fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+                fr.onload = function(e) {
+                    if (e.target.result.byteLength > 0) {
+                        // still sending data to user agent
+                        var bytes = new Uint8Array(e.target.result);
+                        file_to_upload.set(bytes, cur_pos);
+                        cur_pos += bytes.byteLength;
+                        fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+                    } else {
+                        // done, push to notebook.
+                        rcloud_ocaps.notebook_upload(
+                            file_to_upload.buffer, file.name, function(result){
+                                on_success(file_to_upload, file, result.content);
+                            });
+                    }
+                };
+            }
+            if(!(window.File && window.FileReader && window.FileList && window.Blob))
+                throw new Error("File API not supported by browser.");
+            var file=$("#file")[0].files[0];
+            if(_.isUndefined(file))
+                throw new Error("No file selected!");
+            /*FIXME add logged in user */
+            rcloud_ocaps.file_upload.upload_path(function(path) {
+                var file=$("#file")[0].files[0];
+                if(_.isUndefined(file))
+                    throw new Error("No file selected!");
+                do_upload(file);
+            });
         };
         rcloud.upload_file = function(force, on_success, on_failure) {
             on_success = on_success || _.identity;
@@ -384,6 +464,9 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.stars.get_notebook_star_count = function(id, k) {
             rcloud_ocaps.stars.get_notebook_star_count(id, k);
+        };
+        rcloud.stars.get_multiple_notebook_star_counts = function(ids, k) {
+            rcloud_ocaps.stars.get_multiple_notebook_star_counts(ids, k);
         };
         rcloud.stars.get_my_starred_notebooks = function(k) {
             rcloud_ocaps.stars.get_my_starred_notebooks(k);
@@ -474,32 +557,6 @@ RCloud.create = function(rcloud_ocaps) {
 };
 var ui_utils = {};
 
-$.fn.font_awesome_checkbox = function(opts) {
-    opts = opts || {};
-    if (opts.checked) {
-        this.addClass('icon-check');
-        this.removeClass('icon-check-empty');
-    } else {
-        this.addClass('icon-check-empty');
-        this.removeClass('icon-check');
-    }
-    this.off("click");
-    this.on("click", function() {
-        var this_class = $(this).attr("class");
-        if (this_class === 'icon-check') {
-            $(this).addClass('icon-check-empty');
-            $(this).removeClass('icon-check');
-            opts.click && opts.click(this);
-            opts.uncheck && opts.uncheck(this);
-        } else {
-            $(this).addClass('icon-check');
-            $(this).removeClass('icon-check-empty');
-            opts.click && opts.click(this);
-            opts.check && opts.check(this);
-        }
-    });
-};
-
 ui_utils.fa_button = function(which, title, classname, style)
 {
     var span = $('<span/>', {class: 'fontawesome-button ' + (classname || '')});
@@ -537,7 +594,62 @@ ui_utils.ace_editor_height = function(widget)
     var rows = Math.min(30, widget.getSession().getLength());
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
     return Math.max(75, newHeight);
+    /*
+     // patch to remove tooltip when button clicked
+     // (not needed anymore with later jquery?)
+    var old_click = span.click;
+    span.click = function() {
+        $(this).tooltip('hide');
+        old_click.apply(this, arguments);
+    };
+     */
 };
+
+ui_utils.ace_set_pos = function(widget, row, column) {
+    var sel = widget.getSelection();
+    var range = sel.getRange();
+    range.setStart(row, column);
+    range.setEnd(row, column);
+    sel.setSelectionRange(range);
+}
+
+ui_utils.install_common_ace_key_bindings = function(widget) {
+    var Autocomplete = require("ace/autocomplete").Autocomplete;
+    var session = widget.getSession();
+
+    widget.commands.addCommands([
+        {
+            name: 'another autocomplete key',
+            bindKey: 'Ctrl-.',
+            exec: Autocomplete.startCommand.exec
+        },
+        {
+            name: 'disable gotoline',
+            bindKey: {
+                win: "Ctrl-L",
+                mac: "Command-L"
+            },
+            exec: function() { return false; }
+        }, {
+            name: 'execute-selection-or-line',
+            bindKey: {
+                win: 'Alt-Return',
+                mac: 'Alt-Return',
+                sender: 'editor'
+            },
+            exec: function(widget, args, request) {
+                var code = session.getTextRange(widget.getSelectionRange());
+                if(code.length==0) {
+                    var pos = widget.getCursorPosition();
+                    var Range = require('ace/range').Range;
+                    var range = new Range(pos.row, 0, pos.row+1, 0);
+                    code = session.getTextRange(range);
+                }
+                shell.new_interactive_cell(code, true);
+            }
+        }
+    ]);
+}
 
 // bind an ace editor to a listener and return a function to change the
 // editor content without triggering that listener
@@ -555,22 +667,48 @@ ui_utils.ignore_programmatic_changes = function(widget, listener) {
     };
 };
 
-// not that i'm at all happy with the look
-ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
+ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
+                                  active_icon, inactive_icon) {
     function set_state(state) {
         item[0].checked = state;
         var icon = item.find('i');
-        icon.attr('class', state ? 'icon-check' : 'icon-check-empty');
+        if(state) {
+            icon.removeClass(inactive_icon);
+            icon.addClass(active_icon);
+        }
+        else {
+            icon.removeClass(active_icon);
+            icon.addClass(inactive_icon);
+        }
     }
-    item.click(function() {
+    function on_click() {
         var state = !this.checked;
         set_state(state);
         if(state)
-            on_check();
+            on_activate();
         else
-            on_uncheck();
-    });
-    return set_state;
+            on_deactivate();
+    }
+    function enable(val) {
+        item.off('click');
+        if(val)
+            item.click(on_click);
+    }
+    enable(true);
+    return {set_state: set_state, enable: enable};
+};
+
+// not that i'm at all happy with the look
+ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
+    var ret = ui_utils.twostate_icon(item, on_check, on_uncheck,
+                                     'icon-check', 'icon-check-empty');
+    var base_enable = ret.enable;
+    ret.enable = function(val) {
+        // bootstrap menu items go in in an <li /> that takes the disabled class
+        $("#publish-notebook").parent().toggleClass('disabled', !val);
+        base_enable(val);
+    };
+    return ret;
 };
 
 // this is a hack, but it'll help giving people the right impression.
@@ -745,6 +883,12 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var widget = ace.edit(ace_div[0]);
     var RMode = require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
     var session = widget.getSession();
+    widget.setValue(cell_model.content());
+    ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
+    // erase undo state so that undo doesn't erase all
+    window.setTimeout(function() {
+        session.getUndoManager().reset();
+    }, 0);
     var doc = session.doc;
     widget.setReadOnly(cell_model.parent_model.read_only());
     widget.setOptions({
@@ -760,8 +904,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     session.setUseWrapMode(true);
     widget.resize();
 
-    var Autocomplete = require("ace/autocomplete").Autocomplete;
-
+    ui_utils.install_common_ace_key_bindings(widget);
     widget.commands.addCommands([{
         name: 'sendToR',
         bindKey: {
@@ -772,10 +915,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         exec: function(widget, args, request) {
             execute_cell();
         }
-    }, {
-        name: 'another autocomplete key',
-        bindKey: 'Ctrl-.',
-        exec: Autocomplete.startCommand.exec
     }]);
     var change_content = ui_utils.ignore_programmatic_changes(widget, function() {
         cell_model.parent_model.on_dirty();
@@ -792,9 +931,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         // pubsub event handlers
 
         content_updated: function() {
-            var position = widget.getCursorPosition();
+            var range = widget.getSelection().getRange();
             var changed = change_content(cell_model.content());
-            widget.getSelection().moveCursorToPosition(position);
+            widget.getSelection().setSelectionRange(range);
             return changed;
         },
         self_removed: function() {
@@ -808,14 +947,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // There's a list of things that we need to do to the output:
             var uuid = rcloud.deferred_knitr_uuid;
 
-            if (inner_div.find("pre code").length === 0) {
+            if (cell_model.language() === 'R' && inner_div.find("pre code").length === 0) {
                 r_result_div.prepend("<pre><code>" + cell_model.content() + "</code></pre>");
             }
 
             // fix image width so that retina displays are set correctly
-            // FIXME currently assumes that all plots are 72 dpi x 7 inches (which is bad)
             inner_div.find("img")
-                .attr("width", "504px");
+                .each(function(i, img) { img.style.width = img.width / window.devicePixelRatio; });
 
             // capture deferred knitr results
             inner_div.find("pre code")
@@ -979,7 +1117,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     };
 
     result.show_result();
-    result.content_updated();
     return result;
 }};
 
@@ -1291,22 +1428,24 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(k, version, notebook) {
-        this.clear();
-        var parts = {}; // could rely on alphabetic input instead of gathering
-        _.each(notebook.files, function (file) {
-            var filename = file.filename;
-            if(/^part/.test(filename)) {
-                var number = parseInt(filename.slice(4).split('.')[0]);
-                if(number !== NaN)
-                    parts[number] = [file.content, file.language, number];
-            }
-            // style..
-        });
-        for(var i in parts)
-            append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
-        // is there anything else to gist permissions?
-        model.read_only(version != null || notebook.user.login != rcloud.username());
-        current_gist_ = notebook;
+        if (!_.isUndefined(notebook.files)) {
+            this.clear();
+            var parts = {}; // could rely on alphabetic input instead of gathering
+            _.each(notebook.files, function (file) {
+                var filename = file.filename;
+                if(/^part/.test(filename)) {
+                    var number = parseInt(filename.slice(4).split('.')[0]);
+                    if(number !== NaN)
+                        parts[number] = [file.content, file.language, number];
+                }
+                // style..
+            });
+            for(var i in parts)
+                append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
+            // is there anything else to gist permissions?
+            model.read_only(version != null || notebook.user.login != rcloud.username());
+            current_gist_ = notebook;
+        }
         k && k(notebook);
     }
 
@@ -1357,7 +1496,7 @@ Notebook.create_controller = function(model)
         show_source_checkbox_ = ui_utils.checkbox_menu_item($("#show-source"),
            function() {result.show_r_source();},
            function() {result.hide_r_source();});
-        show_source_checkbox_(true);
+        show_source_checkbox_.set_state(true);
     }
 
     setup_show_source();
@@ -1403,28 +1542,36 @@ Notebook.create_controller = function(model)
         },
         fork_or_revert_notebook: function(is_mine, gistname, version, k) {
             var that = this;
-            function update_if(changes, gistname, k) {
-                // if there are no changes, just load the gist so that we are sending along
-                // the latest history, timestamp, etc.
+            function update_and_load(changes, gistname, k) {
+                // force a full reload in all cases, as a sanity check
+                // i.e. we might know what the notebook state should be,
+                // but load the notebook to make sure
+                var k2 = function() {
+                    that.load_notebook(gistname, null, k);
+                };
                 if(changes.length)
-                    that.update_notebook(changes, gistname, k);
+                    that.update_notebook(changes, gistname, k2);
                 else
-                    rcloud.load_notebook(gistname, null, k);
+                    k2();
+
             }
             if(is_mine) // revert: get HEAD, calculate changes from there to here, and apply
                 rcloud.load_notebook(gistname, null, function(notebook) {
                     var changes = find_changes_from(notebook);
-                    update_if(changes, gistname, k);
+                    update_and_load(changes, gistname, k);
                 });
             else // fork:
                 rcloud.fork_notebook(gistname, function(notebook) {
                     if(version) {
-                        // fork, then get changes from there to here, and apply
-                        var changes = find_changes_from(notebook);
-                        update_if(changes, notebook.id, k);
+                        // fork, then get changes from there to where we are in the past, and apply
+                        // git api does not return the files on fork, so load
+                        rcloud.get_notebook(notebook.id, null, function(notebook2) {
+                            var changes = find_changes_from(notebook2);
+                            update_and_load(changes, notebook2.id, k);
+                        });
                     }
                     else
-                        that.load_notebook(notebook.id, null, k);
+                        update_and_load([], notebook.id, k);
                 });
         },
         update_notebook: function(changes, gistname, k) {
@@ -1465,8 +1612,12 @@ Notebook.create_controller = function(model)
                 return {files: _.reduce(changes, xlate_change, {})};
             }
             // not awesome to callback to someone else here
-            k = k || editor.load_callback(null, true);
+            k = k || editor.load_callback(null, true, true);
             var k2 = function(notebook) {
+                if('error' in notebook) {
+                    k(notebook);
+                    return;
+                }
                 current_gist_ = notebook;
                 k(notebook);
             };
@@ -1490,7 +1641,6 @@ Notebook.create_controller = function(model)
 
         },
         run_all: function(k) {
-            var changes = this.refresh_cells();
             this.save();
             var n = model.notebook.length;
             var disp;
@@ -1504,16 +1654,19 @@ Notebook.create_controller = function(model)
             _.each(model.notebook, function(cell_model) {
                 cell_model.controller.set_status_message("Waiting...");
             });
-            // yes this is a joke
+            // this is silly.
             disp = _.map(model.notebook, function(cell_model) {
                 return function() {
                     cell_model.controller.set_status_message("Computing...");
                 };
             });
-            disp.shift()();
-            _.each(model.notebook, function(cell_model) {
-                cell_model.controller.execute(bump_executed);
-            });
+            if(disp.length) {
+                disp.shift()();
+                _.each(model.notebook, function(cell_model) {
+                    cell_model.controller.execute(bump_executed);
+                });
+            }
+            else k && k();
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -1522,12 +1675,12 @@ Notebook.create_controller = function(model)
 
         hide_r_source: function() {
             this._r_source_visible = false;
-            show_source_checkbox_(this._r_source_visible);
+            show_source_checkbox_.set_state(this._r_source_visible);
             Notebook.hide_r_source();
         },
         show_r_source: function() {
             this._r_source_visible = true;
-            show_source_checkbox_(this._r_source_visible);
+            show_source_checkbox_.set_state(this._r_source_visible);
             Notebook.show_r_source();
         }
     };
