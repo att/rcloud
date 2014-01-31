@@ -797,7 +797,7 @@ var editor = function () {
                                 display_date(node.last_commit) != display_date(node.parent.last_commit)))
             $('.notebook-date', $li).text(display_date(node.last_commit));
         // stars
-        $(node.element).find('.fontawesome-button.star')[0].set_state(i_starred_[node.gistname]);
+        $('span.star', node.element)[0].set_state(i_starred_[node.gistname]);
         $('span.star sub', node.element).text(num_stars_[node.gistname] || 0);
     }
     function tree_click(event) {
