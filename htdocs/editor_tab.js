@@ -258,6 +258,10 @@ var editor = function () {
                     if(username === username_) {
                         my_config = user_config;
                         my_alls = notebook_nodes;
+                        // for notebooks of others we're interested that the other user has removed
+                        // or never loaded (!) #245
+                        for(var u in user_config.interests)
+                            _.extend(all_entries_, user_config.interests[u]);
                     }
                     else {
                         var id = node_id('alls', username);
@@ -574,13 +578,12 @@ var editor = function () {
                               selroot==='interests' ? select_node : null);
         if(gistname === config_.currbook) {
             star_notebook_button_.set_state(i_starred_[gistname]);
-            $('#curr-star-count').text(num_stars_[gistname]);
+            $('#curr-star-count').text(num_stars_[gistname] || 0);
         }
 
-        var node = update_tree_entry('alls', user, gistname, entry, true,
-                                     selroot==='alls' ? select_node : null, true);
+        update_tree_entry('alls', user, gistname, entry, true,
+                          selroot==='alls' ? select_node : null, true);
 
-        $(node.element).find('.fontawesome-button.star')[0].set_state(i_starred_[gistname]);
     }
 
     function remove_node(node) {
@@ -601,14 +604,14 @@ var editor = function () {
         remove_node(node);
         if(gistname === config_.currbook) {
             star_notebook_button_.set_state(false);
-            $('#curr-star-count').text(num_stars_[gistname]);
+            $('#curr-star-count').text(num_stars_[gistname] || 0);
         }
         node = $tree_.tree('getNodeById', node_id('alls', user, gistname));
         if(select)
             select_node(node);
         var all_star = $(node.element).find('.fontawesome-button.star');
         all_star[0].set_state(false);
-        all_star.find('sub').text(num_stars_[gistname]);
+        all_star.find('sub').text(num_stars_[gistname] || 0);
     }
 
     function update_notebook_from_gist(result, history, selroot) {
@@ -721,7 +724,7 @@ var editor = function () {
                 state = !!val;
                 $(this).find('i').attr('class', states[state].class);
             };
-            star_unstar.append($('<sub/>').append(num_stars_[node.gistname]));
+            star_unstar.append($('<sub/>').append(num_stars_[node.gistname] || 0));
             add_buttons(star_unstar);
 
             right.append(always);
@@ -787,10 +790,15 @@ var editor = function () {
     }
 
     function update_tree_li(node, $li, data) {
+        // workaround for https://github.com/mbraak/jqTree/issues/247
         node.last_commit = data.last_commit;
+        // date
         if(node.last_commit && (!node.version ||
                                 display_date(node.last_commit) != display_date(node.parent.last_commit)))
             $('.notebook-date', $li).text(display_date(node.last_commit));
+        // stars
+        $('span.star', node.element)[0].set_state(i_starred_[node.gistname]);
+        $('span.star sub', node.element).text(num_stars_[node.gistname] || 0);
     }
     function tree_click(event) {
         if(event.node.id === 'showmore')
