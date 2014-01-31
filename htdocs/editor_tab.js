@@ -578,7 +578,7 @@ var editor = function () {
                               selroot==='interests' ? select_node : null);
         if(gistname === config_.currbook) {
             star_notebook_button_.set_state(i_starred_[gistname]);
-            $('#curr-star-count').text(num_stars_[gistname]);
+            $('#curr-star-count').text(num_stars_[gistname] || 0);
         }
 
         update_tree_entry('alls', user, gistname, entry, true,
@@ -604,14 +604,14 @@ var editor = function () {
         remove_node(node);
         if(gistname === config_.currbook) {
             star_notebook_button_.set_state(false);
-            $('#curr-star-count').text(num_stars_[gistname]);
+            $('#curr-star-count').text(num_stars_[gistname] || 0);
         }
         node = $tree_.tree('getNodeById', node_id('alls', user, gistname));
         if(select)
             select_node(node);
         var all_star = $(node.element).find('.fontawesome-button.star');
         all_star[0].set_state(false);
-        all_star.find('sub').text(num_stars_[gistname]);
+        all_star.find('sub').text(num_stars_[gistname] || 0);
     }
 
     function update_notebook_from_gist(result, history, selroot) {
