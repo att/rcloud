@@ -258,6 +258,10 @@ var editor = function () {
                     if(username === username_) {
                         my_config = user_config;
                         my_alls = notebook_nodes;
+                        // for notebooks of others we're interested that the other user has removed
+                        // or never loaded (!) #245
+                        for(var u in user_config.interests)
+                            _.extend(all_entries_, user_config.interests[u]);
                     }
                     else {
                         var id = node_id('alls', username);
