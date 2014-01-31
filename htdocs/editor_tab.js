@@ -581,10 +581,9 @@ var editor = function () {
             $('#curr-star-count').text(num_stars_[gistname]);
         }
 
-        var node = update_tree_entry('alls', user, gistname, entry, true,
-                                     selroot==='alls' ? select_node : null, true);
+        update_tree_entry('alls', user, gistname, entry, true,
+                          selroot==='alls' ? select_node : null, true);
 
-        $(node.element).find('.fontawesome-button.star')[0].set_state(i_starred_[gistname]);
     }
 
     function remove_node(node) {
@@ -725,7 +724,7 @@ var editor = function () {
                 state = !!val;
                 $(this).find('i').attr('class', states[state].class);
             };
-            star_unstar.append($('<sub/>').append(num_stars_[node.gistname]));
+            star_unstar.append($('<sub/>').append(num_stars_[node.gistname] || 0));
             add_buttons(star_unstar);
 
             right.append(always);
@@ -791,10 +790,15 @@ var editor = function () {
     }
 
     function update_tree_li(node, $li, data) {
+        // workaround for https://github.com/mbraak/jqTree/issues/247
         node.last_commit = data.last_commit;
+        // date
         if(node.last_commit && (!node.version ||
                                 display_date(node.last_commit) != display_date(node.parent.last_commit)))
             $('.notebook-date', $li).text(display_date(node.last_commit));
+        // stars
+        $(node.element).find('.fontawesome-button.star')[0].set_state(i_starred_[node.gistname]);
+        $('span.star sub', node.element).text(num_stars_[node.gistname] || 0);
     }
     function tree_click(event) {
         if(event.node.id === 'showmore')
