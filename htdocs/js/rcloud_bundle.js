@@ -559,16 +559,18 @@ var ui_utils = {};
 
 ui_utils.fa_button = function(which, title, classname, style)
 {
-    var span = $('<span/>', {class: 'fontawesome-button ' + (classname || '')});
-    var icon = $('<i/>', {class: which});
-    if(style)
-        icon.css(style);
-    span.append(icon)
-        .tooltip({
-            title: title,
-            delay: { show: 250, hide: 0 }
-        });
-    return span;
+    var icon = $.el.i({'class': which});
+    var span = $.el.span({'class': 'fontawesome-button ' + (classname || '')},
+                         icon);
+    if(style) {
+        for (var k in style)
+            icon.style[k] = style[k];
+    }
+    // $(icon).css(style);
+    return $(span).tooltip({
+        title: title,
+        delay: { show: 250, hide: 0 }
+    });
 };
 
 ui_utils.enable_fa_button = function(el) {

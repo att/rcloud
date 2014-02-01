@@ -882,7 +882,10 @@ limitations under the License.
       }
       class_string = li_classes.join(' ');
       escaped_name = this.escapeIfNecessary(node.name);
-      return $("<li class=\"" + class_string + "\"><div class=\"jqtree-element jqtree_common\"><span class=\"jqtree-title jqtree_common\">" + escaped_name + "</span></div></li>");
+      return $($.el.li({'class': class_string},
+                       $.el.div({'class': "jqtree-element jqtree_common"},
+                                $.el.span({'class': "jqtree-title jqtree_common"}, node.name))));
+      // return $("<li class=\"" + class_string + "\"><div class=\"jqtree-element jqtree_common\"><span class=\"jqtree-title jqtree_common\">" + escaped_name + "</span></div></li>");
     };
 
     ElementsRenderer.prototype.getButtonClasses = function(node) {
