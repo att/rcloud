@@ -17,6 +17,7 @@ ace_bundle.js:	\
 
 dependencies_bundle.js: \
 	js/jquery-1.10.2.js \
+	js/laconic.js \
 	js/jquery.cookies.2.2.0.js \
 	js/tree.jquery.js \
 	js/jquery-ui-1.8.18.custom.min.js \
