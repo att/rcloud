@@ -46540,8 +46540,8 @@ Rserve.Rsrv = {
 
     GET_XT: function(x) { return x & 63; },
     GET_DT: function(x) { return x & 63; },
-    HAS_ATTR: function(x) { return (x & Rserve.Rsrv.XT_HAS_ATTR) > 0; },
-    IS_LARGE: function(x) { return (x & Rserve.Rsrv.XT_LARGE) > 0; },
+    HAS_ATTR: function(x) { return (x & Rsrv.XT_HAS_ATTR) > 0; },
+    IS_LARGE: function(x) { return (x & Rsrv.XT_LARGE) > 0; },
 
     // # FIXME A WHOLE LOT OF MACROS HERE WHICH ARE PROBABLY IMPORTANT
     // ##############################################################################
@@ -46683,12 +46683,6 @@ function read(m)
             var t = _[0], l = _[1];
             var total_read = 4;
             var attributes = undefined;
-            if (Rserve.Rsrv.IS_LARGE(t)) {
-                var extra_length = this.read_int();
-                total_read += 4;
-                l += extra_length * Math.pow(2, 24);
-                t &= ~64;
-            }
             if (t & Rserve.Rsrv.XT_HAS_ATTR) {
                 t = t & ~Rserve.Rsrv.XT_HAS_ATTR;
                 var attr_result = this.read_sexp();
@@ -46801,13 +46795,8 @@ function parse(msg)
         result.message = "Unexpected response from RServe: " + result.header[0] + " status: " + Rserve.Rsrv.status_codes[status_code];
         return result;
     }
-    try {
-        result.payload = parse_payload(msg);
-        result.ok = true;
-    } catch (e) {
-        result.ok = false;
-        result.message = e.message;
-    }
+    result.ok = true;
+    result.payload = parse_payload(msg);
     return result;
 }
 
@@ -46822,16 +46811,6 @@ function parse_payload(msg)
     var d = reader.read_int();
     var _ = Rserve.Rsrv.par_parse(d);
     var t = _[0], l = _[1];
-    if (Rserve.Rsrv.IS_LARGE(t)) {
-        var more_length = reader.read_int();
-        l += more_length * Math.pow(2, 24);
-        if (l > (Math.pow(2, 32))) { // resist the 1 << 32 temptation here!
-            // total_length is greater than 2^32.. bail out because of node limits
-            // even though in theory we could go higher than that.
-            throw new Error("Payload too large: " + l + " bytes");
-        }
-        t &= ~64;
-    }
     if (t === Rserve.Rsrv.DT_INT) {
         return { type: "int", value: reader.read_int() };
     } else if (t === Rserve.Rsrv.DT_STRING) {
@@ -47047,23 +47026,11 @@ Rserve.create = function(opts) {
     function _encode_value(value, forced_type)
     {
         var sz = Rserve.determine_size(value, forced_type);
-        // all this will still break if sz is, say, >= 2^31.
-        if (sz > 16777215) {
-            var buffer = new ArrayBuffer(sz + 8);
-            var view = Rserve.my_ArrayBufferView(buffer);
-            // can't left shift value here because value will have bit 32 set and become signed..
-            view.data_view().setInt32(0, Rserve.Rsrv.DT_SEXP + ((sz & 16777215) * Math.pow(2, 8)) + Rserve.Rsrv.DT_LARGE);
-            // but *can* right shift because we assume sz is less than 2^31 or so to begin with
-            view.data_view().setInt32(4, sz >> 24);
-            Rserve.write_into_view(value, view.skip(8), forced_type, convert_to_hash);
-            return buffer;
-        } else {
-            var buffer = new ArrayBuffer(sz + 4);
-            var view = Rserve.my_ArrayBufferView(buffer);
-            view.data_view().setInt32(0, Rserve.Rsrv.DT_SEXP + (sz << 8));
-            Rserve.write_into_view(value, view.skip(4), forced_type, convert_to_hash);
-            return buffer;
-        }
+        var buffer = new ArrayBuffer(sz + 4);
+        var view = Rserve.my_ArrayBufferView(buffer);
+        view.data_view().setInt32(0, Rserve.Rsrv.DT_SEXP + (sz << 8));
+        Rserve.write_into_view(value, view.skip(4), forced_type, convert_to_hash);
+        return buffer;
     }
     
     function hand_shake(msg)
@@ -47251,12 +47218,10 @@ Rserve.create = function(opts) {
                 is_ocap |= ocap.r_attributes['class'] === 'OCref';
                 str = ocap[0];
             } catch (e) {};
-            if(!is_ocap) {
-                try {
-                    is_ocap |= ocap.attributes.value[0].value.value[0] === 'OCref';
-                    str = ocap.value[0];
-                } catch (e) {};
-            }
+            try {
+                is_ocap |= ocap.attributes.value[0].value.value[0] === 'OCref';
+                str = ocap.value[0];
+            } catch (e) {};
             if (!is_ocap)
                 throw new Error("Expected an ocap, instead got " + ocap);
             var params = [str];
@@ -47308,9 +47273,6 @@ Rserve.wrap_all_ocaps = function(s, v) {
 Rserve.wrap_ocap = function(s, ocap) {
     var wrapped_ocap = function() {
         var values = _.toArray(arguments);
-        // common error (tho this won't catch the case where last arg is a function)
-        if(!values.length || !_.isFunction(values[values.length-1]))
-            throw new Error("forgot to pass continuation to ocap");
         var k = values.pop();
         s.OCcall(ocap, values, function(v) {
             k(Rserve.wrap_all_ocaps(s, v));
@@ -47390,52 +47352,40 @@ Rserve.determine_size = function(value, forced_type)
             return memo + Rserve.determine_size(el);
         }, 0);
     }
-    function final_size(payload_size) {
-        if (payload_size > (1 << 24))
-            return payload_size + 8; // large header
-        else
-            return payload_size + 4;
-    }
     var header_size = 4, t = forced_type || Rserve.type_id(value);
-
-    switch (t & ~Rserve.Rsrv.XT_LARGE) {
+    switch (t) {
     case Rserve.Rsrv.XT_NULL:
-        return final_size(0);
+        return header_size + 0;
     case Rserve.Rsrv.XT_ARRAY_BOOL:
         if (_.isBoolean(value))
-            return final_size(8);
+            return header_size + 8;
         else
-            return final_size((value.length + 7) & ~3);
+            return header_size + ((value.length + 7) & ~3);
     case Rserve.Rsrv.XT_ARRAY_STR:
         if (_.isArray(value))
-            return final_size(_.reduce(value, function(memo, str) {
+            return header_size + _.reduce(value, function(memo, str) {
                 return memo + str.length + 1;
-            }, 0));
+            }, 0);
         else
-            return final_size(value.length + 1);
+            return header_size + value.length + 1;
     case Rserve.Rsrv.XT_ARRAY_DOUBLE:
         if (_.isNumber(value))
-            return final_size(8);
+            return header_size + 8;
         else
-            return final_size(8 * value.length);
+            return header_size + 8 * value.length;
     case Rserve.Rsrv.XT_RAW:
-        return final_size(4 + value.byteLength);
+        return header_size + 4 + value.byteLength;
     case Rserve.Rsrv.XT_VECTOR:
     case Rserve.Rsrv.XT_LANG_NOTAG:
-        return final_size(list_size(value));
-    case Rserve.Rsrv.XT_VECTOR | Rserve.Rsrv.XT_HAS_ATTR: // a named list (that is, a js object)
-        var names_size_1 = final_size("names".length + 3);
-        var names_size_2 = Rserve.determine_size(_.keys(value));
-        var names_size = final_size(names_size_1 + names_size_2);
-        return final_size(names_size + list_size(_.values(value)));
-/*        return header_size // XT_VECTOR | XT_HAS_ATTR
+        return header_size + list_size(value);
+    case Rserve.Rsrv.XT_VECTOR | Rserve.Rsrv.XT_HAS_ATTR:
+        return header_size // XT_VECTOR | XT_HAS_ATTR
             + header_size // XT_LIST_TAG (attribute)
               + header_size + "names".length + 3 // length of 'names' + padding (tag as XT_SYMNAME)
               + Rserve.determine_size(_.keys(value)) // length of names
             + list_size(_.values(value)); // length of values
-*/
-    case Rserve.Rsrv.XT_ARRAY_STR | Rserve.Rsrv.XT_HAS_ATTR: // js->r ocap (that is, a js function)
-        return Rserve.determine_size("0403556553") // length of ocap nonce; that number is meaningless aside from length
+    case Rserve.Rsrv.XT_ARRAY_STR | Rserve.Rsrv.XT_HAS_ATTR:
+        return Rserve.determine_size("0403556553") // length of string 
             + header_size // XT_LIST_TAG (attribute)
               + header_size + "class".length + 3 // length of 'class' + padding (tag as XT_SYMNAME)
               + Rserve.determine_size(["javascript_function"]); // length of class name
@@ -47448,40 +47398,29 @@ Rserve.determine_size = function(value, forced_type)
 Rserve.write_into_view = function(value, array_buffer_view, forced_type, convert)
 {
     var size = Rserve.determine_size(value, forced_type);
-    var is_large = size > 16777215;
-    // if (size > 16777215)
-    //     throw new Rserve.RserveError("Can't currently handle objects >16MB");
+    if (size > 16777215)
+        throw new Rserve.RserveError("Can't currently handle objects >16MB");
     var t = forced_type || Rserve.type_id(value), i, current_offset, lbl;
-    if (is_large)
-        t = t | Rserve.Rsrv.XT_LARGE;
     var read_view;
     var write_view = array_buffer_view.data_view();
-    var payload_start;
-    if (is_large) {
-        payload_start = 8;
-        write_view.setInt32(0, t + ((size - 8) << 8));
-        write_view.setInt32(4, (size - 8) >> 24);
-    } else { 
-        payload_start = 4;
-        write_view.setInt32(0, t + ((size - 4) << 8));
-    }
+    write_view.setInt32(0, t + ((size - 4) << 8));
 
-    switch (t & ~Rserve.Rsrv.XT_LARGE) {
+    switch (t) {
     case Rserve.Rsrv.XT_NULL:
         break;
     case Rserve.Rsrv.XT_ARRAY_BOOL:
         if (_.isBoolean(value)) {
-            write_view.setInt32(payload_start, 1);
-            write_view.setInt8(payload_start + 4, value ? 1 : 0);
+            write_view.setInt32(4, 1);
+            write_view.setInt8(8, value ? 1 : 0);
         } else {
-            write_view.setInt32(payload_start, value.length);
+            write_view.setInt32(4, value.length);
             for (i=0; i<value.length; ++i)
-                write_view.setInt8(payload_start + 4 + i, value[i] ? 1 : 0);
+                write_view.setInt8(8 + i, value[i] ? 1 : 0);
         }
         break;
     case Rserve.Rsrv.XT_ARRAY_STR:
         if (_.isArray(value)) {
-            var offset = payload_start;
+            var offset = 4;
             _.each(value, function(el) {
                 for (var i=0; i<el.length; ++i, ++offset)
                     write_view.setUint8(offset, el.charCodeAt(i));
@@ -47489,28 +47428,27 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type, convert
             });
         } else {
             for (i=0; i<value.length; ++i)
-                write_view.setUint8(payload_start + i, value.charCodeAt(i));
-            write_view.setUint8(payload_start + value.length, 0);
+                write_view.setUint8(4 + i, value.charCodeAt(i));
+            write_view.setUint8(4 + value.length, 0);
         }
         break;
     case Rserve.Rsrv.XT_ARRAY_DOUBLE:
         if (_.isNumber(value))
-            write_view.setFloat64(payload_start, value);
-        else {
+            write_view.setFloat64(4, value);
+        else
             for (i=0; i<value.length; ++i)
-                write_view.setFloat64(payload_start + 8 * i, value[i]);
-        }
+                write_view.setFloat64(4 + 8 * i, value[i]);
         break;
     case Rserve.Rsrv.XT_RAW:
         read_view = new Rserve.EndianAwareDataView(value);
-        write_view.setUint32(payload_start, value.byteLength);
+        write_view.setUint32(4, value.byteLength);
         for (i=0; i<value.byteLength; ++i) {
-            write_view.setUint8(payload_start + 4 + i, read_view.getUint8(i));
+            write_view.setUint8(8 + i, read_view.getUint8(i));
         }
         break;
     case Rserve.Rsrv.XT_VECTOR:
     case Rserve.Rsrv.XT_LANG_NOTAG:
-        current_offset = payload_start;
+        current_offset = 4;
         _.each(value, function(el) {
             var sz = Rserve.determine_size(el);
             Rserve.write_into_view(el, array_buffer_view.skip(
@@ -47519,13 +47457,13 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type, convert
         });
         break;
     case Rserve.Rsrv.XT_VECTOR | Rserve.Rsrv.XT_HAS_ATTR:
-        current_offset = payload_start + 8;
+        current_offset = 12;
         _.each(_.keys(value), function(el) {
             for (var i=0; i<el.length; ++i, ++current_offset)
                 write_view.setUint8(current_offset, el.charCodeAt(i));
             write_view.setUint8(current_offset++, 0);
         });
-        write_view.setUint32(payload_start + 4, Rserve.Rsrv.XT_ARRAY_STR + ((current_offset - (payload_start + 8)) << 8));
+        write_view.setUint32(8, Rserve.Rsrv.XT_ARRAY_STR + ((current_offset - 12) << 8));
 
         write_view.setUint32(current_offset, Rserve.Rsrv.XT_SYMNAME + (8 << 8));
         current_offset += 4;
@@ -47534,7 +47472,7 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type, convert
             write_view.setUint8(current_offset, lbl.charCodeAt(i));
         current_offset += 3;
 
-        write_view.setUint32(payload_start, Rserve.Rsrv.XT_LIST_TAG + ((current_offset - (payload_start + 4)) << 8));
+        write_view.setUint32(4, Rserve.Rsrv.XT_LIST_TAG + ((current_offset - 8) << 8));
 
         _.each(_.values(value), function(el) {
             var sz = Rserve.determine_size(el);
@@ -47546,19 +47484,22 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type, convert
 
     case Rserve.Rsrv.XT_ARRAY_STR | Rserve.Rsrv.XT_HAS_ATTR:
         var converted_function = convert(value);
-        current_offset = payload_start + 8;
+        current_offset = 12;
         var class_name = "javascript_function";
         for (i=0; i<class_name.length; ++i, ++current_offset)
             write_view.setUint8(current_offset, class_name.charCodeAt(i));
         write_view.setUint8(current_offset++, 0);
-        write_view.setUint32(8, Rserve.Rsrv.XT_ARRAY_STR + ((current_offset - (payload_start + 8)) << 8));
+        write_view.setUint32(8, Rserve.Rsrv.XT_ARRAY_STR + ((current_offset - 12) << 8));
+
         write_view.setUint32(current_offset, Rserve.Rsrv.XT_SYMNAME + (8 << 8));
         current_offset += 4;
         lbl = "class";
         for (i=0; i<lbl.length; ++i, ++current_offset)
             write_view.setUint8(current_offset, lbl.charCodeAt(i));
         current_offset += 3;
-        write_view.setUint32(4, Rserve.Rsrv.XT_LIST_TAG + ((current_offset - (payload_start + 4)) << 8));
+
+        write_view.setUint32(4, Rserve.Rsrv.XT_LIST_TAG + ((current_offset - 8) << 8));
+
         for (i=0; i<converted_function.length; ++i)
             write_view.setUint8(current_offset + i, converted_function.charCodeAt(i));
         write_view.setUint8(current_offset + converted_function.length, 0);
