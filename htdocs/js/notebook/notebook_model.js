@@ -4,7 +4,7 @@ Notebook.create_model = function()
 
     function last_id(notebook) {
         if(notebook.length)
-            return notebook[notebook.length-1].id;
+            return notebook[notebook.length-1].id();
         else
             return 0;
     }
@@ -39,7 +39,7 @@ Notebook.create_model = function()
             id = Math.max(id, last_id(this.notebook)+1);
             while(n) {
                 changes.push({id: id, content: cell_model.content(), language: cell_model.language()});
-                cell_model.id = id;
+                cell_model.id(id);
                 this.notebook.push(cell_model);
                 _.each(this.views, function(view) {
                     view.cell_appended(cell_model);
@@ -54,15 +54,15 @@ Notebook.create_model = function()
             cell_model.parent_model = this;
             var changes = [];
             var n = 1, x = 0;
-            while(x<this.notebook.length && this.notebook[x].id < id) ++x;
+            while(x<this.notebook.length && this.notebook[x].id() < id) ++x;
             // check if ids can go above rather than shifting everything else down
-            if(x<this.notebook.length && id+n > this.notebook[x].id) {
-                var prev = x>0 ? this.notebook[x-1].id : 0;
-                id = Math.max(this.notebook[x].id-n, prev+1);
+            if(x<this.notebook.length && id+n > this.notebook[x].id()) {
+                var prev = x>0 ? this.notebook[x-1].id() : 0;
+                id = Math.max(this.notebook[x].id()-n, prev+1);
             }
             for(var j=0; j<n; ++j) {
                 changes.push({id: id+j, content: cell_model.content(), language: cell_model.language()});
-                cell_model.id = id+j;
+                cell_model.id(id+j);
                 this.notebook.splice(x, 0, cell_model);
                 _.each(this.views, function(view) {
                     view.cell_inserted(that.notebook[x], x);
@@ -70,18 +70,18 @@ Notebook.create_model = function()
                 ++x;
             }
             while(x<this.notebook.length && n) {
-                if(this.notebook[x].id > id) {
-                    var gap = this.notebook[x].id - id;
+                if(this.notebook[x].id() > id) {
+                    var gap = this.notebook[x].id() - id;
                     n -= gap;
                     id += gap;
                 }
                 if(n<=0)
                     break;
-                changes.push({id: this.notebook[x].id,
+                changes.push({id: this.notebook[x].id(),
                               content: this.notebook[x].content(),
-                              rename: this.notebook[x].id+n,
+                              rename: this.notebook[x].id()+n,
                               language: this.notebook[x].language()});
-                this.notebook[x].id += n;
+                this.notebook[x].id(this.notebook[x].id() + n);
                 ++x;
                 ++id;
             }
@@ -92,7 +92,7 @@ Notebook.create_model = function()
             var cell_index, id;
             if(cell_model!=null) {
                 cell_index = this.notebook.indexOf(cell_model);
-                id = cell_model.id;
+                id = cell_model.id();
                 if (cell_index === -1) {
                     throw "cell_model not in notebook model?!";
                 }
@@ -105,7 +105,7 @@ Notebook.create_model = function()
             var x = cell_index;
             var changes = [];
             while(x<this.notebook.length && n) {
-                if(this.notebook[x].id == id) {
+                if(this.notebook[x].id() == id) {
                     _.each(this.views, function(view) {
                         view.cell_removed(that.notebook[x], x);
                     });
@@ -118,7 +118,7 @@ Notebook.create_model = function()
             return changes;
         },
         update_cell: function(cell_model) {
-            return [build_cell_change(cell_model.id, cell_model.content(), cell_model.language())];
+            return [build_cell_change(cell_model.id(), cell_model.content(), cell_model.language())];
         },
         reread_cells: function() {
             var that = this;
@@ -130,7 +130,7 @@ Notebook.create_model = function()
             return _.reduce(changed_cells_per_view[0],
                             function(changes, content, index) {
                                 if(content !== null)
-                                    changes.push(build_cell_change(that.notebook[index].id,
+                                    changes.push(build_cell_change(that.notebook[index].id(),
                                                                    content,
                                                                    that.notebook[index].language()));
                                 return changes;

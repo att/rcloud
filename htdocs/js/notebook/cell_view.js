@@ -2,6 +2,7 @@
 
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
+    update_div_id();
 
     //////////////////////////////////////////////////////////////////////////
     // button bar
@@ -17,11 +18,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     function update_model() {
         return cell_model.content(widget.getSession().getValue());
     }
+    function update_div_id() {
+        notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
+    }
     var enable = ui_utils.enable_fa_button;
     var disable = ui_utils.disable_fa_button;
 
     insert_cell_button.click(function(e) {
-        shell.insert_markdown_cell_before(cell_model.id);
+        shell.insert_markdown_cell_before(cell_model.id());
     });
     source_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
@@ -155,6 +159,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         self_removed: function() {
             notebook_cell_div.remove();
         },
+        id_updated: update_div_id,
         result_updated: function(r) {
             r_result_div.hide();
             r_result_div.html(r);
