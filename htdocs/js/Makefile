@@ -7,14 +7,14 @@ rcloud_bundle.js: \
 	rcloud.js \
 	ui_utils.js \
 	bootstrap_utils.js \
-	notebook/_begin.js \
-	notebook/cell/_begin.js \
-	notebook/cell/create_html_view.js \
-	notebook/cell/create_model.js \
-	notebook/cell/create_controller.js \
-	notebook/create_html_view.js \
-	notebook/create_model.js \
-	notebook/create_controller.js \
+	notebook/_notebook_begin.js \
+	notebook/_cell_begin.js \
+	notebook/cell_view.js \
+	notebook/cell_model.js \
+	notebook/cell_controller.js \
+	notebook/notebook_view.js \
+	notebook/notebook_model.js \
+	notebook/notebook_controller.js \
 	notebook/util.js \
 	notebook.js
 
