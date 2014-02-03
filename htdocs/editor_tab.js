@@ -240,6 +240,13 @@ var editor = function () {
         var children = as_folder_hierarchy(my_notebooks, node_id('interests', username_));
         children = children.concat(user_nodes).sort(compare_nodes);
         root_data[0].children = children;
+        // delay construction of dom elements for Alls
+        var alls = root_data[1].children;
+        for(var i = 0; i < alls.length; ++i)
+            if(alls[i].children && alls[i].children.length) {
+                alls[i].delay_children = alls[i].children;
+                alls[i].children = [{label: 'loading...'}];
+            }
         result.create_book_tree_widget(root_data);
         var interests = $tree_.tree('getNodeById', "/interests");
         $tree_.tree('openNode', interests);
@@ -258,6 +265,10 @@ var editor = function () {
                     if(username === username_) {
                         my_config = user_config;
                         my_alls = notebook_nodes;
+                        // for notebooks of others we're interested that the other user has removed
+                        // or never loaded (!) #245
+                        for(var u in user_config.interests)
+                            _.extend(all_entries_, user_config.interests[u]);
                     }
                     else {
                         var id = node_id('alls', username);
@@ -359,8 +370,10 @@ var editor = function () {
             if(last_chance)
                 last_chance(node); // hacky
             var dp = node.parent;
-            if(dp===parent && node.name===data.label)
-                $tree_.tree('updateNode', node, data);
+            if(dp===parent && node.name===data.label) {
+                // too slow! $tree_.tree('updateNode', node, data);
+                update_tree_li(node, node.element, data);
+            }
             else {
                 $tree_.tree('removeNode', node);
                 node = insert_alpha(data, parent);
@@ -572,13 +585,12 @@ var editor = function () {
                               selroot==='interests' ? select_node : null);
         if(gistname === config_.currbook) {
             star_notebook_button_.set_state(i_starred_[gistname]);
-            $('#curr-star-count').text(num_stars_[gistname]);
+            $('#curr-star-count').text(num_stars_[gistname] || 0);
         }
 
-        var node = update_tree_entry('alls', user, gistname, entry, true,
-                                     selroot==='alls' ? select_node : null, true);
+        update_tree_entry('alls', user, gistname, entry, true,
+                          selroot==='alls' ? select_node : null, true);
 
-        $(node.element).find('.fontawesome-button.star')[0].set_state(i_starred_[gistname]);
     }
 
     function remove_node(node) {
@@ -599,17 +611,18 @@ var editor = function () {
         remove_node(node);
         if(gistname === config_.currbook) {
             star_notebook_button_.set_state(false);
-            $('#curr-star-count').text(num_stars_[gistname]);
+            $('#curr-star-count').text(num_stars_[gistname] || 0);
         }
         node = $tree_.tree('getNodeById', node_id('alls', user, gistname));
         if(select)
             select_node(node);
         var all_star = $(node.element).find('.fontawesome-button.star');
         all_star[0].set_state(false);
-        all_star.find('sub').text(num_stars_[gistname]);
+        all_star.find('sub').text(num_stars_[gistname] || 0);
     }
 
     function update_notebook_from_gist(result, history, selroot) {
+        var t = performance.now();
         var user = result.user.login, gistname = result.id;
         // we only receive history here if we're at HEAD, so use that if we get
         // it.  otherwise use the remembered history if any.  otherwise
@@ -622,6 +635,7 @@ var editor = function () {
                                           result.updated_at || result.history[0].committed_at);
 
         update_notebook_view(user, gistname, entry, selroot);
+        console.log("update_notebook_from_gist took " + (performance.now()-t) + "ms");
     }
 
     function display_date(ds) {
@@ -677,33 +691,38 @@ var editor = function () {
             title.addClass('private');
         if(node.version)
             title.addClass('history');
-        var right = $('<span/>', {class: 'notebook-right'});
+        var right = $($.el.span({'class': 'notebook-right'}));
         if(node.last_commit && (!node.version ||
                                 display_date(node.last_commit) != display_date(node.parent.last_commit))) {
-            right.append('<span id="date" class="notebook-date">'
-                        + display_date(node.last_commit) + '</span>');
+            right[0].appendChild($.el.span({'id': 'date',
+                                            'class': 'notebook-date'},
+                                           display_date(node.last_commit)));
         }
         if(node.gistname && !node.version) {
             var adder = function(target) {
                 var count = 0;
+                var lst = [];
                 function add(items) {
-                    target.append('&nbsp;');
-                    target.append.apply(target, arguments);
+                    lst.push('&nbsp;');
+                    lst.push.apply(lst, arguments);
                     ++count;
                 }
                 add.width = function() {
                     return count*14;
                 };
+                add.commit = function() {
+                    target.append.apply(target, lst);
+                };
                 return add;
             };
             // commands for the right column, always shown
-            var always = $('<span/>', {class: 'notebook-commands-right'});
+            var always = $($.el.span({'class': 'notebook-commands-right'}));
             var add_buttons = adder(always);
             var star_style = _.extend({'font-size': '80%'}, icon_style);
-            var states = {true: {class: 'icon-star', title: 'unstar'},
-                          false: {class: 'icon-star-empty', title: 'star'}};
+            var states = {true: {'class': 'icon-star', title: 'unstar'},
+                          false: {'class': 'icon-star-empty', title: 'star'}};
             var state = i_starred_[node.gistname] || false;
-            var star_unstar = ui_utils.fa_button(states[state].class,
+            var star_unstar = ui_utils.fa_button(states[state]['class'],
                                                  function(e) { return states[state].title; },
                                                  'star',
                                                  star_style);
@@ -719,13 +738,14 @@ var editor = function () {
                 state = !!val;
                 $(this).find('i').attr('class', states[state].class);
             };
-            star_unstar.append($('<sub/>').append(num_stars_[node.gistname]));
+            star_unstar[0].appendChild($.el.sub(String(num_stars_[node.gistname] || 0)));
             add_buttons(star_unstar);
 
-            right.append(always);
+            add_buttons.commit();
+            right[0].appendChild(always[0]);
 
             // commands that appear
-            var appear = $('<span/>', {class: 'notebook-commands appear'});
+            var appear = $($.el.span({'class': 'notebook-commands appear'}));
             add_buttons = adder(appear);
             if(true) { // all notebooks have history - should it always be accessible?
                 var disable = config_.currbook===node.gistname && config_.currversion;
@@ -770,9 +790,10 @@ var editor = function () {
                 add_buttons(remove);
             };
             var wid = add_buttons.width()+'px';
+            add_buttons.commit();
             appear.css({left: '-'+wid, width: wid});
             appear.hide();
-            always.append(appear);
+            always[0].appendChild(appear[0]);
             $li.hover(
                 function() {
                     $('.notebook-commands.appear', this).show();
@@ -781,7 +802,19 @@ var editor = function () {
                     $('.notebook-commands.appear', this).hide();
                 });
         }
-        element.append(right);
+        element[0].appendChild(right[0]);
+    }
+
+    function update_tree_li(node, $li, data) {
+        // workaround for https://github.com/mbraak/jqTree/issues/247
+        node.last_commit = data.last_commit;
+        // date
+        if(node.last_commit && (!node.version ||
+                                display_date(node.last_commit) != display_date(node.parent.last_commit)))
+            $('.notebook-date', $li).text(display_date(node.last_commit));
+        // stars
+        $('span.star', node.element)[0].set_state(i_starred_[node.gistname]);
+        $('span.star sub', node.element).text(num_stars_[node.gistname] || 0);
     }
     function tree_click(event) {
         if(event.node.id === 'showmore')
@@ -805,6 +838,13 @@ var editor = function () {
             }
         }
         return false;
+    }
+    function tree_open(event) {
+        var n = event.node;
+        if(n.delay_children) {
+            $tree_.tree('loadData', n.delay_children, n);
+            delete n.delay_children;
+        }
     }
 
     var result = {
@@ -865,6 +905,7 @@ var editor = function () {
                 selectable: true
             });
             $tree_.bind('tree.click', tree_click);
+            $tree_.bind('tree.open', tree_open);
         },
         load_config: function(k) {
             var that = this;
