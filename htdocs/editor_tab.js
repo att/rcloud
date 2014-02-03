@@ -703,7 +703,7 @@ var editor = function () {
                 var count = 0;
                 var lst = [];
                 function add(items) {
-                    lst.push('&nbsp;');
+                    lst.push(document.createTextNode(String.fromCharCode(160)));
                     lst.push.apply(lst, arguments);
                     ++count;
                 }
