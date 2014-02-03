@@ -240,6 +240,13 @@ var editor = function () {
         var children = as_folder_hierarchy(my_notebooks, node_id('interests', username_));
         children = children.concat(user_nodes).sort(compare_nodes);
         root_data[0].children = children;
+        // delay construction of dom elements for Alls
+        var alls = root_data[1].children;
+        for(var i = 0; i < alls.length; ++i)
+            if(alls[i].children && alls[i].children.length) {
+                alls[i].delay_children = alls[i].children;
+                alls[i].children = [{label: 'loading...'}];
+            }
         result.create_book_tree_widget(root_data);
         var interests = $tree_.tree('getNodeById', "/interests");
         $tree_.tree('openNode', interests);
@@ -832,6 +839,13 @@ var editor = function () {
         }
         return false;
     }
+    function tree_open(event) {
+        var n = event.node;
+        if(n.delay_children) {
+            $tree_.tree('loadData', n.delay_children, n);
+            delete n.delay_children;
+        }
+    }
 
     var result = {
         init: function(gistname, version, k) {
@@ -891,6 +905,7 @@ var editor = function () {
                 selectable: true
             });
             $tree_.bind('tree.click', tree_click);
+            $tree_.bind('tree.open', tree_open);
         },
         load_config: function(k) {
             var that = this;
