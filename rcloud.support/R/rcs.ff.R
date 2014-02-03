@@ -1,15 +1,12 @@
 ## fallback to flat-files engine
 
-readRDS <- function (file, refhook = NULL) 
+# readRDS unaccountably seems to leave connections open if
+# the file does not exist.  this is a temporary workaround
+readRDS.if.exists <- function (file, refhook = NULL)
 {
-    if (is.character(file) && file.exists(file)) {
-        con <- gzfile(file, "rb")
-        on.exit(close(con))
-    }
-    else if (inherits(file, "connection")) 
-        con <- file
-    else stop("bad 'file' argument")
-    .Internal(unserializeFromConn(con, refhook))
+    if (is.character(file) && !file.exists(file))
+      stop("file doesn't exist")
+    else readRDS(file, refhook);
 }
 
 .ffpath <- function(key, engine) file.path(engine$root, key)
@@ -22,7 +19,7 @@ rcs_ff_warning <- function(rv)
   function(w) {cat("rcs.ff warning: "); print(w); cat("\n"); rv}
 
 rcs.get.RCSff <- function(key, list=FALSE, engine=.session$rcs.engine)
-   if (list || length(key) != 1L) .lnapply(key, rcs.get.RCSff, FALSE, engine) else (tryCatch(readRDS(.ffpath(key, engine)), warning=rcs_ff_warning(NULL), error=rcs_ff_error(NULL)))
+   if (list || length(key) != 1L) .lnapply(key, rcs.get.RCSff, FALSE, engine) else (tryCatch(readRDS.if.exists(.ffpath(key, engine)), warning=rcs_ff_warning(NULL), error=rcs_ff_error(NULL)))
 
 rcs.set.RCSff <- function(key, value, engine=.session$rcs.engine) {
   if (missing(value)) {
