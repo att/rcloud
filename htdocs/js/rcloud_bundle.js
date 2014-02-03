@@ -788,6 +788,7 @@ Notebook.Cell = {};
 
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
+    update_div_id();
 
     //////////////////////////////////////////////////////////////////////////
     // button bar
@@ -803,11 +804,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     function update_model() {
         return cell_model.content(widget.getSession().getValue());
     }
+    function update_div_id() {
+        notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
+    }
     var enable = ui_utils.enable_fa_button;
     var disable = ui_utils.disable_fa_button;
 
     insert_cell_button.click(function(e) {
-        shell.insert_markdown_cell_before(cell_model.id);
+        shell.insert_markdown_cell_before(cell_model.id());
     });
     source_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
@@ -941,6 +945,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         self_removed: function() {
             notebook_cell_div.remove();
         },
+        id_updated: update_div_id,
         result_updated: function(r) {
             r_result_div.hide();
             r_result_div.html(r);
@@ -1135,9 +1140,9 @@ Notebook.Cell.create_html_view = function(cell_model)
 })();
 Notebook.Cell.create_model = function(content, language)
 {
+    var id_ = -1;
     var result = {
         views: [], // sub list for pubsub
-        id: -1,
         parent_model: null,
         language: function() {
             return language;
@@ -1146,12 +1151,23 @@ Notebook.Cell.create_model = function(content, language)
             if (!_.isUndefined(new_content)) {
                 if(content != new_content) {
                     content = new_content;
-                    notify_views();
+                    notify_views(function(view) {
+                        view.content_updated();
+                    });
                     return content;
                 }
                 else return null;
             }
             return content;
+        },
+        id: function(new_id) {
+            if (!_.isUndefined(new_id) && new_id != id_) {
+                id_ = new_id;
+                notify_views(function(view) {
+                    view.id_updated();
+                });
+            }
+            return id_;
         },
         json: function() {
             return {
@@ -1160,9 +1176,9 @@ Notebook.Cell.create_model = function(content, language)
             };
         }
     };
-    function notify_views() {
+    function notify_views(f) {
         _.each(result.views, function(view) {
-            view.content_updated();
+            f(view);
         });
     }
     return result;
@@ -1252,7 +1268,7 @@ Notebook.create_model = function()
 
     function last_id(notebook) {
         if(notebook.length)
-            return notebook[notebook.length-1].id;
+            return notebook[notebook.length-1].id();
         else
             return 0;
     }
@@ -1287,7 +1303,7 @@ Notebook.create_model = function()
             id = Math.max(id, last_id(this.notebook)+1);
             while(n) {
                 changes.push({id: id, content: cell_model.content(), language: cell_model.language()});
-                cell_model.id = id;
+                cell_model.id(id);
                 this.notebook.push(cell_model);
                 _.each(this.views, function(view) {
                     view.cell_appended(cell_model);
@@ -1302,15 +1318,15 @@ Notebook.create_model = function()
             cell_model.parent_model = this;
             var changes = [];
             var n = 1, x = 0;
-            while(x<this.notebook.length && this.notebook[x].id < id) ++x;
+            while(x<this.notebook.length && this.notebook[x].id() < id) ++x;
             // check if ids can go above rather than shifting everything else down
-            if(x<this.notebook.length && id+n > this.notebook[x].id) {
-                var prev = x>0 ? this.notebook[x-1].id : 0;
-                id = Math.max(this.notebook[x].id-n, prev+1);
+            if(x<this.notebook.length && id+n > this.notebook[x].id()) {
+                var prev = x>0 ? this.notebook[x-1].id() : 0;
+                id = Math.max(this.notebook[x].id()-n, prev+1);
             }
             for(var j=0; j<n; ++j) {
                 changes.push({id: id+j, content: cell_model.content(), language: cell_model.language()});
-                cell_model.id = id+j;
+                cell_model.id(id+j);
                 this.notebook.splice(x, 0, cell_model);
                 _.each(this.views, function(view) {
                     view.cell_inserted(that.notebook[x], x);
@@ -1318,18 +1334,18 @@ Notebook.create_model = function()
                 ++x;
             }
             while(x<this.notebook.length && n) {
-                if(this.notebook[x].id > id) {
-                    var gap = this.notebook[x].id - id;
+                if(this.notebook[x].id() > id) {
+                    var gap = this.notebook[x].id() - id;
                     n -= gap;
                     id += gap;
                 }
                 if(n<=0)
                     break;
-                changes.push({id: this.notebook[x].id,
+                changes.push({id: this.notebook[x].id(),
                               content: this.notebook[x].content(),
-                              rename: this.notebook[x].id+n,
+                              rename: this.notebook[x].id()+n,
                               language: this.notebook[x].language()});
-                this.notebook[x].id += n;
+                this.notebook[x].id(this.notebook[x].id() + n);
                 ++x;
                 ++id;
             }
@@ -1340,7 +1356,7 @@ Notebook.create_model = function()
             var cell_index, id;
             if(cell_model!=null) {
                 cell_index = this.notebook.indexOf(cell_model);
-                id = cell_model.id;
+                id = cell_model.id();
                 if (cell_index === -1) {
                     throw "cell_model not in notebook model?!";
                 }
@@ -1353,7 +1369,7 @@ Notebook.create_model = function()
             var x = cell_index;
             var changes = [];
             while(x<this.notebook.length && n) {
-                if(this.notebook[x].id == id) {
+                if(this.notebook[x].id() == id) {
                     _.each(this.views, function(view) {
                         view.cell_removed(that.notebook[x], x);
                     });
@@ -1366,7 +1382,7 @@ Notebook.create_model = function()
             return changes;
         },
         update_cell: function(cell_model) {
-            return [build_cell_change(cell_model.id, cell_model.content(), cell_model.language())];
+            return [build_cell_change(cell_model.id(), cell_model.content(), cell_model.language())];
         },
         reread_cells: function() {
             var that = this;
@@ -1378,7 +1394,7 @@ Notebook.create_model = function()
             return _.reduce(changed_cells_per_view[0],
                             function(changes, content, index) {
                                 if(content !== null)
-                                    changes.push(build_cell_change(that.notebook[index].id,
+                                    changes.push(build_cell_change(that.notebook[index].id(),
                                                                    content,
                                                                    that.notebook[index].language()));
                                 return changes;
