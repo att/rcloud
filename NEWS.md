@@ -1,5 +1,33 @@
 ## RCloud develop branch
 
+## RCloud 0.9.1
+
+### Features
+
+* RCloud branch and revision are now displayed on startup (#277).
+  The `scripts/build.sh` script updates the `REVISION` file used for this.
+  Previously, only the distribution script created that file.
+
+* Logout page includes a link to GitHub logout as well (#294)
+  Note that the default for `goodbye.page` has changed to `/goodbye.R`
+
+* `rcloud.call.notebook()` supports an additional argument `attach`.
+  If it is `TRUE` then the evaulation environment of the notebook is attached
+  to the search path after evaluation.
+
+* `rcloud.call.notebook()` allows `args` to be an environment in which case
+  it is used as the evaluation environment of the notebook.
+
+
+### Bugfixes
+
+* empty markdown cells no longer cause an error (#173)
+
+* improved notebook update speed when there are many users/notebooks (#264)
+
+
+## RCloud 0.9
+
 ### Features
 
 * RCloud now supports anonymous access to with user switching.
