@@ -12,7 +12,7 @@
   Note that the default for `goodbye.page` has changed to `/goodbye.R`
 
 * `rcloud.call.notebook()` supports an additional argument `attach`.
-  If it is `TRUE` then the evaulation environment of the notebook is attached
+  If it is `TRUE` then the evaluation environment of the notebook is attached
   to the search path after evaluation.
 
 * `rcloud.call.notebook()` allows `args` to be an environment in which case
@@ -21,9 +21,11 @@
 
 ### Bugfixes
 
-* empty markdown cells no longer cause an error (#173)
+* Empty markdown cells no longer cause an error (#173)
 
-* improved notebook update speed when there are many users/notebooks (#264)
+* Improved notebook update speed when there are many users/notebooks (#264)
+
+* Loads MathJax by HTTPS to allow use in HTTPS deployments (#309)
 
 
 ## RCloud 0.9
