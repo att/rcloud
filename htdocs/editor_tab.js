@@ -684,33 +684,38 @@ var editor = function () {
             title.addClass('private');
         if(node.version)
             title.addClass('history');
-        var right = $('<span/>', {class: 'notebook-right'});
+        var right = $($.el.span({'class': 'notebook-right'}));
         if(node.last_commit && (!node.version ||
                                 display_date(node.last_commit) != display_date(node.parent.last_commit))) {
-            right.append('<span id="date" class="notebook-date">'
-                        + display_date(node.last_commit) + '</span>');
+            right[0].appendChild($.el.span({'id': 'date',
+                                            'class': 'notebook-date'},
+                                           display_date(node.last_commit)));
         }
         if(node.gistname && !node.version) {
             var adder = function(target) {
                 var count = 0;
+                var lst = [];
                 function add(items) {
-                    target.append('&nbsp;');
-                    target.append.apply(target, arguments);
+                    lst.push('&nbsp;');
+                    lst.push.apply(lst, arguments);
                     ++count;
                 }
                 add.width = function() {
                     return count*14;
                 };
+                add.commit = function() {
+                    target.append.apply(target, lst);
+                };
                 return add;
             };
             // commands for the right column, always shown
-            var always = $('<span/>', {class: 'notebook-commands-right'});
+            var always = $($.el.span({'class': 'notebook-commands-right'}));
             var add_buttons = adder(always);
             var star_style = _.extend({'font-size': '80%'}, icon_style);
-            var states = {true: {class: 'icon-star', title: 'unstar'},
-                          false: {class: 'icon-star-empty', title: 'star'}};
+            var states = {true: {'class': 'icon-star', title: 'unstar'},
+                          false: {'class': 'icon-star-empty', title: 'star'}};
             var state = i_starred_[node.gistname] || false;
-            var star_unstar = ui_utils.fa_button(states[state].class,
+            var star_unstar = ui_utils.fa_button(states[state]['class'],
                                                  function(e) { return states[state].title; },
                                                  'star',
                                                  star_style);
@@ -726,13 +731,14 @@ var editor = function () {
                 state = !!val;
                 $(this).find('i').attr('class', states[state].class);
             };
-            star_unstar.append($('<sub/>').append(num_stars_[node.gistname] || 0));
+            star_unstar[0].appendChild($.el.sub(String(num_stars_[node.gistname] || 0)));
             add_buttons(star_unstar);
 
-            right.append(always);
+            add_buttons.commit();
+            right[0].appendChild(always[0]);
 
             // commands that appear
-            var appear = $('<span/>', {class: 'notebook-commands appear'});
+            var appear = $($.el.span({'class': 'notebook-commands appear'}));
             add_buttons = adder(appear);
             if(true) { // all notebooks have history - should it always be accessible?
                 var disable = config_.currbook===node.gistname && config_.currversion;
@@ -777,9 +783,10 @@ var editor = function () {
                 add_buttons(remove);
             };
             var wid = add_buttons.width()+'px';
+            add_buttons.commit();
             appear.css({left: '-'+wid, width: wid});
             appear.hide();
-            always.append(appear);
+            always[0].appendChild(appear[0]);
             $li.hover(
                 function() {
                     $('.notebook-commands.appear', this).show();
@@ -788,7 +795,7 @@ var editor = function () {
                     $('.notebook-commands.appear', this).hide();
                 });
         }
-        element.append(right);
+        element[0].appendChild(right[0]);
     }
 
     function update_tree_li(node, $li, data) {
