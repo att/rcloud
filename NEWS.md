@@ -31,6 +31,10 @@
 
 * empty markdown cells no longer cause an error (#173)
 
+* Improved notebook update speed when there are many users/notebooks (#264)
+
+* Loads MathJax by HTTPS to allow use in HTTPS deployments (#309)
+
 
 ## RCloud 0.9
 
