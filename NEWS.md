@@ -29,7 +29,7 @@
 
 ### Bugfixes
 
-* empty markdown cells no longer cause an error (#173)
+* Empty markdown cells no longer cause an error (#173)
 
 * Improved notebook update speed when there are many users/notebooks (#264)
 
