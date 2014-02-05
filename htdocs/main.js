@@ -30,7 +30,10 @@ function init_upload_pane() {
             $("#file-upload-div").append(
                 bootstrap_utils.alert({
                     "class": 'alert-info',
-                    text: (to_notebook ? "Asset " : "File ") + file.name + " uploaded."
+                    text: (to_notebook ? "Asset " : "File ") + file.name + " uploaded.",
+                    on_close: function() {
+                        $(".progress").hide();
+                    }
                 })
             );
             if(to_notebook)

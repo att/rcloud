@@ -387,6 +387,7 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.upload_file = function(force, on_success, on_failure) {
             on_success = on_success || _.identity;
+            on_failure = on_failure || _.identity;
             function do_upload(path, file) {
                 var upload_name = path + '/' + file.name;
                 rcloud_ocaps.file_upload.create(upload_name, force, function(result) {
@@ -398,13 +399,23 @@ RCloud.create = function(rcloud_ocaps) {
                     var chunk_size = 1024*1024;
                     var f_size=file.size;
                     var cur_pos=0;
+                    var bytes_read = 0;
+                    debugger;
+                    $(".progress").show();
+                    $("#progress-bar").css("width", "0%");
+                    $("#progress-bar").attr("aria-valuenow", "0");
                     //initiate the first chunk, and then another, and then another ...
                     // ...while waiting for one to complete before reading another
                     fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                     fr.onload = function(e) {
+                        console.log("progress: ", (100 * (bytes_read / f_size)) + "%");
+
+                        $("#progress-bar").attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
+                        $("#progress-bar").css("width", (100 * (bytes_read / f_size)) + "%");
                         if (e.target.result.byteLength > 0) {
                             var bytes = new Uint8Array(e.target.result);
                             rcloud_ocaps.file_upload.write(bytes.buffer, function() {
+                                bytes_read += e.target.result.byteLength;
                                 cur_pos += chunk_size;
                                 fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                             });
@@ -758,14 +769,15 @@ var bootstrap_utils = {};
 bootstrap_utils.alert = function(opts)
 {
     opts = _.defaults(opts || {}, {
-        close_button: true
+        close_button: true,
+        on_close: function() {}
     });
     var div = $('<div class="alert"></div>');
     if (opts.html) div.html(opts.html);
     if (opts.text) div.text(opts.text);
     if (opts['class']) div.addClass(opts['class']);
     if (opts.close_button) 
-        div.prepend($('<button type="button" class="close" data-dismiss="alert">&times;</button>'));
+        div.prepend($('<button type="button" class="close" data-dismiss="alert">&times;</button>').click(opts.on_close));
     return div;
 };
 

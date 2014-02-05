@@ -845,7 +845,9 @@ limitations under the License.
       } else {
         class_string = '';
       }
-      return $($.el.ul({'class': "jqtree_common " + class_string}));
+      return $($.el.ul({
+        'class': "jqtree_common " + class_string
+      }));
     };
 
     ElementsRenderer.prototype.createLi = function(node) {
@@ -862,35 +864,39 @@ limitations under the License.
     };
 
     ElementsRenderer.prototype.createFolderLi = function(node) {
-      var button_char, button_classes, escaped_name, folder_classes;
+      var button_char, button_classes, folder_classes;
       button_classes = this.getButtonClasses(node);
       folder_classes = this.getFolderClasses(node);
-      escaped_name = this.escapeIfNecessary(node.name);
       if (node.is_open) {
         button_char = this.tree_widget.options.openedIcon;
       } else {
         button_char = this.tree_widget.options.closedIcon;
       }
-      var r1 = $.el.li({'class': "jqtree_common " + folder_classes},
-                       $.el.div({'class': "jqtree-element jqtree_common"},
-                                $.el.a({'class': "jqtree_common " + button_classes},
-                                       button_char),
-                                $.el.span({'class': "jqtree_common jqtree-title"},
-                                          node.name)));
-      return $(r1);
+      return $($.el.li({
+        'class': "jqtree_common " + folder_classes
+      }, $.el.div({
+        'class': 'jqtree-element jqtree_common'
+      }, $.el.a({
+        'class': "jqtree_common " + button_classes
+      }, button_char), $.el.span({
+        'class': "jqtree_common jqtree-title"
+      }, node.name))));
     };
 
     ElementsRenderer.prototype.createNodeLi = function(node) {
-      var class_string, escaped_name, li_classes;
+      var class_string, li_classes;
       li_classes = ['jqtree_common'];
       if (this.tree_widget.select_node_handler && this.tree_widget.select_node_handler.isNodeSelected(node)) {
         li_classes.push('jqtree-selected');
       }
       class_string = li_classes.join(' ');
-      escaped_name = this.escapeIfNecessary(node.name);
-      return $($.el.li({'class': class_string},
-                       $.el.div({'class': "jqtree-element jqtree_common"},
-                                $.el.span({'class': "jqtree-title jqtree_common"}, node.name))));
+      return $($.el.li({
+        'class': class_string
+      }, $.el.div({
+        'class': 'jqtree-element jqtree_common'
+      }, $.el.span({
+        'class': 'jqtree-title jqtree_common'
+      }, node.name))));
     };
 
     ElementsRenderer.prototype.getButtonClasses = function(node) {
@@ -966,10 +972,8 @@ limitations under the License.
       onLoadFailed: null,
       autoEscape: true,
       dataUrl: null,
-      closedIcon: String.fromCharCode(0x25ba), // '&#x25ba;',
-      openedIcon: String.fromCharCode(0x25bc), // '&#x25bc;',
-      // closedIcon: '&#x25ba;',
-      // openedIcon: '&#x25bc;',
+      closedIcon: String.fromCharCode(0x25ba),
+      openedIcon: String.fromCharCode(0x25bc),
       slide: true,
       nodeClass: Node,
       dataFilter: null,
@@ -2542,7 +2546,7 @@ limitations under the License.
     function DragElement(node, offset_x, offset_y, $tree) {
       this.offset_x = offset_x;
       this.offset_y = offset_y;
-      this.$element = $($.el.span({'class': 'jqtree-title jqtree-dragging'}, node.name));
+      this.$element = $("<span class=\"jqtree-title jqtree-dragging\">" + node.name + "</span>");
       this.$element.css("position", "absolute");
       $tree.append(this.$element);
     }
@@ -2566,10 +2570,7 @@ limitations under the License.
     function GhostDropHint(node, $element, position) {
       this.$element = $element;
       this.node = node;
-      // this.$ghost = $('<li class="jqtree_common jqtree-ghost"><span class="jqtree_common jqtree-circle"></span><span class="jqtree_common jqtree-line"></span></li>');
-      this.$ghost = $($.el.li({'class': 'jqtree_common jqtree-ghost'},
-                              $.el.span({'class': 'jqtree_common jqtree-circle'}),
-                              $.el.span({'class': 'jqtree_common jqtree-line'})));
+      this.$ghost = $('<li class="jqtree_common jqtree-ghost"><span class="jqtree_common jqtree-circle"></span><span class="jqtree_common jqtree-line"></span></li>');
       if (position === Position.AFTER) {
         this.moveAfter();
       } else if (position === Position.BEFORE) {
@@ -2613,7 +2614,7 @@ limitations under the License.
       var $div, width;
       $div = $element.children('.jqtree-element');
       width = $element.width() - 4;
-      this.$hint = $($.el.span({'class': 'jqtree-border'})); //$('<span class="jqtree-border"></span>');
+      this.$hint = $('<span class="jqtree-border"></span>');
       $div.append(this.$hint);
       this.$hint.css({
         width: width,
