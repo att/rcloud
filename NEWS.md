@@ -14,6 +14,8 @@
 
 ### Bugfixes
 
+* `tag` argument in `rcloud.stash.notebook` was ignored and treated as `NULL`
+
 
 ## RCloud 0.9.1
 
