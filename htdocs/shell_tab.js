@@ -273,9 +273,9 @@ var shell = (function() {
 
     function on_new(k, notebook) {
         set_notebook_title(notebook);
-        set_share_link();
         gistname_ = notebook.id;
         version_ = null;
+        set_share_link();
         is_mine_ = notebook_is_mine(notebook);
         show_fork_or_prompt_elements();
         if(prompt_) {
