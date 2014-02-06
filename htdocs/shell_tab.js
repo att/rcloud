@@ -484,7 +484,7 @@ var shell = (function() {
             var that = this;
             function create_import_file_dialog() {
                 var notebook = null;
-                var notebook_status_content = null;
+                var notebook_status = null;
                 var notebook_desc_content = null;
                 var import_button = null;
                 function do_upload(file) {
@@ -497,20 +497,20 @@ var shell = (function() {
                             notebook = JSON.parse(fr.result);
                         }
                         catch(x) {
-                            notebook_status_content.text("Couldn't parse JSON");
+                            notebook_status.text("Invalid notebook format: couldn't parse JSON");
                             return;
                         }
                         if(!notebook.description) {
-                            notebook_status_content.text('No description');
+                            notebook_status.text('Invalid notebook format: has no description');
                             notebook = null;
                             return;
                         }
-                        if(!notebook.files) {
-                            notebook_status_content.text('No files');
+                        if(!notebook.files || _.isEmpty(notebook.files)) {
+                            notebook_status.text('Invalid notebook format: has no files');
                             notebook = null;
                             return;
                         }
-                        notebook_status_content.text('OK');
+                        notebook_status.text('');
                         notebook_desc_content.val(notebook.description);
                         notebook_desc.show();
                         notebook = sanitize_notebook(notebook);
@@ -529,11 +529,10 @@ var shell = (function() {
                 }
                 var body = $('<div class="container"/>');
                 var file_select = $('<input type="file" id="notebook-file-upload" size="50"></input>');
-                var file_upload = $('<span class="btn">Validate</span>')
-                        .click(function() { do_upload(file_select[0].files[0]); });
-                var notebook_status = $('<span>Validation: </span>');
-                notebook_status_content = $('<span />');
-                notebook_status.append(notebook_status_content);
+                file_select.click(function() { ui_utils.disable_bs_button(import_button); })
+                    .change(function() { do_upload(file_select[0].files[0]); });
+                notebook_status = $('<span />');
+                notebook_status.append(notebook_status);
                 var notebook_desc = $('<span>Notebook description: </span>');
                 notebook_desc_content = $('<input type="text" size="50"></input>')
                     .keypress(function(e) {
@@ -544,7 +543,7 @@ var shell = (function() {
                         return true;
                     });
                 notebook_desc.append(notebook_desc_content);
-                body.append(file_select).append(file_upload)
+                body.append($('<p/>').append(file_select))
                     .append($('<p/>').append(notebook_status.hide()))
                     .append($('<p/>').append(notebook_desc.hide()));
                 var cancel = $('<span class="btn">Cancel</span>')
@@ -565,7 +564,7 @@ var shell = (function() {
                 $("body").append(dialog);
                 dialog
                     .on('show.bs.modal', function() {
-                        notebook_status_content.text('');
+                        notebook_status.text('');
                         notebook_status.hide();
                         notebook_desc_content.val('');
                         notebook_desc.hide();
