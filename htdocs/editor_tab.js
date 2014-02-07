@@ -397,7 +397,7 @@ var editor = function () {
 
     // add_history_nodes
     // whither is 'hide' - erase all, 'index' - show thru index, 'sha' - show thru sha, 'more' - show INCR more
-    function add_history_nodes(node, whither, where, k) {
+    function add_history_nodes(node, whither, where) {
         const INCR = 5;
         var debug_colors = false;
         var ellipsis = null;
@@ -413,7 +413,6 @@ var editor = function () {
                 throw "didn't find sha " + where + " in history";
             return sha_ind + INCR - 1; // show this many including curr (?)
         }
-
 
         function process_history(nshow) {
             function do_color(dat, color) {
@@ -486,7 +485,7 @@ var editor = function () {
         if(whither==='hide') {
             for(var i = node.children.length-1; i >= 0; --i)
                 $tree_.tree('removeNode', node.children[i]);
-            return;
+            return Promise.resolve(null);
         }
         else if(whither==='index')
             nshow = Math.max(where, INCR);
@@ -500,15 +499,15 @@ var editor = function () {
 
         if(histories_[node.gistname]) {
             process_history(nshow);
-            k && k(node);
+            return Promise.resolve(node);
         }
         else
-            rcloud.load_notebook(node.gistname, null).then(function(notebook) {
+            return rcloud.load_notebook(node.gistname, null).then(function(notebook) {
                 histories_[node.gistname] = notebook.history;
                 if(whither==='sha')
                     nshow = show_sha(histories_[node.gistname], where);
                 process_history(nshow);
-                k && k(node);
+                return node;
             });
     }
 
@@ -532,7 +531,7 @@ var editor = function () {
         scroll_into_view(node);
     }
 
-    function update_tree_entry(root, user, gistname, entry, create, k) {
+    function update_tree_entry(root, user, gistname, entry, create) {
         var data = {label: entry.description,
                     last_commit: entry.last_commit,
                     sort_order: ordering.NOTEBOOK,
@@ -550,8 +549,9 @@ var editor = function () {
                                            --where;
                                    }
                                }, create);
-        if(!node) // not created
-            return null;
+        if(!node) {
+            return Promise.reject(null); // not created. FIXME is this really 
+        }
 
         // if we're looking at an old version, make sure it's visible
         if(gistname===config_.currbook && config_.currversion) {
@@ -562,36 +562,36 @@ var editor = function () {
         if(config_.currversion)
             k2 = function(node) {
                 $tree_.tree('openNode', node);
-                if(k) {
-                    var n2 = $tree_.tree('getNodeById',
-                                         node_id(root, user, gistname, config_.currversion));
-                    if(!n2)
-                        throw 'tree node was not created for current history';
-                    k(n2);
-                }
+                var n2 = $tree_.tree('getNodeById',
+                                     node_id(root, user, gistname, config_.currversion));
+                if(!n2)
+                    throw 'tree node was not created for current history';
+                return n2;
             };
-        add_history_nodes(node, whither, where, k2);
+        var promise = add_history_nodes(node, whither, where);
+        if(whither !== 'hide' && k2)
+            promise = promise.then(k2);
 
-        if(!config_.currversion && k)
-            k(node);
-
-        return node;
+        return promise;
     }
 
     function update_notebook_view(user, gistname, entry, selroot) {
+        var p;
         if(selroot === true)
             selroot = i_starred_[gistname] ? 'interests' : 'alls';
-        if(i_starred_[gistname])
-            update_tree_entry('interests', user, gistname, entry, true,
-                              selroot==='interests' ? select_node : null);
+        if(i_starred_[gistname]) {
+            p = update_tree_entry('interests', user, gistname, entry, true);
+            if(selroot==='interests')
+                p.then(select_node);
+        }
         if(gistname === config_.currbook) {
             star_notebook_button_.set_state(i_starred_[gistname]);
             $('#curr-star-count').text(num_stars_[gistname] || 0);
         }
 
-        update_tree_entry('alls', user, gistname, entry, true,
-                          selroot==='alls' ? select_node : null, true);
-
+        p = update_tree_entry('alls', user, gistname, entry, true);
+        if(selroot==='alls')
+            p.then(select_node);
     }
 
     function remove_node(node) {
@@ -849,19 +849,18 @@ var editor = function () {
     }
 
     var result = {
-        init: function(gistname, version, k) {
+        init: function(gistname, version) {
             var that = this;
             username_ = rcloud.username();
             $("#input-text-source-results-title").css("display", "none");
             $("#input-text-history-results-title").css("display", "none");
-            this.load_config().then(function() {
+            var promise = this.load_config().then(function() {
                 if(gistname) // notebook specified in url
                     that.load_notebook(gistname, version);
                 else if(config_.currbook)
                     that.load_notebook(config_.currbook, config_.currversion);
                 else // brand new config
                     that.new_notebook();
-                k && k();
             });
             /* Search disabled for Version 0.9
             var old_text = "";
@@ -895,6 +894,7 @@ var editor = function () {
                 ui_utils.twostate_icon($("#star-notebook"),
                                        snf.bind(this, true), snf.bind(this, false),
                                        'icon-star', 'icon-star-empty');
+            return promise;
         },
         create_book_tree_widget: function(data) {
             var that = this;
@@ -1041,12 +1041,7 @@ var editor = function () {
         },
         load_callback: function(version, is_change, selroot) {
             var that = this;
-            debugger;
             return function(result) {
-                debugger;
-                if('error' in result) {
-                    return;
-                }
                 if(!result.description)
                     throw "Invalid notebook (must have description)";
 
@@ -1068,20 +1063,14 @@ var editor = function () {
                 if(is_change && shell.is_old_github())
                     history.unshift({version:'blah'});
 
-                // check star count if we don't have it in the cache
-                // could always double check here but the thought is that it won't
-                // be terribly out of date
-                var update = function() {
-                    update_notebook_from_gist(result, history, selroot);
-                    that.update_notebook_file_list(result.files);
-                };
-                if(!_.has(num_stars_, result.id))
-                    rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
-                        num_stars_[result.id] = count;
-                        update();
-                    });
-                else
-                    update();
+                (!_.has(num_stars_, result.id) 
+                 ? rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
+                       num_stars_[result.id] = count;
+                 }) : Promise.cast(undefined)).then(function() {
+                     update_notebook_from_gist(result, history, selroot);
+                     that.update_notebook_file_list(result.files);
+                });
+                
                 rcloud.get_all_comments(result.id).then(function(data) {
                     populate_comments(data);
                 });

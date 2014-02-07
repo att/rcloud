@@ -22,7 +22,6 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(version, notebook) {
-        debugger;
         if (!_.isUndefined(notebook.files)) {
             this.clear();
             var parts = {}; // could rely on alphabetic input instead of gathering

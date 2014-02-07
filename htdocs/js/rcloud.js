@@ -91,7 +91,7 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         rcloud.anonymous_session_init = function() {
-            rcloud_ocaps.anonymous_session_initAsync();
+            return rcloud_ocaps.anonymous_session_initAsync();
         };
 
         rcloud.init_client_side_data = function() {
@@ -245,20 +245,20 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.load_multiple_user_configs = function(users) {
             return json_p(rcloud_ocaps.load_multiple_user_configsAsync(users));
         };
-        rcloud.save_user_config = function(user, content, k) {
+        rcloud.save_user_config = function(user, content) {
             return json_p(rcloud_ocaps.save_user_configAsync(user, JSON.stringify(content)));
         };
-        rcloud.update_notebook = function(id, content, k) {
+        rcloud.update_notebook = function(id, content) {
             return rcloud_github_handler(
                 "rcloud.update.notebook",
                 rcloud_ocaps.update_notebookAsync(id, JSON.stringify(content)));
         };
-        rcloud.create_notebook = function(content, k) {
+        rcloud.create_notebook = function(content) {
             return rcloud_github_handler(
                 "rcloud.create.notebook", 
                 rcloud_ocaps.create_notebookAsync(JSON.stringify(content)));
         };
-        rcloud.fork_notebook = function(id, k) {
+        rcloud.fork_notebook = function(id) {
             return rcloud_github_handler(
                 "rcloud.fork.notebook",
                 rcloud_ocaps.fork_notebookAsync(id));
@@ -266,7 +266,7 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.port_notebooks = function(source, notebooks, prefix) {
             return rcloud_ocaps.port_notebooksAsync(source, notebooks, prefix);
         };
-        rcloud.get_completions = function(text, pos, k) {
+        rcloud.get_completions = function(text, pos) {
             return rcloud_ocaps.get_completionsAsync(text, pos)
                 .then(function(comps) {
                     if (_.isString(comps))
