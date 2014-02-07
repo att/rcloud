@@ -22,6 +22,7 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(version, notebook) {
+        debugger;
         if (!_.isUndefined(notebook.files)) {
             this.clear();
             var parts = {}; // could rely on alphabetic input instead of gathering
@@ -40,6 +41,7 @@ Notebook.create_controller = function(model)
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
         }
+        return notebook;
     }
 
     // calculate the changes needed to get back from the newest version in notebook

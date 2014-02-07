@@ -13,7 +13,6 @@ RClient = {
             // the rcloud ocap-0 performs the login authentication dance
             // success is indicated by the rest of the capabilities being sent
             rserve.ocap([token, execToken], function(err, ocaps) {
-                debugger;
                 ocaps = Promise.promisifyAll(ocaps);
                 if (ocaps !== null) {
                     result.running = true;

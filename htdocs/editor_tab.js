@@ -933,7 +933,7 @@ var editor = function () {
         load_notebook: function(gistname, version, selroot) {
             var that = this;
             selroot = selroot || true;
-            shell.load_notebook(gistname, version).then(this.load_callback(version, false, selroot));
+            return shell.load_notebook(gistname, version).then(this.load_callback(version, false, selroot));
         },
         new_notebook: function() {
             var that = this;
@@ -941,12 +941,12 @@ var editor = function () {
                 config_.nextwork = 1;
             var desc = "Notebook " + config_.nextwork;
             ++config_.nextwork;
-            shell.new_notebook(desc).then(function(notebook) {
+            return shell.new_notebook(desc).then(function(notebook) {
                 that.star_notebook(true, {notebook: notebook, make_current: true, version: null});
             });
         },
         rename_notebook: function(gistname, newname) {
-            rcloud.rename_notebook(gistname, newname).then(this.load_callback(null, true, true));
+            return rcloud.rename_notebook(gistname, newname).then(this.load_callback(null, true, true));
         },
         star_notebook: function(star, opts) {
             var that = this;
@@ -1041,7 +1041,9 @@ var editor = function () {
         },
         load_callback: function(version, is_change, selroot) {
             var that = this;
+            debugger;
             return function(result) {
+                debugger;
                 if('error' in result) {
                     return;
                 }

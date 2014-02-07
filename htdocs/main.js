@@ -1,3 +1,5 @@
+Promise.longStackTraces();
+
 function resize_side_panel() {
     var non_notebook_panel_height = 246;
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
@@ -173,3 +175,6 @@ function main_init() {
 }
 
 window.onload = main_init;
+// Promise.onPossiblyUnhandledRejection(function(error){
+//     throw error;
+// });

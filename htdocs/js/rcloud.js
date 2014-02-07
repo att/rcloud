@@ -514,7 +514,7 @@ RCloud.create = function(rcloud_ocaps) {
                 set_curtain();
         }, delay);
         progress_counter += 1;
-        thunk(done);
+        return Promise.cast(done).then(thunk);
     };
     rcloud.prevent_progress_modal = function() {
         if (allowed === 1) {

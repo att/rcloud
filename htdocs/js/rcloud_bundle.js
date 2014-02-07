@@ -13,7 +13,6 @@ RClient = {
             // the rcloud ocap-0 performs the login authentication dance
             // success is indicated by the rest of the capabilities being sent
             rserve.ocap([token, execToken], function(err, ocaps) {
-                debugger;
                 ocaps = Promise.promisifyAll(ocaps);
                 if (ocaps !== null) {
                     result.running = true;
@@ -420,6 +419,7 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.session_markdown_evalAsync(command, language, silent);
         };
 
+        // FIXME make into promises
         rcloud.upload_to_notebook = function(force, k) {
             k = k || _.identity;
             var on_success = function(v) { k(null, v); };
@@ -475,6 +475,8 @@ RCloud.create = function(rcloud_ocaps) {
                 do_upload(file);
             });
         };
+
+        // FIXME make into promises
         rcloud.upload_file = function(force, k) {
             k = k || _.identity;
             var on_success = function(v) { k(null, v); };
@@ -638,7 +640,7 @@ RCloud.create = function(rcloud_ocaps) {
                 set_curtain();
         }, delay);
         progress_counter += 1;
-        thunk(done);
+        return Promise.cast(done).then(thunk);
     };
     rcloud.prevent_progress_modal = function() {
         if (allowed === 1) {
@@ -1552,6 +1554,7 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(version, notebook) {
+        debugger;
         if (!_.isUndefined(notebook.files)) {
             this.clear();
             var parts = {}; // could rely on alphabetic input instead of gathering
@@ -1570,6 +1573,7 @@ Notebook.create_controller = function(model)
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
         }
+        return notebook;
     }
 
     // calculate the changes needed to get back from the newest version in notebook
