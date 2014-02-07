@@ -25,6 +25,7 @@ dependencies_bundle.js: \
 	js/underscore-min.js \
 	js/d3.v3.js \
 	js/lux.js \
+	js/bluebird.js \
 	js/crossfilter.js \
 	js/dc.js \
 	js/colorbrewer.js \

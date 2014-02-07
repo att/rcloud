@@ -13,6 +13,8 @@ RClient = {
             // the rcloud ocap-0 performs the login authentication dance
             // success is indicated by the rest of the capabilities being sent
             rserve.ocap([token, execToken], function(err, ocaps) {
+                debugger;
+                ocaps = Promise.promisifyAll(ocaps);
                 if (ocaps !== null) {
                     result.running = true;
                     opts.on_connect && opts.on_connect.call(result, ocaps);
@@ -136,51 +138,77 @@ RCloud.exception_message = function(v) {
 };
 
 RCloud.create = function(rcloud_ocaps) {
-    function json_k(k) {
-        return function(err, result) {
-            var json_result = {};
-            try {
-                json_result = JSON.parse(result);
-                k && k(null, json_result);
-            } catch (e) {
-                rclient.post_error(e.message);
-                k && k(e, null);
-            }
-            // // FIXME: I must still call the continuation,
-            // // because bad things might happen otherwise. But calling
-            // // this means that I'm polluting the 
-            // // space of possible JSON answers with the error.
-            // // For example, right now a return string "{}" is indistinguishable
-            // // from an error
-            // k && k(json_result);
-        };
+    //////////////////////////////////////////////////////////////////////////////
+    // promisification
+
+    function get(path) {
+        var v = rcloud_ocaps;
+        for (var i=0; i<path.length; ++i)
+            v = v[path[i]];
+        return v;
+    }
+    function set(path, val) {
+        var v = rcloud_ocaps;
+        for (var i=0; i<path.length-1; ++i)
+            v = v[path[i]];
+        v[path[path.length-1] + "Async"] = val;
     }
 
-    function rcloud_github_handler(command, k) {
-        return function(err, result) {
-            if(result.ok) {
-                k && k(null, result.content);
+    //////////////////////////////////////////////////////////////////////////////    
+    function json_p(promise) {
+        return promise.then(JSON.parse)
+            .catch(function(e) {
+                rclient.post_error(e.message);
+                throw e;
+            });
+    }
+
+    function rcloud_github_handler(command, promise) {
+        function success(result) {
+            if (result.ok) {
+                return result.content;
             } else {
-                var message = _.isObject(result) && 'ok' in result
-                    ? result.content.message : result.toString();
-                rclient.post_error(command + ': ' + message);
-                // FIXME: I must still call the continuation,
-                // because bad things might happen otherwise. But calling
-                // this means that I'm polluting the 
-                // space of possible JSON answers with the error.
-                // For example, right now a return string "{}" is indistinguishable
-                // from an error
-                k && k(result.content, null);
+                throw result.content;
             }
-        };
+        }
+        function failure(err) {
+            var message = _.isObject(err) && 'ok' in err
+                ? err.content.message : err.toString();
+            rclient.post_error(command + ': ' + message);
+        }
+        return promise.then(success).catch(failure);
     }
 
     var rcloud = {};
 
     function setup_unauthenticated_ocaps() {
-        rcloud.anonymous_session_init = function(k) {
-            rcloud_ocaps.anonymous_session_init(k || _.identity);
-        };
+
+        var paths = [
+            ["anonymous_session_init"],
+            ["prefix_uuid"],
+            ["get_conf_value"],
+            ["get_notebook"],
+            ["load_notebook"],
+            ["call_notebook"],
+            ["install_notebook_stylesheets"],
+            ["get_users"],
+            ["log", "record_cell_execution"],
+            ["setup_js_installer"],
+            ["comments","get_all"],
+            ["debug","raise"],
+            ["stars","star_notebook"],
+            ["stars","unstar_notebook"],
+            ["stars","is_notebook_starred"],
+            ["stars","get_notebook_star_count"],
+            ["stars","get_multiple_notebook_star_counts"],
+            ["stars","get_my_starred_notebooks"],
+            ["session_cell_eval"],
+            ["reset_session"],
+            ["set_device_pixel_ratio"]
+        ];
+        _.each(paths, function(path) {
+            set(path, Promise.promisify(get(path)));
+        });
 
         rcloud.username = function() {
             return $.cookies.get('user');
@@ -188,57 +216,56 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.github_token = function() {
             return $.cookies.get('token');
         };
-        rcloud.init_client_side_data = function(k) {
-            k = k || _.identity;
+
+        rcloud.anonymous_session_init = function() {
+            rcloud_ocaps.anonymous_session_initAsync();
+        };
+
+        rcloud.init_client_side_data = function() {
             var that = this;
-            rcloud_ocaps.prefix_uuid(function(err, v) {
+            return rcloud_ocaps.prefix_uuidAsync().then(function(v) {
                 that.deferred_knitr_uuid = v;
-                k();
             });
         };
 
-        rcloud.get_conf_value = function(key, k) {
-            rcloud_ocaps.get_conf_value(key, k);
+        rcloud.get_conf_value = function(key) {
+            return rcloud_ocaps.get_conf_valueAsync(key);
         };
 
-        rcloud.get_notebook = function(id, version, k) {
-            k = rcloud_github_handler("rcloud.get.notebook " + id, k);
-            rcloud_ocaps.get_notebook(id, version, function(err, notebook) {
-                k(err, notebook);
-            });
+        rcloud.get_notebook = function(id, version) {
+            return rcloud_github_handler(
+                "rcloud.get.notebook " + id,
+                rcloud_ocaps.get_notebookAsync(id, version));
         };
 
-        rcloud.load_notebook = function(id, version, k) {
-            k = rcloud_github_handler("rcloud.load.notebook " + id, k);
-            rcloud_ocaps.load_notebook(id, version, function(err, notebook) {
-                k(err, notebook);
-            });
+        rcloud.load_notebook = function(id, version) {
+            return rcloud_github_handler(
+                "rcloud.load.notebook " + id,
+                rcloud_ocaps.load_notebookAsync(id, version));
         };
 
-        rcloud.call_notebook = function(id, version, k) {
-            k = rcloud_github_handler("rcloud.call.notebook " + id, k);
-            rcloud_ocaps.call_notebook(id, version, function(err, notebook) {
-                k(err, notebook);
-            });
+        rcloud.call_notebook = function(id, version) {
+            return rcloud_github_handler(
+                "rcloud.call.notebook " + id,
+                rcloud_ocaps.call_notebookAsync(id, version));
         };
 
-        rcloud.install_notebook_stylesheets = function(k) {
-            rcloud_ocaps.install_notebook_stylesheets(k || _.identity);
+        rcloud.install_notebook_stylesheets = function() {
+            return rcloud_ocaps.install_notebook_stylesheetsAsync();
         };
 
-        rcloud.get_users = function(user, k) {
-            rcloud_ocaps.get_users(user, k || _.identity);
+        rcloud.get_users = function(user) {
+            return rcloud_ocaps.get_usersAsync(user);
         };
 
         rcloud.record_cell_execution = function(cell_model) {
-            var k = _.identity;
             var json_rep = JSON.stringify(cell_model.json());
-            rcloud_ocaps.log.record_cell_execution(rcloud.username(), json_rep, k);
+            return rcloud_ocaps.log.record_cell_executionAsync(rcloud.username(), json_rep);
         };
 
         // javascript.R
-        rcloud.setup_js_installer = function(v, k) {
-            rcloud_ocaps.setup_js_installer(v, k || _.identity);
+        rcloud.setup_js_installer = function(v) {
+            return rcloud_ocaps.setup_js_installerAsync(v);
         };
 
         // having this naked eval here makes me very nervous.
@@ -269,97 +296,128 @@ RCloud.create = function(rcloud_ocaps) {
         });
 
         // notebook.comments.R
-        rcloud.get_all_comments = function(id, k) {
-            rcloud_ocaps.comments.get_all(id, k || _.identity);
+        rcloud.get_all_comments = function(id) {
+            return rcloud_ocaps.comments.get_allAsync(id);
         };
 
         // debugging ocaps
         rcloud.debug = {};
-        rcloud.debug.raise = function(msg, k) {
-            rcloud_ocaps.debug.raise(msg, k || _.identity);
+        rcloud.debug.raise = function(msg) {
+            return rcloud_ocaps.debug.raiseAsync(msg);
         };
 
         // stars
         rcloud.stars = {};
-        rcloud.stars.is_notebook_starred = function(id, k) {
-            rcloud_ocaps.stars.is_notebook_starred(id, k);
+        rcloud.stars.is_notebook_starred = function(id) {
+            return rcloud_ocaps.stars.is_notebook_starredAsync(id);
         };
-        rcloud.stars.get_notebook_star_count = function(id, k) {
-            rcloud_ocaps.stars.get_notebook_star_count(id, k);
+        rcloud.stars.get_notebook_star_count = function(id) {
+            return rcloud_ocaps.stars.get_notebook_star_countAsync(id);
         };
-        rcloud.stars.get_multiple_notebook_star_counts = function(id, k) {
-            rcloud_ocaps.stars.get_multiple_notebook_star_counts(id, k);
-        };
-
-        rcloud.session_cell_eval = function(filename, language, silent, k) {
-            rcloud_ocaps.session_cell_eval(filename, language, silent, k);
+        rcloud.stars.get_multiple_notebook_star_counts = function(id) {
+            return rcloud_ocaps.stars.get_multiple_notebook_star_countsAsync(id);
         };
 
-        rcloud.reset_session = function(k) {
-            k = k || _.identity;
-            rcloud_ocaps.reset_session(k);
+        rcloud.session_cell_eval = function(filename, language, silent) {
+            return rcloud_ocaps.session_cell_evalAsync(filename, language, silent);
+        };
+
+        rcloud.reset_session = function() {
+            return rcloud_ocaps.reset_sessionAsync();
         };
 
         rcloud.display = {};
-        rcloud.display.set_device_pixel_ratio = function(k) {
-            rcloud_ocaps.set_device_pixel_ratio(window.devicePixelRatio, k || _.identity);
+        rcloud.display.set_device_pixel_ratio = function() {
+            return rcloud_ocaps.set_device_pixel_ratioAsync(window.devicePixelRatio);
         };
     }
 
     function setup_authenticated_ocaps() {
-        rcloud.session_init = function(username, token, k) {
-            rcloud_ocaps.session_init(username, token, k || _.identity);
+        var paths = [
+            ["session_init"],
+            ["search"],
+            ["load_user_config"],
+            ["load_multiple_user_configs"],
+            ["save_user_config"],
+            ["update_notebook"],
+            ["create_notebook"],
+            ["fork_notebook"],
+            ["port_notebooks"],
+            ["get_completions"],
+            ["rename_notebook"],
+            ["session_markdown_eval"],
+            ["notebook_upload"],
+            ["file_upload","upload_path"],
+            ["file_upload","create"],
+            ["file_upload","write"],
+            ["file_upload","close"],
+            ["comments","post"],
+            ["is_notebook_published"],
+            ["publish_notebook"],
+            ["unpublish_notebook"]
+        ];
+        _.each(paths, function(path) {
+            set(path, Promise.promisify(get(path)));
+        });
+
+        rcloud.session_init = function(username, token) {
+            return rcloud_ocaps.session_initAsync(username, token);
         };
-        rcloud.search = function(search_string, k) {
-            rcloud_ocaps.search(search_string, k || _.identity);
+        rcloud.search = function(search_string) {
+            return rcloud_ocaps.searchAsync(search_string);
         };
-        rcloud.load_user_config = function(user, k) {
-            rcloud_ocaps.load_user_config(user, json_k(k));
+        rcloud.load_user_config = function(user) {
+            return json_p(rcloud_ocaps.load_user_configAsync(user));
         };
-        rcloud.load_multiple_user_configs = function(users, k) {
-            rcloud_ocaps.load_multiple_user_configs(users, json_k(k));
+        rcloud.load_multiple_user_configs = function(users) {
+            return json_p(rcloud_ocaps.load_multiple_user_configsAsync(users));
         };
         rcloud.save_user_config = function(user, content, k) {
-            rcloud_ocaps.save_user_config(user, JSON.stringify(content), json_k(k));
+            return json_p(rcloud_ocaps.save_user_configAsync(user, JSON.stringify(content)));
         };
         rcloud.update_notebook = function(id, content, k) {
-            k = rcloud_github_handler("rcloud.update.notebook", k);
-            rcloud_ocaps.update_notebook(id, JSON.stringify(content), k);
+            return rcloud_github_handler(
+                "rcloud.update.notebook",
+                rcloud_ocaps.update_notebookAsync(id, JSON.stringify(content)));
         };
         rcloud.create_notebook = function(content, k) {
-            k = rcloud_github_handler("rcloud.create.notebook", k);
-            rcloud_ocaps.create_notebook(JSON.stringify(content), k);
+            return rcloud_github_handler(
+                "rcloud.create.notebook", 
+                rcloud_ocaps.create_notebookAsync(JSON.stringify(content)));
         };
         rcloud.fork_notebook = function(id, k) {
-            k = rcloud_github_handler("rcloud.fork.notebook", k);
-            rcloud_ocaps.fork_notebook(id, k);
+            return rcloud_github_handler(
+                "rcloud.fork.notebook",
+                rcloud_ocaps.fork_notebookAsync(id));
         };
-        rcloud.port_notebooks = function(source, notebooks, prefix, k) {
-            rcloud_ocaps.port_notebooks(source, notebooks, prefix, k);
+        rcloud.port_notebooks = function(source, notebooks, prefix) {
+            return rcloud_ocaps.port_notebooksAsync(source, notebooks, prefix);
         };
         rcloud.get_completions = function(text, pos, k) {
-            return rcloud_ocaps.get_completions(text, pos, function(comps) {
-                if(_.isString(comps))
-                    comps = [comps]; // quirk of rserve.js scalar handling
-                // convert to the record format ace.js autocompletion expects
-                // meta is what gets displayed at right; name & score might be improved
-                k(null, _.map(comps,
-                              function(comp) {
-                                  return {meta: "local",
-                                          name: "library",
-                                          score: 3,
-                                          value: comp
-                                         };
-                              }));
-            });
+            return rcloud_ocaps.get_completionsAsync(text, pos)
+                .then(function(comps) {
+                    if (_.isString(comps))
+                        comps = [comps]; // quirk of rserve.js scalar handling
+                    // convert to the record format ace.js autocompletion expects
+                    // meta is what gets displayed at right; name & score might be improved
+                    return _.map(comps,
+                                 function(comp) {
+                                     return {meta: "local",
+                                             name: "library",
+                                             score: 3,
+                                             value: comp
+                                            };
+                                 });
+                });
         };
 
-        rcloud.rename_notebook = function(id, new_name, k) {
-            k = rcloud_github_handler("rcloud.rename.notebook", k);
-            rcloud_ocaps.rename_notebook(id, new_name, k);
+        rcloud.rename_notebook = function(id, new_name) {
+            return rcloud_github_handler(
+                "rcloud.rename.notebook",
+                rcloud_ocaps.rename_notebookAsync(id, new_name));
         };
-        rcloud.session_markdown_eval = function(command, language, silent, k) {
-            rcloud_ocaps.session_markdown_eval(command, language, silent, k || _.identity);
+        rcloud.session_markdown_eval = function(command, language, silent) {
+            return rcloud_ocaps.session_markdown_evalAsync(command, language, silent);
         };
 
         rcloud.upload_to_notebook = function(force, k) {
@@ -483,41 +541,41 @@ RCloud.create = function(rcloud_ocaps) {
             }
         };
 
-        rcloud.post_comment = function(id, content, k) {
-            rcloud_ocaps.comments.post(id, content, k || _.identity);
+        rcloud.post_comment = function(id, content) {
+            return rcloud_ocaps.comments.postAsync(id, content);
         };
 
         // publishing notebooks
-        rcloud.is_notebook_published = function(id, k) {
-            rcloud_ocaps.is_notebook_published(id, k);
+        rcloud.is_notebook_published = function(id) {
+            return rcloud_ocaps.is_notebook_publishedAsync(id);
         };
 
-        rcloud.publish_notebook = function(id, k) {
-            rcloud_ocaps.publish_notebook(id, k || _.identity);
+        rcloud.publish_notebook = function(id) {
+            return rcloud_ocaps.publish_notebookAsync(id);
         };
-        rcloud.unpublish_notebook = function(id, k) {
-            rcloud_ocaps.unpublish_notebook(id, k || _.identity);
+        rcloud.unpublish_notebook = function(id) {
+            return rcloud_ocaps.unpublish_notebookAsync(id);
         };
 
         // stars
         rcloud.stars = {};
-        rcloud.stars.star_notebook = function(id, k) {
-            rcloud_ocaps.stars.star_notebook(id, k || _.identity);
+        rcloud.stars.star_notebook = function(id) {
+            return rcloud_ocaps.stars.star_notebookAsync(id);
         };
-        rcloud.stars.unstar_notebook = function(id, k) {
-            rcloud_ocaps.stars.unstar_notebook(id, k || _.identity);
+        rcloud.stars.unstar_notebook = function(id) {
+            return rcloud_ocaps.stars.unstar_notebookAsync(id);
         };
-        rcloud.stars.is_notebook_starred = function(id, k) {
-            rcloud_ocaps.stars.is_notebook_starred(id, k);
+        rcloud.stars.is_notebook_starred = function(id) {
+            return rcloud_ocaps.stars.is_notebook_starredAsync(id);
         };
-        rcloud.stars.get_notebook_star_count = function(id, k) {
-            rcloud_ocaps.stars.get_notebook_star_count(id, k);
+        rcloud.stars.get_notebook_star_count = function(id) {
+            return rcloud_ocaps.stars.get_notebook_star_countAsync(id);
         };
-        rcloud.stars.get_multiple_notebook_star_counts = function(ids, k) {
-            rcloud_ocaps.stars.get_multiple_notebook_star_counts(ids, k);
+        rcloud.stars.get_multiple_notebook_star_counts = function(ids) {
+            return rcloud_ocaps.stars.get_multiple_notebook_star_countsAsync(ids);
         };
-        rcloud.stars.get_my_starred_notebooks = function(k) {
-            rcloud_ocaps.stars.get_my_starred_notebooks(k);
+        rcloud.stars.get_my_starred_notebooks = function() {
+            rcloud_ocaps.stars.get_my_starred_notebooksAsync();
         };
 
     }
@@ -891,9 +949,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         if(new_content!==null) // if any change (including removing the content)
             cell_model.parent_model.controller.update_cell(cell_model);
         rcloud.with_progress(function(done) {
-            cell_model.controller.execute(function() {
-                done();
-            });
+            cell_model.controller.execute().then(done);
         });
     }
     run_md_button.click(function(e) {
@@ -1235,24 +1291,25 @@ Notebook.Cell.create_model = function(content, language)
 Notebook.Cell.create_controller = function(cell_model)
 {
     var result = {
-        execute: function(k) {
+        execute: function() {
             var that = this;
             var language = cell_model.language();
-            function callback(err, r) {
+            function callback(r) {
                 that.set_status_message(r);
-                k && k();
             }
+            var promise;
 
             rcloud.record_cell_execution(cell_model);
             if (rcloud.authenticated) {
-                rcloud.session_markdown_eval(cell_model.content(), language, false, callback);
+                promise = rcloud.session_markdown_eval(cell_model.content(), language, false);
             } else {
-                rcloud.session_cell_eval(Notebook.part_name(cell_model.id,
-                                                            cell_model.language()),
-                                         cell_model.language(),
-                                         false,
-                                         callback);
+                promise = rcloud.session_cell_eval(
+                    Notebook.part_name(cell_model.id,
+                                       cell_model.language()),
+                    cell_model.language(),
+                    false);
             }
+            return promise.then(callback);
         },
         set_status_message: function(msg) {
             _.each(cell_model.views, function(view) {
@@ -1494,7 +1551,7 @@ Notebook.create_controller = function(model)
         return {controller: cell_controller, changes: model.insert_cell(cell_model, id)};
     }
 
-    function on_load(k, version, err, notebook) {
+    function on_load(version, notebook) {
         if (!_.isUndefined(notebook.files)) {
             this.clear();
             var parts = {}; // could rely on alphabetic input instead of gathering
@@ -1513,7 +1570,6 @@ Notebook.create_controller = function(model)
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
         }
-        k && k(notebook);
     }
 
     // calculate the changes needed to get back from the newest version in notebook
@@ -1589,67 +1645,64 @@ Notebook.create_controller = function(model)
         remove_cell: function(cell_model) {
             var changes = model.remove_cell(cell_model);
             shell.prompt_widget.focus(); // there must be a better way
-            this.update_notebook(changes);
+            return this.update_notebook(changes);
         },
         clear: function() {
             model.clear();
         },
-        load_notebook: function(gistname, version, k) {
-            var that = this;
-            rcloud.load_notebook(gistname, version || null, _.bind(on_load, this, k, version));
+        load_notebook: function(gistname, version) {
+            return rcloud.load_notebook(gistname, version || null)
+                .then(_.bind(on_load, this, version));
         },
-        create_notebook: function(content, k) {
+        create_notebook: function(content) {
             var that = this;
-            rcloud.create_notebook(content, function(err, notebook) {
+            return rcloud.create_notebook(content).then(function(notebook) {
                 that.clear();
                 model.read_only(notebook.user.login != rcloud.username());
                 current_gist_ = notebook;
-                k && k(err, notebook);
             });
         },
-        fork_or_revert_notebook: function(is_mine, gistname, version, k) {
+        fork_or_revert_notebook: function(is_mine, gistname, version) {
             var that = this;
-            function update_and_load(changes, gistname, k) {
+            function update_and_load(changes, gistname) {
                 // force a full reload in all cases, as a sanity check
                 // i.e. we might know what the notebook state should be,
                 // but load the notebook to make sure
                 var k2 = function() {
-                    that.load_notebook(gistname, null, k);
+                    return that.load_notebook(gistname, null);
                 };
                 if(changes.length)
-                    that.update_notebook(changes, gistname, k2);
+                    return that.update_notebook(changes, gistname).then(k2);
                 else
-                    k2();
-
+                    return k2();
             }
             if(is_mine) // revert: get HEAD, calculate changes from there to here, and apply
-                rcloud.load_notebook(gistname, null, function(err, notebook) {
+                return rcloud.load_notebook(gistname, null).then(function(notebook) {
                     var changes = find_changes_from(notebook);
-                    update_and_load(changes, gistname, k);
+                    return update_and_load(changes, gistname);
                 });
             else // fork:
-                rcloud.fork_notebook(gistname, function(err, notebook) {
+                return rcloud.fork_notebook(gistname).then(function(notebook) {
                     if(version) {
                         // fork, then get changes from there to where we are in the past, and apply
                         // git api does not return the files on fork, so load
-                        rcloud.get_notebook(notebook.id, null, function(err, notebook2) {
+                        return rcloud.get_notebook(notebook.id, null).then(function(notebook2) {
                             var changes = find_changes_from(notebook2);
-                            update_and_load(changes, notebook2.id, k);
+                            return update_and_load(changes, notebook2.id);
                         });
-                    }
-                    else
-                        update_and_load([], notebook.id, k);
+                    } else
+                        return update_and_load([], notebook.id);
                 });
         },
-        update_notebook: function(changes, gistname, k) {
+        update_notebook: function(changes, gistname) {
             // remove any "empty" changes.  we can keep empty cells on the
             // screen but github will refuse them.  if the user doesn't enter
             // stuff in them before saving, they will disappear on next session
             changes = changes.filter(function(change) { return !!change.content || change.erase; });
-            if(!changes.length)
-                return;
-            if(model.read_only())
-                throw "attempted to update read-only notebook";
+            if (!changes.length)
+                return Promise.cast(undefined);
+            if (model.read_only())
+                return Promise.reject("attempted to update read-only notebook");
             gistname = gistname || shell.gistname();
             function changes_to_gist(changes) {
                 // we don't use the gist rename feature because it doesn't
@@ -1678,24 +1731,23 @@ Notebook.create_controller = function(model)
                 }
                 return {files: _.reduce(changes, xlate_change, {})};
             }
-            // not awesome to callback to someone else here
-            k = k || editor.load_callback(null, true, true);
-            var k2 = function(err, notebook) {
+            var k2 = function(notebook) {
                 if('error' in notebook) {
-                    k(notebook, notebook); // FIXME that's no good
-                    return;
+                    throw notebook;
                 }
                 current_gist_ = notebook;
-                k(err, notebook);
             };
-            if(changes.length)
-                rcloud.update_notebook(gistname, changes_to_gist(changes), k2);
+
+            return rcloud.update_notebook(gistname, changes_to_gist(changes))
+                .then(k2)
+                .then(editor.load_callback(null, true, true)) // FIXME previous code had weird condition callback to random place.. this might just break badly.
+            ;
         },
         refresh_cells: function() {
             return model.reread_cells();
         },
         update_cell: function(cell_model) {
-            this.update_notebook(model.update_cell(cell_model));
+            return this.update_notebook(model.update_cell(cell_model));
         },
         save: function() {
             if(dirty_) {

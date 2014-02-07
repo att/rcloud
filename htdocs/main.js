@@ -135,7 +135,7 @@ function main_init() {
                 rclient.close();
                 return;
             }
-            rcloud.session_init(rcloud.username(), rcloud.github_token(), function(err, hello) {
+            rcloud.session_init(rcloud.username(), rcloud.github_token()).then(function(hello) {
                 rclient.post_response(hello);
             });
             rcloud.display.set_device_pixel_ratio();

@@ -255,10 +255,10 @@ var shell = (function() {
                     host: rclient.host,
                     on_connect: function(ocaps) {
                         rcloud = RCloud.create(ocaps.rcloud);
-                        rcloud.session_init(rcloud.username(), rcloud.github_token(), function(err, hello) {});
+                        rcloud.session_init(rcloud.username(), rcloud.github_token());
                         rcloud.display.set_device_pixel_ratio();
 
-                        rcloud.init_client_side_data(function() {
+                        rcloud.init_client_side_data().then(function() {
                             $("#output").find(".alert").remove();
                             k(done);
                         });
