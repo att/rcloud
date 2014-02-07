@@ -47135,9 +47135,10 @@ Rserve.create = function(opts) {
         }
         var v = Rserve.parse_websocket_frame(msg.data);
         if (!v.ok) {
-            handle_error(v.message, v.status_code);
+            result_callback([v.message, v.status_code], undefined);
+            // handle_error(v.message, v.status_code);
         } else if (v.header[0] === Rserve.Rsrv.RESP_OK) {
-            result_callback(v.payload);
+            result_callback(null, v.payload);
         } else if (v.header[0] === Rserve.Rsrv.OOB_SEND) {
             opts.on_data && opts.on_data(v.payload);
         } else if (v.header[0] === Rserve.Rsrv.OOB_MSG) {
@@ -47156,8 +47157,12 @@ Rserve.create = function(opts) {
                     return;
                 }
                 var captured_function = p[0], params = p.slice(1);
-                params.push(function(result) {
-                    _send_cmd_now(Rserve.Rsrv.OOB_MSG, _encode_value(result));
+                params.push(function(err, result) {
+                    if (err) {
+                        _send_cmd_now(Rserve.Rsrv.RESP_ERR | Rserve.Rsrv.OOB_MSG, _encode_value(err));
+                    } else {
+                        _send_cmd_now(Rserve.Rsrv.OOB_MSG, _encode_value(result));
+                    }
                 });
                 captured_function.apply(undefined, params);
             } else {
@@ -47209,10 +47214,10 @@ Rserve.create = function(opts) {
         }
     }
     function enqueue(buffer, k, command) {
-        queue.push([buffer, function(result) {
+        queue.push([buffer, function(error, result) {
             awaiting_result = false;
             bump_queue();
-            k(result);
+            k(error, result);
         }, command]);
         bump_queue();
     };
@@ -47268,8 +47273,10 @@ Rserve.create = function(opts) {
                     str = ocap.value[0];
                 } catch (e) {};
             }
-            if (!is_ocap)
-                throw new Error("Expected an ocap, instead got " + ocap);
+            if (!is_ocap) {
+                k(new Error("Expected an ocap, instead got " + ocap), undefined);
+                return;
+            }
             var params = [str];
             params.push.apply(params, values);
             _cmd(Rserve.Rsrv.CMD_OCcall, _encode_value(params, Rserve.Rsrv.XT_LANG_NOTAG),
@@ -47323,8 +47330,10 @@ Rserve.wrap_ocap = function(s, ocap) {
         if(!values.length || !_.isFunction(values[values.length-1]))
             throw new Error("forgot to pass continuation to ocap");
         var k = values.pop();
-        s.OCcall(ocap, values, function(v) {
-            k(Rserve.wrap_all_ocaps(s, v));
+        s.OCcall(ocap, values, function(err, v) {
+            if (!_.isUndefined(v))
+                v = Rserve.wrap_all_ocaps(s, v); 
+            k(err, v);
         });
     };
     wrapped_ocap.bare_ocap = ocap;

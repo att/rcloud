@@ -255,7 +255,8 @@ var shell = (function() {
                     host: rclient.host,
                     on_connect: function(ocaps) {
                         rcloud = RCloud.create(ocaps.rcloud);
-                        rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {});
+                        rcloud.session_init(rcloud.username(), rcloud.github_token(), function(err, hello) {});
+                        rcloud.display.set_device_pixel_ratio();
 
                         rcloud.init_client_side_data(function() {
                             $("#output").find(".alert").remove();
@@ -271,7 +272,7 @@ var shell = (function() {
         }
     }
 
-    function on_new(k, notebook) {
+    function on_new(k, err, notebook) {
         set_notebook_title(notebook);
         set_share_link();
         gistname_ = notebook.id;
@@ -282,10 +283,10 @@ var shell = (function() {
             prompt_.widget.focus(); // surely not the right way to do this
             prompt_.restore();
         }
-        k && k(notebook);
+        k && k(null, notebook);
     }
 
-    function on_load(k, notebook) {
+    function on_load(k, err, notebook) {
         set_notebook_title(notebook);
         set_share_link();
 
@@ -299,7 +300,7 @@ var shell = (function() {
             prompt_.widget.focus(); // surely not the right way to do this
             prompt_.restore();
         }
-        k && k(notebook);
+        k && k(null, notebook);
     }
 
 
@@ -387,7 +388,7 @@ var shell = (function() {
                     $(".rcloud-user-defined-css").remove();
                     rcloud.install_notebook_stylesheets(function() {
                         done();
-                        on_load.bind(that, k)(notebook);
+                        on_load.bind(that, k)(null, notebook);
                     });
                 });
             }
@@ -396,7 +397,7 @@ var shell = (function() {
             notebook_controller_.save();
         }, new_notebook: function(desc, k) {
             reset_session(function(done) {
-                var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
+                var content = {description: desc, 'public': false, files: {"scratch.R": {content:"# scratch file"}}};
                 done(); // well not really done (just done with cps bleh)
                 notebook_controller_.create_notebook(content, _.bind(on_new, this, k));
             });
@@ -406,11 +407,11 @@ var shell = (function() {
             reset_session(function(done) {
                 var that = this;
                 notebook_model_.read_only(false);
-                notebook_controller_.fork_or_revert_notebook(is_mine, gistname, version, function(notebook) {
+                notebook_controller_.fork_or_revert_notebook(is_mine, gistname, version, function(err, notebook) {
                     gistname_ = notebook.id;
                     version_ = null;
                     done(); // again, not really done - just too nasty to compose done with k
-                    on_load.call(that, k, notebook);
+                    on_load.call(that, k, null, notebook);
                 });
             });
         }, open_in_github: function() {
@@ -471,7 +472,7 @@ var shell = (function() {
             }
             editor.load_notebook(notebook, version);
         }, export_notebook_file: function() {
-            rcloud.get_notebook(gistname_, version_, function(notebook) {
+            rcloud.get_notebook(gistname_, version_, function(err, notebook) {
                 notebook = sanitize_notebook(notebook);
                 var gisttext = JSON.stringify(notebook);
                 var a=document.createElement('a');
@@ -521,7 +522,7 @@ var shell = (function() {
                 function do_import() {
                     if(notebook) {
                         notebook.description = notebook_desc_content.val();
-                        rcloud.create_notebook(notebook, function(notebook) {
+                        rcloud.create_notebook(notebook, function(err, notebook) {
                             editor.star_notebook(true, {notebook: notebook});
                         });
                     }
@@ -592,7 +593,7 @@ var shell = (function() {
                     prefix = $('#import-prefix').val();
                 notebooks = _.without(notebooks.split(/[\s,;]+/), "");
                 rcloud.port_notebooks(url, notebooks, prefix,
-                                      function(result) {
+                                      function(err, result) {
                                           var succeeded = [], failed = [];
                                           for(var res in result) {
                                               if(res==='r_type' || res==='r_attributes')

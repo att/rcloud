@@ -21,7 +21,7 @@ Notebook.create_controller = function(model)
         return {controller: cell_controller, changes: model.insert_cell(cell_model, id)};
     }
 
-    function on_load(k, version, notebook) {
+    function on_load(k, version, err, notebook) {
         if (!_.isUndefined(notebook.files)) {
             this.clear();
             var parts = {}; // could rely on alphabetic input instead of gathering
@@ -127,11 +127,11 @@ Notebook.create_controller = function(model)
         },
         create_notebook: function(content, k) {
             var that = this;
-            rcloud.create_notebook(content, function(notebook) {
+            rcloud.create_notebook(content, function(err, notebook) {
                 that.clear();
                 model.read_only(notebook.user.login != rcloud.username());
                 current_gist_ = notebook;
-                k && k(notebook);
+                k && k(err, notebook);
             });
         },
         fork_or_revert_notebook: function(is_mine, gistname, version, k) {
@@ -150,16 +150,16 @@ Notebook.create_controller = function(model)
 
             }
             if(is_mine) // revert: get HEAD, calculate changes from there to here, and apply
-                rcloud.load_notebook(gistname, null, function(notebook) {
+                rcloud.load_notebook(gistname, null, function(err, notebook) {
                     var changes = find_changes_from(notebook);
                     update_and_load(changes, gistname, k);
                 });
             else // fork:
-                rcloud.fork_notebook(gistname, function(notebook) {
+                rcloud.fork_notebook(gistname, function(err, notebook) {
                     if(version) {
                         // fork, then get changes from there to where we are in the past, and apply
                         // git api does not return the files on fork, so load
-                        rcloud.get_notebook(notebook.id, null, function(notebook2) {
+                        rcloud.get_notebook(notebook.id, null, function(err, notebook2) {
                             var changes = find_changes_from(notebook2);
                             update_and_load(changes, notebook2.id, k);
                         });
@@ -207,13 +207,13 @@ Notebook.create_controller = function(model)
             }
             // not awesome to callback to someone else here
             k = k || editor.load_callback(null, true, true);
-            var k2 = function(notebook) {
+            var k2 = function(err, notebook) {
                 if('error' in notebook) {
-                    k(notebook);
+                    k(notebook, notebook); // FIXME that's no good
                     return;
                 }
                 current_gist_ = notebook;
-                k(notebook);
+                k(err, notebook);
             };
             if(changes.length)
                 rcloud.update_notebook(gistname, changes_to_gist(changes), k2);

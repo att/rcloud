@@ -253,8 +253,8 @@ var editor = function () {
     }
 
     function load_all_configs(k) {
-        rcloud.get_users(username_, function(users) {
-            rcloud.load_multiple_user_configs(users, function(configset) {
+        rcloud.get_users(username_, function(err, users) {
+            rcloud.load_multiple_user_configs(users, function(err, configset) {
                 var my_alls = [], user_nodes = [], my_config = null;
                 for(var username in configset) {
                     var user_config = configset[username];
@@ -298,7 +298,7 @@ var editor = function () {
                     }
                 ];
                 var all_notebooks = _.keys(all_entries_);
-                rcloud.stars.get_multiple_notebook_star_counts(all_notebooks, function(counts) {
+                rcloud.stars.get_multiple_notebook_star_counts(all_notebooks, function(err, counts) {
                     num_stars_ = counts;
                     k && k(my_config, root_data);
                 });
@@ -502,7 +502,7 @@ var editor = function () {
             k && k(node);
         }
         else
-            rcloud.load_notebook(node.gistname, null, function(notebook) {
+            rcloud.load_notebook(node.gistname, null, function(err, notebook) {
                 histories_[node.gistname] = notebook.history;
                 if(whither==='sha')
                     nshow = show_sha(histories_[node.gistname], where);
@@ -876,7 +876,7 @@ var editor = function () {
                 that.new_notebook();
             });
             function publish_success(gistname, un) {
-                return function(val) {
+                return function(err, val) {
                     var verb = (un ? "un" : "") + "publish";
                     if(!val)
                         console.log("Failed to " + verb + " notebook " + gistname);
@@ -943,7 +943,7 @@ var editor = function () {
                 config_.nextwork = 1;
             var desc = "Notebook " + config_.nextwork;
             ++config_.nextwork;
-            shell.new_notebook(desc, function(notebook) {
+            shell.new_notebook(desc, function(err, notebook) {
                 that.star_notebook(true, {notebook: notebook, make_current: true, version: null});
             });
         },
@@ -966,7 +966,7 @@ var editor = function () {
             if(gistname === config_.currbook)
                 opts.selroot = opts.selroot || true;
             if(star) {
-                rcloud.stars.star_notebook(gistname, function(count) {
+                rcloud.stars.star_notebook(gistname, function(err, count) {
                     num_stars_[gistname] = count;
                     var entry = get_notebook_status(user, gistname);
                     if(!entry.description && !opts.notebook) {
@@ -978,7 +978,7 @@ var editor = function () {
 
                     if(opts.notebook) {
                         if(opts.make_current)
-                            that.load_callback(opts.version, opts.is_change || false, 'interests') (opts.notebook);
+                            that.load_callback(opts.version, opts.is_change || false, 'interests') (null, opts.notebook);
                         else
                             update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
                     }
@@ -993,7 +993,7 @@ var editor = function () {
                 });
             }
             else {
-                rcloud.stars.unstar_notebook(gistname, function(count) {
+                rcloud.stars.unstar_notebook(gistname, function(err, count) {
                     num_stars_[gistname] = count;
                     remove_interest(user, gistname);
                     that.save_config(function() {
@@ -1029,7 +1029,7 @@ var editor = function () {
         fork_or_revert_notebook: function(is_mine, gistname, version) {
             var that = this;
             var k = is_mine ? this.load_callback(null, true, true) :
-                    function(notebook) {
+                    function(err, notebook) {
                         that.star_notebook(true, {notebook: notebook,
                                                   make_current: true,
                                                   is_change: !!version,
@@ -1045,7 +1045,7 @@ var editor = function () {
         },
         load_callback: function(version, is_change, selroot, k) {
             var that = this;
-            return function(result) {
+            return function(err, result) {
                 if('error' in result) {
                     k && k();
                     return;
@@ -1079,17 +1079,17 @@ var editor = function () {
                     that.update_notebook_file_list(result.files);
                 };
                 if(!_.has(num_stars_, result.id))
-                    rcloud.stars.get_notebook_star_count(result.id, function(count) {
+                    rcloud.stars.get_notebook_star_count(result.id, function(err, count) {
                         num_stars_[result.id] = count;
                         update();
                     });
                 else
                     update();
-                rcloud.get_all_comments(result.id, function(data) {
+                rcloud.get_all_comments(result.id, function(err, data) {
                     populate_comments(data);
                 });
                 $("#github-notebook-id").text(result.id).click(false);
-                rcloud.is_notebook_published(result.id, function(p) {
+                rcloud.is_notebook_published(result.id, function(err, p) {
                     publish_notebook_checkbox_.set_state(p);
                     publish_notebook_checkbox_.enable(result.user.login === username_);
 

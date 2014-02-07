@@ -12,28 +12,30 @@ RCloud.exception_message = function(v) {
 
 RCloud.create = function(rcloud_ocaps) {
     function json_k(k) {
-        return function(result) {
+        return function(err, result) {
             var json_result = {};
             try {
                 json_result = JSON.parse(result);
+                k && k(null, json_result);
             } catch (e) {
                 rclient.post_error(e.message);
+                k && k(e, null);
             }
-            // FIXME: I must still call the continuation,
-            // because bad things might happen otherwise. But calling
-            // this means that I'm polluting the 
-            // space of possible JSON answers with the error.
-            // For example, right now a return string "{}" is indistinguishable
-            // from an error
-            k && k(json_result);
+            // // FIXME: I must still call the continuation,
+            // // because bad things might happen otherwise. But calling
+            // // this means that I'm polluting the 
+            // // space of possible JSON answers with the error.
+            // // For example, right now a return string "{}" is indistinguishable
+            // // from an error
+            // k && k(json_result);
         };
     }
 
     function rcloud_github_handler(command, k) {
-        return function(result) {
-            if(result.ok)
-                k && k(result.content);
-            else {
+        return function(err, result) {
+            if(result.ok) {
+                k && k(null, result.content);
+            } else {
                 var message = _.isObject(result) && 'ok' in result
                     ? result.content.message : result.toString();
                 rclient.post_error(command + ': ' + message);
@@ -43,7 +45,7 @@ RCloud.create = function(rcloud_ocaps) {
                 // space of possible JSON answers with the error.
                 // For example, right now a return string "{}" is indistinguishable
                 // from an error
-                k && k({ error: result.content });
+                k && k(result.content, null);
             }
         };
     }
@@ -64,7 +66,7 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.init_client_side_data = function(k) {
             k = k || _.identity;
             var that = this;
-            rcloud_ocaps.prefix_uuid(function(v) {
+            rcloud_ocaps.prefix_uuid(function(err, v) {
                 that.deferred_knitr_uuid = v;
                 k();
             });
@@ -76,22 +78,22 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.get_notebook = function(id, version, k) {
             k = rcloud_github_handler("rcloud.get.notebook " + id, k);
-            rcloud_ocaps.get_notebook(id, version, function(notebook) {
-                k(notebook);
+            rcloud_ocaps.get_notebook(id, version, function(err, notebook) {
+                k(err, notebook);
             });
         };
 
         rcloud.load_notebook = function(id, version, k) {
             k = rcloud_github_handler("rcloud.load.notebook " + id, k);
-            rcloud_ocaps.load_notebook(id, version, function(notebook) {
-                k(notebook);
+            rcloud_ocaps.load_notebook(id, version, function(err, notebook) {
+                k(err, notebook);
             });
         };
 
         rcloud.call_notebook = function(id, version, k) {
             k = rcloud_github_handler("rcloud.call.notebook " + id, k);
-            rcloud_ocaps.call_notebook(id, version, function(notebook) {
-                k(notebook);
+            rcloud_ocaps.call_notebook(id, version, function(err, notebook) {
+                k(err, notebook);
             });
         };
 
@@ -118,13 +120,17 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.modules = {};
         rcloud.setup_js_installer({
             install_js: function(name, content, k) {
-                var result = eval(content);
-                rcloud.modules[name] = result;
-                k(result);
+                try {
+                    var result = eval(content);
+                    rcloud.modules[name] = result;
+                    k(null, result);
+                } catch (e) {
+                    k(e, null);
+                }
             },
             clear_css: function(current_notebook, k) {
                 $(".rcloud-user-defined-css").remove();
-                k();
+                k(null, null);
             },
             install_css: function(urls, k) {
                 if (_.isString(urls))
@@ -133,7 +139,7 @@ RCloud.create = function(rcloud_ocaps) {
                     $("head").append($('<link type="text/css" rel="stylesheet" class="rcloud-user-defined-css" href="' +
                                        url + '"/>'));
                 });
-                k();
+                k(null, null);
             }
         });
 
@@ -212,14 +218,14 @@ RCloud.create = function(rcloud_ocaps) {
                     comps = [comps]; // quirk of rserve.js scalar handling
                 // convert to the record format ace.js autocompletion expects
                 // meta is what gets displayed at right; name & score might be improved
-                k(_.map(comps,
-                        function(comp) {
-                            return {meta: "local",
-                                    name: "library",
-                                    score: 3,
-                                    value: comp
-                                   };
-                        }));
+                k(null, _.map(comps,
+                              function(comp) {
+                                  return {meta: "local",
+                                          name: "library",
+                                          score: 3,
+                                          value: comp
+                                         };
+                              }));
             });
         };
 
@@ -231,9 +237,11 @@ RCloud.create = function(rcloud_ocaps) {
             rcloud_ocaps.session_markdown_eval(command, language, silent, k || _.identity);
         };
 
-        rcloud.upload_to_notebook = function(force, on_success, on_failure) {
-            on_success = on_success || _.identity;
-            on_failure = on_failure || _.identity;
+        rcloud.upload_to_notebook = function(force, k) {
+            k = k || _.identity;
+            var on_success = function(v) { k(null, v); };
+            var on_failure = function(v) { k(v, null); };
+
             function do_upload(file) {
                 var fr = new FileReader();
                 var chunk_size = 1024*1024;
@@ -258,8 +266,12 @@ RCloud.create = function(rcloud_ocaps) {
                     } else {
                         // done, push to notebook.
                         rcloud_ocaps.notebook_upload(
-                            file_to_upload.buffer, file.name, function(result){
-                                on_success(file_to_upload, file, result.content);
+                            file_to_upload.buffer, file.name, function(err, result) {
+                                if (err) {
+                                    on_failure(err);
+                                } else {
+                                    on_success([file_to_upload, file, result.content]);
+                                }
                             });
                     }
                 };
@@ -269,20 +281,26 @@ RCloud.create = function(rcloud_ocaps) {
             var file=$("#file")[0].files[0];
             if(_.isUndefined(file))
                 throw new Error("No file selected!");
-            /*FIXME add logged in user */
-            rcloud_ocaps.file_upload.upload_path(function(path) {
+
+            rcloud_ocaps.file_upload.upload_path(function(err, path) {
+                if (err) {
+                    throw err;
+                }
                 var file=$("#file")[0].files[0];
                 if(_.isUndefined(file))
                     throw new Error("No file selected!");
                 do_upload(file);
             });
         };
-        rcloud.upload_file = function(force, on_success, on_failure) {
-            on_success = on_success || _.identity;
-            on_failure = on_failure || _.identity;
+        rcloud.upload_file = function(force, k) {
+            k = k || _.identity;
+            var on_success = function(v) { k(null, v); };
+            var on_failure = function(v) { k(v, null); };
+
             function do_upload(path, file) {
                 var upload_name = path + '/' + file.name;
-                rcloud_ocaps.file_upload.create(upload_name, force, function(result) {
+                rcloud_ocaps.file_upload.create(upload_name, force, function(err, result) {
+                    debugger;
                     if (RCloud.is_exception(result)) {
                         on_failure(RCloud.exception_message(result));
                         return;
@@ -309,8 +327,12 @@ RCloud.create = function(rcloud_ocaps) {
                                 fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                             });
                         } else {
-                            rcloud_ocaps.file_upload.close(function(){
-                                on_success(path, file);
+                            rcloud_ocaps.file_upload.close(function(err, result){
+                                if (err) {
+                                    on_failure(err);
+                                } else {
+                                    on_success([path, file]);
+                                }
                             });
                         }
                     };
@@ -325,7 +347,8 @@ RCloud.create = function(rcloud_ocaps) {
                     throw "No file selected!";
                 else {
                     /*FIXME add logged in user */
-                    rcloud_ocaps.file_upload.upload_path(function(path) {
+                    rcloud_ocaps.file_upload.upload_path(function(err, path) {
+                        if (err) throw err;
                         var file=$("#file")[0].files[0];
                         if(_.isUndefined(file))
                             throw new Error("No file selected!");

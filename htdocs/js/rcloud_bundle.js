@@ -1,5 +1,8 @@
 RClient = {
     create: function(opts) {
+        opts = _.defaults(opts, {
+            debug: false
+        });
         function on_connect() {
             if (!rserve.ocap_mode) {
                 result.post_error(result.disconnection_error("Expected an object-capability Rserve. Shutting Down!"));
@@ -9,7 +12,7 @@ RClient = {
 
             // the rcloud ocap-0 performs the login authentication dance
             // success is indicated by the rest of the capabilities being sent
-            rserve.ocap([token, execToken], function(ocaps) {
+            rserve.ocap([token, execToken], function(err, ocaps) {
                 if (ocaps !== null) {
                     result.running = true;
                     opts.on_connect && opts.on_connect.call(result, ocaps);
@@ -30,6 +33,9 @@ RClient = {
         }
 
         function on_error(msg, status_code) {
+            if (opts.debug) {
+                debugger;
+            }
             if (opts.on_error && opts.on_error(msg, status_code))
                 return;
             result.post_error(result.disconnection_error(msg));
@@ -37,6 +43,9 @@ RClient = {
         }
 
         function on_close(msg) {
+            if (opts.debug) {
+                debugger;
+            }
             if (!clean) {
                 result.post_error(result.disconnection_error("Socket was closed. Goodbye!"));
                 shutdown();
@@ -128,28 +137,30 @@ RCloud.exception_message = function(v) {
 
 RCloud.create = function(rcloud_ocaps) {
     function json_k(k) {
-        return function(result) {
+        return function(err, result) {
             var json_result = {};
             try {
                 json_result = JSON.parse(result);
+                k && k(null, json_result);
             } catch (e) {
                 rclient.post_error(e.message);
+                k && k(e, null);
             }
-            // FIXME: I must still call the continuation,
-            // because bad things might happen otherwise. But calling
-            // this means that I'm polluting the 
-            // space of possible JSON answers with the error.
-            // For example, right now a return string "{}" is indistinguishable
-            // from an error
-            k && k(json_result);
+            // // FIXME: I must still call the continuation,
+            // // because bad things might happen otherwise. But calling
+            // // this means that I'm polluting the 
+            // // space of possible JSON answers with the error.
+            // // For example, right now a return string "{}" is indistinguishable
+            // // from an error
+            // k && k(json_result);
         };
     }
 
     function rcloud_github_handler(command, k) {
-        return function(result) {
-            if(result.ok)
-                k && k(result.content);
-            else {
+        return function(err, result) {
+            if(result.ok) {
+                k && k(null, result.content);
+            } else {
                 var message = _.isObject(result) && 'ok' in result
                     ? result.content.message : result.toString();
                 rclient.post_error(command + ': ' + message);
@@ -159,7 +170,7 @@ RCloud.create = function(rcloud_ocaps) {
                 // space of possible JSON answers with the error.
                 // For example, right now a return string "{}" is indistinguishable
                 // from an error
-                k && k({ error: result.content });
+                k && k(result.content, null);
             }
         };
     }
@@ -180,7 +191,7 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.init_client_side_data = function(k) {
             k = k || _.identity;
             var that = this;
-            rcloud_ocaps.prefix_uuid(function(v) {
+            rcloud_ocaps.prefix_uuid(function(err, v) {
                 that.deferred_knitr_uuid = v;
                 k();
             });
@@ -192,22 +203,22 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.get_notebook = function(id, version, k) {
             k = rcloud_github_handler("rcloud.get.notebook " + id, k);
-            rcloud_ocaps.get_notebook(id, version, function(notebook) {
-                k(notebook);
+            rcloud_ocaps.get_notebook(id, version, function(err, notebook) {
+                k(err, notebook);
             });
         };
 
         rcloud.load_notebook = function(id, version, k) {
             k = rcloud_github_handler("rcloud.load.notebook " + id, k);
-            rcloud_ocaps.load_notebook(id, version, function(notebook) {
-                k(notebook);
+            rcloud_ocaps.load_notebook(id, version, function(err, notebook) {
+                k(err, notebook);
             });
         };
 
         rcloud.call_notebook = function(id, version, k) {
             k = rcloud_github_handler("rcloud.call.notebook " + id, k);
-            rcloud_ocaps.call_notebook(id, version, function(notebook) {
-                k(notebook);
+            rcloud_ocaps.call_notebook(id, version, function(err, notebook) {
+                k(err, notebook);
             });
         };
 
@@ -234,13 +245,17 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.modules = {};
         rcloud.setup_js_installer({
             install_js: function(name, content, k) {
-                var result = eval(content);
-                rcloud.modules[name] = result;
-                k(result);
+                try {
+                    var result = eval(content);
+                    rcloud.modules[name] = result;
+                    k(null, result);
+                } catch (e) {
+                    k(e, null);
+                }
             },
             clear_css: function(current_notebook, k) {
                 $(".rcloud-user-defined-css").remove();
-                k();
+                k(null, null);
             },
             install_css: function(urls, k) {
                 if (_.isString(urls))
@@ -249,7 +264,7 @@ RCloud.create = function(rcloud_ocaps) {
                     $("head").append($('<link type="text/css" rel="stylesheet" class="rcloud-user-defined-css" href="' +
                                        url + '"/>'));
                 });
-                k();
+                k(null, null);
             }
         });
 
@@ -328,14 +343,14 @@ RCloud.create = function(rcloud_ocaps) {
                     comps = [comps]; // quirk of rserve.js scalar handling
                 // convert to the record format ace.js autocompletion expects
                 // meta is what gets displayed at right; name & score might be improved
-                k(_.map(comps,
-                        function(comp) {
-                            return {meta: "local",
-                                    name: "library",
-                                    score: 3,
-                                    value: comp
-                                   };
-                        }));
+                k(null, _.map(comps,
+                              function(comp) {
+                                  return {meta: "local",
+                                          name: "library",
+                                          score: 3,
+                                          value: comp
+                                         };
+                              }));
             });
         };
 
@@ -346,28 +361,42 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.session_markdown_eval = function(command, language, silent, k) {
             rcloud_ocaps.session_markdown_eval(command, language, silent, k || _.identity);
         };
-        rcloud.upload_to_notebook = function(force, on_success, on_failure) {
-            on_success = on_success || _.identity;
-            on_failure = on_failure || _.identity;
+
+        rcloud.upload_to_notebook = function(force, k) {
+            k = k || _.identity;
+            var on_success = function(v) { k(null, v); };
+            var on_failure = function(v) { k(v, null); };
+
             function do_upload(file) {
                 var fr = new FileReader();
                 var chunk_size = 1024*1024;
                 var f_size = file.size;
                 var file_to_upload = new Uint8Array(f_size);
+                var bytes_read = 0;
                 var cur_pos = 0;
+                $(".progress").show();
+                $("#progress-bar").css("width", "0%");
+                $("#progress-bar").attr("aria-valuenow", "0");
                 fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                 fr.onload = function(e) {
+                    $("#progress-bar").attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
+                    $("#progress-bar").css("width", (100 * (bytes_read / f_size)) + "%");
                     if (e.target.result.byteLength > 0) {
                         // still sending data to user agent
                         var bytes = new Uint8Array(e.target.result);
                         file_to_upload.set(bytes, cur_pos);
                         cur_pos += bytes.byteLength;
+                        bytes_read += e.target.result.byteLength;
                         fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                     } else {
                         // done, push to notebook.
                         rcloud_ocaps.notebook_upload(
-                            file_to_upload.buffer, file.name, function(result){
-                                on_success(file_to_upload, file, result.content);
+                            file_to_upload.buffer, file.name, function(err, result) {
+                                if (err) {
+                                    on_failure(err);
+                                } else {
+                                    on_success([file_to_upload, file, result.content]);
+                                }
                             });
                     }
                 };
@@ -377,20 +406,26 @@ RCloud.create = function(rcloud_ocaps) {
             var file=$("#file")[0].files[0];
             if(_.isUndefined(file))
                 throw new Error("No file selected!");
-            /*FIXME add logged in user */
-            rcloud_ocaps.file_upload.upload_path(function(path) {
+
+            rcloud_ocaps.file_upload.upload_path(function(err, path) {
+                if (err) {
+                    throw err;
+                }
                 var file=$("#file")[0].files[0];
                 if(_.isUndefined(file))
                     throw new Error("No file selected!");
                 do_upload(file);
             });
         };
-        rcloud.upload_file = function(force, on_success, on_failure) {
-            on_success = on_success || _.identity;
-            on_failure = on_failure || _.identity;
+        rcloud.upload_file = function(force, k) {
+            k = k || _.identity;
+            var on_success = function(v) { k(null, v); };
+            var on_failure = function(v) { k(v, null); };
+
             function do_upload(path, file) {
                 var upload_name = path + '/' + file.name;
-                rcloud_ocaps.file_upload.create(upload_name, force, function(result) {
+                rcloud_ocaps.file_upload.create(upload_name, force, function(err, result) {
+                    debugger;
                     if (RCloud.is_exception(result)) {
                         on_failure(RCloud.exception_message(result));
                         return;
@@ -400,7 +435,6 @@ RCloud.create = function(rcloud_ocaps) {
                     var f_size=file.size;
                     var cur_pos=0;
                     var bytes_read = 0;
-                    debugger;
                     $(".progress").show();
                     $("#progress-bar").css("width", "0%");
                     $("#progress-bar").attr("aria-valuenow", "0");
@@ -408,8 +442,6 @@ RCloud.create = function(rcloud_ocaps) {
                     // ...while waiting for one to complete before reading another
                     fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                     fr.onload = function(e) {
-                        console.log("progress: ", (100 * (bytes_read / f_size)) + "%");
-
                         $("#progress-bar").attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
                         $("#progress-bar").css("width", (100 * (bytes_read / f_size)) + "%");
                         if (e.target.result.byteLength > 0) {
@@ -420,8 +452,12 @@ RCloud.create = function(rcloud_ocaps) {
                                 fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                             });
                         } else {
-                            rcloud_ocaps.file_upload.close(function(){
-                                on_success(path, file);
+                            rcloud_ocaps.file_upload.close(function(err, result){
+                                if (err) {
+                                    on_failure(err);
+                                } else {
+                                    on_success([path, file]);
+                                }
                             });
                         }
                     };
@@ -436,7 +472,8 @@ RCloud.create = function(rcloud_ocaps) {
                     throw "No file selected!";
                 else {
                     /*FIXME add logged in user */
-                    rcloud_ocaps.file_upload.upload_path(function(path) {
+                    rcloud_ocaps.file_upload.upload_path(function(err, path) {
+                        if (err) throw err;
                         var file=$("#file")[0].files[0];
                         if(_.isUndefined(file))
                             throw new Error("No file selected!");
@@ -989,7 +1026,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                     ocap.r_attributes = { "class": "OCref" };
                     var f = rclient._rserve.wrap_ocap(ocap);
 
-                    f(function(future) {
+                    f(function(err, future) {
                         if (RCloud.is_exception(future)) {
                             var data = RCloud.exception_message(future);
                             $(that).replaceWith(function() {
@@ -1201,7 +1238,7 @@ Notebook.Cell.create_controller = function(cell_model)
         execute: function(k) {
             var that = this;
             var language = cell_model.language();
-            function callback(r) {
+            function callback(err, r) {
                 that.set_status_message(r);
                 k && k();
             }
@@ -1457,7 +1494,7 @@ Notebook.create_controller = function(model)
         return {controller: cell_controller, changes: model.insert_cell(cell_model, id)};
     }
 
-    function on_load(k, version, notebook) {
+    function on_load(k, version, err, notebook) {
         if (!_.isUndefined(notebook.files)) {
             this.clear();
             var parts = {}; // could rely on alphabetic input instead of gathering
@@ -1563,11 +1600,11 @@ Notebook.create_controller = function(model)
         },
         create_notebook: function(content, k) {
             var that = this;
-            rcloud.create_notebook(content, function(notebook) {
+            rcloud.create_notebook(content, function(err, notebook) {
                 that.clear();
                 model.read_only(notebook.user.login != rcloud.username());
                 current_gist_ = notebook;
-                k && k(notebook);
+                k && k(err, notebook);
             });
         },
         fork_or_revert_notebook: function(is_mine, gistname, version, k) {
@@ -1586,16 +1623,16 @@ Notebook.create_controller = function(model)
 
             }
             if(is_mine) // revert: get HEAD, calculate changes from there to here, and apply
-                rcloud.load_notebook(gistname, null, function(notebook) {
+                rcloud.load_notebook(gistname, null, function(err, notebook) {
                     var changes = find_changes_from(notebook);
                     update_and_load(changes, gistname, k);
                 });
             else // fork:
-                rcloud.fork_notebook(gistname, function(notebook) {
+                rcloud.fork_notebook(gistname, function(err, notebook) {
                     if(version) {
                         // fork, then get changes from there to where we are in the past, and apply
                         // git api does not return the files on fork, so load
-                        rcloud.get_notebook(notebook.id, null, function(notebook2) {
+                        rcloud.get_notebook(notebook.id, null, function(err, notebook2) {
                             var changes = find_changes_from(notebook2);
                             update_and_load(changes, notebook2.id, k);
                         });
@@ -1643,13 +1680,13 @@ Notebook.create_controller = function(model)
             }
             // not awesome to callback to someone else here
             k = k || editor.load_callback(null, true, true);
-            var k2 = function(notebook) {
+            var k2 = function(err, notebook) {
                 if('error' in notebook) {
-                    k(notebook);
+                    k(notebook, notebook); // FIXME that's no good
                     return;
                 }
                 current_gist_ = notebook;
-                k(notebook);
+                k(err, notebook);
             };
             if(changes.length)
                 rcloud.update_notebook(gistname, changes_to_gist(changes), k2);

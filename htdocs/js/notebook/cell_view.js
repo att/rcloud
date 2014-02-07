@@ -191,7 +191,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                     ocap.r_attributes = { "class": "OCref" };
                     var f = rclient._rserve.wrap_ocap(ocap);
 
-                    f(function(future) {
+                    f(function(err, future) {
                         if (RCloud.is_exception(future)) {
                             var data = RCloud.exception_message(future);
                             $(that).replaceWith(function() {

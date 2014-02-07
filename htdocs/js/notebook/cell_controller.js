@@ -4,7 +4,7 @@ Notebook.Cell.create_controller = function(cell_model)
         execute: function(k) {
             var that = this;
             var language = cell_model.language();
-            function callback(r) {
+            function callback(err, r) {
                 that.set_status_message(r);
                 k && k();
             }

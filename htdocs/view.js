@@ -16,11 +16,11 @@ function view_init() {
         on_connect: function(ocaps) {
             rcloud = RCloud.create(ocaps.rcloud);
             if (rcloud.authenticated) {
-                rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {
+                rcloud.session_init(rcloud.username(), rcloud.github_token(), function(err, hello) {
                     rclient.post_response(hello);
                 });
             } else {
-                rcloud.anonymous_session_init(function(hello) {
+                rcloud.anonymous_session_init(function(err, hello) {
                     rclient.post_response(hello);
                 });
             }
