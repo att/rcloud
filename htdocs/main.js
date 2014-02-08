@@ -164,6 +164,14 @@ function main_init() {
                 }
             });
              */
+
+            ////////////////////////////////////////////////////////////////////////////////
+            // autosave when exiting. better default than dropping data, less annoying
+            // than prompting
+            $(window).bind("unload", function() {
+                shell.save_notebook();
+                return true;
+            });
         },
         on_data: function(v) {
             v = v.value.json();
