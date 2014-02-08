@@ -230,6 +230,7 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.session_markdown_eval = function(command, language, silent, k) {
             rcloud_ocaps.session_markdown_eval(command, language, silent, k || _.identity);
         };
+
         rcloud.upload_to_notebook = function(force, on_success, on_failure) {
             on_success = on_success || _.identity;
             on_failure = on_failure || _.identity;
@@ -238,14 +239,21 @@ RCloud.create = function(rcloud_ocaps) {
                 var chunk_size = 1024*1024;
                 var f_size = file.size;
                 var file_to_upload = new Uint8Array(f_size);
+                var bytes_read = 0;
                 var cur_pos = 0;
+                $(".progress").show();
+                $("#progress-bar").css("width", "0%");
+                $("#progress-bar").attr("aria-valuenow", "0");
                 fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                 fr.onload = function(e) {
+                    $("#progress-bar").attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
+                    $("#progress-bar").css("width", (100 * (bytes_read / f_size)) + "%");
                     if (e.target.result.byteLength > 0) {
                         // still sending data to user agent
                         var bytes = new Uint8Array(e.target.result);
                         file_to_upload.set(bytes, cur_pos);
                         cur_pos += bytes.byteLength;
+                        bytes_read += e.target.result.byteLength;
                         fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                     } else {
                         // done, push to notebook.
@@ -291,8 +299,6 @@ RCloud.create = function(rcloud_ocaps) {
                     // ...while waiting for one to complete before reading another
                     fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                     fr.onload = function(e) {
-                        console.log("progress: ", (100 * (bytes_read / f_size)) + "%");
-
                         $("#progress-bar").attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
                         $("#progress-bar").css("width", (100 * (bytes_read / f_size)) + "%");
                         if (e.target.result.byteLength > 0) {

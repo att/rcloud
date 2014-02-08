@@ -18,7 +18,6 @@ rcloud.stash.notebook <- function(stash, id = .session$current.notebook$content$
   if (get.all) version <- NULL
   res <- rcloud.get.notebook(id, version)
   if (res$ok) {
-    tag <- NULL
     if (get.all) { ## get all history?
       versions <- sapply(res$content$history, function(x) x$version)[-1L]
       for (ver in versions) {
