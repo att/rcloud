@@ -11,6 +11,10 @@
 * Logout page includes a link to GitHub logout as well (#294)
   Note that the default for `goodbye.page` has changed to `/goodbye.R`
 
+* Users can get a notebook asset by name via the
+  `rcloud.get.notebook.asset` function. This is useful for getting to
+  files that have been uploaded to the notebook without needing to go
+  through the GitHub URL.
 
 ### Bugfixes
 
