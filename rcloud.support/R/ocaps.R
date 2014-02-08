@@ -131,7 +131,9 @@ authenticated.ocaps <- function()
       # commenting ocaps
       comments = list(
         post = make.oc(rcloud.post.comment)
-        )
+        ),
+
+      purl_source = make.oc(rcloud.purl.source)
            
       )
   )

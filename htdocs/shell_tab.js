@@ -470,6 +470,35 @@ var shell = (function() {
                 }
             }
             editor.load_notebook(notebook, version);
+        }, export_notebook_as_r_file: function() {
+            rcloud.get_notebook(gistname_, version_, function(notebook) {
+                var strings = [];
+                var parts = [];
+                _.each(notebook.files, function(file) {
+                    var filename = file.filename;
+                    if(/^part/.test(filename)) {
+                        var number = parseInt(filename.slice(4).split('.')[0]);
+                        if(!isNaN(NaN)) {
+                            if (file.language === 'R')
+                                parts[number] = "```{r}\n" + file.content + "\n```";
+                            else
+                                parts[number] = file.content;
+                        }
+                    }
+                });
+                for (var i=0; i<parts.length; ++i)
+                    if (!_.isUndefined(parts[i]))
+                        strings.push(parts[i]);
+                strings.push("");
+                rcloud.purl_source(strings.join("\n"), function(purled_lines) {
+                    var purled_source = purled_lines.join("\n");
+                    var a=document.createElement('a');
+                    a.textContent='download';
+                    a.download=notebook.description + ".R";
+                    a.href='data:text/plain;charset=utf-8,'+escape(purled_source);
+                    a.click();
+                });
+            });
         }, export_notebook_file: function() {
             rcloud.get_notebook(gistname_, version_, function(notebook) {
                 notebook = sanitize_notebook(notebook);

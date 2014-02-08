@@ -327,6 +327,9 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.port_notebooks = function(source, notebooks, prefix, k) {
             rcloud_ocaps.port_notebooks(source, notebooks, prefix, k);
         };
+        rcloud.purl_source = function(source, k) {
+            rcloud_ocaps.purl_source(source, k);
+        };
         rcloud.get_completions = function(text, pos, k) {
             return rcloud_ocaps.get_completions(text, pos, function(comps) {
                 if(_.isString(comps))
@@ -1481,7 +1484,7 @@ Notebook.create_controller = function(model)
                 var filename = file.filename;
                 if(/^part/.test(filename)) {
                     var number = parseInt(filename.slice(4).split('.')[0]);
-                    if(number !== NaN)
+                    if(!isNaN(number))
                         parts[number] = [file.content, file.language, number];
                 }
                 // style..
