@@ -16,6 +16,13 @@
   files that have been uploaded to the notebook without needing to go
   through the GitHub URL.
 
+* Users can control warnings via the `rcloud.disable.warnings` and
+  `rcloud.enable.warnings` functions. This controls warnings for the
+  current RCloud session, and is not reset after each evaluation
+  (which happens, say, with `options(warn=-1)`). By default, warnings
+  are displayed, as before.
+ 
+
 ### Bugfixes
 
 * Empty markdown cells no longer cause an error (#173)
