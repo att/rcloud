@@ -170,8 +170,13 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         rcloud.display = {};
+        var cached_device_pixel_ratio;
         rcloud.display.set_device_pixel_ratio = function(k) {
+            cached_device_pixel_ratio = window.devicePixelRatio;
             rcloud_ocaps.set_device_pixel_ratio(window.devicePixelRatio, k || _.identity);
+        };
+        rcloud.display.get_device_pixel_ratio = function() {
+            return cached_device_pixel_ratio;
         };
     }
 
