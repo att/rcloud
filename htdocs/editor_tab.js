@@ -817,12 +817,19 @@ var editor = function () {
         $('span.star', node.element)[0].set_state(i_starred_[node.gistname]);
         $('span.star sub', node.element).text(num_stars_[node.gistname] || 0);
     }
+
+    function make_main_url(notebook, version) {
+        var url = window.location.protocol + '//' + window.location.host + '/main.html?notebook=' + notebook;
+        if(version)
+            url = url + '&version='+version;
+        return url;
+    }
     function tree_click(event) {
         if(event.node.id === 'showmore')
             result.show_history(event.node.parent, false);
         else if(event.node.gistname) {
             if(event.click_event.metaKey || event.click_event.ctrlKey) {
-                var url = window.location.protocol + '//' + window.location.host + '/main.html?notebook=' + event.node.gistname;
+                var url = make_main_url(event.node.gistname, event.node.version);
                 window.open(url, "_blank");
             }
             else {
@@ -930,10 +937,14 @@ var editor = function () {
         save_config: function() {
             return rcloud.save_user_config(username_, config_);
         },
-        load_notebook: function(gistname, version, selroot) {
+        load_notebook: function(gistname, version, selroot, push_history) {
             var that = this;
             selroot = selroot || true;
-            return shell.load_notebook(gistname, version).then(this.load_callback(version, false, selroot));
+
+            return shell.load_notebook(gistname, version)
+                .then(this.load_callback({version: version,
+                                          selroot: selroot,
+                                          push_history: push_history}));
         },
         new_notebook: function() {
             var that = this;
@@ -946,7 +957,7 @@ var editor = function () {
             });
         },
         rename_notebook: function(gistname, newname) {
-            return rcloud.rename_notebook(gistname, newname).then(this.load_callback(null, true, true));
+            return rcloud.rename_notebook(gistname, newname).then(this.load_callback({is_change: true, selroot: true}));
         },
         star_notebook: function(star, opts) {
             var that = this;
@@ -977,7 +988,9 @@ var editor = function () {
 
                     if(opts.notebook) {
                         if(opts.make_current)
-                            that.load_callback(opts.version, opts.is_change || false, 'interests')(opts.notebook);
+                            that.load_callback({version: opts.version,
+                                                is_change: opts.is_change || false,
+                                                selroot: 'interests'}) (opts.notebook);
                         else
                             update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
                     }
@@ -1024,7 +1037,7 @@ var editor = function () {
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
             var that = this;
-            var k = is_mine ? this.load_callback(null, true, true) :
+            var k = is_mine ? this.load_callback({is_change: true, selroot: true}) :
                     function(notebook) {
                         that.star_notebook(true, {notebook: notebook,
                                                   make_current: true,
@@ -1039,20 +1052,36 @@ var editor = function () {
                 $tree_.tree('openNode', node);
             });
         },
-        load_callback: function(version, is_change, selroot) {
+        load_callback: function(opts) {
             var that = this;
+            var options = $.extend(
+                {version: null,
+                 is_change: false,
+                 selroot: null,
+                 push_history: true}, opts);
             return function(result) {
                 if(!result.description)
                     throw "Invalid notebook (must have description)";
 
                 config_.currbook = result.id;
-                config_.currversion = version;
+                config_.currversion = options.version;
                 config_.bookuser = result.user.login;
+
+                /*
+                // disabling inter-notebook navigation for now - concurrency issues
+                options.push_history = false;
+                if(options.push_history)
+                    (window.location.search ?
+                     window.history.pushState :
+                     window.history.replaceState)
+                    .bind(window.history)
+                 */
+                window.history.replaceState("rcloud.notebook", null, make_main_url(result.id, options.version));
 
                 var history;
                 // when loading an old version you get truncated history
                 // we don't want that, even if it means an extra fetch
-                if(version)
+                if(options.version)
                     history = null;
                 else
                     history = result.history;
@@ -1060,14 +1089,14 @@ var editor = function () {
                 // get the old history and not the current
                 // this may be the same bug where the latest version doesn't always
                 // show in github
-                if(is_change && shell.is_old_github())
+                if(options.is_change && shell.is_old_github())
                     history.unshift({version:'blah'});
 
                 (!_.has(num_stars_, result.id) 
                  ? rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
                        num_stars_[result.id] = count;
                  }) : Promise.cast(undefined)).then(function() {
-                     update_notebook_from_gist(result, history, selroot);
+                     update_notebook_from_gist(result, history, options.selroot);
                      that.update_notebook_file_list(result.files);
                 });
                 

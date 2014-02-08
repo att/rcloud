@@ -4,23 +4,6 @@
 
 ### Features
 
-* `rcloud.call.notebook()` supports an additional argument `attach`.
-  If it is `TRUE` then the evaluation environment of the notebook is attached
-  to the search path after evaluation.
-
-* `rcloud.call.notebook()` allows `args` to be an environment in which case
-  it is used as the evaluation environment of the notebook.
-
-
-### Bugfixes
-
-* `tag` argument in `rcloud.stash.notebook` was ignored and treated as `NULL`
-
-
-## RCloud 0.9.1
-
-### Features
-
 * RCloud branch and revision are now displayed on startup (#277).
   The `scripts/build.sh` script updates the `REVISION` file used for this.
   Previously, only the distribution script created that file.
@@ -28,6 +11,10 @@
 * Logout page includes a link to GitHub logout as well (#294)
   Note that the default for `goodbye.page` has changed to `/goodbye.R`
 
+* Users can get a notebook asset by name via the
+  `rcloud.get.notebook.asset` function. This is useful for getting to
+  files that have been uploaded to the notebook without needing to go
+  through the GitHub URL.
 
 ### Bugfixes
 

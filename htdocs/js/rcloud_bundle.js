@@ -326,8 +326,13 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         rcloud.display = {};
+        var cached_device_pixel_ratio;
         rcloud.display.set_device_pixel_ratio = function() {
+            cached_device_pixel_ratio = window.devicePixelRatio;
             return rcloud_ocaps.set_device_pixel_ratioAsync(window.devicePixelRatio);
+        };
+        rcloud.display.get_device_pixel_ratio = function() {
+            return cached_device_pixel_ratio;
         };
     }
 
@@ -1065,9 +1070,15 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 r_result_div.prepend("<pre><code>" + cell_model.content() + "</code></pre>");
             }
 
+            // we use the cached version of DPR instead of getting window.devicePixelRatio
+            // because it might have changed (by moving the user agent window across monitors)
+            // this might cause images that are higher-res than necessary or blurry.
+            // Since using window.devicePixelRatio might cause images
+            // that are too large or too small, the tradeoff is worth it.
+            var dpr = rcloud.display.get_device_pixel_ratio();
             // fix image width so that retina displays are set correctly
             inner_div.find("img")
-                .each(function(i, img) { img.style.width = img.width / window.devicePixelRatio; });
+                .each(function(i, img) { img.style.width = img.width / dpr; });
 
             // capture deferred knitr results
             inner_div.find("pre code")
