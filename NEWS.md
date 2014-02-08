@@ -21,7 +21,10 @@
   current RCloud session, and is not reset after each evaluation
   (which happens, say, with `options(warn=-1)`). By default, warnings
   are displayed, as before.
- 
+
+* Users can export a notebook as a single R source file via the
+  'Export Notebook as R Source File' button in the Advanced menu.
+
 
 ### Bugfixes
 
