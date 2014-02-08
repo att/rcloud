@@ -1074,11 +1074,16 @@ var editor = function () {
                 config_.currversion = options.version;
                 config_.bookuser = result.user.login;
 
+                /*
+                // disabling inter-notebook navigation for now - concurrency issues
+                options.push_history = false;
                 if(options.push_history)
                     (window.location.search ?
                      window.history.pushState :
                      window.history.replaceState)
-                    .bind(window.history)("rcloud.notebook", null, make_main_url(result.id, options.version));
+                    .bind(window.history)
+                 */
+                window.history.replaceState("rcloud.notebook", null, make_main_url(result.id, options.version));
 
                 var history;
                 // when loading an old version you get truncated history

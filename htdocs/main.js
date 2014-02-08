@@ -151,6 +151,8 @@ function main_init() {
             }
             editor.init(notebook, version);
             $("#tabs").tabs("select", "#tabs-2");
+            /*
+             // disabling navigation for now - concurrency issues
             window.addEventListener("popstate", function(e) {
                 if(e.state === "rcloud.notebook") {
                     var notebook2 = getURLParameter("notebook");
@@ -158,6 +160,7 @@ function main_init() {
                     editor.load_notebook(notebook2, version2, true, false);
                 }
             });
+             */
         },
         on_data: function(v) {
             v = v.value.json();
