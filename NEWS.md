@@ -25,8 +25,17 @@
 * Users can export a notebook as a single R source file via the
   'Export Notebook as R Source File' button in the Advanced menu.
 
+* Users can control echoing via the `rcloud.disable.echo` and
+  `rcloud.enable.echo` functions. When echoing is disabled, the
+  commands themselves do not appear in subsequent evaluation calls
+  (notice that the call to `rcloud.disable.echo` itself still
+  appears..) By default, echoing is enabled, as before.
+  In addition, the option `&quiet=1` to view.html now calls
+  `rcloud.disable.echo()` before any evaluation, mitigating the
+  flashing of code described
+  [here](https://github.com/att/rcloud/issues/216).
 
-### Bugfixes
+### bugfixes
 
 * Empty markdown cells no longer cause an error (#173)
 

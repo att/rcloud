@@ -178,6 +178,23 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.display.get_device_pixel_ratio = function() {
             return cached_device_pixel_ratio;
         };
+
+        ////////////////////////////////////////////////////////////////////////////////
+        // access the runtime API in javascript as well
+
+        rcloud.api = {};
+        rcloud.api.disable_warnings = function(k) {
+            rcloud_ocaps.api.disable_warnings(k || _.identity);
+        };
+        rcloud.api.enable_warnings = function(k) {
+            rcloud_ocaps.api.enable_warnings(k || _.identity);
+        };
+        rcloud.api.disable_echo = function(k) {
+            rcloud_ocaps.api.disable_echo(k || _.identity);
+        };
+        rcloud.api.enable_echo = function(k) {
+            rcloud_ocaps.api.enable_echo(k || _.identity);
+        };
     }
 
     function setup_authenticated_ocaps() {

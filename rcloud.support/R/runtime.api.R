@@ -39,3 +39,13 @@ rcloud.enable.warnings <- function()
 {
   .session$disable.warnings <- NULL
 }
+
+rcloud.disable.echo <- function()
+{
+  .session$disable.echo <- TRUE
+}
+
+rcloud.enable.echo <- function()
+{
+  .session$disable.echo <- NULL
+}

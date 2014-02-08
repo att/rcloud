@@ -42,7 +42,10 @@ session.markdown.eval <- function(command, language, silent) {
     opts_chunk$set(warning=FALSE)
   else
     opts_chunk$set(warning=TRUE)
-  
+  if (!is.null(.session$disable.echo))
+    opts_chunk$set(echo=FALSE)
+  else
+    opts_chunk$set(echo=TRUE)
   opts_chunk$set(dev="CairoPNG", tidy=FALSE)
 
   if (command == "") command <- " "
