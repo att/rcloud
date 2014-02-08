@@ -80,6 +80,9 @@ function init_port_file_buttons() {
     $('#export-notebook-file').click(function() {
         shell.export_notebook_file();
     });
+    $('#export-notebook-as-r').click(function() {
+        shell.export_notebook_as_r_file();
+    });
     $('#import-notebook-file').click(function() {
         shell.import_notebook_file();
     });
