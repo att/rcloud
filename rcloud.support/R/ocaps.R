@@ -85,7 +85,15 @@ unauthenticated.ocaps <- function()
       session_cell_eval = make.oc(rcloud.unauthenticated.session.cell.eval),
 
       # display info
-      set_device_pixel_ratio = make.oc(rcloud.set.device.pixel.ratio)
+      set_device_pixel_ratio = make.oc(rcloud.set.device.pixel.ratio),
+
+      # runtime API access in javascript
+      api = list(
+        disable_warnings = make.oc(rcloud.disable.warnings),
+        enable_warnings = make.oc(rcloud.enable.warnings),
+        disable_echo = make.oc(rcloud.disable.echo),
+        enable_echo = make.oc(rcloud.enable.echo)
+        )
       )
     )
 }
@@ -131,7 +139,9 @@ authenticated.ocaps <- function()
       # commenting ocaps
       comments = list(
         post = make.oc(rcloud.post.comment)
-        )
+        ),
+
+      purl_source = make.oc(rcloud.purl.source)
            
       )
   )

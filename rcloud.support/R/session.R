@@ -38,7 +38,14 @@ session.markdown.eval <- function(command, language, silent) {
   command <- canonicalize.command(command, language)
   if (!is.null(.session$device.pixel.ratio))
     opts_chunk$set(dpi=72*.session$device.pixel.ratio)
-  
+  if (!is.null(.session$disable.warnings))
+    opts_chunk$set(warning=FALSE)
+  else
+    opts_chunk$set(warning=TRUE)
+  if (!is.null(.session$disable.echo))
+    opts_chunk$set(echo=FALSE)
+  else
+    opts_chunk$set(echo=TRUE)
   opts_chunk$set(dev="CairoPNG", tidy=FALSE)
 
   if (command == "") command <- " "

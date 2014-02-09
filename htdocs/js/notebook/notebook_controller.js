@@ -29,7 +29,7 @@ Notebook.create_controller = function(model)
                 var filename = file.filename;
                 if(/^part/.test(filename)) {
                     var number = parseInt(filename.slice(4).split('.')[0]);
-                    if(number !== NaN)
+                    if(!isNaN(number))
                         parts[number] = [file.content, file.language, number];
                 }
                 // style..

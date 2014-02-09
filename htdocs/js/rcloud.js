@@ -208,6 +208,23 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.display.get_device_pixel_ratio = function() {
             return cached_device_pixel_ratio;
         };
+
+        ////////////////////////////////////////////////////////////////////////////////
+        // access the runtime API in javascript as well
+
+        rcloud.api = {};
+        rcloud.api.disable_warnings = function() {
+            rcloud_ocaps.api.disable_warningsAsync();
+        };
+        rcloud.api.enable_warnings = function() {
+            rcloud_ocaps.api.enable_warningsAsync();
+        };
+        rcloud.api.disable_echo = function() {
+            rcloud_ocaps.api.disable_echoAsync();
+        };
+        rcloud.api.enable_echo = function() {
+            rcloud_ocaps.api.enable_echoAsync();
+        };
     }
 
     function setup_authenticated_ocaps() {
@@ -221,6 +238,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["create_notebook"],
             ["fork_notebook"],
             ["port_notebooks"],
+            ["purl_source"],
             ["get_completions"],
             ["rename_notebook"],
             ["session_markdown_eval"],
@@ -232,7 +250,11 @@ RCloud.create = function(rcloud_ocaps) {
             ["comments","post"],
             ["is_notebook_published"],
             ["publish_notebook"],
-            ["unpublish_notebook"]
+            ["unpublish_notebook"],
+            ["api","disable_warnings"],
+            ["api","enable_echo"],
+            ["api","disable_warnings"],
+            ["api","enable_echo"]
         ];
         _.each(paths, function(path) {
             set(path, Promise.promisify(get(path)));
@@ -271,6 +293,10 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.port_notebooks = function(source, notebooks, prefix) {
             return rcloud_ocaps.port_notebooksAsync(source, notebooks, prefix);
         };
+        rcloud.purl_source = function(source) {
+            rcloud_ocaps.purl_sourceAsync(source);
+        };
+
         rcloud.get_completions = function(text, pos) {
             return rcloud_ocaps.get_completionsAsync(text, pos)
                 .then(function(comps) {

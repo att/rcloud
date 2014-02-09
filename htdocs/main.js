@@ -96,6 +96,9 @@ function init_port_file_buttons() {
     $('#export-notebook-file').click(function() {
         shell.export_notebook_file();
     });
+    $('#export-notebook-as-r').click(function() {
+        shell.export_notebook_as_r_file();
+    });
     $('#import-notebook-file').click(function() {
         shell.import_notebook_file();
     });
@@ -177,6 +180,14 @@ function main_init() {
                 }
             });
              */
+
+            ////////////////////////////////////////////////////////////////////////////////
+            // autosave when exiting. better default than dropping data, less annoying
+            // than prompting
+            $(window).bind("unload", function() {
+                shell.save_notebook();
+                return true;
+            });
         },
         on_data: function(v) {
             v = v.value.json();

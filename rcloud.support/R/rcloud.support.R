@@ -350,3 +350,15 @@ rcloud.get.my.starred.notebooks <- function()
 {
   rcs.list(star.key("*"))
 }
+
+rcloud.purl.source <- function(contents)
+{
+  input.file <- tempfile(fileext="Rmd")
+  output.file <- tempfile(fileext="R")
+  cat(contents, file = input.file)
+  purl(input.file, output.file, documentation = 2)
+  result <- readLines(output.file)
+  unlink(output.file)
+  unlink(input.file)
+  result
+}
