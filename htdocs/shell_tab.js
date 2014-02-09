@@ -200,7 +200,7 @@ var shell = (function() {
     function set_notebook_title(notebook) {
         var is_read_only = result.notebook.model.read_only();
         var desc = notebook.description;
-        $("#notebook-title").text(desc);
+        result.set_title(desc);
         var ellipt_start = false, ellipt_end = false;
         while(window.innerWidth - $("#notebook-title").width() < 505) {
             var slash = desc.search('/');
@@ -216,19 +216,14 @@ var shell = (function() {
                                       + desc +
                                       (ellipt_end ? '...' : ''));
         }
-        // remove any existing handler
-        $("#rename-notebook").off('click');
-        // then add one if editable
-        if (!is_read_only) {
-            var title = $('#notebook-title');
-            $("#rename-notebook").click(function() {
-                var result = prompt("Please enter the new name for this notebook:", title.text());
-                if (result && !/^\s+$/.test(result)) { // not null and not empty or just whitespace
-                    title.text(result);
-                    editor.rename_notebook(shell.gistname(), result);
-                }
-            });
-        }
+        var title = $('#notebook-title');
+        ui_utils.make_editable(title, !is_read_only, function(text) {
+            if(editor.rename_notebook(shell.gistname(), text)) {
+                result.set_title(text);
+                return true;
+            }
+            return false;
+        });
     }
 
     function set_share_link() {
@@ -330,6 +325,11 @@ var shell = (function() {
         fork_or_revert_button: function() {
             // hmm messages bouncing around everywhere
             editor.fork_or_revert_notebook(is_mine_, gistname_, version_);
+        },
+        set_title: function(desc) {
+            $("#notebook-title")
+                .text(desc)
+                .data('restore_edit', desc);
         },
         detachable_div: function(div) {
             var on_remove = function() {};
