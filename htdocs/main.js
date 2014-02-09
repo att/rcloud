@@ -30,7 +30,10 @@ function init_upload_pane() {
             $("#file-upload-div").append(
                 bootstrap_utils.alert({
                     "class": 'alert-info',
-                    text: (to_notebook ? "Asset " : "File ") + file.name + " uploaded."
+                    text: (to_notebook ? "Asset " : "File ") + file.name + " uploaded.",
+                    on_close: function() {
+                        $(".progress").hide();
+                    }
                 })
             );
             if(to_notebook)
@@ -77,6 +80,9 @@ function init_port_file_buttons() {
     $('#export-notebook-file').click(function() {
         shell.export_notebook_file();
     });
+    $('#export-notebook-as-r').click(function() {
+        shell.export_notebook_as_r_file();
+    });
     $('#import-notebook-file').click(function() {
         shell.import_notebook_file();
     });
@@ -103,6 +109,10 @@ var oob_handlers = {
 function main_init() {
     resize_side_panel();
     init_navbar_buttons();
+
+    function getURLParameter(name) {
+        return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+    }
 
     $("#comment-submit").click(function() {
         editor.post_comment($("#comment-entry-body").val());
@@ -152,14 +162,29 @@ function main_init() {
             shell.init();
             var notebook = null, version = null;
             if (location.search.length > 0) {
-                function getURLParameter(name) {
-                    return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
-                }
                 notebook = getURLParameter("notebook");
                 version = getURLParameter("version");
             }
             editor.init(notebook, version);
             $("#tabs").tabs("select", "#tabs-2");
+            /*
+             // disabling navigation for now - concurrency issues
+            window.addEventListener("popstate", function(e) {
+                if(e.state === "rcloud.notebook") {
+                    var notebook2 = getURLParameter("notebook");
+                    var version2 = getURLParameter("version");
+                    editor.load_notebook(notebook2, version2, true, false);
+                }
+            });
+             */
+
+            ////////////////////////////////////////////////////////////////////////////////
+            // autosave when exiting. better default than dropping data, less annoying
+            // than prompting
+            $(window).bind("unload", function() {
+                shell.save_notebook();
+                return true;
+            });
         },
         on_data: function(v) {
             v = v.value.json();

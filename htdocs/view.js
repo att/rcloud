@@ -36,6 +36,7 @@ function view_init() {
             if (Number(quiet)) {
                 $(".navbar").hide();
                 $("body").css("padding-top", "0");
+                rcloud.api.disable_echo();
             }
             shell.load_notebook(notebook, version, function() {
                 if (Number(quiet)) {

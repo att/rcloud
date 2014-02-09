@@ -33,18 +33,7 @@
 
     <script type="text/javascript" src="lib/dependencies_bundle.js" charset="utf-8"></script>
     <script type="text/javascript">MathJax = undefined;</script>
-    <script type="text/javascript"
-	src="https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-    </script>
-        <!-- src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" -->
-    <script type="text/javascript">MathJax && MathJax.Hub.Config({tex2jax: {processEscapes: true,
-        processEnvironments: false, inlineMath: [ ['\\(','\\)'] ],
-        displayMath: [ ['\\[','\\]'] ] },
-        "HTML-CSS": { minScaleAdjust: 125 } });
-    </script>
-
     <script type="text/javascript" src="js/rcloud_bundle.js"></script>
-
     <script type="text/javascript" src="main.js"></script>
   </head>
 <body>
@@ -73,6 +62,7 @@
               <li><a href="#" id="export-notebook-file">Export Notebook to File</a></li>
               <li><a href="#" id="import-notebook-file">Import Notebook from File</a></li>
 	      <li><a href="#" id="toggle-scratchpad"><i class="icon-check-empty"></i>&nbsp;Show Scratch Pad</a></li>
+              <li><a href="#" id="export-notebook-as-r">Export Notebook as R Source File</a></li>
               <li><a href="#" id="show-source"><i class="icon-check"></i>&nbsp;Show Source</a></li>
               <li><a href="#" id="publish-notebook"><i class="icon-check"></i>&nbsp;Publish notebook</a></li>
               <li class="divider"></li>
@@ -138,7 +128,9 @@
               <div id="collapseFour" class="panel-collapse collapse in">
                 <div class="panel-body">
                   <div id="file-upload-div">
-                    <div class="progress-bar" id="file-progress"style="height: 5px;"></div>
+		    <div class="progress" style="display:none">
+                      <div id="progress-bar" class="progress-bar" id="file-progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
+		    </div>
                     <input type="file" id="file"></input>
 		    <input type="checkbox" id="upload-to-notebook"> Upload to notebook</input>
                     <input type="submit" id="upload-submit" value="Upload" style="float: right;"></input>
@@ -205,5 +197,13 @@
 <script src="editor_tab.js"></script>
 <script src="shell_tab.js"></script>
 <script src="wdcplot.js"></script>
+<script type="text/javascript"
+	src="https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/javascript">MathJax && MathJax.Hub.Config({tex2jax: {processEscapes: true,
+  processEnvironments: false, inlineMath: [ ['\\(','\\)'] ],
+  displayMath: [ ['\\[','\\]'] ] },
+  "HTML-CSS": { minScaleAdjust: 125 } });
+</script>
 
 </body></html>

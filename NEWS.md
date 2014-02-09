@@ -1,6 +1,6 @@
 ## RCloud develop branch
 
-## RCloud 0.9.1
+## RCloud 0.9.2
 
 ### Features
 
@@ -11,17 +11,37 @@
 * Logout page includes a link to GitHub logout as well (#294)
   Note that the default for `goodbye.page` has changed to `/goodbye.R`
 
-* `rcloud.call.notebook()` supports an additional argument `attach`.
-  If it is `TRUE` then the evaulation environment of the notebook is attached
-  to the search path after evaluation.
+* Users can get a notebook asset by name via the
+  `rcloud.get.notebook.asset` function. This is useful for getting to
+  files that have been uploaded to the notebook without needing to go
+  through the GitHub URL.
 
-* `rcloud.call.notebook()` allows `args` to be an environment in which case
-  it is used as the evaluation environment of the notebook.
+* Users can control warnings via the `rcloud.disable.warnings` and
+  `rcloud.enable.warnings` functions. This controls warnings for the
+  current RCloud session, and is not reset after each evaluation
+  (which happens, say, with `options(warn=-1)`). By default, warnings
+  are displayed, as before.
 
+* Users can export a notebook as a single R source file via the
+  'Export Notebook as R Source File' button in the Advanced menu.
 
-### Bugfixes
+* Users can control echoing via the `rcloud.disable.echo` and
+  `rcloud.enable.echo` functions. When echoing is disabled, the
+  commands themselves do not appear in subsequent evaluation calls
+  (notice that the call to `rcloud.disable.echo` itself still
+  appears..) By default, echoing is enabled, as before.
+  In addition, the option `&quiet=1` to view.html now calls
+  `rcloud.disable.echo()` before any evaluation, mitigating the
+  flashing of code described
+  [here](https://github.com/att/rcloud/issues/216).
 
-* empty markdown cells no longer cause an error (#173)
+### bugfixes
+
+* Empty markdown cells no longer cause an error (#173)
+
+* Improved notebook update speed when there are many users/notebooks (#264)
+
+* Loads MathJax by HTTPS to allow use in HTTPS deployments (#309)
 
 
 ## RCloud 0.9
