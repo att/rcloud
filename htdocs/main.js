@@ -121,12 +121,12 @@ function main_init() {
 
     ui_utils.checkbox_menu_item($("#toggle-scratchpad"),
         function() {
-            $("#middle-column").removeClass("col-md-9").addClass("col-md-5");
+            $("#middle-column").removeClass("col-sm-9 col-md-9").addClass("col-sm-5 col-md-5");
             $("#fake-left-column").show();
             $("#left-column").show();
         },
         function() {
-            $("#middle-column").removeClass("col-md-5").addClass("col-md-9");
+            $("#middle-column").removeClass("com-sm-5 col-md-5").addClass("col-sm-9 col-md-9");
             $("#fake-left-column").hide();
             $("#left-column").hide();
         }).set_state(false);

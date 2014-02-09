@@ -66,10 +66,12 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     });
 
     var button_float = $("<div class='cell-controls'></div>");
-    var col = $('<table/>');
+    var col = $('<table/>').append('<tr/>');
+    var watermark = $("<span/>");
+    col.append(watermark);
     $.each([run_md_button, source_button, result_button/*, hide_button*/, gap, remove_button],
            function() {
-               col.append($('<tr/>').append($('<td/>').append($(this))));
+               col.append($('<td/>').append($(this)));
            });
     button_float.append(col);
     notebook_cell_div.append(button_float);
@@ -90,9 +92,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var ace_div = $('<div style="width:100%; height:100%"></div>');
     ace_div.css({'background-color': language === 'R' ? "#E8F1FA" : "#F7EEE4"});
     if (language === 'R') {
-        inner_div.addClass("r-language-pseudo");
+        watermark.addClass("r-language-pseudo");
     } else {
-        inner_div.addClass("rmarkdown-language-pseudo");
+        watermark.addClass("rmarkdown-language-pseudo");
     }
 
 
