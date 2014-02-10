@@ -935,8 +935,7 @@ var editor = function () {
         },
         load_config: function() {
             var that = this;
-            return load_all_configs().then(function(lst) {
-                var my_config = lst[0], root_data = lst[1];
+            return load_all_configs().spread(function(my_config, root_data) {
                 // build up config incrementally & allow user to just
                 // remove parts of it if they're broken
                 config_ = my_config || {};
@@ -1078,9 +1077,10 @@ var editor = function () {
                 }
                 if(toggle) whither = 'hide';
             }
-            add_history_nodes(node, whither, null).then(function(node) {
-                $tree_.tree('openNode', node);
-            });
+            add_history_nodes(node, whither, null)
+                .then(function(node) {
+                    $tree_.tree('openNode', node);
+                });
         },
         load_callback: function(opts) {
             var that = this;
