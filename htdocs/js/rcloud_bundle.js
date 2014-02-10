@@ -794,6 +794,55 @@ ui_utils.make_prompt_chevron_gutter = function(widget)
         }
     };
 };
+
+ui_utils.make_editable = function(elem$, editable, on_edit) {
+    // http://stackoverflow.com/questions/6139107/programatically-select-text-in-a-contenteditable-html-element
+    function selectElementContents(el) {
+        var range = document.createRange();
+        range.selectNodeContents(el);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+
+    if(elem$.attr('contenteditable') === (editable?'true':'false'))
+        return;
+
+    elem$.data('restore_edit', elem$.text());
+    function cancel() {
+        elem$.text(elem$.data('restore_edit'));
+    }
+
+    // remove all handlers, and then recreate them if the title is editable
+    elem$.off('keydown');
+    elem$.off('focus');
+    elem$.off('blur');
+    if (editable) {
+        elem$.attr('contenteditable', 'true');
+        elem$.focus(function() {
+            window.setTimeout(function() {
+                selectElementContents(elem$[0]);
+            }, 0);
+            elem$.off('blur');
+            elem$.blur(cancel); // click-off cancels
+        });
+        elem$.keydown(function(e) {
+            if(e.keyCode === 13) {
+                var result = elem$.text();
+                if(on_edit(result)) {
+                    elem$.off('blur'); // don't cancel!
+                    elem$.blur();
+                }
+                else return false; // don't let CR through!
+            }
+            else if(e.keyCode === 27)
+                elem$.blur(); // and cancel
+            return true;
+        });
+    }
+    else elem$.attr('contenteditable', 'false');
+};
+
 var bootstrap_utils = {};
 
 bootstrap_utils.alert = function(opts)

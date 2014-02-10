@@ -526,9 +526,26 @@ var editor = function () {
                                      + $(node.element).position().top - 100);
     }
 
+    var last_editable_ = null;
+    function make_title_editable(node_title, gistname, editable) {
+        if(last_editable_ && last_editable_[0] !== node_title[0])
+            ui_utils.make_editable(last_editable_, false);
+        ui_utils.make_editable(node_title,
+                               editable,
+                               function(result) {
+                                   if(editor.rename_notebook(gistname, result)) {
+                                       shell.set_title(result);
+                                       return true;
+                                   }
+                                   else return false;
+                               });
+        last_editable_ = node_title;
+    }
+
     function select_node(node) {
         $tree_.tree('selectNode', node);
         scroll_into_view(node);
+        make_title_editable($('.jqtree-title', node.element), node.gistname, !shell.notebook.model.read_only());
     }
 
     function update_tree_entry(root, user, gistname, entry, create, k) {
@@ -699,6 +716,8 @@ var editor = function () {
                                            display_date(node.last_commit)));
         }
         if(node.gistname && !node.version) {
+            if($tree_.tree('isNodeSelected', node))
+                make_title_editable(title, node.gistname, !shell.notebook.model.read_only());
             var adder = function(target) {
                 var count = 0;
                 var lst = [];
@@ -958,7 +977,11 @@ var editor = function () {
             });
         },
         rename_notebook: function(gistname, newname) {
-            rcloud.rename_notebook(gistname, newname, this.load_callback({is_change: true, selroot: true}));
+            if (result && !/^\s+$/.test(result)) { // not null and not empty or just whitespace
+                rcloud.rename_notebook(gistname, newname, this.load_callback({is_change: true, selroot: true}));
+                return true;
+            }
+            else return false;
         },
         star_notebook: function(star, opts, k) {
             var that = this;
