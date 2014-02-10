@@ -7,6 +7,8 @@ Notebook.create_controller = function(model)
         save_timeout_ = 30000, // 30s
         show_source_checkbox_ = null;
 
+    var default_callback_ = editor.load_callback(null, true, true);
+
     function append_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
         var cell_controller = Notebook.Cell.create_controller(cell_model);
@@ -21,7 +23,7 @@ Notebook.create_controller = function(model)
         return {controller: cell_controller, changes: model.insert_cell(cell_model, id)};
     }
 
-    function on_load(k, version, notebook) {
+    function on_load(version, notebook) {
         if (!_.isUndefined(notebook.files)) {
             this.clear();
             var parts = {}; // could rely on alphabetic input instead of gathering
@@ -40,7 +42,7 @@ Notebook.create_controller = function(model)
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
         }
-        k && k(notebook);
+        return notebook;
     }
 
     // calculate the changes needed to get back from the newest version in notebook
@@ -70,6 +72,53 @@ Notebook.create_controller = function(model)
                           content: cf[f].content});
         }
         return changes;
+    }
+
+    function update_notebook(changes, gistname) {
+        // remove any "empty" changes.  we can keep empty cells on the
+        // screen but github will refuse them.  if the user doesn't enter
+        // stuff in them before saving, they will disappear on next session
+        changes = changes.filter(function(change) { return !!change.content || change.erase; });
+        if (!changes.length)
+            return Promise.cast(undefined);
+        if (model.read_only())
+            return Promise.reject("attempted to update read-only notebook");
+        gistname = gistname || shell.gistname();
+        function changes_to_gist(changes) {
+            // we don't use the gist rename feature because it doesn't
+            // allow renaming x -> y and creating a new x at the same time
+            // instead, create y and if there is no longer any x, erase it
+            var post_names = _.reduce(changes,
+                                      function(names, change) {
+                                          if(!change.erase) {
+                                              var after = change.rename || change.id;
+                                              names[Notebook.part_name(after, change.language)] = 1;
+                                          }
+                                          return names;
+                                      }, {});
+            function xlate_change(filehash, change) {
+                var c = {};
+                if(change.content !== undefined)
+                    c.content = change.content;
+                var pre_name = Notebook.part_name(change.id, change.language);
+                if(change.erase || !post_names[pre_name])
+                    filehash[pre_name] = null;
+                if(!change.erase) {
+                    var post_name = Notebook.part_name(change.rename || change.id, change.language);
+                    filehash[post_name] = c;
+                }
+                return filehash;
+            }
+            return {files: _.reduce(changes, xlate_change, {})};
+        }
+
+        return rcloud.update_notebook(gistname, changes_to_gist(changes))
+            .then(function(notebook) {
+                if('error' in notebook)
+                    throw notebook;
+                current_gist_ = notebook;
+                return notebook;
+            });
     }
 
     function on_dirty() {
@@ -105,124 +154,75 @@ Notebook.create_controller = function(model)
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
-            this.update_notebook(cch.changes);
+            update_notebook(cch.changes)
+                .then(default_callback_);
             return cch.controller;
         },
         insert_cell: function(content, type, id) {
             var cch = insert_cell_helper(content, type, id);
-            this.update_notebook(cch.changes);
+            update_notebook(cch.changes)
+                .then(default_callback_);
             return cch.controller;
         },
         remove_cell: function(cell_model) {
             var changes = model.remove_cell(cell_model);
             shell.prompt_widget.focus(); // there must be a better way
-            this.update_notebook(changes);
+            update_notebook(changes)
+                .then(default_callback_);
         },
         clear: function() {
             model.clear();
         },
-        load_notebook: function(gistname, version, k) {
-            var that = this;
-            rcloud.load_notebook(gistname, version || null, _.bind(on_load, this, k, version));
+        load_notebook: function(gistname, version) {
+            return rcloud.load_notebook(gistname, version || null)
+                .then(_.bind(on_load, this, version));
         },
-        create_notebook: function(content, k) {
+        create_notebook: function(content) {
             var that = this;
-            rcloud.create_notebook(content, function(notebook) {
+            return rcloud.create_notebook(content).then(function(notebook) {
                 that.clear();
                 model.read_only(notebook.user.login != rcloud.username());
                 current_gist_ = notebook;
-                k && k(notebook);
+                return notebook;
             });
         },
-        fork_or_revert_notebook: function(is_mine, gistname, version, k) {
+        fork_or_revert_notebook: function(is_mine, gistname, version) {
             var that = this;
-            function update_and_load(changes, gistname, k) {
-                // force a full reload in all cases, as a sanity check
-                // i.e. we might know what the notebook state should be,
-                // but load the notebook to make sure
-                var k2 = function() {
-                    that.load_notebook(gistname, null, k);
-                };
-                if(changes.length)
-                    that.update_notebook(changes, gistname, k2);
-                else
-                    k2();
-
-            }
+            // 1. figure out the changes
+            var promiseChanges;
             if(is_mine) // revert: get HEAD, calculate changes from there to here, and apply
-                rcloud.load_notebook(gistname, null, function(notebook) {
-                    var changes = find_changes_from(notebook);
-                    update_and_load(changes, gistname, k);
+                promiseChanges = rcloud.load_notebook(gistname, null).then(function(notebook) {
+                    return [find_changes_from(notebook), gistname];
                 });
             else // fork:
-                rcloud.fork_notebook(gistname, function(notebook) {
-                    if(version) {
+                promiseChanges = rcloud.fork_notebook(gistname).then(function(notebook) {
+                    if(version)
                         // fork, then get changes from there to where we are in the past, and apply
                         // git api does not return the files on fork, so load
-                        rcloud.get_notebook(notebook.id, null, function(notebook2) {
-                            var changes = find_changes_from(notebook2);
-                            update_and_load(changes, notebook2.id, k);
-                        });
-                    }
-                    else
-                        update_and_load([], notebook.id, k);
+                        return rcloud.get_notebook(notebook.id, null)
+                            .then(function(notebook2) {
+                                return [find_changes_from(notebook2), notebook2.id];
+                            });
+                    else return [[], notebook.id];
                 });
-        },
-        update_notebook: function(changes, gistname, k) {
-            // remove any "empty" changes.  we can keep empty cells on the
-            // screen but github will refuse them.  if the user doesn't enter
-            // stuff in them before saving, they will disappear on next session
-            changes = changes.filter(function(change) { return !!change.content || change.erase; });
-            if(!changes.length)
-                return;
-            if(model.read_only())
-                throw "attempted to update read-only notebook";
-            gistname = gistname || shell.gistname();
-            function changes_to_gist(changes) {
-                // we don't use the gist rename feature because it doesn't
-                // allow renaming x -> y and creating a new x at the same time
-                // instead, create y and if there is no longer any x, erase it
-                var post_names = _.reduce(changes,
-                                         function(names, change) {
-                                             if(!change.erase) {
-                                                 var after = change.rename || change.id;
-                                                 names[Notebook.part_name(after, change.language)] = 1;
-                                             }
-                                             return names;
-                                         }, {});
-                function xlate_change(filehash, change) {
-                    var c = {};
-                    if(change.content !== undefined)
-                        c.content = change.content;
-                    var pre_name = Notebook.part_name(change.id, change.language);
-                    if(change.erase || !post_names[pre_name])
-                        filehash[pre_name] = null;
-                    if(!change.erase) {
-                        var post_name = Notebook.part_name(change.rename || change.id, change.language);
-                        filehash[post_name] = c;
-                    }
-                    return filehash;
-                }
-                return {files: _.reduce(changes, xlate_change, {})};
-            }
-            // not awesome to callback to someone else here
-            k = k || editor.load_callback({is_change: true, selroot: true});
-            var k2 = function(notebook) {
-                if('error' in notebook) {
-                    k(notebook);
-                    return;
-                }
-                current_gist_ = notebook;
-                k(notebook);
-            };
-            if(changes.length)
-                rcloud.update_notebook(gistname, changes_to_gist(changes), k2);
+            // 2. apply the changes, if any
+            return promiseChanges.spread(function(changes, gistname) {
+                return changes.length
+                    ? update_notebook(changes, gistname).return(gistname)
+                    : gistname;
+            })
+            // 3. force a full reload in all cases, as a sanity check
+            // we might know what the notebook state should be,
+            // but load the notebook (and reset the session) to be sure
+                .then(function(gistname) {
+                    return that.load_notebook(gistname, null);
+                });
         },
         refresh_cells: function() {
             return model.reread_cells();
         },
         update_cell: function(cell_model) {
-            this.update_notebook(model.update_cell(cell_model));
+            return this.update_notebook(model.update_cell(cell_model));
         },
         save: function() {
             if(dirty_) {

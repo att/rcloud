@@ -235,38 +235,48 @@ var shell = (function() {
         $("#share-link").attr("href", link);
     }
 
-    function reset_session(k) {
+    function reset_session() {
         if (first_session_) {
             first_session_ = false;
-            rcloud.with_progress(function(done) {
-                k(done);
-            });
+            return rcloud.with_progress();
         } else {
-            rcloud.with_progress(function(done) {
+            return rcloud.with_progress(function(done) {
                 rclient.close();
                 // FIXME this is a bit of an annoying duplication of code on main.js and view.js
-                rclient = RClient.create({
-                    debug: rclient.debug,
-                    host: rclient.host,
-                    on_connect: function(ocaps) {
-                        rcloud = RCloud.create(ocaps.rcloud);
-                        rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {});
 
-                        rcloud.init_client_side_data(function() {
-                            $("#output").find(".alert").remove();
-                            k(done);
-                        });
-                    },
-                    on_data: function(v) {
-                        v = v.value.json();
-                        oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
-                    }
+                return new Promise(function(resolve, reject) {
+                    rclient = RClient.create({
+                        debug: rclient.debug,
+                        host: rclient.host,
+                        on_connect: function(ocaps) {
+                            rcloud = RCloud.create(ocaps.rcloud);
+                            rcloud.session_init(rcloud.username(), rcloud.github_token());
+                            rcloud.display.set_device_pixel_ratio();
+
+                            resolve(rcloud.init_client_side_data().then(function() {
+                                $("#output").find(".alert").remove();
+                                return done;
+                            }));
+                        },
+                        on_error: function(error) {
+                            // if we fail to reconnect we still want
+                            // to resolve the promise so with_progress can continue.
+                            if (!rclient.running) {
+                                resolve(done);
+                            }
+                            return false;
+                        },
+                        on_data: function(v) {
+                            v = v.value.json();
+                            oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
+                        }
+                    });
                 });
             });
         }
     }
 
-    function on_new(k, notebook) {
+    function on_new(notebook) {
         set_notebook_title(notebook);
         gistname_ = notebook.id;
         version_ = null;
@@ -277,10 +287,10 @@ var shell = (function() {
             prompt_.widget.focus(); // surely not the right way to do this
             prompt_.restore();
         }
-        k && k(notebook);
+        return notebook;
     }
 
-    function on_load(k, notebook) {
+    function on_load(notebook) {
         set_notebook_title(notebook);
         set_share_link();
 
@@ -294,7 +304,7 @@ var shell = (function() {
             prompt_.widget.focus(); // surely not the right way to do this
             prompt_.restore();
         }
-        k && k(notebook);
+        return notebook;
     }
 
 
@@ -316,8 +326,8 @@ var shell = (function() {
             return version_;
         },
         init: function() {
-            rcloud.get_conf_value("github.base.url", function(url) { github_url_ = url; });
-            rcloud.get_conf_value("github.gist.url", function(url) { gist_url_ = url; });
+            rcloud.get_conf_value("github.base.url").then(function(url) { github_url_ = url; });
+            rcloud.get_conf_value("github.gist.url").then(function(url) { gist_url_ = url; });
         },
         is_old_github: function() {
             return !gist_url_;
@@ -369,50 +379,55 @@ var shell = (function() {
                 });
         }, insert_markdown_cell_before: function(index) {
             return notebook_controller_.insert_cell("", "Markdown", index);
-        }, load_notebook: function(gistname, version, k) {
+        }, load_notebook: function(gistname, version) {
             var that = this;
-            k = k || _.identity;
-
             function do_load(done) {
                 var oldname = gistname_, oldversion = version_;
                 gistname_ = gistname;
                 version_ = version;
-                that.notebook.controller.load_notebook(gistname_, version_, function(notebook) {
+                return that.notebook.controller.load_notebook(gistname_, version_).then(function(notebook) {
                     if (!_.isUndefined(notebook.error)) {
                         done();
                         gistname_ = oldname;
                         version_ = oldversion;
-                        return;
+                        return undefined;
                     }
                     $(".rcloud-user-defined-css").remove();
-                    rcloud.install_notebook_stylesheets(function() {
-                        done();
-                        on_load.bind(that, k)(notebook);
-                    });
+                    return rcloud.install_notebook_stylesheets()
+                        .return(notebook)
+                        .then(on_load).then(function(notebook) {
+                            done();
+                            return notebook;
+                        });
                 });
             }
-            reset_session(do_load);
+            return reset_session().then(do_load);
         }, save_notebook: function() {
             notebook_controller_.save();
-        }, new_notebook: function(desc, k) {
-            reset_session(function(done) {
-                var content = {description: desc, public: false, files: {"scratch.R": {content:"# scratch file"}}};
-                done(); // well not really done (just done with cps bleh)
-                notebook_controller_.create_notebook(content, _.bind(on_new, this, k));
-            });
-        }, fork_or_revert_notebook: function(is_mine, gistname, version, k) {
+        }, new_notebook: function(desc) {
+            return reset_session()
+                .then(function(done) {
+                    var content = {description: desc, 'public': false,
+                                   files: {"scratch.R": {content:"# scratch file"}}};
+                    done(); // well not really done (just done with cps bleh) FIXME
+                    return notebook_controller_.create_notebook(content).then(on_new);
+                });
+        }, fork_or_revert_notebook: function(is_mine, gistname, version) {
             if(is_mine && !version)
                 throw "unexpected revert of current version";
-            reset_session(function(done) {
-                var that = this;
-                notebook_model_.read_only(false);
-                notebook_controller_.fork_or_revert_notebook(is_mine, gistname, version, function(notebook) {
-                    gistname_ = notebook.id;
-                    version_ = null;
-                    done(); // again, not really done - just too nasty to compose done with k
-                    on_load.call(that, k, notebook);
+            return reset_session()
+                .then(function(done) {
+                    var that = this;
+                    notebook_model_.read_only(false);
+                    return notebook_controller_
+                        .fork_or_revert_notebook(is_mine, gistname, version)
+                        .then(function(notebook) {
+                            gistname_ = notebook.id;
+                            version_ = null;
+                            done(); // again, not really done - just too nasty to compose done with k
+                            return notebook;
+                        }).then(on_load);
                 });
-            });
         }, open_in_github: function() {
             var url;
             if(!this.is_old_github()) {
@@ -500,7 +515,7 @@ var shell = (function() {
                 });
             });
         }, export_notebook_file: function() {
-            rcloud.get_notebook(gistname_, version_, function(notebook) {
+            return rcloud.get_notebook(gistname_, version_).then(function(notebook) {
                 notebook = sanitize_notebook(notebook);
                 var gisttext = JSON.stringify(notebook);
                 var a=document.createElement('a');
@@ -508,6 +523,7 @@ var shell = (function() {
                 a.download=notebook.description + ".gist";
                 a.href='data:text/json;charset=utf-8,'+escape(gisttext);
                 a.click();
+                return notebook;
             });
         }, import_notebook_file: function() {
             var that = this;
@@ -550,7 +566,7 @@ var shell = (function() {
                 function do_import() {
                     if(notebook) {
                         notebook.description = notebook_desc_content.val();
-                        rcloud.create_notebook(notebook, function(notebook) {
+                        rcloud.create_notebook(notebook).then(function(notebook) {
                             editor.star_notebook(true, {notebook: notebook});
                         });
                     }
@@ -619,22 +635,22 @@ var shell = (function() {
                     notebooks = $('#import-gists').val(),
                     prefix = $('#import-prefix').val();
                 notebooks = _.without(notebooks.split(/[\s,;]+/), "");
-                rcloud.port_notebooks(url, notebooks, prefix,
-                                      function(result) {
-                                          var succeeded = [], failed = [];
-                                          for(var res in result) {
-                                              if(res==='r_type' || res==='r_attributes')
-                                                  continue; // R metadata
-                                              if(result[res].ok)
-                                                  succeeded.push(result[res].content);
-                                              else
-                                                  failed.push(res);
-                                          }
-                                          // TODO: tell user about failed imports
-                                          succeeded.forEach(function(notebook) {
-                                              editor.star_notebook(true, {notebook: notebook});
-                                          });
-                                      });
+                rcloud.port_notebooks(url, notebooks, prefix)
+                    .then(function(result) {
+                        var succeeded = [], failed = [];
+                        for(var res in result) {
+                            if(res==='r_type' || res==='r_attributes')
+                                continue; // R metadata
+                            if(result[res].ok)
+                                succeeded.push(result[res].content);
+                            else
+                                failed.push(res);
+                        }
+                        // TODO: tell user about failed imports
+                        succeeded.forEach(function(notebook) {
+                            editor.star_notebook(true, {notebook: notebook});
+                        });
+                    });
                 dialog.modal('hide');
             }
             function create_import_notebook_dialog() {
@@ -678,7 +694,7 @@ var shell = (function() {
     };
 
     $("#run-notebook").click(function() {
-        rcloud.with_progress(function(done) {
+        rcloud.with_progress().then(function(done) {
             result.notebook.controller.run_all(function() { done(); });
             prompt_ && prompt_.widget.focus(); // surely not the right way to do this
         });

@@ -1,3 +1,5 @@
+Promise.longStackTraces();
+
 function resize_side_panel() {
     var non_notebook_panel_height = 246;
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
@@ -26,7 +28,8 @@ function init_github_buttons() {
 function init_upload_pane() {
     $("#upload-submit").click(function() {
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        var success = function(path, file, notebook) {
+        function success(lst) {
+            var path = lst[0], file = lst[1], notebook = lst[2];
             $("#file-upload-div").append(
                 bootstrap_utils.alert({
                     "class": 'alert-info',
@@ -39,20 +42,22 @@ function init_upload_pane() {
             if(to_notebook)
                 editor.update_notebook_file_list(notebook.files);
         };
-        var upload_function = to_notebook
-            ? rcloud.upload_to_notebook
-            : rcloud.upload_file;
 
-        upload_function(false, success, function() {
+        // FIXME check for more failures besides file exists
+        function failure() {
             var overwrite_click = function() {
-                rcloud.upload_file(true, success, function(exception_value) {
-                    var msg = exception_value;
-                    $("#file-upload-div").append(
-                        bootstrap_utils.alert({
-                            "class": 'alert-danger',
-                            text: msg
-                        })
-                    );
+                rcloud.upload_file(true, function(err, value) {
+                    if (err) {
+                        var msg = exception_value;
+                        $("#file-upload-div").append(
+                            bootstrap_utils.alert({
+                                "class": 'alert-danger',
+                                text: msg
+                            })
+                        );
+                    } else {
+                        success(value);
+                    }
                 });
             };
             var alert_element = $("<div></div>");
@@ -64,6 +69,17 @@ function init_upload_pane() {
                 .text("Overwrite");
             p.append(overwrite);
             $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
+        }
+
+        var upload_function = to_notebook
+            ? rcloud.upload_to_notebook
+            : rcloud.upload_file;
+
+        upload_function(false, function(err, value) {
+            if (err) 
+                failure(err);
+            else
+                success(value);
         });
     });
 }
@@ -128,7 +144,7 @@ function main_init() {
                 rclient.close();
                 return;
             }
-            rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {
+            rcloud.session_init(rcloud.username(), rcloud.github_token()).then(function(hello) {
                 rclient.post_response(hello);
             });
             rcloud.display.set_device_pixel_ratio();
@@ -181,3 +197,6 @@ function main_init() {
 }
 
 window.onload = main_init;
+// Promise.onPossiblyUnhandledRejection(function(error){
+//     throw error;
+// });
