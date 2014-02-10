@@ -1070,7 +1070,14 @@ var editor = function () {
                 });
         },
         show_history: function(node, toggle) {
-            var whither = node.children.length && toggle ? 'hide' : 'more';
+            var whither = 'more';
+            if(node.children.length) {
+                if(!node.is_open) {
+                    $tree_.tree('openNode', node);
+                    return;
+                }
+                if(toggle) whither = 'hide';
+            }
             add_history_nodes(node, whither, null).then(function(node) {
                 $tree_.tree('openNode', node);
             });
