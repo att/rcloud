@@ -118,6 +118,7 @@ Notebook.create_controller = function(model)
                     throw notebook;
                 }
                 current_gist_ = notebook;
+                return notebook;
             });
     }
 
