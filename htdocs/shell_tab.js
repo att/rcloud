@@ -393,23 +393,25 @@ var shell = (function() {
                         return undefined;
                     }
                     $(".rcloud-user-defined-css").remove();
-                    return rcloud.install_notebook_stylesheets().then(function() {
-                        return notebook;
-                    }).then(on_load).then(function(notebook) {
-                        done();
-                        return notebook;
-                    });
+                    return rcloud.install_notebook_stylesheets()
+                        .return(notebook)
+                        .then(on_load).then(function(notebook) {
+                            done();
+                            return notebook;
+                        });
                 });
             }
             return reset_session().then(do_load);
         }, save_notebook: function() {
             notebook_controller_.save();
         }, new_notebook: function(desc) {
-            reset_session().then(function(done) {
-                var content = {description: desc, 'public': false, files: {"scratch.R": {content:"# scratch file"}}};
-                done(); // well not really done (just done with cps bleh) FIXME
-                return notebook_controller_.create_notebook(content).then(_.bind(on_new, this));
-            });
+            return reset_session()
+                .then(function(done) {
+                    var content = {description: desc, 'public': false,
+                                   files: {"scratch.R": {content:"# scratch file"}}};
+                    done(); // well not really done (just done with cps bleh) FIXME
+                    return notebook_controller_.create_notebook(content).then(on_new);
+                });
         }, fork_or_revert_notebook: function(is_mine, gistname, version) {
             if(is_mine && !version)
                 throw "unexpected revert of current version";

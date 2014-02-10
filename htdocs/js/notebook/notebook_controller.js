@@ -114,9 +114,8 @@ Notebook.create_controller = function(model)
 
         return rcloud.update_notebook(gistname, changes_to_gist(changes))
             .then(function(notebook) {
-                if('error' in notebook) {
+                if('error' in notebook)
                     throw notebook;
-                }
                 current_gist_ = notebook;
                 return notebook;
             });
@@ -184,6 +183,7 @@ Notebook.create_controller = function(model)
                 that.clear();
                 model.read_only(notebook.user.login != rcloud.username());
                 current_gist_ = notebook;
+                return notebook;
             });
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
