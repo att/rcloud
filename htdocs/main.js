@@ -1,3 +1,15 @@
+/* Added these functions for supporting search functionality */
+
+function search(){	
+	var qry = $('#input-text-search').val();
+	rcloud.custom_search(qry); 
+	return;
+}
+
+function loadSearchedNotebook(notebook_id){
+	rcloud.load_search_notebook(notebook_id);
+}
+/*--------------------------END--------------------------*/
 function resize_side_panel() {
     var non_notebook_panel_height = 246;
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');

@@ -200,11 +200,92 @@ rcloud.upload.to.notebook <- function(file, name) {
   res
 }
 
+#ADDED THIS FUNCTION FOR SOLR SEARCH FUNCTIONALITY
 rcloud.update.notebook <- function(id, content) {
+  myctx <- .session$rgithub.context
   res <- modify.gist(id, content, ctx = .session$rgithub.context)
   .session$current.notebook <- res
-  res
+##Getting the parameters from current session, loaded from rcloud.conf file, Added extra parameter for search functionality 
+  redis_host <- toString(.session$redis.host)  
+  redis_port <- as.numeric(.session$redis.port)  
+  solr_host <- toString(.session$solr.host)  
+  solr_port <- as.numeric(.session$solr.port)
+  library(rredis)
+  redisConnect(host=redis_host,port=redis_port, password=NULL, returnRef= FALSE, nodelay=FALSE, timeout=2678399L)
+  redisSet("session_object",.session$rgithub.context)
+  redisSet("current_notebook",.session$current.notebook)
+  curlTemplate <- "curl 'http://host:port/solr/update/extract?literal.id=v_id&literal.description=v_description&literal.user=v_user&literal.user_url=v_user_url&literal.created_at=v_created_at&literal.updated_at=v_updated_at&literal.commited_at=v_commited_at&literal.avatar_url=v_avatar_url&literal.followers=v_followers&literal.size=v_size&literal.public=v_public&literal.starcount=v_starcount&commit=true' -F myfile=@cont_path"
+  curlTemplate <- gsub("host",solr_host,curlTemplate)
+  curlTemplate <- gsub("port",solr_port,curlTemplate)
+  redcmd<-paste("notebook/",id,"/starcount",sep="")
+  star_count<-redisGet(redcmd)
+  session_res <- redisGet("session_object")
+  current_notebook <- redisGet("current_notebook")
+  redisSet("cont_path",.session$content_path)  
+  cont_path <- redisGet("cont_path")
+  content<-lapply(current_notebook$content$files,function(x) x[[1]][[1]])
+  length<-length(content)
+ cat("",file=cont_path)
+ #Getting content of Notebook
+  for(i in 1:(length-1))
+  {
+     cont_parts<- lapply(current_notebook$content$files[[i]][[6]],function(x) x[[1]][[1]])
+    cat(cont_parts[[1]],file=cont_path,sep="\n",append=TRUE) 
+  }
+  followers <- session_res$user$followers
+  library("RCurl") 
+  description<- gsub(" ","%20",current_notebook$content$description)
+  avatar<- gsub("&","%26",current_notebook$content$user$avatar_url)
+  curlCommand <- gsub("v_id",current_notebook$content$id,curlTemplate)
+  curlCommand <- gsub("v_user_url",current_notebook$content$user$url,curlCommand)
+  curlCommand <- gsub("v_user",current_notebook$content$user$login,curlCommand)	
+  curlCommand <- gsub("v_created_at",current_notebook$content$created_at,curlCommand)
+  curlCommand <- gsub("v_updated_at",current_notebook$content$updated_at,curlCommand)
+  curlCommand <- gsub("v_commited_at",current_notebook$content$updated_at,curlCommand)
+  curlCommand <- gsub("v_avatar_url",avatar,curlCommand)
+  curlCommand <- gsub("v_followers",followers,curlCommand)
+  curlCommand <- gsub("v_description",description,curlCommand)
+  curlCommand <- gsub("v_size","10",curlCommand)
+  curlCommand <- gsub("v_public",current_notebook$content$public,curlCommand)
+  curlCommand <- gsub("v_starcount",star_count,curlCommand)
+  curlCommand<-gsub("cont_path",cont_path,curlCommand)
+  system(curlCommand)
+  if (file.exists(cont_path)) file.remove(cont_path)
+  redisClose()
 }
+
+rcloud.custom.search <-function(q){
+#Getting response from Solr through url 
+	library("rjson")
+	library("RCurl")  
+    solr_host <- toString(.session$solr.host)  
+    solr_port <- as.numeric(.session$solr.port)
+	q <- gsub(" ","%20",q)
+	solr_url <- paste("http://host:s_port/solr/select?q=",q,"&start=0&rows=1000&wt=json",sep="")
+	solr_url <- gsub("host",solr_host,solr_url)
+	solr_url <- gsub("s_port",solr_port,solr_url)
+	solr_res<-getURL(solr_url)
+	return(solr_res)
+}
+
+rcloud.load.search.notebook <-function(id){
+#Loading notebook in new tab by getting port and host through conf files
+  redis_host <- toString(.session$redis.host)  
+  redis_port <- as.numeric(.session$redis.port)  
+  library(rredis)
+  redisConnect(host=redis_host,port=redis_port, password=NULL, returnRef= FALSE, nodelay=FALSE, timeout=2678399L)
+  session_res<- redisGet("session_object")
+  r_port <-readLines(.session$path)
+  r_port <- as.numeric(gsub("http.port","",r_port[3]))
+  r_host <- toString(.session$rhost)
+  r_url <- "http://rhost:rport/main.html?notebook="
+  r_url <- gsub("rhost",r_host,r_url)
+  r_url <- gsub("rport",r_port,r_url)
+  r_url <- paste(r_url,id,sep="")
+  return(r_url)
+  
+}
+#END
 
 rcloud.create.notebook <- function(content) {
   res <- create.gist(content, ctx = .session$rgithub.context)
