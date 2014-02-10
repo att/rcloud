@@ -545,7 +545,9 @@ var editor = function () {
     function select_node(node) {
         $tree_.tree('selectNode', node);
         scroll_into_view(node);
-        make_title_editable($('.jqtree-title', node.element), node.gistname, !shell.notebook.model.read_only());
+        if(!node.version)
+            make_title_editable($('.jqtree-title:not(.history)', node.element),
+                                node.gistname, !shell.notebook.model.read_only());
     }
 
     function update_tree_entry(root, user, gistname, entry, create) {
@@ -702,7 +704,7 @@ var editor = function () {
         title.css('color', node.color);
         if(node.visibility==='private')
             title.addClass('private');
-        if(node.version)
+        if(node.version || node.id === 'showmore')
             title.addClass('history');
         var right = $($.el.span({'class': 'notebook-right'}));
         if(node.last_commit && (!node.version ||
