@@ -413,15 +413,19 @@ var shell = (function() {
         }, fork_or_revert_notebook: function(is_mine, gistname, version) {
             if(is_mine && !version)
                 throw "unexpected revert of current version";
-            reset_session().then(function(done) {
-                var that = this;
-                notebook_model_.read_only(false);
-                return notebook_controller_.fork_or_revert_notebook(is_mine, gistname, version).then(function(notebook) {
-                    gistname_ = notebook.id;
-                    version_ = null;
-                    done(); // again, not really done - just too nasty to compose done with k
-                }).then(_.bind(on_load, this));
-            });
+            return reset_session()
+                .then(function(done) {
+                    var that = this;
+                    notebook_model_.read_only(false);
+                    return notebook_controller_
+                        .fork_or_revert_notebook(is_mine, gistname, version)
+                        .then(function(notebook) {
+                            gistname_ = notebook.id;
+                            version_ = null;
+                            done(); // again, not really done - just too nasty to compose done with k
+                            return notebook;
+                        }).then(on_load);
+                });
         }, open_in_github: function() {
             var url;
             if(!this.is_old_github()) {

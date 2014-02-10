@@ -1625,6 +1625,8 @@ Notebook.create_controller = function(model)
         save_timeout_ = 30000, // 30s
         show_source_checkbox_ = null;
 
+    var default_callback_ = editor.load_callback(null, true, true);
+
     function append_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
         var cell_controller = Notebook.Cell.create_controller(cell_model);
@@ -1690,6 +1692,53 @@ Notebook.create_controller = function(model)
         return changes;
     }
 
+    function update_notebook(changes, gistname) {
+        // remove any "empty" changes.  we can keep empty cells on the
+        // screen but github will refuse them.  if the user doesn't enter
+        // stuff in them before saving, they will disappear on next session
+        changes = changes.filter(function(change) { return !!change.content || change.erase; });
+        if (!changes.length)
+            return Promise.cast(undefined);
+        if (model.read_only())
+            return Promise.reject("attempted to update read-only notebook");
+        gistname = gistname || shell.gistname();
+        function changes_to_gist(changes) {
+            // we don't use the gist rename feature because it doesn't
+            // allow renaming x -> y and creating a new x at the same time
+            // instead, create y and if there is no longer any x, erase it
+            var post_names = _.reduce(changes,
+                                      function(names, change) {
+                                          if(!change.erase) {
+                                              var after = change.rename || change.id;
+                                              names[Notebook.part_name(after, change.language)] = 1;
+                                          }
+                                          return names;
+                                      }, {});
+            function xlate_change(filehash, change) {
+                var c = {};
+                if(change.content !== undefined)
+                    c.content = change.content;
+                var pre_name = Notebook.part_name(change.id, change.language);
+                if(change.erase || !post_names[pre_name])
+                    filehash[pre_name] = null;
+                if(!change.erase) {
+                    var post_name = Notebook.part_name(change.rename || change.id, change.language);
+                    filehash[post_name] = c;
+                }
+                return filehash;
+            }
+            return {files: _.reduce(changes, xlate_change, {})};
+        }
+
+        return rcloud.update_notebook(gistname, changes_to_gist(changes))
+            .then(function(notebook) {
+                if('error' in notebook) {
+                    throw notebook;
+                }
+                current_gist_ = notebook;
+            });
+    }
+
     function on_dirty() {
         if(!dirty_) {
             if(save_button_)
@@ -1723,18 +1772,21 @@ Notebook.create_controller = function(model)
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
-            this.update_notebook(cch.changes);
+            update_notebook(cch.changes)
+                .then(default_callback_);
             return cch.controller;
         },
         insert_cell: function(content, type, id) {
             var cch = insert_cell_helper(content, type, id);
-            this.update_notebook(cch.changes);
+            update_notebook(cch.changes)
+                .then(default_callback_);
             return cch.controller;
         },
         remove_cell: function(cell_model) {
             var changes = model.remove_cell(cell_model);
             shell.prompt_widget.focus(); // there must be a better way
-            return this.update_notebook(changes);
+            update_notebook(changes)
+                .then(default_callback_);
         },
         clear: function() {
             model.clear();
@@ -1753,84 +1805,35 @@ Notebook.create_controller = function(model)
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
             var that = this;
-            function update_and_load(changes, gistname) {
-                // force a full reload in all cases, as a sanity check
-                // i.e. we might know what the notebook state should be,
-                // but load the notebook to make sure
-                var k2 = function() {
-                    return that.load_notebook(gistname, null);
-                };
-                if(changes.length)
-                    return that.update_notebook(changes, gistname).then(k2);
-                else
-                    return k2();
-            }
+            // 1. figure out the changes
+            var promiseChanges;
             if(is_mine) // revert: get HEAD, calculate changes from there to here, and apply
-                return rcloud.load_notebook(gistname, null).then(function(notebook) {
-                    var changes = find_changes_from(notebook);
-                    return update_and_load(changes, gistname);
+                promiseChanges = rcloud.load_notebook(gistname, null).then(function(notebook) {
+                    return [find_changes_from(notebook), gistname];
                 });
             else // fork:
-                return rcloud.fork_notebook(gistname).then(function(notebook) {
-                    if(version) {
+                promiseChanges = rcloud.fork_notebook(gistname).then(function(notebook) {
+                    if(version)
                         // fork, then get changes from there to where we are in the past, and apply
                         // git api does not return the files on fork, so load
-                        return rcloud.get_notebook(notebook.id, null).then(function(notebook2) {
-                            var changes = find_changes_from(notebook2);
-                            return update_and_load(changes, notebook2.id);
-                        });
-                    } else
-                        return update_and_load([], notebook.id);
+                        return rcloud.get_notebook(notebook.id, null)
+                            .then(function(notebook2) {
+                                return [find_changes_from(notebook2), notebook2.id];
+                            });
+                    else return [[], notebook.id];
                 });
-        },
-        update_notebook: function(changes, gistname) {
-            // remove any "empty" changes.  we can keep empty cells on the
-            // screen but github will refuse them.  if the user doesn't enter
-            // stuff in them before saving, they will disappear on next session
-            changes = changes.filter(function(change) { return !!change.content || change.erase; });
-            if (!changes.length)
-                return Promise.cast(undefined);
-            if (model.read_only())
-                return Promise.reject("attempted to update read-only notebook");
-            gistname = gistname || shell.gistname();
-            function changes_to_gist(changes) {
-                // we don't use the gist rename feature because it doesn't
-                // allow renaming x -> y and creating a new x at the same time
-                // instead, create y and if there is no longer any x, erase it
-                var post_names = _.reduce(changes,
-                                         function(names, change) {
-                                             if(!change.erase) {
-                                                 var after = change.rename || change.id;
-                                                 names[Notebook.part_name(after, change.language)] = 1;
-                                             }
-                                             return names;
-                                         }, {});
-                function xlate_change(filehash, change) {
-                    var c = {};
-                    if(change.content !== undefined)
-                        c.content = change.content;
-                    var pre_name = Notebook.part_name(change.id, change.language);
-                    if(change.erase || !post_names[pre_name])
-                        filehash[pre_name] = null;
-                    if(!change.erase) {
-                        var post_name = Notebook.part_name(change.rename || change.id, change.language);
-                        filehash[post_name] = c;
-                    }
-                    return filehash;
-                }
-                return {files: _.reduce(changes, xlate_change, {})};
-            }
-            var k2 = function(notebook) {
-                if('error' in notebook) {
-                    throw notebook;
-                }
-                current_gist_ = notebook;
-            };
-
-            return rcloud.update_notebook(gistname, changes_to_gist(changes))
-                .then(k2)
-                .then(editor.load_callback(null, true, true)) // FIXME previous code had weird condition callback to random place.. this might just break badly.
-            ;
+            // 2. apply the changes, if any
+            return promiseChanges.spread(function(changes, gistname) {
+                return changes.length
+                    ? update_notebook(changes, gistname).return(gistname)
+                    : gistname;
+            })
+            // 3. force a full reload in all cases, as a sanity check
+            // we might know what the notebook state should be,
+            // but load the notebook (and reset the session) to be sure
+                .then(function(gistname) {
+                    return that.load_notebook(gistname, null);
+                });
         },
         refresh_cells: function() {
             return model.reread_cells();

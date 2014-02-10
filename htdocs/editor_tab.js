@@ -1054,12 +1054,12 @@ var editor = function () {
             this.save_config();
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
-            var that = this;
             shell.fork_or_revert_notebook(is_mine, gistname, version)
+                .bind(this)
                 .then(function(notebook) {
                     if(is_mine)
                         this.load_callback({is_change: true, selroot: true})(notebook);
-                    else that.star_notebook(true, {notebook: notebook,
+                    else this.star_notebook(true, {notebook: notebook,
                                                    make_current: true,
                                                    is_change: !!version,
                                                    version: null});
@@ -1067,7 +1067,7 @@ var editor = function () {
         },
         show_history: function(node, toggle) {
             var whither = node.children.length && toggle ? 'hide' : 'more';
-            add_history_nodes(node, whither, null, function(node) {
+            add_history_nodes(node, whither, null).then(function(node) {
                 $tree_.tree('openNode', node);
             });
         },
