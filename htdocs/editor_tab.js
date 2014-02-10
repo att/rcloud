@@ -485,7 +485,7 @@ var editor = function () {
         if(whither==='hide') {
             for(var i = node.children.length-1; i >= 0; --i)
                 $tree_.tree('removeNode', node.children[i]);
-            return Promise.resolve(null);
+            return Promise.resolve(node);
         }
         else if(whither==='index')
             nshow = Math.max(where, INCR);
@@ -566,29 +566,24 @@ var editor = function () {
                                            --where;
                                    }
                                }, create);
-        if(!node) {
-            return Promise.reject(null); // not created. FIXME is this really 
-        }
+        if(!node)
+            return Promise.resolve(null); // !create
 
         // if we're looking at an old version, make sure it's visible
         if(gistname===config_.currbook && config_.currversion) {
             whither = 'sha';
             where = config_.currversion;
         }
-        var k2 = null;
+        var promise = add_history_nodes(node, whither, where);
         if(config_.currversion)
-            k2 = function(node) {
+            promise = promise.then(function(node) {
                 $tree_.tree('openNode', node);
                 var n2 = $tree_.tree('getNodeById',
                                      node_id(root, user, gistname, config_.currversion));
                 if(!n2)
                     throw 'tree node was not created for current history';
                 return n2;
-            };
-        var promise = add_history_nodes(node, whither, where);
-        if(whither !== 'hide' && k2)
-            promise = promise.then(k2);
-
+            });
         return promise;
     }
 
@@ -1060,14 +1055,15 @@ var editor = function () {
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
             var that = this;
-            var k = is_mine ? this.load_callback({is_change: true, selroot: true}) :
-                    function(notebook) {
-                        that.star_notebook(true, {notebook: notebook,
-                                                  make_current: true,
-                                                  is_change: !!version,
-                                                  version: null});
-                    };
-            shell.fork_or_revert_notebook(is_mine, gistname, version).then(k);
+            shell.fork_or_revert_notebook(is_mine, gistname, version)
+                .then(function(notebook) {
+                    if(is_mine)
+                        this.load_callback({is_change: true, selroot: true})(notebook);
+                    else that.star_notebook(true, {notebook: notebook,
+                                                   make_current: true,
+                                                   is_change: !!version,
+                                                   version: null});
+                });
         },
         show_history: function(node, toggle) {
             var whither = node.children.length && toggle ? 'hide' : 'more';
@@ -1115,14 +1111,14 @@ var editor = function () {
                 if(options.is_change && shell.is_old_github())
                     history.unshift({version:'blah'});
 
-                (!_.has(num_stars_, result.id) 
-                 ? rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
+                (_.has(num_stars_, result.id) ? Promise.resolve(undefined)
+                 : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
                        num_stars_[result.id] = count;
-                 }) : Promise.cast(undefined)).then(function() {
+                 })).then(function() {
                      update_notebook_from_gist(result, history, options.selroot);
                      that.update_notebook_file_list(result.files);
                 });
-                
+
                 rcloud.get_all_comments(result.id).then(function(data) {
                     populate_comments(data);
                 });
