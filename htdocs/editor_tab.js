@@ -528,17 +528,18 @@ var editor = function () {
 
     var last_editable_ = null;
     function make_title_editable(node_title, gistname, editable) {
-        if(last_editable_ && last_editable_[0] !== node_title[0])
+        if(last_editable_ && (!node_title || last_editable_[0] !== node_title[0]))
             ui_utils.make_editable(last_editable_, false);
-        ui_utils.make_editable(node_title,
-                               editable,
-                               function(result) {
-                                   if(editor.rename_notebook(gistname, result)) {
-                                       shell.set_title(result);
-                                       return true;
-                                   }
-                                   else return false;
-                               });
+        if(node_title)
+            ui_utils.make_editable(node_title,
+                                   editable,
+                                   function(result) {
+                                       if(editor.rename_notebook(gistname, result)) {
+                                           shell.set_title(result);
+                                           return true;
+                                       }
+                                       else return false;
+                                   });
         last_editable_ = node_title;
     }
 
@@ -548,6 +549,7 @@ var editor = function () {
         if(!node.version)
             make_title_editable($('.jqtree-title:not(.history)', node.element),
                                 node.gistname, !shell.notebook.model.read_only());
+        else make_title_editable(null);
     }
 
     function update_tree_entry(root, user, gistname, entry, create) {
