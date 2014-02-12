@@ -39,17 +39,16 @@ var textCompleter = require("../autocomplete/text_completer");
 var keyWordCompleter = {
     getCompletions: function(editor, session, pos, prefix, callback) {
         var state = editor.session.getState(pos.row);
-        var completions = session.$mode.getCompletions(state, session, pos, prefix, callback);
-        //callback(null, completions);
+        var completions = session.$mode.getCompletions(state, session, pos, prefix);
+        callback(null, completions);
     }
 };
 
 var snippetCompleter = {
     getCompletions: function(editor, session, pos, prefix, callback) {
-        var scope = snippetManager.$getScope(editor);
         var snippetMap = snippetManager.snippetMap;
         var completions = [];
-        [scope, "_"].forEach(function(scope) {
+        snippetManager.getActiveScopes(editor).forEach(function(scope) {
             var snippets = snippetMap[scope] || [];
             for (var i = snippets.length; i--;) {
                 var s = snippets[i];
@@ -80,22 +79,39 @@ var expandSnippet = {
             editor.execCommand("indent");
     },
     bindKey: "tab"
-}
+};
 
 var onChangeMode = function(e, editor) {
-    var mode = editor.session.$mode;
-    var id = mode.$id
-    if (!snippetManager.files) snippetManager.files = {};
-    if (id && !snippetManager.files[id]) {
-        var snippetFilePath = id.replace("mode", "snippets");
-        config.loadModule(snippetFilePath, function(m) {
-            if (m) {
-                snippetManager.files[id] = m;
-                m.snippets = snippetManager.parseSnippetFile(m.snippetText);
-                snippetManager.register(m.snippets, m.scope);
+    loadSnippetsForMode(editor.session.$mode);
+};
+
+var loadSnippetsForMode = function(mode) {
+    var id = mode.$id;
+    if (!snippetManager.files)
+        snippetManager.files = {};
+    loadSnippetFile(id);
+    if (mode.modes)
+        mode.modes.forEach(loadSnippetsForMode);
+};
+
+var loadSnippetFile = function(id) {
+    if (!id || snippetManager.files[id])
+        return;
+    var snippetFilePath = id.replace("mode", "snippets");
+    snippetManager.files[id] = {};
+    config.loadModule(snippetFilePath, function(m) {
+        if (m) {
+            snippetManager.files[id] = m;
+            m.snippets = snippetManager.parseSnippetFile(m.snippetText);
+            snippetManager.register(m.snippets, m.scope);
+            if (m.includeScopes) {
+                snippetManager.snippetMap[m.scope].includeScopes = m.includeScopes;
+                m.includeScopes.forEach(function(x) {
+                    loadSnippetFile("ace/mode/" + x);
+                });
             }
-        });
-    }
+        }
+    });
 };
 
 var Editor = require("../editor").Editor;
@@ -103,7 +119,7 @@ require("../config").defineOptions(Editor.prototype, "editor", {
     enableBasicAutocompletion: {
         set: function(val) {
             if (val) {
-                this.completers = completers
+                this.completers = completers;
                 this.commands.addCommand(Autocomplete.startCommand);
             } else {
                 this.commands.removeCommand(Autocomplete.startCommand);
@@ -116,7 +132,7 @@ require("../config").defineOptions(Editor.prototype, "editor", {
             if (val) {
                 this.commands.addCommand(expandSnippet);
                 this.on("changeMode", onChangeMode);
-                onChangeMode(null, this)
+                onChangeMode(null, this);
             } else {
                 this.commands.removeCommand(expandSnippet);
                 this.off("changeMode", onChangeMode);
@@ -255,18 +271,20 @@ var SnippetManager = function() {
             case "SELECTED_TEXT":
                 return s.getTextRange(r);
             case "CURRENT_LINE":
-                return s.getLine(e.getCursorPosition().row);
+                return s.getLine(editor.getCursorPosition().row);
+            case "PREV_LINE": // not possible in textmate
+                return s.getLine(editor.getCursorPosition().row - 1);
             case "LINE_INDEX":
-                return e.getCursorPosition().column;
+                return editor.getCursorPosition().column;
             case "LINE_NUMBER":
-                return e.getCursorPosition().row + 1;
+                return editor.getCursorPosition().row + 1;
             case "SOFT_TABS":
                 return s.getUseSoftTabs() ? "YES" : "NO";
             case "TAB_SIZE":
                 return s.getTabSize();
             case "FILENAME":
             case "FILEPATH":
-                return "ace.ajax.org";
+                return "";
             case "FULLNAME":
                 return "Ace";
         }
@@ -420,8 +438,9 @@ var SnippetManager = function() {
                 continue;
             var id = p.tabstopId;
             var i1 = tokens.indexOf(p, i + 1);
-            if (expanding[id] == p) { 
-                expanding[id] = null;
+            if (expanding[id]) {
+                if (expanding[id] === p)
+                    expanding[id] = null;
                 continue;
             }
             
@@ -463,9 +482,14 @@ var SnippetManager = function() {
     this.$getScope = function(editor) {
         var scope = editor.session.$mode.$id || "";
         scope = scope.split("/").pop();
-        if (editor.session.$mode.$modes) {
+        if (scope === "html" || scope === "php") {
+            if (scope === "php") 
+                scope = "html";
             var c = editor.getCursorPosition()
             var state = editor.session.getState(c.row);
+            if (typeof state === "object") {
+                state = state[0];
+            }
             if (state.substring) {
                 if (state.substring(0, 3) == "js-")
                     scope = "javascript";
@@ -475,7 +499,19 @@ var SnippetManager = function() {
                     scope = "php";
             }
         }
+        
         return scope;
+    };
+
+    this.getActiveScopes = function(editor) {
+        var scope = this.$getScope(editor);
+        var scopes = [scope];
+        var snippetMap = this.snippetMap;
+        if (snippetMap[scope] && snippetMap[scope].includeScopes) {
+            scopes.push.apply(scopes, snippetMap[scope].includeScopes);
+        }
+        scopes.push("_");
+        return scopes;
     };
 
     this.expandWithTab = function(editor) {
@@ -484,10 +520,9 @@ var SnippetManager = function() {
         var before = line.substring(0, cursor.column);
         var after = line.substr(cursor.column);
 
-        var scope = this.$getScope(editor);
         var snippetMap = this.snippetMap;
         var snippet;
-        [scope, "_"].some(function(scope) {
+        this.getActiveScopes(editor).some(function(scope) {
             var snippets = snippetMap[scope];
             if (snippets)
                 snippet = this.findMatchingSnippet(snippets, before, after);
@@ -644,10 +679,9 @@ var SnippetManager = function() {
         return list;
     };
     this.getSnippetByName = function(name, editor) {
-        var scope = editor && this.$getScope(editor);
         var snippetMap = this.snippetNameMap;
         var snippet;
-        [scope, "_"].some(function(scope) {
+        this.getActiveScopes(editor).some(function(scope) {
             var snippets = snippetMap[scope];
             if (snippets)
                 snippet = snippets[name];
@@ -880,6 +914,10 @@ var TabstopManager = function(editor) {
     this.keyboardHandler = new HashHandler();
     this.keyboardHandler.bindKeys({
         "Tab": function(ed) {
+            if (exports.snippetManager && exports.snippetManager.expandWithTab(ed)) {
+                return;
+            }
+
             ed.tabstopManager.tabNext(1);
         },
         "Shift-Tab": function(ed) {
@@ -933,6 +971,7 @@ var lang = require("./lib/lang");
 var snippetManager = require("./snippets").snippetManager;
 
 var Autocomplete = function() {
+    this.autoInsert = true;
     this.keyboardHandler = new HashHandler();
     this.keyboardHandler.bindKeys(this.commands);
 
@@ -963,6 +1002,7 @@ var Autocomplete = function() {
 
         var renderer = editor.renderer;
         if (!keepPopupPosition) {
+            this.popup.setRow(0);
             this.popup.setFontSize(editor.getFontSize());
 
             var lineHeight = renderer.layerConfig.lineHeight;
@@ -972,19 +1012,18 @@ var Autocomplete = function() {
             
             var rect = editor.container.getBoundingClientRect();
             pos.top += rect.top - renderer.layerConfig.offset;
-            pos.left += rect.left;
+            pos.left += rect.left - editor.renderer.scrollLeft;
             pos.left += renderer.$gutterLayer.gutterWidth;
 
             this.popup.show(pos, lineHeight);
         }
-        renderer.updateText();
     };
 
     this.detach = function() {
         this.editor.keyBinding.removeKeyboardHandler(this.keyboardHandler);
         this.editor.off("changeSelection", this.changeListener);
-        this.editor.off("blur", this.changeListener);
-        this.editor.off("mousedown", this.changeListener);
+        this.editor.off("blur", this.blurListener);
+        this.editor.off("mousedown", this.mousedownListener);
         this.editor.off("mousewheel", this.mousewheelListener);
         this.changeTimer.cancel();
         
@@ -1042,8 +1081,7 @@ var Autocomplete = function() {
             data.completer.insertMatch(this.editor);
         } else {
             if (this.completions.filterText) {
-                // gw: getAllRanges comes up blank, so it doesn't replace (??)
-                var ranges = [this.editor.selection.getRange()]; // this.editor.selection.getAllRanges();
+                var ranges = this.editor.selection.getAllRanges();
                 for (var i = 0, range; range = ranges[i]; i++) {
                     range.start.column -= this.completions.filterText.length;
                     this.editor.session.remove(range);
@@ -1119,7 +1157,7 @@ var Autocomplete = function() {
         editor.on("mousewheel", this.mousewheelListener);
         
         this.updateCompletions();
-    }
+    };
     
     this.updateCompletions = function(keepPopupPosition) {
         if (keepPopupPosition && this.base && this.completions) {
@@ -1140,8 +1178,11 @@ var Autocomplete = function() {
 
             this.completions = new FilteredList(matches);
             this.completions.setFilter(results.prefix);
-            if (!this.completions.filtered.length)
+            var filtered = this.completions.filtered;
+            if (!filtered.length)
                 return this.detach();
+            if (this.autoInsert && filtered.length == 1)
+                return this.insertMatch(filtered[0]);
             this.openPopup(this.editor, results.prefix, keepPopupPosition);
         }.bind(this));
     };
@@ -1273,6 +1314,8 @@ var AcePopup = function(parentNode) {
     el.style.display = "none";
     popup.renderer.content.style.cursor = "default";
     popup.renderer.setStyle("ace_autocomplete");
+    
+    popup.setOption("displayIndentGuides", false);
 
     var noop = function(){};
 
@@ -1309,16 +1352,22 @@ var AcePopup = function(parentNode) {
             hoverMarker.id = null;
         }
     }
-    popup.setSelectOnHover(false)
+    popup.setSelectOnHover(false);
     popup.on("mousemove", function(e) {
+        if (!lastMouseEvent) {
+            lastMouseEvent = e;
+            return;
+        }
+        if (lastMouseEvent.x == e.x && lastMouseEvent.y == e.y) {
+            return;
+        }
         lastMouseEvent = e;
         lastMouseEvent.scrollTop = popup.renderer.scrollTop;
         var row = lastMouseEvent.getDocumentPosition().row;
         if (hoverMarker.start.row != row) {
-            popup.session._emit("changeBackMarker");
             if (!hoverMarker.id)
                 popup.setRow(row);
-            hoverMarker.start.row = hoverMarker.end.row = row;
+            setHoverMarker(row);
         }
     });
     popup.renderer.on("beforeRender", function() {
@@ -1327,13 +1376,34 @@ var AcePopup = function(parentNode) {
             var row = lastMouseEvent.getDocumentPosition().row;
             if (!hoverMarker.id)
                 popup.setRow(row);
-            hoverMarker.start.row = hoverMarker.end.row = row;
+            setHoverMarker(row, true);
         }
     });
-    var hideHoverMarker = function() {
-        hoverMarker.start.row = hoverMarker.end.row = -1;
-        popup.session._emit("changeBackMarker");
+    popup.renderer.on("afterRender", function() {
+        var row = popup.getRow();
+        var t = popup.renderer.$textLayer;
+        var selected = t.element.childNodes[row - t.config.firstRow];
+        if (selected == t.selectedNode)
+            return;
+        if (t.selectedNode)
+            dom.removeCssClass(t.selectedNode, "ace_selected");
+        t.selectedNode = selected;
+        if (selected)
+            dom.addCssClass(selected, "ace_selected");
+    });
+    var hideHoverMarker = function() { setHoverMarker(-1) };
+    var setHoverMarker = function(row, suppressRedraw) {
+        if (row !== hoverMarker.start.row) {
+            hoverMarker.start.row = hoverMarker.end.row = row;
+            if (!suppressRedraw)
+                popup.session._emit("changeBackMarker");
+            popup._emit("changeHoverMarker");
+        }
     };
+    popup.getHoveredRow = function() {
+        return hoverMarker.start.row;
+    };
+    
     event.addListener(popup.container, "mouseout", hideHoverMarker);
     popup.on("hide", hideHoverMarker);
     popup.on("changeSelection", hideHoverMarker);
@@ -1380,14 +1450,19 @@ var AcePopup = function(parentNode) {
         return tokens;
     };
     bgTokenizer.$updateOnChange = noop;
+    bgTokenizer.start = noop;
     
     popup.session.$computeWidth = function() {
         return this.screenWidth = 0;
     }
+    popup.isOpen = false;
+    popup.isTopdown = false;
+    
     popup.data = [];
     popup.setData = function(list) {
         popup.data = list || [];
         popup.setValue(lang.stringRepeat("\n", list.length), -1);
+        popup.setRow(0);
     };
     popup.getData = function(row) {
         return popup.data[row];
@@ -1397,39 +1472,65 @@ var AcePopup = function(parentNode) {
         return selectionMarker.start.row;
     };
     popup.setRow = function(line) {
+        line = Math.max(-1, Math.min(this.data.length, line));
         if (selectionMarker.start.row != line) {
             popup.selection.clearSelection();
             selectionMarker.start.row = selectionMarker.end.row = line || 0;
             popup.session._emit("changeBackMarker");
             popup.moveCursorTo(line || 0, 0);
+            if (popup.isOpen)
+                popup._signal("select");
         }
     };
+    
+    popup.on("changeSelection", function() {
+        if (popup.isOpen)
+            popup.setRow(popup.selection.lead.row);
+    });
 
     popup.hide = function() {
         this.container.style.display = "none";
         this._signal("hide");
+        popup.isOpen = false;
     };
-    popup.show = function(pos, lineHeight) {
+    popup.show = function(pos, lineHeight, topdownOnly) {
         var el = this.container;
-        if (pos.top > window.innerHeight / 2  + lineHeight) {
+        var screenHeight = window.innerHeight;
+        var screenWidth = window.innerWidth;
+        var renderer = this.renderer;
+        var maxH = renderer.$maxLines * lineHeight * 1.4;
+        var top = pos.top + this.$borderSize;
+        if (top + maxH > screenHeight - lineHeight && !topdownOnly) {
             el.style.top = "";
-            el.style.bottom = window.innerHeight - pos.top + "px";
+            el.style.bottom = screenHeight - top + "px";
+            popup.isTopdown = false;
         } else {
-            pos.top += lineHeight;
-            el.style.top = pos.top + "px";
+            top += lineHeight;
+            el.style.top = top + "px";
             el.style.bottom = "";
+            popup.isTopdown = true;
         }
 
-        el.style.left = pos.left + "px";
         el.style.display = "";
         this.renderer.$textLayer.checkForSizeChanges();
-
+        
+        var left = pos.left;
+        if (left + el.offsetWidth > screenWidth)
+            left = screenWidth - el.offsetWidth;
+            
+        el.style.left = left + "px";
+        
         this._signal("show");
+        lastMouseEvent = null;
+        popup.isOpen = true;
     };
     
     popup.getTextLeftOffset = function() {
-        return 1 + this.renderer.layerConfig.padding;
-    }
+        return this.$borderSize + this.renderer.$padding + this.$imageSize;
+    };
+    
+    popup.$imageSize = 0;
+    popup.$borderSize = 1;
 
     return popup;
 };
@@ -1441,10 +1542,12 @@ dom.importCssString("\
 }\
 .ace_autocomplete.ace-tm .ace_line-hover {\
     border: 1px solid #abbffe;\
-    position: absolute;\
-    background: rgba(233,233,253,0.4);\
-    z-index: 2;\
     margin-top: -1px;\
+    background: rgba(233,233,253,0.4);\
+}\
+.ace_autocomplete .ace_line-hover {\
+    position: absolute;\
+    z-index: 2;\
 }\
 .ace_rightAlignedText {\
     color: gray;\
@@ -1490,7 +1593,7 @@ exports.parForEach = function(array, fn, callback) {
     }
 }
 
-var ID_REGEX = /[a-zA-Z_0-9\$-\.]/;
+var ID_REGEX = /[a-zA-Z_0-9\$-]/;
 
 exports.retrievePrecedingIdentifier = function(text, pos, regex) {
     regex = regex || ID_REGEX;
@@ -1560,4 +1663,8 @@ define('ace/autocomplete/text_completer', ['require', 'exports', 'module' , 'ace
             };
         }));
     };
-});
+});;
+                (function() {
+                    window.require(["ace/ext/language_tools"], function() {});
+                })();
+            
