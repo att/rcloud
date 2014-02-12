@@ -1,3 +1,0 @@
-[submodule "htdocs/lib/js/dcplot"]
-	path = htdocs/lib/js/dcplot
-	url = git@github.com:att/dcplot.js
