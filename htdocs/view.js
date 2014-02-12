@@ -1,3 +1,5 @@
+Promise.longStackTraces();
+
 function init_github_buttons() {
     $("#open-in-github").click(function() {
         shell.open_in_github();
@@ -51,6 +53,8 @@ function view_init() {
                         cell_view.hide_buttons();
                     });
                 });
+            }).catch(function(err) {
+                rclient.post_error(rclient.disconnection_error("Could not load notebook. Maybe you do not have permission to see it.", "Login"));
             });
         }, on_error: function(msg, status_code) {
             debugger;

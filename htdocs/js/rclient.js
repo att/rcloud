@@ -85,10 +85,11 @@ RClient = {
                 return result;
             },
 
-            disconnection_error: function(msg) {
+            disconnection_error: function(msg, label) {
                 var result = $("<div class='alert alert-danger'></div>");
                 result.append($("<span></span>").text(msg));
-                var button = $("<button type='button' class='close'>Reconnect</button>");
+                label = label || "Reconnect";
+                var button = $("<button type='button' class='close'>" + label + "</button>");
                 result.append(button);
                 button.click(function() {
                     window.location = 

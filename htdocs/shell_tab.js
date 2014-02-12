@@ -399,6 +399,9 @@ var shell = (function() {
                             done();
                             return notebook;
                         });
+                }).catch(function(err) {
+                    done();
+                    throw err;
                 });
             }
             return reset_session().then(do_load);
