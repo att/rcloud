@@ -703,7 +703,7 @@ var shell = (function() {
         rcloud.with_progress().then(function(done) {
             result.notebook.controller.run_all().then(done);
             prompt_ && prompt_.widget.focus(); // surely not the right way to do this
-        });
+        }).catch(function(done) { done(); });
     });
     return result;
 })();
