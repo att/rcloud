@@ -1,5 +1,8 @@
 RClient = {
     create: function(opts) {
+        opts = _.defaults(opts, {
+            debug: false
+        });
         function on_connect() {
             if (!rserve.ocap_mode) {
                 result.post_error(result.disconnection_error("Expected an object-capability Rserve. Shutting Down!"));
@@ -9,7 +12,8 @@ RClient = {
 
             // the rcloud ocap-0 performs the login authentication dance
             // success is indicated by the rest of the capabilities being sent
-            rserve.ocap([token, execToken], function(ocaps) {
+            rserve.ocap([token, execToken], function(err, ocaps) {
+                ocaps = Promise.promisifyAll(ocaps);
                 if (ocaps !== null) {
                     result.running = true;
                     opts.on_connect && opts.on_connect.call(result, ocaps);
@@ -30,6 +34,9 @@ RClient = {
         }
 
         function on_error(msg, status_code) {
+            if (opts.debug) {
+                debugger;
+            }
             if (opts.on_error && opts.on_error(msg, status_code))
                 return;
             result.post_error(result.disconnection_error(msg));
@@ -37,6 +44,9 @@ RClient = {
         }
 
         function on_close(msg) {
+            if (opts.debug) {
+                debugger;
+            }
             if (!clean) {
                 result.post_error(result.disconnection_error("Socket was closed. Goodbye!"));
                 shutdown();
@@ -101,7 +111,7 @@ RClient = {
             },
 
             post_response: function (msg) {
-                var d = $("<pre></pre>").html(msg);
+                var d = $("<pre class='response'></pre>").html(msg);
                 $("#output").append(d);
                 window.scrollTo(0, document.body.scrollHeight);
             },

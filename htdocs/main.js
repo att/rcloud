@@ -1,3 +1,5 @@
+Promise.longStackTraces();
+
 function resize_side_panel() {
     var non_notebook_panel_height = 246;
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
@@ -26,7 +28,8 @@ function init_github_buttons() {
 function init_upload_pane() {
     $("#upload-submit").click(function() {
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        var success = function(path, file, notebook) {
+        function success(lst) {
+            var path = lst[0], file = lst[1], notebook = lst[2];
             $("#file-upload-div").append(
                 bootstrap_utils.alert({
                     "class": 'alert-info',
@@ -39,20 +42,22 @@ function init_upload_pane() {
             if(to_notebook)
                 editor.update_notebook_file_list(notebook.files);
         };
-        var upload_function = to_notebook
-            ? rcloud.upload_to_notebook
-            : rcloud.upload_file;
 
-        upload_function(false, success, function() {
+        // FIXME check for more failures besides file exists
+        function failure() {
             var overwrite_click = function() {
-                rcloud.upload_file(true, success, function(exception_value) {
-                    var msg = exception_value;
-                    $("#file-upload-div").append(
-                        bootstrap_utils.alert({
-                            "class": 'alert-danger',
-                            text: msg
-                        })
-                    );
+                rcloud.upload_file(true, function(err, value) {
+                    if (err) {
+                        var msg = exception_value;
+                        $("#file-upload-div").append(
+                            bootstrap_utils.alert({
+                                "class": 'alert-danger',
+                                text: msg
+                            })
+                        );
+                    } else {
+                        success(value);
+                    }
                 });
             };
             var alert_element = $("<div></div>");
@@ -64,6 +69,17 @@ function init_upload_pane() {
                 .text("Overwrite");
             p.append(overwrite);
             $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
+        }
+
+        var upload_function = to_notebook
+            ? rcloud.upload_to_notebook
+            : rcloud.upload_file;
+
+        upload_function(false, function(err, value) {
+            if (err) 
+                failure(err);
+            else
+                success(value);
         });
     });
 }
@@ -121,12 +137,14 @@ function main_init() {
 
     ui_utils.checkbox_menu_item($("#toggle-scratchpad"),
         function() {
-            $("#middle-column").removeClass("col-md-9").addClass("col-md-5");
+            $("#middle-column").removeClass("col-sm-9 col-md-9").addClass("col-sm-5 col-md-5");
+            $("#prompt-div").removeClass("col-sm-9 col-md-9").addClass("col-sm-5 col-md-5");
             $("#fake-left-column").show();
             $("#left-column").show();
         },
         function() {
-            $("#middle-column").removeClass("col-md-5").addClass("col-md-9");
+            $("#middle-column").removeClass("col-sm-5 col-md-5").addClass("col-sm-9 col-md-9");
+            $("#prompt-div").removeClass("col-sm-5 col-md-5").addClass("col-sm-9 col-md-9");
             $("#fake-left-column").hide();
             $("#left-column").hide();
         }).set_state(false);
@@ -141,13 +159,18 @@ function main_init() {
                 rclient.close();
                 return;
             }
-            rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {
+            rcloud.session_init(rcloud.username(), rcloud.github_token()).then(function(hello) {
                 rclient.post_response(hello);
             });
             rcloud.display.set_device_pixel_ratio();
 
             $("#new-md-cell-button").click(function() {
-                shell.new_markdown_cell("", "markdown");
+                shell.new_markdown_cell("");
+                var vs = shell.notebook.view.sub_views;
+                vs[vs.length-1].show_source();
+            });
+            $("#new-r-cell-button").click(function() {
+                shell.new_interactive_cell("", false);
                 var vs = shell.notebook.view.sub_views;
                 vs[vs.length-1].show_source();
             });
@@ -194,3 +217,6 @@ function main_init() {
 }
 
 window.onload = main_init;
+// Promise.onPossiblyUnhandledRejection(function(error){
+//     throw error;
+// });

@@ -1,10 +1,6 @@
 body {
     font-family: Helvetica Neue, Verdana, Helvetica, Arial, sans-serif;
-    padding-top: 65px;
-}
-
-.tab-div {
-    margin: 0.5em;
+    padding-top: 51px; /* exact same height as navbar */
 }
 
 .internals-float {
@@ -69,22 +65,6 @@ rect.frame {
   fill: #fff;
   fill-opacity: .7;
   stroke: #aaa;
-}
-
-.detachable {
-    background-color: #fff;
-    margin: 10px;
-    padding: 10px;
-    display: inline-block;
-    border-color: #fff;
-    border-style: solid;
-    border-width: 1px;
-}
-
-.detachable:hover {
-    border-color: #ddd;
-    border-style: solid;
-    border-width: 1px;
 }
 
 .figure-icon {
@@ -165,24 +145,21 @@ rect.frame {
 .notebook-cell {
     position:relative;
     width:100%;
-    border-width: 1px;
-    padding: 1px;
-    border-color: #eee;
-    border-style: solid;
-    margin-top: 1.2em;
-    min-height: 75px;
+    min-height: 25px;
 }
 
 .notebook-cell .cell-controls {
     position: absolute;
-    right: -2em;
-    top: .1em;
+    right: 1em;
+    top: 1em;
 }
 
 .notebook-cell .cell-insert-control {
+    color: #555;
     position: absolute;
-    right: -0.5em;
-    top: -1.3em;
+    right: -0.1em;
+    top: -0.5em;
+    z-index: 5;
 }
 
 .fontawesome-button {
@@ -394,11 +371,15 @@ div.r-result-div h3,
 div.r-result-div h4,
 div.r-result-div h5 {
     margin-top: 0;
+    padding-top: 12px;
+    padding-right: 16px;
+    padding-left: 16px;
 }
 
-.r-result-div {
-    padding: 0.5em;
-}
+div.r-result-div p {
+    margin-left: 16px;
+    margin-right: 16px;
+};
 
 pre {
     max-width: 100%;
@@ -410,10 +391,9 @@ pre {
 
 .r-language-pseudo:after {
     content: "R";
-    position: absolute;
-    top: 0.2em;
-    right: 0.3em;
+    margin-right: 1em;
     color: #AAA;
+    font-size: .75em;
     text-shadow: 0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white
 ;
     z-index: 20;
@@ -421,11 +401,40 @@ pre {
 
 .rmarkdown-language-pseudo:after {
     content: "RMarkdown";
-    position: absolute;
-    top: 0.2em;
-    right: 0.3em;
+    margin-right: 1em;
     color: #AAA;
+    font-size: .75em;
     text-shadow: 0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white
 ;
     z-index: 20;
+}
+
+.tab-div {
+    margin-bottom: 51px;
+}
+
+.rcloud-prompt {
+    position: fixed;
+    bottom: 0;
+    z-index: 10;
+    padding: 0;
+    background-color: #e5e5e5;
+}
+
+.btn {
+    border-radius: 0;
+    font-size: inherit;
+}
+
+#prompt-div > button {
+    border: 0;
+    background-color: #e5e5e5;
+}
+
+#new-r-cell-button:hover {
+    background-color: rgb(232,241,250);
+}
+
+#new-md-cell-button:hover {
+    background-color: rgb(247,238,228);
 }

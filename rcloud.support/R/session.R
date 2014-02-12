@@ -46,6 +46,7 @@ session.markdown.eval <- function(command, language, silent) {
     opts_chunk$set(echo=FALSE)
   else
     opts_chunk$set(echo=TRUE)
+  opts_chunk$set(prompt=TRUE)
   opts_chunk$set(dev="CairoPNG", tidy=FALSE)
 
   if (command == "") command <- " "
