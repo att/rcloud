@@ -56,9 +56,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         if(new_content!==null) // if any change (including removing the content)
             cell_model.parent_model.controller.update_cell(cell_model);
         rcloud.with_progress(function(done) {
-            cell_model.controller.execute(function() {
-                done();
-            });
+            cell_model.controller.execute().then(done);
         });
     }
     run_md_button.click(function(e) {
@@ -197,7 +195,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                     ocap.r_attributes = { "class": "OCref" };
                     var f = rclient._rserve.wrap_ocap(ocap);
 
-                    f(function(future) {
+                    f(function(err, future) {
                         if (RCloud.is_exception(future)) {
                             var data = RCloud.exception_message(future);
                             $(that).replaceWith(function() {
