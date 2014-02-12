@@ -1826,15 +1826,9 @@ Notebook.create_controller = function(model)
             // 2. apply the changes, if any
             return promiseChanges.spread(function(changes, gistname) {
                 return changes.length
-                    ? update_notebook(changes, gistname).return(gistname)
-                    : gistname;
-            })
-            // 3. force a full reload in all cases, as a sanity check
-            // we might know what the notebook state should be,
-            // but load the notebook (and reset the session) to be sure
-                .then(function(gistname) {
-                    return that.load_notebook(gistname, null);
-                });
+                    ? update_notebook(changes, gistname)
+                    : that.load_notebook(gistname, null); // do a load - we need to refresh
+            });
         },
         refresh_cells: function() {
             return model.reread_cells();

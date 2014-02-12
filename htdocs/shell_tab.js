@@ -413,6 +413,9 @@ var shell = (function() {
                     return notebook_controller_.create_notebook(content).then(on_new);
                 });
         }, fork_or_revert_notebook: function(is_mine, gistname, version) {
+            // force a full reload in all cases, as a sanity check
+            // we might know what the notebook state should be,
+            // but load the notebook and reset the session to be sure
             if(is_mine && !version)
                 throw "unexpected revert of current version";
             return reset_session()
