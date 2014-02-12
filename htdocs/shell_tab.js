@@ -129,8 +129,8 @@ var shell = (function() {
         ui_utils.install_common_ace_key_bindings(widget);
 
         // note ace.js typo which we need to correct when we update ace
-        var up_handler = widget.commands.commmandKeyBinding[0]["up"],
-            down_handler = widget.commands.commmandKeyBinding[0]["down"];
+        var up_handler = widget.commands.commandKeyBinding[0]["up"],
+            down_handler = widget.commands.commandKeyBinding[0]["down"];
         widget.commands.addCommands([{
             name: 'execute',
             bindKey: {
@@ -718,7 +718,7 @@ var shell = (function() {
 
     $("#run-notebook").click(function() {
         rcloud.with_progress().then(function(done) {
-            result.notebook.controller.run_all(function() { done(); });
+            result.notebook.controller.run_all().then(done);
             prompt_ && prompt_.widget.focus(); // surely not the right way to do this
         });
     });

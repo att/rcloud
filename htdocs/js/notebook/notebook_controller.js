@@ -80,7 +80,7 @@ Notebook.create_controller = function(model)
         // stuff in them before saving, they will disappear on next session
         changes = changes.filter(function(change) { return !!change.content || change.erase; });
         if (!changes.length)
-            return Promise.cast(undefined);
+            return Promise.cast(current_gist_);
         if (model.read_only())
             return Promise.reject("attempted to update read-only notebook");
         gistname = gistname || shell.gistname();
@@ -216,45 +216,32 @@ Notebook.create_controller = function(model)
             return model.reread_cells();
         },
         update_cell: function(cell_model) {
-            return this.update_notebook(model.update_cell(cell_model));
+            return update_notebook(model.update_cell(cell_model));
         },
         save: function() {
             if(dirty_) {
                 var changes = this.refresh_cells();
-                this.update_notebook(changes);
+                update_notebook(changes);
                 if(save_button_)
                     ui_utils.disable_bs_button(save_button_);
                 dirty_ = false;
             }
 
         },
-        run_all: function(k) {
+        run_all: function() {
             this.save();
-            var n = model.notebook.length;
-            var disp;
-            function bump_executed() {
-                --n;
-                if(disp.length)
-                    disp.shift()();
-                if (n === 0)
-                    k && k();
-            }
             _.each(model.notebook, function(cell_model) {
                 cell_model.controller.set_status_message("Waiting...");
             });
-            // this is silly.
-            disp = _.map(model.notebook, function(cell_model) {
-                return function() {
+            
+            // will ordering bite us in the leg here?
+            var promises = _.map(model.notebook, function(cell_model) {
+                return Promise.resolve().then(function() {
                     cell_model.controller.set_status_message("Computing...");
-                };
-            });
-            if(disp.length) {
-                disp.shift()();
-                _.each(model.notebook, function(cell_model) {
-                    cell_model.controller.execute(bump_executed);
+                    return cell_model.controller.execute();
                 });
-            }
-            else k && k();
+            });
+            return Promise.all(promises);
         },
 
         //////////////////////////////////////////////////////////////////////
