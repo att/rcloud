@@ -228,33 +228,20 @@ Notebook.create_controller = function(model)
             }
 
         },
-        run_all: function(k) {
+        run_all: function() {
             this.save();
-            var n = model.notebook.length;
-            var disp;
-            function bump_executed() {
-                --n;
-                if(disp.length)
-                    disp.shift()();
-                if (n === 0)
-                    k && k();
-            }
             _.each(model.notebook, function(cell_model) {
                 cell_model.controller.set_status_message("Waiting...");
             });
-            // this is silly.
-            disp = _.map(model.notebook, function(cell_model) {
-                return function() {
+            
+            // will ordering bite us in the leg here?
+            var promises = _.map(model.notebook, function(cell_model) {
+                return Promise.resolve().then(function() {
                     cell_model.controller.set_status_message("Computing...");
-                };
-            });
-            if(disp.length) {
-                disp.shift()();
-                _.each(model.notebook, function(cell_model) {
-                    cell_model.controller.execute(bump_executed);
+                    return cell_model.controller.execute();
                 });
-            }
-            else k && k();
+            });
+            return Promise.all(promises);
         },
 
         //////////////////////////////////////////////////////////////////////
