@@ -15,15 +15,16 @@ function view_init() {
         host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
         on_connect: function(ocaps) {
             rcloud = RCloud.create(ocaps.rcloud);
+            var promise;
             if (rcloud.authenticated) {
-                rcloud.session_init(rcloud.username(), rcloud.github_token(), function(err, hello) {
-                    rclient.post_response(hello);
-                });
+                promise = rcloud.session_init(rcloud.username(), rcloud.github_token());
             } else {
-                rcloud.anonymous_session_init(function(err, hello) {
-                    rclient.post_response(hello);
-                });
+                promise = rcloud.anonymous_session_init();
             }
+            promise.then(function(hello) {
+                rclient.post_response(hello);
+            });
+
             rcloud.display.set_device_pixel_ratio();
             $("#edit-notebook").click(function() {
                 window.location = "main.html?notebook=" + shell.gistname();
@@ -38,12 +39,12 @@ function view_init() {
                 $("body").css("padding-top", "0");
                 rcloud.api.disable_echo();
             }
-            shell.load_notebook(notebook, version, function() {
+            shell.load_notebook(notebook, version).then(function() {
                 if (Number(quiet)) {
                     $("#output > pre").first().hide();
                 }
-                rcloud.install_notebook_stylesheets(function() {
-                    shell.notebook.controller.run_all(function() {
+                rcloud.install_notebook_stylesheets().then(function() {
+                    shell.notebook.controller.run_all().then(function() {
                         shell.notebook.controller.hide_r_source();
                     });
                     _.each(shell.notebook.view.sub_views, function(cell_view) {
