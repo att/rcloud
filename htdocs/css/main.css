@@ -429,3 +429,8 @@ pre {
 ;
     z-index: 20;
 }
+
+/* some visual affordance for ace-gutter sortable handles */
+#output > .notebook-cell .ace_gutter-layer {
+    cursor: pointer
+}

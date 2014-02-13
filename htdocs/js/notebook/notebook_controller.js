@@ -153,6 +153,7 @@ Notebook.create_controller = function(model)
                     next = info.item.next().data('rcloud.model');
                 result.move_cell(model, next);
             },
+            handle: " .ace_gutter-layer",
             scroll: true,
             scrollSensitivity: 40
         });
