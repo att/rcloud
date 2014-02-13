@@ -31,7 +31,7 @@ Notebook.create_model = function()
         clear: function() {
             return this.remove_cell(null,last_id(this.notebook));
         },
-        append_cell: function(cell_model, id) {
+        append_cell: function(cell_model, id, skip_event) {
             cell_model.parent_model = this;
             var changes = [];
             var n = 1;
@@ -41,15 +41,16 @@ Notebook.create_model = function()
                 changes.push({id: id, content: cell_model.content(), language: cell_model.language()});
                 cell_model.id(id);
                 this.notebook.push(cell_model);
-                _.each(this.views, function(view) {
-                    view.cell_appended(cell_model);
-                });
+                if(!skip_event)
+                    _.each(this.views, function(view) {
+                        view.cell_appended(cell_model);
+                    });
                 ++id;
                 --n;
             }
             return changes;
         },
-        insert_cell: function(cell_model, id) {
+        insert_cell: function(cell_model, id, skip_event) {
             var that = this;
             cell_model.parent_model = this;
             var changes = [];
@@ -64,9 +65,10 @@ Notebook.create_model = function()
                 changes.push({id: id+j, content: cell_model.content(), language: cell_model.language()});
                 cell_model.id(id+j);
                 this.notebook.splice(x, 0, cell_model);
-                _.each(this.views, function(view) {
-                    view.cell_inserted(that.notebook[x], x);
-                });
+                if(!skip_event)
+                    _.each(this.views, function(view) {
+                        view.cell_inserted(that.notebook[x], x);
+                    });
                 ++x;
             }
             while(x<this.notebook.length && n) {
@@ -87,7 +89,7 @@ Notebook.create_model = function()
             }
             return changes;
         },
-        remove_cell: function(cell_model, n) {
+        remove_cell: function(cell_model, n, skip_event) {
             var that = this;
             var cell_index, id;
             if(cell_model!=null) {
@@ -106,15 +108,28 @@ Notebook.create_model = function()
             var changes = [];
             while(x<this.notebook.length && n) {
                 if(this.notebook[x].id() == id) {
-                    _.each(this.views, function(view) {
-                        view.cell_removed(that.notebook[x], x);
-                    });
+                    if(!skip_event)
+                        _.each(this.views, function(view) {
+                            view.cell_removed(that.notebook[x], x);
+                        });
                     changes.push({id: id, erase: 1, language: that.notebook[x].language()});
                     this.notebook.splice(x, 1);
                 }
                 ++id;
                 --n;
             }
+            return changes;
+        },
+        move_cell: function(cell_model, before) {
+            var pre_index = this.notebook.indexOf(cell_model),
+                changes = this.remove_cell(cell_model, 1, true)
+                    .concat(before >= 0
+                            ? this.insert_cell(cell_model, before, true)
+                            : this.append_cell(cell_model, null, true)),
+                post_index = this.notebook.indexOf(cell_model);
+            _.each(this.views, function(view) {
+                view.cell_moved(cell_model, pre_index, post_index);
+            });
             return changes;
         },
         update_cell: function(cell_model) {

@@ -3,6 +3,7 @@
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
     update_div_id();
+    notebook_cell_div.data('rcloud.model', cell_model);
 
     //////////////////////////////////////////////////////////////////////////
     // button bar
