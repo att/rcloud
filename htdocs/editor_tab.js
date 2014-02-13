@@ -1043,17 +1043,15 @@ var editor = function () {
         },
         remove_notebook: function(user, gistname) {
             var that = this;
-            function do_rest() {
-                remove_all(user, gistname);
-                remove_node($tree_.tree('getNodeById', node_id('alls', user, gistname)));
-                result.save_config();
-                if(gistname === config_.currbook)
-                    that.new_notebook();
-            };
-            if(i_starred_[gistname])
-                this.star_notebook(false, {user: user, gistname: gistname}, do_rest);
-            else
-                do_rest();
+            (!i_starred_[gistname] ? Promise.resolve() :
+                this.star_notebook(false, {user: user, gistname: gistname}))
+                .then(function() {
+                    remove_all(user, gistname);
+                    remove_node($tree_.tree('getNodeById', node_id('alls', user, gistname)));
+                    result.save_config();
+                    if(gistname === config_.currbook)
+                        that.new_notebook();
+                });
         },
         set_visibility: function(node, visibility) {
             if(node.user !== username_)
