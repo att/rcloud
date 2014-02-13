@@ -3,6 +3,7 @@
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
     update_div_id();
+    notebook_cell_div.data('rcloud.model', cell_model);
 
     //////////////////////////////////////////////////////////////////////////
     // button bar
@@ -10,7 +11,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
     var source_button = ui_utils.fa_button("icon-edit", "source");
     var result_button = ui_utils.fa_button("icon-picture", "result");
-    // var hide_button   = ui_utils.fa_button("icon-resize-small", "hide");
+    // var hide_button  = ui_utils.fa_button("icon-resize-small", "hide");
     var remove_button = ui_utils.fa_button("icon-trash", "remove");
     var run_md_button = ui_utils.fa_button("icon-play", "run");
     var gap = $('<div/>').html('&nbsp;').css({'line-height': '25%'});
@@ -25,7 +26,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var disable = ui_utils.disable_fa_button;
 
     insert_cell_button.click(function(e) {
-        shell.insert_markdown_cell_before(cell_model.id());
+        if (!$(e.currentTarget).hasClass("button-disabled")) {
+            shell.insert_markdown_cell_before(cell_model.id());
+        }
     });
     source_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
@@ -110,7 +113,12 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         session.getUndoManager().reset();
     }, 0);
     var doc = session.doc;
-    widget.setReadOnly(cell_model.parent_model.read_only());
+    var am_read_only = cell_model.parent_model.read_only();
+    if (am_read_only) {
+        disable(remove_button);
+        disable(insert_cell_button);
+    }
+    widget.setReadOnly(am_read_only);
     widget.setOptions({
         enableBasicAutocompletion: true
     });
@@ -235,7 +243,15 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             this.show_result();
         },
         set_readonly: function(readonly) {
+            am_read_only = readonly;
             widget.setReadOnly(readonly);
+            if (readonly) {
+                disable(remove_button);
+                disable(insert_cell_button);
+            } else {
+                enable(remove_button);
+                enable(insert_cell_button);
+            }            
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -286,7 +302,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             disable(source_button);
             enable(result_button);
             // enable(hide_button);
-            enable(remove_button);
+            if (!am_read_only) {
+                enable(remove_button);
+            }
             //editor_row.show();
 
             markdown_div.show();
@@ -301,7 +319,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             enable(source_button);
             disable(result_button);
             // enable(hide_button);
-            enable(remove_button);
+            if (!am_read_only) {
+                enable(remove_button);
+            }
 
             //editor_row.hide();
             markdown_div.hide();
@@ -313,7 +333,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             enable(source_button);
             enable(result_button);
             // disable(hide_button);
-            enable(remove_button);
+            if (!am_read_only) {
+                enable(remove_button);
+            }
 
             //editor_row.hide();
             if (current_mode === "result") {

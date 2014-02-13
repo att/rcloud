@@ -189,7 +189,6 @@ function main_init() {
                 version = getURLParameter("version");
             }
             editor.init(notebook, version);
-            $("#tabs").tabs("select", "#tabs-2");
             /*
              // disabling navigation for now - concurrency issues
             window.addEventListener("popstate", function(e) {

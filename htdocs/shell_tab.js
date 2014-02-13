@@ -419,6 +419,9 @@ var shell = (function() {
                             done();
                             return notebook;
                         });
+                }).catch(function(err) {
+                    done();
+                    throw err;
                 });
             }
             return reset_session().then(do_load);
@@ -720,7 +723,7 @@ var shell = (function() {
         rcloud.with_progress().then(function(done) {
             result.notebook.controller.run_all().then(done);
             prompt_ && prompt_.widget.focus(); // surely not the right way to do this
-        });
+        }).catch(function(done) { done(); });
     });
     return result;
 })();

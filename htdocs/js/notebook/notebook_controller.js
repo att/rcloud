@@ -142,8 +142,25 @@ Notebook.create_controller = function(model)
         show_source_checkbox_.set_state(true);
     }
 
+
+    function make_cells_sortable() {
+        var cells = $('#output');
+        cells.sortable({
+            items: "> .notebook-cell",
+            update: function(e, info) {
+                var ray = cells.sortable('toArray');
+                var model = info.item.data('rcloud.model'),
+                    next = info.item.next().data('rcloud.model');
+                result.move_cell(model, next);
+            },
+            scroll: true,
+            scrollSensitivity: 40
+        });
+    }
+
     setup_show_source();
     model.dishers.push({on_dirty: on_dirty});
+    make_cells_sortable();
 
     var result = {
         save_button: function(save_button) {
@@ -167,6 +184,11 @@ Notebook.create_controller = function(model)
         remove_cell: function(cell_model) {
             var changes = model.remove_cell(cell_model);
             shell.prompt_widget.focus(); // there must be a better way
+            update_notebook(changes)
+                .then(default_callback_);
+        },
+        move_cell: function(cell_model, before) {
+            var changes = model.move_cell(cell_model, before ? before.id() : -1);
             update_notebook(changes)
                 .then(default_callback_);
         },
