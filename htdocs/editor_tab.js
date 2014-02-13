@@ -612,10 +612,18 @@ var editor = function () {
 
     function remove_node(node) {
         var dp = node.parent;
+        // hack to fake a hover over the next item when deleting the current one despite
+        // that jqTree is rebuilding the entire (?) tree
+        var next = $('.notebook-commands.appear', node.element).attr('display') !== 'none' ?
+                dp.children.indexOf(node) : null;
         $tree_.tree('removeNode', node);
         remove_empty_parents(dp);
         if(node.root === 'interests' && node.user !== username_ && dp.children.length === 0)
             $tree_.tree('removeNode', dp);
+        if(next>=0 && next < dp.children.length) {
+            next = dp.children[next];
+            setTimeout(function() { $(next.element).mouseover(); }, 0);
+        }
     }
 
     function unstar_notebook_view(user, gistname, select) {
