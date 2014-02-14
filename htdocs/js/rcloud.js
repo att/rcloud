@@ -27,7 +27,7 @@ RCloud.create = function(rcloud_ocaps) {
         v[path[path.length-1] + "Async"] = val;
     }
 
-    //////////////////////////////////////////////////////////////////////////////    
+    //////////////////////////////////////////////////////////////////////////////
     function json_p(promise) {
         return promise.then(JSON.parse)
             .catch(function(e) {
@@ -39,12 +39,12 @@ RCloud.create = function(rcloud_ocaps) {
     function rcloud_github_handler(command, promise) {
         function success(result) {
             if (result.r_attributes['class'] === "try-error") {
-                throw result;
+                throw new Error(result);
             }
             if (result.ok) {
                 return result.content;
             } else {
-                throw result.content;
+                throw new Error(result.content.message);
             }
         }
         function failure(err) {
@@ -438,11 +438,11 @@ RCloud.create = function(rcloud_ocaps) {
             }
 
             if(!(window.File && window.FileReader && window.FileList && window.Blob))
-                throw "File API not supported by browser.";
+                throw new Error("File API not supported by browser.");
             else {
                 var file=$("#file")[0].files[0];
                 if(_.isUndefined(file))
-                    throw "No file selected!";
+                    throw new Error("No file selected!");
                 else {
                     /*FIXME add logged in user */
                     rcloud_ocaps.file_upload.upload_path(function(err, path) {
@@ -490,8 +490,88 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.stars.get_multiple_notebook_star_countsAsync(ids);
         };
         rcloud.stars.get_my_starred_notebooks = function() {
-            rcloud_ocaps.stars.get_my_starred_notebooksAsync();
+            return rcloud_ocaps.stars.get_my_starred_notebooksAsync()
+                .then(function(keys) {
+                    return _.map(keys, function(key) { return /notebook\/([^\/]*)\//.exec(key)[1]; });
+                });
         };
+
+        // temporarily still local config to flush out the interface
+        var __user__ = null;
+        var __config__ = null;
+        rcloud.config = {};
+        rcloud.config.get_current_notebook = Promise.method(function() {
+            if(!__config__) throw new Error("expected you to call get_all_notebooks first");
+            return {currbook: __config__.currbook,
+                    currversion: __config__.currversion,
+                    bookuser: __config__.bookuser};
+        });
+        rcloud.config.set_current_notebook = Promise.method(function(current) {
+            if(!__config__) throw new Error("expected you to call get_all_notebooks first");
+            __config__.currbook = current.book;
+            __config__.currversion = current.version;
+            __config__.bookuser = current.user;
+        });
+        rcloud.config.new_notebook_number = Promise.method(function() {
+            if(!__config__) throw new Error("expected you to call get_all_notebooks first");
+            ++__config__.nextwork;
+            return rcloud.save_user_config(__user__, __config__)
+                .return(__config__.nextwork);
+
+        });
+
+        function default_config() {
+            __config__.currbook = __config__.currbook || null;
+            __config__.currversion = __config__.currversion || null;
+            __config__.bookuser = __config__.bookuser || null;
+            __config__.nextwork = __config__.nextwork || 1;
+            __config__.all_books = __config__.all_books || {};
+        }
+
+        rcloud.config.get_all_notebooks = Promise.method(function() {
+            __user__ = rcloud.username();
+            // having to call this first is just an artifact of the current setup
+            // and will go away when this is server side and not individual configs
+            return rcloud.get_users(__user__)
+                .then(rcloud.load_multiple_user_configs)
+                .then(function(configset) {
+                    var user_notebooks = {}, notebook_entries = {};
+                    for(var username in configset) {
+                        function add_user(entry) {
+                            entry.user = username;
+                            return entry;
+                        }
+                        var user_config = configset[username];
+                        if(!user_config)
+                            continue;
+                        _.each(user_config.all_books, add_user);
+                        _.extend(notebook_entries, user_config.all_books);
+                        if(username === __user__) {
+                            __config__ = user_config;
+                            default_config();
+                            // for notebooks of others we're interested that the other user has removed
+                            // or never loaded (!) #245
+                            for(var u in user_config.interests) {
+                                _.each(user_config.interests[u], add_user);
+                                _.extend(notebook_entries, user_config.interests[u]);
+                            }
+                        }
+                        user_notebooks[username] = _.keys(user_config.all_books);
+                    }
+                    if(!__config__) throw new Error("expected to find current user's config");
+                    return [user_notebooks, notebook_entries];
+                });
+        });
+        rcloud.config.update_notebook_info = Promise.method(function(gistname, entry) {
+            if(!__config__) throw new Error("expected you to call get_all_notebooks first");
+            __config__.all_books[gistname] = entry;
+            return rcloud.save_user_config(__user__, __config__);
+        });
+        rcloud.config.remove_notebook = Promise.method(function(gistname) {
+            if(!__config__) throw new Error("expected you to call get_all_notebooks first");
+            delete __config__.all_books[gistname];
+            return rcloud.save_user_config(__user__, __config__);
+        });
 
     }
 

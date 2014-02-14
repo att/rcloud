@@ -9,7 +9,7 @@ var editor = function () {
 
     /* "Model-Model-View-Controller"
      .. or something ..
-     there are two models: the local config and the global rcs+github
+     there are two models: the local state and the global rcs+github
      the local model is private data of this class
 
      E.g. an interest ("star") is reflected in 7 places:
@@ -17,7 +17,7 @@ var editor = function () {
      - the star in rcs (logically in github but they don't have the necessary APIs)
      - the count in rcs
      Local model
-     - the entry in config_.interests[]
+     - the entry in interests_[]
      - the bit in i_starred_[] (for efficiency)
      View
      - the existence of the node under My Interests in the notebook tree UI
@@ -30,14 +30,14 @@ var editor = function () {
         histories_ = {},
         all_entries_ = {}, // all notebooks we are aware of
         num_stars_ = {}, // number of stars for all known notebooks
-        i_starred_ = {};
+        i_starred_ = {},
+        interests_ = null,
+        current_ = null;
 
     // view
     var $tree_ = undefined,
         publish_notebook_checkbox_ = null,
-        star_notebook_button_ = null,
-        config_ = undefined;
-
+        star_notebook_button_ = null;
 
     //  Model functions
 
@@ -45,73 +45,42 @@ var editor = function () {
     // do a depth-first search then apply all the migration functions.
     // obviously results will be unpredictable if there is more than one path.
     function migrate_config() {
-        var old_version = config_.config_version || 0;
-        if(old_version === CONFIG_VERSION)
-            return false;
-        // upgrade from version M to N
-        var migration_graph = {
-            '0': {
-                '1': function(config) {
-                    // star all notebooks in interests
-                    for(var u in config.interests)
-                        for(var n in config.interests[u])
-                            rcloud.stars.star_notebook(n);
-                }
-            }
-        };
-        function find_path(a, b) {
-            if(a === b)
-                return [];
-            var links = migration_graph[a];
-            if(!links)
-                return null;
-            if(links[b])
-                return [{version: b, f: links[b]}];
-            var path;
-            for(var l in links)
-                if((path = find_path(l, b))) {
-                    path.unshift({version: l, f: links[l]});
-                    return path;
-                }
-            return null;
-        }
-        var migration_path = find_path(old_version, CONFIG_VERSION);
-        for(var i = 0; i < migration_path.length; ++i)
-            migration_path[i].f(config_);
-        config_.config_version = CONFIG_VERSION;
+        // do server-side
         return true;
     }
 
     function get_notebook_status(user, gistname) {
-        var iu = config_.interests[user];
+        var iu = interests_[user];
         return (iu && iu[gistname]) || all_entries_[gistname] || {};
     }
 
     function add_interest(user, gistname, entry) {
-        var iu = config_.interests[user];
+        var iu = interests_[user];
         if(!iu)
-            iu = config_.interests[user] = {};
+            iu = interests_[user] = {};
         iu[gistname] = entry;
 
         i_starred_[gistname] = true;
     }
 
     function remove_interest(user, gistname) {
-        delete config_.interests[user][gistname];
+        delete interests_[user][gistname];
         delete i_starred_[gistname];
-        if(user!==username_ && _.isEmpty(config_.interests[user]))
-            delete config_.interests[user];
+        if(user!==username_ && _.isEmpty(interests_[user]))
+            delete interests_[user];
     }
 
     function add_all(user, gistname, entry) {
-        if(user === username_)
-            config_.all_books[gistname] = entry;
         all_entries_[gistname] = entry;
+        return user === username_ ?
+            rcloud.config.update_notebook_info(gistname, entry) :
+            Promise.resolve();
     }
 
     function remove_all(user, gistname) {
-        if(user === username_)
-            delete config_.all_books[gistname];
+        return user === username_ ?
+            rcloud.config.remove_notebook(gistname) :
+            Promise.resolve();
     }
 
     function update_notebook_model(user, gistname, description, time) {
@@ -124,9 +93,7 @@ var editor = function () {
         if(i_starred_[gistname])
             add_interest(user, gistname, entry);
         add_all(user, gistname, entry);
-
-        result.save_config();
-        return entry;
+        return entry; // note: let go of promise
     }
 
 
@@ -211,35 +178,58 @@ var editor = function () {
     }
 
     function populate_interests(root_data) {
-        var my_notebooks, user_nodes = [];
-        for (var username in config_.interests) {
-            var user_notebooks = config_.interests[username];
-            for(var gistname in user_notebooks) {
-                i_starred_[gistname] = true;
-                // sanitize... this shouldn't really happen...
-                if(!user_notebooks[gistname].description)
-                    user_notebooks[gistname].description = "(no description)";
-            }
-
-            var notebook_nodes = [];
-            notebook_nodes = notebook_nodes.concat(convert_notebook_set('interests', username, user_notebooks));
-
-            if(username === username_)
-                my_notebooks = notebook_nodes;
-            else {
-                var id = node_id('interests', username);
-                var node = {
-                    label: someone_elses(username),
-                    id: id,
-                    sort_order: ordering.SUBFOLDER,
-                    children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
-                };
-                user_nodes.push(node);
-            }
+        function create_user_book_entry_map(books) {
+            return _.reduce(books,
+                            function(users, book){
+                                var entry = all_entries_[book];
+                                if(!entry) {
+                                    console.log("rcloud.stars.get_my_starred_notebooks reports a notebook starred that is not listed in All Notebooks: " + book);
+                                    return users;
+                                }
+                                var user = users[entry.user] = users[entry.user] || {};
+                                user[book] = entry;
+                                return users;
+                            },
+                            {});
         }
-        var children = as_folder_hierarchy(my_notebooks, node_id('interests', username_));
-        children = children.concat(user_nodes).sort(compare_nodes);
-        root_data[0].children = children;
+
+        return rcloud.stars.get_my_starred_notebooks()
+            .then(function(starred) {
+                interests_ = create_user_book_entry_map(starred);
+                var my_notebooks, user_nodes = [];
+                for (var username in interests_) {
+                    var user_notebooks = interests_[username];
+                    for(var gistname in user_notebooks) {
+                        i_starred_[gistname] = true;
+                        // sanitize... this shouldn't really happen...
+                        if(!user_notebooks[gistname].description)
+                            user_notebooks[gistname].description = "(no description)";
+                    }
+
+                    var notebook_nodes = [];
+                    notebook_nodes = notebook_nodes.concat(convert_notebook_set('interests', username, user_notebooks));
+
+                    if(username === username_)
+                        my_notebooks = notebook_nodes;
+                    else {
+                        var id = node_id('interests', username);
+                        var node = {
+                            label: someone_elses(username),
+                            id: id,
+                            sort_order: ordering.SUBFOLDER,
+                            children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
+                        };
+                        user_nodes.push(node);
+                    }
+                }
+                var children = as_folder_hierarchy(my_notebooks, node_id('interests', username_));
+                children = children.concat(user_nodes).sort(compare_nodes);
+                root_data[0].children = children;
+                return root_data;
+            });
+    }
+
+    function load_tree(root_data) {
         // delay construction of dom elements for Alls
         var alls = root_data[1].children;
         for(var i = 0; i < alls.length; ++i)
@@ -252,59 +242,73 @@ var editor = function () {
         $tree_.tree('openNode', interests);
     }
 
-    function load_all_configs() {
-        return rcloud.get_users(username_)
-            .then(rcloud.load_multiple_user_configs)
-            .then(function(configset) {
-                var my_alls = [], user_nodes = [], my_config = null;
-                for(var username in configset) {
-                    var user_config = configset[username];
-                    if(!user_config)
-                        continue;
-                    _.extend(all_entries_, user_config.all_books);
-                    var notebook_nodes = convert_notebook_set('alls', username, user_config.all_books);
-                    if(username === username_) {
-                        my_config = user_config;
-                        my_alls = notebook_nodes;
-                        // for notebooks of others we're interested that the other user has removed
-                        // or never loaded (!) #245
-                        for(var u in user_config.interests)
-                            _.extend(all_entries_, user_config.interests[u]);
-                    }
-                    else {
-                        var id = node_id('alls', username);
-                        var node = {
-                            label: someone_elses(username),
-                            id: id,
-                            sort_order: ordering.SUBFOLDER,
-                            children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
-                        };
-                        user_nodes.push(node);
-                    }
-                }
+    function load_notebook_list(user_notebooks, notebook_entries) {
+        function create_book_entry_map(books) {
+            return _.reduce(books,
+                            function(map, book) {
+                                var entry = all_entries_[book];
+                                if(!entry)
+                                    throw new Error("didn't find notebook " + book + " in alls");
+                                map[book] = entry;
+                                return map;
+                            },
+                            {});
+        }
 
-                // start creating the tree data and pass it forward
-                // populate_interests will create the tree
-                var children = as_folder_hierarchy(my_alls, node_id('alls', username_));
-                children = children.concat(user_nodes).sort(compare_nodes);
-                var root_data = [
-                    {
-                        label: 'My Interests',
-                        id: '/interests'
-                    },
-                    {
-                        label: 'All Notebooks',
-                        id: '/alls',
-                        children: children
-                    }
-                ];
-                var all_notebooks = _.keys(all_entries_);
-                return rcloud.stars.get_multiple_notebook_star_counts(all_notebooks)
-                    .then(function(counts) {
-                        num_stars_ = counts;
-                        return [my_config, root_data];
-                    });
-            });
+        all_entries_ = notebook_entries;
+
+        var my_alls = [], user_nodes = [], my_config = null;
+        for(var username in user_notebooks) {
+            var notebook_nodes =
+                    convert_notebook_set('alls', username,
+                                         create_book_entry_map(user_notebooks[username]));
+            if(username === username_)
+                my_alls = notebook_nodes;
+            else {
+                var id = node_id('alls', username);
+                var node = {
+                    label: someone_elses(username),
+                    id: id,
+                    sort_order: ordering.SUBFOLDER,
+                    children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
+                };
+                user_nodes.push(node);
+            }
+        }
+
+        // start creating the tree data and pass it forward
+        // populate_interests will create the tree
+        var children = as_folder_hierarchy(my_alls, node_id('alls', username_));
+        children = children.concat(user_nodes).sort(compare_nodes);
+        var root_data = [
+            {
+                label: 'My Interests',
+                id: '/interests'
+            },
+            {
+                label: 'All Notebooks',
+                id: '/alls',
+                children: children
+            }
+        ];
+        return root_data;
+    }
+
+    function load_everything() {
+        return rcloud.config.get_all_notebooks()
+            .spread(load_notebook_list)
+            .then(function(root_data) {
+                return rcloud.config.get_current_notebook()
+                    .then(function(current) {
+                        current_ = current;
+                    })
+                    .return(_.keys(all_entries_))
+                    .then(rcloud.stars.get_multiple_notebook_star_counts)
+                    .then(function(counts) { num_stars_ = counts; })
+                    .return(root_data);
+            })
+            .then(populate_interests)
+            .then(load_tree);
     }
 
     function insert_alpha(data, parent) {
@@ -574,16 +578,16 @@ var editor = function () {
             return Promise.resolve(null); // !create
 
         // if we're looking at an old version, make sure it's visible
-        if(gistname===config_.currbook && config_.currversion) {
+        if(gistname===current_.book && current_.version) {
             whither = 'sha';
-            where = config_.currversion;
+            where = current_.version;
         }
         var promise = add_history_nodes(node, whither, where);
-        if(config_.currversion)
+        if(current_.version)
             promise = promise.then(function(node) {
                 $tree_.tree('openNode', node);
                 var n2 = $tree_.tree('getNodeById',
-                                     node_id(root, user, gistname, config_.currversion));
+                                     node_id(root, user, gistname, current_.version));
                 if(!n2)
                     throw 'tree node was not created for current history';
                 return n2;
@@ -600,7 +604,7 @@ var editor = function () {
             if(selroot==='interests')
                 p.then(select_node);
         }
-        if(gistname === config_.currbook) {
+        if(gistname === current_.book) {
             star_notebook_button_.set_state(i_starred_[gistname]);
             $('#curr-star-count').text(num_stars_[gistname] || 0);
         }
@@ -634,7 +638,7 @@ var editor = function () {
             return;
         }
         remove_node(node);
-        if(gistname === config_.currbook) {
+        if(gistname === current_.book) {
             star_notebook_button_.set_state(false);
             $('#curr-star-count').text(num_stars_[gistname] || 0);
         }
@@ -775,7 +779,7 @@ var editor = function () {
             var appear = $($.el.span({'class': 'notebook-commands appear'}));
             add_buttons = adder(appear);
             if(true) { // all notebooks have history - should it always be accessible?
-                var disable = config_.currbook===node.gistname && config_.currversion;
+                var disable = current_.book===node.gistname && current_.version;
                 var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style);
                 // jqtree recreates large portions of the tree whenever anything changes
                 // so far this seems safe but might need revisiting if that improves
@@ -862,8 +866,8 @@ var editor = function () {
                 // workaround: it's weird that a notebook exists in two trees but only one is selected (#220)
                 // and some would like clicking on the active notebook to edit the name (#252)
                 // for now, just select
-                if(event.node.gistname === config_.currbook
-                   && event.node.version == config_.currversion) // nulliness ok here
+                if(event.node.gistname === current_.book
+                   && event.node.version == current_.version) // nulliness ok here
                     select_node(event.node);
                 else {
                     // possibly erase query parameters here, but that requires a reload
@@ -887,12 +891,12 @@ var editor = function () {
             username_ = rcloud.username();
             $("#input-text-source-results-title").css("display", "none");
             $("#input-text-history-results-title").css("display", "none");
-            var promise = this.load_config().then(function() {
+            var promise = load_everything().then(function() {
                 if(gistname) // notebook specified in url
                     that.load_notebook(gistname, version);
-                else if(config_.currbook)
-                    that.load_notebook(config_.currbook, config_.currversion);
-                else // brand new config
+                else if(current_.book)
+                    that.load_notebook(current_.book, current_.version);
+                else // brand new user
                     that.new_notebook();
             });
             /* Search disabled for Version 0.9
@@ -917,10 +921,10 @@ var editor = function () {
             }
             publish_notebook_checkbox_ = ui_utils.checkbox_menu_item($("#publish-notebook"),
                function() {
-                   rcloud.publish_notebook(config_.currbook).then(publish_success(config_.currbook, false));
+                   rcloud.publish_notebook(current_.book).then(publish_success(current_.book, false));
                },
                function() {
-                   rcloud.unpublish_notebook(config_.currbook).then(publish_success(config_.currbook, true));
+                   rcloud.unpublish_notebook(current_.book).then(publish_success(current_.book, true));
                });
             var snf = result.star_notebook;
             star_notebook_button_ =
@@ -941,27 +945,6 @@ var editor = function () {
             $tree_.bind('tree.click', tree_click);
             $tree_.bind('tree.open', tree_open);
         },
-        load_config: function() {
-            var that = this;
-            return load_all_configs().spread(function(my_config, root_data) {
-                // build up config incrementally & allow user to just
-                // remove parts of it if they're broken
-                config_ = my_config || {};
-                config_.currbook = config_.currbook || null;
-                config_.currversion = config_.currversion || null;
-                config_.bookuser = config_.bookuser || null;
-                config_.nextwork = config_.nextwork || 1;
-                config_.interests = config_.interests || {};
-                config_.interests[username_] = config_.interests[username_] || {};
-                config_.all_books = config_.all_books || {};
-                if(migrate_config())
-                    that.save_config();
-                populate_interests(root_data);
-            });
-        },
-        save_config: function() {
-            return rcloud.save_user_config(username_, config_);
-        },
         load_notebook: function(gistname, version, selroot, push_history) {
             var that = this;
             selroot = selroot || true;
@@ -973,13 +956,12 @@ var editor = function () {
         },
         new_notebook: function() {
             var that = this;
-            if(isNaN(config_.nextwork))
-                config_.nextwork = 1;
-            var desc = "Notebook " + config_.nextwork;
-            ++config_.nextwork;
-            return shell.new_notebook(desc).then(function(notebook) {
-                that.star_notebook(true, {notebook: notebook, make_current: true, version: null});
-            });
+            return rcloud.config.new_notebook_number()
+                .then(function(number) { return "Notebook " + number; })
+                .then(shell.new_notebook.bind(shell))
+                .then(function(notebook) {
+                    that.star_notebook(true, {notebook: notebook, make_current: true, version: null});
+                });
         },
         rename_notebook: function(gistname, newname) {
             if (result && !/^\s+$/.test(result)) { // not null and not empty or just whitespace
@@ -996,12 +978,12 @@ var editor = function () {
             opts = opts || {};
             var user = opts.user
                     || opts.notebook&&opts.notebook.user&&opts.notebook.user.login
-                    || config_.bookuser;
+                    || current_.user;
             var gistname = opts.gistname
                     || opts.notebook&&opts.notebook.id
-                    || config_.currbook;
+                    || current_.book;
             // keep selected if was
-            if(gistname === config_.currbook)
+            if(gistname === current_.book)
                 opts.selroot = opts.selroot || true;
             if(star) {
                 return rcloud.stars.star_notebook(gistname).then(function(count) {
@@ -1024,7 +1006,6 @@ var editor = function () {
                             update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
                     }
                     else {
-                        that.save_config();
                         update_notebook_view(user, gistname, entry, opts.selroot);
                     }
                     // this continuation is not strictly correct, because
@@ -1034,10 +1015,10 @@ var editor = function () {
             } else {
                 return rcloud.stars.unstar_notebook(gistname).then(function(count) {
                     num_stars_[gistname] = count;
-                    remove_interest(user, gistname);
-                    return that.save_config().then(function() {
-                        unstar_notebook_view(user, gistname, opts.selroot);
-                    });
+                    return remove_interest(user, gistname)
+                        .then(function() {
+                            unstar_notebook_view(user, gistname, opts.selroot);
+                        });
                 });
             }
         },
@@ -1048,19 +1029,17 @@ var editor = function () {
                 .then(function() {
                     remove_all(user, gistname);
                     remove_node($tree_.tree('getNodeById', node_id('alls', user, gistname)));
-                    result.save_config();
-                    if(gistname === config_.currbook)
+                    if(gistname === current_.book)
                         that.new_notebook();
                 });
         },
         set_visibility: function(node, visibility) {
             if(node.user !== username_)
                 throw "attempt to set visibility on notebook not mine";
-            var entry = config_.interests[username_][node.gistname];
+            var entry = interests_[username_][node.gistname];
             entry.visibility = visibility;
-            config_.all_books[node.gistname] = entry;
+            rcloud.config.update_notebook_info(username_, entry);
             update_tree_entry(node.root, username_, node.gistname, entry, false);
-            this.save_config();
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
             shell.fork_or_revert_notebook(is_mine, gistname, version)
@@ -1099,9 +1078,8 @@ var editor = function () {
                 if(!result.description)
                     throw "Invalid notebook (must have description)";
 
-                config_.currbook = result.id;
-                config_.currversion = options.version;
-                config_.bookuser = result.user.login;
+                current_ = {book: result.id, version: options.version, user: result.user.login};
+                rcloud.config.set_current_notebook(current_);
 
                 /*
                 // disabling inter-notebook navigation for now - concurrency issues
@@ -1178,10 +1156,10 @@ var editor = function () {
         },
         post_comment: function(comment) {
             comment = JSON.stringify({"body":comment});
-            return rcloud.post_comment(config_.currbook, comment).then(function(result) {
+            return rcloud.post_comment(current_.book, comment).then(function(result) {
                 if (!result)
                     return null;
-                return rcloud.get_all_comments(config_.currbook).then(function(data) {
+                return rcloud.get_all_comments(current_.book).then(function(data) {
                     populate_comments(data);
                     $('#comment-entry-body').val('');
                 });
