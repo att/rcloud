@@ -1,5 +1,88 @@
 Promise.longStackTraces();
 
+var right_panel_collapsed = false;
+var left_panel_collapsed = true;
+var middle_panel_size = 9;
+function init_side_panel_collapsers()
+{
+    function hide_right_panel() {
+        $("#right-column").removeClass("col-md-3 col-sm-3").addClass("col-md-1 col-sm-1");
+        $("#new-notebook").hide();
+        $("#right-pane-collapser i").removeClass("icon-minus").addClass("icon-plus");
+        right_panel_collapsed = true;
+    }
+
+    function show_right_panel() {
+        $("#right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-3 col-sm-3");
+        $("#new-notebook").show();
+        $("#right-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
+        right_panel_collapsed = false;
+    }
+
+    function hide_left_panel() {
+        $("#fake-left-column").hide();
+        $("#left-column").hide();
+        left_panel_collapsed = true;
+    }
+
+    function show_left_panel() {
+        $("#fake-left-column").show();
+        $("#left-column").show();
+        left_panel_collapsed = false;
+    }
+
+    function update_middle_column() {
+        var size;
+        if (right_panel_collapsed) {
+            if (left_panel_collapsed) {
+                size = 11;
+            } else {
+                size = 7;
+            }
+        } else {
+            if (left_panel_collapsed) {
+                size = 9;
+            } else {
+                size = 5;
+             }
+         }
+        var previous_classes = "col-sm-" + middle_panel_size + " col-md-" + middle_panel_size;
+        var new_classes = "col-sm-" + size + " col-md-" + size;
+        $("#middle-column").removeClass(previous_classes).addClass(new_classes);
+        $("#prompt-div").removeClass(previous_classes).addClass(new_classes);
+        middle_panel_size = size;
+    }
+    
+    $("#right-pane-collapser").click(function() {
+        if (right_panel_collapsed) {
+            show_right_panel();
+        } else {
+            // the following actually makes sense to me. oh no what has my life become
+            $("#accordion > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
+            hide_right_panel();
+        }
+        update_middle_column();
+    });
+
+    $("#accordion").on("show.bs.collapse", function() {
+        if (right_panel_collapsed) {
+            show_right_panel();
+            right_panel_collapsed = false;
+            update_middle_column();
+        }
+    });
+
+    ui_utils.checkbox_menu_item($("#toggle-scratchpad"),
+        function() {
+            show_left_panel();
+            update_middle_column();
+        },
+        function() {
+            hide_left_panel();
+            update_middle_column();
+        }).set_state(false);
+}
+
 function resize_side_panel() {
     var non_notebook_panel_height = 246;
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
@@ -110,6 +193,7 @@ function init_navbar_buttons() {
     init_save_button();
     init_port_file_buttons();
     init_upload_pane();
+    init_side_panel_collapsers();
 }
 
 var oob_handlers = {
@@ -134,20 +218,6 @@ function main_init() {
         editor.post_comment($("#comment-entry-body").val());
         return false;
     });
-
-    ui_utils.checkbox_menu_item($("#toggle-scratchpad"),
-        function() {
-            $("#middle-column").removeClass("col-sm-9 col-md-9").addClass("col-sm-5 col-md-5");
-            $("#prompt-div").removeClass("col-sm-9 col-md-9").addClass("col-sm-5 col-md-5");
-            $("#fake-left-column").show();
-            $("#left-column").show();
-        },
-        function() {
-            $("#middle-column").removeClass("col-sm-5 col-md-5").addClass("col-sm-9 col-md-9");
-            $("#prompt-div").removeClass("col-sm-5 col-md-5").addClass("col-sm-9 col-md-9");
-            $("#fake-left-column").hide();
-            $("#left-column").hide();
-        }).set_state(false);
 
     rclient = RClient.create({
         debug: false,

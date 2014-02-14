@@ -438,3 +438,16 @@ pre {
 #new-md-cell-button:hover {
     background-color: rgb(247,238,228);
 }
+
+.title-offset {
+    position: absolute;
+    left: 3em;
+    text-overflow: ellipsis; /* Chrome bug to be resolved soon: https://code.google.com/p/chromium/issues/detail?id=166263 */
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+a.accordion-toggle [class^="icon-"], a.accordion-toggle [class*="icon-"] {
+    position: relative;
+    top: 2px;
+}
