@@ -1,12 +1,13 @@
 Promise.longStackTraces();
 
 var right_panel_collapsed = false;
-var left_panel_collapsed = true;
-var middle_panel_size = 9;
+var left_panel_collapsed = false;
+var middle_panel_size = 5;
 function init_side_panel_collapsers()
 {
     function hide_right_panel() {
         $("#right-column").removeClass("col-md-3 col-sm-3").addClass("col-md-1 col-sm-1");
+        $("#fake-right-column").removeClass("col-md-3 col-sm-3").addClass("col-md-1 col-sm-1");
         $("#new-notebook").hide();
         $("#right-pane-collapser i").removeClass("icon-minus").addClass("icon-plus");
         right_panel_collapsed = true;
@@ -14,6 +15,7 @@ function init_side_panel_collapsers()
 
     function show_right_panel() {
         $("#right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-3 col-sm-3");
+        $("#fake-right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-3 col-sm-3");
         $("#new-notebook").show();
         $("#right-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
         right_panel_collapsed = false;

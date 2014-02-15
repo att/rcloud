@@ -147,12 +147,19 @@ Notebook.create_controller = function(model)
         var cells = $('#output');
         cells.sortable({
             items: "> .notebook-cell",
+            start: function(e, info) {
+                $(e.toElement).addClass("grabbing");
+            },
+            stop: function(e, info) {
+                $(e.toElement).removeClass("grabbing");
+            },
             update: function(e, info) {
                 var ray = cells.sortable('toArray');
                 var model = info.item.data('rcloud.model'),
                     next = info.item.next().data('rcloud.model');
                 result.move_cell(model, next);
             },
+            handle: " .ace_gutter-layer",
             scroll: true,
             scrollSensitivity: 40
         });

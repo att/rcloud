@@ -451,3 +451,16 @@ a.accordion-toggle [class^="icon-"], a.accordion-toggle [class*="icon-"] {
     position: relative;
     top: 2px;
 }
+
+/* some visual affordance for ace-gutter sortable handles */
+#output > .notebook-cell .ace_gutter-layer {
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+    cursor: grab;
+}
+
+#output > .notebook-cell .grabbing {
+    cursor: -moz-grabbing;
+    cursor: -webkit-grabbing;
+    cursor: grabbing;
+}
