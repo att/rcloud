@@ -143,31 +143,8 @@ Notebook.create_controller = function(model)
     }
 
 
-    function make_cells_sortable() {
-        var cells = $('#output');
-        cells.sortable({
-            items: "> .notebook-cell",
-            start: function(e, info) {
-                $(e.toElement).addClass("grabbing");
-            },
-            stop: function(e, info) {
-                $(e.toElement).removeClass("grabbing");
-            },
-            update: function(e, info) {
-                var ray = cells.sortable('toArray');
-                var model = info.item.data('rcloud.model'),
-                    next = info.item.next().data('rcloud.model');
-                result.move_cell(model, next);
-            },
-            handle: " .ace_gutter-layer",
-            scroll: true,
-            scrollSensitivity: 40
-        });
-    }
-
     setup_show_source();
     model.dishers.push({on_dirty: on_dirty});
-    make_cells_sortable();
 
     var result = {
         save_button: function(save_button) {

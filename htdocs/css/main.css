@@ -432,7 +432,7 @@ pre {
 
 
 /* some visual affordance for ace-gutter sortable handles */
-#output > .notebook-cell .ace_gutter-layer {
+#output:not(.ui-sortable-disabled) > .notebook-cell .ace_gutter-layer {
     cursor: -moz-grab;
     cursor: -webkit-grab;
     cursor: grab;
