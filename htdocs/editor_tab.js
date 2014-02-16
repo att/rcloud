@@ -375,10 +375,8 @@ var editor = function () {
             if(last_chance)
                 last_chance(node); // hacky
             var dp = node.parent;
-            if(dp===parent && node.name===data.label) {
-                // too slow! $tree_.tree('updateNode', node, data);
-                update_tree_li(node, node.element, data);
-            }
+            if(dp===parent && node.name===data.label)
+                $tree_.tree('updateNode', node, data);
             else {
                 $tree_.tree('removeNode', node);
                 node = insert_alpha(data, parent);
@@ -834,18 +832,6 @@ var editor = function () {
                 });
         }
         element[0].appendChild(right[0]);
-    }
-
-    function update_tree_li(node, $li, data) {
-        // workaround for https://github.com/mbraak/jqTree/issues/247
-        node.last_commit = data.last_commit;
-        // date
-        if(node.last_commit && (!node.version ||
-                                display_date(node.last_commit) != display_date(node.parent.last_commit)))
-            $('.notebook-date', $li).text(display_date(node.last_commit));
-        // stars
-        $('span.star', node.element)[0].set_state(i_starred_[node.gistname]);
-        $('span.star sub', node.element).text(num_stars_[node.gistname] || 0);
     }
 
     function make_main_url(notebook, version) {
