@@ -136,7 +136,7 @@ function main_init() {
     });
     rclient = RClient.create({
         debug: false,
-        host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
+        host:  location.href.replace(/^http/,"ws"),
         on_connect: function(ocaps) {
             rcloud = RCloud.create(ocaps.rcloud);
             if (!rcloud.authenticated) {
