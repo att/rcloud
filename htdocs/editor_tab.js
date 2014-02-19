@@ -294,6 +294,11 @@ var editor = function () {
         return root_data;
     }
 
+    function load_children(n) {
+        $tree_.tree('loadData', n.delay_children, n);
+        delete n.delay_children;
+    }
+
     function load_everything() {
         return rcloud.config.get_all_notebooks()
             .spread(load_notebook_list)
@@ -338,6 +343,8 @@ var editor = function () {
             parent = $tree_.tree('getNodeById', id),
             pdat = null,
             node = null;
+        if(parent.delay_children)
+            load_children(parent);
         if(!parent) {
             if(user===username_)
                 throw "my folder should be there at least";
@@ -875,10 +882,8 @@ var editor = function () {
     }
     function tree_open(event) {
         var n = event.node;
-        if(n.delay_children) {
-            $tree_.tree('loadData', n.delay_children, n);
-            delete n.delay_children;
-        }
+        if(n.delay_children) 
+            load_children(n);
     }
 
     var result = {
