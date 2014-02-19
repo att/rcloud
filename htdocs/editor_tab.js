@@ -73,7 +73,7 @@ var editor = function () {
     function add_all(user, gistname, entry) {
         all_entries_[gistname] = entry;
         return user === username_ ?
-            rcloud.config.update_notebook_info(gistname, entry) :
+            rcloud.config.add_notebook(gistname, entry) :
             Promise.resolve();
     }
 
@@ -994,17 +994,12 @@ var editor = function () {
                     else {
                         update_notebook_view(user, gistname, entry, opts.selroot);
                     }
-                    // this continuation is not strictly correct, because
-                    // the above make asynchronous calls to save_config and perhaps others
-                    // (but we don't use this continuation so: yuk)
                 });
             } else {
                 return rcloud.stars.unstar_notebook(gistname).then(function(count) {
                     num_stars_[gistname] = count;
-                    return remove_interest(user, gistname)
-                        .then(function() {
-                            unstar_notebook_view(user, gistname, opts.selroot);
-                        });
+                    remove_interest(user, gistname);
+                    unstar_notebook_view(user, gistname, opts.selroot);
                 });
             }
         },
