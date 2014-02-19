@@ -1,11 +1,25 @@
 ## fallback to flat-files engine
 
+# readRDS unaccountably seems to leave connections open if
+# the file does not exist.  this is a temporary workaround
+readRDS.if.exists <- function (file, refhook = NULL)
+{
+    if (is.character(file) && !file.exists(file))
+      stop("file doesn't exist")
+    else readRDS(file, refhook);
+}
+
 .ffpath <- function(key, engine) file.path(engine$root, key)
 
 .lnapply <- function(X, ...) { l <- lapply(X, ...); names(l) <- X; l }
 
+rcs_ff_error <- function(rv)
+  function(w) {cat("rcs.ff error: "); print(w); cat("\n"); rv}
+rcs_ff_warning <- function(rv)
+  function(w) {cat("rcs.ff warning: "); print(w); cat("\n"); rv}
+
 rcs.get.RCSff <- function(key, list=FALSE, engine=.session$rcs.engine)
-   if (list || length(key) != 1L) .lnapply(key, rcs.get.RCSff, FALSE, engine) else (tryCatch(readRDS(.ffpath(key, engine)), error=function(e) NULL, warning=function(w) NULL))
+   if (list || length(key) != 1L) .lnapply(key, rcs.get.RCSff, FALSE, engine) else (tryCatch(readRDS.if.exists(.ffpath(key, engine)), warning=rcs_ff_warning(NULL), error=rcs_ff_error(NULL)))
 
 rcs.set.RCSff <- function(key, value, engine=.session$rcs.engine) {
   if (missing(value)) {
@@ -23,16 +37,16 @@ rcs.set.RCSff <- function(key, value, engine=.session$rcs.engine) {
 }
 
 rcs.rm.RCSff <- function(key, engine=.session$rcs.engine)
-  tryCatch(file.remove(.ffpath(key, engine)), warning=function(w) FALSE, error=function(e) FALSE)
+  tryCatch(file.remove(.ffpath(key, engine)), warning=rcs_ff_warning(FALSE), error=rcs_ff_error(FALSE))
 
 rcs.incr.RCSff <- function(key, engine=.session$rcs.engine) {
-  x <- tryCatch(as.integer(rcs.get(key, engine=engine)), warning=function(w) 0L, error=function(w) 0L)
+  x <- tryCatch(as.integer(rcs.get(key, engine=engine)), warning=rcs_ff_warning(0L), error=rcs_ff_error(0L))
   if (length(x) != 1L) x <- 0L
   rcs.set(key, x + 1L, engine)
 }
 
 rcs.decr.RCSff <- function(key, engine=.session$rcs.engine) {
-  x <- tryCatch(as.integer(rcs.get(key, engine=engine)), warning=function(w) 0L, error=function(w) 0L)
+  x <- tryCatch(as.integer(rcs.get(key, engine=engine)), warning=rcs_ff_warning(0L), error=rcs_ff_error(0L))
   if (length(x) != 1L) x <- 0L
   if (x < 1L) x <- 0L else x <- x - 1L
   rcs.set(key, x, engine)
