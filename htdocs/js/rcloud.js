@@ -297,7 +297,7 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.create_notebook = function(content) {
             return rcloud_github_handler(
-                "rcloud.create.notebook", 
+                "rcloud.create.notebook",
                 rcloud_ocaps.create_notebookAsync(JSON.stringify(content)));
         };
         rcloud.fork_notebook = function(id) {
