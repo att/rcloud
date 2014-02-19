@@ -1,5 +1,15 @@
 ## RCloud develop branch
 
+### Installation/Administration
+
+* RCloud configuration now defaults to using a single port for both
+  HTTP and WebSockets. This simplifies many things since there is now
+  only one place to configure the port (`rserve.conf`), only one port
+  to forward when needed and only one connection to setup TLS for if
+  needed. However, it requires more care when using a reverse proxy
+  since it has to also proxy WebSocket upgrade requests accordingly.
+
+
 ## RCloud 0.9.2
 
 ### Features

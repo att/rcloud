@@ -183,19 +183,43 @@ var shell = (function() {
         };
     }
 
-    function show_fork_or_prompt_elements() {
+    function do_interface_readonlyness() {
         var fork_revert = $('#fork-revert-notebook');
         if(notebook_model_.read_only()) {
             $('#prompt-div').hide();
             fork_revert.text(is_mine_ ? 'Revert' : 'Fork');
             fork_revert.show();
             $('#save-notebook').hide();
+            $('#output').sortable('disable');
         }
         else {
-            $('#save-notebook').show();
             $('#prompt-div').show();
             fork_revert.hide();
+            $('#save-notebook').show();
+            $('#output').sortable('enable');
         }
+    }
+
+    function make_cells_sortable() {
+        var cells = $('#output');
+        cells.sortable({
+            items: "> .notebook-cell",
+            start: function(e, info) {
+                $(e.toElement).addClass("grabbing");
+            },
+            stop: function(e, info) {
+                $(e.toElement).removeClass("grabbing");
+            },
+            update: function(e, info) {
+                var ray = cells.sortable('toArray');
+                var model = info.item.data('rcloud.model'),
+                    next = info.item.next().data('rcloud.model');
+                notebook_controller_.move_cell(model, next);
+            },
+            handle: " .ace_gutter-layer",
+            scroll: true,
+            scrollSensitivity: 40
+        });
     }
 
     function sanitize_notebook(notebook) {
@@ -297,7 +321,7 @@ var shell = (function() {
         version_ = null;
         set_share_link();
         is_mine_ = notebook_is_mine(notebook);
-        show_fork_or_prompt_elements();
+        do_interface_readonlyness();
         if(prompt_) {
             prompt_.widget.focus(); // surely not the right way to do this
             prompt_.restore();
@@ -311,7 +335,7 @@ var shell = (function() {
 
         is_mine_ = notebook_is_mine(notebook);
         notebook_user_ = notebook.user.login;
-        show_fork_or_prompt_elements();
+        do_interface_readonlyness();
         _.each(notebook_view_.sub_views, function(cell_view) {
             cell_view.show_source();
         });
@@ -330,6 +354,8 @@ var shell = (function() {
     if (scratchpad_editor.length) {
         setup_scratchpad(scratchpad_editor);
     }
+
+    make_cells_sortable();
 
     var first = true;
     var result = {

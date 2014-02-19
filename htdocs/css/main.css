@@ -409,6 +409,20 @@ pre {
     z-index: 20;
 }
 
+
+/* some visual affordance for ace-gutter sortable handles */
+#output:not(.ui-sortable-disabled) > .notebook-cell .ace_gutter-layer {
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+    cursor: grab;
+}
+
+#output > .notebook-cell .grabbing {
+    cursor: -moz-grabbing;
+    cursor: -webkit-grabbing;
+    cursor: grabbing;
+}
+
 .tab-div {
     margin-bottom: 51px;
 }

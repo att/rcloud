@@ -252,6 +252,11 @@ var editor = function () {
         $tree_.tree('openNode', interests);
     }
 
+    function load_children(n) {
+        $tree_.tree('loadData', n.delay_children, n);
+        delete n.delay_children;
+    }
+
     function load_all_configs() {
         return rcloud.get_users(username_)
             .then(rcloud.load_multiple_user_configs)
@@ -334,6 +339,8 @@ var editor = function () {
             parent = $tree_.tree('getNodeById', id),
             pdat = null,
             node = null;
+        if(parent.delay_children)
+            load_children(parent);
         if(!parent) {
             if(user===username_)
                 throw "my folder should be there at least";
@@ -612,10 +619,18 @@ var editor = function () {
 
     function remove_node(node) {
         var dp = node.parent;
+        // hack to fake a hover over the next item when deleting the current one despite
+        // that jqTree is rebuilding the entire (?) tree
+        var next = $('.notebook-commands.appear', node.element).attr('display') !== 'none' ?
+                dp.children.indexOf(node) : null;
         $tree_.tree('removeNode', node);
         remove_empty_parents(dp);
         if(node.root === 'interests' && node.user !== username_ && dp.children.length === 0)
             $tree_.tree('removeNode', dp);
+        if(next>=0 && next < dp.children.length) {
+            next = dp.children[next];
+            setTimeout(function() { $(next.element).mouseover(); }, 0);
+        }
     }
 
     function unstar_notebook_view(user, gistname, select) {
@@ -867,10 +882,8 @@ var editor = function () {
     }
     function tree_open(event) {
         var n = event.node;
-        if(n.delay_children) {
-            $tree_.tree('loadData', n.delay_children, n);
-            delete n.delay_children;
-        }
+        if(n.delay_children) 
+            load_children(n);
     }
 
     var result = {
@@ -1035,17 +1048,15 @@ var editor = function () {
         },
         remove_notebook: function(user, gistname) {
             var that = this;
-            function do_rest() {
-                remove_all(user, gistname);
-                remove_node($tree_.tree('getNodeById', node_id('alls', user, gistname)));
-                result.save_config();
-                if(gistname === config_.currbook)
-                    that.new_notebook();
-            };
-            if(i_starred_[gistname])
-                this.star_notebook(false, {user: user, gistname: gistname}, do_rest);
-            else
-                do_rest();
+            (!i_starred_[gistname] ? Promise.resolve() :
+                this.star_notebook(false, {user: user, gistname: gistname}))
+                .then(function() {
+                    remove_all(user, gistname);
+                    remove_node($tree_.tree('getNodeById', node_id('alls', user, gistname)));
+                    result.save_config();
+                    if(gistname === config_.currbook)
+                        that.new_notebook();
+                });
         },
         set_visibility: function(node, visibility) {
             if(node.user !== username_)
