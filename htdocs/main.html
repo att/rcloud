@@ -81,41 +81,19 @@
 
 <div class="container" id="main-div">
   <div class="row">
-    <div class="col-md-4 col-sm-4 no-padding"
-	 style="position:fixed; top: 51; bottom: 0;
-    		margin: 0; display: none" id="left-column">
-      <div class="panel panel-default">
-    	<div class="panel-heading">Scratch</div>
-    	<div class="panel-body" style="padding:0;border:0">
-    	  <div style="padding:1px;margin:0px;background-color:#ddd">
-    	    <div id="scratchpad-editor" style="height: 100%"></div>
-    	  </div>
-    	</div>
+    <div class="col-md-3 col-sm-3 no-padding" style="position:fixed;top:51;left:0" id="right-column">
+      <div style="position: absolute; left:0; top:0px">
+	<svg height="20" width="20" id="notebook-clicker" style="position:absolute; left:0; top:0px">
+	  <polygon points="0,0 20,0 0,20" style="fill:#428bca;stroke:none"/>
+	</svg>
+	<a id="right-pane-collapser"><i class="icon-minus" style="font-size:0.8em; color:#f5f5f5; position:absolute; left:2px; top:0px; cursor:pointer"></i> </a>
       </div>
-    </div>
-    <div class="col-md-4 col-sm-4 no-padding" id="fake-left-column" style="display:none">
-    </div>
-    <div class="col-md-9 col-sm-9 no-padding" id="middle-column">
-      <div id="tabs-1">
-        <div id="output" class="tab-div">
-        </div>
-
-        <div id="prompt-div" class="rcloud-prompt col-sm-9 col-md-9"><img width="100%" height="5px" src="img/vbordergray.png" style="position:relative;top:-5px"><div id="command-prompt"
-               style="float: left; width:80%; height: 50px; background:#FFFFFF; border:1px solid #DDDDDD"></div>
-          <button style="float: right; width:20%;"
-          id="new-md-cell-button" class="btn btn-default btn-md">Add
-          RMarkdown cell</button><div style="clear:right;"></div><button style="float: right; width:20%;" id="new-r-cell-button" class="btn btn-default btn-md">Add R cell</button>
-        </div>
-        <div style="padding:1em; clear:both"></div>
-      </div>
-    </div>
-    <div class="col-md-3 col-sm-3 no-padding" style="position:fixed;top:51;right:0">
       <div id="tabs-2">
         <div class="tab-div">
           <div class="panel-group" id="accordion">
             <div class="panel panel-default">
               <div class="panel-heading">
-                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">Notebooks</a>
+                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseOne"><i class="icon-folder-open"></i> <span class="title-offset">Notebooks</span></a>
                 <a class="header-button" href="#" id="new-notebook"><i class="icon-plus"></i></a>
               </div>
               <div id="collapseOne" class="panel-collapse collapse">
@@ -126,7 +104,7 @@
             </div>
             <div class="panel panel-default">
               <div class="panel-heading">
-                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseFour">File Upload</a>
+                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseFour"><i class="icon-upload"></i> <span class="title-offset">File Upload</span></a>
               </div>
               <div id="collapseFour" class="panel-collapse collapse in">
                 <div class="panel-body">
@@ -144,7 +122,7 @@
             </div>
             <div class="panel panel-default">
               <div class="panel-heading">
-                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">Search</a>
+                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo"><i class="icon-search"></i> <span class="title-offset">Search</span></a>
               </div>
               <div id="collapseTwo" class="panel-collapse collapse in">
                 <div class="panel-body">
@@ -166,7 +144,7 @@
               <div class="panel-heading">
                 <a class="accordion-toggle" data-toggle="collapse"
                    data-parent="#accordion"
-                   href="#collapseFive">Comments (<span id="comment-count">0</span>)</a>
+                   href="#collapseFive"><i class="icon-comments"></i> <span class="title-offset">Comments (<span id="comment-count">0</span>)</span></a>
               </div>
               <div id="collapseFive" class="panel-collapse collapse in">
                 <div class="panel-body">
@@ -195,6 +173,33 @@
 
           </div>
         </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-3 no-padding" id="fake-right-column"></div>
+    <div class="col-md-5 col-sm-5 no-padding" id="middle-column">
+      <div id="tabs-1">
+        <div id="output" class="tab-div">
+        </div>
+
+        <div id="prompt-div" class="rcloud-prompt col-sm-5 col-md-5"><img width="100%" height="5px" src="img/vbordergray.png" style="position:relative;top:-5px"><div id="command-prompt"
+               style="float: left; width:80%; height: 50px; background:#FFFFFF; border:1px solid #DDDDDD"></div>
+          <button style="float: right; width:20%;"
+          id="new-md-cell-button" class="btn btn-default btn-md">Add
+          RMarkdown cell</button><div style="clear:right;"></div><button style="float: right; width:20%;" id="new-r-cell-button" class="btn btn-default btn-md">Add R cell</button>
+        </div>
+        <div style="padding:1em; clear:both"></div>
+      </div>
+    </div>
+    <div class="col-md-4 col-sm-4 no-padding"
+	 style="position:fixed; top: 51; bottom: 0;
+		right:0; margin: 0" id="left-column">
+      <div class="panel panel-default">
+    	<div class="panel-heading">Scratch</div>
+    	<div class="panel-body" style="padding:0;border:0">
+    	  <div style="padding:1px;margin:0px;background-color:#ddd">
+    	    <div id="scratchpad-editor" style="height: 100%"></div>
+    	  </div>
+    	</div>
       </div>
     </div>
   </div>
