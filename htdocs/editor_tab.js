@@ -612,20 +612,27 @@ var editor = function () {
             p.then(select_node);
     }
 
+    // hack to fake a hover over a node (or the next one if it's deleted)
+    // because jqTree rebuilds DOM elements and events get lost
+    function fake_hover(node) {
+        var parent = node.parent;
+        var index = $('.notebook-commands.appear', node.element).css('display') !== 'none' ?
+                parent.children.indexOf(node) : undefined;
+        setTimeout(function() {
+            if(index>=0 && index < parent.children.length) {
+                var next = parent.children[index];
+                $(next.element).mouseover();
+            }
+        }, 0);
+    }
+
     function remove_node(node) {
-        var dp = node.parent;
-        // hack to fake a hover over the next item when deleting the current one despite
-        // that jqTree is rebuilding the entire (?) tree
-        var next = $('.notebook-commands.appear', node.element).attr('display') !== 'none' ?
-                dp.children.indexOf(node) : null;
+        var parent = node.parent;
+        fake_hover(node);
         $tree_.tree('removeNode', node);
-        remove_empty_parents(dp);
-        if(node.root === 'interests' && node.user !== username_ && dp.children.length === 0)
-            $tree_.tree('removeNode', dp);
-        if(next>=0 && next < dp.children.length) {
-            next = dp.children[next];
-            setTimeout(function() { $(next.element).mouseover(); }, 0);
-        }
+        remove_empty_parents(parent);
+        if(node.root === 'interests' && node.user !== username_ && parent.children.length === 0)
+            $tree_.tree('removeNode', parent);
     }
 
     function unstar_notebook_view(user, gistname, select) {
@@ -784,6 +791,7 @@ var editor = function () {
                 if(disable)
                     history.addClass('button-disabled');
                 history.click(function() {
+                    fake_hover(node);
                     if(!disable) {
                         result.show_history(node, true);
                     }
@@ -800,9 +808,11 @@ var editor = function () {
                 else
                     make_private.hide();
                 make_private.click(function() {
+                    fake_hover(node);
                     result.set_visibility(node, 'private');
                 });
                 make_public.click(function() {
+                    fake_hover(node);
                     result.set_visibility(node, 'public');
                     return false;
                 });
@@ -1019,7 +1029,7 @@ var editor = function () {
                 throw "attempt to set visibility on notebook not mine";
             var entry = interests_[username_][node.gistname];
             entry.visibility = visibility;
-            rcloud.config.update_notebook_info(username_, entry);
+            rcloud.config.add_notebook(username_, entry);
             update_tree_entry(node.root, username_, node.gistname, entry, false);
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
