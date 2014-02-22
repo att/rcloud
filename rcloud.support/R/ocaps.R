@@ -1,3 +1,10 @@
+rcloud.get.ocaps<-function(pkg, fun) {
+  if(!require(pkg,character.only=TRUE) & exists(fun, paste0('package:',pkg)))
+  stop(paste(pkg, "not installed or missing",fun))
+  ocaps<-eval(parse(text=paste0(pkg,'::',fun,'()')))
+  ocaps
+}
+
 make.oc <- function(fun, name=deparse(substitute(fun))) {
   f <- function(...) try(fun(...), silent=TRUE)
   Rserve:::ocap(f, name)
@@ -141,7 +148,8 @@ authenticated.ocaps <- function()
         post = make.oc(rcloud.post.comment)
         ),
 
-      purl_source = make.oc(rcloud.purl.source)
+      purl_source = make.oc(rcloud.purl.source),
+      get_ocaps = make.oc(rcloud.get.ocaps)
            
       )
   )
