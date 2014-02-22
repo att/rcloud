@@ -247,6 +247,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["fork_notebook"],
             ["port_notebooks"],
             ["purl_source"],
+            ["get_ocaps"],
             ["get_completions"],
             ["rename_notebook"],
             ["session_markdown_eval"],
@@ -303,6 +304,9 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.purl_source = function(source) {
             rcloud_ocaps.purl_sourceAsync(source);
+        };
+        rcloud.get_ocaps = function(pkg, fun) {
+            return rcloud_ocaps.get_ocapsAsync(pkg, fun);
         };
 
         rcloud.get_completions = function(text, pos) {
