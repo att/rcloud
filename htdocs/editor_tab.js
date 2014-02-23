@@ -45,7 +45,48 @@ var editor = function () {
     // do a depth-first search then apply all the migration functions.
     // obviously results will be unpredictable if there is more than one path.
     function migrate_config() {
-        // do server-side
+        var old_version = config_.config_version || 0;
+        if(old_version === CONFIG_VERSION)
+            return false;
+        // upgrade from version M to N
+        var migration_graph = {
+            '0': {
+                '1': function(config) {
+                    // star all notebooks in interests
+                    for(var u in config.interests)
+                        for(var n in config.interests[u])
+                            rcloud.stars.star_notebook(n);
+                }
+            },
+            '1': {
+                '2': function(config) {
+                    // register all notebooks in interests and all_books
+                    // drop interests and all_books
+                    delete config.interests;
+                    delete config.all_books;
+                }
+            }
+        };
+        function find_path(a, b) {
+            if(a === b)
+                return [];
+            var links = migration_graph[a];
+            if(!links)
+                return null;
+            if(links[b])
+                return [{version: b, f: links[b]}];
+            var path;
+            for(var l in links)
+                if((path = find_path(l, b))) {
+                    path.unshift({version: l, f: links[l]});
+                    return path;
+                }
+            return null;
+        }
+        var migration_path = find_path(old_version, CONFIG_VERSION);
+        for(var i = 0; i < migration_path.length; ++i)
+            migration_path[i].f(config_);
+        config_.config_version = CONFIG_VERSION;
         return true;
     }
 
