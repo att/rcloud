@@ -5,49 +5,49 @@ var left_panel_collapsed = false;
 var middle_panel_size = 5;
 function init_side_panel_collapsers()
 {
-    function hide_right_panel() {
-        $("#right-column").removeClass("col-md-3 col-sm-3").addClass("col-md-1 col-sm-1");
-        $("#fake-right-column").removeClass("col-md-3 col-sm-3").addClass("col-md-1 col-sm-1");
-        $("#new-notebook").hide();
-        $("#right-pane-collapser i").removeClass("icon-minus").addClass("icon-plus");
-        right_panel_collapsed = true;
-    }
-
-    function show_right_panel() {
-        $("#right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-3 col-sm-3");
-        $("#fake-right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-3 col-sm-3");
-        $("#new-notebook").show();
-        $("#right-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
-        right_panel_collapsed = false;
-    }
-
     function hide_left_panel() {
-        $("#fake-left-column").hide();
-        $("#left-column").hide();
+        $("#left-column").removeClass("col-md-3 col-sm-3").addClass("col-md-1 col-sm-1");
+        $("#fake-left-column").removeClass("col-md-3 col-sm-3").addClass("col-md-1 col-sm-1");
+        $("#new-notebook").hide();
+        $("#left-pane-collapser i").removeClass("icon-minus").addClass("icon-plus");
         left_panel_collapsed = true;
     }
 
     function show_left_panel() {
-        $("#fake-left-column").show();
-        $("#left-column").show();
+        $("#left-column").removeClass("col-md-1 col-sm-1").addClass("col-md-3 col-sm-3");
+        $("#fake-left-column").removeClass("col-md-1 col-sm-1").addClass("col-md-3 col-sm-3");
+        $("#new-notebook").show();
+        $("#left-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
         left_panel_collapsed = false;
     }
 
+    function hide_right_panel() {
+        $("#right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-1 col-sm-1");
+        $("#fake-right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-1 col-sm-1");
+        $("#right-pane-collapser i").addClass("icon-plus").removeClass("icon-minus");
+        right_panel_collapsed = true;
+    }
+
+    function show_right_panel() {
+        $("#right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-4 col-sm-4");
+        $("#fake-right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-4 col-sm-4");
+        $("#right-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
+        right_panel_collapsed = false;
+    }
+
     function update_middle_column() {
-        var size;
+        var size = 12;
         if (right_panel_collapsed) {
-            if (left_panel_collapsed) {
-                size = 11;
-            } else {
-                size = 7;
-            }
+            size -= 1;
         } else {
-            if (left_panel_collapsed) {
-                size = 9;
-            } else {
-                size = 5;
-             }
-         }
+            size -= 4;
+        }
+        if (left_panel_collapsed) {
+            size -= 1;
+        } else {
+            size -= 3;
+        }
+
         var previous_classes = "col-sm-" + middle_panel_size + " col-md-" + middle_panel_size;
         var new_classes = "col-sm-" + size + " col-md-" + size;
         $("#middle-column").removeClass(previous_classes).addClass(new_classes);
@@ -60,8 +60,19 @@ function init_side_panel_collapsers()
             show_right_panel();
         } else {
             // the following actually makes sense to me. oh no what has my life become
-            $("#accordion > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
+            $("#accordion-right > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
             hide_right_panel();
+        }
+        update_middle_column();
+    });
+
+    $("#left-pane-collapser").click(function() {
+        if (left_panel_collapsed) {
+            show_left_panel();
+        } else {
+            // the following actually makes sense to me. oh no what has my life become
+            $("#accordion > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
+            hide_left_panel();
         }
         update_middle_column();
     });
@@ -69,6 +80,13 @@ function init_side_panel_collapsers()
     $("#accordion").on("show.bs.collapse", function() {
         if (right_panel_collapsed) {
             show_right_panel();
+            right_panel_collapsed = false;
+            update_middle_column();
+        }
+    });
+    $("#accordion-right").on("show.bs.collapse", function() {
+        if (left_panel_collapsed) {
+            show_left_panel();
             right_panel_collapsed = false;
             update_middle_column();
         }

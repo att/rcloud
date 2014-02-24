@@ -456,15 +456,31 @@ pre {
 
 .title-offset {
     position: absolute;
-    left: 3em;
     text-overflow: ellipsis; /* Chrome bug to be resolved soon: https://code.google.com/p/chromium/issues/detail?id=166263 */
     overflow: hidden;
     white-space: nowrap;
 }
 
+.left > .title-offset {
+    left: 3em;
+}
+
+.right > .title-offset {
+    right: 3em;
+}
+
+a.accordion-toggle:hover {
+    text-decoration: none;
+}
+
 a.accordion-toggle [class^="icon-"], a.accordion-toggle [class*="icon-"] {
     position: relative;
     top: 2px;
+}
+
+a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="icon-"] {
+    position: absolute;
+    right: 0px;
 }
 
 .panel-default > .panel-heading {
@@ -492,3 +508,4 @@ a.accordion-toggle [class^="icon-"], a.accordion-toggle [class*="icon-"] {
 .navbar-inverse {
     border-color: #222;
 }
+
