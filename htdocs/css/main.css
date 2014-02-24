@@ -179,6 +179,7 @@ rect.frame {
 .header-button {
     float: right;
     font-size: 120%;
+    color: #f1f1e5;
 }
 
 /* Ace sets its z-index to something obscene,
@@ -465,4 +466,29 @@ a.accordion-toggle [class^="icon-"], a.accordion-toggle [class*="icon-"] {
     position: relative;
     top: 2px;
 }
+
+.panel-default > .panel-heading {
+    background-color: #777;
+}
+
+.panel-default > .panel-heading > .accordion-toggle {
+    color: #f1f1e5;
+}
+
+.panel-heading {
+    border-radius: 0;
+}
+
+.panel-collapse {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    background-color: #777;
+}
+
+.panel-body {
+    background-color: #fff;
+}
+
+.navbar-inverse {
+    border-color: #222;
 }
