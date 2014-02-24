@@ -22,15 +22,15 @@ function init_side_panel_collapsers()
     }
 
     function hide_right_panel() {
-        $("#right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-1 col-sm-1");
-        $("#fake-right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-1 col-sm-1");
+        $("#right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-2 col-sm-2");
+        $("#fake-right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-2 col-sm-2");
         $("#right-pane-collapser i").addClass("icon-plus").removeClass("icon-minus");
         right_panel_collapsed = true;
     }
 
     function show_right_panel() {
-        $("#right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-4 col-sm-4");
-        $("#fake-right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-4 col-sm-4");
+        $("#right-column").removeClass("col-md-2 col-sm-2").addClass("col-md-4 col-sm-4");
+        $("#fake-right-column").removeClass("col-md-2 col-sm-2").addClass("col-md-4 col-sm-4");
         $("#right-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
         right_panel_collapsed = false;
     }
@@ -38,7 +38,7 @@ function init_side_panel_collapsers()
     function update_middle_column() {
         var size = 12;
         if (right_panel_collapsed) {
-            size -= 1;
+            size -= 2;
         } else {
             size -= 4;
         }
@@ -77,19 +77,36 @@ function init_side_panel_collapsers()
         update_middle_column();
     });
 
-    $("#accordion").on("show.bs.collapse", function() {
+    $("#accordion-right").on("show.bs.collapse", function() {
         if (right_panel_collapsed) {
             show_right_panel();
             right_panel_collapsed = false;
             update_middle_column();
         }
     });
-    $("#accordion-right").on("show.bs.collapse", function() {
+    $("#accordion").on("show.bs.collapse", function() {
         if (left_panel_collapsed) {
             show_left_panel();
-            right_panel_collapsed = false;
+            left_panel_collapsed = false;
             update_middle_column();
         }
+    });
+
+    $("#accordion").on("shown.bs.collapse", function() {
+        $(".left-panel-shadow").each(function(v) { 
+            var h = $(this).parent().height();
+            if (h === 0)
+                h = "100%";
+            $(this).attr("height", h);
+        });
+    });
+    $("#accordion-right").on("shown.bs.collapse", function() {
+        $(".right-panel-shadow").each(function(v) { 
+            var h = $(this).parent().height();
+            if (h === 0)
+                h = "100%";
+            $(this).attr("height", h);
+        });
     });
 
     ui_utils.checkbox_menu_item($("#toggle-scratchpad"),
