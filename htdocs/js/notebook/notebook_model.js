@@ -1,6 +1,7 @@
 Notebook.create_model = function()
 {
     var readonly_ = false;
+    var user_ = "";
 
     function last_id(notebook) {
         if(notebook.length)
@@ -160,6 +161,12 @@ Notebook.create_model = function()
                 });
             }
             return readonly_;
+        },
+        user: function(user) {
+            if (!_.isUndefined(user)) {
+                user_ = user;
+            }
+            return user_;
         },
         on_dirty: function() {
             _.each(this.dishers, function(disher) {

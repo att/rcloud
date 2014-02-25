@@ -23,7 +23,10 @@ rcloud_bundle.js: \
 	ui/right_panel.js \
 	ui/middle_column.js \
 	ui/scratchpad.js \
-	ui/command_prompt.js
+	ui/command_prompt.js \
+	ui/share_button.js \
+	ui/configure_readonly.js \
+	ui/notebook_title.js
 
 rcloud_bundle.min.js: rcloud_bundle.js Makefile
 	@rm -f $@

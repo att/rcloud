@@ -3,30 +3,12 @@ var shell = (function() {
     var version_ = null,
         gistname_ = null,
         notebook_user_ = null,
-        is_mine_ = null,
         github_url_ = null,
         gist_url_ = null,
         notebook_model_ = Notebook.create_model(),
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
         notebook_controller_ = Notebook.create_controller(notebook_model_),
         first_session_ = true;
-
-    function do_interface_readonlyness() {
-        var fork_revert = $('#fork-revert-notebook');
-        if(notebook_model_.read_only()) {
-            $('#prompt-div').hide();
-            fork_revert.text(is_mine_ ? 'Revert' : 'Fork');
-            fork_revert.show();
-            $('#save-notebook').hide();
-            $('#output').sortable('disable');
-        }
-        else {
-            $('#prompt-div').show();
-            fork_revert.hide();
-            $('#save-notebook').show();
-            $('#output').sortable('enable');
-        }
-    }
 
     function make_cells_sortable() {
         var cells = $('#output');
@@ -58,39 +40,6 @@ var shell = (function() {
         for(var fn in files)
             files[fn] = _.pick(files[fn], 'content');
         return notebook;
-    }
-
-    function notebook_is_mine(notebook) {
-        return rcloud.username() === notebook.user.login;
-    }
-
-    function set_notebook_title(notebook) {
-        var is_read_only = result.notebook.model.read_only();
-        var desc = notebook.description;
-        result.set_title(desc);
-        var ellipt_start = false, ellipt_end = false;
-        while(window.innerWidth - $("#notebook-title").width() < 505) {
-            var slash = desc.search('/');
-            if(slash >= 0) {
-                ellipt_start = true;
-                desc = desc.slice(slash+1);
-            }
-            else {
-                ellipt_end = true;
-                desc = desc.substr(0, desc.length - 2);
-            }
-            $("#notebook-title").text((ellipt_start ? '.../' : '')
-                                      + desc +
-                                      (ellipt_end ? '...' : ''));
-        }
-        var title = $('#notebook-title');
-        ui_utils.make_editable(title, !is_read_only, function(text) {
-            if(editor.rename_notebook(shell.gistname(), text)) {
-                result.set_title(text);
-                return true;
-            }
-            return false;
-        });
     }
 
     function set_share_link() {
@@ -144,23 +93,16 @@ var shell = (function() {
     }
 
     function on_new(notebook) {
-        set_notebook_title(notebook);
         gistname_ = notebook.id;
         version_ = null;
-        set_share_link();
-        is_mine_ = notebook_is_mine(notebook);
-        do_interface_readonlyness();
-        RCloud.UI.command_prompt.focus();
-        return notebook;
+        return on_load(notebook);
     }
 
     function on_load(notebook) {
-        set_notebook_title(notebook);
-        set_share_link();
-
-        is_mine_ = notebook_is_mine(notebook);
+        RCloud.UI.notebook_title.set(notebook.description);
+        RCloud.UI.share_button.set_link();
         notebook_user_ = notebook.user.login;
-        do_interface_readonlyness();
+        RCloud.UI.configure_readonly();
         _.each(notebook_view_.sub_views, function(cell_view) {
             cell_view.show_source();
         });
@@ -191,8 +133,9 @@ var shell = (function() {
             return !gist_url_;
         },
         fork_or_revert_button: function() {
+            var is_mine = result.notebook.controller.is_mine();
             // hmm messages bouncing around everywhere
-            editor.fork_or_revert_notebook(is_mine_, gistname_, version_);
+            editor.fork_or_revert_notebook(is_mine, gistname_, version_);
         },
         set_title: function(desc) {
             $("#notebook-title")

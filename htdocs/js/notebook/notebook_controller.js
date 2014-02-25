@@ -39,6 +39,7 @@ Notebook.create_controller = function(model)
             for(var i in parts)
                 append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
             // is there anything else to gist permissions?
+            model.user(notebook.user.login);
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
         }
@@ -141,7 +142,6 @@ Notebook.create_controller = function(model)
            function() {result.hide_r_source();});
         show_source_checkbox_.set_state(true);
     }
-
 
     setup_show_source();
     model.dishers.push({on_dirty: on_dirty});
@@ -248,6 +248,12 @@ Notebook.create_controller = function(model)
                 });
             });
             return Promise.all(promises);
+        },
+
+        //////////////////////////////////////////////////////////////////////
+
+        is_mine: function() {
+            return rcloud.username() === model.user();
         },
 
         //////////////////////////////////////////////////////////////////////

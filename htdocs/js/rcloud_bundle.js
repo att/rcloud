@@ -1496,6 +1496,7 @@ Notebook.create_html_view = function(model, root_div)
 Notebook.create_model = function()
 {
     var readonly_ = false;
+    var user_ = "";
 
     function last_id(notebook) {
         if(notebook.length)
@@ -1656,6 +1657,12 @@ Notebook.create_model = function()
             }
             return readonly_;
         },
+        user: function(user) {
+            if (!_.isUndefined(user)) {
+                user_ = user;
+            }
+            return user_;
+        },
         on_dirty: function() {
             _.each(this.dishers, function(disher) {
                 disher.on_dirty();
@@ -1709,6 +1716,7 @@ Notebook.create_controller = function(model)
             for(var i in parts)
                 append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
             // is there anything else to gist permissions?
+            model.user(notebook.user.login);
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
         }
@@ -1811,7 +1819,6 @@ Notebook.create_controller = function(model)
            function() {result.hide_r_source();});
         show_source_checkbox_.set_state(true);
     }
-
 
     setup_show_source();
     model.dishers.push({on_dirty: on_dirty});
@@ -1918,6 +1925,12 @@ Notebook.create_controller = function(model)
                 });
             });
             return Promise.all(promises);
+        },
+
+        //////////////////////////////////////////////////////////////////////
+
+        is_mine: function() {
+            return rcloud.username() === model.user();
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -2393,5 +2406,84 @@ RCloud.UI.command_prompt = {
             widget: widget,
             restore: restore_prompt
         };
+    }
+};
+RCloud.UI.share_button = {
+    set_link: function() {
+        var link = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
+        var v = shell.version();
+        if(v)
+            link += '&version='+v;
+
+        $("#share-link").attr("href", link);
+    }
+};
+/*
+ * Adjusts the UI depending on whether notebook is read-only
+ */
+RCloud.UI.configure_readonly = function() {
+    var fork_revert = $('#fork-revert-notebook');
+    if(shell.notebook.model.read_only()) {
+        $('#prompt-div').hide();
+        fork_revert.text(shell.notebook.controller.is_mine() ? 'Revert' : 'Fork');
+        fork_revert.show();
+        $('#save-notebook').hide();
+        $('#output').sortable('disable');
+    }
+    else {
+        $('#prompt-div').show();
+        fork_revert.hide();
+        $('#save-notebook').show();
+        $('#output').sortable('enable');
+    }
+};
+RCloud.UI.notebook_title = {
+    last_editable_: null,
+    set: function (text) {
+        var is_read_only = shell.notebook.model.read_only();
+        $("#notebook-title")
+            .text(text)
+            .data('restore_edit', text);
+        var ellipt_start = false, ellipt_end = false;
+        while(window.innerWidth - $("#notebook-title").width() < 505) {
+            var slash = text.search('/');
+            if(slash >= 0) {
+                ellipt_start = true;
+                text = text.slice(slash+1);
+            }
+            else {
+                ellipt_end = true;
+                text = text.substr(0, text.length - 2);
+            }
+            $("#notebook-title").text((ellipt_start ? '.../' : '')
+                                      + text +
+                                      (ellipt_end ? '...' : ''));
+        }
+        var title = $('#notebook-title');
+        ui_utils.make_editable(title, !is_read_only, function(text) {
+            if(editor.rename_notebook(shell.gistname(), text)) {
+                $("#notebook-title")
+                    .text(text)
+                    .data('restore_edit', text);
+                return true;
+            } else {
+                return false;
+            }
+        });
+    }, make_editable: function(node_title, gistname, editable) {
+        if(this.last_editable_ && (!node_title || this.last_editable_[0] !== node_title[0]))
+            ui_utils.make_editable(this.last_editable_, false);
+        if(node_title)
+            ui_utils.make_editable(node_title, editable, function(text) {
+                if(editor.rename_notebook(gistname, text)) {
+                    $("#notebook-title")
+                        .text(text)
+                        .data('restore_edit', text);
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+        this.last_editable_ = node_title;
     }
 };
