@@ -113,4 +113,5 @@ RCloud.UI.init = function() {
     $("#run-notebook").click(shell.run_notebook);
 
     RCloud.UI.scratchpad.init();
+    RCloud.UI.command_prompt.init();
 };

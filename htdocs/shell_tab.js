@@ -6,166 +6,10 @@ var shell = (function() {
         is_mine_ = null,
         github_url_ = null,
         gist_url_ = null,
-        prefix_ = null,
-        prompt_ = null,
         notebook_model_ = Notebook.create_model(),
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
         notebook_controller_ = Notebook.create_controller(notebook_model_),
-        first_session_ = true,
-        prompt_history_ = null;
-
-    prompt_history_ = (function() {
-        var entries_ = [], alt_ = [];
-        var curr_ = 0;
-        function curr_cmd() {
-            return alt_[curr_] || (curr_<entries_.length ? entries_[curr_] : "");
-        }
-        var result = {
-            init: function() {
-                prefix_ = "rcloud.history." + gistname_ + ".";
-                var i = 0;
-                entries_ = [];
-                alt_ = [];
-                while(1) {
-                    var cmd = window.localStorage[prefix_+i],
-                        cmda = window.localStorage[prefix_+i+".alt"];
-                    if(cmda !== undefined)
-                        alt_[i] = cmda;
-                    if(cmd === undefined)
-                        break;
-                    entries_.push(cmd);
-                    ++i;
-                }
-                curr_ = entries_.length;
-                return curr_cmd();
-            },
-            execute: function(cmd) {
-                if(cmd==="") return;
-                alt_[entries_.length] = null;
-                entries_.push(cmd);
-                alt_[curr_] = null;
-                curr_ = entries_.length;
-                window.localStorage[prefix_+(curr_-1)] = cmd;
-            },
-            last: function() {
-                if(curr_>0) --curr_;
-                return curr_cmd();
-            },
-            next: function() {
-                if(curr_<entries_.length) ++curr_;
-                return curr_cmd();
-            },
-            change: function(cmd) {
-                window.localStorage[prefix_+curr_+".alt"] = alt_[curr_] = cmd;
-            }
-        };
-        return result;
-    })();
-
-    function setup_command_prompt(prompt_div) {
-        function set_ace_height() {
-            prompt_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
-            widget.resize();
-        }
-        prompt_div.css({'background-color': "#fff"});
-        prompt_div.addClass("r-language-pseudo");
-        ace.require("ace/ext/language_tools");
-        var widget = ace.edit(prompt_div[0]);
-        set_ace_height();
-        var RMode = require("ace/mode/r").Mode;
-        var session = widget.getSession();
-        var doc = session.doc;
-        widget.setOptions({
-            enableBasicAutocompletion: true
-        });
-        session.setMode(new RMode(false, doc, session));
-        session.on('change', set_ace_height);
-
-        widget.setTheme("ace/theme/chrome");
-        session.setUseWrapMode(true);
-        widget.resize();
-        var change_prompt = ui_utils.ignore_programmatic_changes(widget, prompt_history_.change.bind(prompt_history_));
-        function execute(widget, args, request) {
-            var code = session.getValue();
-            if(code.length) {
-                result.new_interactive_cell(code, true);
-                change_prompt('');
-            }
-        }
-
-        function last_row(widget) {
-            var doc = widget.getSession().getDocument();
-            return doc.getLength()-1;
-        }
-
-        function last_col(widget, row) {
-            var doc = widget.getSession().getDocument();
-            return doc.getLine(row).length;
-        }
-
-        function restore_prompt() {
-            var cmd = prompt_history_.init();
-            change_prompt(cmd);
-            var r = last_row(widget);
-            ui_utils.ace_set_pos(widget, r, last_col(widget, r));
-        }
-
-        ui_utils.install_common_ace_key_bindings(widget);
-
-        // note ace.js typo which we need to correct when we update ace
-        var up_handler = widget.commands.commandKeyBinding[0]["up"],
-            down_handler = widget.commands.commandKeyBinding[0]["down"];
-        widget.commands.addCommands([{
-            name: 'execute',
-            bindKey: {
-                win: 'Return',
-                mac: 'Return',
-                sender: 'editor'
-            },
-            exec: execute
-        }, {
-            name: 'execute-2',
-            bindKey: {
-                win: 'Ctrl-Return',
-                mac: 'Command-Return',
-                sender: 'editor'
-            },
-            exec: execute
-        }, {
-            name: 'up-with-history',
-            bindKey: 'up',
-            exec: function(widget, args, request) {
-                var pos = widget.getCursorPosition();
-                if(pos.row > 0)
-                    up_handler.exec(widget, args, request);
-                else {
-                    change_prompt(prompt_history_.last());
-                    var r = last_row(widget);
-                    ui_utils.ace_set_pos(widget, r, last_col(widget, r));
-                }
-            }
-        }, {
-            name: 'down-with-history',
-            bindKey: 'down',
-            exec: function(widget, args, request) {
-                var pos = widget.getCursorPosition();
-                var r = last_row(widget);
-                if(pos.row < r)
-                    down_handler.exec(widget, args, request);
-                else {
-                    change_prompt(prompt_history_.next());
-                    ui_utils.ace_set_pos(widget, 0, last_col(widget, 0));
-                }
-            }
-        }
-        ]);
-        ui_utils.make_prompt_chevron_gutter(widget);
-
-        return {
-            widget: widget,
-            restore: restore_prompt
-        };
-    }
+        first_session_ = true;
 
     function do_interface_readonlyness() {
         var fork_revert = $('#fork-revert-notebook');
@@ -306,10 +150,7 @@ var shell = (function() {
         set_share_link();
         is_mine_ = notebook_is_mine(notebook);
         do_interface_readonlyness();
-        if(prompt_) {
-            prompt_.widget.focus(); // surely not the right way to do this
-            prompt_.restore();
-        }
+        RCloud.UI.command_prompt.focus();
         return notebook;
     }
 
@@ -323,17 +164,9 @@ var shell = (function() {
         _.each(notebook_view_.sub_views, function(cell_view) {
             cell_view.show_source();
         });
-        if(prompt_) {
-            prompt_.widget.focus(); // surely not the right way to do this
-            prompt_.restore();
-        }
+        RCloud.UI.command_prompt.focus();
         return notebook;
     }
-
-    var prompt_div = $("#command-prompt");
-    if(prompt_div.length)
-        prompt_ = setup_command_prompt(prompt_div);
-
 
     make_cells_sortable();
 
@@ -344,7 +177,6 @@ var shell = (function() {
             view: notebook_view_,
             controller: notebook_controller_
         },
-        prompt_widget: prompt_? prompt_.widget : null,
         gistname: function() {
             return gistname_;
         },
@@ -398,7 +230,7 @@ var shell = (function() {
             return notebook_controller_.append_cell(content, "Markdown");
         }, new_interactive_cell: function(content, execute) {
             var cell = notebook_controller_.append_cell(content, "R");
-            prompt_history_.execute(content);
+            RCloud.UI.command_prompt.history.execute(content);
             if(execute) {
                 cell.execute().then(function() {
                     $.scrollTo(null, $("#end-of-output"));
@@ -729,7 +561,7 @@ var shell = (function() {
     result.run_notebook = function() {
         rcloud.with_progress().then(function(done) {
             result.notebook.controller.run_all().then(done);
-            prompt_ && prompt_.widget.focus(); // surely not the right way to do this
+            RCloud.UI.command_prompt.focus();
         }).catch(function(done) { done(); });
     };
 
