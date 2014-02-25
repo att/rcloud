@@ -13,59 +13,53 @@ var oob_handlers = {
 function main_init() {
     RCloud.UI.init();
 
-    function getURLParameter(name) {
-        return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
-    }
+    RCloud.session.init();
 
-    rclient = RClient.create({
-        debug: false,
-        host:  location.href.replace(/^http/,"ws").replace(/#.*$/,""),
-        on_connect: function(ocaps) {
-            rcloud = RCloud.create(ocaps.rcloud);
-            if (!rcloud.authenticated) {
-                rclient.post_error(rclient.disconnection_error("Please login first!"));
-                rclient.close();
-                return;
-            }
-            rcloud.session_init(rcloud.username(), rcloud.github_token()).then(function(hello) {
-                rclient.post_response(hello);
-            });
-            rcloud.display.set_device_pixel_ratio();
+    // function getURLParameter(name) {
+    //     return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+    // }
 
-            $(".collapse").collapse();
-            rcloud.init_client_side_data();
+    // rclient = RClient.create({
+    //     debug: false,
+    //     host:  location.href.replace(/^http/,"ws").replace(/#.*$/,""),
+    //     on_connect: function(ocaps) {
+    //         rcloud = RCloud.create(ocaps.rcloud);
+    //         if (!rcloud.authenticated) {
+    //             rclient.post_error(rclient.disconnection_error("Please login first!"));
+    //             rclient.close();
+    //             return;
+    //         }
+    //         rcloud.session_init(rcloud.username(), rcloud.github_token()).then(function(hello) {
+    //             rclient.post_response(hello);
+    //         });
+    //         rcloud.display.set_device_pixel_ratio();
 
-            shell.init();
-            var notebook = null, version = null;
-            if (location.search.length > 0) {
-                notebook = getURLParameter("notebook");
-                version = getURLParameter("version");
-            }
-            editor.init(notebook, version);
-            /*
-             // disabling navigation for now - concurrency issues
-            window.addEventListener("popstate", function(e) {
-                if(e.state === "rcloud.notebook") {
-                    var notebook2 = getURLParameter("notebook");
-                    var version2 = getURLParameter("version");
-                    editor.load_notebook(notebook2, version2, true, false);
-                }
-            });
-             */
+    //         $(".collapse").collapse();
+    //         rcloud.init_client_side_data();
 
-            ////////////////////////////////////////////////////////////////////////////////
-            // autosave when exiting. better default than dropping data, less annoying
-            // than prompting
-            $(window).bind("unload", function() {
-                shell.save_notebook();
-                return true;
-            });
-        },
-        on_data: function(v) {
-            v = v.value.json();
-            oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
-        }
-    });
+    //         shell.init();
+    //         var notebook = null, version = null;
+    //         if (location.search.length > 0) {
+    //             notebook = getURLParameter("notebook");
+    //             version = getURLParameter("version");
+    //         }
+    //         editor.init(notebook, version);
+    //         /*
+    //          // disabling navigation for now - concurrency issues
+    //         window.addEventListener("popstate", function(e) {
+    //             if(e.state === "rcloud.notebook") {
+    //                 var notebook2 = getURLParameter("notebook");
+    //                 var version2 = getURLParameter("version");
+    //                 editor.load_notebook(notebook2, version2, true, false);
+    //             }
+    //         });
+    //          */
+    //     },
+    //     on_data: function(v) {
+    //         v = v.value.json();
+    //         oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
+    //     }
+    // });
 }
 
 window.onload = main_init;

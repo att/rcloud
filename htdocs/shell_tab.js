@@ -10,28 +10,6 @@ var shell = (function() {
         notebook_controller_ = Notebook.create_controller(notebook_model_),
         first_session_ = true;
 
-    function make_cells_sortable() {
-        var cells = $('#output');
-        cells.sortable({
-            items: "> .notebook-cell",
-            start: function(e, info) {
-                $(e.toElement).addClass("grabbing");
-            },
-            stop: function(e, info) {
-                $(e.toElement).removeClass("grabbing");
-            },
-            update: function(e, info) {
-                var ray = cells.sortable('toArray');
-                var model = info.item.data('rcloud.model'),
-                    next = info.item.next().data('rcloud.model');
-                notebook_controller_.move_cell(model, next);
-            },
-            handle: " .ace_gutter-layer",
-            scroll: true,
-            scrollSensitivity: 40
-        });
-    }
-
     function sanitize_notebook(notebook) {
         notebook = _.pick(notebook, 'description', 'files');
         var files = notebook.files;
@@ -40,15 +18,6 @@ var shell = (function() {
         for(var fn in files)
             files[fn] = _.pick(files[fn], 'content');
         return notebook;
-    }
-
-    function set_share_link() {
-        var link = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
-        var v = shell.version();
-        if(v)
-            link += '&version='+v;
-
-        $("#share-link").attr("href", link);
     }
 
     function reset_session() {
@@ -109,8 +78,6 @@ var shell = (function() {
         RCloud.UI.command_prompt.focus();
         return notebook;
     }
-
-    make_cells_sortable();
 
     var first = true;
     var result = {

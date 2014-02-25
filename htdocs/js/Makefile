@@ -17,6 +17,7 @@ rcloud_bundle.js: \
 	notebook/notebook_controller.js \
 	notebook/util.js \
 	notebook.js \
+	session.js \
 	ui/_begin.js \
 	ui/init.js \
 	ui/left_panel.js \

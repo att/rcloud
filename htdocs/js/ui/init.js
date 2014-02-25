@@ -114,4 +114,35 @@ RCloud.UI.init = function() {
 
     RCloud.UI.scratchpad.init();
     RCloud.UI.command_prompt.init();
+
+    function make_cells_sortable() {
+        var cells = $('#output');
+        cells.sortable({
+            items: "> .notebook-cell",
+            start: function(e, info) {
+                $(e.toElement).addClass("grabbing");
+            },
+            stop: function(e, info) {
+                $(e.toElement).removeClass("grabbing");
+            },
+            update: function(e, info) {
+                var ray = cells.sortable('toArray');
+                var model = info.item.data('rcloud.model'),
+                    next = info.item.next().data('rcloud.model');
+                shell.notebook.controller.move_cell(model, next);
+            },
+            handle: " .ace_gutter-layer",
+            scroll: true,
+            scrollSensitivity: 40
+        });
+    }
+    make_cells_sortable();    
+
+    //////////////////////////////////////////////////////////////////////////
+    // autosave when exiting. better default than dropping data, less annoying
+    // than prompting
+    $(window).bind("unload", function() {
+        shell.save_notebook();
+        return true;
+    });
 };
