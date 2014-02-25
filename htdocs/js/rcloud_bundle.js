@@ -1985,6 +1985,17 @@ Notebook.part_name = function(id, language) {
     }
     return 'part' + id + '.' + ext;
 };
+// FIXME this needs to go away as well.
+var oob_handlers = {
+    "browsePath": function(v) {
+        var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
+        var width=600;
+        var height=500;
+        var left=screen.width-width;
+        window.open(x,'RCloudHelp','width='+width+',height='+height+',scrollbars=yes,resizable=yes,left='+left);
+    }
+};
+
 RCloud.session = {
     first_session_: true,
     // FIXME rcloud.with_progress is part of the UI.
@@ -2028,63 +2039,33 @@ RCloud.session = {
         }
     }, init: function() {
         this.first_session_ = true;
-        function getURLParameter(name) {
-            return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
-        }
 
-        // return rcloud.with_progress(function(done) {
-            return new Promise(function(resolve, reject) {
-                rclient = RClient.create({
-                    debug: false,
-                    host:  location.href.replace(/^http/,"ws").replace(/#.*$/,""),
-                    on_connect: function(ocaps) {
-                        rcloud = RCloud.create(ocaps.rcloud);
-                        if (!rcloud.authenticated) {
-                            rclient.post_error(rclient.disconnection_error("Please login first!"));
-                            rclient.close();
-                            return;
-                        }
-                        rcloud.session_init(rcloud.username(), rcloud.github_token()).then(function(hello) {
-                            rclient.post_response(hello);
-                        });
-                        rcloud.display.set_device_pixel_ratio();
-
-                        $(".collapse").collapse();
-
-                        shell.init();
-                        var notebook = null, version = null;
-                        if (location.search.length > 0) {
-                            notebook = getURLParameter("notebook");
-                            version = getURLParameter("version");
-                        }
-                        editor.init(notebook, version);
-                        /*
-                         // disabling navigation for now - concurrency issues
-                         window.addEventListener("popstate", function(e) {
-                         if(e.state === "rcloud.notebook") {
-                         var notebook2 = getURLParameter("notebook");
-                         var version2 = getURLParameter("version");
-                         editor.load_notebook(notebook2, version2, true, false);
-                         }
-                         });
-                         */ 
-                        resolve(rcloud.init_client_side_data()); //.return(done));
-                    },
-                    // on_error: function(error) {
-                    //     // if we fail to connect we want
-                    //     // to reject the promise so with_progress can be cleaned up.
-                    //     if (!rclient.running) {
-                    //         reject(done);
-                    //     }
-                    //     return false;
-                    // },
-                    on_data: function(v) {
-                        v = v.value.json();
-                        oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
+        return new Promise(function(resolve, reject) {
+            rclient = RClient.create({
+                debug: false,
+                host:  location.href.replace(/^http/,"ws").replace(/#.*$/,""),
+                on_connect: function(ocaps) {
+                    rcloud = RCloud.create(ocaps.rcloud);
+                    if (!rcloud.authenticated) {
+                        rclient.post_error(rclient.disconnection_error("Please login first!"));
+                        rclient.close();
+                        reject(new Error("Not authenticated"));
+                        return;
                     }
-                });
+                    rcloud.session_init(rcloud.username(), rcloud.github_token()).then(function(hello) {
+                        rclient.post_response(hello);
+                    });
+                    rcloud.display.set_device_pixel_ratio();
+
+                    $(".collapse").collapse();
+
+                    resolve(rcloud.init_client_side_data());
+                }, on_data: function(v) {
+                    v = v.value.json();
+                    oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
+                }
             });
-        // });
+        });
         
     }
 };
