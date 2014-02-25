@@ -107,36 +107,18 @@ var middle_column = {
         } else {
             size -= 3;
         }
-
-        var previous_classes = "col-sm-" + middle_panel_size + " col-md-" + middle_panel_size;
+        var previous_classes = "col-sm-" + this.middle_panel_size + " col-md-" + this.middle_panel_size;
         var new_classes = "col-sm-" + size + " col-md-" + size;
         $("#middle-column").removeClass(previous_classes).addClass(new_classes);
         $("#prompt-div").removeClass(previous_classes).addClass(new_classes);
-        middle_panel_size = size;
+        this.middle_panel_size = size;
     }
 };
 
-var right_panel_collapsed = false;
-var left_panel_collapsed = false;
-var middle_panel_size = 5;
-function init_side_panel_collapsers()
-{
-    left_panel.init();
-    right_panel.init();
-}
-
-function resize_side_panel() {
-    var non_notebook_panel_height = 246;
-    $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
-}
-
-function init_fork_revert_button() {
+function init_ui() {
     $("#fork-revert-notebook").click(function() {
         shell.fork_or_revert_button();
     });
-}
-
-function init_github_buttons() {
     $("#open-in-github").click(function() {
         shell.open_in_github();
     });
@@ -148,9 +130,22 @@ function init_github_buttons() {
     $("#import-notebooks").click(function() {
         shell.import_notebooks();
     });
-}
 
-function init_upload_pane() {
+    var saveb = $("#save-notebook");
+    saveb.click(function() {
+        shell.save_notebook();
+    });
+    shell.notebook.controller.save_button(saveb);
+    $('#export-notebook-file').click(function() {
+        shell.export_notebook_file();
+    });
+    $('#export-notebook-as-r').click(function() {
+        shell.export_notebook_as_r_file();
+    });
+    $('#import-notebook-file').click(function() {
+        shell.import_notebook_file();
+    });
+
     $("#upload-submit").click(function() {
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
         function success(lst) {
@@ -207,35 +202,32 @@ function init_upload_pane() {
                 success(value);
         });
     });
-}
 
-function init_save_button() {
-    var saveb = $("#save-notebook");
-    saveb.click(function() {
-        shell.save_notebook();
-    });
-    shell.notebook.controller.save_button(saveb);
-}
+    left_panel.init();
+    right_panel.init();
 
-function init_port_file_buttons() {
-    $('#export-notebook-file').click(function() {
-        shell.export_notebook_file();
+    var non_notebook_panel_height = 246;
+    $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
+    $("#new-md-cell-button").click(function() {
+        shell.new_markdown_cell("");
+        var vs = shell.notebook.view.sub_views;
+        vs[vs.length-1].show_source();
     });
-    $('#export-notebook-as-r').click(function() {
-        shell.export_notebook_as_r_file();
+    $("#new-r-cell-button").click(function() {
+        shell.new_interactive_cell("", false);
+        var vs = shell.notebook.view.sub_views;
+        vs[vs.length-1].show_source();
     });
-    $('#import-notebook-file').click(function() {
-        shell.import_notebook_file();
+    $("#rcloud-logout").click(function() {
+	// let the server-side script handle this so it can
+	// also revoke all tokens
+        window.location.href = '/logout.R';
     });
-}
 
-function init_navbar_buttons() {
-    init_fork_revert_button();
-    init_github_buttons();
-    init_save_button();
-    init_port_file_buttons();
-    init_upload_pane();
-    init_side_panel_collapsers();
+    $("#comment-submit").click(function() {
+        editor.post_comment($("#comment-entry-body").val());
+        return false;
+    });
 }
 
 var oob_handlers = {
@@ -249,17 +241,11 @@ var oob_handlers = {
 };
 
 function main_init() {
-    resize_side_panel();
-    init_navbar_buttons();
+    init_ui();
 
     function getURLParameter(name) {
         return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
     }
-
-    $("#comment-submit").click(function() {
-        editor.post_comment($("#comment-entry-body").val());
-        return false;
-    });
 
     rclient = RClient.create({
         debug: false,
@@ -276,21 +262,6 @@ function main_init() {
             });
             rcloud.display.set_device_pixel_ratio();
 
-            $("#new-md-cell-button").click(function() {
-                shell.new_markdown_cell("");
-                var vs = shell.notebook.view.sub_views;
-                vs[vs.length-1].show_source();
-            });
-            $("#new-r-cell-button").click(function() {
-                shell.new_interactive_cell("", false);
-                var vs = shell.notebook.view.sub_views;
-                vs[vs.length-1].show_source();
-            });
-            $("#rcloud-logout").click(function() {
-		// let the server-side script handle this so it can
-		// also revoke all tokens
-                window.location.href = '/logout.R';
-            });
             $(".collapse").collapse();
             rcloud.init_client_side_data();
 
