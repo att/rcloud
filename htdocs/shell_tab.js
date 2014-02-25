@@ -62,21 +62,6 @@ var shell = (function() {
         return result;
     })();
 
-    function setup_scratchpad(div) {
-        div.css({'background-color': "#f1f1f1"});
-        ace.require("ace/ext/language_tools");
-        var widget = ace.edit(div[0]);
-        var RMode = require("ace/mode/r").Mode;
-        var session = widget.getSession();
-        var doc = session.doc;
-        widget.setOptions({
-            enableBasicAutocompletion: true
-        });
-        session.setMode(new RMode(false, doc, session));
-        session.setUseWrapMode(true);
-        widget.resize();
-    }
-
     function setup_command_prompt(prompt_div) {
         function set_ace_height() {
             prompt_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
@@ -349,10 +334,6 @@ var shell = (function() {
     if(prompt_div.length)
         prompt_ = setup_command_prompt(prompt_div);
 
-    var scratchpad_editor = $("#scratchpad-editor");
-    if (scratchpad_editor.length) {
-        setup_scratchpad(scratchpad_editor);
-    }
 
     make_cells_sortable();
 
@@ -745,11 +726,12 @@ var shell = (function() {
         }
     };
 
-    $("#run-notebook").click(function() {
+    result.run_notebook = function() {
         rcloud.with_progress().then(function(done) {
             result.notebook.controller.run_all().then(done);
             prompt_ && prompt_.widget.focus(); // surely not the right way to do this
         }).catch(function(done) { done(); });
-    });
+    };
+
     return result;
 })();

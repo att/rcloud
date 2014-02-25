@@ -109,4 +109,8 @@ RCloud.UI.init = function() {
         editor.post_comment($("#comment-entry-body").val());
         return false;
     });
+
+    $("#run-notebook").click(shell.run_notebook);
+
+    RCloud.UI.scratchpad.init();
 };
