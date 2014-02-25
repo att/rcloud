@@ -424,7 +424,7 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.create_notebook = function(content) {
             return rcloud_github_handler(
-                "rcloud.create.notebook", 
+                "rcloud.create.notebook",
                 rcloud_ocaps.create_notebookAsync(JSON.stringify(content)));
         };
         rcloud.fork_notebook = function(id) {
@@ -706,7 +706,7 @@ RCloud.create = function(rcloud_ocaps) {
                     return rcloud.save_user_config(RCloud.crazy_globals.user, RCloud.crazy_globals.config);
                 });
         };
-        rcloud.config.remove_notebook = function(gistname, k) {
+        rcloud.config.remove_notebook = function(gistname) {
             return assert_config()
                 .then(function() {
                     delete RCloud.crazy_globals.config.all_books[gistname];
