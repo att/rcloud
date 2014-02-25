@@ -22,15 +22,15 @@ function init_side_panel_collapsers()
     }
 
     function hide_right_panel() {
-        $("#right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-2 col-sm-2");
-        $("#fake-right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-2 col-sm-2");
+        $("#right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-1 col-sm-1");
+        $("#fake-right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-1 col-sm-1");
         $("#right-pane-collapser i").addClass("icon-plus").removeClass("icon-minus");
         right_panel_collapsed = true;
     }
 
     function show_right_panel() {
-        $("#right-column").removeClass("col-md-2 col-sm-2").addClass("col-md-4 col-sm-4");
-        $("#fake-right-column").removeClass("col-md-2 col-sm-2").addClass("col-md-4 col-sm-4");
+        $("#right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-4 col-sm-4");
+        $("#fake-right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-4 col-sm-4");
         $("#right-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
         right_panel_collapsed = false;
     }
@@ -38,7 +38,7 @@ function init_side_panel_collapsers()
     function update_middle_column() {
         var size = 12;
         if (right_panel_collapsed) {
-            size -= 2;
+            size -= 1;
         } else {
             size -= 4;
         }

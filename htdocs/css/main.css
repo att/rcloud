@@ -433,7 +433,7 @@ pre {
     bottom: 0;
     z-index: 10;
     padding: 0;
-    background-color: #e5e5e5;
+    background-color: #777;
 }
 
 .btn {
@@ -441,17 +441,20 @@ pre {
     font-size: inherit;
 }
 
-#prompt-div > button {
+#prompt-div button {
     border: 0;
-    background-color: #e5e5e5;
+    background-color: #777;
+    color: #f1f1e5;
 }
 
 #new-r-cell-button:hover {
     background-color: rgb(232,241,250);
+    color: #333;
 }
 
 #new-md-cell-button:hover {
     background-color: rgb(247,238,228);
+    color: #333;
 }
 
 .title-offset {
@@ -509,3 +512,6 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
     border-color: #222;
 }
 
+.ace-chrome .ace_print-margin {
+    display: none;
+}

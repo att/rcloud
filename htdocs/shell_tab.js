@@ -82,7 +82,7 @@ var shell = (function() {
             prompt_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
             widget.resize();
         }
-        prompt_div.css({'background-color': "#f1f1f1"});
+        prompt_div.css({'background-color': "#fff"});
         prompt_div.addClass("r-language-pseudo");
         ace.require("ace/ext/language_tools");
         var widget = ace.edit(prompt_div[0]);
@@ -100,7 +100,6 @@ var shell = (function() {
         session.setUseWrapMode(true);
         widget.resize();
         var change_prompt = ui_utils.ignore_programmatic_changes(widget, prompt_history_.change.bind(prompt_history_));
-
         function execute(widget, args, request) {
             var code = session.getValue();
             if(code.length) {
