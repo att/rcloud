@@ -26,7 +26,3 @@ window.onload = function() {
          */ 
     });
 };
-
-// Promise.onPossiblyUnhandledRejection(function(error){
-//     throw error;
-// });

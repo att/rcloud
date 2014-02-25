@@ -50,7 +50,7 @@ RCloud.session = {
                 });
             });
         }
-    }, init: function() {
+    }, init: function(allow_anonymous) {
         this.first_session_ = true;
 
         return new Promise(function(resolve, reject) {
@@ -59,18 +59,28 @@ RCloud.session = {
                 host:  location.href.replace(/^http/,"ws").replace(/#.*$/,""),
                 on_connect: function(ocaps) {
                     rcloud = RCloud.create(ocaps.rcloud);
-                    if (!rcloud.authenticated) {
-                        rclient.post_error(rclient.disconnection_error("Please login first!"));
-                        rclient.close();
-                        reject(new Error("Not authenticated"));
-                        return;
+                    if (allow_anonymous) {
+                        var promise;
+                        if (rcloud.authenticated) {
+                            promise = rcloud.session_init(rcloud.username(), rcloud.github_token());
+                        } else {
+                            promise = rcloud.anonymous_session_init();
+                        }
+                        promise.then(function(hello) {
+                            rclient.post_response(hello);
+                        });
+                    } else {
+                        if (!rcloud.authenticated) {
+                            rclient.post_error(rclient.disconnection_error("Please login first!"));
+                            rclient.close();
+                            reject(new Error("Not authenticated"));
+                            return;
+                        }
+                        rcloud.session_init(rcloud.username(), rcloud.github_token()).then(function(hello) {
+                            rclient.post_response(hello);
+                        });
                     }
-                    rcloud.session_init(rcloud.username(), rcloud.github_token()).then(function(hello) {
-                        rclient.post_response(hello);
-                    });
                     rcloud.display.set_device_pixel_ratio();
-
-                    $(".collapse").collapse();
 
                     resolve(rcloud.init_client_side_data());
                 }, on_data: function(v) {

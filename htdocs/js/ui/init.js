@@ -145,4 +145,16 @@ RCloud.UI.init = function() {
         shell.save_notebook();
         return true;
     });
+
+    $(".collapse").collapse();
+
+    //////////////////////////////////////////////////////////////////////////
+    // view mode things
+    $("#open-in-github").click(function() {
+        shell.open_in_github();
+    });
+    $("#edit-notebook").click(function() {
+        window.location = "main.html?notebook=" + shell.gistname();
+    });
+    
 };
