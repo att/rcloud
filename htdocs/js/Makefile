@@ -16,7 +16,12 @@ rcloud_bundle.js: \
 	notebook/notebook_model.js \
 	notebook/notebook_controller.js \
 	notebook/util.js \
-	notebook.js
+	notebook.js \
+	ui/_begin.js \
+	ui/init.js \
+	ui/left_panel.js \
+	ui/right_panel.js \
+	ui/middle_column.js
 
 rcloud_bundle.min.js: rcloud_bundle.js Makefile
 	@rm -f $@
