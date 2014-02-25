@@ -418,10 +418,11 @@ var shell = (function() {
         }, new_interactive_cell: function(content, execute) {
             var cell = notebook_controller_.append_cell(content, "R");
             prompt_history_.execute(content);
-            if(execute)
-                cell.execute(function() {
-                    $.scrollTo(null, prompt_div);
+            if(execute) {
+                cell.execute().then(function() {
+                    $.scrollTo(null, $("#end-of-output"));
                 });
+            }
         }, insert_markdown_cell_before: function(index) {
             return notebook_controller_.insert_cell("", "Markdown", index);
         }, load_notebook: function(gistname, version) {

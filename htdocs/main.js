@@ -1,48 +1,108 @@
 Promise.longStackTraces();
 
-var right_panel_collapsed = false;
-var left_panel_collapsed = false;
-var middle_panel_size = 5;
-function init_side_panel_collapsers()
-{
-    function hide_left_panel() {
+var left_panel = {
+    collapsed: false,
+    hide: function() {
+        this.collapsed = true;
         $("#left-column").removeClass("col-md-3 col-sm-3").addClass("col-md-1 col-sm-1");
         $("#fake-left-column").removeClass("col-md-3 col-sm-3").addClass("col-md-1 col-sm-1");
         $("#new-notebook").hide();
         $("#left-pane-collapser i").removeClass("icon-minus").addClass("icon-plus");
-        left_panel_collapsed = true;
-    }
-
-    function show_left_panel() {
+        middle_column.update();
+    },
+    show: function() {
         $("#left-column").removeClass("col-md-1 col-sm-1").addClass("col-md-3 col-sm-3");
         $("#fake-left-column").removeClass("col-md-1 col-sm-1").addClass("col-md-3 col-sm-3");
         $("#new-notebook").show();
         $("#left-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
-        left_panel_collapsed = false;
-    }
+        this.collapsed = false;
+        middle_column.update();
+    },
+    init: function() {
+        var that = this;
+        $("#accordion").on("show.bs.collapse", function() {
+            if (that.collapsed) {
+                that.show();
+                that.collapsed = false;
+                middle_column.update();
+            }
+        });
 
-    function hide_right_panel() {
+        $("#accordion").on("shown.bs.collapse", function() {
+            $(".left-panel-shadow").each(function(v) { 
+                var h = $(this).parent().height();
+                if (h === 0)
+                    h = "100%";
+                $(this).attr("height", h);
+            });
+        });
+        $("#left-pane-collapser").click(function() {
+            if (that.collapsed) {
+                that.show();
+            } else {
+                // the following actually makes sense to me. oh no what has my life become
+                $("#accordion > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
+                that.hide();
+            }
+            middle_column.update();
+        });
+    }
+};
+
+var right_panel = {
+    collapsed: false,
+    hide: function() {
+        this.collapsed = true;
         $("#right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-1 col-sm-1");
         $("#fake-right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-1 col-sm-1");
         $("#right-pane-collapser i").addClass("icon-plus").removeClass("icon-minus");
-        right_panel_collapsed = true;
-    }
-
-    function show_right_panel() {
+    },
+    show: function() {
         $("#right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-4 col-sm-4");
         $("#fake-right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-4 col-sm-4");
         $("#right-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
-        right_panel_collapsed = false;
+        this.collapsed = false;
+    },
+    init: function() {
+        var that = this;
+        $("#accordion-right").on("show.bs.collapse", function() {
+            if (that.collapsed) {
+                that.show();
+                that.collapsed = false;
+                middle_column.update();
+            }
+        });
+        $("#accordion-right").on("shown.bs.collapse", function() {
+            $(".right-panel-shadow").each(function(v) { 
+                var h = $(this).parent().height();
+                if (h === 0)
+                    h = "100%";
+                $(this).attr("height", h);
+            });
+        });
+        $("#right-pane-collapser").click(function() {
+            if (that.collapsed) {
+                that.show();
+            } else {
+                // the following actually makes sense to me. oh no what has my life become
+                $("#accordion-right > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
+                that.hide();
+            }
+            middle_column.update();
+        });
     }
+};
 
-    function update_middle_column() {
+var middle_column = {
+    middle_panel_size: 5,
+    update: function() {
         var size = 12;
-        if (right_panel_collapsed) {
+        if (right_panel.collapsed) {
             size -= 1;
         } else {
             size -= 4;
         }
-        if (left_panel_collapsed) {
+        if (left_panel.collapsed) {
             size -= 1;
         } else {
             size -= 3;
@@ -54,70 +114,15 @@ function init_side_panel_collapsers()
         $("#prompt-div").removeClass(previous_classes).addClass(new_classes);
         middle_panel_size = size;
     }
-    
-    $("#right-pane-collapser").click(function() {
-        if (right_panel_collapsed) {
-            show_right_panel();
-        } else {
-            // the following actually makes sense to me. oh no what has my life become
-            $("#accordion-right > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
-            hide_right_panel();
-        }
-        update_middle_column();
-    });
+};
 
-    $("#left-pane-collapser").click(function() {
-        if (left_panel_collapsed) {
-            show_left_panel();
-        } else {
-            // the following actually makes sense to me. oh no what has my life become
-            $("#accordion > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
-            hide_left_panel();
-        }
-        update_middle_column();
-    });
-
-    $("#accordion-right").on("show.bs.collapse", function() {
-        if (right_panel_collapsed) {
-            show_right_panel();
-            right_panel_collapsed = false;
-            update_middle_column();
-        }
-    });
-    $("#accordion").on("show.bs.collapse", function() {
-        if (left_panel_collapsed) {
-            show_left_panel();
-            left_panel_collapsed = false;
-            update_middle_column();
-        }
-    });
-
-    $("#accordion").on("shown.bs.collapse", function() {
-        $(".left-panel-shadow").each(function(v) { 
-            var h = $(this).parent().height();
-            if (h === 0)
-                h = "100%";
-            $(this).attr("height", h);
-        });
-    });
-    $("#accordion-right").on("shown.bs.collapse", function() {
-        $(".right-panel-shadow").each(function(v) { 
-            var h = $(this).parent().height();
-            if (h === 0)
-                h = "100%";
-            $(this).attr("height", h);
-        });
-    });
-
-    ui_utils.checkbox_menu_item($("#toggle-scratchpad"),
-        function() {
-            show_left_panel();
-            update_middle_column();
-        },
-        function() {
-            hide_left_panel();
-            update_middle_column();
-        }).set_state(false);
+var right_panel_collapsed = false;
+var left_panel_collapsed = false;
+var middle_panel_size = 5;
+function init_side_panel_collapsers()
+{
+    left_panel.init();
+    right_panel.init();
 }
 
 function resize_side_panel() {
