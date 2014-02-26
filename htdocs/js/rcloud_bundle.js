@@ -153,6 +153,11 @@ RCloud.create = function(rcloud_ocaps) {
             v = v[path[i]];
         v[path[path.length-1] + "Async"] = val;
     }
+    function process_paths(paths) {
+        _.each(paths, function(path) {
+            set(path, rcloud_handler(Promise.promisify(get(path))));
+        });
+    }
 
     //////////////////////////////////////////////////////////////////////////////    
     function json_p(promise) {
@@ -163,11 +168,27 @@ RCloud.create = function(rcloud_ocaps) {
             });
     }
 
-    function rcloud_github_handler(command, promise) {
+    function rcloud_handler(promise_fn) {
         function success(result) {
-            if (result.r_attributes['class'] === "try-error") {
+            if (result && result.r_attributes &&
+                result.r_attributes['class'] === "try-error") {
                 throw result;
             }
+            return result;
+        }
+        function failure(err) {
+            if (RCloud.is_exception(err)) {
+                rclient.post_error(err[0]);
+            }
+            throw err;
+        }
+        return function() {
+            return promise_fn.apply(this, arguments).then(success).catch(failure);
+        };
+    }
+
+    function rcloud_github_handler(command, promise) {
+        function success(result) {
             if (result.ok) {
                 return result.content;
             } else {
@@ -175,17 +196,37 @@ RCloud.create = function(rcloud_ocaps) {
             }
         }
         function failure(err) {
-            if (RCloud.is_exception(err)) {
-                rclient.post_error(err[0]);
-            } else {
-                var message = _.isObject(err) && 'ok' in err
-                    ? err.content.message : err.toString();
-                rclient.post_error(command + ': ' + message);
-            }
+            var message = _.isObject(err) && 'ok' in err
+                ? err.content.message : err.toString();
+            rclient.post_error(command + ': ' + message);
             throw err;
         }
         return promise.then(success).catch(failure);
     }
+
+    // function rcloud_github_handler(command, promise) {
+    //     function success(result) {
+    //         if (result.r_attributes['class'] === "try-error") {
+    //             throw result;
+    //         }
+    //         if (result.ok) {
+    //             return result.content;
+    //         } else {
+    //             throw result.content;
+    //         }
+    //     }
+    //     function failure(err) {
+    //         if (RCloud.is_exception(err)) {
+    //             rclient.post_error(err[0]);
+    //         } else {
+    //             var message = _.isObject(err) && 'ok' in err
+    //                 ? err.content.message : err.toString();
+    //             rclient.post_error(command + ': ' + message);
+    //         }
+    //         throw err;
+    //     }
+    //     return promise.then(success).catch(failure);
+    // }
 
     var rcloud = {};
 
@@ -214,9 +255,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["reset_session"],
             ["set_device_pixel_ratio"]
         ];
-        _.each(paths, function(path) {
-            set(path, Promise.promisify(get(path)));
-        });
+        process_paths(paths);
 
         rcloud.username = function() {
             return $.cookies.get('user');
@@ -391,9 +430,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["api","disable_warnings"],
             ["api","enable_echo"]
         ];
-        _.each(paths, function(path) {
-            set(path, Promise.promisify(get(path)));
-        });
+        process_paths(paths);
 
         rcloud.session_init = function(username, token) {
             return rcloud_ocaps.session_initAsync(username, token);
@@ -1811,31 +1848,8 @@ Notebook.create_controller = function(model)
     }
 
 
-    function make_cells_sortable() {
-        var cells = $('#output');
-        cells.sortable({
-            items: "> .notebook-cell",
-            start: function(e, info) {
-                $(e.toElement).addClass("grabbing");
-            },
-            stop: function(e, info) {
-                $(e.toElement).removeClass("grabbing");
-            },
-            update: function(e, info) {
-                var ray = cells.sortable('toArray');
-                var model = info.item.data('rcloud.model'),
-                    next = info.item.next().data('rcloud.model');
-                result.move_cell(model, next);
-            },
-            handle: " .ace_gutter-layer",
-            scroll: true,
-            scrollSensitivity: 40
-        });
-    }
-
     setup_show_source();
     model.dishers.push({on_dirty: on_dirty});
-    make_cells_sortable();
 
     var result = {
         save_button: function(save_button) {
