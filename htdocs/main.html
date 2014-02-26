@@ -177,7 +177,7 @@
 		    <ul class="nav nav-tabs" id="asset-list">
 		      <li style="float:right" id="new-asset"><a href="#">[New Asset]</a></li>
 		    </ul>
-    		    <div id="scratchpad-editor" style="height: 100%"></div>
+    		    <div id="scratchpad-editor"></div>
     		  </div>
     		</div>
 	      </div>
@@ -225,11 +225,11 @@
               <div class="panel-heading">
                 <a class="accordion-toggle right" data-toggle="collapse"
                    data-parent="#accordion-right"
-                   href="#collapseSix"><div style="position:relative"><i class="icon-info"></i></div>&nbsp;<span class="title-offset">Session Information</span></a>
+                   href="#collapse-session-info"><div style="position:relative"><i class="icon-info"></i></div>&nbsp;<span class="title-offset">Session Information</span></a>
               </div>
-              <div id="collapseSix" class="panel-collapse collapse in">
+              <div id="collapse-session-info" class="panel-collapse collapse out">
 		<img height="100%" width="5px" src="img/left_bordergray.png" style="position:absolute;left:0px" class="right-panel-shadow">
-                <div class="panel-body">
+                <div class="panel-body" id="session-info">
                 </div>
               </div>
             </div>

@@ -106,9 +106,9 @@ RClient = {
                     msg = this.string_error(msg);
                 if (typeof msg !== 'object')
                     throw new Error("post_error expects a string or a jquery div");
-                // var d = $("<div class='alert alert-danger'></div>").text(msg);
-                $("#output").append(msg);
-                window.scrollTo(0, document.body.scrollHeight);
+                msg.css("margin", "-15px"); // hack
+                $("#session-info").append(msg);
+                $("#collapse-session-info").collapse("show");
             },
 
             post_response: function (msg) {
@@ -1017,9 +1017,15 @@ Notebook.Asset.create_html_view = function(asset_model)
 };
 Notebook.Asset.create_model = function(content, filename)
 {
+    var cursor_position;
     var result = {
         views: [], // sub list for pubsub
         parent_model: null,
+        cursor_position: function(new_cursor_position) {
+            if (!_.isUndefined(new_cursor_position))
+                cursor_position = new_cursor_position;
+            return cursor_position;
+        },
         language: function() {
             var extension = filename.match(/\.([^.]+)$/);
             if (!extension)
@@ -1623,6 +1629,19 @@ Notebook.create_model = function()
         return change;
     }
 
+    function build_asset_change(filename, content) {
+        // unfortunately, yet another workaround because github
+        // won't take blank files.  would prefer to make changes
+        // a high-level description but i don't see it yet.
+        var change = {filename: filename};
+        if(content === "")
+            change.erase = true;
+        else
+            change.content = content;
+        return change;
+    }
+
+
     /* note, the code below is a little more sophisticated than it needs to be:
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
     return {
@@ -1751,6 +1770,9 @@ Notebook.create_model = function()
         },
         update_cell: function(cell_model) {
             return [build_cell_change(cell_model.id(), cell_model.content(), cell_model.language())];
+        },
+        update_asset: function(asset_model) {
+            return [build_asset_change(asset_model.filename(), asset_model.content())];
         },
         reread_cells: function() {
             var that = this;
@@ -2493,6 +2515,7 @@ RCloud.UI.middle_column = {
 RCloud.UI.scratchpad = {
     session: null,
     widget: null,
+    current_model: null,
     init: function() {
         var that = this;
         function setup_scratchpad(div) {
@@ -2514,6 +2537,7 @@ RCloud.UI.scratchpad = {
                 div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
                 widget.resize();
             });
+            
             widget.setOptions({
                 enableBasicAutocompletion: true
             });
@@ -2522,6 +2546,7 @@ RCloud.UI.scratchpad = {
             widget.resize();
             ui_utils.on_next_tick(function() {
                 session.getUndoManager().reset();
+                div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
                 widget.resize();
             });
         }
@@ -2539,18 +2564,26 @@ RCloud.UI.scratchpad = {
             css: "ace/mode/css",
             txt: "ace/mode/text"
         };
-        function set_mode() {
-            debugger;
-            var lang = asset_model.language().toLocaleLowerCase();
-            var mode = require(modes[lang] || modes.txt).Mode;
-            that.session.setMode(new mode(false, that.session.doc, that.session));
+        if (this.current_model) {
+            this.current_model.cursor_position(this.widget.getCursorPosition());
+            this.current_model.content(this.widget.getValue());
         }
         this.widget.setValue(asset_model.content());
+        var model_cursor = asset_model.cursor_position();
+        if (model_cursor) {
+            ui_utils.ace_set_pos(this.widget, model_cursor); // setValue selects all
+        } else {
+            ui_utils.ace_set_pos(this.widget, 0, 0); // setValue selects all
+        }
         ui_utils.on_next_tick(function() {
             that.session.getUndoManager().reset();
-            set_mode();
-            that.widget.resize();
         });
+        var lang = asset_model.language().toLocaleLowerCase();
+        var mode = require(modes[lang] || modes.txt).Mode;
+        that.session.setMode(new mode(false, that.session.doc, that.session));
+        that.widget.resize();
+        that.widget.focus();
+        this.current_model = asset_model;
     }
 };
 RCloud.UI.command_prompt = {

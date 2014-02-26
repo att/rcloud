@@ -1,8 +1,14 @@
 Notebook.Asset.create_model = function(content, filename)
 {
+    var cursor_position;
     var result = {
         views: [], // sub list for pubsub
         parent_model: null,
+        cursor_position: function(new_cursor_position) {
+            if (!_.isUndefined(new_cursor_position))
+                cursor_position = new_cursor_position;
+            return cursor_position;
+        },
         language: function() {
             var extension = filename.match(/\.([^.]+)$/);
             if (!extension)

@@ -1,6 +1,7 @@
 RCloud.UI.scratchpad = {
     session: null,
     widget: null,
+    current_model: null,
     init: function() {
         var that = this;
         function setup_scratchpad(div) {
@@ -22,6 +23,7 @@ RCloud.UI.scratchpad = {
                 div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
                 widget.resize();
             });
+            
             widget.setOptions({
                 enableBasicAutocompletion: true
             });
@@ -30,6 +32,7 @@ RCloud.UI.scratchpad = {
             widget.resize();
             ui_utils.on_next_tick(function() {
                 session.getUndoManager().reset();
+                div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
                 widget.resize();
             });
         }
@@ -47,17 +50,25 @@ RCloud.UI.scratchpad = {
             css: "ace/mode/css",
             txt: "ace/mode/text"
         };
-        function set_mode() {
-            debugger;
-            var lang = asset_model.language().toLocaleLowerCase();
-            var mode = require(modes[lang] || modes.txt).Mode;
-            that.session.setMode(new mode(false, that.session.doc, that.session));
+        if (this.current_model) {
+            this.current_model.cursor_position(this.widget.getCursorPosition());
+            this.current_model.content(this.widget.getValue());
         }
         this.widget.setValue(asset_model.content());
+        var model_cursor = asset_model.cursor_position();
+        if (model_cursor) {
+            ui_utils.ace_set_pos(this.widget, model_cursor); // setValue selects all
+        } else {
+            ui_utils.ace_set_pos(this.widget, 0, 0); // setValue selects all
+        }
         ui_utils.on_next_tick(function() {
             that.session.getUndoManager().reset();
-            set_mode();
-            that.widget.resize();
         });
+        var lang = asset_model.language().toLocaleLowerCase();
+        var mode = require(modes[lang] || modes.txt).Mode;
+        that.session.setMode(new mode(false, that.session.doc, that.session));
+        that.widget.resize();
+        that.widget.focus();
+        this.current_model = asset_model;
     }
 };

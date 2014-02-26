@@ -23,6 +23,19 @@ Notebook.create_model = function()
         return change;
     }
 
+    function build_asset_change(filename, content) {
+        // unfortunately, yet another workaround because github
+        // won't take blank files.  would prefer to make changes
+        // a high-level description but i don't see it yet.
+        var change = {filename: filename};
+        if(content === "")
+            change.erase = true;
+        else
+            change.content = content;
+        return change;
+    }
+
+
     /* note, the code below is a little more sophisticated than it needs to be:
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
     return {
@@ -151,6 +164,9 @@ Notebook.create_model = function()
         },
         update_cell: function(cell_model) {
             return [build_cell_change(cell_model.id(), cell_model.content(), cell_model.language())];
+        },
+        update_asset: function(asset_model) {
+            return [build_asset_change(asset_model.filename(), asset_model.content())];
         },
         reread_cells: function() {
             var that = this;
