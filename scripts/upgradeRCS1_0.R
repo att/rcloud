@@ -1,3 +1,17 @@
+# This script upgrades RCS keys from RCloud 0.9 to 1.0
+# In particular it renames notebook/* to .notebook/*
+# and extracts all notebook lists and user configuration
+# from <user>/system/config.json
+
+# to invoke, run
+# ROOT=<rcloud-root-dir> R -f upgradeRCS1_0.R
+
+require('rcloud.support')
+rcloud.support:::configure.rcloud()
+rcloud.support:::start.rcloud.anonymously()
+
+rcs.key <- rcloud.support:::rcs.key
+
 # migrate notebooks from notebook/ to .notebook/
 rename.notebook.keys <- function() {
   nb_rename <- function(keys) Map(function(src, dest) {
@@ -30,14 +44,14 @@ explode.user.configs <- function() {
   users <- gsub("/.*", "", configs)
   timestamp <- format(Sys.time(),"%Y-%m-%dT%H:%M:%SZ","GMT");
   currbooks <-
-    Map(users, configs, function(username, key) {
+    Map(function(username, key) {
       config <- rjson::fromJSON(rcs.get(key))
-      
+
       pull.notebook.metadata(username, config$all_books)
       lapply(names(config$interests),
              function(friend) pull.notebook.metadata(friend, config$interests[[friend]]))
 
-      #options
+      # options
       opts <- usr.key(user = username, notebook = "system", "config");
 
       rcs.set(rcs.key(opts, "current", "notebook"), config$currbook)
@@ -46,18 +60,19 @@ explode.user.configs <- function() {
       rcs.set(rcs.key(opts, "config_version"), config$config_version)
 
       # seed recently-opened list with current notebook and current time
-      rcs.set(rcs.key(opts, "recent", currbooks[[username]]), timestamp);
+      rcs.set(rcs.key(opts, "recent", config$currbook), timestamp);
 
       # remove config.json
       rcs.rm(key)
-    })
+      config$currbook
+    }, users, configs)
 }
 
-
-
-rcloud.migrate.notebook.lists <- function() {
+rcloud.upgrade.notebook.lists <- function() {
   rename.notebook.keys()
   explode.user.configs();
-  
+
   invisible(TRUE)
 }
+
+rcloud.upgrade.notebook.lists()
