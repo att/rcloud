@@ -85,7 +85,11 @@ RCloud.create = function(rcloud_ocaps) {
             ["stars","get_my_starred_notebooks"],
             ["session_cell_eval"],
             ["reset_session"],
-            ["set_device_pixel_ratio"]
+            ["set_device_pixel_ratio"],
+            ["api", "enable_echo"],
+            ["api", "disable_echo"],
+            ["api", "enable_warnings"],
+            ["api", "disable_warnings"]
         ];
         _.each(paths, function(path) {
             set(path, Promise.promisify(get(path)));

@@ -1,9 +1,12 @@
 RCloud.UI.init = function() {
     $("#fork-revert-notebook").click(function() {
-        shell.fork_or_revert_button();
+        var is_mine = shell.notebook.controller.is_mine();
+        var gistname = shell.gistname();
+        var version = shell.version();
+        editor.fork_or_revert_notebook(is_mine, gistname, version);
     });
     $("#open-in-github").click(function() {
-        shell.open_in_github();
+        window.open(shell.github_url(), "_blank");
     });
     $("#open-from-github").click(function() {
         var result = prompt("Enter notebook ID or github URL:");
@@ -150,9 +153,6 @@ RCloud.UI.init = function() {
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
-    $("#open-in-github").click(function() {
-        shell.open_in_github();
-    });
     $("#edit-notebook").click(function() {
         window.location = "main.html?notebook=" + shell.gistname();
     });

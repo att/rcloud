@@ -212,7 +212,11 @@ RCloud.create = function(rcloud_ocaps) {
             ["stars","get_my_starred_notebooks"],
             ["session_cell_eval"],
             ["reset_session"],
-            ["set_device_pixel_ratio"]
+            ["set_device_pixel_ratio"],
+            ["api", "enable_echo"],
+            ["api", "disable_echo"],
+            ["api", "enable_warnings"],
+            ["api", "disable_warnings"]
         ];
         _.each(paths, function(path) {
             set(path, Promise.promisify(get(path)));
@@ -2069,8 +2073,6 @@ RCloud.session = {
                     }
                     rcloud.display.set_device_pixel_ratio();
 
-                    $(".collapse").collapse();
-
                     resolve(rcloud.init_client_side_data());
                 }, on_data: function(v) {
                     v = v.value.json();
@@ -2084,10 +2086,13 @@ RCloud.session = {
 RCloud.UI = {};
 RCloud.UI.init = function() {
     $("#fork-revert-notebook").click(function() {
-        shell.fork_or_revert_button();
+        var is_mine = shell.notebook.controller.is_mine();
+        var gistname = shell.gistname();
+        var version = shell.version();
+        editor.fork_or_revert_notebook(is_mine, gistname, version);
     });
     $("#open-in-github").click(function() {
-        shell.open_in_github();
+        window.open(shell.github_url(), "_blank");
     });
     $("#open-from-github").click(function() {
         var result = prompt("Enter notebook ID or github URL:");
@@ -2234,9 +2239,6 @@ RCloud.UI.init = function() {
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
-    $("#open-in-github").click(function() {
-        shell.open_in_github();
-    });
     $("#edit-notebook").click(function() {
         window.location = "main.html?notebook=" + shell.gistname();
     });

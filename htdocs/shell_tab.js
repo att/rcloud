@@ -20,47 +20,6 @@ var shell = (function() {
         return notebook;
     }
 
-    function reset_session() {
-        if (first_session_) {
-            first_session_ = false;
-            return rcloud.with_progress();
-        } else {
-            return rcloud.with_progress(function(done) {
-                rclient.close();
-                // FIXME this is a bit of an annoying duplication of code on main.js and view.js
-
-                return new Promise(function(resolve, reject) {
-                    rclient = RClient.create({
-                        debug: rclient.debug,
-                        host: rclient.host,
-                        on_connect: function(ocaps) {
-                            rcloud = RCloud.create(ocaps.rcloud);
-                            rcloud.session_init(rcloud.username(), rcloud.github_token());
-                            rcloud.display.set_device_pixel_ratio();
-
-                            resolve(rcloud.init_client_side_data().then(function() {
-                                $("#output").find(".alert").remove();
-                                return done;
-                            }));
-                        },
-                        on_error: function(error) {
-                            // if we fail to reconnect we still want
-                            // to resolve the promise so with_progress can continue.
-                            if (!rclient.running) {
-                                resolve(done);
-                            }
-                            return false;
-                        },
-                        on_data: function(v) {
-                            v = v.value.json();
-                            oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
-                        }
-                    });
-                });
-            });
-        }
-    }
-
     function on_new(notebook) {
         gistname_ = notebook.id;
         version_ = null;
@@ -98,44 +57,6 @@ var shell = (function() {
         },
         is_old_github: function() {
             return !gist_url_;
-        },
-        fork_or_revert_button: function() {
-            var is_mine = result.notebook.controller.is_mine();
-            // hmm messages bouncing around everywhere
-            editor.fork_or_revert_notebook(is_mine, gistname_, version_);
-        },
-        set_title: function(desc) {
-            $("#notebook-title")
-                .text(desc)
-                .data('restore_edit', desc);
-        },
-        detachable_div: function(div) {
-            var on_remove = function() {};
-            var on_detach = function() {};
-            var result = $("<div class='detachable' style='position: relative; z-index: 0;'></div>");
-            var inner_div = $("<div style='float: right'></div>");
-            result.append(inner_div);
-            result.append(div);
-            var sign_out = $("<i class='icon-signout figure-icon' style='position: absolute; right: 5px; top: 25px'>");
-            sign_out.click(function(){
-                $(result).detach().draggable();
-                $("#output").append(result);
-                make_fixed_menu(result[0], true);
-                $(sign_out).remove();
-                on_detach();
-            });
-            var trash = $("<i class='icon-trash figure-icon' style='position: absolute; right: 5px; top: 5px'>");
-            trash.click(function() {
-                $(result).remove();
-                on_remove();
-            });
-            inner_div.append(sign_out);
-            inner_div.append(trash);
-
-            result[0].on_remove = function(callback) { on_remove = callback; };
-            result[0].on_detach = function(callback) { on_detach = callback; };
-
-            return result[0];
         }, new_markdown_cell: function(content) {
             return notebook_controller_.append_cell(content, "Markdown");
         }, new_interactive_cell: function(content, execute) {
@@ -173,37 +94,35 @@ var shell = (function() {
                     throw err;
                 });
             }
-            return reset_session().then(do_load);
+            return RCloud.session.reset().then(do_load);
         }, save_notebook: function() {
             notebook_controller_.save();
         }, new_notebook: function(desc) {
-            return reset_session()
-                .then(function(done) {
-                    var content = {description: desc, 'public': false,
-                                   files: {"scratch.R": {content:"# scratch file"}}};
-                    done(); // well not really done (just done with cps bleh) FIXME
-                    return notebook_controller_.create_notebook(content).then(on_new);
-                });
+            return RCloud.session.reset().then(function(done) {
+                var content = {description: desc, 'public': false,
+                               files: {"scratch.R": {content:"# scratch file"}}};
+                done(); // well not really done (just done with cps bleh) FIXME
+                return notebook_controller_.create_notebook(content).then(on_new);
+            });
         }, fork_or_revert_notebook: function(is_mine, gistname, version) {
             // force a full reload in all cases, as a sanity check
             // we might know what the notebook state should be,
             // but load the notebook and reset the session to be sure
             if(is_mine && !version)
                 throw "unexpected revert of current version";
-            return reset_session()
-                .then(function(done) {
-                    var that = this;
-                    notebook_model_.read_only(false);
-                    return notebook_controller_
-                        .fork_or_revert_notebook(is_mine, gistname, version)
-                        .then(function(notebook) {
-                            gistname_ = notebook.id;
-                            version_ = null;
-                            done(); // again, not really done - just too nasty to compose done with k
-                            return notebook;
-                        }).then(on_load);
-                });
-        }, open_in_github: function() {
+            return RCloud.session.reset().then(function(done) {
+                var that = this;
+                notebook_model_.read_only(false);
+                return notebook_controller_
+                    .fork_or_revert_notebook(is_mine, gistname, version)
+                    .then(function(notebook) {
+                        gistname_ = notebook.id;
+                        version_ = null;
+                        done(); // again, not really done - just too nasty to compose done with k
+                        return notebook;
+                    }).then(on_load);
+            });
+        }, github_url: function() {
             var url;
             if(!this.is_old_github()) {
                 url = gist_url_;
@@ -214,7 +133,7 @@ var shell = (function() {
             url += gistname_;
             if(version_)
                 url += '/' + version_;
-            window.open(url, "_blank");
+            return url;
         }, open_from_github: function(notebook_or_url) {
             function isHex(str) {
                 return str.match(/^[a-f0-9]*$/i) !== null;
@@ -465,14 +384,12 @@ var shell = (function() {
             if(!dialog.length)
                 dialog = create_import_notebook_dialog();
             dialog.modal({keyboard: true});
+        }, run_notebook: function() {
+            rcloud.with_progress().then(function(done) {
+                result.notebook.controller.run_all().then(done);
+                RCloud.UI.command_prompt.focus();
+            }).catch(function(done) { done(); });
         }
-    };
-
-    result.run_notebook = function() {
-        rcloud.with_progress().then(function(done) {
-            result.notebook.controller.run_all().then(done);
-            RCloud.UI.command_prompt.focus();
-        }).catch(function(done) { done(); });
     };
 
     return result;
