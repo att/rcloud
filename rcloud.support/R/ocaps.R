@@ -126,7 +126,7 @@ authenticated.ocaps <- function()
       # This will cause bugs, because some notebooks want a
       # call_fastrweb_notebook...
       call_fastrweb_notebook = make.oc(rcloud.call.FastRWeb.notebook),
-      
+
       # file upload ocaps
       file_upload = list(
         create = make.oc(rcloud.upload.create.file),
@@ -135,14 +135,30 @@ authenticated.ocaps <- function()
         upload_path = make.oc(rcloud.upload.path)
         ),
       notebook_upload = make.oc(rcloud.upload.to.notebook),
-      
+
       # commenting ocaps
       comments = list(
         post = make.oc(rcloud.post.comment)
         ),
 
+      config = list(
+        all_notebooks = make.oc(rcloud.config.all.notebooks),
+        all_notebooks_multiple_users = make.oc(rcloud.config.all.notebooks.multiple.users),
+        add_notebook = make.oc(rcloud.config.add.notebook),
+        remove_notebook = make.oc(rcloud.config.remove.notebook),
+        get_current_notebook = make.oc(rcloud.config.get.current.notebook),
+        set_current_notebook = make.oc(rcloud.config.set.current.notebook),
+        new_notebook_number = make.oc(rcloud.config.new.notebook.number),
+        get_recent_notebooks = make.oc(rcloud.config.get.recent.notebooks),
+        set_recent_notebook = make.oc(rcloud.config.set.recent.notebook)
+        ),
+
+      get_notebook_info = make.oc(rcloud.get.notebook.info),
+      get_multiple_notebook_infos = make.oc(rcloud.get.multiple.notebook.infos),
+      set_notebook_info = make.oc(rcloud.set.notebook.info),
+
       purl_source = make.oc(rcloud.purl.source)
-           
+
       )
   )
   modifyList(basic.ocaps, changes)

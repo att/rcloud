@@ -13,26 +13,6 @@
 ## is to move all of these to require the session token to match against
 ## the one we have stored during the login process.
 
-rcloud.load.user.config <- function(user = .session$username, map = FALSE) {
-  payload <- rcs.get(usr.key("config.json", user=user, notebook="system"))
-  if (is.null(payload)) payload <- "null"
-  if (map) paste0('"', user, '": ', paste(payload, collapse='\n')) else payload
-}
-
-rcloud.load.multiple.user.configs <- function(users) {
-  if (length(users) == 0) {
-    "{}"
-  } else {
-    res <- unlist(lapply(rcs.get(usr.key("config.json", user=users, notebook="system"), TRUE), paste, collapse="\n"))
-    paste0('{', paste(paste0('"', users, '": ', res), collapse=','), '}')
-  }
-}
-
-rcloud.save.user.config <- function(user = .session$username, content) {
-  if (rcloud.debug.level()) cat("rcloud.save.user.config(", user, ")\n", sep='')
-  invisible(rcs.set(usr.key("config.json", user=user, notebook="system"), content))
-}
-
 rcloud.get.conf.value <- function(key) {
   Allowed <- c('host', 'github.base.url', 'github.api.url', 'github.gist.url')
   if(key %in% Allowed)
@@ -163,6 +143,7 @@ rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
 }
 
 rcloud.notebook.by.name <- function(name, user=.session$username, path=TRUE) {
+  # fixme
   cfg <- rcloud.load.user.config(user)
   if (cfg == "null") stop("user `", user, "' not found")
   if (inherits(cfg, "try-error")) stop("Error while loading user `", user, "' configuration: ", cfg)
@@ -223,7 +204,7 @@ rcloud.rename.notebook <- function(id, new.name)
 rcloud.fork.notebook <- function(id) fork.gist(id, ctx = .session$rgithub.context)
 
 rcloud.get.users <- function(user) ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
-  gsub("/.*","",rcs.list(usr.key("config.json", user="*", notebook="system")))
+  gsub("/.*","",rcs.list(usr.key(user="*", notebook="system", "config")))
 
 rcloud.publish.notebook <- function(id) {
   nb <- rcloud.get.notebook(id)
@@ -350,6 +331,76 @@ rcloud.get.my.starred.notebooks <- function()
 {
   rcs.list(star.key("*"))
 }
+
+################################################################################
+# config
+
+rcloud.config.all.notebooks <- function(user)
+  gsub(".*/", "", rcs.list(usr.key(user=user, notebook="system", "config", "notebooks", "*")))
+
+rcloud.config.all.notebooks.multiple.users <- function(users) {
+  result <- lapply(users, rcloud.all.notebooks)
+  names(result) <- users
+  result
+}
+
+rcloud.config.add.notebook <- function(user, id)
+  rcs.set(usr.key(user=user, notebook="system", "config", "notebooks", id), 1)
+
+rcloud.config.remove.notebook <- function(user, id)
+  rcs.rm(usr.key(user=user, notebook="system", "config", "notebooks", id))
+
+rcloud.config.get.current.notebook <- function(user) {
+  base <- usr.key(user=user, notebook="system", "config", "current")
+  list(notebook = rcs.get(rcs.key(base, "notebook")),
+       version = rcs.get(rcs.key(base, "version")))
+}
+
+rcloud.config.set.current.notebook <- function(user, current) {
+  base <- usr.key(user=user, notebook="system", "config", "current")
+  rcs.set(rcs.key(base, "notebook"), current$notebook)
+  rcs.set(rcs.key(base, "version"), current$version)
+}
+
+rcloud.config.new.notebook.number <- function(user)
+  rcs.incr(usr.key(user=user, notebook="system", "config", "nextwork"))
+
+rcloud.config.get.recent.notebooks <- function(user) {
+  keys <- rcs.list(usr.key(user=user, notebook="system", "config", "recent", "*"))
+  vals <- rcs.get(keys)
+  names(vals) <- gsub(".*/", "", names(vals))
+  vals
+}
+
+rcloud.config.set.recent.notebook <- function(user, id, date)
+  rcs.set(usr.key(user=user, notebook="system", "config", "recent", id), date)
+
+################################################################################
+# notebook cache
+
+rcloud.get.notebook.info <- function(id) {
+  base <- usr.key(user=".notebook", notebook=id)
+  list(username = rcs.get(rcs.key(base, "username")),
+       description = rcs.get(rcs.key(base, "description")),
+       last_commit = rcs.get(rcs.key(base, "last_commit")),
+       visibility = rcs.get(rcs.key(base, "visibility")))
+}
+
+rcloud.get.multiple.notebook.infos <- function(ids) {
+  result <- lapply(ids, rcloud.get.notebook.info)
+  names(result) <- ids
+  result
+}
+
+rcloud.set.notebook.info <- function(id, info) {
+  base <- usr.key(user=".notebook", notebook=id)
+  rcs.set(rcs.key(base, "username"), info$username)
+  rcs.set(rcs.key(base, "description"), info$description)
+  rcs.set(rcs.key(base, "last_commit"), info$last_commit)
+  rcs.set(rcs.key(base, "visibility"), info$visibility)
+}
+
+
 
 rcloud.purl.source <- function(contents)
 {

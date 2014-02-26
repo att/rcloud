@@ -10,13 +10,6 @@ RCloud.exception_message = function(v) {
     return v[0];
 };
 
-// this will go to the server, just working out the kinks by first keeping
-// a local user config as we have been doing in order to flush out the interface
-RCloud.crazy_globals = {
-    config: null,
-    user: null
-};
-
 RCloud.create = function(rcloud_ocaps) {
     //////////////////////////////////////////////////////////////////////////////
     // promisification
@@ -246,9 +239,6 @@ RCloud.create = function(rcloud_ocaps) {
         var paths = [
             ["session_init"],
             ["search"],
-            ["load_user_config"],
-            ["load_multiple_user_configs"],
-            ["save_user_config"],
             ["update_notebook"],
             ["create_notebook"],
             ["fork_notebook"],
@@ -269,7 +259,19 @@ RCloud.create = function(rcloud_ocaps) {
             ["api","disable_warnings"],
             ["api","enable_echo"],
             ["api","disable_warnings"],
-            ["api","enable_echo"]
+            ["api","enable_echo"],
+            ["config", "all_notebooks"],
+            ["config", "all_notebooks_multiple_users"],
+            ["config", "add_notebook"],
+            ["config", "remove_notebook"],
+            ["config", "get_current_notebook"],
+            ["config", "set_current_notebook"],
+            ["config", "new_notebook_number"],
+            ["config", "get_recent_notebooks"],
+            ["config", "set_recent_notebook"],
+            ["get_notebook_info"],
+            ["get_multiple_notebook_infos"],
+            ["set_notebook_info"]
         ];
         _.each(paths, function(path) {
             set(path, Promise.promisify(get(path)));
@@ -280,15 +282,6 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.search = function(search_string) {
             return rcloud_ocaps.searchAsync(search_string);
-        };
-        rcloud.load_user_config = function(user) {
-            return json_p(rcloud_ocaps.load_user_configAsync(user));
-        };
-        rcloud.load_multiple_user_configs = function(users) {
-            return json_p(rcloud_ocaps.load_multiple_user_configsAsync(users));
-        };
-        rcloud.save_user_config = function(user, content) {
-            return json_p(rcloud_ocaps.save_user_configAsync(user, JSON.stringify(content)));
         };
         rcloud.update_notebook = function(id, content) {
             return rcloud_github_handler(
@@ -503,90 +496,23 @@ RCloud.create = function(rcloud_ocaps) {
                 });
         };
 
-        function assert_config() {
-            return RCloud.crazy_globals.config ? Promise.resolve() :
-                Promise.reject(new Error("expected you to call get_all_notebooks first"), null);
-        }
-        rcloud.config = {};
-        rcloud.config.get_current_notebook = function() {
-            return assert_config().return({currbook: RCloud.crazy_globals.config.currbook,
-                                           currversion: RCloud.crazy_globals.config.currversion,
-                                           bookuser: RCloud.crazy_globals.config.bookuser});
-        };
-        rcloud.config.set_current_notebook = function(current) {
-            return assert_config()
-                .then(function() {
-                    RCloud.crazy_globals.config.currbook = current.book;
-                    RCloud.crazy_globals.config.currversion = current.version;
-                    RCloud.crazy_globals.config.bookuser = current.user;
-                });
-        };
-        rcloud.config.new_notebook_number = function() {
-            return assert_config()
-                .then(function() {
-                    ++RCloud.crazy_globals.config.nextwork;
-                    return rcloud.save_user_config(RCloud.crazy_globals.user, RCloud.crazy_globals.config)
-                        .return(RCloud.crazy_globals.config.nextwork);
-                });
+        // config
+        rcloud.config = {
+            all_notebooks: rcloud_ocaps.config.all_notebooksAsync,
+            all_notebooks_multiple_users: rcloud_ocaps.config.all_notebooks_multiple_usersAsync,
+            add_notebook: rcloud_ocaps.config.add_notebookAsync,
+            remove_notebook: rcloud_ocaps.config.remove_notebookAsync,
+            get_current_notebook: rcloud_ocaps.config.get_current_notebookAsync,
+            set_current_notebook: rcloud_ocaps.config.set_current_notebookAsync,
+            new_notebook_number: rcloud_ocaps.config.new_notebook_numberAsync,
+            get_recent_notebooks: rcloud_ocaps.config.get_recent_notebooksAsync,
+            set_recent_notebook: rcloud_ocaps.config.set_recent_notebookAsync
         };
 
-        function default_config() {
-            RCloud.crazy_globals.config.currbook = RCloud.crazy_globals.config.currbook || null;
-            RCloud.crazy_globals.config.currversion = RCloud.crazy_globals.config.currversion || null;
-            RCloud.crazy_globals.config.bookuser = RCloud.crazy_globals.config.bookuser || null;
-            RCloud.crazy_globals.config.nextwork = RCloud.crazy_globals.config.nextwork || 1;
-            RCloud.crazy_globals.config.all_books = RCloud.crazy_globals.config.all_books || {};
-        }
-
-        rcloud.config.get_all_notebooks = function() {
-            RCloud.crazy_globals.user = rcloud.username();
-            // having to call this first is just an artifact of the current setup
-            // and will go away when this is server side and not individual configs
-            return rcloud.get_users(RCloud.crazy_globals.user)
-                .then(rcloud.load_multiple_user_configs)
-                .then(function(configset) {
-                    var user_notebooks = {}, notebook_entries = {};
-                    for(var username in configset) {
-                        var user_config = configset[username];
-                        if(!user_config)
-                            continue;
-                        _.each(user_config.all_books, function(entry) {
-                            entry.user = username;
-                        });
-                        _.extend(notebook_entries, user_config.all_books);
-                        if(username === RCloud.crazy_globals.user) {
-                            RCloud.crazy_globals.config = user_config;
-                            default_config();
-                            // for notebooks of others we're interested that the other user has removed
-                            // or never loaded (!) #245
-                            for(var u in user_config.interests) {
-                                _.each(user_config.interests[u], function(entry) {
-                                    entry.user = u;
-                                });
-                                _.extend(notebook_entries, user_config.interests[u]);
-                            }
-                        }
-                        user_notebooks[username] = _.keys(user_config.all_books);
-                    }
-                    return RCloud.crazy_globals.config ? Promise.resolve([user_notebooks, notebook_entries])
-                        : Promise.reject(new Error("expected to find current user's config"));
-                });
-        };
-        rcloud.config.add_notebook = function(gistname, entry) {
-            return assert_config()
-                .then(function() {
-                    RCloud.crazy_globals.config.all_books[gistname] = entry;
-                    return rcloud.save_user_config(RCloud.crazy_globals.user, RCloud.crazy_globals.config);
-                });
-        };
-        rcloud.config.remove_notebook = function(gistname) {
-            return assert_config()
-                .then(function() {
-                    delete RCloud.crazy_globals.config.all_books[gistname];
-                    return rcloud.save_user_config(RCloud.crazy_globals.user, RCloud.crazy_globals.config);
-                });
-        };
-
+        // notebook cache
+        rcloud.get_notebook_info = rcloud_ocaps.get_notebook_infoAsync;
+        rcloud.get_multiple_notebook_infos = rcloud_ocaps.get_multiple_notebook_infosAsync;
+        rcloud.set_notebook_info = rcloud_ocaps.set_notebook_infoAsync;
     }
 
     rcloud.authenticated = rcloud_ocaps.authenticated;
