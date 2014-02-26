@@ -40,56 +40,6 @@ var editor = function () {
         star_notebook_button_ = null;
 
     //  Model functions
-
-    // find a migration path from one version to another,
-    // do a depth-first search then apply all the migration functions.
-    // obviously results will be unpredictable if there is more than one path.
-    function migrate_config() {
-        var old_version = config_.config_version || 0;
-        if(old_version === CONFIG_VERSION)
-            return false;
-        // upgrade from version M to N
-        var migration_graph = {
-            '0': {
-                '1': function(config) {
-                    // star all notebooks in interests
-                    for(var u in config.interests)
-                        for(var n in config.interests[u])
-                            rcloud.stars.star_notebook(n);
-                }
-            },
-            '1': {
-                '2': function(config) {
-                    // register all notebooks in interests and all_books
-                    // drop interests and all_books
-                    delete config.interests;
-                    delete config.all_books;
-                }
-            }
-        };
-        function find_path(a, b) {
-            if(a === b)
-                return [];
-            var links = migration_graph[a];
-            if(!links)
-                return null;
-            if(links[b])
-                return [{version: b, f: links[b]}];
-            var path;
-            for(var l in links)
-                if((path = find_path(l, b))) {
-                    path.unshift({version: l, f: links[l]});
-                    return path;
-                }
-            return null;
-        }
-        var migration_path = find_path(old_version, CONFIG_VERSION);
-        for(var i = 0; i < migration_path.length; ++i)
-            migration_path[i].f(config_);
-        config_.config_version = CONFIG_VERSION;
-        return true;
-    }
-
     function get_notebook_status(user, gistname) {
         var iu = interests_[user];
         return (iu && iu[gistname]) || all_entries_[gistname] || {};
@@ -218,7 +168,7 @@ var editor = function () {
         return notebook_nodes;
     }
 
-    function populate_interests(root_data) {
+    function populate_interests(root_data, my_stars) {
         function create_user_book_entry_map(books) {
             return _.reduce(books,
                             function(users, book){
@@ -234,40 +184,37 @@ var editor = function () {
                             {});
         }
 
-        return rcloud.stars.get_my_starred_notebooks()
-            .then(function(starred) {
-                interests_ = create_user_book_entry_map(starred);
-                var my_notebooks, user_nodes = [];
-                for (var username in interests_) {
-                    var user_notebooks = interests_[username];
-                    for(var gistname in user_notebooks) {
-                        i_starred_[gistname] = true;
-                        // sanitize... this shouldn't really happen...
-                        if(!user_notebooks[gistname].description)
-                            user_notebooks[gistname].description = "(no description)";
-                    }
+        interests_ = create_user_book_entry_map(my_stars);
+        var my_notebooks, user_nodes = [];
+        for (var username in interests_) {
+            var user_notebooks = interests_[username];
+            for(var gistname in user_notebooks) {
+                i_starred_[gistname] = true;
+                // sanitize... this shouldn't really happen...
+                if(!user_notebooks[gistname].description)
+                    user_notebooks[gistname].description = "(no description)";
+            }
 
-                    var notebook_nodes = [];
-                    notebook_nodes = notebook_nodes.concat(convert_notebook_set('interests', username, user_notebooks));
+            var notebook_nodes = [];
+            notebook_nodes = notebook_nodes.concat(convert_notebook_set('interests', username, user_notebooks));
 
-                    if(username === username_)
-                        my_notebooks = notebook_nodes;
-                    else {
-                        var id = node_id('interests', username);
-                        var node = {
-                            label: someone_elses(username),
-                            id: id,
-                            sort_order: ordering.SUBFOLDER,
-                            children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
-                        };
-                        user_nodes.push(node);
-                    }
-                }
-                var children = as_folder_hierarchy(my_notebooks, node_id('interests', username_));
-                children = children.concat(user_nodes).sort(compare_nodes);
-                root_data[0].children = children;
-                return root_data;
-            });
+            if(username === username_)
+                my_notebooks = notebook_nodes;
+            else {
+                var id = node_id('interests', username);
+                var node = {
+                    label: someone_elses(username),
+                    id: id,
+                    sort_order: ordering.SUBFOLDER,
+                    children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
+                };
+                user_nodes.push(node);
+            }
+        }
+        var children = as_folder_hierarchy(my_notebooks, node_id('interests', username_));
+        children = children.concat(user_nodes).sort(compare_nodes);
+        root_data[0].children = children;
+        return root_data;
     }
 
     function load_tree(root_data) {
@@ -341,19 +288,33 @@ var editor = function () {
     }
 
     function load_everything() {
-        return rcloud.config.get_all_notebooks()
-            .spread(load_notebook_list)
-            .then(function(root_data) {
-                return rcloud.config.get_current_notebook()
-                    .then(function(current) {
-                        current_ = current;
-                    })
-                    .return(_.keys(all_entries_))
-                    .then(rcloud.stars.get_multiple_notebook_star_counts)
-                    .then(function(counts) { num_stars_ = counts; })
-                    .return(root_data);
+        return rcloud.get_users(rcloud.username())
+            .then(rcloud.config.all_notebooks_multiple_users)
+            .then(function(user_notebook_set) {
+                return rcloud.stars.get_my_starred_notebooks()
+                    .then(function(my_stars) { return [user_notebook_set, my_stars]; });
             })
-            .then(populate_interests)
+            .spread(function(user_notebook_set, my_stars) {
+                var all_notebooks = [];
+                for(var username in user_notebook_set)
+                    all_notebooks = all_notebooks.concat(user_notebook_set[username]);
+                all_notebooks = all_notebooks.concat(my_stars);
+                all_notebooks = _.uniq(all_notebooks.sort(), true);
+                return rcloud.get_multiple_notebook_infos(all_notebooks)
+                    .then(function(notebook_entries) {
+                        return load_notebook_list(user_notebook_set, notebook_entries)
+                            .then(function(root_data) {
+                                return Promise.all(rcloud.config.get_current_notebook()
+                                                   .then(function(current) {
+                                                       current_ = current;
+                                                   }),
+                                                   rcloud.stars.get_multiple_notebook_star_counts(all_notebooks)
+                                                   .then(function(counts) { num_stars_ = counts; }))
+                                    .return([root_data, my_stars]);
+                            });
+                    });
+            })
+            .spread(populate_interests)
             .then(load_tree);
     }
 
