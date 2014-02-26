@@ -47,12 +47,17 @@ explode.user.configs <- function() {
     Map(function(username, key) {
       config <- rjson::fromJSON(rcs.get(key))
 
+      # notebook metadata
       pull.notebook.metadata(username, config$all_books)
       lapply(names(config$interests),
              function(friend) pull.notebook.metadata(friend, config$interests[[friend]]))
 
       # options
       opts <- usr.key(user = username, notebook = "system", "config");
+
+      # all notebooks list
+      lapply(rcs.key(opts, "notebooks", names(config$all_books)),
+             function(key) rcs.set(key, 1))
 
       rcs.set(rcs.key(opts, "current", "notebook"), config$currbook)
       rcs.set(rcs.key(opts, "current", "version"), config$currversion)
