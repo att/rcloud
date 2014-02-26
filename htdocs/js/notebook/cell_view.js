@@ -98,7 +98,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         watermark.addClass("rmarkdown-language-pseudo");
     }
 
-
     // ace_div.css({'background-color': language === 'R' ? "#B1BEA4" : "#F1EDC0"});
     inner_div.append(markdown_div);
     markdown_div.append(ace_div);
@@ -109,9 +108,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     widget.setValue(cell_model.content());
     ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
     // erase undo state so that undo doesn't erase all
-    window.setTimeout(function() {
+    ui_utils.on_next_tick(function() {
         session.getUndoManager().reset();
-    }, 0);
+    });
     var doc = session.doc;
     var am_read_only = cell_model.parent_model.read_only();
     if (am_read_only) {

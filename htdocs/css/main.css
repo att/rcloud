@@ -515,3 +515,15 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
 .ace-chrome .ace_print-margin {
     display: none;
 }
+
+.nav-tabs > li > a {
+    padding: 5px;
+    padding-bottom: 2px;
+    color: rgb(28, 66, 87);
+    background-color: transparent;
+}
+
+.nav-tabs > li.active > a {
+    font-weight: bold;
+    background-color: transparent;
+}

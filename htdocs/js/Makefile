@@ -9,6 +9,10 @@ rcloud_bundle.js: \
 	bootstrap_utils.js \
 	notebook/_notebook_begin.js \
 	notebook/_cell_begin.js \
+	notebook/_asset_begin.js \
+	notebook/asset_view.js \
+	notebook/asset_model.js \
+	notebook/asset_controller.js \
 	notebook/cell_view.js \
 	notebook/cell_model.js \
 	notebook/cell_controller.js \

@@ -954,6 +954,9 @@ ui_utils.make_editable = function(elem$, editable, on_edit) {
     else elem$.attr('contenteditable', 'false');
 };
 
+ui_utils.on_next_tick = function(f) {
+    window.setTimeout(f, 0);
+};
 var bootstrap_utils = {};
 
 bootstrap_utils.alert = function(opts)
@@ -986,6 +989,92 @@ Notebook = {};
 // roughly a MVC-kinda-thing per cell, plus a MVC for all the cells
 // 
 Notebook.Cell = {};
+Notebook.Asset = {};
+Notebook.Asset.create_html_view = function(asset_model)
+{
+    var filename_div = $("<li></li>");
+    var anchor = $("<a href='#'>" + asset_model.filename() + "</a>");
+    filename_div.append(anchor);
+    anchor.click(function() {
+        $(filename_div).parent().find("li").removeClass("active");
+        filename_div.addClass("active");
+        RCloud.UI.scratchpad.update_to_model(asset_model);
+    });
+    var result = {
+        content_updated: function() {
+        },
+        self_removed: function() {
+            filename_div.remove();
+        },
+        set_readonly: function(readonly) {
+            // FIXME
+        }, 
+        div: function() {
+            return filename_div;
+        }
+    };
+    return result;
+};
+Notebook.Asset.create_model = function(content, filename)
+{
+    var result = {
+        views: [], // sub list for pubsub
+        parent_model: null,
+        language: function() {
+            var extension = filename.match(/\.([^.]+)$/);
+            if (!extension)
+                throw new Error("extension does not exist");
+            extension = extension[1];
+            return extension;
+        },
+        filename: function(new_filename) {
+            if (!_.isUndefined(new_filename)) {
+                if(filename != new_filename) {
+                    filename = new_filename;
+                    notify_views(function(view) {
+                        view.filename_updated();
+                    });
+                    return filename;
+                }
+                else return null;
+            }
+            return filename;
+        },
+        content: function(new_content) {
+            if (!_.isUndefined(new_content)) {
+                if(content != new_content) {
+                    content = new_content;
+                    notify_views(function(view) {
+                        view.content_updated();
+                    });
+                    return content;
+                }
+                else return null;
+            }
+            return content;
+        },
+        json: function() {
+            return {
+                content: content,
+                filename: this.filename(),
+                language: this.language()
+            };
+        }
+    };
+    function notify_views(f) {
+        _.each(result.views, function(view) {
+            f(view);
+        });
+    }
+    return result;
+};
+Notebook.Asset.create_controller = function(asset_model)
+{
+    var result = {
+        
+    };
+    return result;
+};
 (function() {
 
 function create_markdown_cell_html_view(language) { return function(cell_model) {
@@ -1086,7 +1175,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         watermark.addClass("rmarkdown-language-pseudo");
     }
 
-
     // ace_div.css({'background-color': language === 'R' ? "#B1BEA4" : "#F1EDC0"});
     inner_div.append(markdown_div);
     markdown_div.append(ace_div);
@@ -1097,9 +1185,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     widget.setValue(cell_model.content());
     ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
     // erase undo state so that undo doesn't erase all
-    window.setTimeout(function() {
+    ui_utils.on_next_tick(function() {
         session.getUndoManager().reset();
-    }, 0);
+    });
     var doc = session.doc;
     var am_read_only = cell_model.parent_model.read_only();
     if (am_read_only) {
@@ -1447,6 +1535,8 @@ Notebook.Cell.create_controller = function(cell_model)
 };
 Notebook.create_html_view = function(model, root_div)
 {
+    var root_asset_div = $("#asset-list");
+
     function show_or_hide_cursor(readonly) {
         if(readonly)
             $('.ace_cursor-layer').hide();
@@ -1456,12 +1546,20 @@ Notebook.create_html_view = function(model, root_div)
     var result = {
         model: model,
         sub_views: [],
+        asset_sub_views: [],
         cell_appended: function(cell_model) {
             var cell_view = Notebook.Cell.create_html_view(cell_model);
             cell_model.views.push(cell_view);
             root_div.append(cell_view.div());
             this.sub_views.push(cell_view);
             return cell_view;
+        },
+        asset_appended: function(asset_model) {
+            var asset_view = Notebook.Asset.create_html_view(asset_model);
+            asset_model.views.push(asset_view);
+            root_asset_div.append(asset_view.div());
+            this.asset_sub_views.push(asset_view);
+            return asset_view;
         },
         cell_inserted: function(cell_model, cell_index) {
             var cell_view = Notebook.Cell.create_html_view(cell_model);
@@ -1485,6 +1583,9 @@ Notebook.create_html_view = function(model, root_div)
         set_readonly: function(readonly) {
             show_or_hide_cursor(readonly);
             _.each(this.sub_views, function(view) {
+                view.set_readonly(readonly);
+            });
+            _.each(this.asset_sub_views, function(view) {
                 view.set_readonly(readonly);
             });
         },
@@ -1525,11 +1626,27 @@ Notebook.create_model = function()
     /* note, the code below is a little more sophisticated than it needs to be:
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
     return {
-        notebook: [],
+        notebook: [], // this should be called "cells"
+        assets: [],
         views: [], // sub list for cell content pubsub
         dishers: [], // for dirty bit pubsub
         clear: function() {
             return this.remove_cell(null,last_id(this.notebook));
+        },
+        append_asset: function(asset_model, filename, skip_event) {
+            asset_model.parent_model = this;
+            var changes = [];
+            changes.push({
+                filename: filename, 
+                content: asset_model.content(), 
+                language: asset_model.language()
+            });
+            this.assets.push(asset_model);
+            if(!skip_event)
+                _.each(this.views, function(view) {
+                    view.asset_appended(asset_model);
+                });
+            return changes;
         },
         append_cell: function(cell_model, id, skip_event) {
             cell_model.parent_model = this;
@@ -1697,6 +1814,14 @@ Notebook.create_controller = function(model)
         return {controller: cell_controller, changes: model.append_cell(cell_model, id)};
     }
 
+    function append_asset_helper(content, filename) {
+        var asset_model = Notebook.Asset.create_model(content, filename);
+        var asset_controller = Notebook.Asset.create_controller(asset_model);
+        asset_model.controller = asset_controller;
+        return {controller: asset_controller, 
+                changes: model.append_asset(asset_model, filename)};
+    }
+
     function insert_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
         var cell_controller = Notebook.Cell.create_controller(cell_model);
@@ -1706,19 +1831,29 @@ Notebook.create_controller = function(model)
 
     function on_load(version, notebook) {
         if (!_.isUndefined(notebook.files)) {
+            var i;
             this.clear();
-            var parts = {}; // could rely on alphabetic input instead of gathering
-            _.each(notebook.files, function (file) {
+            var cells = {}; // could rely on alphabetic input instead of gathering
+            var assets = {};
+            _.each(notebook.files, function (file, k) {
+                // ugh, we really need to have a better javascript mapping of R objects..
+                if (k === "r_attributes" || k === "r_type")
+                    return;
                 var filename = file.filename;
                 if(/^part/.test(filename)) {
+                    // cells
                     var number = parseInt(filename.slice(4).split('.')[0]);
                     if(!isNaN(number))
-                        parts[number] = [file.content, file.language, number];
+                        cells[number] = [file.content, file.language, number];
+                } else {
+                    // assets
+                    assets[filename] = [file.content, file.filename];
                 }
-                // style..
             });
-            for(var i in parts)
-                append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
+            for(i in cells)
+                append_cell_helper(cells[i][0], cells[i][1], cells[i][2]);
+            for(i in assets)
+                append_asset_helper(assets[i][0], assets[i][1]);
             // is there anything else to gist permissions?
             model.user(notebook.user.login);
             model.read_only(version != null || notebook.user.login != rcloud.username());
@@ -2356,25 +2491,66 @@ RCloud.UI.middle_column = {
     }
 };
 RCloud.UI.scratchpad = {
+    session: null,
+    widget: null,
     init: function() {
+        var that = this;
         function setup_scratchpad(div) {
-            div.css({'background-color': "#f1f1f1"});
+            var inner_div = $("<div></div>");
+            var clear_div = $("<div style='clear:both;'></div>");
+            div.append(inner_div);
+            div.append(clear_div);
+            var ace_div = $('<div style="width:100%; height:100%"></div>');
+            ace_div.css({'background-color': "#f1f1f1"});
+            inner_div.append(ace_div);
             ace.require("ace/ext/language_tools");
-            var widget = ace.edit(div[0]);
+            var widget = ace.edit(ace_div[0]);
             var RMode = require("ace/mode/r").Mode;
             var session = widget.getSession();
+            that.session = session;
+            that.widget = widget;
             var doc = session.doc;
+            session.on('change', function() {
+                div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
+                widget.resize();
+            });
             widget.setOptions({
                 enableBasicAutocompletion: true
             });
             session.setMode(new RMode(false, doc, session));
             session.setUseWrapMode(true);
             widget.resize();
+            ui_utils.on_next_tick(function() {
+                session.getUndoManager().reset();
+                widget.resize();
+            });
         }
         var scratchpad_editor = $("#scratchpad-editor");
         if (scratchpad_editor.length) {
             setup_scratchpad(scratchpad_editor);
         }
+    },
+    update_to_model: function(asset_model) {
+        var that = this;
+        var modes = {
+            r: "ace/mode/r",
+            py: "ace/mode/python",
+            md: "ace/mode/rmarkdown",
+            css: "ace/mode/css",
+            txt: "ace/mode/text"
+        };
+        function set_mode() {
+            debugger;
+            var lang = asset_model.language().toLocaleLowerCase();
+            var mode = require(modes[lang] || modes.txt).Mode;
+            that.session.setMode(new mode(false, that.session.doc, that.session));
+        }
+        this.widget.setValue(asset_model.content());
+        ui_utils.on_next_tick(function() {
+            that.session.getUndoManager().reset();
+            set_mode();
+            that.widget.resize();
+        });
     }
 };
 RCloud.UI.command_prompt = {

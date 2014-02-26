@@ -26,11 +26,27 @@ Notebook.create_model = function()
     /* note, the code below is a little more sophisticated than it needs to be:
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
     return {
-        notebook: [],
+        notebook: [], // this should be called "cells"
+        assets: [],
         views: [], // sub list for cell content pubsub
         dishers: [], // for dirty bit pubsub
         clear: function() {
             return this.remove_cell(null,last_id(this.notebook));
+        },
+        append_asset: function(asset_model, filename, skip_event) {
+            asset_model.parent_model = this;
+            var changes = [];
+            changes.push({
+                filename: filename, 
+                content: asset_model.content(), 
+                language: asset_model.language()
+            });
+            this.assets.push(asset_model);
+            if(!skip_event)
+                _.each(this.views, function(view) {
+                    view.asset_appended(asset_model);
+                });
+            return changes;
         },
         append_cell: function(cell_model, id, skip_event) {
             cell_model.parent_model = this;

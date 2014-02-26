@@ -16,6 +16,14 @@ Notebook.create_controller = function(model)
         return {controller: cell_controller, changes: model.append_cell(cell_model, id)};
     }
 
+    function append_asset_helper(content, filename) {
+        var asset_model = Notebook.Asset.create_model(content, filename);
+        var asset_controller = Notebook.Asset.create_controller(asset_model);
+        asset_model.controller = asset_controller;
+        return {controller: asset_controller, 
+                changes: model.append_asset(asset_model, filename)};
+    }
+
     function insert_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
         var cell_controller = Notebook.Cell.create_controller(cell_model);
@@ -25,19 +33,29 @@ Notebook.create_controller = function(model)
 
     function on_load(version, notebook) {
         if (!_.isUndefined(notebook.files)) {
+            var i;
             this.clear();
-            var parts = {}; // could rely on alphabetic input instead of gathering
-            _.each(notebook.files, function (file) {
+            var cells = {}; // could rely on alphabetic input instead of gathering
+            var assets = {};
+            _.each(notebook.files, function (file, k) {
+                // ugh, we really need to have a better javascript mapping of R objects..
+                if (k === "r_attributes" || k === "r_type")
+                    return;
                 var filename = file.filename;
                 if(/^part/.test(filename)) {
+                    // cells
                     var number = parseInt(filename.slice(4).split('.')[0]);
                     if(!isNaN(number))
-                        parts[number] = [file.content, file.language, number];
+                        cells[number] = [file.content, file.language, number];
+                } else {
+                    // assets
+                    assets[filename] = [file.content, file.filename];
                 }
-                // style..
             });
-            for(var i in parts)
-                append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
+            for(i in cells)
+                append_cell_helper(cells[i][0], cells[i][1], cells[i][2]);
+            for(i in assets)
+                append_asset_helper(assets[i][0], assets[i][1]);
             // is there anything else to gist permissions?
             model.user(notebook.user.login);
             model.read_only(version != null || notebook.user.login != rcloud.username());

@@ -245,3 +245,6 @@ ui_utils.make_editable = function(elem$, editable, on_edit) {
     else elem$.attr('contenteditable', 'false');
 };
 
+ui_utils.on_next_tick = function(f) {
+    window.setTimeout(f, 0);
+};
