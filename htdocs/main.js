@@ -136,7 +136,7 @@ function main_init() {
     });
     rclient = RClient.create({
         debug: false,
-        host:  location.href.replace(/^http/,"ws"),
+        host:  location.href.replace(/^http/,"ws").replace(/#.*$/,""),
         on_connect: function(ocaps) {
             rcloud = RCloud.create(ocaps.rcloud);
             if (!rcloud.authenticated) {
