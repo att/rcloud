@@ -203,7 +203,7 @@ rcloud.rename.notebook <- function(id, new.name)
 
 rcloud.fork.notebook <- function(id) fork.gist(id, ctx = .session$rgithub.context)
 
-rcloud.get.users <- function(user) ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
+rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
   gsub("/.*","",rcs.list(usr.key(user="*", notebook="system", "config")))
 
 rcloud.publish.notebook <- function(id) {
@@ -335,45 +335,49 @@ rcloud.get.my.starred.notebooks <- function()
 ################################################################################
 # config
 
-rcloud.config.all.notebooks <- function(user)
+user.all.notebooks <- function(user)
   gsub(".*/", "", rcs.list(usr.key(user=user, notebook="system", "config", "notebooks", "*")))
 
+rcloud.config.all.notebooks <- function()
+  user.all.notebooks(.session$username)
+
 rcloud.config.all.notebooks.multiple.users <- function(users) {
-  result <- lapply(users, rcloud.all.notebooks)
+  result <- lapply(users, user.all.notebooks)
   names(result) <- users
   result
+
 }
 
-rcloud.config.add.notebook <- function(user, id)
-  rcs.set(usr.key(user=user, notebook="system", "config", "notebooks", id), 1)
+rcloud.config.add.notebook <- function(id)
+  rcs.set(usr.key(user=.session$username, notebook="system", "config", "notebooks", id), 1)
 
-rcloud.config.remove.notebook <- function(user, id)
-  rcs.rm(usr.key(user=user, notebook="system", "config", "notebooks", id))
+rcloud.config.remove.notebook <- function(id)
+  rcs.rm(usr.key(user=.session$username, notebook="system", "config", "notebooks", id))
 
-rcloud.config.get.current.notebook <- function(user) {
-  base <- usr.key(user=user, notebook="system", "config", "current")
+rcloud.config.get.current.notebook <- function() {
+  base <- usr.key(user=.session$username, notebook="system", "config", "current")
   list(notebook = rcs.get(rcs.key(base, "notebook")),
        version = rcs.get(rcs.key(base, "version")))
 }
 
-rcloud.config.set.current.notebook <- function(user, current) {
-  base <- usr.key(user=user, notebook="system", "config", "current")
+rcloud.config.set.current.notebook <- function(current) {
+  base <- usr.key(user=.session$username, notebook="system", "config", "current")
   rcs.set(rcs.key(base, "notebook"), current$notebook)
   rcs.set(rcs.key(base, "version"), current$version)
 }
 
-rcloud.config.new.notebook.number <- function(user)
-  rcs.incr(usr.key(user=user, notebook="system", "config", "nextwork"))
+rcloud.config.new.notebook.number <- function()
+  rcs.incr(usr.key(user=.session$username, notebook="system", "config", "nextwork"))
 
-rcloud.config.get.recent.notebooks <- function(user) {
-  keys <- rcs.list(usr.key(user=user, notebook="system", "config", "recent", "*"))
+rcloud.config.get.recent.notebooks <- function() {
+  keys <- rcs.list(usr.key(user=.session$username, notebook="system", "config", "recent", "*"))
   vals <- rcs.get(keys)
   names(vals) <- gsub(".*/", "", names(vals))
   vals
 }
 
-rcloud.config.set.recent.notebook <- function(user, id, date)
-  rcs.set(usr.key(user=user, notebook="system", "config", "recent", id), date)
+rcloud.config.set.recent.notebook <- function(id, date)
+  rcs.set(usr.key(user=.session$username, notebook="system", "config", "recent", id), date)
 
 ################################################################################
 # notebook cache
@@ -399,8 +403,6 @@ rcloud.set.notebook.info <- function(id, info) {
   rcs.set(rcs.key(base, "last_commit"), info$last_commit)
   rcs.set(rcs.key(base, "visibility"), info$visibility)
 }
-
-
 
 rcloud.purl.source <- function(contents)
 {

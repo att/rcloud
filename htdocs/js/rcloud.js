@@ -135,8 +135,8 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.install_notebook_stylesheetsAsync();
         };
 
-        rcloud.get_users = function(user) {
-            return rcloud_ocaps.get_usersAsync(user);
+        rcloud.get_users = function() {
+            return rcloud_ocaps.get_usersAsync();
         };
 
         rcloud.record_cell_execution = function(cell_model) {
