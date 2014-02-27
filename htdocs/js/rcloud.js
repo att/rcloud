@@ -38,9 +38,6 @@ RCloud.create = function(rcloud_ocaps) {
 
     function rcloud_github_handler(command, promise) {
         function success(result) {
-            if (result.r_attributes['class'] === "try-error") {
-                throw new Error(result);
-            }
             if (result.ok) {
                 return result.content;
             } else {
@@ -48,16 +45,31 @@ RCloud.create = function(rcloud_ocaps) {
             }
         }
         function failure(err) {
-            if (RCloud.is_exception(err)) {
-                rclient.post_error(err[0]);
-            } else {
-                var message = _.isObject(err) && 'ok' in err
+            var message = _.isObject(err) && 'ok' in err
                     ? err.content.message : err.toString();
-                rclient.post_error(command + ': ' + message);
-            }
+            rclient.post_error(command + ': ' + message);
             throw err;
         }
         return promise.then(success).catch(failure);
+    }
+
+    function rcloud_r_handler(command, promise_function) {
+        function success(result) {
+            if(result && result.r_attributes && result.r_attributes['class'] === "try-error") {
+                throw new Error(command + ": " + result);
+            }
+            return result;
+        }
+        function failure(err) {
+            if(RCloud.is_exception(err)) {
+                rclient.post_error(err[0]);
+            }
+            throw err;
+        }
+
+        return function() {
+            return promise_function.apply(this, arguments).then(success).catch(failure);
+        };
     }
 
     var rcloud = {};
@@ -88,7 +100,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["set_device_pixel_ratio"]
         ];
         _.each(paths, function(path) {
-            set(path, Promise.promisify(get(path)));
+            set(path, rcloud_r_handler(path.join('.'), Promise.promisify(get(path))));
         });
 
         rcloud.username = function() {
@@ -274,7 +286,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["set_notebook_info"]
         ];
         _.each(paths, function(path) {
-            set(path, Promise.promisify(get(path)));
+            set(path, rcloud_r_handler(path.join('.'), Promise.promisify(get(path))));
         });
 
         rcloud.session_init = function(username, token) {
