@@ -29,12 +29,19 @@ rename.notebook.keys <- function() {
 # notebook metadata now gets stored globally under .notebook
 pull.notebook.metadata <- function(user, entries)
   lapply(names(entries), function(notebook) {
+    info <- entries[[notebook]]
+    cat(paste("Writing notebook", notebook, ":",
+              "user", user,
+              "description", info$description,
+              "last_commit", info$last_commit,
+              "visibility", info$visibility,
+              "\n", sep=' '))
     book <- usr.key(user = ".notebook", notebook = notebook);
     rcs.set(rcs.key(book, 'username'), user);
-    rcs.set(rcs.key(book, 'description'), entries[notebook]$description);
-    rcs.set(rcs.key(book, 'last_commit'), entries[notebook]$last_commit);
-    if('visibility' %in% names(entries[notebook]))
-      rcs.set(rcs.key(book, 'visibility'), entries[notebook]$visibility);
+    rcs.set(rcs.key(book, 'description'), info$description);
+    rcs.set(rcs.key(book, 'last_commit'), info$last_commit);
+    if('visibility' %in% names(info))
+      rcs.set(rcs.key(book, 'visibility'), info$visibility);
   })
 
 # pull notebook lists and user options out of the
