@@ -2,6 +2,7 @@ RCloud.UI.scratchpad = {
     session: null,
     widget: null,
     current_model: null,
+    change_content: null,
     init: function() {
         var that = this;
         function setup_scratchpad(div) {
@@ -35,6 +36,11 @@ RCloud.UI.scratchpad = {
                 div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
                 widget.resize();
             });
+            that.change_content = ui_utils.ignore_programmatic_changes(
+                that.widget, function() {
+                    if (that.current_model)
+                        that.current_model.parent_model.on_dirty();
+                });
         }
         var scratchpad_editor = $("#scratchpad-editor");
         if (scratchpad_editor.length) {
@@ -52,14 +58,19 @@ RCloud.UI.scratchpad = {
         };
         if (this.current_model) {
             this.current_model.cursor_position(this.widget.getCursorPosition());
-            this.current_model.content(this.widget.getValue());
+            // if this isn't a code smell I don't know what is.
+            if (this.current_model.content(this.widget.getValue())) {
+                this.current_model.parent_model.controller.update_asset(this.current_model);
+            }
         }
-        this.widget.setValue(asset_model.content());
+        this.current_model = asset_model;
+        that.change_content(this.current_model.content());
+        // restore cursor
         var model_cursor = asset_model.cursor_position();
         if (model_cursor) {
-            ui_utils.ace_set_pos(this.widget, model_cursor); // setValue selects all
+            ui_utils.ace_set_pos(this.widget, model_cursor);
         } else {
-            ui_utils.ace_set_pos(this.widget, 0, 0); // setValue selects all
+            ui_utils.ace_set_pos(this.widget, 0, 0);
         }
         ui_utils.on_next_tick(function() {
             that.session.getUndoManager().reset();
@@ -69,6 +80,9 @@ RCloud.UI.scratchpad = {
         that.session.setMode(new mode(false, that.session.doc, that.session));
         that.widget.resize();
         that.widget.focus();
-        this.current_model = asset_model;
+    },
+    // this behaves like cell_view's update_model
+    update_model: function() {
+        return this.current_model.content(this.widget.getSession().getValue());
     }
 };

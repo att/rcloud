@@ -10,32 +10,6 @@ Notebook.create_model = function()
             return 0;
     }
 
-    function build_cell_change(id, content, language) {
-        // unfortunately, yet another workaround because github
-        // won't take blank files.  would prefer to make changes
-        // a high-level description but i don't see it yet.
-        var change = {id: id,
-                      language: language};
-        if(content === "")
-            change.erase = true;
-        else
-            change.content = content;
-        return change;
-    }
-
-    function build_asset_change(filename, content) {
-        // unfortunately, yet another workaround because github
-        // won't take blank files.  would prefer to make changes
-        // a high-level description but i don't see it yet.
-        var change = {filename: filename};
-        if(content === "")
-            change.erase = true;
-        else
-            change.content = content;
-        return change;
-    }
-
-
     /* note, the code below is a little more sophisticated than it needs to be:
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
     return {
@@ -163,27 +137,36 @@ Notebook.create_model = function()
             return changes;
         },
         update_cell: function(cell_model) {
-            return [build_cell_change(cell_model.id(), cell_model.content(), cell_model.language())];
+            return [cell_model.change_object()];
         },
         update_asset: function(asset_model) {
-            return [build_asset_change(asset_model.filename(), asset_model.content())];
+            return [asset_model.change_object()];
         },
         reread_cells: function() {
             var that = this;
+            // Forces views to update models
             var changed_cells_per_view = _.map(this.views, function(view) {
                 return view.update_model();
             });
             if(changed_cells_per_view.length != 1)
                 throw "not expecting more than one notebook view";
-            return _.reduce(changed_cells_per_view[0],
-                            function(changes, content, index) {
-                                if(content !== null)
-                                    changes.push(build_cell_change(that.notebook[index].id(),
-                                                                   content,
-                                                                   that.notebook[index].language()));
-                                return changes;
-                            },
-                            []);
+            var contents = changed_cells_per_view[0];
+            var changes = [];
+            for (var i=0; i<contents.length; ++i) {
+                var content = contents[i];
+                if (content !== null) {
+                    changes.push(that.notebook[i].change_object());
+                    // build_cell_change(that.notebook[i].id(),
+                    //                   content,
+                    //                   that.notebook[i].language()));
+                }
+            }
+            var asset_change = RCloud.UI.scratchpad.update_model();
+            if (asset_change) {
+                var active_asset_model = RCloud.UI.scratchpad.current_model;
+                changes.push(active_asset_model.change_object());
+            }
+            return changes;
         },
         read_only: function(readonly) {
             if(!_.isUndefined(readonly)) {

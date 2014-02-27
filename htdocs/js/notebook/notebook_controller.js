@@ -107,28 +107,50 @@ Notebook.create_controller = function(model)
             // we don't use the gist rename feature because it doesn't
             // allow renaming x -> y and creating a new x at the same time
             // instead, create y and if there is no longer any x, erase it
-            var post_names = _.reduce(changes,
-                                      function(names, change) {
-                                          if(!change.erase) {
-                                              var after = change.rename || change.id;
-                                              names[Notebook.part_name(after, change.language)] = 1;
-                                          }
-                                          return names;
-                                      }, {});
-            function xlate_change(filehash, change) {
+            var post_names = {};
+            _.each(changes, function(change) {
+                if (!change.erase) {
+                    var after = change.rename || change.id;
+                    post_names[change.name(after)] = 1;
+                };
+            });
+
+            var filehash = {};
+            _.each(changes, function(change) {
                 var c = {};
                 if(change.content !== undefined)
                     c.content = change.content;
-                var pre_name = Notebook.part_name(change.id, change.language);
+                var pre_name = change.name(change.id);
                 if(change.erase || !post_names[pre_name])
                     filehash[pre_name] = null;
                 if(!change.erase) {
-                    var post_name = Notebook.part_name(change.rename || change.id, change.language);
+                    var post_name = change.name(change.rename || change.id);
                     filehash[post_name] = c;
                 }
-                return filehash;
-            }
-            return {files: _.reduce(changes, xlate_change, {})};
+            });
+            return { files: filehash }; 
+            // _.reduce(changes, xlate_change, {})};
+            // var post_names = _.reduce(changes,
+            //                           function(names, change) {
+            //                               if(!change.erase) {
+            //                                   var after = change.rename || change.id;
+            //                                   names[Notebook.part_name(after, change.language)] = 1;
+            //                               }
+            //                               return names;
+            //                           }, {});
+            // function xlate_change(filehash, change) {
+            //     var c = {};
+            //     if(change.content !== undefined)
+            //         c.content = change.content;
+            //     var pre_name = Notebook.part_name(change.id, change.language);
+            //     if(change.erase || !post_names[pre_name])
+            //         filehash[pre_name] = null;
+            //     if(!change.erase) {
+            //         var post_name = Notebook.part_name(change.rename || change.id, change.language);
+            //         filehash[post_name] = c;
+            //     }
+            //     return filehash;
+            // }
         }
 
         return rcloud.update_notebook(gistname, changes_to_gist(changes))
@@ -241,6 +263,9 @@ Notebook.create_controller = function(model)
         },
         update_cell: function(cell_model) {
             return update_notebook(model.update_cell(cell_model));
+        },
+        update_asset: function(asset_model) {
+            return update_notebook(model.update_asset(asset_model));
         },
         save: function() {
             if(dirty_) {
