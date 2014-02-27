@@ -63,9 +63,10 @@ var editor = function () {
 
     function add_all(user, gistname, entry) {
         all_entries_[gistname] = entry;
-        return user === username_ ?
-            rcloud.config.add_notebook(gistname, entry) :
-            Promise.resolve();
+        var p = rcloud.set_notebook_info(gistname, entry);
+        if(user === username_)
+            p = p.then(function() { rcloud.config.add_notebook(gistname); });
+        return p;
     }
 
     function remove_all(user, gistname) {
@@ -230,7 +231,7 @@ var editor = function () {
         $tree_.tree('openNode', interests);
     }
 
-    function load_notebook_list(user_notebooks, notebook_entries) {
+    function load_notebook_list(user_notebooks) {
         function create_book_entry_map(books) {
             return _.reduce(books,
                             function(map, book) {
@@ -242,8 +243,6 @@ var editor = function () {
                             },
                             {});
         }
-
-        all_entries_ = notebook_entries;
 
         var my_alls = [], user_nodes = [], my_config = null;
         for(var username in user_notebooks) {
@@ -288,29 +287,38 @@ var editor = function () {
     }
 
     function load_everything() {
-        return rcloud.get_users(rcloud.username())
-            .then(rcloud.config.all_notebooks_multiple_users)
-            .then(function(user_notebook_set) {
-                return rcloud.stars.get_my_starred_notebooks()
-                    .then(function(my_stars) { return [user_notebook_set, my_stars]; });
-            })
+        return Promise.all([
+            rcloud.get_users().then(rcloud.config.all_notebooks_multiple_users),
+            rcloud.stars.get_my_starred_notebooks()
+            ])
             .spread(function(user_notebook_set, my_stars) {
                 var all_notebooks = [];
-                for(var username in user_notebook_set)
-                    all_notebooks = all_notebooks.concat(user_notebook_set[username]);
+                for(var username in user_notebook_set) {
+                    // work around oddities of rcloud.js
+                    if(username === 'r_attributes' || username === 'r_type')
+                        continue;
+                    else if(_.isArray(user_notebook_set[username]))
+                        all_notebooks = all_notebooks.concat(user_notebook_set[username]);
+                    else all_notebooks.push(user_notebook_set[username]);
+                }
                 all_notebooks = all_notebooks.concat(my_stars);
                 all_notebooks = _.uniq(all_notebooks.sort(), true);
-                return rcloud.get_multiple_notebook_infos(all_notebooks)
-                    .then(function(notebook_entries) {
-                        return load_notebook_list(user_notebook_set, notebook_entries)
+                return Promise.all([rcloud.config.get_current_notebook()
+                                    .then(function(current) {
+                                        current_ = current;
+                                    }),
+                                    rcloud.stars.get_multiple_notebook_star_counts(all_notebooks)
+                                    .then(function(counts) {
+                                        num_stars_ = counts;
+                                    }),
+                                    rcloud.get_multiple_notebook_infos(all_notebooks)
+                                    .then(function(notebook_entries) {
+                                        all_entries_ = notebook_entries;
+                                    })])
+                    .then(function() {
+                        return load_notebook_list(user_notebook_set)
                             .then(function(root_data) {
-                                return Promise.all(rcloud.config.get_current_notebook()
-                                                   .then(function(current) {
-                                                       current_ = current;
-                                                   }),
-                                                   rcloud.stars.get_multiple_notebook_star_counts(all_notebooks)
-                                                   .then(function(counts) { num_stars_ = counts; }))
-                                    .return([root_data, my_stars]);
+                                return [root_data, my_stars];
                             });
                     });
             })
@@ -1036,7 +1044,7 @@ var editor = function () {
                 throw "attempt to set visibility on notebook not mine";
             var entry = interests_[username_][node.gistname];
             entry.visibility = visibility;
-            rcloud.config.add_notebook(username_, entry);
+            rcloud.config.set_notebook_info(entry);
             update_tree_entry(node.root, username_, node.gistname, entry, false);
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
@@ -1076,7 +1084,7 @@ var editor = function () {
                 if(!result.description)
                     throw "Invalid notebook (must have description)";
 
-                current_ = {book: result.id, version: options.version, user: result.user.login};
+                current_ = {notebook: result.id, version: options.version};
                 rcloud.config.set_current_notebook(current_);
 
                 /*
