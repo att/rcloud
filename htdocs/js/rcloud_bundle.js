@@ -768,6 +768,7 @@ ui_utils.ace_set_pos = function(widget, row, column) {
 }
 
 ui_utils.install_common_ace_key_bindings = function(widget) {
+    debugger;
     var Autocomplete = require("ace/autocomplete").Autocomplete;
     var session = widget.getSession();
 
@@ -996,12 +997,20 @@ Notebook.Asset.create_html_view = function(asset_model)
     var anchor = $("<a href='#'>" + asset_model.filename() + "</a>");
     filename_div.append(anchor);
     anchor.click(function() {
-        $(filename_div).parent().find("li").removeClass("active");
-        filename_div.addClass("active");
-        RCloud.UI.scratchpad.update_to_model(asset_model);
+        asset_model.controller.select();
     });
     var result = {
+        div: filename_div,
+        filename_updated: function() {
+            anchor.text(asset_model.filename());
+        },
         content_updated: function() {
+        },
+        active_updated: function() {
+            if (asset_model.active())
+                filename_div.addClass("active");
+            else
+                filename_div.removeClass("active");
         },
         self_removed: function() {
             filename_div.remove();
@@ -1018,9 +1027,24 @@ Notebook.Asset.create_html_view = function(asset_model)
 Notebook.Asset.create_model = function(content, filename)
 {
     var cursor_position;
+    var active = false;
     var result = {
         views: [], // sub list for pubsub
         parent_model: null,
+        active: function(new_active) {
+            if (!_.isUndefined(new_active)) {
+                if(active !== new_active) {
+                    active = new_active;
+                    notify_views(function(view) {
+                        view.active_updated();
+                    });
+                    return active;
+                } else {
+                    return null;
+                }
+            }
+            return active;
+        },
         cursor_position: function(new_cursor_position) {
             if (!_.isUndefined(new_cursor_position))
                 cursor_position = new_cursor_position;
@@ -1093,7 +1117,17 @@ Notebook.Asset.create_model = function(content, filename)
 Notebook.Asset.create_controller = function(asset_model)
 {
     var result = {
-        
+        select: function() {
+            // a little ugly here...
+            if (RCloud.UI.scratchpad.current_model) {
+                RCloud.UI.scratchpad.current_model.controller.deselect();
+            }
+            asset_model.active(true);
+            RCloud.UI.scratchpad.set_model(asset_model);
+        },
+        deselect: function() {
+            asset_model.active(false);
+        }
     };
     return result;
 };
@@ -1515,13 +1549,14 @@ Notebook.Cell.create_model = function(content, language)
                 language: language
             };
         },
-        change_object: function() {
+        change_object: function(obj) {
+            obj = obj || {};
             // unfortunately, yet another workaround because github
             // won't take blank files.  would prefer to make changes
             // a high-level description but i don't see it yet.
             var change = {
-                id: this.id(),
-                language: this.language(),
+                id: obj.id || this.id(),
+                language: obj.language || this.language(),
                 name: function(id) {
                     if (_.isString(id))
                         return id;
@@ -1537,12 +1572,14 @@ Notebook.Cell.create_model = function(content, language)
                         throw "Unknown language " + this.language;
                     }
                     return 'part' + this.id + '.' + ext;
-                }
+                },
+                erase: obj.erase,
+                rename: obj.rename
             };
             if(content === "")
                 change.erase = true;
             else
-                change.content = this.content();
+                change.content = obj.id || this.content();
             return change;
         }
     };
@@ -1628,6 +1665,12 @@ Notebook.create_html_view = function(model, root_div)
             });
             this.sub_views.splice(cell_index, 1);
         },
+        asset_removed: function(asset_model, asset_index) {
+            _.each(asset_model.views, function(view) {
+                view.self_removed();
+            });
+            this.asset_sub_views.splice(asset_index, 1);
+        },
         cell_moved: function(cell_model, pre_index, post_index) {
             this.sub_views.splice(pre_index, 1);
             this.sub_views.splice(post_index, 0, cell_model.views[0]);
@@ -1670,16 +1713,15 @@ Notebook.create_model = function()
         views: [], // sub list for cell content pubsub
         dishers: [], // for dirty bit pubsub
         clear: function() {
-            return this.remove_cell(null,last_id(this.notebook));
+            var cells_removed = this.remove_cell(null,last_id(this.notebook));
+            var assets_removed = this.remove_asset(null,this.assets.length);
+            cells_removed.push.apply(cells_removed, assets_removed);
+            return cells_removed;
         },
         append_asset: function(asset_model, filename, skip_event) {
             asset_model.parent_model = this;
             var changes = [];
-            changes.push({
-                filename: filename, 
-                content: asset_model.content(), 
-                language: asset_model.language()
-            });
+            changes.push(asset_model.change_object());
             this.assets.push(asset_model);
             if(!skip_event)
                 _.each(this.views, function(view) {
@@ -1694,8 +1736,8 @@ Notebook.create_model = function()
             id = id || 1;
             id = Math.max(id, last_id(this.notebook)+1);
             while(n) {
-                changes.push({id: id, content: cell_model.content(), language: cell_model.language()});
                 cell_model.id(id);
+                changes.push(cell_model.change_object());
                 this.notebook.push(cell_model);
                 if(!skip_event)
                     _.each(this.views, function(view) {
@@ -1718,7 +1760,7 @@ Notebook.create_model = function()
                 id = Math.max(this.notebook[x].id()-n, prev+1);
             }
             for(var j=0; j<n; ++j) {
-                changes.push({id: id+j, content: cell_model.content(), language: cell_model.language()});
+                changes.push(cell_model.change_object({id: id+j}));
                 cell_model.id(id+j);
                 this.notebook.splice(x, 0, cell_model);
                 if(!skip_event)
@@ -1735,13 +1777,46 @@ Notebook.create_model = function()
                 }
                 if(n<=0)
                     break;
-                changes.push({id: this.notebook[x].id(),
-                              content: this.notebook[x].content(),
-                              rename: this.notebook[x].id()+n,
-                              language: this.notebook[x].language()});
+                changes.push(this.notebook[x].change_object({
+                    rename: this.notebook[x].id()+n
+                }));
                 this.notebook[x].id(this.notebook[x].id() + n);
                 ++x;
                 ++id;
+            }
+            return changes;
+        },
+        remove_asset: function(asset_model, n, skip_event) {
+            if (this.assets.length === 0)
+                return [];
+            var that = this;
+            var asset_index, filename;
+            if(asset_model!=null) {
+                asset_index = this.assets.indexOf(asset_model);
+                filename = asset_model.filename();
+                if (asset_index === -1) {
+                    throw "asset_model not in notebook model?!";
+                }
+            }
+            else {
+                asset_index = 0;
+                filename = this.assets[asset_index].filename();
+            }
+            n = n || 1;
+            var x = asset_index;
+            var changes = [];
+            while(x<this.assets.length && n) {
+                if(this.assets[x].filename() == filename) {
+                    if(!skip_event)
+                        _.each(this.views, function(view) {
+                            view.asset_removed(that.assets[x], x);
+                        });
+                    changes.push(that.assets[x].change_object({ erase: 1 }));
+                    this.assets.splice(x, 1);
+                }
+                if (x<this.assets.length)
+                    filename = this.assets[x].filename();
+                --n;
             }
             return changes;
         },
@@ -1768,7 +1843,7 @@ Notebook.create_model = function()
                         _.each(this.views, function(view) {
                             view.cell_removed(that.notebook[x], x);
                         });
-                    changes.push({id: id, erase: 1, language: that.notebook[x].language()});
+                    changes.push(that.notebook[x].change_object({ erase: 1 }));
                     this.notebook.splice(x, 1);
                 }
                 ++id;
@@ -1901,14 +1976,19 @@ Notebook.create_controller = function(model)
                     assets[filename] = [file.content, file.filename];
                 }
             });
+            var asset_controller;
             for(i in cells)
                 append_cell_helper(cells[i][0], cells[i][1], cells[i][2]);
-            for(i in assets)
-                append_asset_helper(assets[i][0], assets[i][1]);
+            for(i in assets) {
+                var result = append_asset_helper(assets[i][0], assets[i][1]).controller;
+                asset_controller = asset_controller || result;
+            }
             // is there anything else to gist permissions?
             model.user(notebook.user.login);
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
+            asset_controller.select();
+            
         }
         return notebook;
     }
@@ -1953,7 +2033,6 @@ Notebook.create_controller = function(model)
             return Promise.reject("attempted to update read-only notebook");
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
-            debugger;
             // we don't use the gist rename feature because it doesn't
             // allow renaming x -> y and creating a new x at the same time
             // instead, create y and if there is no longer any x, erase it
@@ -2043,6 +2122,12 @@ Notebook.create_controller = function(model)
             }
             return save_button_;
         },
+        append_asset: function(content, filename) {
+            var cch = append_asset_helper(content, filename);
+            update_notebook(cch.changes)
+                .then(default_callback_);
+            return cch.controller;
+        },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
             update_notebook(cch.changes)
@@ -2068,6 +2153,9 @@ Notebook.create_controller = function(model)
         },
         clear: function() {
             model.clear();
+            // FIXME when scratchpad becomes a view, clearing the model
+            // should make this happen automatically.
+            RCloud.UI.scratchpad.clear();
         },
         load_notebook: function(gistname, version) {
             return rcloud.load_notebook(gistname, version || null)
@@ -2610,13 +2698,23 @@ RCloud.UI.scratchpad = {
                     if (that.current_model)
                         that.current_model.parent_model.on_dirty();
                 });
+            ui_utils.install_common_ace_key_bindings(widget);
         }
         var scratchpad_editor = $("#scratchpad-editor");
         if (scratchpad_editor.length) {
             setup_scratchpad(scratchpad_editor);
         }
+        $("#new-asset > a").click(function() {
+            // FIXME prompt, yuck. I know, I know.
+            var filename = prompt("Choose a filename for your asset");
+            if (!filename)
+                return;
+            shell.notebook.controller.append_asset(
+                "# New file " + filename, filename);
+        });
     },
-    update_to_model: function(asset_model) {
+    // FIXME this is completely backwards
+    set_model: function(asset_model) {
         var that = this;
         var modes = {
             r: "ace/mode/r",
@@ -2629,12 +2727,11 @@ RCloud.UI.scratchpad = {
             this.current_model.cursor_position(this.widget.getCursorPosition());
             // if this isn't a code smell I don't know what is.
             if (this.current_model.content(this.widget.getValue())) {
-                debugger;
                 this.current_model.parent_model.controller.update_asset(this.current_model);
             }
         }
         this.current_model = asset_model;
-        that.change_content(this.current_model.content());
+        this.change_content(this.current_model.content());
         // restore cursor
         var model_cursor = asset_model.cursor_position();
         if (model_cursor) {
@@ -2654,6 +2751,11 @@ RCloud.UI.scratchpad = {
     // this behaves like cell_view's update_model
     update_model: function() {
         return this.current_model.content(this.widget.getSession().getValue());
+    }, clear: function() {
+        var that = this;
+        that.session.setValue("");
+        that.session.getUndoManager().reset();
+        that.widget.resize();
     }
 };
 RCloud.UI.command_prompt = {

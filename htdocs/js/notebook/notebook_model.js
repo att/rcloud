@@ -18,16 +18,15 @@ Notebook.create_model = function()
         views: [], // sub list for cell content pubsub
         dishers: [], // for dirty bit pubsub
         clear: function() {
-            return this.remove_cell(null,last_id(this.notebook));
+            var cells_removed = this.remove_cell(null,last_id(this.notebook));
+            var assets_removed = this.remove_asset(null,this.assets.length);
+            cells_removed.push.apply(cells_removed, assets_removed);
+            return cells_removed;
         },
         append_asset: function(asset_model, filename, skip_event) {
             asset_model.parent_model = this;
             var changes = [];
-            changes.push({
-                filename: filename, 
-                content: asset_model.content(), 
-                language: asset_model.language()
-            });
+            changes.push(asset_model.change_object());
             this.assets.push(asset_model);
             if(!skip_event)
                 _.each(this.views, function(view) {
@@ -42,8 +41,8 @@ Notebook.create_model = function()
             id = id || 1;
             id = Math.max(id, last_id(this.notebook)+1);
             while(n) {
-                changes.push({id: id, content: cell_model.content(), language: cell_model.language()});
                 cell_model.id(id);
+                changes.push(cell_model.change_object());
                 this.notebook.push(cell_model);
                 if(!skip_event)
                     _.each(this.views, function(view) {
@@ -66,7 +65,7 @@ Notebook.create_model = function()
                 id = Math.max(this.notebook[x].id()-n, prev+1);
             }
             for(var j=0; j<n; ++j) {
-                changes.push({id: id+j, content: cell_model.content(), language: cell_model.language()});
+                changes.push(cell_model.change_object({id: id+j}));
                 cell_model.id(id+j);
                 this.notebook.splice(x, 0, cell_model);
                 if(!skip_event)
@@ -83,13 +82,46 @@ Notebook.create_model = function()
                 }
                 if(n<=0)
                     break;
-                changes.push({id: this.notebook[x].id(),
-                              content: this.notebook[x].content(),
-                              rename: this.notebook[x].id()+n,
-                              language: this.notebook[x].language()});
+                changes.push(this.notebook[x].change_object({
+                    rename: this.notebook[x].id()+n
+                }));
                 this.notebook[x].id(this.notebook[x].id() + n);
                 ++x;
                 ++id;
+            }
+            return changes;
+        },
+        remove_asset: function(asset_model, n, skip_event) {
+            if (this.assets.length === 0)
+                return [];
+            var that = this;
+            var asset_index, filename;
+            if(asset_model!=null) {
+                asset_index = this.assets.indexOf(asset_model);
+                filename = asset_model.filename();
+                if (asset_index === -1) {
+                    throw "asset_model not in notebook model?!";
+                }
+            }
+            else {
+                asset_index = 0;
+                filename = this.assets[asset_index].filename();
+            }
+            n = n || 1;
+            var x = asset_index;
+            var changes = [];
+            while(x<this.assets.length && n) {
+                if(this.assets[x].filename() == filename) {
+                    if(!skip_event)
+                        _.each(this.views, function(view) {
+                            view.asset_removed(that.assets[x], x);
+                        });
+                    changes.push(that.assets[x].change_object({ erase: 1 }));
+                    this.assets.splice(x, 1);
+                }
+                if (x<this.assets.length)
+                    filename = this.assets[x].filename();
+                --n;
             }
             return changes;
         },
@@ -116,7 +148,7 @@ Notebook.create_model = function()
                         _.each(this.views, function(view) {
                             view.cell_removed(that.notebook[x], x);
                         });
-                    changes.push({id: id, erase: 1, language: that.notebook[x].language()});
+                    changes.push(that.notebook[x].change_object({ erase: 1 }));
                     this.notebook.splice(x, 1);
                 }
                 ++id;

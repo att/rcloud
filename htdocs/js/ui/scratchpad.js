@@ -41,13 +41,23 @@ RCloud.UI.scratchpad = {
                     if (that.current_model)
                         that.current_model.parent_model.on_dirty();
                 });
+            ui_utils.install_common_ace_key_bindings(widget);
         }
         var scratchpad_editor = $("#scratchpad-editor");
         if (scratchpad_editor.length) {
             setup_scratchpad(scratchpad_editor);
         }
+        $("#new-asset > a").click(function() {
+            // FIXME prompt, yuck. I know, I know.
+            var filename = prompt("Choose a filename for your asset");
+            if (!filename)
+                return;
+            shell.notebook.controller.append_asset(
+                "# New file " + filename, filename);
+        });
     },
-    update_to_model: function(asset_model) {
+    // FIXME this is completely backwards
+    set_model: function(asset_model) {
         var that = this;
         var modes = {
             r: "ace/mode/r",
@@ -64,7 +74,7 @@ RCloud.UI.scratchpad = {
             }
         }
         this.current_model = asset_model;
-        that.change_content(this.current_model.content());
+        this.change_content(this.current_model.content());
         // restore cursor
         var model_cursor = asset_model.cursor_position();
         if (model_cursor) {
@@ -84,5 +94,10 @@ RCloud.UI.scratchpad = {
     // this behaves like cell_view's update_model
     update_model: function() {
         return this.current_model.content(this.widget.getSession().getValue());
+    }, clear: function() {
+        var that = this;
+        that.session.setValue("");
+        that.session.getUndoManager().reset();
+        that.widget.resize();
     }
 };

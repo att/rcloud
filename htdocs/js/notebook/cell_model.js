@@ -35,13 +35,14 @@ Notebook.Cell.create_model = function(content, language)
                 language: language
             };
         },
-        change_object: function() {
+        change_object: function(obj) {
+            obj = obj || {};
             // unfortunately, yet another workaround because github
             // won't take blank files.  would prefer to make changes
             // a high-level description but i don't see it yet.
             var change = {
-                id: this.id(),
-                language: this.language(),
+                id: obj.id || this.id(),
+                language: obj.language || this.language(),
                 name: function(id) {
                     if (_.isString(id))
                         return id;
@@ -57,12 +58,14 @@ Notebook.Cell.create_model = function(content, language)
                         throw "Unknown language " + this.language;
                     }
                     return 'part' + this.id + '.' + ext;
-                }
+                },
+                erase: obj.erase,
+                rename: obj.rename
             };
             if(content === "")
                 change.erase = true;
             else
-                change.content = this.content();
+                change.content = obj.id || this.content();
             return change;
         }
     };

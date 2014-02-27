@@ -52,14 +52,19 @@ Notebook.create_controller = function(model)
                     assets[filename] = [file.content, file.filename];
                 }
             });
+            var asset_controller;
             for(i in cells)
                 append_cell_helper(cells[i][0], cells[i][1], cells[i][2]);
-            for(i in assets)
-                append_asset_helper(assets[i][0], assets[i][1]);
+            for(i in assets) {
+                var result = append_asset_helper(assets[i][0], assets[i][1]).controller;
+                asset_controller = asset_controller || result;
+            }
             // is there anything else to gist permissions?
             model.user(notebook.user.login);
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
+            asset_controller.select();
+            
         }
         return notebook;
     }
@@ -193,6 +198,12 @@ Notebook.create_controller = function(model)
             }
             return save_button_;
         },
+        append_asset: function(content, filename) {
+            var cch = append_asset_helper(content, filename);
+            update_notebook(cch.changes)
+                .then(default_callback_);
+            return cch.controller;
+        },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
             update_notebook(cch.changes)
@@ -218,6 +229,9 @@ Notebook.create_controller = function(model)
         },
         clear: function() {
             model.clear();
+            // FIXME when scratchpad becomes a view, clearing the model
+            // should make this happen automatically.
+            RCloud.UI.scratchpad.clear();
         },
         load_notebook: function(gistname, version) {
             return rcloud.load_notebook(gistname, version || null)

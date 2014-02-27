@@ -8,20 +8,15 @@ ace_bundle.js:	\
 	js/ace/mode-r.js \
 	js/ace/rmarkdown_highlight_rules.js \
 	js/ace/rmarkdown.js \
-	js/ace/sh_highlight_rules.js \
-	js/ace/sh.js \
-	js/ace/python_highlight_rules.js \
-	js/ace/python.js \
-	js/ace/css_highlight_rules.js \
-	js/ace/css.js \
-	js/ace/text_highlight_rules.js \
-	js/ace/text.js \
 	js/ace/r_code_model.js \
 	js/ace/r_scope_tree.js \
 	js/ace/mode-markdown.js \
         js/ace/sweave_background_highlighter.js \
 	js/ace/ext-language_tools.js \
-	js/ace/ext-searchbox.js
+	js/ace/ext-searchbox.js \
+	js/ace/mode-python.js \
+	js/ace/mode-sh.js
+
 
 dependencies_bundle.js: \
 	js/jquery-1.10.2.js \

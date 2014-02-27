@@ -41,6 +41,12 @@ Notebook.create_html_view = function(model, root_div)
             });
             this.sub_views.splice(cell_index, 1);
         },
+        asset_removed: function(asset_model, asset_index) {
+            _.each(asset_model.views, function(view) {
+                view.self_removed();
+            });
+            this.asset_sub_views.splice(asset_index, 1);
+        },
         cell_moved: function(cell_model, pre_index, post_index) {
             this.sub_views.splice(pre_index, 1);
             this.sub_views.splice(post_index, 0, cell_model.views[0]);

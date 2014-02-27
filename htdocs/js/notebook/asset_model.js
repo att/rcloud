@@ -1,9 +1,24 @@
 Notebook.Asset.create_model = function(content, filename)
 {
     var cursor_position;
+    var active = false;
     var result = {
         views: [], // sub list for pubsub
         parent_model: null,
+        active: function(new_active) {
+            if (!_.isUndefined(new_active)) {
+                if(active !== new_active) {
+                    active = new_active;
+                    notify_views(function(view) {
+                        view.active_updated();
+                    });
+                    return active;
+                } else {
+                    return null;
+                }
+            }
+            return active;
+        },
         cursor_position: function(new_cursor_position) {
             if (!_.isUndefined(new_cursor_position))
                 cursor_position = new_cursor_position;
