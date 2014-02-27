@@ -74,7 +74,7 @@ unauthenticated.ocaps <- function()
 
       # stars
       stars=list(
-        star_notebook = make.oc(rcloud.star.notebook), 
+        star_notebook = make.oc(rcloud.star.notebook),
         unstar_notebook = make.oc(rcloud.unstar.notebook),
         is_notebook_starred = make.oc(rcloud.is.notebook.starred),
         get_notebook_star_count = make.oc(rcloud.notebook.star.count),
