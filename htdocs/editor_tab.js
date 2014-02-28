@@ -39,6 +39,16 @@ var editor = function () {
         publish_notebook_checkbox_ = null,
         star_notebook_button_ = null;
 
+    // work around oddities of rcloud.js
+    function each_r_list(list, f) {
+        for(var key in list)
+            if(key!=='r_attributes' && key!=='r_type')
+                f(key);
+    }
+    function r_vector(value) {
+        return _.isArray(value) ? value : [value];
+    }
+
     //  Model functions
     function get_notebook_status(user, gistname) {
         var iu = interests_[user];
@@ -78,6 +88,7 @@ var editor = function () {
     function update_notebook_model(user, gistname, description, time) {
         var entry = get_notebook_status(user, gistname);
 
+        entry.username = user;
         entry.description = description;
         entry.last_commit = time;
         entry.visibility = entry.visibility || 'public';
@@ -171,18 +182,19 @@ var editor = function () {
 
     function populate_interests(root_data, my_stars) {
         function create_user_book_entry_map(books) {
-            return _.reduce(books,
-                            function(users, book){
-                                var entry = all_entries_[book];
-                                if(!entry) {
-                                    console.log("rcloud.stars.get_my_starred_notebooks reports a notebook starred that is not listed in All Notebooks: " + book);
-                                    return users;
-                                }
-                                var user = users[entry.user] = users[entry.user] || {};
-                                user[book] = entry;
-                                return users;
-                            },
-                            {});
+            var users = {};
+            _.each(books,
+                   function(book){
+                       var entry = all_entries_[book];
+                       if(!entry) {
+                           console.log("rcloud.stars.get_my_starred_notebooks reports a notebook starred that is not listed in All Notebooks: " + book);
+                           return users;
+                       }
+                       var user = users[entry.user] = users[entry.user] || {};
+                       user[book] = entry;
+                       return users;
+                   });
+            return users;
         }
 
         interests_ = create_user_book_entry_map(my_stars);
@@ -233,22 +245,20 @@ var editor = function () {
 
     function load_notebook_list(user_notebooks) {
         function create_book_entry_map(books) {
-            return _.reduce(books,
-                            function(map, book) {
-                                var entry = all_entries_[book];
-                                if(!entry)
-                                    throw new Error("didn't find notebook " + book + " in alls");
-                                map[book] = entry;
-                                return map;
-                            },
-                            {});
+            return _.object(
+                _.map(books, function(book) {
+                    var entry = all_entries_[book];
+                    if(!entry)
+                        throw new Error("didn't find notebook " + book + " in alls");
+                    return [book, entry];
+                }));
         }
 
         var my_alls = [], user_nodes = [], my_config = null;
-        for(var username in user_notebooks) {
+        each_r_list(user_notebooks, function(username) {
             var notebook_nodes =
                     convert_notebook_set('alls', username,
-                                         create_book_entry_map(user_notebooks[username]));
+                                         create_book_entry_map(r_vector(user_notebooks[username])));
             if(username === username_)
                 my_alls = notebook_nodes;
             else {
@@ -261,7 +271,7 @@ var editor = function () {
                 };
                 user_nodes.push(node);
             }
-        }
+        });
 
         // start creating the tree data and pass it forward
         // populate_interests will create the tree
@@ -292,15 +302,11 @@ var editor = function () {
             rcloud.stars.get_my_starred_notebooks()
             ])
             .spread(function(user_notebook_set, my_stars) {
+                my_stars = r_vector(my_stars);
                 var all_notebooks = [];
-                for(var username in user_notebook_set) {
-                    // work around oddities of rcloud.js
-                    if(username === 'r_attributes' || username === 'r_type')
-                        continue;
-                    else if(_.isArray(user_notebook_set[username]))
-                        all_notebooks = all_notebooks.concat(user_notebook_set[username]);
-                    else all_notebooks.push(user_notebook_set[username]);
-                }
+                each_r_list(user_notebook_set, function(username) {
+                    all_notebooks = all_notebooks.concat(r_vector(user_notebook_set[username]));
+                });
                 all_notebooks = all_notebooks.concat(my_stars);
                 all_notebooks = _.uniq(all_notebooks.sort(), true);
                 return Promise.all([rcloud.config.get_current_notebook()
@@ -315,11 +321,10 @@ var editor = function () {
                                     .then(function(notebook_entries) {
                                         all_entries_ = notebook_entries;
                                     })])
-                    .then(function() {
-                        return load_notebook_list(user_notebook_set)
-                            .then(function(root_data) {
-                                return [root_data, my_stars];
-                            });
+                    .return(user_notebook_set)
+                    .then(load_notebook_list)
+                    .then(function(root_data) {
+                        return [root_data, my_stars];
                     });
             })
             .spread(populate_interests)
@@ -353,8 +358,6 @@ var editor = function () {
             parent = $tree_.tree('getNodeById', id),
             pdat = null,
             node = null;
-        if(parent.delay_children)
-            load_children(parent);
         if(!parent) {
             if(user===username_)
                 throw "my folder should be there at least";
@@ -368,6 +371,8 @@ var editor = function () {
             };
             parent = insert_alpha(pdat, parent);
         }
+        if(parent.delay_children)
+            load_children(parent);
         while('children' in path) {
             node = $tree_.tree('getNodeById', path.id);
             if(!node) {
@@ -987,12 +992,12 @@ var editor = function () {
             // else if opts has notebook, use notebook id & user
             // else use current notebook & user
             opts = opts || {};
-            var user = opts.user
-                    || opts.notebook&&opts.notebook.user&&opts.notebook.user.login
-                    || current_.user;
             var gistname = opts.gistname
                     || opts.notebook&&opts.notebook.id
-                    || current_.book;
+                    || current_.notebook;
+            var user = opts.user
+                    || opts.notebook&&opts.notebook.user&&opts.notebook.user.login
+                    || all_entries_[gistname].username;
             // keep selected if was
             if(gistname === current_.book)
                 opts.selroot = opts.selroot || true;
