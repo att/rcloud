@@ -27,7 +27,7 @@ github.client.secret entries in
 conf/rcloud.conf
 
 to match the application in Github you have created (refer to
-"Github authentication" in https://github.com/cscheid/rcloud)
+"Github authentication" in https://github.com/att/rcloud)
 Once that is done, you can start up the server using
 
 conf/start
