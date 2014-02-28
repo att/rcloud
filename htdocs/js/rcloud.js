@@ -257,6 +257,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["file_upload","write"],
             ["file_upload","close"],
             ["comments","post"],
+            ["load_module_package"],
             ["is_notebook_published"],
             ["publish_notebook"],
             ["unpublish_notebook"],
@@ -463,7 +464,10 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.post_comment = function(id, content) {
             return rcloud_ocaps.comments.postAsync(id, content);
         };
-
+        
+        rcloud.load_module_package = function(pkg) {
+            return rcloud_ocaps.load_module_packageAsync(pkg);
+        }
         // publishing notebooks
         rcloud.is_notebook_published = function(id) {
             return rcloud_ocaps.is_notebook_publishedAsync(id);
