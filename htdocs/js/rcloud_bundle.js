@@ -388,16 +388,16 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.api = {};
         rcloud.api.disable_warnings = function() {
-            rcloud_ocaps.api.disable_warningsAsync();
+            return rcloud_ocaps.api.disable_warningsAsync();
         };
         rcloud.api.enable_warnings = function() {
-            rcloud_ocaps.api.enable_warningsAsync();
+            return rcloud_ocaps.api.enable_warningsAsync();
         };
         rcloud.api.disable_echo = function() {
-            rcloud_ocaps.api.disable_echoAsync();
+            return rcloud_ocaps.api.disable_echoAsync();
         };
         rcloud.api.enable_echo = function() {
-            rcloud_ocaps.api.enable_echoAsync();
+            return rcloud_ocaps.api.enable_echoAsync();
         };
     }
 
