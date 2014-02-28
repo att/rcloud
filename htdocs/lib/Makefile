@@ -13,7 +13,10 @@ ace_bundle.js:	\
 	js/ace/mode-markdown.js \
         js/ace/sweave_background_highlighter.js \
 	js/ace/ext-language_tools.js \
-	js/ace/ext-searchbox.js
+	js/ace/ext-searchbox.js \
+	js/ace/mode-python.js \
+	js/ace/mode-sh.js
+
 
 dependencies_bundle.js: \
 	js/jquery-1.10.2.js \

@@ -6,6 +6,7 @@
     <link rel="stylesheet" type="text/css" href="css/jqtree.css"/>
     <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
     <link rel="stylesheet" type="text/css" href="css/rmarkdown.css"/>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-rcloud-tweaks.css"/>
     <link rel="stylesheet" type="text/css" href="css/main.css"/>
     <link rel="stylesheet" type="text/css" href="css/dc.css"/>
 
@@ -79,30 +80,23 @@
 
 <div class="container" id="main-div">
   <div class="row">
-    <!--div class="col-md-1"></div-->
-    <div class="col-md-8">
-      <div id="tabs-1">
-        <div id="output" class="tab-div">
-        </div>
-
-        <div id="prompt-div">
-          <button style="float: right; width:20%;" id="new-md-cell-button">New RMarkdown cell</button>
-          <div id="command-prompt"
-               style="float: left; width:79%; height: 50px; background:#FFFFFF; border:1px solid #DDDDDD"></div>
-        </div>
-        <div style="padding:1em; clear:both"></div>
+    <div class="col-md-3 col-sm-3 no-padding" style="position:fixed;top:51;left:0" id="left-column">
+      <div style="position: absolute; left:0; top:0px">
+	<svg height="20" width="20" id="notebook-clicker" style="position:absolute; left:0; top:0px">
+	  <polygon points="0,0 20,0 0,20" style="fill:#222;stroke:none"/>
+	</svg>
+	<a id="left-pane-collapser"><i class="icon-minus" style="font-size:0.8em; color:#999; position:absolute; left:2px; top:1px; cursor:pointer"></i> </a>
       </div>
-    </div>
-    <div class="col-md-3" style="position:fixed;top:60;right:10">
       <div id="tabs-2">
         <div class="tab-div">
           <div class="panel-group" id="accordion">
             <div class="panel panel-default">
               <div class="panel-heading">
-                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">Notebooks</a>
+                <a class="accordion-toggle left" data-toggle="collapse" data-parent="#accordion" href="#collapseOne"><i class="icon-folder-open"></i> <span class="title-offset">Notebooks</span></a>
                 <a class="header-button" href="#" id="new-notebook"><i class="icon-plus"></i></a>
               </div>
               <div id="collapseOne" class="panel-collapse collapse">
+		<img height="100%" width="5px" src="img/right_bordergray.png" style="position:absolute;right:0px" class="left-panel-shadow">
                 <div class="panel-body notebook-tree">
                   <div id="editor-book-tree"></div>
                 </div>
@@ -110,27 +104,10 @@
             </div>
             <div class="panel panel-default">
               <div class="panel-heading">
-                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseFour">File Upload</a>
-              </div>
-              <div id="collapseFour" class="panel-collapse collapse in">
-                <div class="panel-body">
-                  <div id="file-upload-div">
-		    <div class="progress" style="display:none">
-                      <div id="progress-bar" class="progress-bar" id="file-progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
-		    </div>
-                    <input type="file" id="file"></input>
-		    <input type="checkbox" id="upload-to-notebook"> Upload to notebook</input>
-                    <input type="submit" id="upload-submit" value="Upload" style="float: right;"></input>
-                    <div style="clear: both"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="panel panel-default">
-              <div class="panel-heading">
-                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">Search</a>
+                <a class="accordion-toggle left" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo"><i class="icon-search"></i> <span class="title-offset">Search</span></a>
               </div>
               <div id="collapseTwo" class="panel-collapse collapse in">
+		<img height="100%" width="5px" src="img/right_bordergray.png" style="position:absolute;right:0px" class="left-panel-shadow">
                 <div class="panel-body">
                   Coming soon!
                   <!--  Search disabled for Version 0.9
@@ -145,13 +122,95 @@
                 </div>
               </div>
             </div>
+
+	    <!-- If only I could tell you the ways in which I'm not proud of this -->
+            <div class="panel panel-default">
+              <div class="panel-heading"></div>
+              <div id="collapseSix" class="panel-collapse collapse out">
+                <div class="panel-body" 
+		     style="border-top-color: transparent; background-color: #777">
+		  <br><br><br><br><br><br><br><br><br><br><br><br>
+		  <br><br><br><br><br><br><br><br><br><br><br><br>
+		  <br><br><br><br><br><br><br><br><br><br><br><br>
+		  <br><br><br><br><br><br><br><br><br><br><br><br>
+		  <br><br><br><br><br><br><br><br><br><br><br><br>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-3 no-padding" id="fake-left-column"></div>
+    <div class="col-md-5 col-sm-5 no-padding" id="middle-column">
+      <div id="tabs-1">
+        <div id="output" class="tab-div">
+        </div>
+
+	<div id="end-of-output"></div>
+        <div id="prompt-div" class="rcloud-prompt col-sm-5 col-md-5"><img width="100%" height="5px" src="img/vbordergray.png" style="position:absolute;top:-5px"><div id="command-prompt" style="float: left; width:80%; height: 50px; background:#FFFFFF; border:1px solid #DDDDDD"></div><button style="float: right; width:20%;" id="new-md-cell-button" class="btn btn-default btn-md">Add RMarkdown cell</button><div style="clear:right;"></div><button style="float: right; width:20%;" id="new-r-cell-button" class="btn btn-default btn-md">Add R cell</button></div>
+
+        <div style="padding:1em; clear:both"></div>
+      </div>
+    </div>
+    <div class="col-md-4 col-sm-4 no-padding"
+	 style="position:fixed; top: 51; bottom: 0;
+		right:0; margin: 0" id="right-column">
+      <div id="right-tabs">
+	<div class="tab-div">
+	  <div style="position: absolute; right:0; top:0px">
+	    <svg height="20" width="20" id="notebook-clicker" style="position:absolute; right:0; top:0px">
+	      <polygon points="0,0 20,0 20,20" style="fill:#222;stroke:none"/>
+	    </svg>
+	    <a id="right-pane-collapser"><i class="icon-minus" style="font-size:0.8em; color:#999; position:absolute; right:2px; top:1px; cursor:pointer"></i> </a>
+	  </div>
+	  <div class="panel-group" id="accordion-right">
+
+	    <div class="panel panel-default">
+    	      <div class="panel-heading"><a class="accordion-toggle right" data-toggle="collapse" data-parent="#accordion-right" href="#collapse10"><span class="title-offset">Assets</span><div style="position: relative"><i class="icon-copy"></i></div>&nbsp;</a>
+	      </div>
+	      <div class="panel-collapse collapse" id="collapse10">
+		<img height="100%" width="5px" src="img/left_bordergray.png" style="position:absolute;left:0px" class="right-panel-shadow">
+    		<div class="panel-body" style="padding:0;border:0">
+    		  <div style="padding:1px;margin:0px;background-color:#ddd">
+		    <ul class="nav nav-tabs" id="asset-list"
+		    style="background-color:white; padding-top:5px;
+		    padding-left: 5px"><li id="new-asset"><a href="#">[New Asset]</a></li></ul>
+    		    <div id="scratchpad-editor"></div>
+    		  </div>
+    		</div>
+	      </div>
+	    </div>
+
             <div class="panel panel-default">
               <div class="panel-heading">
-                <a class="accordion-toggle" data-toggle="collapse"
-                   data-parent="#accordion"
-                   href="#collapseFive">Comments (<span id="comment-count">0</span>)</a>
+                <a class="accordion-toggle right" data-toggle="collapse" data-parent="#accordion-right" href="#collapseFour"><div style="position: relative"><i class="icon-upload"></i></div>&nbsp;<span class="title-offset">File Upload</span></a>
+              </div>
+              <div id="collapseFour" class="panel-collapse collapse in">
+		<img height="100%" width="5px" src="img/left_bordergray.png" style="position:absolute;left:0px" class="right-panel-shadow">
+                <div class="panel-body">
+                  <div id="file-upload-div">
+		    <div class="progress" style="display:none">
+                      <div id="progress-bar" class="progress-bar" id="file-progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
+		    </div>
+                    <input type="file" id="file"></input>
+		    <input type="checkbox" id="upload-to-notebook"> Upload to notebook</input>
+                    <input type="submit" id="upload-submit" value="Upload" style="float: right;"></input>
+                    <div style="clear: both"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel panel-default right">
+              <div class="panel-heading">
+                <a class="accordion-toggle right" data-toggle="collapse"
+                   data-parent="#accordion-right"
+                   href="#collapseFive"><div style="position:relative"><i class="icon-comments"></i></div>&nbsp;<span class="title-offset"><span id="comment-count">0</span> Comments</span></a>
               </div>
               <div id="collapseFive" class="panel-collapse collapse in">
+		<img height="100%" width="5px" src="img/left_bordergray.png" style="position:absolute;left:0px" class="right-panel-shadow">
                 <div class="panel-body">
                   <div id="comments-container"></div>
                   <div id="comment-entry">
@@ -161,11 +220,39 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+
+            <div class="panel panel-default right">
+              <div class="panel-heading">
+                <a class="accordion-toggle right" data-toggle="collapse"
+                   data-parent="#accordion-right"
+                   href="#collapse-session-info"><div style="position:relative"><i class="icon-info"></i></div>&nbsp;<span class="title-offset">Session Information</span></a>
+              </div>
+              <div id="collapse-session-info" class="panel-collapse collapse out">
+		<img height="100%" width="5px" src="img/left_bordergray.png" style="position:absolute;left:0px" class="right-panel-shadow">
+                <div class="panel-body" id="session-info">
+                </div>
+              </div>
+            </div>
+
+	    <!-- If only I could tell you the ways in which I'm not proud of this -->
+            <div class="panel panel-default">
+              <div class="panel-heading"></div>
+              <div id="collapseSix" class="panel-collapse collapse out">
+                <div class="panel-body" 
+		     style="border-top-color: transparent; background-color: #777">
+		  <br><br><br><br><br><br><br><br><br><br><br><br>
+		  <br><br><br><br><br><br><br><br><br><br><br><br>
+		  <br><br><br><br><br><br><br><br><br><br><br><br>
+		  <br><br><br><br><br><br><br><br><br><br><br><br>
+		  <br><br><br><br><br><br><br><br><br><br><br><br>
+                </div>
+              </div>
+            </div>
+
+	  </div>
+	</div>
       </div>
     </div>
-    <div class="col-md-1"></div>
   </div>
 </div>
 
