@@ -20,8 +20,7 @@ Notebook.create_model = function()
         clear: function() {
             var cells_removed = this.remove_cell(null,last_id(this.notebook));
             var assets_removed = this.remove_asset(null,this.assets.length);
-            cells_removed.push.apply(cells_removed, assets_removed);
-            return cells_removed;
+            return cells_removed.concat(assets_removed);
         },
         append_asset: function(asset_model, filename, skip_event) {
             asset_model.parent_model = this;
