@@ -1,8 +1,5 @@
-rcloud.get.ocaps<-function(pkg, fun) {
-  if (!require(pkg,character.only=TRUE) & exists(fun, paste0('package:',pkg)))
-    stop(paste(pkg, "not installed or missing",fun))
-  ocaps<-eval(parse(text=paste0(pkg,'::',fun,'()')))
-  ocaps
+rcloud.load.module.package <- function(pkg) {
+  lapply(as.list(loadNamespace(pkg)), make.oc)
 }
 
 make.oc <- function(fun, name=deparse(substitute(fun))) {
