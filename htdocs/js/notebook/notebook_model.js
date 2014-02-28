@@ -1,6 +1,7 @@
 Notebook.create_model = function()
 {
     var readonly_ = false;
+    var user_ = "";
 
     function last_id(notebook) {
         if(notebook.length)
@@ -9,27 +10,28 @@ Notebook.create_model = function()
             return 0;
     }
 
-    function build_cell_change(id, content, language) {
-        // unfortunately, yet another workaround because github
-        // won't take blank files.  would prefer to make changes
-        // a high-level description but i don't see it yet.
-        var change = {id: id,
-                      language: language};
-        if(content === "")
-            change.erase = true;
-        else
-            change.content = content;
-        return change;
-    }
-
     /* note, the code below is a little more sophisticated than it needs to be:
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
     return {
-        notebook: [],
+        notebook: [], // FIXME this should be called "cells"
+        assets: [],
         views: [], // sub list for cell content pubsub
         dishers: [], // for dirty bit pubsub
         clear: function() {
-            return this.remove_cell(null,last_id(this.notebook));
+            var cells_removed = this.remove_cell(null,last_id(this.notebook));
+            var assets_removed = this.remove_asset(null,this.assets.length);
+            return cells_removed.concat(assets_removed);
+        },
+        append_asset: function(asset_model, filename, skip_event) {
+            asset_model.parent_model = this;
+            var changes = [];
+            changes.push(asset_model.change_object());
+            this.assets.push(asset_model);
+            if(!skip_event)
+                _.each(this.views, function(view) {
+                    view.asset_appended(asset_model);
+                });
+            return changes;
         },
         append_cell: function(cell_model, id, skip_event) {
             cell_model.parent_model = this;
@@ -38,8 +40,8 @@ Notebook.create_model = function()
             id = id || 1;
             id = Math.max(id, last_id(this.notebook)+1);
             while(n) {
-                changes.push({id: id, content: cell_model.content(), language: cell_model.language()});
                 cell_model.id(id);
+                changes.push(cell_model.change_object());
                 this.notebook.push(cell_model);
                 if(!skip_event)
                     _.each(this.views, function(view) {
@@ -62,7 +64,7 @@ Notebook.create_model = function()
                 id = Math.max(this.notebook[x].id()-n, prev+1);
             }
             for(var j=0; j<n; ++j) {
-                changes.push({id: id+j, content: cell_model.content(), language: cell_model.language()});
+                changes.push(cell_model.change_object({id: id+j}));
                 cell_model.id(id+j);
                 this.notebook.splice(x, 0, cell_model);
                 if(!skip_event)
@@ -79,13 +81,46 @@ Notebook.create_model = function()
                 }
                 if(n<=0)
                     break;
-                changes.push({id: this.notebook[x].id(),
-                              content: this.notebook[x].content(),
-                              rename: this.notebook[x].id()+n,
-                              language: this.notebook[x].language()});
+                changes.push(this.notebook[x].change_object({
+                    rename: this.notebook[x].id()+n
+                }));
                 this.notebook[x].id(this.notebook[x].id() + n);
                 ++x;
                 ++id;
+            }
+            return changes;
+        },
+        remove_asset: function(asset_model, n, skip_event) {
+            if (this.assets.length === 0)
+                return [];
+            var that = this;
+            var asset_index, filename;
+            if(asset_model!=null) {
+                asset_index = this.assets.indexOf(asset_model);
+                filename = asset_model.filename();
+                if (asset_index === -1) {
+                    throw "asset_model not in notebook model?!";
+                }
+            }
+            else {
+                asset_index = 0;
+                filename = this.assets[asset_index].filename();
+            }
+            n = n || 1;
+            var x = asset_index;
+            var changes = [];
+            while(x<this.assets.length && n) {
+                if(this.assets[x].filename() == filename) {
+                    if(!skip_event)
+                        _.each(this.views, function(view) {
+                            view.asset_removed(that.assets[x], x);
+                        });
+                    changes.push(that.assets[x].change_object({ erase: 1 }));
+                    this.assets.splice(x, 1);
+                }
+                if (x<this.assets.length)
+                    filename = this.assets[x].filename();
+                --n;
             }
             return changes;
         },
@@ -112,7 +147,7 @@ Notebook.create_model = function()
                         _.each(this.views, function(view) {
                             view.cell_removed(that.notebook[x], x);
                         });
-                    changes.push({id: id, erase: 1, language: that.notebook[x].language()});
+                    changes.push(that.notebook[x].change_object({ erase: 1 }));
                     this.notebook.splice(x, 1);
                 }
                 ++id;
@@ -133,24 +168,36 @@ Notebook.create_model = function()
             return changes;
         },
         update_cell: function(cell_model) {
-            return [build_cell_change(cell_model.id(), cell_model.content(), cell_model.language())];
+            return [cell_model.change_object()];
+        },
+        update_asset: function(asset_model) {
+            return [asset_model.change_object()];
         },
         reread_cells: function() {
             var that = this;
+            // Forces views to update models
             var changed_cells_per_view = _.map(this.views, function(view) {
                 return view.update_model();
             });
             if(changed_cells_per_view.length != 1)
                 throw "not expecting more than one notebook view";
-            return _.reduce(changed_cells_per_view[0],
-                            function(changes, content, index) {
-                                if(content !== null)
-                                    changes.push(build_cell_change(that.notebook[index].id(),
-                                                                   content,
-                                                                   that.notebook[index].language()));
-                                return changes;
-                            },
-                            []);
+            var contents = changed_cells_per_view[0];
+            var changes = [];
+            for (var i=0; i<contents.length; ++i) {
+                var content = contents[i];
+                if (content !== null) {
+                    changes.push(that.notebook[i].change_object());
+                    // build_cell_change(that.notebook[i].id(),
+                    //                   content,
+                    //                   that.notebook[i].language()));
+                }
+            }
+            var asset_change = RCloud.UI.scratchpad.update_model();
+            if (asset_change) {
+                var active_asset_model = RCloud.UI.scratchpad.current_model;
+                changes.push(active_asset_model.change_object());
+            }
+            return changes;
         },
         read_only: function(readonly) {
             if(!_.isUndefined(readonly)) {
@@ -160,6 +207,12 @@ Notebook.create_model = function()
                 });
             }
             return readonly_;
+        },
+        user: function(user) {
+            if (!_.isUndefined(user)) {
+                user_ = user;
+            }
+            return user_;
         },
         on_dirty: function() {
             _.each(this.dishers, function(disher) {

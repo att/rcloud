@@ -16,6 +16,14 @@ Notebook.create_controller = function(model)
         return {controller: cell_controller, changes: model.append_cell(cell_model, id)};
     }
 
+    function append_asset_helper(content, filename) {
+        var asset_model = Notebook.Asset.create_model(content, filename);
+        var asset_controller = Notebook.Asset.create_controller(asset_model);
+        asset_model.controller = asset_controller;
+        return {controller: asset_controller, 
+                changes: model.append_asset(asset_model, filename)};
+    }
+
     function insert_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
         var cell_controller = Notebook.Cell.create_controller(cell_model);
@@ -25,22 +33,38 @@ Notebook.create_controller = function(model)
 
     function on_load(version, notebook) {
         if (!_.isUndefined(notebook.files)) {
+            var i;
             this.clear();
-            var parts = {}; // could rely on alphabetic input instead of gathering
-            _.each(notebook.files, function (file) {
+            var cells = {}; // could rely on alphabetic input instead of gathering
+            var assets = {};
+            _.each(notebook.files, function (file, k) {
+                // ugh, we really need to have a better javascript mapping of R objects..
+                if (k === "r_attributes" || k === "r_type")
+                    return;
                 var filename = file.filename;
                 if(/^part/.test(filename)) {
+                    // cells
                     var number = parseInt(filename.slice(4).split('.')[0]);
                     if(!isNaN(number))
-                        parts[number] = [file.content, file.language, number];
+                        cells[number] = [file.content, file.language, number];
+                } else {
+                    // assets
+                    assets[filename] = [file.content, file.filename];
                 }
-                // style..
             });
-            for(var i in parts)
-                append_cell_helper(parts[i][0], parts[i][1], parts[i][2]);
+            var asset_controller;
+            for(i in cells)
+                append_cell_helper(cells[i][0], cells[i][1], cells[i][2]);
+            for(i in assets) {
+                var result = append_asset_helper(assets[i][0], assets[i][1]).controller;
+                asset_controller = asset_controller || result;
+            }
             // is there anything else to gist permissions?
+            model.user(notebook.user.login);
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
+            asset_controller.select();
+            
         }
         return notebook;
     }
@@ -56,20 +80,16 @@ Notebook.create_controller = function(model)
                 continue; // R metadata
             if(f in cf) {
                 if(cf[f].language != nf[f].language || cf[f].content != nf[f].content) {
-                    changes.push({id: f,
-                                  language: cf[f].language,
-                                  content: cf[f].content});
+                    changes.push(nf.change_object({id: f}));
                 }
                 delete cf[f];
             }
-            else changes.push({id: f, erase: true, language: nf[f].language});
+            else changes.push(nf.change_object({id: f, erase: true}));
         }
         for(f in cf) {
             if(f==='r_type' || f==='r_attributes')
                 continue; // artifact of rserve.js
-            changes.push({id: f,
-                          language: cf[f].language,
-                          content: cf[f].content});
+            changes.push(nf.change_object({id: f}));
         }
         return changes;
     }
@@ -88,28 +108,50 @@ Notebook.create_controller = function(model)
             // we don't use the gist rename feature because it doesn't
             // allow renaming x -> y and creating a new x at the same time
             // instead, create y and if there is no longer any x, erase it
-            var post_names = _.reduce(changes,
-                                      function(names, change) {
-                                          if(!change.erase) {
-                                              var after = change.rename || change.id;
-                                              names[Notebook.part_name(after, change.language)] = 1;
-                                          }
-                                          return names;
-                                      }, {});
-            function xlate_change(filehash, change) {
+            var post_names = {};
+            _.each(changes, function(change) {
+                if (!change.erase) {
+                    var after = change.rename || change.id;
+                    post_names[change.name(after)] = 1;
+                };
+            });
+
+            var filehash = {};
+            _.each(changes, function(change) {
                 var c = {};
                 if(change.content !== undefined)
                     c.content = change.content;
-                var pre_name = Notebook.part_name(change.id, change.language);
+                var pre_name = change.name(change.id);
                 if(change.erase || !post_names[pre_name])
                     filehash[pre_name] = null;
                 if(!change.erase) {
-                    var post_name = Notebook.part_name(change.rename || change.id, change.language);
+                    var post_name = change.name(change.rename || change.id);
                     filehash[post_name] = c;
                 }
-                return filehash;
-            }
-            return {files: _.reduce(changes, xlate_change, {})};
+            });
+            return { files: filehash }; 
+            // _.reduce(changes, xlate_change, {})};
+            // var post_names = _.reduce(changes,
+            //                           function(names, change) {
+            //                               if(!change.erase) {
+            //                                   var after = change.rename || change.id;
+            //                                   names[Notebook.part_name(after, change.language)] = 1;
+            //                               }
+            //                               return names;
+            //                           }, {});
+            // function xlate_change(filehash, change) {
+            //     var c = {};
+            //     if(change.content !== undefined)
+            //         c.content = change.content;
+            //     var pre_name = Notebook.part_name(change.id, change.language);
+            //     if(change.erase || !post_names[pre_name])
+            //         filehash[pre_name] = null;
+            //     if(!change.erase) {
+            //         var post_name = Notebook.part_name(change.rename || change.id, change.language);
+            //         filehash[post_name] = c;
+            //     }
+            //     return filehash;
+            // }
         }
 
         return rcloud.update_notebook(gistname, changes_to_gist(changes))
@@ -142,7 +184,6 @@ Notebook.create_controller = function(model)
         show_source_checkbox_.set_state(true);
     }
 
-
     setup_show_source();
     model.dishers.push({on_dirty: on_dirty});
 
@@ -152,6 +193,12 @@ Notebook.create_controller = function(model)
                 save_button_ = save_button;
             }
             return save_button_;
+        },
+        append_asset: function(content, filename) {
+            var cch = append_asset_helper(content, filename);
+            update_notebook(cch.changes)
+                .then(default_callback_);
+            return cch.controller;
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
@@ -167,7 +214,12 @@ Notebook.create_controller = function(model)
         },
         remove_cell: function(cell_model) {
             var changes = model.remove_cell(cell_model);
-            shell.prompt_widget.focus(); // there must be a better way
+            RCloud.UI.command_prompt.prompt.widget.focus(); // there must be a better way
+            update_notebook(changes)
+                .then(default_callback_);
+        },
+        remove_asset: function(asset_model) {
+            var changes = model.remove_asset(asset_model);
             update_notebook(changes)
                 .then(default_callback_);
         },
@@ -178,6 +230,9 @@ Notebook.create_controller = function(model)
         },
         clear: function() {
             model.clear();
+            // FIXME when scratchpad becomes a view, clearing the model
+            // should make this happen automatically.
+            RCloud.UI.scratchpad.clear();
         },
         load_notebook: function(gistname, version) {
             return rcloud.load_notebook(gistname, version || null)
@@ -224,6 +279,9 @@ Notebook.create_controller = function(model)
         update_cell: function(cell_model) {
             return update_notebook(model.update_cell(cell_model));
         },
+        update_asset: function(asset_model) {
+            return update_notebook(model.update_asset(asset_model));
+        },
         save: function() {
             if(dirty_) {
                 var changes = this.refresh_cells();
@@ -248,6 +306,12 @@ Notebook.create_controller = function(model)
                 });
             });
             return Promise.all(promises);
+        },
+
+        //////////////////////////////////////////////////////////////////////
+
+        is_mine: function() {
+            return rcloud.username() === model.user();
         },
 
         //////////////////////////////////////////////////////////////////////

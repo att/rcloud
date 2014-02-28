@@ -126,7 +126,11 @@ RCloud.create = function(rcloud_ocaps) {
             ["stars","get_my_starred_notebooks"],
             ["session_cell_eval"],
             ["reset_session"],
-            ["set_device_pixel_ratio"]
+            ["set_device_pixel_ratio"],
+            ["api", "enable_echo"],
+            ["api", "disable_echo"],
+            ["api", "enable_warnings"],
+            ["api", "disable_warnings"]
         ];
         process_paths(paths);
 
@@ -527,7 +531,7 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.stars.get_multiple_notebook_star_countsAsync(ids);
         };
         rcloud.stars.get_my_starred_notebooks = function() {
-            rcloud_ocaps.stars.get_my_starred_notebooksAsync();
+            return rcloud_ocaps.stars.get_my_starred_notebooksAsync();
         };
 
     }

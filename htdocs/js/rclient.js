@@ -106,13 +106,13 @@ RClient = {
                     msg = this.string_error(msg);
                 if (typeof msg !== 'object')
                     throw new Error("post_error expects a string or a jquery div");
-                // var d = $("<div class='alert alert-danger'></div>").text(msg);
-                $("#output").append(msg);
-                window.scrollTo(0, document.body.scrollHeight);
+                msg.css("margin", "-15px"); // hack
+                $("#session-info").append(msg);
+                $("#collapse-session-info").collapse("show");
             },
 
             post_response: function (msg) {
-                var d = $("<pre></pre>").html(msg);
+                var d = $("<pre class='response'></pre>").html(msg);
                 $("#output").append(d);
                 window.scrollTo(0, document.body.scrollHeight);
             },
