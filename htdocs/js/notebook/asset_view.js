@@ -2,9 +2,18 @@ Notebook.Asset.create_html_view = function(asset_model)
 {
     var filename_div = $("<li></li>");
     var anchor = $("<a href='#'>" + asset_model.filename() + "</a>");
+    var remove = ui_utils.fa_button("icon-remove", "remove", '',
+                                    { 'position': 'relative',
+                                      'left': '2px',
+                                      'opacity': '0.75'
+                                    });
     filename_div.append(anchor);
+    anchor.append(remove);
     anchor.click(function() {
         asset_model.controller.select();
+    });
+    remove.click(function() {
+        asset_model.controller.remove();
     });
     var result = {
         div: filename_div,

@@ -64,20 +64,23 @@ Notebook.Asset.create_model = function(content, filename)
                 language: this.language()
             };
         },
-        change_object: function() {
+        change_object: function(obj) {
+            obj = obj || {};
             // unfortunately, yet another workaround because github
             // won't take blank files.  would prefer to make changes
             // a high-level description but i don't see it yet.
             var change = {
-                id: this.filename(),
+                id: obj.id || this.filename(),
                 name: function() {
                     return this.id;
-                }
+                },
+                erase: obj.erase,
+                rename: obj.rename
             };
             if(content === "")
                 change.erase = true;
             else
-                change.content = this.content();
+                change.content = obj.content || this.content();
             return change;
         }
     };

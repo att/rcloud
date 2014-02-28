@@ -24,7 +24,7 @@ RCloud.UI.scratchpad = {
                 div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
                 widget.resize();
             });
-            
+
             widget.setOptions({
                 enableBasicAutocompletion: true
             });
@@ -52,8 +52,12 @@ RCloud.UI.scratchpad = {
             var filename = prompt("Choose a filename for your asset");
             if (!filename)
                 return;
+            if (filename.toLocaleLowerCase().substring(0,4) === "part") {
+                alert("Asset names cannot start with 'part', sorry!");
+                return;
+            }
             shell.notebook.controller.append_asset(
-                "# New file " + filename, filename);
+                "# New file " + filename, filename).select();
         });
     },
     // FIXME this is completely backwards
@@ -74,6 +78,11 @@ RCloud.UI.scratchpad = {
             }
         }
         this.current_model = asset_model;
+        if (!this.current_model) {
+            that.session.setValue("");
+            that.widget.resize();
+            return;
+        }
         this.change_content(this.current_model.content());
         // restore cursor
         var model_cursor = asset_model.cursor_position();

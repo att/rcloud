@@ -65,7 +65,7 @@ Notebook.Cell.create_model = function(content, language)
             if(content === "")
                 change.erase = true;
             else
-                change.content = obj.id || this.content();
+                change.content = obj.content || this.content();
             return change;
         }
     };

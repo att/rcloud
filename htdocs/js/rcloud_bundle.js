@@ -765,10 +765,9 @@ ui_utils.ace_set_pos = function(widget, row, column) {
     range.setStart(row, column);
     range.setEnd(row, column);
     sel.setSelectionRange(range);
-}
+};
 
 ui_utils.install_common_ace_key_bindings = function(widget) {
-    debugger;
     var Autocomplete = require("ace/autocomplete").Autocomplete;
     var session = widget.getSession();
 
@@ -804,7 +803,7 @@ ui_utils.install_common_ace_key_bindings = function(widget) {
             }
         }
     ]);
-}
+};
 
 // bind an ace editor to a listener and return a function to change the
 // editor content without triggering that listener
@@ -995,9 +994,18 @@ Notebook.Asset.create_html_view = function(asset_model)
 {
     var filename_div = $("<li></li>");
     var anchor = $("<a href='#'>" + asset_model.filename() + "</a>");
+    var remove = ui_utils.fa_button("icon-remove", "remove", '',
+                                    { 'position': 'relative',
+                                      'left': '2px',
+                                      'opacity': '0.75'
+                                    });
     filename_div.append(anchor);
+    anchor.append(remove);
     anchor.click(function() {
         asset_model.controller.select();
+    });
+    remove.click(function() {
+        asset_model.controller.remove();
     });
     var result = {
         div: filename_div,
@@ -1090,20 +1098,23 @@ Notebook.Asset.create_model = function(content, filename)
                 language: this.language()
             };
         },
-        change_object: function() {
+        change_object: function(obj) {
+            obj = obj || {};
             // unfortunately, yet another workaround because github
             // won't take blank files.  would prefer to make changes
             // a high-level description but i don't see it yet.
             var change = {
-                id: this.filename(),
+                id: obj.id || this.filename(),
                 name: function() {
                     return this.id;
-                }
+                },
+                erase: obj.erase,
+                rename: obj.rename
             };
             if(content === "")
                 change.erase = true;
             else
-                change.content = this.content();
+                change.content = obj.content || this.content();
             return change;
         }
     };
@@ -1127,6 +1138,18 @@ Notebook.Asset.create_controller = function(asset_model)
         },
         deselect: function() {
             asset_model.active(false);
+        },
+        remove: function(force) {
+            var msg = "Are you sure? This will remove the asset from the notebook.";
+            if (force || confirm(msg)) {
+                asset_model.parent_model.controller.remove_asset(asset_model);
+                var assets = asset_model.parent_model.assets;
+                if (assets.length)
+                    assets[0].controller.select();
+                else {
+                    RCloud.UI.scratchpad.set_model(null);
+                }
+            }
         }
     };
     return result;
@@ -1579,7 +1602,7 @@ Notebook.Cell.create_model = function(content, language)
             if(content === "")
                 change.erase = true;
             else
-                change.content = obj.id || this.content();
+                change.content = obj.content || this.content();
             return change;
         }
     };
@@ -1708,7 +1731,7 @@ Notebook.create_model = function()
     /* note, the code below is a little more sophisticated than it needs to be:
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
     return {
-        notebook: [], // this should be called "cells"
+        notebook: [], // FIXME this should be called "cells"
         assets: [],
         views: [], // sub list for cell content pubsub
         dishers: [], // for dirty bit pubsub
@@ -2004,20 +2027,16 @@ Notebook.create_controller = function(model)
                 continue; // R metadata
             if(f in cf) {
                 if(cf[f].language != nf[f].language || cf[f].content != nf[f].content) {
-                    changes.push({id: f,
-                                  language: cf[f].language,
-                                  content: cf[f].content});
+                    changes.push(nf.change_object({id: f}));
                 }
                 delete cf[f];
             }
-            else changes.push({id: f, erase: true, language: nf[f].language});
+            else changes.push(nf.change_object({id: f, erase: true}));
         }
         for(f in cf) {
             if(f==='r_type' || f==='r_attributes')
                 continue; // artifact of rserve.js
-            changes.push({id: f,
-                          language: cf[f].language,
-                          content: cf[f].content});
+            changes.push(nf.change_object({id: f}));
         }
         return changes;
     }
@@ -2143,6 +2162,11 @@ Notebook.create_controller = function(model)
         remove_cell: function(cell_model) {
             var changes = model.remove_cell(cell_model);
             RCloud.UI.command_prompt.prompt.widget.focus(); // there must be a better way
+            update_notebook(changes)
+                .then(default_callback_);
+        },
+        remove_asset: function(asset_model) {
+            var changes = model.remove_asset(asset_model);
             update_notebook(changes)
                 .then(default_callback_);
         },
@@ -2681,7 +2705,7 @@ RCloud.UI.scratchpad = {
                 div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
                 widget.resize();
             });
-            
+
             widget.setOptions({
                 enableBasicAutocompletion: true
             });
@@ -2709,8 +2733,12 @@ RCloud.UI.scratchpad = {
             var filename = prompt("Choose a filename for your asset");
             if (!filename)
                 return;
+            if (filename.toLocaleLowerCase().substring(0,4) === "part") {
+                alert("Asset names cannot start with 'part', sorry!");
+                return;
+            }
             shell.notebook.controller.append_asset(
-                "# New file " + filename, filename);
+                "# New file " + filename, filename).select();
         });
     },
     // FIXME this is completely backwards
@@ -2731,6 +2759,11 @@ RCloud.UI.scratchpad = {
             }
         }
         this.current_model = asset_model;
+        if (!this.current_model) {
+            that.session.setValue("");
+            that.widget.resize();
+            return;
+        }
         this.change_content(this.current_model.content());
         // restore cursor
         var model_cursor = asset_model.cursor_position();

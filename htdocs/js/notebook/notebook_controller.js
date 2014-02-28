@@ -80,20 +80,16 @@ Notebook.create_controller = function(model)
                 continue; // R metadata
             if(f in cf) {
                 if(cf[f].language != nf[f].language || cf[f].content != nf[f].content) {
-                    changes.push({id: f,
-                                  language: cf[f].language,
-                                  content: cf[f].content});
+                    changes.push(nf.change_object({id: f}));
                 }
                 delete cf[f];
             }
-            else changes.push({id: f, erase: true, language: nf[f].language});
+            else changes.push(nf.change_object({id: f, erase: true}));
         }
         for(f in cf) {
             if(f==='r_type' || f==='r_attributes')
                 continue; // artifact of rserve.js
-            changes.push({id: f,
-                          language: cf[f].language,
-                          content: cf[f].content});
+            changes.push(nf.change_object({id: f}));
         }
         return changes;
     }
@@ -219,6 +215,11 @@ Notebook.create_controller = function(model)
         remove_cell: function(cell_model) {
             var changes = model.remove_cell(cell_model);
             RCloud.UI.command_prompt.prompt.widget.focus(); // there must be a better way
+            update_notebook(changes)
+                .then(default_callback_);
+        },
+        remove_asset: function(asset_model) {
+            var changes = model.remove_asset(asset_model);
             update_notebook(changes)
                 .then(default_callback_);
         },

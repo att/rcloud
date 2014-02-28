@@ -13,7 +13,7 @@ Notebook.create_model = function()
     /* note, the code below is a little more sophisticated than it needs to be:
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
     return {
-        notebook: [], // this should be called "cells"
+        notebook: [], // FIXME this should be called "cells"
         assets: [],
         views: [], // sub list for cell content pubsub
         dishers: [], // for dirty bit pubsub

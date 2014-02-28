@@ -11,6 +11,18 @@ Notebook.Asset.create_controller = function(asset_model)
         },
         deselect: function() {
             asset_model.active(false);
+        },
+        remove: function(force) {
+            var msg = "Are you sure? This will remove the asset from the notebook.";
+            if (force || confirm(msg)) {
+                asset_model.parent_model.controller.remove_asset(asset_model);
+                var assets = asset_model.parent_model.assets;
+                if (assets.length)
+                    assets[0].controller.select();
+                else {
+                    RCloud.UI.scratchpad.set_model(null);
+                }
+            }
         }
     };
     return result;
