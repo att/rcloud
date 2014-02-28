@@ -329,7 +329,7 @@ rcloud.unstar.notebook <- function(notebook)
 
 rcloud.get.my.starred.notebooks <- function()
 {
-  rcs.list(star.key("*"))
+  gsub("notebook/([^/]*).*", "\\1", rcs.list(star.key("*")))
 }
 
 ################################################################################

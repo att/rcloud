@@ -502,10 +502,7 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.stars.get_multiple_notebook_star_countsAsync(ids);
         };
         rcloud.stars.get_my_starred_notebooks = function() {
-            return rcloud_ocaps.stars.get_my_starred_notebooksAsync()
-                .then(function(keys) {
-                    return _.map(keys, function(key) { return /notebook\/([^\/]*)\//.exec(key)[1]; });
-                });
+            return rcloud_ocaps.stars.get_my_starred_notebooksAsync();
         };
 
         // config
