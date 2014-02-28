@@ -392,16 +392,16 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.api = {};
         rcloud.api.disable_warnings = function() {
-            rcloud_ocaps.api.disable_warningsAsync();
+            return rcloud_ocaps.api.disable_warningsAsync();
         };
         rcloud.api.enable_warnings = function() {
-            rcloud_ocaps.api.enable_warningsAsync();
+            return rcloud_ocaps.api.enable_warningsAsync();
         };
         rcloud.api.disable_echo = function() {
-            rcloud_ocaps.api.disable_echoAsync();
+            return rcloud_ocaps.api.disable_echoAsync();
         };
         rcloud.api.enable_echo = function() {
-            rcloud_ocaps.api.enable_echoAsync();
+            return rcloud_ocaps.api.enable_echoAsync();
         };
     }
 
@@ -658,7 +658,7 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.stars.get_multiple_notebook_star_countsAsync(ids);
         };
         rcloud.stars.get_my_starred_notebooks = function() {
-            rcloud_ocaps.stars.get_my_starred_notebooksAsync();
+            return rcloud_ocaps.stars.get_my_starred_notebooksAsync();
         };
 
     }
@@ -1775,8 +1775,7 @@ Notebook.create_model = function()
         clear: function() {
             var cells_removed = this.remove_cell(null,last_id(this.notebook));
             var assets_removed = this.remove_asset(null,this.assets.length);
-            cells_removed.push.apply(cells_removed, assets_removed);
-            return cells_removed;
+            return cells_removed.concat(assets_removed);
         },
         append_asset: function(asset_model, filename, skip_event) {
             asset_model.parent_model = this;
@@ -2168,10 +2167,6 @@ Notebook.create_controller = function(model)
         show_source_checkbox_.set_state(true);
     }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> develop
     setup_show_source();
     model.dishers.push({on_dirty: on_dirty});
 
