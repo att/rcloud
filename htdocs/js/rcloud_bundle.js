@@ -153,6 +153,11 @@ RCloud.create = function(rcloud_ocaps) {
             v = v[path[i]];
         v[path[path.length-1] + "Async"] = val;
     }
+    function process_paths(paths) {
+        _.each(paths, function(path) {
+            set(path, rcloud_handler(Promise.promisify(get(path))));
+        });
+    }
 
     //////////////////////////////////////////////////////////////////////////////    
     function json_p(promise) {
@@ -163,11 +168,27 @@ RCloud.create = function(rcloud_ocaps) {
             });
     }
 
-    function rcloud_github_handler(command, promise) {
+    function rcloud_handler(promise_fn) {
         function success(result) {
-            if (result.r_attributes['class'] === "try-error") {
+            if (result && result.r_attributes &&
+                result.r_attributes['class'] === "try-error") {
                 throw result;
             }
+            return result;
+        }
+        function failure(err) {
+            if (RCloud.is_exception(err)) {
+                rclient.post_error(err[0]);
+            }
+            throw err;
+        }
+        return function() {
+            return promise_fn.apply(this, arguments).then(success).catch(failure);
+        };
+    }
+
+    function rcloud_github_handler(command, promise) {
+        function success(result) {
             if (result.ok) {
                 return result.content;
             } else {
@@ -175,17 +196,37 @@ RCloud.create = function(rcloud_ocaps) {
             }
         }
         function failure(err) {
-            if (RCloud.is_exception(err)) {
-                rclient.post_error(err[0]);
-            } else {
-                var message = _.isObject(err) && 'ok' in err
-                    ? err.content.message : err.toString();
-                rclient.post_error(command + ': ' + message);
-            }
+            var message = _.isObject(err) && 'ok' in err
+                ? err.content.message : err.toString();
+            rclient.post_error(command + ': ' + message);
             throw err;
         }
         return promise.then(success).catch(failure);
     }
+
+    // function rcloud_github_handler(command, promise) {
+    //     function success(result) {
+    //         if (result.r_attributes['class'] === "try-error") {
+    //             throw result;
+    //         }
+    //         if (result.ok) {
+    //             return result.content;
+    //         } else {
+    //             throw result.content;
+    //         }
+    //     }
+    //     function failure(err) {
+    //         if (RCloud.is_exception(err)) {
+    //             rclient.post_error(err[0]);
+    //         } else {
+    //             var message = _.isObject(err) && 'ok' in err
+    //                 ? err.content.message : err.toString();
+    //             rclient.post_error(command + ': ' + message);
+    //         }
+    //         throw err;
+    //     }
+    //     return promise.then(success).catch(failure);
+    // }
 
     var rcloud = {};
 
@@ -218,9 +259,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "enable_warnings"],
             ["api", "disable_warnings"]
         ];
-        _.each(paths, function(path) {
-            set(path, Promise.promisify(get(path)));
-        });
+        process_paths(paths);
 
         rcloud.username = function() {
             return $.cookies.get('user');
@@ -395,9 +434,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["api","disable_warnings"],
             ["api","enable_echo"]
         ];
-        _.each(paths, function(path) {
-            set(path, Promise.promisify(get(path)));
-        });
+        process_paths(paths);
 
         rcloud.session_init = function(username, token) {
             return rcloud_ocaps.session_initAsync(username, token);
@@ -2131,6 +2168,10 @@ Notebook.create_controller = function(model)
         show_source_checkbox_.set_state(true);
     }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     setup_show_source();
     model.dishers.push({on_dirty: on_dirty});
 
