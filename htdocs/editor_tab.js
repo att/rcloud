@@ -25,12 +25,12 @@ var editor = function () {
      - the filling of the star icon in the navbar (if current notebook)
      */
 
-    // local model
+    // local model (all caches of stuff stored in RCS)
     var username_ = null,
         histories_ = {},
         all_entries_ = {}, // all notebooks we are aware of
         num_stars_ = {}, // number of stars for all known notebooks
-        i_starred_ = {},
+        i_starred_ = {}, // set of notebooks starred by me
         interests_ = null,
         current_ = null;
 
@@ -190,7 +190,10 @@ var editor = function () {
                            console.log("rcloud.stars.get_my_starred_notebooks reports a notebook starred that is not listed in All Notebooks: " + book);
                            return users;
                        }
-                       var user = users[entry.user] = users[entry.user] || {};
+                       if(!entry.username || entry.username === "undefined"
+                          || !entry.description || !entry.last_commit)
+                           throw new Error("invalid notebook info: " + JSON.stringify(entry));
+                       var user = users[entry.username] = users[entry.username] || {};
                        user[book] = entry;
                        return users;
                    });
@@ -250,6 +253,9 @@ var editor = function () {
                     var entry = all_entries_[book];
                     if(!entry)
                         throw new Error("didn't find notebook " + book + " in alls");
+                    if(!entry.username || entry.username === "undefined"
+                       || !entry.description || !entry.last_commit)
+                        throw new Error("invalid notebook info: " + JSON.stringify(entry));
                     return [book, entry];
                 }));
         }
@@ -353,6 +359,12 @@ var editor = function () {
     }
 
     function update_tree(root, user, gistname, path, last_chance, create) {
+        if(!root)
+            throw "need root";
+        if(!user)
+            throw "need user";
+        if(!gistname)
+            throw "need gistname";
         // make sure parents exist
         var id = user===username_ ? node_id(root) : node_id(root, user),
             parent = $tree_.tree('getNodeById', id),
@@ -598,7 +610,7 @@ var editor = function () {
             return Promise.resolve(null); // !create
 
         // if we're looking at an old version, make sure it's visible
-        if(gistname===current_.book && current_.version) {
+        if(gistname===current_.notebook && current_.version) {
             whither = 'sha';
             where = current_.version;
         }
@@ -624,7 +636,7 @@ var editor = function () {
             if(selroot==='interests')
                 p.then(select_node);
         }
-        if(gistname === current_.book) {
+        if(gistname === current_.notebook) {
             star_notebook_button_.set_state(i_starred_[gistname]);
             $('#curr-star-count').text(num_stars_[gistname] || 0);
         }
@@ -665,7 +677,7 @@ var editor = function () {
             return;
         }
         remove_node(node);
-        if(gistname === current_.book) {
+        if(gistname === current_.notebook) {
             star_notebook_button_.set_state(false);
             $('#curr-star-count').text(num_stars_[gistname] || 0);
         }
@@ -806,7 +818,7 @@ var editor = function () {
             var appear = $($.el.span({'class': 'notebook-commands appear'}));
             add_buttons = adder(appear);
             if(true) { // all notebooks have history - should it always be accessible?
-                var disable = current_.book===node.gistname && current_.version;
+                var disable = current_.notebook===node.gistname && current_.version;
                 var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style);
                 // jqtree recreates large portions of the tree whenever anything changes
                 // so far this seems safe but might need revisiting if that improves
@@ -884,7 +896,7 @@ var editor = function () {
                 // workaround: it's weird that a notebook exists in two trees but only one is selected (#220)
                 // and some would like clicking on the active notebook to edit the name (#252)
                 // for now, just select
-                if(event.node.gistname === current_.book
+                if(event.node.gistname === current_.notebook
                    && event.node.version == current_.version) // nulliness ok here
                     select_node(event.node);
                 else {
@@ -897,7 +909,7 @@ var editor = function () {
     }
     function tree_open(event) {
         var n = event.node;
-        if(n.delay_children) 
+        if(n.delay_children)
             load_children(n);
     }
 
@@ -910,8 +922,8 @@ var editor = function () {
             var promise = load_everything().then(function() {
                 if(gistname) // notebook specified in url
                     that.load_notebook(gistname, version);
-                else if(current_.book)
-                    that.load_notebook(current_.book, current_.version);
+                else if(current_.notebook)
+                    that.load_notebook(current_.notebook, current_.version);
                 else // brand new user
                     that.new_notebook();
             });
@@ -937,10 +949,10 @@ var editor = function () {
             }
             publish_notebook_checkbox_ = ui_utils.checkbox_menu_item($("#publish-notebook"),
                function() {
-                   rcloud.publish_notebook(current_.book).then(publish_success(current_.book, false));
+                   rcloud.publish_notebook(current_.notebook).then(publish_success(current_.notebook, false));
                },
                function() {
-                   rcloud.unpublish_notebook(current_.book).then(publish_success(current_.book, true));
+                   rcloud.unpublish_notebook(current_.notebook).then(publish_success(current_.notebook, true));
                });
             var snf = result.star_notebook;
             star_notebook_button_ =
@@ -999,7 +1011,7 @@ var editor = function () {
                     || opts.notebook&&opts.notebook.user&&opts.notebook.user.login
                     || all_entries_[gistname].username;
             // keep selected if was
-            if(gistname === current_.book)
+            if(gistname === current_.notebook)
                 opts.selroot = opts.selroot || true;
             if(star) {
                 return rcloud.stars.star_notebook(gistname).then(function(count) {
@@ -1040,7 +1052,7 @@ var editor = function () {
                 .then(function() {
                     remove_all(user, gistname);
                     remove_node($tree_.tree('getNodeById', node_id('alls', user, gistname)));
-                    if(gistname === current_.book)
+                    if(gistname === current_.notebook)
                         that.new_notebook();
                 });
         },
@@ -1049,7 +1061,7 @@ var editor = function () {
                 throw "attempt to set visibility on notebook not mine";
             var entry = interests_[username_][node.gistname];
             entry.visibility = visibility;
-            rcloud.config.set_notebook_info(entry);
+            rcloud.set_notebook_info(node.gistname, entry);
             update_tree_entry(node.root, username_, node.gistname, entry, false);
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
@@ -1167,10 +1179,10 @@ var editor = function () {
         },
         post_comment: function(comment) {
             comment = JSON.stringify({"body":comment});
-            return rcloud.post_comment(current_.book, comment).then(function(result) {
+            return rcloud.post_comment(current_.notebook, comment).then(function(result) {
                 if (!result)
                     return null;
-                return rcloud.get_all_comments(current_.book).then(function(data) {
+                return rcloud.get_all_comments(current_.notebook).then(function(data) {
                     populate_comments(data);
                     $('#comment-entry-body').val('');
                 });
