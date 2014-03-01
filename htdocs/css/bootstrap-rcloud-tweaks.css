@@ -1,0 +1,107 @@
+.navbar {
+    margin-bottom: 0;
+}
+
+body {
+    margin: 0;
+}
+
+pre {
+    border-radius: 0;
+    border: 0;
+    background-color: #e5e5e5;
+    margin-bottom: 0;
+    padding: 0;
+}
+
+pre code {
+    padding: 16px;
+}
+
+code {
+    border-radius: 0;
+    background-color: #fff;
+    padding: 0;
+    color: black;
+    font-size: 100%;
+}
+
+.response {
+    padding: 16px;
+}
+
+.panel {
+    border-radius: 0;
+}
+
+.panel-group .panel {
+    border-radius: 0;
+}
+
+.container {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.no-padding {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.panel-group .panel + .panel {
+    margin-top: 0;
+}
+
+.panel-default > .panel-heading {
+    border-style: none;
+}
+
+.panel-default {
+    border: 0;
+}
+
+.r-result-div {
+    padding: 0;
+}
+
+.notebook-cell {
+    border-width: 0px;
+    /* border-left: 1px solid #f5f5f5; */
+    /* border-right: 1px solid #f5f5f5; */
+    padding: 0px;
+    margin-top: 0em;
+}
+
+.alert {
+    border-radius: 0;
+    border: 0;
+}
+
+.cell-controls {
+    z-index: 5; /* in order to beat the default */
+}
+
+td {
+    background-color: transparent;
+}
+
+.r-result-div {
+    border-bottom: 1px solid #f5f5f5;
+}
+
+code.r {
+    background-color: #fff;
+}
+
+.panel:first-child .panel-heading {
+    padding-top:10px;
+}
+
+.panel-heading {
+    padding: 5px 15px;
+}

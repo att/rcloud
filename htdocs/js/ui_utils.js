@@ -56,7 +56,7 @@ ui_utils.ace_set_pos = function(widget, row, column) {
     range.setStart(row, column);
     range.setEnd(row, column);
     sel.setSelectionRange(range);
-}
+};
 
 ui_utils.install_common_ace_key_bindings = function(widget) {
     var Autocomplete = require("ace/autocomplete").Autocomplete;
@@ -94,7 +94,7 @@ ui_utils.install_common_ace_key_bindings = function(widget) {
             }
         }
     ]);
-}
+};
 
 // bind an ace editor to a listener and return a function to change the
 // editor content without triggering that listener
@@ -245,3 +245,6 @@ ui_utils.make_editable = function(elem$, editable, on_edit) {
     else elem$.attr('contenteditable', 'false');
 };
 
+ui_utils.on_next_tick = function(f) {
+    window.setTimeout(f, 0);
+};

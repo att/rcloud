@@ -14,7 +14,7 @@ Notebook.Cell.create_controller = function(cell_model)
                 promise = rcloud.session_markdown_eval(cell_model.content(), language, false);
             } else {
                 promise = rcloud.session_cell_eval(
-                    Notebook.part_name(cell_model.id,
+                    Notebook.part_name(cell_model.id(),
                                        cell_model.language()),
                     cell_model.language(),
                     false);
