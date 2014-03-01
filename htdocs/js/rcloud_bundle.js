@@ -648,7 +648,13 @@ RCloud.create = function(rcloud_ocaps) {
         // notebook cache
         rcloud.get_notebook_info = rcloud_ocaps.get_notebook_infoAsync;
         rcloud.get_multiple_notebook_infos = rcloud_ocaps.get_multiple_notebook_infosAsync;
-        rcloud.set_notebook_info = rcloud_ocaps.set_notebook_infoAsync;
+        rcloud.set_notebook_info = function(id, info) {
+            if(!info.username) return Promise.reject("attempt to set info no username");
+            if(!info.description) return Promise.reject("attempt to set info no description");
+            if(!info.last_commit) return Promise.reject("attempt to set info no last_commit");
+            if(!info.visibility) return Promise.reject("attempt to set info no visibility");
+            return rcloud_ocaps.set_notebook_infoAsync(id, info);
+        };
     }
 
     rcloud.authenticated = rcloud_ocaps.authenticated;
