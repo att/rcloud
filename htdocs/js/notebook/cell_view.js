@@ -11,7 +11,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
     var source_button = ui_utils.fa_button("icon-edit", "source");
     var result_button = ui_utils.fa_button("icon-picture", "result");
-    // var hide_button  = ui_utils.fa_button("icon-resize-small", "hide");
     var remove_button = ui_utils.fa_button("icon-trash", "remove");
     var run_md_button = ui_utils.fa_button("icon-play", "run");
     var gap = $('<div/>').html('&nbsp;').css({'line-height': '25%'});
@@ -39,10 +38,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         if (!$(e.currentTarget).hasClass("button-disabled"))
             result.show_result();
     });
-    // hide_button.click(function(e) {
-    //     if (!$(e.currentTarget).hasClass("button-disabled"))
-    //         result.hide_all();
-    // });
     remove_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             cell_model.parent_model.controller.remove_cell(cell_model);
@@ -70,11 +65,24 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     cell_status.append(button_float);
     cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
-    col.append($("<td>" + language + "</td>"));
-    $.each([run_md_button, source_button, result_button/*, hide_button*/, gap, remove_button],
+    var languages = { "R": {},
+                      "Markdown": {},
+                      "Python": {},
+                      "Bash": {} 
+                    };
+    var select = $("<select class='form-control'></select>");
+    _.each(languages, function(value, key) {
+        languages[key].element = $("<option></option>").text(key);
+        select.append(languages[key].element);
+    });
+    $(languages[language].element).attr('selected', true);
+
+    col.append($("<div></div>").append(select));
+    $.each([run_md_button, source_button, result_button, gap, remove_button],
            function() {
                col.append($('<td/>').append($(this)));
            });
+
     button_float.append(col);
     notebook_cell_div.append(cell_status);
 
@@ -289,7 +297,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
              *
              */
             // do the two-change dance to make ace happy
-            var obj = {'height': (ui_utils.ace_editor_height(widget) + 24) + "px"};
+            var obj = {'height': (ui_utils.ace_editor_height(widget) + 25) + "px"};
             notebook_cell_div.css(obj);
             outer_ace_div.show();
             widget.resize(true);
@@ -365,14 +373,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     return result;
 }};
 
-var dispatch = {
-    Markdown: create_markdown_cell_html_view("Markdown"),
-    R: create_markdown_cell_html_view("R")
-};
-
 Notebook.Cell.create_html_view = function(cell_model)
 {
-    return dispatch[cell_model.language()](cell_model);
+    return create_markdown_cell_html_view(cell_model.language())(cell_model);
 };
 
 })();
