@@ -779,10 +779,12 @@ ui_utils.disable_bs_button = function(el) {
 };
 
 
-ui_utils.ace_editor_height = function(widget)
+ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
 {
+    min_rows = _.isUndefined(min_rows) ? 0  : min_rows;
+    max_rows = _.isUndefined(max_rows) ? 30 : max_rows;
     var lineHeight = widget.renderer.lineHeight;
-    var rows = Math.min(30, widget.getSession().getLength());
+    var rows = Math.max(min_rows, Math.min(max_rows, widget.getSession().getLength()));
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
     return Math.max(75, newHeight);
     /*
@@ -2738,7 +2740,7 @@ RCloud.UI.scratchpad = {
             that.widget = widget;
             var doc = session.doc;
             session.on('change', function() {
-                div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
+                div.css({'height': ui_utils.ace_editor_height(widget, 30) + "px"});
                 widget.resize();
             });
 
@@ -2750,7 +2752,7 @@ RCloud.UI.scratchpad = {
             widget.resize();
             ui_utils.on_next_tick(function() {
                 session.getUndoManager().reset();
-                div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
+                div.css({'height': ui_utils.ace_editor_height(widget, 30) + "px"});
                 widget.resize();
             });
             that.change_content = ui_utils.ignore_programmatic_changes(
