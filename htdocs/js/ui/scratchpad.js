@@ -21,7 +21,7 @@ RCloud.UI.scratchpad = {
             that.widget = widget;
             var doc = session.doc;
             session.on('change', function() {
-                div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
+                div.css({'height': ui_utils.ace_editor_height(widget, 30) + "px"});
                 widget.resize();
             });
 
@@ -33,7 +33,7 @@ RCloud.UI.scratchpad = {
             widget.resize();
             ui_utils.on_next_tick(function() {
                 session.getUndoManager().reset();
-                div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
+                div.css({'height': ui_utils.ace_editor_height(widget, 30) + "px"});
                 widget.resize();
             });
             that.change_content = ui_utils.ignore_programmatic_changes(

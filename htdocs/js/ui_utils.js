@@ -33,10 +33,12 @@ ui_utils.disable_bs_button = function(el) {
 };
 
 
-ui_utils.ace_editor_height = function(widget)
+ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
 {
+    min_rows = _.isUndefined(min_rows) ? 0  : min_rows;
+    max_rows = _.isUndefined(max_rows) ? 30 : max_rows;
     var lineHeight = widget.renderer.lineHeight;
-    var rows = Math.min(30, widget.getSession().getLength());
+    var rows = Math.max(min_rows, Math.min(max_rows, widget.getSession().getLength()));
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
     return Math.max(75, newHeight);
     /*
