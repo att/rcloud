@@ -65,17 +65,23 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     cell_status.append(button_float);
     cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
-    var languages = { "R": {},
-                      "Markdown": {},
-                      "Python": {},
-                      "Bash": {} 
-                    };
+    var languages = { 
+        "R": { 'background-color': "#E8F1FA" },
+        "Markdown": { 'background-color': "#F7EEE4" }
+        // ,
+        // "Python": { 'background-color': "#ff0000" },
+        // "Bash": { 'background-color': "#00ff00" }
+    };
     var select = $("<select class='form-control'></select>");
     _.each(languages, function(value, key) {
         languages[key].element = $("<option></option>").text(key);
         select.append(languages[key].element);
     });
     $(languages[language].element).attr('selected', true);
+    select.on("change", function() {
+        var l = select.find("option:selected").text();
+        cell_model.parent_model.controller.change_cell_language(cell_model, l);
+    });
 
     col.append($("<div></div>").append(select));
     $.each([run_md_button, source_button, result_button, gap, remove_button],
@@ -100,9 +106,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
 
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
-    ace_div.css({'background-color': language === 'R' ? "#E8F1FA" : "#F7EEE4"});
+    ace_div.css({ 'background-color': languages[language]["background-color"] });
 
-    // ace_div.css({'background-color': language === 'R' ? "#B1BEA4" : "#F1EDC0"});
     inner_div.append(outer_ace_div);
     outer_ace_div.append(ace_div);
     ace.require("ace/ext/language_tools");
@@ -171,6 +176,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             notebook_cell_div.remove();
         },
         id_updated: update_div_id,
+        language_updated: function() {
+            language = cell_model.language();
+            ace_div.css({ 'background-color': languages[language]["background-color"] });
+        },
         result_updated: function(r) {
             r_result_div.hide();
             r_result_div.html(r);

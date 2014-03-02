@@ -4,7 +4,17 @@ Notebook.Cell.create_model = function(content, language)
     var result = {
         views: [], // sub list for pubsub
         parent_model: null,
-        language: function() {
+        language: function(new_language) {
+            if (!_.isUndefined(new_language)) {
+                if(language != new_language) {
+                    language = new_language;
+                    notify_views(function(view) {
+                        view.language_updated();
+                    });
+                    return language;
+                }
+                else return null;
+            }
             return language;
         },
         content: function(new_content) {

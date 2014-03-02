@@ -167,6 +167,19 @@ Notebook.create_model = function()
             });
             return changes;
         },
+        change_cell_language: function(cell_model, language) {
+            // ugh. we can't use the change_object with "language" because
+            // this changes name() (the way the object is written kind
+            // of assumes that id is the only thing that can change)
+            // at the same time, we can use the "rename" field because, in
+            // that case, the object just returns the name itself.
+            // FIXME this is really ugly.
+            cell_model.language(language);
+            var c = cell_model.change_object({language: language});
+            return [cell_model.change_object({
+                rename: c.name()
+            })];
+        },
         update_cell: function(cell_model) {
             return [cell_model.change_object()];
         },

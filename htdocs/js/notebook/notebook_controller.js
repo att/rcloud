@@ -228,6 +228,11 @@ Notebook.create_controller = function(model)
             update_notebook(changes)
                 .then(default_callback_);
         },
+        change_cell_language: function(cell_model, language) {
+            var changes = model.change_cell_language(cell_model, language);
+            update_notebook(changes)
+                .then(default_callback_);
+        },
         clear: function() {
             model.clear();
             // FIXME when scratchpad becomes a view, clearing the model
