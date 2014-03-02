@@ -103,7 +103,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     markdown_div.append(ace_div);
     ace.require("ace/ext/language_tools");
     var widget = ace.edit(ace_div[0]);
-    var RMode = require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
+    var RMode = ace.require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
     var session = widget.getSession();
     widget.setValue(cell_model.content());
     ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all

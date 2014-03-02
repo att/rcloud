@@ -807,7 +807,7 @@ ui_utils.ace_set_pos = function(widget, row, column) {
 };
 
 ui_utils.install_common_ace_key_bindings = function(widget) {
-    var Autocomplete = require("ace/autocomplete").Autocomplete;
+    var Autocomplete = ace.require("ace/autocomplete").Autocomplete;
     var session = widget.getSession();
 
     widget.commands.addCommands([
@@ -834,7 +834,7 @@ ui_utils.install_common_ace_key_bindings = function(widget) {
                 var code = session.getTextRange(widget.getSelectionRange());
                 if(code.length==0) {
                     var pos = widget.getCursorPosition();
-                    var Range = require('ace/range').Range;
+                    var Range = ace.require('ace/range').Range;
                     var range = new Range(pos.row, 0, pos.row+1, 0);
                     code = session.getTextRange(range);
                 }
@@ -909,7 +909,7 @@ ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
 // how to do it.
 ui_utils.make_prompt_chevron_gutter = function(widget)
 {
-    var dom = require("ace/lib/dom");
+    var dom = ace.require("ace/lib/dom");
     widget.renderer.$gutterLayer.update = function(config) {
         var emptyAnno = {className: ""};
         var html = [];
@@ -1298,7 +1298,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     markdown_div.append(ace_div);
     ace.require("ace/ext/language_tools");
     var widget = ace.edit(ace_div[0]);
-    var RMode = require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
+    var RMode = ace.require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
     var session = widget.getSession();
     widget.setValue(cell_model.content());
     ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
@@ -2734,7 +2734,7 @@ RCloud.UI.scratchpad = {
             inner_div.append(ace_div);
             ace.require("ace/ext/language_tools");
             var widget = ace.edit(ace_div[0]);
-            var RMode = require("ace/mode/r").Mode;
+            var RMode = ace.require("ace/mode/r").Mode;
             var session = widget.getSession();
             that.session = session;
             that.widget = widget;
@@ -2814,7 +2814,7 @@ RCloud.UI.scratchpad = {
             that.session.getUndoManager().reset();
         });
         var lang = asset_model.language().toLocaleLowerCase();
-        var mode = require(modes[lang] || modes.txt).Mode;
+        var mode = ace.require(modes[lang] || modes.txt).Mode;
         that.session.setMode(new mode(false, that.session.doc, that.session));
         that.widget.resize();
         that.widget.focus();
@@ -2906,7 +2906,7 @@ RCloud.UI.command_prompt = {
         ace.require("ace/ext/language_tools");
         var widget = ace.edit(prompt_div[0]);
         set_ace_height();
-        var RMode = require("ace/mode/r").Mode;
+        var RMode = ace.require("ace/mode/r").Mode;
         var session = widget.getSession();
         var doc = session.doc;
         widget.setOptions({

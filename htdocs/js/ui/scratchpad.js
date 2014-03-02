@@ -15,7 +15,7 @@ RCloud.UI.scratchpad = {
             inner_div.append(ace_div);
             ace.require("ace/ext/language_tools");
             var widget = ace.edit(ace_div[0]);
-            var RMode = require("ace/mode/r").Mode;
+            var RMode = ace.require("ace/mode/r").Mode;
             var session = widget.getSession();
             that.session = session;
             that.widget = widget;
@@ -95,7 +95,7 @@ RCloud.UI.scratchpad = {
             that.session.getUndoManager().reset();
         });
         var lang = asset_model.language().toLocaleLowerCase();
-        var mode = require(modes[lang] || modes.txt).Mode;
+        var mode = ace.require(modes[lang] || modes.txt).Mode;
         that.session.setMode(new mode(false, that.session.doc, that.session));
         that.widget.resize();
         that.widget.focus();
