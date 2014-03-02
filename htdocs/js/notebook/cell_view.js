@@ -65,17 +65,18 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     run_md_button.click(function(e) {
         execute_cell();
     });
-
+    var cell_status = $("<div class='cell-status'></div>");
     var button_float = $("<div class='cell-controls'></div>");
+    cell_status.append(button_float);
+    cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
-    var watermark = $("<span/>");
-    col.append(watermark);
+    col.append($("<td>" + language + "</td>"));
     $.each([run_md_button, source_button, result_button/*, hide_button*/, gap, remove_button],
            function() {
                col.append($('<td/>').append($(this)));
            });
     button_float.append(col);
-    notebook_cell_div.append(button_float);
+    notebook_cell_div.append(cell_status);
 
     var insert_button_float = $("<div class='cell-insert-control'></div>");
     insert_button_float.append(insert_cell_button);
@@ -88,19 +89,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     notebook_cell_div.append(inner_div);
     notebook_cell_div.append(clear_div);
 
-    var markdown_div = $('<div style="position: relative; width:100%; height:100%"></div>');
+    var outer_ace_div = $('<div class="outer-ace-div"></div>');
 
-    var ace_div = $('<div style="width:100%; height:100%"></div>');
+    var ace_div = $('<div style="width:100%; height:100%;"></div>');
     ace_div.css({'background-color': language === 'R' ? "#E8F1FA" : "#F7EEE4"});
-    if (language === 'R') {
-        watermark.addClass("r-language-pseudo");
-    } else {
-        watermark.addClass("rmarkdown-language-pseudo");
-    }
 
     // ace_div.css({'background-color': language === 'R' ? "#B1BEA4" : "#F1EDC0"});
-    inner_div.append(markdown_div);
-    markdown_div.append(ace_div);
+    inner_div.append(outer_ace_div);
+    outer_ace_div.append(ace_div);
     ace.require("ace/ext/language_tools");
     var widget = ace.edit(ace_div[0]);
     var RMode = require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
@@ -123,7 +119,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     });
     session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
-        notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
+        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + 24) + "px"});
         widget.resize();
     });
 
@@ -293,10 +289,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
              *
              */
             // do the two-change dance to make ace happy
-            notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
-            markdown_div.show();
+            var obj = {'height': (ui_utils.ace_editor_height(widget) + 24) + "px"};
+            notebook_cell_div.css(obj);
+            outer_ace_div.show();
             widget.resize(true);
-            notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
+            notebook_cell_div.css(obj);
             widget.resize(true);
             disable(source_button);
             enable(result_button);
@@ -306,7 +303,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             }
             //editor_row.show();
 
-            markdown_div.show();
+            outer_ace_div.show();
             r_result_div.hide();
             widget.resize();
             widget.focus();
@@ -323,7 +320,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             }
 
             //editor_row.hide();
-            markdown_div.hide();
+            outer_ace_div.hide();
             r_result_div.slideDown(150); // show();
             current_mode = "result";
         },
@@ -340,7 +337,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             if (current_mode === "result") {
                 r_result_div.slideUp(150); // hide();
             } else {
-                markdown_div.slideUp(150); // hide();
+                outer_ace_div.slideUp(150); // hide();
             }
         },
         /*
