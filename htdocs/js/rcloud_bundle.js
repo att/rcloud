@@ -426,6 +426,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["is_notebook_published"],
             ["publish_notebook"],
             ["unpublish_notebook"],
+            ["set_notebook_visibility"],
             ["api","disable_warnings"],
             ["api","enable_echo"],
             ["api","disable_warnings"],
@@ -640,6 +641,10 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.unpublish_notebookAsync(id);
         };
 
+        rcloud.set_notebook_visibility = function(id, value) {
+            return rcloud_ocaps.set_notebook_visibilityAsync(id, value);
+        };
+
         // stars
         rcloud.stars = {};
         rcloud.stars.star_notebook = function(id) {
@@ -681,7 +686,6 @@ RCloud.create = function(rcloud_ocaps) {
             if(!info.username) return Promise.reject("attempt to set info no username");
             if(!info.description) return Promise.reject("attempt to set info no description");
             if(!info.last_commit) return Promise.reject("attempt to set info no last_commit");
-            if(!info.visibility) return Promise.reject("attempt to set info no visibility");
             return rcloud_ocaps.set_notebook_infoAsync(id, info);
         };
     }

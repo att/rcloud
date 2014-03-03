@@ -51,7 +51,8 @@ unauthenticated.ocaps <- function()
       notebook_by_name = make.oc(rcloud.unauthenticated.notebook.by.name),
       install_notebook_stylesheets = make.oc(rcloud.install.notebook.stylesheets),
       is_notebook_published = make.oc(rcloud.is.notebook.published),
-      
+      is_notebook_visible = make.oc(rcloud.is.notebook.visible),
+
       get_users = make.oc(rcloud.get.users),
 
       # javascript.R
@@ -118,6 +119,7 @@ authenticated.ocaps <- function()
       rename_notebook = make.oc(rcloud.rename.notebook),
       publish_notebook = make.oc(rcloud.publish.notebook),
       unpublish_notebook = make.oc(rcloud.unpublish.notebook),
+      set_notebook_visibility = make.oc(rcloud.set.notebook.visibility),
       fork_notebook = make.oc(rcloud.fork.notebook),
       port_notebooks = make.oc(rcloud.port.notebooks),
       call_notebook = make.oc(rcloud.call.notebook),

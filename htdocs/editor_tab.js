@@ -91,7 +91,6 @@ var editor = function () {
         entry.username = user;
         entry.description = description;
         entry.last_commit = time;
-        entry.visibility = entry.visibility || 'public';
 
         if(i_starred_[gistname])
             add_interest(user, gistname, entry);
@@ -163,14 +162,12 @@ var editor = function () {
         var notebook_nodes = [];
         for(var name in set) {
             var attrs = set[name];
-            if(username!==username_ && root==='alls' && attrs.visibility==='private')
-                continue;
             var result = {
                 label: attrs.description,
                 gistname: name,
                 user: username,
                 root: root,
-                visibility: attrs.visibility || 'public',
+                visible: attrs.visible,
                 last_commit: attrs.last_commit || 'none',
                 id: node_id(root, username, name),
                 sort_order: ordering.NOTEBOOK
@@ -576,7 +573,7 @@ var editor = function () {
         var data = {label: entry.description,
                     last_commit: entry.last_commit,
                     sort_order: ordering.NOTEBOOK,
-                    visibility: entry.visibility};
+                    visible: entry.visible};
 
         // always show the same number of history nodes as before
         var whither = 'hide', where = null;
@@ -739,7 +736,7 @@ var editor = function () {
         var element = $li.find('.jqtree-element'),
             title = element.find('.jqtree-title');
         title.css('color', node.color);
-        if(node.visibility==='private')
+        if(!node.visible)
             title.addClass('private');
         if(node.version || node.id === 'showmore')
             title.addClass('history');
@@ -822,17 +819,17 @@ var editor = function () {
             if(node.user===username_) {
                 var make_private = ui_utils.fa_button('icon-eye-close', 'make private', 'private', icon_style),
                     make_public = ui_utils.fa_button('icon-eye-open', 'make public', 'public', icon_style);
-                if(node.visibility=='public')
+                if(node.visible)
                     make_public.hide();
                 else
                     make_private.hide();
                 make_private.click(function() {
                     fake_hover(node);
-                    result.set_visibility(node, 'private');
+                    result.set_visibility(node, false);
                 });
                 make_public.click(function() {
                     fake_hover(node);
-                    result.set_visibility(node, 'public');
+                    result.set_visibility(node, true);
                     return false;
                 });
                 add_buttons(make_private, make_public);
@@ -1041,12 +1038,12 @@ var editor = function () {
                         that.new_notebook();
                 });
         },
-        set_visibility: function(node, visibility) {
+        set_visibility: function(node, visible) {
             if(node.user !== username_)
                 throw "attempt to set visibility on notebook not mine";
             var entry = interests_[username_][node.gistname];
-            entry.visibility = visibility;
-            rcloud.set_notebook_info(node.gistname, entry);
+            entry.visible = visible;
+            rcloud.set_notebook_visibility(node.gistname, visible);
             update_tree_entry(node.root, username_, node.gistname, entry, false);
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {

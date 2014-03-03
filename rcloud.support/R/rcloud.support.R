@@ -206,9 +206,14 @@ rcloud.fork.notebook <- function(id) fork.gist(id, ctx = .session$rgithub.contex
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
   gsub("/.*","",rcs.list(usr.key(user="*", notebook="system", "config")))
 
-rcloud.publish.notebook <- function(id) {
+# sloooow, but we don't have any other way of verifying the owner
+notebook.is.mine <- function(id) {
   nb <- rcloud.get.notebook(id)
-  if (nb$content$user$login == .session$rgithub.context$user$login) {
+  nb$content$user$login == .session$rgithub.context$user$login
+}
+
+rcloud.publish.notebook <- function(id) {
+  if(notebook.is.mine(id)) {
     rcs.set(rcs.key(".notebook", id, "public"), 1)
     TRUE
   } else
@@ -216,8 +221,7 @@ rcloud.publish.notebook <- function(id) {
 }
 
 rcloud.unpublish.notebook <- function(id) {
-  nb <- rcloud.get.notebook(id)
-  if (nb$content$user$login == .session$rgithub.context$user$login) {
+  if(notebook.is.mine(id)) {
     rcs.rm(rcs.key(".notebook", id, "public"))
     TRUE
   } else
@@ -226,6 +230,18 @@ rcloud.unpublish.notebook <- function(id) {
 
 rcloud.is.notebook.published <- function(id) {
   !is.null(rcs.get(rcs.key(".notebook", id, "public")))
+}
+
+rcloud.is.notebook.visible <- function(id)
+  rcs.get(rcs.key(".notebook", id, "visible"))
+
+rcloud.set.notebook.visibility <- function(id, value) {
+  if(notebook.is.mine(id)) {
+    rcs.set(rcs.key(".notebook", id, "visible"), value != 0)
+    TRUE
+  }
+  else
+    FALSE
 }
 
 rcloud.port.notebooks <- function(url, books, prefix) {
@@ -335,8 +351,13 @@ rcloud.get.my.starred.notebooks <- function()
 ################################################################################
 # config
 
-user.all.notebooks <- function(user)
-  gsub(".*/", "", rcs.list(usr.key(user=user, notebook="system", "config", "notebooks", "*")))
+user.all.notebooks <- function(user) {
+  notebooks <- gsub(".*/", "", rcs.list(usr.key(user=user, notebook="system", "config", "notebooks", "*")))
+  if(user == .session$username)
+    notebooks
+  else # filter notebooks on their visibility before they get to the client
+    notebooks[unlist(rcs.get(usr.key(user=".notebook", notebook=notebooks, "visible")))]
+}
 
 rcloud.config.all.notebooks <- function()
   user.all.notebooks(.session$username)
@@ -387,7 +408,7 @@ rcloud.get.notebook.info <- function(id) {
   list(username = rcs.get(rcs.key(base, "username")),
        description = rcs.get(rcs.key(base, "description")),
        last_commit = rcs.get(rcs.key(base, "last_commit")),
-       visibility = rcs.get(rcs.key(base, "visibility")))
+       visible = rcs.get(rcs.key(base, "visible")))
 }
 
 rcloud.get.multiple.notebook.infos <- function(ids) {
@@ -401,7 +422,6 @@ rcloud.set.notebook.info <- function(id, info) {
   rcs.set(rcs.key(base, "username"), info$username)
   rcs.set(rcs.key(base, "description"), info$description)
   rcs.set(rcs.key(base, "last_commit"), info$last_commit)
-  rcs.set(rcs.key(base, "visibility"), info$visibility)
 }
 
 rcloud.purl.source <- function(contents)

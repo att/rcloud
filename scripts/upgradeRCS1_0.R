@@ -41,7 +41,7 @@ pull.notebook.metadata <- function(user, entries)
     rcs.set(rcs.key(book, 'description'), info$description);
     rcs.set(rcs.key(book, 'last_commit'), info$last_commit);
     if('visibility' %in% names(info))
-      rcs.set(rcs.key(book, 'visibility'), info$visibility);
+      rcs.set(rcs.key(book, 'visible'), info$visibility == "public");
   })
 
 # pull notebook lists and user options out of the
