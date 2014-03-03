@@ -39,7 +39,7 @@ var editor = function () {
         publish_notebook_checkbox_ = null,
         star_notebook_button_ = null;
 
-    // work around oddities of rcloud.js
+    // work around oddities of rserve.js
     function each_r_list(list, f) {
         for(var key in list)
             if(key!=='r_attributes' && key!=='r_type')
@@ -360,11 +360,11 @@ var editor = function () {
 
     function update_tree(root, user, gistname, path, last_chance, create) {
         if(!root)
-            throw "need root";
+            throw new Error("need root");
         if(!user)
-            throw "need user";
+            throw new Error("need user");
         if(!gistname)
-            throw "need gistname";
+            throw new Error("need gistname");
         // make sure parents exist
         var id = user===username_ ? node_id(root) : node_id(root, user),
             parent = $tree_.tree('getNodeById', id),
