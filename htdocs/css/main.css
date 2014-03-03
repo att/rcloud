@@ -155,14 +155,18 @@ rect.frame {
     border: 1px solid #fff;
 }
 
-.notebook-cell .cell-status {
+.cell-status {
     position: relative;
     width: 100%;
     height: 25px;
     background-color: #e5e5e5;
 }
 
-.notebook-cell .cell-controls {
+.cell-status.big {
+    height: 35px;
+}
+
+.cell-status .cell-controls {
     position: absolute;
     bottom: 0;
     right: 0;
@@ -536,6 +540,10 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
     background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16px' height='16px'><polyline fill='#555' points='8,13 10,9 6,9'/><polyline fill='#555' points='8,4 10,8 6,8'/></svg>") right no-repeat;
 }
 
+.form-control.big {
+    height: 20px;
+    font-size: 16px;
+}
 .r-result-div pre code:not(.r) {
     width: 800px;
     margin-left: auto;

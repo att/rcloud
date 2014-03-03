@@ -91,7 +91,12 @@ RCloud.UI.command_prompt = {
         function execute(widget, args, request) {
             var code = session.getValue();
             if(code.length) {
-                shell.new_interactive_cell(code, true);
+                var language = $("#insert-cell-language option:selected").text();
+                if (language === 'Markdown') {
+                    shell.new_markdown_cell(code, true);
+                } else if (language === 'R') {
+                    shell.new_interactive_cell(code, true);
+                }
                 change_prompt('');
             }
         }

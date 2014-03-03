@@ -2581,16 +2581,29 @@ RCloud.UI.init = function() {
 
     var non_notebook_panel_height = 246;
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
-    $("#new-md-cell-button").click(function() {
-        shell.new_markdown_cell("");
+
+    $("#insert-new-cell").click(function() {
+        debugger;
+        var language = $("#insert-cell-language option:selected").text();
+        if (language === 'Markdown') {
+            shell.new_markdown_cell("");
+        } else if (language === 'R') {
+            shell.new_interactive_cell("", false);
+        }
         var vs = shell.notebook.view.sub_views;
         vs[vs.length-1].show_source();
     });
-    $("#new-r-cell-button").click(function() {
-        shell.new_interactive_cell("", false);
-        var vs = shell.notebook.view.sub_views;
-        vs[vs.length-1].show_source();
-    });
+
+    // $("#new-md-cell-button").click(function() {
+    //     shell.new_markdown_cell("");
+    //     var vs = shell.notebook.view.sub_views;
+    //     vs[vs.length-1].show_source();
+    // });
+    // $("#new-r-cell-button").click(function() {
+    //     shell.new_interactive_cell("", false);
+    //     var vs = shell.notebook.view.sub_views;
+    //     vs[vs.length-1].show_source();
+    // });
     $("#rcloud-logout").click(function() {
 	// let the server-side script handle this so it can
 	// also revoke all tokens
@@ -2963,7 +2976,12 @@ RCloud.UI.command_prompt = {
         function execute(widget, args, request) {
             var code = session.getValue();
             if(code.length) {
-                shell.new_interactive_cell(code, true);
+                var language = $("#insert-cell-language option:selected").text();
+                if (language === 'Markdown') {
+                    shell.new_markdown_cell(code, true);
+                } else if (language === 'R') {
+                    shell.new_interactive_cell(code, true);
+                }
                 change_prompt('');
             }
         }

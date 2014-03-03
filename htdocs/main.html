@@ -149,7 +149,30 @@
         </div>
 
 	<div id="end-of-output"></div>
-        <div id="prompt-div" class="rcloud-prompt col-sm-5 col-md-5"><img width="100%" height="5px" src="img/vbordergray.png" style="position:absolute;top:-5px"><div id="command-prompt" style="float: left; width:80%; height: 50px; background:#FFFFFF; border:1px solid #DDDDDD"></div><button style="float: right; width:20%;" id="new-md-cell-button" class="btn btn-default btn-md">Add RMarkdown cell</button><div style="clear:right;"></div><button style="float: right; width:20%;" id="new-r-cell-button" class="btn btn-default btn-md">Add R cell</button></div>
+
+        
+	<div id="prompt-div" class="rcloud-prompt col-sm-5 col-md-5">
+	  <img src="img/vbordergray_dark.png" style="position:absolute; top:-5px" 
+	       width="100%" height="5px">
+
+	  <div class="cell-status big">
+	    <div class="cell-controls">
+	      <table>
+		<td style="padding:4px"><span id="insert-new-cell" class="fontawesome-button"><i class="icon-plus"></i></span></td>
+		<td style="padding:4px">
+		  <select id="insert-cell-language" class="form-control big">
+		    <option selected>R</option>
+		    <option>Markdown</option>
+		  </select>
+		</td>
+	      </table>
+	    </div>
+	  </div>
+
+	  <div id="command-prompt" style="float: left; width:100%;
+	  height: 50px; background:#FFFFFF; border:1px solid
+	  #DDDDDD"></div>
+	</div>
 
         <div style="padding:1em; clear:both"></div>
       </div>
