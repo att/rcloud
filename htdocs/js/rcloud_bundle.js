@@ -802,10 +802,12 @@ ui_utils.disable_bs_button = function(el) {
 };
 
 
-ui_utils.ace_editor_height = function(widget)
+ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
 {
+    min_rows = _.isUndefined(min_rows) ? 0  : min_rows;
+    max_rows = _.isUndefined(max_rows) ? 30 : max_rows;
     var lineHeight = widget.renderer.lineHeight;
-    var rows = Math.min(30, widget.getSession().getLength());
+    var rows = Math.max(min_rows, Math.min(max_rows, widget.getSession().getLength()));
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
     return Math.max(75, newHeight);
     /*
@@ -1227,7 +1229,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
     var source_button = ui_utils.fa_button("icon-edit", "source");
     var result_button = ui_utils.fa_button("icon-picture", "result");
-    // var hide_button  = ui_utils.fa_button("icon-resize-small", "hide");
     var remove_button = ui_utils.fa_button("icon-trash", "remove");
     var run_md_button = ui_utils.fa_button("icon-play", "run");
     var gap = $('<div/>').html('&nbsp;').css({'line-height': '25%'});
@@ -1255,10 +1256,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         if (!$(e.currentTarget).hasClass("button-disabled"))
             result.show_result();
     });
-    // hide_button.click(function(e) {
-    //     if (!$(e.currentTarget).hasClass("button-disabled"))
-    //         result.hide_all();
-    // });
     remove_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             cell_model.parent_model.controller.remove_cell(cell_model);
@@ -1281,17 +1278,37 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     run_md_button.click(function(e) {
         execute_cell();
     });
-
+    var cell_status = $("<div class='cell-status'></div>");
     var button_float = $("<div class='cell-controls'></div>");
+    cell_status.append(button_float);
+    cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
-    var watermark = $("<span/>");
-    col.append(watermark);
-    $.each([run_md_button, source_button, result_button/*, hide_button*/, gap, remove_button],
+    var languages = { 
+        "R": { 'background-color': "#E8F1FA" },
+        "Markdown": { 'background-color': "#F7EEE4" }
+        // ,
+        // "Python": { 'background-color': "#ff0000" },
+        // "Bash": { 'background-color': "#00ff00" }
+    };
+    var select = $("<select class='form-control'></select>");
+    _.each(languages, function(value, key) {
+        languages[key].element = $("<option></option>").text(key);
+        select.append(languages[key].element);
+    });
+    $(languages[language].element).attr('selected', true);
+    select.on("change", function() {
+        var l = select.find("option:selected").text();
+        cell_model.parent_model.controller.change_cell_language(cell_model, l);
+    });
+
+    col.append($("<div></div>").append(select));
+    $.each([run_md_button, source_button, result_button, gap, remove_button],
            function() {
                col.append($('<td/>').append($(this)));
            });
+
     button_float.append(col);
-    notebook_cell_div.append(button_float);
+    notebook_cell_div.append(cell_status);
 
     var insert_button_float = $("<div class='cell-insert-control'></div>");
     insert_button_float.append(insert_cell_button);
@@ -1304,19 +1321,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     notebook_cell_div.append(inner_div);
     notebook_cell_div.append(clear_div);
 
-    var markdown_div = $('<div style="position: relative; width:100%; height:100%"></div>');
+    var outer_ace_div = $('<div class="outer-ace-div"></div>');
 
-    var ace_div = $('<div style="width:100%; height:100%"></div>');
-    ace_div.css({'background-color': language === 'R' ? "#E8F1FA" : "#F7EEE4"});
-    if (language === 'R') {
-        watermark.addClass("r-language-pseudo");
-    } else {
-        watermark.addClass("rmarkdown-language-pseudo");
-    }
+    var ace_div = $('<div style="width:100%; height:100%;"></div>');
+    ace_div.css({ 'background-color': languages[language]["background-color"] });
 
-    // ace_div.css({'background-color': language === 'R' ? "#B1BEA4" : "#F1EDC0"});
-    inner_div.append(markdown_div);
-    markdown_div.append(ace_div);
+    inner_div.append(outer_ace_div);
+    outer_ace_div.append(ace_div);
     ace.require("ace/ext/language_tools");
     var widget = ace.edit(ace_div[0]);
     var RMode = require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
@@ -1339,7 +1350,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     });
     session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
-        notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
+        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + 24) + "px"});
         widget.resize();
     });
 
@@ -1383,6 +1394,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             notebook_cell_div.remove();
         },
         id_updated: update_div_id,
+        language_updated: function() {
+            language = cell_model.language();
+            ace_div.css({ 'background-color': languages[language]["background-color"] });
+        },
         result_updated: function(r) {
             r_result_div.hide();
             r_result_div.html(r);
@@ -1509,10 +1524,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
              *
              */
             // do the two-change dance to make ace happy
-            notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
-            markdown_div.show();
+            var obj = {'height': (ui_utils.ace_editor_height(widget) + 25) + "px"};
+            notebook_cell_div.css(obj);
+            outer_ace_div.show();
             widget.resize(true);
-            notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
+            notebook_cell_div.css(obj);
             widget.resize(true);
             disable(source_button);
             enable(result_button);
@@ -1522,7 +1538,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             }
             //editor_row.show();
 
-            markdown_div.show();
+            outer_ace_div.show();
             r_result_div.hide();
             widget.resize();
             widget.focus();
@@ -1539,7 +1555,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             }
 
             //editor_row.hide();
-            markdown_div.hide();
+            outer_ace_div.hide();
             r_result_div.slideDown(150); // show();
             current_mode = "result";
         },
@@ -1556,7 +1572,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             if (current_mode === "result") {
                 r_result_div.slideUp(150); // hide();
             } else {
-                markdown_div.slideUp(150); // hide();
+                outer_ace_div.slideUp(150); // hide();
             }
         },
         /*
@@ -1584,14 +1600,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     return result;
 }};
 
-var dispatch = {
-    Markdown: create_markdown_cell_html_view("Markdown"),
-    R: create_markdown_cell_html_view("R")
-};
-
 Notebook.Cell.create_html_view = function(cell_model)
 {
-    return dispatch[cell_model.language()](cell_model);
+    return create_markdown_cell_html_view(cell_model.language())(cell_model);
 };
 
 })();
@@ -1601,7 +1612,17 @@ Notebook.Cell.create_model = function(content, language)
     var result = {
         views: [], // sub list for pubsub
         parent_model: null,
-        language: function() {
+        language: function(new_language) {
+            if (!_.isUndefined(new_language)) {
+                if(language != new_language) {
+                    language = new_language;
+                    notify_views(function(view) {
+                        view.language_updated();
+                    });
+                    return language;
+                }
+                else return null;
+            }
             return language;
         },
         content: function(new_content) {
@@ -1700,6 +1721,10 @@ Notebook.Cell.create_controller = function(cell_model)
             _.each(cell_model.views, function(view) {
                 view.result_updated(msg);
             });
+        },
+        change_language: function(language) {
+            cell_model.language(language);
+            
         }
     };
 
@@ -1944,6 +1969,19 @@ Notebook.create_model = function()
                 view.cell_moved(cell_model, pre_index, post_index);
             });
             return changes;
+        },
+        change_cell_language: function(cell_model, language) {
+            // ugh. we can't use the change_object with "language" because
+            // this changes name() (the way the object is written kind
+            // of assumes that id is the only thing that can change)
+            // at the same time, we can use the "rename" field because, in
+            // that case, the object just returns the name itself.
+            // FIXME this is really ugly.
+            cell_model.language(language);
+            var c = cell_model.change_object({language: language});
+            return [cell_model.change_object({
+                rename: c.name()
+            })];
         },
         update_cell: function(cell_model) {
             return [cell_model.change_object()];
@@ -2231,6 +2269,11 @@ Notebook.create_controller = function(model)
         },
         move_cell: function(cell_model, before) {
             var changes = model.move_cell(cell_model, before ? before.id() : -1);
+            update_notebook(changes)
+                .then(default_callback_);
+        },
+        change_cell_language: function(cell_model, language) {
+            var changes = model.change_cell_language(cell_model, language);
             update_notebook(changes)
                 .then(default_callback_);
         },
@@ -2561,16 +2604,29 @@ RCloud.UI.init = function() {
 
     var non_notebook_panel_height = 246;
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
-    $("#new-md-cell-button").click(function() {
-        shell.new_markdown_cell("");
+
+    $("#insert-new-cell").click(function() {
+        debugger;
+        var language = $("#insert-cell-language option:selected").text();
+        if (language === 'Markdown') {
+            shell.new_markdown_cell("");
+        } else if (language === 'R') {
+            shell.new_interactive_cell("", false);
+        }
         var vs = shell.notebook.view.sub_views;
         vs[vs.length-1].show_source();
     });
-    $("#new-r-cell-button").click(function() {
-        shell.new_interactive_cell("", false);
-        var vs = shell.notebook.view.sub_views;
-        vs[vs.length-1].show_source();
-    });
+
+    // $("#new-md-cell-button").click(function() {
+    //     shell.new_markdown_cell("");
+    //     var vs = shell.notebook.view.sub_views;
+    //     vs[vs.length-1].show_source();
+    // });
+    // $("#new-r-cell-button").click(function() {
+    //     shell.new_interactive_cell("", false);
+    //     var vs = shell.notebook.view.sub_views;
+    //     vs[vs.length-1].show_source();
+    // });
     $("#rcloud-logout").click(function() {
 	// let the server-side script handle this so it can
 	// also revoke all tokens
@@ -2761,7 +2817,7 @@ RCloud.UI.scratchpad = {
             that.widget = widget;
             var doc = session.doc;
             session.on('change', function() {
-                div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
+                div.css({'height': ui_utils.ace_editor_height(widget, 30) + "px"});
                 widget.resize();
             });
 
@@ -2773,7 +2829,7 @@ RCloud.UI.scratchpad = {
             widget.resize();
             ui_utils.on_next_tick(function() {
                 session.getUndoManager().reset();
-                div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
+                div.css({'height': ui_utils.ace_editor_height(widget, 30) + "px"});
                 widget.resize();
             });
             that.change_content = ui_utils.ignore_programmatic_changes(
@@ -2943,7 +2999,12 @@ RCloud.UI.command_prompt = {
         function execute(widget, args, request) {
             var code = session.getValue();
             if(code.length) {
-                shell.new_interactive_cell(code, true);
+                var language = $("#insert-cell-language option:selected").text();
+                if (language === 'Markdown') {
+                    shell.new_markdown_cell(code, true);
+                } else if (language === 'R') {
+                    shell.new_interactive_cell(code, true);
+                }
                 change_prompt('');
             }
         }

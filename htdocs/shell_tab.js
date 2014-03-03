@@ -57,8 +57,14 @@ var shell = (function() {
         },
         is_old_github: function() {
             return !gist_url_;
-        }, new_markdown_cell: function(content) {
-            return notebook_controller_.append_cell(content, "Markdown");
+        }, new_markdown_cell: function(content, execute) {
+            var cell = notebook_controller_.append_cell(content, "Markdown");
+            RCloud.UI.command_prompt.history.execute(content);
+            if(execute) {
+                cell.execute().then(function() {
+                    $.scrollTo(null, $("#end-of-output"));
+                });
+            }
         }, new_interactive_cell: function(content, execute) {
             var cell = notebook_controller_.append_cell(content, "R");
             RCloud.UI.command_prompt.history.execute(content);
@@ -67,6 +73,7 @@ var shell = (function() {
                     $.scrollTo(null, $("#end-of-output"));
                 });
             }
+            return cell;
         }, insert_markdown_cell_before: function(index) {
             return notebook_controller_.insert_cell("", "Markdown", index);
         }, load_notebook: function(gistname, version) {

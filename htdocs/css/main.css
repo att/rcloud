@@ -148,10 +148,32 @@ rect.frame {
     min-height: 25px;
 }
 
-.notebook-cell .cell-controls {
+.notebook-cell .outer-ace-div {
+    position: relative; 
+    width: 100%; 
+    height: calc(100% - 25px);
+    border: 1px solid #fff;
+}
+
+.cell-status {
+    position: relative;
+    width: 100%;
+    height: 25px;
+    background-color: #e5e5e5;
+}
+
+.cell-status.big {
+    height: 35px;
+}
+
+.cell-status .cell-controls {
     position: absolute;
-    right: 1em;
-    top: 1em;
+    bottom: 0;
+    right: 0;
+    padding: 2 2 2 2px;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    background-color: white;
 }
 
 .notebook-cell .cell-insert-control {
@@ -386,31 +408,6 @@ pre {
     max-width: 100%;
 }
 
-/******************************************************************************/
-/* Some pseudo-elements for watermarking the ACE editors
- */
-
-.r-language-pseudo:after {
-    content: "R";
-    margin-right: 1em;
-    color: #AAA;
-    font-size: .75em;
-    text-shadow: 0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white
-;
-    z-index: 20;
-}
-
-.rmarkdown-language-pseudo:after {
-    content: "RMarkdown";
-    margin-right: 1em;
-    color: #AAA;
-    font-size: .75em;
-    text-shadow: 0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white,0 0 0.7em white
-;
-    z-index: 20;
-}
-
-
 /* some visual affordance for ace-gutter sortable handles */
 #output:not(.ui-sortable-disabled) > .notebook-cell .ace_gutter-layer {
     cursor: -moz-grab;
@@ -526,4 +523,37 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
 .nav-tabs > li.active > a {
     font-weight: bold;
     background-color: rgba(224,224,224,0.75);
+}
+
+/*****************************************************************************/
+/* Fix that awful select from webkit */
+
+.form-control {
+    -webkit-appearance: none;
+    height: 16px;
+    width: 100px;
+    padding: 1px 0 0 4px;
+    position: relative;
+    font-size: 12px;
+    border: inherit;
+
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16px' height='16px'><polyline fill='#555' points='8,13 10,9 6,9'/><polyline fill='#555' points='8,4 10,8 6,8'/></svg>") right no-repeat;
+}
+
+.form-control.big {
+    height: 20px;
+    font-size: 16px;
+}
+.r-result-div pre code:not(.r) {
+    width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    border-left: 1px solid rgba(0,0,0,0.15);
+    border-right: 1px solid rgba(0,0,0,0.15);
+}
+
+.r-result-div p img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
 }
