@@ -209,7 +209,7 @@ rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abus
 rcloud.publish.notebook <- function(id) {
   nb <- rcloud.get.notebook(id)
   if (nb$content$user$login == .session$rgithub.context$user$login) {
-    rcs.set(rcs.key("notebook", id, "public"), 1)
+    rcs.set(rcs.key(".notebook", id, "public"), 1)
     TRUE
   } else
     FALSE
@@ -218,14 +218,14 @@ rcloud.publish.notebook <- function(id) {
 rcloud.unpublish.notebook <- function(id) {
   nb <- rcloud.get.notebook(id)
   if (nb$content$user$login == .session$rgithub.context$user$login) {
-    rcs.rm(rcs.key("notebook", id, "public"))
+    rcs.rm(rcs.key(".notebook", id, "public"))
     TRUE
   } else
     FALSE
 }
 
 rcloud.is.notebook.published <- function(id) {
-  !is.null(rcs.get(rcs.key("notebook", id, "public")))
+  !is.null(rcs.get(rcs.key(".notebook", id, "public")))
 }
 
 rcloud.port.notebooks <- function(url, books, prefix) {
@@ -287,12 +287,12 @@ rcloud.debug.level <- function() if (hasConf("debug")) getConf("debug") else 0L
 star.key <- function(notebook)
 {
   user <- .session$username
-  rcs.key("notebook", notebook, "stars", user)
+  rcs.key(".notebook", notebook, "stars", user)
 }
 
 star.count.key <- function(notebook)
 {
-  rcs.key("notebook", notebook, "starcount")
+  rcs.key(".notebook", notebook, "starcount")
 }
 
 rcloud.notebook.star.count <- function(notebook)
@@ -329,7 +329,7 @@ rcloud.unstar.notebook <- function(notebook)
 
 rcloud.get.my.starred.notebooks <- function()
 {
-  gsub("notebook/([^/]*).*", "\\1", rcs.list(star.key("*")))
+  gsub(".notebook/([^/]*).*", "\\1", rcs.list(star.key("*")))
 }
 
 ################################################################################
