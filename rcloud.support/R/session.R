@@ -10,7 +10,7 @@ canonicalize.command <- function(command, language) {
   } else if (language == "Markdown") {
     command
   } else
-    stop("Don't know language '" + language + "' - only Markdown or R supported.")
+    stop(paste("Don't know language '",  language, "' - only Markdown or R supported."))
 }
 
 rcloud.get.gist.part <- function(partname) {
@@ -27,11 +27,40 @@ rcloud.unauthenticated.session.cell.eval <- function(partname, language, silent)
 
 rcloud.session.cell.eval <- function(partname, language, silent) {
   command <- rcloud.get.gist.part(partname)
-  session.markdown.eval(command, language, silent)
+  if (language == "R" || language == "Markdown") {
+    session.markdown.eval(command, language, silent)
+  } else if (language == "Python") {
+    session.python.eval(command)
+  }
+}
+
+rcloud.authenticated.cell.eval <- function(command, language, silent) {
+  if (language == "R" || language == "Markdown") {
+    session.markdown.eval(command, language, silent)
+  } else if (language == "Python") {
+    session.python.eval(command)
+  }
 }
 
 rcloud.set.device.pixel.ratio <- function(ratio) {
   .session$device.pixel.ratio <- ratio
+}
+
+session.python.eval <- function(command) {
+  result <- rcloud.exec.python(command)
+  "<pre>Success!</pre>"
+  to.chunk <- function(chunk) {
+    if (chunk$output_type == "pyout") {
+      paste("\n    ", chunk$text, sep='')
+    } else if (chunk$output_type == "stream") {
+      paste("\n    ", chunk$text, sep='')
+    } else if (chunk$output_type == "display_data") {
+      paste("<img src=\"data:image/png;base64,", sub("\\s+$", "", chunk$png), "\">\n", sep='')
+    } else ""
+  }
+  md <- paste(lapply(result, to.chunk), collapse='\n')
+  val <- markdownToHTML(text=md, fragment=TRUE)
+  val
 }
 
 session.markdown.eval <- function(command, language, silent) {
@@ -79,6 +108,7 @@ rcloud.session.init <- function(...) {
   revFn <- pathConf("root", "REVISION")
   ver <- ''
   if (file.exists(revFn)) try({ vl <- readLines(revFn); ver <- paste0("RCloud ", vl[1], " (", substr(vl[2],1,7),") --- ") })
+  rcloud.start.python()
   paste0(ver, R.version.string, "<br>Welcome, ", .session$username)
 }
 

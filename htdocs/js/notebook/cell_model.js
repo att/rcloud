@@ -64,6 +64,9 @@ Notebook.Cell.create_model = function(content, language)
                     case 'Markdown':
                         ext = 'md';
                         break;
+                    case 'Python':
+                        ext = 'py';
+                        break;
                     default:
                         throw "Unknown language " + this.language;
                     }

@@ -106,6 +106,7 @@ authenticated.ocaps <- function()
       authenticated = TRUE,
       session_init = make.oc(rcloud.session.init),
       session_markdown_eval = make.oc(session.markdown.eval),
+      authenticated_cell_eval = make.oc(rcloud.authenticated.cell.eval),
       load_user_config = make.oc(rcloud.load.user.config),
       save_user_config = make.oc(rcloud.save.user.config),
       load_multiple_user_configs = make.oc(rcloud.load.multiple.user.configs),
