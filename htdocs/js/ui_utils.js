@@ -199,43 +199,105 @@ ui_utils.make_prompt_chevron_gutter = function(widget)
     };
 };
 
-ui_utils.make_editable = function(elem$, editable, on_edit) {
-    // http://stackoverflow.com/questions/6139107/programatically-select-text-in-a-contenteditable-html-element
-    function selectElementContents(el) {
-        var range = document.createRange();
-        range.selectNodeContents(el);
+// the existing jQuery editable libraries don't seem to do what we need, with
+// different active and inactive text, and customized selection.
+// this is a vague imitation of what a jquery.ui library might look like
+// except without putting it into $ namespace
+ui_utils.editable = function(elem$, command) {
+    function selectRange(range) {
         var sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(range);
     }
-
-    if(elem$.attr('contenteditable') === (editable?'true':'false'))
-        return;
-
-    elem$.data('restore_edit', elem$.text());
-    function cancel() {
-        elem$.text(elem$.data('restore_edit'));
+    function options() {
+        return elem$.data('__editable');
     }
 
-    // remove all handlers, and then recreate them if the title is editable
-    elem$.off('keydown');
-    elem$.off('focus');
-    elem$.off('blur');
-    if (editable) {
+    var old_opts = options(),
+        new_opts = old_opts;
+    if(_.isObject(command)) {
+        var defaults = {on_change: function() { return true; },
+                        allow_edit: true,
+                        inactive_text: elem$.text(),
+                        active_text: elem$.text(),
+                        select: function(el) {
+                            var range = document.createRange();
+                            range.selectNodeContents(el);
+                            return range;
+                        }
+                       };
+        new_opts = $.extend(old_opts || defaults, command);
+        elem$.data('__editable', new_opts);
+    }
+    else {
+        if(command !== 'destroy' && !old_opts)
+            throw new Error('expected already editable for command ' + command);
+        function set_option(key, value) {
+            old_opts = $.extend({}, old_opts);
+            new_opts[key] = value;
+        }
+        switch(command) {
+        case 'destroy':
+            elem$.data('__editable', null);
+            new_opts = null;
+            break;
+        case 'option':
+            if(!arguments[2])
+                return old_opts;
+            else if(!arguments[3])
+                return old_opts[arguments[2]];
+            else {
+                set_option(arguments[2], arguments[3]);
+            }
+            break;
+        case 'disable':
+            set_option('allow_edit', false);
+            break;
+        case 'enable':
+            set_option('allow_edit', true);
+            break;
+        }
+    }
+    var action = null;
+    if((!old_opts || !old_opts.allow_edit) && (new_opts && new_opts.allow_edit))
+        action = 'melt';
+    else if((old_opts && old_opts.allow_edit) && (!new_opts || !new_opts.allow_edit))
+        action = 'freeze';
+
+    if(new_opts)
+        elem$.text(options().__active ? new_opts.active_text : new_opts.inactive_text);
+
+    switch(action) {
+    case 'freeze':
+        elem$.attr('contenteditable', 'false');
+        elem$.off('keydown');
+        elem$.off('focus');
+        elem$.off('blur');
+        break;
+    case 'melt':
         elem$.attr('contenteditable', 'true');
         elem$.focus(function() {
-            window.setTimeout(function() {
-                selectElementContents(elem$[0]);
-            }, 0);
-            elem$.off('blur');
-            elem$.blur(cancel); // click-off cancels
+            if(!options().__active) {
+                options().__active = true;
+                elem$.text(options().active_text);
+                window.setTimeout(function() {
+                    selectRange(options().select(elem$[0]));
+                    elem$.off('blur');
+                    elem$.blur(function() {
+                        elem$.text(options().inactive_text);
+                        options().__active = false;
+                    }); // click-off cancels
+                }, 10);
+            }
         });
         elem$.keydown(function(e) {
             if(e.keyCode === 13) {
                 var result = elem$.text();
-                if(on_edit(result)) {
+                if(options().validate(result)) {
+                    options().__active = false;
                     elem$.off('blur'); // don't cancel!
                     elem$.blur();
+                    options().change(result);
                 }
                 else return false; // don't let CR through!
             }
@@ -243,8 +305,8 @@ ui_utils.make_editable = function(elem$, editable, on_edit) {
                 elem$.blur(); // and cancel
             return true;
         });
+        break;
     }
-    else elem$.attr('contenteditable', 'false');
 };
 
 ui_utils.on_next_tick = function(f) {
