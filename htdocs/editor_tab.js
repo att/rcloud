@@ -741,7 +741,7 @@ var editor = function () {
         var element = $li.find('.jqtree-element'),
             title = element.find('.jqtree-title');
         title.css('color', node.color);
-        if(!node.visible)
+        if(node.gistname && !node.visible)
             title.addClass('private');
         if(node.version || node.id === 'showmore')
             title.addClass('history');
