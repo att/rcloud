@@ -157,7 +157,7 @@ var editor = function () {
         }
     }
 
-    function as_folder_hierarchy(nodes, prefix) {
+    function as_folder_hierarchy(nodes, prefix, name_prefix) {
         function is_in_folder(v) { return v.label.match(/([^/]+)\/(.+)/); }
         var in_folders = nodes;
         in_folders = _.filter(in_folders, is_in_folder);
@@ -175,16 +175,21 @@ var editor = function () {
             var children = _.map(v, function(o) {
                 return _.omit(o, "folder_name");
             });
-            var id = prefix + '/' + k;
+            var id = prefix + '/' + k,
+                full_name = (name_prefix ? name_prefix + '/' : '')  + k;
             return {
                 label: k,
+                full_name: full_name,
                 sort_order: ordering.NOTEBOOK,
                 id: id,
-                children: as_folder_hierarchy(children, id)
+                children: as_folder_hierarchy(children, id, full_name)
             };
         });
         var outside_folders = _.filter(nodes, function(v) {
             return !is_in_folder(v);
+        });
+        outside_folders.forEach(function(v) {
+            v.full_name = (name_prefix ? name_prefix + '/' : '')  + v.label;
         });
         return outside_folders.concat(in_folders).sort(compare_nodes);
     }
@@ -538,8 +543,8 @@ var editor = function () {
         scroll_into_view(node);
         if(!node.version)
             RCloud.UI.notebook_title.make_editable(
-                $('.jqtree-title:not(.history)', node.element),
-                node.gistname, !shell.notebook.model.read_only());
+                node,
+                !shell.notebook.model.read_only());
         else RCloud.UI.notebook_title.make_editable(null);
     }
 
@@ -717,7 +722,7 @@ var editor = function () {
         if(node.gistname && !node.version) {
             if($tree_.tree('isNodeSelected', node))
                 RCloud.UI.notebook_title.make_editable(
-                    title, node.gistname, !shell.notebook.model.read_only());
+                    node, !shell.notebook.model.read_only());
             var adder = function(target) {
                 var count = 0;
                 var lst = [];
@@ -971,12 +976,11 @@ var editor = function () {
                 that.star_notebook(true, {notebook: notebook, make_current: true, version: null});
             });
         },
+        validate_name: function(newname) {
+            return newname && !/^\s+$/.test(newname); // not null and not empty or just whitespace
+        },
         rename_notebook: function(gistname, newname) {
-            if (result && !/^\s+$/.test(result)) { // not null and not empty or just whitespace
-                rcloud.rename_notebook(gistname, newname).then(this.load_callback({is_change: true, selroot: true}));
-                return true;
-            }
-            else return false;
+            return rcloud.rename_notebook(gistname, newname).then(this.load_callback({is_change: true, selroot: true}));
         },
         star_notebook: function(star, opts) {
             var that = this;
