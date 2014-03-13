@@ -9,6 +9,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     // button bar
 
     var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
+    var coalesce_cells_button = ui_utils.fa_button("icon-link", "coalesce cells");
     var source_button = ui_utils.fa_button("icon-edit", "source");
     var result_button = ui_utils.fa_button("icon-picture", "result");
     var remove_button = ui_utils.fa_button("icon-trash", "remove");
@@ -27,6 +28,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     insert_cell_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             shell.insert_markdown_cell_before(cell_model.id());
+        }
+    });
+    coalesce_cells_button.click(function(e) {
+        if (!$(e.currentTarget).hasClass("button-disabled")) {
+            shell.coalesce_prior_cell(cell_model);
         }
     });
     source_button.click(function(e) {
@@ -93,6 +99,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     notebook_cell_div.append(cell_status);
 
     var insert_button_float = $("<div class='cell-insert-control'></div>");
+    insert_button_float.append(coalesce_cells_button);
     insert_button_float.append(insert_cell_button);
     notebook_cell_div.append(insert_button_float);
 

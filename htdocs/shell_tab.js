@@ -76,7 +76,10 @@ var shell = (function() {
             return cell;
         }, insert_markdown_cell_before: function(index) {
             return notebook_controller_.insert_cell("", "Markdown", index);
-        }, load_notebook: function(gistname, version) {
+        }, coalesce_prior_cell: function(cell_model) {
+            return notebook_controller_.coalesce_prior_cell(cell_model);
+        },
+        load_notebook: function(gistname, version) {
             var that = this;
             function do_load(done) {
                 var oldname = gistname_, oldversion = version_;

@@ -242,6 +242,37 @@ Notebook.create_controller = function(model)
             update_notebook(changes)
                 .then(default_callback_);
         },
+        coalesce_prior_cell: function(cell_model) {
+            var prior = model.prior_cell(cell_model);
+            if(!prior)
+                return;
+            // note we have to refresh everything and then concat these changes onto
+            // that.  which won't work in general but looks like it will work for
+            // change content + change content and change content + remove
+            var new_content, changes = this.refresh_cells();
+            if(prior.language()==cell_model.language()) {
+                var cr = '', pc = prior.content();
+                if(pc.length && pc[pc.length-1] != '\n')
+                    cr = '\n';
+                new_content = prior.content() + cr + cell_model.content();
+                prior.content(new_content);
+                changes = changes.concat(model.update_cell(prior));
+            }
+            else {
+                if(prior.language()==="R") {
+                    new_content = '```{r}\n' + prior.content() + '\n```\n' + cell_model.content();
+                    prior.content(new_content);
+                    changes = changes.concat(model.change_cell_language(prior, "Markdown"));
+                    changes[changes.length-1].content = new_content; //  NOOOOOO!!!!
+                }
+                else {
+                    new_content =  prior.content() + '\n```{r}\n' + cell_model.content() + '\n```\n';
+                    prior.content(new_content);
+                    changes = changes.concat(model.update_cell(prior));
+                }
+            }
+            update_notebook(changes.concat(model.remove_cell(cell_model)));
+        },
         change_cell_language: function(cell_model, language) {
             var changes = model.change_cell_language(cell_model, language);
             update_notebook(changes)
