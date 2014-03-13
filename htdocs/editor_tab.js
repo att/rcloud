@@ -595,7 +595,7 @@ var editor = function () {
         if(!node)
             return Promise.resolve(null); // !create
 
-        // if we're looking at an old version, make sure it's visible
+        // if we're looking at an old version, make sure it's shown
         if(gistname===current_.notebook && current_.version) {
             whither = 'sha';
             where = current_.version;
