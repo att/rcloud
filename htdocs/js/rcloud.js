@@ -65,7 +65,7 @@ RCloud.create = function(rcloud_ocaps) {
             if (result.ok) {
                 return result.content;
             } else {
-                throw new Error(command + ': ' + result.content);
+                throw new Error(command + ': ' + result.content.message);
             }
         }
         function failure(err) {
