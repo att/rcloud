@@ -25,13 +25,13 @@ var editor = function () {
      - the filling of the star icon in the navbar (if current notebook)
      */
 
-    // local model (all caches of stuff stored in RCS)
-    var username_ = null,
-        histories_ = {},
+    // local model (all caches of stuff stored in RCS/github)
+    var username_ = null, // cache of rcloud.username() so we're not reading a cookie
+        histories_ = {}, // cached notebook histories
         notebook_info_ = {}, // all notebooks we are aware of
         num_stars_ = {}, // number of stars for all known notebooks
         my_stars_ = {}, // set of notebooks starred by me
-        current_ = null;
+        current_ = null; // current notebook and version
 
     // view
     var $tree_ = undefined,
@@ -926,9 +926,8 @@ var editor = function () {
             });
             function publish_success(gistname, un) {
                 return function(val) {
-                    var verb = (un ? "un" : "") + "publish";
                     if(!val)
-                        console.log("Failed to " + verb + " notebook " + gistname);
+                        console.log("Failed to " + (un ? "un" : "") + "publish notebook " + gistname);
                 };
             }
             publish_notebook_checkbox_ = ui_utils.checkbox_menu_item($("#publish-notebook"),
