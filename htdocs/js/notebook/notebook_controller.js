@@ -252,25 +252,34 @@ Notebook.create_controller = function(model)
                     return text + '\n';
                 return text;
             }
+            function crunch_quotes(left, right) {
+                var end = /```\n$/, begin = /^```{r}/;
+                if(end.test(left) && begin.test(right))
+                    return left.replace(end, '') + right.replace(begin, '');
+                else return left + right;
+            }
 
             // note we have to refresh everything and then concat these changes onto
             // that.  which won't work in general but looks like it will work for
             // change content + change content and change content + remove
             var new_content, changes = this.refresh_cells();
             if(prior.language()==cell_model.language()) {
-                new_content = opt_cr(prior.content()) + cell_model.content();
+                new_content = crunch_quotes(opt_cr(prior.content()),
+                                            cell_model.content());
                 prior.content(new_content);
                 changes = changes.concat(model.update_cell(prior));
             }
             else {
                 if(prior.language()==="R") {
-                    new_content = '```{r}\n' + opt_cr(prior.content()) + '```\n' + cell_model.content();
+                    new_content = crunch_quotes('```{r}\n' + opt_cr(prior.content()) + '```\n',
+                                                cell_model.content());
                     prior.content(new_content);
                     changes = changes.concat(model.change_cell_language(prior, "Markdown"));
                     changes[changes.length-1].content = new_content; //  NOOOOOO!!!!
                 }
                 else {
-                    new_content =  opt_cr(prior.content()) + '```{r}\n' + opt_cr(cell_model.content()) + '```\n';
+                    new_content = crunch_quotes(opt_cr(prior.content()) + '```{r}\n',
+                                                opt_cr(cell_model.content()) + '```\n');
                     new_content = new_content.replace(/```\n```{r}\n/, '');
                     prior.content(new_content);
                     changes = changes.concat(model.update_cell(prior));
