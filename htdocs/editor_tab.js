@@ -4,7 +4,8 @@ var editor = function () {
         HEADER: 0, // at top (unused)
         NOTEBOOK: 1,
         MYFOLDER: 2,
-        SUBFOLDER: 3
+        MYFRIENDS: 3,
+        SUBFOLDER: 4
     };
     var CONFIG_VERSION = 1;
 
@@ -32,6 +33,7 @@ var editor = function () {
         notebook_info_ = {}, // all notebooks we are aware of
         num_stars_ = {}, // number of stars for all known notebooks
         my_stars_ = {}, // set of notebooks starred by me
+        my_friends_ = {},
         current_ = null; // current notebook and version
 
     // view
@@ -54,12 +56,19 @@ var editor = function () {
         return notebook_info_[gistname] || {};
     }
 
-    function add_interest(user, gistname, entry) {
-        my_stars_[gistname] = true;
+    function add_interest(user, gistname) {
+        if(!my_stars_[gistname]) {
+            my_stars_[gistname] = true;
+            my_friends_[user] = (my_friends_[user] || 0) + 1;
+        }
     }
 
     function remove_interest(user, gistname) {
-        delete my_stars_[gistname];
+        if(my_stars_[gistname]) {
+            delete my_stars_[gistname];
+            if(--my_friends_[user] === 0)
+                delete my_friends_[user];
+        }
     }
 
     function set_visibility(gistname, visible) {
@@ -178,7 +187,7 @@ var editor = function () {
         return notebook_nodes;
     }
 
-    function populate_interests(root_data, my_stars) {
+    function populate_interests(my_stars_array) {
         function create_user_book_entry_map(books) {
             var users = {};
             _.each(books,
@@ -198,12 +207,12 @@ var editor = function () {
             return users;
         }
 
-        var interests = create_user_book_entry_map(my_stars);
+        var interests = create_user_book_entry_map(my_stars_array);
         var user_nodes = [];
         for (var username in interests) {
             var user_notebooks = interests[username];
             for(var gistname in user_notebooks) {
-                my_stars_[gistname] = true;
+                add_interest(username, gistname);
                 // sanitize... this shouldn't really happen...
                 if(!user_notebooks[gistname].description)
                     user_notebooks[gistname].description = "(no description)";
@@ -220,21 +229,11 @@ var editor = function () {
             };
             user_nodes.push(node);
         }
-        root_data[0].children = user_nodes.sort(compare_nodes);
-        return root_data;
-    }
-
-    function load_tree(root_data) {
-        // delay construction of dom elements for Alls
-        var alls = root_data[1].children;
-        for(var i = 0; i < alls.length; ++i)
-            if(alls[i].children && alls[i].children.length) {
-                alls[i].delay_children = alls[i].children;
-                alls[i].children = [{label: 'loading...'}];
-            }
-        result.create_book_tree_widget(root_data);
-        var interests = $tree_.tree('getNodeById', "/interests");
-        $tree_.tree('openNode', interests);
+        return {
+            label: 'My Interests',
+            id: '/interests',
+            children: user_nodes.sort(compare_nodes)
+        };
     }
 
     function load_notebook_list(user_notebooks) {
@@ -261,27 +260,30 @@ var editor = function () {
             var node = {
                 label: mine ? "My Notebooks" : someone_elses(username),
                 id: id,
-                sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER,
+                sort_order: mine ? ordering.MYFOLDER : my_friends_[username] ? ordering.MYFRIENDS : ordering.SUBFOLDER,
                 children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
             };
             user_nodes.push(node);
         });
 
-        // start creating the tree data and pass it forward
-        // populate_interests boots the widget
-        var children = user_nodes.sort(compare_nodes);
-        var root_data = [
-            {
-                label: 'My Interests',
-                id: '/interests'
-            },
-            {
-                label: 'All Notebooks',
-                id: '/alls',
-                children: children
+        return {
+            label: 'All Notebooks',
+            id: '/alls',
+            children: user_nodes.sort(compare_nodes)
+        };
+    }
+
+    function load_tree(root_data) {
+        // delay construction of dom elements for Alls
+        var alls = root_data[1].children;
+        for(var i = 0; i < alls.length; ++i)
+            if(alls[i].children && alls[i].children.length) {
+                alls[i].delay_children = alls[i].children;
+                alls[i].children = [{label: 'loading...'}];
             }
-        ];
-        return root_data;
+        result.create_book_tree_widget(root_data);
+        var interests = $tree_.tree('getNodeById', "/interests");
+        $tree_.tree('openNode', interests);
     }
 
     function load_children(n) {
@@ -293,15 +295,16 @@ var editor = function () {
         return Promise.all([
             rcloud.get_users().then(rcloud.config.all_notebooks_multiple_users),
             rcloud.stars.get_my_starred_notebooks()
-            ])
-            .spread(function(user_notebook_set, my_stars) {
-                my_stars = r_vector(my_stars);
+        ])
+            .spread(function(user_notebook_set, my_stars_array) {
+                my_stars_array = r_vector(my_stars_array);
                 var all_notebooks = [];
                 each_r_list(user_notebook_set, function(username) {
                     all_notebooks = all_notebooks.concat(r_vector(user_notebook_set[username]));
                 });
-                all_notebooks = all_notebooks.concat(my_stars);
+                all_notebooks = all_notebooks.concat(my_stars_array);
                 all_notebooks = _.uniq(all_notebooks.sort(), true);
+                var root_data = [];
                 return Promise.all([rcloud.config.get_current_notebook()
                                     .then(function(current) {
                                         current_ = current;
@@ -314,26 +317,32 @@ var editor = function () {
                                     .then(function(notebook_entries) {
                                         notebook_info_ = notebook_entries;
                                     })])
-                    .return(user_notebook_set)
-                    .then(load_notebook_list)
-                    .then(function(root_data) {
-                        return [root_data, my_stars];
-                    });
+                    .then(populate_interests.bind(null, my_stars_array))
+                    .then(function(interests) { root_data.push(interests); })
+                    .then(load_notebook_list.bind(null, user_notebook_set))
+                    .then(function(alls) { root_data.push(alls); })
+                    .return(root_data);
             })
-            .spread(populate_interests)
             .then(load_tree);
     }
 
-    function insert_alpha(data, parent) {
+    function find_sort_point(data, parent) {
         // this could be a binary search but linear is probably fast enough
         // for a single insert, and it also could be out of order
         for(var i = 0; i < parent.children.length; ++i) {
             var child = parent.children[i];
             var so = compare_nodes(data, child);
             if(so<0)
-                return $tree_.tree('addNodeBefore', data, child);
+                return child;
         }
-        return $tree_.tree('appendNode', data, parent);
+        return 0;
+    }
+    function insert_alpha(data, parent) {
+        var before = find_sort_point(data, parent);
+        if(before)
+            return $tree_.tree('addNodeBefore', data, before);
+        else
+            return $tree_.tree('appendNode', data, parent);
     }
 
     function remove_empty_parents(dp) {
@@ -677,6 +686,21 @@ var editor = function () {
         console.log("update_notebook_from_gist took " + (performance.now()-t) + "ms");
     }
 
+    function change_folder_friendness(user) {
+        var node = $tree_.tree('getNodeById', node_id('alls', user)),
+            parent = $tree_.tree('getNodeById', node_id('alls'));
+        var data = {
+            sort_order: my_friends_[user] ? ordering.MYFRIENDS : ordering.SUBFOLDER,
+            name: node.name || node.label
+        };
+        var before = find_sort_point(data, parent);
+        if(before)
+            $tree_.tree('moveNode', node, before, 'before');
+        else
+            $tree_.tree('moveNode', node, parent.children[parent.children.length-1], 'after');
+        node.sort_order = data.sort_order;
+    }
+
     function display_date(ds) {
         function pad(n) { return n<10 ? '0'+n : n; }
         if(ds==='none')
@@ -994,7 +1018,9 @@ var editor = function () {
                         throw new Error("attempt to star notebook we have no record of",
                                         node_id('interests', user, gistname));
                     }
-                    add_interest(user, gistname, entry);
+                    add_interest(user, gistname);
+                    if(my_friends_[user]===1)
+                        change_folder_friendness(user);
 
                     if(opts.notebook) {
                         if(opts.make_current)
@@ -1012,6 +1038,8 @@ var editor = function () {
                 return rcloud.stars.unstar_notebook(gistname).then(function(count) {
                     num_stars_[gistname] = count;
                     remove_interest(user, gistname);
+                    if(!my_friends_[user])
+                        change_folder_friendness(user);
                     unstar_notebook_view(user, gistname, opts.selroot);
                 });
             }
