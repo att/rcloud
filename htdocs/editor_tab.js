@@ -90,8 +90,6 @@ var editor = function () {
         entry.description = description;
         entry.last_commit = time;
 
-        if(my_stars_[gistname])
-            add_interest(user, gistname, entry);
         add_notebook_info(user, gistname, entry);
         return entry; // note: let go of promise
     }
