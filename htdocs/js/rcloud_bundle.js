@@ -2358,9 +2358,12 @@ Notebook.create_controller = function(model)
             }
 
             // note we have to refresh everything and then concat these changes onto
-            // that.  which won't work in general but looks like it will work for
-            // change content + change content and change content + remove
+            // that.  which won't work in general but looks like it is okay to
+            // concatenate a bunch of change content objects with a move or change
+            // to one of the same objects, and an erase of one
             var new_content, changes = this.refresh_cells();
+
+            // this may have to be multiple dispatch when there are more than two languages
             if(prior.language()==cell_model.language()) {
                 new_content = crunch_quotes(opt_cr(prior.content()),
                                             cell_model.content());
@@ -2383,6 +2386,7 @@ Notebook.create_controller = function(model)
                     changes = changes.concat(model.update_cell(prior));
                 }
             }
+            _.each(prior.views, function(v) { v.show_source(); });
             update_notebook(changes.concat(model.remove_cell(cell_model)));
         },
         change_cell_language: function(cell_model, language) {
