@@ -72,24 +72,38 @@ Notebook.create_controller = function(model)
     // calculate the changes needed to get back from the newest version in notebook
     // back to what we are presently displaying (current_gist_)
     function find_changes_from(notebook) {
+        function change_object(obj) {
+            obj.name = function(n) { return n; };
+            return obj;
+        }
         var changes = [];
+
+        // notebook files, current files
         var nf = notebook.files,
-            cf = _.extend({}, current_gist_.files); // to keep track of changes
+            cf = _.extend({}, current_gist_.files); // dupe to keep track of changes
+
+        // find files which must be changed or removed to get from nf to cf
         for(var f in nf) {
             if(f==='r_type' || f==='r_attributes')
                 continue; // R metadata
             if(f in cf) {
                 if(cf[f].language != nf[f].language || cf[f].content != nf[f].content) {
-                    changes.push(nf.change_object({id: f}));
+                    changes.push(change_object({id: f,
+                                                language: cf[f].language,
+                                                content: cf[f].content}));
                 }
                 delete cf[f];
             }
-            else changes.push(nf.change_object({id: f, erase: true}));
+            else changes.push(change_object({id: f, erase: true, language: nf[f].language}));
         }
+
+        // find files which must be added to get from nf to cf
         for(f in cf) {
             if(f==='r_type' || f==='r_attributes')
                 continue; // artifact of rserve.js
-            changes.push(nf.change_object({id: f}));
+            changes.push(change_object({id: f,
+                                        language: cf[f].language,
+                                        content: cf[f].content}));
         }
         return changes;
     }
