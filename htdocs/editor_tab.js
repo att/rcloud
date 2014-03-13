@@ -3,7 +3,8 @@ var editor = function () {
     var ordering = {
         HEADER: 0, // at top (unused)
         NOTEBOOK: 1,
-        SUBFOLDER: 2
+        MYFOLDER: 2,
+        SUBFOLDER: 3
     };
     var CONFIG_VERSION = 1;
 
@@ -200,7 +201,7 @@ var editor = function () {
         }
 
         var interests = create_user_book_entry_map(my_stars);
-        var my_notebooks, user_nodes = [];
+        var user_nodes = [];
         for (var username in interests) {
             var user_notebooks = interests[username];
             for(var gistname in user_notebooks) {
@@ -210,25 +211,18 @@ var editor = function () {
                     user_notebooks[gistname].description = "(no description)";
             }
 
-            var notebook_nodes = [];
-            notebook_nodes = notebook_nodes.concat(convert_notebook_set('interests', username, user_notebooks));
-
-            if(username === username_)
-                my_notebooks = notebook_nodes;
-            else {
-                var id = node_id('interests', username);
-                var node = {
-                    label: someone_elses(username),
-                    id: id,
-                    sort_order: ordering.SUBFOLDER,
-                    children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
-                };
-                user_nodes.push(node);
-            }
+            var notebook_nodes = convert_notebook_set('interests', username, user_notebooks);
+            var id = node_id('interests', username);
+            var mine = username === username_;
+            var node = {
+                label: mine ? "My Notebooks" : someone_elses(username),
+                id: id,
+                sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER,
+                children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
+            };
+            user_nodes.push(node);
         }
-        var children = as_folder_hierarchy(my_notebooks, node_id('interests', username_));
-        children = children.concat(user_nodes).sort(compare_nodes);
-        root_data[0].children = children;
+        root_data[0].children = user_nodes.sort(compare_nodes);
         return root_data;
     }
 
@@ -259,29 +253,25 @@ var editor = function () {
                 }));
         }
 
-        var my_alls = [], user_nodes = [], my_config = null;
+        var user_nodes = [], my_config = null;
         each_r_list(user_notebooks, function(username) {
             var notebook_nodes =
                     convert_notebook_set('alls', username,
                                          create_book_entry_map(r_vector(user_notebooks[username])));
-            if(username === username_)
-                my_alls = notebook_nodes;
-            else {
-                var id = node_id('alls', username);
-                var node = {
-                    label: someone_elses(username),
-                    id: id,
-                    sort_order: ordering.SUBFOLDER,
-                    children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
-                };
-                user_nodes.push(node);
-            }
+            var mine = username===username_;
+            var id = node_id('alls', username);
+            var node = {
+                label: mine ? "My Notebooks" : someone_elses(username),
+                id: id,
+                sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER,
+                children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
+            };
+            user_nodes.push(node);
         });
 
         // start creating the tree data and pass it forward
-        // populate_interests will create the tree
-        var children = as_folder_hierarchy(my_alls, node_id('alls', username_));
-        children = children.concat(user_nodes).sort(compare_nodes);
+        // populate_interests boots the widget
+        var children = user_nodes.sort(compare_nodes);
         var root_data = [
             {
                 label: 'My Interests',
@@ -365,8 +355,8 @@ var editor = function () {
         if(!gistname)
             throw new Error("need gistname");
         // make sure parents exist
-        var id = user===username_ ? node_id(root) : node_id(root, user),
-            parent = $tree_.tree('getNodeById', id),
+        var parid = node_id(root, user),
+            parent = $tree_.tree('getNodeById', parid),
             pdat = null,
             node = null;
         if(!parent) {
@@ -394,7 +384,7 @@ var editor = function () {
             path = path.children[0];
         }
         var data = path;
-        id = node_id(root, user, gistname);
+        var id = node_id(root, user, gistname);
         node = $tree_.tree('getNodeById', id);
         if(!node && !create)
             return null;
