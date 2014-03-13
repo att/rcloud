@@ -246,27 +246,32 @@ Notebook.create_controller = function(model)
             var prior = model.prior_cell(cell_model);
             if(!prior)
                 return;
+
+            function opt_cr(text) {
+                if(text.length && text[text.length-1] != '\n')
+                    return text + '\n';
+                return text;
+            }
+
             // note we have to refresh everything and then concat these changes onto
             // that.  which won't work in general but looks like it will work for
             // change content + change content and change content + remove
             var new_content, changes = this.refresh_cells();
             if(prior.language()==cell_model.language()) {
-                var cr = '', pc = prior.content();
-                if(pc.length && pc[pc.length-1] != '\n')
-                    cr = '\n';
-                new_content = prior.content() + cr + cell_model.content();
+                new_content = opt_cr(prior.content()) + cell_model.content();
                 prior.content(new_content);
                 changes = changes.concat(model.update_cell(prior));
             }
             else {
                 if(prior.language()==="R") {
-                    new_content = '```{r}\n' + prior.content() + '\n```\n' + cell_model.content();
+                    new_content = '```{r}\n' + opt_cr(prior.content()) + '```\n' + cell_model.content();
                     prior.content(new_content);
                     changes = changes.concat(model.change_cell_language(prior, "Markdown"));
                     changes[changes.length-1].content = new_content; //  NOOOOOO!!!!
                 }
                 else {
-                    new_content =  prior.content() + '\n```{r}\n' + cell_model.content() + '\n```\n';
+                    new_content =  opt_cr(prior.content()) + '```{r}\n' + opt_cr(cell_model.content()) + '```\n';
+                    new_content = new_content.replace(/```\n```{r}\n/, '');
                     prior.content(new_content);
                     changes = changes.concat(model.update_cell(prior));
                 }
