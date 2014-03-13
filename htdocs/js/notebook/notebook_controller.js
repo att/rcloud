@@ -59,12 +59,10 @@ Notebook.create_controller = function(model)
                 var result = append_asset_helper(assets[i][0], assets[i][1]).controller;
                 asset_controller = asset_controller || result;
             }
-            // is there anything else to gist permissions?
             model.user(notebook.user.login);
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
             asset_controller.select();
-            
         }
         return notebook;
     }
