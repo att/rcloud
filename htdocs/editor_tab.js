@@ -17,8 +17,8 @@ var editor = function () {
      - the star in rcs (logically in github but they don't have the necessary APIs)
      - the count in rcs
      Local model
-     - the entry in interests_[]
-     - the bit in i_starred_[] (for efficiency)
+     - the entry in notebook_info_[]
+     - the bit in my_stars_[]
      View
      - the existence of the node under My Interests in the notebook tree UI
      - the filling of the star icon next to the node under All Notebooks in the tree UI
@@ -28,10 +28,9 @@ var editor = function () {
     // local model (all caches of stuff stored in RCS)
     var username_ = null,
         histories_ = {},
-        all_entries_ = {}, // all notebooks we are aware of
+        notebook_info_ = {}, // all notebooks we are aware of
         num_stars_ = {}, // number of stars for all known notebooks
-        i_starred_ = {}, // set of notebooks starred by me
-        interests_ = null,
+        my_stars_ = {}, // set of notebooks starred by me
         current_ = null;
 
     // view
@@ -50,51 +49,49 @@ var editor = function () {
     }
 
     //  Model functions
-    function get_notebook_status(user, gistname) {
-        var iu = interests_[user];
-        return (iu && iu[gistname]) || all_entries_[gistname] || {};
+    function get_notebook_info(gistname) {
+        return notebook_info_[gistname] || {};
     }
 
     function add_interest(user, gistname, entry) {
-        var iu = interests_[user];
-        if(!iu)
-            iu = interests_[user] = {};
-        iu[gistname] = entry;
-
-        i_starred_[gistname] = true;
+        my_stars_[gistname] = true;
     }
 
     function remove_interest(user, gistname) {
-        delete interests_[user][gistname];
-        delete i_starred_[gistname];
-        if(user!==username_ && _.isEmpty(interests_[user]))
-            delete interests_[user];
+        delete my_stars_[gistname];
     }
 
-    function add_all(user, gistname, entry) {
-        all_entries_[gistname] = entry;
+    function set_visibility(gistname, visible) {
+        var entry = get_notebook_info(gistname);
+        entry.visible = visible;
+        notebook_info_[gistname] = entry;
+        return rcloud.set_notebook_visibility(gistname, visible);
+    }
+
+    function add_notebook_info(user, gistname, entry) {
+        notebook_info_[gistname] = entry;
         var p = rcloud.set_notebook_info(gistname, entry);
         if(user === username_)
             p = p.then(function() { rcloud.config.add_notebook(gistname); });
         return p;
     }
 
-    function remove_all(user, gistname) {
+    function remove_notebook_info(user, gistname) {
         return user === username_ ?
             rcloud.config.remove_notebook(gistname) :
             Promise.resolve();
     }
 
     function update_notebook_model(user, gistname, description, time) {
-        var entry = get_notebook_status(user, gistname);
+        var entry = get_notebook_info(gistname);
 
         entry.username = user;
         entry.description = description;
         entry.last_commit = time;
 
-        if(i_starred_[gistname])
+        if(my_stars_[gistname])
             add_interest(user, gistname, entry);
-        add_all(user, gistname, entry);
+        add_notebook_info(user, gistname, entry);
         return entry; // note: let go of promise
     }
 
@@ -187,7 +184,7 @@ var editor = function () {
             var users = {};
             _.each(books,
                    function(book){
-                       var entry = all_entries_[book];
+                       var entry = notebook_info_[book];
                        if(!entry) {
                            console.log("rcloud.stars.get_my_starred_notebooks reports a notebook starred that is not listed in All Notebooks: " + book);
                            return users;
@@ -202,12 +199,12 @@ var editor = function () {
             return users;
         }
 
-        interests_ = create_user_book_entry_map(my_stars);
+        var interests = create_user_book_entry_map(my_stars);
         var my_notebooks, user_nodes = [];
-        for (var username in interests_) {
-            var user_notebooks = interests_[username];
+        for (var username in interests) {
+            var user_notebooks = interests[username];
             for(var gistname in user_notebooks) {
-                i_starred_[gistname] = true;
+                my_stars_[gistname] = true;
                 // sanitize... this shouldn't really happen...
                 if(!user_notebooks[gistname].description)
                     user_notebooks[gistname].description = "(no description)";
@@ -252,7 +249,7 @@ var editor = function () {
         function create_book_entry_map(books) {
             return _.object(
                 _.map(books, function(book) {
-                    var entry = all_entries_[book];
+                    var entry = notebook_info_[book];
                     if(!entry)
                         throw new Error("didn't find notebook " + book + " in alls");
                     if(!entry.username || entry.username === "undefined"
@@ -327,7 +324,7 @@ var editor = function () {
                                     }),
                                     rcloud.get_multiple_notebook_infos(all_notebooks)
                                     .then(function(notebook_entries) {
-                                        all_entries_ = notebook_entries;
+                                        notebook_info_ = notebook_entries;
                                     })])
                     .return(user_notebook_set)
                     .then(load_notebook_list)
@@ -616,14 +613,14 @@ var editor = function () {
     function update_notebook_view(user, gistname, entry, selroot) {
         var p;
         if(selroot === true)
-            selroot = i_starred_[gistname] ? 'interests' : 'alls';
-        if(i_starred_[gistname]) {
+            selroot = my_stars_[gistname] ? 'interests' : 'alls';
+        if(my_stars_[gistname]) {
             p = update_tree_entry('interests', user, gistname, entry, true);
             if(selroot==='interests')
                 p.then(select_node);
         }
         if(gistname === current_.notebook) {
-            star_notebook_button_.set_state(i_starred_[gistname]);
+            star_notebook_button_.set_state(my_stars_[gistname]);
             $('#curr-star-count').text(num_stars_[gistname] || 0);
         }
 
@@ -778,7 +775,7 @@ var editor = function () {
             var star_style = _.extend({'font-size': '80%'}, icon_style);
             var states = {true: {'class': 'icon-star', title: 'unstar'},
                           false: {'class': 'icon-star-empty', title: 'star'}};
-            var state = i_starred_[node.gistname] || false;
+            var state = my_stars_[node.gistname] || false;
             var star_unstar = ui_utils.fa_button(states[state]['class'],
                                                  function(e) { return states[state].title; },
                                                  'star',
@@ -830,11 +827,11 @@ var editor = function () {
                     make_private.hide();
                 make_private.click(function() {
                     fake_hover(node);
-                    result.set_visibility(node, false);
+                    result.set_notebook_visibility(node, false);
                 });
                 make_public.click(function() {
                     fake_hover(node);
-                    result.set_visibility(node, true);
+                    result.set_notebook_visibility(node, true);
                     return false;
                 });
                 add_buttons(make_private, make_public);
@@ -975,6 +972,7 @@ var editor = function () {
                 .then(function(number) { return "Notebook " + number; })
                 .then(shell.new_notebook.bind(shell))
                 .then(function(notebook) {
+                    set_visibility(notebook.gistname, true);
                     that.star_notebook(true, {notebook: notebook, make_current: true, version: null});
                 });
         },
@@ -995,14 +993,14 @@ var editor = function () {
                     || current_.notebook;
             var user = opts.user
                     || opts.notebook&&opts.notebook.user&&opts.notebook.user.login
-                    || all_entries_[gistname].username;
+                    || notebook_info_[gistname].username;
             // keep selected if was
             if(gistname === current_.notebook)
                 opts.selroot = opts.selroot || true;
             if(star) {
                 return rcloud.stars.star_notebook(gistname).then(function(count) {
                     num_stars_[gistname] = count;
-                    var entry = get_notebook_status(user, gistname);
+                    var entry = get_notebook_info(gistname);
                     if(!entry.description && !opts.notebook) {
                         console.log("attempt to star notebook we have no record of",
                                     node_id('interests', user, gistname));
@@ -1033,22 +1031,20 @@ var editor = function () {
         },
         remove_notebook: function(user, gistname) {
             var that = this;
-            (!i_starred_[gistname] ? Promise.resolve() :
+            (!my_stars_[gistname] ? Promise.resolve() :
                 this.star_notebook(false, {user: user, gistname: gistname}))
                 .then(function() {
-                    remove_all(user, gistname);
+                    remove_notebook_info(user, gistname);
                     remove_node($tree_.tree('getNodeById', node_id('alls', user, gistname)));
                     if(gistname === current_.notebook)
                         that.new_notebook();
                 });
         },
-        set_visibility: function(node, visible) {
+        set_notebook_visibility: function(node, visible) {
             if(node.user !== username_)
                 throw "attempt to set visibility on notebook not mine";
-            var entry = interests_[username_][node.gistname];
-            entry.visible = visible;
-            rcloud.set_notebook_visibility(node.gistname, visible);
-            update_tree_entry(node.root, username_, node.gistname, entry, false);
+            set_visibility(node.gistname, visible);
+            update_tree_entry(node.root, username_, node.gistname, get_notebook_info(node.gistname), false);
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
             shell.fork_or_revert_notebook(is_mine, gistname, version)
