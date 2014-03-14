@@ -196,15 +196,9 @@ Notebook.create_model = function()
                 throw "not expecting more than one notebook view";
             var contents = changed_cells_per_view[0];
             var changes = [];
-            for (var i=0; i<contents.length; ++i) {
-                var content = contents[i];
-                if (content !== null) {
+            for (var i=0; i<contents.length; ++i)
+                if (contents[i] !== null)
                     changes.push(that.notebook[i].change_object());
-                    // build_cell_change(that.notebook[i].id(),
-                    //                   content,
-                    //                   that.notebook[i].language()));
-                }
-            }
             var asset_change = RCloud.UI.scratchpad.update_model();
             if (asset_change) {
                 var active_asset_model = RCloud.UI.scratchpad.current_model;

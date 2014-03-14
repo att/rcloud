@@ -1090,8 +1090,51 @@ Notebook = {};
 //
 // roughly a MVC-kinda-thing per cell, plus a MVC for all the cells
 // 
+Notebook.Buffer = {};
 Notebook.Cell = {};
 Notebook.Asset = {};
+Notebook.Buffer.create_model = function(content) {
+    var result = {
+        views: [], // sub list for pubsub
+        parent_model: null,
+
+        content: function(new_content) {
+            if (!_.isUndefined(new_content)) {
+                if(content != new_content) {
+                    content = new_content;
+                    this.notify_views(function(view) {
+                        view.content_updated();
+                    });
+                    return content;
+                }
+                else return null;
+            }
+            return content;
+        },
+        change_object: function(obj) {
+            var change = {
+                id: obj.id,
+                name: function(id) {
+                    return id;
+                },
+                erase: obj.erase,
+                rename: obj.rename
+            };
+            if(content === "")
+                change.erase = true;
+            else
+                change.content = obj.content || this.content();
+            return change;
+        },
+        notify_views: function(f) {
+            _.each(this.views, function(view) {
+                f(view);
+            });
+        }
+    };
+    return result;
+};
+
 Notebook.Asset.create_html_view = function(asset_model)
 {
     var filename_div = $("<li></li>");
@@ -1136,31 +1179,34 @@ Notebook.Asset.create_html_view = function(asset_model)
 };
 Notebook.Asset.create_model = function(content, filename)
 {
-    var cursor_position;
-    var active = false;
-    var result = {
-        views: [], // sub list for pubsub
-        parent_model: null,
+    var cursor_position_;
+    var active_ = false;
+    var result = Notebook.Buffer.create_model(content);
+    var base_change_object = result.change_object;
+
+    _.extend(result, {
         active: function(new_active) {
             if (!_.isUndefined(new_active)) {
-                if(active !== new_active) {
-                    active = new_active;
-                    notify_views(function(view) {
+                if(active_ !== new_active) {
+                    active_ = new_active;
+                    this.notify_views(function(view) {
                         view.active_updated();
                     });
-                    return active;
+                    return active_;
                 } else {
                     return null;
                 }
             }
-            return active;
+            return active_;
         },
         cursor_position: function(new_cursor_position) {
             if (!_.isUndefined(new_cursor_position))
-                cursor_position = new_cursor_position;
-            return cursor_position;
+                cursor_position_ = new_cursor_position;
+            return cursor_position_;
         },
         language: function() {
+            if(arguments.length)
+                throw new Error("set language of asset not supported");
             var extension = filename.match(/\.([^.]+)$/);
             if (!extension)
                 throw new Error("extension does not exist");
@@ -1171,7 +1217,7 @@ Notebook.Asset.create_model = function(content, filename)
             if (!_.isUndefined(new_filename)) {
                 if(filename != new_filename) {
                     filename = new_filename;
-                    notify_views(function(view) {
+                    this.notify_views(function(view) {
                         view.filename_updated();
                     });
                     return filename;
@@ -1179,19 +1225,6 @@ Notebook.Asset.create_model = function(content, filename)
                 else return null;
             }
             return filename;
-        },
-        content: function(new_content) {
-            if (!_.isUndefined(new_content)) {
-                if(content != new_content) {
-                    content = new_content;
-                    notify_views(function(view) {
-                        view.content_updated();
-                    });
-                    return content;
-                }
-                else return null;
-            }
-            return content;
         },
         json: function() {
             return {
@@ -1202,29 +1235,10 @@ Notebook.Asset.create_model = function(content, filename)
         },
         change_object: function(obj) {
             obj = obj || {};
-            // unfortunately, yet another workaround because github
-            // won't take blank files.  would prefer to make changes
-            // a high-level description but i don't see it yet.
-            var change = {
-                id: obj.id || this.filename(),
-                name: function() {
-                    return this.id;
-                },
-                erase: obj.erase,
-                rename: obj.rename
-            };
-            if(content === "")
-                change.erase = true;
-            else
-                change.content = obj.content || this.content();
-            return change;
+            obj.id = obj.id || this.filename();
+            return base_change_object.call(this, obj);
         }
-    };
-    function notify_views(f) {
-        _.each(result.views, function(view) {
-            f(view);
-        });
-    }
+    });
     return result;
 };
 Notebook.Asset.create_controller = function(asset_model)
@@ -1649,14 +1663,15 @@ Notebook.Cell.create_html_view = function(cell_model)
 Notebook.Cell.create_model = function(content, language)
 {
     var id_ = -1;
-    var result = {
-        views: [], // sub list for pubsub
-        parent_model: null,
+    var result = Notebook.Buffer.create_model(content);
+    var base_change_object = result.change_object;
+
+    _.extend(result, {
         language: function(new_language) {
             if (!_.isUndefined(new_language)) {
                 if(language != new_language) {
                     language = new_language;
-                    notify_views(function(view) {
+                    this.notify_views(function(view) {
                         view.language_updated();
                     });
                     return language;
@@ -1665,23 +1680,10 @@ Notebook.Cell.create_model = function(content, language)
             }
             return language;
         },
-        content: function(new_content) {
-            if (!_.isUndefined(new_content)) {
-                if(content != new_content) {
-                    content = new_content;
-                    notify_views(function(view) {
-                        view.content_updated();
-                    });
-                    return content;
-                }
-                else return null;
-            }
-            return content;
-        },
         id: function(new_id) {
             if (!_.isUndefined(new_id) && new_id != id_) {
                 id_ = new_id;
-                notify_views(function(view) {
+                this.notify_views(function(view) {
                     view.id_updated();
                 });
             }
@@ -1695,43 +1697,29 @@ Notebook.Cell.create_model = function(content, language)
         },
         change_object: function(obj) {
             obj = obj || {};
-            // unfortunately, yet another workaround because github
-            // won't take blank files.  would prefer to make changes
-            // a high-level description but i don't see it yet.
-            var change = {
-                id: obj.id || this.id(),
-                language: obj.language || this.language(),
-                name: function(id) {
-                    if (_.isString(id))
-                        return id;
-                    var ext;
-                    switch(this.language) {
-                    case 'R':
-                        ext = 'R';
-                        break;
-                    case 'Markdown':
-                        ext = 'md';
-                        break;
-                    default:
-                        throw "Unknown language " + this.language;
-                    }
-                    return 'part' + this.id + '.' + ext;
-                },
-                erase: obj.erase,
-                rename: obj.rename
+            obj.id = obj.id || this.id();
+            var change = base_change_object.call(this, obj);
+
+            change.language = obj.language || this.language();
+            change.name = function(id) {
+                if (_.isString(id))
+                    return id;
+                var ext;
+                switch(this.language) {
+                case 'R':
+                    ext = 'R';
+                    break;
+                case 'Markdown':
+                    ext = 'md';
+                    break;
+                default:
+                    throw "Unknown language " + this.language;
+                }
+                return 'part' + this.id + '.' + ext;
             };
-            if(content === "")
-                change.erase = true;
-            else
-                change.content = obj.content || this.content();
             return change;
         }
-    };
-    function notify_views(f) {
-        _.each(result.views, function(view) {
-            f(view);
-        });
-    }
+    });
     return result;
 };
 Notebook.Cell.create_controller = function(cell_model)
@@ -2039,15 +2027,9 @@ Notebook.create_model = function()
                 throw "not expecting more than one notebook view";
             var contents = changed_cells_per_view[0];
             var changes = [];
-            for (var i=0; i<contents.length; ++i) {
-                var content = contents[i];
-                if (content !== null) {
+            for (var i=0; i<contents.length; ++i)
+                if (contents[i] !== null)
                     changes.push(that.notebook[i].change_object());
-                    // build_cell_change(that.notebook[i].id(),
-                    //                   content,
-                    //                   that.notebook[i].language()));
-                }
-            }
             var asset_change = RCloud.UI.scratchpad.update_model();
             if (asset_change) {
                 var active_asset_model = RCloud.UI.scratchpad.current_model;
@@ -2148,7 +2130,6 @@ Notebook.create_controller = function(model)
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
             asset_controller.select();
-            
         }
         return notebook;
     }
@@ -2227,29 +2208,7 @@ Notebook.create_controller = function(model)
                     filehash[post_name] = c;
                 }
             });
-            return { files: filehash }; 
-            // _.reduce(changes, xlate_change, {})};
-            // var post_names = _.reduce(changes,
-            //                           function(names, change) {
-            //                               if(!change.erase) {
-            //                                   var after = change.rename || change.id;
-            //                                   names[Notebook.part_name(after, change.language)] = 1;
-            //                               }
-            //                               return names;
-            //                           }, {});
-            // function xlate_change(filehash, change) {
-            //     var c = {};
-            //     if(change.content !== undefined)
-            //         c.content = change.content;
-            //     var pre_name = Notebook.part_name(change.id, change.language);
-            //     if(change.erase || !post_names[pre_name])
-            //         filehash[pre_name] = null;
-            //     if(!change.erase) {
-            //         var post_name = Notebook.part_name(change.rename || change.id, change.language);
-            //         filehash[post_name] = c;
-            //     }
-            //     return filehash;
-            // }
+            return { files: filehash };
         }
 
         return rcloud.update_notebook(gistname, changes_to_gist(changes))
