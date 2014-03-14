@@ -10,6 +10,9 @@ Notebook.create_model = function()
             return 0;
     }
 
+    // anything here that returns a set of changes must only be called from the
+    // controller.  the controller makes sure those changes are sent to github.
+
     /* note, the code below is a little more sophisticated than it needs to be:
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
     return {
@@ -64,7 +67,7 @@ Notebook.create_model = function()
                 id = Math.max(this.cells[x].id()-n, prev+1);
             }
             for(var j=0; j<n; ++j) {
-                changes.push(cell_model.change_object({id: id+j}));
+                changes.push(cell_model.change_object({id: id+j})); // most likely blank
                 cell_model.id(id+j);
                 this.cells.splice(x, 0, cell_model);
                 if(!skip_event)
@@ -187,8 +190,7 @@ Notebook.create_model = function()
             return [asset_model.change_object()];
         },
         reread_cells: function() {
-            var that = this;
-            // Forces views to update models
+            // force views to update models
             var changed_cells_per_view = _.map(this.views, function(view) {
                 return view.update_model();
             });
@@ -198,7 +200,7 @@ Notebook.create_model = function()
             var changes = [];
             for (var i=0; i<contents.length; ++i)
                 if (contents[i] !== null)
-                    changes.push(that.cells[i].change_object());
+                    changes.push(this.cells[i].change_object());
             var asset_change = RCloud.UI.scratchpad.update_model();
             if (asset_change) {
                 var active_asset_model = RCloud.UI.scratchpad.current_model;

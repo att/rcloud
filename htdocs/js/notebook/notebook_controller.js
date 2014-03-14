@@ -20,7 +20,7 @@ Notebook.create_controller = function(model)
         var asset_model = Notebook.Asset.create_model(content, filename);
         var asset_controller = Notebook.Asset.create_controller(asset_model);
         asset_model.controller = asset_controller;
-        return {controller: asset_controller, 
+        return {controller: asset_controller,
                 changes: model.append_asset(asset_model, filename)};
     }
 
@@ -52,6 +52,8 @@ Notebook.create_controller = function(model)
                     assets[filename] = [file.content, file.filename];
                 }
             });
+            // we intentionally drop changes on the floor, here and only here
+            // that way the cells/assets are checkpointed where they were loaded
             var asset_controller;
             for(i in cells)
                 append_cell_helper(cells[i][0], cells[i][1], cells[i][2]);
@@ -59,7 +61,6 @@ Notebook.create_controller = function(model)
                 var result = append_asset_helper(assets[i][0], assets[i][1]).controller;
                 asset_controller = asset_controller || result;
             }
-            // is there anything else to gist permissions?
             model.user(notebook.user.login);
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
@@ -152,6 +153,9 @@ Notebook.create_controller = function(model)
                 current_gist_ = notebook;
                 return notebook;
             });
+    }
+    function refresh_cells() {
+        return model.reread_cells();
     }
 
     function on_dirty() {
@@ -269,9 +273,6 @@ Notebook.create_controller = function(model)
                     : that.load_notebook(gistname, null); // do a load - we need to refresh
             });
         },
-        refresh_cells: function() {
-            return model.reread_cells();
-        },
         update_cell: function(cell_model) {
             return update_notebook(model.update_cell(cell_model));
         },
@@ -280,7 +281,7 @@ Notebook.create_controller = function(model)
         },
         save: function() {
             if(dirty_) {
-                var changes = this.refresh_cells();
+                var changes = refresh_cells();
                 update_notebook(changes);
                 if(save_button_)
                     ui_utils.disable_bs_button(save_button_);
