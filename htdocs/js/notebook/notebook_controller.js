@@ -112,7 +112,9 @@ Notebook.create_controller = function(model)
         // remove any "empty" changes.  we can keep empty cells on the
         // screen but github will refuse them.  if the user doesn't enter
         // stuff in them before saving, they will disappear on next session
-        changes = changes.filter(function(change) { return !!change.content || change.erase; });
+        changes = changes.filter(function(change) {
+            return !!change.content || change.erase || change.rename;
+        });
         if (!changes.length)
             return Promise.cast(current_gist_);
         if (model.read_only())

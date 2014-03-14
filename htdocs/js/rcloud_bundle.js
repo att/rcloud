@@ -159,7 +159,7 @@ RCloud.create = function(rcloud_ocaps) {
         });
     }
 
-    //////////////////////////////////////////////////////////////////////////////    
+    //////////////////////////////////////////////////////////////////////////////
     function json_p(promise) {
         return promise.then(JSON.parse)
             .catch(function(e) {
@@ -1094,6 +1094,13 @@ Notebook.Buffer = {};
 Notebook.Cell = {};
 Notebook.Asset = {};
 Notebook.Buffer.create_model = function(content) {
+    // by default, consider this a new cell
+    var checkpoint_ = "";
+
+    function not_empty(text) {
+        return ! /^\s*$/.test(text);
+    }
+
     var result = {
         views: [], // sub list for pubsub
         parent_model: null,
@@ -1112,6 +1119,8 @@ Notebook.Buffer.create_model = function(content) {
             return content;
         },
         change_object: function(obj) {
+            if(obj.content)
+                throw new Error("content must come from the object");
             var change = {
                 id: obj.id,
                 name: function(id) {
@@ -1120,10 +1129,21 @@ Notebook.Buffer.create_model = function(content) {
                 erase: obj.erase,
                 rename: obj.rename
             };
-            if(content === "")
+            // github treats any content which is only whitespace or empty
+            // as an erase.  so we have to pretend those objects don't exist
+            if(not_empty(content)) {
+                if(content != checkpoint_)
+                    change.content = content;
+                // else no change
+            }
+            else if(not_empty(checkpoint_))
                 change.erase = true;
-            else
-                change.content = obj.content || this.content();
+            // else no change
+
+            // every time we get a change_object it's in order to send it to
+            // github.  so we can assume that the cell has been checkpointed
+            // whenever we create a change object.
+            checkpoint_ = content;
             return change;
         },
         notify_views: function(f) {
@@ -1337,7 +1357,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     cell_status.append(button_float);
     cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
-    var languages = { 
+    var languages = {
         "R": { 'background-color': "#E8F1FA" },
         "Markdown": { 'background-color': "#F7EEE4" }
         // ,
@@ -1629,13 +1649,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 outer_ace_div.slideUp(150); // hide();
             }
         },
-        /*
-        // this doesn't make sense: changes should go through controller
-        remove_self: function() {
-            cell_model.parent_model.remove_cell(cell_model);
-            notebook_cell_div.remove();
-        },
-        */
         div: function() {
             return notebook_cell_div;
         },
@@ -1841,6 +1854,9 @@ Notebook.create_model = function()
             return 0;
     }
 
+    // anything here that returns a set of changes must only be called from the
+    // controller.  the controller makes sure those changes are sent to github.
+
     /* note, the code below is a little more sophisticated than it needs to be:
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
     return {
@@ -1895,7 +1911,7 @@ Notebook.create_model = function()
                 id = Math.max(this.cells[x].id()-n, prev+1);
             }
             for(var j=0; j<n; ++j) {
-                changes.push(cell_model.change_object({id: id+j}));
+                changes.push(cell_model.change_object({id: id+j})); // most likely blank
                 cell_model.id(id+j);
                 this.cells.splice(x, 0, cell_model);
                 if(!skip_event)
@@ -2018,8 +2034,7 @@ Notebook.create_model = function()
             return [asset_model.change_object()];
         },
         reread_cells: function() {
-            var that = this;
-            // Forces views to update models
+            // force views to update models
             var changed_cells_per_view = _.map(this.views, function(view) {
                 return view.update_model();
             });
@@ -2029,7 +2044,7 @@ Notebook.create_model = function()
             var changes = [];
             for (var i=0; i<contents.length; ++i)
                 if (contents[i] !== null)
-                    changes.push(that.cells[i].change_object());
+                    changes.push(this.cells[i].change_object());
             var asset_change = RCloud.UI.scratchpad.update_model();
             if (asset_change) {
                 var active_asset_model = RCloud.UI.scratchpad.current_model;
@@ -2118,6 +2133,8 @@ Notebook.create_controller = function(model)
                     assets[filename] = [file.content, file.filename];
                 }
             });
+            // we intentionally drop changes on the floor, here and only here
+            // that way the cells/assets are checkpointed where they were loaded
             var asset_controller;
             for(i in cells)
                 append_cell_helper(cells[i][0], cells[i][1], cells[i][2]);
@@ -2125,7 +2142,6 @@ Notebook.create_controller = function(model)
                 var result = append_asset_helper(assets[i][0], assets[i][1]).controller;
                 asset_controller = asset_controller || result;
             }
-            // is there anything else to gist permissions?
             model.user(notebook.user.login);
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
@@ -2177,7 +2193,9 @@ Notebook.create_controller = function(model)
         // remove any "empty" changes.  we can keep empty cells on the
         // screen but github will refuse them.  if the user doesn't enter
         // stuff in them before saving, they will disappear on next session
-        changes = changes.filter(function(change) { return !!change.content || change.erase; });
+        changes = changes.filter(function(change) {
+            return !!change.content || change.erase || change.rename;
+        });
         if (!changes.length)
             return Promise.cast(current_gist_);
         if (model.read_only())
@@ -2218,6 +2236,9 @@ Notebook.create_controller = function(model)
                 current_gist_ = notebook;
                 return notebook;
             });
+    }
+    function refresh_cells() {
+        return model.reread_cells();
     }
 
     function on_dirty() {
@@ -2335,9 +2356,6 @@ Notebook.create_controller = function(model)
                     : that.load_notebook(gistname, null); // do a load - we need to refresh
             });
         },
-        refresh_cells: function() {
-            return model.reread_cells();
-        },
         update_cell: function(cell_model) {
             return update_notebook(model.update_cell(cell_model));
         },
@@ -2346,7 +2364,7 @@ Notebook.create_controller = function(model)
         },
         save: function() {
             if(dirty_) {
-                var changes = this.refresh_cells();
+                var changes = refresh_cells();
                 update_notebook(changes);
                 if(save_button_)
                     ui_utils.disable_bs_button(save_button_);
