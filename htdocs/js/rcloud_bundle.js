@@ -1834,9 +1834,9 @@ Notebook.create_model = function()
     var readonly_ = false;
     var user_ = "";
 
-    function last_id(notebook) {
-        if(notebook.length)
-            return notebook[notebook.length-1].id();
+    function last_id(cells) {
+        if(cells.length)
+            return cells[cells.length-1].id();
         else
             return 0;
     }
@@ -1844,12 +1844,12 @@ Notebook.create_model = function()
     /* note, the code below is a little more sophisticated than it needs to be:
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
     return {
-        notebook: [], // FIXME this should be called "cells"
+        cells: [],
         assets: [],
         views: [], // sub list for cell content pubsub
         dishers: [], // for dirty bit pubsub
         clear: function() {
-            var cells_removed = this.remove_cell(null,last_id(this.notebook));
+            var cells_removed = this.remove_cell(null,last_id(this.cells));
             var assets_removed = this.remove_asset(null,this.assets.length);
             return cells_removed.concat(assets_removed);
         },
@@ -1869,11 +1869,11 @@ Notebook.create_model = function()
             var changes = [];
             var n = 1;
             id = id || 1;
-            id = Math.max(id, last_id(this.notebook)+1);
+            id = Math.max(id, last_id(this.cells)+1);
             while(n) {
                 cell_model.id(id);
                 changes.push(cell_model.change_object());
-                this.notebook.push(cell_model);
+                this.cells.push(cell_model);
                 if(!skip_event)
                     _.each(this.views, function(view) {
                         view.cell_appended(cell_model);
@@ -1888,34 +1888,34 @@ Notebook.create_model = function()
             cell_model.parent_model = this;
             var changes = [];
             var n = 1, x = 0;
-            while(x<this.notebook.length && this.notebook[x].id() < id) ++x;
+            while(x<this.cells.length && this.cells[x].id() < id) ++x;
             // check if ids can go above rather than shifting everything else down
-            if(x<this.notebook.length && id+n > this.notebook[x].id()) {
-                var prev = x>0 ? this.notebook[x-1].id() : 0;
-                id = Math.max(this.notebook[x].id()-n, prev+1);
+            if(x<this.cells.length && id+n > this.cells[x].id()) {
+                var prev = x>0 ? this.cells[x-1].id() : 0;
+                id = Math.max(this.cells[x].id()-n, prev+1);
             }
             for(var j=0; j<n; ++j) {
                 changes.push(cell_model.change_object({id: id+j}));
                 cell_model.id(id+j);
-                this.notebook.splice(x, 0, cell_model);
+                this.cells.splice(x, 0, cell_model);
                 if(!skip_event)
                     _.each(this.views, function(view) {
-                        view.cell_inserted(that.notebook[x], x);
+                        view.cell_inserted(that.cells[x], x);
                     });
                 ++x;
             }
-            while(x<this.notebook.length && n) {
-                if(this.notebook[x].id() > id) {
-                    var gap = this.notebook[x].id() - id;
+            while(x<this.cells.length && n) {
+                if(this.cells[x].id() > id) {
+                    var gap = this.cells[x].id() - id;
                     n -= gap;
                     id += gap;
                 }
                 if(n<=0)
                     break;
-                changes.push(this.notebook[x].change_object({
-                    rename: this.notebook[x].id()+n
+                changes.push(this.cells[x].change_object({
+                    rename: this.cells[x].id()+n
                 }));
-                this.notebook[x].id(this.notebook[x].id() + n);
+                this.cells[x].id(this.cells[x].id() + n);
                 ++x;
                 ++id;
             }
@@ -1959,7 +1959,7 @@ Notebook.create_model = function()
             var that = this;
             var cell_index, id;
             if(cell_model!=null) {
-                cell_index = this.notebook.indexOf(cell_model);
+                cell_index = this.cells.indexOf(cell_model);
                 id = cell_model.id();
                 if (cell_index === -1) {
                     throw "cell_model not in notebook model?!";
@@ -1972,14 +1972,14 @@ Notebook.create_model = function()
             n = n || 1;
             var x = cell_index;
             var changes = [];
-            while(x<this.notebook.length && n) {
-                if(this.notebook[x].id() == id) {
+            while(x<this.cells.length && n) {
+                if(this.cells[x].id() == id) {
                     if(!skip_event)
                         _.each(this.views, function(view) {
-                            view.cell_removed(that.notebook[x], x);
+                            view.cell_removed(that.cells[x], x);
                         });
-                    changes.push(that.notebook[x].change_object({ erase: 1 }));
-                    this.notebook.splice(x, 1);
+                    changes.push(that.cells[x].change_object({ erase: 1 }));
+                    this.cells.splice(x, 1);
                 }
                 ++id;
                 --n;
@@ -1987,12 +1987,12 @@ Notebook.create_model = function()
             return changes;
         },
         move_cell: function(cell_model, before) {
-            var pre_index = this.notebook.indexOf(cell_model),
+            var pre_index = this.cells.indexOf(cell_model),
                 changes = this.remove_cell(cell_model, 1, true)
                     .concat(before >= 0
                             ? this.insert_cell(cell_model, before, true)
                             : this.append_cell(cell_model, null, true)),
-                post_index = this.notebook.indexOf(cell_model);
+                post_index = this.cells.indexOf(cell_model);
             _.each(this.views, function(view) {
                 view.cell_moved(cell_model, pre_index, post_index);
             });
@@ -2029,7 +2029,7 @@ Notebook.create_model = function()
             var changes = [];
             for (var i=0; i<contents.length; ++i)
                 if (contents[i] !== null)
-                    changes.push(that.notebook[i].change_object());
+                    changes.push(that.cells[i].change_object());
             var asset_change = RCloud.UI.scratchpad.update_model();
             if (asset_change) {
                 var active_asset_model = RCloud.UI.scratchpad.current_model;
@@ -2058,7 +2058,7 @@ Notebook.create_model = function()
             });
         },
         json: function() {
-            return _.map(this.notebook, function(cell_model) {
+            return _.map(this.cells, function(cell_model) {
                 return cell_model.json();
             });
         }
@@ -2356,12 +2356,12 @@ Notebook.create_controller = function(model)
         },
         run_all: function() {
             this.save();
-            _.each(model.notebook, function(cell_model) {
+            _.each(model.cells, function(cell_model) {
                 cell_model.controller.set_status_message("Waiting...");
             });
-            
+
             // will ordering bite us in the leg here?
-            var promises = _.map(model.notebook, function(cell_model) {
+            var promises = _.map(model.cells, function(cell_model) {
                 return Promise.resolve().then(function() {
                     cell_model.controller.set_status_message("Computing...");
                     return cell_model.controller.execute();

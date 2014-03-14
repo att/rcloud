@@ -290,12 +290,12 @@ Notebook.create_controller = function(model)
         },
         run_all: function() {
             this.save();
-            _.each(model.notebook, function(cell_model) {
+            _.each(model.cells, function(cell_model) {
                 cell_model.controller.set_status_message("Waiting...");
             });
-            
+
             // will ordering bite us in the leg here?
-            var promises = _.map(model.notebook, function(cell_model) {
+            var promises = _.map(model.cells, function(cell_model) {
                 return Promise.resolve().then(function() {
                     cell_model.controller.set_status_message("Computing...");
                     return cell_model.controller.execute();
