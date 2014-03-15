@@ -214,6 +214,11 @@ start.rcloud <- function(username="", token="", ...) {
     stop("bad username/token pair");
   .session$username <- username
   .session$token <- token
+  #Getting these parameters from configuration files
+  .session$rhost <- getConf("host")
+  .session$solr.host.port <- getConf("solr.host.port")
+  .session$collection<- getConf("solr.collection")
+  #End
   if (nzConf("gist.deployment.stash"))
     .session$deployment.stash <- getConf("gist.deployment.stash")
   else
