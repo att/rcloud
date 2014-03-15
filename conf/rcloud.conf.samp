@@ -2,8 +2,8 @@
 ##: GitHub info below must be modified in order for RCloud to work!
 ## Only set Host: if it doesn't match the canonical name of your machine
 Host: 127.0.0.1
-github.client.id: 77f21c6c7b8205d2db16
-github.client.secret: 9e4b6d985e05f2a07522e0121227d950f41eabd6
+github.client.id: XXXXXXXXXXXXXXXXXXX
+github.client.secret: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXxx
 github.base.url: https://github.com/
 github.api.url: https://api.github.com/
 github.gist.url: https://gist.github.com/
