@@ -2,8 +2,8 @@ Notebook.Buffer.create_model = function(content) {
     // by default, consider this a new cell
     var checkpoint_ = "";
 
-    function not_empty(text) {
-        return ! /^\s*$/.test(text);
+    function is_empty(text) {
+        return /^\s*$/.test(text);
     }
 
     var result = {
@@ -26,28 +26,49 @@ Notebook.Buffer.create_model = function(content) {
         change_object: function(obj) {
             if(obj.content)
                 throw new Error("content must come from the object");
-            var change = {
-                id: obj.id,
-                name: function(id) {
-                    return id;
-                },
-                erase: obj.erase,
-                rename: obj.rename
-            };
-            // github treats any content which is only whitespace or empty
-            // as an erase.  so we have to pretend those objects don't exist
-            if(not_empty(content)) {
-                if(content != checkpoint_)
+            if(!obj.filename)
+                throw new Error("change object must have filename");
+            var change = {filename: obj.filename};
+
+            // github treats any content which is only whitespace or empty as an erase.
+            // so we have to transform our requests to accommodate that.
+            // note: any change without content, erase, or rename is a no-op.
+            if(obj.erase)
+                change.erase = !is_empty(checkpoint_);
+            else if(obj.rename) {
+                if(is_empty(content)) {
+                    if(!is_empty(checkpoint_))
+                        change.erase = true; // stuff => empty: erase
+                    // else empty => empty: no-op
+                    // no content either way
+                }
+                else {
+                    if(is_empty(checkpoint_))
+                        change.filename = obj.rename; // empty => stuff: create
+                    else
+                        change.rename = obj.rename; // stuff => stuff: rename
                     change.content = content;
-                // else no change
+                }
             }
-            else if(not_empty(checkpoint_))
-                change.erase = true;
-            // else no change
+            else { // change content
+                if(!is_empty(content)) {
+                    if(content != checkpoint_) // * => stuff: create/modify
+                        change.content = content;
+                    // else no-op
+                }
+                else {
+                    if(!is_empty(checkpoint_))
+                        change.erase = true; // stuff => empty: erase
+                    // else empty => empty: no-op
+                }
+            }
 
             // every time we get a change_object it's in order to send it to
             // github.  so we can assume that the cell has been checkpointed
             // whenever we create a change object.
+            // it would be nice to verify this somehow, but for now
+            // only notebook_model creates change_objects
+            // and only notebook_controller consumes them
             checkpoint_ = content;
             return change;
         },

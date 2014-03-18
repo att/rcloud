@@ -61,8 +61,9 @@ Notebook.create_model = function()
             var changes = [];
             var n = 1, x = 0;
             while(x<this.cells.length && this.cells[x].id() < id) ++x;
-            // check if ids can go above rather than shifting everything else down
+            // if id is before some cell and id+n knocks into that cell...
             if(x<this.cells.length && id+n > this.cells[x].id()) {
+                // see how many ids we can squeeze between this and prior cell
                 var prev = x>0 ? this.cells[x-1].id() : 0;
                 id = Math.max(this.cells[x].id()-n, prev+1);
             }
@@ -91,7 +92,9 @@ Notebook.create_model = function()
                 ++x;
                 ++id;
             }
-            return changes;
+            // apply the changes backward so that we're moving each cell
+            // out of the way just before putting the next one in its place
+            return changes.reverse();
         },
         remove_asset: function(asset_model, n, skip_event) {
             if (this.assets.length === 0)
@@ -159,6 +162,7 @@ Notebook.create_model = function()
             return changes;
         },
         move_cell: function(cell_model, before) {
+            // remove doesn't change any ids, so we can just remove then add
             var pre_index = this.cells.indexOf(cell_model),
                 changes = this.remove_cell(cell_model, 1, true)
                     .concat(before >= 0
@@ -171,17 +175,11 @@ Notebook.create_model = function()
             return changes;
         },
         change_cell_language: function(cell_model, language) {
-            // ugh. we can't use the change_object with "language" because
-            // this changes name() (the way the object is written kind
-            // of assumes that id is the only thing that can change)
-            // at the same time, we can use the "rename" field because, in
-            // that case, the object just returns the name itself.
-            // FIXME this is really ugly.
+            // for this one case we have to use filenames instead of ids
+            var pre_name = cell_model.filename();
             cell_model.language(language);
-            var c = cell_model.change_object({language: language});
-            return [cell_model.change_object({
-                rename: c.name()
-            })];
+            return [cell_model.change_object({filename: pre_name,
+                                              rename: cell_model.filename()})];
         },
         update_cell: function(cell_model) {
             return [cell_model.change_object()];

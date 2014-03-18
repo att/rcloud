@@ -52,7 +52,7 @@ Notebook.create_controller = function(model)
                     assets[filename] = [file.content, file.filename];
                 }
             });
-            // we intentionally drop changes on the floor, here and only here
+            // we intentionally drop change objects on the floor, here and only here.
             // that way the cells/assets are checkpointed where they were loaded
             var asset_controller;
             for(i in cells)
@@ -88,20 +88,20 @@ Notebook.create_controller = function(model)
                 continue; // R metadata
             if(f in cf) {
                 if(cf[f].language != nf[f].language || cf[f].content != nf[f].content) {
-                    changes.push(change_object({id: f,
+                    changes.push(change_object({filename: f,
                                                 language: cf[f].language,
                                                 content: cf[f].content}));
                 }
                 delete cf[f];
             }
-            else changes.push(change_object({id: f, erase: true, language: nf[f].language}));
+            else changes.push(change_object({filename: f, erase: true, language: nf[f].language}));
         }
 
         // find files which must be added to get from nf to cf
         for(f in cf) {
             if(f==='r_type' || f==='r_attributes')
                 continue; // artifact of rserve.js
-            changes.push(change_object({id: f,
+            changes.push(change_object({filename: f,
                                         language: cf[f].language,
                                         content: cf[f].content}));
         }
@@ -113,7 +113,7 @@ Notebook.create_controller = function(model)
         // screen but github will refuse them.  if the user doesn't enter
         // stuff in them before saving, they will disappear on next session
         changes = changes.filter(function(change) {
-            return !!change.content || change.erase || change.rename;
+            return change.content || change.erase || change.rename;
         });
         if (!changes.length)
             return Promise.cast(current_gist_);
@@ -121,31 +121,17 @@ Notebook.create_controller = function(model)
             return Promise.reject("attempted to update read-only notebook");
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
-            // we don't use the gist rename feature because it doesn't
-            // allow renaming x -> y and creating a new x at the same time
-            // instead, create y and if there is no longer any x, erase it
-            var post_names = {};
+            var files = {};
+            // play the changes in order - they must be sequenced so this makes sense
             _.each(changes, function(change) {
-                if (!change.erase) {
-                    var after = change.rename || change.id;
-                    post_names[change.name(after)] = 1;
-                };
-            });
-
-            var filehash = {};
-            _.each(changes, function(change) {
-                var c = {};
-                if(change.content !== undefined)
-                    c.content = change.content;
-                var pre_name = change.name(change.id);
-                if(change.erase || !post_names[pre_name])
-                    filehash[pre_name] = null;
-                if(!change.erase) {
-                    var post_name = change.name(change.rename || change.id);
-                    filehash[post_name] = c;
+                if(change.erase || change.rename) {
+                    files[change.filename] = null;
+                    if(change.rename)
+                        files[change.rename] = {content: change.content};
                 }
+                else files[change.filename] = {content: change.content};
             });
-            return { files: filehash };
+            return {files: files};
         }
 
         return rcloud.update_notebook(gistname, changes_to_gist(changes))

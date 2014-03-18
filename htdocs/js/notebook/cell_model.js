@@ -27,6 +27,11 @@ Notebook.Cell.create_model = function(content, language)
             }
             return id_;
         },
+        filename: function() {
+            if(arguments.length)
+                throw new Error("can't set filename of cell");
+            return Notebook.part_name(this.id(), this.language());
+        },
         json: function() {
             return {
                 content: content,
@@ -35,27 +40,17 @@ Notebook.Cell.create_model = function(content, language)
         },
         change_object: function(obj) {
             obj = obj || {};
-            obj.id = obj.id || this.id();
-            var change = base_change_object.call(this, obj);
-
-            change.language = obj.language || this.language();
-            change.name = function(id) {
-                if (_.isString(id))
-                    return id;
-                var ext;
-                switch(this.language) {
-                case 'R':
-                    ext = 'R';
-                    break;
-                case 'Markdown':
-                    ext = 'md';
-                    break;
-                default:
-                    throw "Unknown language " + this.language;
-                }
-                return 'part' + this.id + '.' + ext;
-            };
-            return change;
+            if(obj.id && obj.filename)
+                throw new Error("must specify only id or filename");
+            if(!obj.filename) {
+                var id = obj.id || this.id();
+                if(!(id>0)) // negative, NaN, null, undefined, etc etc.  note: this isn't <=
+                    throw new Error("bad id for cell change object: " + id);
+                obj.filename = Notebook.part_name(id, this.language());
+            }
+            if(obj.rename && _.isNumber(obj.rename))
+                obj.rename = Notebook.part_name(obj.rename, this.language());
+            return base_change_object.call(this, obj);
         }
     });
     return result;

@@ -56,7 +56,7 @@ Notebook.Asset.create_model = function(content, filename)
         },
         change_object: function(obj) {
             obj = obj || {};
-            obj.id = obj.id || this.filename();
+            obj.filename = obj.filename || this.filename();
             return base_change_object.call(this, obj);
         }
     });

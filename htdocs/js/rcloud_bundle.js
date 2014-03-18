@@ -155,7 +155,7 @@ RCloud.create = function(rcloud_ocaps) {
     }
     function process_paths(paths) {
         _.each(paths, function(path) {
-            set(path, rcloud_handler(Promise.promisify(get(path))));
+            set(path, rcloud_handler(path.join('.'), Promise.promisify(get(path))));
         });
     }
 
@@ -168,11 +168,11 @@ RCloud.create = function(rcloud_ocaps) {
             });
     }
 
-    function rcloud_handler(promise_fn) {
+    function rcloud_handler(command, promise_fn) {
         function success(result) {
             if (result && result.r_attributes &&
                 result.r_attributes['class'] === "try-error") {
-                throw result;
+                throw new Error(command + ": " + result);
             }
             return result;
         }
@@ -192,7 +192,7 @@ RCloud.create = function(rcloud_ocaps) {
             if (result.ok) {
                 return result.content;
             } else {
-                throw result.content;
+                throw new Error(command + ': ' + result.content.message);
             }
         }
         function failure(err) {
@@ -203,30 +203,6 @@ RCloud.create = function(rcloud_ocaps) {
         }
         return promise.then(success).catch(failure);
     }
-
-    // function rcloud_github_handler(command, promise) {
-    //     function success(result) {
-    //         if (result.r_attributes['class'] === "try-error") {
-    //             throw result;
-    //         }
-    //         if (result.ok) {
-    //             return result.content;
-    //         } else {
-    //             throw result.content;
-    //         }
-    //     }
-    //     function failure(err) {
-    //         if (RCloud.is_exception(err)) {
-    //             rclient.post_error(err[0]);
-    //         } else {
-    //             var message = _.isObject(err) && 'ok' in err
-    //                 ? err.content.message : err.toString();
-    //             rclient.post_error(command + ': ' + message);
-    //         }
-    //         throw err;
-    //     }
-    //     return promise.then(success).catch(failure);
-    // }
 
     var rcloud = {};
 
@@ -1097,8 +1073,8 @@ Notebook.Buffer.create_model = function(content) {
     // by default, consider this a new cell
     var checkpoint_ = "";
 
-    function not_empty(text) {
-        return ! /^\s*$/.test(text);
+    function is_empty(text) {
+        return /^\s*$/.test(text);
     }
 
     var result = {
@@ -1121,28 +1097,49 @@ Notebook.Buffer.create_model = function(content) {
         change_object: function(obj) {
             if(obj.content)
                 throw new Error("content must come from the object");
-            var change = {
-                id: obj.id,
-                name: function(id) {
-                    return id;
-                },
-                erase: obj.erase,
-                rename: obj.rename
-            };
-            // github treats any content which is only whitespace or empty
-            // as an erase.  so we have to pretend those objects don't exist
-            if(not_empty(content)) {
-                if(content != checkpoint_)
+            if(!obj.filename)
+                throw new Error("change object must have filename");
+            var change = {filename: obj.filename};
+
+            // github treats any content which is only whitespace or empty as an erase.
+            // so we have to transform our requests to accommodate that.
+            // note: any change without content, erase, or rename is a no-op.
+            if(obj.erase)
+                change.erase = !is_empty(checkpoint_);
+            else if(obj.rename) {
+                if(is_empty(content)) {
+                    if(!is_empty(checkpoint_))
+                        change.erase = true; // stuff => empty: erase
+                    // else empty => empty: no-op
+                    // no content either way
+                }
+                else {
+                    if(is_empty(checkpoint_))
+                        change.filename = obj.rename; // empty => stuff: create
+                    else
+                        change.rename = obj.rename; // stuff => stuff: rename
                     change.content = content;
-                // else no change
+                }
             }
-            else if(not_empty(checkpoint_))
-                change.erase = true;
-            // else no change
+            else { // change content
+                if(!is_empty(content)) {
+                    if(content != checkpoint_) // * => stuff: create/modify
+                        change.content = content;
+                    // else no-op
+                }
+                else {
+                    if(!is_empty(checkpoint_))
+                        change.erase = true; // stuff => empty: erase
+                    // else empty => empty: no-op
+                }
+            }
 
             // every time we get a change_object it's in order to send it to
             // github.  so we can assume that the cell has been checkpointed
             // whenever we create a change object.
+            // it would be nice to verify this somehow, but for now
+            // only notebook_model creates change_objects
+            // and only notebook_controller consumes them
             checkpoint_ = content;
             return change;
         },
@@ -1255,7 +1252,7 @@ Notebook.Asset.create_model = function(content, filename)
         },
         change_object: function(obj) {
             obj = obj || {};
-            obj.id = obj.id || this.filename();
+            obj.filename = obj.filename || this.filename();
             return base_change_object.call(this, obj);
         }
     });
@@ -1702,6 +1699,11 @@ Notebook.Cell.create_model = function(content, language)
             }
             return id_;
         },
+        filename: function() {
+            if(arguments.length)
+                throw new Error("can't set filename of cell");
+            return Notebook.part_name(this.id(), this.language());
+        },
         json: function() {
             return {
                 content: content,
@@ -1710,27 +1712,17 @@ Notebook.Cell.create_model = function(content, language)
         },
         change_object: function(obj) {
             obj = obj || {};
-            obj.id = obj.id || this.id();
-            var change = base_change_object.call(this, obj);
-
-            change.language = obj.language || this.language();
-            change.name = function(id) {
-                if (_.isString(id))
-                    return id;
-                var ext;
-                switch(this.language) {
-                case 'R':
-                    ext = 'R';
-                    break;
-                case 'Markdown':
-                    ext = 'md';
-                    break;
-                default:
-                    throw "Unknown language " + this.language;
-                }
-                return 'part' + this.id + '.' + ext;
-            };
-            return change;
+            if(obj.id && obj.filename)
+                throw new Error("must specify only id or filename");
+            if(!obj.filename) {
+                var id = obj.id || this.id();
+                if(!(id>0)) // negative, NaN, null, undefined, etc etc.  note: this isn't <=
+                    throw new Error("bad id for cell change object: " + id);
+                obj.filename = Notebook.part_name(id, this.language());
+            }
+            if(obj.rename && _.isNumber(obj.rename))
+                obj.rename = Notebook.part_name(obj.rename, this.language());
+            return base_change_object.call(this, obj);
         }
     });
     return result;
@@ -1905,8 +1897,9 @@ Notebook.create_model = function()
             var changes = [];
             var n = 1, x = 0;
             while(x<this.cells.length && this.cells[x].id() < id) ++x;
-            // check if ids can go above rather than shifting everything else down
+            // if id is before some cell and id+n knocks into that cell...
             if(x<this.cells.length && id+n > this.cells[x].id()) {
+                // see how many ids we can squeeze between this and prior cell
                 var prev = x>0 ? this.cells[x-1].id() : 0;
                 id = Math.max(this.cells[x].id()-n, prev+1);
             }
@@ -1935,7 +1928,9 @@ Notebook.create_model = function()
                 ++x;
                 ++id;
             }
-            return changes;
+            // apply the changes backward so that we're moving each cell
+            // out of the way just before putting the next one in its place
+            return changes.reverse();
         },
         remove_asset: function(asset_model, n, skip_event) {
             if (this.assets.length === 0)
@@ -2003,6 +1998,7 @@ Notebook.create_model = function()
             return changes;
         },
         move_cell: function(cell_model, before) {
+            // remove doesn't change any ids, so we can just remove then add
             var pre_index = this.cells.indexOf(cell_model),
                 changes = this.remove_cell(cell_model, 1, true)
                     .concat(before >= 0
@@ -2015,17 +2011,11 @@ Notebook.create_model = function()
             return changes;
         },
         change_cell_language: function(cell_model, language) {
-            // ugh. we can't use the change_object with "language" because
-            // this changes name() (the way the object is written kind
-            // of assumes that id is the only thing that can change)
-            // at the same time, we can use the "rename" field because, in
-            // that case, the object just returns the name itself.
-            // FIXME this is really ugly.
+            // for this one case we have to use filenames instead of ids
+            var pre_name = cell_model.filename();
             cell_model.language(language);
-            var c = cell_model.change_object({language: language});
-            return [cell_model.change_object({
-                rename: c.name()
-            })];
+            return [cell_model.change_object({filename: pre_name,
+                                              rename: cell_model.filename()})];
         },
         update_cell: function(cell_model) {
             return [cell_model.change_object()];
@@ -2101,7 +2091,7 @@ Notebook.create_controller = function(model)
         var asset_model = Notebook.Asset.create_model(content, filename);
         var asset_controller = Notebook.Asset.create_controller(asset_model);
         asset_model.controller = asset_controller;
-        return {controller: asset_controller, 
+        return {controller: asset_controller,
                 changes: model.append_asset(asset_model, filename)};
     }
 
@@ -2133,7 +2123,7 @@ Notebook.create_controller = function(model)
                     assets[filename] = [file.content, file.filename];
                 }
             });
-            // we intentionally drop changes on the floor, here and only here
+            // we intentionally drop change objects on the floor, here and only here.
             // that way the cells/assets are checkpointed where they were loaded
             var asset_controller;
             for(i in cells)
@@ -2169,20 +2159,20 @@ Notebook.create_controller = function(model)
                 continue; // R metadata
             if(f in cf) {
                 if(cf[f].language != nf[f].language || cf[f].content != nf[f].content) {
-                    changes.push(change_object({id: f,
+                    changes.push(change_object({filename: f,
                                                 language: cf[f].language,
                                                 content: cf[f].content}));
                 }
                 delete cf[f];
             }
-            else changes.push(change_object({id: f, erase: true, language: nf[f].language}));
+            else changes.push(change_object({filename: f, erase: true, language: nf[f].language}));
         }
 
         // find files which must be added to get from nf to cf
         for(f in cf) {
             if(f==='r_type' || f==='r_attributes')
                 continue; // artifact of rserve.js
-            changes.push(change_object({id: f,
+            changes.push(change_object({filename: f,
                                         language: cf[f].language,
                                         content: cf[f].content}));
         }
@@ -2194,7 +2184,7 @@ Notebook.create_controller = function(model)
         // screen but github will refuse them.  if the user doesn't enter
         // stuff in them before saving, they will disappear on next session
         changes = changes.filter(function(change) {
-            return !!change.content || change.erase || change.rename;
+            return change.content || change.erase || change.rename;
         });
         if (!changes.length)
             return Promise.cast(current_gist_);
@@ -2202,31 +2192,17 @@ Notebook.create_controller = function(model)
             return Promise.reject("attempted to update read-only notebook");
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
-            // we don't use the gist rename feature because it doesn't
-            // allow renaming x -> y and creating a new x at the same time
-            // instead, create y and if there is no longer any x, erase it
-            var post_names = {};
+            var files = {};
+            // play the changes in order - they must be sequenced so this makes sense
             _.each(changes, function(change) {
-                if (!change.erase) {
-                    var after = change.rename || change.id;
-                    post_names[change.name(after)] = 1;
-                };
-            });
-
-            var filehash = {};
-            _.each(changes, function(change) {
-                var c = {};
-                if(change.content !== undefined)
-                    c.content = change.content;
-                var pre_name = change.name(change.id);
-                if(change.erase || !post_names[pre_name])
-                    filehash[pre_name] = null;
-                if(!change.erase) {
-                    var post_name = change.name(change.rename || change.id);
-                    filehash[post_name] = c;
+                if(change.erase || change.rename) {
+                    files[change.filename] = null;
+                    if(change.rename)
+                        files[change.rename] = {content: change.content};
                 }
+                else files[change.filename] = {content: change.content};
             });
-            return { files: filehash };
+            return {files: files};
         }
 
         return rcloud.update_notebook(gistname, changes_to_gist(changes))
