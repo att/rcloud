@@ -20,7 +20,7 @@ Notebook.create_controller = function(model)
         var asset_model = Notebook.Asset.create_model(content, filename);
         var asset_controller = Notebook.Asset.create_controller(asset_model);
         asset_model.controller = asset_controller;
-        return {controller: asset_controller, 
+        return {controller: asset_controller,
                 changes: model.append_asset(asset_model, filename)};
     }
 
@@ -52,6 +52,8 @@ Notebook.create_controller = function(model)
                     assets[filename] = [file.content, file.filename];
                 }
             });
+            // we intentionally drop change objects on the floor, here and only here.
+            // that way the cells/assets are checkpointed where they were loaded
             var asset_controller;
             for(i in cells)
                 append_cell_helper(cells[i][0], cells[i][1], cells[i][2]);
@@ -59,12 +61,10 @@ Notebook.create_controller = function(model)
                 var result = append_asset_helper(assets[i][0], assets[i][1]).controller;
                 asset_controller = asset_controller || result;
             }
-            // is there anything else to gist permissions?
             model.user(notebook.user.login);
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
             asset_controller.select();
-            
         }
         return notebook;
     }
@@ -88,20 +88,20 @@ Notebook.create_controller = function(model)
                 continue; // R metadata
             if(f in cf) {
                 if(cf[f].language != nf[f].language || cf[f].content != nf[f].content) {
-                    changes.push(change_object({id: f,
+                    changes.push(change_object({filename: f,
                                                 language: cf[f].language,
                                                 content: cf[f].content}));
                 }
                 delete cf[f];
             }
-            else changes.push(change_object({id: f, erase: true, language: nf[f].language}));
+            else changes.push(change_object({filename: f, erase: true, language: nf[f].language}));
         }
 
         // find files which must be added to get from nf to cf
         for(f in cf) {
             if(f==='r_type' || f==='r_attributes')
                 continue; // artifact of rserve.js
-            changes.push(change_object({id: f,
+            changes.push(change_object({filename: f,
                                         language: cf[f].language,
                                         content: cf[f].content}));
         }
@@ -112,60 +112,26 @@ Notebook.create_controller = function(model)
         // remove any "empty" changes.  we can keep empty cells on the
         // screen but github will refuse them.  if the user doesn't enter
         // stuff in them before saving, they will disappear on next session
-        changes = changes.filter(function(change) { return !!change.content || change.erase; });
+        changes = changes.filter(function(change) {
+            return change.content || change.erase || change.rename;
+        });
         if (!changes.length)
             return Promise.cast(current_gist_);
         if (model.read_only())
             return Promise.reject("attempted to update read-only notebook");
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
-            // we don't use the gist rename feature because it doesn't
-            // allow renaming x -> y and creating a new x at the same time
-            // instead, create y and if there is no longer any x, erase it
-            var post_names = {};
+            var files = {};
+            // play the changes in order - they must be sequenced so this makes sense
             _.each(changes, function(change) {
-                if (!change.erase) {
-                    var after = change.rename || change.id;
-                    post_names[change.name(after)] = 1;
-                };
-            });
-
-            var filehash = {};
-            _.each(changes, function(change) {
-                var c = {};
-                if(change.content !== undefined)
-                    c.content = change.content;
-                var pre_name = change.name(change.id);
-                if(change.erase || !post_names[pre_name])
-                    filehash[pre_name] = null;
-                if(!change.erase) {
-                    var post_name = change.name(change.rename || change.id);
-                    filehash[post_name] = c;
+                if(change.erase || change.rename) {
+                    files[change.filename] = null;
+                    if(change.rename)
+                        files[change.rename] = {content: change.content};
                 }
+                else files[change.filename] = {content: change.content};
             });
-            return { files: filehash }; 
-            // _.reduce(changes, xlate_change, {})};
-            // var post_names = _.reduce(changes,
-            //                           function(names, change) {
-            //                               if(!change.erase) {
-            //                                   var after = change.rename || change.id;
-            //                                   names[Notebook.part_name(after, change.language)] = 1;
-            //                               }
-            //                               return names;
-            //                           }, {});
-            // function xlate_change(filehash, change) {
-            //     var c = {};
-            //     if(change.content !== undefined)
-            //         c.content = change.content;
-            //     var pre_name = Notebook.part_name(change.id, change.language);
-            //     if(change.erase || !post_names[pre_name])
-            //         filehash[pre_name] = null;
-            //     if(!change.erase) {
-            //         var post_name = Notebook.part_name(change.rename || change.id, change.language);
-            //         filehash[post_name] = c;
-            //     }
-            //     return filehash;
-            // }
+            return {files: files};
         }
 
         return rcloud.update_notebook(gistname, changes_to_gist(changes))
@@ -175,6 +141,9 @@ Notebook.create_controller = function(model)
                 current_gist_ = notebook;
                 return notebook;
             });
+    }
+    function refresh_cells() {
+        return model.reread_cells();
     }
 
     function on_dirty() {
@@ -292,9 +261,6 @@ Notebook.create_controller = function(model)
                     : that.load_notebook(gistname, null); // do a load - we need to refresh
             });
         },
-        refresh_cells: function() {
-            return model.reread_cells();
-        },
         update_cell: function(cell_model) {
             return update_notebook(model.update_cell(cell_model));
         },
@@ -303,7 +269,7 @@ Notebook.create_controller = function(model)
         },
         save: function() {
             if(dirty_) {
-                var changes = this.refresh_cells();
+                var changes = refresh_cells();
                 update_notebook(changes);
                 if(save_button_)
                     ui_utils.disable_bs_button(save_button_);
@@ -313,12 +279,12 @@ Notebook.create_controller = function(model)
         },
         run_all: function() {
             this.save();
-            _.each(model.notebook, function(cell_model) {
+            _.each(model.cells, function(cell_model) {
                 cell_model.controller.set_status_message("Waiting...");
             });
-            
+
             // will ordering bite us in the leg here?
-            var promises = _.map(model.notebook, function(cell_model) {
+            var promises = _.map(model.cells, function(cell_model) {
                 return Promise.resolve().then(function() {
                     cell_model.controller.set_status_message("Computing...");
                     return cell_model.controller.execute();

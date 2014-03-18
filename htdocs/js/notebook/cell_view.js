@@ -65,7 +65,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     cell_status.append(button_float);
     cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
-    var languages = { 
+    var languages = {
         "R": { 'background-color': "#E8F1FA" },
         "Markdown": { 'background-color': "#F7EEE4" }
         // ,
@@ -357,13 +357,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 outer_ace_div.slideUp(150); // hide();
             }
         },
-        /*
-        // this doesn't make sense: changes should go through controller
-        remove_self: function() {
-            cell_model.parent_model.remove_cell(cell_model);
-            notebook_cell_div.remove();
-        },
-        */
         div: function() {
             return notebook_cell_div;
         },
