@@ -290,6 +290,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["fork_notebook"],
             ["port_notebooks"],
             ["purl_source"],
+            ["get_ocaps"],
             ["get_completions"],
             ["rename_notebook"],
             ["session_markdown_eval"],
@@ -299,6 +300,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["file_upload","write"],
             ["file_upload","close"],
             ["comments","post"],
+            ["load_module_package"],
             ["is_notebook_published"],
             ["publish_notebook"],
             ["unpublish_notebook"],
@@ -344,6 +346,9 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.purl_source = function(source) {
             rcloud_ocaps.purl_sourceAsync(source);
+        };
+        rcloud.get_ocaps = function(pkg, fun) {
+            return rcloud_ocaps.get_ocapsAsync(pkg, fun);
         };
 
         rcloud.get_completions = function(text, pos) {
@@ -500,7 +505,10 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.post_comment = function(id, content) {
             return rcloud_ocaps.comments.postAsync(id, content);
         };
-
+        
+        rcloud.load_module_package = function(pkg) {
+            return rcloud_ocaps.load_module_packageAsync(pkg);
+        }
         // publishing notebooks
         rcloud.is_notebook_published = function(id) {
             return rcloud_ocaps.is_notebook_publishedAsync(id);

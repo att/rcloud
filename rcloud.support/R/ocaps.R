@@ -1,3 +1,7 @@
+rcloud.load.module.package <- function(pkg) {
+  lapply(as.list(loadNamespace(pkg)), make.oc)
+}
+
 make.oc <- function(fun, name=deparse(substitute(fun))) {
   f <- function(...) try(fun(...), silent=TRUE)
   Rserve:::ocap(f, name)
@@ -117,6 +121,7 @@ authenticated.ocaps <- function()
       create_notebook = make.oc(rcloud.create.notebook),
       rename_notebook = make.oc(rcloud.rename.notebook),
       publish_notebook = make.oc(rcloud.publish.notebook),
+      load_module_package = make.oc(rcloud.load.module.package),
       unpublish_notebook = make.oc(rcloud.unpublish.notebook),
       fork_notebook = make.oc(rcloud.fork.notebook),
       port_notebooks = make.oc(rcloud.port.notebooks),
@@ -141,7 +146,8 @@ authenticated.ocaps <- function()
         post = make.oc(rcloud.post.comment)
         ),
 
-      purl_source = make.oc(rcloud.purl.source)
+      purl_source = make.oc(rcloud.purl.source),
+      get_ocaps = make.oc(rcloud.get.ocaps)
            
       )
   )
