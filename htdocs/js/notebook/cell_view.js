@@ -1,6 +1,7 @@
 (function() {
 
 function create_markdown_cell_html_view(language) { return function(cell_model) {
+    var EXTRA_HEIGHT = 26;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
     update_div_id();
     notebook_cell_div.data('rcloud.model', cell_model);
@@ -150,7 +151,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     });
     session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
-        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + 24) + "px"});
+        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
         widget.resize();
     });
 
@@ -324,11 +325,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
              *
              */
             // do the two-change dance to make ace happy
-            var obj = {'height': (ui_utils.ace_editor_height(widget) + 25) + "px"};
-            notebook_cell_div.css(obj);
             outer_ace_div.show();
             widget.resize(true);
-            notebook_cell_div.css(obj);
+            notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
             widget.resize(true);
             disable(source_button);
             enable(result_button);
