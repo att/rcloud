@@ -400,6 +400,9 @@ rcloud.config.get.recent.notebooks <- function() {
 rcloud.config.set.recent.notebook <- function(id, date)
   rcs.set(usr.key(user=.session$username, notebook="system", "config", "recent", id), date)
 
+rcloud.config.clear.recent.notebook <- function(id)
+  rcs.rm(usr.key(user=.session$username, notebook="system", "config", "recent", id))
+
 ################################################################################
 # notebook cache
 
