@@ -211,6 +211,82 @@ Notebook.create_controller = function(model)
             update_notebook(changes)
                 .then(default_callback_);
         },
+        coalesce_prior_cell: function(cell_model) {
+            var prior = model.prior_cell(cell_model);
+            if(!prior)
+                return;
+
+            function opt_cr(text) {
+                if(text.length && text[text.length-1] != '\n')
+                    return text + '\n';
+                return text;
+            }
+            function crunch_quotes(left, right) {
+                var end = /```\n$/, begin = /^```{r}/;
+                if(end.test(left) && begin.test(right))
+                    return left.replace(end, '') + right.replace(begin, '');
+                else return left + right;
+            }
+
+            // note we have to refresh everything and then concat these changes onto
+            // that.  which won't work in general but looks like it is okay to
+            // concatenate a bunch of change content objects with a move or change
+            // to one of the same objects, and an erase of one
+            var new_content, changes = refresh_cells();
+
+            // this may have to be multiple dispatch when there are more than two languages
+            if(prior.language()==cell_model.language()) {
+                new_content = crunch_quotes(opt_cr(prior.content()),
+                                            cell_model.content());
+                prior.content(new_content);
+                changes = changes.concat(model.update_cell(prior));
+            }
+            else {
+                if(prior.language()==="R") {
+                    new_content = crunch_quotes('```{r}\n' + opt_cr(prior.content()) + '```\n',
+                                                cell_model.content());
+                    prior.content(new_content);
+                    changes = changes.concat(model.change_cell_language(prior, "Markdown"));
+                    changes[changes.length-1].content = new_content; //  NOOOOOO!!!!
+                }
+                else {
+                    new_content = crunch_quotes(opt_cr(prior.content()) + '```{r}\n',
+                                                opt_cr(cell_model.content()) + '```\n');
+                    new_content = new_content.replace(/```\n```{r}\n/, '');
+                    prior.content(new_content);
+                    changes = changes.concat(model.update_cell(prior));
+                }
+            }
+            _.each(prior.views, function(v) { v.show_source(); });
+            update_notebook(changes.concat(model.remove_cell(cell_model)))
+                .then(default_callback_);
+        },
+        split_cell: function(cell_model, point1, point2) {
+            function resplit(a) {
+                for(var i=0; i<a.length-1; ++i)
+                    if(!/\n$/.test(a[i]) && /^\n/.test(a[i+1])) {
+                        a[i] = a[i].concat('\n');
+                        a[i+1] = a[i+1].replace(/^\n/, '');
+                    }
+            }
+            var changes = refresh_cells();
+            var content = cell_model.content(),
+                parts = [content.substring(0, point1)],
+                id = cell_model.id(), language = cell_model.language();
+            if(point2 === undefined)
+                parts.push(content.substring(point1));
+            else
+                parts.push(content.substring(point1, point2),
+                           content.substring(point2));
+            resplit(parts);
+            cell_model.content(parts[0]);
+            changes = changes.concat(model.update_cell(cell_model));
+            // not great to do multiple inserts here - but not quite important enough to enable insert-n
+            for(var i=1; i<parts.length; ++i)
+                changes = changes.concat(insert_cell_helper(parts[i], language, id+i).changes);
+            update_notebook(changes)
+                .then(default_callback_);
+        },
         change_cell_language: function(cell_model, language) {
             var changes = model.change_cell_language(cell_model, language);
             update_notebook(changes)

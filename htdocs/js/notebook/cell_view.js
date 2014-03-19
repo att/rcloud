@@ -9,8 +9,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     // button bar
 
     var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
+    var coalesce_button = ui_utils.fa_button("icon-link", "coalesce cells");
     var source_button = ui_utils.fa_button("icon-edit", "source");
     var result_button = ui_utils.fa_button("icon-picture", "result");
+    var split_button = ui_utils.fa_button("icon-unlink", "split cell");
     var remove_button = ui_utils.fa_button("icon-trash", "remove");
     var run_md_button = ui_utils.fa_button("icon-play", "run");
     var gap = $('<div/>').html('&nbsp;').css({'line-height': '25%'});
@@ -27,6 +29,21 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     insert_cell_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             shell.insert_markdown_cell_before(cell_model.id());
+        }
+    });
+    coalesce_button.click(function(e) {
+        if (!$(e.currentTarget).hasClass("button-disabled")) {
+            shell.coalesce_prior_cell(cell_model);
+        }
+    });
+    split_button.click(function(e) {
+        if (!$(e.currentTarget).hasClass("button-disabled")) {
+            var range = widget.getSelection().getRange();
+            var point1, point2 = undefined;
+            point1 = ui_utils.character_offset_of_pos(widget, range.start);
+            if(!range.isEmpty())
+                point2 = ui_utils.character_offset_of_pos(widget, range.end);
+            shell.split_cell(cell_model, point1, point2);
         }
     });
     source_button.click(function(e) {
@@ -84,7 +101,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     });
 
     col.append($("<div></div>").append(select));
-    $.each([run_md_button, source_button, result_button, gap, remove_button],
+    $.each([run_md_button, source_button, result_button, gap, split_button, remove_button],
            function() {
                col.append($('<td/>').append($(this)));
            });
@@ -93,6 +110,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     notebook_cell_div.append(cell_status);
 
     var insert_button_float = $("<div class='cell-insert-control'></div>");
+    insert_button_float.append(coalesce_button);
     insert_button_float.append(insert_cell_button);
     notebook_cell_div.append(insert_button_float);
 
@@ -263,7 +281,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
-            }            
+            }
         },
 
         //////////////////////////////////////////////////////////////////////
