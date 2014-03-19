@@ -1051,8 +1051,21 @@ var editor = function () {
                 .then(function() {
                     remove_notebook_info(user, gistname);
                     remove_node($tree_.tree('getNodeById', node_id('alls', user, gistname)));
+                    var promise = rcloud.config.clear_recent_notebook(gistname);
                     if(gistname === current_.notebook)
-                        that.new_notebook();
+                        promise.then(function() {
+                            return rcloud.config.get_recent_notebooks();
+                        })
+                        .then(function(recent) {
+                            var sorted = _.chain(recent)
+                                    .pairs()
+                                    .filter(function(kv) { return kv[0] != 'r_attributes' && kv[0] != 'r_type'; })
+                                    .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
+                                    .sortBy(function(kv) { return kv[1]; })
+                                    .value();
+                            var latest = sorted[sorted.length-1][0];
+                            that.load_notebook(latest, null);
+                        });
                 });
         },
         set_notebook_visibility: function(node, visible) {
@@ -1100,6 +1113,7 @@ var editor = function () {
 
                 current_ = {notebook: result.id, version: options.version};
                 rcloud.config.set_current_notebook(current_);
+                rcloud.config.set_recent_notebook(result.id, (new Date()).toString());
 
                 /*
                 // disabling inter-notebook navigation for now - concurrency issues
