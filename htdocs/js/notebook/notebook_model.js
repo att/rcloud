@@ -175,9 +175,9 @@ Notebook.create_model = function()
             return changes;
         },
         prior_cell: function(cell_model) {
-            var index = this.notebook.indexOf(cell_model);
+            var index = this.cells.indexOf(cell_model);
             if(index>0)
-                return this.notebook[index-1];
+                return this.cells[index-1];
             else
                 return null;
         },

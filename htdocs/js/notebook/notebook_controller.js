@@ -232,7 +232,7 @@ Notebook.create_controller = function(model)
             // that.  which won't work in general but looks like it is okay to
             // concatenate a bunch of change content objects with a move or change
             // to one of the same objects, and an erase of one
-            var new_content, changes = this.refresh_cells();
+            var new_content, changes = refresh_cells();
 
             // this may have to be multiple dispatch when there are more than two languages
             if(prior.language()==cell_model.language()) {
@@ -258,7 +258,34 @@ Notebook.create_controller = function(model)
                 }
             }
             _.each(prior.views, function(v) { v.show_source(); });
-            update_notebook(changes.concat(model.remove_cell(cell_model)));
+            update_notebook(changes.concat(model.remove_cell(cell_model)))
+                .then(default_callback_);
+        },
+        split_cell: function(cell_model, point1, point2) {
+            function resplit(a) {
+                for(var i=0; i<a.length-1; ++i)
+                    if(!/\n$/.test(a[i]) && /^\n/.test(a[i+1])) {
+                        a[i] = a[i].concat('\n');
+                        a[i+1] = a[i+1].replace(/^\n/, '');
+                    }
+            }
+            var changes = refresh_cells();
+            var content = cell_model.content(),
+                parts = [content.substring(0, point1)],
+                id = cell_model.id(), language = cell_model.language();
+            if(point2 === undefined)
+                parts.push(content.substring(point1));
+            else
+                parts.push(content.substring(point1, point2),
+                           content.substring(point2));
+            resplit(parts);
+            cell_model.content(parts[0]);
+            changes = changes.concat(model.update_cell(cell_model));
+            // not great to do multiple inserts here - but not quite important enough to enable insert-n
+            for(var i=1; i<parts.length; ++i)
+                changes = changes.concat(insert_cell_helper(parts[i], language, id+i).changes);
+            update_notebook(changes)
+                .then(default_callback_);
         },
         change_cell_language: function(cell_model, language) {
             var changes = model.change_cell_language(cell_model, language);

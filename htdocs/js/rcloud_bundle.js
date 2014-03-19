@@ -820,6 +820,21 @@ ui_utils.install_common_ace_key_bindings = function(widget) {
     ]);
 };
 
+ui_utils.character_offset_of_pos = function(widget, pos) {
+    // surprising this is not built-in.  this adapted from
+    // https://groups.google.com/forum/#!msg/ace-discuss/-RVHHWZGkk8/blFQz0TcPf8J
+    var session = widget.getSession(), doc = session.getDocument();
+    var nlLength = doc.getNewLineCharacter().length;
+    var text = doc.getAllLines();
+    if(pos.row>text.length)
+        throw new Error("getting position off end of editor");
+    var ret = 0, i;
+    for(i=0; i<pos.row; i++)
+        ret += text[i].length + nlLength;
+    ret += pos.column;
+    return ret;
+};
+
 // bind an ace editor to a listener and return a function to change the
 // editor content without triggering that listener
 ui_utils.ignore_programmatic_changes = function(widget, listener) {
@@ -1298,9 +1313,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     // button bar
 
     var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
-    var coalesce_cells_button = ui_utils.fa_button("icon-link", "coalesce cells");
+    var coalesce_button = ui_utils.fa_button("icon-link", "coalesce cells");
     var source_button = ui_utils.fa_button("icon-edit", "source");
     var result_button = ui_utils.fa_button("icon-picture", "result");
+    var split_button = ui_utils.fa_button("icon-unlink", "split cell");
     var remove_button = ui_utils.fa_button("icon-trash", "remove");
     var run_md_button = ui_utils.fa_button("icon-play", "run");
     var gap = $('<div/>').html('&nbsp;').css({'line-height': '25%'});
@@ -1319,9 +1335,19 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             shell.insert_markdown_cell_before(cell_model.id());
         }
     });
-    coalesce_cells_button.click(function(e) {
+    coalesce_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             shell.coalesce_prior_cell(cell_model);
+        }
+    });
+    split_button.click(function(e) {
+        if (!$(e.currentTarget).hasClass("button-disabled")) {
+            var range = widget.getSelection().getRange();
+            var point1, point2 = undefined;
+            point1 = ui_utils.character_offset_of_pos(widget, range.start);
+            if(!range.isEmpty())
+                point2 = ui_utils.character_offset_of_pos(widget, range.end);
+            shell.split_cell(cell_model, point1, point2);
         }
     });
     source_button.click(function(e) {
@@ -1379,7 +1405,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     });
 
     col.append($("<div></div>").append(select));
-    $.each([run_md_button, source_button, result_button, gap, remove_button],
+    $.each([run_md_button, source_button, result_button, gap, split_button, remove_button],
            function() {
                col.append($('<td/>').append($(this)));
            });
@@ -1388,7 +1414,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     notebook_cell_div.append(cell_status);
 
     var insert_button_float = $("<div class='cell-insert-control'></div>");
-    insert_button_float.append(coalesce_cells_button);
+    insert_button_float.append(coalesce_button);
     insert_button_float.append(insert_cell_button);
     notebook_cell_div.append(insert_button_float);
 
@@ -1559,7 +1585,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
-            }            
+            }
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -2018,9 +2044,9 @@ Notebook.create_model = function()
             return changes;
         },
         prior_cell: function(cell_model) {
-            var index = this.notebook.indexOf(cell_model);
+            var index = this.cells.indexOf(cell_model);
             if(index>0)
-                return this.notebook[index-1];
+                return this.cells[index-1];
             else
                 return null;
         },
@@ -2317,7 +2343,7 @@ Notebook.create_controller = function(model)
             // that.  which won't work in general but looks like it is okay to
             // concatenate a bunch of change content objects with a move or change
             // to one of the same objects, and an erase of one
-            var new_content, changes = this.refresh_cells();
+            var new_content, changes = refresh_cells();
 
             // this may have to be multiple dispatch when there are more than two languages
             if(prior.language()==cell_model.language()) {
@@ -2343,7 +2369,34 @@ Notebook.create_controller = function(model)
                 }
             }
             _.each(prior.views, function(v) { v.show_source(); });
-            update_notebook(changes.concat(model.remove_cell(cell_model)));
+            update_notebook(changes.concat(model.remove_cell(cell_model)))
+                .then(default_callback_);
+        },
+        split_cell: function(cell_model, point1, point2) {
+            function resplit(a) {
+                for(var i=0; i<a.length-1; ++i)
+                    if(!/\n$/.test(a[i]) && /^\n/.test(a[i+1])) {
+                        a[i] = a[i].concat('\n');
+                        a[i+1] = a[i+1].replace(/^\n/, '');
+                    }
+            }
+            var changes = refresh_cells();
+            var content = cell_model.content(),
+                parts = [content.substring(0, point1)],
+                id = cell_model.id(), language = cell_model.language();
+            if(point2 === undefined)
+                parts.push(content.substring(point1));
+            else
+                parts.push(content.substring(point1, point2),
+                           content.substring(point2));
+            resplit(parts);
+            cell_model.content(parts[0]);
+            changes = changes.concat(model.update_cell(cell_model));
+            // not great to do multiple inserts here - but not quite important enough to enable insert-n
+            for(var i=1; i<parts.length; ++i)
+                changes = changes.concat(insert_cell_helper(parts[i], language, id+i).changes);
+            update_notebook(changes)
+                .then(default_callback_);
         },
         change_cell_language: function(cell_model, language) {
             var changes = model.change_cell_language(cell_model, language);

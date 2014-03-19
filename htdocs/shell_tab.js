@@ -78,6 +78,8 @@ var shell = (function() {
             return notebook_controller_.insert_cell("", "Markdown", index);
         }, coalesce_prior_cell: function(cell_model) {
             return notebook_controller_.coalesce_prior_cell(cell_model);
+        }, split_cell: function(cell_model, point1, point2) {
+            return notebook_controller_.split_cell(cell_model, point1, point2);
         },
         load_notebook: function(gistname, version) {
             var that = this;
