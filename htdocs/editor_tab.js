@@ -983,7 +983,7 @@ var editor = function () {
                 .then(function(number) { return "Notebook " + number; })
                 .then(shell.new_notebook.bind(shell))
                 .then(function(notebook) {
-                    set_visibility(notebook.gistname, true);
+                    set_visibility(notebook.id, true);
                     that.star_notebook(true, {notebook: notebook, make_current: true, version: null});
                 });
         },
