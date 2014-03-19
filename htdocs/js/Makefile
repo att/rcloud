@@ -8,8 +8,10 @@ rcloud_bundle.js: \
 	ui_utils.js \
 	bootstrap_utils.js \
 	notebook/_notebook_begin.js \
+	notebook/_buffer_begin.js \
 	notebook/_cell_begin.js \
 	notebook/_asset_begin.js \
+	notebook/buffer_model.js \
 	notebook/asset_view.js \
 	notebook/asset_model.js \
 	notebook/asset_controller.js \
