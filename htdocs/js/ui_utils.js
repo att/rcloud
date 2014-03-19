@@ -98,6 +98,21 @@ ui_utils.install_common_ace_key_bindings = function(widget) {
     ]);
 };
 
+ui_utils.character_offset_of_pos = function(widget, pos) {
+    // surprising this is not built-in.  this adapted from
+    // https://groups.google.com/forum/#!msg/ace-discuss/-RVHHWZGkk8/blFQz0TcPf8J
+    var session = widget.getSession(), doc = session.getDocument();
+    var nlLength = doc.getNewLineCharacter().length;
+    var text = doc.getAllLines();
+    if(pos.row>text.length)
+        throw new Error("getting position off end of editor");
+    var ret = 0, i;
+    for(i=0; i<pos.row; i++)
+        ret += text[i].length + nlLength;
+    ret += pos.column;
+    return ret;
+};
+
 // bind an ace editor to a listener and return a function to change the
 // editor content without triggering that listener
 ui_utils.ignore_programmatic_changes = function(widget, listener) {

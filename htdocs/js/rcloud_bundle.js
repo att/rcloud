@@ -204,30 +204,6 @@ RCloud.create = function(rcloud_ocaps) {
         return promise.then(success).catch(failure);
     }
 
-    // function rcloud_github_handler(command, promise) {
-    //     function success(result) {
-    //         if (result.r_attributes['class'] === "try-error") {
-    //             throw result;
-    //         }
-    //         if (result.ok) {
-    //             return result.content;
-    //         } else {
-    //             throw result.content;
-    //         }
-    //     }
-    //     function failure(err) {
-    //         if (RCloud.is_exception(err)) {
-    //             rclient.post_error(err[0]);
-    //         } else {
-    //             var message = _.isObject(err) && 'ok' in err
-    //                 ? err.content.message : err.toString();
-    //             rclient.post_error(command + ': ' + message);
-    //         }
-    //         throw err;
-    //     }
-    //     return promise.then(success).catch(failure);
-    // }
-
     var rcloud = {};
 
     function setup_unauthenticated_ocaps() {
@@ -871,6 +847,21 @@ ui_utils.install_common_ace_key_bindings = function(widget) {
     ]);
 };
 
+ui_utils.character_offset_of_pos = function(widget, pos) {
+    // surprising this is not built-in.  this adapted from
+    // https://groups.google.com/forum/#!msg/ace-discuss/-RVHHWZGkk8/blFQz0TcPf8J
+    var session = widget.getSession(), doc = session.getDocument();
+    var nlLength = doc.getNewLineCharacter().length;
+    var text = doc.getAllLines();
+    if(pos.row>text.length)
+        throw new Error("getting position off end of editor");
+    var ret = 0, i;
+    for(i=0; i<pos.row; i++)
+        ret += text[i].length + nlLength;
+    ret += pos.column;
+    return ret;
+};
+
 // bind an ace editor to a listener and return a function to change the
 // editor content without triggering that listener
 ui_utils.ignore_programmatic_changes = function(widget, listener) {
@@ -1117,8 +1108,92 @@ Notebook = {};
 //
 // roughly a MVC-kinda-thing per cell, plus a MVC for all the cells
 // 
+Notebook.Buffer = {};
 Notebook.Cell = {};
 Notebook.Asset = {};
+Notebook.Buffer.create_model = function(content) {
+    // by default, consider this a new cell
+    var checkpoint_ = "";
+
+    function is_empty(text) {
+        return /^\s*$/.test(text);
+    }
+
+    var result = {
+        views: [], // sub list for pubsub
+        parent_model: null,
+
+        content: function(new_content) {
+            if (!_.isUndefined(new_content)) {
+                if(content != new_content) {
+                    content = new_content;
+                    this.notify_views(function(view) {
+                        view.content_updated();
+                    });
+                    return content;
+                }
+                else return null;
+            }
+            return content;
+        },
+        change_object: function(obj) {
+            if(obj.content)
+                throw new Error("content must come from the object");
+            if(!obj.filename)
+                throw new Error("change object must have filename");
+            var change = {filename: obj.filename};
+
+            // github treats any content which is only whitespace or empty as an erase.
+            // so we have to transform our requests to accommodate that.
+            // note: any change without content, erase, or rename is a no-op.
+            if(obj.erase)
+                change.erase = !is_empty(checkpoint_);
+            else if(obj.rename) {
+                if(is_empty(content)) {
+                    if(!is_empty(checkpoint_))
+                        change.erase = true; // stuff => empty: erase
+                    // else empty => empty: no-op
+                    // no content either way
+                }
+                else {
+                    if(is_empty(checkpoint_))
+                        change.filename = obj.rename; // empty => stuff: create
+                    else
+                        change.rename = obj.rename; // stuff => stuff: rename
+                    change.content = content;
+                }
+            }
+            else { // change content
+                if(!is_empty(content)) {
+                    if(content != checkpoint_) // * => stuff: create/modify
+                        change.content = content;
+                    // else no-op
+                }
+                else {
+                    if(!is_empty(checkpoint_))
+                        change.erase = true; // stuff => empty: erase
+                    // else empty => empty: no-op
+                }
+            }
+
+            // every time we get a change_object it's in order to send it to
+            // github.  so we can assume that the cell has been checkpointed
+            // whenever we create a change object.
+            // it would be nice to verify this somehow, but for now
+            // only notebook_model creates change_objects
+            // and only notebook_controller consumes them
+            checkpoint_ = content;
+            return change;
+        },
+        notify_views: function(f) {
+            _.each(this.views, function(view) {
+                f(view);
+            });
+        }
+    };
+    return result;
+};
+
 Notebook.Asset.create_html_view = function(asset_model)
 {
     var filename_div = $("<li></li>");
@@ -1163,31 +1238,34 @@ Notebook.Asset.create_html_view = function(asset_model)
 };
 Notebook.Asset.create_model = function(content, filename)
 {
-    var cursor_position;
-    var active = false;
-    var result = {
-        views: [], // sub list for pubsub
-        parent_model: null,
+    var cursor_position_;
+    var active_ = false;
+    var result = Notebook.Buffer.create_model(content);
+    var base_change_object = result.change_object;
+
+    _.extend(result, {
         active: function(new_active) {
             if (!_.isUndefined(new_active)) {
-                if(active !== new_active) {
-                    active = new_active;
-                    notify_views(function(view) {
+                if(active_ !== new_active) {
+                    active_ = new_active;
+                    this.notify_views(function(view) {
                         view.active_updated();
                     });
-                    return active;
+                    return active_;
                 } else {
                     return null;
                 }
             }
-            return active;
+            return active_;
         },
         cursor_position: function(new_cursor_position) {
             if (!_.isUndefined(new_cursor_position))
-                cursor_position = new_cursor_position;
-            return cursor_position;
+                cursor_position_ = new_cursor_position;
+            return cursor_position_;
         },
         language: function() {
+            if(arguments.length)
+                throw new Error("set language of asset not supported");
             var extension = filename.match(/\.([^.]+)$/);
             if (!extension)
                 throw new Error("extension does not exist");
@@ -1198,7 +1276,7 @@ Notebook.Asset.create_model = function(content, filename)
             if (!_.isUndefined(new_filename)) {
                 if(filename != new_filename) {
                     filename = new_filename;
-                    notify_views(function(view) {
+                    this.notify_views(function(view) {
                         view.filename_updated();
                     });
                     return filename;
@@ -1206,19 +1284,6 @@ Notebook.Asset.create_model = function(content, filename)
                 else return null;
             }
             return filename;
-        },
-        content: function(new_content) {
-            if (!_.isUndefined(new_content)) {
-                if(content != new_content) {
-                    content = new_content;
-                    notify_views(function(view) {
-                        view.content_updated();
-                    });
-                    return content;
-                }
-                else return null;
-            }
-            return content;
         },
         json: function() {
             return {
@@ -1229,29 +1294,10 @@ Notebook.Asset.create_model = function(content, filename)
         },
         change_object: function(obj) {
             obj = obj || {};
-            // unfortunately, yet another workaround because github
-            // won't take blank files.  would prefer to make changes
-            // a high-level description but i don't see it yet.
-            var change = {
-                id: obj.id || this.filename(),
-                name: function() {
-                    return this.id;
-                },
-                erase: obj.erase,
-                rename: obj.rename
-            };
-            if(content === "")
-                change.erase = true;
-            else
-                change.content = obj.content || this.content();
-            return change;
+            obj.filename = obj.filename || this.filename();
+            return base_change_object.call(this, obj);
         }
-    };
-    function notify_views(f) {
-        _.each(result.views, function(view) {
-            f(view);
-        });
-    }
+    });
     return result;
 };
 Notebook.Asset.create_controller = function(asset_model)
@@ -1286,6 +1332,7 @@ Notebook.Asset.create_controller = function(asset_model)
 (function() {
 
 function create_markdown_cell_html_view(language) { return function(cell_model) {
+    var EXTRA_HEIGHT = 26;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
     update_div_id();
     notebook_cell_div.data('rcloud.model', cell_model);
@@ -1294,8 +1341,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     // button bar
 
     var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
+    var coalesce_button = ui_utils.fa_button("icon-link", "coalesce cells");
     var source_button = ui_utils.fa_button("icon-edit", "source");
     var result_button = ui_utils.fa_button("icon-picture", "result");
+    var split_button = ui_utils.fa_button("icon-unlink", "split cell");
     var remove_button = ui_utils.fa_button("icon-trash", "remove");
     var run_md_button = ui_utils.fa_button("icon-play", "run");
     var gap = $('<div/>').html('&nbsp;').css({'line-height': '25%'});
@@ -1312,6 +1361,21 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     insert_cell_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             shell.insert_markdown_cell_before(cell_model.id());
+        }
+    });
+    coalesce_button.click(function(e) {
+        if (!$(e.currentTarget).hasClass("button-disabled")) {
+            shell.coalesce_prior_cell(cell_model);
+        }
+    });
+    split_button.click(function(e) {
+        if (!$(e.currentTarget).hasClass("button-disabled")) {
+            var range = widget.getSelection().getRange();
+            var point1, point2 = undefined;
+            point1 = ui_utils.character_offset_of_pos(widget, range.start);
+            if(!range.isEmpty())
+                point2 = ui_utils.character_offset_of_pos(widget, range.end);
+            shell.split_cell(cell_model, point1, point2);
         }
     });
     source_button.click(function(e) {
@@ -1350,7 +1414,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     cell_status.append(button_float);
     cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
-    var languages = { 
+    var languages = {
         "R": { 'background-color': "#E8F1FA" },
         "Markdown": { 'background-color': "#F7EEE4" }
         // ,
@@ -1369,7 +1433,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     });
 
     col.append($("<div></div>").append(select));
-    $.each([run_md_button, source_button, result_button, gap, remove_button],
+    $.each([run_md_button, source_button, result_button, gap, split_button, remove_button],
            function() {
                col.append($('<td/>').append($(this)));
            });
@@ -1378,6 +1442,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     notebook_cell_div.append(cell_status);
 
     var insert_button_float = $("<div class='cell-insert-control'></div>");
+    insert_button_float.append(coalesce_button);
     insert_button_float.append(insert_cell_button);
     notebook_cell_div.append(insert_button_float);
 
@@ -1417,7 +1482,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     });
     session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
-        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + 24) + "px"});
+        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
         widget.resize();
     });
 
@@ -1548,7 +1613,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
-            }            
+            }
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -1591,11 +1656,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
              *
              */
             // do the two-change dance to make ace happy
-            var obj = {'height': (ui_utils.ace_editor_height(widget) + 25) + "px"};
-            notebook_cell_div.css(obj);
             outer_ace_div.show();
             widget.resize(true);
-            notebook_cell_div.css(obj);
+            notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
             widget.resize(true);
             disable(source_button);
             enable(result_button);
@@ -1642,13 +1705,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 outer_ace_div.slideUp(150); // hide();
             }
         },
-        /*
-        // this doesn't make sense: changes should go through controller
-        remove_self: function() {
-            cell_model.parent_model.remove_cell(cell_model);
-            notebook_cell_div.remove();
-        },
-        */
         div: function() {
             return notebook_cell_div;
         },
@@ -1676,14 +1732,15 @@ Notebook.Cell.create_html_view = function(cell_model)
 Notebook.Cell.create_model = function(content, language)
 {
     var id_ = -1;
-    var result = {
-        views: [], // sub list for pubsub
-        parent_model: null,
+    var result = Notebook.Buffer.create_model(content);
+    var base_change_object = result.change_object;
+
+    _.extend(result, {
         language: function(new_language) {
             if (!_.isUndefined(new_language)) {
                 if(language != new_language) {
                     language = new_language;
-                    notify_views(function(view) {
+                    this.notify_views(function(view) {
                         view.language_updated();
                     });
                     return language;
@@ -1692,27 +1749,19 @@ Notebook.Cell.create_model = function(content, language)
             }
             return language;
         },
-        content: function(new_content) {
-            if (!_.isUndefined(new_content)) {
-                if(content != new_content) {
-                    content = new_content;
-                    notify_views(function(view) {
-                        view.content_updated();
-                    });
-                    return content;
-                }
-                else return null;
-            }
-            return content;
-        },
         id: function(new_id) {
             if (!_.isUndefined(new_id) && new_id != id_) {
                 id_ = new_id;
-                notify_views(function(view) {
+                this.notify_views(function(view) {
                     view.id_updated();
                 });
             }
             return id_;
+        },
+        filename: function() {
+            if(arguments.length)
+                throw new Error("can't set filename of cell");
+            return Notebook.part_name(this.id(), this.language());
         },
         json: function() {
             return {
@@ -1722,43 +1771,19 @@ Notebook.Cell.create_model = function(content, language)
         },
         change_object: function(obj) {
             obj = obj || {};
-            // unfortunately, yet another workaround because github
-            // won't take blank files.  would prefer to make changes
-            // a high-level description but i don't see it yet.
-            var change = {
-                id: obj.id || this.id(),
-                language: obj.language || this.language(),
-                name: function(id) {
-                    if (_.isString(id))
-                        return id;
-                    var ext;
-                    switch(this.language) {
-                    case 'R':
-                        ext = 'R';
-                        break;
-                    case 'Markdown':
-                        ext = 'md';
-                        break;
-                    default:
-                        throw "Unknown language " + this.language;
-                    }
-                    return 'part' + this.id + '.' + ext;
-                },
-                erase: obj.erase,
-                rename: obj.rename
-            };
-            if(content === "")
-                change.erase = true;
-            else
-                change.content = obj.content || this.content();
-            return change;
+            if(obj.id && obj.filename)
+                throw new Error("must specify only id or filename");
+            if(!obj.filename) {
+                var id = obj.id || this.id();
+                if(!(id>0)) // negative, NaN, null, undefined, etc etc.  note: this isn't <=
+                    throw new Error("bad id for cell change object: " + id);
+                obj.filename = Notebook.part_name(id, this.language());
+            }
+            if(obj.rename && _.isNumber(obj.rename))
+                obj.rename = Notebook.part_name(obj.rename, this.language());
+            return base_change_object.call(this, obj);
         }
-    };
-    function notify_views(f) {
-        _.each(result.views, function(view) {
-            f(view);
-        });
-    }
+    });
     return result;
 };
 Notebook.Cell.create_controller = function(cell_model)
@@ -1873,22 +1898,25 @@ Notebook.create_model = function()
     var readonly_ = false;
     var user_ = "";
 
-    function last_id(notebook) {
-        if(notebook.length)
-            return notebook[notebook.length-1].id();
+    function last_id(cells) {
+        if(cells.length)
+            return cells[cells.length-1].id();
         else
             return 0;
     }
 
+    // anything here that returns a set of changes must only be called from the
+    // controller.  the controller makes sure those changes are sent to github.
+
     /* note, the code below is a little more sophisticated than it needs to be:
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
     return {
-        notebook: [], // FIXME this should be called "cells"
+        cells: [],
         assets: [],
         views: [], // sub list for cell content pubsub
         dishers: [], // for dirty bit pubsub
         clear: function() {
-            var cells_removed = this.remove_cell(null,last_id(this.notebook));
+            var cells_removed = this.remove_cell(null,last_id(this.cells));
             var assets_removed = this.remove_asset(null,this.assets.length);
             return cells_removed.concat(assets_removed);
         },
@@ -1908,11 +1936,11 @@ Notebook.create_model = function()
             var changes = [];
             var n = 1;
             id = id || 1;
-            id = Math.max(id, last_id(this.notebook)+1);
+            id = Math.max(id, last_id(this.cells)+1);
             while(n) {
                 cell_model.id(id);
                 changes.push(cell_model.change_object());
-                this.notebook.push(cell_model);
+                this.cells.push(cell_model);
                 if(!skip_event)
                     _.each(this.views, function(view) {
                         view.cell_appended(cell_model);
@@ -1927,38 +1955,41 @@ Notebook.create_model = function()
             cell_model.parent_model = this;
             var changes = [];
             var n = 1, x = 0;
-            while(x<this.notebook.length && this.notebook[x].id() < id) ++x;
-            // check if ids can go above rather than shifting everything else down
-            if(x<this.notebook.length && id+n > this.notebook[x].id()) {
-                var prev = x>0 ? this.notebook[x-1].id() : 0;
-                id = Math.max(this.notebook[x].id()-n, prev+1);
+            while(x<this.cells.length && this.cells[x].id() < id) ++x;
+            // if id is before some cell and id+n knocks into that cell...
+            if(x<this.cells.length && id+n > this.cells[x].id()) {
+                // see how many ids we can squeeze between this and prior cell
+                var prev = x>0 ? this.cells[x-1].id() : 0;
+                id = Math.max(this.cells[x].id()-n, prev+1);
             }
             for(var j=0; j<n; ++j) {
-                changes.push(cell_model.change_object({id: id+j}));
+                changes.push(cell_model.change_object({id: id+j})); // most likely blank
                 cell_model.id(id+j);
-                this.notebook.splice(x, 0, cell_model);
+                this.cells.splice(x, 0, cell_model);
                 if(!skip_event)
                     _.each(this.views, function(view) {
-                        view.cell_inserted(that.notebook[x], x);
+                        view.cell_inserted(that.cells[x], x);
                     });
                 ++x;
             }
-            while(x<this.notebook.length && n) {
-                if(this.notebook[x].id() > id) {
-                    var gap = this.notebook[x].id() - id;
+            while(x<this.cells.length && n) {
+                if(this.cells[x].id() > id) {
+                    var gap = this.cells[x].id() - id;
                     n -= gap;
                     id += gap;
                 }
                 if(n<=0)
                     break;
-                changes.push(this.notebook[x].change_object({
-                    rename: this.notebook[x].id()+n
+                changes.push(this.cells[x].change_object({
+                    rename: this.cells[x].id()+n
                 }));
-                this.notebook[x].id(this.notebook[x].id() + n);
+                this.cells[x].id(this.cells[x].id() + n);
                 ++x;
                 ++id;
             }
-            return changes;
+            // apply the changes backward so that we're moving each cell
+            // out of the way just before putting the next one in its place
+            return changes.reverse();
         },
         remove_asset: function(asset_model, n, skip_event) {
             if (this.assets.length === 0)
@@ -1998,7 +2029,7 @@ Notebook.create_model = function()
             var that = this;
             var cell_index, id;
             if(cell_model!=null) {
-                cell_index = this.notebook.indexOf(cell_model);
+                cell_index = this.cells.indexOf(cell_model);
                 id = cell_model.id();
                 if (cell_index === -1) {
                     throw "cell_model not in notebook model?!";
@@ -2011,14 +2042,14 @@ Notebook.create_model = function()
             n = n || 1;
             var x = cell_index;
             var changes = [];
-            while(x<this.notebook.length && n) {
-                if(this.notebook[x].id() == id) {
+            while(x<this.cells.length && n) {
+                if(this.cells[x].id() == id) {
                     if(!skip_event)
                         _.each(this.views, function(view) {
-                            view.cell_removed(that.notebook[x], x);
+                            view.cell_removed(that.cells[x], x);
                         });
-                    changes.push(that.notebook[x].change_object({ erase: 1 }));
-                    this.notebook.splice(x, 1);
+                    changes.push(that.cells[x].change_object({ erase: 1 }));
+                    this.cells.splice(x, 1);
                 }
                 ++id;
                 --n;
@@ -2026,29 +2057,31 @@ Notebook.create_model = function()
             return changes;
         },
         move_cell: function(cell_model, before) {
-            var pre_index = this.notebook.indexOf(cell_model),
+            // remove doesn't change any ids, so we can just remove then add
+            var pre_index = this.cells.indexOf(cell_model),
                 changes = this.remove_cell(cell_model, 1, true)
                     .concat(before >= 0
                             ? this.insert_cell(cell_model, before, true)
                             : this.append_cell(cell_model, null, true)),
-                post_index = this.notebook.indexOf(cell_model);
+                post_index = this.cells.indexOf(cell_model);
             _.each(this.views, function(view) {
                 view.cell_moved(cell_model, pre_index, post_index);
             });
             return changes;
         },
+        prior_cell: function(cell_model) {
+            var index = this.cells.indexOf(cell_model);
+            if(index>0)
+                return this.cells[index-1];
+            else
+                return null;
+        },
         change_cell_language: function(cell_model, language) {
-            // ugh. we can't use the change_object with "language" because
-            // this changes name() (the way the object is written kind
-            // of assumes that id is the only thing that can change)
-            // at the same time, we can use the "rename" field because, in
-            // that case, the object just returns the name itself.
-            // FIXME this is really ugly.
+            // for this one case we have to use filenames instead of ids
+            var pre_name = cell_model.filename();
             cell_model.language(language);
-            var c = cell_model.change_object({language: language});
-            return [cell_model.change_object({
-                rename: c.name()
-            })];
+            return [cell_model.change_object({filename: pre_name,
+                                              rename: cell_model.filename()})];
         },
         update_cell: function(cell_model) {
             return [cell_model.change_object()];
@@ -2057,8 +2090,7 @@ Notebook.create_model = function()
             return [asset_model.change_object()];
         },
         reread_cells: function() {
-            var that = this;
-            // Forces views to update models
+            // force views to update models
             var changed_cells_per_view = _.map(this.views, function(view) {
                 return view.update_model();
             });
@@ -2066,15 +2098,9 @@ Notebook.create_model = function()
                 throw "not expecting more than one notebook view";
             var contents = changed_cells_per_view[0];
             var changes = [];
-            for (var i=0; i<contents.length; ++i) {
-                var content = contents[i];
-                if (content !== null) {
-                    changes.push(that.notebook[i].change_object());
-                    // build_cell_change(that.notebook[i].id(),
-                    //                   content,
-                    //                   that.notebook[i].language()));
-                }
-            }
+            for (var i=0; i<contents.length; ++i)
+                if (contents[i] !== null)
+                    changes.push(this.cells[i].change_object());
             var asset_change = RCloud.UI.scratchpad.update_model();
             if (asset_change) {
                 var active_asset_model = RCloud.UI.scratchpad.current_model;
@@ -2103,7 +2129,7 @@ Notebook.create_model = function()
             });
         },
         json: function() {
-            return _.map(this.notebook, function(cell_model) {
+            return _.map(this.cells, function(cell_model) {
                 return cell_model.json();
             });
         }
@@ -2131,7 +2157,7 @@ Notebook.create_controller = function(model)
         var asset_model = Notebook.Asset.create_model(content, filename);
         var asset_controller = Notebook.Asset.create_controller(asset_model);
         asset_model.controller = asset_controller;
-        return {controller: asset_controller, 
+        return {controller: asset_controller,
                 changes: model.append_asset(asset_model, filename)};
     }
 
@@ -2163,6 +2189,8 @@ Notebook.create_controller = function(model)
                     assets[filename] = [file.content, file.filename];
                 }
             });
+            // we intentionally drop change objects on the floor, here and only here.
+            // that way the cells/assets are checkpointed where they were loaded
             var asset_controller;
             for(i in cells)
                 append_cell_helper(cells[i][0], cells[i][1], cells[i][2]);
@@ -2181,24 +2209,38 @@ Notebook.create_controller = function(model)
     // calculate the changes needed to get back from the newest version in notebook
     // back to what we are presently displaying (current_gist_)
     function find_changes_from(notebook) {
+        function change_object(obj) {
+            obj.name = function(n) { return n; };
+            return obj;
+        }
         var changes = [];
+
+        // notebook files, current files
         var nf = notebook.files,
-            cf = _.extend({}, current_gist_.files); // to keep track of changes
+            cf = _.extend({}, current_gist_.files); // dupe to keep track of changes
+
+        // find files which must be changed or removed to get from nf to cf
         for(var f in nf) {
             if(f==='r_type' || f==='r_attributes')
                 continue; // R metadata
             if(f in cf) {
                 if(cf[f].language != nf[f].language || cf[f].content != nf[f].content) {
-                    changes.push(nf.change_object({id: f}));
+                    changes.push(change_object({filename: f,
+                                                language: cf[f].language,
+                                                content: cf[f].content}));
                 }
                 delete cf[f];
             }
-            else changes.push(nf.change_object({id: f, erase: true}));
+            else changes.push(change_object({filename: f, erase: true, language: nf[f].language}));
         }
+
+        // find files which must be added to get from nf to cf
         for(f in cf) {
             if(f==='r_type' || f==='r_attributes')
                 continue; // artifact of rserve.js
-            changes.push(nf.change_object({id: f}));
+            changes.push(change_object({filename: f,
+                                        language: cf[f].language,
+                                        content: cf[f].content}));
         }
         return changes;
     }
@@ -2207,60 +2249,26 @@ Notebook.create_controller = function(model)
         // remove any "empty" changes.  we can keep empty cells on the
         // screen but github will refuse them.  if the user doesn't enter
         // stuff in them before saving, they will disappear on next session
-        changes = changes.filter(function(change) { return !!change.content || change.erase; });
+        changes = changes.filter(function(change) {
+            return change.content || change.erase || change.rename;
+        });
         if (!changes.length)
             return Promise.cast(current_gist_);
         if (model.read_only())
             return Promise.reject("attempted to update read-only notebook");
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
-            // we don't use the gist rename feature because it doesn't
-            // allow renaming x -> y and creating a new x at the same time
-            // instead, create y and if there is no longer any x, erase it
-            var post_names = {};
+            var files = {};
+            // play the changes in order - they must be sequenced so this makes sense
             _.each(changes, function(change) {
-                if (!change.erase) {
-                    var after = change.rename || change.id;
-                    post_names[change.name(after)] = 1;
-                };
-            });
-
-            var filehash = {};
-            _.each(changes, function(change) {
-                var c = {};
-                if(change.content !== undefined)
-                    c.content = change.content;
-                var pre_name = change.name(change.id);
-                if(change.erase || !post_names[pre_name])
-                    filehash[pre_name] = null;
-                if(!change.erase) {
-                    var post_name = change.name(change.rename || change.id);
-                    filehash[post_name] = c;
+                if(change.erase || change.rename) {
+                    files[change.filename] = null;
+                    if(change.rename)
+                        files[change.rename] = {content: change.content};
                 }
+                else files[change.filename] = {content: change.content};
             });
-            return { files: filehash }; 
-            // _.reduce(changes, xlate_change, {})};
-            // var post_names = _.reduce(changes,
-            //                           function(names, change) {
-            //                               if(!change.erase) {
-            //                                   var after = change.rename || change.id;
-            //                                   names[Notebook.part_name(after, change.language)] = 1;
-            //                               }
-            //                               return names;
-            //                           }, {});
-            // function xlate_change(filehash, change) {
-            //     var c = {};
-            //     if(change.content !== undefined)
-            //         c.content = change.content;
-            //     var pre_name = Notebook.part_name(change.id, change.language);
-            //     if(change.erase || !post_names[pre_name])
-            //         filehash[pre_name] = null;
-            //     if(!change.erase) {
-            //         var post_name = Notebook.part_name(change.rename || change.id, change.language);
-            //         filehash[post_name] = c;
-            //     }
-            //     return filehash;
-            // }
+            return {files: files};
         }
 
         return rcloud.update_notebook(gistname, changes_to_gist(changes))
@@ -2270,6 +2278,9 @@ Notebook.create_controller = function(model)
                 current_gist_ = notebook;
                 return notebook;
             });
+    }
+    function refresh_cells() {
+        return model.reread_cells();
     }
 
     function on_dirty() {
@@ -2337,6 +2348,82 @@ Notebook.create_controller = function(model)
             update_notebook(changes)
                 .then(default_callback_);
         },
+        coalesce_prior_cell: function(cell_model) {
+            var prior = model.prior_cell(cell_model);
+            if(!prior)
+                return;
+
+            function opt_cr(text) {
+                if(text.length && text[text.length-1] != '\n')
+                    return text + '\n';
+                return text;
+            }
+            function crunch_quotes(left, right) {
+                var end = /```\n$/, begin = /^```{r}/;
+                if(end.test(left) && begin.test(right))
+                    return left.replace(end, '') + right.replace(begin, '');
+                else return left + right;
+            }
+
+            // note we have to refresh everything and then concat these changes onto
+            // that.  which won't work in general but looks like it is okay to
+            // concatenate a bunch of change content objects with a move or change
+            // to one of the same objects, and an erase of one
+            var new_content, changes = refresh_cells();
+
+            // this may have to be multiple dispatch when there are more than two languages
+            if(prior.language()==cell_model.language()) {
+                new_content = crunch_quotes(opt_cr(prior.content()),
+                                            cell_model.content());
+                prior.content(new_content);
+                changes = changes.concat(model.update_cell(prior));
+            }
+            else {
+                if(prior.language()==="R") {
+                    new_content = crunch_quotes('```{r}\n' + opt_cr(prior.content()) + '```\n',
+                                                cell_model.content());
+                    prior.content(new_content);
+                    changes = changes.concat(model.change_cell_language(prior, "Markdown"));
+                    changes[changes.length-1].content = new_content; //  NOOOOOO!!!!
+                }
+                else {
+                    new_content = crunch_quotes(opt_cr(prior.content()) + '```{r}\n',
+                                                opt_cr(cell_model.content()) + '```\n');
+                    new_content = new_content.replace(/```\n```{r}\n/, '');
+                    prior.content(new_content);
+                    changes = changes.concat(model.update_cell(prior));
+                }
+            }
+            _.each(prior.views, function(v) { v.show_source(); });
+            update_notebook(changes.concat(model.remove_cell(cell_model)))
+                .then(default_callback_);
+        },
+        split_cell: function(cell_model, point1, point2) {
+            function resplit(a) {
+                for(var i=0; i<a.length-1; ++i)
+                    if(!/\n$/.test(a[i]) && /^\n/.test(a[i+1])) {
+                        a[i] = a[i].concat('\n');
+                        a[i+1] = a[i+1].replace(/^\n/, '');
+                    }
+            }
+            var changes = refresh_cells();
+            var content = cell_model.content(),
+                parts = [content.substring(0, point1)],
+                id = cell_model.id(), language = cell_model.language();
+            if(point2 === undefined)
+                parts.push(content.substring(point1));
+            else
+                parts.push(content.substring(point1, point2),
+                           content.substring(point2));
+            resplit(parts);
+            cell_model.content(parts[0]);
+            changes = changes.concat(model.update_cell(cell_model));
+            // not great to do multiple inserts here - but not quite important enough to enable insert-n
+            for(var i=1; i<parts.length; ++i)
+                changes = changes.concat(insert_cell_helper(parts[i], language, id+i).changes);
+            update_notebook(changes)
+                .then(default_callback_);
+        },
         change_cell_language: function(cell_model, language) {
             var changes = model.change_cell_language(cell_model, language);
             update_notebook(changes)
@@ -2387,9 +2474,6 @@ Notebook.create_controller = function(model)
                     : that.load_notebook(gistname, null); // do a load - we need to refresh
             });
         },
-        refresh_cells: function() {
-            return model.reread_cells();
-        },
         update_cell: function(cell_model) {
             return update_notebook(model.update_cell(cell_model));
         },
@@ -2398,7 +2482,7 @@ Notebook.create_controller = function(model)
         },
         save: function() {
             if(dirty_) {
-                var changes = this.refresh_cells();
+                var changes = refresh_cells();
                 update_notebook(changes);
                 if(save_button_)
                     ui_utils.disable_bs_button(save_button_);
@@ -2408,12 +2492,12 @@ Notebook.create_controller = function(model)
         },
         run_all: function() {
             this.save();
-            _.each(model.notebook, function(cell_model) {
+            _.each(model.cells, function(cell_model) {
                 cell_model.controller.set_status_message("Waiting...");
             });
-            
+
             // will ordering bite us in the leg here?
-            var promises = _.map(model.notebook, function(cell_model) {
+            var promises = _.map(model.cells, function(cell_model) {
                 return Promise.resolve().then(function() {
                     cell_model.controller.set_status_message("Computing...");
                     return cell_model.controller.execute();

@@ -77,30 +77,6 @@ RCloud.create = function(rcloud_ocaps) {
         return promise.then(success).catch(failure);
     }
 
-    // function rcloud_github_handler(command, promise) {
-    //     function success(result) {
-    //         if (result.r_attributes['class'] === "try-error") {
-    //             throw result;
-    //         }
-    //         if (result.ok) {
-    //             return result.content;
-    //         } else {
-    //             throw result.content;
-    //         }
-    //     }
-    //     function failure(err) {
-    //         if (RCloud.is_exception(err)) {
-    //             rclient.post_error(err[0]);
-    //         } else {
-    //             var message = _.isObject(err) && 'ok' in err
-    //                 ? err.content.message : err.toString();
-    //             rclient.post_error(command + ': ' + message);
-    //         }
-    //         throw err;
-    //     }
-    //     return promise.then(success).catch(failure);
-    // }
-
     var rcloud = {};
 
     function setup_unauthenticated_ocaps() {
