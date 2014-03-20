@@ -5,7 +5,7 @@
 readRDS.if.exists <- function (file, refhook = NULL)
 {
     if (is.character(file) && !file.exists(file))
-      stop("file doesn't exist")
+      stop(paste("file", file, "doesn't exist", sep=" "))
     else readRDS(file, refhook);
 }
 
