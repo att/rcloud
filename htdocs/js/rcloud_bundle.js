@@ -2566,6 +2566,17 @@ Notebook.part_name = function(id, language) {
     }
     return 'part' + id + '.' + ext;
 };
+// FIXME this is jsut a proof of concept - using Rserve console OOBs
+var append_session_info = function(msg) {
+    // one hacky way is to maintain a <pre> that we fill as we go
+    // note that R will happily spit out incomplete lines so it's
+    // not trivial to maintain each output in some separate structure
+    if (!document.getElementById("session-info-out"))
+	$("#session-info").append($("<pre id='session-info-out'></pre>"));
+    $("#session-info-out").append(msg);
+    $("#collapse-session-info").collapse("show");
+};
+
 // FIXME this needs to go away as well.
 var oob_handlers = {
     "browsePath": function(v) {
@@ -2574,7 +2585,10 @@ var oob_handlers = {
         var height=500;
         var left=screen.width-width;
         window.open(x,'RCloudHelp','width='+width+',height='+height+',scrollbars=yes,resizable=yes,left='+left);
-    }
+    },
+    "console.out": append_session_info,
+    "console.msg": append_session_info,
+    "console.err": append_session_info
 };
 
 RCloud.session = {

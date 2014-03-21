@@ -291,8 +291,8 @@ rcloud.search <- function(search.string) {
 
 ## FIXME: won't work - uses a global file!
 rcloud.record.cell.execution <- function(user = .session$username, json.string) {
-  cat(paste(paste(Sys.time(), user, json.string, sep="|"), "\n"),
-      file=pathConf("data.root", "history", "main_log.txt"), append=TRUE)
+#  cat(paste(paste(Sys.time(), user, json.string, sep="|"), "\n"),
+#      file=pathConf("data.root", "history", "main_log.txt"), append=TRUE)
 }
 
 rcloud.debug.level <- function() if (hasConf("debug")) getConf("debug") else 0L
