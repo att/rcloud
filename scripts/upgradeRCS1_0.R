@@ -1,7 +1,8 @@
 # This script upgrades RCS keys from RCloud 0.9 to 1.0
-# In particular it renames notebook/* to .notebook/*
+# In particular it copies all notebook/* to .notebook/*
 # and extracts all notebook lists and user configuration
 # from <user>/system/config.json
+# It skips any notebooks that have already been migrated
 
 # to invoke, run
 # ROOT=<rcloud-root-dir> R -f upgradeRCS1_0.R
@@ -12,12 +13,28 @@ rcloud.support:::start.rcloud.anonymously()
 
 rcs.key <- rcloud.support:::rcs.key
 
+id_part <- function(x) gsub("\\.?notebook/([^/]*).*", "\\1", x)
+
+# find out what has already been migrated
+get.migrated.notebooks <- function() {
+  migrated <- list()
+  migrated[unique(id_part(rcs.list(".notebook/*/*")))] <- TRUE
+  migrated
+}
+
 # migrate notebooks from notebook/ to .notebook/
-migrate.notebook.keys <- function() {
-  nb_migrate <- function(keys) Map(function(src, dest) {
-    val <- rcs.get(src)
-    rcs.set(dest, val)
-  }, keys, gsub("notebook", ".notebook", keys))
+migrate.notebook.keys <- function(keep) {
+  nb_migrate <- function(keys) {
+    fk <- Filter(function(k) keep(id_part(k)), keys)
+    if(length(fk)) {
+      cat("migrating new keys:\n");
+      print(fk)
+      Map(function(src, dest) {
+        val <- rcs.get(src)
+        rcs.set(dest, val)
+      }, fk, gsub("notebook", ".notebook", fk))
+    }
+  }
   nb_migrate(rcs.list("notebook/*/*/*"))
   nb_migrate(rcs.list("notebook/*/*"))
 }
@@ -26,23 +43,26 @@ migrate.notebook.keys <- function() {
 pull.notebook.metadata <- function(user, entries)
   lapply(names(entries), function(notebook) {
     info <- entries[[notebook]]
-    cat(paste("Writing notebook", notebook, ":",
-              "user", user,
-              "description", info$description,
-              "last_commit", info$last_commit,
-              "visibility", info$visibility,
-              "\n", sep=' '))
-    book <- usr.key(user = ".notebook", notebook = notebook);
-    rcs.set(rcs.key(book, 'username'), user);
-    rcs.set(rcs.key(book, 'description'), info$description);
-    rcs.set(rcs.key(book, 'last_commit'), info$last_commit);
-    if('visibility' %in% names(info))
-      rcs.set(rcs.key(book, 'visible'), info$visibility == "public");
+    book <- usr.key(user = ".notebook", notebook = notebook)
+    date <- rcs.get(rcs.key(book, 'last_commit'))
+    if(length(date) == 0 || info$last_commit > date) {
+      cat(paste("Writing notebook", notebook, ":",
+                "user", user,
+                "description", info$description,
+                "last_commit", info$last_commit,
+                "visibility", info$visibility,
+                "\n", sep=' '))
+      rcs.set(rcs.key(book, 'username'), user)
+      rcs.set(rcs.key(book, 'description'), info$description)
+      rcs.set(rcs.key(book, 'last_commit'), info$last_commit)
+      if('visibility' %in% names(info))
+        rcs.set(rcs.key(book, 'visible'), info$visibility == "public")
+    }
   })
 
 # pull notebook lists and user options out of the
 # individual user config files
-explode.user.configs <- function() {
+explode.user.configs <- function(keep) {
   configs <- rcs.list("*/system/config.json")
   users <- gsub("/.*", "", configs)
   timestamp <- format(Sys.time(),"%Y-%m-%dT%H:%M:%SZ","GMT");
@@ -51,16 +71,22 @@ explode.user.configs <- function() {
       config <- rjson::fromJSON(rcs.get(key))
 
       # notebook metadata
-      pull.notebook.metadata(username, config$all_books)
+      pull.notebook.metadata(username, config$all_books[Filter(keep, names(config$all_books))])
       lapply(names(config$interests),
-             function(friend) pull.notebook.metadata(friend, config$interests[[friend]]))
+             function(friend) {
+               fi <- config$interests[[friend]]
+               pull.notebook.metadata(friend, fi[Filter(keep, names(fi))])
+             })
 
       # options
       opts <- usr.key(user = username, notebook = "system", "config");
 
       # all notebooks list
-      lapply(rcs.key(opts, "notebooks", names(config$all_books)),
-             function(key) rcs.set(key, 1))
+      newbooks <- Filter(keep, names(config$all_books))
+      if(length(newbooks)) {
+        lapply(rcs.key(opts, "notebooks", newbooks),
+               function(key) rcs.set(key, 1))
+      }
 
       rcs.set(rcs.key(opts, "current", "notebook"), config$currbook)
       rcs.set(rcs.key(opts, "current", "version"), config$currversion)
@@ -75,10 +101,15 @@ explode.user.configs <- function() {
 }
 
 rcloud.upgrade.notebook.lists <- function() {
-  migrate.notebook.keys()
-  explode.user.configs();
+  already <- get.migrated.notebooks()
+  keep <- function(id) is.null(already[[id]])
+  cat("Already migrated:\n")
+  print(names(already))
+  migrate.notebook.keys(keep)
+  explode.user.configs(keep);
 
   invisible(TRUE)
 }
 
 rcloud.upgrade.notebook.lists()
+warnings()
