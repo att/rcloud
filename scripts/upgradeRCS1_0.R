@@ -81,20 +81,28 @@ explode.user.configs <- function(keep) {
       # options
       opts <- usr.key(user = username, notebook = "system", "config");
 
-      # all notebooks list
+      # add any notebooks created in old RCloud
       newbooks <- Filter(keep, names(config$all_books))
       if(length(newbooks)) {
         lapply(rcs.key(opts, "notebooks", newbooks),
                function(key) rcs.set(key, 1))
       }
 
-      rcs.set(rcs.key(opts, "current", "notebook"), config$currbook)
-      rcs.set(rcs.key(opts, "current", "version"), config$currversion)
-      rcs.set(rcs.key(opts, "nextwork"), config$nextwork)
-      rcs.set(rcs.key(opts, "config_version"), config$config_version)
+      # import ordinary options only once
+      if(length(rcs.list(rcs.key(opts, "current", "notebook"))) == 0) {
+        rcs.set(rcs.key(opts, "current", "notebook"), config$currbook)
+        rcs.set(rcs.key(opts, "current", "version"), config$currversion)
+        rcs.set(rcs.key(opts, "config_version"), config$config_version)
+        # seed recently-opened list with current notebook and current time
+        rcs.set(rcs.key(opts, "recent", config$currbook), timestamp);
+      }
 
-      # seed recently-opened list with current notebook and current time
-      rcs.set(rcs.key(opts, "recent", config$currbook), timestamp);
+      # but keep max notebook number ;-)
+      nxt <- rcs.get(rcs.key(opts, "nextwork"))
+      if(is.null(nxt) | nxt < config$nextwork) {
+        cat("Bump user", username, "notebook # to", config$nextwork, "\n", sep=' ')
+        rcs.set(rcs.key(opts, "nextwork"), config$nextwork)
+      }
 
       config$currbook
     }, users, configs)
