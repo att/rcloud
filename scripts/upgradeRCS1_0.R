@@ -17,7 +17,7 @@ rename.notebook.keys <- function() {
   nb_rename <- function(keys) Map(function(src, dest) {
     val <- rcs.get(src)
     rcs.set(dest, val)
-    rcloud.support:::rcs.rm(src)
+    rcs.rm(src)
   }, keys, gsub("notebook", ".notebook", keys))
   nb_rename(rcs.list("notebook/*/*/*"))
   rcs.rm(rcs.list("notebook/*/stars"))
