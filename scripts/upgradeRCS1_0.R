@@ -13,17 +13,13 @@ rcloud.support:::start.rcloud.anonymously()
 rcs.key <- rcloud.support:::rcs.key
 
 # migrate notebooks from notebook/ to .notebook/
-rename.notebook.keys <- function() {
-  nb_rename <- function(keys) Map(function(src, dest) {
+migrate.notebook.keys <- function() {
+  nb_migrate <- function(keys) Map(function(src, dest) {
     val <- rcs.get(src)
     rcs.set(dest, val)
-    rcs.rm(src)
   }, keys, gsub("notebook", ".notebook", keys))
-  nb_rename(rcs.list("notebook/*/*/*"))
-  rcs.rm(rcs.list("notebook/*/stars"))
-  nb_rename(rcs.list("notebook/*/*"))
-  rcs.rm(rcs.list("notebook/*"))
-  rcs.rm(rcs.list("notebook"))
+  nb_migrate(rcs.list("notebook/*/*/*"))
+  nb_migrate(rcs.list("notebook/*/*"))
 }
 
 # notebook metadata now gets stored globally under .notebook
@@ -74,14 +70,12 @@ explode.user.configs <- function() {
       # seed recently-opened list with current notebook and current time
       rcs.set(rcs.key(opts, "recent", config$currbook), timestamp);
 
-      # remove config.json
-      rcs.rm(key)
       config$currbook
     }, users, configs)
 }
 
 rcloud.upgrade.notebook.lists <- function() {
-  rename.notebook.keys()
+  migrate.notebook.keys()
   explode.user.configs();
 
   invisible(TRUE)
