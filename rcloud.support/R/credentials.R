@@ -31,7 +31,7 @@ set.token <- function(user, token, realm="rcloud")
     d$user.to.token[[user]] <- token
     d$token.to.user[[token]] <- user
     .save.token.list(d)
-  } else RCurl::getURL(paste0(getConf("session.server"), "/stored_token?token=", URLencode(token), "&user=", URLencode(user), "&realm=", URLencode(realm)))
+  } else session.server.set.token(realm, user, token)
 }
 
 revoke.token <- function(token, realm="rcloud") {
@@ -41,7 +41,7 @@ revoke.token <- function(token, realm="rcloud") {
     if (!is.null(user)) d$user.to.token[[user]] <- NULL
     d$token.to.user[[token]] <- NULL
     .save.token.list(d)
-  } else RCurl::getURL(paste0(getConf("session.server"), "/revoke?token=", URLencode(token), "&realm=", URLencode(realm)))
+  } else session.server.revoke.token(realm, token)
 }
 
 check.user.token.pair <- function(user, token, valid.sources="stored", realm="rcloud")
@@ -59,8 +59,7 @@ check.user.token.pair <- function(user, token, valid.sources="stored", realm="rc
      !is.null(token.from.user) &&
      (token.from.user == token))
   } else {
-    res <- RCurl::getURL(paste0(getConf("session.server"), "/valid?token=", URLencode(token), "&realm=", URLencode(realm)))
-    res <- strsplit(res, "\n")[[1]]
+    res <- session.server.get.token(realm, token)
     if (rcloud.debug.level()) cat("check.user.token.pair(", user, ", ", token, ", ", realm, ") valid: ", res[1],", user: ", res[2], ", source: ", res[3], "\n", sep='')
     (length(res) > 1) && isTRUE(res[1] == "YES") && isTRUE(res[2] == as.vector(user)) && isTRUE(res[3] %in% valid.sources)
   }
@@ -78,8 +77,7 @@ check.token <- function(token, valid.sources="stored", realm="rcloud")
     else
       FALSE
   } else {
-    res <- RCurl::getURL(paste0(getConf("session.server"), "/valid?token=", URLencode(token), "&realm=", URLencode(realm)))
-    res <- strsplit(res, "\n")[[1]]
+    res <- session.server.get.token(realm, token)
     if (rcloud.debug.level()) cat("check.token(", token,", ", realm,") valid: ", res[1],", user: ", res[2], ", source: ", res[3], "\n", sep='')
     if ((length(res) > 1) && isTRUE(res[1] == "YES") && isTRUE(res[3] %in% valid.sources)) res[2] else FALSE    
   }
