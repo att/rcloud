@@ -5,7 +5,7 @@
 readRDS.if.exists <- function (file, refhook = NULL)
 {
     if (is.character(file) && !file.exists(file))
-      stop("file doesn't exist")
+      stop(paste("file", file, "doesn't exist", sep=" "))
     else readRDS(file, refhook);
 }
 
@@ -13,10 +13,12 @@ readRDS.if.exists <- function (file, refhook = NULL)
 
 .lnapply <- function(X, ...) { l <- lapply(X, ...); names(l) <- X; l }
 
-rcs_ff_error <- function(rv)
-  function(w) {cat("rcs.ff error: "); print(w); cat("\n"); rv}
-rcs_ff_warning <- function(rv)
-  function(w) {cat("rcs.ff warning: "); print(w); cat("\n"); rv}
+## rcs_ff_error <- function(rv)
+##   function(w) {cat("rcs.ff error: "); print(w); cat("\n"); rv}
+## rcs_ff_warning <- function(rv)
+##   function(w) {cat("rcs.ff warning: "); print(w); cat("\n"); rv}
+
+rcs_ff_error <- rcs_ff_warning <- function(rv) function(w) rv
 
 rcs.get.RCSff <- function(key, list=FALSE, engine=.session$rcs.engine)
    if (list || length(key) != 1L) .lnapply(key, rcs.get.RCSff, FALSE, engine) else (tryCatch(readRDS.if.exists(.ffpath(key, engine)), warning=rcs_ff_warning(NULL), error=rcs_ff_error(NULL)))

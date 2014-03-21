@@ -281,8 +281,8 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.install_notebook_stylesheetsAsync();
         };
 
-        rcloud.get_users = function(user) {
-            return rcloud_ocaps.get_usersAsync(user);
+        rcloud.get_users = function() {
+            return rcloud_ocaps.get_usersAsync();
         };
 
         rcloud.record_cell_execution = function(cell_model) {
@@ -385,9 +385,6 @@ RCloud.create = function(rcloud_ocaps) {
         var paths = [
             ["session_init"],
             ["search"],
-            ["load_user_config"],
-            ["load_multiple_user_configs"],
-            ["save_user_config"],
             ["update_notebook"],
             ["create_notebook"],
             ["fork_notebook"],
@@ -405,10 +402,24 @@ RCloud.create = function(rcloud_ocaps) {
             ["is_notebook_published"],
             ["publish_notebook"],
             ["unpublish_notebook"],
+            ["set_notebook_visibility"],
             ["api","disable_warnings"],
             ["api","enable_echo"],
             ["api","disable_warnings"],
-            ["api","enable_echo"]
+            ["api","enable_echo"],
+            ["config", "all_notebooks"],
+            ["config", "all_notebooks_multiple_users"],
+            ["config", "add_notebook"],
+            ["config", "remove_notebook"],
+            ["config", "get_current_notebook"],
+            ["config", "set_current_notebook"],
+            ["config", "new_notebook_number"],
+            ["config", "get_recent_notebooks"],
+            ["config", "set_recent_notebook"],
+            ["config", "clear_recent_notebook"],
+            ["get_notebook_info"],
+            ["get_multiple_notebook_infos"],
+            ["set_notebook_info"]
         ];
         process_paths(paths);
 
@@ -418,15 +429,6 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.search = function(search_string) {
             return rcloud_ocaps.searchAsync(search_string);
         };
-        rcloud.load_user_config = function(user) {
-            return json_p(rcloud_ocaps.load_user_configAsync(user));
-        };
-        rcloud.load_multiple_user_configs = function(users) {
-            return json_p(rcloud_ocaps.load_multiple_user_configsAsync(users));
-        };
-        rcloud.save_user_config = function(user, content) {
-            return json_p(rcloud_ocaps.save_user_configAsync(user, JSON.stringify(content)));
-        };
         rcloud.update_notebook = function(id, content) {
             return rcloud_github_handler(
                 "rcloud.update.notebook",
@@ -434,7 +436,7 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.create_notebook = function(content) {
             return rcloud_github_handler(
-                "rcloud.create.notebook", 
+                "rcloud.create.notebook",
                 rcloud_ocaps.create_notebookAsync(JSON.stringify(content)));
         };
         rcloud.fork_notebook = function(id) {
@@ -582,11 +584,11 @@ RCloud.create = function(rcloud_ocaps) {
             }
 
             if(!(window.File && window.FileReader && window.FileList && window.Blob))
-                throw "File API not supported by browser.";
+                throw new Error("File API not supported by browser.");
             else {
                 var file=$("#file")[0].files[0];
                 if(_.isUndefined(file))
-                    throw "No file selected!";
+                    throw new Error("No file selected!");
                 else {
                     /*FIXME add logged in user */
                     rcloud_ocaps.file_upload.upload_path(function(err, path) {
@@ -616,6 +618,10 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.unpublish_notebookAsync(id);
         };
 
+        rcloud.set_notebook_visibility = function(id, value) {
+            return rcloud_ocaps.set_notebook_visibilityAsync(id, value);
+        };
+
         // stars
         rcloud.stars = {};
         rcloud.stars.star_notebook = function(id) {
@@ -637,6 +643,29 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.stars.get_my_starred_notebooksAsync();
         };
 
+        // config
+        rcloud.config = {
+            all_notebooks: rcloud_ocaps.config.all_notebooksAsync,
+            all_notebooks_multiple_users: rcloud_ocaps.config.all_notebooks_multiple_usersAsync,
+            add_notebook: rcloud_ocaps.config.add_notebookAsync,
+            remove_notebook: rcloud_ocaps.config.remove_notebookAsync,
+            get_current_notebook: rcloud_ocaps.config.get_current_notebookAsync,
+            set_current_notebook: rcloud_ocaps.config.set_current_notebookAsync,
+            new_notebook_number: rcloud_ocaps.config.new_notebook_numberAsync,
+            get_recent_notebooks: rcloud_ocaps.config.get_recent_notebooksAsync,
+            set_recent_notebook: rcloud_ocaps.config.set_recent_notebookAsync,
+            clear_recent_notebook: rcloud_ocaps.config.clear_recent_notebookAsync
+        };
+
+        // notebook cache
+        rcloud.get_notebook_info = rcloud_ocaps.get_notebook_infoAsync;
+        rcloud.get_multiple_notebook_infos = rcloud_ocaps.get_multiple_notebook_infosAsync;
+        rcloud.set_notebook_info = function(id, info) {
+            if(!info.username) return Promise.reject("attempt to set info no username");
+            if(!info.description) return Promise.reject("attempt to set info no description");
+            if(!info.last_commit) return Promise.reject("attempt to set info no last_commit");
+            return rcloud_ocaps.set_notebook_infoAsync(id, info);
+        };
     }
 
     rcloud.authenticated = rcloud_ocaps.authenticated;
