@@ -77,7 +77,12 @@
     <!--/div-->
   </div>
 </div>
-
+<!-- Added for search functionality -->
+<div id="popup" style="height:auto;width:auto;" class="modal">
+	<div id="divClose" class="closeButtonDiv"  style="display:none;">hide</div>
+	<div id="divPopup" class="headerDiv" style="display:none;overflow-x:hidden"></div>
+</div>
+<!-- End -->
 <div class="container" id="main-div">
   <div class="row">
     <div class="col-md-3 col-sm-3 no-padding" style="position:fixed;top:51;left:0" id="left-column">
@@ -109,16 +114,17 @@
               <div id="collapseTwo" class="panel-collapse collapse in">
 		<img height="100%" width="5px" src="img/right_bordergray.png" style="position:absolute;right:0px" class="left-panel-shadow">
                 <div class="panel-body">
-                  Coming soon!
-                  <!--  Search disabled for Version 0.9
-                  <div>Full-text search for <input type="text" value="" id="input-text-search"></input></div>
+                  <!--Added for search functionality -->
+                 <div>Full-text search for <input type="text" value="" id="input-text-search" onkeydown="getTextBoxData(event)"></input><button id='search-button' onclick="search();">search</button></div>
                   <h4 id="input-text-source-results-title" style="padding-bottom: 0; margin-bottom: 0">Source results</h4>
                   <table id="input-text-source-results-table">
                   </table>
                   <h4 id="input-text-history-results-title" style="padding-bottom: 0; margin-bottom: 0">History results</h4>
                   <table id="input-text-history-results-table">
-                  </table>
-                  -->
+                  </table>				  
+                 </div>
+                <div id="custom-search-result"></div>
+		<!--End -->
                 </div>
               </div>
             </div>
