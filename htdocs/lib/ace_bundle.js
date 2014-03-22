@@ -17728,6 +17728,13 @@ define('ace/mode/r', ['require', 'exports', 'module' , 'ace/range', 'ace/lib/oop
    {
       this.HighlightRules = RHighlightRules;
       this.$outdent = new MatchingBraceOutdent();
+      this.getCompletions = function(state, session, pos, prefix, callback) {
+          rcloud.get_completions(session.getValue(),
+                                 session.getDocument().positionToIndex(pos))
+              .then(function(ret) {
+                  callback(null, ret);
+              });
+      };
    };
    oop.inherits(Mode, TextMode);
 
@@ -22617,8 +22624,9 @@ var textCompleter = require("../autocomplete/text_completer");
 var keyWordCompleter = {
     getCompletions: function(editor, session, pos, prefix, callback) {
         var state = editor.session.getState(pos.row);
-        var completions = session.$mode.getCompletions(state, session, pos, prefix);
-        callback(null, completions);
+        // gw: pass in callback instead of calling it directly, to support asynchronous results
+        var completions = session.$mode.getCompletions(state, session, pos, prefix, callback);
+        //callback(null, completions);
     }
 };
 
@@ -23659,7 +23667,8 @@ var Autocomplete = function() {
             data.completer.insertMatch(this.editor);
         } else {
             if (this.completions.filterText) {
-                var ranges = this.editor.selection.getAllRanges();
+                // gw: getAllRanges comes up blank, so it doesn't replace (??)
+                var ranges = [this.editor.selection.getRange()]; // this.editor.selection.getAllRanges();
                 for (var i = 0, range; range = ranges[i]; i++) {
                     range.start.column -= this.completions.filterText.length;
                     this.editor.session.remove(range);
@@ -24171,7 +24180,8 @@ exports.parForEach = function(array, fn, callback) {
     }
 }
 
-var ID_REGEX = /[a-zA-Z_0-9\$-]/;
+// gw: add \. to identifiers for R
+var ID_REGEX = /[a-zA-Z_0-9\$-\.]/;
 
 exports.retrievePrecedingIdentifier = function(text, pos, regex) {
     regex = regex || ID_REGEX;
@@ -24245,7 +24255,8 @@ define('ace/autocomplete/text_completer', ['require', 'exports', 'module' , 'ace
                 (function() {
                     window.require(["ace/ext/language_tools"], function() {});
                 })();
-            /* ***** BEGIN LICENSE BLOCK *****
+            
+/* ***** BEGIN LICENSE BLOCK *****
  * Distributed under the BSD license:
  *
  * Copyright (c) 2010, Ajax.org B.V.
