@@ -388,8 +388,8 @@ RCloud.create = function(rcloud_ocaps) {
         var paths = [
             ["session_init"],
             ["search"],
-			["custom_search"],
-			["query_solr"],
+	    ["custom_search"],
+	    ["query_solr"],
             ["update_notebook"],
             ["create_notebook"],
             ["fork_notebook"],
@@ -439,7 +439,7 @@ RCloud.create = function(rcloud_ocaps) {
                 "rcloud.update.notebook",
                 rcloud_ocaps.update_notebookAsync(id, JSON.stringify(content)));
         };
-		/*---------------ADDED THIS FUNCTION FOR SOLR SEARCH FUNCTIONALITY---------------*/
+	/*---------------ADDED THIS FUNCTION FOR SOLR SEARCH FUNCTIONALITY---------------*/
         rcloud.custom_search = function (qry) {
             var res;
             $('#divClose').css('width', $(document).width() - 45);
