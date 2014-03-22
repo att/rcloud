@@ -1236,7 +1236,8 @@ exports.parForEach = function(array, fn, callback) {
     }
 };
 
-var ID_REGEX = /[a-zA-Z_0-9\$\-\u00A2-\uFFFF]/;
+// gw: add [:\.] to identifiers for R completions
+var ID_REGEX = /[a-zA-Z_0-9:\$\-\.\u00A2-\uFFFF]/;
 
 exports.retrievePrecedingIdentifier = function(text, pos, regex) {
     regex = regex || ID_REGEX;
@@ -1436,7 +1437,8 @@ var Autocomplete = function() {
             data.completer.insertMatch(this.editor, data);
         } else {
             if (this.completions.filterText) {
-                var ranges = this.editor.selection.getAllRanges();
+                // gw: getAllRanges comes up blank, so it doesn't replace (??)
+                var ranges = [this.editor.selection.getRange()]; // this.editor.selection.getAllRanges();
                 for (var i = 0, range; range = ranges[i]; i++) {
                     range.start.column -= this.completions.filterText.length;
                     this.editor.session.remove(range);
@@ -1790,8 +1792,9 @@ var keyWordCompleter = {
             return session.$mode.completer.getCompletions(editor, session, pos, prefix, callback);
         }
         var state = editor.session.getState(pos.row);
-        var completions = session.$mode.getCompletions(state, session, pos, prefix);
-        callback(null, completions);
+        // gw: pass in callback instead of calling it directly, to support asynchronous results
+        var completions = session.$mode.getCompletions(state, session, pos, prefix, callback);
+        //callback(null, completions);
     }
 };
 

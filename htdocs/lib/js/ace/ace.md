@@ -17,4 +17,12 @@ following changes:
   - `tex_highlight_rules.js`
 - all `require` paths in those files must be prefixed with `ace/`
 - the Ace API has changed a bit since those modes were published, and last I checked RStudio was
-  using the old Ace. So there are a few minor patches needed to make these files work.
+  using the old Ace. So there are a few minor patches needed to make these files work. Currently
+  those changes are in commit ffab1b007b0445739eb269c64cf7afac71992fd7
+- we add `\.` to the identifier regex so that autocomplete replaces whole R identifiers.
+- `getCompletions` is defined synchronously in Ace, but we need it to be synchronous in order to
+  call an R function
+- there's a hack in `ext-language_tools.js` where we need to create an array from
+  `selection.getRange()` instead of `selection.getAllRanges()` - unclear why the latter doesn't work
+- ace-cpp-autoindent needs extra parameters for `mode.getNextLineIndent()` to work
+- add call to rcloud.get_completions for python mode

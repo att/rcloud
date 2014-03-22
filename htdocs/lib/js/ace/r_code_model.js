@@ -922,8 +922,10 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
    };
 
    this.$onDocChange = function(evt)
-   {
-      var delta = evt.data;
+  {
+      // ace appears to have slipped too far for any of this code to work
+      // my changes are just to keep this from crashing...
+      var delta = evt;
 
       if (delta.action === "insertLines")
       {
@@ -961,7 +963,8 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
          }
       }
 
-      this.$scopes.invalidateFrom(delta.range.start);
+      // gw: ditto here
+      this.$scopes.invalidateFrom(delta.start);
    };
    
    this.$invalidateRow = function(row)

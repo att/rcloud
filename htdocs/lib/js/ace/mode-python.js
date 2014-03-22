@@ -196,6 +196,14 @@ var Mode = function() {
     this.HighlightRules = PythonHighlightRules;
     this.foldingRules = new PythonFoldMode("\\:");
     this.$behaviour = this.$defaultBehaviour;
+    // gw: RCloud-specific asynchronous completions
+    this.getCompletions = function(state, session, pos, prefix, callback) {
+        rcloud.get_completions('Python', session.getValue(),
+                               session.getDocument().positionToIndex(pos))
+            .then(function(ret) {
+                callback(null, ret);
+            });
+    };
 };
 oop.inherits(Mode, TextMode);
 
