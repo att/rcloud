@@ -1063,8 +1063,19 @@ var editor = function () {
                                     .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
                                     .sortBy(function(kv) { return kv[1]; })
                                     .value();
-                            var latest = sorted[sorted.length-1][0];
-                            that.load_notebook(latest, null);
+                            function try_last() {
+                                var last = sorted.pop();
+                                if(!last)
+                                    that.new_notebook();
+                                else
+                                    that.load_notebook(last[0], null)
+                                    .catch(function(err) {
+                                        if(/Not Found/.test(err))
+                                            rcloud.config.clear_recent_notebook(last);
+                                        try_last();
+                                    });
+                            }
+                            try_last();
                         });
                 });
         },
