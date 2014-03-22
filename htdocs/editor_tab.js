@@ -990,8 +990,8 @@ var editor = function () {
         validate_name: function(newname) {
             return newname && !/^\s+$/.test(newname); // not null and not empty or just whitespace
         },
-        rename_notebook: function(gistname, newname) {
-            return rcloud.rename_notebook(gistname, newname).then(this.load_callback({is_change: true, selroot: true}));
+        rename_notebook: function(desc) {
+            return shell.rename_notebook(desc);
         },
         star_notebook: function(star, opts) {
             var that = this;

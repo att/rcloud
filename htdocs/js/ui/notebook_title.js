@@ -1,7 +1,7 @@
 RCloud.UI.notebook_title = (function() {
     var last_editable_ =  null;
     function rename_current_notebook(name) {
-        editor.rename_notebook(shell.gistname(), name)
+        editor.rename_notebook(name)
             .then(function() {
                 result.set(name);
             });

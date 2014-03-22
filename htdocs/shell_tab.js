@@ -116,6 +116,8 @@ var shell = (function() {
                 done(); // well not really done (just done with cps bleh) FIXME
                 return notebook_controller_.create_notebook(content).then(on_new);
             });
+        }, rename_notebook: function(desc) {
+            return notebook_controller_.rename_notebook(desc);
         }, fork_or_revert_notebook: function(is_mine, gistname, version) {
             // force a full reload in all cases, as a sanity check
             // we might know what the notebook state should be,
