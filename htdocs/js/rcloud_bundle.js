@@ -1541,8 +1541,12 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             var uuid = rcloud.deferred_knitr_uuid;
 
             if (cell_model.language() === 'R' && inner_div.find("pre code").length === 0) {
-                r_result_div.prepend("<pre><code>" + cell_model.content() + "</code></pre>");
+                r_result_div.prepend("<pre><code class='r'>" + cell_model.content() + "</code></pre>");
             }
+
+            // click on code to edit
+            $("code.r", r_result_div).off('click')
+                .click(result.show_source);
 
             // we use the cached version of DPR instead of getting window.devicePixelRatio
             // because it might have changed (by moving the user agent window across monitors)
