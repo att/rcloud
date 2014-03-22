@@ -5,7 +5,7 @@
 # the per-connection setup is done by start.rcloud()
 configure.rcloud <- function () {
   require(rcloud.support) ## make sure we're on the search path (may not be needed once we switch to OCap)
-  
+
   ## it is useful to have access to the root of your
   ## installation from R scripts -- for RCloud this is *mandatory*
   setConf("root", Sys.getenv("ROOT"))
@@ -28,7 +28,7 @@ configure.rcloud <- function () {
     cat("=== NOTE: DEBUG is set, enabling debug mode at level", dl, "===\n")
   }
   if (rcloud.debug.level()) cat("Using ROOT =", getConf("root"), "\n")
-  
+
   # CONFROOT/DATAROOT are purely optional
   # Whom are we kidding? Although it may be nice to abstract out all paths
   # this is far from complete (what about htdocs?) and not very practical
@@ -72,7 +72,7 @@ configure.rcloud <- function () {
   ## use public github by default
   if (!nzConf("github.base.url")) setConf("github.base.url", "https://github.com/")
   if (!nzConf("github.api.url")) setConf("github.api.url", "https://api.github.com/")
-  
+
   if (!all(sapply(c("github.client.id", "github.client.secret"), nzConf))
       && !nzConf("gist.deployment.stash"))
     stop("*** ERROR: You need a GitHub configuration in rcloud.conf! Please refer to README.md for more instructions.")
@@ -139,7 +139,7 @@ configure.rcloud <- function () {
     cainfo <- pathConf("curl.cainfo", anchor=getConf("configuration.root"))
     httr::set_config(httr::config(cainfo = cainfo))
   }
-  
+
   setConf("instanceID", generate.uuid())
 
   options(HTTPUserAgent=paste(getOption("HTTPUserAgent"), "- RCloud (http://github.com/cscheid/rcloud)"))

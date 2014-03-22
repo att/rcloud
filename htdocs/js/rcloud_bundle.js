@@ -529,7 +529,7 @@ RCloud.create = function(rcloud_ocaps) {
             });
         };
         /*------------------------------------------------------------END------------------------------------------------------------*/
-       
+
 	   rcloud.create_notebook = function(content) {
             return rcloud_github_handler(
                 "rcloud.create.notebook",

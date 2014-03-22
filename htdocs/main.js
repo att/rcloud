@@ -2,9 +2,9 @@ Promise.longStackTraces();
 
 /* Added these functions for supporting search functionality */
 
-function search(){	
+function search(){
 	var qry = $('#input-text-search').val();
-	rcloud.custom_search(qry); 
+	rcloud.custom_search(qry);
 	return;
 }
 
@@ -22,7 +22,7 @@ function show_popup(table_content,qry,len,qtime){
 	$("#divPopup").show(200);
 	$("#divClose").show(200);
 	$("#divPopup").html(table_content);
-	$("#divClose").html("Search For: <b>" +qry+"</b> <i style=\"font-size:10px\">Results Found:"+len+"</i><i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i><div style=\"float:right; cursor: pointer;\" data-dismiss='modal' onclick='hide_popup();'><b>[x]&nbsp;</b></div>");	
+	$("#divClose").html("Search For: <b>" +qry+"</b> <i style=\"font-size:10px\">Results Found:"+len+"</i><i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i><div style=\"float:right; cursor: pointer;\" data-dismiss='modal' onclick='hide_popup();'><b>[x]&nbsp;</b></div>");
 };
 /*--------------------------END--------------------------*/
 window.onload = function() {
@@ -48,6 +48,6 @@ window.onload = function() {
          editor.load_notebook(notebook2, version2, true, false);
          }
          });
-         */ 
+         */
     });
 };

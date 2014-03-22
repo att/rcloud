@@ -10,7 +10,7 @@ rcloud.get.comments <- function(id)
 rcloud.post.comment <- function(id, content)
 {
   res <- create.gist.comment(id, content, ctx = .session$rgithub.context)
-  solr.host.port <- toString(.session$solr.host.port)  
+  solr.host.port <- toString(.session$solr.host.port)
   solr.url <- URLencode(paste0("http://",solr.host.port,"/solr/",.session$collection,"/select?q=id:",id,"&start=0&rows=1000&wt=json&sort=starcount desc"))
   solr.res<-getURL(solr.url,.encoding = 'utf-8',.mapUnicode=FALSE)
   solr.res<-fromJSON(solr.res)

@@ -16,7 +16,7 @@
 	font-family:Arial, Helvetica, sans-serif;
 	font-size:15px;
 	color:#fff;
-	font-weight:bold; 
+	font-weight:bold;
 	padding:6px 4px 6px 4px;
 	background-color: white;
 	position: absolute;
@@ -41,7 +41,7 @@
 	z-index: 11;
 	border-top-right-radius: 2px;
 	border-top-left-radius: 2px;
-}	
+}
 /*     End */
 
 body {
@@ -195,8 +195,8 @@ rect.frame {
 }
 
 .notebook-cell .outer-ace-div {
-    position: relative; 
-    width: 100%; 
+    position: relative;
+    width: 100%;
     height: calc(100% - 25px);
     border: 1px solid #fff;
 }

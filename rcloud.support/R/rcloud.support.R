@@ -184,19 +184,20 @@ rcloud.upload.to.notebook <- function(file, name) {
 rcloud.update.notebook <- function(id, content) {
   res <- modify.gist(id, content, ctx = .session$rgithub.context)
   .session$current.notebook <- res
-  ##Getting the parameters from current session, loaded from rcloud.conf file, Added extra parameter for search functionality 
+  ##Getting the parameters from current session, loaded from rcloud.conf file,
+  ##Added extra parameter for search functionality
   ##Getting starcount from redis if rcs.engine=redis is true otherwise getting it from RCSff
   solr.host.port <- toString(.session$solr.host.port)
   if (attr(.session$rcs.engine,"class") == "RCSredis"){
 	star.count <- rcs.get.RCSredis(paste0("notebook/",id,"/starcount"))
   }else
 	star.count <- rcs.get(star.count.key(id))
-  if (is.null(star.count)) star.count <- 0 
+  if (is.null(star.count)) star.count <- 0
   mcparallel(update.solr(solr.host.port,res,star.count,.session$collection), detached=TRUE)
   res
 }
 
-update.solr <- function(host.port,session.object,starcount,collection){ 
+update.solr <- function(host.port,session.object,starcount,collection){
   ##Sample curl command to post data to solr
   solr.flag <- 1
   for(i in 1:3) {
@@ -238,7 +239,7 @@ update.solr <- function(host.port,session.object,starcount,collection){
         postForm(curlTemplate,.opts = list(postfields = paste("[",completedata,"]",sep=''),httpheader = c('Content-Type' = 'application/json',Accept = 'application/json')))
       }
     },
-    error = function (ex) { 
+    error = function (ex) {
 	  print(id)
 	  print(as.character(ex))
 	  print(ex$message)
@@ -252,9 +253,9 @@ rcloud.custom.search <-function(q){
   #Getting response from Solr through url
   #Need to handle '&' as it is reserved character in URLencode
   q <- gsub("%20","+",q)
-  solr.host <- toString(.session$solr.host)  
+  solr.host <- toString(.session$solr.host)
   solr.port <- as.numeric(.session$solr.port)
-  solr.host.port <- toString(.session$solr.host.port)  
+  solr.host.port <- toString(.session$solr.host.port)
   solr.url <- paste0("http://",solr.host.port,"/solr/",.session$collection,"/select?q=",q,"&start=0&rows=1000&wt=json&indent=true&fl=description,id,user,updated_at,starcount&hl=true&hl.fl=content&hl.fragsize=0&hl.maxAnalyzedChars=-1")
   solr.res <- getURL(solr.url,.encoding = 'utf-8',.mapUnicode=FALSE)
   solr.res <- fromJSON(solr.res)
@@ -262,7 +263,7 @@ rcloud.custom.search <-function(q){
   response.high <- solr.res$highlighting
   if(is.null(solr.res$error)){
     if(length(response.docs) > 0){
-      for(i in 1:length(response.high)){    
+      for(i in 1:length(response.high)){
 		if(length(response.high[[i]]) != 0){
           parts.content <- fromJSON(response.high[[i]]$content)
           for(j in 1:length(parts.content)){
@@ -270,10 +271,10 @@ rcloud.custom.search <-function(q){
             if(length(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1]) !=0)) {
               if(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])%in%1 | (which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])%in%length(strsplit(parts.content[[j]]$content,'\n')[[1]]))) {
                 parts.content[[j]]$content <- strsplit(parts.content[[j]]$content,'\n')[[1]][which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])]
-              } else 
+              } else
                 parts.content[[j]]$content <- strsplit(parts.content[[j]]$content,'\n')[[1]][(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])-1):(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])+1)]
             } else
-              parts.content[[j]]$content <- grep("open_b_close",strsplit(parts.content[[j]]$content,'\n')[[1]],value=T,ignore.case=T)                
+              parts.content[[j]]$content <- grep("open_b_close",strsplit(parts.content[[j]]$content,'\n')[[1]],value=T,ignore.case=T)
           }
 		  response.high[[i]]$content <- toJSON(parts.content)
 		  #Handling HTML content
@@ -286,7 +287,7 @@ rcloud.custom.search <-function(q){
         }
       json<-""
       for(i in 1:length(response.docs)){
-        time <- solr.res$responseHeader$QTime  
+        time <- solr.res$responseHeader$QTime
         notebook <- response.docs[[i]]$description
         id <- response.docs[[i]]$id
         starcount <- response.docs[[i]]$starcount
@@ -298,7 +299,7 @@ rcloud.custom.search <-function(q){
 	  return(json)
 	} else
 	  return(solr.res$response$docs)
- } else 
+ } else
 	return(c("error",solr.res$error$msg))
 }
 #########################################################END#######################################################################
@@ -309,7 +310,7 @@ rcloud.create.notebook <- function(content) {
     rcloud.reset.session()
   }
   res
- 
+
 }
 
 rcloud.rename.notebook <- function(id, new.name)
