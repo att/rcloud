@@ -1125,6 +1125,10 @@ Notebook.Buffer.create_model = function(content) {
         views: [], // sub list for pubsub
         parent_model: null,
 
+        renew_content: function() {
+            // make content look new again, e.g. to reinsert cell
+            checkpoint_ = "";
+        },
         content: function(new_content) {
             if (!_.isUndefined(new_content)) {
                 if(content != new_content) {
@@ -1959,6 +1963,7 @@ Notebook.create_model = function()
         insert_cell: function(cell_model, id, skip_event) {
             var that = this;
             cell_model.parent_model = this;
+            cell_model.renew_content();
             var changes = [];
             var n = 1, x = 0;
             while(x<this.cells.length && this.cells[x].id() < id) ++x;
