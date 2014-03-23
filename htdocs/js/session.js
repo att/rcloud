@@ -31,7 +31,6 @@ RCloud.session = {
         } else {
             return rcloud.with_progress(function(done) {
                 rclient.close();
-                // FIXME this is a bit of an annoying duplication of code on main.js and view.js
                 return new Promise(function(resolve, reject) {
                     rclient = RClient.create({
                         debug: rclient.debug,

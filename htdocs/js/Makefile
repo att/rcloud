@@ -26,6 +26,7 @@ rcloud_bundle.js: \
 	session.js \
 	ui/_begin.js \
 	ui/init.js \
+	ui/load.js \
 	ui/column.js \
 	ui/left_panel.js \
 	ui/right_panel.js \

@@ -417,6 +417,8 @@ RCloud.create = function(rcloud_ocaps) {
             ["config", "get_recent_notebooks"],
             ["config", "set_recent_notebook"],
             ["config", "clear_recent_notebook"],
+            ["config", "get_user_option"],
+            ["config", "set_user_option"],
             ["get_notebook_info"],
             ["get_multiple_notebook_infos"],
             ["set_notebook_info"]
@@ -654,7 +656,9 @@ RCloud.create = function(rcloud_ocaps) {
             new_notebook_number: rcloud_ocaps.config.new_notebook_numberAsync,
             get_recent_notebooks: rcloud_ocaps.config.get_recent_notebooksAsync,
             set_recent_notebook: rcloud_ocaps.config.set_recent_notebookAsync,
-            clear_recent_notebook: rcloud_ocaps.config.clear_recent_notebookAsync
+            clear_recent_notebook: rcloud_ocaps.config.clear_recent_notebookAsync,
+            get_user_option: rcloud_ocaps.config.get_user_optionAsync,
+            set_user_option: rcloud_ocaps.config.set_user_optionAsync
         };
 
         // notebook cache
@@ -2611,7 +2615,6 @@ RCloud.session = {
         } else {
             return rcloud.with_progress(function(done) {
                 rclient.close();
-                // FIXME this is a bit of an annoying duplication of code on main.js and view.js
                 return new Promise(function(resolve, reject) {
                     rclient = RClient.create({
                         debug: rclient.debug,
@@ -2859,6 +2862,10 @@ RCloud.UI.init = function() {
     });
 
 };
+RCloud.UI.load = function() {
+    RCloud.UI.left_panel.load();
+    RCloud.UI.right_panel.load();
+};
 RCloud.UI.column = function(selector, colwidth) {
     function classes(cw) {
         return "col-md-" + cw + " col-sm-" + cw;
@@ -2877,21 +2884,32 @@ RCloud.UI.column = function(selector, colwidth) {
 RCloud.UI.left_panel = (function() {
     var collapsed_ = false;
 
+    function hide() {
+        result.colwidth(1);
+        $("#new-notebook").hide();
+        // the following actually makes sense to me. oh no what has my life become
+        $("#accordion > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
+        $("#left-pane-collapser i").removeClass("icon-minus").addClass("icon-plus");
+        RCloud.UI.middle_column.update();
+        collapsed_ = true;
+    }
+    function show() {
+        result.colwidth(3);
+        $("#new-notebook").show();
+        $("#left-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
+        RCloud.UI.middle_column.update();
+        collapsed_ = false;
+    }
+
     var result = RCloud.UI.column("#left-column, #fake-left-column", 3);
     _.extend(result, {
         hide: function() {
-            result.colwidth(1);
-            $("#new-notebook").hide();
-            $("#left-pane-collapser i").removeClass("icon-minus").addClass("icon-plus");
-            RCloud.UI.middle_column.update();
-            collapsed_ = true;
+            hide();
+            rcloud.config.set_user_option("collapse_left", true);
         },
         show: function() {
-            result.colwidth(3);
-            $("#new-notebook").show();
-            $("#left-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
-            RCloud.UI.middle_column.update();
-            collapsed_ = false;
+            show();
+            rcloud.config.set_user_option("collapse_left", false);
         },
         init: function() {
             var that = this;
@@ -2910,11 +2928,15 @@ RCloud.UI.left_panel = (function() {
             $("#left-pane-collapser").click(function() {
                 if (collapsed_)
                     that.show();
-                else {
-                    // the following actually makes sense to me. oh no what has my life become
-                    $("#accordion > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
+                else
                     that.hide();
-                }
+            });
+        },
+        load: function() {
+            rcloud.config.get_user_option("collapse_left").then(function(val) {
+                if(val)
+                    hide();
+                // else show();
             });
         }
     });
@@ -2924,19 +2946,30 @@ RCloud.UI.left_panel = (function() {
 RCloud.UI.right_panel = (function() {
     var collapsed_ = false;
 
+    function hide() {
+        result.colwidth(1);
+        // the following actually makes sense to me. oh no what has my life become
+        $("#accordion-right > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
+        $("#right-pane-collapser i").addClass("icon-plus").removeClass("icon-minus");
+        RCloud.UI.middle_column.update();
+        collapsed_ = true;
+    }
+    function show() {
+        result.colwidth(4);
+        $("#right-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
+        RCloud.UI.middle_column.update();
+        collapsed_ = false;
+    }
+
     var result = RCloud.UI.column("#right-column, #fake-right-column", 4);
     _.extend(result, {
         hide: function() {
-            result.colwidth(1);
-            $("#right-pane-collapser i").addClass("icon-plus").removeClass("icon-minus");
-            RCloud.UI.middle_column.update();
-            collapsed_ = true;
+            hide();
+            rcloud.config.set_user_option("collapse_right", true);
         },
         show: function() {
-            result.colwidth(4);
-            $("#right-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
-            RCloud.UI.middle_column.update();
-            collapsed_ = false;
+            show();
+            rcloud.config.set_user_option("collapse_right", false);
         },
         init: function() {
             var that = this;
@@ -2955,11 +2988,15 @@ RCloud.UI.right_panel = (function() {
             $("#right-pane-collapser").click(function() {
                 if (collapsed_)
                     that.show();
-                else {
-                    // the following actually makes sense to me. oh no what has my life become
-                    $("#accordion-right > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
+                else
                     that.hide();
-                }
+            });
+        },
+        load: function() {
+            rcloud.config.get_user_option("collapse_right").then(function(val) {
+                if(val)
+                    hide();
+                // else show();
             });
         }
     });

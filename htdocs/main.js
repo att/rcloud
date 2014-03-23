@@ -8,6 +8,7 @@ window.onload = function() {
 
     RCloud.UI.init();
     RCloud.session.init().then(function() {
+        RCloud.UI.load();
         var notebook = null, version = null;
         if (location.search.length > 0) {
             notebook = getURLParameter("notebook");
