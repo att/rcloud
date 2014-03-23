@@ -1,4 +1,4 @@
-// FIXME this is jsut a proof of concept - using Rserve console OOBs
+// FIXME this is just a proof of concept - using Rserve console OOBs
 var append_session_info = function(msg) {
     // one hacky way is to maintain a <pre> that we fill as we go
     // note that R will happily spit out incomplete lines so it's
@@ -13,10 +13,8 @@ var append_session_info = function(msg) {
 var oob_handlers = {
     "browsePath": function(v) {
         var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
-        var width=600;
-        var height=500;
-        var left=screen.width-width;
-        window.open(x,'RCloudHelp','width='+width+',height='+height+',scrollbars=yes,resizable=yes,left='+left);
+        $("#help-frame").attr("src", x);
+        $("#collapse-help").collapse("show");
     },
     "console.out": append_session_info,
     "console.msg": append_session_info,

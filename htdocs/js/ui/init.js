@@ -130,6 +130,7 @@ RCloud.UI.init = function() {
 
     RCloud.UI.scratchpad.init();
     RCloud.UI.command_prompt.init();
+    RCloud.UI.help_frame.init();
 
     function make_cells_sortable() {
         var cells = $('#output');

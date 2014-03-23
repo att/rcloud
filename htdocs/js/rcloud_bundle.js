@@ -70,7 +70,7 @@ RClient = {
             _rserve: rserve,
             host: opts.host,
             running: false,
-           
+
             //////////////////////////////////////////////////////////////////
             // FIXME: all of this should move out of rclient and into
             // the notebook objects.
@@ -92,10 +92,10 @@ RClient = {
                 var button = $("<button type='button' class='close'>" + label + "</button>");
                 result.append(button);
                 button.click(function() {
-                    window.location = 
-                        (window.location.protocol + 
-                         '//' + window.location.host + 
-                         '/login.R?redirect=' + 
+                    window.location =
+                        (window.location.protocol +
+                         '//' + window.location.host +
+                         '/login.R?redirect=' +
                          encodeURIComponent(window.location.pathname + window.location.search));
                 });
                 return result;
@@ -1091,7 +1091,7 @@ bootstrap_utils.alert = function(opts)
     if (opts.html) div.html(opts.html);
     if (opts.text) div.text(opts.text);
     if (opts['class']) div.addClass(opts['class']);
-    if (opts.close_button) 
+    if (opts.close_button)
         div.prepend($('<button type="button" class="close" data-dismiss="alert">&times;</button>').click(opts.on_close));
     return div;
 };
@@ -1195,7 +1195,6 @@ Notebook.Buffer.create_model = function(content) {
     };
     return result;
 };
-
 Notebook.Asset.create_html_view = function(asset_model)
 {
     var filename_div = $("<li></li>");
@@ -1231,7 +1230,7 @@ Notebook.Asset.create_html_view = function(asset_model)
         },
         set_readonly: function(readonly) {
             // FIXME
-        }, 
+        },
         div: function() {
             return filename_div;
         }
@@ -1822,7 +1821,6 @@ Notebook.Cell.create_controller = function(cell_model)
         },
         change_language: function(language) {
             cell_model.language(language);
-            
         }
     };
 
@@ -2580,7 +2578,7 @@ Notebook.part_name = function(id, language) {
     }
     return 'part' + id + '.' + ext;
 };
-// FIXME this is jsut a proof of concept - using Rserve console OOBs
+// FIXME this is just a proof of concept - using Rserve console OOBs
 var append_session_info = function(msg) {
     // one hacky way is to maintain a <pre> that we fill as we go
     // note that R will happily spit out incomplete lines so it's
@@ -2595,10 +2593,8 @@ var append_session_info = function(msg) {
 var oob_handlers = {
     "browsePath": function(v) {
         var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
-        var width=600;
-        var height=500;
-        var left=screen.width-width;
-        window.open(x,'RCloudHelp','width='+width+',height='+height+',scrollbars=yes,resizable=yes,left='+left);
+        $("#help-frame").attr("src", x);
+        $("#collapse-help").collapse("show");
     },
     "console.out": append_session_info,
     "console.msg": append_session_info,
@@ -2685,7 +2681,7 @@ RCloud.session = {
                 }
             });
         });
-        
+
     }
 };
 RCloud.UI = {};
@@ -2771,7 +2767,7 @@ RCloud.UI.init = function() {
             : rcloud.upload_file;
 
         upload_function(false, function(err, value) {
-            if (err) 
+            if (err)
                 failure(err);
             else
                 success(value);
@@ -2821,6 +2817,7 @@ RCloud.UI.init = function() {
 
     RCloud.UI.scratchpad.init();
     RCloud.UI.command_prompt.init();
+    RCloud.UI.help_frame.init();
 
     function make_cells_sortable() {
         var cells = $('#output');
@@ -2843,7 +2840,7 @@ RCloud.UI.init = function() {
             scrollSensitivity: 40
         });
     }
-    make_cells_sortable();    
+    make_cells_sortable();
 
     //////////////////////////////////////////////////////////////////////////
     // autosave when exiting. better default than dropping data, less annoying
@@ -2860,7 +2857,7 @@ RCloud.UI.init = function() {
     $("#edit-notebook").click(function() {
         window.location = "main.html?notebook=" + shell.gistname();
     });
-    
+
 };
 RCloud.UI.left_panel = {
     collapsed: false,
@@ -2890,7 +2887,7 @@ RCloud.UI.left_panel = {
             }
         });
         $("#accordion").on("shown.bs.collapse", function() {
-            $(".left-panel-shadow").each(function(v) { 
+            $(".left-panel-shadow").each(function(v) {
                 var h = $(this).parent().height();
                 if (h === 0)
                     h = "100%";
@@ -2933,7 +2930,7 @@ RCloud.UI.right_panel = {
             }
         });
         $("#accordion-right").on("shown.bs.collapse", function() {
-            $(".right-panel-shadow").each(function(v) { 
+            $(".right-panel-shadow").each(function(v) {
                 var h = $(this).parent().height();
                 if (h === 0)
                     h = "100%";
@@ -3364,3 +3361,10 @@ RCloud.UI.notebook_title = (function() {
     };
     return result;
 })();
+RCloud.UI.help_frame = {
+    init: function() {
+        // i can't be bothered to figure out why the iframe causes onload to be triggered early
+        // if this code is directly in main.html
+        $("#help-parent").append('<iframe id="help-frame" width="100%" height="100%" frameborder="0" />');
+    }
+};
