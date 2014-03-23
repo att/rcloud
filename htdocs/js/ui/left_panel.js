@@ -26,7 +26,7 @@ RCloud.UI.left_panel = {
             }
         });
         $("#accordion").on("shown.bs.collapse", function() {
-            $(".left-panel-shadow").each(function(v) { 
+            $(".left-panel-shadow").each(function(v) {
                 var h = $(this).parent().height();
                 if (h === 0)
                     h = "100%";

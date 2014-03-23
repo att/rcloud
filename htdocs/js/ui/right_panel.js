@@ -22,7 +22,7 @@ RCloud.UI.right_panel = {
             }
         });
         $("#accordion-right").on("shown.bs.collapse", function() {
-            $(".right-panel-shadow").each(function(v) { 
+            $(".right-panel-shadow").each(function(v) {
                 var h = $(this).parent().height();
                 if (h === 0)
                     h = "100%";

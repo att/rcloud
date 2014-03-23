@@ -70,7 +70,7 @@ RClient = {
             _rserve: rserve,
             host: opts.host,
             running: false,
-           
+
             //////////////////////////////////////////////////////////////////
             // FIXME: all of this should move out of rclient and into
             // the notebook objects.
@@ -92,10 +92,10 @@ RClient = {
                 var button = $("<button type='button' class='close'>" + label + "</button>");
                 result.append(button);
                 button.click(function() {
-                    window.location = 
-                        (window.location.protocol + 
-                         '//' + window.location.host + 
-                         '/login.R?redirect=' + 
+                    window.location =
+                        (window.location.protocol +
+                         '//' + window.location.host +
+                         '/login.R?redirect=' +
                          encodeURIComponent(window.location.pathname + window.location.search));
                 });
                 return result;

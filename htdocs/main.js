@@ -23,6 +23,6 @@ window.onload = function() {
          editor.load_notebook(notebook2, version2, true, false);
          }
          });
-         */ 
+         */
     });
 };
