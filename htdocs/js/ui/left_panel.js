@@ -20,9 +20,8 @@ RCloud.UI.left_panel = (function() {
         init: function() {
             var that = this;
             $("#accordion").on("show.bs.collapse", function() {
-                if (that.collapsed) {
+                if (collapsed_) {
                     that.show();
-                    that.collapsed = false;
                     RCloud.UI.middle_column.update();
                 }
             });

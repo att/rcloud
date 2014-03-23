@@ -2896,9 +2896,8 @@ RCloud.UI.left_panel = (function() {
         init: function() {
             var that = this;
             $("#accordion").on("show.bs.collapse", function() {
-                if (that.collapsed) {
+                if (collapsed_) {
                     that.show();
-                    that.collapsed = false;
                     RCloud.UI.middle_column.update();
                 }
             });
@@ -2943,9 +2942,8 @@ RCloud.UI.right_panel = (function() {
         init: function() {
             var that = this;
             $("#accordion-right").on("show.bs.collapse", function() {
-                if (that.collapsed) {
+                if (collapsed_) {
                     that.show();
-                    that.collapsed = false;
                     RCloud.UI.middle_column.update();
                 }
             });
@@ -2978,13 +2976,6 @@ RCloud.UI.middle_column = (function() {
         update: function() {
             var size = 12 - RCloud.UI.left_panel.colwidth() - RCloud.UI.right_panel.colwidth();
             result.colwidth(size);
-            /*
-            var previous_classes = "col-sm-" + this.middle_panel_size + " col-md-" + this.middle_panel_size;
-            var new_classes = "col-sm-" + size + " col-md-" + size;
-            $("#middle-column").removeClass(previous_classes).addClass(new_classes);
-            $("#prompt-div").removeClass(previous_classes).addClass(new_classes);
-            this.middle_panel_size = size;
-             */
         }
     });
     return result;
