@@ -149,8 +149,8 @@ rect.frame {
 }
 
 .notebook-cell .outer-ace-div {
-    position: relative; 
-    width: 100%; 
+    position: relative;
+    width: 100%;
     height: calc(100% - 25px);
     border: 1px solid #fff;
 }
@@ -423,6 +423,12 @@ pre {
 
 .tab-div {
     margin-bottom: 51px;
+}
+
+.rcloud-cellarea {
+    height: 80vh;
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
 
 .rcloud-prompt {
