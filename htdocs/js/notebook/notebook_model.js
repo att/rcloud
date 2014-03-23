@@ -194,7 +194,7 @@ Notebook.create_model = function()
         update_asset: function(asset_model) {
             return [asset_model.change_object()];
         },
-        reread_cells: function() {
+        reread_buffers: function() {
             // force views to update models
             var changed_cells_per_view = _.map(this.views, function(view) {
                 return view.update_model();

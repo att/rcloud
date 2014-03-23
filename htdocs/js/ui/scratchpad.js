@@ -1,6 +1,7 @@
 RCloud.UI.scratchpad = {
     session: null,
     widget: null,
+    exists: false,
     current_model: null,
     change_content: null,
     init: function() {
@@ -45,6 +46,7 @@ RCloud.UI.scratchpad = {
         }
         var scratchpad_editor = $("#scratchpad-editor");
         if (scratchpad_editor.length) {
+            this.exists = true;
             setup_scratchpad(scratchpad_editor);
         }
         $("#new-asset > a").click(function() {
@@ -63,6 +65,8 @@ RCloud.UI.scratchpad = {
     // FIXME this is completely backwards
     set_model: function(asset_model) {
         var that = this;
+        if(!this.exists)
+            return;
         var modes = {
             r: "ace/mode/r",
             py: "ace/mode/python",
@@ -105,6 +109,8 @@ RCloud.UI.scratchpad = {
         return this.current_model.content(this.widget.getSession().getValue());
     }, clear: function() {
         var that = this;
+        if(!this.exists)
+            return;
         that.session.setValue("");
         that.session.getUndoManager().reset();
         that.widget.resize();

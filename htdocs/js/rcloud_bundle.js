@@ -1640,8 +1640,12 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             var uuid = rcloud.deferred_knitr_uuid;
 
             if (cell_model.language() === 'R' && inner_div.find("pre code").length === 0) {
-                r_result_div.prepend("<pre><code>" + cell_model.content() + "</code></pre>");
+                r_result_div.prepend("<pre><code class='r'>" + cell_model.content() + "</code></pre>");
             }
+
+            // click on code to edit
+            $("code.r", r_result_div).off('click')
+                .click(result.show_source);
 
             // we use the cached version of DPR instead of getting window.devicePixelRatio
             // because it might have changed (by moving the user agent window across monitors)
@@ -2190,7 +2194,7 @@ Notebook.create_model = function()
         update_asset: function(asset_model) {
             return [asset_model.change_object()];
         },
-        reread_cells: function() {
+        reread_buffers: function() {
             // force views to update models
             var changed_cells_per_view = _.map(this.views, function(view) {
                 return view.update_model();
@@ -2245,7 +2249,13 @@ Notebook.create_controller = function(model)
         save_timeout_ = 30000, // 30s
         show_source_checkbox_ = null;
 
-    var default_callback_ = editor.load_callback(null, true, true);
+    var editor_callback_ = editor.load_callback({is_change: true, selroot: true}),
+        default_callback_ = function(notebook) {
+            if(save_button_)
+                ui_utils.disable_bs_button(save_button_);
+            dirty_ = false;
+            return editor_callback_(notebook);
+        };
 
     function append_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
@@ -2346,7 +2356,7 @@ Notebook.create_controller = function(model)
         return changes;
     }
 
-    function update_notebook(changes, gistname) {
+    function update_notebook(changes, gistname, more) {
         // remove any "empty" changes.  we can keep empty cells on the
         // screen but github will refuse them.  if the user doesn't enter
         // stuff in them before saving, they will disappear on next session
@@ -2371,8 +2381,10 @@ Notebook.create_controller = function(model)
             });
             return {files: files};
         }
-
-        return rcloud.update_notebook(gistname, changes_to_gist(changes))
+        var gist = changes_to_gist(changes);
+        if(more)
+            _.extend(gist, more);
+        return rcloud.update_notebook(gistname, gist)
             .then(function(notebook) {
                 if('error' in notebook)
                     throw notebook;
@@ -2380,8 +2392,8 @@ Notebook.create_controller = function(model)
                 return notebook;
             });
     }
-    function refresh_cells() {
-        return model.reread_cells();
+    function refresh_buffers() {
+        return model.reread_buffers();
     }
 
     function on_dirty() {
@@ -2417,35 +2429,35 @@ Notebook.create_controller = function(model)
         },
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);
-            update_notebook(cch.changes)
+            update_notebook(refresh_buffers().concat(cch.changes))
                 .then(default_callback_);
             return cch.controller;
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
-            update_notebook(cch.changes)
+            update_notebook(refresh_buffers().concat(cch.changes))
                 .then(default_callback_);
             return cch.controller;
         },
         insert_cell: function(content, type, id) {
             var cch = insert_cell_helper(content, type, id);
-            update_notebook(cch.changes)
+            update_notebook(refresh_buffers().concat(cch.changes))
                 .then(default_callback_);
             return cch.controller;
         },
         remove_cell: function(cell_model) {
-            var changes = model.remove_cell(cell_model);
+            var changes = refresh_buffers().concat(model.remove_cell(cell_model));
             RCloud.UI.command_prompt.prompt.widget.focus(); // there must be a better way
             update_notebook(changes)
                 .then(default_callback_);
         },
         remove_asset: function(asset_model) {
-            var changes = model.remove_asset(asset_model);
+            var changes = refresh_buffers().concat(model.remove_asset(asset_model));
             update_notebook(changes)
                 .then(default_callback_);
         },
         move_cell: function(cell_model, before) {
-            var changes = model.move_cell(cell_model, before ? before.id() : -1);
+            var changes = refresh_buffers().concat(model.move_cell(cell_model, before ? before.id() : -1));
             update_notebook(changes)
                 .then(default_callback_);
         },
@@ -2470,7 +2482,7 @@ Notebook.create_controller = function(model)
             // that.  which won't work in general but looks like it is okay to
             // concatenate a bunch of change content objects with a move or change
             // to one of the same objects, and an erase of one
-            var new_content, changes = refresh_cells();
+            var new_content, changes = refresh_buffers();
 
             // this may have to be multiple dispatch when there are more than two languages
             if(prior.language()==cell_model.language()) {
@@ -2507,7 +2519,7 @@ Notebook.create_controller = function(model)
                         a[i+1] = a[i+1].replace(/^\n/, '');
                     }
             }
-            var changes = refresh_cells();
+            var changes = refresh_buffers();
             var content = cell_model.content(),
                 parts = [content.substring(0, point1)],
                 id = cell_model.id(), language = cell_model.language();
@@ -2526,7 +2538,7 @@ Notebook.create_controller = function(model)
                 .then(default_callback_);
         },
         change_cell_language: function(cell_model, language) {
-            var changes = model.change_cell_language(cell_model, language);
+            var changes = refresh_buffers().concat(model.change_cell_language(cell_model, language));
             update_notebook(changes)
                 .then(default_callback_);
         },
@@ -2576,20 +2588,22 @@ Notebook.create_controller = function(model)
             });
         },
         update_cell: function(cell_model) {
-            return update_notebook(model.update_cell(cell_model));
+            return update_notebook(refresh_buffers().concat(model.update_cell(cell_model)))
+                .then(default_callback_);
         },
         update_asset: function(asset_model) {
-            return update_notebook(model.update_asset(asset_model));
+            return update_notebook(refresh_buffers().concat(model.update_asset(asset_model)))
+                .then(default_callback_);
+        },
+        rename_notebook: function(desc) {
+            return update_notebook(refresh_buffers(), null, {description: desc})
+                .then(default_callback_);
         },
         save: function() {
-            if(dirty_) {
-                var changes = refresh_cells();
-                update_notebook(changes);
-                if(save_button_)
-                    ui_utils.disable_bs_button(save_button_);
-                dirty_ = false;
-            }
-
+            if(!dirty_)
+                return Promise.resolve(undefined);
+            return update_notebook(refresh_buffers())
+                .then(default_callback_);
         },
         run_all: function() {
             this.save();
@@ -3061,6 +3075,7 @@ RCloud.UI.middle_column = {
 RCloud.UI.scratchpad = {
     session: null,
     widget: null,
+    exists: false,
     current_model: null,
     change_content: null,
     init: function() {
@@ -3105,6 +3120,7 @@ RCloud.UI.scratchpad = {
         }
         var scratchpad_editor = $("#scratchpad-editor");
         if (scratchpad_editor.length) {
+            this.exists = true;
             setup_scratchpad(scratchpad_editor);
         }
         $("#new-asset > a").click(function() {
@@ -3123,6 +3139,8 @@ RCloud.UI.scratchpad = {
     // FIXME this is completely backwards
     set_model: function(asset_model) {
         var that = this;
+        if(!this.exists)
+            return;
         var modes = {
             r: "ace/mode/r",
             py: "ace/mode/python",
@@ -3165,6 +3183,8 @@ RCloud.UI.scratchpad = {
         return this.current_model.content(this.widget.getSession().getValue());
     }, clear: function() {
         var that = this;
+        if(!this.exists)
+            return;
         that.session.setValue("");
         that.session.getUndoManager().reset();
         that.widget.resize();
@@ -3379,7 +3399,7 @@ RCloud.UI.configure_readonly = function() {
 RCloud.UI.notebook_title = (function() {
     var last_editable_ =  null;
     function rename_current_notebook(name) {
-        editor.rename_notebook(shell.gistname(), name)
+        editor.rename_notebook(name)
             .then(function() {
                 result.set(name);
             });
