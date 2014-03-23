@@ -2872,7 +2872,7 @@ RCloud.UI.column = function(selector, colwidth) {
     }
     var result = {
         colwidth: function(val) {
-            if(!_.isUndefined(val)) {
+            if(!_.isUndefined(val) && val != colwidth) {
                 $(selector).removeClass(classes(colwidth)).addClass(classes(val));
                 colwidth = val;
             }
