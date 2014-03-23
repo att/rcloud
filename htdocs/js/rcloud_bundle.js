@@ -2859,117 +2859,136 @@ RCloud.UI.init = function() {
     });
 
 };
-RCloud.UI.left_panel = {
-    collapsed: false,
-    hide: function() {
-        this.collapsed = true;
-        $("#left-column").removeClass("col-md-3 col-sm-3").addClass("col-md-1 col-sm-1");
-        $("#fake-left-column").removeClass("col-md-3 col-sm-3").addClass("col-md-1 col-sm-1");
-        $("#new-notebook").hide();
-        $("#left-pane-collapser i").removeClass("icon-minus").addClass("icon-plus");
-        RCloud.UI.middle_column.update();
-    },
-    show: function() {
-        $("#left-column").removeClass("col-md-1 col-sm-1").addClass("col-md-3 col-sm-3");
-        $("#fake-left-column").removeClass("col-md-1 col-sm-1").addClass("col-md-3 col-sm-3");
-        $("#new-notebook").show();
-        $("#left-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
-        this.collapsed = false;
-        RCloud.UI.middle_column.update();
-    },
-    init: function() {
-        var that = this;
-        $("#accordion").on("show.bs.collapse", function() {
-            if (that.collapsed) {
-                that.show();
-                that.collapsed = false;
-                RCloud.UI.middle_column.update();
-            }
-        });
-        $("#accordion").on("shown.bs.collapse", function() {
-            $(".left-panel-shadow").each(function(v) {
-                var h = $(this).parent().height();
-                if (h === 0)
-                    h = "100%";
-                $(this).attr("height", h);
-            });
-        });
-        $("#left-pane-collapser").click(function() {
-            if (that.collapsed) {
-                that.show();
-            } else {
-                // the following actually makes sense to me. oh no what has my life become
-                $("#accordion > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
-                that.hide();
-            }
-            RCloud.UI.middle_column.update();
-        });
+RCloud.UI.column = function(selector, colwidth) {
+    function classes(cw) {
+        return "col-md-" + cw + " col-sm-" + cw;
     }
-};
-RCloud.UI.right_panel = {
-    collapsed: false,
-    hide: function() {
-        this.collapsed = true;
-        $("#right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-1 col-sm-1");
-        $("#fake-right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-1 col-sm-1");
-        $("#right-pane-collapser i").addClass("icon-plus").removeClass("icon-minus");
-    },
-    show: function() {
-        $("#right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-4 col-sm-4");
-        $("#fake-right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-4 col-sm-4");
-        $("#right-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
-        this.collapsed = false;
-    },
-    init: function() {
-        var that = this;
-        $("#accordion-right").on("show.bs.collapse", function() {
-            if (that.collapsed) {
-                that.show();
-                that.collapsed = false;
-                RCloud.UI.middle_column.update();
+    var result = {
+        colwidth: function(val) {
+            if(!_.isUndefined(val)) {
+                $(selector).removeClass(classes(colwidth)).addClass(classes(val));
+                colwidth = val;
             }
-        });
-        $("#accordion-right").on("shown.bs.collapse", function() {
-            $(".right-panel-shadow").each(function(v) {
-                var h = $(this).parent().height();
-                if (h === 0)
-                    h = "100%";
-                $(this).attr("height", h);
-            });
-        });
-        $("#right-pane-collapser").click(function() {
-            if (that.collapsed) {
-                that.show();
-            } else {
-                // the following actually makes sense to me. oh no what has my life become
-                $("#accordion-right > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
-                that.hide();
-            }
-            RCloud.UI.middle_column.update();
-        });
-    }
-};
-RCloud.UI.middle_column = {
-    middle_panel_size: 5,
-    update: function() {
-        var size = 12;
-        if (RCloud.UI.right_panel.collapsed) {
-            size -= 1;
-        } else {
-            size -= 4;
+            return colwidth;
         }
-        if (RCloud.UI.left_panel.collapsed) {
-            size -= 1;
-        } else {
-            size -= 3;
-        }
-        var previous_classes = "col-sm-" + this.middle_panel_size + " col-md-" + this.middle_panel_size;
-        var new_classes = "col-sm-" + size + " col-md-" + size;
-        $("#middle-column").removeClass(previous_classes).addClass(new_classes);
-        $("#prompt-div").removeClass(previous_classes).addClass(new_classes);
-        this.middle_panel_size = size;
-    }
+    };
+    return result;
 };
+RCloud.UI.left_panel = (function() {
+    var collapsed_ = false;
+
+    var result = RCloud.UI.column("#left-column, #fake-left-column", 3);
+    _.extend(result, {
+        hide: function() {
+            result.colwidth(1);
+            $("#new-notebook").hide();
+            $("#left-pane-collapser i").removeClass("icon-minus").addClass("icon-plus");
+            RCloud.UI.middle_column.update();
+            collapsed_ = true;
+        },
+        show: function() {
+            result.colwidth(3);
+            $("#new-notebook").show();
+            $("#left-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
+            RCloud.UI.middle_column.update();
+            collapsed_ = false;
+        },
+        init: function() {
+            var that = this;
+            $("#accordion").on("show.bs.collapse", function() {
+                if (that.collapsed) {
+                    that.show();
+                    that.collapsed = false;
+                    RCloud.UI.middle_column.update();
+                }
+            });
+            $("#accordion").on("shown.bs.collapse", function() {
+                $(".left-panel-shadow").each(function(v) {
+                    var h = $(this).parent().height();
+                    if (h === 0)
+                        h = "100%";
+                    $(this).attr("height", h);
+                });
+            });
+            $("#left-pane-collapser").click(function() {
+                if (collapsed_) {
+                    that.show();
+                } else {
+                    // the following actually makes sense to me. oh no what has my life become
+                    $("#accordion > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
+                    that.hide();
+                }
+                RCloud.UI.middle_column.update();
+            });
+        }
+    });
+    return result;
+}());
+
+RCloud.UI.right_panel = (function() {
+    var collapsed_ = false;
+
+    var result = RCloud.UI.column("#right-column, #fake-right-column", 4);
+    _.extend(result, {
+        hide: function() {
+            result.colwidth(1);
+            $("#right-pane-collapser i").addClass("icon-plus").removeClass("icon-minus");
+            collapsed_ = true;
+        },
+        show: function() {
+            result.colwidth(4);
+            $("#right-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
+            collapsed_ = false;
+        },
+        init: function() {
+            var that = this;
+            $("#accordion-right").on("show.bs.collapse", function() {
+                if (that.collapsed) {
+                    that.show();
+                    that.collapsed = false;
+                    RCloud.UI.middle_column.update();
+                }
+            });
+            $("#accordion-right").on("shown.bs.collapse", function() {
+                $(".right-panel-shadow").each(function(v) {
+                    var h = $(this).parent().height();
+                    if (h === 0)
+                        h = "100%";
+                    $(this).attr("height", h);
+                });
+            });
+            $("#right-pane-collapser").click(function() {
+                if (collapsed_) {
+                    that.show();
+                } else {
+                    // the following actually makes sense to me. oh no what has my life become
+                    $("#accordion-right > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
+                    that.hide();
+                }
+                RCloud.UI.middle_column.update();
+            });
+        }
+    });
+    return result;
+}());
+RCloud.UI.middle_column = (function() {
+    var result = RCloud.UI.column("#middle-column, #prompt-div", 3);
+
+    _.extend(result, {
+        update: function() {
+            var size = 12 - RCloud.UI.left_panel.colwidth() - RCloud.UI.right_panel.colwidth();
+            result.colwidth(size);
+            /*
+            var previous_classes = "col-sm-" + this.middle_panel_size + " col-md-" + this.middle_panel_size;
+            var new_classes = "col-sm-" + size + " col-md-" + size;
+            $("#middle-column").removeClass(previous_classes).addClass(new_classes);
+            $("#prompt-div").removeClass(previous_classes).addClass(new_classes);
+            this.middle_panel_size = size;
+             */
+        }
+    });
+    return result;
+}());
 RCloud.UI.scratchpad = {
     session: null,
     widget: null,
