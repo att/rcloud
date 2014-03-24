@@ -172,15 +172,14 @@ RCloud.create = function(rcloud_ocaps) {
 
     function rcloud_handler(command, promise_fn) {
         function success(result) {
-            if (result && result.r_attributes &&
-                result.r_attributes['class'] === "try-error") {
-                throw new Error(command + ": " + result);
+            if(result && RCloud.is_exception(result)) {
+                throw new Error(command + ": " + result[0]);
             }
             return result;
         }
         function failure(err) {
-            if (RCloud.is_exception(err)) {
-                rclient.post_error(err[0]);
+            if(err.message) {
+                rclient.post_error(err.message);
             }
             throw err;
         }
