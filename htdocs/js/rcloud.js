@@ -35,10 +35,7 @@ RCloud.create = function(rcloud_ocaps) {
     //////////////////////////////////////////////////////////////////////////////
     function json_p(promise) {
         return promise.then(JSON.parse)
-            .catch(function(e) {
-                rclient.post_error(e.message);
-                throw e;
-            });
+            .catch(rclient.post_rejection);
     }
 
     function rcloud_handler(command, promise_fn) {

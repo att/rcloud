@@ -323,7 +323,8 @@ var editor = function () {
                     .then(function(alls) { root_data.push(alls); })
                     .return(root_data);
             })
-            .then(load_tree);
+            .then(load_tree)
+            .catch(rclient.post_rejection);
     }
 
     function find_sort_point(data, parent) {
