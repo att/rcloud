@@ -199,7 +199,7 @@ var editor = function () {
                        }
                        if(!entry.username || entry.username === "undefined"
                           || !entry.description || !entry.last_commit)
-                           throw new Error("invalid notebook info: " + JSON.stringify(entry));
+                           throw new Error("invalid notebook info[" + book + "]: " + JSON.stringify(entry));
                        var user = users[entry.username] = users[entry.username] || {};
                        user[book] = entry;
                        return users;
