@@ -194,14 +194,14 @@ var shell = (function() {
             }
             editor.load_notebook(notebook, version);
         }, export_notebook_as_r_file: function() {
-            rcloud.get_notebook(gistname_, version_, function(notebook) {
+            return rcloud.get_notebook(gistname_, version_).then(function(notebook) {
                 var strings = [];
                 var parts = [];
                 _.each(notebook.files, function(file) {
                     var filename = file.filename;
                     if(/^part/.test(filename)) {
                         var number = parseInt(filename.slice(4).split('.')[0]);
-                        if(!isNaN(NaN)) {
+                        if(!isNaN(number)) {
                             if (file.language === 'R')
                                 parts[number] = "```{r}\n" + file.content + "\n```";
                             else
