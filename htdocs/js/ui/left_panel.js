@@ -4,8 +4,9 @@ RCloud.UI.left_panel = (function() {
     function hide() {
         result.colwidth(1);
         $("#new-notebook").hide();
-        // the following actually makes sense to me. oh no what has my life become
-        $("#accordion > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
+        // all panels on this side, their collapsible sub-panels that are not "out"
+        // and not already collapsed, collapse them
+        $("#accordion-left > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
         $("#left-pane-collapser i").removeClass("icon-minus").addClass("icon-plus");
         RCloud.UI.middle_column.update();
         collapsed_ = true;
@@ -30,11 +31,11 @@ RCloud.UI.left_panel = (function() {
         },
         init: function() {
             var that = this;
-            $("#accordion").on("show.bs.collapse", function() {
+            $("#accordion-left").on("show.bs.collapse", function() {
                 if (collapsed_)
                     that.show();
             });
-            $("#accordion").on("shown.bs.collapse", function() {
+            $("#accordion-left").on("shown.bs.collapse", function() {
                 $(".left-panel-shadow").each(function(v) {
                     var h = $(this).parent().height();
                     if (h === 0)
