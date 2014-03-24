@@ -52,6 +52,16 @@ RClient = {
                 shutdown();
             }
         };
+        // detect where we will show errors
+
+        var error_dest_ = $("#session-info");
+        var show_error_area;
+        if(error_dest_.length)
+            show_error_area = function() { $("#collapse-session-info").collapse("show"); };
+        else {
+            error_dest_ = $("#output");
+            show_error_area = function() {};
+        }
 
         var token = $.cookies.get().token;  // document access token
         var execToken = $.cookies.get().execToken; // execution token (if enabled)
@@ -101,14 +111,15 @@ RClient = {
                 return result;
             },
 
-            post_error: function (msg) {
+            post_error: function (msg, dest) {
                 if (typeof msg === 'string')
                     msg = this.string_error(msg);
                 if (typeof msg !== 'object')
                     throw new Error("post_error expects a string or a jquery div");
                 msg.css("margin", "-15px"); // hack
-                $("#session-info").append(msg);
-                $("#collapse-session-info").collapse("show");
+                dest = dest || error_dest_;
+                dest.append(msg);
+                show_error_area();
             },
 
             post_response: function (msg) {
