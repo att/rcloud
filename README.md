@@ -42,7 +42,7 @@ Or, if you already have an RCloud source tree, run
 
 to just get the dependencies.
 
-## Upgrading to RCloud 1.0
+### Upgrading to RCloud 1.0
 
 If you are moving from RCloud 0.9 to 1.0, you'll need to run the upgrade script to move your
 RCS data (notebook lists and configuration data).  In your RCloud root, run:
