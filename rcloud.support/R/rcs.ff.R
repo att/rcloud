@@ -56,5 +56,7 @@ rcs.decr.RCSff <- function(key, engine=.session$rcs.engine) {
 
 rcs.list.RCSff <- function(pattern="*", engine=.session$rcs.engine) {
   if (is.null(pattern)) pattern <- "*"
-  substr(Sys.glob(.ffpath(pattern, engine)), nchar(.ffpath("", engine)) + 1L, 1000)
+  files <- Sys.glob(.ffpath(pattern, engine))
+  files <- files[!file.info(files)$isdir] ## filter out directories
+  substr(files, nchar(.ffpath("", engine)) + 1L, 1000)
 }
