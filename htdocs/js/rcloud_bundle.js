@@ -52,6 +52,16 @@ RClient = {
                 shutdown();
             }
         };
+        // detect where we will show errors
+
+        var error_dest_ = $("#session-info");
+        var show_error_area;
+        if(error_dest_.length)
+            show_error_area = function() { $("#collapse-session-info").collapse("show"); };
+        else {
+            error_dest_ = $("#output");
+            show_error_area = function() {};
+        }
 
         var token = $.cookies.get().token;  // document access token
         var execToken = $.cookies.get().execToken; // execution token (if enabled)
@@ -101,14 +111,15 @@ RClient = {
                 return result;
             },
 
-            post_error: function (msg) {
+            post_error: function (msg, dest) {
                 if (typeof msg === 'string')
                     msg = this.string_error(msg);
                 if (typeof msg !== 'object')
                     throw new Error("post_error expects a string or a jquery div");
                 msg.css("margin", "-15px"); // hack
-                $("#session-info").append(msg);
-                $("#collapse-session-info").collapse("show");
+                dest = dest || error_dest_;
+                dest.append(msg);
+                show_error_area();
             },
 
             post_response: function (msg) {
@@ -2887,8 +2898,9 @@ RCloud.UI.left_panel = (function() {
     function hide() {
         result.colwidth(1);
         $("#new-notebook").hide();
-        // the following actually makes sense to me. oh no what has my life become
-        $("#accordion > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
+        // all panels on this side, their collapsible sub-panels that are not "out"
+        // and not already collapsed, collapse them
+        $("#accordion-left > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
         $("#left-pane-collapser i").removeClass("icon-minus").addClass("icon-plus");
         RCloud.UI.middle_column.update();
         collapsed_ = true;
@@ -2913,11 +2925,11 @@ RCloud.UI.left_panel = (function() {
         },
         init: function() {
             var that = this;
-            $("#accordion").on("show.bs.collapse", function() {
+            $("#accordion-left").on("show.bs.collapse", function() {
                 if (collapsed_)
                     that.show();
             });
-            $("#accordion").on("shown.bs.collapse", function() {
+            $("#accordion-left").on("shown.bs.collapse", function() {
                 $(".left-panel-shadow").each(function(v) {
                     var h = $(this).parent().height();
                     if (h === 0)
