@@ -23,7 +23,9 @@ rcs_ff_error <- rcs_ff_warning <- function(rv) function(w) rv
 rcs.get.RCSff <- function(key, list=FALSE, engine=.session$rcs.engine)
    if (list || length(key) != 1L) .lnapply(key, rcs.get.RCSff, FALSE, engine) else (tryCatch(readRDS.if.exists(.ffpath(key, engine)), warning=rcs_ff_warning(NULL), error=rcs_ff_error(NULL)))
 
-rcs.set.RCSff <- function(key, value, engine=.session$rcs.engine) {
+rcs.set.RCSff <- function(key, value, counter=FALSE, engine=.session$rcs.engine) {
+  if (counter)
+    value <- as.integer(value)
   if (missing(value)) {
     if (!is.list(key) || is.null(names(key))) stop("Missing `value' and `key' is not a named vector")
     for (i in seq.int(length(key))) rcs.set.RCSff(names(key)[i], key[[i]], engine)
