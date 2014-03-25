@@ -56,8 +56,10 @@ migrate.notebook.keys <- function(keep) {
   Map(function(dest) {
     if(is.null(rcs.get(dest))) {
       rcs.set(dest, 1)
-      rcs.incr(usr.key(user = ".notebook", notebook = id_part(dest), "starcount"))
-    }, gsub("notebook", ".notebook", oldstarred))
+      count <- rcs.incr(usr.key(user = ".notebook", notebook = id_part(dest), "starcount"))
+      cat("Star notebook", id_part(dest), "to count", count, "\n", sep=' ')
+    }
+  }, gsub("notebook", ".notebook", oldstarred))
 }
 
 # notebook metadata now gets stored globally under .notebook
@@ -102,7 +104,7 @@ explode.user.configs <- function(keep) {
       # options
       opts <- usr.key(user = username, notebook = "system", "config");
 
-      # add any notebooks created in old RCloud
+      # add any new notebooks created in old RCloud
       newbooks <- Filter(keep, names(config$all_books))
       if(length(newbooks)) {
         lapply(rcs.key(opts, "notebooks", newbooks),
