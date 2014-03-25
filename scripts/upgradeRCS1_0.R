@@ -50,6 +50,14 @@ migrate.notebook.keys <- function(keep) {
   }
   nb_migrate(rcs.list("notebook/*/*/*"))
   nb_migrate(rcs.list("notebook/*/*"))
+
+  # migrate any new stars (old notebooks, new stars)
+  oldstarred <- Filter(function(k) !keep(id_part(k)), rcs.list("notebook/*/stars/*"))
+  Map(function(dest) {
+    if(is.null(rcs.get(dest))) {
+      rcs.set(dest, 1)
+      rcs.incr(usr.key(user = ".notebook", notebook = id_part(dest), "starcount"))
+    }, gsub("notebook", ".notebook", oldstarred))
 }
 
 # notebook metadata now gets stored globally under .notebook
