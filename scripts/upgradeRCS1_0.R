@@ -40,8 +40,8 @@ migrate.notebook.keys <- function(keep) {
   nb_migrate <- function(keys) {
     fk <- Filter(function(k) keep(id_part(k)), keys)
     if(length(fk)) {
-      cat("migrating new keys:\n");
-      str(fk)
+      cat("Migrating new keys:\n");
+      str(fk, vec.len=Inf)
       Map(function(src, dest) {
         val <- rcs.get(src)
         rcs.set(dest, val)
@@ -125,7 +125,7 @@ rcloud.upgrade.notebook.lists <- function() {
   already <- get.migrated.notebooks()
   keep <- function(id) is.null(already[[id]])
   cat("Already migrated:\n")
-  str(names(already))
+  str(names(already), vec.len=Inf)
   migrate.notebook.keys(keep)
   explode.user.configs(keep);
 
