@@ -3,7 +3,8 @@ RCloud.UI.right_panel = (function() {
 
     function hide() {
         result.colwidth(1);
-        // the following actually makes sense to me. oh no what has my life become
+        // all panels on this side, their collapsible sub-panels that are not "out"
+        // and not already collapsed, collapse them
         $("#accordion-right > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
         $("#right-pane-collapser i").addClass("icon-plus").removeClass("icon-minus");
         RCloud.UI.middle_column.update();
