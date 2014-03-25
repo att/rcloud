@@ -55,7 +55,7 @@ migrate.notebook.keys <- function(keep) {
   oldstarred <- Filter(function(k) !keep(id_part(k)), rcs.list("notebook/*/stars/*"))
   Map(function(dest) {
     if(is.null(rcs.get(dest))) {
-      rcs.set(dest, 1)
+      rcs.set(dest, TRUE)
       count <- rcs.incr(usr.key(user = ".notebook", notebook = id_part(dest), "starcount"))
       cat("Star notebook", id_part(dest), "to count", count, "\n", sep=' ')
     }
@@ -108,7 +108,7 @@ explode.user.configs <- function(keep) {
       newbooks <- Filter(keep, names(config$all_books))
       if(length(newbooks)) {
         lapply(rcs.key(opts, "notebooks", newbooks),
-               function(key) rcs.set(key, 1))
+               function(key) rcs.set(key, TRUE))
       }
 
       # import ordinary options only once

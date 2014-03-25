@@ -371,7 +371,7 @@ rcloud.config.all.notebooks.multiple.users <- function(users) {
 }
 
 rcloud.config.add.notebook <- function(id)
-  rcs.set(usr.key(user=.session$username, notebook="system", "config", "notebooks", id), 1)
+  rcs.set(usr.key(user=.session$username, notebook="system", "config", "notebooks", id), TRUE)
 
 rcloud.config.remove.notebook <- function(id)
   rcs.rm(usr.key(user=.session$username, notebook="system", "config", "notebooks", id))
