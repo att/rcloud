@@ -120,9 +120,9 @@ explode.user.configs <- function(keep) {
 
       # but keep max notebook number ;-)
       nxt <- rcs.get(rcs.key(opts, "nextwork"))
-      if(is.null(nxt) || nxt < config$nextwork) {
+      if(is.null(nxt) || any(is.na(nxt)) || as.integer(nxt) < config$nextwork) {
         cat("Bump user", username, "notebook # to", config$nextwork, "\n", sep=' ')
-        rcs.set(rcs.key(opts, "nextwork"), config$nextwork)
+        rcs.set(rcs.key(opts, "nextwork"), config$nextwork, counter=TRUE)
       }
 
       config$currbook
