@@ -6,7 +6,9 @@ usr.key <- function(..., user=.session$username, notebook=.session$notebook) pas
 
 rcs.get <- function(key, list=FALSE, engine=.session$rcs.engine) UseMethod("rcs.get", engine)
 
-rcs.set <- function(key, value, engine=.session$rcs.engine) UseMethod("rcs.set", engine)
+## FIXME: we need the counter flag becasue counters may need special treatment
+##        e.g., in redis they have to be passed unserialized
+rcs.set <- function(key, value, counter=FALSE, engine=.session$rcs.engine) UseMethod("rcs.set", engine)
 
 rcs.rm <- function(key, engine=.session$rcs.engine) UseMethod("rcs.rm", engine)
 

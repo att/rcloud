@@ -204,7 +204,8 @@ rcloud.rename.notebook <- function(id, new.name)
 rcloud.fork.notebook <- function(id) fork.gist(id, ctx = .session$rgithub.context)
 
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
-  gsub("/.*","",rcs.list(usr.key(user="*", notebook="system", "config")))
+  ## also note that we are looking deep in the config space - this shold be really much easier ...
+  gsub("/.*","",rcs.list(usr.key(user="*", notebook="system", "config", "current", "notebook")))
 
 # sloooow, but we don't have any other way of verifying the owner
 notebook.is.mine <- function(id) {
@@ -356,7 +357,7 @@ user.all.notebooks <- function(user) {
   if(user == .session$username)
     notebooks
   else # filter notebooks on their visibility before they get to the client
-    notebooks[unlist(rcs.get(usr.key(user=".notebook", notebook=notebooks, "visible")))]
+    notebooks[unlist(rcs.get(usr.key(user=".notebook", notebook=notebooks, "visible"), TRUE))]
 }
 
 rcloud.config.all.notebooks <- function()
@@ -370,7 +371,7 @@ rcloud.config.all.notebooks.multiple.users <- function(users) {
 }
 
 rcloud.config.add.notebook <- function(id)
-  rcs.set(usr.key(user=.session$username, notebook="system", "config", "notebooks", id), 1)
+  rcs.set(usr.key(user=.session$username, notebook="system", "config", "notebooks", id), TRUE)
 
 rcloud.config.remove.notebook <- function(id)
   rcs.rm(usr.key(user=.session$username, notebook="system", "config", "notebooks", id))

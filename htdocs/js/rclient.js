@@ -128,6 +128,11 @@ RClient = {
                 window.scrollTo(0, document.body.scrollHeight);
             },
 
+            post_rejection: function(e) {
+                rclient.post_error(e.message);
+                throw e;
+            },
+
             close: function() {
                 clean = true;
                 shutdown();
