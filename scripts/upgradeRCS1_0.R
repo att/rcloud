@@ -98,7 +98,7 @@ explode.user.configs <- function(keep) {
       newbooks <- Filter(keep, names(config$all_books))
       if(length(newbooks)) {
         lapply(rcs.key(opts, "notebooks", newbooks),
-               function(key) rcs.set(key, 1))
+               function(key) rcs.set(key, TRUE))
       }
 
       # import ordinary options only once
