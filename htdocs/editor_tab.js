@@ -34,6 +34,7 @@ var editor = function () {
         num_stars_ = {}, // number of stars for all known notebooks
         my_stars_ = {}, // set of notebooks starred by me
         my_friends_ = {},
+        invalid_notebooks_ = {};
         current_ = null; // current notebook and version
 
     // view
@@ -194,12 +195,14 @@ var editor = function () {
                    function(book){
                        var entry = notebook_info_[book];
                        if(!entry) {
-                           console.log("rcloud.stars.get_my_starred_notebooks reports a notebook starred that is not listed in All Notebooks: " + book);
+                           invalid_notebooks_[book] = null;
                            return users;
                        }
                        if(!entry.username || entry.username === "undefined"
-                          || !entry.description || !entry.last_commit)
-                           throw new Error("invalid notebook info: " + JSON.stringify(entry));
+                          || !entry.description || !entry.last_commit) {
+                           invalid_notebooks_[book] = entry;
+                           return users;
+                       }
                        var user = users[entry.username] = users[entry.username] || {};
                        user[book] = entry;
                        return users;
@@ -238,16 +241,25 @@ var editor = function () {
 
     function load_notebook_list(user_notebooks) {
         function create_book_entry_map(books) {
-            return _.object(
-                _.map(books, function(book) {
+            return _.chain(books)
+                .filter(function(book) {
                     var entry = notebook_info_[book];
-                    if(!entry)
-                        throw new Error("didn't find notebook " + book + " in alls");
+                    if(!entry) {
+                        invalid_notebooks_[book] = null;
+                        return false;
+                    }
                     if(!entry.username || entry.username === "undefined"
-                       || !entry.description || !entry.last_commit)
-                        throw new Error("invalid notebook info: " + JSON.stringify(entry));
+                       || !entry.description || !entry.last_commit) {
+                        invalid_notebooks_[book] = entry;
+                        return false;
+                    }
+                    return true;
+                })
+                .map(function(book) {
+                    var entry = notebook_info_[book];
                     return [book, entry];
-                }));
+                })
+                .object().value();
         }
 
         var user_nodes = [], my_config = null;
@@ -323,7 +335,17 @@ var editor = function () {
                     .then(function(alls) { root_data.push(alls); })
                     .return(root_data);
             })
-            .then(load_tree);
+            .then(load_tree)
+            .then(function() {
+                for(var book in invalid_notebooks_) {
+                    var entry = invalid_notebooks_[book];
+                    if(!entry)
+                        console.log("notebook metadata for " + book + " is missing.");
+                    else
+                        console.log("notebook metadata for " + book + " has invalid entries: " + JSON.stringify(_.pick(entry, "username","description","last_commit","visible")));
+                }
+            })
+            .catch(rclient.post_rejection);
     }
 
     function find_sort_point(data, parent) {

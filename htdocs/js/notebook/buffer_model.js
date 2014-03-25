@@ -10,6 +10,10 @@ Notebook.Buffer.create_model = function(content) {
         views: [], // sub list for pubsub
         parent_model: null,
 
+        renew_content: function() {
+            // make content look new again, e.g. to reinsert cell
+            checkpoint_ = "";
+        },
         content: function(new_content) {
             if (!_.isUndefined(new_content)) {
                 if(content != new_content) {
