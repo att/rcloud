@@ -511,6 +511,16 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
     background-color: #fff;
 }
 
+.panel-shadow.left {
+    position:absolute;
+    right:0px;
+}
+
+.panel-shadow.right {
+    position:absolute;
+    left:0px
+}
+
 .navbar-inverse {
     border-color: #222;
 }

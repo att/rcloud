@@ -163,7 +163,7 @@ RCloud.UI.init = function() {
         return true;
     });
 
-    $(".collapse").collapse();
+    $(".collapse").collapse({toggle: false});
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
