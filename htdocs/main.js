@@ -4,7 +4,7 @@ Promise.longStackTraces();
 
 function search(){
 	var qry = $('#input-text-search').val();
-	rcloud.custom_search(qry);
+	rcloud.search(qry);
 	return;
 }
 

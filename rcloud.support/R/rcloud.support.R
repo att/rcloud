@@ -180,91 +180,68 @@ rcloud.upload.to.notebook <- function(file, name) {
   .session$current.notebook <- res
   res
 }
-#######################################ADDED THIS FUNCTION FOR SOLR SEARCH FUNCTIONALITY###################################################
+
 rcloud.update.notebook <- function(id, content) {
   res <- modify.gist(id, content, ctx = .session$rgithub.context)
   .session$current.notebook <- res
-  ##Getting the parameters from current session, loaded from rcloud.conf file,
-  ##Added extra parameter for search functionality
-  ##Getting starcount from redis if rcs.engine=redis is true otherwise getting it from RCSff
-  solr.host.port <- toString(.session$solr.host.port)
-  if (attr(.session$rcs.engine,"class") == "RCSredis"){
-	star.count <- rcs.get.RCSredis(paste0("notebook/",id,"/starcount"))
-  }else
-	star.count <- rcs.get(star.count.key(id))
-  if (is.null(star.count)) star.count <- 0
-  mcparallel(update.solr(solr.host.port,res,star.count,.session$collection), detached=TRUE)
+  if (nzConf("solr.url")) {
+    star.count <- rcloud.notebook.star.count(id)
+    mcparallel(update.solr(res,star.count), detached=TRUE)
+  }
   res
 }
 
-update.solr <- function(host.port,session.object,starcount,collection){
-  ##Sample curl command to post data to solr
-  solr.flag <- 1
-  for(i in 1:3) {
-    if(url.exists(paste0("http://",host.port,"/solr/")) == FALSE) {
-	  Sys.sleep(i)
-	  solr.flag <- 0
-	} else {
-	  solr.flag
-	}
-  }
-  if(solr.flag == 1) {
-    tryCatch({
-      curlTemplate <- paste0("http://",host.port,"/solr/",collection,"/update/json?commit=true")
-      ##Creating json with all the metadata fields
-      content.files <- session.object$content$files
-      if (!is.null(content.files[["scratch.R"]])) content.files$scratch.R <- NULL
-      if (length(content.files) >=1){
-        content.files <- content.files[unlist(lapply(seq(1:length(content.files)), function(i) if(length(grep("\\.R$",content.files[[i]]$filename)) == 1 || length(grep("\\.md$",content.files[[i]]$filename)) == 1) i))]
-        size <- sum(unlist(lapply(seq(1:(length(content.files))),function(i) content.files[[i]]$size)))
-        desc <- session.object$content$description
-        desc <- gsub("^\"*|\"*$", "", desc)
-        desc <- gsub("^\\\\*|\\\\*$", "", desc)
-        if(length(grep("\"",desc) == 1)){
-  	      notebook.description <- strsplit(desc,'\"')
-	      desc <- paste(notebook.description[[1]],collapse="\\\"")
-        }else if(length(grep("\\\\",desc) == 1)){
-	      notebook.description <- strsplit(desc,'\\\\')
-	      desc <- paste(notebook.description[[1]],collapse="\\\\")
-        }else{
-          desc
-	    }
-        session.content <- session.object$content
-        metadata<-paste0('{\"id\":\"',session.content$id, '\",\"user\":\"',session.content$user$login, '\",\"created_at\":\"',session.content$created_at, '\",\"updated_at\":\"',session.content$updated_at, '\",\"description\":\"',desc, '\",\"user_url\":\"',session.content$user$url, '\",\"avatar_url\":\"',session.content$user$avatar_url, '\",\"size\":\"',size, '\",\"commited_at\":\"',session.content$updated_at, '\",\"followers\":\"',.session$rgithub.context$user$followers, '\",\"public\":\"',session.content$public, '\",\"starcount\":\"',starcount, '\",\"content\":{\"set\":\"\"}}')
-        metadata.list <- fromJSON(metadata)
-        content.files <- lapply(seq(1:length(content.files)), function(i) list('filename'=content.files[[i]]$filename,'content'=content.files[[i]]$content))
-        content.files <- toJSON(content.files)
-        metadata.list$content$set <- content.files
-        completedata <- toJSON(metadata.list)
-        postForm(curlTemplate,.opts = list(postfields = paste("[",completedata,"]",sep=''),httpheader = c('Content-Type' = 'application/json',Accept = 'application/json')))
-      }
-    },
-    error = function (ex) {
-	  print(id)
-	  print(as.character(ex))
-	  print(ex$message)
-	})
-  } else {
-    print("Solr server is down")
+update.solr <- function(notebook,starcount){
+  url <- getConf("solr.url")
+  if (is.null(url)) stop("solr configuration not enabled")
+
+  ## FIXME: gracefully handle unavailability
+  curlTemplate <- paste0(url, "/update/json?commit=true")
+
+  ##Creating json with all the metadata fields
+  content.files <- session.object$content$files
+  if (!is.null(content.files[["scratch.R"]])) content.files$scratch.R <- NULL
+  if (length(content.files) >=1){
+    content.files <- content.files[unlist(lapply(seq(1:length(content.files)), function(i) if(length(grep("\\.R$",content.files[[i]]$filename)) == 1 || length(grep("\\.md$",content.files[[i]]$filename)) == 1) i))]
+    size <- sum(unlist(lapply(seq(1:(length(content.files))),function(i) content.files[[i]]$size)))
+    desc <- session.object$content$description
+    desc <- gsub("^\"*|\"*$", "", desc)
+    desc <- gsub("^\\\\*|\\\\*$", "", desc)
+    if (length(grep("\"",desc) == 1)) {
+      notebook.description <- strsplit(desc,'\"')
+      desc <- paste(notebook.description[[1]],collapse="\\\"")
+    } else if(length(grep("\\\\",desc) == 1)){
+      notebook.description <- strsplit(desc,'\\\\')
+      desc <- paste(notebook.description[[1]],collapse="\\\\")
+    } else {
+      desc
+    }
+    session.content <- session.object$content
+    metadata<-paste0('{\"id\":\"',session.content$id, '\",\"user\":\"',session.content$user$login, '\",\"created_at\":\"',session.content$created_at, '\",\"updated_at\":\"',session.content$updated_at, '\",\"description\":\"',desc, '\",\"user_url\":\"',session.content$user$url, '\",\"avatar_url\":\"',session.content$user$avatar_url, '\",\"size\":\"',size, '\",\"commited_at\":\"',session.content$updated_at, '\",\"followers\":\"',.session$rgithub.context$user$followers, '\",\"public\":\"',session.content$public, '\",\"starcount\":\"',starcount, '\",\"content\":{\"set\":\"\"}}')
+    metadata.list <- fromJSON(metadata)
+    content.files <- lapply(seq(1:length(content.files)), function(i) list('filename'=content.files[[i]]$filename,'content'=content.files[[i]]$content))
+    content.files <- toJSON(content.files)
+    metadata.list$content$set <- content.files
+    completedata <- toJSON(metadata.list)
+    postForm(curlTemplate,.opts = list(postfields = paste("[",completedata,"]",sep=''),httpheader = c('Content-Type' = 'application/json',Accept = 'application/json')))
   }
 }
 
-rcloud.custom.search <-function(q){
-  #Getting response from Solr through url
-  #Need to handle '&' as it is reserved character in URLencode
-  q <- gsub("%20","+",q)
-  solr.host <- toString(.session$solr.host)
-  solr.port <- as.numeric(.session$solr.port)
-  solr.host.port <- toString(.session$solr.host.port)
-  solr.url <- paste0("http://",solr.host.port,"/solr/",.session$collection,"/select?q=",q,"&start=0&rows=1000&wt=json&indent=true&fl=description,id,user,updated_at,starcount&hl=true&hl.fl=content&hl.fragsize=0&hl.maxAnalyzedChars=-1")
-  solr.res <- getURL(solr.url,.encoding = 'utf-8',.mapUnicode=FALSE)
+rcloud.search <-function(query) {
+  url <- getConf("solr.url")
+  if (is.null(url)) stop("solr is not enabled")
+
+  ## FIXME: shouldn't we URL-encode the query?!?
+  q <- gsub("%20","+",query)
+  solr.url <- paste0(url,"/select?q=",q,"&start=0&rows=1000&wt=json&indent=true&fl=description,id,user,updated_at,starcount&hl=true&hl.fl=content&hl.fragsize=0&hl.maxAnalyzedChars=-1")
+  solr.res <- getURL(solr.url, .encoding = 'utf-8', .mapUnicode=FALSE)
   solr.res <- fromJSON(solr.res)
   response.docs <- solr.res$response$docs
   response.high <- solr.res$highlighting
   if(is.null(solr.res$error)){
     if(length(response.docs) > 0){
       for(i in 1:length(response.high)){
-		if(length(response.high[[i]]) != 0){
+        if(length(response.high[[i]]) != 0){
           parts.content <- fromJSON(response.high[[i]]$content)
           for(j in 1:length(parts.content)){
             strmatched <- grep("open_b_close",strsplit(parts.content[[j]]$content,'\n')[[1]],value=T,fixed=T)
@@ -272,19 +249,19 @@ rcloud.custom.search <-function(q){
               if(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])%in%1 | (which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])%in%length(strsplit(parts.content[[j]]$content,'\n')[[1]]))) {
                 parts.content[[j]]$content <- strsplit(parts.content[[j]]$content,'\n')[[1]][which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])]
               } else
-                parts.content[[j]]$content <- strsplit(parts.content[[j]]$content,'\n')[[1]][(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])-1):(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])+1)]
+              parts.content[[j]]$content <- strsplit(parts.content[[j]]$content,'\n')[[1]][(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])-1):(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])+1)]
             } else
-              parts.content[[j]]$content <- grep("open_b_close",strsplit(parts.content[[j]]$content,'\n')[[1]],value=T,ignore.case=T)
+            parts.content[[j]]$content <- grep("open_b_close",strsplit(parts.content[[j]]$content,'\n')[[1]],value=T,ignore.case=T)
           }
-		  response.high[[i]]$content <- toJSON(parts.content)
-		  #Handling HTML content
-		  response.high[[i]]$content <- gsub("<","&lt;",response.high[[i]]$content)
-		  response.high[[i]]$content <- gsub(">","&gt;",response.high[[i]]$content)
-		  response.high[[i]]$content <- gsub("open_b_close","<b style=\\\\\"background:yellow\\\\\">",response.high[[i]]$content)
-		  response.high[[i]]$content <- gsub("open_/b_close","</b>",response.high[[i]]$content)
-		} else
-		  response.high[[i]]$content <-"[{\"filename\":\"part1.R\",\"content\":[]}]"
-        }
+          response.high[[i]]$content <- toJSON(parts.content)
+                                        #Handling HTML content
+          response.high[[i]]$content <- gsub("<","&lt;",response.high[[i]]$content)
+          response.high[[i]]$content <- gsub(">","&gt;",response.high[[i]]$content)
+          response.high[[i]]$content <- gsub("open_b_close","<b style=\\\\\"background:yellow\\\\\">",response.high[[i]]$content)
+          response.high[[i]]$content <- gsub("open_/b_close","</b>",response.high[[i]]$content)
+        } else
+        response.high[[i]]$content <-"[{\"filename\":\"part1.R\",\"content\":[]}]"
+      }
       json<-""
       for(i in 1:length(response.docs)){
         time <- solr.res$responseHeader$QTime
@@ -296,13 +273,13 @@ rcloud.custom.search <-function(q){
         parts <- response.high[[i]]$content
         json[i] <- toJSON(c('QTime'=time,'notebook'=notebook,'id'=id,'starcount'=starcount,'updated_at'=updated.at,'user'=user,'parts'=parts))
       }
-	  return(json)
-	} else
-	  return(solr.res$response$docs)
- } else
-	return(c("error",solr.res$error$msg))
+      return(json)
+    } else
+    return(solr.res$response$docs)
+  } else
+  return(c("error",solr.res$error$msg))
 }
-#########################################################END#######################################################################
+
 rcloud.create.notebook <- function(content) {
   res <- create.gist(content, ctx = .session$rgithub.context)
   if (res$ok) {
@@ -392,22 +369,8 @@ rcloud.get.completions <- function(text, pos) {
   utils:::.CompletionEnv[["comps"]]
 }
 
-rcloud.search <- function(search.string) {
-  if (nchar(search.string) == 0)
-    list(NULL, NULL)
-  else {
-    cmd <- paste0("find ", getConf("data.root"), "/userfiles -type f -exec grep -iHn ",
-                 search.string,
-                 " {} \\; | sed 's:^", getConf("data.root"), "/userfiles::'")
-    source.results <- system(cmd, intern=TRUE)
-
-    cmd <- paste0("grep -in ", search.string, " ", getConf("data.root"), "/history/main_log.txt")
-    history.results <- rev(system(cmd, intern=TRUE))
-    list(source.results, history.results)
-  }
-}
-
 ## FIXME: won't work - uses a global file!
+## FIXME: should search be using this instead of update notebook?!?
 rcloud.record.cell.execution <- function(user = .session$username, json.string) {
 #  cat(paste(paste(Sys.time(), user, json.string, sep="|"), "\n"),
 #      file=pathConf("data.root", "history", "main_log.txt"), append=TRUE)
