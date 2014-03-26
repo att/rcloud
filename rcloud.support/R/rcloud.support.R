@@ -198,12 +198,15 @@ update.solr <- function(notebook, starcount){
   ## FIXME: gracefully handle unavailability
   curlTemplate <- paste0(url, "/update/json?commit=true")
 
-  ##Creating json with all the metadata fields
   content.files <- notebook$content$files
-  if (!is.null(content.files[["scratch.R"]])) content.files$scratch.R <- NULL
-  if (length(content.files) >=1){
-    content.files <- content.files[unlist(lapply(seq(1:length(content.files)), function(i) if(length(grep("\\.R$",content.files[[i]]$filename)) == 1 || length(grep("\\.md$",content.files[[i]]$filename)) == 1) i))]
-    size <- sum(unlist(lapply(seq(1:(length(content.files))),function(i) content.files[[i]]$size)))
+  fns <- as.vector(sapply(content.files, function(o) o$filename))
+  ## only index cells for now ...
+  ## FIXME: do we really want to exclude the scratch file?
+  indexable <- grep("^part.*\\.(R|md)$", fns)
+  if (length(indexable)) {
+    content.files <- content.files[indexable]
+    sizes <- as.numeric(sapply(content.files, function(o) o$size))
+    size <- sum(sizes, na.rm=TRUE)
     desc <- notebook$content$description
     desc <- gsub("^\"*|\"*$", "", desc)
     desc <- gsub("^\\\\*|\\\\*$", "", desc)
@@ -220,11 +223,13 @@ update.solr <- function(notebook, starcount){
     ## FIXME: followers is not in the notebook, set to 0 for now
     metadata<-paste0('{\"id\":\"',session.content$id, '\",\"user\":\"',session.content$user$login, '\",\"created_at\":\"',session.content$created_at, '\",\"updated_at\":\"',session.content$updated_at, '\",\"description\":\"',desc, '\",\"user_url\":\"',session.content$user$url, '\",\"avatar_url\":\"',session.content$user$avatar_url, '\",\"size\":\"',size, '\",\"commited_at\":\"',session.content$updated_at, '\",\"followers\":\"',0, '\",\"public\":\"',session.content$public, '\",\"starcount\":\"',starcount, '\",\"content\":{\"set\":\"\"}}')
     metadata.list <- fromJSON(metadata)
-    content.files <- lapply(seq(1:length(content.files)), function(i) list('filename'=content.files[[i]]$filename,'content'=content.files[[i]]$content))
+    content.files <- unname(lapply(content.files, function(o) list('filename'=o$filename,'content'=o$content)))
     content.files <- toJSON(content.files)
     metadata.list$content$set <- content.files
     completedata <- toJSON(metadata.list)
-    postForm(curlTemplate,.opts = list(postfields = paste("[",completedata,"]",sep=''),httpheader = c('Content-Type' = 'application/json',Accept = 'application/json')))
+    postForm(curlTemplate, .opts = list(
+             postfields = paste("[",completedata,"]",sep=''),
+             httpheader = c('Content-Type' = 'application/json', Accept = 'application/json')))
   }
 }
 
