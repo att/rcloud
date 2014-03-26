@@ -186,12 +186,12 @@ rcloud.update.notebook <- function(id, content) {
   .session$current.notebook <- res
   if (nzConf("solr.url")) {
     star.count <- rcloud.notebook.star.count(id)
-    mcparallel(update.solr(res,star.count), detached=TRUE)
+    mcparallel(update.solr(res, star.count), detached=TRUE)
   }
   res
 }
 
-update.solr <- function(notebook,starcount){
+update.solr <- function(notebook, starcount){
   url <- getConf("solr.url")
   if (is.null(url)) stop("solr configuration not enabled")
 
@@ -199,12 +199,12 @@ update.solr <- function(notebook,starcount){
   curlTemplate <- paste0(url, "/update/json?commit=true")
 
   ##Creating json with all the metadata fields
-  content.files <- session.object$content$files
+  content.files <- notebook$content$files
   if (!is.null(content.files[["scratch.R"]])) content.files$scratch.R <- NULL
   if (length(content.files) >=1){
     content.files <- content.files[unlist(lapply(seq(1:length(content.files)), function(i) if(length(grep("\\.R$",content.files[[i]]$filename)) == 1 || length(grep("\\.md$",content.files[[i]]$filename)) == 1) i))]
     size <- sum(unlist(lapply(seq(1:(length(content.files))),function(i) content.files[[i]]$size)))
-    desc <- session.object$content$description
+    desc <- notebook$content$description
     desc <- gsub("^\"*|\"*$", "", desc)
     desc <- gsub("^\\\\*|\\\\*$", "", desc)
     if (length(grep("\"",desc) == 1)) {
@@ -216,8 +216,9 @@ update.solr <- function(notebook,starcount){
     } else {
       desc
     }
-    session.content <- session.object$content
-    metadata<-paste0('{\"id\":\"',session.content$id, '\",\"user\":\"',session.content$user$login, '\",\"created_at\":\"',session.content$created_at, '\",\"updated_at\":\"',session.content$updated_at, '\",\"description\":\"',desc, '\",\"user_url\":\"',session.content$user$url, '\",\"avatar_url\":\"',session.content$user$avatar_url, '\",\"size\":\"',size, '\",\"commited_at\":\"',session.content$updated_at, '\",\"followers\":\"',.session$rgithub.context$user$followers, '\",\"public\":\"',session.content$public, '\",\"starcount\":\"',starcount, '\",\"content\":{\"set\":\"\"}}')
+    session.content <- notebook$content
+    ## FIXME: followers is not in the notebook, set to 0 for now
+    metadata<-paste0('{\"id\":\"',session.content$id, '\",\"user\":\"',session.content$user$login, '\",\"created_at\":\"',session.content$created_at, '\",\"updated_at\":\"',session.content$updated_at, '\",\"description\":\"',desc, '\",\"user_url\":\"',session.content$user$url, '\",\"avatar_url\":\"',session.content$user$avatar_url, '\",\"size\":\"',size, '\",\"commited_at\":\"',session.content$updated_at, '\",\"followers\":\"',0, '\",\"public\":\"',session.content$public, '\",\"starcount\":\"',starcount, '\",\"content\":{\"set\":\"\"}}')
     metadata.list <- fromJSON(metadata)
     content.files <- lapply(seq(1:length(content.files)), function(i) list('filename'=content.files[[i]]$filename,'content'=content.files[[i]]$content))
     content.files <- toJSON(content.files)
