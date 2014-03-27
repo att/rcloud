@@ -502,18 +502,19 @@ pre {
 }
 
 .tab-div {
-    margin-bottom: 51px;
 }
 
 .rcloud-cellarea {
-    height: 80vh;
+    position: fixed;
+    top: 51;
+    bottom: 0;
+    width: 100%;
     overflow-y: scroll;
     overflow-x: hidden;
 }
 
 .rcloud-prompt {
-    position: fixed;
-    bottom: 0;
+    width: 100%;
     z-index: 10;
     padding: 0;
     background-color: #777;
@@ -522,6 +523,10 @@ pre {
 .btn {
     border-radius: 0;
     font-size: inherit;
+}
+
+#prompt-div {
+    padding-top: 5px;
 }
 
 #prompt-div button {
