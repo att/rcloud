@@ -30,6 +30,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             rcloud.config.set_user_option(opt, state);
         }
     }
+    function all_collapsed() {
+        return $.makeArray(collapsibles()).every(function(el) {
+            return $(el).hasClass('out') || $(el).data("would-collapse")===true;
+        });
+    }
     function sel_to_opt(sel) {
         return sel.replace('#', 'ui/');
     }
@@ -40,7 +45,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         init: function() {
             var that = this;
             collapsibles().each(function() {
-                $(this).data("would-collapse", !$(this).hasClass('in'));
+                $(this).data("would-collapse", !$(this).hasClass('in') && !$(this).hasClass('out'));
             });
             togglers().click(function() {
                 var target = $(this.hash);
@@ -50,6 +55,8 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                     return false;
                 }
                 collapse(target, target.hasClass('in'), true);
+                if(all_collapsed())
+                    that.hide(true);
                 return true;
             });
             $(sel_accordion).on("show.bs.collapse", function(e) {
@@ -113,6 +120,8 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), true);
         },
         show: function(persist) {
+            if(all_collapsed())
+                collapse($(collapsibles()[0]), false, true);
             collapsibles().each(function() {
                 $(this).collapse($(this).data("would-collapse") ? "hide" : "show");
             });
