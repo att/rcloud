@@ -57,7 +57,9 @@ RClient = {
         var error_dest_ = $("#session-info");
         var show_error_area;
         if(error_dest_.length)
-            show_error_area = function() { $("#collapse-session-info").collapse("show"); };
+            show_error_area = function() {
+                RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
+            };
         else {
             error_dest_ = $("#output");
             show_error_area = function() {};

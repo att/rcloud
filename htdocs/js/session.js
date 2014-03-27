@@ -6,7 +6,7 @@ var append_session_info = function(msg) {
     if (!document.getElementById("session-info-out"))
 	$("#session-info").append($("<pre id='session-info-out'></pre>"));
     $("#session-info-out").append(msg);
-    $("#collapse-session-info").collapse("show");
+    RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
 };
 
 // FIXME this needs to go away as well.
@@ -14,7 +14,7 @@ var oob_handlers = {
     "browsePath": function(v) {
         var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
         $("#help-frame").attr("src", x);
-        $("#collapse-help").collapse("show");
+        RCloud.UI.left_panel.collapse($("#collapse-help"), false);
     },
     "console.out": append_session_info,
     "console.msg": append_session_info,

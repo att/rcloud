@@ -57,7 +57,9 @@ RClient = {
         var error_dest_ = $("#session-info");
         var show_error_area;
         if(error_dest_.length)
-            show_error_area = function() { $("#collapse-session-info").collapse("show"); };
+            show_error_area = function() {
+                RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
+            };
         else {
             error_dest_ = $("#output");
             show_error_area = function() {};
@@ -2609,7 +2611,7 @@ var append_session_info = function(msg) {
     if (!document.getElementById("session-info-out"))
 	$("#session-info").append($("<pre id='session-info-out'></pre>"));
     $("#session-info-out").append(msg);
-    $("#collapse-session-info").collapse("show");
+    RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
 };
 
 // FIXME this needs to go away as well.
@@ -2617,7 +2619,7 @@ var oob_handlers = {
     "browsePath": function(v) {
         var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
         $("#help-frame").attr("src", x);
-        $("#collapse-help").collapse("show");
+        RCloud.UI.left_panel.collapse($("#collapse-help"), false);
     },
     "console.out": append_session_info,
     "console.msg": append_session_info,
@@ -2910,11 +2912,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     function togglers() {
         return $(sel_accordion + " > .panel > div.panel-heading > a.accordion-toggle");
     }
-    function collapse(target, state, persist) {
-        target.data("would-collapse", state);
+    function collapse(target, collapse, persist) {
+        target.data("would-collapse", collapse);
         if(persist) {
             var opt = 'ui/' + target[0].id;
-            rcloud.config.set_user_option(opt, state);
+            rcloud.config.set_user_option(opt, collapse);
         }
     }
     function all_collapsed() {
@@ -2936,15 +2938,8 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             });
             togglers().click(function() {
                 var target = $(this.hash);
-                if(collapsed_) {
-                    collapse(target, false, true);
-                    that.show(true);
-                    return false;
-                }
-                collapse(target, target.hasClass('in'), true);
-                if(all_collapsed())
-                    that.hide(true);
-                return true;
+                that.collapse(target, target.hasClass('in'));
+                return false;
             });
             $(sel_accordion).on("show.bs.collapse", function(e) {
                 that.resize();
@@ -2990,6 +2985,18 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 }
                 else that.show(true); // make sure we have a setting
             });
+        },
+        collapse: function(target, whether) {
+            if(collapsed_) {
+                collapse(target, false, true);
+                this.show(true);
+                return;
+            }
+            collapse(target, whether, true);
+            if(all_collapsed())
+                this.hide(true);
+            else
+                this.show(true);
         },
         resize: function() {
             var cw = this.calcwidth();
