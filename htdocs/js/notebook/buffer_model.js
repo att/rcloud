@@ -84,4 +84,3 @@ Notebook.Buffer.create_model = function(content) {
     };
     return result;
 };
-

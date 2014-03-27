@@ -52,6 +52,18 @@ RClient = {
                 shutdown();
             }
         };
+        // detect where we will show errors
+
+        var error_dest_ = $("#session-info");
+        var show_error_area;
+        if(error_dest_.length)
+            show_error_area = function() {
+                RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
+            };
+        else {
+            error_dest_ = $("#output");
+            show_error_area = function() {};
+        }
 
         var token = $.cookies.get().token;  // document access token
         var execToken = $.cookies.get().execToken; // execution token (if enabled)
@@ -70,7 +82,7 @@ RClient = {
             _rserve: rserve,
             host: opts.host,
             running: false,
-           
+
             //////////////////////////////////////////////////////////////////
             // FIXME: all of this should move out of rclient and into
             // the notebook objects.
@@ -92,23 +104,24 @@ RClient = {
                 var button = $("<button type='button' class='close'>" + label + "</button>");
                 result.append(button);
                 button.click(function() {
-                    window.location = 
-                        (window.location.protocol + 
-                         '//' + window.location.host + 
-                         '/login.R?redirect=' + 
+                    window.location =
+                        (window.location.protocol +
+                         '//' + window.location.host +
+                         '/login.R?redirect=' +
                          encodeURIComponent(window.location.pathname + window.location.search));
                 });
                 return result;
             },
 
-            post_error: function (msg) {
+            post_error: function (msg, dest) {
                 if (typeof msg === 'string')
                     msg = this.string_error(msg);
                 if (typeof msg !== 'object')
                     throw new Error("post_error expects a string or a jquery div");
                 msg.css("margin", "-15px"); // hack
-                $("#session-info").append(msg);
-                $("#collapse-session-info").collapse("show");
+                dest = dest || error_dest_;
+                dest.append(msg);
+                show_error_area();
             },
 
             post_response: function (msg) {
@@ -418,6 +431,8 @@ RCloud.create = function(rcloud_ocaps) {
             ["config", "get_recent_notebooks"],
             ["config", "set_recent_notebook"],
             ["config", "clear_recent_notebook"],
+            ["config", "get_user_option"],
+            ["config", "set_user_option"],
             ["get_notebook_info"],
             ["get_multiple_notebook_infos"],
             ["set_notebook_info"]
@@ -655,7 +670,9 @@ RCloud.create = function(rcloud_ocaps) {
             new_notebook_number: rcloud_ocaps.config.new_notebook_numberAsync,
             get_recent_notebooks: rcloud_ocaps.config.get_recent_notebooksAsync,
             set_recent_notebook: rcloud_ocaps.config.set_recent_notebookAsync,
-            clear_recent_notebook: rcloud_ocaps.config.clear_recent_notebookAsync
+            clear_recent_notebook: rcloud_ocaps.config.clear_recent_notebookAsync,
+            get_user_option: rcloud_ocaps.config.get_user_optionAsync,
+            set_user_option: rcloud_ocaps.config.set_user_optionAsync
         };
 
         // notebook cache
@@ -1092,7 +1109,7 @@ bootstrap_utils.alert = function(opts)
     if (opts.html) div.html(opts.html);
     if (opts.text) div.text(opts.text);
     if (opts['class']) div.addClass(opts['class']);
-    if (opts.close_button) 
+    if (opts.close_button)
         div.prepend($('<button type="button" class="close" data-dismiss="alert">&times;</button>').click(opts.on_close));
     return div;
 };
@@ -1200,7 +1217,6 @@ Notebook.Buffer.create_model = function(content) {
     };
     return result;
 };
-
 Notebook.Asset.create_html_view = function(asset_model)
 {
     var filename_div = $("<li></li>");
@@ -1236,7 +1252,7 @@ Notebook.Asset.create_html_view = function(asset_model)
         },
         set_readonly: function(readonly) {
             // FIXME
-        }, 
+        },
         div: function() {
             return filename_div;
         }
@@ -1827,7 +1843,6 @@ Notebook.Cell.create_controller = function(cell_model)
         },
         change_language: function(language) {
             cell_model.language(language);
-            
         }
     };
 
@@ -2219,7 +2234,9 @@ Notebook.create_controller = function(model)
             model.user(notebook.user.login);
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
-            asset_controller.select();
+            // it's rare but valid not to have assets
+            if(asset_controller)
+                asset_controller.select();
         }
         return notebook;
     }
@@ -2586,7 +2603,7 @@ Notebook.part_name = function(id, language) {
     }
     return 'part' + id + '.' + ext;
 };
-// FIXME this is jsut a proof of concept - using Rserve console OOBs
+// FIXME this is just a proof of concept - using Rserve console OOBs
 var append_session_info = function(msg) {
     // one hacky way is to maintain a <pre> that we fill as we go
     // note that R will happily spit out incomplete lines so it's
@@ -2594,17 +2611,15 @@ var append_session_info = function(msg) {
     if (!document.getElementById("session-info-out"))
 	$("#session-info").append($("<pre id='session-info-out'></pre>"));
     $("#session-info-out").append(msg);
-    $("#collapse-session-info").collapse("show");
+    RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
 };
 
 // FIXME this needs to go away as well.
 var oob_handlers = {
     "browsePath": function(v) {
         var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
-        var width=600;
-        var height=500;
-        var left=screen.width-width;
-        window.open(x,'RCloudHelp','width='+width+',height='+height+',scrollbars=yes,resizable=yes,left='+left);
+        $("#help-frame").attr("src", x);
+        RCloud.UI.left_panel.collapse($("#collapse-help"), false);
     },
     "console.out": append_session_info,
     "console.msg": append_session_info,
@@ -2621,7 +2636,6 @@ RCloud.session = {
         } else {
             return rcloud.with_progress(function(done) {
                 rclient.close();
-                // FIXME this is a bit of an annoying duplication of code on main.js and view.js
                 return new Promise(function(resolve, reject) {
                     rclient = RClient.create({
                         debug: rclient.debug,
@@ -2691,7 +2705,7 @@ RCloud.session = {
                 }
             });
         });
-        
+
     }
 };
 RCloud.UI = {};
@@ -2777,7 +2791,7 @@ RCloud.UI.init = function() {
             : rcloud.upload_file;
 
         upload_function(false, function(err, value) {
-            if (err) 
+            if (err)
                 failure(err);
             else
                 success(value);
@@ -2827,6 +2841,7 @@ RCloud.UI.init = function() {
 
     RCloud.UI.scratchpad.init();
     RCloud.UI.command_prompt.init();
+    RCloud.UI.help_frame.init();
 
     function make_cells_sortable() {
         var cells = $('#output');
@@ -2849,7 +2864,7 @@ RCloud.UI.init = function() {
             scrollSensitivity: 40
         });
     }
-    make_cells_sortable();    
+    make_cells_sortable();
 
     //////////////////////////////////////////////////////////////////////////
     // autosave when exiting. better default than dropping data, less annoying
@@ -2859,126 +2874,206 @@ RCloud.UI.init = function() {
         return true;
     });
 
-    $(".collapse").collapse();
+    $(".panel-collapse").collapse({toggle: false});
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
     $("#edit-notebook").click(function() {
         window.location = "main.html?notebook=" + shell.gistname();
     });
-    
+
 };
-RCloud.UI.left_panel = {
-    collapsed: false,
-    hide: function() {
-        this.collapsed = true;
-        $("#left-column").removeClass("col-md-3 col-sm-3").addClass("col-md-1 col-sm-1");
-        $("#fake-left-column").removeClass("col-md-3 col-sm-3").addClass("col-md-1 col-sm-1");
-        $("#new-notebook").hide();
-        $("#left-pane-collapser i").removeClass("icon-minus").addClass("icon-plus");
-        RCloud.UI.middle_column.update();
-    },
-    show: function() {
-        $("#left-column").removeClass("col-md-1 col-sm-1").addClass("col-md-3 col-sm-3");
-        $("#fake-left-column").removeClass("col-md-1 col-sm-1").addClass("col-md-3 col-sm-3");
-        $("#new-notebook").show();
-        $("#left-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
-        this.collapsed = false;
-        RCloud.UI.middle_column.update();
-    },
-    init: function() {
-        var that = this;
-        $("#accordion").on("show.bs.collapse", function() {
-            if (that.collapsed) {
-                that.show();
-                that.collapsed = false;
-                RCloud.UI.middle_column.update();
-            }
-        });
-        $("#accordion").on("shown.bs.collapse", function() {
-            $(".left-panel-shadow").each(function(v) { 
-                var h = $(this).parent().height();
-                if (h === 0)
-                    h = "100%";
-                $(this).attr("height", h);
-            });
-        });
-        $("#left-pane-collapser").click(function() {
-            if (that.collapsed) {
-                that.show();
-            } else {
-                // the following actually makes sense to me. oh no what has my life become
-                $("#accordion > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
-                that.hide();
-            }
-            RCloud.UI.middle_column.update();
-        });
+RCloud.UI.load = function() {
+    RCloud.UI.left_panel.load();
+    RCloud.UI.right_panel.load();
+};
+RCloud.UI.column = function(sel_column, colwidth) {
+    function classes(cw) {
+        return "col-md-" + cw + " col-sm-" + cw;
     }
-};
-RCloud.UI.right_panel = {
-    collapsed: false,
-    hide: function() {
-        this.collapsed = true;
-        $("#right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-1 col-sm-1");
-        $("#fake-right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-1 col-sm-1");
-        $("#right-pane-collapser i").addClass("icon-plus").removeClass("icon-minus");
-    },
-    show: function() {
-        $("#right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-4 col-sm-4");
-        $("#fake-right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-4 col-sm-4");
-        $("#right-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
-        this.collapsed = false;
-    },
-    init: function() {
-        var that = this;
-        $("#accordion-right").on("show.bs.collapse", function() {
-            if (that.collapsed) {
-                that.show();
-                that.collapsed = false;
-                RCloud.UI.middle_column.update();
+    var result = {
+        colwidth: function(val) {
+            if(!_.isUndefined(val) && val != colwidth) {
+                $(sel_column).removeClass(classes(colwidth)).addClass(classes(val));
+                colwidth = val;
             }
-        });
-        $("#accordion-right").on("shown.bs.collapse", function() {
-            $(".right-panel-shadow").each(function(v) { 
-                var h = $(this).parent().height();
-                if (h === 0)
-                    h = "100%";
-                $(this).attr("height", h);
-            });
-        });
-        $("#right-pane-collapser").click(function() {
-            if (that.collapsed) {
-                that.show();
-            } else {
-                // the following actually makes sense to me. oh no what has my life become
-                $("#accordion-right > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
-                that.hide();
-            }
-            RCloud.UI.middle_column.update();
-        });
-    }
-};
-RCloud.UI.middle_column = {
-    middle_panel_size: 5,
-    update: function() {
-        var size = 12;
-        if (RCloud.UI.right_panel.collapsed) {
-            size -= 1;
-        } else {
-            size -= 4;
+            return colwidth;
         }
-        if (RCloud.UI.left_panel.collapsed) {
-            size -= 1;
-        } else {
-            size -= 3;
-        }
-        var previous_classes = "col-sm-" + this.middle_panel_size + " col-md-" + this.middle_panel_size;
-        var new_classes = "col-sm-" + size + " col-md-" + size;
-        $("#middle-column").removeClass(previous_classes).addClass(new_classes);
-        $("#prompt-div").removeClass(previous_classes).addClass(new_classes);
-        this.middle_panel_size = size;
-    }
+    };
+    return result;
 };
+
+RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser, colwidth) {
+    var collapsed_ = false;
+    var result = RCloud.UI.column(sel_column, colwidth);
+    function collapsibles() {
+        return $(sel_accordion + " > .panel > div.panel-collapse");
+    }
+    function togglers() {
+        return $(sel_accordion + " > .panel > div.panel-heading > a.accordion-toggle");
+    }
+    function collapse(target, collapse, persist) {
+        target.data("would-collapse", collapse);
+        if(persist) {
+            var opt = 'ui/' + target[0].id;
+            rcloud.config.set_user_option(opt, collapse);
+        }
+    }
+    function all_collapsed() {
+        return $.makeArray(collapsibles()).every(function(el) {
+            return $(el).hasClass('out') || $(el).data("would-collapse")===true;
+        });
+    }
+    function sel_to_opt(sel) {
+        return sel.replace('#', 'ui/');
+    }
+    function opt_to_sel(opt) {
+        return opt.replace('ui/', '#');
+    }
+    _.extend(result, {
+        init: function() {
+            var that = this;
+            collapsibles().each(function() {
+                $(this).data("would-collapse", !$(this).hasClass('in') && !$(this).hasClass('out'));
+            });
+            togglers().click(function() {
+                var target = $(this.hash);
+                that.collapse(target, target.hasClass('in'));
+                return false;
+            });
+            $(sel_accordion).on("show.bs.collapse", function(e) {
+                that.resize();
+            });
+            $(sel_accordion).on("hide.bs.collapse", function(e) {
+                that.resize();
+            });
+            $(sel_accordion).on("shown.bs.collapse", function() {
+                $(".panel-shadow").each(function(v) {
+                    var h = $(this).parent().height();
+                    if (h === 0)
+                        h = "100%";
+                    $(this).attr("height", h);
+                });
+            });
+            $(sel_collapser).click(function() {
+                if (collapsed_)
+                    that.show(true);
+                else
+                    that.hide(true);
+            });
+        },
+        load: function() {
+            var that = this;
+            var sels = $.makeArray(collapsibles()).map(function(el) { return '#' + el.id; });
+            sels.push(sel_accordion);
+            var opts = sels.map(sel_to_opt);
+            rcloud.config.get_user_option(opts).then(function(settings) {
+                var hide_column;
+                for(var k in settings) {
+                    var id = opt_to_sel(k);
+                    if(id === sel_accordion)
+                        hide_column = settings[k];
+                    else if(typeof settings[k] === "boolean")
+                        collapse($(id), settings[k], false);
+                }
+                // do the column last because it will affect all its children
+                if(typeof hide_column === "boolean") {
+                    if(hide_column)
+                        that.hide(false);
+                    else
+                        that.show(false);
+                }
+                else that.show(true); // make sure we have a setting
+            });
+        },
+        collapse: function(target, whether) {
+            if(collapsed_) {
+                collapse(target, false, true);
+                this.show(true);
+                return;
+            }
+            collapse(target, whether, true);
+            if(all_collapsed())
+                this.hide(true);
+            else
+                this.show(true);
+        },
+        resize: function() {
+            var cw = this.calcwidth();
+            console.log("resizing " + sel_column + " to " + cw);
+            this.colwidth(cw);
+            RCloud.UI.middle_column.update();
+        },
+        hide: function(persist) {
+            // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
+            $(sel_accordion + " > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
+            $(sel_collapser + " i").removeClass("icon-minus").addClass("icon-plus");
+            collapsed_ = true;
+            this.resize();
+            if(persist)
+                rcloud.config.set_user_option(sel_to_opt(sel_accordion), true);
+        },
+        show: function(persist) {
+            if(all_collapsed())
+                collapse($(collapsibles()[0]), false, true);
+            collapsibles().each(function() {
+                $(this).collapse($(this).data("would-collapse") ? "hide" : "show");
+            });
+            $(sel_collapser + " i").removeClass("icon-plus").addClass("icon-minus");
+            collapsed_ = false;
+            this.resize();
+            if(persist)
+                rcloud.config.set_user_option(sel_to_opt(sel_accordion), false);
+        },
+        calcwidth: function() {
+            if(collapsed_)
+                return 1;
+            var widths = [];
+            collapsibles().each(function() {
+                var width = $(this).data("would-collapse") ? 1 : $(this).attr("data-colwidth");
+                if(width > 0)
+                    widths.push(width);
+            });
+            return d3.max(widths);
+        }
+    });
+    return result;
+};
+RCloud.UI.left_panel = (function() {
+    var result = RCloud.UI.collapsible_column("#left-column,#fake-left-column",
+                                              "#accordion-left", "#left-pane-collapser", 3);
+    var base_hide = result.hide.bind(result),
+        base_show = result.show.bind(result);
+
+    _.extend(result, {
+        hide: function(persist) {
+            $("#new-notebook").hide();
+            base_hide(persist);
+        },
+        show: function(persist) {
+            $("#new-notebook").show();
+            base_show(persist);
+        }
+    });
+    return result;
+}());
+
+RCloud.UI.right_panel = (function() {
+    var result = RCloud.UI.collapsible_column("#right-column,#fake-right-column",
+                                              "#accordion-right", "#right-pane-collapser", 4);
+    return result;
+}());
+RCloud.UI.middle_column = (function() {
+    var result = RCloud.UI.column("#middle-column, #prompt-div", 5);
+
+    _.extend(result, {
+        update: function() {
+            var size = 12 - RCloud.UI.left_panel.colwidth() - RCloud.UI.right_panel.colwidth();
+            result.colwidth(size);
+        }
+    });
+    return result;
+}());
 RCloud.UI.scratchpad = {
     session: null,
     widget: null,
@@ -3370,3 +3465,10 @@ RCloud.UI.notebook_title = (function() {
     };
     return result;
 })();
+RCloud.UI.help_frame = {
+    init: function() {
+        // i can't be bothered to figure out why the iframe causes onload to be triggered early
+        // if this code is directly in main.html
+        $("#help-parent").append('<iframe id="help-frame" frameborder="0" />');
+    }
+};
