@@ -43,8 +43,10 @@ migrate.notebook.keys <- function(keep) {
       cat("Migrating new keys:\n");
       str(fk, vec.len=Inf)
       Map(function(src, dest) {
+        ## are there any other counters?
+        counter <- grepl("/starcount$", src)
         val <- rcs.get(src)
-        rcs.set(dest, val)
+        rcs.set(dest, val, counter)
       }, fk, gsub("notebook", ".notebook", fk))
     }
   }
