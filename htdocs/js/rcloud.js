@@ -20,15 +20,18 @@ RCloud.create = function(rcloud_ocaps) {
             v = v[path[i]];
         return v;
     }
+
     function set(path, val) {
         var v = rcloud_ocaps;
         for (var i=0; i<path.length-1; ++i)
             v = v[path[i]];
         v[path[path.length-1] + "Async"] = val;
     }
+
     function process_paths(paths) {
         _.each(paths, function(path) {
-            set(path, rcloud_handler(path.join('.'), Promise.promisify(get(path))));
+            var fn = get(path);
+            set(path, fn ? rcloud_handler(path.join('.'), Promise.promisify(fn)) : null);
         });
     }
 
@@ -45,6 +48,7 @@ RCloud.create = function(rcloud_ocaps) {
             }
             return result;
         }
+
         function failure(err) {
             if(err.message) {
                 rclient.post_error(err.message);
@@ -64,6 +68,7 @@ RCloud.create = function(rcloud_ocaps) {
                 throw new Error(command + ': ' + result.content.message);
             }
         }
+
         function failure(err) {
             var message = _.isObject(err) && 'ok' in err
                 ? err.content.message : err.toString();
@@ -76,7 +81,6 @@ RCloud.create = function(rcloud_ocaps) {
     var rcloud = {};
 
     function setup_unauthenticated_ocaps() {
-
         var paths = [
             ["anonymous_session_init"],
             ["prefix_uuid"],
@@ -297,14 +301,15 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.session_init = function(username, token) {
             return rcloud_ocaps.session_initAsync(username, token);
         };
-        rcloud.search = function(search_string) {
-            return rcloud_ocaps.searchAsync(search_string);
-        };
+
         rcloud.update_notebook = function(id, content) {
             return rcloud_github_handler(
                 "rcloud.update.notebook",
                 rcloud_ocaps.update_notebookAsync(id, JSON.stringify(content)));
         };
+
+        rcloud.search = rcloud_ocaps.searchAsync; // may be null
+
         rcloud.create_notebook = function(content) {
             return rcloud_github_handler(
                 "rcloud.create.notebook",
@@ -567,17 +572,20 @@ RCloud.create = function(rcloud_ocaps) {
         }
         progress_dialog.modal({keyboard: true});
     }
+
     function clear_curtain() {
         if (!curtains_on)
             return;
         curtains_on = false;
         progress_dialog.modal('hide');
     }
+
     function set_cursor() {
         _.delay(function() {
             document.body.style.cursor = "wait";
         }, 0);
     }
+
     function clear_cursor() {
         _.delay(function() {
             document.body.style.cursor = '';

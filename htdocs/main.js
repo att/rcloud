@@ -9,6 +9,8 @@ window.onload = function() {
     RCloud.UI.init();
     RCloud.session.init().then(function() {
         RCloud.UI.load();
+        if(!rcloud.search)
+            $("#collapse-search div.panel-body > div").text("Search engine not enabled on server");
         var notebook = null, version = null;
         if (location.search.length > 0) {
             notebook = getURLParameter("notebook");

@@ -165,15 +165,18 @@ RCloud.create = function(rcloud_ocaps) {
             v = v[path[i]];
         return v;
     }
+
     function set(path, val) {
         var v = rcloud_ocaps;
         for (var i=0; i<path.length-1; ++i)
             v = v[path[i]];
         v[path[path.length-1] + "Async"] = val;
     }
+
     function process_paths(paths) {
         _.each(paths, function(path) {
-            set(path, rcloud_handler(path.join('.'), Promise.promisify(get(path))));
+            var fn = get(path);
+            set(path, fn ? rcloud_handler(path.join('.'), Promise.promisify(fn)) : null);
         });
     }
 
@@ -190,6 +193,7 @@ RCloud.create = function(rcloud_ocaps) {
             }
             return result;
         }
+
         function failure(err) {
             if(err.message) {
                 rclient.post_error(err.message);
@@ -209,6 +213,7 @@ RCloud.create = function(rcloud_ocaps) {
                 throw new Error(command + ': ' + result.content.message);
             }
         }
+
         function failure(err) {
             var message = _.isObject(err) && 'ok' in err
                 ? err.content.message : err.toString();
@@ -221,7 +226,6 @@ RCloud.create = function(rcloud_ocaps) {
     var rcloud = {};
 
     function setup_unauthenticated_ocaps() {
-
         var paths = [
             ["anonymous_session_init"],
             ["prefix_uuid"],
@@ -442,14 +446,15 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.session_init = function(username, token) {
             return rcloud_ocaps.session_initAsync(username, token);
         };
-        rcloud.search = function(search_string) {
-            return rcloud_ocaps.searchAsync(search_string);
-        };
+
         rcloud.update_notebook = function(id, content) {
             return rcloud_github_handler(
                 "rcloud.update.notebook",
                 rcloud_ocaps.update_notebookAsync(id, JSON.stringify(content)));
         };
+
+        rcloud.search = rcloud_ocaps.searchAsync; // may be null
+
         rcloud.create_notebook = function(content) {
             return rcloud_github_handler(
                 "rcloud.create.notebook",
@@ -712,17 +717,20 @@ RCloud.create = function(rcloud_ocaps) {
         }
         progress_dialog.modal({keyboard: true});
     }
+
     function clear_curtain() {
         if (!curtains_on)
             return;
         curtains_on = false;
         progress_dialog.modal('hide');
     }
+
     function set_cursor() {
         _.delay(function() {
             document.body.style.cursor = "wait";
         }, 0);
     }
+
     function clear_cursor() {
         _.delay(function() {
             document.body.style.cursor = '';
@@ -2804,6 +2812,12 @@ RCloud.UI.init = function() {
     var non_notebook_panel_height = 246;
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
 
+    $("#search").submit(function() {
+        var qry = $('#input-text-search').val();
+        RCloud.UI.search.exec(qry);
+        return false;
+    });
+
     $("#insert-new-cell").click(function() {
         debugger;
         var language = $("#insert-cell-language option:selected").text();
@@ -2914,7 +2928,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     }
     function collapse(target, collapse, persist) {
         target.data("would-collapse", collapse);
-        if(persist) {
+        if(persist && rcloud.config) {
             var opt = 'ui/' + target[0].id;
             rcloud.config.set_user_option(opt, collapse);
         }
@@ -3010,7 +3024,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             $(sel_collapser + " i").removeClass("icon-minus").addClass("icon-plus");
             collapsed_ = true;
             this.resize();
-            if(persist)
+            if(persist && rcloud.config)
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), true);
         },
         show: function(persist) {
@@ -3022,7 +3036,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             $(sel_collapser + " i").removeClass("icon-plus").addClass("icon-minus");
             collapsed_ = false;
             this.resize();
-            if(persist)
+            if(persist && rcloud.config)
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), false);
         },
         calcwidth: function() {
@@ -3465,6 +3479,102 @@ RCloud.UI.notebook_title = (function() {
     };
     return result;
 })();
+RCloud.UI.search = {
+    exec: function(query) {
+        function summary(html) {
+            $("#search-summary").show().html($("<h4 />").append(html));
+        }
+        function create_list_of_search_results(d) {
+            var i;
+            if(d == null || d == "null" || d == "") {
+                summary("No Results Found");
+            } else if(d[0] == "error") {
+                d[1] = d[1].replace(/\n/g, "<br/>");
+                summary("ERROR:\n" + d[1]);
+            } else {
+                if(typeof (d) == "string") {
+                    d = JSON.parse("[" + d + "]");
+                }
+                //convertin any string type part to json object : not required most of the time
+                for(i = 0; i < d.length; i++) {
+                    if(typeof (d[i]) == "string") {
+                        d[i] = JSON.parse(d[i]);
+                    }
+                }
+                d.sort(function(a, b) {
+                    var astars = +(a.starcount||0), bstars = +(b.starcount||0);
+                    return bstars-astars;
+                });
+                var len = d.length;
+                var search_results = "";
+                var star_count;
+                var qtime = 0;
+                //iterating for all the notebooks got in the result/response
+                for(i = 0; i < len; i++) {
+                    try {
+                        qtime = d[0].QTime;
+                        if(typeof d[i].starcount === "undefined") {
+                            star_count = 0;
+                        } else {
+                            star_count = d[i].starcount;
+                        }
+                        var notebook_id = d[i].id;
+                        var image_string = "<i class=\"icon-star\" style=\"font-size: 110%; line-height: 90%;\"><sub>" + star_count + "</sub></i>";
+                        d[i].parts = JSON.parse(d[i].parts);
+                        var parts_table = "";
+                        var inner_table = "";
+                        var added_parts = 0;
+                        //displaying only 5 parts of the notebook sorted based on relevancy from solr
+                        for(var k = 0; k < d[i].parts.length && added_parts < 5; k++) {
+                            inner_table = "";
+                            var ks = Object.keys(d[i].parts[k]);
+                            if(ks.length > 0 && d[i].parts[k].content != "") {
+                                var content = d[i].parts[k].content;
+                                if(typeof content == "string")
+                                    content = [content];
+                                if(content.length > 0)
+                                    parts_table += "<tr><th style=\"font-size:11px\">" + d[i].parts[k].filename + "</th></tr>";
+                                for(var l = 0; l < content.length; l++)
+                                    inner_table += "<tr><td class='search-result-line-number'>" + (l + 1) + "</td><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
+
+                                added_parts++;
+                            }
+                            if(inner_table != "") {
+                                inner_table = "<table>" + inner_table + "</table>";
+                                parts_table += "<tr><td>" + inner_table + "</td></tr>";
+                            }
+                        }
+                        if(parts_table != "") {
+                            parts_table = "<table>" + parts_table + "</table>";
+                        }
+                        search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" + "<a id=\"open_" + i + "\" href='javascript:editor.load_notebook(\"" + notebook_id + "\")' class='search-result-heading'>" + d[i].user + " / " + d[i].notebook + "</a>" + image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
+                        if(parts_table != "")
+                            search_results += "<tr><td colspan=2 width=100% style='font-size: 12'><div>" + parts_table + "</div></td></tr>";
+                        search_results += "</table>";
+                    } catch(e) {
+                        summary("Error : \n" + e);
+                    }
+                }
+                var qry = decodeURIComponent(query);
+                qry = qry.replace(/\</g,'&lt;');
+                qry = qry.replace(/\>/g,'&gt;');
+                var search_summary = len + " Results Found"; //+ " <i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i>";
+                summary(search_summary);
+                $("#search-results").show().css("height", "50vh").html(search_results);
+            }
+        };
+
+        summary("Searching...");
+        $("#search-results").hide().html("");
+        query = encodeURIComponent(query);
+        rcloud.with_progress(function(done) {
+            rcloud.search(query).then(function (v) {
+                create_list_of_search_results(v);
+                done();
+            });
+        });
+    }
+};
 RCloud.UI.help_frame = {
     init: function() {
         // i can't be bothered to figure out why the iframe causes onload to be triggered early
