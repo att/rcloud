@@ -2300,11 +2300,11 @@ Notebook.create_controller = function(model)
         changes = changes.filter(function(change) {
             return change.content || change.erase || change.rename;
         });
+        if (model.read_only())
+            return Promise.reject("attempted to update read-only notebook");
         if (!changes.length) {
             return Promise.cast(add_more_changes(current_gist_));
         }
-        if (model.read_only())
-            return Promise.reject("attempted to update read-only notebook");
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
             var files = {};
