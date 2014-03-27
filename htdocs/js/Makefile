@@ -36,6 +36,7 @@ rcloud_bundle.js: \
 	ui/share_button.js \
 	ui/configure_readonly.js \
 	ui/notebook_title.js \
+	ui/search.js \
 	ui/help_frame.js
 
 rcloud_bundle.min.js: rcloud_bundle.js Makefile

@@ -2,12 +2,6 @@ Promise.longStackTraces();
 
 /* Added these functions for supporting search functionality */
 
-function search(){
-	var qry = $('#input-text-search').val();
-	rcloud.search(qry);
-	return;
-}
-
 function hide_popup(){
 	$("#divPopup").hide();
 	$("#divClose").hide();
@@ -34,6 +28,8 @@ window.onload = function() {
     RCloud.UI.init();
     RCloud.session.init().then(function() {
         RCloud.UI.load();
+        if(!rcloud.search)
+            $("#collapse-search div.panel-body > div").text("Search engine not enabled on server");
         var notebook = null, version = null;
         if (location.search.length > 0) {
             notebook = getURLParameter("notebook");
