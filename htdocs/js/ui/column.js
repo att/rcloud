@@ -25,7 +25,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     }
     function collapse(target, collapse, persist) {
         target.data("would-collapse", collapse);
-        if(persist) {
+        if(persist && rcloud.config) {
             var opt = 'ui/' + target[0].id;
             rcloud.config.set_user_option(opt, collapse);
         }
@@ -121,7 +121,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             $(sel_collapser + " i").removeClass("icon-minus").addClass("icon-plus");
             collapsed_ = true;
             this.resize();
-            if(persist)
+            if(persist && rcloud.config)
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), true);
         },
         show: function(persist) {
@@ -133,7 +133,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             $(sel_collapser + " i").removeClass("icon-plus").addClass("icon-minus");
             collapsed_ = false;
             this.resize();
-            if(persist)
+            if(persist && rcloud.config)
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), false);
         },
         calcwidth: function() {

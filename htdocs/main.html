@@ -110,16 +110,13 @@
               <div id="collapse-search" class="panel-collapse collapse" data-colwidth="4">
 		<img height="100%" width="5px" src="img/right_bordergray.png" class="panel-shadow left" />
                 <div class="panel-body">
-                  Coming soon!
-                  <!--  Search disabled for Version 0.9
-                  <div>Full-text search for <input type="text" value="" id="input-text-search"></input></div>
-                  <h4 id="input-text-source-results-title" style="padding-bottom: 0; margin-bottom: 0">Source results</h4>
-                  <table id="input-text-source-results-table">
-                  </table>
-                  <h4 id="input-text-history-results-title" style="padding-bottom: 0; margin-bottom: 0">History results</h4>
-                  <table id="input-text-history-results-table">
-                  </table>
-                  -->
+                  <form id="search" action="#">
+                    <div>Full-text search for <input type="text" value="" id="input-text-search"></input>
+                    <button type='submit'>search</button>
+                    </div>
+                  </form>
+                  <div id="search-summary"></div>
+                  <div id="search-results"></div>
                 </div>
               </div>
             </div>
@@ -149,7 +146,6 @@
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>

@@ -93,6 +93,12 @@ RCloud.UI.init = function() {
     var non_notebook_panel_height = 246;
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
 
+    $("#search").submit(function() {
+        var qry = $('#input-text-search').val();
+        RCloud.UI.search.exec(qry);
+        return false;
+    });
+
     $("#insert-new-cell").click(function() {
         debugger;
         var language = $("#insert-cell-language option:selected").text();

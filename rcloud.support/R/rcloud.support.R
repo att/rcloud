@@ -184,7 +184,106 @@ rcloud.upload.to.notebook <- function(file, name) {
 rcloud.update.notebook <- function(id, content) {
   res <- modify.gist(id, content, ctx = .session$rgithub.context)
   .session$current.notebook <- res
+  if (nzConf("solr.url")) {
+    star.count <- rcloud.notebook.star.count(id)
+    mcparallel(update.solr(res, star.count), detached=TRUE)
+  }
   res
+}
+
+update.solr <- function(notebook, starcount){
+  url <- getConf("solr.url")
+  if (is.null(url)) stop("solr configuration not enabled")
+
+  ## FIXME: gracefully handle unavailability
+  curlTemplate <- paste0(url, "/update/json?commit=true")
+
+  content.files <- notebook$content$files
+  fns <- as.vector(sapply(content.files, function(o) o$filename))
+  ## only index cells for now ...
+  ## FIXME: do we really want to exclude the scratch file?
+  indexable <- grep("^part.*\\.(R|md)$", fns)
+  if (length(indexable)) {
+    content.files <- content.files[indexable]
+    sizes <- as.numeric(sapply(content.files, function(o) o$size))
+    size <- sum(sizes, na.rm=TRUE)
+    desc <- notebook$content$description
+    desc <- gsub("^\"*|\"*$", "", desc)
+    desc <- gsub("^\\\\*|\\\\*$", "", desc)
+    if (length(grep("\"",desc) == 1)) {
+      notebook.description <- strsplit(desc,'\"')
+      desc <- paste(notebook.description[[1]],collapse="\\\"")
+    } else if(length(grep("\\\\",desc) == 1)){
+      notebook.description <- strsplit(desc,'\\\\')
+      desc <- paste(notebook.description[[1]],collapse="\\\\")
+    } else {
+      desc
+    }
+    session.content <- notebook$content
+    ## FIXME: followers is not in the notebook, set to 0 for now
+    metadata<-paste0('{\"id\":\"',session.content$id, '\",\"user\":\"',session.content$user$login, '\",\"created_at\":\"',session.content$created_at, '\",\"updated_at\":\"',session.content$updated_at, '\",\"description\":\"',desc, '\",\"user_url\":\"',session.content$user$url, '\",\"avatar_url\":\"',session.content$user$avatar_url, '\",\"size\":\"',size, '\",\"commited_at\":\"',session.content$updated_at, '\",\"followers\":\"',0, '\",\"public\":\"',session.content$public, '\",\"starcount\":\"',starcount, '\",\"content\":{\"set\":\"\"}}')
+    metadata.list <- fromJSON(metadata)
+    content.files <- unname(lapply(content.files, function(o) list('filename'=o$filename,'content'=o$content)))
+    content.files <- toJSON(content.files)
+    metadata.list$content$set <- content.files
+    completedata <- toJSON(metadata.list)
+    postForm(curlTemplate, .opts = list(
+             postfields = paste("[",completedata,"]",sep=''),
+             httpheader = c('Content-Type' = 'application/json', Accept = 'application/json')))
+  }
+}
+
+rcloud.search <-function(query) {
+  url <- getConf("solr.url")
+  if (is.null(url)) stop("solr is not enabled")
+
+  ## FIXME: shouldn't we URL-encode the query?!?
+  q <- gsub("%20","+",query)
+  solr.url <- paste0(url,"/select?q=",q,"&start=0&rows=1000&wt=json&indent=true&fl=description,id,user,updated_at,starcount&hl=true&hl.fl=content&hl.fragsize=0&hl.maxAnalyzedChars=-1")
+  solr.res <- getURL(solr.url, .encoding = 'utf-8', .mapUnicode=FALSE)
+  solr.res <- fromJSON(solr.res)
+  response.docs <- solr.res$response$docs
+  response.high <- solr.res$highlighting
+  if(is.null(solr.res$error)){
+    if(length(response.docs) > 0){
+      for(i in 1:length(response.high)){
+        if(length(response.high[[i]]) != 0){
+          parts.content <- fromJSON(response.high[[i]]$content)
+          for(j in 1:length(parts.content)){
+            strmatched <- grep("open_b_close",strsplit(parts.content[[j]]$content,'\n')[[1]],value=T,fixed=T)
+            if(length(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1]) !=0)) {
+              if(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])%in%1 | (which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])%in%length(strsplit(parts.content[[j]]$content,'\n')[[1]]))) {
+                parts.content[[j]]$content <- strsplit(parts.content[[j]]$content,'\n')[[1]][which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])]
+              } else
+              parts.content[[j]]$content <- strsplit(parts.content[[j]]$content,'\n')[[1]][(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])-1):(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])+1)]
+            } else
+            parts.content[[j]]$content <- grep("open_b_close",strsplit(parts.content[[j]]$content,'\n')[[1]],value=T,ignore.case=T)
+          }
+          response.high[[i]]$content <- toJSON(parts.content)
+                                        #Handling HTML content
+          response.high[[i]]$content <- gsub("<","&lt;",response.high[[i]]$content)
+          response.high[[i]]$content <- gsub(">","&gt;",response.high[[i]]$content)
+          response.high[[i]]$content <- gsub("open_b_close","<b style=\\\\\"background:yellow\\\\\">",response.high[[i]]$content)
+          response.high[[i]]$content <- gsub("open_/b_close","</b>",response.high[[i]]$content)
+        } else
+        response.high[[i]]$content <-"[{\"filename\":\"part1.R\",\"content\":[]}]"
+      }
+      json<-""
+      for(i in 1:length(response.docs)){
+        time <- solr.res$responseHeader$QTime
+        notebook <- response.docs[[i]]$description
+        id <- response.docs[[i]]$id
+        starcount <- response.docs[[i]]$starcount
+        updated.at <- response.docs[[i]]$updated_at
+        user <- response.docs[[i]]$user
+        parts <- response.high[[i]]$content
+        json[i] <- toJSON(c('QTime'=time,'notebook'=notebook,'id'=id,'starcount'=starcount,'updated_at'=updated.at,'user'=user,'parts'=parts))
+      }
+      return(json)
+    } else
+    return(solr.res$response$docs)
+  } else
+  return(c("error",solr.res$error$msg))
 }
 
 rcloud.create.notebook <- function(content) {
@@ -194,6 +293,7 @@ rcloud.create.notebook <- function(content) {
     rcloud.reset.session()
   }
   res
+
 }
 
 rcloud.rename.notebook <- function(id, new.name)
@@ -275,22 +375,8 @@ rcloud.get.completions <- function(text, pos) {
   utils:::.CompletionEnv[["comps"]]
 }
 
-rcloud.search <- function(search.string) {
-  if (nchar(search.string) == 0)
-    list(NULL, NULL)
-  else {
-    cmd <- paste0("find ", getConf("data.root"), "/userfiles -type f -exec grep -iHn ",
-                 search.string,
-                 " {} \\; | sed 's:^", getConf("data.root"), "/userfiles::'")
-    source.results <- system(cmd, intern=TRUE)
-
-    cmd <- paste0("grep -in ", search.string, " ", getConf("data.root"), "/history/main_log.txt")
-    history.results <- rev(system(cmd, intern=TRUE))
-    list(source.results, history.results)
-  }
-}
-
 ## FIXME: won't work - uses a global file!
+## FIXME: should search be using this instead of update notebook?!?
 rcloud.record.cell.execution <- function(user = .session$username, json.string) {
 #  cat(paste(paste(Sys.time(), user, json.string, sep="|"), "\n"),
 #      file=pathConf("data.root", "history", "main_log.txt"), append=TRUE)

@@ -935,8 +935,6 @@ var editor = function () {
         init: function(gistname, version) {
             var that = this;
             username_ = rcloud.username();
-            $("#input-text-source-results-title").css("display", "none");
-            $("#input-text-history-results-title").css("display", "none");
             var promise = load_everything().then(function() {
                 if(gistname) // notebook specified in url
                     that.load_notebook(gistname, version);
