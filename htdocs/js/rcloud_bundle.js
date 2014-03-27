@@ -2289,16 +2289,23 @@ Notebook.create_controller = function(model)
     }
 
     function update_notebook(changes, gistname, more) {
+        debugger;
+        function add_more_changes(gist) {
+            if (_.isUndefined(more))
+                return gist;
+            return _.extend(_.clone(gist), more);
+        }
         // remove any "empty" changes.  we can keep empty cells on the
         // screen but github will refuse them.  if the user doesn't enter
         // stuff in them before saving, they will disappear on next session
         changes = changes.filter(function(change) {
             return change.content || change.erase || change.rename;
         });
-        if (!changes.length)
-            return Promise.cast(current_gist_);
         if (model.read_only())
             return Promise.reject("attempted to update read-only notebook");
+        if (!changes.length && _.isUndefined(more)) {
+            return Promise.cast(current_gist_);
+        }
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
             var files = {};
@@ -2313,9 +2320,7 @@ Notebook.create_controller = function(model)
             });
             return {files: files};
         }
-        var gist = changes_to_gist(changes);
-        if(more)
-            _.extend(gist, more);
+        var gist = add_more_changes(changes_to_gist(changes));
         return rcloud.update_notebook(gistname, gist)
             .then(function(notebook) {
                 if('error' in notebook)
