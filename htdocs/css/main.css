@@ -398,6 +398,25 @@ li.jqtree-selected .notebook-commands {
     display: none;
 }
 
+.search-result-item {
+    margin-top: 1ex;
+}
+.search-result-heading {
+    margin-right: 1em;
+    padding-top: 1ex
+}
+.search-result-modified-date {
+    margin-left: 1ex;
+}
+.search-result-line-number {
+    width:10px;
+    border-right:solid 1px gray;
+    padding-right: 0.5ex;
+}
+.search-result-code {
+    padding-left: 0.5ex;
+}
+
 #help-frame {
     width: 100%;
     height: 50vh;
