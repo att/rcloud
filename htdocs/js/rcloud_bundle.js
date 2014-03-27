@@ -2289,14 +2289,14 @@ Notebook.create_controller = function(model)
     }
 
     function update_notebook(changes, gistname, more) {
-        // remove any "empty" changes.  we can keep empty cells on the
-        // screen but github will refuse them.  if the user doesn't enter
-        // stuff in them before saving, they will disappear on next session
         function add_more_changes(gist) {
             if (_.isUndefined(more))
                 return gist;
             return _.extend(_.clone(gist), more);
         }
+        // remove any "empty" changes.  we can keep empty cells on the
+        // screen but github will refuse them.  if the user doesn't enter
+        // stuff in them before saving, they will disappear on next session
         changes = changes.filter(function(change) {
             return change.content || change.erase || change.rename;
         });
