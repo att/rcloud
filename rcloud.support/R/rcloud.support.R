@@ -404,8 +404,15 @@ rcloud.config.set.recent.notebook <- function(id, date)
 rcloud.config.clear.recent.notebook <- function(id)
   rcs.rm(usr.key(user=.session$username, notebook="system", "config", "recent", id))
 
-rcloud.config.get.user.option <- function(key)
-  rcs.get(rcs.key(user=.session$username, notebook="system", "config", key))
+rcloud.config.get.user.option <- function(key) {
+  if(length(key)>1) {
+    results <- rcs.get(rcs.key(user=.session$username, notebook="system", "config", key), list=TRUE)
+    names(results) <- gsub(rcs.key(user=.session$username, notebook="system", "config", ""), "", names(results))
+    results
+  }
+  else
+    rcs.get(rcs.key(user=.session$username, notebook="system", "config", key))
+}
 
 rcloud.config.set.user.option <- function(key, value)
   rcs.set(rcs.key(user=.session$username, notebook="system", "config", key), value)
