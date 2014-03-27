@@ -4,7 +4,7 @@ var append_session_info = function(msg) {
     // note that R will happily spit out incomplete lines so it's
     // not trivial to maintain each output in some separate structure
     if (!document.getElementById("session-info-out"))
-	$("#session-info").append($("<pre id='session-info-out'></pre>"));
+        $("#session-info").append($("<pre id='session-info-out'></pre>"));
     $("#session-info-out").append(msg);
     RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
 };

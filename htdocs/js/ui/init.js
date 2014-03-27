@@ -122,8 +122,8 @@ RCloud.UI.init = function() {
     //     vs[vs.length-1].show_source();
     // });
     $("#rcloud-logout").click(function() {
-	// let the server-side script handle this so it can
-	// also revoke all tokens
+        // let the server-side script handle this so it can
+        // also revoke all tokens
         window.location.href = '/logout.R';
     });
 
