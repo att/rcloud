@@ -2872,7 +2872,7 @@ RCloud.UI.init = function() {
         return true;
     });
 
-    $(".collapse").collapse({toggle: false});
+    $(".panel-collapse").collapse({toggle: false});
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
@@ -2902,6 +2902,7 @@ RCloud.UI.column = function(sel_column, colwidth) {
 };
 
 RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser, colwidth) {
+    var collapsed_ = false;
     var result = RCloud.UI.column(sel_column, colwidth);
     function collapsibles() {
         return $(sel_accordion + " > .panel > div.panel-collapse");
@@ -2909,8 +2910,20 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     function togglers() {
         return $(sel_accordion + " > .panel > div.panel-heading > a.accordion-toggle");
     }
+    function collapse(target, state, persist) {
+        target.data("would-collapse", state);
+        if(persist) {
+            var opt = 'ui/' + target[0].id;
+            rcloud.config.set_user_option(opt, state);
+        }
+    }
+    function sel_to_opt(sel) {
+        return sel.replace('#', 'ui/');
+    }
+    function opt_to_sel(opt) {
+        return opt.replace('ui/', '#');
+    }
     _.extend(result, {
-        collapsed: false,
         init: function() {
             var that = this;
             collapsibles().each(function() {
@@ -2918,12 +2931,12 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             });
             togglers().click(function() {
                 var target = $(this.hash);
-                if(that.collapsed) {
-                    target.data("would-collapse", false);
-                    that.show();
+                if(collapsed_) {
+                    collapse(target, false, true);
+                    that.show(true);
                     return false;
                 }
-                target.data("would-collapse", target.hasClass('in'));
+                collapse(target, target.hasClass('in'), true);
                 return true;
             });
             $(sel_accordion).on("show.bs.collapse", function(e) {
@@ -2941,10 +2954,34 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 });
             });
             $(sel_collapser).click(function() {
-                if (that.collapsed)
-                    that.show();
+                if (collapsed_)
+                    that.show(true);
                 else
-                    that.hide();
+                    that.hide(true);
+            });
+        },
+        load: function() {
+            var that = this;
+            var sels = $.makeArray(collapsibles()).map(function(el) { return '#' + el.id; });
+            sels.push(sel_accordion);
+            var opts = sels.map(sel_to_opt);
+            rcloud.config.get_user_option(opts).then(function(settings) {
+                var hide_column;
+                for(var k in settings) {
+                    var id = opt_to_sel(k);
+                    if(id === sel_accordion)
+                        hide_column = settings[k];
+                    else if(typeof settings[k] === "boolean")
+                        collapse($(id), settings[k], false);
+                }
+                // do the column last because it will affect all its children
+                if(typeof hide_column === "boolean") {
+                    if(hide_column)
+                        that.hide(false);
+                    else
+                        that.show(false);
+                }
+                else that.show(true); // make sure we have a setting
             });
         },
         resize: function() {
@@ -2953,24 +2990,27 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             this.colwidth(cw);
             RCloud.UI.middle_column.update();
         },
-        hide: function() {
+        hide: function(persist) {
             // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
             $(sel_accordion + " > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
             $(sel_collapser + " i").removeClass("icon-minus").addClass("icon-plus");
-            this.collapsed = true;
+            collapsed_ = true;
             this.resize();
+            if(persist)
+                rcloud.config.set_user_option(sel_to_opt(sel_accordion), true);
         },
-        show: function() {
+        show: function(persist) {
             collapsibles().each(function() {
-                if(!$(this).data("would-collapse"))
-                    $(this).collapse("show");
+                $(this).collapse($(this).data("would-collapse") ? "hide" : "show");
             });
             $(sel_collapser + " i").removeClass("icon-plus").addClass("icon-minus");
-            this.collapsed = false;
+            collapsed_ = false;
             this.resize();
+            if(persist)
+                rcloud.config.set_user_option(sel_to_opt(sel_accordion), false);
         },
         calcwidth: function() {
-            if(this.collapsed)
+            if(collapsed_)
                 return 1;
             var widths = [];
             collapsibles().each(function() {
@@ -2989,30 +3029,14 @@ RCloud.UI.left_panel = (function() {
     var base_hide = result.hide.bind(result),
         base_show = result.show.bind(result);
 
-    function hide() {
-        $("#new-notebook").hide();
-        base_hide();
-    }
-    function show() {
-        $("#new-notebook").show();
-        base_show();
-    }
-
     _.extend(result, {
-        hide: function() {
-            hide();
-            rcloud.config.set_user_option("ui/collapse_left", true);
+        hide: function(persist) {
+            $("#new-notebook").hide();
+            base_hide(persist);
         },
-        show: function() {
-            show();
-            rcloud.config.set_user_option("ui/collapse_left", false);
-        },
-        load: function() {
-            rcloud.config.get_user_option("ui/collapse_left").then(function(val) {
-                if(val)
-                    hide();
-                // else show();
-            });
+        show: function(persist) {
+            $("#new-notebook").show();
+            base_show(persist);
         }
     });
     return result;
@@ -3021,26 +3045,6 @@ RCloud.UI.left_panel = (function() {
 RCloud.UI.right_panel = (function() {
     var result = RCloud.UI.collapsible_column("#right-column,#fake-right-column",
                                               "#accordion-right", "#right-pane-collapser", 4);
-    var base_hide = result.hide.bind(result),
-        base_show = result.show.bind(result);
-
-    _.extend(result, {
-        hide: function() {
-            base_hide();
-            rcloud.config.set_user_option("ui/collapse_right", true);
-        },
-        show: function() {
-            base_show();
-            rcloud.config.set_user_option("ui/collapse_right", false);
-        },
-        load: function() {
-            rcloud.config.get_user_option("ui/collapse_right").then(function(val) {
-                if(val)
-                    base_hide();
-                // else show();
-            });
-        }
-    });
     return result;
 }());
 RCloud.UI.middle_column = (function() {

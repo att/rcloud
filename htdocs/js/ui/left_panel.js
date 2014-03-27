@@ -4,30 +4,14 @@ RCloud.UI.left_panel = (function() {
     var base_hide = result.hide.bind(result),
         base_show = result.show.bind(result);
 
-    function hide() {
-        $("#new-notebook").hide();
-        base_hide();
-    }
-    function show() {
-        $("#new-notebook").show();
-        base_show();
-    }
-
     _.extend(result, {
-        hide: function() {
-            hide();
-            rcloud.config.set_user_option("ui/collapse_left", true);
+        hide: function(persist) {
+            $("#new-notebook").hide();
+            base_hide(persist);
         },
-        show: function() {
-            show();
-            rcloud.config.set_user_option("ui/collapse_left", false);
-        },
-        load: function() {
-            rcloud.config.get_user_option("ui/collapse_left").then(function(val) {
-                if(val)
-                    hide();
-                // else show();
-            });
+        show: function(persist) {
+            $("#new-notebook").show();
+            base_show(persist);
         }
     });
     return result;
