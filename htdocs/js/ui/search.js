@@ -1,9 +1,6 @@
 RCloud.UI.search = {
     exec: function(query) {
         var res;
-        $('#divClose').css('width', $(document).width() - 45);
-        $('#divPopup').css('width', $(document).width() - 45);
-
         function summary(html) {
             $("#search-summary").show().html($("<h4 />").append(html));
         }
