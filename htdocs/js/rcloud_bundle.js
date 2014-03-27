@@ -2617,7 +2617,7 @@ var append_session_info = function(msg) {
     // note that R will happily spit out incomplete lines so it's
     // not trivial to maintain each output in some separate structure
     if (!document.getElementById("session-info-out"))
-	$("#session-info").append($("<pre id='session-info-out'></pre>"));
+        $("#session-info").append($("<pre id='session-info-out'></pre>"));
     $("#session-info-out").append(msg);
     RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
 };
@@ -2841,8 +2841,8 @@ RCloud.UI.init = function() {
     //     vs[vs.length-1].show_source();
     // });
     $("#rcloud-logout").click(function() {
-	// let the server-side script handle this so it can
-	// also revoke all tokens
+        // let the server-side script handle this so it can
+        // also revoke all tokens
         window.location.href = '/logout.R';
     });
 
@@ -3497,7 +3497,7 @@ RCloud.UI.search = {
                 if(typeof (d) == "string") {
                     d = JSON.parse("[" + d + "]");
                 }
-                //convertin any string type part to json object : not required most of the time
+                //convert any string type part to json object : not required most of the time
                 for(i = 0; i < d.length; i++) {
                     if(typeof (d[i]) == "string") {
                         d[i] = JSON.parse(d[i]);
