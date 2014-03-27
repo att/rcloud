@@ -33,7 +33,7 @@ Notebook.Asset.create_html_view = function(asset_model)
         },
         set_readonly: function(readonly) {
             // FIXME
-        }, 
+        },
         div: function() {
             return filename_div;
         }

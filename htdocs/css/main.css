@@ -390,7 +390,10 @@ li.jqtree-selected .notebook-commands {
     margin: 0;
 }
 
-
+#help-frame {
+    width: 100%;
+    height: 50vh;
+}
 
 /******************************************************************************/
 
@@ -555,6 +558,16 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
 
 .panel-body {
     background-color: #fff;
+}
+
+.panel-shadow.left {
+    position:absolute;
+    right:0px;
+}
+
+.panel-shadow.right {
+    position:absolute;
+    left:0px
 }
 
 .navbar-inverse {

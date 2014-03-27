@@ -70,7 +70,9 @@ Notebook.create_controller = function(model)
             model.user(notebook.user.login);
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
-            asset_controller.select();
+            // it's rare but valid not to have assets
+            if(asset_controller)
+                asset_controller.select();
         }
         return notebook;
     }

@@ -80,7 +80,7 @@ RCloud.UI.init = function() {
             : rcloud.upload_file;
 
         upload_function(false, function(err, value) {
-            if (err) 
+            if (err)
                 failure(err);
             else
                 success(value);
@@ -130,6 +130,7 @@ RCloud.UI.init = function() {
 
     RCloud.UI.scratchpad.init();
     RCloud.UI.command_prompt.init();
+    RCloud.UI.help_frame.init();
 
     function make_cells_sortable() {
         var cells = $('#output');
@@ -152,7 +153,7 @@ RCloud.UI.init = function() {
             scrollSensitivity: 40
         });
     }
-    make_cells_sortable();    
+    make_cells_sortable();
 
     //////////////////////////////////////////////////////////////////////////
     // autosave when exiting. better default than dropping data, less annoying
@@ -162,12 +163,12 @@ RCloud.UI.init = function() {
         return true;
     });
 
-    $(".collapse").collapse();
+    $(".panel-collapse").collapse({toggle: false});
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
     $("#edit-notebook").click(function() {
         window.location = "main.html?notebook=" + shell.gistname();
     });
-    
+
 };
