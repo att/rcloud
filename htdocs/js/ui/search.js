@@ -80,6 +80,7 @@ RCloud.UI.search = {
                 var search_summary = len + " Results Found"; //+ " <i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i>";
                 summary(search_summary);
                 $("#search-results").show().css("height", "50vh").html(search_results);
+                $("#accordion-left").trigger("reshadow");
             }
         };
 

@@ -2961,14 +2961,16 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             $(sel_accordion).on("hide.bs.collapse", function(e) {
                 that.resize();
             });
-            $(sel_accordion).on("shown.bs.collapse", function() {
+            var shadow_sizer = function() {
                 $(".panel-shadow").each(function(v) {
                     var h = $(this).parent().height();
                     if (h === 0)
                         h = "100%";
                     $(this).attr("height", h);
                 });
-            });
+            };
+            $(sel_accordion).on("shown.bs.collapse", shadow_sizer);
+            $(sel_accordion).on("reshadow", shadow_sizer);
             $(sel_collapser).click(function() {
                 if (collapsed_)
                     that.show(true);
@@ -3561,6 +3563,7 @@ RCloud.UI.search = {
                 var search_summary = len + " Results Found"; //+ " <i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i>";
                 summary(search_summary);
                 $("#search-results").show().css("height", "50vh").html(search_results);
+                $("#accordion-left").trigger("reshadow");
             }
         };
 

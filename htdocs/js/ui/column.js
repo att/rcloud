@@ -58,14 +58,16 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             $(sel_accordion).on("hide.bs.collapse", function(e) {
                 that.resize();
             });
-            $(sel_accordion).on("shown.bs.collapse", function() {
+            var shadow_sizer = function() {
                 $(".panel-shadow").each(function(v) {
                     var h = $(this).parent().height();
                     if (h === 0)
                         h = "100%";
                     $(this).attr("height", h);
                 });
-            });
+            };
+            $(sel_accordion).on("shown.bs.collapse", shadow_sizer);
+            $(sel_accordion).on("reshadow", shadow_sizer);
             $(sel_collapser).click(function() {
                 if (collapsed_)
                     that.show(true);
