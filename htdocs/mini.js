@@ -14,27 +14,24 @@ window.onload = function () {
 
     rclient = RClient.create({
         debug: false,
-        host: (location.protocol == "https:") ? ("wss://"+location.hostname+":8083/") : ("ws://"+location.hostname+":8081/"),
+        host: location.href.replace(/^http/,"ws").replace(/#.*$/,""),
         on_connect: function(ocaps) {
             rcloud = RCloud.create(ocaps.rcloud);
+            var promise;
             if (rcloud.authenticated) {
-                rcloud.session_init(rcloud.username(), rcloud.github_token(), function(hello) {
-                    rclient.post_response(hello);
-                });
+		promise = rcloud.session_init(rcloud.username(), rcloud.github_token());
             } else {
-                rcloud.anonymous_session_init(function(hello) {
-                    rclient.post_response(hello);
-                });
-            }
-            rcloud.init_client_side_data();
+                promise = rcloud.anonymous_session_init();
+	    }
+            promise.then(function(hello) {
+                rclient.post_response(hello);
+            });
+
+            // resolve(rcloud.init_client_side_data()); // what was this for?!?
 
 	    var notebook = getURLParameter("notebook"),
 	    version = getURLParameter("version");
-	    rcloud.call_notebook(notebook, version, function(x) {
-		if (!_.isUndefined(x.error)) {
-		    // FIXME: what to do on error?
-		    return;
-                }
+	    rcloud.call_notebook(notebook, version).then(function(x) {
 		// FIXME: I'm not sure what's the best way to make this available
 		// in a convenient manner so that notebooks can leverage it ...
 		window.notebook_result = x;
