@@ -52,11 +52,10 @@ RCloud.UI.init = function() {
             var overwrite_click = function() {
                 rcloud.upload_file(true, function(err, value) {
                     if (err) {
-                        var msg = exception_value;
                         $("#file-upload-div").append(
                             bootstrap_utils.alert({
                                 "class": 'alert-danger',
-                                text: msg
+                                text: err
                             })
                         );
                     } else {
