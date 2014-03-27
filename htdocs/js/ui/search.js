@@ -4,13 +4,16 @@ RCloud.UI.search = {
         $('#divClose').css('width', $(document).width() - 45);
         $('#divPopup').css('width', $(document).width() - 45);
 
+        function summary(html) {
+            $("#search-summary").show().html($("<h4 />").append(html));
+        }
         function create_list_of_search_results(d) {
             var i;
             if(d == null || d == "null" || d == "") {
-                alert("No Results Found");
+                summary("No Results Found");
             } else if(d[0] == "error") {
                 d[1] = d[1].replace(/\n/g, "<br/>");
-                alert("ERROR:\n" + d[1]);
+                summary("ERROR:\n" + d[1]);
             } else {
                 if(typeof (d) == "string") {
                     d = JSON.parse("[" + d + "]");
@@ -72,14 +75,14 @@ RCloud.UI.search = {
                             search_results += "<tr><td colspan=2 width=100% style='font-size: 12;border:solid 1px #c0c0c0'><div style=\"border:solid 3px #b0b0b0;margin:1px;padding:4px;margin-left:4px;\">" + parts_table + "</div></td></tr>";
                         search_results += "</table><hr/>";
                     } catch(e) {
-                        alert("Error : \n" + e);
+                        summary("Error : \n" + e);
                     }
                 }
                 var qry = decodeURIComponent(query);
                 qry = qry.replace(/\</g,'&lt;');
                 qry = qry.replace(/\>/g,'&gt;');
-                var search_summary = "<h4>Search For: <b>" +qry+"</b> <i style=\"font-size:10px\">Results Found:"+len+"</i><i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i></h4>\n";
-                $("#search-summary").show().html(search_summary);
+                var search_summary = "Search For: <b>" +qry+"</b> <i style=\"font-size:10px\">Results Found:"+len+"</i><i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i>";
+                summary(search_summary);
                 $("#search-results").show().css("height", "50vh").html(search_results);
             }
         };
