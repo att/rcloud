@@ -408,6 +408,10 @@ li.jqtree-selected .notebook-commands {
 .search-result-modified-date {
     margin-left: 1ex;
 }
+.search-result-part-name {
+    font-size:11px;
+    padding-left:1em;
+}
 .search-result-line-number {
     width:10px;
     border-right:solid 1px gray;

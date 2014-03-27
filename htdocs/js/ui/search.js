@@ -52,7 +52,7 @@ RCloud.UI.search = {
                                 if(typeof content == "string")
                                     content = [content];
                                 if(content.length > 0)
-                                    parts_table += "<tr><th style=\"font-size:11px\">" + d[i].parts[k].filename + "</th></tr>";
+                                    parts_table += "<tr><th class='search-result-part-name'>" + d[i].parts[k].filename + "</th></tr>";
                                 for(var l = 0; l < content.length; l++)
                                     inner_table += "<tr><td class='search-result-line-number'>" + (l + 1) + "</td><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
 
