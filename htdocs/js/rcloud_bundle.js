@@ -52,6 +52,18 @@ RClient = {
                 shutdown();
             }
         };
+        // detect where we will show errors
+
+        var error_dest_ = $("#session-info");
+        var show_error_area;
+        if(error_dest_.length)
+            show_error_area = function() {
+                RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
+            };
+        else {
+            error_dest_ = $("#output");
+            show_error_area = function() {};
+        }
 
         var token = $.cookies.get().token;  // document access token
         var execToken = $.cookies.get().execToken; // execution token (if enabled)
@@ -70,7 +82,7 @@ RClient = {
             _rserve: rserve,
             host: opts.host,
             running: false,
-           
+
             //////////////////////////////////////////////////////////////////
             // FIXME: all of this should move out of rclient and into
             // the notebook objects.
@@ -92,29 +104,35 @@ RClient = {
                 var button = $("<button type='button' class='close'>" + label + "</button>");
                 result.append(button);
                 button.click(function() {
-                    window.location = 
-                        (window.location.protocol + 
-                         '//' + window.location.host + 
-                         '/login.R?redirect=' + 
+                    window.location =
+                        (window.location.protocol +
+                         '//' + window.location.host +
+                         '/login.R?redirect=' +
                          encodeURIComponent(window.location.pathname + window.location.search));
                 });
                 return result;
             },
 
-            post_error: function (msg) {
+            post_error: function (msg, dest) {
                 if (typeof msg === 'string')
                     msg = this.string_error(msg);
                 if (typeof msg !== 'object')
                     throw new Error("post_error expects a string or a jquery div");
                 msg.css("margin", "-15px"); // hack
-                $("#session-info").append(msg);
-                $("#collapse-session-info").collapse("show");
+                dest = dest || error_dest_;
+                dest.append(msg);
+                show_error_area();
             },
 
             post_response: function (msg) {
                 var d = $("<pre class='response'></pre>").html(msg);
                 $("#output").append(d);
                 window.scrollTo(0, document.body.scrollHeight);
+            },
+
+            post_rejection: function(e) {
+                rclient.post_error(e.message);
+                throw e;
             },
 
             close: function() {
@@ -147,38 +165,38 @@ RCloud.create = function(rcloud_ocaps) {
             v = v[path[i]];
         return v;
     }
+
     function set(path, val) {
         var v = rcloud_ocaps;
         for (var i=0; i<path.length-1; ++i)
             v = v[path[i]];
         v[path[path.length-1] + "Async"] = val;
     }
+
     function process_paths(paths) {
         _.each(paths, function(path) {
-            set(path, rcloud_handler(Promise.promisify(get(path))));
+            var fn = get(path);
+            set(path, fn ? rcloud_handler(path.join('.'), Promise.promisify(fn)) : null);
         });
     }
 
-    //////////////////////////////////////////////////////////////////////////////    
+    //////////////////////////////////////////////////////////////////////////////
     function json_p(promise) {
         return promise.then(JSON.parse)
-            .catch(function(e) {
-                rclient.post_error(e.message);
-                throw e;
-            });
+            .catch(rclient.post_rejection);
     }
 
-    function rcloud_handler(promise_fn) {
+    function rcloud_handler(command, promise_fn) {
         function success(result) {
-            if (result && result.r_attributes &&
-                result.r_attributes['class'] === "try-error") {
-                throw result;
+            if(result && RCloud.is_exception(result)) {
+                throw new Error(command + ": " + result[0]);
             }
             return result;
         }
+
         function failure(err) {
-            if (RCloud.is_exception(err)) {
-                rclient.post_error(err[0]);
+            if(err.message) {
+                rclient.post_error(err.message);
             }
             throw err;
         }
@@ -192,9 +210,10 @@ RCloud.create = function(rcloud_ocaps) {
             if (result.ok) {
                 return result.content;
             } else {
-                throw result.content;
+                throw new Error(command + ': ' + result.content.message);
             }
         }
+
         function failure(err) {
             var message = _.isObject(err) && 'ok' in err
                 ? err.content.message : err.toString();
@@ -204,34 +223,9 @@ RCloud.create = function(rcloud_ocaps) {
         return promise.then(success).catch(failure);
     }
 
-    // function rcloud_github_handler(command, promise) {
-    //     function success(result) {
-    //         if (result.r_attributes['class'] === "try-error") {
-    //             throw result;
-    //         }
-    //         if (result.ok) {
-    //             return result.content;
-    //         } else {
-    //             throw result.content;
-    //         }
-    //     }
-    //     function failure(err) {
-    //         if (RCloud.is_exception(err)) {
-    //             rclient.post_error(err[0]);
-    //         } else {
-    //             var message = _.isObject(err) && 'ok' in err
-    //                 ? err.content.message : err.toString();
-    //             rclient.post_error(command + ': ' + message);
-    //         }
-    //         throw err;
-    //     }
-    //     return promise.then(success).catch(failure);
-    // }
-
     var rcloud = {};
 
     function setup_unauthenticated_ocaps() {
-
         var paths = [
             ["anonymous_session_init"],
             ["prefix_uuid"],
@@ -305,8 +299,8 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.install_notebook_stylesheetsAsync();
         };
 
-        rcloud.get_users = function(user) {
-            return rcloud_ocaps.get_usersAsync(user);
+        rcloud.get_users = function() {
+            return rcloud_ocaps.get_usersAsync();
         };
 
         rcloud.record_cell_execution = function(cell_model) {
@@ -409,9 +403,6 @@ RCloud.create = function(rcloud_ocaps) {
         var paths = [
             ["session_init"],
             ["search"],
-            ["load_user_config"],
-            ["load_multiple_user_configs"],
-            ["save_user_config"],
             ["update_notebook"],
             ["create_notebook"],
             ["fork_notebook"],
@@ -429,36 +420,44 @@ RCloud.create = function(rcloud_ocaps) {
             ["is_notebook_published"],
             ["publish_notebook"],
             ["unpublish_notebook"],
+            ["set_notebook_visibility"],
             ["api","disable_warnings"],
             ["api","enable_echo"],
             ["api","disable_warnings"],
-            ["api","enable_echo"]
+            ["api","enable_echo"],
+            ["config", "all_notebooks"],
+            ["config", "all_notebooks_multiple_users"],
+            ["config", "add_notebook"],
+            ["config", "remove_notebook"],
+            ["config", "get_current_notebook"],
+            ["config", "set_current_notebook"],
+            ["config", "new_notebook_number"],
+            ["config", "get_recent_notebooks"],
+            ["config", "set_recent_notebook"],
+            ["config", "clear_recent_notebook"],
+            ["config", "get_user_option"],
+            ["config", "set_user_option"],
+            ["get_notebook_info"],
+            ["get_multiple_notebook_infos"],
+            ["set_notebook_info"]
         ];
         process_paths(paths);
 
         rcloud.session_init = function(username, token) {
             return rcloud_ocaps.session_initAsync(username, token);
         };
-        rcloud.search = function(search_string) {
-            return rcloud_ocaps.searchAsync(search_string);
-        };
-        rcloud.load_user_config = function(user) {
-            return json_p(rcloud_ocaps.load_user_configAsync(user));
-        };
-        rcloud.load_multiple_user_configs = function(users) {
-            return json_p(rcloud_ocaps.load_multiple_user_configsAsync(users));
-        };
-        rcloud.save_user_config = function(user, content) {
-            return json_p(rcloud_ocaps.save_user_configAsync(user, JSON.stringify(content)));
-        };
+
         rcloud.update_notebook = function(id, content) {
             return rcloud_github_handler(
                 "rcloud.update.notebook",
                 rcloud_ocaps.update_notebookAsync(id, JSON.stringify(content)));
         };
+
+        rcloud.search = rcloud_ocaps.searchAsync; // may be null
+
         rcloud.create_notebook = function(content) {
             return rcloud_github_handler(
-                "rcloud.create.notebook", 
+                "rcloud.create.notebook",
                 rcloud_ocaps.create_notebookAsync(JSON.stringify(content)));
         };
         rcloud.fork_notebook = function(id) {
@@ -606,11 +605,11 @@ RCloud.create = function(rcloud_ocaps) {
             }
 
             if(!(window.File && window.FileReader && window.FileList && window.Blob))
-                throw "File API not supported by browser.";
+                throw new Error("File API not supported by browser.");
             else {
                 var file=$("#file")[0].files[0];
                 if(_.isUndefined(file))
-                    throw "No file selected!";
+                    throw new Error("No file selected!");
                 else {
                     /*FIXME add logged in user */
                     rcloud_ocaps.file_upload.upload_path(function(err, path) {
@@ -640,6 +639,10 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.unpublish_notebookAsync(id);
         };
 
+        rcloud.set_notebook_visibility = function(id, value) {
+            return rcloud_ocaps.set_notebook_visibilityAsync(id, value);
+        };
+
         // stars
         rcloud.stars = {};
         rcloud.stars.star_notebook = function(id) {
@@ -661,6 +664,31 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.stars.get_my_starred_notebooksAsync();
         };
 
+        // config
+        rcloud.config = {
+            all_notebooks: rcloud_ocaps.config.all_notebooksAsync,
+            all_notebooks_multiple_users: rcloud_ocaps.config.all_notebooks_multiple_usersAsync,
+            add_notebook: rcloud_ocaps.config.add_notebookAsync,
+            remove_notebook: rcloud_ocaps.config.remove_notebookAsync,
+            get_current_notebook: rcloud_ocaps.config.get_current_notebookAsync,
+            set_current_notebook: rcloud_ocaps.config.set_current_notebookAsync,
+            new_notebook_number: rcloud_ocaps.config.new_notebook_numberAsync,
+            get_recent_notebooks: rcloud_ocaps.config.get_recent_notebooksAsync,
+            set_recent_notebook: rcloud_ocaps.config.set_recent_notebookAsync,
+            clear_recent_notebook: rcloud_ocaps.config.clear_recent_notebookAsync,
+            get_user_option: rcloud_ocaps.config.get_user_optionAsync,
+            set_user_option: rcloud_ocaps.config.set_user_optionAsync
+        };
+
+        // notebook cache
+        rcloud.get_notebook_info = rcloud_ocaps.get_notebook_infoAsync;
+        rcloud.get_multiple_notebook_infos = rcloud_ocaps.get_multiple_notebook_infosAsync;
+        rcloud.set_notebook_info = function(id, info) {
+            if(!info.username) return Promise.reject("attempt to set info no username");
+            if(!info.description) return Promise.reject("attempt to set info no description");
+            if(!info.last_commit) return Promise.reject("attempt to set info no last_commit");
+            return rcloud_ocaps.set_notebook_infoAsync(id, info);
+        };
     }
 
     rcloud.authenticated = rcloud_ocaps.authenticated;
@@ -689,17 +717,20 @@ RCloud.create = function(rcloud_ocaps) {
         }
         progress_dialog.modal({keyboard: true});
     }
+
     function clear_curtain() {
         if (!curtains_on)
             return;
         curtains_on = false;
         progress_dialog.modal('hide');
     }
+
     function set_cursor() {
         _.delay(function() {
             document.body.style.cursor = "wait";
         }, 0);
     }
+
     function clear_cursor() {
         _.delay(function() {
             document.body.style.cursor = '';
@@ -844,6 +875,21 @@ ui_utils.install_common_ace_key_bindings = function(widget) {
     ]);
 };
 
+ui_utils.character_offset_of_pos = function(widget, pos) {
+    // surprising this is not built-in.  this adapted from
+    // https://groups.google.com/forum/#!msg/ace-discuss/-RVHHWZGkk8/blFQz0TcPf8J
+    var session = widget.getSession(), doc = session.getDocument();
+    var nlLength = doc.getNewLineCharacter().length;
+    var text = doc.getAllLines();
+    if(pos.row>text.length)
+        throw new Error("getting position off end of editor");
+    var ret = 0, i;
+    for(i=0; i<pos.row; i++)
+        ret += text[i].length + nlLength;
+    ret += pos.column;
+    return ret;
+};
+
 // bind an ace editor to a listener and return a function to change the
 // editor content without triggering that listener
 ui_utils.ignore_programmatic_changes = function(widget, listener) {
@@ -945,43 +991,106 @@ ui_utils.make_prompt_chevron_gutter = function(widget)
     };
 };
 
-ui_utils.make_editable = function(elem$, editable, on_edit) {
-    // http://stackoverflow.com/questions/6139107/programatically-select-text-in-a-contenteditable-html-element
-    function selectElementContents(el) {
-        var range = document.createRange();
-        range.selectNodeContents(el);
+// the existing jQuery editable libraries don't seem to do what we need, with
+// different active and inactive text, and customized selection.
+// this is a vague imitation of what a jquery.ui library might look like
+// except without putting it into $ namespace
+ui_utils.editable = function(elem$, command) {
+    function selectRange(range) {
         var sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(range);
     }
-
-    if(elem$.attr('contenteditable') === (editable?'true':'false'))
-        return;
-
-    elem$.data('restore_edit', elem$.text());
-    function cancel() {
-        elem$.text(elem$.data('restore_edit'));
+    function options() {
+        return elem$.data('__editable');
     }
 
-    // remove all handlers, and then recreate them if the title is editable
-    elem$.off('keydown');
-    elem$.off('focus');
-    elem$.off('blur');
-    if (editable) {
+    var old_opts = options(),
+        new_opts = old_opts;
+    if(_.isObject(command)) {
+        var defaults = {
+            on_change: function() { return true; },
+            allow_edit: true,
+            inactive_text: elem$.text(),
+            active_text: elem$.text(),
+            select: function(el) {
+                var range = document.createRange();
+                range.selectNodeContents(el);
+                return range;
+            }
+        };
+        new_opts = $.extend(old_opts || defaults, command);
+        elem$.data('__editable', new_opts);
+    }
+    else {
+        if(command !== 'destroy' && !old_opts)
+            throw new Error('expected already editable for command ' + command);
+        function set_option(key, value) {
+            old_opts = $.extend({}, old_opts);
+            new_opts[key] = value;
+        }
+        switch(command) {
+        case 'destroy':
+            elem$.data('__editable', null);
+            new_opts = null;
+            break;
+        case 'option':
+            if(!arguments[2])
+                return old_opts;
+            else if(!arguments[3])
+                return old_opts[arguments[2]];
+            else {
+                set_option(arguments[2], arguments[3]);
+            }
+            break;
+        case 'disable':
+            set_option('allow_edit', false);
+            break;
+        case 'enable':
+            set_option('allow_edit', true);
+            break;
+        }
+    }
+    var action = null;
+    if((!old_opts || !old_opts.allow_edit) && (new_opts && new_opts.allow_edit))
+        action = 'melt';
+    else if((old_opts && old_opts.allow_edit) && (!new_opts || !new_opts.allow_edit))
+        action = 'freeze';
+
+    if(new_opts)
+        elem$.text(options().__active ? new_opts.active_text : new_opts.inactive_text);
+
+    switch(action) {
+    case 'freeze':
+        elem$.attr('contenteditable', 'false');
+        elem$.off('keydown');
+        elem$.off('focus');
+        elem$.off('blur');
+        break;
+    case 'melt':
         elem$.attr('contenteditable', 'true');
         elem$.focus(function() {
-            window.setTimeout(function() {
-                selectElementContents(elem$[0]);
-            }, 0);
-            elem$.off('blur');
-            elem$.blur(cancel); // click-off cancels
+            if(!options().__active) {
+                options().__active = true;
+                elem$.text(options().active_text);
+                window.setTimeout(function() {
+                    selectRange(options().select(elem$[0]));
+                    elem$.off('blur');
+                    elem$.blur(function() {
+                        elem$.text(options().inactive_text);
+                        options().__active = false;
+                    }); // click-off cancels
+                }, 10);
+            }
         });
         elem$.keydown(function(e) {
             if(e.keyCode === 13) {
                 var result = elem$.text();
-                if(on_edit(result)) {
+                if(options().validate(result)) {
+                    options().__active = false;
                     elem$.off('blur'); // don't cancel!
                     elem$.blur();
+                    options().change(result);
                 }
                 else return false; // don't let CR through!
             }
@@ -989,8 +1098,8 @@ ui_utils.make_editable = function(elem$, editable, on_edit) {
                 elem$.blur(); // and cancel
             return true;
         });
+        break;
     }
-    else elem$.attr('contenteditable', 'false');
 };
 
 ui_utils.on_next_tick = function(f) {
@@ -1008,7 +1117,7 @@ bootstrap_utils.alert = function(opts)
     if (opts.html) div.html(opts.html);
     if (opts.text) div.text(opts.text);
     if (opts['class']) div.addClass(opts['class']);
-    if (opts.close_button) 
+    if (opts.close_button)
         div.prepend($('<button type="button" class="close" data-dismiss="alert">&times;</button>').click(opts.on_close));
     return div;
 };
@@ -1027,8 +1136,95 @@ Notebook = {};
 //
 // roughly a MVC-kinda-thing per cell, plus a MVC for all the cells
 // 
+Notebook.Buffer = {};
 Notebook.Cell = {};
 Notebook.Asset = {};
+Notebook.Buffer.create_model = function(content) {
+    // by default, consider this a new cell
+    var checkpoint_ = "";
+
+    function is_empty(text) {
+        return /^\s*$/.test(text);
+    }
+
+    var result = {
+        views: [], // sub list for pubsub
+        parent_model: null,
+
+        renew_content: function() {
+            // make content look new again, e.g. to reinsert cell
+            checkpoint_ = "";
+        },
+        content: function(new_content) {
+            if (!_.isUndefined(new_content)) {
+                if(content != new_content) {
+                    content = new_content;
+                    this.notify_views(function(view) {
+                        view.content_updated();
+                    });
+                    return content;
+                }
+                else return null;
+            }
+            return content;
+        },
+        change_object: function(obj) {
+            if(obj.content)
+                throw new Error("content must come from the object");
+            if(!obj.filename)
+                throw new Error("change object must have filename");
+            var change = {filename: obj.filename};
+
+            // github treats any content which is only whitespace or empty as an erase.
+            // so we have to transform our requests to accommodate that.
+            // note: any change without content, erase, or rename is a no-op.
+            if(obj.erase)
+                change.erase = !is_empty(checkpoint_);
+            else if(obj.rename) {
+                if(is_empty(content)) {
+                    if(!is_empty(checkpoint_))
+                        change.erase = true; // stuff => empty: erase
+                    // else empty => empty: no-op
+                    // no content either way
+                }
+                else {
+                    if(is_empty(checkpoint_))
+                        change.filename = obj.rename; // empty => stuff: create
+                    else
+                        change.rename = obj.rename; // stuff => stuff: rename
+                    change.content = content;
+                }
+            }
+            else { // change content
+                if(!is_empty(content)) {
+                    if(content != checkpoint_) // * => stuff: create/modify
+                        change.content = content;
+                    // else no-op
+                }
+                else {
+                    if(!is_empty(checkpoint_))
+                        change.erase = true; // stuff => empty: erase
+                    // else empty => empty: no-op
+                }
+            }
+
+            // every time we get a change_object it's in order to send it to
+            // github.  so we can assume that the cell has been checkpointed
+            // whenever we create a change object.
+            // it would be nice to verify this somehow, but for now
+            // only notebook_model creates change_objects
+            // and only notebook_controller consumes them
+            checkpoint_ = content;
+            return change;
+        },
+        notify_views: function(f) {
+            _.each(this.views, function(view) {
+                f(view);
+            });
+        }
+    };
+    return result;
+};
 Notebook.Asset.create_html_view = function(asset_model)
 {
     var filename_div = $("<li></li>");
@@ -1064,7 +1260,7 @@ Notebook.Asset.create_html_view = function(asset_model)
         },
         set_readonly: function(readonly) {
             // FIXME
-        }, 
+        },
         div: function() {
             return filename_div;
         }
@@ -1073,31 +1269,34 @@ Notebook.Asset.create_html_view = function(asset_model)
 };
 Notebook.Asset.create_model = function(content, filename)
 {
-    var cursor_position;
-    var active = false;
-    var result = {
-        views: [], // sub list for pubsub
-        parent_model: null,
+    var cursor_position_;
+    var active_ = false;
+    var result = Notebook.Buffer.create_model(content);
+    var base_change_object = result.change_object;
+
+    _.extend(result, {
         active: function(new_active) {
             if (!_.isUndefined(new_active)) {
-                if(active !== new_active) {
-                    active = new_active;
-                    notify_views(function(view) {
+                if(active_ !== new_active) {
+                    active_ = new_active;
+                    this.notify_views(function(view) {
                         view.active_updated();
                     });
-                    return active;
+                    return active_;
                 } else {
                     return null;
                 }
             }
-            return active;
+            return active_;
         },
         cursor_position: function(new_cursor_position) {
             if (!_.isUndefined(new_cursor_position))
-                cursor_position = new_cursor_position;
-            return cursor_position;
+                cursor_position_ = new_cursor_position;
+            return cursor_position_;
         },
         language: function() {
+            if(arguments.length)
+                throw new Error("set language of asset not supported");
             var extension = filename.match(/\.([^.]+)$/);
             if (!extension)
                 throw new Error("extension does not exist");
@@ -1108,7 +1307,7 @@ Notebook.Asset.create_model = function(content, filename)
             if (!_.isUndefined(new_filename)) {
                 if(filename != new_filename) {
                     filename = new_filename;
-                    notify_views(function(view) {
+                    this.notify_views(function(view) {
                         view.filename_updated();
                     });
                     return filename;
@@ -1116,19 +1315,6 @@ Notebook.Asset.create_model = function(content, filename)
                 else return null;
             }
             return filename;
-        },
-        content: function(new_content) {
-            if (!_.isUndefined(new_content)) {
-                if(content != new_content) {
-                    content = new_content;
-                    notify_views(function(view) {
-                        view.content_updated();
-                    });
-                    return content;
-                }
-                else return null;
-            }
-            return content;
         },
         json: function() {
             return {
@@ -1139,29 +1325,10 @@ Notebook.Asset.create_model = function(content, filename)
         },
         change_object: function(obj) {
             obj = obj || {};
-            // unfortunately, yet another workaround because github
-            // won't take blank files.  would prefer to make changes
-            // a high-level description but i don't see it yet.
-            var change = {
-                id: obj.id || this.filename(),
-                name: function() {
-                    return this.id;
-                },
-                erase: obj.erase,
-                rename: obj.rename
-            };
-            if(content === "")
-                change.erase = true;
-            else
-                change.content = obj.content || this.content();
-            return change;
+            obj.filename = obj.filename || this.filename();
+            return base_change_object.call(this, obj);
         }
-    };
-    function notify_views(f) {
-        _.each(result.views, function(view) {
-            f(view);
-        });
-    }
+    });
     return result;
 };
 Notebook.Asset.create_controller = function(asset_model)
@@ -1196,6 +1363,7 @@ Notebook.Asset.create_controller = function(asset_model)
 (function() {
 
 function create_markdown_cell_html_view(language) { return function(cell_model) {
+    var EXTRA_HEIGHT = 26;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
     update_div_id();
     notebook_cell_div.data('rcloud.model', cell_model);
@@ -1204,9 +1372,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     // button bar
 
     var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
+    var coalesce_button = ui_utils.fa_button("icon-link", "coalesce cells");
     var source_button = ui_utils.fa_button("icon-edit", "source");
     var result_button = ui_utils.fa_button("icon-picture", "result");
-    // var hide_button  = ui_utils.fa_button("icon-resize-small", "hide");
+    var split_button = ui_utils.fa_button("icon-unlink", "split cell");
     var remove_button = ui_utils.fa_button("icon-trash", "remove");
     var run_md_button = ui_utils.fa_button("icon-play", "run");
     var gap = $('<div/>').html('&nbsp;').css({'line-height': '25%'});
@@ -1225,6 +1394,21 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             shell.insert_markdown_cell_before(cell_model.id());
         }
     });
+    coalesce_button.click(function(e) {
+        if (!$(e.currentTarget).hasClass("button-disabled")) {
+            shell.coalesce_prior_cell(cell_model);
+        }
+    });
+    split_button.click(function(e) {
+        if (!$(e.currentTarget).hasClass("button-disabled")) {
+            var range = widget.getSelection().getRange();
+            var point1, point2 = undefined;
+            point1 = ui_utils.character_offset_of_pos(widget, range.start);
+            if(!range.isEmpty())
+                point2 = ui_utils.character_offset_of_pos(widget, range.end);
+            shell.split_cell(cell_model, point1, point2);
+        }
+    });
     source_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             result.show_source();
@@ -1234,10 +1418,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         if (!$(e.currentTarget).hasClass("button-disabled"))
             result.show_result();
     });
-    // hide_button.click(function(e) {
-    //     if (!$(e.currentTarget).hasClass("button-disabled"))
-    //         result.hide_all();
-    // });
     remove_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             cell_model.parent_model.controller.remove_cell(cell_model);
@@ -1260,19 +1440,40 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     run_md_button.click(function(e) {
         execute_cell();
     });
-
+    var cell_status = $("<div class='cell-status'></div>");
     var button_float = $("<div class='cell-controls'></div>");
+    cell_status.append(button_float);
+    cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
-    var watermark = $("<span/>");
-    col.append(watermark);
-    $.each([run_md_button, source_button, result_button/*, hide_button*/, gap, remove_button],
+    var languages = {
+        "R": { 'background-color': "#E8F1FA" },
+        "Markdown": { 'background-color': "#F7EEE4" }
+        // ,
+        // "Python": { 'background-color': "#ff0000" },
+        // "Bash": { 'background-color': "#00ff00" }
+    };
+    var select = $("<select class='form-control'></select>");
+    _.each(languages, function(value, key) {
+        languages[key].element = $("<option></option>").text(key);
+        select.append(languages[key].element);
+    });
+    $(languages[language].element).attr('selected', true);
+    select.on("change", function() {
+        var l = select.find("option:selected").text();
+        cell_model.parent_model.controller.change_cell_language(cell_model, l);
+    });
+
+    col.append($("<div></div>").append(select));
+    $.each([run_md_button, source_button, result_button, gap, split_button, remove_button],
            function() {
                col.append($('<td/>').append($(this)));
            });
+
     button_float.append(col);
-    notebook_cell_div.append(button_float);
+    notebook_cell_div.append(cell_status);
 
     var insert_button_float = $("<div class='cell-insert-control'></div>");
+    insert_button_float.append(coalesce_button);
     insert_button_float.append(insert_cell_button);
     notebook_cell_div.append(insert_button_float);
 
@@ -1283,19 +1484,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     notebook_cell_div.append(inner_div);
     notebook_cell_div.append(clear_div);
 
-    var markdown_div = $('<div style="position: relative; width:100%; height:100%"></div>');
+    var outer_ace_div = $('<div class="outer-ace-div"></div>');
 
-    var ace_div = $('<div style="width:100%; height:100%"></div>');
-    ace_div.css({'background-color': language === 'R' ? "#E8F1FA" : "#F7EEE4"});
-    if (language === 'R') {
-        watermark.addClass("r-language-pseudo");
-    } else {
-        watermark.addClass("rmarkdown-language-pseudo");
-    }
+    var ace_div = $('<div style="width:100%; height:100%;"></div>');
+    ace_div.css({ 'background-color': languages[language]["background-color"] });
 
-    // ace_div.css({'background-color': language === 'R' ? "#B1BEA4" : "#F1EDC0"});
-    inner_div.append(markdown_div);
-    markdown_div.append(ace_div);
+    inner_div.append(outer_ace_div);
+    outer_ace_div.append(ace_div);
     ace.require("ace/ext/language_tools");
     var widget = ace.edit(ace_div[0]);
     var RMode = ace.require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
@@ -1318,7 +1513,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     });
     session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
-        notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
+        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
         widget.resize();
     });
 
@@ -1362,6 +1557,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             notebook_cell_div.remove();
         },
         id_updated: update_div_id,
+        language_updated: function() {
+            language = cell_model.language();
+            ace_div.css({ 'background-color': languages[language]["background-color"] });
+        },
         result_updated: function(r) {
             r_result_div.hide();
             r_result_div.html(r);
@@ -1371,8 +1570,12 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             var uuid = rcloud.deferred_knitr_uuid;
 
             if (cell_model.language() === 'R' && inner_div.find("pre code").length === 0) {
-                r_result_div.prepend("<pre><code>" + cell_model.content() + "</code></pre>");
+                r_result_div.prepend("<pre><code class='r'>" + cell_model.content() + "</code></pre>");
             }
+
+            // click on code to edit
+            $("code.r", r_result_div).off('click')
+                .click(result.show_source);
 
             // we use the cached version of DPR instead of getting window.devicePixelRatio
             // because it might have changed (by moving the user agent window across monitors)
@@ -1445,7 +1648,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
-            }            
+            }
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -1488,10 +1691,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
              *
              */
             // do the two-change dance to make ace happy
-            notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
-            markdown_div.show();
+            outer_ace_div.show();
             widget.resize(true);
-            notebook_cell_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
+            notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
             widget.resize(true);
             disable(source_button);
             enable(result_button);
@@ -1501,7 +1703,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             }
             //editor_row.show();
 
-            markdown_div.show();
+            outer_ace_div.show();
             r_result_div.hide();
             widget.resize();
             widget.focus();
@@ -1518,7 +1720,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             }
 
             //editor_row.hide();
-            markdown_div.hide();
+            outer_ace_div.hide();
             r_result_div.slideDown(150); // show();
             current_mode = "result";
         },
@@ -1535,16 +1737,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             if (current_mode === "result") {
                 r_result_div.slideUp(150); // hide();
             } else {
-                markdown_div.slideUp(150); // hide();
+                outer_ace_div.slideUp(150); // hide();
             }
         },
-        /*
-        // this doesn't make sense: changes should go through controller
-        remove_self: function() {
-            cell_model.parent_model.remove_cell(cell_model);
-            notebook_cell_div.remove();
-        },
-        */
         div: function() {
             return notebook_cell_div;
         },
@@ -1563,47 +1758,45 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     return result;
 }};
 
-var dispatch = {
-    Markdown: create_markdown_cell_html_view("Markdown"),
-    R: create_markdown_cell_html_view("R")
-};
-
 Notebook.Cell.create_html_view = function(cell_model)
 {
-    return dispatch[cell_model.language()](cell_model);
+    return create_markdown_cell_html_view(cell_model.language())(cell_model);
 };
 
 })();
 Notebook.Cell.create_model = function(content, language)
 {
     var id_ = -1;
-    var result = {
-        views: [], // sub list for pubsub
-        parent_model: null,
-        language: function() {
-            return language;
-        },
-        content: function(new_content) {
-            if (!_.isUndefined(new_content)) {
-                if(content != new_content) {
-                    content = new_content;
-                    notify_views(function(view) {
-                        view.content_updated();
+    var result = Notebook.Buffer.create_model(content);
+    var base_change_object = result.change_object;
+
+    _.extend(result, {
+        language: function(new_language) {
+            if (!_.isUndefined(new_language)) {
+                if(language != new_language) {
+                    language = new_language;
+                    this.notify_views(function(view) {
+                        view.language_updated();
                     });
-                    return content;
+                    return language;
                 }
                 else return null;
             }
-            return content;
+            return language;
         },
         id: function(new_id) {
             if (!_.isUndefined(new_id) && new_id != id_) {
                 id_ = new_id;
-                notify_views(function(view) {
+                this.notify_views(function(view) {
                     view.id_updated();
                 });
             }
             return id_;
+        },
+        filename: function() {
+            if(arguments.length)
+                throw new Error("can't set filename of cell");
+            return Notebook.part_name(this.id(), this.language());
         },
         json: function() {
             return {
@@ -1613,43 +1806,19 @@ Notebook.Cell.create_model = function(content, language)
         },
         change_object: function(obj) {
             obj = obj || {};
-            // unfortunately, yet another workaround because github
-            // won't take blank files.  would prefer to make changes
-            // a high-level description but i don't see it yet.
-            var change = {
-                id: obj.id || this.id(),
-                language: obj.language || this.language(),
-                name: function(id) {
-                    if (_.isString(id))
-                        return id;
-                    var ext;
-                    switch(this.language) {
-                    case 'R':
-                        ext = 'R';
-                        break;
-                    case 'Markdown':
-                        ext = 'md';
-                        break;
-                    default:
-                        throw "Unknown language " + this.language;
-                    }
-                    return 'part' + this.id + '.' + ext;
-                },
-                erase: obj.erase,
-                rename: obj.rename
-            };
-            if(content === "")
-                change.erase = true;
-            else
-                change.content = obj.content || this.content();
-            return change;
+            if(obj.id && obj.filename)
+                throw new Error("must specify only id or filename");
+            if(!obj.filename) {
+                var id = obj.id || this.id();
+                if(!(id>0)) // negative, NaN, null, undefined, etc etc.  note: this isn't <=
+                    throw new Error("bad id for cell change object: " + id);
+                obj.filename = Notebook.part_name(id, this.language());
+            }
+            if(obj.rename && _.isNumber(obj.rename))
+                obj.rename = Notebook.part_name(obj.rename, this.language());
+            return base_change_object.call(this, obj);
         }
-    };
-    function notify_views(f) {
-        _.each(result.views, function(view) {
-            f(view);
-        });
-    }
+    });
     return result;
 };
 Notebook.Cell.create_controller = function(cell_model)
@@ -1679,6 +1848,9 @@ Notebook.Cell.create_controller = function(cell_model)
             _.each(cell_model.views, function(view) {
                 view.result_updated(msg);
             });
+        },
+        change_language: function(language) {
+            cell_model.language(language);
         }
     };
 
@@ -1760,22 +1932,25 @@ Notebook.create_model = function()
     var readonly_ = false;
     var user_ = "";
 
-    function last_id(notebook) {
-        if(notebook.length)
-            return notebook[notebook.length-1].id();
+    function last_id(cells) {
+        if(cells.length)
+            return cells[cells.length-1].id();
         else
             return 0;
     }
 
+    // anything here that returns a set of changes must only be called from the
+    // controller.  the controller makes sure those changes are sent to github.
+
     /* note, the code below is a little more sophisticated than it needs to be:
        allows multiple inserts or removes but currently n is hardcoded as 1.  */
     return {
-        notebook: [], // FIXME this should be called "cells"
+        cells: [],
         assets: [],
         views: [], // sub list for cell content pubsub
         dishers: [], // for dirty bit pubsub
         clear: function() {
-            var cells_removed = this.remove_cell(null,last_id(this.notebook));
+            var cells_removed = this.remove_cell(null,last_id(this.cells));
             var assets_removed = this.remove_asset(null,this.assets.length);
             return cells_removed.concat(assets_removed);
         },
@@ -1795,11 +1970,11 @@ Notebook.create_model = function()
             var changes = [];
             var n = 1;
             id = id || 1;
-            id = Math.max(id, last_id(this.notebook)+1);
+            id = Math.max(id, last_id(this.cells)+1);
             while(n) {
                 cell_model.id(id);
                 changes.push(cell_model.change_object());
-                this.notebook.push(cell_model);
+                this.cells.push(cell_model);
                 if(!skip_event)
                     _.each(this.views, function(view) {
                         view.cell_appended(cell_model);
@@ -1812,40 +1987,44 @@ Notebook.create_model = function()
         insert_cell: function(cell_model, id, skip_event) {
             var that = this;
             cell_model.parent_model = this;
+            cell_model.renew_content();
             var changes = [];
             var n = 1, x = 0;
-            while(x<this.notebook.length && this.notebook[x].id() < id) ++x;
-            // check if ids can go above rather than shifting everything else down
-            if(x<this.notebook.length && id+n > this.notebook[x].id()) {
-                var prev = x>0 ? this.notebook[x-1].id() : 0;
-                id = Math.max(this.notebook[x].id()-n, prev+1);
+            while(x<this.cells.length && this.cells[x].id() < id) ++x;
+            // if id is before some cell and id+n knocks into that cell...
+            if(x<this.cells.length && id+n > this.cells[x].id()) {
+                // see how many ids we can squeeze between this and prior cell
+                var prev = x>0 ? this.cells[x-1].id() : 0;
+                id = Math.max(this.cells[x].id()-n, prev+1);
             }
             for(var j=0; j<n; ++j) {
-                changes.push(cell_model.change_object({id: id+j}));
+                changes.push(cell_model.change_object({id: id+j})); // most likely blank
                 cell_model.id(id+j);
-                this.notebook.splice(x, 0, cell_model);
+                this.cells.splice(x, 0, cell_model);
                 if(!skip_event)
                     _.each(this.views, function(view) {
-                        view.cell_inserted(that.notebook[x], x);
+                        view.cell_inserted(that.cells[x], x);
                     });
                 ++x;
             }
-            while(x<this.notebook.length && n) {
-                if(this.notebook[x].id() > id) {
-                    var gap = this.notebook[x].id() - id;
+            while(x<this.cells.length && n) {
+                if(this.cells[x].id() > id) {
+                    var gap = this.cells[x].id() - id;
                     n -= gap;
                     id += gap;
                 }
                 if(n<=0)
                     break;
-                changes.push(this.notebook[x].change_object({
-                    rename: this.notebook[x].id()+n
+                changes.push(this.cells[x].change_object({
+                    rename: this.cells[x].id()+n
                 }));
-                this.notebook[x].id(this.notebook[x].id() + n);
+                this.cells[x].id(this.cells[x].id() + n);
                 ++x;
                 ++id;
             }
-            return changes;
+            // apply the changes backward so that we're moving each cell
+            // out of the way just before putting the next one in its place
+            return changes.reverse();
         },
         remove_asset: function(asset_model, n, skip_event) {
             if (this.assets.length === 0)
@@ -1885,7 +2064,7 @@ Notebook.create_model = function()
             var that = this;
             var cell_index, id;
             if(cell_model!=null) {
-                cell_index = this.notebook.indexOf(cell_model);
+                cell_index = this.cells.indexOf(cell_model);
                 id = cell_model.id();
                 if (cell_index === -1) {
                     throw "cell_model not in notebook model?!";
@@ -1898,14 +2077,14 @@ Notebook.create_model = function()
             n = n || 1;
             var x = cell_index;
             var changes = [];
-            while(x<this.notebook.length && n) {
-                if(this.notebook[x].id() == id) {
+            while(x<this.cells.length && n) {
+                if(this.cells[x].id() == id) {
                     if(!skip_event)
                         _.each(this.views, function(view) {
-                            view.cell_removed(that.notebook[x], x);
+                            view.cell_removed(that.cells[x], x);
                         });
-                    changes.push(that.notebook[x].change_object({ erase: 1 }));
-                    this.notebook.splice(x, 1);
+                    changes.push(that.cells[x].change_object({ erase: 1 }));
+                    this.cells.splice(x, 1);
                 }
                 ++id;
                 --n;
@@ -1913,16 +2092,31 @@ Notebook.create_model = function()
             return changes;
         },
         move_cell: function(cell_model, before) {
-            var pre_index = this.notebook.indexOf(cell_model),
+            // remove doesn't change any ids, so we can just remove then add
+            var pre_index = this.cells.indexOf(cell_model),
                 changes = this.remove_cell(cell_model, 1, true)
                     .concat(before >= 0
                             ? this.insert_cell(cell_model, before, true)
                             : this.append_cell(cell_model, null, true)),
-                post_index = this.notebook.indexOf(cell_model);
+                post_index = this.cells.indexOf(cell_model);
             _.each(this.views, function(view) {
                 view.cell_moved(cell_model, pre_index, post_index);
             });
             return changes;
+        },
+        prior_cell: function(cell_model) {
+            var index = this.cells.indexOf(cell_model);
+            if(index>0)
+                return this.cells[index-1];
+            else
+                return null;
+        },
+        change_cell_language: function(cell_model, language) {
+            // for this one case we have to use filenames instead of ids
+            var pre_name = cell_model.filename();
+            cell_model.language(language);
+            return [cell_model.change_object({filename: pre_name,
+                                              rename: cell_model.filename()})];
         },
         update_cell: function(cell_model) {
             return [cell_model.change_object()];
@@ -1930,9 +2124,8 @@ Notebook.create_model = function()
         update_asset: function(asset_model) {
             return [asset_model.change_object()];
         },
-        reread_cells: function() {
-            var that = this;
-            // Forces views to update models
+        reread_buffers: function() {
+            // force views to update models
             var changed_cells_per_view = _.map(this.views, function(view) {
                 return view.update_model();
             });
@@ -1940,15 +2133,9 @@ Notebook.create_model = function()
                 throw "not expecting more than one notebook view";
             var contents = changed_cells_per_view[0];
             var changes = [];
-            for (var i=0; i<contents.length; ++i) {
-                var content = contents[i];
-                if (content !== null) {
-                    changes.push(that.notebook[i].change_object());
-                    // build_cell_change(that.notebook[i].id(),
-                    //                   content,
-                    //                   that.notebook[i].language()));
-                }
-            }
+            for (var i=0; i<contents.length; ++i)
+                if (contents[i] !== null)
+                    changes.push(this.cells[i].change_object());
             var asset_change = RCloud.UI.scratchpad.update_model();
             if (asset_change) {
                 var active_asset_model = RCloud.UI.scratchpad.current_model;
@@ -1977,7 +2164,7 @@ Notebook.create_model = function()
             });
         },
         json: function() {
-            return _.map(this.notebook, function(cell_model) {
+            return _.map(this.cells, function(cell_model) {
                 return cell_model.json();
             });
         }
@@ -1992,7 +2179,13 @@ Notebook.create_controller = function(model)
         save_timeout_ = 30000, // 30s
         show_source_checkbox_ = null;
 
-    var default_callback_ = editor.load_callback(null, true, true);
+    var editor_callback_ = editor.load_callback({is_change: true, selroot: true}),
+        default_callback_ = function(notebook) {
+            if(save_button_)
+                ui_utils.disable_bs_button(save_button_);
+            dirty_ = false;
+            return editor_callback_(notebook);
+        };
 
     function append_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
@@ -2005,7 +2198,7 @@ Notebook.create_controller = function(model)
         var asset_model = Notebook.Asset.create_model(content, filename);
         var asset_controller = Notebook.Asset.create_controller(asset_model);
         asset_model.controller = asset_controller;
-        return {controller: asset_controller, 
+        return {controller: asset_controller,
                 changes: model.append_asset(asset_model, filename)};
     }
 
@@ -2037,6 +2230,8 @@ Notebook.create_controller = function(model)
                     assets[filename] = [file.content, file.filename];
                 }
             });
+            // we intentionally drop change objects on the floor, here and only here.
+            // that way the cells/assets are checkpointed where they were loaded
             var asset_controller;
             for(i in cells)
                 append_cell_helper(cells[i][0], cells[i][1], cells[i][2]);
@@ -2044,12 +2239,12 @@ Notebook.create_controller = function(model)
                 var result = append_asset_helper(assets[i][0], assets[i][1]).controller;
                 asset_controller = asset_controller || result;
             }
-            // is there anything else to gist permissions?
             model.user(notebook.user.login);
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
-            asset_controller.select();
-            
+            // it's rare but valid not to have assets
+            if(asset_controller)
+                asset_controller.select();
         }
         return notebook;
     }
@@ -2057,95 +2252,80 @@ Notebook.create_controller = function(model)
     // calculate the changes needed to get back from the newest version in notebook
     // back to what we are presently displaying (current_gist_)
     function find_changes_from(notebook) {
+        function change_object(obj) {
+            obj.name = function(n) { return n; };
+            return obj;
+        }
         var changes = [];
+
+        // notebook files, current files
         var nf = notebook.files,
-            cf = _.extend({}, current_gist_.files); // to keep track of changes
+            cf = _.extend({}, current_gist_.files); // dupe to keep track of changes
+
+        // find files which must be changed or removed to get from nf to cf
         for(var f in nf) {
             if(f==='r_type' || f==='r_attributes')
                 continue; // R metadata
             if(f in cf) {
                 if(cf[f].language != nf[f].language || cf[f].content != nf[f].content) {
-                    changes.push(nf.change_object({id: f}));
+                    changes.push(change_object({filename: f,
+                                                language: cf[f].language,
+                                                content: cf[f].content}));
                 }
                 delete cf[f];
             }
-            else changes.push(nf.change_object({id: f, erase: true}));
+            else changes.push(change_object({filename: f, erase: true, language: nf[f].language}));
         }
+
+        // find files which must be added to get from nf to cf
         for(f in cf) {
             if(f==='r_type' || f==='r_attributes')
                 continue; // artifact of rserve.js
-            changes.push(nf.change_object({id: f}));
+            changes.push(change_object({filename: f,
+                                        language: cf[f].language,
+                                        content: cf[f].content}));
         }
         return changes;
     }
 
-    function update_notebook(changes, gistname) {
+    function update_notebook(changes, gistname, more) {
         // remove any "empty" changes.  we can keep empty cells on the
         // screen but github will refuse them.  if the user doesn't enter
         // stuff in them before saving, they will disappear on next session
-        changes = changes.filter(function(change) { return !!change.content || change.erase; });
+        changes = changes.filter(function(change) {
+            return change.content || change.erase || change.rename;
+        });
         if (!changes.length)
             return Promise.cast(current_gist_);
         if (model.read_only())
             return Promise.reject("attempted to update read-only notebook");
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
-            // we don't use the gist rename feature because it doesn't
-            // allow renaming x -> y and creating a new x at the same time
-            // instead, create y and if there is no longer any x, erase it
-            var post_names = {};
+            var files = {};
+            // play the changes in order - they must be sequenced so this makes sense
             _.each(changes, function(change) {
-                if (!change.erase) {
-                    var after = change.rename || change.id;
-                    post_names[change.name(after)] = 1;
-                };
-            });
-
-            var filehash = {};
-            _.each(changes, function(change) {
-                var c = {};
-                if(change.content !== undefined)
-                    c.content = change.content;
-                var pre_name = change.name(change.id);
-                if(change.erase || !post_names[pre_name])
-                    filehash[pre_name] = null;
-                if(!change.erase) {
-                    var post_name = change.name(change.rename || change.id);
-                    filehash[post_name] = c;
+                if(change.erase || change.rename) {
+                    files[change.filename] = null;
+                    if(change.rename)
+                        files[change.rename] = {content: change.content};
                 }
+                else files[change.filename] = {content: change.content};
             });
-            return { files: filehash }; 
-            // _.reduce(changes, xlate_change, {})};
-            // var post_names = _.reduce(changes,
-            //                           function(names, change) {
-            //                               if(!change.erase) {
-            //                                   var after = change.rename || change.id;
-            //                                   names[Notebook.part_name(after, change.language)] = 1;
-            //                               }
-            //                               return names;
-            //                           }, {});
-            // function xlate_change(filehash, change) {
-            //     var c = {};
-            //     if(change.content !== undefined)
-            //         c.content = change.content;
-            //     var pre_name = Notebook.part_name(change.id, change.language);
-            //     if(change.erase || !post_names[pre_name])
-            //         filehash[pre_name] = null;
-            //     if(!change.erase) {
-            //         var post_name = Notebook.part_name(change.rename || change.id, change.language);
-            //         filehash[post_name] = c;
-            //     }
-            //     return filehash;
-            // }
+            return {files: files};
         }
-
-        return rcloud.update_notebook(gistname, changes_to_gist(changes))
+        var gist = changes_to_gist(changes);
+        if(more)
+            _.extend(gist, more);
+        return rcloud.update_notebook(gistname, gist)
             .then(function(notebook) {
                 if('error' in notebook)
                     throw notebook;
                 current_gist_ = notebook;
                 return notebook;
             });
+    }
+    function refresh_buffers() {
+        return model.reread_buffers();
     }
 
     function on_dirty() {
@@ -2181,35 +2361,116 @@ Notebook.create_controller = function(model)
         },
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);
-            update_notebook(cch.changes)
+            update_notebook(refresh_buffers().concat(cch.changes))
                 .then(default_callback_);
             return cch.controller;
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
-            update_notebook(cch.changes)
+            update_notebook(refresh_buffers().concat(cch.changes))
                 .then(default_callback_);
             return cch.controller;
         },
         insert_cell: function(content, type, id) {
             var cch = insert_cell_helper(content, type, id);
-            update_notebook(cch.changes)
+            update_notebook(refresh_buffers().concat(cch.changes))
                 .then(default_callback_);
             return cch.controller;
         },
         remove_cell: function(cell_model) {
-            var changes = model.remove_cell(cell_model);
+            var changes = refresh_buffers().concat(model.remove_cell(cell_model));
             RCloud.UI.command_prompt.prompt.widget.focus(); // there must be a better way
             update_notebook(changes)
                 .then(default_callback_);
         },
         remove_asset: function(asset_model) {
-            var changes = model.remove_asset(asset_model);
+            var changes = refresh_buffers().concat(model.remove_asset(asset_model));
             update_notebook(changes)
                 .then(default_callback_);
         },
         move_cell: function(cell_model, before) {
-            var changes = model.move_cell(cell_model, before ? before.id() : -1);
+            var changes = refresh_buffers().concat(model.move_cell(cell_model, before ? before.id() : -1));
+            update_notebook(changes)
+                .then(default_callback_);
+        },
+        coalesce_prior_cell: function(cell_model) {
+            var prior = model.prior_cell(cell_model);
+            if(!prior)
+                return;
+
+            function opt_cr(text) {
+                if(text.length && text[text.length-1] != '\n')
+                    return text + '\n';
+                return text;
+            }
+            function crunch_quotes(left, right) {
+                var end = /```\n$/, begin = /^```{r}/;
+                if(end.test(left) && begin.test(right))
+                    return left.replace(end, '') + right.replace(begin, '');
+                else return left + right;
+            }
+
+            // note we have to refresh everything and then concat these changes onto
+            // that.  which won't work in general but looks like it is okay to
+            // concatenate a bunch of change content objects with a move or change
+            // to one of the same objects, and an erase of one
+            var new_content, changes = refresh_buffers();
+
+            // this may have to be multiple dispatch when there are more than two languages
+            if(prior.language()==cell_model.language()) {
+                new_content = crunch_quotes(opt_cr(prior.content()),
+                                            cell_model.content());
+                prior.content(new_content);
+                changes = changes.concat(model.update_cell(prior));
+            }
+            else {
+                if(prior.language()==="R") {
+                    new_content = crunch_quotes('```{r}\n' + opt_cr(prior.content()) + '```\n',
+                                                cell_model.content());
+                    prior.content(new_content);
+                    changes = changes.concat(model.change_cell_language(prior, "Markdown"));
+                    changes[changes.length-1].content = new_content; //  NOOOOOO!!!!
+                }
+                else {
+                    new_content = crunch_quotes(opt_cr(prior.content()) + '```{r}\n',
+                                                opt_cr(cell_model.content()) + '```\n');
+                    new_content = new_content.replace(/```\n```{r}\n/, '');
+                    prior.content(new_content);
+                    changes = changes.concat(model.update_cell(prior));
+                }
+            }
+            _.each(prior.views, function(v) { v.show_source(); });
+            update_notebook(changes.concat(model.remove_cell(cell_model)))
+                .then(default_callback_);
+        },
+        split_cell: function(cell_model, point1, point2) {
+            function resplit(a) {
+                for(var i=0; i<a.length-1; ++i)
+                    if(!/\n$/.test(a[i]) && /^\n/.test(a[i+1])) {
+                        a[i] = a[i].concat('\n');
+                        a[i+1] = a[i+1].replace(/^\n/, '');
+                    }
+            }
+            var changes = refresh_buffers();
+            var content = cell_model.content(),
+                parts = [content.substring(0, point1)],
+                id = cell_model.id(), language = cell_model.language();
+            if(point2 === undefined)
+                parts.push(content.substring(point1));
+            else
+                parts.push(content.substring(point1, point2),
+                           content.substring(point2));
+            resplit(parts);
+            cell_model.content(parts[0]);
+            changes = changes.concat(model.update_cell(cell_model));
+            // not great to do multiple inserts here - but not quite important enough to enable insert-n
+            for(var i=1; i<parts.length; ++i)
+                changes = changes.concat(insert_cell_helper(parts[i], language, id+i).changes);
+            update_notebook(changes)
+                .then(default_callback_);
+        },
+        change_cell_language: function(cell_model, language) {
+            var changes = refresh_buffers().concat(model.change_cell_language(cell_model, language));
             update_notebook(changes)
                 .then(default_callback_);
         },
@@ -2258,33 +2519,32 @@ Notebook.create_controller = function(model)
                     : that.load_notebook(gistname, null); // do a load - we need to refresh
             });
         },
-        refresh_cells: function() {
-            return model.reread_cells();
-        },
         update_cell: function(cell_model) {
-            return update_notebook(model.update_cell(cell_model));
+            return update_notebook(refresh_buffers().concat(model.update_cell(cell_model)))
+                .then(default_callback_);
         },
         update_asset: function(asset_model) {
-            return update_notebook(model.update_asset(asset_model));
+            return update_notebook(refresh_buffers().concat(model.update_asset(asset_model)))
+                .then(default_callback_);
+        },
+        rename_notebook: function(desc) {
+            return update_notebook(refresh_buffers(), null, {description: desc})
+                .then(default_callback_);
         },
         save: function() {
-            if(dirty_) {
-                var changes = this.refresh_cells();
-                update_notebook(changes);
-                if(save_button_)
-                    ui_utils.disable_bs_button(save_button_);
-                dirty_ = false;
-            }
-
+            if(!dirty_)
+                return Promise.resolve(undefined);
+            return update_notebook(refresh_buffers())
+                .then(default_callback_);
         },
         run_all: function() {
             this.save();
-            _.each(model.notebook, function(cell_model) {
+            _.each(model.cells, function(cell_model) {
                 cell_model.controller.set_status_message("Waiting...");
             });
-            
+
             // will ordering bite us in the leg here?
-            var promises = _.map(model.notebook, function(cell_model) {
+            var promises = _.map(model.cells, function(cell_model) {
                 return Promise.resolve().then(function() {
                     cell_model.controller.set_status_message("Computing...");
                     return cell_model.controller.execute();
@@ -2351,15 +2611,27 @@ Notebook.part_name = function(id, language) {
     }
     return 'part' + id + '.' + ext;
 };
+// FIXME this is just a proof of concept - using Rserve console OOBs
+var append_session_info = function(msg) {
+    // one hacky way is to maintain a <pre> that we fill as we go
+    // note that R will happily spit out incomplete lines so it's
+    // not trivial to maintain each output in some separate structure
+    if (!document.getElementById("session-info-out"))
+	$("#session-info").append($("<pre id='session-info-out'></pre>"));
+    $("#session-info-out").append(msg);
+    RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
+};
+
 // FIXME this needs to go away as well.
 var oob_handlers = {
     "browsePath": function(v) {
         var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
-        var width=600;
-        var height=500;
-        var left=screen.width-width;
-        window.open(x,'RCloudHelp','width='+width+',height='+height+',scrollbars=yes,resizable=yes,left='+left);
-    }
+        $("#help-frame").attr("src", x);
+        RCloud.UI.left_panel.collapse($("#collapse-help"), false);
+    },
+    "console.out": append_session_info,
+    "console.msg": append_session_info,
+    "console.err": append_session_info
 };
 
 RCloud.session = {
@@ -2372,7 +2644,6 @@ RCloud.session = {
         } else {
             return rcloud.with_progress(function(done) {
                 rclient.close();
-                // FIXME this is a bit of an annoying duplication of code on main.js and view.js
                 return new Promise(function(resolve, reject) {
                     rclient = RClient.create({
                         debug: rclient.debug,
@@ -2442,7 +2713,7 @@ RCloud.session = {
                 }
             });
         });
-        
+
     }
 };
 RCloud.UI = {};
@@ -2528,7 +2799,7 @@ RCloud.UI.init = function() {
             : rcloud.upload_file;
 
         upload_function(false, function(err, value) {
-            if (err) 
+            if (err)
                 failure(err);
             else
                 success(value);
@@ -2540,16 +2811,35 @@ RCloud.UI.init = function() {
 
     var non_notebook_panel_height = 246;
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
-    $("#new-md-cell-button").click(function() {
-        shell.new_markdown_cell("");
+
+    $("#search").submit(function() {
+        var qry = $('#input-text-search').val();
+        RCloud.UI.search.exec(qry);
+        return false;
+    });
+
+    $("#insert-new-cell").click(function() {
+        debugger;
+        var language = $("#insert-cell-language option:selected").text();
+        if (language === 'Markdown') {
+            shell.new_markdown_cell("");
+        } else if (language === 'R') {
+            shell.new_interactive_cell("", false);
+        }
         var vs = shell.notebook.view.sub_views;
         vs[vs.length-1].show_source();
     });
-    $("#new-r-cell-button").click(function() {
-        shell.new_interactive_cell("", false);
-        var vs = shell.notebook.view.sub_views;
-        vs[vs.length-1].show_source();
-    });
+
+    // $("#new-md-cell-button").click(function() {
+    //     shell.new_markdown_cell("");
+    //     var vs = shell.notebook.view.sub_views;
+    //     vs[vs.length-1].show_source();
+    // });
+    // $("#new-r-cell-button").click(function() {
+    //     shell.new_interactive_cell("", false);
+    //     var vs = shell.notebook.view.sub_views;
+    //     vs[vs.length-1].show_source();
+    // });
     $("#rcloud-logout").click(function() {
 	// let the server-side script handle this so it can
 	// also revoke all tokens
@@ -2565,6 +2855,7 @@ RCloud.UI.init = function() {
 
     RCloud.UI.scratchpad.init();
     RCloud.UI.command_prompt.init();
+    RCloud.UI.help_frame.init();
 
     function make_cells_sortable() {
         var cells = $('#output');
@@ -2587,7 +2878,7 @@ RCloud.UI.init = function() {
             scrollSensitivity: 40
         });
     }
-    make_cells_sortable();    
+    make_cells_sortable();
 
     //////////////////////////////////////////////////////////////////////////
     // autosave when exiting. better default than dropping data, less annoying
@@ -2597,129 +2888,210 @@ RCloud.UI.init = function() {
         return true;
     });
 
-    $(".collapse").collapse();
+    $(".panel-collapse").collapse({toggle: false});
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
     $("#edit-notebook").click(function() {
         window.location = "main.html?notebook=" + shell.gistname();
     });
-    
+
 };
-RCloud.UI.left_panel = {
-    collapsed: false,
-    hide: function() {
-        this.collapsed = true;
-        $("#left-column").removeClass("col-md-3 col-sm-3").addClass("col-md-1 col-sm-1");
-        $("#fake-left-column").removeClass("col-md-3 col-sm-3").addClass("col-md-1 col-sm-1");
-        $("#new-notebook").hide();
-        $("#left-pane-collapser i").removeClass("icon-minus").addClass("icon-plus");
-        RCloud.UI.middle_column.update();
-    },
-    show: function() {
-        $("#left-column").removeClass("col-md-1 col-sm-1").addClass("col-md-3 col-sm-3");
-        $("#fake-left-column").removeClass("col-md-1 col-sm-1").addClass("col-md-3 col-sm-3");
-        $("#new-notebook").show();
-        $("#left-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
-        this.collapsed = false;
-        RCloud.UI.middle_column.update();
-    },
-    init: function() {
-        var that = this;
-        $("#accordion").on("show.bs.collapse", function() {
-            if (that.collapsed) {
-                that.show();
-                that.collapsed = false;
-                RCloud.UI.middle_column.update();
-            }
-        });
-        $("#accordion").on("shown.bs.collapse", function() {
-            $(".left-panel-shadow").each(function(v) { 
-                var h = $(this).parent().height();
-                if (h === 0)
-                    h = "100%";
-                $(this).attr("height", h);
-            });
-        });
-        $("#left-pane-collapser").click(function() {
-            if (that.collapsed) {
-                that.show();
-            } else {
-                // the following actually makes sense to me. oh no what has my life become
-                $("#accordion > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
-                that.hide();
-            }
-            RCloud.UI.middle_column.update();
-        });
+RCloud.UI.load = function() {
+    RCloud.UI.left_panel.load();
+    RCloud.UI.right_panel.load();
+};
+RCloud.UI.column = function(sel_column, colwidth) {
+    function classes(cw) {
+        return "col-md-" + cw + " col-sm-" + cw;
     }
-};
-RCloud.UI.right_panel = {
-    collapsed: false,
-    hide: function() {
-        this.collapsed = true;
-        $("#right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-1 col-sm-1");
-        $("#fake-right-column").removeClass("col-md-4 col-sm-4").addClass("col-md-1 col-sm-1");
-        $("#right-pane-collapser i").addClass("icon-plus").removeClass("icon-minus");
-    },
-    show: function() {
-        $("#right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-4 col-sm-4");
-        $("#fake-right-column").removeClass("col-md-1 col-sm-1").addClass("col-md-4 col-sm-4");
-        $("#right-pane-collapser i").removeClass("icon-plus").addClass("icon-minus");
-        this.collapsed = false;
-    },
-    init: function() {
-        var that = this;
-        $("#accordion-right").on("show.bs.collapse", function() {
-            if (that.collapsed) {
-                that.show();
-                that.collapsed = false;
-                RCloud.UI.middle_column.update();
+    var result = {
+        colwidth: function(val) {
+            if(!_.isUndefined(val) && val != colwidth) {
+                $(sel_column).removeClass(classes(colwidth)).addClass(classes(val));
+                colwidth = val;
             }
-        });
-        $("#accordion-right").on("shown.bs.collapse", function() {
-            $(".right-panel-shadow").each(function(v) { 
-                var h = $(this).parent().height();
-                if (h === 0)
-                    h = "100%";
-                $(this).attr("height", h);
-            });
-        });
-        $("#right-pane-collapser").click(function() {
-            if (that.collapsed) {
-                that.show();
-            } else {
-                // the following actually makes sense to me. oh no what has my life become
-                $("#accordion-right > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
-                that.hide();
-            }
-            RCloud.UI.middle_column.update();
-        });
-    }
-};
-RCloud.UI.middle_column = {
-    middle_panel_size: 5,
-    update: function() {
-        var size = 12;
-        if (RCloud.UI.right_panel.collapsed) {
-            size -= 1;
-        } else {
-            size -= 4;
+            return colwidth;
         }
-        if (RCloud.UI.left_panel.collapsed) {
-            size -= 1;
-        } else {
-            size -= 3;
-        }
-        var previous_classes = "col-sm-" + this.middle_panel_size + " col-md-" + this.middle_panel_size;
-        var new_classes = "col-sm-" + size + " col-md-" + size;
-        $("#middle-column").removeClass(previous_classes).addClass(new_classes);
-        $("#prompt-div").removeClass(previous_classes).addClass(new_classes);
-        this.middle_panel_size = size;
-    }
+    };
+    return result;
 };
+
+RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser, colwidth) {
+    var collapsed_ = false;
+    var result = RCloud.UI.column(sel_column, colwidth);
+    function collapsibles() {
+        return $(sel_accordion + " > .panel > div.panel-collapse");
+    }
+    function togglers() {
+        return $(sel_accordion + " > .panel > div.panel-heading > a.accordion-toggle");
+    }
+    function collapse(target, collapse, persist) {
+        target.data("would-collapse", collapse);
+        if(persist && rcloud.config) {
+            var opt = 'ui/' + target[0].id;
+            rcloud.config.set_user_option(opt, collapse);
+        }
+    }
+    function all_collapsed() {
+        return $.makeArray(collapsibles()).every(function(el) {
+            return $(el).hasClass('out') || $(el).data("would-collapse")===true;
+        });
+    }
+    function sel_to_opt(sel) {
+        return sel.replace('#', 'ui/');
+    }
+    function opt_to_sel(opt) {
+        return opt.replace('ui/', '#');
+    }
+    _.extend(result, {
+        init: function() {
+            var that = this;
+            collapsibles().each(function() {
+                $(this).data("would-collapse", !$(this).hasClass('in') && !$(this).hasClass('out'));
+            });
+            togglers().click(function() {
+                var target = $(this.hash);
+                that.collapse(target, target.hasClass('in'));
+                return false;
+            });
+            $(sel_accordion).on("show.bs.collapse", function(e) {
+                that.resize();
+            });
+            $(sel_accordion).on("hide.bs.collapse", function(e) {
+                that.resize();
+            });
+            $(sel_accordion).on("shown.bs.collapse", function() {
+                $(".panel-shadow").each(function(v) {
+                    var h = $(this).parent().height();
+                    if (h === 0)
+                        h = "100%";
+                    $(this).attr("height", h);
+                });
+            });
+            $(sel_collapser).click(function() {
+                if (collapsed_)
+                    that.show(true);
+                else
+                    that.hide(true);
+            });
+        },
+        load: function() {
+            var that = this;
+            var sels = $.makeArray(collapsibles()).map(function(el) { return '#' + el.id; });
+            sels.push(sel_accordion);
+            var opts = sels.map(sel_to_opt);
+            rcloud.config.get_user_option(opts).then(function(settings) {
+                var hide_column;
+                for(var k in settings) {
+                    var id = opt_to_sel(k);
+                    if(id === sel_accordion)
+                        hide_column = settings[k];
+                    else if(typeof settings[k] === "boolean")
+                        collapse($(id), settings[k], false);
+                }
+                // do the column last because it will affect all its children
+                if(typeof hide_column === "boolean") {
+                    if(hide_column)
+                        that.hide(false);
+                    else
+                        that.show(false);
+                }
+                else that.show(true); // make sure we have a setting
+            });
+        },
+        collapse: function(target, whether) {
+            if(collapsed_) {
+                collapse(target, false, true);
+                this.show(true);
+                return;
+            }
+            collapse(target, whether, true);
+            if(all_collapsed())
+                this.hide(true);
+            else
+                this.show(true);
+        },
+        resize: function() {
+            var cw = this.calcwidth();
+            console.log("resizing " + sel_column + " to " + cw);
+            this.colwidth(cw);
+            RCloud.UI.middle_column.update();
+        },
+        hide: function(persist) {
+            // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
+            $(sel_accordion + " > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
+            $(sel_collapser + " i").removeClass("icon-minus").addClass("icon-plus");
+            collapsed_ = true;
+            this.resize();
+            if(persist && rcloud.config)
+                rcloud.config.set_user_option(sel_to_opt(sel_accordion), true);
+        },
+        show: function(persist) {
+            if(all_collapsed())
+                collapse($(collapsibles()[0]), false, true);
+            collapsibles().each(function() {
+                $(this).collapse($(this).data("would-collapse") ? "hide" : "show");
+            });
+            $(sel_collapser + " i").removeClass("icon-plus").addClass("icon-minus");
+            collapsed_ = false;
+            this.resize();
+            if(persist && rcloud.config)
+                rcloud.config.set_user_option(sel_to_opt(sel_accordion), false);
+        },
+        calcwidth: function() {
+            if(collapsed_)
+                return 1;
+            var widths = [];
+            collapsibles().each(function() {
+                var width = $(this).data("would-collapse") ? 1 : $(this).attr("data-colwidth");
+                if(width > 0)
+                    widths.push(width);
+            });
+            return d3.max(widths);
+        }
+    });
+    return result;
+};
+RCloud.UI.left_panel = (function() {
+    var result = RCloud.UI.collapsible_column("#left-column,#fake-left-column",
+                                              "#accordion-left", "#left-pane-collapser", 3);
+    var base_hide = result.hide.bind(result),
+        base_show = result.show.bind(result);
+
+    _.extend(result, {
+        hide: function(persist) {
+            $("#new-notebook").hide();
+            base_hide(persist);
+        },
+        show: function(persist) {
+            $("#new-notebook").show();
+            base_show(persist);
+        }
+    });
+    return result;
+}());
+
+RCloud.UI.right_panel = (function() {
+    var result = RCloud.UI.collapsible_column("#right-column,#fake-right-column",
+                                              "#accordion-right", "#right-pane-collapser", 4);
+    return result;
+}());
+RCloud.UI.middle_column = (function() {
+    var result = RCloud.UI.column("#middle-column, #prompt-div", 5);
+
+    _.extend(result, {
+        update: function() {
+            var size = 12 - RCloud.UI.left_panel.colwidth() - RCloud.UI.right_panel.colwidth();
+            result.colwidth(size);
+        }
+    });
+    return result;
+}());
 RCloud.UI.scratchpad = {
     session: null,
     widget: null,
+    exists: false,
     current_model: null,
     change_content: null,
     init: function() {
@@ -2764,6 +3136,7 @@ RCloud.UI.scratchpad = {
         }
         var scratchpad_editor = $("#scratchpad-editor");
         if (scratchpad_editor.length) {
+            this.exists = true;
             setup_scratchpad(scratchpad_editor);
         }
         $("#new-asset > a").click(function() {
@@ -2782,6 +3155,8 @@ RCloud.UI.scratchpad = {
     // FIXME this is completely backwards
     set_model: function(asset_model) {
         var that = this;
+        if(!this.exists)
+            return;
         var modes = {
             r: "ace/mode/r",
             py: "ace/mode/python",
@@ -2824,6 +3199,8 @@ RCloud.UI.scratchpad = {
         return this.current_model.content(this.widget.getSession().getValue());
     }, clear: function() {
         var that = this;
+        if(!this.exists)
+            return;
         that.session.setValue("");
         that.session.getUndoManager().reset();
         that.widget.resize();
@@ -2922,7 +3299,12 @@ RCloud.UI.command_prompt = {
         function execute(widget, args, request) {
             var code = session.getValue();
             if(code.length) {
-                shell.new_interactive_cell(code, true);
+                var language = $("#insert-cell-language option:selected").text();
+                if (language === 'Markdown') {
+                    shell.new_markdown_cell(code, true);
+                } else if (language === 'R') {
+                    shell.new_interactive_cell(code, true);
+                }
                 change_prompt('');
             }
         }
@@ -3030,53 +3412,173 @@ RCloud.UI.configure_readonly = function() {
         $('#output').sortable('enable');
     }
 };
-RCloud.UI.notebook_title = {
-    last_editable_: null,
-    set: function (text) {
-        var is_read_only = shell.notebook.model.read_only();
-        $("#notebook-title")
-            .text(text)
-            .data('restore_edit', text);
-        var ellipt_start = false, ellipt_end = false;
-        while(window.innerWidth - $("#notebook-title").width() < 505) {
-            var slash = text.search('/');
-            if(slash >= 0) {
-                ellipt_start = true;
-                text = text.slice(slash+1);
-            }
-            else {
-                ellipt_end = true;
-                text = text.substr(0, text.length - 2);
-            }
-            $("#notebook-title").text((ellipt_start ? '.../' : '')
-                                      + text +
-                                      (ellipt_end ? '...' : ''));
-        }
-        var title = $('#notebook-title');
-        ui_utils.make_editable(title, !is_read_only, function(text) {
-            if(editor.rename_notebook(shell.gistname(), text)) {
-                $("#notebook-title")
-                    .text(text)
-                    .data('restore_edit', text);
-                return true;
-            } else {
-                return false;
-            }
-        });
-    }, make_editable: function(node_title, gistname, editable) {
-        if(this.last_editable_ && (!node_title || this.last_editable_[0] !== node_title[0]))
-            ui_utils.make_editable(this.last_editable_, false);
-        if(node_title)
-            ui_utils.make_editable(node_title, editable, function(text) {
-                if(editor.rename_notebook(gistname, text)) {
-                    $("#notebook-title")
-                        .text(text)
-                        .data('restore_edit', text);
-                    return true;
-                } else {
-                    return false;
-                }
+RCloud.UI.notebook_title = (function() {
+    var last_editable_ =  null;
+    function rename_current_notebook(name) {
+        editor.rename_notebook(name)
+            .then(function() {
+                result.set(name);
             });
-        this.last_editable_ = node_title;
+    }
+    // always select all text after last slash, or all text
+    function select(el) {
+        if(el.childNodes.length !== 1 || el.firstChild.nodeType != el.TEXT_NODE)
+            throw new Error('expecting simple element with child text');
+        var text = el.firstChild.textContent;
+        var range = document.createRange();
+        range.setStart(el.firstChild, text.lastIndexOf('/') + 1);
+        range.setEnd(el.firstChild, text.length);
+        return range;
+    }
+    var editable_opts = {
+        change: rename_current_notebook,
+        select: select,
+        validate: function(name) { return editor.validate_name(name); }
+    };
+
+    var result = {
+        set: function (text) {
+            var is_read_only = shell.notebook.model.read_only();
+            var active_text = text;
+            var ellipt_start = false, ellipt_end = false;
+            var title = $('#notebook-title');
+            title.text(text);
+            while(window.innerWidth - title.width() < 505) {
+                var slash = text.search('/');
+                if(slash >= 0) {
+                    ellipt_start = true;
+                    text = text.slice(slash+1);
+                }
+                else {
+                    ellipt_end = true;
+                    text = text.substr(0, text.length - 2);
+                }
+                title.text((ellipt_start ? '.../' : '')
+                                          + text +
+                                          (ellipt_end ? '...' : ''));
+            }
+            ui_utils.editable(title, $.extend({allow_edit: !is_read_only,
+                                               inactive_text: title.text(),
+                                               active_text: active_text},
+                                              editable_opts));
+        }, make_editable: function(node, editable) {
+            function get_title(node) {
+                return $('.jqtree-title:not(.history)', node.element);
+            }
+            if(last_editable_ && (!node || last_editable_ !== node))
+                ui_utils.editable(get_title(last_editable_), 'destroy');
+            if(node) {
+                ui_utils.editable(get_title(node),
+                                  $.extend({allow_edit: editable,
+                                            inactive_text: node.name,
+                                            active_text: node.full_name},
+                                           editable_opts));
+            }
+            last_editable_ = node;
+        }
+    };
+    return result;
+})();
+RCloud.UI.search = {
+    exec: function(query) {
+        function summary(html) {
+            $("#search-summary").show().html($("<h4 />").append(html));
+        }
+        function create_list_of_search_results(d) {
+            var i;
+            if(d == null || d == "null" || d == "") {
+                summary("No Results Found");
+            } else if(d[0] == "error") {
+                d[1] = d[1].replace(/\n/g, "<br/>");
+                summary("ERROR:\n" + d[1]);
+            } else {
+                if(typeof (d) == "string") {
+                    d = JSON.parse("[" + d + "]");
+                }
+                //convertin any string type part to json object : not required most of the time
+                for(i = 0; i < d.length; i++) {
+                    if(typeof (d[i]) == "string") {
+                        d[i] = JSON.parse(d[i]);
+                    }
+                }
+                d.sort(function(a, b) {
+                    var astars = +(a.starcount||0), bstars = +(b.starcount||0);
+                    return bstars-astars;
+                });
+                var len = d.length;
+                var search_results = "";
+                var star_count;
+                var qtime = 0;
+                //iterating for all the notebooks got in the result/response
+                for(i = 0; i < len; i++) {
+                    try {
+                        qtime = d[0].QTime;
+                        if(typeof d[i].starcount === "undefined") {
+                            star_count = 0;
+                        } else {
+                            star_count = d[i].starcount;
+                        }
+                        var notebook_id = d[i].id;
+                        var image_string = "<i class=\"icon-star\" style=\"font-size: 110%; line-height: 90%;\"><sub>" + star_count + "</sub></i>";
+                        d[i].parts = JSON.parse(d[i].parts);
+                        var parts_table = "";
+                        var inner_table = "";
+                        var added_parts = 0;
+                        //displaying only 5 parts of the notebook sorted based on relevancy from solr
+                        for(var k = 0; k < d[i].parts.length && added_parts < 5; k++) {
+                            inner_table = "";
+                            var ks = Object.keys(d[i].parts[k]);
+                            if(ks.length > 0 && d[i].parts[k].content != "") {
+                                var content = d[i].parts[k].content;
+                                if(typeof content == "string")
+                                    content = [content];
+                                if(content.length > 0)
+                                    parts_table += "<tr><th style=\"font-size:11px\">" + d[i].parts[k].filename + "</th></tr>";
+                                for(var l = 0; l < content.length; l++)
+                                    inner_table += "<tr><td class='search-result-line-number'>" + (l + 1) + "</td><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
+
+                                added_parts++;
+                            }
+                            if(inner_table != "") {
+                                inner_table = "<table>" + inner_table + "</table>";
+                                parts_table += "<tr><td>" + inner_table + "</td></tr>";
+                            }
+                        }
+                        if(parts_table != "") {
+                            parts_table = "<table>" + parts_table + "</table>";
+                        }
+                        search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" + "<a id=\"open_" + i + "\" href='javascript:editor.load_notebook(\"" + notebook_id + "\")' class='search-result-heading'>" + d[i].user + " / " + d[i].notebook + "</a>" + image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
+                        if(parts_table != "")
+                            search_results += "<tr><td colspan=2 width=100% style='font-size: 12'><div>" + parts_table + "</div></td></tr>";
+                        search_results += "</table>";
+                    } catch(e) {
+                        summary("Error : \n" + e);
+                    }
+                }
+                var qry = decodeURIComponent(query);
+                qry = qry.replace(/\</g,'&lt;');
+                qry = qry.replace(/\>/g,'&gt;');
+                var search_summary = len + " Results Found"; //+ " <i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i>";
+                summary(search_summary);
+                $("#search-results").show().css("height", "50vh").html(search_results);
+            }
+        };
+
+        summary("Searching...");
+        $("#search-results").hide().html("");
+        query = encodeURIComponent(query);
+        rcloud.with_progress(function(done) {
+            rcloud.search(query).then(function (v) {
+                create_list_of_search_results(v);
+                done();
+            });
+        });
+    }
+};
+RCloud.UI.help_frame = {
+    init: function() {
+        // i can't be bothered to figure out why the iframe causes onload to be triggered early
+        // if this code is directly in main.html
+        $("#help-parent").append('<iframe id="help-frame" frameborder="0" />');
     }
 };

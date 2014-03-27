@@ -7,7 +7,7 @@
             dialog.modal('hide');
             rcloud.allow_progress_modal();
         }
-
+        var prompt;
         function create_password_dialog() {
             var password = $('<input id="password-input" type="password"></input>').
                     keypress(function(e) {
@@ -17,7 +17,7 @@
                         }
                         return true;
                     });
-            var prompt = $('<p></p>').text(v);
+            var prompt = $('<p id="password-prompt"></p>');
             var body = $('<div class="modal-body"></div>').append(prompt).append(password);
 
             var cancel = $('<span class="btn">Cancel</span>')
@@ -49,6 +49,7 @@
         var dialog = $("#password-dialog");
         if(!dialog.length)
             dialog = create_password_dialog();
+        $("#password-prompt").text(v);
         password = dialog.find("#password-input");
         rcloud.prevent_progress_modal();
         dialog.modal({keyboard: true});

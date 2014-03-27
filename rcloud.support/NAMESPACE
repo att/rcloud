@@ -1,6 +1,6 @@
 exportPattern("^rcloud.*") ## rcloud API
 exportPattern("^w.*")      ## wplot, wdc, wgeo...
-export(rcs.get, rcs.set, rcs.incr, rcs.decr, rcs.list, usr.key)  ## RCS
+export(rcs.get, rcs.set, rcs.rm, rcs.incr, rcs.decr, rcs.list, usr.key)  ## RCS
 
 ## other user-visible functions
 export(password, select, check.installation, show.iframe)
@@ -8,12 +8,14 @@ export(password, select, check.installation, show.iframe)
 ## this is brain-dead but there is no way to export multiple methods
 S3method(rcs.get, RCSredis)
 S3method(rcs.set, RCSredis)
+S3method(rcs.rm, RCSredis)
 S3method(rcs.incr, RCSredis)
 S3method(rcs.decr, RCSredis)
 S3method(rcs.list, RCSredis)
 
 S3method(rcs.get, RCSff)
 S3method(rcs.set, RCSff)
+S3method(rcs.rm, RCSff)
 S3method(rcs.incr, RCSff)
 S3method(rcs.decr, RCSff)
 S3method(rcs.list, RCSff)

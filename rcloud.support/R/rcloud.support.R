@@ -13,26 +13,6 @@
 ## is to move all of these to require the session token to match against
 ## the one we have stored during the login process.
 
-rcloud.load.user.config <- function(user = .session$username, map = FALSE) {
-  payload <- rcs.get(usr.key("config.json", user=user, notebook="system"))
-  if (is.null(payload)) payload <- "null"
-  if (map) paste0('"', user, '": ', paste(payload, collapse='\n')) else payload
-}
-
-rcloud.load.multiple.user.configs <- function(users) {
-  if (length(users) == 0) {
-    "{}"
-  } else {
-    res <- unlist(lapply(rcs.get(usr.key("config.json", user=users, notebook="system"), TRUE), paste, collapse="\n"))
-    paste0('{', paste(paste0('"', users, '": ', res), collapse=','), '}')
-  }
-}
-
-rcloud.save.user.config <- function(user = .session$username, content) {
-  if (rcloud.debug.level()) cat("rcloud.save.user.config(", user, ")\n", sep='')
-  invisible(rcs.set(usr.key("config.json", user=user, notebook="system"), content))
-}
-
 rcloud.get.conf.value <- function(key) {
   Allowed <- c('host', 'github.base.url', 'github.api.url', 'github.gist.url')
   if(key %in% Allowed)
@@ -163,6 +143,7 @@ rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
 }
 
 rcloud.notebook.by.name <- function(name, user=.session$username, path=TRUE) {
+  # fixme
   cfg <- rcloud.load.user.config(user)
   if (cfg == "null") stop("user `", user, "' not found")
   if (inherits(cfg, "try-error")) stop("Error while loading user `", user, "' configuration: ", cfg)
@@ -203,7 +184,106 @@ rcloud.upload.to.notebook <- function(file, name) {
 rcloud.update.notebook <- function(id, content) {
   res <- modify.gist(id, content, ctx = .session$rgithub.context)
   .session$current.notebook <- res
+  if (nzConf("solr.url")) {
+    star.count <- rcloud.notebook.star.count(id)
+    mcparallel(update.solr(res, star.count), detached=TRUE)
+  }
   res
+}
+
+update.solr <- function(notebook, starcount){
+  url <- getConf("solr.url")
+  if (is.null(url)) stop("solr configuration not enabled")
+
+  ## FIXME: gracefully handle unavailability
+  curlTemplate <- paste0(url, "/update/json?commit=true")
+
+  content.files <- notebook$content$files
+  fns <- as.vector(sapply(content.files, function(o) o$filename))
+  ## only index cells for now ...
+  ## FIXME: do we really want to exclude the scratch file?
+  indexable <- grep("^part.*\\.(R|md)$", fns)
+  if (length(indexable)) {
+    content.files <- content.files[indexable]
+    sizes <- as.numeric(sapply(content.files, function(o) o$size))
+    size <- sum(sizes, na.rm=TRUE)
+    desc <- notebook$content$description
+    desc <- gsub("^\"*|\"*$", "", desc)
+    desc <- gsub("^\\\\*|\\\\*$", "", desc)
+    if (length(grep("\"",desc) == 1)) {
+      notebook.description <- strsplit(desc,'\"')
+      desc <- paste(notebook.description[[1]],collapse="\\\"")
+    } else if(length(grep("\\\\",desc) == 1)){
+      notebook.description <- strsplit(desc,'\\\\')
+      desc <- paste(notebook.description[[1]],collapse="\\\\")
+    } else {
+      desc
+    }
+    session.content <- notebook$content
+    ## FIXME: followers is not in the notebook, set to 0 for now
+    metadata<-paste0('{\"id\":\"',session.content$id, '\",\"user\":\"',session.content$user$login, '\",\"created_at\":\"',session.content$created_at, '\",\"updated_at\":\"',session.content$updated_at, '\",\"description\":\"',desc, '\",\"user_url\":\"',session.content$user$url, '\",\"avatar_url\":\"',session.content$user$avatar_url, '\",\"size\":\"',size, '\",\"commited_at\":\"',session.content$updated_at, '\",\"followers\":\"',0, '\",\"public\":\"',session.content$public, '\",\"starcount\":\"',starcount, '\",\"content\":{\"set\":\"\"}}')
+    metadata.list <- fromJSON(metadata)
+    content.files <- unname(lapply(content.files, function(o) list('filename'=o$filename,'content'=o$content)))
+    content.files <- toJSON(content.files)
+    metadata.list$content$set <- content.files
+    completedata <- toJSON(metadata.list)
+    postForm(curlTemplate, .opts = list(
+             postfields = paste("[",completedata,"]",sep=''),
+             httpheader = c('Content-Type' = 'application/json', Accept = 'application/json')))
+  }
+}
+
+rcloud.search <-function(query) {
+  url <- getConf("solr.url")
+  if (is.null(url)) stop("solr is not enabled")
+
+  ## FIXME: shouldn't we URL-encode the query?!?
+  q <- gsub("%20","+",query)
+  solr.url <- paste0(url,"/select?q=",q,"&start=0&rows=1000&wt=json&indent=true&fl=description,id,user,updated_at,starcount&hl=true&hl.fl=content&hl.fragsize=0&hl.maxAnalyzedChars=-1")
+  solr.res <- getURL(solr.url, .encoding = 'utf-8', .mapUnicode=FALSE)
+  solr.res <- fromJSON(solr.res)
+  response.docs <- solr.res$response$docs
+  response.high <- solr.res$highlighting
+  if(is.null(solr.res$error)){
+    if(length(response.docs) > 0){
+      for(i in 1:length(response.high)){
+        if(length(response.high[[i]]) != 0){
+          parts.content <- fromJSON(response.high[[i]]$content)
+          for(j in 1:length(parts.content)){
+            strmatched <- grep("open_b_close",strsplit(parts.content[[j]]$content,'\n')[[1]],value=T,fixed=T)
+            if(length(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1]) !=0)) {
+              if(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])%in%1 | (which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])%in%length(strsplit(parts.content[[j]]$content,'\n')[[1]]))) {
+                parts.content[[j]]$content <- strsplit(parts.content[[j]]$content,'\n')[[1]][which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])]
+              } else
+              parts.content[[j]]$content <- strsplit(parts.content[[j]]$content,'\n')[[1]][(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])-1):(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])+1)]
+            } else
+            parts.content[[j]]$content <- grep("open_b_close",strsplit(parts.content[[j]]$content,'\n')[[1]],value=T,ignore.case=T)
+          }
+          response.high[[i]]$content <- toJSON(parts.content)
+                                        #Handling HTML content
+          response.high[[i]]$content <- gsub("<","&lt;",response.high[[i]]$content)
+          response.high[[i]]$content <- gsub(">","&gt;",response.high[[i]]$content)
+          response.high[[i]]$content <- gsub("open_b_close","<b style=\\\\\"background:yellow\\\\\">",response.high[[i]]$content)
+          response.high[[i]]$content <- gsub("open_/b_close","</b>",response.high[[i]]$content)
+        } else
+        response.high[[i]]$content <-"[{\"filename\":\"part1.R\",\"content\":[]}]"
+      }
+      json<-""
+      for(i in 1:length(response.docs)){
+        time <- solr.res$responseHeader$QTime
+        notebook <- response.docs[[i]]$description
+        id <- response.docs[[i]]$id
+        starcount <- response.docs[[i]]$starcount
+        updated.at <- response.docs[[i]]$updated_at
+        user <- response.docs[[i]]$user
+        parts <- response.high[[i]]$content
+        json[i] <- toJSON(c('QTime'=time,'notebook'=notebook,'id'=id,'starcount'=starcount,'updated_at'=updated.at,'user'=user,'parts'=parts))
+      }
+      return(json)
+    } else
+    return(solr.res$response$docs)
+  } else
+  return(c("error",solr.res$error$msg))
 }
 
 rcloud.create.notebook <- function(content) {
@@ -213,6 +293,7 @@ rcloud.create.notebook <- function(content) {
     rcloud.reset.session()
   }
   res
+
 }
 
 rcloud.rename.notebook <- function(id, new.name)
@@ -222,29 +303,46 @@ rcloud.rename.notebook <- function(id, new.name)
 
 rcloud.fork.notebook <- function(id) fork.gist(id, ctx = .session$rgithub.context)
 
-rcloud.get.users <- function(user) ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
-  gsub("/.*","",rcs.list(usr.key("config.json", user="*", notebook="system")))
+rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
+  ## also note that we are looking deep in the config space - this shold be really much easier ...
+  gsub("/.*","",rcs.list(usr.key(user="*", notebook="system", "config", "current", "notebook")))
+
+# sloooow, but we don't have any other way of verifying the owner
+notebook.is.mine <- function(id) {
+  nb <- rcloud.get.notebook(id)
+  nb$content$user$login == .session$rgithub.context$user$login
+}
 
 rcloud.publish.notebook <- function(id) {
-  nb <- rcloud.get.notebook(id)
-  if (nb$content$user$login == .session$rgithub.context$user$login) {
-    rcs.set(rcs.key("notebook", id, "public"), 1)
+  if(notebook.is.mine(id)) {
+    rcs.set(rcs.key(".notebook", id, "public"), 1)
     TRUE
   } else
     FALSE
 }
 
 rcloud.unpublish.notebook <- function(id) {
-  nb <- rcloud.get.notebook(id)
-  if (nb$content$user$login == .session$rgithub.context$user$login) {
-    rcs.rm(rcs.key("notebook", id, "public"))
+  if(notebook.is.mine(id)) {
+    rcs.rm(rcs.key(".notebook", id, "public"))
     TRUE
   } else
     FALSE
 }
 
 rcloud.is.notebook.published <- function(id) {
-  !is.null(rcs.get(rcs.key("notebook", id, "public")))
+  !is.null(rcs.get(rcs.key(".notebook", id, "public")))
+}
+
+rcloud.is.notebook.visible <- function(id)
+  rcs.get(rcs.key(".notebook", id, "visible"))
+
+rcloud.set.notebook.visibility <- function(id, value) {
+  if(notebook.is.mine(id)) {
+    rcs.set(rcs.key(".notebook", id, "visible"), value != 0)
+    TRUE
+  }
+  else
+    FALSE
 }
 
 rcloud.port.notebooks <- function(url, books, prefix) {
@@ -277,25 +375,11 @@ rcloud.get.completions <- function(text, pos) {
   utils:::.CompletionEnv[["comps"]]
 }
 
-rcloud.search <- function(search.string) {
-  if (nchar(search.string) == 0)
-    list(NULL, NULL)
-  else {
-    cmd <- paste0("find ", getConf("data.root"), "/userfiles -type f -exec grep -iHn ",
-                 search.string,
-                 " {} \\; | sed 's:^", getConf("data.root"), "/userfiles::'")
-    source.results <- system(cmd, intern=TRUE)
-
-    cmd <- paste0("grep -in ", search.string, " ", getConf("data.root"), "/history/main_log.txt")
-    history.results <- rev(system(cmd, intern=TRUE))
-    list(source.results, history.results)
-  }
-}
-
 ## FIXME: won't work - uses a global file!
+## FIXME: should search be using this instead of update notebook?!?
 rcloud.record.cell.execution <- function(user = .session$username, json.string) {
-  cat(paste(paste(Sys.time(), user, json.string, sep="|"), "\n"),
-      file=pathConf("data.root", "history", "main_log.txt"), append=TRUE)
+#  cat(paste(paste(Sys.time(), user, json.string, sep="|"), "\n"),
+#      file=pathConf("data.root", "history", "main_log.txt"), append=TRUE)
 }
 
 rcloud.debug.level <- function() if (hasConf("debug")) getConf("debug") else 0L
@@ -306,12 +390,12 @@ rcloud.debug.level <- function() if (hasConf("debug")) getConf("debug") else 0L
 star.key <- function(notebook)
 {
   user <- .session$username
-  rcs.key("notebook", notebook, "stars", user)
+  rcs.key(".notebook", notebook, "stars", user)
 }
 
 star.count.key <- function(notebook)
 {
-  rcs.key("notebook", notebook, "starcount")
+  rcs.key(".notebook", notebook, "starcount")
 }
 
 rcloud.notebook.star.count <- function(notebook)
@@ -348,7 +432,99 @@ rcloud.unstar.notebook <- function(notebook)
 
 rcloud.get.my.starred.notebooks <- function()
 {
-  rcs.list(star.key("*"))
+  gsub(".notebook/([^/]*).*", "\\1", rcs.list(star.key("*")))
+}
+
+################################################################################
+# config
+
+user.all.notebooks <- function(user) {
+  notebooks <- gsub(".*/", "", rcs.list(usr.key(user=user, notebook="system", "config", "notebooks", "*")))
+  if(user == .session$username)
+    notebooks
+  else # filter notebooks on their visibility before they get to the client
+    notebooks[unlist(rcs.get(usr.key(user=".notebook", notebook=notebooks, "visible"), TRUE))]
+}
+
+rcloud.config.all.notebooks <- function()
+  user.all.notebooks(.session$username)
+
+rcloud.config.all.notebooks.multiple.users <- function(users) {
+  result <- lapply(users, user.all.notebooks)
+  names(result) <- users
+  result
+
+}
+
+rcloud.config.add.notebook <- function(id)
+  rcs.set(usr.key(user=.session$username, notebook="system", "config", "notebooks", id), TRUE)
+
+rcloud.config.remove.notebook <- function(id)
+  rcs.rm(usr.key(user=.session$username, notebook="system", "config", "notebooks", id))
+
+rcloud.config.get.current.notebook <- function() {
+  base <- usr.key(user=.session$username, notebook="system", "config", "current")
+  list(notebook = rcs.get(rcs.key(base, "notebook")),
+       version = rcs.get(rcs.key(base, "version")))
+}
+
+rcloud.config.set.current.notebook <- function(current) {
+  base <- usr.key(user=.session$username, notebook="system", "config", "current")
+  rcs.set(rcs.key(base, "notebook"), current$notebook)
+  rcs.set(rcs.key(base, "version"), current$version)
+}
+
+rcloud.config.new.notebook.number <- function()
+  rcs.incr(usr.key(user=.session$username, notebook="system", "config", "nextwork"))
+
+rcloud.config.get.recent.notebooks <- function() {
+  keys <- rcs.list(usr.key(user=.session$username, notebook="system", "config", "recent", "*"))
+  vals <- rcs.get(keys)
+  names(vals) <- gsub(".*/", "", names(vals))
+  vals
+}
+
+rcloud.config.set.recent.notebook <- function(id, date)
+  rcs.set(usr.key(user=.session$username, notebook="system", "config", "recent", id), date)
+
+rcloud.config.clear.recent.notebook <- function(id)
+  rcs.rm(usr.key(user=.session$username, notebook="system", "config", "recent", id))
+
+rcloud.config.get.user.option <- function(key) {
+  if(length(key)>1) {
+    results <- rcs.get(rcs.key(user=.session$username, notebook="system", "config", key), list=TRUE)
+    names(results) <- gsub(rcs.key(user=.session$username, notebook="system", "config", ""), "", names(results))
+    results
+  }
+  else
+    rcs.get(rcs.key(user=.session$username, notebook="system", "config", key))
+}
+
+rcloud.config.set.user.option <- function(key, value)
+  rcs.set(rcs.key(user=.session$username, notebook="system", "config", key), value)
+
+################################################################################
+# notebook cache
+
+rcloud.get.notebook.info <- function(id) {
+  base <- usr.key(user=".notebook", notebook=id)
+  list(username = rcs.get(rcs.key(base, "username")),
+       description = rcs.get(rcs.key(base, "description")),
+       last_commit = rcs.get(rcs.key(base, "last_commit")),
+       visible = rcs.get(rcs.key(base, "visible")))
+}
+
+rcloud.get.multiple.notebook.infos <- function(ids) {
+  result <- lapply(ids, rcloud.get.notebook.info)
+  names(result) <- ids
+  result
+}
+
+rcloud.set.notebook.info <- function(id, info) {
+  base <- usr.key(user=".notebook", notebook=id)
+  rcs.set(rcs.key(base, "username"), info$username)
+  rcs.set(rcs.key(base, "description"), info$description)
+  rcs.set(rcs.key(base, "last_commit"), info$last_commit)
 }
 
 rcloud.purl.source <- function(contents)

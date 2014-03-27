@@ -1,12 +1,24 @@
+// FIXME this is just a proof of concept - using Rserve console OOBs
+var append_session_info = function(msg) {
+    // one hacky way is to maintain a <pre> that we fill as we go
+    // note that R will happily spit out incomplete lines so it's
+    // not trivial to maintain each output in some separate structure
+    if (!document.getElementById("session-info-out"))
+	$("#session-info").append($("<pre id='session-info-out'></pre>"));
+    $("#session-info-out").append(msg);
+    RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
+};
+
 // FIXME this needs to go away as well.
 var oob_handlers = {
     "browsePath": function(v) {
         var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
-        var width=600;
-        var height=500;
-        var left=screen.width-width;
-        window.open(x,'RCloudHelp','width='+width+',height='+height+',scrollbars=yes,resizable=yes,left='+left);
-    }
+        $("#help-frame").attr("src", x);
+        RCloud.UI.left_panel.collapse($("#collapse-help"), false);
+    },
+    "console.out": append_session_info,
+    "console.msg": append_session_info,
+    "console.err": append_session_info
 };
 
 RCloud.session = {
@@ -19,7 +31,6 @@ RCloud.session = {
         } else {
             return rcloud.with_progress(function(done) {
                 rclient.close();
-                // FIXME this is a bit of an annoying duplication of code on main.js and view.js
                 return new Promise(function(resolve, reject) {
                     rclient = RClient.create({
                         debug: rclient.debug,
@@ -89,6 +100,6 @@ RCloud.session = {
                 }
             });
         });
-        
+
     }
 };

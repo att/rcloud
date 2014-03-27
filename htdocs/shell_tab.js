@@ -57,8 +57,14 @@ var shell = (function() {
         },
         is_old_github: function() {
             return !gist_url_;
-        }, new_markdown_cell: function(content) {
-            return notebook_controller_.append_cell(content, "Markdown");
+        }, new_markdown_cell: function(content, execute) {
+            var cell = notebook_controller_.append_cell(content, "Markdown");
+            RCloud.UI.command_prompt.history.execute(content);
+            if(execute) {
+                cell.execute().then(function() {
+                    $.scrollTo(null, $("#end-of-output"));
+                });
+            }
         }, new_interactive_cell: function(content, execute) {
             var cell = notebook_controller_.append_cell(content, "R");
             RCloud.UI.command_prompt.history.execute(content);
@@ -67,9 +73,15 @@ var shell = (function() {
                     $.scrollTo(null, $("#end-of-output"));
                 });
             }
+            return cell;
         }, insert_markdown_cell_before: function(index) {
             return notebook_controller_.insert_cell("", "Markdown", index);
-        }, load_notebook: function(gistname, version) {
+        }, coalesce_prior_cell: function(cell_model) {
+            return notebook_controller_.coalesce_prior_cell(cell_model);
+        }, split_cell: function(cell_model, point1, point2) {
+            return notebook_controller_.split_cell(cell_model, point1, point2);
+        },
+        load_notebook: function(gistname, version) {
             var that = this;
             function do_load(done) {
                 var oldname = gistname_, oldversion = version_;
@@ -104,6 +116,8 @@ var shell = (function() {
                 done(); // well not really done (just done with cps bleh) FIXME
                 return notebook_controller_.create_notebook(content).then(on_new);
             });
+        }, rename_notebook: function(desc) {
+            return notebook_controller_.rename_notebook(desc);
         }, fork_or_revert_notebook: function(is_mine, gistname, version) {
             // force a full reload in all cases, as a sanity check
             // we might know what the notebook state should be,
@@ -180,14 +194,14 @@ var shell = (function() {
             }
             editor.load_notebook(notebook, version);
         }, export_notebook_as_r_file: function() {
-            rcloud.get_notebook(gistname_, version_, function(notebook) {
+            return rcloud.get_notebook(gistname_, version_).then(function(notebook) {
                 var strings = [];
                 var parts = [];
                 _.each(notebook.files, function(file) {
                     var filename = file.filename;
                     if(/^part/.test(filename)) {
                         var number = parseInt(filename.slice(4).split('.')[0]);
-                        if(!isNaN(NaN)) {
+                        if(!isNaN(number)) {
                             if (file.language === 'R')
                                 parts[number] = "```{r}\n" + file.content + "\n```";
                             else

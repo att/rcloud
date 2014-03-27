@@ -7,7 +7,13 @@ Notebook.create_controller = function(model)
         save_timeout_ = 30000, // 30s
         show_source_checkbox_ = null;
 
-    var default_callback_ = editor.load_callback(null, true, true);
+    var editor_callback_ = editor.load_callback({is_change: true, selroot: true}),
+        default_callback_ = function(notebook) {
+            if(save_button_)
+                ui_utils.disable_bs_button(save_button_);
+            dirty_ = false;
+            return editor_callback_(notebook);
+        };
 
     function append_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
@@ -20,7 +26,7 @@ Notebook.create_controller = function(model)
         var asset_model = Notebook.Asset.create_model(content, filename);
         var asset_controller = Notebook.Asset.create_controller(asset_model);
         asset_model.controller = asset_controller;
-        return {controller: asset_controller, 
+        return {controller: asset_controller,
                 changes: model.append_asset(asset_model, filename)};
     }
 
@@ -52,6 +58,8 @@ Notebook.create_controller = function(model)
                     assets[filename] = [file.content, file.filename];
                 }
             });
+            // we intentionally drop change objects on the floor, here and only here.
+            // that way the cells/assets are checkpointed where they were loaded
             var asset_controller;
             for(i in cells)
                 append_cell_helper(cells[i][0], cells[i][1], cells[i][2]);
@@ -59,12 +67,12 @@ Notebook.create_controller = function(model)
                 var result = append_asset_helper(assets[i][0], assets[i][1]).controller;
                 asset_controller = asset_controller || result;
             }
-            // is there anything else to gist permissions?
             model.user(notebook.user.login);
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
-            asset_controller.select();
-            
+            // it's rare but valid not to have assets
+            if(asset_controller)
+                asset_controller.select();
         }
         return notebook;
     }
@@ -72,95 +80,80 @@ Notebook.create_controller = function(model)
     // calculate the changes needed to get back from the newest version in notebook
     // back to what we are presently displaying (current_gist_)
     function find_changes_from(notebook) {
+        function change_object(obj) {
+            obj.name = function(n) { return n; };
+            return obj;
+        }
         var changes = [];
+
+        // notebook files, current files
         var nf = notebook.files,
-            cf = _.extend({}, current_gist_.files); // to keep track of changes
+            cf = _.extend({}, current_gist_.files); // dupe to keep track of changes
+
+        // find files which must be changed or removed to get from nf to cf
         for(var f in nf) {
             if(f==='r_type' || f==='r_attributes')
                 continue; // R metadata
             if(f in cf) {
                 if(cf[f].language != nf[f].language || cf[f].content != nf[f].content) {
-                    changes.push(nf.change_object({id: f}));
+                    changes.push(change_object({filename: f,
+                                                language: cf[f].language,
+                                                content: cf[f].content}));
                 }
                 delete cf[f];
             }
-            else changes.push(nf.change_object({id: f, erase: true}));
+            else changes.push(change_object({filename: f, erase: true, language: nf[f].language}));
         }
+
+        // find files which must be added to get from nf to cf
         for(f in cf) {
             if(f==='r_type' || f==='r_attributes')
                 continue; // artifact of rserve.js
-            changes.push(nf.change_object({id: f}));
+            changes.push(change_object({filename: f,
+                                        language: cf[f].language,
+                                        content: cf[f].content}));
         }
         return changes;
     }
 
-    function update_notebook(changes, gistname) {
+    function update_notebook(changes, gistname, more) {
         // remove any "empty" changes.  we can keep empty cells on the
         // screen but github will refuse them.  if the user doesn't enter
         // stuff in them before saving, they will disappear on next session
-        changes = changes.filter(function(change) { return !!change.content || change.erase; });
+        changes = changes.filter(function(change) {
+            return change.content || change.erase || change.rename;
+        });
         if (!changes.length)
             return Promise.cast(current_gist_);
         if (model.read_only())
             return Promise.reject("attempted to update read-only notebook");
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
-            // we don't use the gist rename feature because it doesn't
-            // allow renaming x -> y and creating a new x at the same time
-            // instead, create y and if there is no longer any x, erase it
-            var post_names = {};
+            var files = {};
+            // play the changes in order - they must be sequenced so this makes sense
             _.each(changes, function(change) {
-                if (!change.erase) {
-                    var after = change.rename || change.id;
-                    post_names[change.name(after)] = 1;
-                };
-            });
-
-            var filehash = {};
-            _.each(changes, function(change) {
-                var c = {};
-                if(change.content !== undefined)
-                    c.content = change.content;
-                var pre_name = change.name(change.id);
-                if(change.erase || !post_names[pre_name])
-                    filehash[pre_name] = null;
-                if(!change.erase) {
-                    var post_name = change.name(change.rename || change.id);
-                    filehash[post_name] = c;
+                if(change.erase || change.rename) {
+                    files[change.filename] = null;
+                    if(change.rename)
+                        files[change.rename] = {content: change.content};
                 }
+                else files[change.filename] = {content: change.content};
             });
-            return { files: filehash }; 
-            // _.reduce(changes, xlate_change, {})};
-            // var post_names = _.reduce(changes,
-            //                           function(names, change) {
-            //                               if(!change.erase) {
-            //                                   var after = change.rename || change.id;
-            //                                   names[Notebook.part_name(after, change.language)] = 1;
-            //                               }
-            //                               return names;
-            //                           }, {});
-            // function xlate_change(filehash, change) {
-            //     var c = {};
-            //     if(change.content !== undefined)
-            //         c.content = change.content;
-            //     var pre_name = Notebook.part_name(change.id, change.language);
-            //     if(change.erase || !post_names[pre_name])
-            //         filehash[pre_name] = null;
-            //     if(!change.erase) {
-            //         var post_name = Notebook.part_name(change.rename || change.id, change.language);
-            //         filehash[post_name] = c;
-            //     }
-            //     return filehash;
-            // }
+            return {files: files};
         }
-
-        return rcloud.update_notebook(gistname, changes_to_gist(changes))
+        var gist = changes_to_gist(changes);
+        if(more)
+            _.extend(gist, more);
+        return rcloud.update_notebook(gistname, gist)
             .then(function(notebook) {
                 if('error' in notebook)
                     throw notebook;
                 current_gist_ = notebook;
                 return notebook;
             });
+    }
+    function refresh_buffers() {
+        return model.reread_buffers();
     }
 
     function on_dirty() {
@@ -196,35 +189,116 @@ Notebook.create_controller = function(model)
         },
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);
-            update_notebook(cch.changes)
+            update_notebook(refresh_buffers().concat(cch.changes))
                 .then(default_callback_);
             return cch.controller;
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
-            update_notebook(cch.changes)
+            update_notebook(refresh_buffers().concat(cch.changes))
                 .then(default_callback_);
             return cch.controller;
         },
         insert_cell: function(content, type, id) {
             var cch = insert_cell_helper(content, type, id);
-            update_notebook(cch.changes)
+            update_notebook(refresh_buffers().concat(cch.changes))
                 .then(default_callback_);
             return cch.controller;
         },
         remove_cell: function(cell_model) {
-            var changes = model.remove_cell(cell_model);
+            var changes = refresh_buffers().concat(model.remove_cell(cell_model));
             RCloud.UI.command_prompt.prompt.widget.focus(); // there must be a better way
             update_notebook(changes)
                 .then(default_callback_);
         },
         remove_asset: function(asset_model) {
-            var changes = model.remove_asset(asset_model);
+            var changes = refresh_buffers().concat(model.remove_asset(asset_model));
             update_notebook(changes)
                 .then(default_callback_);
         },
         move_cell: function(cell_model, before) {
-            var changes = model.move_cell(cell_model, before ? before.id() : -1);
+            var changes = refresh_buffers().concat(model.move_cell(cell_model, before ? before.id() : -1));
+            update_notebook(changes)
+                .then(default_callback_);
+        },
+        coalesce_prior_cell: function(cell_model) {
+            var prior = model.prior_cell(cell_model);
+            if(!prior)
+                return;
+
+            function opt_cr(text) {
+                if(text.length && text[text.length-1] != '\n')
+                    return text + '\n';
+                return text;
+            }
+            function crunch_quotes(left, right) {
+                var end = /```\n$/, begin = /^```{r}/;
+                if(end.test(left) && begin.test(right))
+                    return left.replace(end, '') + right.replace(begin, '');
+                else return left + right;
+            }
+
+            // note we have to refresh everything and then concat these changes onto
+            // that.  which won't work in general but looks like it is okay to
+            // concatenate a bunch of change content objects with a move or change
+            // to one of the same objects, and an erase of one
+            var new_content, changes = refresh_buffers();
+
+            // this may have to be multiple dispatch when there are more than two languages
+            if(prior.language()==cell_model.language()) {
+                new_content = crunch_quotes(opt_cr(prior.content()),
+                                            cell_model.content());
+                prior.content(new_content);
+                changes = changes.concat(model.update_cell(prior));
+            }
+            else {
+                if(prior.language()==="R") {
+                    new_content = crunch_quotes('```{r}\n' + opt_cr(prior.content()) + '```\n',
+                                                cell_model.content());
+                    prior.content(new_content);
+                    changes = changes.concat(model.change_cell_language(prior, "Markdown"));
+                    changes[changes.length-1].content = new_content; //  NOOOOOO!!!!
+                }
+                else {
+                    new_content = crunch_quotes(opt_cr(prior.content()) + '```{r}\n',
+                                                opt_cr(cell_model.content()) + '```\n');
+                    new_content = new_content.replace(/```\n```{r}\n/, '');
+                    prior.content(new_content);
+                    changes = changes.concat(model.update_cell(prior));
+                }
+            }
+            _.each(prior.views, function(v) { v.show_source(); });
+            update_notebook(changes.concat(model.remove_cell(cell_model)))
+                .then(default_callback_);
+        },
+        split_cell: function(cell_model, point1, point2) {
+            function resplit(a) {
+                for(var i=0; i<a.length-1; ++i)
+                    if(!/\n$/.test(a[i]) && /^\n/.test(a[i+1])) {
+                        a[i] = a[i].concat('\n');
+                        a[i+1] = a[i+1].replace(/^\n/, '');
+                    }
+            }
+            var changes = refresh_buffers();
+            var content = cell_model.content(),
+                parts = [content.substring(0, point1)],
+                id = cell_model.id(), language = cell_model.language();
+            if(point2 === undefined)
+                parts.push(content.substring(point1));
+            else
+                parts.push(content.substring(point1, point2),
+                           content.substring(point2));
+            resplit(parts);
+            cell_model.content(parts[0]);
+            changes = changes.concat(model.update_cell(cell_model));
+            // not great to do multiple inserts here - but not quite important enough to enable insert-n
+            for(var i=1; i<parts.length; ++i)
+                changes = changes.concat(insert_cell_helper(parts[i], language, id+i).changes);
+            update_notebook(changes)
+                .then(default_callback_);
+        },
+        change_cell_language: function(cell_model, language) {
+            var changes = refresh_buffers().concat(model.change_cell_language(cell_model, language));
             update_notebook(changes)
                 .then(default_callback_);
         },
@@ -273,33 +347,32 @@ Notebook.create_controller = function(model)
                     : that.load_notebook(gistname, null); // do a load - we need to refresh
             });
         },
-        refresh_cells: function() {
-            return model.reread_cells();
-        },
         update_cell: function(cell_model) {
-            return update_notebook(model.update_cell(cell_model));
+            return update_notebook(refresh_buffers().concat(model.update_cell(cell_model)))
+                .then(default_callback_);
         },
         update_asset: function(asset_model) {
-            return update_notebook(model.update_asset(asset_model));
+            return update_notebook(refresh_buffers().concat(model.update_asset(asset_model)))
+                .then(default_callback_);
+        },
+        rename_notebook: function(desc) {
+            return update_notebook(refresh_buffers(), null, {description: desc})
+                .then(default_callback_);
         },
         save: function() {
-            if(dirty_) {
-                var changes = this.refresh_cells();
-                update_notebook(changes);
-                if(save_button_)
-                    ui_utils.disable_bs_button(save_button_);
-                dirty_ = false;
-            }
-
+            if(!dirty_)
+                return Promise.resolve(undefined);
+            return update_notebook(refresh_buffers())
+                .then(default_callback_);
         },
         run_all: function() {
             this.save();
-            _.each(model.notebook, function(cell_model) {
+            _.each(model.cells, function(cell_model) {
                 cell_model.controller.set_status_message("Waiting...");
             });
-            
+
             // will ordering bite us in the leg here?
-            var promises = _.map(model.notebook, function(cell_model) {
+            var promises = _.map(model.cells, function(cell_model) {
                 return Promise.resolve().then(function() {
                     cell_model.controller.set_status_message("Computing...");
                     return cell_model.controller.execute();
