@@ -30,7 +30,8 @@ RCloud.create = function(rcloud_ocaps) {
 
     function process_paths(paths) {
         _.each(paths, function(path) {
-            set(path, rcloud_handler(path.join('.'), Promise.promisify(get(path))));
+            var fn = get(path);
+            set(path, fn ? rcloud_handler(path.join('.'), Promise.promisify(fn)) : null);
         });
     }
 
@@ -306,7 +307,7 @@ RCloud.create = function(rcloud_ocaps) {
                 "rcloud.update.notebook",
                 rcloud_ocaps.update_notebookAsync(id, JSON.stringify(content)));
         };
-	/*---------------ADDED THIS FUNCTION FOR SOLR SEARCH FUNCTIONALITY---------------*/
+
         rcloud.search = function (qry) {
             var res;
             $('#divClose').css('width', $(document).width() - 45);
@@ -319,7 +320,7 @@ RCloud.create = function(rcloud_ocaps) {
                 if(d == null || d == "null" || d == "") {
                     alert("No Results Found");
                 } else if(d[0] == "error") {
-                    d[1] = d[1].replace(/\n/g, "<br/>")
+                    d[1] = d[1].replace(/\n/g, "<br/>");
                     alert("ERROR:\n" + d[1]);
                 } else {
                     if(typeof (d) == "string") {
@@ -390,14 +391,14 @@ RCloud.create = function(rcloud_ocaps) {
                 }
             };
             qry = encodeURIComponent(qry);
+            // rcloud.search ...
             rcloud_ocaps.searchAsync(qry).then(function (v) {
                 create_list_of_search_results(v);
                 return v;
             });
         };
-        /*------------------------------------------------------------END------------------------------------------------------------*/
 
-	   rcloud.create_notebook = function(content) {
+	rcloud.create_notebook = function(content) {
             return rcloud_github_handler(
                 "rcloud.create.notebook",
                 rcloud_ocaps.create_notebookAsync(JSON.stringify(content)));

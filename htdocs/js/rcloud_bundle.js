@@ -175,7 +175,8 @@ RCloud.create = function(rcloud_ocaps) {
 
     function process_paths(paths) {
         _.each(paths, function(path) {
-            set(path, rcloud_handler(path.join('.'), Promise.promisify(get(path))));
+            var fn = get(path);
+            set(path, fn ? rcloud_handler(path.join('.'), Promise.promisify(fn)) : null);
         });
     }
 
