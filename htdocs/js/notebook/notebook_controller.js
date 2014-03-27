@@ -117,6 +117,7 @@ Notebook.create_controller = function(model)
     }
 
     function update_notebook(changes, gistname, more) {
+        debugger;
         function add_more_changes(gist) {
             if (_.isUndefined(more))
                 return gist;
@@ -130,8 +131,8 @@ Notebook.create_controller = function(model)
         });
         if (model.read_only())
             return Promise.reject("attempted to update read-only notebook");
-        if (!changes.length) {
-            return Promise.cast(add_more_changes(current_gist_));
+        if (!changes.length && _.isUndefined(more)) {
+            return Promise.cast(current_gist_);
         }
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
