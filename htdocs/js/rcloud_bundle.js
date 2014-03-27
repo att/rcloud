@@ -3519,7 +3519,7 @@ RCloud.UI.search = {
                             star_count = d[i].starcount;
                         }
                         var notebook_id = d[i].id;
-                        var image_string = "<i class=\"icon-star\" style=\"font-size: 120%; line-height: 90%;\"><sub>" + star_count + "</sub></i>";
+                        var image_string = "<i class=\"icon-star\" style=\"font-size: 110%; line-height: 90%;\"><sub>" + star_count + "</sub></i>";
                         d[i].parts = JSON.parse(d[i].parts);
                         var parts_table = "";
                         var inner_table = "";
@@ -3529,19 +3529,15 @@ RCloud.UI.search = {
                             inner_table = "";
                             var ks = Object.keys(d[i].parts[k]);
                             if(ks.length > 0 && d[i].parts[k].content != "") {
-                                if(typeof (d[i].parts[k].content) == "string") {
+                                var content = d[i].parts[k].content;
+                                if(typeof content == "string")
+                                    content = [content];
+                                if(content.length > 0)
                                     parts_table += "<tr><th style=\"font-size:11px\">" + d[i].parts[k].filename + "</th></tr>";
-                                    inner_table += "<tr><td class='search-result-line-number'>" + 1 + "</td><td class='search-result-code'><code>" + d[i].parts[k].content + "</code></td></tr>";
-                                    added_parts++;
-                                } else {
-                                    if(d[i].parts[k].content.length > 0) {
-                                        parts_table += "<tr><th style=\"font-size:11px\">" + d[i].parts[k].filename + "</th></tr>";
-                                    }
-                                    for(var l = 0; l < d[i].parts[k].content.length; l++) {
-                                        inner_table += "<tr><td class='search-result-line-number'>" + (l + 1) + "</td><td class='search-result-code'><code>" + d[i].parts[k].content[l] + "</code></td></tr>";
-                                    }
-                                    added_parts++;
-                                }
+                                for(var l = 0; l < content.length; l++)
+                                    inner_table += "<tr><td class='search-result-line-number'>" + (l + 1) + "</td><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
+
+                                added_parts++;
                             }
                             if(inner_table != "") {
                                 inner_table = "<table>" + inner_table + "</table>";
