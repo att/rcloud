@@ -39,6 +39,7 @@ RCloud.session = {
                             rcloud = RCloud.create(ocaps.rcloud);
                             rcloud.session_init(rcloud.username(), rcloud.github_token());
                             rcloud.display.set_device_pixel_ratio();
+                            rcloud.api.set_url(window.location);
 
                             resolve(rcloud.init_client_side_data().then(function() {
                                 $("#output").find(".alert").remove();
@@ -92,6 +93,7 @@ RCloud.session = {
                         });
                     }
                     rcloud.display.set_device_pixel_ratio();
+                    rcloud.api.set_url(window.location.href);
 
                     resolve(rcloud.init_client_side_data());
                 }, on_data: function(v) {

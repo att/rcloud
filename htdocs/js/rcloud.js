@@ -106,7 +106,9 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "enable_echo"],
             ["api", "disable_echo"],
             ["api", "enable_warnings"],
-            ["api", "disable_warnings"]
+            ["api", "disable_warnings"],
+            ["api", "set_url"],
+            ["api", "get_url"]
         ];
         process_paths(paths);
 
@@ -251,6 +253,12 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.api.enable_echo = function() {
             return rcloud_ocaps.api.enable_echoAsync();
+        };
+        rcloud.api.set_url = function(url) {
+            return rcloud_ocaps.api.set_urlAsync(url);
+        };
+        rcloud.api.get_url = function() {
+            return rcloud_ocaps.api.get_urlAsync();
         };
     }
 
