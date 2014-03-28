@@ -420,7 +420,6 @@ RCloud.create = function(rcloud_ocaps) {
             function do_upload(path, file) {
                 var upload_name = path + '/' + file.name;
                 rcloud_ocaps.file_upload.create(upload_name, force, function(err, result) {
-                    debugger;
                     if (RCloud.is_exception(result)) {
                         on_failure(RCloud.exception_message(result));
                         return;

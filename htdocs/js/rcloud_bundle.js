@@ -565,7 +565,6 @@ RCloud.create = function(rcloud_ocaps) {
             function do_upload(path, file) {
                 var upload_name = path + '/' + file.name;
                 rcloud_ocaps.file_upload.create(upload_name, force, function(err, result) {
-                    debugger;
                     if (RCloud.is_exception(result)) {
                         on_failure(RCloud.exception_message(result));
                         return;
@@ -2289,7 +2288,6 @@ Notebook.create_controller = function(model)
     }
 
     function update_notebook(changes, gistname, more) {
-        debugger;
         function add_more_changes(gist) {
             if (_.isUndefined(more))
                 return gist;
@@ -2823,7 +2821,6 @@ RCloud.UI.init = function() {
     });
 
     $("#insert-new-cell").click(function() {
-        debugger;
         var language = $("#insert-cell-language option:selected").text();
         if (language === 'Markdown') {
             shell.new_markdown_cell("");

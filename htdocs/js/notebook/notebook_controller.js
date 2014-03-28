@@ -117,7 +117,6 @@ Notebook.create_controller = function(model)
     }
 
     function update_notebook(changes, gistname, more) {
-        debugger;
         function add_more_changes(gist) {
             if (_.isUndefined(more))
                 return gist;

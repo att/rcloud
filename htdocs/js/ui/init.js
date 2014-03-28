@@ -99,7 +99,6 @@ RCloud.UI.init = function() {
     });
 
     $("#insert-new-cell").click(function() {
-        debugger;
         var language = $("#insert-cell-language option:selected").text();
         if (language === 'Markdown') {
             shell.new_markdown_cell("");
