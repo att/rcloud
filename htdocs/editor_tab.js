@@ -1155,7 +1155,9 @@ var editor = function () {
                      window.history.replaceState)
                     .bind(window.history)
                  */
-                window.history.replaceState("rcloud.notebook", null, make_main_url(result.id, options.version));
+                var url = make_main_url(result.id, options.version);
+                window.history.replaceState("rcloud.notebook", null, url);
+                rcloud.api.set_url(url);
 
                 var history;
                 // when loading an old version you get truncated history

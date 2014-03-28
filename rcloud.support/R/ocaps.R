@@ -93,7 +93,9 @@ unauthenticated.ocaps <- function()
         disable_warnings = make.oc(rcloud.disable.warnings),
         enable_warnings = make.oc(rcloud.enable.warnings),
         disable_echo = make.oc(rcloud.disable.echo),
-        enable_echo = make.oc(rcloud.enable.echo)
+        enable_echo = make.oc(rcloud.enable.echo),
+        set_url = make.oc(rcloud.set.url),
+        get_url = make.oc(rcloud.get.url)
         )
       )
     )
