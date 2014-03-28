@@ -34,7 +34,7 @@ var editor = function () {
         num_stars_ = {}, // number of stars for all known notebooks
         my_stars_ = {}, // set of notebooks starred by me
         my_friends_ = {},
-        invalid_notebooks_ = {};
+        invalid_notebooks_ = {},
         current_ = null; // current notebook and version
 
     // view
