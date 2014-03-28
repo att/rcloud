@@ -1103,7 +1103,7 @@ var editor = function () {
             if(node.user !== username_)
                 throw "attempt to set visibility on notebook not mine";
             set_visibility(node.gistname, visible);
-            update_tree_entry(node.root, username_, node.gistname, get_notebook_info(node.gistname), false);
+            update_notebook_view(username_, node.gistname, get_notebook_info(node.gistname), false);
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
             shell.fork_or_revert_notebook(is_mine, gistname, version)
