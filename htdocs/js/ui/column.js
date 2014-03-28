@@ -113,7 +113,6 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         },
         resize: function() {
             var cw = this.calcwidth();
-            console.log("resizing " + sel_column + " to " + cw);
             this.colwidth(cw);
             RCloud.UI.middle_column.update();
         },
