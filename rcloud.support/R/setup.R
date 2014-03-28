@@ -6,6 +6,16 @@
 configure.rcloud <- function () {
   require(rcloud.support) ## make sure we're on the search path (may not be needed once we switch to OCap)
 
+  root <- Sys.getenv("ROOT")
+  if (!nzchar(root)) {
+    if (file.exists("/data/rcloud/conf/rcloud.conf")) {
+      root <- "/data/rcloud"
+      Sys.setenv(ROOT=root)
+    } else stop("ERROR: ROOT not set - please set ROOT first before using")
+  }
+  if (!file.exists(file.path(root, "conf", "rcloud.conf")))
+    stop("ERROR: ROOT is invalid - it must point to the root of the RCloud installation")
+
   ## it is useful to have access to the root of your
   ## installation from R scripts -- for RCloud this is *mandatory*
   setConf("root", Sys.getenv("ROOT"))
