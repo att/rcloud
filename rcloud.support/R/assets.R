@@ -11,21 +11,21 @@ rcloud.get.asset <- function(name, notebook=.session$current.notebook, version=N
     notebook <- res
   }
   asset <- notebook$content$files[[name]]$content
-  if (is.null(asset)) {
-    if (!quiet)
-      stop("cannot find asset `",name,"'")
-    return(NULL)
-  }
-  fn <- name
-  ## FIXME: make .b64 support somehow formal ...
-  if (length(grep("\\.b64$", name))) {
+  if (is.null(asset)) { ## re-try for binary assets with .b64 extension
+    asset <- notebook$content$files[[paste0(name, ".b64")]]$content
+    if (is.null(asset)) {
+      if (!quiet)
+        stop("cannot find asset `",name,"'")
+      return(NULL)
+    }
     asset <- base64decode(asset)
-    fn <- gsub("\\.b64$", "", name)
-  }
+  } else if (length(grep("\\.b64$",name))) ## we got .b64 name explicitly so jsut decode it
+    asset <- base64decode(asset)
+  
   if (as.file) {
     ad <- tempfile(paste0(notebook$content$id, '-assets'))
     dir.create(ad, FALSE, FALSE, "0700")
-    ad <- file.path(ad, fn)
+    ad <- file.path(ad, name)
     if (is.raw(asset))
       writeBin(asset, ad)
     else
