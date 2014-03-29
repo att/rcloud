@@ -51,6 +51,7 @@ RClient = {
                 result.post_error(result.disconnection_error("Socket was closed. Goodbye!"));
                 shutdown();
             }
+            result.running = false;
         };
         // detect where we will show errors
 
