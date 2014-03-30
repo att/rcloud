@@ -58,7 +58,7 @@ RClient = {
         var show_error_area;
         if(error_dest_.length)
             show_error_area = function() {
-                RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
+                RCloud.UI.right_panel.collapse($("#collapse-session-info"), false, false);
             };
         else {
             error_dest_ = $("#output");
@@ -2686,8 +2686,8 @@ RCloud.session = {
                 host:  location.href.replace(/^http/,"ws").replace(/#.*$/,""),
                 on_connect: function(ocaps) {
                     rcloud = RCloud.create(ocaps.rcloud);
+                    var promise;
                     if (allow_anonymous) {
-                        var promise;
                         if (rcloud.authenticated) {
                             promise = rcloud.session_init(rcloud.username(), rcloud.github_token());
                         } else {
@@ -2705,6 +2705,10 @@ RCloud.session = {
                         }
                         rcloud.session_init(rcloud.username(), rcloud.github_token()).then(function(hello) {
                             rclient.post_response(hello);
+                        }).catch(function(error) {
+                            rclient.close();
+                            reject(error);
+                            return;
                         });
                     }
                     rcloud.display.set_device_pixel_ratio();
@@ -2927,7 +2931,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     function togglers() {
         return $(sel_accordion + " > .panel > div.panel-heading > a.accordion-toggle");
     }
-    function collapse(target, collapse, persist) {
+    function set_collapse(target, collapse, persist) {
         target.data("would-collapse", collapse);
         if(persist && rcloud.config) {
             var opt = 'ui/' + target[0].id;
@@ -2991,7 +2995,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                     if(id === sel_accordion)
                         hide_column = settings[k];
                     else if(typeof settings[k] === "boolean")
-                        collapse($(id), settings[k], false);
+                        set_collapse($(id), settings[k], false);
                 }
                 // do the column last because it will affect all its children
                 if(typeof hide_column === "boolean") {
@@ -3003,21 +3007,22 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 else that.show(true); // make sure we have a setting
             });
         },
-        collapse: function(target, whether) {
+        collapse: function(target, whether, persist) {
+            if(persist === undefined)
+                persist = true;
             if(collapsed_) {
-                collapse(target, false, true);
+                set_collapse(target, false, persist);
                 this.show(true);
                 return;
             }
-            collapse(target, whether, true);
+            set_collapse(target, whether, persist);
             if(all_collapsed())
-                this.hide(true);
+                this.hide(persist);
             else
-                this.show(true);
+                this.show(persist);
         },
         resize: function() {
             var cw = this.calcwidth();
-            console.log("resizing " + sel_column + " to " + cw);
             this.colwidth(cw);
             RCloud.UI.middle_column.update();
         },
@@ -3032,7 +3037,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         },
         show: function(persist) {
             if(all_collapsed())
-                collapse($(collapsibles()[0]), false, true);
+                set_collapse($(collapsibles()[0]), false, true);
             collapsibles().each(function() {
                 $(this).collapse($(this).data("would-collapse") ? "hide" : "show");
             });
