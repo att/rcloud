@@ -508,10 +508,11 @@ rcloud.config.set.user.option <- function(key, value)
 
 rcloud.get.notebook.info <- function(id) {
   base <- usr.key(user=".notebook", notebook=id)
-  list(username = rcs.get(rcs.key(base, "username")),
-       description = rcs.get(rcs.key(base, "description")),
-       last_commit = rcs.get(rcs.key(base, "last_commit")),
-       visible = rcs.get(rcs.key(base, "visible")))
+  fields <- c("username", "description", "last_commit", "visible")
+  keys <- rcs.key(base, fields)
+  results <- rcs.get(keys, list=TRUE)
+  names(results) <- fields
+  results
 }
 
 rcloud.get.multiple.notebook.infos <- function(ids) {

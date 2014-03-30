@@ -1,0 +1,12 @@
+#!/bin/bash
+cd conf
+if [ $# -gt 0 ]; then
+   cp rcloud.conf.$1 rcloud.conf && echo $1 > selected.conf.txt
+fi
+if [ -a selected.conf.txt ]
+then cat selected.conf.txt
+else echo "No configuration selected with this tool."
+fi
+
+
+
