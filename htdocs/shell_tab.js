@@ -83,6 +83,7 @@ var shell = (function() {
         },
         load_notebook: function(gistname, version) {
             var that = this;
+            notebook_controller_.save();
             function do_load(done) {
                 var oldname = gistname_, oldversion = version_;
                 gistname_ = gistname;
@@ -110,6 +111,7 @@ var shell = (function() {
         }, save_notebook: function() {
             notebook_controller_.save();
         }, new_notebook: function(desc) {
+            notebook_controller_.save();
             return RCloud.session.reset().then(function(done) {
                 var content = {description: desc, 'public': false,
                                files: {"scratch.R": {content:"# scratch file"}}};
