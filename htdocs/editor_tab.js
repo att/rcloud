@@ -973,6 +973,8 @@ var editor = function () {
                 }
             }
         }
+        else
+            $tree_.tree('toggle', event.node);
         return false;
     }
     function tree_open(event) {
