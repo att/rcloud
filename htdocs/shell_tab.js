@@ -114,7 +114,7 @@ var shell = (function() {
             notebook_controller_.save();
             return RCloud.session.reset().then(function(done) {
                 var content = {description: desc, 'public': false,
-                               files: {"scratch.R": {content:"# scratch file"}}};
+                               files: {"scratch.R": {content:"# keep snippets here while working with your notebook's cells"}}};
                 done(); // well not really done (just done with cps bleh) FIXME
                 return notebook_controller_.create_notebook(content).then(on_new);
             });
