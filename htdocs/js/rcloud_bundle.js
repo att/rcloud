@@ -2494,12 +2494,8 @@ Notebook.create_controller = function(model)
         },
         create_notebook: function(content) {
             var that = this;
-            return rcloud.create_notebook(content).then(function(notebook) {
-                that.clear();
-                model.read_only(notebook.user.login != rcloud.username());
-                current_gist_ = notebook;
-                return notebook;
-            });
+            return rcloud.create_notebook(content)
+                .then(_.bind(on_load,this,null));
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
             var that = this;
