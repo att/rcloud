@@ -1307,7 +1307,7 @@ Notebook.Asset.create_model = function(content, filename)
                 throw new Error("set language of asset not supported");
             var extension = filename.match(/\.([^.]+)$/);
             if (!extension)
-                throw new Error("extension does not exist");
+                return "";
             extension = extension[1];
             return extension;
         },
