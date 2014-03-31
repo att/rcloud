@@ -215,7 +215,7 @@ var shell = (function() {
                     if (!_.isUndefined(parts[i]))
                         strings.push(parts[i]);
                 strings.push("");
-                rcloud.purl_source(strings.join("\n"), function(purled_lines) {
+                rcloud.purl_source(strings.join("\n")).then(function(purled_lines) {
                     var purled_source = purled_lines.join("\n");
                     var a=document.createElement('a');
                     a.textContent='download';

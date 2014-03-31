@@ -324,7 +324,7 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.port_notebooksAsync(source, notebooks, prefix);
         };
         rcloud.purl_source = function(source) {
-            rcloud_ocaps.purl_sourceAsync(source);
+            return rcloud_ocaps.purl_sourceAsync(source);
         };
 
         rcloud.get_completions = function(text, pos) {
