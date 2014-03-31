@@ -6,7 +6,7 @@ rcloud.get.asset <- function(name, notebook=.session$current.notebook, version=N
   if (!cached) {
     if (!is.character(notebook) || length(notebook) < 1)
       stop("invalid notebook specification")
-    res <- rcloud.get.notebook(id, version)
+    res <- rcloud.get.notebook(notebook, version)
     if (!isTRUE(res$ok)) stop("cannot get notebook `",notebook[1],"'")
     notebook <- res
   }
