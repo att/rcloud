@@ -144,6 +144,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     if (am_read_only) {
         disable(remove_button);
         disable(insert_cell_button);
+        disable(split_button);
+        disable(coalesce_button);
     }
     widget.setReadOnly(am_read_only);
     widget.setOptions({

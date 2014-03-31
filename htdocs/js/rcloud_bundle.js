@@ -1514,6 +1514,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     if (am_read_only) {
         disable(remove_button);
         disable(insert_cell_button);
+        disable(split_button);
+        disable(coalesce_button);
     }
     widget.setReadOnly(am_read_only);
     widget.setOptions({
@@ -2228,6 +2230,7 @@ Notebook.create_controller = function(model)
     function on_load(version, notebook) {
         if (!_.isUndefined(notebook.files)) {
             var i;
+            model.read_only(version != null || notebook.user.login != rcloud.username());
             this.clear();
             var cells = {}; // could rely on alphabetic input instead of gathering
             var assets = {};
@@ -2256,9 +2259,8 @@ Notebook.create_controller = function(model)
                 asset_controller = asset_controller || result;
             }
             model.user(notebook.user.login);
-            model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
-            // it's rare but valid not to have assets
+
             if(asset_controller)
                 asset_controller.select();
             else
