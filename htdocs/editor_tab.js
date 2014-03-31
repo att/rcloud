@@ -714,18 +714,6 @@ var editor = function () {
         }
         remove_node(node);
         update_notebook_view(user, gistname, get_notebook_info(gistname));
-        /*
-        if(gistname === current_.notebook) {
-            star_notebook_button_.set_state(false);
-            $('#curr-star-count').text(num_stars_[gistname] || 0);
-        }
-        node = $tree_.tree('getNodeById', node_id('alls', user, gistname));
-        if(select)
-            select_node(node);
-        var all_star = $(node.element).find('.fontawesome-button.star');
-        all_star[0].set_state(false);
-        all_star.find('sub').text(num_stars_[gistname] || 0);
-         */
     }
 
     function update_notebook_from_gist(result, history, selroot) {
