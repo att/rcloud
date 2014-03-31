@@ -85,8 +85,12 @@ RCloud.UI.scratchpad = {
         if (!this.current_model) {
             that.change_content("");
             that.widget.resize();
+            that.widget.setReadOnly(true);
+            $('#scratchpad-editor .ace_gutter,.ace_cursor-layer,.ace_marker-layer').hide();
             return;
         }
+        that.widget.setReadOnly(false);
+        $('#scratchpad-editor .ace_gutter,.ace_cursor-layer,.ace_marker-layer').show();
         this.change_content(this.current_model.content());
         // restore cursor
         var model_cursor = asset_model.cursor_position();

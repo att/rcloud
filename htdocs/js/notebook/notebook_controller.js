@@ -77,6 +77,8 @@ Notebook.create_controller = function(model)
             // it's rare but valid not to have assets
             if(asset_controller)
                 asset_controller.select();
+            else
+                RCloud.UI.scratchpad.set_model(null);
         }
         return notebook;
     }

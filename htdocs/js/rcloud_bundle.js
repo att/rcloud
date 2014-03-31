@@ -2261,6 +2261,8 @@ Notebook.create_controller = function(model)
             // it's rare but valid not to have assets
             if(asset_controller)
                 asset_controller.select();
+            else
+                RCloud.UI.scratchpad.set_model(null);
         }
         return notebook;
     }
@@ -3166,7 +3168,7 @@ RCloud.UI.scratchpad = {
             that.widget = widget;
             var doc = session.doc;
             session.on('change', function() {
-                div.css({'height': ui_utils.ace_editor_height(widget, 30) + "px"});
+                div.css({'height': ui_utils.ace_editor_height(widget, 25) + "px"});
                 widget.resize();
             });
 
@@ -3178,7 +3180,7 @@ RCloud.UI.scratchpad = {
             widget.resize();
             ui_utils.on_next_tick(function() {
                 session.getUndoManager().reset();
-                div.css({'height': ui_utils.ace_editor_height(widget, 30) + "px"});
+                div.css({'height': ui_utils.ace_editor_height(widget, 25) + "px"});
                 widget.resize();
             });
             that.change_content = ui_utils.ignore_programmatic_changes(
@@ -3229,8 +3231,12 @@ RCloud.UI.scratchpad = {
         if (!this.current_model) {
             that.change_content("");
             that.widget.resize();
+            that.widget.setReadOnly(true);
+            $('#scratchpad-editor .ace_gutter,.ace_cursor-layer,.ace_marker-layer').hide();
             return;
         }
+        that.widget.setReadOnly(false);
+        $('#scratchpad-editor .ace_gutter,.ace_cursor-layer,.ace_marker-layer').show();
         this.change_content(this.current_model.content());
         // restore cursor
         var model_cursor = asset_model.cursor_position();
