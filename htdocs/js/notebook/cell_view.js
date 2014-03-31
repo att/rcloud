@@ -147,6 +147,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         disable(split_button);
         disable(coalesce_button);
     }
+    else {
+        // no coalesce at top
+        if(!cell_model.parent_model.prior_cell(cell_model))
+            coalesce_button.hide();
+    }
     widget.setReadOnly(am_read_only);
     widget.setOptions({
         enableBasicAutocompletion: true
