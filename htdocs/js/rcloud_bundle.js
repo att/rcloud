@@ -2146,7 +2146,10 @@ Notebook.create_model = function()
                 if (contents[i] !== null)
                     changes.push(this.cells[i].change_object());
             var asset_change = RCloud.UI.scratchpad.update_model();
-            if (asset_change) {
+            // too subtle here: update_model distinguishes between no change (null)
+            // and change-to-empty.  we care about change-to-empty and let github
+            // delete the asset but leave it on the screen until reload (as with cells)
+            if (asset_change !== null) {
                 var active_asset_model = RCloud.UI.scratchpad.current_model;
                 changes.push(active_asset_model.change_object());
             }
