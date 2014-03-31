@@ -20,7 +20,6 @@ window.onload = function() {
                 $("#output > pre").first().hide();
             }
             rcloud.install_notebook_stylesheets().then(function() {
-                debugger;
                 shell.notebook.controller.run_all().then(function() {
                     shell.notebook.controller.hide_r_source();
                 });
