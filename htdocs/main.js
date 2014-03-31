@@ -4,7 +4,6 @@ window.onload = function() {
     function getURLParameter(name) {
         return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
     }
-    console.log("hello");
 
     RCloud.UI.init();
     RCloud.session.init().then(function() {
