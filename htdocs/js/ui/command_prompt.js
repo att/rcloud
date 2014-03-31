@@ -143,26 +143,26 @@ RCloud.UI.command_prompt = {
             name: 'up-with-history',
             bindKey: 'up',
             exec: function(widget, args, request) {
-                var pos = widget.getCursorPosition();
+                var pos = widget.getCursorPositionScreen();
                 if(pos.row > 0)
                     up_handler.exec(widget, args, request);
                 else {
                     change_prompt(that.history.last());
-                    var r = last_row(widget);
-                    ui_utils.ace_set_pos(widget, r, last_col(widget, r));
+                    var r = widget.getSession().getScreenLength();
+                    ui_utils.ace_set_pos(widget, r, pos.column);
                 }
             }
         }, {
             name: 'down-with-history',
             bindKey: 'down',
             exec: function(widget, args, request) {
-                var pos = widget.getCursorPosition();
-                var r = last_row(widget);
-                if(pos.row < r)
+                var pos = widget.getCursorPositionScreen();
+                var r = widget.getSession().getScreenLength();
+                if(pos.row < r-1)
                     down_handler.exec(widget, args, request);
                 else {
                     change_prompt(that.history.next());
-                    ui_utils.ace_set_pos(widget, 0, last_col(widget, 0));
+                    ui_utils.ace_set_pos(widget, 0, pos.column);
                 }
             }
         }
