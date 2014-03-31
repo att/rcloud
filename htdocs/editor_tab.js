@@ -756,25 +756,13 @@ var editor = function () {
             var parent = $tree_.tree('getNodeById', node_id('friends'));
             var node = insert_alpha(data, parent);
             var anode = $tree_.tree('getNodeById', node_id('alls', user));
-            $tree_.tree('loadData', anode.children, node);
+            if(anode)
+                $tree_.tree('loadData', anode.children, node);
         }
         else {
             var n2 = $tree_.tree('getNodeById', node_id('friends', user));
             $tree_.tree('removeNode', n2);
         }
-/*
-            parent = $tree_.tree('getNodeById', node_id('alls'));
-        var data = {
-            sort_order: my_friends_[user] ? ordering.MYFRIENDS : ordering.SUBFOLDER,
-            name: node.name || node.label
-        };
-        var before = find_sort_point(data, parent);
-        if(before)
-            $tree_.tree('moveNode', node, before, 'before');
-        else
-            $tree_.tree('moveNode', node, parent.children[parent.children.length-1], 'after');
-        node.sort_order = data.sort_order;
-*/
     }
 
     function display_date(ds) {
