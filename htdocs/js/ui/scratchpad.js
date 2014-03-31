@@ -83,7 +83,7 @@ RCloud.UI.scratchpad = {
         }
         this.current_model = asset_model;
         if (!this.current_model) {
-            that.session.setValue("");
+            that.change_content("");
             that.widget.resize();
             return;
         }
@@ -112,15 +112,14 @@ RCloud.UI.scratchpad = {
     }, content_updated: function() {
         var range = this.widget.getSelection().getRange();
         var changed = this.current_model.content();
-        this.widget.setValue(changed);
+        this.change_content(changed);
         this.widget.getSelection().setSelectionRange(range);
         return changed;
     }, clear: function() {
-        var that = this;
         if(!this.exists)
             return;
-        that.session.setValue("");
-        that.session.getUndoManager().reset();
-        that.widget.resize();
+        this.change_content("");
+        this.session.getUndoManager().reset();
+        this.widget.resize();
     }
 };

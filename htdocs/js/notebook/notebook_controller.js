@@ -12,6 +12,10 @@ Notebook.create_controller = function(model)
             if(save_button_)
                 ui_utils.disable_bs_button(save_button_);
             dirty_ = false;
+            if(save_timer_) {
+                window.clearTimeout(save_timer_);
+                save_timer_ = null;
+            }
             return editor_callback_(notebook);
         };
 

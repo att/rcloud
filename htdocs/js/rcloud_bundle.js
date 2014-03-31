@@ -2193,6 +2193,10 @@ Notebook.create_controller = function(model)
             if(save_button_)
                 ui_utils.disable_bs_button(save_button_);
             dirty_ = false;
+            if(save_timer_) {
+                window.clearTimeout(save_timer_);
+                save_timer_ = null;
+            }
             return editor_callback_(notebook);
         };
 
@@ -3220,7 +3224,7 @@ RCloud.UI.scratchpad = {
         }
         this.current_model = asset_model;
         if (!this.current_model) {
-            that.session.setValue("");
+            that.change_content("");
             that.widget.resize();
             return;
         }
@@ -3249,16 +3253,15 @@ RCloud.UI.scratchpad = {
     }, content_updated: function() {
         var range = this.widget.getSelection().getRange();
         var changed = this.current_model.content();
-        this.widget.setValue(changed);
+        this.change_content(changed);
         this.widget.getSelection().setSelectionRange(range);
         return changed;
     }, clear: function() {
-        var that = this;
         if(!this.exists)
             return;
-        that.session.setValue("");
-        that.session.getUndoManager().reset();
-        that.widget.resize();
+        this.change_content("");
+        this.session.getUndoManager().reset();
+        this.widget.resize();
     }
 };
 RCloud.UI.command_prompt = {
@@ -3459,12 +3462,18 @@ RCloud.UI.configure_readonly = function() {
         fork_revert.show();
         $('#save-notebook').hide();
         $('#output').sortable('disable');
+        $('#upload-to-notebook')
+            .prop('checked', false)
+            .attr("disabled", true);
     }
     else {
         $('#prompt-div').show();
         fork_revert.hide();
         $('#save-notebook').show();
         $('#output').sortable('enable');
+        $('#upload-to-notebook')
+            .prop('checked', false)
+            .removeAttr("disabled");
     }
 };
 RCloud.UI.notebook_title = (function() {
