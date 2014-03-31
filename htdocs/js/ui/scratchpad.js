@@ -106,7 +106,15 @@ RCloud.UI.scratchpad = {
     },
     // this behaves like cell_view's update_model
     update_model: function() {
-        return this.current_model.content(this.widget.getSession().getValue());
+        return this.current_model
+            ? this.current_model.content(this.widget.getSession().getValue())
+            : null;
+    }, content_updated: function() {
+        var range = this.widget.getSelection().getRange();
+        var changed = this.current_model.content();
+        this.widget.setValue(changed);
+        this.widget.getSelection().setSelectionRange(range);
+        return changed;
     }, clear: function() {
         var that = this;
         if(!this.exists)

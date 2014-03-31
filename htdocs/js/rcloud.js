@@ -383,7 +383,7 @@ RCloud.create = function(rcloud_ocaps) {
                         fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                     } else {
                         // done, push to notebook.
-                        var content = String.fromCharCode.apply(null, new Uint16Array(file_to_upload.buffer));
+                        var content = String.fromCharCode.apply(null, new Uint16Array(file_to_upload));
                         if(Notebook.empty_for_github(content))
                             on_failure("empty");
                         else rcloud_ocaps.notebook_upload(

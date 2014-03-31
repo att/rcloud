@@ -528,7 +528,7 @@ RCloud.create = function(rcloud_ocaps) {
                         fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                     } else {
                         // done, push to notebook.
-                        var content = String.fromCharCode.apply(null, new Uint16Array(file_to_upload.buffer));
+                        var content = String.fromCharCode.apply(null, new Uint16Array(file_to_upload));
                         if(Notebook.empty_for_github(content))
                             on_failure("empty");
                         else rcloud_ocaps.notebook_upload(
@@ -1250,6 +1250,8 @@ Notebook.Asset.create_html_view = function(asset_model)
             anchor.text(asset_model.filename());
         },
         content_updated: function() {
+            if(asset_model.active())
+                RCloud.UI.scratchpad.content_updated();
         },
         active_updated: function() {
             if (asset_model.active())
@@ -2765,25 +2767,36 @@ RCloud.UI.init = function() {
     });
     $("#upload-submit").click(function() {
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        var replacement = _.find(shell.notebook.model.assets, function(asset) {
+        var replacing = _.find(shell.notebook.model.assets, function(asset) {
             return asset.filename() == $("#file")[0].files[0].name;
-        }) !== undefined;
+        });
         function success(lst) {
             var path = lst[0], file = lst[1], notebook = lst[2];
             $("#file-upload-div").append(
                 bootstrap_utils.alert({
                     "class": 'alert-info',
-                    text: (to_notebook ? "Asset " : "File ") + file.name + (replacement ? " replaced." : " uploaded."),
+                    text: (to_notebook ? "Asset " : "File ") + file.name + (replacing ? " replaced." : " uploaded."),
                     on_close: function() {
                         $(".progress").hide();
                     }
                 })
             );
-            if(to_notebook)
+            if(to_notebook) {
+                var content = notebook.files[file.name].content;
                 editor.update_notebook_file_list(notebook.files);
+                var controller;
+                if(replacing) {
+                    replacing.content(content);
+                    shell.notebook.controller.update_asset(replacing);
+                    controller = replacing.controller;
+                }
+                else {
+                    controller = shell.notebook.controller.append_asset(content, file.name);
+                }
+                controller.select();
+            }
         };
 
-        // FIXME check for more failures besides file exists
         function failure(what) {
             var overwrite_click = function() {
                 rcloud.upload_file(true, function(err, value) {
@@ -3220,7 +3233,15 @@ RCloud.UI.scratchpad = {
     },
     // this behaves like cell_view's update_model
     update_model: function() {
-        return this.current_model.content(this.widget.getSession().getValue());
+        return this.current_model
+            ? this.current_model.content(this.widget.getSession().getValue())
+            : null;
+    }, content_updated: function() {
+        var range = this.widget.getSelection().getRange();
+        var changed = this.current_model.content();
+        this.widget.setValue(changed);
+        this.widget.getSelection().setSelectionRange(range);
+        return changed;
     }, clear: function() {
         var that = this;
         if(!this.exists)

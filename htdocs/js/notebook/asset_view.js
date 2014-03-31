@@ -21,6 +21,8 @@ Notebook.Asset.create_html_view = function(asset_model)
             anchor.text(asset_model.filename());
         },
         content_updated: function() {
+            if(asset_model.active())
+                RCloud.UI.scratchpad.content_updated();
         },
         active_updated: function() {
             if (asset_model.active())
