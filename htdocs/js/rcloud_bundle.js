@@ -3232,11 +3232,11 @@ RCloud.UI.scratchpad = {
             that.change_content("");
             that.widget.resize();
             that.widget.setReadOnly(true);
-            $('#scratchpad-editor .ace_gutter,.ace_cursor-layer,.ace_marker-layer').hide();
+            $('#scratchpad-editor > *').hide();
             return;
         }
         that.widget.setReadOnly(false);
-        $('#scratchpad-editor .ace_gutter,.ace_cursor-layer,.ace_marker-layer').show();
+        $('#scratchpad-editor > *').show();
         this.change_content(this.current_model.content());
         // restore cursor
         var model_cursor = asset_model.cursor_position();
