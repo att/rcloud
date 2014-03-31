@@ -19,3 +19,7 @@ Notebook.part_name = function(id, language) {
 Notebook.empty_for_github = function(text) {
     return /^\s*$/.test(text);
 };
+
+Notebook.is_part_name = function(filename) {
+    return filename.match(/^part\d+\.([rR]|[mM][dD])$/);
+};

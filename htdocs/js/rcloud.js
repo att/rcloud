@@ -402,6 +402,10 @@ RCloud.create = function(rcloud_ocaps) {
             var file=$("#file")[0].files[0];
             if(_.isUndefined(file))
                 throw new Error("No file selected!");
+            if(Notebook.is_part_name(file.name)) {
+                on_failure("badname");
+                return;
+            }
 
             rcloud_ocaps.file_upload.upload_path(function(err, path) {
                 if (err) {

@@ -31,6 +31,8 @@ RCloud.UI.init = function() {
         shell.import_notebook_file();
     });
     $("#upload-submit").click(function() {
+        if($("#file")[0].files.length===0)
+            return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
         var replacing = _.find(shell.notebook.model.assets, function(asset) {
             return asset.filename() == $("#file")[0].files[0].name;
@@ -80,7 +82,7 @@ RCloud.UI.init = function() {
             var alert_element = $("<div></div>");
             var p;
             if(what==="exists") {
-                p = $("<p>File exists. </p>");
+                p = $("<p>File exists.</p>");
                 var overwrite = bootstrap_utils
                         .button({"class": 'btn-danger'})
                         .click(overwrite_click)
@@ -88,7 +90,10 @@ RCloud.UI.init = function() {
                 p.append(overwrite);
             }
             else if(what==="empty") {
-                p = $("<p>File is empty. </p>");
+                p = $("<p>File is empty.</p>");
+            }
+            else if(what==="badname") {
+                p = $("<p>Filename not allowed.</p>");
             }
             alert_element.append(p);
             $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));

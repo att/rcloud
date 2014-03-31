@@ -1243,7 +1243,7 @@ var editor = function () {
             // FIXME natural sort!
             var files_out = _(files).pairs().filter(function(v) {
                 var k = v[0];
-                return !k.match(/\.([rR]|[mM][dD])$/) && k !== "r_type" && k !== "r_attributes";
+                return !Notebook.is_part_name(k) && k !== "r_type" && k !== "r_attributes";
             });
             if(files_out.length)
                 $("#notebook-assets-header").show();
