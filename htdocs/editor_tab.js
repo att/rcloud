@@ -291,9 +291,10 @@ var editor = function () {
         var friend_subtrees = alls_root.children.filter(function(subtree) {
             var user = subtree.id.replace("/alls/","");
             return my_friends_[user]>0;
-        });
-        friend_subtrees.forEach(function(subtree) {
-            subtree.id = subtree.id.replace("/alls/", "/friends/");
+        }).map(function(subtree) {
+            var copy = _.extend({}, subtree);
+            copy.id = copy.id.replace("/alls/", "/friends/");
+            return copy;
         });
         return [
             {
@@ -745,20 +746,21 @@ var editor = function () {
     }
 
     function change_folder_friendness(user) {
-        var node = $tree_.tree('getNodeById', node_id('alls', user));
         if(my_friends_[user]) {
             var mine = user === username_; // yes it is possible I'm not my own friend
             var data = {
                 label: mine ? "My Notebooks" : someone_elses(user),
                 id: node_id('friends', user),
-                sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER,
-                children: node.children
+                sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER
             };
-            $tree_.tree('addNode', data); // copy
+            var parent = $tree_.tree('getNodeById', node_id('friends'));
+            var node = insert_alpha(data, parent);
+            var anode = $tree_.tree('getNodeById', node_id('alls', user));
+            $tree_.tree('loadData', anode.children, node);
         }
         else {
             var n2 = $tree_.tree('getNodeById', node_id('friends', user));
-            $tree_.tree('deleteNode', n2);
+            $tree_.tree('removeNode', n2);
         }
 /*
             parent = $tree_.tree('getNodeById', node_id('alls'));
