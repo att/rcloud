@@ -167,6 +167,8 @@ RCloud.UI.init = function() {
             items: "> .notebook-cell",
             start: function(e, info) {
                 $(e.toElement).addClass("grabbing");
+                // http://stackoverflow.com/questions/6140680/jquery-sortable-placeholder-height-problem
+                info.placeholder.height(info.item.height());
             },
             stop: function(e, info) {
                 $(e.toElement).removeClass("grabbing");
@@ -179,7 +181,8 @@ RCloud.UI.init = function() {
             },
             handle: " .ace_gutter-layer",
             scroll: true,
-            scrollSensitivity: 40
+            scrollSensitivity: 40,
+            forcePlaceholderSize: true
         });
     }
     make_cells_sortable();
