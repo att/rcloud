@@ -32,12 +32,15 @@ RCloud.UI.init = function() {
     });
     $("#upload-submit").click(function() {
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
+        var replacement = _.find(shell.notebook.model.assets, function(asset) {
+            return asset.filename() == $("#file")[0].files[0].name;
+        }) !== undefined;
         function success(lst) {
             var path = lst[0], file = lst[1], notebook = lst[2];
             $("#file-upload-div").append(
                 bootstrap_utils.alert({
                     "class": 'alert-info',
-                    text: (to_notebook ? "Asset " : "File ") + file.name + " uploaded.",
+                    text: (to_notebook ? "Asset " : "File ") + file.name + (replacement ? " replaced." : " uploaded."),
                     on_close: function() {
                         $(".progress").hide();
                     }
