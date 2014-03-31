@@ -1058,7 +1058,7 @@ var editor = function () {
                 });
         },
         validate_name: function(newname) {
-            return newname && !/^\s+$/.test(newname); // not null and not empty or just whitespace
+            return newname && !Notebook.empty_for_github(newname); // not null and not empty or just whitespace
         },
         rename_notebook: function(desc) {
             return shell.rename_notebook(desc);

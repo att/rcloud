@@ -50,8 +50,7 @@ RCloud.UI.init = function() {
                 editor.update_notebook_file_list(notebook.files);
         };
 
-        // FIXME check for more failures besides file exists
-        function failure() {
+        function failure(what) {
             var overwrite_click = function() {
                 rcloud.upload_file(true, function(err, value) {
                     if (err) {
@@ -67,13 +66,19 @@ RCloud.UI.init = function() {
                 });
             };
             var alert_element = $("<div></div>");
-            var p = $("<p>File exists. </p>");
+            var p;
+            if(what==="exists") {
+                p = $("<p>File exists. </p>");
+                var overwrite = bootstrap_utils
+                        .button({"class": 'btn-danger'})
+                        .click(overwrite_click)
+                        .text("Overwrite");
+                p.append(overwrite);
+            }
+            else if(what==="empty") {
+                p = $("<p>File is empty. </p>");
+            }
             alert_element.append(p);
-            var overwrite = bootstrap_utils
-                .button({"class": 'btn-danger'})
-                .click(overwrite_click)
-                .text("Overwrite");
-            p.append(overwrite);
             $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
         }
 

@@ -15,3 +15,7 @@ Notebook.part_name = function(id, language) {
     }
     return 'part' + id + '.' + ext;
 };
+
+Notebook.empty_for_github = function(text) {
+    return /^\s*$/.test(text);
+};

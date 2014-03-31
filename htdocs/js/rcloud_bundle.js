@@ -528,10 +528,13 @@ RCloud.create = function(rcloud_ocaps) {
                         fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                     } else {
                         // done, push to notebook.
-                        rcloud_ocaps.notebook_upload(
+                        var content = String.fromCharCode.apply(null, new Uint16Array(file_to_upload.buffer));
+                        if(Notebook.empty_for_github(content))
+                            on_failure("empty");
+                        else rcloud_ocaps.notebook_upload(
                             file_to_upload.buffer, file.name, function(err, result) {
                                 if (err) {
-                                    on_failure(err);
+                                    on_failure("exists", err);
                                 } else {
                                     on_success([file_to_upload, file, result.content]);
                                 }
@@ -1143,7 +1146,7 @@ Notebook.Buffer.create_model = function(content) {
     var checkpoint_ = "";
 
     function is_empty(text) {
-        return /^\s*$/.test(text);
+        return Notebook.empty_for_github(text);
     }
 
     var result = {
@@ -2614,6 +2617,10 @@ Notebook.part_name = function(id, language) {
     }
     return 'part' + id + '.' + ext;
 };
+
+Notebook.empty_for_github = function(text) {
+    return /^\s*$/.test(text);
+};
 // FIXME this is just a proof of concept - using Rserve console OOBs
 var append_session_info = function(msg) {
     // one hacky way is to maintain a <pre> that we fill as we go
@@ -2777,7 +2784,7 @@ RCloud.UI.init = function() {
         };
 
         // FIXME check for more failures besides file exists
-        function failure() {
+        function failure(what) {
             var overwrite_click = function() {
                 rcloud.upload_file(true, function(err, value) {
                     if (err) {
@@ -2793,13 +2800,19 @@ RCloud.UI.init = function() {
                 });
             };
             var alert_element = $("<div></div>");
-            var p = $("<p>File exists. </p>");
+            var p;
+            if(what==="exists") {
+                p = $("<p>File exists. </p>");
+                var overwrite = bootstrap_utils
+                        .button({"class": 'btn-danger'})
+                        .click(overwrite_click)
+                        .text("Overwrite");
+                p.append(overwrite);
+            }
+            else if(what==="empty") {
+                p = $("<p>File is empty. </p>");
+            }
             alert_element.append(p);
-            var overwrite = bootstrap_utils
-                .button({"class": 'btn-danger'})
-                .click(overwrite_click)
-                .text("Overwrite");
-            p.append(overwrite);
             $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
         }
 
