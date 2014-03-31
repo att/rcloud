@@ -285,9 +285,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             if (readonly) {
                 disable(remove_button);
                 disable(insert_cell_button);
+                disable(split_button);
+                disable(coalesce_button);
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
+                enable(split_button);
+                enable(coalesce_button);
             }
         },
 
