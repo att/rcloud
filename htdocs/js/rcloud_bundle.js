@@ -1589,8 +1589,24 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             }
 
             // click on code to edit
-            $("code.r", r_result_div).off('click')
-                .click(result.show_source);
+            var code_div = $("code.r", r_result_div);
+            code_div.off('click');
+            if(!shell.is_view_mode()) {
+                // distinguish between a click and a drag
+                // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
+                code_div.on('mousedown', function(e) {
+                    $(this).data('p0', { x: e.pageX, y: e.pageY });
+                }).on('mouseup', function(e) {
+                    var p0 = $(this).data('p0');
+                    if(p0) {
+                        var p1 = { x: e.pageX, y: e.pageY },
+                            d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
+                        if (d < 4) {
+                            result.show_source();
+                        }
+                    }
+                });
+            }
 
             // we use the cached version of DPR instead of getting window.devicePixelRatio
             // because it might have changed (by moving the user agent window across monitors)

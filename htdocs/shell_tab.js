@@ -7,7 +7,8 @@ var shell = (function() {
         gist_url_ = null,
         notebook_model_ = Notebook.create_model(),
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
-        notebook_controller_ = Notebook.create_controller(notebook_model_);
+        notebook_controller_ = Notebook.create_controller(notebook_model_),
+        view_mode_ = window.location.href.match("/view.html");
 
     function sanitize_notebook(notebook) {
         notebook = _.pick(notebook, 'description', 'files');
@@ -37,7 +38,6 @@ var shell = (function() {
         return notebook;
     }
 
-    var first = true;
     var result = {
         notebook: {
             model: notebook_model_,
@@ -56,7 +56,11 @@ var shell = (function() {
         },
         is_old_github: function() {
             return !gist_url_;
-        }, new_markdown_cell: function(content, execute) {
+        },
+        is_view_mode: function() {
+            return view_mode_;
+        },
+        new_markdown_cell: function(content, execute) {
             var cell = notebook_controller_.append_cell(content, "Markdown");
             RCloud.UI.command_prompt.history.execute(content);
             if(execute) {
