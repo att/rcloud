@@ -45,6 +45,9 @@ Notebook.create_controller = function(model)
         if (!_.isUndefined(notebook.files)) {
             var i;
             model.read_only(version != null || notebook.user.login != rcloud.username());
+            // we can't do much with a notebook with no name, so give it one
+            if(!notebook.description)
+                notebook.description = "(untitled)";
             this.clear();
             var cells = {}; // could rely on alphabetic input instead of gathering
             var assets = {};

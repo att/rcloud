@@ -1185,10 +1185,6 @@ var editor = function () {
                  selroot: null,
                  push_history: true}, opts);
             return function(result) {
-                if(!result.description)
-                    result.description = "(no name)";
-                    //throw new Error("Invalid notebook (must have description)");
-
                 current_ = {notebook: result.id, version: options.version};
                 rcloud.config.set_current_notebook(current_);
                 rcloud.config.set_recent_notebook(result.id, (new Date()).toString());
