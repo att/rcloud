@@ -112,7 +112,7 @@ RCloud.UI.command_prompt = {
         }
 
         function restore_prompt() {
-            var cmd = that.init();
+            var cmd = that.history.init();
             change_prompt(cmd);
             var r = last_row(widget);
             ui_utils.ace_set_pos(widget, r, last_col(widget, r));
