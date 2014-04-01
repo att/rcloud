@@ -70,8 +70,8 @@ RCloud.session = {
                 host:  location.href.replace(/^http/,"ws").replace(/#.*$/,""),
                 on_connect: function(ocaps) {
                     rcloud = RCloud.create(ocaps.rcloud);
-                    var promise;
                     if (allow_anonymous) {
+                        var promise;
                         if (rcloud.authenticated) {
                             promise = rcloud.session_init(rcloud.username(), rcloud.github_token());
                         } else {
@@ -89,7 +89,7 @@ RCloud.session = {
                         }
                         rcloud.session_init(rcloud.username(), rcloud.github_token()).then(function(hello) {
                             rclient.post_response(hello);
-                        }).catch(function(error) {
+                        }).catch(function(error) { // e.g. couldn't connect with github
                             rclient.close();
                             reject(error);
                             return;

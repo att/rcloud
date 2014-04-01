@@ -7,8 +7,7 @@ var shell = (function() {
         gist_url_ = null,
         notebook_model_ = Notebook.create_model(),
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
-        notebook_controller_ = Notebook.create_controller(notebook_model_),
-        first_session_ = true;
+        notebook_controller_ = Notebook.create_controller(notebook_model_);
 
     function sanitize_notebook(notebook) {
         notebook = _.pick(notebook, 'description', 'files');
