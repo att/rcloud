@@ -287,14 +287,25 @@ var editor = function () {
             children: user_nodes.sort(compare_nodes)
         };
     }
+    function duplicate_tree_data(tree, f) {
+        var t2 = f(tree);
+        if(tree.children) {
+            var ch2 = [];
+            for(var i=0; i<tree.children.length; ++i)
+                ch2.push(duplicate_tree_data(tree.children[i], f));
+            t2.children = ch2;
+        }
+        return t2;
+    }
     function populate_friends(alls_root) {
         var friend_subtrees = alls_root.children.filter(function(subtree) {
-            var user = subtree.id.replace("/alls/","");
-            return my_friends_[user]>0;
+            return my_friends_[subtree.id.replace("/alls/","")]>0;
         }).map(function(subtree) {
-            var copy = _.extend({}, subtree);
-            copy.id = copy.id.replace("/alls/", "/friends/");
-            return copy;
+            return duplicate_tree_data(subtree, function(datum) {
+                var d2 = _.extend({}, datum);
+                d2.id = datum.id.replace("/alls/", "/friends/");
+                return d2;
+            });
         });
         return [
             {
@@ -700,9 +711,16 @@ var editor = function () {
     }
 
     function remove_notebook_view(user, gistname) {
+        function do_remove(id) {
+            var node = $tree_.tree('getNodeById', id);
+            if(node)
+                remove_node(node);
+            else
+                console.log("tried to remove node that doesn't exist: " + id);
+        }
         if(my_friends_[user])
-            remove_node($tree_.tree('getNodeById', node_id('friends', user, gistname)));
-        remove_node($tree_.tree('getNodeById', node_id('alls', user, gistname)));
+            do_remove(node_id('friends', user, gistname));
+        do_remove(node_id('alls', user, gistname));
     }
 
     function unstar_notebook_view(user, gistname, select) {
@@ -1168,7 +1186,8 @@ var editor = function () {
                  push_history: true}, opts);
             return function(result) {
                 if(!result.description)
-                    throw "Invalid notebook (must have description)";
+                    result.description = "(no name)";
+                    //throw new Error("Invalid notebook (must have description)");
 
                 current_ = {notebook: result.id, version: options.version};
                 rcloud.config.set_current_notebook(current_);
