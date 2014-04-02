@@ -442,8 +442,10 @@ user.all.notebooks <- function(user) {
     notebooks
   else { # filter notebooks on their visibility before they get to the client
     visible <- unlist(rcs.get(usr.key(user=".notebook", notebook=notebooks, "visible"), TRUE))
-    names(visible) <- gsub("\\.notebook/(.*)/visible","\\1", names(visible))
-    Filter(function(id) visible[id], notebooks)
+    if (length(visible)) {
+      visible.notebooks <- gsub("\\.notebook/(.*)/visible","\\1", names(visible))
+      notebooks[notebooks %in% visible.notebooks]
+    } else character()
   }
 }
 
