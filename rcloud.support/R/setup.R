@@ -2,16 +2,35 @@
 # setup the r-side environment
 # this is called once in the main Rserve instance, so it should do and load
 # everything that is common to all connections
-# the per-connection setup is done by start.rcloud()
-configure.rcloud <- function () {
-  require(rcloud.support) ## make sure we're on the search path (may not be needed once we switch to OCap)
+# the per-connection setup is done by start.cloud()
+#
+# mode = "startup" is assuming regular startup via Rserve
+# mode = "script"  will attempt to login anonymously, intended to be
+#                  used in scripts
+configure.rcloud <- function (mode=c("startup", "script")) {
+  ## FIXME: should not be needed - try out?
+  require(rcloud.support)
+  
+  ## FIXME: this is needed, because github is only in Suggests
+  ##        since it's not on CRAN. We load it for convenience
+  ##        later but this is a note that it's really needed.
+  require(github)
 
+  mode <- match.arg(mode)
+  
   ## it is useful to have access to the root of your
   ## installation from R scripts -- for RCloud this is *mandatory*
   setConf("root", Sys.getenv("ROOT"))
   if (!nzConf("root")) {
-    setConf("root", "/var/FastRWeb")
-    warning("Invalid ROOT - falling back to", getConf("root"))
+    ## some fall-back attempts
+    for (guess in c("/data/rcloud", "/var/rcloud", "/usr/local/rcloud")) {
+      if (file.exists(file.path(guess, "conf", "rcloud.conf"))) {
+        setConf("root", guess)
+        warning("ROOT is unset, falling back to `", getConf("root"), "'")
+      }
+    }
+    if (!nzConf("root"))
+      stop("FATAL: ROOT not specified and cannot guess RCloud location, please set ROOT!")
   }
 
   ## forward our HTTP handler so Rserve can use it
@@ -144,9 +163,54 @@ configure.rcloud <- function () {
 
   options(HTTPUserAgent=paste(getOption("HTTPUserAgent"), "- RCloud (http://github.com/cscheid/rcloud)"))
 
-  TRUE
+  ## determine verison/revision/branch
+  ##
+  ## in absence of a VERSION file claim 0.0
+  ver <- 0.0
+  v.parts <- c(0L, 0L, 0L)
+  f.ver <- "0.0-UNKNOWN"
+  rev <- ""
+  branch <- ""
+  revFn <- pathConf("root", "REVISION")
+  verFn <- pathConf("root", "VERSION")
+  if (file.exists(revFn)) {
+    vl <- readLines(revFn)
+    branch <- vl[1]
+    rev <- substr(vl[2],1,7)
+  }
+  if (file.exists(verFn)) {
+    f.ver <- readLines(verFn, 1L)
+    ver <- gsub("[^0-9.]+.*","", f.ver)
+    v.parts <- as.integer(strsplit(ver, ".", TRUE)[[1]])
+    if (length(v.parts) >= 2)
+      ver <- as.numeric(paste(v.parts[1], v.parts[2], sep='.'))
+    else
+      ver <- v.parts[1]
+    v.parts <- c(v.parts, 0L, 0L)
+  }
+  
+  rcloud.info <- list()
+  rcloud.version <- ver
+  rcloud.info$version.string <- f.ver
+  rcloud.info$ver.major <- v.parts[1]
+  rcloud.info$ver.minor <- v.parts[2]
+  rcloud.info$ver.patch <- v.parts[3]
+  rcloud.info$revision <- rev
+  rcloud.info$branch <- branch
+
+  .info$rcloud.info <- rcloud.info
+  .info$rcloud.version <- rcloud.version
+
+  if (mode == "script")
+    rcloud.support:::start.rcloud.anonymously()
+  else
+    TRUE
 }
 
+rcloud.version <- function() .info$rcloud.version
+rcloud.info <- function(name) if (missing(name)) .info$rcloud.info else .info$rcloud.info[[name]]
+
+.info <- new.env(emptyenv())
 
 start.rcloud.common <- function(...) {
 
