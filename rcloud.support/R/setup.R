@@ -144,9 +144,51 @@ configure.rcloud <- function () {
 
   options(HTTPUserAgent=paste(getOption("HTTPUserAgent"), "- RCloud (http://github.com/cscheid/rcloud)"))
 
+  ## determine verison/revision/branch
+  ##
+  ## in absence of a VERSION file claim 0.0
+  ver <- 0.0
+  v.parts <- c(0L, 0L, 0L)
+  f.ver <- "0.0-UNKNOWN"
+  rev <- ""
+  branch <- ""
+  revFn <- pathConf("root", "REVISION")
+  verFn <- pathConf("root", "VERSION")
+  if (file.exists(revFn)) {
+    vl <- readLines(revFn)
+    branch <- vl[1]
+    rev <- substr(vl[2],1,7)
+  }
+  if (file.exists(verFn)) {
+    f.ver <- readLines(verFn, 1L)
+    ver <- gsub("[^0-9.]+.*","", f.ver)
+    v.parts <- as.integer(strsplit(ver, ".", TRUE)[[1]])
+    if (length(v.parts) >= 2)
+      ver <- as.numeric(paste(v.parts[1], v.parts[2], sep='.'))
+    else
+      ver <- v.parts[1]
+    v.parts <- c(v.parts, 0L, 0L)
+  }
+  
+  rcloud.info <- list()
+  rcloud.version <- ver
+  rcloud.info$version.string <- f.ver
+  rcloud.info$ver.major <- v.parts[1]
+  rcloud.info$ver.minor <- v.parts[2]
+  rcloud.info$ver.patch <- v.parts[3]
+  rcloud.info$revision <- rev
+  rcloud.info$branch <- branch
+
+  .info$rcloud.info <- rcloud.info
+  .info$rcloud.version <- rcloud.version
+
   TRUE
 }
 
+rcloud.version <- function() .info$rcloud.version
+rcloud.info <- function(name) if (missing(name)) .info$rcloud.info else .info$rcloud.info[[name]]
+
+.info <- new.env(emptyenv())
 
 start.rcloud.common <- function(...) {
 

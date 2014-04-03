@@ -76,11 +76,8 @@ rcloud.session.init <- function(...) {
   .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
   start.rcloud(...)
   rcloud.reset.session()
-  revFn <- pathConf("root", "REVISION")
-  verFn <- pathConf("root", "VERSION")
-  ver <- 'RCloud '
-  if (file.exists(verFn)) try({ ver <- paste0(ver, readLines(verFn)[1L], " ") })
-  if (file.exists(revFn)) try({ vl <- readLines(revFn); ver <- paste0(ver, "(", vl[1], "/", substr(vl[2],1,7),"), ") })
+  ver <- paste0('RCloud ', rcloud.info("version.string"), ' ')
+  if (nzchar(rcloud.info("revision"))) ver <- paste0(ver, "(", rcloud.info("branch"), "/", rcloud.info("revision"), "), ")
   paste0(ver, R.version.string, "<br>Welcome, ", .session$username)
 }
 
