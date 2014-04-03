@@ -250,9 +250,20 @@ start.rcloud.common <- function(...) {
   })
 
   ## while at it, pass other requests as OOB, too
-  options(pager = function(...) self.oobSend(list("pager", ...)))
-  options(editor = function(...) self.oobSend(list("editor", ...)))
-
+  options(pager = function(files, header, title, delete.file) {
+    content <- lapply(files, function(fn) {
+      c <- readLines(fn)
+      if (isTRUE(delete.file)) unlink(fn)
+      paste(c, collapse='\n')
+    })
+    self.oobSend(list("pager", content, header, title))
+  })
+  options(editor = function(what, file, name) {
+    ## FIXME: this should be oobMessage()
+    if (nzchar(file)) file <- paste(readLines(file), collapse="\n")
+    self.oobSend(list("editor", what, file, name))
+  })
+  
   ## and some options that may be of interest
   options(demo.ask = FALSE)
   options(example.ask = FALSE)
