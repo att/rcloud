@@ -117,6 +117,48 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             var cw = this.calcwidth();
             this.colwidth(cw);
             RCloud.UI.middle_column.update();
+            var heights = {}, cbles = collapsibles(), ncollapse = cbles.length;
+            var greedy_one = null;
+            cbles.each(function() {
+                if(!$(this).hasClass("out") && !$(this).data("would-collapse"))
+                    heights[this.id] = $(this).find(".widget-vsize:not(.out)").height();
+                if($(this).attr("data-widgethdeight")=="greedy")
+                    greedy_one = $(this);
+            });
+            var heading_height =  $(sel_accordion + " .panel-heading").height(); // height of first heading
+            var available = window.innerHeight - 51 - ncollapse*heading_height;
+            var id, left = available;
+            for(id in heights)
+                left -= heights[id];
+            if(left>=0) {
+                // they all fit, now just give the rest to the greedy one if any
+                if(greedy_one != null) {
+                    var h = heights[greedy_one.id().get(0).id] + left;
+                    greedy_one.find(".panel-body").height(h);
+                }
+            }
+            else {
+                // they didn't fit
+                var count = ncollapse, done = false;
+                left = available;
+
+                // see which need less than an even split and be done with those
+                while(count && !done) {
+                    var split = left/ncollapse;
+                    done = true;
+                    for(id in heights)
+                        if(heights[id] < split) {
+                            left -= heights[id];
+                            --count;
+                            delete heights[id];
+                            done = false;
+                        }
+                }
+                // split the rest among the remainders
+                split = left/count;
+                for(id in heights)
+                    $(id).find(".panel-body").height(split);
+            }
         },
         hide: function(persist) {
             // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
