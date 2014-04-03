@@ -440,15 +440,12 @@ user.all.notebooks <- function(user) {
   notebooks <- gsub(".*/", "", rcs.list(usr.key(user=user, notebook="system", "config", "notebooks", "*")))
   if(user == .session$username)
     notebooks
-  else if(length(notebooks)) { # filter notebooks on their visibility before they get to the client
     visible <- unlist(rcs.get(usr.key(user=".notebook", notebook=notebooks, "visible"), TRUE))
-    if(length(visible)) {
-      names(visible) <- gsub("\\.notebook/(.*)/visible","\\1", names(visible))
-      Filter(function(id) visible[id], notebooks)
-    }
-    else NULL
+    if (length(visible)) {
+      visible.notebooks <- gsub("\\.notebook/(.*)/visible","\\1", names(visible))
+      notebooks[notebooks %in% visible.notebooks]
+    } else character()
   }
-  else NULL
 }
 
 rcloud.config.all.notebooks <- function()
