@@ -120,7 +120,6 @@ RCloud.UI.command_prompt = {
 
         ui_utils.install_common_ace_key_bindings(widget);
 
-        // note ace.js typo which we need to correct when we update ace
         var up_handler = widget.commands.commandKeyBinding[0]["up"],
             down_handler = widget.commands.commandKeyBinding[0]["down"];
         widget.commands.addCommands([{
