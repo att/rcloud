@@ -505,7 +505,7 @@ pre {
     margin-bottom: 51px;
 }
 
-.rcloud-cellarea {
+#rcloud-cellarea {
     height: 80vh;
     overflow-y: scroll;
     overflow-x: hidden;

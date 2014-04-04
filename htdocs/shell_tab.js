@@ -65,7 +65,7 @@ var shell = (function() {
             RCloud.UI.command_prompt.history.execute(content);
             if(execute) {
                 cell.execute().then(function() {
-                    $.scrollTo(null, $("#end-of-output"));
+                    $("#rcloud-cellarea").scrollTo(null, $("#end-of-output"));
                 });
             }
         }, new_interactive_cell: function(content, execute) {
@@ -73,7 +73,7 @@ var shell = (function() {
             RCloud.UI.command_prompt.history.execute(content);
             if(execute) {
                 cell.execute().then(function() {
-                    $.scrollTo(null, $("#end-of-output"));
+                    $("#rcloud-cellarea").scrollTo(null, $("#end-of-output"));
                 });
             }
             return cell;
