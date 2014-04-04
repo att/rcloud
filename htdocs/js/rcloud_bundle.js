@@ -127,7 +127,8 @@ RClient = {
             post_response: function (msg) {
                 var d = $("<pre class='response'></pre>").html(msg);
                 $("#output").append(d);
-                window.scrollTo(0, document.body.scrollHeight);
+                // not sure what this was for
+                //window.scrollTo(0, document.body.scrollHeight);
             },
 
             post_rejection: function(e) {
@@ -2685,9 +2686,24 @@ var oob_handlers = {
         $("#help-frame").attr("src", x);
         RCloud.UI.left_panel.collapse($("#collapse-help"), false);
     },
+    "pager": function(v) {
+	var files = v[0], header = v[1], title = v[2];
+	// FIXME: show this somewhere somehow ...
+	append_session_info("pager.header:" + header +"\npager.title: "+title+"\n");
+	append_session_info("contents:" + files);
+    },
+    "editor": function(v) {
+	// what is an object to edit, content is file content to edit
+	var what = v[0], content = v[1], name = v[2];
+	// FIXME: do somethign with it - eventually this
+	// should be a modal thing - for now we shoudl at least
+	// show the content ...
+	append_session_info("what: "+ what + "\ncontents:" + content + "\nname: "+name+"\n");
+    },
     "console.out": append_session_info,
     "console.msg": append_session_info,
     "console.err": append_session_info
+    // NOTE: "idle": ... can be used to handle idle pings from Rserve if we care ..
 };
 
 RCloud.session = {
@@ -3428,7 +3444,6 @@ RCloud.UI.command_prompt = {
 
         ui_utils.install_common_ace_key_bindings(widget);
 
-        // note ace.js typo which we need to correct when we update ace
         var up_handler = widget.commands.commandKeyBinding[0]["up"],
             down_handler = widget.commands.commandKeyBinding[0]["down"];
         widget.commands.addCommands([{
