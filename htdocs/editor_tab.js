@@ -287,6 +287,7 @@ var editor = function () {
             children: user_nodes.sort(compare_nodes)
         };
     }
+
     function duplicate_tree_data(tree, f) {
         var t2 = f(tree);
         if(tree.children) {
@@ -297,15 +298,19 @@ var editor = function () {
         }
         return t2;
     }
+
+    function friend_from_all(datum) {
+        var d2 = _.pick(datum, "label", "name", "gistname", "user", "visible", "last_commit", "sort_order");
+        d2.id = datum.id.replace("/alls/", "/friends/");
+        d2.root = "friends";
+        return d2;
+    }
+
     function populate_friends(alls_root) {
         var friend_subtrees = alls_root.children.filter(function(subtree) {
             return my_friends_[subtree.id.replace("/alls/","")]>0;
         }).map(function(subtree) {
-            return duplicate_tree_data(subtree, function(datum) {
-                var d2 = _.extend({}, datum);
-                d2.id = datum.id.replace("/alls/", "/friends/");
-                return d2;
-            });
+            return duplicate_tree_data(subtree, friend_from_all);
         });
         return [
             {
@@ -422,8 +427,6 @@ var editor = function () {
             pdat = null,
             node = null;
         if(!parent) {
-            if(user===username_)
-                console.log("surprised not to find my own folder");
             var mine = user === username_; // yes it is possible I'm not my own friend
             parent = $tree_.tree('getNodeById', node_id(root));
             if(!parent)
@@ -753,17 +756,22 @@ var editor = function () {
 
     function change_folder_friendness(user) {
         if(my_friends_[user]) {
-            var mine = user === username_; // yes it is possible I'm not my own friend
-            var data = {
-                label: mine ? "My Notebooks" : someone_elses(user),
-                id: node_id('friends', user),
-                sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER
-            };
-            var parent = $tree_.tree('getNodeById', node_id('friends'));
-            var node = insert_alpha(data, parent);
             var anode = $tree_.tree('getNodeById', node_id('alls', user));
+            var ftree;
             if(anode)
-                $tree_.tree('loadData', anode.children, node);
+                ftree = duplicate_tree_data(anode, friend_from_all);
+            else {
+                // note: check what this case is really for
+                var mine = user === username_; // yes it is possible I'm not my own friend
+                ftree = {
+                    label: mine ? "My Notebooks" : someone_elses(user),
+                    id: node_id('friends', user),
+                    sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER
+                };
+            }
+            var parent = $tree_.tree('getNodeById', node_id('friends'));
+            var node = insert_alpha(ftree, parent);
+            $tree_.tree('loadData', ftree.children, node);
         }
         else {
             var n2 = $tree_.tree('getNodeById', node_id('friends', user));
