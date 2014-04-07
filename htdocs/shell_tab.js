@@ -362,10 +362,11 @@ var shell = (function() {
                             else
                                 failed.push(res);
                         }
-                        // TODO: tell user about failed imports
                         succeeded.forEach(function(notebook) {
                             editor.star_notebook(true, {notebook: notebook});
                         });
+                        if(failed.length)
+                            rclient.post_error("Failed to import notebooks: " + failed.join(', '));
                     });
                 dialog.modal('hide');
             }
