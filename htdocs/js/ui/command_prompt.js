@@ -133,8 +133,8 @@ RCloud.UI.command_prompt = {
         }, {
             name: 'execute-2',
             bindKey: {
-                win: 'Ctrl-Return',
-                mac: 'Command-Return',
+                win: 'Alt-Return',
+                mac: 'Alt-Return',
                 sender: 'editor'
             },
             exec: execute

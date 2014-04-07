@@ -80,8 +80,8 @@ ui_utils.install_common_ace_key_bindings = function(widget) {
         }, {
             name: 'execute-selection-or-line',
             bindKey: {
-                win: 'Alt-Return',
-                mac: 'Alt-Return',
+                win: 'Ctrl-Return',
+                mac: 'Command-Return',
                 sender: 'editor'
             },
             exec: function(widget, args, request) {

@@ -170,8 +170,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     widget.commands.addCommands([{
         name: 'sendToR',
         bindKey: {
-            win: 'Ctrl-Return',
-            mac: 'Command-Return',
+            win: 'Alt-Return',
+            mac: 'Alt-Return',
             sender: 'editor'
         },
         exec: function(widget, args, request) {

@@ -864,8 +864,8 @@ ui_utils.install_common_ace_key_bindings = function(widget) {
         }, {
             name: 'execute-selection-or-line',
             bindKey: {
-                win: 'Alt-Return',
-                mac: 'Alt-Return',
+                win: 'Ctrl-Return',
+                mac: 'Command-Return',
                 sender: 'editor'
             },
             exec: function(widget, args, request) {
@@ -1541,8 +1541,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     widget.commands.addCommands([{
         name: 'sendToR',
         bindKey: {
-            win: 'Ctrl-Return',
-            mac: 'Command-Return',
+            win: 'Alt-Return',
+            mac: 'Alt-Return',
             sender: 'editor'
         },
         exec: function(widget, args, request) {
@@ -3457,8 +3457,8 @@ RCloud.UI.command_prompt = {
         }, {
             name: 'execute-2',
             bindKey: {
-                win: 'Ctrl-Return',
-                mac: 'Command-Return',
+                win: 'Alt-Return',
+                mac: 'Alt-Return',
                 sender: 'editor'
             },
             exec: execute
