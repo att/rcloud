@@ -293,8 +293,23 @@ Notebook.create_controller = function(model)
                     }
             }
             var changes = refresh_buffers();
-            var content = cell_model.content(),
-                parts = [content.substring(0, point1)],
+            var content = cell_model.content();
+            // make sure point1 is before point2
+            if(point1>=point2)
+                point2 = undefined;
+            // remove split points at the beginning or end
+            if(point2 !== undefined && /^\s*$/.test(content.substring(point2)))
+                point2 = undefined;
+            if(point1 !== undefined) {
+                if(/^\s*$/.test(content.substring(point1)))
+                    point1 = undefined;
+                else if(/^\s*$/.test(content.substring(0, point1)))
+                    point1 = point2;
+            }
+            // don't do anything if there is no real split point
+            if(point1 === undefined)
+                return;
+            var parts = [content.substring(0, point1)],
                 id = cell_model.id(), language = cell_model.language();
             if(point2 === undefined)
                 parts.push(content.substring(point1));

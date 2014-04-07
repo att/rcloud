@@ -365,6 +365,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // enable(hide_button);
             if (!am_read_only) {
                 enable(remove_button);
+                enable(split_button);
             }
             //editor_row.show();
 
@@ -379,6 +380,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             notebook_cell_div.css({'height': ''});
             enable(source_button);
             disable(result_button);
+            disable(split_button);
             // enable(hide_button);
             if (!am_read_only) {
                 enable(remove_button);
