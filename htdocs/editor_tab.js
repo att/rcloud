@@ -948,10 +948,15 @@ var editor = function () {
         element[0].appendChild(right[0]);
     }
 
-    function make_main_url(notebook, version) {
-        var url = window.location.protocol + '//' + window.location.host + '/main.html?notebook=' + notebook;
-        if(version)
-            url = url + '&version='+version;
+    function make_main_url(opts) {
+        var url = window.location.protocol + '//' + window.location.host + '/main.html';
+        if(opts.notebook) {
+            url += '?notebook=' + opts.notebook;
+            if(opts.version)
+                url = url + '&version='+opts.version;
+        }
+        else if(opts.new_notebook)
+            url += '?new_notebook=true';
         return url;
     }
     function tree_click(event) {
@@ -959,7 +964,7 @@ var editor = function () {
             result.show_history(event.node.parent, false);
         else if(event.node.gistname) {
             if(event.click_event.metaKey || event.click_event.ctrlKey) {
-                var url = make_main_url(event.node.gistname, event.node.version);
+                var url = make_main_url({notebook: event.node.gistname, version: event.node.version});
                 window.open(url, "_blank");
             }
             else {
@@ -986,16 +991,16 @@ var editor = function () {
     }
 
     var result = {
-        init: function(gistname, version) {
+        init: function(opts) {
             var that = this;
             username_ = rcloud.username();
             var promise = load_everything().then(function() {
-                if(gistname) // notebook specified in url
-                    that.load_notebook(gistname, version);
-                else if(current_.notebook)
-                    that.load_notebook(current_.notebook, current_.version);
-                else // brand new user
-                    that.new_notebook();
+                if(opts.notebook) // notebook specified in url
+                    return that.load_notebook(opts.notebook, opts.version);
+                else if(!opts.new_notebook && current_.notebook)
+                    return that.load_notebook(current_.notebook, current_.version);
+
+                return that.new_notebook();
             });
             /* Search disabled for Version 0.9
             var old_text = "";
@@ -1007,8 +1012,14 @@ var editor = function () {
                 }
             }, 500);
              */
-            $('#new-notebook').click(function() {
-                that.new_notebook();
+            $('#new-notebook').click(function(e) {
+                e.preventDefault();
+                if(e.metaKey || e.ctrlKey) {
+                    var url = make_main_url({new_notebook: true});
+                    window.open(url, "_blank");
+                }
+                else
+                    that.new_notebook();
             });
             function publish_success(gistname, un) {
                 return function(val) {
@@ -1206,7 +1217,9 @@ var editor = function () {
                      window.history.replaceState)
                     .bind(window.history)
                  */
-                window.history.replaceState("rcloud.notebook", null, make_main_url(result.id, options.version));
+                window.history.replaceState("rcloud.notebook",
+                                            null,
+                                            make_main_url({notebook: result.id, version: options.version}));
 
                 var history;
                 // when loading an old version you get truncated history
