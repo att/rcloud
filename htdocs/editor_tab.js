@@ -21,7 +21,7 @@ var editor = function () {
      - the entry in notebook_info_[]
      - the bit in my_stars_[]
      View
-     - the existence of the node under My Interests in the notebook tree UI
+     - the existence of the node under Notebooks I Starred in the notebook tree UI
      - the filling of the star icon next to the node under All Notebooks in the tree UI
      - the filling of the star icon in the navbar (if current notebook)
      */
@@ -236,7 +236,7 @@ var editor = function () {
             user_nodes.push(node);
         }
         return {
-            label: 'My Interests',
+            label: 'Notebooks I Starred',
             id: '/interests',
             children: user_nodes.sort(compare_nodes)
         };
@@ -314,7 +314,7 @@ var editor = function () {
         });
         return [
             {
-                label: 'My Friends',
+                label: 'People I Starred',
                 id: '/friends',
                 children: friend_subtrees
             },
