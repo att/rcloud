@@ -58,7 +58,7 @@ RClient = {
         var show_error_area;
         if(error_dest_.length)
             show_error_area = function() {
-                RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
+                RCloud.UI.right_panel.collapse($("#collapse-session-info"), false, false);
             };
         else {
             error_dest_ = $("#output");
@@ -127,7 +127,8 @@ RClient = {
             post_response: function (msg) {
                 var d = $("<pre class='response'></pre>").html(msg);
                 $("#output").append(d);
-                window.scrollTo(0, document.body.scrollHeight);
+                // not sure what this was for
+                //window.scrollTo(0, document.body.scrollHeight);
             },
 
             post_rejection: function(e) {
@@ -469,7 +470,7 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.port_notebooksAsync(source, notebooks, prefix);
         };
         rcloud.purl_source = function(source) {
-            rcloud_ocaps.purl_sourceAsync(source);
+            return rcloud_ocaps.purl_sourceAsync(source);
         };
 
         rcloud.get_completions = function(text, pos) {
@@ -528,10 +529,13 @@ RCloud.create = function(rcloud_ocaps) {
                         fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                     } else {
                         // done, push to notebook.
-                        rcloud_ocaps.notebook_upload(
+                        var content = String.fromCharCode.apply(null, new Uint16Array(file_to_upload));
+                        if(Notebook.empty_for_github(content))
+                            on_failure("empty");
+                        else rcloud_ocaps.notebook_upload(
                             file_to_upload.buffer, file.name, function(err, result) {
                                 if (err) {
-                                    on_failure(err);
+                                    on_failure("exists", err);
                                 } else {
                                     on_success([file_to_upload, file, result.content]);
                                 }
@@ -544,6 +548,10 @@ RCloud.create = function(rcloud_ocaps) {
             var file=$("#file")[0].files[0];
             if(_.isUndefined(file))
                 throw new Error("No file selected!");
+            if(Notebook.is_part_name(file.name)) {
+                on_failure("badname");
+                return;
+            }
 
             rcloud_ocaps.file_upload.upload_path(function(err, path) {
                 if (err) {
@@ -565,7 +573,6 @@ RCloud.create = function(rcloud_ocaps) {
             function do_upload(path, file) {
                 var upload_name = path + '/' + file.name;
                 rcloud_ocaps.file_upload.create(upload_name, force, function(err, result) {
-                    debugger;
                     if (RCloud.is_exception(result)) {
                         on_failure(RCloud.exception_message(result));
                         return;
@@ -815,7 +822,7 @@ ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
     min_rows = _.isUndefined(min_rows) ? 0  : min_rows;
     max_rows = _.isUndefined(max_rows) ? 30 : max_rows;
     var lineHeight = widget.renderer.lineHeight;
-    var rows = Math.max(min_rows, Math.min(max_rows, widget.getSession().getLength()));
+    var rows = Math.max(min_rows, Math.min(max_rows, widget.getSession().getScreenLength()));
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
     return Math.max(75, newHeight);
     /*
@@ -857,8 +864,8 @@ ui_utils.install_common_ace_key_bindings = function(widget) {
         }, {
             name: 'execute-selection-or-line',
             bindKey: {
-                win: 'Alt-Return',
-                mac: 'Alt-Return',
+                win: 'Ctrl-Return',
+                mac: 'Command-Return',
                 sender: 'editor'
             },
             exec: function(widget, args, request) {
@@ -1144,7 +1151,7 @@ Notebook.Buffer.create_model = function(content) {
     var checkpoint_ = "";
 
     function is_empty(text) {
-        return /^\s*$/.test(text);
+        return Notebook.empty_for_github(text);
     }
 
     var result = {
@@ -1248,6 +1255,8 @@ Notebook.Asset.create_html_view = function(asset_model)
             anchor.text(asset_model.filename());
         },
         content_updated: function() {
+            if(asset_model.active())
+                RCloud.UI.scratchpad.content_updated();
         },
         active_updated: function() {
             if (asset_model.active())
@@ -1299,7 +1308,7 @@ Notebook.Asset.create_model = function(content, filename)
                 throw new Error("set language of asset not supported");
             var extension = filename.match(/\.([^.]+)$/);
             if (!extension)
-                throw new Error("extension does not exist");
+                return "";
             extension = extension[1];
             return extension;
         },
@@ -1506,6 +1515,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     if (am_read_only) {
         disable(remove_button);
         disable(insert_cell_button);
+        disable(split_button);
+        disable(coalesce_button);
+    }
+    else {
+        // no coalesce at top
+        if(!cell_model.parent_model.prior_cell(cell_model))
+            coalesce_button.hide();
     }
     widget.setReadOnly(am_read_only);
     widget.setOptions({
@@ -1525,8 +1541,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     widget.commands.addCommands([{
         name: 'sendToR',
         bindKey: {
-            win: 'Ctrl-Return',
-            mac: 'Command-Return',
+            win: 'Alt-Return',
+            mac: 'Alt-Return',
             sender: 'editor'
         },
         exec: function(widget, args, request) {
@@ -1574,8 +1590,24 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             }
 
             // click on code to edit
-            $("code.r", r_result_div).off('click')
-                .click(result.show_source);
+            var code_div = $("code.r", r_result_div);
+            code_div.off('click');
+            if(!shell.is_view_mode()) {
+                // distinguish between a click and a drag
+                // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
+                code_div.on('mousedown', function(e) {
+                    $(this).data('p0', { x: e.pageX, y: e.pageY });
+                }).on('mouseup', function(e) {
+                    var p0 = $(this).data('p0');
+                    if(p0) {
+                        var p1 = { x: e.pageX, y: e.pageY },
+                            d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
+                        if (d < 4) {
+                            result.show_source();
+                        }
+                    }
+                });
+            }
 
             // we use the cached version of DPR instead of getting window.devicePixelRatio
             // because it might have changed (by moving the user agent window across monitors)
@@ -1645,9 +1677,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             if (readonly) {
                 disable(remove_button);
                 disable(insert_cell_button);
+                disable(split_button);
+                disable(coalesce_button);
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
+                enable(split_button);
+                enable(coalesce_button);
             }
         },
 
@@ -1967,6 +2003,7 @@ Notebook.create_model = function()
         },
         append_cell: function(cell_model, id, skip_event) {
             cell_model.parent_model = this;
+            cell_model.renew_content();
             var changes = [];
             var n = 1;
             id = id || 1;
@@ -2137,7 +2174,10 @@ Notebook.create_model = function()
                 if (contents[i] !== null)
                     changes.push(this.cells[i].change_object());
             var asset_change = RCloud.UI.scratchpad.update_model();
-            if (asset_change) {
+            // too subtle here: update_model distinguishes between no change (null)
+            // and change-to-empty.  we care about change-to-empty and let github
+            // delete the asset but leave it on the screen until reload (as with cells)
+            if (asset_change !== null) {
                 var active_asset_model = RCloud.UI.scratchpad.current_model;
                 changes.push(active_asset_model.change_object());
             }
@@ -2184,6 +2224,10 @@ Notebook.create_controller = function(model)
             if(save_button_)
                 ui_utils.disable_bs_button(save_button_);
             dirty_ = false;
+            if(save_timer_) {
+                window.clearTimeout(save_timer_);
+                save_timer_ = null;
+            }
             return editor_callback_(notebook);
         };
 
@@ -2212,6 +2256,10 @@ Notebook.create_controller = function(model)
     function on_load(version, notebook) {
         if (!_.isUndefined(notebook.files)) {
             var i;
+            model.read_only(version != null || notebook.user.login != rcloud.username());
+            // we can't do much with a notebook with no name, so give it one
+            if(!notebook.description)
+                notebook.description = "(untitled)";
             this.clear();
             var cells = {}; // could rely on alphabetic input instead of gathering
             var assets = {};
@@ -2240,11 +2288,12 @@ Notebook.create_controller = function(model)
                 asset_controller = asset_controller || result;
             }
             model.user(notebook.user.login);
-            model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
-            // it's rare but valid not to have assets
+
             if(asset_controller)
                 asset_controller.select();
+            else
+                RCloud.UI.scratchpad.set_model(null);
         }
         return notebook;
     }
@@ -2289,16 +2338,22 @@ Notebook.create_controller = function(model)
     }
 
     function update_notebook(changes, gistname, more) {
+        function add_more_changes(gist) {
+            if (_.isUndefined(more))
+                return gist;
+            return _.extend(_.clone(gist), more);
+        }
         // remove any "empty" changes.  we can keep empty cells on the
         // screen but github will refuse them.  if the user doesn't enter
         // stuff in them before saving, they will disappear on next session
         changes = changes.filter(function(change) {
             return change.content || change.erase || change.rename;
         });
-        if (!changes.length)
-            return Promise.cast(current_gist_);
         if (model.read_only())
             return Promise.reject("attempted to update read-only notebook");
+        if (!changes.length && _.isUndefined(more)) {
+            return Promise.cast(current_gist_);
+        }
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
             var files = {};
@@ -2313,9 +2368,7 @@ Notebook.create_controller = function(model)
             });
             return {files: files};
         }
-        var gist = changes_to_gist(changes);
-        if(more)
-            _.extend(gist, more);
+        var gist = add_more_changes(changes_to_gist(changes));
         return rcloud.update_notebook(gistname, gist)
             .then(function(notebook) {
                 if('error' in notebook)
@@ -2486,12 +2539,8 @@ Notebook.create_controller = function(model)
         },
         create_notebook: function(content) {
             var that = this;
-            return rcloud.create_notebook(content).then(function(notebook) {
-                that.clear();
-                model.read_only(notebook.user.login != rcloud.username());
-                current_gist_ = notebook;
-                return notebook;
-            });
+            return rcloud.create_notebook(content)
+                .then(_.bind(on_load,this,null));
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
             var that = this;
@@ -2611,13 +2660,21 @@ Notebook.part_name = function(id, language) {
     }
     return 'part' + id + '.' + ext;
 };
+
+Notebook.empty_for_github = function(text) {
+    return /^\s*$/.test(text);
+};
+
+Notebook.is_part_name = function(filename) {
+    return filename.match(/^part\d+\.([rR]|[mM][dD])$/);
+};
 // FIXME this is just a proof of concept - using Rserve console OOBs
 var append_session_info = function(msg) {
     // one hacky way is to maintain a <pre> that we fill as we go
     // note that R will happily spit out incomplete lines so it's
     // not trivial to maintain each output in some separate structure
     if (!document.getElementById("session-info-out"))
-	$("#session-info").append($("<pre id='session-info-out'></pre>"));
+        $("#session-info").append($("<pre id='session-info-out'></pre>"));
     $("#session-info-out").append(msg);
     RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
 };
@@ -2629,9 +2686,24 @@ var oob_handlers = {
         $("#help-frame").attr("src", x);
         RCloud.UI.left_panel.collapse($("#collapse-help"), false);
     },
+    "pager": function(v) {
+	var files = v[0], header = v[1], title = v[2];
+	// FIXME: show this somewhere somehow ...
+	append_session_info("pager.header:" + header +"\npager.title: "+title+"\n");
+	append_session_info("contents:" + files);
+    },
+    "editor": function(v) {
+	// what is an object to edit, content is file content to edit
+	var what = v[0], content = v[1], name = v[2];
+	// FIXME: do somethign with it - eventually this
+	// should be a modal thing - for now we shoudl at least
+	// show the content ...
+	append_session_info("what: "+ what + "\ncontents:" + content + "\nname: "+name+"\n");
+    },
     "console.out": append_session_info,
     "console.msg": append_session_info,
     "console.err": append_session_info
+    // NOTE: "idle": ... can be used to handle idle pings from Rserve if we care ..
 };
 
 RCloud.session = {
@@ -2702,6 +2774,10 @@ RCloud.session = {
                         }
                         rcloud.session_init(rcloud.username(), rcloud.github_token()).then(function(hello) {
                             rclient.post_response(hello);
+                        }).catch(function(error) { // e.g. couldn't connect with github
+                            rclient.close();
+                            reject(error);
+                            return;
                         });
                     }
                     rcloud.display.set_device_pixel_ratio();
@@ -2750,32 +2826,47 @@ RCloud.UI.init = function() {
         shell.import_notebook_file();
     });
     $("#upload-submit").click(function() {
+        if($("#file")[0].files.length===0)
+            return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
+        var replacing = _.find(shell.notebook.model.assets, function(asset) {
+            return asset.filename() == $("#file")[0].files[0].name;
+        });
         function success(lst) {
             var path = lst[0], file = lst[1], notebook = lst[2];
             $("#file-upload-div").append(
                 bootstrap_utils.alert({
                     "class": 'alert-info',
-                    text: (to_notebook ? "Asset " : "File ") + file.name + " uploaded.",
+                    text: (to_notebook ? "Asset " : "File ") + file.name + (replacing ? " replaced." : " uploaded."),
                     on_close: function() {
                         $(".progress").hide();
                     }
                 })
             );
-            if(to_notebook)
+            if(to_notebook) {
+                var content = notebook.files[file.name].content;
                 editor.update_notebook_file_list(notebook.files);
+                var controller;
+                if(replacing) {
+                    replacing.content(content);
+                    shell.notebook.controller.update_asset(replacing);
+                    controller = replacing.controller;
+                }
+                else {
+                    controller = shell.notebook.controller.append_asset(content, file.name);
+                }
+                controller.select();
+            }
         };
 
-        // FIXME check for more failures besides file exists
-        function failure() {
+        function failure(what) {
             var overwrite_click = function() {
                 rcloud.upload_file(true, function(err, value) {
                     if (err) {
-                        var msg = exception_value;
                         $("#file-upload-div").append(
                             bootstrap_utils.alert({
                                 "class": 'alert-danger',
-                                text: msg
+                                text: err
                             })
                         );
                     } else {
@@ -2784,13 +2875,22 @@ RCloud.UI.init = function() {
                 });
             };
             var alert_element = $("<div></div>");
-            var p = $("<p>File exists. </p>");
+            var p;
+            if(what==="exists") {
+                p = $("<p>File exists.</p>");
+                var overwrite = bootstrap_utils
+                        .button({"class": 'btn-danger'})
+                        .click(overwrite_click)
+                        .text("Overwrite");
+                p.append(overwrite);
+            }
+            else if(what==="empty") {
+                p = $("<p>File is empty.</p>");
+            }
+            else if(what==="badname") {
+                p = $("<p>Filename not allowed.</p>");
+            }
             alert_element.append(p);
-            var overwrite = bootstrap_utils
-                .button({"class": 'btn-danger'})
-                .click(overwrite_click)
-                .text("Overwrite");
-            p.append(overwrite);
             $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
         }
 
@@ -2819,7 +2919,6 @@ RCloud.UI.init = function() {
     });
 
     $("#insert-new-cell").click(function() {
-        debugger;
         var language = $("#insert-cell-language option:selected").text();
         if (language === 'Markdown') {
             shell.new_markdown_cell("");
@@ -2841,8 +2940,8 @@ RCloud.UI.init = function() {
     //     vs[vs.length-1].show_source();
     // });
     $("#rcloud-logout").click(function() {
-	// let the server-side script handle this so it can
-	// also revoke all tokens
+        // let the server-side script handle this so it can
+        // also revoke all tokens
         window.location.href = '/logout.R';
     });
 
@@ -2863,6 +2962,8 @@ RCloud.UI.init = function() {
             items: "> .notebook-cell",
             start: function(e, info) {
                 $(e.toElement).addClass("grabbing");
+                // http://stackoverflow.com/questions/6140680/jquery-sortable-placeholder-height-problem
+                info.placeholder.height(info.item.height());
             },
             stop: function(e, info) {
                 $(e.toElement).removeClass("grabbing");
@@ -2875,7 +2976,8 @@ RCloud.UI.init = function() {
             },
             handle: " .ace_gutter-layer",
             scroll: true,
-            scrollSensitivity: 40
+            scrollSensitivity: 40,
+            forcePlaceholderSize: true
         });
     }
     make_cells_sortable();
@@ -2926,7 +3028,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     function togglers() {
         return $(sel_accordion + " > .panel > div.panel-heading > a.accordion-toggle");
     }
-    function collapse(target, collapse, persist) {
+    function set_collapse(target, collapse, persist) {
         target.data("would-collapse", collapse);
         if(persist && rcloud.config) {
             var opt = 'ui/' + target[0].id;
@@ -2990,7 +3092,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                     if(id === sel_accordion)
                         hide_column = settings[k];
                     else if(typeof settings[k] === "boolean")
-                        collapse($(id), settings[k], false);
+                        set_collapse($(id), settings[k], false);
                 }
                 // do the column last because it will affect all its children
                 if(typeof hide_column === "boolean") {
@@ -3002,21 +3104,22 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 else that.show(true); // make sure we have a setting
             });
         },
-        collapse: function(target, whether) {
+        collapse: function(target, whether, persist) {
+            if(persist === undefined)
+                persist = true;
             if(collapsed_) {
-                collapse(target, false, true);
+                set_collapse(target, false, persist);
                 this.show(true);
                 return;
             }
-            collapse(target, whether, true);
+            set_collapse(target, whether, persist);
             if(all_collapsed())
-                this.hide(true);
+                this.hide(persist);
             else
-                this.show(true);
+                this.show(persist);
         },
         resize: function() {
             var cw = this.calcwidth();
-            console.log("resizing " + sel_column + " to " + cw);
             this.colwidth(cw);
             RCloud.UI.middle_column.update();
         },
@@ -3031,7 +3134,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         },
         show: function(persist) {
             if(all_collapsed())
-                collapse($(collapsibles()[0]), false, true);
+                set_collapse($(collapsibles()[0]), false, true);
             collapsibles().each(function() {
                 $(this).collapse($(this).data("would-collapse") ? "hide" : "show");
             });
@@ -3114,7 +3217,7 @@ RCloud.UI.scratchpad = {
             that.widget = widget;
             var doc = session.doc;
             session.on('change', function() {
-                div.css({'height': ui_utils.ace_editor_height(widget, 30) + "px"});
+                div.css({'height': ui_utils.ace_editor_height(widget, 25) + "px"});
                 widget.resize();
             });
 
@@ -3126,7 +3229,7 @@ RCloud.UI.scratchpad = {
             widget.resize();
             ui_utils.on_next_tick(function() {
                 session.getUndoManager().reset();
-                div.css({'height': ui_utils.ace_editor_height(widget, 30) + "px"});
+                div.css({'height': ui_utils.ace_editor_height(widget, 25) + "px"});
                 widget.resize();
             });
             that.change_content = ui_utils.ignore_programmatic_changes(
@@ -3175,10 +3278,14 @@ RCloud.UI.scratchpad = {
         }
         this.current_model = asset_model;
         if (!this.current_model) {
-            that.session.setValue("");
+            that.change_content("");
             that.widget.resize();
+            that.widget.setReadOnly(true);
+            $('#scratchpad-editor > *').hide();
             return;
         }
+        that.widget.setReadOnly(false);
+        $('#scratchpad-editor > *').show();
         this.change_content(this.current_model.content());
         // restore cursor
         var model_cursor = asset_model.cursor_position();
@@ -3198,14 +3305,21 @@ RCloud.UI.scratchpad = {
     },
     // this behaves like cell_view's update_model
     update_model: function() {
-        return this.current_model.content(this.widget.getSession().getValue());
+        return this.current_model
+            ? this.current_model.content(this.widget.getSession().getValue())
+            : null;
+    }, content_updated: function() {
+        var range = this.widget.getSelection().getRange();
+        var changed = this.current_model.content();
+        this.change_content(changed);
+        this.widget.getSelection().setSelectionRange(range);
+        return changed;
     }, clear: function() {
-        var that = this;
         if(!this.exists)
             return;
-        that.session.setValue("");
-        that.session.getUndoManager().reset();
-        that.widget.resize();
+        this.change_content("");
+        this.session.getUndoManager().reset();
+        this.widget.resize();
     }
 };
 RCloud.UI.command_prompt = {
@@ -3322,7 +3436,7 @@ RCloud.UI.command_prompt = {
         }
 
         function restore_prompt() {
-            var cmd = that.init();
+            var cmd = that.history.init();
             change_prompt(cmd);
             var r = last_row(widget);
             ui_utils.ace_set_pos(widget, r, last_col(widget, r));
@@ -3330,7 +3444,6 @@ RCloud.UI.command_prompt = {
 
         ui_utils.install_common_ace_key_bindings(widget);
 
-        // note ace.js typo which we need to correct when we update ace
         var up_handler = widget.commands.commandKeyBinding[0]["up"],
             down_handler = widget.commands.commandKeyBinding[0]["down"];
         widget.commands.addCommands([{
@@ -3344,8 +3457,8 @@ RCloud.UI.command_prompt = {
         }, {
             name: 'execute-2',
             bindKey: {
-                win: 'Ctrl-Return',
-                mac: 'Command-Return',
+                win: 'Alt-Return',
+                mac: 'Alt-Return',
                 sender: 'editor'
             },
             exec: execute
@@ -3353,26 +3466,26 @@ RCloud.UI.command_prompt = {
             name: 'up-with-history',
             bindKey: 'up',
             exec: function(widget, args, request) {
-                var pos = widget.getCursorPosition();
+                var pos = widget.getCursorPositionScreen();
                 if(pos.row > 0)
                     up_handler.exec(widget, args, request);
                 else {
                     change_prompt(that.history.last());
-                    var r = last_row(widget);
-                    ui_utils.ace_set_pos(widget, r, last_col(widget, r));
+                    var r = widget.getSession().getScreenLength();
+                    ui_utils.ace_set_pos(widget, r, pos.column);
                 }
             }
         }, {
             name: 'down-with-history',
             bindKey: 'down',
             exec: function(widget, args, request) {
-                var pos = widget.getCursorPosition();
-                var r = last_row(widget);
-                if(pos.row < r)
+                var pos = widget.getCursorPositionScreen();
+                var r = widget.getSession().getScreenLength();
+                if(pos.row < r-1)
                     down_handler.exec(widget, args, request);
                 else {
                     change_prompt(that.history.next());
-                    ui_utils.ace_set_pos(widget, 0, last_col(widget, 0));
+                    ui_utils.ace_set_pos(widget, 0, pos.column);
                 }
             }
         }
@@ -3406,12 +3519,18 @@ RCloud.UI.configure_readonly = function() {
         fork_revert.show();
         $('#save-notebook').hide();
         $('#output').sortable('disable');
+        $('#upload-to-notebook')
+            .prop('checked', false)
+            .attr("disabled", true);
     }
     else {
         $('#prompt-div').show();
         fork_revert.hide();
         $('#save-notebook').show();
         $('#output').sortable('enable');
+        $('#upload-to-notebook')
+            .prop('checked', false)
+            .removeAttr("disabled");
     }
 };
 RCloud.UI.notebook_title = (function() {
@@ -3497,7 +3616,7 @@ RCloud.UI.search = {
                 if(typeof (d) == "string") {
                     d = JSON.parse("[" + d + "]");
                 }
-                //convertin any string type part to json object : not required most of the time
+                //convert any string type part to json object : not required most of the time
                 for(i = 0; i < d.length; i++) {
                     if(typeof (d[i]) == "string") {
                         d[i] = JSON.parse(d[i]);

@@ -12,6 +12,10 @@ Notebook.create_controller = function(model)
             if(save_button_)
                 ui_utils.disable_bs_button(save_button_);
             dirty_ = false;
+            if(save_timer_) {
+                window.clearTimeout(save_timer_);
+                save_timer_ = null;
+            }
             return editor_callback_(notebook);
         };
 
@@ -40,6 +44,10 @@ Notebook.create_controller = function(model)
     function on_load(version, notebook) {
         if (!_.isUndefined(notebook.files)) {
             var i;
+            model.read_only(version != null || notebook.user.login != rcloud.username());
+            // we can't do much with a notebook with no name, so give it one
+            if(!notebook.description)
+                notebook.description = "(untitled)";
             this.clear();
             var cells = {}; // could rely on alphabetic input instead of gathering
             var assets = {};
@@ -68,11 +76,12 @@ Notebook.create_controller = function(model)
                 asset_controller = asset_controller || result;
             }
             model.user(notebook.user.login);
-            model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
-            // it's rare but valid not to have assets
+
             if(asset_controller)
                 asset_controller.select();
+            else
+                RCloud.UI.scratchpad.set_model(null);
         }
         return notebook;
     }
@@ -117,16 +126,22 @@ Notebook.create_controller = function(model)
     }
 
     function update_notebook(changes, gistname, more) {
+        function add_more_changes(gist) {
+            if (_.isUndefined(more))
+                return gist;
+            return _.extend(_.clone(gist), more);
+        }
         // remove any "empty" changes.  we can keep empty cells on the
         // screen but github will refuse them.  if the user doesn't enter
         // stuff in them before saving, they will disappear on next session
         changes = changes.filter(function(change) {
             return change.content || change.erase || change.rename;
         });
-        if (!changes.length)
-            return Promise.cast(current_gist_);
         if (model.read_only())
             return Promise.reject("attempted to update read-only notebook");
+        if (!changes.length && _.isUndefined(more)) {
+            return Promise.cast(current_gist_);
+        }
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
             var files = {};
@@ -141,9 +156,7 @@ Notebook.create_controller = function(model)
             });
             return {files: files};
         }
-        var gist = changes_to_gist(changes);
-        if(more)
-            _.extend(gist, more);
+        var gist = add_more_changes(changes_to_gist(changes));
         return rcloud.update_notebook(gistname, gist)
             .then(function(notebook) {
                 if('error' in notebook)
@@ -314,12 +327,8 @@ Notebook.create_controller = function(model)
         },
         create_notebook: function(content) {
             var that = this;
-            return rcloud.create_notebook(content).then(function(notebook) {
-                that.clear();
-                model.read_only(notebook.user.login != rcloud.username());
-                current_gist_ = notebook;
-                return notebook;
-            });
+            return rcloud.create_notebook(content)
+                .then(_.bind(on_load,this,null));
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
             var that = this;

@@ -57188,14 +57188,20 @@ Rserve.Robj = {
             if (_.isUndefined(this.attributes)) {
                 return values;
             } else {
-                if(this.attributes.value[0].name!="names")
-                    throw "expected names here";
-                var keys   = this.attributes.value[0].value.value;
-                var result = {};
-                _.each(keys, function(key, i) {
-                    result[key] = values[i];
-                });
-                return result;
+		// FIXME: there is no reason why names should be the first or only
+		//        attribute, so the code should really look
+		//        for "names" and not cry if it doesn't exist
+                if(this.attributes.value[0].name == "names") {
+                    var keys   = this.attributes.value[0].value.value;
+                    var result = {};
+                    _.each(keys, function(key, i) {
+			result[key] = values[i];
+                    });
+                    return result;
+		}
+		// FIXME: this doesn't pass-through any other attributes
+		//        including important ones like "class"
+		return values;
             }
         }
     }),

@@ -143,17 +143,15 @@ rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
 }
 
 rcloud.notebook.by.name <- function(name, user=.session$username, path=TRUE) {
-  # fixme
-  cfg <- rcloud.load.user.config(user)
-  if (cfg == "null") stop("user `", user, "' not found")
-  if (inherits(cfg, "try-error")) stop("Error while loading user `", user, "' configuration: ", cfg)
-  cfg <- rjson::fromJSON(cfg)
-  nbs <- lapply(cfg$all_books, function(o) o$description)
-  ok <- sapply(nbs, function(s) (name == s || (path && substr(name, 1, nchar(s)) == s && substr(name, nchar(s)+1L, nchar(s)+1L) == "/")))
+  nl <- user.all.notebooks(user)
+  if (!length(nl)) return(if(path) NULL else character(0))
+  names <- unlist(rcs.get(usr.key("description", user=".notebook", notebook=nl), TRUE))
+  names(names) <- nl ## we want the ids as keys, not the RCS keys
+  ok <- sapply(names, function(s) (name == s || (path && substr(name, 1, nchar(s)) == s && substr(name, nchar(s)+1L, nchar(s)+1L) == "/")))
   if (!any(ok)) return(if(path) NULL else character(0))
-  notebook <- as.character(names(nbs)[ok])
+  notebook <- as.character(names(names)[ok])
   if (!path) return(notebook)
-  extra.path <- sapply(nbs[ok], function(nmatch) if (nmatch == name) "" else substr(name, nchar(nmatch) + 1L, nchar(name)))
+  extra.path <- sapply(names[ok], function(nmatch) if (nmatch == name) "" else substr(name, nchar(nmatch) + 1L, nchar(name)))
   m <- matrix(c(notebook, extra.path),,2)
   colnames(m) <- c("id", "extra.path")
   m
@@ -442,8 +440,13 @@ user.all.notebooks <- function(user) {
   notebooks <- gsub(".*/", "", rcs.list(usr.key(user=user, notebook="system", "config", "notebooks", "*")))
   if(user == .session$username)
     notebooks
-  else # filter notebooks on their visibility before they get to the client
-    notebooks[unlist(rcs.get(usr.key(user=".notebook", notebook=notebooks, "visible"), TRUE))]
+  else { # filter notebooks on their visibility before they get to the client
+    visible <- unlist(rcs.get(usr.key(user=".notebook", notebook=notebooks, "visible"), TRUE))
+    if (length(visible)) {
+      visible.notebooks <- gsub("\\.notebook/(.*)/visible","\\1", names(visible)[visible])
+      notebooks[notebooks %in% visible.notebooks]
+    } else character()
+  }
 }
 
 rcloud.config.all.notebooks <- function()
@@ -508,10 +511,11 @@ rcloud.config.set.user.option <- function(key, value)
 
 rcloud.get.notebook.info <- function(id) {
   base <- usr.key(user=".notebook", notebook=id)
-  list(username = rcs.get(rcs.key(base, "username")),
-       description = rcs.get(rcs.key(base, "description")),
-       last_commit = rcs.get(rcs.key(base, "last_commit")),
-       visible = rcs.get(rcs.key(base, "visible")))
+  fields <- c("username", "description", "last_commit", "visible")
+  keys <- rcs.key(base, fields)
+  results <- rcs.get(keys, list=TRUE)
+  names(results) <- fields
+  results
 }
 
 rcloud.get.multiple.notebook.infos <- function(ids) {

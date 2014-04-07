@@ -14,7 +14,7 @@ RCloud.UI.search = {
                 if(typeof (d) == "string") {
                     d = JSON.parse("[" + d + "]");
                 }
-                //convertin any string type part to json object : not required most of the time
+                //convert any string type part to json object : not required most of the time
                 for(i = 0; i < d.length; i++) {
                     if(typeof (d[i]) == "string") {
                         d[i] = JSON.parse(d[i]);

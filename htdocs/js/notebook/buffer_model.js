@@ -3,7 +3,7 @@ Notebook.Buffer.create_model = function(content) {
     var checkpoint_ = "";
 
     function is_empty(text) {
-        return /^\s*$/.test(text);
+        return Notebook.empty_for_github(text);
     }
 
     var result = {

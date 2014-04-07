@@ -504,7 +504,7 @@ pre {
 .tab-div {
 }
 
-.rcloud-cellarea {
+#rcloud-cellarea {
     position: fixed;
     top: 51;
     bottom: 0;

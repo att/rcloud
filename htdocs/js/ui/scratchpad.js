@@ -22,7 +22,7 @@ RCloud.UI.scratchpad = {
             that.widget = widget;
             var doc = session.doc;
             session.on('change', function() {
-                div.css({'height': ui_utils.ace_editor_height(widget, 30) + "px"});
+                div.css({'height': ui_utils.ace_editor_height(widget, 25) + "px"});
                 widget.resize();
             });
 
@@ -34,7 +34,7 @@ RCloud.UI.scratchpad = {
             widget.resize();
             ui_utils.on_next_tick(function() {
                 session.getUndoManager().reset();
-                div.css({'height': ui_utils.ace_editor_height(widget, 30) + "px"});
+                div.css({'height': ui_utils.ace_editor_height(widget, 25) + "px"});
                 widget.resize();
             });
             that.change_content = ui_utils.ignore_programmatic_changes(
@@ -83,10 +83,14 @@ RCloud.UI.scratchpad = {
         }
         this.current_model = asset_model;
         if (!this.current_model) {
-            that.session.setValue("");
+            that.change_content("");
             that.widget.resize();
+            that.widget.setReadOnly(true);
+            $('#scratchpad-editor > *').hide();
             return;
         }
+        that.widget.setReadOnly(false);
+        $('#scratchpad-editor > *').show();
         this.change_content(this.current_model.content());
         // restore cursor
         var model_cursor = asset_model.cursor_position();
@@ -106,13 +110,20 @@ RCloud.UI.scratchpad = {
     },
     // this behaves like cell_view's update_model
     update_model: function() {
-        return this.current_model.content(this.widget.getSession().getValue());
+        return this.current_model
+            ? this.current_model.content(this.widget.getSession().getValue())
+            : null;
+    }, content_updated: function() {
+        var range = this.widget.getSelection().getRange();
+        var changed = this.current_model.content();
+        this.change_content(changed);
+        this.widget.getSelection().setSelectionRange(range);
+        return changed;
     }, clear: function() {
-        var that = this;
         if(!this.exists)
             return;
-        that.session.setValue("");
-        that.session.getUndoManager().reset();
-        that.widget.resize();
+        this.change_content("");
+        this.session.getUndoManager().reset();
+        this.widget.resize();
     }
 };

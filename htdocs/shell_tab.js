@@ -8,7 +8,7 @@ var shell = (function() {
         notebook_model_ = Notebook.create_model(),
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
         notebook_controller_ = Notebook.create_controller(notebook_model_),
-        first_session_ = true;
+        view_mode_ = window.location.href.match("/view.html");
 
     function sanitize_notebook(notebook) {
         notebook = _.pick(notebook, 'description', 'files');
@@ -38,7 +38,13 @@ var shell = (function() {
         return notebook;
     }
 
-    var first = true;
+    function scroll_to_end() {
+        // no idea why the plugin doesn't take current scroll into account when using
+        // the element parameter version
+        var y = $("#rcloud-cellarea").scrollTop() + $("#end-of-output").offset().top;
+        $("#rcloud-cellarea").scrollTo(null, y);
+    }
+
     var result = {
         notebook: {
             model: notebook_model_,
@@ -57,21 +63,21 @@ var shell = (function() {
         },
         is_old_github: function() {
             return !gist_url_;
-        }, new_markdown_cell: function(content, execute) {
+        },
+        is_view_mode: function() {
+            return view_mode_;
+        },
+        new_markdown_cell: function(content, execute) {
             var cell = notebook_controller_.append_cell(content, "Markdown");
             RCloud.UI.command_prompt.history.execute(content);
             if(execute) {
-                cell.execute().then(function() {
-                    $.scrollTo(null, $("#end-of-output"));
-                });
+                cell.execute().then(scroll_to_end);
             }
         }, new_interactive_cell: function(content, execute) {
             var cell = notebook_controller_.append_cell(content, "R");
             RCloud.UI.command_prompt.history.execute(content);
             if(execute) {
-                cell.execute().then(function() {
-                    $.scrollTo(null, $("#end-of-output"));
-                });
+                cell.execute().then(scroll_to_end);
             }
             return cell;
         }, insert_markdown_cell_before: function(index) {
@@ -83,6 +89,7 @@ var shell = (function() {
         },
         load_notebook: function(gistname, version) {
             var that = this;
+            notebook_controller_.save();
             function do_load(done) {
                 var oldname = gistname_, oldversion = version_;
                 gistname_ = gistname;
@@ -110,9 +117,10 @@ var shell = (function() {
         }, save_notebook: function() {
             notebook_controller_.save();
         }, new_notebook: function(desc) {
+            notebook_controller_.save();
             return RCloud.session.reset().then(function(done) {
                 var content = {description: desc, 'public': false,
-                               files: {"scratch.R": {content:"# scratch file"}}};
+                               files: {"scratch.R": {content:"# keep snippets here while working with your notebook's cells"}}};
                 done(); // well not really done (just done with cps bleh) FIXME
                 return notebook_controller_.create_notebook(content).then(on_new);
             });
@@ -213,7 +221,7 @@ var shell = (function() {
                     if (!_.isUndefined(parts[i]))
                         strings.push(parts[i]);
                 strings.push("");
-                rcloud.purl_source(strings.join("\n"), function(purled_lines) {
+                rcloud.purl_source(strings.join("\n")).then(function(purled_lines) {
                     var purled_source = purled_lines.join("\n");
                     var a=document.createElement('a');
                     a.textContent='download';
@@ -354,10 +362,11 @@ var shell = (function() {
                             else
                                 failed.push(res);
                         }
-                        // TODO: tell user about failed imports
                         succeeded.forEach(function(notebook) {
                             editor.star_notebook(true, {notebook: notebook});
                         });
+                        if(failed.length)
+                            rclient.post_error("Failed to import notebooks: " + failed.join(', '));
                     });
                 dialog.modal('hide');
             }

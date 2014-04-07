@@ -4,7 +4,6 @@ var editor = function () {
         HEADER: 0, // at top (unused)
         NOTEBOOK: 1,
         MYFOLDER: 2,
-        MYFRIENDS: 3,
         SUBFOLDER: 4
     };
     var CONFIG_VERSION = 1;
@@ -22,7 +21,7 @@ var editor = function () {
      - the entry in notebook_info_[]
      - the bit in my_stars_[]
      View
-     - the existence of the node under My Interests in the notebook tree UI
+     - the existence of the node under Notebooks I Starred in the notebook tree UI
      - the filling of the star icon next to the node under All Notebooks in the tree UI
      - the filling of the star icon in the navbar (if current notebook)
      */
@@ -33,8 +32,8 @@ var editor = function () {
         notebook_info_ = {}, // all notebooks we are aware of
         num_stars_ = {}, // number of stars for all known notebooks
         my_stars_ = {}, // set of notebooks starred by me
-        my_friends_ = {},
-        invalid_notebooks_ = {};
+        my_friends_ = {}, // people whose notebooks i've starred
+        invalid_notebooks_ = {},
         current_ = null; // current notebook and version
 
     // view
@@ -53,6 +52,10 @@ var editor = function () {
     }
 
     //  Model functions
+    function someone_elses(name) {
+        return name + "'s Notebooks";
+    }
+
     function get_notebook_info(gistname) {
         return notebook_info_[gistname] || {};
     }
@@ -233,13 +236,13 @@ var editor = function () {
             user_nodes.push(node);
         }
         return {
-            label: 'My Interests',
+            label: 'Notebooks I Starred',
             id: '/interests',
             children: user_nodes.sort(compare_nodes)
         };
     }
 
-    function load_notebook_list(user_notebooks) {
+    function populate_all_notebooks(user_notebooks) {
         function create_book_entry_map(books) {
             return _.chain(books)
                 .filter(function(book) {
@@ -272,7 +275,7 @@ var editor = function () {
             var node = {
                 label: mine ? "My Notebooks" : someone_elses(username),
                 id: id,
-                sort_order: mine ? ordering.MYFOLDER : my_friends_[username] ? ordering.MYFRIENDS : ordering.SUBFOLDER,
+                sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER,
                 children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
             };
             user_nodes.push(node);
@@ -283,6 +286,40 @@ var editor = function () {
             id: '/alls',
             children: user_nodes.sort(compare_nodes)
         };
+    }
+
+    function duplicate_tree_data(tree, f) {
+        var t2 = f(tree);
+        if(tree.children) {
+            var ch2 = [];
+            for(var i=0; i<tree.children.length; ++i)
+                ch2.push(duplicate_tree_data(tree.children[i], f));
+            t2.children = ch2;
+        }
+        return t2;
+    }
+
+    function friend_from_all(datum) {
+        var d2 = _.pick(datum, "label", "name", "gistname", "user", "visible", "last_commit", "sort_order");
+        d2.id = datum.id.replace("/alls/", "/friends/");
+        d2.root = "friends";
+        return d2;
+    }
+
+    function populate_friends(alls_root) {
+        var friend_subtrees = alls_root.children.filter(function(subtree) {
+            return my_friends_[subtree.id.replace("/alls/","")]>0;
+        }).map(function(subtree) {
+            return duplicate_tree_data(subtree, friend_from_all);
+        });
+        return [
+            {
+                label: 'People I Starred',
+                id: '/friends',
+                children: friend_subtrees
+            },
+            alls_root
+        ];
     }
 
     function load_tree(root_data) {
@@ -331,8 +368,9 @@ var editor = function () {
                                     })])
                     .then(populate_interests.bind(null, my_stars_array))
                     .then(function(interests) { root_data.push(interests); })
-                    .then(load_notebook_list.bind(null, user_notebook_set))
-                    .then(function(alls) { root_data.push(alls); })
+                    .then(populate_all_notebooks.bind(null, user_notebook_set))
+                    .then(populate_friends)
+                    .spread(function(friends, alls) { root_data.push(friends, alls); })
                     .return(root_data);
             })
             .then(load_tree)
@@ -389,15 +427,14 @@ var editor = function () {
             pdat = null,
             node = null;
         if(!parent) {
-            if(user===username_)
-                throw "my folder should be there at least";
+            var mine = user === username_; // yes it is possible I'm not my own friend
             parent = $tree_.tree('getNodeById', node_id(root));
             if(!parent)
                 throw "root '" + root + "' of notebook tree not found!";
             pdat = {
-                label: someone_elses(user),
+                label: mine ? "My Notebooks" : someone_elses(user),
                 id: node_id(root, user),
-                sort_order: ordering.SUBFOLDER
+                sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER
             };
             parent = insert_alpha(pdat, parent);
         }
@@ -642,6 +679,11 @@ var editor = function () {
             star_notebook_button_.set_state(my_stars_[gistname]);
             $('#curr-star-count').text(num_stars_[gistname] || 0);
         }
+        if(my_friends_[user]) {
+            p = update_tree_entry('friends', user, gistname, entry, true);
+            if(selroot==='friends')
+                p.then(select_node);
+        }
 
         p = update_tree_entry('alls', user, gistname, entry, true);
         if(selroot==='alls')
@@ -671,6 +713,19 @@ var editor = function () {
             $tree_.tree('removeNode', parent);
     }
 
+    function remove_notebook_view(user, gistname) {
+        function do_remove(id) {
+            var node = $tree_.tree('getNodeById', id);
+            if(node)
+                remove_node(node);
+            else
+                console.log("tried to remove node that doesn't exist: " + id);
+        }
+        if(my_friends_[user])
+            do_remove(node_id('friends', user, gistname));
+        do_remove(node_id('alls', user, gistname));
+    }
+
     function unstar_notebook_view(user, gistname, select) {
         var inter_id = node_id('interests', user, gistname);
         var node = $tree_.tree('getNodeById', inter_id);
@@ -679,16 +734,7 @@ var editor = function () {
             return;
         }
         remove_node(node);
-        if(gistname === current_.notebook) {
-            star_notebook_button_.set_state(false);
-            $('#curr-star-count').text(num_stars_[gistname] || 0);
-        }
-        node = $tree_.tree('getNodeById', node_id('alls', user, gistname));
-        if(select)
-            select_node(node);
-        var all_star = $(node.element).find('.fontawesome-button.star');
-        all_star[0].set_state(false);
-        all_star.find('sub').text(num_stars_[gistname] || 0);
+        update_notebook_view(user, gistname, get_notebook_info(gistname));
     }
 
     function update_notebook_from_gist(result, history, selroot) {
@@ -709,18 +755,28 @@ var editor = function () {
     }
 
     function change_folder_friendness(user) {
-        var node = $tree_.tree('getNodeById', node_id('alls', user)),
-            parent = $tree_.tree('getNodeById', node_id('alls'));
-        var data = {
-            sort_order: my_friends_[user] ? ordering.MYFRIENDS : ordering.SUBFOLDER,
-            name: node.name || node.label
-        };
-        var before = find_sort_point(data, parent);
-        if(before)
-            $tree_.tree('moveNode', node, before, 'before');
-        else
-            $tree_.tree('moveNode', node, parent.children[parent.children.length-1], 'after');
-        node.sort_order = data.sort_order;
+        if(my_friends_[user]) {
+            var anode = $tree_.tree('getNodeById', node_id('alls', user));
+            var ftree;
+            if(anode)
+                ftree = duplicate_tree_data(anode, friend_from_all);
+            else {
+                // note: check what this case is really for
+                var mine = user === username_; // yes it is possible I'm not my own friend
+                ftree = {
+                    label: mine ? "My Notebooks" : someone_elses(user),
+                    id: node_id('friends', user),
+                    sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER
+                };
+            }
+            var parent = $tree_.tree('getNodeById', node_id('friends'));
+            var node = insert_alpha(ftree, parent);
+            $tree_.tree('loadData', ftree.children, node);
+        }
+        else {
+            var n2 = $tree_.tree('getNodeById', node_id('friends', user));
+            $tree_.tree('removeNode', n2);
+        }
     }
 
     function display_date(ds) {
@@ -733,10 +789,6 @@ var editor = function () {
             return date.getHours() + ':' + pad(date.getMinutes());
         else
             return (date.getMonth()+1) + '/' + date.getDate();
-    }
-
-    function someone_elses(name) {
-        return name + "'s Notebooks";
     }
 
     function populate_comments(comments) {
@@ -923,6 +975,8 @@ var editor = function () {
                 }
             }
         }
+        else
+            $tree_.tree('toggle', event.node);
         return false;
     }
     function tree_open(event) {
@@ -1008,7 +1062,7 @@ var editor = function () {
                 });
         },
         validate_name: function(newname) {
-            return newname && !/^\s+$/.test(newname); // not null and not empty or just whitespace
+            return newname && !Notebook.empty_for_github(newname); // not null and not empty or just whitespace
         },
         rename_notebook: function(desc) {
             return shell.rename_notebook(desc);
@@ -1070,7 +1124,7 @@ var editor = function () {
                 this.star_notebook(false, {user: user, gistname: gistname}))
                 .then(function() {
                     remove_notebook_info(user, gistname);
-                    remove_node($tree_.tree('getNodeById', node_id('alls', user, gistname)));
+                    remove_notebook_view(user, gistname);
                     var promise = rcloud.config.clear_recent_notebook(gistname);
                     if(gistname === current_.notebook)
                         promise.then(function() {
@@ -1103,7 +1157,7 @@ var editor = function () {
             if(node.user !== username_)
                 throw "attempt to set visibility on notebook not mine";
             set_visibility(node.gistname, visible);
-            update_tree_entry(node.root, username_, node.gistname, get_notebook_info(node.gistname), false);
+            update_notebook_view(username_, node.gistname, get_notebook_info(node.gistname), false);
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
             shell.fork_or_revert_notebook(is_mine, gistname, version)
@@ -1139,9 +1193,6 @@ var editor = function () {
                  selroot: null,
                  push_history: true}, opts);
             return function(result) {
-                if(!result.description)
-                    throw "Invalid notebook (must have description)";
-
                 current_ = {notebook: result.id, version: options.version};
                 rcloud.config.set_current_notebook(current_);
                 rcloud.config.set_recent_notebook(result.id, (new Date()).toString());
@@ -1193,7 +1244,7 @@ var editor = function () {
             // FIXME natural sort!
             var files_out = _(files).pairs().filter(function(v) {
                 var k = v[0];
-                return !k.match(/\.([rR]|[mM][dD])$/) && k !== "r_type" && k !== "r_attributes";
+                return !Notebook.is_part_name(k) && k !== "r_type" && k !== "r_attributes";
             });
             if(files_out.length)
                 $("#notebook-assets-header").show();

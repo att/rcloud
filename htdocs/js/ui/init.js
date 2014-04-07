@@ -31,32 +31,47 @@ RCloud.UI.init = function() {
         shell.import_notebook_file();
     });
     $("#upload-submit").click(function() {
+        if($("#file")[0].files.length===0)
+            return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
+        var replacing = _.find(shell.notebook.model.assets, function(asset) {
+            return asset.filename() == $("#file")[0].files[0].name;
+        });
         function success(lst) {
             var path = lst[0], file = lst[1], notebook = lst[2];
             $("#file-upload-div").append(
                 bootstrap_utils.alert({
                     "class": 'alert-info',
-                    text: (to_notebook ? "Asset " : "File ") + file.name + " uploaded.",
+                    text: (to_notebook ? "Asset " : "File ") + file.name + (replacing ? " replaced." : " uploaded."),
                     on_close: function() {
                         $(".progress").hide();
                     }
                 })
             );
-            if(to_notebook)
+            if(to_notebook) {
+                var content = notebook.files[file.name].content;
                 editor.update_notebook_file_list(notebook.files);
+                var controller;
+                if(replacing) {
+                    replacing.content(content);
+                    shell.notebook.controller.update_asset(replacing);
+                    controller = replacing.controller;
+                }
+                else {
+                    controller = shell.notebook.controller.append_asset(content, file.name);
+                }
+                controller.select();
+            }
         };
 
-        // FIXME check for more failures besides file exists
-        function failure() {
+        function failure(what) {
             var overwrite_click = function() {
                 rcloud.upload_file(true, function(err, value) {
                     if (err) {
-                        var msg = exception_value;
                         $("#file-upload-div").append(
                             bootstrap_utils.alert({
                                 "class": 'alert-danger',
-                                text: msg
+                                text: err
                             })
                         );
                     } else {
@@ -65,13 +80,22 @@ RCloud.UI.init = function() {
                 });
             };
             var alert_element = $("<div></div>");
-            var p = $("<p>File exists. </p>");
+            var p;
+            if(what==="exists") {
+                p = $("<p>File exists.</p>");
+                var overwrite = bootstrap_utils
+                        .button({"class": 'btn-danger'})
+                        .click(overwrite_click)
+                        .text("Overwrite");
+                p.append(overwrite);
+            }
+            else if(what==="empty") {
+                p = $("<p>File is empty.</p>");
+            }
+            else if(what==="badname") {
+                p = $("<p>Filename not allowed.</p>");
+            }
             alert_element.append(p);
-            var overwrite = bootstrap_utils
-                .button({"class": 'btn-danger'})
-                .click(overwrite_click)
-                .text("Overwrite");
-            p.append(overwrite);
             $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
         }
 
@@ -100,7 +124,6 @@ RCloud.UI.init = function() {
     });
 
     $("#insert-new-cell").click(function() {
-        debugger;
         var language = $("#insert-cell-language option:selected").text();
         if (language === 'Markdown') {
             shell.new_markdown_cell("");
@@ -122,8 +145,8 @@ RCloud.UI.init = function() {
     //     vs[vs.length-1].show_source();
     // });
     $("#rcloud-logout").click(function() {
-	// let the server-side script handle this so it can
-	// also revoke all tokens
+        // let the server-side script handle this so it can
+        // also revoke all tokens
         window.location.href = '/logout.R';
     });
 
@@ -144,6 +167,8 @@ RCloud.UI.init = function() {
             items: "> .notebook-cell",
             start: function(e, info) {
                 $(e.toElement).addClass("grabbing");
+                // http://stackoverflow.com/questions/6140680/jquery-sortable-placeholder-height-problem
+                info.placeholder.height(info.item.height());
             },
             stop: function(e, info) {
                 $(e.toElement).removeClass("grabbing");
@@ -156,7 +181,8 @@ RCloud.UI.init = function() {
             },
             handle: " .ace_gutter-layer",
             scroll: true,
-            scrollSensitivity: 40
+            scrollSensitivity: 40,
+            forcePlaceholderSize: true
         });
     }
     make_cells_sortable();
