@@ -119,6 +119,7 @@ RCloud.UI.init = function() {
 
     $("#search").submit(function() {
         var qry = $('#input-text-search').val();
+        $('#input-text-search').blur();
         RCloud.UI.search.exec(qry);
         return false;
     });
