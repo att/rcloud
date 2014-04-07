@@ -38,6 +38,13 @@ var shell = (function() {
         return notebook;
     }
 
+    function scroll_to_end() {
+        // no idea why the plugin doesn't take current scroll into account when using
+        // the element parameter version
+        var y = $("#rcloud-cellarea").scrollTop() + $("#end-of-output").offset().top;
+        $("#rcloud-cellarea").scrollTo(null, y);
+    }
+
     var result = {
         notebook: {
             model: notebook_model_,
@@ -64,17 +71,13 @@ var shell = (function() {
             var cell = notebook_controller_.append_cell(content, "Markdown");
             RCloud.UI.command_prompt.history.execute(content);
             if(execute) {
-                cell.execute().then(function() {
-                    $("#rcloud-cellarea").scrollTo(null, $("#end-of-output"));
-                });
+                cell.execute().then(scroll_to_end);
             }
         }, new_interactive_cell: function(content, execute) {
             var cell = notebook_controller_.append_cell(content, "R");
             RCloud.UI.command_prompt.history.execute(content);
             if(execute) {
-                cell.execute().then(function() {
-                    $("#rcloud-cellarea").scrollTo(null, $("#end-of-output"));
-                });
+                cell.execute().then(scroll_to_end);
             }
             return cell;
         }, insert_markdown_cell_before: function(index) {
