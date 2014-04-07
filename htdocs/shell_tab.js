@@ -38,11 +38,14 @@ var shell = (function() {
         return notebook;
     }
 
-    function scroll_to_end() {
+    function scroll_to_end(duration) {
         // no idea why the plugin doesn't take current scroll into account when using
         // the element parameter version
-        var y = $("#rcloud-cellarea").scrollTop() + $("#end-of-output").offset().top;
-        $("#rcloud-cellarea").scrollTo(null, y);
+        var opts = undefined;
+        if(duration !== undefined)
+            opts = {animation: {duration: duration}};
+        var y = $("#rcloud-cellarea").scrollTop() + $("#prompt-div").position().top +  $("#prompt-div").height();
+        $("#rcloud-cellarea").scrollTo(null, y, opts);
     }
 
     var result = {
@@ -80,7 +83,8 @@ var shell = (function() {
                 cell.execute().then(scroll_to_end);
             }
             return cell;
-        }, insert_markdown_cell_before: function(index) {
+        }, scroll_to_end: scroll_to_end,
+        insert_markdown_cell_before: function(index) {
             return notebook_controller_.insert_cell("", "Markdown", index);
         }, coalesce_prior_cell: function(cell_model) {
             return notebook_controller_.coalesce_prior_cell(cell_model);

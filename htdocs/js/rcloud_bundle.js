@@ -3391,8 +3391,10 @@ RCloud.UI.command_prompt = {
         if (!prompt_div.length)
             return null;
         function set_ace_height() {
-            prompt_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
+            var EXTRA_HEIGHT = 6;
+            prompt_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
             widget.resize();
+            shell.scroll_to_end(0);
         }
         prompt_div.css({'background-color': "#fff"});
         prompt_div.addClass("r-language-pseudo");
