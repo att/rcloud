@@ -193,7 +193,7 @@ var shell = (function() {
                 }
             }
             else ponents = notebook_or_url.split('/');
-            var notebook = ponents[0],
+            var gistname = ponents[0],
                 version = null;
             if(ponents.length>1) {
                 version = ponents[1] || null; // don't take empty string
@@ -204,7 +204,10 @@ var shell = (function() {
                     }
                 }
             }
-            editor.load_notebook(notebook, version);
+            editor.load_notebook(gistname, version).then(function(notebook) {
+                if(notebook.user.login === rcloud.username())
+                    editor.set_notebook_visibility(notebook.id, true);
+            });
         }, export_notebook_as_r_file: function() {
             return rcloud.get_notebook(gistname_, version_).then(function(notebook) {
                 var strings = [];
@@ -288,6 +291,7 @@ var shell = (function() {
                         notebook.description = notebook_desc_content.val();
                         rcloud.create_notebook(notebook).then(function(notebook) {
                             editor.star_notebook(true, {notebook: notebook});
+                            editor.set_notebook_visibility(notebook.id, true);
                         });
                     }
                     dialog.modal('hide');
@@ -368,6 +372,7 @@ var shell = (function() {
                         }
                         succeeded.forEach(function(notebook) {
                             editor.star_notebook(true, {notebook: notebook});
+                            editor.set_notebook_visibility(notebook.id, true);
                         });
                         if(failed.length)
                             rclient.post_error("Failed to import notebooks: " + failed.join(', '));

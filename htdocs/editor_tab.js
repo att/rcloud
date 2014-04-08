@@ -913,11 +913,17 @@ var editor = function () {
                     make_private.hide();
                 make_private.click(function() {
                     fake_hover(node);
-                    result.set_notebook_visibility(node, false);
+                    if(node.user !== username_)
+                        throw "attempt to set visibility on notebook not mine";
+                    else
+                        result.set_notebook_visibility(node, false);
                 });
                 make_public.click(function() {
                     fake_hover(node);
-                    result.set_notebook_visibility(node, true);
+                    if(node.user !== username_)
+                        throw "attempt to set visibility on notebook not mine";
+                    else
+                        result.set_notebook_visibility(node, true);
                     return false;
                 });
                 add_buttons(make_private, make_public);
@@ -1158,11 +1164,9 @@ var editor = function () {
                         });
                 });
         },
-        set_notebook_visibility: function(node, visible) {
-            if(node.user !== username_)
-                throw "attempt to set visibility on notebook not mine";
-            set_visibility(node.gistname, visible);
-            update_notebook_view(username_, node.gistname, get_notebook_info(node.gistname), false);
+        set_notebook_visibility: function(gistname, visible) {
+            set_visibility(gistname, visible);
+            update_notebook_view(username_, gistname, get_notebook_info(gistname), false);
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
             shell.fork_or_revert_notebook(is_mine, gistname, version)
@@ -1174,6 +1178,10 @@ var editor = function () {
                                                    make_current: true,
                                                    is_change: !!version,
                                                    version: null});
+                    return notebook.id;
+                }).then(function(gistname) {
+                    if(!is_mine)
+                        this.set_notebook_visibility(gistname, true);
                 });
         },
         show_history: function(node, toggle) {
@@ -1229,13 +1237,13 @@ var editor = function () {
                 if(options.is_change && shell.is_old_github())
                     history.unshift({version:'blah'});
 
-                (_.has(num_stars_, result.id) ? Promise.resolve(undefined)
-                 : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
-                       num_stars_[result.id] = count;
-                 })).then(function() {
-                     update_notebook_from_gist(result, history, options.selroot);
-                     that.update_notebook_file_list(result.files);
-                });
+                var promise = (_.has(num_stars_, result.id) ? Promise.resolve(undefined)
+                               : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
+                                   num_stars_[result.id] = count;
+                               })).then(function() {
+                                   update_notebook_from_gist(result, history, options.selroot);
+                                   that.update_notebook_file_list(result.files);
+                               });
 
                 rcloud.get_all_comments(result.id).then(function(data) {
                     populate_comments(data);
@@ -1245,6 +1253,7 @@ var editor = function () {
                     publish_notebook_checkbox_.set_state(p);
                     publish_notebook_checkbox_.enable(result.user.login === username_);
                 });
+                return promise.return(result);
             };
         },
         update_notebook_file_list: function(files) {
