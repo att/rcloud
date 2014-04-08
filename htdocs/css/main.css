@@ -298,6 +298,8 @@ rect.frame {
 }
 
 #main-div {
+    top: 51px; left: 0px; right: 0px; bottom: 0px;
+    overflow: hidden;
     padding-bottom: 2.5em; /* must be .footer height + 2 * .footer.padding */
 }
 
@@ -502,18 +504,17 @@ pre {
 }
 
 .tab-div {
-    margin-bottom: 51px;
 }
 
-.rcloud-cellarea {
-    height: 80vh;
+#rcloud-cellarea {
+    width: 100%;
+    height: 100%;
     overflow-y: scroll;
     overflow-x: hidden;
 }
 
 .rcloud-prompt {
-    position: fixed;
-    bottom: 0;
+    width: 100%;
     z-index: 10;
     padding: 0;
     background-color: #777;
@@ -522,6 +523,10 @@ pre {
 .btn {
     border-radius: 0;
     font-size: inherit;
+}
+
+#prompt-div {
+    padding-top: 5px;
 }
 
 #prompt-div button {
@@ -642,7 +647,6 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
 }
 .r-result-div pre code:not(.r) {
     width: 800px;
-    margin-left: auto;
     margin-right: auto;
     border-left: 1px solid rgba(0,0,0,0.15);
     border-right: 1px solid rgba(0,0,0,0.15);

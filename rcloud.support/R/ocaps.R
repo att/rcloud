@@ -55,6 +55,9 @@ unauthenticated.ocaps <- function()
 
       get_users = make.oc(rcloud.get.users),
 
+      # externally used ocaps
+      load_module_package = make.oc(rcloud.load.module.package),
+
       # javascript.R
       setup_js_installer = make.oc(rcloud.setup.js.installer),
 
@@ -109,9 +112,6 @@ authenticated.ocaps <- function()
       authenticated = TRUE,
       session_init = make.oc(rcloud.session.init),
       session_markdown_eval = make.oc(session.markdown.eval),
-      load_user_config = make.oc(rcloud.load.user.config),
-      save_user_config = make.oc(rcloud.save.user.config),
-      load_multiple_user_configs = make.oc(rcloud.load.multiple.user.configs),
       get_notebook = make.oc(rcloud.get.notebook),
       load_notebook = make.oc(rcloud.load.notebook),
       notebook_by_name = make.oc(rcloud.notebook.by.name),

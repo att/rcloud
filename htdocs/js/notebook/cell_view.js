@@ -144,6 +144,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     if (am_read_only) {
         disable(remove_button);
         disable(insert_cell_button);
+        disable(split_button);
+        disable(coalesce_button);
+    }
+    else {
+        // no coalesce at top
+        if(!cell_model.parent_model.prior_cell(cell_model))
+            coalesce_button.hide();
     }
     widget.setReadOnly(am_read_only);
     widget.setOptions({
@@ -163,8 +170,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     widget.commands.addCommands([{
         name: 'sendToR',
         bindKey: {
-            win: 'Ctrl-Return',
-            mac: 'Command-Return',
+            win: 'Alt-Return',
+            mac: 'Alt-Return',
             sender: 'editor'
         },
         exec: function(widget, args, request) {
@@ -212,8 +219,24 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             }
 
             // click on code to edit
-            $("code.r", r_result_div).off('click')
-                .click(result.show_source);
+            var code_div = $("code.r", r_result_div);
+            code_div.off('click');
+            if(!shell.is_view_mode()) {
+                // distinguish between a click and a drag
+                // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
+                code_div.on('mousedown', function(e) {
+                    $(this).data('p0', { x: e.pageX, y: e.pageY });
+                }).on('mouseup', function(e) {
+                    var p0 = $(this).data('p0');
+                    if(p0) {
+                        var p1 = { x: e.pageX, y: e.pageY },
+                            d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
+                        if (d < 4) {
+                            result.show_source();
+                        }
+                    }
+                });
+            }
 
             // we use the cached version of DPR instead of getting window.devicePixelRatio
             // because it might have changed (by moving the user agent window across monitors)
@@ -283,9 +306,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             if (readonly) {
                 disable(remove_button);
                 disable(insert_cell_button);
+                disable(split_button);
+                disable(coalesce_button);
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
+                enable(split_button);
+                enable(coalesce_button);
             }
         },
 
@@ -338,6 +365,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // enable(hide_button);
             if (!am_read_only) {
                 enable(remove_button);
+                enable(split_button);
             }
             //editor_row.show();
 
@@ -352,6 +380,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             notebook_cell_div.css({'height': ''});
             enable(source_button);
             disable(result_button);
+            disable(split_button);
             // enable(hide_button);
             if (!am_read_only) {
                 enable(remove_button);

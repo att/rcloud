@@ -58,7 +58,7 @@ RClient = {
         var show_error_area;
         if(error_dest_.length)
             show_error_area = function() {
-                RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
+                RCloud.UI.right_panel.collapse($("#collapse-session-info"), false, false);
             };
         else {
             error_dest_ = $("#output");
@@ -127,7 +127,8 @@ RClient = {
             post_response: function (msg) {
                 var d = $("<pre class='response'></pre>").html(msg);
                 $("#output").append(d);
-                window.scrollTo(0, document.body.scrollHeight);
+                // not sure what this was for
+                //window.scrollTo(0, document.body.scrollHeight);
             },
 
             post_rejection: function(e) {

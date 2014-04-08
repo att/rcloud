@@ -332,7 +332,7 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.port_notebooksAsync(source, notebooks, prefix);
         };
         rcloud.purl_source = function(source) {
-            rcloud_ocaps.purl_sourceAsync(source);
+            return rcloud_ocaps.purl_sourceAsync(source);
         };
 
         rcloud.get_completions = function(text, pos) {
@@ -391,10 +391,13 @@ RCloud.create = function(rcloud_ocaps) {
                         fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                     } else {
                         // done, push to notebook.
-                        rcloud_ocaps.notebook_upload(
+                        var content = String.fromCharCode.apply(null, new Uint16Array(file_to_upload));
+                        if(Notebook.empty_for_github(content))
+                            on_failure("empty");
+                        else rcloud_ocaps.notebook_upload(
                             file_to_upload.buffer, file.name, function(err, result) {
                                 if (err) {
-                                    on_failure(err);
+                                    on_failure("exists", err);
                                 } else {
                                     on_success([file_to_upload, file, result.content]);
                                 }
@@ -407,6 +410,10 @@ RCloud.create = function(rcloud_ocaps) {
             var file=$("#file")[0].files[0];
             if(_.isUndefined(file))
                 throw new Error("No file selected!");
+            if(Notebook.is_part_name(file.name)) {
+                on_failure("badname");
+                return;
+            }
 
             rcloud_ocaps.file_upload.upload_path(function(err, path) {
                 if (err) {
@@ -428,7 +435,6 @@ RCloud.create = function(rcloud_ocaps) {
             function do_upload(path, file) {
                 var upload_name = path + '/' + file.name;
                 rcloud_ocaps.file_upload.create(upload_name, force, function(err, result) {
-                    debugger;
                     if (RCloud.is_exception(result)) {
                         on_failure(RCloud.exception_message(result));
                         return;
