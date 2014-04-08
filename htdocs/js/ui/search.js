@@ -66,7 +66,10 @@ RCloud.UI.search = {
                         if(parts_table != "") {
                             parts_table = "<table>" + parts_table + "</table>";
                         }
-                        search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" + "<a id=\"open_" + i + "\" href='javascript:editor.load_notebook(\"" + notebook_id + "\")' class='search-result-heading'>" + d[i].user + " / " + d[i].notebook + "</a>" + image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
+                        search_results += "<table class='search-result-item' width=100%><tr><td width=10%>"
+                            + "<a id=\"open_" + i + "\" href='#' data-gistname='" + notebook_id + "' class='search-result-heading'>"
+                            + d[i].user + " / " + d[i].notebook + "</a>"
+                            + image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
                         if(parts_table != "")
                             search_results += "<tr><td colspan=2 width=100% style='font-size: 12'><div>" + parts_table + "</div></td></tr>";
                         search_results += "</table>";
@@ -80,6 +83,12 @@ RCloud.UI.search = {
                 var search_summary = len + " Results Found"; //+ " <i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i>";
                 summary(search_summary);
                 $("#search-results").show().css("height", "50vh").html(search_results);
+                $("#search-results .search-result-heading").click(function(e) {
+                    e.preventDefault();
+                    var gistname = $(this).attr("data-gistname");
+                    editor.open_notebook(gistname, null, true, e.metaKey || e.ctrlKey);
+                    return false;
+                });
                 $("#accordion-left").trigger("reshadow");
             }
         };

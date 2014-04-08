@@ -963,21 +963,16 @@ var editor = function () {
         if(event.node.id === 'showmore')
             result.show_history(event.node.parent, false);
         else if(event.node.gistname) {
-            if(event.click_event.metaKey || event.click_event.ctrlKey) {
-                var url = make_main_url({notebook: event.node.gistname, version: event.node.version});
-                window.open(url, "_blank");
-            }
+            if(event.click_event.metaKey || event.click_event.ctrlKey)
+                result.open_notebook(event.node.gistname, event.node.version, true, true);
             else {
-                // workaround: it's weird that a notebook exists in two trees but only one is selected (#220)
-                // and some would like clicking on the active notebook to edit the name (#252)
-                // for now, just select
+                // it's weird that a notebook exists in two trees but only one is selected (#220)
+                // just select - and this enables editability
                 if(event.node.gistname === current_.notebook
                    && event.node.version == current_.version) // nulliness ok here
                     select_node(event.node);
-                else {
-                    // possibly erase query parameters here, but that requires a reload
-                    result.load_notebook(event.node.gistname, event.node.version || null, event.node.root);
-                }
+                else
+                    result.open_notebook(event.node.gistname, event.node.version || null, event.node.root, false);
             }
         }
         else
@@ -1061,6 +1056,15 @@ var editor = function () {
                 .then(this.load_callback({version: version,
                                           selroot: selroot,
                                           push_history: push_history}));
+        },
+        open_notebook: function(gistname, version, selroot, new_window) {
+            // really just load_notebook except possibly in a new window
+            if(new_window) {
+                var url = make_main_url({notebook: gistname, version: version});
+                window.open(url, "_blank");
+            }
+            else
+                this.load_notebook(gistname, version, selroot);
         },
         new_notebook: function() {
             var that = this;
