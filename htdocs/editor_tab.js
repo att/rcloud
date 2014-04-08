@@ -997,16 +997,6 @@ var editor = function () {
 
                 return that.new_notebook();
             });
-            /* Search disabled for Version 0.9
-            var old_text = "";
-            window.setInterval(function() {
-                var new_text = $("#input-text-search").val();
-                if (new_text !== old_text) {
-                    old_text = new_text;
-                    that.search(new_text);
-                }
-            }, 500);
-             */
             $('#new-notebook').click(function(e) {
                 e.preventDefault();
                 if(e.metaKey || e.ctrlKey) {
