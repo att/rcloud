@@ -241,7 +241,7 @@ rect.frame {
 
 .notebook-tree {
     height: 450px;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 .header-button {
@@ -515,7 +515,7 @@ pre {
 #rcloud-cellarea {
     width: 100%;
     height: 100%;
-    overflow-y: scroll;
+    overflow-y: auto;
     overflow-x: hidden;
 }
 
