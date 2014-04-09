@@ -2732,9 +2732,13 @@ var oob_handlers = {
     },
     "pager": function(v) {
         var files = v[0], header = v[1], title = v[2];
-        // FIXME: show this somewhere somehow ...
-        append_session_info("pager.header:" + header +"\npager.title: "+title+"\n");
-        append_session_info("contents:" + files);
+        var html = "<h2>" + title + "</h2>\n";
+        for(var i=0; i<files.length; ++i) {
+            if(_.isArray(header) && header[i])
+                html += "<h3>" + header[i] + "</h3>\n";
+            html += "<pre>" + files[i] + "</pre>";
+        }
+        $("#help-frame").contents().find('body').html(html);
     },
     "editor": function(v) {
         // what is an object to edit, content is file content to edit
