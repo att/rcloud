@@ -428,6 +428,12 @@ li.jqtree-selected .notebook-commands {
     height: 50vh;
 }
 
+#session-info {
+    height: 100%;
+    overflow-y: auto;
+    padding: 5px;
+}
+
 /******************************************************************************/
 
 .comment-container {
