@@ -140,19 +140,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         session.getUndoManager().reset();
     });
     var doc = session.doc;
-    var am_read_only = cell_model.parent_model.read_only();
-    if (am_read_only) {
-        disable(remove_button);
-        disable(insert_cell_button);
-        disable(split_button);
-        disable(coalesce_button);
-    }
-    else {
-        // no coalesce at top
-        if(!cell_model.parent_model.prior_cell(cell_model))
-            coalesce_button.hide();
-    }
-    widget.setReadOnly(am_read_only);
+    var am_read_only = undefined; // we don't know yet
     widget.setOptions({
         enableBasicAutocompletion: true
     });
@@ -302,7 +290,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
         set_readonly: function(readonly) {
             am_read_only = readonly;
-            widget.setReadOnly(readonly);
+            // a better way to set non-interactive readonly
+            // https://github.com/ajaxorg/ace/issues/266
+            widget.setOptions({
+                readOnly: readonly,
+                highlightActiveLine: !readonly,
+                highlightGutterLine: !readonly
+            });
+            widget.renderer.$cursorLayer.element.style.opacity = readonly?0:1;
             if (readonly) {
                 disable(remove_button);
                 disable(insert_cell_button);

@@ -1524,19 +1524,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         session.getUndoManager().reset();
     });
     var doc = session.doc;
-    var am_read_only = cell_model.parent_model.read_only();
-    if (am_read_only) {
-        disable(remove_button);
-        disable(insert_cell_button);
-        disable(split_button);
-        disable(coalesce_button);
-    }
-    else {
-        // no coalesce at top
-        if(!cell_model.parent_model.prior_cell(cell_model))
-            coalesce_button.hide();
-    }
-    widget.setReadOnly(am_read_only);
+    var am_read_only = undefined; // we don't know yet
     widget.setOptions({
         enableBasicAutocompletion: true
     });
@@ -1686,7 +1674,12 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
         set_readonly: function(readonly) {
             am_read_only = readonly;
-            widget.setReadOnly(readonly);
+            widget.setOptions({
+                readOnly: readonly,
+                highlightActiveLine: !readonly,
+                highlightGutterLine: !readonly
+            });
+            widget.renderer.$cursorLayer.element.style.opacity = readonly?0:1;
             if (readonly) {
                 disable(remove_button);
                 disable(insert_cell_button);
@@ -1920,12 +1913,6 @@ Notebook.create_html_view = function(model, root_div)
 {
     var root_asset_div = $("#asset-list");
 
-    function show_or_hide_cursor(readonly) {
-        if(readonly)
-            $('.ace_cursor-layer').hide();
-        else
-            $('.ace_cursor-layer').show();
-    }
     function on_rearrange() {
         _.each(result.sub_views, function(view) {
             view.check_buttons();
@@ -1981,7 +1968,6 @@ Notebook.create_html_view = function(model, root_div)
             on_rearrange();
         },
         set_readonly: function(readonly) {
-            show_or_hide_cursor(readonly);
             _.each(this.sub_views, function(view) {
                 view.set_readonly(readonly);
             });
@@ -2297,7 +2283,6 @@ Notebook.create_controller = function(model)
     function on_load(version, notebook) {
         if (!_.isUndefined(notebook.files)) {
             var i;
-            model.read_only(version != null || notebook.user.login != rcloud.username());
             // we can't do much with a notebook with no name, so give it one
             if(!notebook.description)
                 notebook.description = "(untitled)";
@@ -2329,6 +2314,7 @@ Notebook.create_controller = function(model)
                 asset_controller = asset_controller || result;
             }
             model.user(notebook.user.login);
+            model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
 
             if(asset_controller)

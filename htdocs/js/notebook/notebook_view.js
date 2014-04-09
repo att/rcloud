@@ -2,12 +2,6 @@ Notebook.create_html_view = function(model, root_div)
 {
     var root_asset_div = $("#asset-list");
 
-    function show_or_hide_cursor(readonly) {
-        if(readonly)
-            $('.ace_cursor-layer').hide();
-        else
-            $('.ace_cursor-layer').show();
-    }
     function on_rearrange() {
         _.each(result.sub_views, function(view) {
             view.check_buttons();
@@ -63,7 +57,6 @@ Notebook.create_html_view = function(model, root_div)
             on_rearrange();
         },
         set_readonly: function(readonly) {
-            show_or_hide_cursor(readonly);
             _.each(this.sub_views, function(view) {
                 view.set_readonly(readonly);
             });
