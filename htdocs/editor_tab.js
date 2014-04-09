@@ -848,7 +848,7 @@ var editor = function () {
                     ++count;
                 }
                 add.width = function() {
-                    return count*14;
+                    return count*15;
                 };
                 add.commit = function() {
                     target.append.apply(target, lst);
