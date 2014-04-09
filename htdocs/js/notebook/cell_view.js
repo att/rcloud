@@ -418,6 +418,15 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
         get_content: function() { // for debug
             return cell_model.content();
+        },
+        reformat: function() {
+            widget.resize();
+        },
+        check_buttons: function() {
+            if(!cell_model.parent_model.prior_cell(cell_model))
+                coalesce_button.hide();
+            else if(!am_read_only)
+                coalesce_button.show();
         }
     };
 

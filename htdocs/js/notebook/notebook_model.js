@@ -151,12 +151,13 @@ Notebook.create_model = function()
             var changes = [];
             while(x<this.cells.length && n) {
                 if(this.cells[x].id() == id) {
+                    var cell = this.cells[x];
+                    this.cells.splice(x, 1);
                     if(!skip_event)
                         _.each(this.views, function(view) {
-                            view.cell_removed(that.cells[x], x);
+                            view.cell_removed(cell, x);
                         });
-                    changes.push(that.cells[x].change_object({ erase: 1 }));
-                    this.cells.splice(x, 1);
+                    changes.push(cell.change_object({ erase: 1 }));
                 }
                 ++id;
                 --n;
