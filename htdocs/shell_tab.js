@@ -95,16 +95,13 @@ var shell = (function() {
             var that = this;
             notebook_controller_.save();
             function do_load(done) {
-                var oldname = gistname_, oldversion = version_;
-                gistname_ = gistname;
-                version_ = version;
-                return that.notebook.controller.load_notebook(gistname_, version_).then(function(notebook) {
+                return that.notebook.controller.load_notebook(gistname, version).then(function(notebook) {
                     if (!_.isUndefined(notebook.error)) {
                         done();
-                        gistname_ = oldname;
-                        version_ = oldversion;
                         return undefined;
                     }
+                    gistname_ = gistname;
+                    version_ = version;
                     $(".rcloud-user-defined-css").remove();
                     return rcloud.install_notebook_stylesheets()
                         .return(notebook)
