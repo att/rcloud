@@ -3271,6 +3271,9 @@ RCloud.UI.scratchpad = {
                         that.current_model.parent_model.on_dirty();
                 });
             ui_utils.install_common_ace_key_bindings(widget);
+            $("#collapse-assets").on("shown.bs.collapse", function() {
+                widget.resize();
+            });
         }
         var scratchpad_editor = $("#scratchpad-editor");
         if (scratchpad_editor.length) {
