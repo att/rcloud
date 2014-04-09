@@ -1080,6 +1080,7 @@ ui_utils.editable = function(elem$, command) {
         elem$.attr('contenteditable', 'false');
         elem$.off('keydown');
         elem$.off('focus');
+        elem$.off('click');
         elem$.off('blur');
         break;
     case 'melt':
@@ -1097,6 +1098,10 @@ ui_utils.editable = function(elem$, command) {
                     }); // click-off cancels
                 }, 10);
             }
+        });
+        elem$.click(function(e) {
+            e.stopPropagation();
+            // allow default action but don't bubble (causing eroneous reselection in notebook tree)
         });
         elem$.keydown(function(e) {
             if(e.keyCode === 13) {
