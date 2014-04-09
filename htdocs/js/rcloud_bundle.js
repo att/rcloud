@@ -2775,7 +2775,8 @@ RCloud.session = {
                             rcloud.api.set_url(window.location);
 
                             resolve(rcloud.init_client_side_data().then(function() {
-                                $("#output").find(".alert").remove();
+                                // we're always in edit mode here
+                                $("#session-info").empty();
                                 return done;
                             }));
                         },
