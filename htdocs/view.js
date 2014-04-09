@@ -28,7 +28,7 @@ window.onload = function() {
                 });
             });
         }).catch(function(err) {
-            rclient.post_error(rclient.disconnection_error("Could not load notebook. Maybe you do not have permission to see it.", "Login"));
+            rclient.post_error(rclient.disconnection_error("Could not load notebook. You may need to login to see it.", "Login"));
         });
     });
 };
