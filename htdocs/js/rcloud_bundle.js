@@ -1674,6 +1674,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
         set_readonly: function(readonly) {
             am_read_only = readonly;
+            // a better way to set non-interactive readonly
+            // https://github.com/ajaxorg/ace/issues/266
             widget.setOptions({
                 readOnly: readonly,
                 highlightActiveLine: !readonly,
@@ -2729,18 +2731,18 @@ var oob_handlers = {
         RCloud.UI.left_panel.collapse($("#collapse-help"), false);
     },
     "pager": function(v) {
-	var files = v[0], header = v[1], title = v[2];
-	// FIXME: show this somewhere somehow ...
-	append_session_info("pager.header:" + header +"\npager.title: "+title+"\n");
-	append_session_info("contents:" + files);
+        var files = v[0], header = v[1], title = v[2];
+        // FIXME: show this somewhere somehow ...
+        append_session_info("pager.header:" + header +"\npager.title: "+title+"\n");
+        append_session_info("contents:" + files);
     },
     "editor": function(v) {
-	// what is an object to edit, content is file content to edit
-	var what = v[0], content = v[1], name = v[2];
-	// FIXME: do somethign with it - eventually this
-	// should be a modal thing - for now we shoudl at least
-	// show the content ...
-	append_session_info("what: "+ what + "\ncontents:" + content + "\nname: "+name+"\n");
+        // what is an object to edit, content is file content to edit
+        var what = v[0], content = v[1], name = v[2];
+        // FIXME: do somethign with it - eventually this
+        // should be a modal thing - for now we shoudl at least
+        // show the content ...
+        append_session_info("what: "+ what + "\ncontents:" + content + "\nname: "+name+"\n");
     },
     "console.out": append_session_info,
     "console.msg": append_session_info,
