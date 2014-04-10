@@ -1,3 +1,5 @@
+(function() {
+
 // FIXME this is just a proof of concept - using Rserve console OOBs
 var append_session_info = function(msg) {
     // one hacky way is to maintain a <pre> that we fill as we go
@@ -43,6 +45,11 @@ var oob_handlers = {
     // NOTE: "idle": ... can be used to handle idle pings from Rserve if we care ..
 };
 
+var on_data = function(v) {
+    v = v.value.json();
+    oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
+};
+
 RCloud.session = {
     first_session_: true,
     // FIXME rcloud.with_progress is part of the UI.
@@ -50,85 +57,94 @@ RCloud.session = {
         if (this.first_session_) {
             this.first_session_ = false;
             return rcloud.with_progress();
-        } else {
-            return rcloud.with_progress(function(done) {
-                rclient.close();
-                return new Promise(function(resolve, reject) {
-                    rclient = RClient.create({
-                        debug: rclient.debug,
-                        host: rclient.host,
-                        on_connect: function(ocaps) {
-                            rcloud = RCloud.create(ocaps.rcloud);
-                            rcloud.session_init(rcloud.username(), rcloud.github_token());
-                            rcloud.display.set_device_pixel_ratio();
-                            rcloud.api.set_url(window.location);
-
-                            resolve(rcloud.init_client_side_data().then(function() {
-                                // we're always in edit mode here
-                                $("#session-info").empty();
-                                return done;
-                            }));
-                        },
-                        on_error: function(error) {
-                            // if we fail to reconnect we still want
-                            // to reject the promise so with_progress can continue.
-                            if (!rclient.running) {
-                                reject(done);
-                            }
-                            return false;
-                        },
-                        on_data: function(v) {
-                            v = v.value.json();
-                            oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
+        } 
+        return rcloud.with_progress(function(done) {
+            rclient.close();
+            return new Promise(function(resolve, reject) {
+                rclient = RClient.create({
+                    debug: rclient.debug,
+                    host: rclient.host,
+                    on_connect: function(ocaps) {
+                        rcloud = RCloud.create(ocaps.rcloud);
+                        rcloud.session_init(rcloud.username(), rcloud.github_token());
+                        rcloud.display.set_device_pixel_ratio();
+                        rcloud.api.set_url(window.location);
+                        
+                        resolve(rcloud.init_client_side_data().then(function() {
+                            // we're always in edit mode here
+                            $("#session-info").empty();
+                            return done;
+                        }));
+                    },
+                    on_error: function(error) {
+                        // if we fail to reconnect we still want
+                        // to reject the promise so with_progress can continue.
+                        if (!rclient.running) {
+                            reject(done);
                         }
-                    });
+                        return false;
+                    },
+                    on_data: on_data
                 });
             });
-        }
+        });
     }, init: function(allow_anonymous) {
         this.first_session_ = true;
 
         return new Promise(function(resolve, reject) {
+            function on_connect_anonymous_allowed(ocaps) {
+                var promise;
+                rcloud = RCloud.create(ocaps.rcloud);
+                if (rcloud.authenticated) {
+                    promise = rcloud.session_init(rcloud.username(), rcloud.github_token());
+                } else {
+                    promise = rcloud.anonymous_session_init();
+                }
+                return promise;
+            }
+
+            function on_connect_anonymous_disallowed(ocaps) {
+                rcloud = RCloud.create(ocaps.rcloud);
+                if (!rcloud.authenticated) {
+                    rclient.post_error(rclient.disconnection_error("Please login first!"));
+                    return new Promise(function(resolve, reject) {
+                        reject(new Error("Not authenticated"));
+                    });
+                }
+                return rcloud.session_init(rcloud.username(), rcloud.github_token());
+            }
+
+            function on_connect(ocaps) {
+                var promise = allow_anonymous ? 
+                    on_connect_anonymous_allowed(ocaps) : 
+                    on_connect_anonymous_disallowed(ocaps);
+                
+                promise.then(function(hello) {
+                    rclient.post_response(hello);
+                }).catch(function(error) { // e.g. couldn't connect with github
+                    rclient.close();
+                    reject(error);
+                }).then(function() {
+                    rcloud.display.set_device_pixel_ratio();
+                    rcloud.api.set_url(window.location.href);
+                    resolve(rcloud.init_client_side_data());
+                });
+            }
+
             rclient = RClient.create({
                 debug: false,
                 host:  location.href.replace(/^http/,"ws").replace(/#.*$/,""),
-                on_connect: function(ocaps) {
-                    rcloud = RCloud.create(ocaps.rcloud);
-                    if (allow_anonymous) {
-                        var promise;
-                        if (rcloud.authenticated) {
-                            promise = rcloud.session_init(rcloud.username(), rcloud.github_token());
-                        } else {
-                            promise = rcloud.anonymous_session_init();
-                        }
-                        promise.then(function(hello) {
-                            rclient.post_response(hello);
-                        });
-                    } else {
-                        if (!rcloud.authenticated) {
-                            rclient.post_error(rclient.disconnection_error("Please login first!"));
-                            rclient.close();
-                            reject(new Error("Not authenticated"));
-                            return;
-                        }
-                        rcloud.session_init(rcloud.username(), rcloud.github_token()).then(function(hello) {
-                            rclient.post_response(hello);
-                        }).catch(function(error) { // e.g. couldn't connect with github
-                            rclient.close();
-                            reject(error);
-                            return;
-                        });
-                    }
-                    rcloud.display.set_device_pixel_ratio();
-                    rcloud.api.set_url(window.location.href);
-
-                    resolve(rcloud.init_client_side_data());
-                }, on_data: function(v) {
-                    v = v.value.json();
-                    oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
+                on_connect: on_connect,
+                on_data: on_data,
+                on_error: function(error) {
+                    // if we fail to connect we want
+                    // to reject the promise so it can be handled downstream
+                    reject();
+                    return false;
                 }
             });
         });
-
     }
 };
+
+})();
