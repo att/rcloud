@@ -2739,6 +2739,7 @@ var oob_handlers = {
             html += "<pre>" + files[i] + "</pre>";
         }
         $("#help-frame").contents().find('body').html(html);
+        RCloud.UI.left_panel.collapse($("#collapse-help"), false);
     },
     "editor": function(v) {
         // what is an object to edit, content is file content to edit
@@ -2750,7 +2751,9 @@ var oob_handlers = {
     },
     "console.out": append_session_info,
     "console.msg": append_session_info,
-    "console.err": append_session_info
+    "console.err": append_session_info,
+    "stdout": append_session_info,
+    "stderr": append_session_info
     // NOTE: "idle": ... can be used to handle idle pings from Rserve if we care ..
 };
 
