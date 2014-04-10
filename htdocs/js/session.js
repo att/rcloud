@@ -25,6 +25,7 @@ var oob_handlers = {
             html += "<pre>" + files[i] + "</pre>";
         }
         $("#help-frame").contents().find('body').html(html);
+        RCloud.UI.left_panel.collapse($("#collapse-help"), false);
     },
     "editor": function(v) {
         // what is an object to edit, content is file content to edit
