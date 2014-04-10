@@ -1,5 +1,11 @@
 ## RCloud develop branch
 
+### Features
+
+* `view.html` and `main.html` now support referencing notebooks by
+  name. Use, for example,
+  `view.html?user=cscheid&path=tests/project1/notebook1`.
+
 ### Installation/Administration
 
 * RCloud configuration now defaults to using a single port for both

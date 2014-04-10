@@ -10,12 +10,25 @@ window.onload = function() {
         var notebook = getURLParameter("notebook"),
         version = getURLParameter("version"),
         quiet = getURLParameter("quiet");
+
+        var promise = Promise.cast(true);
         if (Number(quiet)) {
-            $(".navbar").hide();
-            $("body").css("padding-top", "0");
-            rcloud.api.disable_echo();
+            promise = promise.then(function() {
+                $(".navbar").hide();
+                $("body").css("padding-top", "0");
+                rcloud.api.disable_echo();
+            });
         }
-        shell.load_notebook(notebook, version).then(function() {
+        if (notebook === null && getURLParameter("user")) {
+            promise = promise.then(function() {
+                return rcloud.get_notebook_by_name(getURLParameter("path"), getURLParameter("user"));
+            }).then(function(result) {
+                notebook = result[0];
+            });
+        }
+        promise = promise.then(function() {
+            return shell.load_notebook(notebook, version);
+        }).then(function() {
             if (Number(quiet)) {
                 $("#output > pre").first().hide();
             }
@@ -30,5 +43,6 @@ window.onload = function() {
         }).catch(function(err) {
             rclient.post_error(rclient.disconnection_error("Could not load notebook. You may need to login to see it.", "Login"));
         });
+        return promise;
     });
 };

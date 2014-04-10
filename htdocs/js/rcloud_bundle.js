@@ -254,7 +254,8 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "enable_warnings"],
             ["api", "disable_warnings"],
             ["api", "set_url"],
-            ["api", "get_url"]
+            ["api", "get_url"],
+            ["get_notebook_by_name"]
         ];
         process_paths(paths);
 
@@ -384,6 +385,10 @@ RCloud.create = function(rcloud_ocaps) {
             return cached_device_pixel_ratio;
         };
 
+        rcloud.get_notebook_by_name = function(user, path) {
+            return rcloud_ocaps.get_notebook_by_nameAsync(user, path);
+        };
+
         ////////////////////////////////////////////////////////////////////////////////
         // access the runtime API in javascript as well
 
@@ -448,7 +453,8 @@ RCloud.create = function(rcloud_ocaps) {
             ["config", "set_user_option"],
             ["get_notebook_info"],
             ["get_multiple_notebook_infos"],
-            ["set_notebook_info"]
+            ["set_notebook_info"],
+            ["notebook_by_name"]
         ];
         process_paths(paths);
 
@@ -703,6 +709,10 @@ RCloud.create = function(rcloud_ocaps) {
             if(!info.description) return Promise.reject("attempt to set info no description");
             if(!info.last_commit) return Promise.reject("attempt to set info no last_commit");
             return rcloud_ocaps.set_notebook_infoAsync(id, info);
+        };
+
+        rcloud.get_notebook_by_name = function(user, path) {
+            return rcloud_ocaps.notebook_by_nameAsync(user, path);
         };
     }
 
