@@ -138,6 +138,11 @@ var editor = function () {
     function as_folder_hierarchy(nodes, prefix, name_prefix) {
         function is_in_folder(v) { return v.label.match(/([^/]+)\/(.+)/); }
         var in_folders = nodes;
+        // tired of seeing the "method 'match' of undefined" error
+        if(_.some(in_folders, function(entry) {
+            return entry.label === undefined || entry.label === null;
+        }))
+           throw new Error("bad notebook entry with no label");
         in_folders = _.filter(in_folders, is_in_folder);
         in_folders = _.map(in_folders, function(v) {
             var m = v.label.match(/([^/]+)\/(.+)/);
@@ -916,14 +921,14 @@ var editor = function () {
                     if(node.user !== username_)
                         throw "attempt to set visibility on notebook not mine";
                     else
-                        result.set_notebook_visibility(node, false);
+                        result.set_notebook_visibility(node.gistname, false);
                 });
                 make_public.click(function() {
                     fake_hover(node);
                     if(node.user !== username_)
                         throw "attempt to set visibility on notebook not mine";
                     else
-                        result.set_notebook_visibility(node, true);
+                        result.set_notebook_visibility(node.gistname, true);
                     return false;
                 });
                 add_buttons(make_private, make_public);
