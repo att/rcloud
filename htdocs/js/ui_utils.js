@@ -47,6 +47,7 @@ ui_utils.fa_button = function(which, title, classname, style)
     }
     // $(icon).css(style);
     return $(span).tooltip({
+        container: 'body', // https://github.com/twbs/bootstrap/issues/5889
         title: title,
         delay: { show: 250, hide: 0 }
     });
