@@ -255,7 +255,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                         if (RCloud.is_exception(future)) {
                             var data = RCloud.exception_message(future);
                             $(that).replaceWith(function() {
-                                return rclient.string_error(data);
+                                return ui_utils.string_error(data);
                             });
                         } else {
                             var data = future();

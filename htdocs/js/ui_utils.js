@@ -1,5 +1,41 @@
 var ui_utils = {};
 
+ui_utils.disconnection_error = function(msg, label) {
+    var result = $("<div class='alert alert-danger'></div>");
+    result.append($("<span></span>").text(msg));
+    label = label || "Reconnect";
+    var button = $("<button type='button' class='close'>" + label + "</button>");
+    result.append(button);
+    button.click(function() {
+        window.location =
+            (window.location.protocol +
+             '//' + window.location.host +
+             '/login.R?redirect=' +
+             encodeURIComponent(window.location.pathname + window.location.search));
+    });
+    return result;
+};
+
+ui_utils.string_error = function(msg) {
+    var button = $("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>");
+    var result = $("<div class='alert alert-danger alert-dismissable'></div>");
+    // var text = $("<span></span>");
+
+    result.append(button);
+    var text = _.map(msg.split("\n"), function(str) {
+        // poor-man replacing 4 spaces with indent
+        var el = $("<div></div>").text(str), match;
+        if ((match = str.match(/^( {4})+/))) {
+            var indent = match[0].length / 4;
+            el.css("left", indent +"em");
+            el.css("position", "relative");
+        };
+        return el;
+    });
+    result.append(text);
+    return result;
+};
+
 ui_utils.fa_button = function(which, title, classname, style)
 {
     var icon = $.el.i({'class': which});

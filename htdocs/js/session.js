@@ -57,7 +57,7 @@ RCloud.session = {
         if (this.first_session_) {
             this.first_session_ = false;
             return rcloud.with_progress();
-        } 
+        }
         return rcloud.with_progress(function(done) {
             rclient.close();
             return new Promise(function(resolve, reject) {
@@ -69,7 +69,7 @@ RCloud.session = {
                         rcloud.session_init(rcloud.username(), rcloud.github_token());
                         rcloud.display.set_device_pixel_ratio();
                         rcloud.api.set_url(window.location);
-                        
+
                         resolve(rcloud.init_client_side_data().then(function() {
                             // we're always in edit mode here
                             $("#session-info").empty();
@@ -106,7 +106,8 @@ RCloud.session = {
             function on_connect_anonymous_disallowed(ocaps) {
                 rcloud = RCloud.create(ocaps.rcloud);
                 if (!rcloud.authenticated) {
-                    rclient.post_error(rclient.disconnection_error("Please login first!"));
+                    RCloud.UI.session_pane.post_error(
+                        ui_utils.disconnection_error("Please login first!"));
                     return new Promise(function(resolve, reject) {
                         reject(new Error("Not authenticated"));
                     });
@@ -115,10 +116,10 @@ RCloud.session = {
             }
 
             function on_connect(ocaps) {
-                var promise = allow_anonymous ? 
-                    on_connect_anonymous_allowed(ocaps) : 
+                var promise = allow_anonymous ?
+                    on_connect_anonymous_allowed(ocaps) :
                     on_connect_anonymous_disallowed(ocaps);
-                
+
                 promise.then(function(hello) {
                     rclient.post_response(hello);
                 }).catch(function(error) { // e.g. couldn't connect with github

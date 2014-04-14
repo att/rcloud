@@ -800,7 +800,7 @@ var editor = function () {
         try {
             comments = JSON.parse(comments);
         } catch (e) {
-            rclient.post_error("populate comments: " + e.message);
+            RCloud.UI.session_pane.post_error("populate comments: " + e.message);
             return;
         }
         d3.select("#comment-count")

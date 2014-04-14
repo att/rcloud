@@ -51,7 +51,7 @@ RCloud.create = function(rcloud_ocaps) {
 
         function failure(err) {
             if(err.message) {
-                rclient.post_error(err.message);
+                RCloud.UI.session_pane.post_error(err.message);
             }
             throw err;
         }
@@ -72,7 +72,7 @@ RCloud.create = function(rcloud_ocaps) {
         function failure(err) {
             var message = _.isObject(err) && 'ok' in err
                 ? err.content.message : err.toString();
-            rclient.post_error(command + ': ' + message);
+            RCloud.UI.session_pane.post_error(command + ': ' + message);
             throw err;
         }
         return promise.then(success).catch(failure);

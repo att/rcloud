@@ -113,6 +113,7 @@ RCloud.UI.init = function() {
 
     RCloud.UI.left_panel.init();
     RCloud.UI.right_panel.init();
+    RCloud.UI.session_pane.init();
 
     var non_notebook_panel_height = 246;
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
@@ -203,5 +204,4 @@ RCloud.UI.init = function() {
     $("#edit-notebook").click(function() {
         window.location = "main.html?notebook=" + shell.gistname();
     });
-
 };
