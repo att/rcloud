@@ -2815,11 +2815,7 @@ RCloud.session = {
             function on_connect_anonymous_disallowed(ocaps) {
                 rcloud = RCloud.create(ocaps.rcloud);
                 if (!rcloud.authenticated) {
-                    RCloud.UI.session_pane.post_error(
-                        ui_utils.disconnection_error("Please login first!"));
-                    return new Promise(function(resolve, reject) {
-                        reject(new Error("Not authenticated"));
-                    });
+                    return Promise.reject(new Error("Authentication required"));
                 }
                 return rcloud.session_init(rcloud.username(), rcloud.github_token());
             }
@@ -2832,6 +2828,7 @@ RCloud.session = {
                 promise.then(function(hello) {
                     rclient.post_response(hello);
                 }).catch(function(error) { // e.g. couldn't connect with github
+                    debugger;
                     rclient.close();
                     reject(error);
                 }).then(function() {

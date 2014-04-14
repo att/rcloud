@@ -29,15 +29,9 @@ window.onload = function() {
             shell.init();
             editor.init(opts);
         });
-        /*
-         // disabling navigation for now - concurrency issues
-         window.addEventListener("popstate", function(e) {
-         if(e.state === "rcloud.notebook") {
-         var notebook2 = getURLParameter("notebook");
-         var version2 = getURLParameter("version");
-         editor.load_notebook(notebook2, version2, true, false);
-         }
-         });
-         */
+    }).catch(function(error) {
+        if (error.message === "Authentication required") {
+            RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Please login first!"));
+        }
     });
 };
