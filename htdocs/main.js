@@ -18,7 +18,7 @@ window.onload = function() {
             if (opts.notebook === null && getURLParameter("new_notebook"))
                 opts = {new_notebook: true};
             if (opts.notebook === null && getURLParameter("user")) {
-                 promise = promise.then(function() { 
+                 promise = promise.then(function() {
                      return rcloud.get_notebook_by_name(getURLParameter("path"), getURLParameter("user"));
                  }).then(function(result) {
                      opts.notebook = result[0];

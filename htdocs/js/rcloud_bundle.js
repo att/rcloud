@@ -1,3 +1,5 @@
+// FIXME all RCloud.*.post_error calls should be handled elsewhere
+
 RClient = {
     create: function(opts) {
         opts = _.defaults(opts, {
@@ -5,7 +7,7 @@ RClient = {
         });
         function on_connect() {
             if (!rserve.ocap_mode) {
-                result.post_error(result.disconnection_error("Expected an object-capability Rserve. Shutting Down!"));
+                RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Expected an object-capability Rserve. Shutting Down!"));
                 shutdown();
                 return;
             }
@@ -39,7 +41,7 @@ RClient = {
             }
             if (opts.on_error && opts.on_error(msg, status_code))
                 return;
-            result.post_error(result.disconnection_error(msg));
+            RCloud.UI.session_pane.post_error(ui_utils.disconnection_error(msg));
             shutdown();
         }
 
@@ -48,22 +50,10 @@ RClient = {
                 debugger;
             }
             if (!clean) {
-                result.post_error(result.disconnection_error("Socket was closed. Goodbye!"));
+                RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Socket was closed. Goodbye!"));
                 shutdown();
             }
         };
-        // detect where we will show errors
-
-        var error_dest_ = $("#session-info");
-        var show_error_area;
-        if(error_dest_.length)
-            show_error_area = function() {
-                RCloud.UI.right_panel.collapse($("#collapse-session-info"), false, false);
-            };
-        else {
-            error_dest_ = $("#output");
-            show_error_area = function() {};
-        }
 
         var token = $.cookies.get().token;  // document access token
         var execToken = $.cookies.get().execToken; // execution token (if enabled)
@@ -83,47 +73,6 @@ RClient = {
             host: opts.host,
             running: false,
 
-            //////////////////////////////////////////////////////////////////
-            // FIXME: all of this should move out of rclient and into
-            // the notebook objects.
-
-            string_error: function(msg) {
-                var button = $("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>");
-                var result = $("<div class='alert alert-danger alert-dismissable'></div>");
-                var text = $("<span></span>");
-                result.append(button);
-                result.append(text);
-                text.text(msg);
-                return result;
-            },
-
-            disconnection_error: function(msg, label) {
-                var result = $("<div class='alert alert-danger'></div>");
-                result.append($("<span></span>").text(msg));
-                label = label || "Reconnect";
-                var button = $("<button type='button' class='close'>" + label + "</button>");
-                result.append(button);
-                button.click(function() {
-                    window.location =
-                        (window.location.protocol +
-                         '//' + window.location.host +
-                         '/login.R?redirect=' +
-                         encodeURIComponent(window.location.pathname + window.location.search));
-                });
-                return result;
-            },
-
-            post_error: function (msg, dest) {
-                if (typeof msg === 'string')
-                    msg = this.string_error(msg);
-                if (typeof msg !== 'object')
-                    throw new Error("post_error expects a string or a jquery div");
-                msg.css("margin", "-15px"); // hack
-                dest = dest || error_dest_;
-                dest.append(msg);
-                show_error_area();
-            },
-
             post_response: function (msg) {
                 var d = $("<pre class='response'></pre>").html(msg);
                 $("#output").append(d);
@@ -132,7 +81,7 @@ RClient = {
             },
 
             post_rejection: function(e) {
-                rclient.post_error(e.message);
+                RCloud.UI.session_pane.post_error(e.message);
                 throw e;
             },
 
@@ -197,7 +146,7 @@ RCloud.create = function(rcloud_ocaps) {
 
         function failure(err) {
             if(err.message) {
-                rclient.post_error(err.message);
+                RCloud.UI.session_pane.post_error(err.message);
             }
             throw err;
         }
@@ -218,7 +167,7 @@ RCloud.create = function(rcloud_ocaps) {
         function failure(err) {
             var message = _.isObject(err) && 'ok' in err
                 ? err.content.message : err.toString();
-            rclient.post_error(command + ': ' + message);
+            RCloud.UI.session_pane.post_error(command + ': ' + message);
             throw err;
         }
         return promise.then(success).catch(failure);
@@ -801,6 +750,42 @@ RCloud.create = function(rcloud_ocaps) {
     return rcloud;
 };
 var ui_utils = {};
+
+ui_utils.disconnection_error = function(msg, label) {
+    var result = $("<div class='alert alert-danger'></div>");
+    result.append($("<span></span>").text(msg));
+    label = label || "Reconnect";
+    var button = $("<button type='button' class='close'>" + label + "</button>");
+    result.append(button);
+    button.click(function() {
+        window.location =
+            (window.location.protocol +
+             '//' + window.location.host +
+             '/login.R?redirect=' +
+             encodeURIComponent(window.location.pathname + window.location.search));
+    });
+    return result;
+};
+
+ui_utils.string_error = function(msg) {
+    var button = $("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>");
+    var result = $("<div class='alert alert-danger alert-dismissable'></div>");
+    // var text = $("<span></span>");
+
+    result.append(button);
+    var text = _.map(msg.split("\n"), function(str) {
+        // poor-man replacing 4 spaces with indent
+        var el = $("<div></div>").text(str), match;
+        if ((match = str.match(/^( {4})+/))) {
+            var indent = match[0].length / 4;
+            el.css("left", indent +"em");
+            el.css("position", "relative");
+        };
+        return el;
+    });
+    result.append(text);
+    return result;
+};
 
 ui_utils.fa_button = function(which, title, classname, style)
 {
@@ -1649,7 +1634,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                         if (RCloud.is_exception(future)) {
                             var data = RCloud.exception_message(future);
                             $(that).replaceWith(function() {
-                                return rclient.string_error(data);
+                                return ui_utils.string_error(data);
                             });
                         } else {
                             var data = future();
@@ -2781,7 +2766,7 @@ RCloud.session = {
         if (this.first_session_) {
             this.first_session_ = false;
             return rcloud.with_progress();
-        } 
+        }
         return rcloud.with_progress(function(done) {
             rclient.close();
             return new Promise(function(resolve, reject) {
@@ -2793,7 +2778,7 @@ RCloud.session = {
                         rcloud.session_init(rcloud.username(), rcloud.github_token());
                         rcloud.display.set_device_pixel_ratio();
                         rcloud.api.set_url(window.location);
-                        
+
                         resolve(rcloud.init_client_side_data().then(function() {
                             // we're always in edit mode here
                             $("#session-info").empty();
@@ -2830,7 +2815,8 @@ RCloud.session = {
             function on_connect_anonymous_disallowed(ocaps) {
                 rcloud = RCloud.create(ocaps.rcloud);
                 if (!rcloud.authenticated) {
-                    rclient.post_error(rclient.disconnection_error("Please login first!"));
+                    RCloud.UI.session_pane.post_error(
+                        ui_utils.disconnection_error("Please login first!"));
                     return new Promise(function(resolve, reject) {
                         reject(new Error("Not authenticated"));
                     });
@@ -2839,10 +2825,10 @@ RCloud.session = {
             }
 
             function on_connect(ocaps) {
-                var promise = allow_anonymous ? 
-                    on_connect_anonymous_allowed(ocaps) : 
+                var promise = allow_anonymous ?
+                    on_connect_anonymous_allowed(ocaps) :
                     on_connect_anonymous_disallowed(ocaps);
-                
+
                 promise.then(function(hello) {
                     rclient.post_response(hello);
                 }).catch(function(error) { // e.g. couldn't connect with github
@@ -2873,217 +2859,6 @@ RCloud.session = {
 
 })();
 RCloud.UI = {};
-RCloud.UI.init = function() {
-    $("#fork-revert-notebook").click(function() {
-        var is_mine = shell.notebook.controller.is_mine();
-        var gistname = shell.gistname();
-        var version = shell.version();
-        editor.fork_or_revert_notebook(is_mine, gistname, version);
-    });
-    $("#open-in-github").click(function() {
-        window.open(shell.github_url(), "_blank");
-    });
-    $("#open-from-github").click(function() {
-        var result = prompt("Enter notebook ID or github URL:");
-        if(result !== null)
-            shell.open_from_github(result);
-    });
-    $("#import-notebooks").click(function() {
-        shell.import_notebooks();
-    });
-    var saveb = $("#save-notebook");
-    saveb.click(function() {
-        shell.save_notebook();
-    });
-    shell.notebook.controller.save_button(saveb);
-    $('#export-notebook-file').click(function() {
-        shell.export_notebook_file();
-    });
-    $('#export-notebook-as-r').click(function() {
-        shell.export_notebook_as_r_file();
-    });
-    $('#import-notebook-file').click(function() {
-        shell.import_notebook_file();
-    });
-    $("#upload-submit").click(function() {
-        if($("#file")[0].files.length===0)
-            return;
-        var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        var replacing = _.find(shell.notebook.model.assets, function(asset) {
-            return asset.filename() == $("#file")[0].files[0].name;
-        });
-        function success(lst) {
-            var path = lst[0], file = lst[1], notebook = lst[2];
-            $("#file-upload-div").append(
-                bootstrap_utils.alert({
-                    "class": 'alert-info',
-                    text: (to_notebook ? "Asset " : "File ") + file.name + (replacing ? " replaced." : " uploaded."),
-                    on_close: function() {
-                        $(".progress").hide();
-                    }
-                })
-            );
-            if(to_notebook) {
-                var content = notebook.files[file.name].content;
-                editor.update_notebook_file_list(notebook.files);
-                var controller;
-                if(replacing) {
-                    replacing.content(content);
-                    shell.notebook.controller.update_asset(replacing);
-                    controller = replacing.controller;
-                }
-                else {
-                    controller = shell.notebook.controller.append_asset(content, file.name);
-                }
-                controller.select();
-            }
-        };
-
-        function failure(what) {
-            var overwrite_click = function() {
-                rcloud.upload_file(true, function(err, value) {
-                    if (err) {
-                        $("#file-upload-div").append(
-                            bootstrap_utils.alert({
-                                "class": 'alert-danger',
-                                text: err
-                            })
-                        );
-                    } else {
-                        success(value);
-                    }
-                });
-            };
-            var alert_element = $("<div></div>");
-            var p;
-            if(what==="exists") {
-                p = $("<p>File exists.</p>");
-                var overwrite = bootstrap_utils
-                        .button({"class": 'btn-danger'})
-                        .click(overwrite_click)
-                        .text("Overwrite");
-                p.append(overwrite);
-            }
-            else if(what==="empty") {
-                p = $("<p>File is empty.</p>");
-            }
-            else if(what==="badname") {
-                p = $("<p>Filename not allowed.</p>");
-            }
-            alert_element.append(p);
-            $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
-        }
-
-        var upload_function = to_notebook
-            ? rcloud.upload_to_notebook
-            : rcloud.upload_file;
-
-        upload_function(false, function(err, value) {
-            if (err)
-                failure(err);
-            else
-                success(value);
-        });
-    });
-
-    RCloud.UI.left_panel.init();
-    RCloud.UI.right_panel.init();
-
-    var non_notebook_panel_height = 246;
-    $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
-
-    $("#search").submit(function() {
-        var qry = $('#input-text-search').val();
-        $('#input-text-search').blur();
-        RCloud.UI.search.exec(qry);
-        return false;
-    });
-
-    $("#insert-new-cell").click(function() {
-        var language = $("#insert-cell-language option:selected").text();
-        if (language === 'Markdown') {
-            shell.new_markdown_cell("");
-        } else if (language === 'R') {
-            shell.new_interactive_cell("", false);
-        }
-        var vs = shell.notebook.view.sub_views;
-        vs[vs.length-1].show_source();
-    });
-
-    // $("#new-md-cell-button").click(function() {
-    //     shell.new_markdown_cell("");
-    //     var vs = shell.notebook.view.sub_views;
-    //     vs[vs.length-1].show_source();
-    // });
-    // $("#new-r-cell-button").click(function() {
-    //     shell.new_interactive_cell("", false);
-    //     var vs = shell.notebook.view.sub_views;
-    //     vs[vs.length-1].show_source();
-    // });
-    $("#rcloud-logout").click(function() {
-        // let the server-side script handle this so it can
-        // also revoke all tokens
-        window.location.href = '/logout.R';
-    });
-
-    $("#comment-submit").click(function() {
-        editor.post_comment($("#comment-entry-body").val());
-        return false;
-    });
-
-    $("#run-notebook").click(shell.run_notebook);
-
-    RCloud.UI.scratchpad.init();
-    RCloud.UI.command_prompt.init();
-    RCloud.UI.help_frame.init();
-
-    function make_cells_sortable() {
-        var cells = $('#output');
-        cells.sortable({
-            items: "> .notebook-cell",
-            start: function(e, info) {
-                $(e.toElement).addClass("grabbing");
-                // http://stackoverflow.com/questions/6140680/jquery-sortable-placeholder-height-problem
-                info.placeholder.height(info.item.height());
-            },
-            stop: function(e, info) {
-                $(e.toElement).removeClass("grabbing");
-            },
-            update: function(e, info) {
-                var ray = cells.sortable('toArray');
-                var model = info.item.data('rcloud.model'),
-                    next = info.item.next().data('rcloud.model');
-                shell.notebook.controller.move_cell(model, next);
-            },
-            handle: " .ace_gutter-layer",
-            scroll: true,
-            scrollSensitivity: 40,
-            forcePlaceholderSize: true
-        });
-    }
-    make_cells_sortable();
-
-    //////////////////////////////////////////////////////////////////////////
-    // autosave when exiting. better default than dropping data, less annoying
-    // than prompting
-    $(window).bind("unload", function() {
-        shell.save_notebook();
-        return true;
-    });
-
-    $(".panel-collapse").collapse({toggle: false});
-
-    //////////////////////////////////////////////////////////////////////////
-    // view mode things
-    $("#edit-notebook").click(function() {
-        window.location = "main.html?notebook=" + shell.gistname();
-    });
-
-};
-RCloud.UI.load = function() {
-    RCloud.UI.left_panel.load();
-    RCloud.UI.right_panel.load();
-};
 RCloud.UI.column = function(sel_column, colwidth) {
     function classes(cw) {
         return "col-md-" + cw + " col-sm-" + cw;
@@ -3238,174 +3013,6 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         }
     });
     return result;
-};
-RCloud.UI.left_panel = (function() {
-    var result = RCloud.UI.collapsible_column("#left-column,#fake-left-column",
-                                              "#accordion-left", "#left-pane-collapser", 3);
-    var base_hide = result.hide.bind(result),
-        base_show = result.show.bind(result);
-
-    _.extend(result, {
-        hide: function(persist) {
-            $("#new-notebook").hide();
-            base_hide(persist);
-        },
-        show: function(persist) {
-            $("#new-notebook").show();
-            base_show(persist);
-        }
-    });
-    return result;
-}());
-
-RCloud.UI.right_panel = (function() {
-    var result = RCloud.UI.collapsible_column("#right-column,#fake-right-column",
-                                              "#accordion-right", "#right-pane-collapser", 4);
-    return result;
-}());
-RCloud.UI.middle_column = (function() {
-    var result = RCloud.UI.column("#middle-column, #prompt-div", 5);
-
-    _.extend(result, {
-        update: function() {
-            var size = 12 - RCloud.UI.left_panel.colwidth() - RCloud.UI.right_panel.colwidth();
-            result.colwidth(size);
-            shell.notebook.view.reformat();
-        }
-    });
-    return result;
-}());
-RCloud.UI.scratchpad = {
-    session: null,
-    widget: null,
-    exists: false,
-    current_model: null,
-    change_content: null,
-    init: function() {
-        var that = this;
-        function setup_scratchpad(div) {
-            var inner_div = $("<div></div>");
-            var clear_div = $("<div style='clear:both;'></div>");
-            div.append(inner_div);
-            div.append(clear_div);
-            var ace_div = $('<div style="width:100%; height:100%"></div>');
-            ace_div.css({'background-color': "#f1f1f1"});
-            inner_div.append(ace_div);
-            ace.require("ace/ext/language_tools");
-            var widget = ace.edit(ace_div[0]);
-            var RMode = require("ace/mode/r").Mode;
-            var session = widget.getSession();
-            that.session = session;
-            that.widget = widget;
-            var doc = session.doc;
-            session.on('change', function() {
-                div.css({'height': ui_utils.ace_editor_height(widget, 25) + "px"});
-                widget.resize();
-            });
-
-            widget.setOptions({
-                enableBasicAutocompletion: true
-            });
-            session.setMode(new RMode(false, doc, session));
-            session.setUseWrapMode(true);
-            widget.resize();
-            ui_utils.on_next_tick(function() {
-                session.getUndoManager().reset();
-                div.css({'height': ui_utils.ace_editor_height(widget, 25) + "px"});
-                widget.resize();
-            });
-            that.change_content = ui_utils.ignore_programmatic_changes(
-                that.widget, function() {
-                    if (that.current_model)
-                        that.current_model.parent_model.on_dirty();
-                });
-            ui_utils.install_common_ace_key_bindings(widget);
-            $("#collapse-assets").on("shown.bs.collapse", function() {
-                widget.resize();
-            });
-        }
-        var scratchpad_editor = $("#scratchpad-editor");
-        if (scratchpad_editor.length) {
-            this.exists = true;
-            setup_scratchpad(scratchpad_editor);
-        }
-        $("#new-asset > a").click(function() {
-            // FIXME prompt, yuck. I know, I know.
-            var filename = prompt("Choose a filename for your asset");
-            if (!filename)
-                return;
-            if (filename.toLocaleLowerCase().substring(0,4) === "part") {
-                alert("Asset names cannot start with 'part', sorry!");
-                return;
-            }
-            shell.notebook.controller.append_asset(
-                "# New file " + filename, filename).select();
-        });
-    },
-    // FIXME this is completely backwards
-    set_model: function(asset_model) {
-        var that = this;
-        if(!this.exists)
-            return;
-        var modes = {
-            r: "ace/mode/r",
-            py: "ace/mode/python",
-            md: "ace/mode/rmarkdown",
-            css: "ace/mode/css",
-            txt: "ace/mode/text"
-        };
-        if (this.current_model) {
-            this.current_model.cursor_position(this.widget.getCursorPosition());
-            // if this isn't a code smell I don't know what is.
-            if (this.current_model.content(this.widget.getValue())) {
-                this.current_model.parent_model.controller.update_asset(this.current_model);
-            }
-        }
-        this.current_model = asset_model;
-        if (!this.current_model) {
-            that.change_content("");
-            that.widget.resize();
-            that.widget.setReadOnly(true);
-            $('#scratchpad-editor > *').hide();
-            return;
-        }
-        that.widget.setReadOnly(false);
-        $('#scratchpad-editor > *').show();
-        this.change_content(this.current_model.content());
-        // restore cursor
-        var model_cursor = asset_model.cursor_position();
-        if (model_cursor) {
-            ui_utils.ace_set_pos(this.widget, model_cursor);
-        } else {
-            ui_utils.ace_set_pos(this.widget, 0, 0);
-        }
-        ui_utils.on_next_tick(function() {
-            that.session.getUndoManager().reset();
-        });
-        var lang = asset_model.language().toLocaleLowerCase();
-        var mode = require(modes[lang] || modes.txt).Mode;
-        that.session.setMode(new mode(false, that.session.doc, that.session));
-        that.widget.resize();
-        that.widget.focus();
-    },
-    // this behaves like cell_view's update_model
-    update_model: function() {
-        return this.current_model
-            ? this.current_model.content(this.widget.getSession().getValue())
-            : null;
-    }, content_updated: function() {
-        var range = this.widget.getSelection().getRange();
-        var changed = this.current_model.content();
-        this.change_content(changed);
-        this.widget.getSelection().setSelectionRange(range);
-        return changed;
-    }, clear: function() {
-        if(!this.exists)
-            return;
-        this.change_content("");
-        this.session.getUndoManager().reset();
-        this.widget.resize();
-    }
 };
 RCloud.UI.command_prompt = {
     prompt: null,
@@ -3601,16 +3208,6 @@ RCloud.UI.command_prompt = {
         };
     }
 };
-RCloud.UI.share_button = {
-    set_link: function() {
-        var link = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
-        var v = shell.version();
-        if(v)
-            link += '&version='+v;
-
-        $("#share-link").attr("href", link);
-    }
-};
 /*
  * Adjusts the UI depending on whether notebook is read-only
  */
@@ -3636,6 +3233,255 @@ RCloud.UI.configure_readonly = function() {
             .removeAttr("disabled");
     }
 };
+RCloud.UI.help_frame = {
+    init: function() {
+        // i can't be bothered to figure out why the iframe causes onload to be triggered early
+        // if this code is directly in main.html
+        $("#help-parent").append('<iframe id="help-frame" frameborder="0" />');
+    }
+};
+RCloud.UI.init = function() {
+    $("#fork-revert-notebook").click(function() {
+        var is_mine = shell.notebook.controller.is_mine();
+        var gistname = shell.gistname();
+        var version = shell.version();
+        editor.fork_or_revert_notebook(is_mine, gistname, version);
+    });
+    $("#open-in-github").click(function() {
+        window.open(shell.github_url(), "_blank");
+    });
+    $("#open-from-github").click(function() {
+        var result = prompt("Enter notebook ID or github URL:");
+        if(result !== null)
+            shell.open_from_github(result);
+    });
+    $("#import-notebooks").click(function() {
+        shell.import_notebooks();
+    });
+    var saveb = $("#save-notebook");
+    saveb.click(function() {
+        shell.save_notebook();
+    });
+    shell.notebook.controller.save_button(saveb);
+    $('#export-notebook-file').click(function() {
+        shell.export_notebook_file();
+    });
+    $('#export-notebook-as-r').click(function() {
+        shell.export_notebook_as_r_file();
+    });
+    $('#import-notebook-file').click(function() {
+        shell.import_notebook_file();
+    });
+    $("#upload-submit").click(function() {
+        if($("#file")[0].files.length===0)
+            return;
+        var to_notebook = ($('#upload-to-notebook').is(':checked'));
+        var replacing = _.find(shell.notebook.model.assets, function(asset) {
+            return asset.filename() == $("#file")[0].files[0].name;
+        });
+        function success(lst) {
+            var path = lst[0], file = lst[1], notebook = lst[2];
+            $("#file-upload-div").append(
+                bootstrap_utils.alert({
+                    "class": 'alert-info',
+                    text: (to_notebook ? "Asset " : "File ") + file.name + (replacing ? " replaced." : " uploaded."),
+                    on_close: function() {
+                        $(".progress").hide();
+                    }
+                })
+            );
+            if(to_notebook) {
+                var content = notebook.files[file.name].content;
+                editor.update_notebook_file_list(notebook.files);
+                var controller;
+                if(replacing) {
+                    replacing.content(content);
+                    shell.notebook.controller.update_asset(replacing);
+                    controller = replacing.controller;
+                }
+                else {
+                    controller = shell.notebook.controller.append_asset(content, file.name);
+                }
+                controller.select();
+            }
+        };
+
+        function failure(what) {
+            var overwrite_click = function() {
+                rcloud.upload_file(true, function(err, value) {
+                    if (err) {
+                        $("#file-upload-div").append(
+                            bootstrap_utils.alert({
+                                "class": 'alert-danger',
+                                text: err
+                            })
+                        );
+                    } else {
+                        success(value);
+                    }
+                });
+            };
+            var alert_element = $("<div></div>");
+            var p;
+            if(what==="exists") {
+                p = $("<p>File exists.</p>");
+                var overwrite = bootstrap_utils
+                        .button({"class": 'btn-danger'})
+                        .click(overwrite_click)
+                        .text("Overwrite");
+                p.append(overwrite);
+            }
+            else if(what==="empty") {
+                p = $("<p>File is empty.</p>");
+            }
+            else if(what==="badname") {
+                p = $("<p>Filename not allowed.</p>");
+            }
+            alert_element.append(p);
+            $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
+        }
+
+        var upload_function = to_notebook
+            ? rcloud.upload_to_notebook
+            : rcloud.upload_file;
+
+        upload_function(false, function(err, value) {
+            if (err)
+                failure(err);
+            else
+                success(value);
+        });
+    });
+
+    RCloud.UI.left_panel.init();
+    RCloud.UI.right_panel.init();
+    RCloud.UI.session_pane.init();
+
+    var non_notebook_panel_height = 246;
+    $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
+
+    $("#search").submit(function() {
+        var qry = $('#input-text-search').val();
+        $('#input-text-search').blur();
+        RCloud.UI.search.exec(qry);
+        return false;
+    });
+
+    $("#insert-new-cell").click(function() {
+        var language = $("#insert-cell-language option:selected").text();
+        if (language === 'Markdown') {
+            shell.new_markdown_cell("");
+        } else if (language === 'R') {
+            shell.new_interactive_cell("", false);
+        }
+        var vs = shell.notebook.view.sub_views;
+        vs[vs.length-1].show_source();
+    });
+
+    // $("#new-md-cell-button").click(function() {
+    //     shell.new_markdown_cell("");
+    //     var vs = shell.notebook.view.sub_views;
+    //     vs[vs.length-1].show_source();
+    // });
+    // $("#new-r-cell-button").click(function() {
+    //     shell.new_interactive_cell("", false);
+    //     var vs = shell.notebook.view.sub_views;
+    //     vs[vs.length-1].show_source();
+    // });
+    $("#rcloud-logout").click(function() {
+        // let the server-side script handle this so it can
+        // also revoke all tokens
+        window.location.href = '/logout.R';
+    });
+
+    $("#comment-submit").click(function() {
+        editor.post_comment($("#comment-entry-body").val());
+        return false;
+    });
+
+    $("#run-notebook").click(shell.run_notebook);
+
+    RCloud.UI.scratchpad.init();
+    RCloud.UI.command_prompt.init();
+    RCloud.UI.help_frame.init();
+
+    function make_cells_sortable() {
+        var cells = $('#output');
+        cells.sortable({
+            items: "> .notebook-cell",
+            start: function(e, info) {
+                $(e.toElement).addClass("grabbing");
+                // http://stackoverflow.com/questions/6140680/jquery-sortable-placeholder-height-problem
+                info.placeholder.height(info.item.height());
+            },
+            stop: function(e, info) {
+                $(e.toElement).removeClass("grabbing");
+            },
+            update: function(e, info) {
+                var ray = cells.sortable('toArray');
+                var model = info.item.data('rcloud.model'),
+                    next = info.item.next().data('rcloud.model');
+                shell.notebook.controller.move_cell(model, next);
+            },
+            handle: " .ace_gutter-layer",
+            scroll: true,
+            scrollSensitivity: 40,
+            forcePlaceholderSize: true
+        });
+    }
+    make_cells_sortable();
+
+    //////////////////////////////////////////////////////////////////////////
+    // autosave when exiting. better default than dropping data, less annoying
+    // than prompting
+    $(window).bind("unload", function() {
+        shell.save_notebook();
+        return true;
+    });
+
+    $(".panel-collapse").collapse({toggle: false});
+
+    //////////////////////////////////////////////////////////////////////////
+    // view mode things
+    $("#edit-notebook").click(function() {
+        window.location = "main.html?notebook=" + shell.gistname();
+    });
+};
+RCloud.UI.left_panel = (function() {
+    var result = RCloud.UI.collapsible_column("#left-column,#fake-left-column",
+                                              "#accordion-left", "#left-pane-collapser", 3);
+    var base_hide = result.hide.bind(result),
+        base_show = result.show.bind(result);
+
+    _.extend(result, {
+        hide: function(persist) {
+            $("#new-notebook").hide();
+            base_hide(persist);
+        },
+        show: function(persist) {
+            $("#new-notebook").show();
+            base_show(persist);
+        }
+    });
+    return result;
+}());
+
+RCloud.UI.load = function() {
+    RCloud.UI.left_panel.load();
+    RCloud.UI.right_panel.load();
+};
+RCloud.UI.middle_column = (function() {
+    var result = RCloud.UI.column("#middle-column, #prompt-div", 5);
+
+    _.extend(result, {
+        update: function() {
+            var size = 12 - RCloud.UI.left_panel.colwidth() - RCloud.UI.right_panel.colwidth();
+            result.colwidth(size);
+            shell.notebook.view.reformat();
+        }
+    });
+    return result;
+}());
 RCloud.UI.notebook_title = (function() {
     var last_editable_ =  null;
     function rename_current_notebook(name) {
@@ -3703,6 +3549,143 @@ RCloud.UI.notebook_title = (function() {
     };
     return result;
 })();
+RCloud.UI.right_panel = (function() {
+    var result = RCloud.UI.collapsible_column("#right-column,#fake-right-column",
+                                              "#accordion-right", "#right-pane-collapser", 4);
+    return result;
+}());
+RCloud.UI.scratchpad = {
+    session: null,
+    widget: null,
+    exists: false,
+    current_model: null,
+    change_content: null,
+    init: function() {
+        var that = this;
+        function setup_scratchpad(div) {
+            var inner_div = $("<div></div>");
+            var clear_div = $("<div style='clear:both;'></div>");
+            div.append(inner_div);
+            div.append(clear_div);
+            var ace_div = $('<div style="width:100%; height:100%"></div>');
+            ace_div.css({'background-color': "#f1f1f1"});
+            inner_div.append(ace_div);
+            ace.require("ace/ext/language_tools");
+            var widget = ace.edit(ace_div[0]);
+            var RMode = require("ace/mode/r").Mode;
+            var session = widget.getSession();
+            that.session = session;
+            that.widget = widget;
+            var doc = session.doc;
+            session.on('change', function() {
+                div.css({'height': ui_utils.ace_editor_height(widget, 25) + "px"});
+                widget.resize();
+            });
+
+            widget.setOptions({
+                enableBasicAutocompletion: true
+            });
+            session.setMode(new RMode(false, doc, session));
+            session.setUseWrapMode(true);
+            widget.resize();
+            ui_utils.on_next_tick(function() {
+                session.getUndoManager().reset();
+                div.css({'height': ui_utils.ace_editor_height(widget, 25) + "px"});
+                widget.resize();
+            });
+            that.change_content = ui_utils.ignore_programmatic_changes(
+                that.widget, function() {
+                    if (that.current_model)
+                        that.current_model.parent_model.on_dirty();
+                });
+            ui_utils.install_common_ace_key_bindings(widget);
+            $("#collapse-assets").on("shown.bs.collapse", function() {
+                widget.resize();
+            });
+        }
+        var scratchpad_editor = $("#scratchpad-editor");
+        if (scratchpad_editor.length) {
+            this.exists = true;
+            setup_scratchpad(scratchpad_editor);
+        }
+        $("#new-asset > a").click(function() {
+            // FIXME prompt, yuck. I know, I know.
+            var filename = prompt("Choose a filename for your asset");
+            if (!filename)
+                return;
+            if (filename.toLocaleLowerCase().substring(0,4) === "part") {
+                alert("Asset names cannot start with 'part', sorry!");
+                return;
+            }
+            shell.notebook.controller.append_asset(
+                "# New file " + filename, filename).select();
+        });
+    },
+    // FIXME this is completely backwards
+    set_model: function(asset_model) {
+        var that = this;
+        if(!this.exists)
+            return;
+        var modes = {
+            r: "ace/mode/r",
+            py: "ace/mode/python",
+            md: "ace/mode/rmarkdown",
+            css: "ace/mode/css",
+            txt: "ace/mode/text"
+        };
+        if (this.current_model) {
+            this.current_model.cursor_position(this.widget.getCursorPosition());
+            // if this isn't a code smell I don't know what is.
+            if (this.current_model.content(this.widget.getValue())) {
+                this.current_model.parent_model.controller.update_asset(this.current_model);
+            }
+        }
+        this.current_model = asset_model;
+        if (!this.current_model) {
+            that.change_content("");
+            that.widget.resize();
+            that.widget.setReadOnly(true);
+            $('#scratchpad-editor > *').hide();
+            return;
+        }
+        that.widget.setReadOnly(false);
+        $('#scratchpad-editor > *').show();
+        this.change_content(this.current_model.content());
+        // restore cursor
+        var model_cursor = asset_model.cursor_position();
+        if (model_cursor) {
+            ui_utils.ace_set_pos(this.widget, model_cursor);
+        } else {
+            ui_utils.ace_set_pos(this.widget, 0, 0);
+        }
+        ui_utils.on_next_tick(function() {
+            that.session.getUndoManager().reset();
+        });
+        var lang = asset_model.language().toLocaleLowerCase();
+        var mode = require(modes[lang] || modes.txt).Mode;
+        that.session.setMode(new mode(false, that.session.doc, that.session));
+        that.widget.resize();
+        that.widget.focus();
+    },
+    // this behaves like cell_view's update_model
+    update_model: function() {
+        return this.current_model
+            ? this.current_model.content(this.widget.getSession().getValue())
+            : null;
+    }, content_updated: function() {
+        var range = this.widget.getSelection().getRange();
+        var changed = this.current_model.content();
+        this.change_content(changed);
+        this.widget.getSelection().setSelectionRange(range);
+        return changed;
+    }, clear: function() {
+        if(!this.exists)
+            return;
+        this.change_content("");
+        this.session.getUndoManager().reset();
+        this.widget.resize();
+    }
+};
 RCloud.UI.search = {
     exec: function(query) {
         function summary(html) {
@@ -3809,10 +3792,45 @@ RCloud.UI.search = {
         });
     }
 };
-RCloud.UI.help_frame = {
+RCloud.UI.session_pane = {
     init: function() {
-        // i can't be bothered to figure out why the iframe causes onload to be triggered early
-        // if this code is directly in main.html
-        $("#help-parent").append('<iframe id="help-frame" frameborder="0" />');
+        // detect where we will show errors
+        this.error_dest_ = $("#session-info");
+        if(this.error_dest_.length)
+            this.show_error_area = function() {
+                RCloud.UI.right_panel.collapse($("#collapse-session-info"), false, false);
+            };
+        else {
+            this.error_dest_ = $("#output");
+            this.show_error_area = function() {};
+        }
+
+        var that = this;
+        //////////////////////////////////////////////////////////////////////
+        // bluebird unhandled promise handler
+        Promise.onPossiblyUnhandledRejection(function(e, promise) {
+            that.post_error("Internal error, unhandled promise rejection\nStack trace:\n" + e.stack);
+        });
+
+    },
+    post_error: function(msg, dest) {
+        if (typeof msg === 'string')
+            msg = ui_utils.string_error(msg);
+        if (typeof msg !== 'object')
+            throw new Error("post_error expects a string or a jquery div");
+        msg.css("margin", "-15px"); // hack
+        dest = dest || this.error_dest_;
+        dest.append(msg);
+        this.show_error_area();
+    }
+};
+RCloud.UI.share_button = {
+    set_link: function() {
+        var link = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
+        var v = shell.version();
+        if(v)
+            link += '&version='+v;
+
+        $("#share-link").attr("href", link);
     }
 };

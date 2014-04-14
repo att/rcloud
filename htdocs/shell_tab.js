@@ -372,7 +372,7 @@ var shell = (function() {
                             editor.set_notebook_visibility(notebook.id, true);
                         });
                         if(failed.length)
-                            rclient.post_error("Failed to import notebooks: " + failed.join(', '));
+                            RCloud.UI.session_pane.post_error("Failed to import notebooks: " + failed.join(', '));
                     });
                 dialog.modal('hide');
             }
