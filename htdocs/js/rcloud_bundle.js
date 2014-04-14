@@ -1121,6 +1121,13 @@ ui_utils.editable = function(elem$, command) {
 ui_utils.on_next_tick = function(f) {
     window.setTimeout(f, 0);
 };
+
+ui_utils.add_ace_grab_affordance = function(element) {
+    debugger;
+    var sel = $(element).children().filter(".ace_gutter");
+    var div = $("<div style='position:absolute;top:0px'><object data='/img/grab_affordance.svg' type='image/svg+xml'></object></div>");
+    sel.append(div);
+};
 var bootstrap_utils = {};
 
 bootstrap_utils.alert = function(opts)
@@ -1533,6 +1540,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     widget.setTheme("ace/theme/chrome");
     session.setUseWrapMode(true);
     widget.resize();
+
+    ui_utils.add_ace_grab_affordance(widget.container);
 
     ui_utils.install_common_ace_key_bindings(widget);
     widget.commands.addCommands([{

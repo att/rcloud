@@ -65,15 +65,19 @@
           ## run the run() function but like .httpd
           return(run(url, query, body, headers))
       }
-        
+
         s <- file.info(fn)$size
         f <- file(fn, "rb")
         r <- readBin(f, raw(), s)
         close(f)
         ## deduce content type by extension
         ct <- "text/html"
-        ctl <- list("text/javascript"=".js", "image/png"=".png",
-                    "image/jpeg"=".jpg", "image/jpeg"=".jpeg", "text/css"=".css")
+        ctl <- list("text/javascript"=".js",
+                    "image/png"=".png",
+                    "image/jpeg"=".jpg",
+                    "image/jpeg"=".jpeg",
+                    "image/svg+xml"=".svg",
+                    "text/css"=".css")
         for (i in seq_along(ctl))
             if (length(grep(paste("\\",ctl[[i]],"$",sep=''), fn, TRUE))) {
                 ct <- names(ctl)[i]
