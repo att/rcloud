@@ -370,3 +370,10 @@ ui_utils.editable = function(elem$, command) {
 ui_utils.on_next_tick = function(f) {
     window.setTimeout(f, 0);
 };
+
+ui_utils.add_ace_grab_affordance = function(element) {
+    debugger;
+    var sel = $(element).children().filter(".ace_gutter");
+    var div = $("<div style='position:absolute;top:0px'><object data='/img/grab_affordance.svg' type='image/svg+xml'></object></div>");
+    sel.append(div);
+};
