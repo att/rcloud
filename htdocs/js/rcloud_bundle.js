@@ -3240,8 +3240,8 @@ RCloud.UI.init = function() {
             };
             var alert_element = $("<div></div>");
             var p;
-            if(what==="exists") {
-                p = $("<p>File exists.</p>");
+            if(/exists/.test(what)) {
+                p = $("<p>File exists. </p>");
                 var overwrite = bootstrap_utils
                         .button({"class": 'btn-danger'})
                         .click(overwrite_click)
@@ -3253,6 +3253,9 @@ RCloud.UI.init = function() {
             }
             else if(what==="badname") {
                 p = $("<p>Filename not allowed.</p>");
+            }
+            else {
+                p = $("<p>(unexpected) " + what + "</p>");
             }
             alert_element.append(p);
             $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
