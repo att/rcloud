@@ -1476,8 +1476,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     session.setUseWrapMode(true);
     widget.resize();
 
-    ui_utils.add_ace_grab_affordance(widget.container);
-
     ui_utils.install_common_ace_key_bindings(widget);
     widget.commands.addCommands([{
         name: 'sendToR',
@@ -1632,6 +1630,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 enable(insert_cell_button);
                 enable(split_button);
                 enable(coalesce_button);
+                ui_utils.add_ace_grab_affordance(widget.container);
             }
         },
 
