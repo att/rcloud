@@ -61,6 +61,11 @@ code {
     border-style: none;
 }
 
+div.panel-heading:hover {
+    background-color: #888;
+    color: #0f0;
+}
+
 .panel-default {
     border: 0;
 }
