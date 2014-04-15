@@ -36,7 +36,16 @@ ui_utils.string_error = function(msg) {
     return result;
 };
 
-ui_utils.fa_button = function(which, title, classname, style)
+/*
+ * if container_is_self is true, then the html container of the tooltip is the element
+ * itself (which is the default for bootstrap but doesn't work very well for us
+ * because of z-index issues).
+ *
+ * On the other hand, if *all* containers are the html body, then this happens:
+ *
+ * https://github.com/att/rcloud/issues/525
+ */
+ui_utils.fa_button = function(which, title, classname, style, container_is_self)
 {
     var icon = $.el.i({'class': which});
     var span = $.el.span({'class': 'fontawesome-button ' + (classname || '')},
@@ -46,11 +55,14 @@ ui_utils.fa_button = function(which, title, classname, style)
             icon.style[k] = style[k];
     }
     // $(icon).css(style);
-    return $(span).tooltip({
-        container: 'body', // https://github.com/twbs/bootstrap/issues/5889
+    var opts = {
         title: title,
         delay: { show: 250, hide: 0 }
-    });
+    };
+    if (!container_is_self) {
+        opts.container = 'body';
+    }
+    return $(span).tooltip(opts);
 };
 
 ui_utils.enable_fa_button = function(el) {

@@ -870,7 +870,8 @@ var editor = function () {
             var star_unstar = ui_utils.fa_button(states[state]['class'],
                                                  function(e) { return states[state].title; },
                                                  'star',
-                                                 star_style);
+                                                 star_style,
+                                                 true);
             // sigh, ui_utils.twostate_icon should be a mixin or something
             // ... why does this code exist?
             star_unstar.click(function(e) {
@@ -894,7 +895,7 @@ var editor = function () {
             add_buttons = adder(appear);
             if(true) { // all notebooks have history - should it always be accessible?
                 var disable = current_.notebook===node.gistname && current_.version;
-                var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style);
+                var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style, true);
                 // jqtree recreates large portions of the tree whenever anything changes
                 // so far this seems safe but might need revisiting if that improves
                 if(disable)
@@ -910,8 +911,8 @@ var editor = function () {
                 add_buttons(history);
             }
             if(node.user===username_) {
-                var make_private = ui_utils.fa_button('icon-eye-close', 'make private', 'private', icon_style),
-                    make_public = ui_utils.fa_button('icon-eye-open', 'make public', 'public', icon_style);
+                var make_private = ui_utils.fa_button('icon-eye-close', 'make private', 'private', icon_style, true),
+                    make_public = ui_utils.fa_button('icon-eye-open', 'make public', 'public', icon_style, true);
                 if(node.visible)
                     make_public.hide();
                 else
@@ -934,7 +935,7 @@ var editor = function () {
                 add_buttons(make_private, make_public);
             }
             if(node.user===username_) {
-                var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style);
+                var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style, true);
                 remove.click(function(e) {
                     e.stopPropagation();
                     e.preventDefault();
