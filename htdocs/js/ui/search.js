@@ -96,11 +96,11 @@ RCloud.UI.search = {
         summary("Searching...");
         $("#search-results").hide().html("");
         query = encodeURIComponent(query);
-        rcloud.with_progress(function(done) {
-            rcloud.search(query).then(function (v) {
-                create_list_of_search_results(v);
-                done();
-            });
+        RCloud.UI.with_progress(function() {
+            return rcloud.search(query)
+                .then(function(v) {
+                    create_list_of_search_results(v);
+                });
         });
     }
 };
