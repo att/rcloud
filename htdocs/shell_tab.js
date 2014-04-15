@@ -94,36 +94,30 @@ var shell = (function() {
         load_notebook: function(gistname, version) {
             var that = this;
             notebook_controller_.save();
-            function do_load(done) {
-                return that.notebook.controller.load_notebook(gistname, version).then(function(notebook) {
+            return RCloud.UI.with_progress(function() {
+                return RCloud.session.reset().then(function() {
+                    return that.notebook.controller.load_notebook(gistname, version);
+                }).then(function(notebook) {
                     if (!_.isUndefined(notebook.error)) {
-                        done();
-                        return undefined;
+                        throw notebook.error;
                     }
                     gistname_ = gistname;
                     version_ = version;
                     $(".rcloud-user-defined-css").remove();
                     return rcloud.install_notebook_stylesheets()
-                        .return(notebook)
-                        .then(on_load).then(function(notebook) {
-                            done();
-                            return notebook;
-                        });
-                }).catch(function(err) {
-                    done();
-                    throw err;
-                });
-            }
-            return RCloud.session.reset().then(do_load);
+                        .return(notebook);
+                }).then(on_load);
+            });
         }, save_notebook: function() {
             notebook_controller_.save();
         }, new_notebook: function(desc) {
             notebook_controller_.save();
-            return RCloud.session.reset().then(function(done) {
-                var content = {description: desc, 'public': false,
-                               files: {"scratch.R": {content:"# keep snippets here while working with your notebook's cells"}}};
-                done(); // well not really done (just done with cps bleh) FIXME
-                return notebook_controller_.create_notebook(content).then(on_new);
+            return RCloud.UI.with_progress(function() {
+                return RCloud.session.reset().then(function() {
+                    var content = {description: desc, 'public': false,
+                                   files: {"scratch.R": {content:"# keep snippets here while working with your notebook's cells"}}};
+                    return notebook_controller_.create_notebook(content).then(on_new);
+                });
             });
         }, rename_notebook: function(desc) {
             return notebook_controller_.rename_notebook(desc);
@@ -133,17 +127,18 @@ var shell = (function() {
             // but load the notebook and reset the session to be sure
             if(is_mine && !version)
                 throw "unexpected revert of current version";
-            return RCloud.session.reset().then(function(done) {
-                var that = this;
-                notebook_model_.read_only(false);
-                return notebook_controller_
-                    .fork_or_revert_notebook(is_mine, gistname, version)
-                    .then(function(notebook) {
-                        gistname_ = notebook.id;
-                        version_ = null;
-                        done(); // again, not really done - just too nasty to compose done with k
-                        return notebook;
-                    }).then(on_load);
+            return RCloud.UI.with_progress(function() {
+                return RCloud.session.reset().then(function() {
+                    var that = this;
+                    notebook_model_.read_only(false);
+                    return notebook_controller_
+                        .fork_or_revert_notebook(is_mine, gistname, version)
+                        .then(function(notebook) {
+                            gistname_ = notebook.id;
+                            version_ = null;
+                            return notebook;
+                        }).then(on_load);
+                });
             });
         }, github_url: function() {
             var url;
@@ -414,10 +409,11 @@ var shell = (function() {
                 dialog = create_import_notebook_dialog();
             dialog.modal({keyboard: true});
         }, run_notebook: function() {
-            rcloud.with_progress().then(function(done) {
-                result.notebook.controller.run_all().then(done);
+            RCloud.UI.with_progress(function() {
+                return result.notebook.controller.run_all();
+            }).then(function() {
                 RCloud.UI.command_prompt.focus();
-            }).catch(function(done) { done(); });
+            });
         }
     };
 

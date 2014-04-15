@@ -402,7 +402,9 @@ Notebook.create_controller = function(model)
                     return cell_model.controller.execute();
                 });
             });
-            return Promise.all(promises);
+            return RCloud.UI.with_progress(function() {
+                return Promise.all(promises);
+            });
         },
 
         //////////////////////////////////////////////////////////////////////

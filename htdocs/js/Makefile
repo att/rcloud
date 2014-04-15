@@ -34,6 +34,7 @@ rcloud_bundle.js: \
 	ui/load.js \
 	ui/middle_column.js \
 	ui/notebook_title.js \
+	ui/progress.js \
 	ui/right_panel.js \
 	ui/scratchpad.js \
 	ui/search.js \
