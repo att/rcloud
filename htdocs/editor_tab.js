@@ -1236,12 +1236,6 @@ var editor = function () {
                     history = null;
                 else
                     history = result.history;
-                // there is a bug in old github where if you make a change you only
-                // get the old history and not the current
-                // this may be the same bug where the latest version doesn't always
-                // show in github
-                if(options.is_change && shell.is_old_github())
-                    history.unshift({version:'blah'});
 
                 var promise = (_.has(num_stars_, result.id) ? Promise.resolve(undefined)
                                : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {

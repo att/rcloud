@@ -64,9 +64,6 @@ var shell = (function() {
             rcloud.get_conf_value("github.base.url").then(function(url) { github_url_ = url; });
             rcloud.get_conf_value("github.gist.url").then(function(url) { gist_url_ = url; });
         },
-        is_old_github: function() {
-            return !gist_url_;
-        },
         is_view_mode: function() {
             return view_mode_;
         },
@@ -147,7 +144,7 @@ var shell = (function() {
             });
         }, github_url: function() {
             var url;
-            if(!this.is_old_github()) {
+            if(gist_url_) {
                 url = gist_url_;
                 url += notebook_user_ + '/';
             }
