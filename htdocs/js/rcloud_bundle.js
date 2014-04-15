@@ -1820,7 +1820,6 @@ Notebook.Cell.create_controller = function(cell_model)
 {
     var result = {
         execute: function() {
-            debugger;
             var that = this;
             var language = cell_model.language();
             function callback(r) {
@@ -3510,7 +3509,6 @@ RCloud.UI.with_progress = function(promise_thunk, delay) {
         delay = 2000;
     set_cursor();
     function done() {
-        debugger;
         progress_counter -= 1;
         if (progress_counter === 0) {
             clear_cursor();
@@ -3518,7 +3516,6 @@ RCloud.UI.with_progress = function(promise_thunk, delay) {
         }
     }
     _.delay(function() {
-        debugger;
         if (progress_counter > 0 && allowed > 0)
             set_curtain();
     }, delay);
