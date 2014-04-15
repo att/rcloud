@@ -431,6 +431,7 @@ li.jqtree-selected .notebook-commands {
 #session-info {
     height: 100%;
     overflow-y: auto;
+    overflow-x: auto;
     padding: 5px;
 }
 
