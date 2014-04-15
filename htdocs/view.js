@@ -11,7 +11,7 @@ window.onload = function() {
         version = getURLParameter("version"),
         quiet = getURLParameter("quiet");
 
-        var promise = Promise.cast(true);
+        var promise = Promise.resolve(true);
         if (Number(quiet)) {
             promise = promise.then(function() {
                 $(".navbar").hide();
@@ -40,9 +40,9 @@ window.onload = function() {
                     cell_view.hide_buttons();
                 });
             });
-        }).catch(function(err) {
-            RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Could not load notebook. You may need to login to see it.", "Login"));
         });
         return promise;
+    }).catch(function(err) {
+        RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Could not load notebook. You may need to login to see it.", "Login"));
     });
 };

@@ -151,7 +151,7 @@ RCloud.create = function(rcloud_ocaps) {
             throw err;
         }
         return function() {
-            return promise_fn.apply(this, arguments).then(success).catch(failure);
+            return promise_fn.apply(this, arguments).then(success);
         };
     }
 
@@ -165,10 +165,12 @@ RCloud.create = function(rcloud_ocaps) {
         }
 
         function failure(err) {
-            var message = _.isObject(err) && 'ok' in err
-                ? err.content.message : err.toString();
-            RCloud.UI.session_pane.post_error(command + ': ' + message);
-            throw err;
+            // convert the error
+            throw new Error(command + ': ' + message);
+            // var message = _.isObject(err) && 'ok' in err
+            //     ? err.content.message : err.toString();
+            // RCloud.UI.session_pane.post_error(command + ': ' + message);
+            // throw err;
         }
         return promise.then(success).catch(failure);
     }
@@ -3821,6 +3823,7 @@ RCloud.UI.session_pane = {
 
     },
     post_error: function(msg, dest) {
+        debugger;
         if (typeof msg === 'string')
             msg = ui_utils.string_error(msg);
         if (typeof msg !== 'object')

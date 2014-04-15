@@ -49,14 +49,8 @@ RCloud.create = function(rcloud_ocaps) {
             return result;
         }
 
-        function failure(err) {
-            if(err.message) {
-                RCloud.UI.session_pane.post_error(err.message);
-            }
-            throw err;
-        }
         return function() {
-            return promise_fn.apply(this, arguments).then(success).catch(failure);
+            return promise_fn.apply(this, arguments).then(success);
         };
     }
 
@@ -72,8 +66,7 @@ RCloud.create = function(rcloud_ocaps) {
         function failure(err) {
             var message = _.isObject(err) && 'ok' in err
                 ? err.content.message : err.toString();
-            RCloud.UI.session_pane.post_error(command + ': ' + message);
-            throw err;
+            throw new Error(command + ': ' + message);
         }
         return promise.then(success).catch(failure);
     }
