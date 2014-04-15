@@ -670,83 +670,6 @@ RCloud.create = function(rcloud_ocaps) {
     if (rcloud.authenticated)
         setup_authenticated_ocaps();
 
-    //////////////////////////////////////////////////////////////////////////
-    // Progress indication
-
-    // FIXME this doesn't feel like it belongs on rcloud, but then again,
-    // where would it?
-
-    var progress_dialog;
-    var progress_counter = 0;
-    var allowed = 1;
-    var curtains_on = false;
-
-    function set_curtain() {
-        if (curtains_on)
-            return;
-        curtains_on = true;
-        if (_.isUndefined(progress_dialog)) {
-            progress_dialog = $('<div id="progress-dialog" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-body">Please wait...</div></div></div>');
-            $("body").append(progress_dialog);
-        }
-        progress_dialog.modal({keyboard: true});
-    }
-
-    function clear_curtain() {
-        if (!curtains_on)
-            return;
-        curtains_on = false;
-        progress_dialog.modal('hide');
-    }
-
-    function set_cursor() {
-        _.delay(function() {
-            document.body.style.cursor = "wait";
-        }, 0);
-    }
-
-    function clear_cursor() {
-        _.delay(function() {
-            document.body.style.cursor = '';
-        }, 0);
-    }
-    rcloud.with_progress = function(thunk, delay) {
-        if (_.isUndefined(delay))
-            delay = 2000;
-        set_cursor();
-        function done() {
-            progress_counter -= 1;
-            if (progress_counter === 0) {
-                clear_cursor();
-                clear_curtain();
-            }
-        }
-        _.delay(function() {
-            if (progress_counter > 0 && allowed > 0)
-                set_curtain();
-        }, delay);
-        progress_counter += 1;
-        return Promise.cast(done).then(thunk);
-    };
-    rcloud.prevent_progress_modal = function() {
-        if (allowed === 1) {
-            if (progress_counter > 0) {
-                clear_cursor();
-                clear_curtain();
-            }
-        }
-        allowed -= 1;
-    };
-    rcloud.allow_progress_modal = function() {
-        if (allowed === 0) {
-            if (progress_counter > 0) {
-                set_cursor();
-                set_curtain();
-            }
-        }
-        allowed += 1;
-    };
-
     return rcloud;
 };
 var ui_utils = {};
@@ -1469,8 +1392,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         result.show_result();
         if(new_content!==null) // if any change (including removing the content)
             cell_model.parent_model.controller.update_cell(cell_model);
-        rcloud.with_progress(function(done) {
-            cell_model.controller.execute().then(done);
+
+        RCloud.UI.with_progress(function() {
+            return cell_model.controller.execute();
         });
     }
     run_md_button.click(function(e) {
@@ -1896,6 +1820,7 @@ Notebook.Cell.create_controller = function(cell_model)
 {
     var result = {
         execute: function() {
+            debugger;
             var that = this;
             var language = cell_model.language();
             function callback(r) {
@@ -2659,7 +2584,9 @@ Notebook.create_controller = function(model)
                     return cell_model.controller.execute();
                 });
             });
-            return Promise.all(promises);
+            return RCloud.UI.with_progress(function() {
+                return Promise.all(promises);
+            });
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -2780,97 +2707,72 @@ var on_data = function(v) {
     oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
 };
 
+function on_connect_anonymous_allowed(ocaps) {
+    var promise;
+    rcloud = RCloud.create(ocaps.rcloud);
+    if (rcloud.authenticated) {
+        promise = rcloud.session_init(rcloud.username(), rcloud.github_token());
+    } else {
+        promise = rcloud.anonymous_session_init();
+    }
+    return promise;
+}
+
+function on_connect_anonymous_disallowed(ocaps) {
+    rcloud = RCloud.create(ocaps.rcloud);
+    if (!rcloud.authenticated) {
+        return Promise.reject(new Error("Authentication required"));
+    }
+    return rcloud.session_init(rcloud.username(), rcloud.github_token());
+}
+
+function rclient_promise(allow_anonymous) {
+    return new Promise(function(resolve, reject) {
+        rclient = RClient.create({
+            debug: false,
+            host:  location.href.replace(/^http/,"ws").replace(/#.*$/,""),
+            on_connect: function (ocaps) { resolve(ocaps); },
+            on_data: on_data,
+            on_error: function(error) {
+                reject(error);
+                return false;
+            }
+        });
+        rclient.allow_anonymous_ = allow_anonymous;
+    }).then(function(ocaps) {
+        var promise = allow_anonymous ?
+            on_connect_anonymous_allowed(ocaps) :
+            on_connect_anonymous_disallowed(ocaps);
+        return promise;
+    }).then(function(hello) {
+        if (!$("#output > .response").length)
+            rclient.post_response(hello);
+    }).catch(function(error) { // e.g. couldn't connect with github
+        rclient.close();
+        throw error;
+    }).then(function() {
+        rcloud.display.set_device_pixel_ratio();
+        rcloud.api.set_url(window.location.href);
+        return rcloud.init_client_side_data();
+    });
+}
+
 RCloud.session = {
     first_session_: true,
     // FIXME rcloud.with_progress is part of the UI.
     reset: function() {
         if (this.first_session_) {
             this.first_session_ = false;
-            return rcloud.with_progress();
+            return RCloud.UI.with_progress(function() {});
         }
-        return rcloud.with_progress(function(done) {
+        return RCloud.UI.with_progress(function() {
+            var anonymous = rclient.allow_anonymous_;
             rclient.close();
-            return new Promise(function(resolve, reject) {
-                rclient = RClient.create({
-                    debug: rclient.debug,
-                    host: rclient.host,
-                    on_connect: function(ocaps) {
-                        rcloud = RCloud.create(ocaps.rcloud);
-                        rcloud.session_init(rcloud.username(), rcloud.github_token());
-                        rcloud.display.set_device_pixel_ratio();
-                        rcloud.api.set_url(window.location);
-
-                        resolve(rcloud.init_client_side_data().then(function() {
-                            // we're always in edit mode here
-                            $("#session-info").empty();
-                            return done;
-                        }));
-                    },
-                    on_error: function(error) {
-                        // if we fail to reconnect we still want
-                        // to reject the promise so with_progress can continue.
-                        if (!rclient.running) {
-                            reject(done);
-                        }
-                        return false;
-                    },
-                    on_data: on_data
-                });
-            });
+            return rclient_promise(anonymous);
         });
     }, init: function(allow_anonymous) {
         this.first_session_ = true;
-
-        return new Promise(function(resolve, reject) {
-            function on_connect_anonymous_allowed(ocaps) {
-                var promise;
-                rcloud = RCloud.create(ocaps.rcloud);
-                if (rcloud.authenticated) {
-                    promise = rcloud.session_init(rcloud.username(), rcloud.github_token());
-                } else {
-                    promise = rcloud.anonymous_session_init();
-                }
-                return promise;
-            }
-
-            function on_connect_anonymous_disallowed(ocaps) {
-                rcloud = RCloud.create(ocaps.rcloud);
-                if (!rcloud.authenticated) {
-                    return Promise.reject(new Error("Authentication required"));
-                }
-                return rcloud.session_init(rcloud.username(), rcloud.github_token());
-            }
-
-            function on_connect(ocaps) {
-                var promise = allow_anonymous ?
-                    on_connect_anonymous_allowed(ocaps) :
-                    on_connect_anonymous_disallowed(ocaps);
-
-                promise.then(function(hello) {
-                    rclient.post_response(hello);
-                }).catch(function(error) { // e.g. couldn't connect with github
-                    rclient.close();
-                    reject(error);
-                }).then(function() {
-                    rcloud.display.set_device_pixel_ratio();
-                    rcloud.api.set_url(window.location.href);
-                    resolve(rcloud.init_client_side_data());
-                });
-            }
-
-            rclient = RClient.create({
-                debug: false,
-                host:  location.href.replace(/^http/,"ws").replace(/#.*$/,""),
-                on_connect: on_connect,
-                on_data: on_data,
-                on_error: function(error) {
-                    // if we fail to connect we want
-                    // to reject the promise so it can be handled downstream
-                    reject();
-                    return false;
-                }
-            });
-        });
+        return rclient_promise(allow_anonymous);
     }
 };
 
@@ -3566,6 +3468,93 @@ RCloud.UI.notebook_title = (function() {
     };
     return result;
 })();
+(function() {
+
+var progress_dialog;
+var progress_counter = 0;
+var allowed = 1;
+var curtains_on = false;
+
+function set_curtain() {
+    if (curtains_on)
+        return;
+    curtains_on = true;
+    if (_.isUndefined(progress_dialog)) {
+        progress_dialog = $('<div id="progress-dialog" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-body">Please wait...</div></div></div>');
+        $("body").append(progress_dialog);
+    }
+    progress_dialog.modal({keyboard: true});
+}
+
+function clear_curtain() {
+    if (!curtains_on)
+        return;
+    curtains_on = false;
+    progress_dialog.modal('hide');
+}
+
+function set_cursor() {
+    _.delay(function() {
+        document.body.style.cursor = "wait";
+    }, 0);
+}
+
+function clear_cursor() {
+    _.delay(function() {
+        document.body.style.cursor = '';
+    }, 0);
+}
+
+RCloud.UI.with_progress = function(promise_thunk, delay) {
+    if (_.isUndefined(delay))
+        delay = 2000;
+    set_cursor();
+    function done() {
+        debugger;
+        progress_counter -= 1;
+        if (progress_counter === 0) {
+            clear_cursor();
+            clear_curtain();
+        }
+    }
+    _.delay(function() {
+        debugger;
+        if (progress_counter > 0 && allowed > 0)
+            set_curtain();
+    }, delay);
+    progress_counter += 1;
+    return Promise.resolve(done)
+        .then(promise_thunk)
+        .then(function(v) {
+            done();
+            return v;
+        }).catch(function(error) {
+            done();
+            throw error;
+        });
+};
+
+RCloud.UI.prevent_progress_modal = function() {
+    if (allowed === 1) {
+        if (progress_counter > 0) {
+            clear_cursor();
+            clear_curtain();
+        }
+    }
+    allowed -= 1;
+};
+
+RCloud.UI.allow_progress_modal = function() {
+    if (allowed === 0) {
+        if (progress_counter > 0) {
+            set_cursor();
+            set_curtain();
+        }
+    }
+    allowed += 1;
+};
+
+})();
 RCloud.UI.right_panel = (function() {
     var result = RCloud.UI.collapsible_column("#right-column,#fake-right-column",
                                               "#accordion-right", "#right-pane-collapser", 4);
@@ -3801,11 +3790,11 @@ RCloud.UI.search = {
         summary("Searching...");
         $("#search-results").hide().html("");
         query = encodeURIComponent(query);
-        rcloud.with_progress(function(done) {
-            rcloud.search(query).then(function (v) {
-                create_list_of_search_results(v);
-                done();
-            });
+        RCloud.UI.with_progress(function() {
+            return rcloud.search(query)
+                .then(function(v) {
+                    create_list_of_search_results(v);
+                });
         });
     }
 };
