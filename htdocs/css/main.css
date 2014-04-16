@@ -435,6 +435,11 @@ li.jqtree-selected .notebook-commands {
     padding: 5px;
 }
 
+#session-info-out {
+  word-wrap: normal;
+  white-space: pre;
+}
+
 /******************************************************************************/
 
 .comment-container {
