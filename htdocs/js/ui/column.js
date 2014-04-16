@@ -114,16 +114,28 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             var cw = this.calcwidth();
             this.colwidth(cw);
             RCloud.UI.middle_column.update();
-            var heights = {}, cbles = collapsibles(), ncollapse = cbles.length;
+            var heights = {}, padding = {}, cbles = collapsibles(), ncollapse = cbles.length;
             var greedy_one = null;
+            function default_sizer(el) {
+                var sizer = $(el).find(".widget-vsize:not(.out)"),
+                    height = sizer.height(),
+                    padding = sizer.outerHeight() - height;
+                return {height: height, padding: padding};
+            }
             cbles.each(function() {
-                if(!$(this).hasClass("out") && !$(this).data("would-collapse"))
-                    heights[this.id] = $(this).find(".widget-vsize:not(.out)").height();
+                if(!$(this).hasClass("out") && !$(this).data("would-collapse")) {
+                    var spf = $(this).data("panel-sizer");
+                    var sp = spf ? spf(this) : default_sizer(this);
+                    heights[this.id] = sp.height;
+                    padding[this.id] = sp.padding;
+                }
                 if($(this).attr("data-widgetheight")=="greedy")
                     greedy_one = $(this);
             });
             var heading_height =  $(sel_accordion + " .panel-heading").outerHeight(); // height of first heading
             var available = $(sel_column).height() - ncollapse*heading_height;
+            if(id in padding)
+                available -= padding[id];
             var id, left = available;
             for(id in heights)
                 left -= heights[id];
@@ -134,10 +146,10 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             }
             else {
                 // they didn't fit
+                left = available;
                 var remaining = _.keys(heights),
                     done = false, i;
                 var split = left/remaining.length;
-                left = available;
 
                 // see which need less than an even split and be done with those
                 while(remaining.length && !done) {

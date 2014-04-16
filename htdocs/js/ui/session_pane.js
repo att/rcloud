@@ -2,10 +2,11 @@ RCloud.UI.session_pane = {
     init: function() {
         // detect where we will show errors
         this.error_dest_ = $("#session-info");
-        if(this.error_dest_.length)
+        if(this.error_dest_.length) {
             this.show_error_area = function() {
                 RCloud.UI.right_panel.collapse($("#collapse-session-info"), false, false);
             };
+        }
         else {
             this.error_dest_ = $("#output");
             this.show_error_area = function() {};

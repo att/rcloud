@@ -240,7 +240,6 @@ rect.frame {
 }
 
 .notebook-tree {
-    height: 450px;
     overflow-y: auto;
 }
 
@@ -428,8 +427,7 @@ li.jqtree-selected .notebook-commands {
     height: 50vh;
 }
 
-#session-info {
-    height: 100%;
+#session-info-panel {
     overflow-y: auto;
     overflow-x: auto;
     padding: 5px;
