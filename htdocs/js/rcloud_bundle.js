@@ -2888,9 +2888,12 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             var heights = {}, padding = {}, cbles = collapsibles(), ncollapse = cbles.length;
             var greedy_one = null;
             function default_sizer(el) {
-                var sizer = $(el).find(".widget-vsize:not(.out)"),
-                    height = sizer.height(),
-                    padding = sizer.outerHeight() - height;
+                var el$ = $(el),
+                    $izer = el$.find(".widget-vsize:not(.out)"),
+                    height = $izer.height(),
+                    body$ = el$.find('.panel-body'),
+                    padding = el$.outerHeight() - el$.height() +
+                        body$.outerHeight() - body$.height();
                 return {height: height, padding: padding};
             }
             cbles.each(function() {
@@ -2899,19 +2902,27 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                     var sp = spf ? spf(this) : default_sizer(this);
                     heights[this.id] = sp.height;
                     padding[this.id] = sp.padding;
+                    // remember the first greedy panel
+                    if(!greedy_one && $(this).attr("data-widgetheight")==="greedy")
+                        greedy_one = $(this);
                 }
-                if($(this).attr("data-widgetheight")=="greedy")
-                    greedy_one = $(this);
             });
-            var heading_height =  $(sel_accordion + " .panel-heading").outerHeight(); // height of first heading
-            var available = $(sel_column).height() - ncollapse*heading_height;
-            if(id in padding)
+            /*
+             var heading_height =  $(sel_accordion + " .panel-heading").outerHeight(); // height of first heading
+             var total_headings = ncollapse*heading_height;
+             var available = $(sel_column).height() - total_headings;
+             */
+            var available = $(sel_column).height();
+            var total_headings = d3.sum($(sel_accordion + " .panel-heading")
+                                        .map(function(_, ph) { return $(ph).outerHeight(); }));
+            available -= total_headings;
+            for(id in padding)
                 available -= padding[id];
             var id, left = available;
             for(id in heights)
                 left -= heights[id];
             if(left>=0) {
-                // they all fit, now just give the rest to the greedy one if any
+                // they all fit, now just give the rest to greedy one (if any)
                 if(greedy_one != null)
                     heights[greedy_one.get(0).id] += left;
             }
@@ -2940,6 +2951,10 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             }
             for(id in heights)
                 $('#' + id).find(".panel-body").height(heights[id]);
+            var expected = $(sel_column).height();
+            var got = d3.sum(_.values(padding)) + d3.sum(_.values(heights)) + total_headings;
+            if(expected != got)
+                console.log("Error in vertical layout algo: filling " + expected + " pixels with " + got);
         },
         hide: function(persist) {
             // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
@@ -3850,10 +3865,6 @@ RCloud.UI.session_pane = {
             this.show_error_area = function() {
                 RCloud.UI.right_panel.collapse($("#collapse-session-info"), false, false);
             };
-            /*
-            $("#session-info").data("panel-sizer", function(el) {
-                var sout = 
-             */
         }
         else {
             this.error_dest_ = $("#output");
