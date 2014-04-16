@@ -8,6 +8,15 @@
 # mode = "script"  will attempt to login anonymously, intended to be
 #                  used in scripts
 configure.rcloud <- function (mode=c("startup", "script")) {
+  mode <- match.arg(mode)
+
+  ## If we're running in startup mode, suicide on error!
+  if (mode == "startup")
+    options(error=function(...) {
+      cat("\n***FATAL ERROR** aborting RCloud startup\n")
+      tools:::pskill(Sys.getpid())
+    })
+  
   ## FIXME: should not be needed - try out?
   require(rcloud.support)
   
@@ -15,8 +24,6 @@ configure.rcloud <- function (mode=c("startup", "script")) {
   ##        since it's not on CRAN. We load it for convenience
   ##        later but this is a note that it's really needed.
   require(github)
-
-  mode <- match.arg(mode)
   
   ## it is useful to have access to the root of your
   ## installation from R scripts -- for RCloud this is *mandatory*
@@ -161,6 +168,14 @@ configure.rcloud <- function (mode=c("startup", "script")) {
 
   setConf("instanceID", generate.uuid())
 
+  ## sanity check on redis
+  if (isTRUE(getConf("rcs.engine") == "redis")) {
+    redis <- rcs.redis(getConf("rcs.redis.host"))
+    if (is.null(redis$handle)) stop("ERROR: cannot connect to redis host `",getConf("rcs.redis.host"),"', aborting")
+    ## FIXME: we don't expose close in RCS, so do it by hand
+    rediscc::redis.close(redis$handle)
+    cat("Redis back-end .... OK\n")
+  }
   options(HTTPUserAgent=paste(getOption("HTTPUserAgent"), "- RCloud (http://github.com/cscheid/rcloud)"))
 
   ## determine verison/revision/branch
@@ -201,6 +216,9 @@ configure.rcloud <- function (mode=c("startup", "script")) {
   .info$rcloud.info <- rcloud.info
   .info$rcloud.version <- rcloud.version
 
+  if (mode == "startup") ## reset error suicide
+    options(error=NULL)
+
   if (mode == "script")
     rcloud.support:::start.rcloud.anonymously()
   else
@@ -232,9 +250,20 @@ start.rcloud.common <- function(...) {
   })
 
   ## while at it, pass other requests as OOB, too
-  options(pager = function(...) self.oobSend(list("pager", ...)))
-  options(editor = function(...) self.oobSend(list("editor", ...)))
-
+  options(pager = function(files, header, title, delete.file) {
+    content <- lapply(files, function(fn) {
+      c <- readLines(fn)
+      if (isTRUE(delete.file)) unlink(fn)
+      paste(c, collapse='\n')
+    })
+    self.oobSend(list("pager", content, header, title))
+  })
+  options(editor = function(what, file, name) {
+    ## FIXME: this should be oobMessage()
+    if (nzchar(file)) file <- paste(readLines(file), collapse="\n")
+    self.oobSend(list("editor", what, file, name))
+  })
+  
   ## and some options that may be of interest
   options(demo.ask = FALSE)
   options(example.ask = FALSE)

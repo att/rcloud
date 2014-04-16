@@ -1,6 +1,51 @@
 var ui_utils = {};
 
-ui_utils.fa_button = function(which, title, classname, style)
+ui_utils.disconnection_error = function(msg, label) {
+    var result = $("<div class='alert alert-danger'></div>");
+    result.append($("<span></span>").text(msg));
+    label = label || "Reconnect";
+    var button = $("<button type='button' class='close'>" + label + "</button>");
+    result.append(button);
+    button.click(function() {
+        window.location =
+            (window.location.protocol +
+             '//' + window.location.host +
+             '/login.R?redirect=' +
+             encodeURIComponent(window.location.pathname + window.location.search));
+    });
+    return result;
+};
+
+ui_utils.string_error = function(msg) {
+    var button = $("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>");
+    var result = $("<div class='alert alert-danger alert-dismissable'></div>");
+    // var text = $("<span></span>");
+
+    result.append(button);
+    var text = _.map(msg.split("\n"), function(str) {
+        // poor-man replacing 4 spaces with indent
+        var el = $("<div></div>").text(str), match;
+        if ((match = str.match(/^( {4})+/))) {
+            var indent = match[0].length / 4;
+            el.css("left", indent +"em");
+            el.css("position", "relative");
+        };
+        return el;
+    });
+    result.append(text);
+    return result;
+};
+
+/*
+ * if container_is_self is true, then the html container of the tooltip is the element
+ * itself (which is the default for bootstrap but doesn't work very well for us
+ * because of z-index issues).
+ *
+ * On the other hand, if *all* containers are the html body, then this happens:
+ *
+ * https://github.com/att/rcloud/issues/525
+ */
+ui_utils.fa_button = function(which, title, classname, style, container_is_self)
 {
     var icon = $.el.i({'class': which});
     var span = $.el.span({'class': 'fontawesome-button ' + (classname || '')},
@@ -10,10 +55,14 @@ ui_utils.fa_button = function(which, title, classname, style)
             icon.style[k] = style[k];
     }
     // $(icon).css(style);
-    return $(span).tooltip({
+    var opts = {
         title: title,
         delay: { show: 250, hide: 0 }
-    });
+    };
+    if (!container_is_self) {
+        opts.container = 'body';
+    }
+    return $(span).tooltip(opts);
 };
 
 ui_utils.enable_fa_button = function(el) {
@@ -80,8 +129,8 @@ ui_utils.install_common_ace_key_bindings = function(widget) {
         }, {
             name: 'execute-selection-or-line',
             bindKey: {
-                win: 'Alt-Return',
-                mac: 'Alt-Return',
+                win: 'Ctrl-Return',
+                mac: 'Command-Return',
                 sender: 'editor'
             },
             exec: function(widget, args, request) {
@@ -288,6 +337,7 @@ ui_utils.editable = function(elem$, command) {
         elem$.attr('contenteditable', 'false');
         elem$.off('keydown');
         elem$.off('focus');
+        elem$.off('click');
         elem$.off('blur');
         break;
     case 'melt':
@@ -305,6 +355,10 @@ ui_utils.editable = function(elem$, command) {
                     }); // click-off cancels
                 }, 10);
             }
+        });
+        elem$.click(function(e) {
+            e.stopPropagation();
+            // allow default action but don't bubble (causing eroneous reselection in notebook tree)
         });
         elem$.keydown(function(e) {
             if(e.keyCode === 13) {
@@ -327,4 +381,10 @@ ui_utils.editable = function(elem$, command) {
 
 ui_utils.on_next_tick = function(f) {
     window.setTimeout(f, 0);
+};
+
+ui_utils.add_ace_grab_affordance = function(element) {
+    var sel = $(element).children().filter(".ace_gutter");
+    var div = $("<div style='position:absolute;top:0px'><object data='/img/grab_affordance.svg' type='image/svg+xml'></object></div>");
+    sel.append(div);
 };

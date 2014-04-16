@@ -81,8 +81,8 @@ RCloud.UI.init = function() {
             };
             var alert_element = $("<div></div>");
             var p;
-            if(what==="exists") {
-                p = $("<p>File exists.</p>");
+            if(/exists/.test(what)) {
+                p = $("<p>File exists. </p>");
                 var overwrite = bootstrap_utils
                         .button({"class": 'btn-danger'})
                         .click(overwrite_click)
@@ -94,6 +94,9 @@ RCloud.UI.init = function() {
             }
             else if(what==="badname") {
                 p = $("<p>Filename not allowed.</p>");
+            }
+            else {
+                p = $("<p>(unexpected) " + what + "</p>");
             }
             alert_element.append(p);
             $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
@@ -113,12 +116,14 @@ RCloud.UI.init = function() {
 
     RCloud.UI.left_panel.init();
     RCloud.UI.right_panel.init();
+    RCloud.UI.session_pane.init();
 
     var non_notebook_panel_height = 246;
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
 
     $("#search").submit(function() {
         var qry = $('#input-text-search').val();
+        $('#input-text-search').blur();
         RCloud.UI.search.exec(qry);
         return false;
     });
@@ -202,5 +207,4 @@ RCloud.UI.init = function() {
     $("#edit-notebook").click(function() {
         window.location = "main.html?notebook=" + shell.gistname();
     });
-
 };

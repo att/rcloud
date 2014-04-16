@@ -38,7 +38,7 @@ rcloud.load.notebook <- function(id, version = NULL) {
 
 rcloud.install.notebook.stylesheets <- function() {
   n <- .session$current.notebook$content
-  urls <- sapply(grep('css$', names(n$files)), function(v) {
+  urls <- sapply(grep('^rcloud-.*\\.css$', names(n$files)), function(v) {
     n$files[[v]]$raw_url
   })
   rcloud.install.css(urls)

@@ -49,3 +49,13 @@ rcloud.enable.echo <- function()
 {
   .session$disable.echo <- NULL
 }
+
+rcloud.set.url <- function(url)
+{
+  .session$url <- url
+}
+
+rcloud.get.url <- function(url)
+{
+  .session$url
+}

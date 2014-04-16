@@ -55,6 +55,9 @@ unauthenticated.ocaps <- function()
 
       get_users = make.oc(rcloud.get.users),
 
+      # externally used ocaps
+      load_module_package = make.oc(rcloud.load.module.package),
+
       # javascript.R
       setup_js_installer = make.oc(rcloud.setup.js.installer),
 
@@ -93,7 +96,9 @@ unauthenticated.ocaps <- function()
         disable_warnings = make.oc(rcloud.disable.warnings),
         enable_warnings = make.oc(rcloud.enable.warnings),
         disable_echo = make.oc(rcloud.disable.echo),
-        enable_echo = make.oc(rcloud.enable.echo)
+        enable_echo = make.oc(rcloud.enable.echo),
+        set_url = make.oc(rcloud.set.url),
+        get_url = make.oc(rcloud.get.url)
         )
       )
     )

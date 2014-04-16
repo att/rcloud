@@ -51,7 +51,7 @@ RCloud.create = function(rcloud_ocaps) {
 
         function failure(err) {
             if(err.message) {
-                rclient.post_error(err.message);
+                RCloud.UI.session_pane.post_error(err.message);
             }
             throw err;
         }
@@ -72,7 +72,7 @@ RCloud.create = function(rcloud_ocaps) {
         function failure(err) {
             var message = _.isObject(err) && 'ok' in err
                 ? err.content.message : err.toString();
-            rclient.post_error(command + ': ' + message);
+            RCloud.UI.session_pane.post_error(command + ': ' + message);
             throw err;
         }
         return promise.then(success).catch(failure);
@@ -106,7 +106,10 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "enable_echo"],
             ["api", "disable_echo"],
             ["api", "enable_warnings"],
-            ["api", "disable_warnings"]
+            ["api", "disable_warnings"],
+            ["api", "set_url"],
+            ["api", "get_url"],
+            ["get_notebook_by_name"]
         ];
         process_paths(paths);
 
@@ -236,6 +239,10 @@ RCloud.create = function(rcloud_ocaps) {
             return cached_device_pixel_ratio;
         };
 
+        rcloud.get_notebook_by_name = function(user, path) {
+            return rcloud_ocaps.get_notebook_by_nameAsync(user, path);
+        };
+
         ////////////////////////////////////////////////////////////////////////////////
         // access the runtime API in javascript as well
 
@@ -251,6 +258,12 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.api.enable_echo = function() {
             return rcloud_ocaps.api.enable_echoAsync();
+        };
+        rcloud.api.set_url = function(url) {
+            return rcloud_ocaps.api.set_urlAsync(url);
+        };
+        rcloud.api.get_url = function() {
+            return rcloud_ocaps.api.get_urlAsync();
         };
     }
 
@@ -294,7 +307,8 @@ RCloud.create = function(rcloud_ocaps) {
             ["config", "set_user_option"],
             ["get_notebook_info"],
             ["get_multiple_notebook_infos"],
-            ["set_notebook_info"]
+            ["set_notebook_info"],
+            ["notebook_by_name"]
         ];
         process_paths(paths);
 
@@ -550,89 +564,16 @@ RCloud.create = function(rcloud_ocaps) {
             if(!info.last_commit) return Promise.reject("attempt to set info no last_commit");
             return rcloud_ocaps.set_notebook_infoAsync(id, info);
         };
+
+        rcloud.get_notebook_by_name = function(user, path) {
+            return rcloud_ocaps.notebook_by_nameAsync(user, path);
+        };
     }
 
     rcloud.authenticated = rcloud_ocaps.authenticated;
     setup_unauthenticated_ocaps();
     if (rcloud.authenticated)
         setup_authenticated_ocaps();
-
-    //////////////////////////////////////////////////////////////////////////
-    // Progress indication
-
-    // FIXME this doesn't feel like it belongs on rcloud, but then again,
-    // where would it?
-
-    var progress_dialog;
-    var progress_counter = 0;
-    var allowed = 1;
-    var curtains_on = false;
-
-    function set_curtain() {
-        if (curtains_on)
-            return;
-        curtains_on = true;
-        if (_.isUndefined(progress_dialog)) {
-            progress_dialog = $('<div id="progress-dialog" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-body">Please wait...</div></div></div>');
-            $("body").append(progress_dialog);
-        }
-        progress_dialog.modal({keyboard: true});
-    }
-
-    function clear_curtain() {
-        if (!curtains_on)
-            return;
-        curtains_on = false;
-        progress_dialog.modal('hide');
-    }
-
-    function set_cursor() {
-        _.delay(function() {
-            document.body.style.cursor = "wait";
-        }, 0);
-    }
-
-    function clear_cursor() {
-        _.delay(function() {
-            document.body.style.cursor = '';
-        }, 0);
-    }
-    rcloud.with_progress = function(thunk, delay) {
-        if (_.isUndefined(delay))
-            delay = 2000;
-        set_cursor();
-        function done() {
-            progress_counter -= 1;
-            if (progress_counter === 0) {
-                clear_cursor();
-                clear_curtain();
-            }
-        }
-        _.delay(function() {
-            if (progress_counter > 0 && allowed > 0)
-                set_curtain();
-        }, delay);
-        progress_counter += 1;
-        return Promise.cast(done).then(thunk);
-    };
-    rcloud.prevent_progress_modal = function() {
-        if (allowed === 1) {
-            if (progress_counter > 0) {
-                clear_cursor();
-                clear_curtain();
-            }
-        }
-        allowed -= 1;
-    };
-    rcloud.allow_progress_modal = function() {
-        if (allowed === 0) {
-            if (progress_counter > 0) {
-                set_cursor();
-                set_curtain();
-            }
-        }
-        allowed += 1;
-    };
 
     return rcloud;
 };

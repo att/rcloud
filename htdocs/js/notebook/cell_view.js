@@ -71,8 +71,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         result.show_result();
         if(new_content!==null) // if any change (including removing the content)
             cell_model.parent_model.controller.update_cell(cell_model);
-        rcloud.with_progress(function(done) {
-            cell_model.controller.execute().then(done);
+
+        RCloud.UI.with_progress(function() {
+            return cell_model.controller.execute();
         });
     }
     run_md_button.click(function(e) {
@@ -140,19 +141,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         session.getUndoManager().reset();
     });
     var doc = session.doc;
-    var am_read_only = cell_model.parent_model.read_only();
-    if (am_read_only) {
-        disable(remove_button);
-        disable(insert_cell_button);
-        disable(split_button);
-        disable(coalesce_button);
-    }
-    else {
-        // no coalesce at top
-        if(!cell_model.parent_model.prior_cell(cell_model))
-            coalesce_button.hide();
-    }
-    widget.setReadOnly(am_read_only);
+    var am_read_only = undefined; // we don't know yet
     widget.setOptions({
         enableBasicAutocompletion: true
     });
@@ -170,8 +159,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     widget.commands.addCommands([{
         name: 'sendToR',
         bindKey: {
-            win: 'Ctrl-Return',
-            mac: 'Command-Return',
+            win: 'Alt-Return',
+            mac: 'Alt-Return',
             sender: 'editor'
         },
         exec: function(widget, args, request) {
@@ -267,7 +256,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                         if (RCloud.is_exception(future)) {
                             var data = RCloud.exception_message(future);
                             $(that).replaceWith(function() {
-                                return rclient.string_error(data);
+                                return ui_utils.string_error(data);
                             });
                         } else {
                             var data = future();
@@ -302,7 +291,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
         set_readonly: function(readonly) {
             am_read_only = readonly;
-            widget.setReadOnly(readonly);
+            // a better way to set non-interactive readonly
+            // https://github.com/ajaxorg/ace/issues/266
+            widget.setOptions({
+                readOnly: readonly,
+                highlightActiveLine: !readonly,
+                highlightGutterLine: !readonly
+            });
+            widget.renderer.$cursorLayer.element.style.opacity = readonly?0:1;
             if (readonly) {
                 disable(remove_button);
                 disable(insert_cell_button);
@@ -313,6 +309,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 enable(insert_cell_button);
                 enable(split_button);
                 enable(coalesce_button);
+                ui_utils.add_ace_grab_affordance(widget.container);
             }
         },
 
@@ -365,6 +362,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // enable(hide_button);
             if (!am_read_only) {
                 enable(remove_button);
+                enable(split_button);
             }
             //editor_row.show();
 
@@ -379,6 +377,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             notebook_cell_div.css({'height': ''});
             enable(source_button);
             disable(result_button);
+            disable(split_button);
             // enable(hide_button);
             if (!am_read_only) {
                 enable(remove_button);
@@ -416,6 +415,15 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
         get_content: function() { // for debug
             return cell_model.content();
+        },
+        reformat: function() {
+            widget.resize();
+        },
+        check_buttons: function() {
+            if(!cell_model.parent_model.prior_cell(cell_model))
+                coalesce_button.hide();
+            else if(!am_read_only)
+                coalesce_button.show();
         }
     };
 

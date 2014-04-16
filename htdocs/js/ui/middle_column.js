@@ -5,6 +5,7 @@ RCloud.UI.middle_column = (function() {
         update: function() {
             var size = 12 - RCloud.UI.left_panel.colwidth() - RCloud.UI.right_panel.colwidth();
             result.colwidth(size);
+            shell.notebook.view.reformat();
         }
     });
     return result;

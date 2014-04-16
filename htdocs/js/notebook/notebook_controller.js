@@ -44,7 +44,6 @@ Notebook.create_controller = function(model)
     function on_load(version, notebook) {
         if (!_.isUndefined(notebook.files)) {
             var i;
-            model.read_only(version != null || notebook.user.login != rcloud.username());
             // we can't do much with a notebook with no name, so give it one
             if(!notebook.description)
                 notebook.description = "(untitled)";
@@ -76,6 +75,7 @@ Notebook.create_controller = function(model)
                 asset_controller = asset_controller || result;
             }
             model.user(notebook.user.login);
+            model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
 
             if(asset_controller)
@@ -293,8 +293,23 @@ Notebook.create_controller = function(model)
                     }
             }
             var changes = refresh_buffers();
-            var content = cell_model.content(),
-                parts = [content.substring(0, point1)],
+            var content = cell_model.content();
+            // make sure point1 is before point2
+            if(point1>=point2)
+                point2 = undefined;
+            // remove split points at the beginning or end
+            if(point2 !== undefined && /^\s*$/.test(content.substring(point2)))
+                point2 = undefined;
+            if(point1 !== undefined) {
+                if(/^\s*$/.test(content.substring(point1)))
+                    point1 = undefined;
+                else if(/^\s*$/.test(content.substring(0, point1)))
+                    point1 = point2;
+            }
+            // don't do anything if there is no real split point
+            if(point1 === undefined)
+                return;
+            var parts = [content.substring(0, point1)],
                 id = cell_model.id(), language = cell_model.language();
             if(point2 === undefined)
                 parts.push(content.substring(point1));
@@ -387,7 +402,9 @@ Notebook.create_controller = function(model)
                     return cell_model.controller.execute();
                 });
             });
-            return Promise.all(promises);
+            return RCloud.UI.with_progress(function() {
+                return Promise.all(promises);
+            });
         },
 
         //////////////////////////////////////////////////////////////////////

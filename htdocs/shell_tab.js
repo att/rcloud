@@ -38,6 +38,16 @@ var shell = (function() {
         return notebook;
     }
 
+    function scroll_to_end(duration) {
+        // no idea why the plugin doesn't take current scroll into account when using
+        // the element parameter version
+        var opts = undefined;
+        if(duration !== undefined)
+            opts = {animation: {duration: duration}};
+        var y = $("#rcloud-cellarea").scrollTop() + $("#prompt-div").position().top +  $("#prompt-div").height();
+        $("#rcloud-cellarea").scrollTo(null, y, opts);
+    }
+
     var result = {
         notebook: {
             model: notebook_model_,
@@ -54,9 +64,6 @@ var shell = (function() {
             rcloud.get_conf_value("github.base.url").then(function(url) { github_url_ = url; });
             rcloud.get_conf_value("github.gist.url").then(function(url) { gist_url_ = url; });
         },
-        is_old_github: function() {
-            return !gist_url_;
-        },
         is_view_mode: function() {
             return view_mode_;
         },
@@ -64,20 +71,17 @@ var shell = (function() {
             var cell = notebook_controller_.append_cell(content, "Markdown");
             RCloud.UI.command_prompt.history.execute(content);
             if(execute) {
-                cell.execute().then(function() {
-                    $.scrollTo(null, $("#end-of-output"));
-                });
+                cell.execute().then(scroll_to_end);
             }
         }, new_interactive_cell: function(content, execute) {
             var cell = notebook_controller_.append_cell(content, "R");
             RCloud.UI.command_prompt.history.execute(content);
             if(execute) {
-                cell.execute().then(function() {
-                    $.scrollTo(null, $("#end-of-output"));
-                });
+                cell.execute().then(scroll_to_end);
             }
             return cell;
-        }, insert_markdown_cell_before: function(index) {
+        }, scroll_to_end: scroll_to_end,
+        insert_markdown_cell_before: function(index) {
             return notebook_controller_.insert_cell("", "Markdown", index);
         }, coalesce_prior_cell: function(cell_model) {
             return notebook_controller_.coalesce_prior_cell(cell_model);
@@ -87,39 +91,30 @@ var shell = (function() {
         load_notebook: function(gistname, version) {
             var that = this;
             notebook_controller_.save();
-            function do_load(done) {
-                var oldname = gistname_, oldversion = version_;
-                gistname_ = gistname;
-                version_ = version;
-                return that.notebook.controller.load_notebook(gistname_, version_).then(function(notebook) {
+            return RCloud.UI.with_progress(function() {
+                return RCloud.session.reset().then(function() {
+                    return that.notebook.controller.load_notebook(gistname, version);
+                }).then(function(notebook) {
                     if (!_.isUndefined(notebook.error)) {
-                        done();
-                        gistname_ = oldname;
-                        version_ = oldversion;
-                        return undefined;
+                        throw notebook.error;
                     }
+                    gistname_ = gistname;
+                    version_ = version;
                     $(".rcloud-user-defined-css").remove();
                     return rcloud.install_notebook_stylesheets()
-                        .return(notebook)
-                        .then(on_load).then(function(notebook) {
-                            done();
-                            return notebook;
-                        });
-                }).catch(function(err) {
-                    done();
-                    throw err;
-                });
-            }
-            return RCloud.session.reset().then(do_load);
+                        .return(notebook);
+                }).then(on_load);
+            });
         }, save_notebook: function() {
             notebook_controller_.save();
         }, new_notebook: function(desc) {
             notebook_controller_.save();
-            return RCloud.session.reset().then(function(done) {
-                var content = {description: desc, 'public': false,
-                               files: {"scratch.R": {content:"# keep snippets here while working with your notebook's cells"}}};
-                done(); // well not really done (just done with cps bleh) FIXME
-                return notebook_controller_.create_notebook(content).then(on_new);
+            return RCloud.UI.with_progress(function() {
+                return RCloud.session.reset().then(function() {
+                    var content = {description: desc, 'public': false,
+                                   files: {"scratch.R": {content:"# keep snippets here while working with your notebook's cells"}}};
+                    return notebook_controller_.create_notebook(content).then(on_new);
+                });
             });
         }, rename_notebook: function(desc) {
             return notebook_controller_.rename_notebook(desc);
@@ -129,21 +124,22 @@ var shell = (function() {
             // but load the notebook and reset the session to be sure
             if(is_mine && !version)
                 throw "unexpected revert of current version";
-            return RCloud.session.reset().then(function(done) {
-                var that = this;
-                notebook_model_.read_only(false);
-                return notebook_controller_
-                    .fork_or_revert_notebook(is_mine, gistname, version)
-                    .then(function(notebook) {
-                        gistname_ = notebook.id;
-                        version_ = null;
-                        done(); // again, not really done - just too nasty to compose done with k
-                        return notebook;
-                    }).then(on_load);
+            return RCloud.UI.with_progress(function() {
+                return RCloud.session.reset().then(function() {
+                    var that = this;
+                    notebook_model_.read_only(false);
+                    return notebook_controller_
+                        .fork_or_revert_notebook(is_mine, gistname, version)
+                        .then(function(notebook) {
+                            gistname_ = notebook.id;
+                            version_ = null;
+                            return notebook;
+                        }).then(on_load);
+                });
             });
         }, github_url: function() {
             var url;
-            if(!this.is_old_github()) {
+            if(gist_url_) {
                 url = gist_url_;
                 url += notebook_user_ + '/';
             }
@@ -186,7 +182,7 @@ var shell = (function() {
                 }
             }
             else ponents = notebook_or_url.split('/');
-            var notebook = ponents[0],
+            var gistname = ponents[0],
                 version = null;
             if(ponents.length>1) {
                 version = ponents[1] || null; // don't take empty string
@@ -197,7 +193,10 @@ var shell = (function() {
                     }
                 }
             }
-            editor.load_notebook(notebook, version);
+            editor.load_notebook(gistname, version).then(function(notebook) {
+                if(notebook.user.login === rcloud.username())
+                    editor.set_notebook_visibility(notebook.id, true);
+            });
         }, export_notebook_as_r_file: function() {
             return rcloud.get_notebook(gistname_, version_).then(function(notebook) {
                 var strings = [];
@@ -281,6 +280,7 @@ var shell = (function() {
                         notebook.description = notebook_desc_content.val();
                         rcloud.create_notebook(notebook).then(function(notebook) {
                             editor.star_notebook(true, {notebook: notebook});
+                            editor.set_notebook_visibility(notebook.id, true);
                         });
                     }
                     dialog.modal('hide');
@@ -359,10 +359,12 @@ var shell = (function() {
                             else
                                 failed.push(res);
                         }
-                        // TODO: tell user about failed imports
                         succeeded.forEach(function(notebook) {
                             editor.star_notebook(true, {notebook: notebook});
+                            editor.set_notebook_visibility(notebook.id, true);
                         });
+                        if(failed.length)
+                            RCloud.UI.session_pane.post_error("Failed to import notebooks: " + failed.join(', '));
                     });
                 dialog.modal('hide');
             }
@@ -404,10 +406,11 @@ var shell = (function() {
                 dialog = create_import_notebook_dialog();
             dialog.modal({keyboard: true});
         }, run_notebook: function() {
-            rcloud.with_progress().then(function(done) {
-                result.notebook.controller.run_all().then(done);
+            RCloud.UI.with_progress(function() {
+                return result.notebook.controller.run_all();
+            }).then(function() {
                 RCloud.UI.command_prompt.focus();
-            }).catch(function(done) { done(); });
+            });
         }
     };
 

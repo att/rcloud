@@ -21,7 +21,7 @@ var editor = function () {
      - the entry in notebook_info_[]
      - the bit in my_stars_[]
      View
-     - the existence of the node under My Interests in the notebook tree UI
+     - the existence of the node under Notebooks I Starred in the notebook tree UI
      - the filling of the star icon next to the node under All Notebooks in the tree UI
      - the filling of the star icon in the navbar (if current notebook)
      */
@@ -138,6 +138,11 @@ var editor = function () {
     function as_folder_hierarchy(nodes, prefix, name_prefix) {
         function is_in_folder(v) { return v.label.match(/([^/]+)\/(.+)/); }
         var in_folders = nodes;
+        // tired of seeing the "method 'match' of undefined" error
+        if(_.some(in_folders, function(entry) {
+            return entry.label === undefined || entry.label === null;
+        }))
+           throw new Error("bad notebook entry with no label");
         in_folders = _.filter(in_folders, is_in_folder);
         in_folders = _.map(in_folders, function(v) {
             var m = v.label.match(/([^/]+)\/(.+)/);
@@ -236,7 +241,7 @@ var editor = function () {
             user_nodes.push(node);
         }
         return {
-            label: 'My Interests',
+            label: 'Notebooks I Starred',
             id: '/interests',
             children: user_nodes.sort(compare_nodes)
         };
@@ -287,6 +292,7 @@ var editor = function () {
             children: user_nodes.sort(compare_nodes)
         };
     }
+
     function duplicate_tree_data(tree, f) {
         var t2 = f(tree);
         if(tree.children) {
@@ -297,19 +303,23 @@ var editor = function () {
         }
         return t2;
     }
+
+    function friend_from_all(datum) {
+        var d2 = _.pick(datum, "label", "name", "gistname", "user", "visible", "last_commit", "sort_order");
+        d2.id = datum.id.replace("/alls/", "/friends/");
+        d2.root = "friends";
+        return d2;
+    }
+
     function populate_friends(alls_root) {
         var friend_subtrees = alls_root.children.filter(function(subtree) {
             return my_friends_[subtree.id.replace("/alls/","")]>0;
         }).map(function(subtree) {
-            return duplicate_tree_data(subtree, function(datum) {
-                var d2 = _.extend({}, datum);
-                d2.id = datum.id.replace("/alls/", "/friends/");
-                return d2;
-            });
+            return duplicate_tree_data(subtree, friend_from_all);
         });
         return [
             {
-                label: 'My Friends',
+                label: 'People I Starred',
                 id: '/friends',
                 children: friend_subtrees
             },
@@ -422,8 +432,6 @@ var editor = function () {
             pdat = null,
             node = null;
         if(!parent) {
-            if(user===username_)
-                console.log("surprised not to find my own folder");
             var mine = user === username_; // yes it is possible I'm not my own friend
             parent = $tree_.tree('getNodeById', node_id(root));
             if(!parent)
@@ -753,17 +761,22 @@ var editor = function () {
 
     function change_folder_friendness(user) {
         if(my_friends_[user]) {
-            var mine = user === username_; // yes it is possible I'm not my own friend
-            var data = {
-                label: mine ? "My Notebooks" : someone_elses(user),
-                id: node_id('friends', user),
-                sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER
-            };
-            var parent = $tree_.tree('getNodeById', node_id('friends'));
-            var node = insert_alpha(data, parent);
             var anode = $tree_.tree('getNodeById', node_id('alls', user));
+            var ftree;
             if(anode)
-                $tree_.tree('loadData', anode.children, node);
+                ftree = duplicate_tree_data(anode, friend_from_all);
+            else {
+                // note: check what this case is really for
+                var mine = user === username_; // yes it is possible I'm not my own friend
+                ftree = {
+                    label: mine ? "My Notebooks" : someone_elses(user),
+                    id: node_id('friends', user),
+                    sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER
+                };
+            }
+            var parent = $tree_.tree('getNodeById', node_id('friends'));
+            var node = insert_alpha(ftree, parent);
+            $tree_.tree('loadData', ftree.children, node);
         }
         else {
             var n2 = $tree_.tree('getNodeById', node_id('friends', user));
@@ -787,7 +800,7 @@ var editor = function () {
         try {
             comments = JSON.parse(comments);
         } catch (e) {
-            rclient.post_error("populate comments: " + e.message);
+            RCloud.UI.session_pane.post_error("populate comments: " + e.message);
             return;
         }
         d3.select("#comment-count")
@@ -840,7 +853,7 @@ var editor = function () {
                     ++count;
                 }
                 add.width = function() {
-                    return count*14;
+                    return count*15;
                 };
                 add.commit = function() {
                     target.append.apply(target, lst);
@@ -857,7 +870,8 @@ var editor = function () {
             var star_unstar = ui_utils.fa_button(states[state]['class'],
                                                  function(e) { return states[state].title; },
                                                  'star',
-                                                 star_style);
+                                                 star_style,
+                                                 true);
             // sigh, ui_utils.twostate_icon should be a mixin or something
             // ... why does this code exist?
             star_unstar.click(function(e) {
@@ -881,7 +895,7 @@ var editor = function () {
             add_buttons = adder(appear);
             if(true) { // all notebooks have history - should it always be accessible?
                 var disable = current_.notebook===node.gistname && current_.version;
-                var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style);
+                var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style, true);
                 // jqtree recreates large portions of the tree whenever anything changes
                 // so far this seems safe but might need revisiting if that improves
                 if(disable)
@@ -897,25 +911,31 @@ var editor = function () {
                 add_buttons(history);
             }
             if(node.user===username_) {
-                var make_private = ui_utils.fa_button('icon-eye-close', 'make private', 'private', icon_style),
-                    make_public = ui_utils.fa_button('icon-eye-open', 'make public', 'public', icon_style);
+                var make_private = ui_utils.fa_button('icon-eye-close', 'make private', 'private', icon_style, true),
+                    make_public = ui_utils.fa_button('icon-eye-open', 'make public', 'public', icon_style, true);
                 if(node.visible)
                     make_public.hide();
                 else
                     make_private.hide();
                 make_private.click(function() {
                     fake_hover(node);
-                    result.set_notebook_visibility(node, false);
+                    if(node.user !== username_)
+                        throw "attempt to set visibility on notebook not mine";
+                    else
+                        result.set_notebook_visibility(node.gistname, false);
                 });
                 make_public.click(function() {
                     fake_hover(node);
-                    result.set_notebook_visibility(node, true);
+                    if(node.user !== username_)
+                        throw "attempt to set visibility on notebook not mine";
+                    else
+                        result.set_notebook_visibility(node.gistname, true);
                     return false;
                 });
                 add_buttons(make_private, make_public);
             }
             if(node.user===username_) {
-                var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style);
+                var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style, true);
                 remove.click(function(e) {
                     e.stopPropagation();
                     e.preventDefault();
@@ -940,31 +960,31 @@ var editor = function () {
         element[0].appendChild(right[0]);
     }
 
-    function make_main_url(notebook, version) {
-        var url = window.location.protocol + '//' + window.location.host + '/main.html?notebook=' + notebook;
-        if(version)
-            url = url + '&version='+version;
+    function make_main_url(opts) {
+        var url = window.location.protocol + '//' + window.location.host + '/main.html';
+        if(opts.notebook) {
+            url += '?notebook=' + opts.notebook;
+            if(opts.version)
+                url = url + '&version='+opts.version;
+        }
+        else if(opts.new_notebook)
+            url += '?new_notebook=true';
         return url;
     }
     function tree_click(event) {
         if(event.node.id === 'showmore')
             result.show_history(event.node.parent, false);
         else if(event.node.gistname) {
-            if(event.click_event.metaKey || event.click_event.ctrlKey) {
-                var url = make_main_url(event.node.gistname, event.node.version);
-                window.open(url, "_blank");
-            }
+            if(event.click_event.metaKey || event.click_event.ctrlKey)
+                result.open_notebook(event.node.gistname, event.node.version, true, true);
             else {
-                // workaround: it's weird that a notebook exists in two trees but only one is selected (#220)
-                // and some would like clicking on the active notebook to edit the name (#252)
-                // for now, just select
+                // it's weird that a notebook exists in two trees but only one is selected (#220)
+                // just select - and this enables editability
                 if(event.node.gistname === current_.notebook
                    && event.node.version == current_.version) // nulliness ok here
                     select_node(event.node);
-                else {
-                    // possibly erase query parameters here, but that requires a reload
-                    result.load_notebook(event.node.gistname, event.node.version || null, event.node.root);
-                }
+                else
+                    result.open_notebook(event.node.gistname, event.node.version || null, event.node.root, false);
             }
         }
         else
@@ -978,29 +998,25 @@ var editor = function () {
     }
 
     var result = {
-        init: function(gistname, version) {
+        init: function(opts) {
             var that = this;
             username_ = rcloud.username();
             var promise = load_everything().then(function() {
-                if(gistname) // notebook specified in url
-                    that.load_notebook(gistname, version);
-                else if(current_.notebook)
-                    that.load_notebook(current_.notebook, current_.version);
-                else // brand new user
-                    that.new_notebook();
+                if(opts.notebook) // notebook specified in url
+                    return that.load_notebook(opts.notebook, opts.version);
+                else if(!opts.new_notebook && current_.notebook)
+                    return that.load_notebook(current_.notebook, current_.version);
+
+                return that.new_notebook();
             });
-            /* Search disabled for Version 0.9
-            var old_text = "";
-            window.setInterval(function() {
-                var new_text = $("#input-text-search").val();
-                if (new_text !== old_text) {
-                    old_text = new_text;
-                    that.search(new_text);
+            $('#new-notebook').click(function(e) {
+                e.preventDefault();
+                if(e.metaKey || e.ctrlKey) {
+                    var url = make_main_url({new_notebook: true});
+                    window.open(url, "_blank");
                 }
-            }, 500);
-             */
-            $('#new-notebook').click(function() {
-                that.new_notebook();
+                else
+                    that.new_notebook();
             });
             function publish_success(gistname, un) {
                 return function(val) {
@@ -1042,6 +1058,15 @@ var editor = function () {
                 .then(this.load_callback({version: version,
                                           selroot: selroot,
                                           push_history: push_history}));
+        },
+        open_notebook: function(gistname, version, selroot, new_window) {
+            // really just load_notebook except possibly in a new window
+            if(new_window) {
+                var url = make_main_url({notebook: gistname, version: version});
+                window.open(url, "_blank");
+            }
+            else
+                this.load_notebook(gistname, version, selroot);
         },
         new_notebook: function() {
             var that = this;
@@ -1145,11 +1170,9 @@ var editor = function () {
                         });
                 });
         },
-        set_notebook_visibility: function(node, visible) {
-            if(node.user !== username_)
-                throw "attempt to set visibility on notebook not mine";
-            set_visibility(node.gistname, visible);
-            update_notebook_view(username_, node.gistname, get_notebook_info(node.gistname), false);
+        set_notebook_visibility: function(gistname, visible) {
+            set_visibility(gistname, visible);
+            update_notebook_view(username_, gistname, get_notebook_info(gistname), false);
         },
         fork_or_revert_notebook: function(is_mine, gistname, version) {
             shell.fork_or_revert_notebook(is_mine, gistname, version)
@@ -1161,6 +1184,10 @@ var editor = function () {
                                                    make_current: true,
                                                    is_change: !!version,
                                                    version: null});
+                    return notebook.id;
+                }).then(function(gistname) {
+                    if(!is_mine)
+                        this.set_notebook_visibility(gistname, true);
                 });
         },
         show_history: function(node, toggle) {
@@ -1198,7 +1225,9 @@ var editor = function () {
                      window.history.replaceState)
                     .bind(window.history)
                  */
-                window.history.replaceState("rcloud.notebook", null, make_main_url(result.id, options.version));
+                var url = make_main_url({notebook: result.id, version: options.version});
+                window.history.replaceState("rcloud.notebook", null, url);
+                rcloud.api.set_url(url);
 
                 var history;
                 // when loading an old version you get truncated history
@@ -1207,20 +1236,14 @@ var editor = function () {
                     history = null;
                 else
                     history = result.history;
-                // there is a bug in old github where if you make a change you only
-                // get the old history and not the current
-                // this may be the same bug where the latest version doesn't always
-                // show in github
-                if(options.is_change && shell.is_old_github())
-                    history.unshift({version:'blah'});
 
-                (_.has(num_stars_, result.id) ? Promise.resolve(undefined)
-                 : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
-                       num_stars_[result.id] = count;
-                 })).then(function() {
-                     update_notebook_from_gist(result, history, options.selroot);
-                     that.update_notebook_file_list(result.files);
-                });
+                var promise = (_.has(num_stars_, result.id) ? Promise.resolve(undefined)
+                               : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
+                                   num_stars_[result.id] = count;
+                               })).then(function() {
+                                   update_notebook_from_gist(result, history, options.selroot);
+                                   that.update_notebook_file_list(result.files);
+                               });
 
                 rcloud.get_all_comments(result.id).then(function(data) {
                     populate_comments(data);
@@ -1230,6 +1253,7 @@ var editor = function () {
                     publish_notebook_checkbox_.set_state(p);
                     publish_notebook_checkbox_.enable(result.user.login === username_);
                 });
+                return promise.return(result);
             };
         },
         update_notebook_file_list: function(files) {
