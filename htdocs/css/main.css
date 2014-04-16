@@ -573,7 +573,6 @@ a.accordion-toggle:hover {
 
 a.accordion-toggle [class^="icon-"], a.accordion-toggle [class*="icon-"] {
     position: relative;
-    top: 2px;
 }
 
 a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="icon-"] {
@@ -583,6 +582,7 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
 
 .panel-default > .panel-heading {
     background-color: #777;
+    cursor: pointer;
 }
 
 .panel-default > .panel-heading > .accordion-toggle {

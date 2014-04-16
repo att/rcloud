@@ -91,8 +91,8 @@
         <div class="tab-div">
           <div class="panel-group" id="accordion-left">
             <div class="panel panel-default">
-              <div class="panel-heading">
-                <a class="accordion-toggle left" data-toggle="collapse" data-parent="#accordion" href="#collapse-notebook-tree"><i class="icon-folder-open"></i> <span class="title-offset">Notebooks</span></a>
+              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" data-target="#collapse-notebook-tree">
+                <a class="accordion-toggle left" href="#collapse-notebook-tree"><i class="icon-folder-open"></i> <span class="title-offset">Notebooks</span></a>
                 <a class="header-button" href="#" id="new-notebook"><i class="icon-plus"></i></a>
               </div>
               <div id="collapse-notebook-tree" class="panel-collapse in" data-colwidth="3" data-widgetheight="greedy">
@@ -104,8 +104,8 @@
             </div>
 
             <div class="panel panel-default">
-              <div class="panel-heading">
-                <a class="accordion-toggle left" data-toggle="collapse" data-parent="#accordion" href="#collapse-search"><i class="icon-search"></i> <span class="title-offset">Search</span></a>
+              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" data-target="#collapse-search">
+                <a class="accordion-toggle left" href="#collapse-search"><i class="icon-search"></i> <span class="title-offset">Search</span></a>
               </div>
               <div id="collapse-search" class="panel-collapse collapse" data-colwidth="4">
                 <img height="100%" width="5px" src="img/right_bordergray.png" class="panel-shadow left" />
@@ -124,8 +124,8 @@
             </div>
 
             <div class="panel panel-default">
-              <div class="panel-heading">
-                <a class="accordion-toggle left" data-toggle="collapse" data-parent="#accordion" href="#collapse-help"><i class="icon-question"></i> <span class="title-offset">Help</span></a>
+              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" data-target="#collapse-help">
+                <a class="accordion-toggle left" href="#collapse-help"><i class="icon-question"></i> <span class="title-offset">Help</span></a>
               </div>
               <div id="collapse-help" class="panel-collapse collapse" data-colwidth="5">
                 <img height="100%" width="5px" src="img/right_bordergray.png" class="panel-shadow left" />
@@ -197,7 +197,8 @@
           <div class="panel-group" id="accordion-right">
 
             <div class="panel panel-default">
-              <div class="panel-heading"><a class="accordion-toggle right" data-toggle="collapse" data-parent="#accordion-right" href="#collapse-assets"><span class="title-offset">Assets</span><div style="position: relative"><i class="icon-copy"></i></div>&nbsp;</a>
+              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion-right" data-target="#collapse-assets">
+		<a class="accordion-toggle right" href="#collapse-assets"><span class="title-offset">Assets</span><div style="position: relative"><i class="icon-copy"></i></div>&nbsp;</a>
               </div>
               <div id="collapse-assets" class="panel-collapse in" data-colwidth="4" data-widgetheight="greedy">
                 <img height="100%" width="5px" src="img/left_bordergray.png" class="panel-shadow right" />
@@ -213,8 +214,8 @@
             </div>
 
             <div class="panel panel-default">
-              <div class="panel-heading">
-                <a class="accordion-toggle right" data-toggle="collapse" data-parent="#accordion-right" href="#collapse-file-upload"><div style="position: relative"><i class="icon-upload"></i></div>&nbsp;<span class="title-offset">File Upload</span></a>
+              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion-right" data-target="#collapse-file-upload">
+                <a class="accordion-toggle right" href="#collapse-file-upload"><div style="position: relative"><i class="icon-upload"></i></div>&nbsp;<span class="title-offset">File Upload</span></a>
               </div>
               <div id="collapse-file-upload" class="panel-collapse collapse" data-colwidth="2">
                 <img height="100%" width="5px" src="img/left_bordergray.png" class="panel-shadow right" />
@@ -233,9 +234,8 @@
             </div>
 
             <div class="panel panel-default right">
-              <div class="panel-heading">
-                <a class="accordion-toggle right" data-toggle="collapse"
-                   data-parent="#accordion-right"
+              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion-right" data-target="#collapse-comments">
+                <a class="accordion-toggle right"
                    href="#collapse-comments"><div style="position:relative"><i class="icon-comments"></i></div>&nbsp;<span class="title-offset"><span id="comment-count">0</span> Comments</span></a>
               </div>
               <div id="collapse-comments" class="panel-collapse collapse" data-colwidth="2">
@@ -253,9 +253,8 @@
             </div>
 
             <div class="panel panel-default right">
-              <div class="panel-heading">
-                <a class="accordion-toggle right" data-toggle="collapse"
-                   data-parent="#accordion-right"
+              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion-right" data-target="#collapse-session-info">
+                <a class="accordion-toggle right"
                    href="#collapse-session-info"><div style="position:relative"><i class="icon-info"></i></div>&nbsp;<span class="title-offset">Session</span></a>
               </div>
               <div id="collapse-session-info" class="panel-collapse collapse" data-colwidth="3">

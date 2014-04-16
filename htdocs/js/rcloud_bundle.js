@@ -144,14 +144,8 @@ RCloud.create = function(rcloud_ocaps) {
             return result;
         }
 
-        function failure(err) {
-            if(err.message) {
-                RCloud.UI.session_pane.post_error(err.message);
-            }
-            throw err;
-        }
         return function() {
-            return promise_fn.apply(this, arguments).then(success).catch(failure);
+            return promise_fn.apply(this, arguments).then(success);
         };
     }
 
@@ -167,8 +161,7 @@ RCloud.create = function(rcloud_ocaps) {
         function failure(err) {
             var message = _.isObject(err) && 'ok' in err
                 ? err.content.message : err.toString();
-            RCloud.UI.session_pane.post_error(command + ': ' + message);
-            throw err;
+            throw new Error(command + ': ' + message);
         }
         return promise.then(success).catch(failure);
     }
@@ -2799,7 +2792,8 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         return $(sel_accordion + " > .panel > div.panel-collapse");
     }
     function togglers() {
-        return $(sel_accordion + " > .panel > div.panel-heading > a.accordion-toggle");
+        // return $(sel_accordion + " > .panel > div.panel-heading > a.accordion-toggle");
+        return $(sel_accordion + " > .panel > div.panel-heading");
     }
     function set_collapse(target, collapse, persist) {
         target.data("would-collapse", collapse);
@@ -2826,7 +2820,8 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 $(this).data("would-collapse", !$(this).hasClass('in') && !$(this).hasClass('out'));
             });
             togglers().click(function() {
-                var target = $(this.hash);
+                // var target = $(this.hash);
+                var target = $(this.dataset.target);
                 that.collapse(target, target.hasClass('in'));
                 return false;
             });
@@ -3861,6 +3856,7 @@ RCloud.UI.session_pane = {
 
     },
     post_error: function(msg, dest) {
+        debugger;
         if (typeof msg === 'string')
             msg = ui_utils.string_error(msg);
         if (typeof msg !== 'object')

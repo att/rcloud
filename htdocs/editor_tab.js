@@ -1188,6 +1188,11 @@ var editor = function () {
                 }).then(function(gistname) {
                     if(!is_mine)
                         this.set_notebook_visibility(gistname, true);
+                }).catch(function(error) {
+                    // hack around https://github.com/att/rcloud/issues/534
+                    if (error.message !== "bad notebook entry with no label") {
+                        throw error;
+                    }
                 });
         },
         show_history: function(node, toggle) {
