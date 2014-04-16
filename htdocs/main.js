@@ -7,7 +7,6 @@ window.onload = function() {
 
     RCloud.UI.init();
     RCloud.session.init().then(function() {
-        RCloud.UI.load();
         if(!rcloud.search)
             $("#search").text("Search engine not enabled on server");
         var opts = {};
@@ -25,10 +24,9 @@ window.onload = function() {
                  });
             }
         }
-        promise.then(function() {
-            shell.init();
-            editor.init(opts);
-        });
+        promise = promise.then(shell.init.bind(shell))
+            .then(editor.init.bind(editor, opts));
+        RCloud.UI.load(promise);
     }).catch(function(error) {
         if (error.message === "Authentication required") {
             RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Please login first!"));
