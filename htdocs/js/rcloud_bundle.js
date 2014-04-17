@@ -1052,7 +1052,7 @@ ui_utils.on_next_tick = function(f) {
 
 ui_utils.add_ace_grab_affordance = function(element) {
     var sel = $(element).children().filter(".ace_gutter");
-    var div = $("<div style='position:absolute;top:0px'><object data='/img/grab_affordance.svg' type='image/svg+xml'></object></div>");
+    var div = $("<div class='grab-affordance' style='position:absolute;top:0px'><object data='/img/grab_affordance.svg' type='image/svg+xml'></object></div>");
     sel.append(div);
 };
 var bootstrap_utils = {};
@@ -1469,6 +1469,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     session.setUseWrapMode(true);
     widget.resize();
 
+    ui_utils.add_ace_grab_affordance(widget.container);
+
     ui_utils.install_common_ace_key_bindings(widget);
     widget.commands.addCommands([{
         name: 'sendToR',
@@ -1618,12 +1620,12 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 disable(insert_cell_button);
                 disable(split_button);
                 disable(coalesce_button);
+                $(widget.container).find(".grab-affordance").hide();
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
                 enable(split_button);
                 enable(coalesce_button);
-                ui_utils.add_ace_grab_affordance(widget.container);
             }
         },
 

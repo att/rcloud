@@ -155,6 +155,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     session.setUseWrapMode(true);
     widget.resize();
 
+    ui_utils.add_ace_grab_affordance(widget.container);
+
     ui_utils.install_common_ace_key_bindings(widget);
     widget.commands.addCommands([{
         name: 'sendToR',
@@ -304,12 +306,12 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 disable(insert_cell_button);
                 disable(split_button);
                 disable(coalesce_button);
+                $(widget.container).find(".grab-affordance").hide();
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
                 enable(split_button);
                 enable(coalesce_button);
-                ui_utils.add_ace_grab_affordance(widget.container);
             }
         },
 
