@@ -1011,6 +1011,7 @@ var editor = function () {
             });
             $('#new-notebook').click(function(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 if(e.metaKey || e.ctrlKey) {
                     var url = make_main_url({new_notebook: true});
                     window.open(url, "_blank");
