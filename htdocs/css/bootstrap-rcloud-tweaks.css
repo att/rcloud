@@ -34,6 +34,11 @@ code {
     border-radius: 0;
 }
 
+.collapsing {
+    -webkit-transition: none;
+    transition: none;
+}
+
 .panel-group .panel {
     border-radius: 0;
 }
