@@ -31,16 +31,9 @@ Interested? Read on.
 
 You will need to do
 
-    $ git clone --recursive https://github.com/cscheid/rcloud.git
+    $ git clone https://github.com/att/rcloud.git
 
-to get RCloud and all of its dependencies.
-
-Or, if you already have an RCloud source tree, run
-
-    $ git submodule init
-    $ git submodule update
-
-to just get the dependencies.
+to get RCloud
 
 ### Upgrading to RCloud 1.0
 
@@ -55,7 +48,7 @@ from the 0.9 installation.
 
 ## Installation requirements
 
-Please use R 3.0.0 or later. It'll make your life easier, we promise.
+Please use R 3.0.0 or later. Search functionality requires R 3.1.0 or later.
 
 You will need several headers and libraries to compile dependent
 R packages (as well as R) -- on Debian/Ubuntu, you can use
@@ -179,3 +172,76 @@ Also if things are failing, try to run
     rcloud.support:::check.installation(force.all=TRUE)
 
 which will re-fetch and install all packages.
+
+### Optional functionality
+
+#### Redis
+
+It is strongly recommended to use Redis as the back-end for key/value
+storage in RCloud. Install Redis server (in Debian/Ubuntu
+`sudo apt-get install redis-server`) and add `rcs.engine: redis` to
+the `rcloud.conf` configuration file.
+
+Note: the default up until RCloud 1.0 is file-based RCS back-end which
+is limited and deprecated and thus the default may become Redis in
+future releases.
+
+#### Search
+
+RCloud 1.0 uses Apache Solr to index gists and provide search
+functionality if desired. See `conf/solr/README.md` for
+details. Quick start: install tomcat (Debian/Ubuntu
+`sudo apt-get install tomcat7`) and run
+
+    cd $ROOT/conf/solr
+    sh solrsetup.sh $ROOT/services/solr
+
+assuming `$ROOT` is set to your RCloud root directory. It will
+download Solr, setup the configuration, start Solr and create a
+collection used by RCloud. Then add
+
+    solr.url: http://127.0.0.1:8983/solr/rcloudnotebooks
+
+to `rcloud.conf`.
+
+
+#### SessionKeyServer
+
+For enhanced security RCloud can be configured to use a session key
+server instead of flat files. To install the reference server (it
+requires Java so e.g. `sudo apt-get install openjdk-7-jdk`), use
+
+    cd $ROOT
+    mkdir services
+    cd services
+    git clone https://github.com/s-u/SessionKeyServer.git
+    make
+    sh run &
+
+Then add `Session.server: http://127.0.0.1:4301` to `rcloud.conf`.
+
+#### PAM authentication
+
+This is the most advanced setup so use only if you know how this
+works. If you want to use user switching and PAM authentication, you
+can compile PAM support in the session server - make sure you have
+setup the session server (see above) and PAM is available
+(e.g. `sudo apt-get install libpam-dev` on Ubuntu/Debian), then
+
+    cd $ROOT/services/SessionKeyServer
+    make pam
+
+You may need to edit the `Makefile` if you're not on Ubuntu/Debian
+since it assumes `java-7-openjdk-amd64`to find the Java
+components. Common configuration in that case:
+
+    Exec.auth: pam
+    Exec.match.user: login
+    Exec.anon.user: nobody
+    HTTP.user: www-data
+
+This setup allows RCloud to switch the execution environemnt according
+to the user than has authenticated. For this to work, RCloud must be
+started as root, e.g., `sudo conf/start`. Again, use only if you know
+what you're doing since misconfiguring RCloud run as root can have
+grave security implications.
