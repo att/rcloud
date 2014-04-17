@@ -215,6 +215,7 @@ requires Java so e.g. `sudo apt-get install openjdk-7-jdk`), use
     mkdir services
     cd services
     git clone https://github.com/s-u/SessionKeyServer.git
+    cd SessionKeyServer
     make
     sh run &
 
@@ -240,7 +241,7 @@ components. Common configuration in that case:
     Exec.anon.user: nobody
     HTTP.user: www-data
 
-This setup allows RCloud to switch the execution environemnt according
+This setup allows RCloud to switch the execution environment according
 to the user than has authenticated. For this to work, RCloud must be
 started as root, e.g., `sudo conf/start`. Again, use only if you know
 what you're doing since misconfiguring RCloud run as root can have
