@@ -1,3 +1,4 @@
+# FIXME Overlaps with rcloud.get.notebook.asset
 rcloud.get.asset <- function(name, notebook=.session$current.notebook, version=NULL,
                              cached=TRUE, quiet=FALSE, as.file=FALSE) {
   if (!cached && is.list(notebook))
@@ -21,7 +22,7 @@ rcloud.get.asset <- function(name, notebook=.session$current.notebook, version=N
     asset <- base64decode(asset)
   } else if (length(grep("\\.b64$",name))) ## we got .b64 name explicitly so jsut decode it
     asset <- base64decode(asset)
-  
+
   if (as.file) {
     ad <- tempfile(paste0(notebook$content$id, '-assets'))
     dir.create(ad, FALSE, FALSE, "0700")
@@ -34,6 +35,8 @@ rcloud.get.asset <- function(name, notebook=.session$current.notebook, version=N
   } else asset
 }
 
+# FIXME semantics are entirely different depending on the file extension
+# this is a terrible idea.
 rcloud.execute.asset <- function(name, ..., notebook=.session$current.notebook, version=NULL,
                                  cached=TRUE, wait=TRUE) {
   asset <- rcloud.get.asset(name, notebook, version, cached, as.file=TRUE)

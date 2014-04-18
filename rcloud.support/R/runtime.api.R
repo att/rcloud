@@ -1,12 +1,54 @@
-# Functions here should be exposed in runtime to users of RCloud
+# Functions defined or referenced here are to be considered as public
+# API for RCloud notebooks. Any other functions are *NOT*.
 #
 # FIXME: we currently seem to expose all of rcloud.support. That
 # is a terrible idea on the face of it, both because of documentation
 # (how is the user to know which functions they're expected to call
-# and which they aren't?)
+# and which they aren't?) and security (are we sure all calls are safe?)
 #
 ################################################################################
 
+################################################################################
+# functions that are part of the API in other files:
+#
+# assets.R
+# - rcloud.get.asset
+# - rcloud.execute.asset
+# conf.R
+# - rcloud.config
+# javascript.R
+# - rcloud.install.js.module
+# - rcloud.install.css
+# - rcloud.clear.css
+# lux.plot.R
+# - wgeoplot
+# - wtour
+# module.pkg.R
+# - rcloud.load.module.package
+# output.R
+# - rcloud.out
+# password.R
+# - password
+# rcloud.support.R
+# - rcloud.get.conf.value
+# - rcloud.call.notebook
+# - rcloud.unauthenticated.call.notebook
+# setup.R
+# - rcloud.version
+# - rcloud.info
+# show.iframe.R
+# - show.iframe
+# tools.R
+# - rcloud.get.notebook.file
+# upload.R
+# - rcloud.upload.path
+# wdcplot.R
+# - wdcplot
+# wplot.R
+# - wplot
+# - select
+#
+################################################################################
 # Returns an asset from the notebook (simply one of the files in the
 # gist) This is useful for getting to files that have been uploaded to
 # the notebook without needing to go through the GitHub URL.

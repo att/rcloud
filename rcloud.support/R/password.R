@@ -1,5 +1,6 @@
 #function to request a password popup
 
+# FIXME rename
 password <- function(prompt)
 {
   path <- system.file("javascript", "password.js", package="rcloud.support");
