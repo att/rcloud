@@ -1,18 +1,7 @@
 ################################################################################
 # rcloud_status stuff goes here
 
-## FIXME: should we really allow JS to supply the username in all of the below?
-## If we do, then some access control would be in order ...
-
-## Yes. The right way to do this is when a user has successfully connected,
-## we create a unique session key, send this key to Javascript-side on startup,
-## and check the session key at every attempt at execution. This way users
-## cannot (easily) fake identities.
-
-## We're almost there now that we use github for authentication. The next step
-## is to move all of these to require the session token to match against
-## the one we have stored during the login process.
-
+# FIXME what's the relationship between this and rcloud.config in conf.R?
 rcloud.get.conf.value <- function(key) {
   Allowed <- c('host', 'github.base.url', 'github.api.url', 'github.gist.url')
   if(key %in% Allowed)
@@ -78,6 +67,9 @@ rcloud.get.notebook <- function(id, version = NULL) {
 ## this is extremely experimental -- use at your own risk
 ## the meaining of args is ambiguous and probably a bad idea - it jsut makes the client code a bit easier to write ...
 
+## FIXME shouldn't the detection of unauthenticated vs authenticated happen
+## transparently so we don't need to write different calls for different
+## situations?
 rcloud.unauthenticated.call.notebook <- function(id, version = NULL, args = NULL) {
   if (!rcloud.is.notebook.published(id))
     stop("Notebook does not exist or has not been published")
@@ -117,6 +109,9 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE
   } else NULL
 }
 
+## FIXME shouldn't the detection of unauthenticated vs authenticated happen
+## transparently so we don't need to write different calls for different
+## situations?
 rcloud.unauthenticated.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
   if (!rcloud.is.notebook.published(id))
     stop("Notebook does not exist or has not been published")
@@ -157,6 +152,9 @@ rcloud.notebook.by.name <- function(name, user=.session$username, path=TRUE) {
   m
 }
 
+## FIXME shouldn't the detection of unauthenticated vs authenticated happen
+## transparently so we don't need to write different calls for different
+## situations?
 rcloud.unauthenticated.notebook.by.name <- function(name, user=.session$username, path=TRUE) {
   candidates <- rcloud.notebook.by.name(name, user)
   if (length(candidates) < 1L) return(candidates)
