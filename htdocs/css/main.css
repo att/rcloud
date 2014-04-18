@@ -422,9 +422,13 @@ li.jqtree-selected .notebook-commands {
     padding-left: 0.5ex;
 }
 
+#help-parent {
+    padding: 1ex;
+}
+
 #help-frame {
     width: 100%;
-    height: 50vh;
+    height: 100%;
 }
 
 #session-info-panel {
