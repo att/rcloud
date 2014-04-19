@@ -147,13 +147,15 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             available -= total_headings;
             for(id in padding)
                 available -= padding[id];
-            var id, left = available;
+            var id, left = available, do_fit = false;
             for(id in heights)
                 left -= heights[id];
             if(left>=0) {
                 // they all fit, now just give the rest to greedy one (if any)
-                if(greedy_one != null)
+                if(greedy_one != null) {
                     heights[greedy_one.get(0).id] += left;
+                    do_fit = true;
+                }
             }
             else {
                 // they didn't fit
@@ -177,12 +179,13 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 // split the rest among the remainders
                 for(i = 0; i < remaining.length; ++i)
                     heights[remaining[i]] = split;
+                do_fit = true;
             }
             for(id in heights)
                 $('#' + id).find(".panel-body").height(heights[id]);
             var expected = $(sel_column).height();
             var got = d3.sum(_.values(padding)) + d3.sum(_.values(heights)) + total_headings;
-            if(expected != got)
+            if(do_fit && expected != got)
                 console.log("Error in vertical layout algo: filling " + expected + " pixels with " + got);
         },
         hide: function(persist) {
