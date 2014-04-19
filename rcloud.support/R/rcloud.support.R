@@ -480,7 +480,7 @@ rcloud.config.new.notebook.number <- function()
 
 rcloud.config.get.recent.notebooks <- function() {
   keys <- rcs.list(usr.key(user=.session$username, notebook="system", "config", "recent", "*"))
-  vals <- rcs.get(keys)
+  vals <- rcs.get(keys, list=TRUE)
   names(vals) <- gsub(".*/", "", names(vals))
   vals
 }
