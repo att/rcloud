@@ -3877,7 +3877,6 @@ RCloud.UI.session_pane = {
 
     },
     post_error: function(msg, dest) {
-        debugger;
         if (typeof msg === 'string')
             msg = ui_utils.string_error(msg);
         if (typeof msg !== 'object')
