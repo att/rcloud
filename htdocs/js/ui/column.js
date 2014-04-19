@@ -116,19 +116,10 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             RCloud.UI.middle_column.update();
             var heights = {}, padding = {}, cbles = collapsibles(), ncollapse = cbles.length;
             var greedy_one = null;
-            function default_sizer(el) {
-                var el$ = $(el),
-                    $izer = el$.find(".widget-vsize:not(.out)"),
-                    height = $izer.height(),
-                    body$ = el$.find('.panel-body'),
-                    padding = el$.outerHeight() - el$.height() +
-                        body$.outerHeight() - body$.height();
-                return {height: height, padding: padding};
-            }
             cbles.each(function() {
                 if(!$(this).hasClass("out") && !$(this).data("would-collapse")) {
                     var spf = $(this).data("panel-sizer");
-                    var sp = spf ? spf(this) : default_sizer(this);
+                    var sp = spf ? spf(this) : RCloud.UI.collapsible_column.default_sizer(this);
                     heights[this.id] = sp.height;
                     padding[this.id] = sp.padding;
                     // remember the first greedy panel
@@ -222,4 +213,21 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         }
     });
     return result;
+};
+
+
+RCloud.UI.collapsible_column.default_padder = function(el) {
+    var el$ = $(el),
+        body$ = el$.find('.panel-body'),
+        padding = el$.outerHeight() - el$.height() +
+            body$.outerHeight() - body$.height();
+    return padding;
+};
+
+RCloud.UI.collapsible_column.default_sizer = function(el) {
+    var el$ = $(el),
+        $izer = el$.find(".widget-vsize:not(.out)"),
+        height = $izer.height(),
+        padding = RCloud.UI.collapsible_column.default_padder(el);
+    return {height: height, padding: padding};
 };
