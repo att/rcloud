@@ -142,7 +142,7 @@ var editor = function () {
         if(_.some(in_folders, function(entry) {
             return entry.label === undefined || entry.label === null;
         }))
-           throw new Error("bad notebook entry with no label");
+           throw new Error("incomplete notebook entry (has it been shown yet?)");
         in_folders = _.filter(in_folders, is_in_folder);
         in_folders = _.map(in_folders, function(v) {
             var m = v.label.match(/([^/]+)\/(.+)/);
@@ -1179,21 +1179,16 @@ var editor = function () {
             shell.fork_or_revert_notebook(is_mine, gistname, version)
                 .bind(this)
                 .then(function(notebook) {
-                    if(is_mine)
-                        this.load_callback({is_change: true, selroot: true})(notebook);
-                    else this.star_notebook(true, {notebook: notebook,
-                                                   make_current: true,
-                                                   is_change: !!version,
-                                                   version: null});
-                    return notebook.id;
+                    var promise = is_mine ?
+                            this.load_callback({is_change: true, selroot: true})(notebook) :
+                        this.star_notebook(true, {notebook: notebook,
+                                                  make_current: true,
+                                                  is_change: !!version,
+                                                  version: null});
+                    return promise.return(notebook.id);
                 }).then(function(gistname) {
                     if(!is_mine)
                         this.set_notebook_visibility(gistname, true);
-                }).catch(function(error) {
-                    // hack around https://github.com/att/rcloud/issues/534
-                    if (error.message !== "bad notebook entry with no label") {
-                        throw error;
-                    }
                 });
         },
         show_history: function(node, toggle) {
