@@ -2909,11 +2909,6 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                         greedy_one = $(this);
                 }
             });
-            /*
-             var heading_height =  $(sel_accordion + " .panel-heading").outerHeight(); // height of first heading
-             var total_headings = ncollapse*heading_height;
-             var available = $(sel_column).height() - total_headings;
-             */
             var available = $(sel_column).height();
             var total_headings = d3.sum($(sel_accordion + " .panel-heading")
                                         .map(function(_, ph) { return $(ph).outerHeight(); }));
