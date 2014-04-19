@@ -1,7 +1,7 @@
 RCloud.UI.search = {
     exec: function(query) {
         function summary(html) {
-            $("#search-summary").show().html($("<h4 />").append(html));
+            $("#search-summary").css('display', 'table-row').html($("<h4 />").append(html));
         }
         function create_list_of_search_results(d) {
             var i;
@@ -82,7 +82,7 @@ RCloud.UI.search = {
                 qry = qry.replace(/\>/g,'&gt;');
                 var search_summary = len + " Results Found"; //+ " <i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i>";
                 summary(search_summary);
-                $("#search-results").show().css("height", "50vh").html(search_results);
+                $("#search-results").css('display', 'table-row').html(search_results);
                 $("#search-results .search-result-heading").click(function(e) {
                     e.preventDefault();
                     var gistname = $(this).attr("data-gistname");
@@ -94,7 +94,7 @@ RCloud.UI.search = {
         };
 
         summary("Searching...");
-        $("#search-results").hide().html("");
+        $("search-results").hide().html("");
         query = encodeURIComponent(query);
         RCloud.UI.with_progress(function() {
             return rcloud.search(query)

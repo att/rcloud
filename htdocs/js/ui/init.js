@@ -128,6 +128,12 @@ RCloud.UI.init = function() {
         return false;
     });
 
+    $("#collapse-search").data("panel-sizer", function(el) {
+        var padding = RCloud.UI.collapsible_column.default_padder(el);
+        var height = 24 + $('#search-summary').height() + $('#search-results').height();
+        return {height: height, padding: padding};
+    });
+
     $("#insert-new-cell").click(function() {
         var language = $("#insert-cell-language option:selected").text();
         if (language === 'Markdown') {

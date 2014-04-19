@@ -2889,19 +2889,10 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             RCloud.UI.middle_column.update();
             var heights = {}, padding = {}, cbles = collapsibles(), ncollapse = cbles.length;
             var greedy_one = null;
-            function default_sizer(el) {
-                var el$ = $(el),
-                    $izer = el$.find(".widget-vsize:not(.out)"),
-                    height = $izer.height(),
-                    body$ = el$.find('.panel-body'),
-                    padding = el$.outerHeight() - el$.height() +
-                        body$.outerHeight() - body$.height();
-                return {height: height, padding: padding};
-            }
             cbles.each(function() {
                 if(!$(this).hasClass("out") && !$(this).data("would-collapse")) {
                     var spf = $(this).data("panel-sizer");
-                    var sp = spf ? spf(this) : default_sizer(this);
+                    var sp = spf ? spf(this) : RCloud.UI.collapsible_column.default_sizer(this);
                     heights[this.id] = sp.height;
                     padding[this.id] = sp.padding;
                     // remember the first greedy panel
@@ -2920,13 +2911,15 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             available -= total_headings;
             for(id in padding)
                 available -= padding[id];
-            var id, left = available;
+            var id, left = available, do_fit = false;
             for(id in heights)
                 left -= heights[id];
             if(left>=0) {
                 // they all fit, now just give the rest to greedy one (if any)
-                if(greedy_one != null)
+                if(greedy_one != null) {
                     heights[greedy_one.get(0).id] += left;
+                    do_fit = true;
+                }
             }
             else {
                 // they didn't fit
@@ -2950,12 +2943,13 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 // split the rest among the remainders
                 for(i = 0; i < remaining.length; ++i)
                     heights[remaining[i]] = split;
+                do_fit = true;
             }
             for(id in heights)
                 $('#' + id).find(".panel-body").height(heights[id]);
             var expected = $(sel_column).height();
             var got = d3.sum(_.values(padding)) + d3.sum(_.values(heights)) + total_headings;
-            if(expected != got)
+            if(do_fit && expected != got)
                 console.log("Error in vertical layout algo: filling " + expected + " pixels with " + got);
         },
         hide: function(persist) {
@@ -2992,6 +2986,23 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         }
     });
     return result;
+};
+
+
+RCloud.UI.collapsible_column.default_padder = function(el) {
+    var el$ = $(el),
+        body$ = el$.find('.panel-body'),
+        padding = el$.outerHeight() - el$.height() +
+            body$.outerHeight() - body$.height();
+    return padding;
+};
+
+RCloud.UI.collapsible_column.default_sizer = function(el) {
+    var el$ = $(el),
+        $izer = el$.find(".widget-vsize:not(.out)"),
+        height = $izer.height(),
+        padding = RCloud.UI.collapsible_column.default_padder(el);
+    return {height: height, padding: padding};
 };
 RCloud.UI.command_prompt = {
     prompt: null,
@@ -3347,6 +3358,12 @@ RCloud.UI.init = function() {
         $('#input-text-search').blur();
         RCloud.UI.search.exec(qry);
         return false;
+    });
+
+    $("#collapse-search").data("panel-sizer", function(el) {
+        var padding = RCloud.UI.collapsible_column.default_padder(el);
+        var height = 24 + $('#search-summary').height() + $('#search-results').height();
+        return {height: height, padding: padding};
     });
 
     $("#insert-new-cell").click(function() {
@@ -3756,7 +3773,7 @@ RCloud.UI.scratchpad = {
 RCloud.UI.search = {
     exec: function(query) {
         function summary(html) {
-            $("#search-summary").show().html($("<h4 />").append(html));
+            $("#search-summary").css('display', 'table-row').html($("<h4 />").append(html));
         }
         function create_list_of_search_results(d) {
             var i;
@@ -3837,7 +3854,7 @@ RCloud.UI.search = {
                 qry = qry.replace(/\>/g,'&gt;');
                 var search_summary = len + " Results Found"; //+ " <i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i>";
                 summary(search_summary);
-                $("#search-results").show().css("height", "50vh").html(search_results);
+                $("#search-results").css('display', 'table-row').html(search_results);
                 $("#search-results .search-result-heading").click(function(e) {
                     e.preventDefault();
                     var gistname = $(this).attr("data-gistname");
@@ -3849,7 +3866,7 @@ RCloud.UI.search = {
         };
 
         summary("Searching...");
-        $("#search-results").hide().html("");
+        $("search-results").hide().html("");
         query = encodeURIComponent(query);
         RCloud.UI.with_progress(function() {
             return rcloud.search(query)

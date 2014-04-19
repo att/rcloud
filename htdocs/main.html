@@ -110,14 +110,13 @@
               <div id="collapse-search" class="panel-collapse collapse" data-colwidth="4">
                 <img height="100%" width="5px" src="img/right_bordergray.png" class="panel-shadow left" />
                 <div class="panel-body">
-                  <div class="widget-vsize"> <!-- only for sizing -->
-                    <form id="search" action="#">
-                      <div>Full-text search for <input type="text" value="" id="input-text-search"></input>
-                        <button type='submit'>search</button>
+                  <div id="search-wrapper" class="widget-vsize"> <!-- only for sizing -->
+                    <form id="search" action="#">Full-text search for <input type="text" value="" id="input-text-search"></input><button type='submit'>search</button>
+                    </form><div id="search-summary"></div><div id="search-results-row">
+                      <div id="search-results-scroller">
+                        <div id="search-results"></div>
                       </div>
-                    </form>
-                    <div id="search-summary"></div>
-                    <div id="search-results"></div>
+                    </div>
                   </div>
                 </div>
               </div>

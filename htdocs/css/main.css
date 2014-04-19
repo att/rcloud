@@ -391,12 +391,33 @@ li.jqtree-selected .notebook-commands {
     margin: 0;
 }
 
-#search-results {
-    overflow: auto;
-    display: none;
+#search-wrapper {
+    display: table;
+    height: 100%;
+    width: 100%;
 }
+
+#search-wrapper td, #search-wrapper tr {
+    padding: 0;
+    margin: 0;
+}
+
+#search {
+    display: table-row;
+}
+
 #search-summary {
-    display: none;
+    display: none; // will be display: table-row;
+}
+
+#search-results-row {
+    display: none; // will be display: table-row;
+    height: 100%;
+}
+
+#search-results-scroller {
+    overflow: auto;
+    height: 100%
 }
 
 .search-result-item {
