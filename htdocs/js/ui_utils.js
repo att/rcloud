@@ -169,6 +169,17 @@ ui_utils.ignore_programmatic_changes = function(widget, listener) {
     };
 };
 
+ui_utils.set_ace_readonly = function(widget, readonly) {
+    // a better way to set non-interactive readonly
+    // https://github.com/ajaxorg/ace/issues/266
+    widget.setOptions({
+        readOnly: readonly,
+        highlightActiveLine: !readonly,
+        highlightGutterLine: !readonly
+    });
+    widget.renderer.$cursorLayer.element.style.opacity = readonly?0:1;
+};
+
 ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
                                   active_icon, inactive_icon) {
     function set_state(state) {

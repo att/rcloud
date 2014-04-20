@@ -75,13 +75,15 @@ Notebook.create_controller = function(model)
                 asset_controller = asset_controller || result;
             }
             model.user(notebook.user.login);
-            model.read_only(version != null || notebook.user.login != rcloud.username());
-            current_gist_ = notebook;
-
             if(asset_controller)
                 asset_controller.select();
             else
                 RCloud.UI.scratchpad.set_model(null);
+
+            // we set read-only last because it ripples MVC events through to
+            // make the display look impermeable
+            model.read_only(version != null || notebook.user.login != rcloud.username());
+            current_gist_ = notebook;
         }
         return notebook;
     }

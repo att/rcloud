@@ -296,14 +296,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
         set_readonly: function(readonly) {
             am_read_only = readonly;
-            // a better way to set non-interactive readonly
-            // https://github.com/ajaxorg/ace/issues/266
-            widget.setOptions({
-                readOnly: readonly,
-                highlightActiveLine: !readonly,
-                highlightGutterLine: !readonly
-            });
-            widget.renderer.$cursorLayer.element.style.opacity = readonly?0:1;
+            ui_utils.set_ace_readonly(widget, readonly);
             if (readonly) {
                 disable(remove_button);
                 disable(insert_cell_button);

@@ -836,6 +836,17 @@ ui_utils.ignore_programmatic_changes = function(widget, listener) {
     };
 };
 
+ui_utils.set_ace_readonly = function(widget, readonly) {
+    // a better way to set non-interactive readonly
+    // https://github.com/ajaxorg/ace/issues/266
+    widget.setOptions({
+        readOnly: readonly,
+        highlightActiveLine: !readonly,
+        highlightGutterLine: !readonly
+    });
+    widget.renderer.$cursorLayer.element.style.opacity = readonly?0:1;
+};
+
 ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
                                   active_icon, inactive_icon) {
     function set_state(state) {
@@ -1209,7 +1220,8 @@ Notebook.Asset.create_html_view = function(asset_model)
             filename_div.remove();
         },
         set_readonly: function(readonly) {
-            // FIXME
+            if(asset_model.active())
+                RCloud.UI.scratchpad.set_readonly(readonly);
         },
         div: function() {
             return filename_div;
@@ -1608,14 +1620,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
         set_readonly: function(readonly) {
             am_read_only = readonly;
-            // a better way to set non-interactive readonly
-            // https://github.com/ajaxorg/ace/issues/266
-            widget.setOptions({
-                readOnly: readonly,
-                highlightActiveLine: !readonly,
-                highlightGutterLine: !readonly
-            });
-            widget.renderer.$cursorLayer.element.style.opacity = readonly?0:1;
+            ui_utils.set_ace_readonly(widget, readonly);
             if (readonly) {
                 disable(remove_button);
                 disable(insert_cell_button);
@@ -1734,11 +1739,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             return cell_model.content();
         },
         reformat: function() {
-            // resize 
+            // resize once to get right height, then set height,
+            // then resize again to get ace scrollbars right (?)
             widget.resize();
             set_widget_height();
             widget.resize();
-            //ui_utils.on_next_tick(function() { widget.resize(); });
         },
         check_buttons: function() {
             if(!cell_model.parent_model.prior_cell(cell_model))
@@ -1912,6 +1917,7 @@ Notebook.create_html_view = function(model, root_div)
             _.each(this.sub_views, function(view) {
                 view.set_readonly(readonly);
             });
+            //RCloud.UI.scratchpad.set_readonly(readonly);
             _.each(this.asset_sub_views, function(view) {
                 view.set_readonly(readonly);
             });
@@ -2260,13 +2266,13 @@ Notebook.create_controller = function(model)
                 asset_controller = asset_controller || result;
             }
             model.user(notebook.user.login);
-            model.read_only(version != null || notebook.user.login != rcloud.username());
-            current_gist_ = notebook;
-
             if(asset_controller)
                 asset_controller.select();
             else
                 RCloud.UI.scratchpad.set_model(null);
+
+            model.read_only(version != null || notebook.user.login != rcloud.username());
+            current_gist_ = notebook;
         }
         return notebook;
     }
@@ -3753,6 +3759,8 @@ RCloud.UI.scratchpad = {
         this.change_content(changed);
         this.widget.getSelection().setSelectionRange(range);
         return changed;
+    }, set_readonly: function(readonly) {
+        ui_utils.set_ace_readonly(this.widget, readonly);
     }, clear: function() {
         if(!this.exists)
             return;

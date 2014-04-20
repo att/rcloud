@@ -34,7 +34,8 @@ Notebook.Asset.create_html_view = function(asset_model)
             filename_div.remove();
         },
         set_readonly: function(readonly) {
-            // FIXME
+            if(asset_model.active())
+                RCloud.UI.scratchpad.set_readonly(readonly);
         },
         div: function() {
             return filename_div;

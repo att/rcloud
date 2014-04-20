@@ -126,6 +126,8 @@ RCloud.UI.scratchpad = {
         this.change_content(changed);
         this.widget.getSelection().setSelectionRange(range);
         return changed;
+    }, set_readonly: function(readonly) {
+        ui_utils.set_ace_readonly(this.widget, readonly);
     }, clear: function() {
         if(!this.exists)
             return;
