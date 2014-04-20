@@ -1222,6 +1222,10 @@ Notebook.Asset.create_html_view = function(asset_model)
         set_readonly: function(readonly) {
             if(asset_model.active())
                 RCloud.UI.scratchpad.set_readonly(readonly);
+            if(readonly)
+                remove.hide();
+            else
+                remove.show();
         },
         div: function() {
             return filename_div;
@@ -1917,7 +1921,9 @@ Notebook.create_html_view = function(model, root_div)
             _.each(this.sub_views, function(view) {
                 view.set_readonly(readonly);
             });
-            //RCloud.UI.scratchpad.set_readonly(readonly);
+            // tempting to just
+            // RCloud.UI.scratchpad.set_readonly(readonly);
+            // but we bow to MVC
             _.each(this.asset_sub_views, function(view) {
                 view.set_readonly(readonly);
             });
@@ -2271,6 +2277,8 @@ Notebook.create_controller = function(model)
             else
                 RCloud.UI.scratchpad.set_model(null);
 
+            // we set read-only last because it ripples MVC events through to
+            // make the display look impermeable
             model.read_only(version != null || notebook.user.login != rcloud.username());
             current_gist_ = notebook;
         }

@@ -36,6 +36,10 @@ Notebook.Asset.create_html_view = function(asset_model)
         set_readonly: function(readonly) {
             if(asset_model.active())
                 RCloud.UI.scratchpad.set_readonly(readonly);
+            if(readonly)
+                remove.hide();
+            else
+                remove.show();
         },
         div: function() {
             return filename_div;
