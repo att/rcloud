@@ -61,8 +61,12 @@ RCloud.UI.scratchpad = {
                 alert("Asset names cannot start with 'part', sorry!");
                 return;
             }
-            shell.notebook.controller.append_asset(
-                "# New file " + filename, filename).select();
+            var found = shell.notebook.model.has_asset(filename);
+            if(found)
+                found.controller.select();
+            else
+                shell.notebook.controller.append_asset(
+                    "# New file " + filename, filename).select();
         });
     },
     // FIXME this is completely backwards

@@ -1959,6 +1959,11 @@ Notebook.create_model = function()
             var assets_removed = this.remove_asset(null,this.assets.length);
             return cells_removed.concat(assets_removed);
         },
+        has_asset: function(filename) {
+            return _.find(this.assets, function(asset) {
+                return asset.filename() == filename;
+            });
+        },
         append_asset: function(asset_model, filename, skip_event) {
             asset_model.parent_model = this;
             var changes = [];
@@ -3257,9 +3262,8 @@ RCloud.UI.init = function() {
         if($("#file")[0].files.length===0)
             return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        var replacing = _.find(shell.notebook.model.assets, function(asset) {
-            return asset.filename() == $("#file")[0].files[0].name;
-        });
+        var replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
+
         function success(lst) {
             var path = lst[0], file = lst[1], notebook = lst[2];
             $("#file-upload-div").append(
@@ -3686,8 +3690,12 @@ RCloud.UI.scratchpad = {
                 alert("Asset names cannot start with 'part', sorry!");
                 return;
             }
-            shell.notebook.controller.append_asset(
-                "# New file " + filename, filename).select();
+            var found = shell.notebook.model.has_asset(filename);
+            if(found)
+                found.controller.select();
+            else
+                shell.notebook.controller.append_asset(
+                    "# New file " + filename, filename).select();
         });
     },
     // FIXME this is completely backwards

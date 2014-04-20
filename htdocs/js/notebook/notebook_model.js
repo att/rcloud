@@ -25,6 +25,11 @@ Notebook.create_model = function()
             var assets_removed = this.remove_asset(null,this.assets.length);
             return cells_removed.concat(assets_removed);
         },
+        has_asset: function(filename) {
+            return _.find(this.assets, function(asset) {
+                return asset.filename() == filename;
+            });
+        },
         append_asset: function(asset_model, filename, skip_event) {
             asset_model.parent_model = this;
             var changes = [];
