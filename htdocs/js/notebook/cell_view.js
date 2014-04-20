@@ -1,7 +1,7 @@
 (function() {
 
 function create_markdown_cell_html_view(language) { return function(cell_model) {
-    var EXTRA_HEIGHT = 26;
+    var EXTRA_HEIGHT = 27;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
     update_div_id();
     notebook_cell_div.data('rcloud.model', cell_model);
