@@ -1238,7 +1238,7 @@ var editor = function () {
                 else
                     history = result.history;
 
-                var promise = (_.has(num_stars_, result.id) ? Promise.resolve(undefined)
+                var stars_promise = (_.has(num_stars_, result.id) ? Promise.resolve(undefined)
                                : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
                                    num_stars_[result.id] = count;
                                })).then(function() {
@@ -1246,15 +1246,15 @@ var editor = function () {
                                    that.update_notebook_file_list(result.files);
                                });
 
-                rcloud.get_all_comments(result.id).then(function(data) {
+                var comments_promise = rcloud.get_all_comments(result.id).then(function(data) {
                     populate_comments(data);
                 });
                 $("#github-notebook-id").text(result.id).click(false);
-                rcloud.is_notebook_published(result.id).then(function(p) {
+                var publish_promise = rcloud.is_notebook_published(result.id).then(function(p) {
                     publish_notebook_checkbox_.set_state(p);
                     publish_notebook_checkbox_.enable(result.user.login === username_);
                 });
-                return promise.return(result);
+                return Promise.all([stars_promise, comments_promise, publish_promise]).return(result);
             };
         },
         update_notebook_file_list: function(files) {
