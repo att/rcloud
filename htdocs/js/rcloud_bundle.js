@@ -757,15 +757,6 @@ ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
     var rows = Math.max(min_rows, Math.min(max_rows, widget.getSession().getScreenLength()));
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
     return Math.max(75, newHeight);
-    /*
-     // patch to remove tooltip when button clicked
-     // (not needed anymore with later jquery?)
-    var old_click = span.click;
-    span.click = function() {
-        $(this).tooltip('hide');
-        old_click.apply(this, arguments);
-    };
-     */
 };
 
 ui_utils.ace_set_pos = function(widget, row, column) {
@@ -1345,6 +1336,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     function update_div_id() {
         notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
     }
+    function set_widget_height() {
+        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
+    }
     var enable = ui_utils.enable_fa_button;
     var disable = ui_utils.disable_fa_button;
 
@@ -1468,7 +1462,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     });
     session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
-        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
+        set_widget_height();
         widget.resize();
     });
 
@@ -1678,7 +1672,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // do the two-change dance to make ace happy
             outer_ace_div.show();
             widget.resize(true);
-            notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
+            set_widget_height();
             widget.resize(true);
             disable(source_button);
             enable(result_button);
@@ -1691,7 +1685,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
             outer_ace_div.show();
             r_result_div.hide();
-            widget.resize();
+            widget.resize(); // again?!?
             widget.focus();
 
             current_mode = "source";
@@ -1740,7 +1734,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             return cell_model.content();
         },
         reformat: function() {
+            // resize 
             widget.resize();
+            set_widget_height();
+            widget.resize();
+            //ui_utils.on_next_tick(function() { widget.resize(); });
         },
         check_buttons: function() {
             if(!cell_model.parent_model.prior_cell(cell_model))
