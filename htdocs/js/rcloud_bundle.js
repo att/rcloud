@@ -1921,9 +1921,6 @@ Notebook.create_html_view = function(model, root_div)
             _.each(this.sub_views, function(view) {
                 view.set_readonly(readonly);
             });
-            // tempting to just
-            // RCloud.UI.scratchpad.set_readonly(readonly);
-            // but we bow to MVC
             _.each(this.asset_sub_views, function(view) {
                 view.set_readonly(readonly);
             });
@@ -3769,6 +3766,10 @@ RCloud.UI.scratchpad = {
         return changed;
     }, set_readonly: function(readonly) {
         ui_utils.set_ace_readonly(this.widget, readonly);
+        if(readonly)
+            $('#new-asset').hide();
+        else
+            $('#new-asset').show();
     }, clear: function() {
         if(!this.exists)
             return;
