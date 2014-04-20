@@ -371,6 +371,12 @@ rcloud.get.completions <- function(text, pos) {
   utils:::.CompletionEnv[["comps"]]
 }
 
+# unsafe/overkill: why do we need eval here?
+rcloud.help <- function(topic) {
+  cmd <- paste("help(", topic, ")", sep="")
+  session.markdown.eval(cmd, "R", FALSE);
+}
+
 ## FIXME: won't work - uses a global file!
 ## FIXME: should search be using this instead of update notebook?!?
 rcloud.record.cell.execution <- function(user = .session$username, json.string) {

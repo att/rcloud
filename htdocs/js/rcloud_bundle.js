@@ -181,6 +181,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["log", "record_cell_execution"],
             ["setup_js_installer"],
             ["comments","get_all"],
+            ["help"],
             ["debug","raise"],
             ["stars","star_notebook"],
             ["stars","unstar_notebook"],
@@ -243,6 +244,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.install_notebook_stylesheets = function() {
             return rcloud_ocaps.install_notebook_stylesheetsAsync();
+        };
+
+        rcloud.help = function(topic) {
+            return rcloud_ocaps.helpAsync(topic);
         };
 
         rcloud.get_users = function() {
@@ -3357,10 +3362,20 @@ RCloud.UI.init = function() {
     var non_notebook_panel_height = 246;
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
 
-    $("#search").submit(function() {
+    $("#search-form").submit(function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         var qry = $('#input-text-search').val();
         $('#input-text-search').blur();
         RCloud.UI.search.exec(qry);
+        return false;
+    });
+    $('#help-form').submit(function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var topic = $('#input-text-help').val();
+        $('#input-text-help').blur();
+        rcloud.help(topic);
         return false;
     });
 
