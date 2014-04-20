@@ -6,7 +6,7 @@ Notebook.Asset.create_html_view = function(asset_model)
                                     { 'position': 'relative',
                                       'left': '2px',
                                       'opacity': '0.75'
-                                    });
+                                    }, true);
     filename_div.append(anchor);
     anchor.append(remove);
     anchor.click(function() {
