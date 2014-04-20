@@ -90,15 +90,6 @@ ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
     var rows = Math.max(min_rows, Math.min(max_rows, widget.getSession().getScreenLength()));
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
     return Math.max(75, newHeight);
-    /*
-     // patch to remove tooltip when button clicked
-     // (not needed anymore with later jquery?)
-    var old_click = span.click;
-    span.click = function() {
-        $(this).tooltip('hide');
-        old_click.apply(this, arguments);
-    };
-     */
 };
 
 ui_utils.ace_set_pos = function(widget, row, column) {
