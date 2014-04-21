@@ -393,6 +393,7 @@ li.jqtree-selected .notebook-commands {
 
 #search-wrapper {
     display: table;
+    table-layout: fixed;
     height: 100%;
     width: 100%;
 }
@@ -404,6 +405,7 @@ li.jqtree-selected .notebook-commands {
 
 #search-header {
     display: table-row;
+    width: 100%;
 }
 
 #search-summary {
@@ -413,11 +415,13 @@ li.jqtree-selected .notebook-commands {
 #search-results-row {
     display: none; // will be display: table-row;
     height: 100%;
+    width: 100%;
 }
 
 #search-results-scroller {
     overflow: auto;
-    height: 100%
+    width: 100%;
+    height: 100%;
 }
 
 .search-result-item {
