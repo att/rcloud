@@ -447,8 +447,21 @@ li.jqtree-selected .notebook-commands {
     padding-left: 0.5ex;
 }
 
-#help-parent {
+#help-wrapper {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
     padding: 1ex;
+}
+
+#help-header {
+    display: table-row;
+}
+
+#help-body {
+    display: table-row;
+    width: 100%;
+    height: 100%;
 }
 
 #help-frame {

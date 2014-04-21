@@ -129,12 +129,15 @@
               </div>
               <div id="collapse-help" class="panel-collapse collapse" data-colwidth="5" data-widgetheight="greedy">
                 <img height="100%" width="5px" src="img/right_bordergray.png" class="panel-shadow left" />
-                <div id="help-parent" class="panel-body widget-vsize">
-                  <form id="help-form" action="#">
-                    <div>Get help on <input type="text" value="" id="input-text-help"></input>
-                      <button type='submit'>help</button>
-                    </div>
-                  </form>
+                <div id="help-wrapper" class="panel-body widget-vsize">
+                  <div id="help-header">
+                    <form id="help-form" action="#">
+                      <div>Get help on <input type="text" value="" id="input-text-help"></input>
+                        <button type='submit'>help</button>
+                      </div>
+                    </form>
+                  </div>
+                  <div id="help-body" />
                 </div>
               </div>
             </div>

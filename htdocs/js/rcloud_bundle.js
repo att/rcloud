@@ -3265,7 +3265,7 @@ RCloud.UI.help_frame = {
     init: function() {
         // i can't be bothered to figure out why the iframe causes onload to be triggered early
         // if this code is directly in main.html
-        $("#help-parent").append('<iframe id="help-frame" frameborder="0" />');
+        $("#help-body").append('<iframe id="help-frame" frameborder="0" />');
     }
 };
 RCloud.UI.init = function() {
@@ -3410,7 +3410,7 @@ RCloud.UI.init = function() {
     $("#collapse-search").data("panel-sizer", function(el) {
         var padding = RCloud.UI.collapsible_column.default_padder(el);
         var height = 24 + $('#search-summary').height() + $('#search-results').height();
-        height += 30; // fudge
+        height += 30; // there is only so deep you can dig
         return {height: height, padding: padding};
     });
 
