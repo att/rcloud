@@ -371,6 +371,10 @@ rcloud.get.completions <- function(text, pos) {
   utils:::.CompletionEnv[["comps"]]
 }
 
+rcloud.help <- function(topic) {
+  print(help(topic))
+}
+
 ## FIXME: won't work - uses a global file!
 ## FIXME: should search be using this instead of update notebook?!?
 rcloud.record.cell.execution <- function(user = .session$username, json.string) {

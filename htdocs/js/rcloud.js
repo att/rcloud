@@ -86,6 +86,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["log", "record_cell_execution"],
             ["setup_js_installer"],
             ["comments","get_all"],
+            ["help"],
             ["debug","raise"],
             ["stars","star_notebook"],
             ["stars","unstar_notebook"],
@@ -148,6 +149,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.install_notebook_stylesheets = function() {
             return rcloud_ocaps.install_notebook_stylesheetsAsync();
+        };
+
+        rcloud.help = function(topic) {
+            return rcloud_ocaps.helpAsync(topic);
         };
 
         rcloud.get_users = function() {

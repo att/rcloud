@@ -79,6 +79,7 @@ Notebook.create_controller = function(model)
                 asset_controller.select();
             else
                 RCloud.UI.scratchpad.set_model(null);
+            model.update_urls(notebook.files);
 
             // we set read-only last because it ripples MVC events through to
             // make the display look impermeable
@@ -164,6 +165,7 @@ Notebook.create_controller = function(model)
                 if('error' in notebook)
                     throw notebook;
                 current_gist_ = notebook;
+                model.update_urls(notebook.files);
                 return notebook;
             });
     }

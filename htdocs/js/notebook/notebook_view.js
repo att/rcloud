@@ -64,6 +64,9 @@ Notebook.create_html_view = function(model, root_div)
                 view.set_readonly(readonly);
             });
         },
+        update_urls: function() {
+            RCloud.UI.scratchpad.update_asset_url();
+        },
         update_model: function() {
             return _.map(this.sub_views, function(cell_view) {
                 return cell_view.update_model();

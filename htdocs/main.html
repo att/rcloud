@@ -65,9 +65,6 @@
               <li><a href="#" id="export-notebook-as-r">Export Notebook as R Source File</a></li>
               <li><a href="#" id="show-source"><i class="icon-check"></i>&nbsp;Show Source</a></li>
               <li><a href="#" id="publish-notebook"><i class="icon-check"></i>&nbsp;Publish notebook</a></li>
-              <li class="divider"></li>
-              <li><span class="disabled">&nbsp;&nbsp;ID: <span id="github-notebook-id"></span></li>
-              <li><span class="disabled" id="notebook-assets-header">&nbsp;&nbsp;&nbsp;Notebook assets</span></li>
             </ul>
           </li>
           <li class="divider-vertical"></li>
@@ -111,7 +108,7 @@
                 <img height="100%" width="5px" src="img/right_bordergray.png" class="panel-shadow left" />
                 <div class="panel-body">
                   <div id="search-wrapper" class="widget-vsize"> <!-- only for sizing -->
-                    <form id="search" action="#">Full-text search for <input type="text" value="" id="input-text-search"></input><button type='submit'>search</button>
+                    <form id="search-form" action="#">Full-text search for <input type="text" value="" id="input-text-search"></input><button type='submit'>search</button>
                     </form><div id="search-summary"></div><div id="search-results-row">
                       <div id="search-results-scroller">
                         <div id="search-results"></div>
@@ -129,6 +126,11 @@
               <div id="collapse-help" class="panel-collapse collapse" data-colwidth="5" data-widgetheight="greedy">
                 <img height="100%" width="5px" src="img/right_bordergray.png" class="panel-shadow left" />
                 <div id="help-parent" class="panel-body widget-vsize">
+                  <form id="help-form" action="#">
+                    <div>Get help on <input type="text" value="" id="input-text-help"></input>
+                      <button type='submit'>help</button>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>
@@ -201,9 +203,11 @@
                 <div class="panel-body" style="padding:0;border:0">
                   <div style="padding:1px;margin:0px;background-color:#ddd">
                     <ul class="nav nav-tabs" id="asset-list"
-                    style="background-color:white; padding-top:5px;
-                    padding-left: 5px"><li id="new-asset"><a href="#">[New Asset]</a></li></ul>
-                    <div id="scratchpad-editor" class="widget-vsize"></div>
+                        style="background-color:white; padding-top:5px;
+                               padding-left: 5px"><li id="new-asset"><a href="#">[New Asset]</a></li></ul>
+                    <div id="scratchpad-editor" class="widget-vsize">
+                      <a id="asset-link" target="_blank" href="#">link</a>
+                    </div>
                   </div>
                 </div>
               </div>

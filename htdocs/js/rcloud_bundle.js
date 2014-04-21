@@ -181,6 +181,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["log", "record_cell_execution"],
             ["setup_js_installer"],
             ["comments","get_all"],
+            ["help"],
             ["debug","raise"],
             ["stars","star_notebook"],
             ["stars","unstar_notebook"],
@@ -243,6 +244,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.install_notebook_stylesheets = function() {
             return rcloud_ocaps.install_notebook_stylesheetsAsync();
+        };
+
+        rcloud.help = function(topic) {
+            return rcloud_ocaps.helpAsync(topic);
         };
 
         rcloud.get_users = function() {
@@ -1743,11 +1748,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             return cell_model.content();
         },
         reformat: function() {
-            // resize once to get right height, then set height,
-            // then resize again to get ace scrollbars right (?)
-            widget.resize();
-            set_widget_height();
-            widget.resize();
+            if(current_mode === "source") {
+                // resize once to get right height, then set height,
+                // then resize again to get ace scrollbars right (?)
+                widget.resize();
+                set_widget_height();
+                widget.resize();
+            }
         },
         check_buttons: function() {
             if(!cell_model.parent_model.prior_cell(cell_model))
@@ -1924,6 +1931,9 @@ Notebook.create_html_view = function(model, root_div)
             _.each(this.asset_sub_views, function(view) {
                 view.set_readonly(readonly);
             });
+        },
+        update_urls: function() {
+            RCloud.UI.scratchpad.update_asset_url();
         },
         update_model: function() {
             return _.map(this.sub_views, function(cell_view) {
@@ -2180,6 +2190,13 @@ Notebook.create_model = function()
             }
             return user_;
         },
+        update_urls: function(files) {
+            for(var i = 0; i<this.assets.length; ++i)
+                this.assets[i].raw_url = files[this.assets[i].filename()].raw_url;
+            _.each(this.views, function(view) {
+                view.update_urls();
+            });
+        },
         on_dirty: function() {
             _.each(this.dishers, function(disher) {
                 disher.on_dirty();
@@ -2273,6 +2290,7 @@ Notebook.create_controller = function(model)
                 asset_controller.select();
             else
                 RCloud.UI.scratchpad.set_model(null);
+            model.update_urls(notebook.files);
 
             // we set read-only last because it ripples MVC events through to
             // make the display look impermeable
@@ -2358,6 +2376,7 @@ Notebook.create_controller = function(model)
                 if('error' in notebook)
                     throw notebook;
                 current_gist_ = notebook;
+                model.update_urls(notebook.files);
                 return notebook;
             });
     }
@@ -3368,10 +3387,20 @@ RCloud.UI.init = function() {
     var non_notebook_panel_height = 246;
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
 
-    $("#search").submit(function() {
+    $("#search-form").submit(function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         var qry = $('#input-text-search').val();
         $('#input-text-search').blur();
         RCloud.UI.search.exec(qry);
+        return false;
+    });
+    $('#help-form').submit(function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var topic = $('#input-text-help').val();
+        $('#input-text-help').blur();
+        rcloud.help(topic);
         return false;
     });
 
@@ -3749,11 +3778,14 @@ RCloud.UI.scratchpad = {
             that.widget.resize();
             that.widget.setReadOnly(true);
             $('#scratchpad-editor > *').hide();
+            $('#asset-link').hide();
             return;
         }
         that.widget.setReadOnly(false);
         $('#scratchpad-editor > *').show();
         this.change_content(this.current_model.content());
+        this.update_asset_url();
+        $('#asset-link').show();
         // restore cursor
         var model_cursor = asset_model.cursor_position();
         if (model_cursor) {
@@ -3782,11 +3814,16 @@ RCloud.UI.scratchpad = {
         this.widget.getSelection().setSelectionRange(range);
         return changed;
     }, set_readonly: function(readonly) {
-        ui_utils.set_ace_readonly(this.widget, readonly);
-        if(readonly)
-            $('#new-asset').hide();
-        else
-            $('#new-asset').show();
+        if(!shell.is_view_mode()) {
+            ui_utils.set_ace_readonly(this.widget, readonly);
+            if(readonly)
+                $('#new-asset').hide();
+            else
+                $('#new-asset').show();
+        }
+    }, update_asset_url: function() {
+        if(this.current_model)
+            $('#asset-link').attr('href', this.current_model.raw_url);
     }, clear: function() {
         if(!this.exists)
             return;
@@ -3891,7 +3928,7 @@ RCloud.UI.search = {
         };
 
         summary("Searching...");
-        $("search-results").hide().html("");
+        $("#search-results").hide().html("");
         query = encodeURIComponent(query);
         RCloud.UI.with_progress(function() {
             return rcloud.search(query)
@@ -3919,6 +3956,7 @@ RCloud.UI.session_pane = {
         //////////////////////////////////////////////////////////////////////
         // bluebird unhandled promise handler
         Promise.onPossiblyUnhandledRejection(function(e, promise) {
+            console.log(e.stack);
             that.post_error("Internal error, unhandled promise rejection\nStack trace:\n" + e.stack);
         });
 
