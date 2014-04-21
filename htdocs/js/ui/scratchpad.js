@@ -94,11 +94,14 @@ RCloud.UI.scratchpad = {
             that.widget.resize();
             that.widget.setReadOnly(true);
             $('#scratchpad-editor > *').hide();
+            $('#asset-link').hide();
             return;
         }
         that.widget.setReadOnly(false);
         $('#scratchpad-editor > *').show();
         this.change_content(this.current_model.content());
+        this.update_asset_url();
+        $('#asset-link').show();
         // restore cursor
         var model_cursor = asset_model.cursor_position();
         if (model_cursor) {
@@ -134,6 +137,9 @@ RCloud.UI.scratchpad = {
             else
                 $('#new-asset').show();
         }
+    }, update_asset_url: function() {
+        if(this.current_model)
+            $('#asset-link').attr('href', this.current_model.raw_url);
     }, clear: function() {
         if(!this.exists)
             return;

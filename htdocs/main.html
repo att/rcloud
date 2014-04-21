@@ -65,9 +65,6 @@
               <li><a href="#" id="export-notebook-as-r">Export Notebook as R Source File</a></li>
               <li><a href="#" id="show-source"><i class="icon-check"></i>&nbsp;Show Source</a></li>
               <li><a href="#" id="publish-notebook"><i class="icon-check"></i>&nbsp;Publish notebook</a></li>
-              <li class="divider"></li>
-              <li><span class="disabled">&nbsp;&nbsp;ID: <span id="github-notebook-id"></span></li>
-              <li><span class="disabled" id="notebook-assets-header">&nbsp;&nbsp;&nbsp;Notebook assets</span></li>
             </ul>
           </li>
           <li class="divider-vertical"></li>
@@ -207,9 +204,11 @@
                 <div class="panel-body" style="padding:0;border:0">
                   <div style="padding:1px;margin:0px;background-color:#ddd">
                     <ul class="nav nav-tabs" id="asset-list"
-                    style="background-color:white; padding-top:5px;
-                    padding-left: 5px"><li id="new-asset"><a href="#">[New Asset]</a></li></ul>
-                    <div id="scratchpad-editor" class="widget-vsize"></div>
+                        style="background-color:white; padding-top:5px;
+                               padding-left: 5px"><li id="new-asset"><a href="#">[New Asset]</a></li></ul>
+                    <div id="scratchpad-editor" class="widget-vsize">
+                      <a id="asset-link" target="_blank" href="#">link</a>
+                    </div>
                   </div>
                 </div>
               </div>

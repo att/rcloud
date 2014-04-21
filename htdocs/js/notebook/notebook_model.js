@@ -239,6 +239,13 @@ Notebook.create_model = function()
             }
             return user_;
         },
+        update_urls: function(files) {
+            for(var i = 0; i<this.assets.length; ++i)
+                this.assets[i].raw_url = files[this.assets[i].filename()].raw_url;
+            _.each(this.views, function(view) {
+                view.update_urls();
+            });
+        },
         on_dirty: function() {
             _.each(this.dishers, function(disher) {
                 disher.on_dirty();

@@ -438,8 +438,20 @@ li.jqtree-selected .notebook-commands {
 }
 
 #session-info-out {
-  word-wrap: normal;
-  white-space: pre;
+    word-wrap: normal;
+    white-space: pre;
+}
+
+#scratchpad-editor {
+    position: relative;
+}
+
+#asset-link {
+    position: absolute;
+    right: 1ex;
+    bottom: 1ex;
+    z-index: 10000;
+    display: none;
 }
 
 /******************************************************************************/

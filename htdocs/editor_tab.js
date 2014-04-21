@@ -1243,49 +1243,17 @@ var editor = function () {
                                    num_stars_[result.id] = count;
                                })).then(function() {
                                    update_notebook_from_gist(result, history, options.selroot);
-                                   that.update_notebook_file_list(result.files);
                                });
 
                 var comments_promise = rcloud.get_all_comments(result.id).then(function(data) {
                     populate_comments(data);
                 });
-                $("#github-notebook-id").text(result.id).click(false);
                 var publish_promise = rcloud.is_notebook_published(result.id).then(function(p) {
                     publish_notebook_checkbox_.set_state(p);
                     publish_notebook_checkbox_.enable(result.user.login === username_);
                 });
                 return Promise.all([stars_promise, comments_promise, publish_promise]).return(result);
             };
-        },
-        update_notebook_file_list: function(files) {
-            // FIXME natural sort!
-            var files_out = _(files).pairs().filter(function(v) {
-                var k = v[0];
-                return !Notebook.is_part_name(k) && k !== "r_type" && k !== "r_attributes";
-            });
-            if(files_out.length)
-                $("#notebook-assets-header").show();
-            else
-                $("#notebook-assets-header").hide();
-
-            d3.select("#advanced-menu")
-                .selectAll("li .notebook-assets")
-                .remove();
-            var s = d3.select("#advanced-menu")
-                .selectAll("li .notebook-assets")
-                .data(files_out)
-                .enter()
-                .append("li")
-                .classed("notebook-assets", true)
-                .append("a")
-                .attr("tabindex", "-1")
-                .attr("href", "#");
-            s.append("a")
-                .text(function(d) { return d[0]; })
-                .attr("href", function(d) { return d[1].raw_url; })
-                .attr("target", "_blank");
-
-                // .text(function(d, i) { return String(i); });
         },
         post_comment: function(comment) {
             comment = JSON.stringify({"body":comment});

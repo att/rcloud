@@ -1930,6 +1930,9 @@ Notebook.create_html_view = function(model, root_div)
                 view.set_readonly(readonly);
             });
         },
+        update_urls: function() {
+            RCloud.UI.scratchpad.update_asset_url();
+        },
         update_model: function() {
             return _.map(this.sub_views, function(cell_view) {
                 return cell_view.update_model();
@@ -2185,6 +2188,13 @@ Notebook.create_model = function()
             }
             return user_;
         },
+        update_urls: function(files) {
+            for(var i = 0; i<this.assets.length; ++i)
+                this.assets[i].raw_url = files[this.assets[i].filename()].raw_url;
+            _.each(this.views, function(view) {
+                view.update_urls();
+            });
+        },
         on_dirty: function() {
             _.each(this.dishers, function(disher) {
                 disher.on_dirty();
@@ -2278,6 +2288,7 @@ Notebook.create_controller = function(model)
                 asset_controller.select();
             else
                 RCloud.UI.scratchpad.set_model(null);
+            model.update_urls(notebook.files);
 
             // we set read-only last because it ripples MVC events through to
             // make the display look impermeable
@@ -2363,6 +2374,7 @@ Notebook.create_controller = function(model)
                 if('error' in notebook)
                     throw notebook;
                 current_gist_ = notebook;
+                model.update_urls(notebook.files);
                 return notebook;
             });
     }
@@ -3747,11 +3759,14 @@ RCloud.UI.scratchpad = {
             that.widget.resize();
             that.widget.setReadOnly(true);
             $('#scratchpad-editor > *').hide();
+            $('#asset-link').hide();
             return;
         }
         that.widget.setReadOnly(false);
         $('#scratchpad-editor > *').show();
         this.change_content(this.current_model.content());
+        this.update_asset_url();
+        $('#asset-link').show();
         // restore cursor
         var model_cursor = asset_model.cursor_position();
         if (model_cursor) {
@@ -3787,6 +3802,9 @@ RCloud.UI.scratchpad = {
             else
                 $('#new-asset').show();
         }
+    }, update_asset_url: function() {
+        if(this.current_model)
+            $('#asset-link').attr('href', this.current_model.raw_url);
     }, clear: function() {
         if(!this.exists)
             return;
