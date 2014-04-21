@@ -30,6 +30,7 @@ window.onload = function() {
     }).catch(function(error) {
         if (error.message === "Authentication required") {
             RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Please login first!"));
-        }
+        } else
+            throw error;
     });
 };
