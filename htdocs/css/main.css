@@ -494,6 +494,11 @@ li.jqtree-selected .notebook-commands {
 
 /******************************************************************************/
 
+#comments-wrapper {
+    height: 100%;
+    overflow-y: scroll;
+}
+
 .comment-container {
     margin-bottom: .4em;
     clear: both;
@@ -509,7 +514,8 @@ li.jqtree-selected .notebook-commands {
 }
 
 #comment-entry {
-    width: 100%
+    width: 100%;
+    padding-bottom: 2px; // scroll was cutting it off
 }
 
 /******************************************************************************/

@@ -822,6 +822,10 @@ var editor = function () {
             .append("div")
             .attr("class", "comment-body")
             .text(function(d) { return d.body; });
+        $('#collapse-comments').trigger('size-changed');
+        ui_utils.on_next_tick(function() {
+            ui_utils.scroll_to_after($("#comments-qux"));
+        });
     }
 
     const icon_style = {'line-height': '90%'};

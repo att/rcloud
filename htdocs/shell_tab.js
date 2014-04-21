@@ -39,14 +39,8 @@ var shell = (function() {
     }
 
     function scroll_to_end(duration) {
-        // no idea why the plugin doesn't take current scroll into account when using
-        // the element parameter version
-        var opts = undefined;
-        if(duration !== undefined)
-            opts = {animation: {duration: duration}};
         window.setTimeout(function() {
-            var y = $("#rcloud-cellarea").scrollTop() + $("#prompt-div").position().top +  $("#prompt-div").height();
-            $("#rcloud-cellarea").scrollTo(null, y, opts);
+            ui_utils.scroll_to_after($("#prompt-div"));
         }, 100);
     }
 

@@ -397,3 +397,14 @@ ui_utils.add_ace_grab_affordance = function(element) {
     var div = $("<div class='grab-affordance' style='position:absolute;top:0px'><object data='/img/grab_affordance.svg' type='image/svg+xml'></object></div>");
     sel.append(div);
 };
+
+ui_utils.scroll_to_after = function($sel, duration) {
+    // no idea why the plugin doesn't take current scroll into account when using
+    // the element parameter version
+    var opts = undefined;
+    if(duration !== undefined)
+        opts = {animation: {duration: duration}};
+    var $parent = $sel.parent();
+    var y = $parent.scrollTop() + $sel.position().top +  $sel.outerHeight();
+    $parent.scrollTo(null, y, opts);
+};
