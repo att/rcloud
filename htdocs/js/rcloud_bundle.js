@@ -1748,11 +1748,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             return cell_model.content();
         },
         reformat: function() {
-            // resize once to get right height, then set height,
-            // then resize again to get ace scrollbars right (?)
-            widget.resize();
-            set_widget_height();
-            widget.resize();
+            if(current_mode === "source") {
+                // resize once to get right height, then set height,
+                // then resize again to get ace scrollbars right (?)
+                widget.resize();
+                set_widget_height();
+                widget.resize();
+            }
         },
         check_buttons: function() {
             if(!cell_model.parent_model.prior_cell(cell_model))
