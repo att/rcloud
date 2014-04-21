@@ -995,6 +995,7 @@ var editor = function () {
         var n = event.node;
         if(n.delay_children)
             load_children(n);
+        $('#collapse-notebook-tree').trigger('size-changed');
     }
 
     var result = {
