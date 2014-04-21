@@ -3421,16 +3421,6 @@ RCloud.UI.init = function() {
         vs[vs.length-1].show_source();
     });
 
-    // $("#new-md-cell-button").click(function() {
-    //     shell.new_markdown_cell("");
-    //     var vs = shell.notebook.view.sub_views;
-    //     vs[vs.length-1].show_source();
-    // });
-    // $("#new-r-cell-button").click(function() {
-    //     shell.new_interactive_cell("", false);
-    //     var vs = shell.notebook.view.sub_views;
-    //     vs[vs.length-1].show_source();
-    // });
     $("#rcloud-logout").click(function() {
         // let the server-side script handle this so it can
         // also revoke all tokens
@@ -3916,7 +3906,8 @@ RCloud.UI.search = {
                 qry = qry.replace(/\>/g,'&gt;');
                 var search_summary = len + " Results Found"; //+ " <i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i>";
                 summary(search_summary);
-                $("#search-results").css('display', 'table-row').html(search_results);
+                $("#search-results-row").css('display', 'table-row');
+                $('#search-results').html(search_results);
                 $("#search-results .search-result-heading").click(function(e) {
                     e.preventDefault();
                     var gistname = $(this).attr("data-gistname");
@@ -3928,7 +3919,8 @@ RCloud.UI.search = {
         };
 
         summary("Searching...");
-        $("#search-results").hide().html("");
+        $("#search-results-row").hide();
+        $("#search-results").html("");
         query = encodeURIComponent(query);
         RCloud.UI.with_progress(function() {
             return rcloud.search(query)
