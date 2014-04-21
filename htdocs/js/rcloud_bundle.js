@@ -1197,7 +1197,7 @@ Notebook.Asset.create_html_view = function(asset_model)
                                     { 'position': 'relative',
                                       'left': '2px',
                                       'opacity': '0.75'
-                                    });
+                                    }, true);
     filename_div.append(anchor);
     anchor.append(remove);
     anchor.click(function() {
@@ -3780,11 +3780,13 @@ RCloud.UI.scratchpad = {
         this.widget.getSelection().setSelectionRange(range);
         return changed;
     }, set_readonly: function(readonly) {
-        ui_utils.set_ace_readonly(this.widget, readonly);
-        if(readonly)
-            $('#new-asset').hide();
-        else
-            $('#new-asset').show();
+        if(!shell.is_view_mode()) {
+            ui_utils.set_ace_readonly(this.widget, readonly);
+            if(readonly)
+                $('#new-asset').hide();
+            else
+                $('#new-asset').show();
+        }
     }, clear: function() {
         if(!this.exists)
             return;

@@ -329,7 +329,7 @@ var editor = function () {
 
     function load_tree(root_data) {
         // delay construction of dom elements for Alls
-        var alls = root_data[1].children;
+        var alls = _.find(root_data, function(root) { return root.id === "/alls"; }).children;
         for(var i = 0; i < alls.length; ++i)
             if(alls[i].children && alls[i].children.length) {
                 alls[i].delay_children = alls[i].children;
