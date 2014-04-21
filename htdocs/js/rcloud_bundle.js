@@ -2710,6 +2710,9 @@ var append_session_info = function(msg) {
         $("#session-info").append($("<pre id='session-info-out'></pre>"));
     $("#session-info-out").append(msg);
     RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
+    ui_utils.on_next_tick(function() {
+        ui_utils.scroll_to_after($("#session-info"));
+    });
 };
 
 // FIXME this needs to go away as well.
@@ -3986,10 +3989,13 @@ RCloud.UI.session_pane = {
             msg = ui_utils.string_error(msg);
         if (typeof msg !== 'object')
             throw new Error("post_error expects a string or a jquery div");
-        msg.css("margin", "-15px"); // hack
+        msg.addClass('session-error');
         dest = dest || this.error_dest_;
         dest.append(msg);
         this.show_error_area();
+        ui_utils.on_next_tick(function() {
+            ui_utils.scroll_to_after($("#session-info"));
+        });
     }
 };
 RCloud.UI.share_button = {

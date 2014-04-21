@@ -480,6 +480,11 @@ li.jqtree-selected .notebook-commands {
     white-space: pre;
 }
 
+.session-error {
+    padding: .75ex 3em .75ex .75ex;
+    margin: 0
+}
+
 #scratchpad-editor {
     position: relative;
 }

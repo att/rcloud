@@ -9,6 +9,9 @@ var append_session_info = function(msg) {
         $("#session-info").append($("<pre id='session-info-out'></pre>"));
     $("#session-info-out").append(msg);
     RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
+    ui_utils.on_next_tick(function() {
+        ui_utils.scroll_to_after($("#session-info"));
+    });
 };
 
 // FIXME this needs to go away as well.
