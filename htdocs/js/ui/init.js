@@ -154,16 +154,6 @@ RCloud.UI.init = function() {
         vs[vs.length-1].show_source();
     });
 
-    // $("#new-md-cell-button").click(function() {
-    //     shell.new_markdown_cell("");
-    //     var vs = shell.notebook.view.sub_views;
-    //     vs[vs.length-1].show_source();
-    // });
-    // $("#new-r-cell-button").click(function() {
-    //     shell.new_interactive_cell("", false);
-    //     var vs = shell.notebook.view.sub_views;
-    //     vs[vs.length-1].show_source();
-    // });
     $("#rcloud-logout").click(function() {
         // let the server-side script handle this so it can
         // also revoke all tokens
