@@ -144,6 +144,15 @@ RCloud.UI.init = function() {
         return {height: height, padding: padding};
     });
 
+    $("#collapse-help").data("panel-sizer", function(el) {
+        if($('#help-body').css('display') === 'none')
+            return RCloud.UI.collapsible_column.default_sizer(el);
+        else return {
+            padding: RCloud.UI.collapsible_column.default_padder(el),
+            height: 9000
+        };
+    });
+
     $("#insert-new-cell").click(function() {
         var language = $("#insert-cell-language option:selected").text();
         if (language === 'Markdown') {

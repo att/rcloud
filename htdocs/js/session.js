@@ -15,6 +15,9 @@ var append_session_info = function(msg) {
 var oob_handlers = {
     "browsePath": function(v) {
         var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
+        $("#help-body").css('display', 'table-row');
+        $("#help-body").attr('data-widgetheight', "greedy");
+        $("#collapse-help").trigger('size-changed');
         $("#help-frame").attr("src", x);
         RCloud.UI.left_panel.collapse($("#collapse-help"), false);
     },

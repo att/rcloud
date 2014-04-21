@@ -2705,6 +2705,9 @@ var append_session_info = function(msg) {
 var oob_handlers = {
     "browsePath": function(v) {
         var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
+        $("#help-body").css('display', 'table-row');
+        $("#help-body").attr('data-widgetheight', "greedy");
+        $("#collapse-help").trigger('size-changed');
         $("#help-frame").attr("src", x);
         RCloud.UI.left_panel.collapse($("#collapse-help"), false);
     },
@@ -3412,6 +3415,15 @@ RCloud.UI.init = function() {
         var height = 24 + $('#search-summary').height() + $('#search-results').height();
         height += 30; // there is only so deep you can dig
         return {height: height, padding: padding};
+    });
+
+    $("#collapse-help").data("panel-sizer", function(el) {
+        if($('#help-body').css('display') === 'none')
+            return RCloud.UI.collapsible_column.default_sizer(el);
+        else return {
+            padding: RCloud.UI.collapsible_column.default_padder(el),
+            height: 9000
+        };
     });
 
     $("#insert-new-cell").click(function() {

@@ -459,7 +459,7 @@ li.jqtree-selected .notebook-commands {
 }
 
 #help-body {
-    display: table-row;
+    display: none;
     width: 100%;
     height: 100%;
 }
