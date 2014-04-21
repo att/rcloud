@@ -94,7 +94,7 @@ RCloud.UI.search = {
         };
 
         summary("Searching...");
-        $("search-results").hide().html("");
+        $("#search-results").hide().html("");
         query = encodeURIComponent(query);
         RCloud.UI.with_progress(function() {
             return rcloud.search(query)
