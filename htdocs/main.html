@@ -107,14 +107,17 @@
               <div id="collapse-search" class="panel-collapse collapse" data-colwidth="4">
                 <img height="100%" width="5px" src="img/right_bordergray.png" class="panel-shadow left" />
                 <div class="panel-body">
-                  <div class="widget-vsize"> <!-- only for sizing -->
-                    <form id="search-form" action="#">
-                      <div>Full-text search for <input type="text" value="" id="input-text-search"></input>
-                        <button type='submit'>search</button>
+                  <div id="search-wrapper" class="widget-vsize"> <!-- only for sizing -->
+                    <div id="search-header">
+                      <form id="search-form" action="#">Full-text search for <input type="text" value="" id="input-text-search"></input><button type='submit'>search</button>
+                      </form>
+                      <div id="search-summary"></div>
+                    </div>
+                    <div id="search-results-row">
+                      <div id="search-results-scroller">
+                        <div id="search-results"></div>
                       </div>
-                    </form>
-                    <div id="search-summary"></div>
-                    <div id="search-results"></div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -126,12 +129,15 @@
               </div>
               <div id="collapse-help" class="panel-collapse collapse" data-colwidth="5" data-widgetheight="greedy">
                 <img height="100%" width="5px" src="img/right_bordergray.png" class="panel-shadow left" />
-                <div id="help-parent" class="panel-body widget-vsize">
-                  <form id="help-form" action="#">
-                    <div>Get help on <input type="text" value="" id="input-text-help"></input>
-                      <button type='submit'>help</button>
-                    </div>
-                  </form>
+                <div id="help-wrapper" class="panel-body widget-vsize">
+                  <div id="help-header">
+                    <form id="help-form" action="#">
+                      <div>Get help on <input type="text" value="" id="input-text-help"></input>
+                        <button type='submit'>help</button>
+                      </div>
+                    </form>
+                  </div>
+                  <div id="help-body" />
                 </div>
               </div>
             </div>
