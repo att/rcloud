@@ -757,15 +757,6 @@ ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
     var rows = Math.max(min_rows, Math.min(max_rows, widget.getSession().getScreenLength()));
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
     return Math.max(75, newHeight);
-    /*
-     // patch to remove tooltip when button clicked
-     // (not needed anymore with later jquery?)
-    var old_click = span.click;
-    span.click = function() {
-        $(this).tooltip('hide');
-        old_click.apply(this, arguments);
-    };
-     */
 };
 
 ui_utils.ace_set_pos = function(widget, row, column) {
@@ -843,6 +834,17 @@ ui_utils.ignore_programmatic_changes = function(widget, listener) {
         listen = true;
         return res;
     };
+};
+
+ui_utils.set_ace_readonly = function(widget, readonly) {
+    // a better way to set non-interactive readonly
+    // https://github.com/ajaxorg/ace/issues/266
+    widget.setOptions({
+        readOnly: readonly,
+        highlightActiveLine: !readonly,
+        highlightGutterLine: !readonly
+    });
+    widget.renderer.$cursorLayer.element.style.opacity = readonly?0:1;
 };
 
 ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
@@ -943,6 +945,12 @@ ui_utils.editable = function(elem$, command) {
     function options() {
         return elem$.data('__editable');
     }
+    function encode(s) {
+        return s.replace(/  /g, ' \xa0'); // replace every space with nbsp
+    }
+    function decode(s) {
+        return s.replace(/\xa0/g,' '); // replace nbsp's with spaces
+    }
 
     var old_opts = options(),
         new_opts = old_opts;
@@ -997,7 +1005,7 @@ ui_utils.editable = function(elem$, command) {
         action = 'freeze';
 
     if(new_opts)
-        elem$.text(options().__active ? new_opts.active_text : new_opts.inactive_text);
+        elem$.text(encode(options().__active ? new_opts.active_text : new_opts.inactive_text));
 
     switch(action) {
     case 'freeze':
@@ -1012,12 +1020,12 @@ ui_utils.editable = function(elem$, command) {
         elem$.focus(function() {
             if(!options().__active) {
                 options().__active = true;
-                elem$.text(options().active_text);
+                elem$.text(encode(options().active_text));
                 window.setTimeout(function() {
                     selectRange(options().select(elem$[0]));
                     elem$.off('blur');
                     elem$.blur(function() {
-                        elem$.text(options().inactive_text);
+                        elem$.text(encode(options().inactive_text));
                         options().__active = false;
                     }); // click-off cancels
                 }, 10);
@@ -1030,6 +1038,7 @@ ui_utils.editable = function(elem$, command) {
         elem$.keydown(function(e) {
             if(e.keyCode === 13) {
                 var result = elem$.text();
+                result = decode(result);
                 if(options().validate(result)) {
                     options().__active = false;
                     elem$.off('blur'); // don't cancel!
@@ -1183,7 +1192,7 @@ Notebook.Asset.create_html_view = function(asset_model)
                                     { 'position': 'relative',
                                       'left': '2px',
                                       'opacity': '0.75'
-                                    });
+                                    }, true);
     filename_div.append(anchor);
     anchor.append(remove);
     anchor.click(function() {
@@ -1211,7 +1220,12 @@ Notebook.Asset.create_html_view = function(asset_model)
             filename_div.remove();
         },
         set_readonly: function(readonly) {
-            // FIXME
+            if(asset_model.active())
+                RCloud.UI.scratchpad.set_readonly(readonly);
+            if(readonly)
+                remove.hide();
+            else
+                remove.show();
         },
         div: function() {
             return filename_div;
@@ -1315,7 +1329,7 @@ Notebook.Asset.create_controller = function(asset_model)
 (function() {
 
 function create_markdown_cell_html_view(language) { return function(cell_model) {
-    var EXTRA_HEIGHT = 26;
+    var EXTRA_HEIGHT = 27;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
     update_div_id();
     notebook_cell_div.data('rcloud.model', cell_model);
@@ -1337,6 +1351,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     }
     function update_div_id() {
         notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
+    }
+    function set_widget_height() {
+        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
     }
     var enable = ui_utils.enable_fa_button;
     var disable = ui_utils.disable_fa_button;
@@ -1461,7 +1478,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     });
     session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
-        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
+        set_widget_height();
         widget.resize();
     });
 
@@ -1607,14 +1624,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
         set_readonly: function(readonly) {
             am_read_only = readonly;
-            // a better way to set non-interactive readonly
-            // https://github.com/ajaxorg/ace/issues/266
-            widget.setOptions({
-                readOnly: readonly,
-                highlightActiveLine: !readonly,
-                highlightGutterLine: !readonly
-            });
-            widget.renderer.$cursorLayer.element.style.opacity = readonly?0:1;
+            ui_utils.set_ace_readonly(widget, readonly);
             if (readonly) {
                 disable(remove_button);
                 disable(insert_cell_button);
@@ -1671,7 +1681,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // do the two-change dance to make ace happy
             outer_ace_div.show();
             widget.resize(true);
-            notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
+            set_widget_height();
             widget.resize(true);
             disable(source_button);
             enable(result_button);
@@ -1684,7 +1694,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
             outer_ace_div.show();
             r_result_div.hide();
-            widget.resize();
+            widget.resize(); // again?!?
             widget.focus();
 
             current_mode = "source";
@@ -1733,6 +1743,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             return cell_model.content();
         },
         reformat: function() {
+            // resize once to get right height, then set height,
+            // then resize again to get ace scrollbars right (?)
+            widget.resize();
+            set_widget_height();
             widget.resize();
         },
         check_buttons: function() {
@@ -1951,6 +1965,11 @@ Notebook.create_model = function()
             var cells_removed = this.remove_cell(null,last_id(this.cells));
             var assets_removed = this.remove_asset(null,this.assets.length);
             return cells_removed.concat(assets_removed);
+        },
+        has_asset: function(filename) {
+            return _.find(this.assets, function(asset) {
+                return asset.filename() == filename;
+            });
         },
         append_asset: function(asset_model, filename, skip_event) {
             asset_model.parent_model = this;
@@ -2250,13 +2269,15 @@ Notebook.create_controller = function(model)
                 asset_controller = asset_controller || result;
             }
             model.user(notebook.user.login);
-            model.read_only(version != null || notebook.user.login != rcloud.username());
-            current_gist_ = notebook;
-
             if(asset_controller)
                 asset_controller.select();
             else
                 RCloud.UI.scratchpad.set_model(null);
+
+            // we set read-only last because it ripples MVC events through to
+            // make the display look impermeable
+            model.read_only(version != null || notebook.user.login != rcloud.username());
+            current_gist_ = notebook;
         }
         return notebook;
     }
@@ -2900,11 +2921,6 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                         greedy_one = $(this);
                 }
             });
-            /*
-             var heading_height =  $(sel_accordion + " .panel-heading").outerHeight(); // height of first heading
-             var total_headings = ncollapse*heading_height;
-             var available = $(sel_column).height() - total_headings;
-             */
             var available = $(sel_column).height();
             var total_headings = d3.sum($(sel_accordion + " .panel-heading")
                                         .map(function(_, ph) { return $(ph).outerHeight(); }));
@@ -3266,9 +3282,8 @@ RCloud.UI.init = function() {
         if($("#file")[0].files.length===0)
             return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        var replacing = _.find(shell.notebook.model.assets, function(asset) {
-            return asset.filename() == $("#file")[0].files[0].name;
-        });
+        var replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
+
         function success(lst) {
             var path = lst[0], file = lst[1], notebook = lst[2];
             $("#file-upload-div").append(
@@ -3701,8 +3716,12 @@ RCloud.UI.scratchpad = {
                 alert("Asset names cannot start with 'part', sorry!");
                 return;
             }
-            shell.notebook.controller.append_asset(
-                "# New file " + filename, filename).select();
+            var found = shell.notebook.model.has_asset(filename);
+            if(found)
+                found.controller.select();
+            else
+                shell.notebook.controller.append_asset(
+                    "# New file " + filename, filename).select();
         });
     },
     // FIXME this is completely backwards
@@ -3762,6 +3781,12 @@ RCloud.UI.scratchpad = {
         this.change_content(changed);
         this.widget.getSelection().setSelectionRange(range);
         return changed;
+    }, set_readonly: function(readonly) {
+        ui_utils.set_ace_readonly(this.widget, readonly);
+        if(readonly)
+            $('#new-asset').hide();
+        else
+            $('#new-asset').show();
     }, clear: function() {
         if(!this.exists)
             return;
@@ -3899,7 +3924,6 @@ RCloud.UI.session_pane = {
 
     },
     post_error: function(msg, dest) {
-        debugger;
         if (typeof msg === 'string')
             msg = ui_utils.string_error(msg);
         if (typeof msg !== 'object')

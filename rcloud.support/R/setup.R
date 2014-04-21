@@ -16,15 +16,15 @@ configure.rcloud <- function (mode=c("startup", "script")) {
       cat("\n***FATAL ERROR** aborting RCloud startup\n")
       tools:::pskill(Sys.getpid())
     })
-  
+
   ## FIXME: should not be needed - try out?
   require(rcloud.support)
-  
+
   ## FIXME: this is needed, because github is only in Suggests
   ##        since it's not on CRAN. We load it for convenience
   ##        later but this is a note that it's really needed.
   require(github)
-  
+
   ## it is useful to have access to the root of your
   ## installation from R scripts -- for RCloud this is *mandatory*
   setConf("root", Sys.getenv("ROOT"))
@@ -203,7 +203,7 @@ configure.rcloud <- function (mode=c("startup", "script")) {
       ver <- v.parts[1]
     v.parts <- c(v.parts, 0L, 0L)
   }
-  
+
   rcloud.info <- list()
   rcloud.version <- ver
   rcloud.info$version.string <- f.ver
@@ -263,7 +263,7 @@ start.rcloud.common <- function(...) {
     if (nzchar(file)) file <- paste(readLines(file), collapse="\n")
     self.oobSend(list("editor", what, file, name))
   })
-  
+
   ## and some options that may be of interest
   options(demo.ask = FALSE)
   options(example.ask = FALSE)
@@ -302,7 +302,7 @@ start.rcloud.common <- function(...) {
 ## --- RCloud part folows ---
 ## this is called by session.init() on per-connection basis
 start.rcloud <- function(username="", token="", ...) {
-  if (rcloud.debug.level()) cat("start.rcloud(", username, ", ", token, ")\n", sep='')
+  # if (rcloud.debug.level()) cat("start.rcloud(", username, ", ", token, ")\n", sep='')
   if (!check.user.token.pair(username, token))
     stop("bad username/token pair");
   .session$username <- username
@@ -320,7 +320,7 @@ start.rcloud <- function(username="", token="", ...) {
 }
 
 start.rcloud.anonymously <- function(...) {
-  if (rcloud.debug.level()) cat("start.rcloud.anonymously()")
+  # if (rcloud.debug.level()) cat("start.rcloud.anonymously()")
   if (nzConf("gist.deployment.stash"))
     .session$deployment.stash <- getConf("gist.deployment.stash")
   else

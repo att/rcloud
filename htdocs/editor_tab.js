@@ -142,7 +142,7 @@ var editor = function () {
         if(_.some(in_folders, function(entry) {
             return entry.label === undefined || entry.label === null;
         }))
-           throw new Error("bad notebook entry with no label");
+           throw new Error("incomplete notebook entry (has it been shown yet?)");
         in_folders = _.filter(in_folders, is_in_folder);
         in_folders = _.map(in_folders, function(v) {
             var m = v.label.match(/([^/]+)\/(.+)/);
@@ -329,7 +329,7 @@ var editor = function () {
 
     function load_tree(root_data) {
         // delay construction of dom elements for Alls
-        var alls = root_data[1].children;
+        var alls = _.find(root_data, function(root) { return root.id === "/alls"; }).children;
         for(var i = 0; i < alls.length; ++i)
             if(alls[i].children && alls[i].children.length) {
                 alls[i].delay_children = alls[i].children;
@@ -1179,21 +1179,16 @@ var editor = function () {
             shell.fork_or_revert_notebook(is_mine, gistname, version)
                 .bind(this)
                 .then(function(notebook) {
-                    if(is_mine)
-                        this.load_callback({is_change: true, selroot: true})(notebook);
-                    else this.star_notebook(true, {notebook: notebook,
-                                                   make_current: true,
-                                                   is_change: !!version,
-                                                   version: null});
-                    return notebook.id;
+                    var promise = is_mine ?
+                            this.load_callback({is_change: true, selroot: true})(notebook) :
+                        this.star_notebook(true, {notebook: notebook,
+                                                  make_current: true,
+                                                  is_change: !!version,
+                                                  version: null});
+                    return promise.return(notebook.id);
                 }).then(function(gistname) {
                     if(!is_mine)
                         this.set_notebook_visibility(gistname, true);
-                }).catch(function(error) {
-                    // hack around https://github.com/att/rcloud/issues/534
-                    if (error.message !== "bad notebook entry with no label") {
-                        throw error;
-                    }
                 });
         },
         show_history: function(node, toggle) {
@@ -1243,7 +1238,7 @@ var editor = function () {
                 else
                     history = result.history;
 
-                var promise = (_.has(num_stars_, result.id) ? Promise.resolve(undefined)
+                var stars_promise = (_.has(num_stars_, result.id) ? Promise.resolve(undefined)
                                : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
                                    num_stars_[result.id] = count;
                                })).then(function() {
@@ -1251,15 +1246,15 @@ var editor = function () {
                                    that.update_notebook_file_list(result.files);
                                });
 
-                rcloud.get_all_comments(result.id).then(function(data) {
+                var comments_promise = rcloud.get_all_comments(result.id).then(function(data) {
                     populate_comments(data);
                 });
                 $("#github-notebook-id").text(result.id).click(false);
-                rcloud.is_notebook_published(result.id).then(function(p) {
+                var publish_promise = rcloud.is_notebook_published(result.id).then(function(p) {
                     publish_notebook_checkbox_.set_state(p);
                     publish_notebook_checkbox_.enable(result.user.login === username_);
                 });
-                return promise.return(result);
+                return Promise.all([stars_promise, comments_promise, publish_promise]).return(result);
             };
         },
         update_notebook_file_list: function(files) {

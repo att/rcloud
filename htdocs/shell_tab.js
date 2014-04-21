@@ -279,8 +279,9 @@ var shell = (function() {
                     if(notebook) {
                         notebook.description = notebook_desc_content.val();
                         rcloud.create_notebook(notebook).then(function(notebook) {
-                            editor.star_notebook(true, {notebook: notebook});
-                            editor.set_notebook_visibility(notebook.id, true);
+                            editor.star_notebook(true, {notebook: notebook}).then(function() {
+                                editor.set_notebook_visibility(notebook.id, true);
+                            });
                         });
                     }
                     dialog.modal('hide');
@@ -360,8 +361,9 @@ var shell = (function() {
                                 failed.push(res);
                         }
                         succeeded.forEach(function(notebook) {
-                            editor.star_notebook(true, {notebook: notebook});
-                            editor.set_notebook_visibility(notebook.id, true);
+                            editor.star_notebook(true, {notebook: notebook}).then(function() {
+                                editor.set_notebook_visibility(notebook.id, true);
+                            });
                         });
                         if(failed.length)
                             RCloud.UI.session_pane.post_error("Failed to import notebooks: " + failed.join(', '));

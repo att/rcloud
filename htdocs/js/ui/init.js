@@ -34,9 +34,8 @@ RCloud.UI.init = function() {
         if($("#file")[0].files.length===0)
             return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        var replacing = _.find(shell.notebook.model.assets, function(asset) {
-            return asset.filename() == $("#file")[0].files[0].name;
-        });
+        var replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
+
         function success(lst) {
             var path = lst[0], file = lst[1], notebook = lst[2];
             $("#file-upload-div").append(

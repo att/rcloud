@@ -1,7 +1,7 @@
 (function() {
 
 function create_markdown_cell_html_view(language) { return function(cell_model) {
-    var EXTRA_HEIGHT = 26;
+    var EXTRA_HEIGHT = 27;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
     update_div_id();
     notebook_cell_div.data('rcloud.model', cell_model);
@@ -23,6 +23,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     }
     function update_div_id() {
         notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
+    }
+    function set_widget_height() {
+        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
     }
     var enable = ui_utils.enable_fa_button;
     var disable = ui_utils.disable_fa_button;
@@ -147,7 +150,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     });
     session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
-        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
+        set_widget_height();
         widget.resize();
     });
 
@@ -293,14 +296,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
         set_readonly: function(readonly) {
             am_read_only = readonly;
-            // a better way to set non-interactive readonly
-            // https://github.com/ajaxorg/ace/issues/266
-            widget.setOptions({
-                readOnly: readonly,
-                highlightActiveLine: !readonly,
-                highlightGutterLine: !readonly
-            });
-            widget.renderer.$cursorLayer.element.style.opacity = readonly?0:1;
+            ui_utils.set_ace_readonly(widget, readonly);
             if (readonly) {
                 disable(remove_button);
                 disable(insert_cell_button);
@@ -357,7 +353,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // do the two-change dance to make ace happy
             outer_ace_div.show();
             widget.resize(true);
-            notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
+            set_widget_height();
             widget.resize(true);
             disable(source_button);
             enable(result_button);
@@ -370,7 +366,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
             outer_ace_div.show();
             r_result_div.hide();
-            widget.resize();
+            widget.resize(); // again?!?
             widget.focus();
 
             current_mode = "source";
@@ -419,6 +415,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             return cell_model.content();
         },
         reformat: function() {
+            // resize once to get right height, then set height,
+            // then resize again to get ace scrollbars right (?)
+            widget.resize();
+            set_widget_height();
             widget.resize();
         },
         check_buttons: function() {

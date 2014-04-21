@@ -90,15 +90,6 @@ ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
     var rows = Math.max(min_rows, Math.min(max_rows, widget.getSession().getScreenLength()));
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
     return Math.max(75, newHeight);
-    /*
-     // patch to remove tooltip when button clicked
-     // (not needed anymore with later jquery?)
-    var old_click = span.click;
-    span.click = function() {
-        $(this).tooltip('hide');
-        old_click.apply(this, arguments);
-    };
-     */
 };
 
 ui_utils.ace_set_pos = function(widget, row, column) {
@@ -176,6 +167,17 @@ ui_utils.ignore_programmatic_changes = function(widget, listener) {
         listen = true;
         return res;
     };
+};
+
+ui_utils.set_ace_readonly = function(widget, readonly) {
+    // a better way to set non-interactive readonly
+    // https://github.com/ajaxorg/ace/issues/266
+    widget.setOptions({
+        readOnly: readonly,
+        highlightActiveLine: !readonly,
+        highlightGutterLine: !readonly
+    });
+    widget.renderer.$cursorLayer.element.style.opacity = readonly?0:1;
 };
 
 ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
@@ -276,6 +278,12 @@ ui_utils.editable = function(elem$, command) {
     function options() {
         return elem$.data('__editable');
     }
+    function encode(s) {
+        return s.replace(/  /g, ' \xa0'); // replace every space with nbsp
+    }
+    function decode(s) {
+        return s.replace(/\xa0/g,' '); // replace nbsp's with spaces
+    }
 
     var old_opts = options(),
         new_opts = old_opts;
@@ -330,7 +338,7 @@ ui_utils.editable = function(elem$, command) {
         action = 'freeze';
 
     if(new_opts)
-        elem$.text(options().__active ? new_opts.active_text : new_opts.inactive_text);
+        elem$.text(encode(options().__active ? new_opts.active_text : new_opts.inactive_text));
 
     switch(action) {
     case 'freeze':
@@ -345,12 +353,12 @@ ui_utils.editable = function(elem$, command) {
         elem$.focus(function() {
             if(!options().__active) {
                 options().__active = true;
-                elem$.text(options().active_text);
+                elem$.text(encode(options().active_text));
                 window.setTimeout(function() {
                     selectRange(options().select(elem$[0]));
                     elem$.off('blur');
                     elem$.blur(function() {
-                        elem$.text(options().inactive_text);
+                        elem$.text(encode(options().inactive_text));
                         options().__active = false;
                     }); // click-off cancels
                 }, 10);
@@ -363,6 +371,7 @@ ui_utils.editable = function(elem$, command) {
         elem$.keydown(function(e) {
             if(e.keyCode === 13) {
                 var result = elem$.text();
+                result = decode(result);
                 if(options().validate(result)) {
                     options().__active = false;
                     elem$.off('blur'); // don't cancel!

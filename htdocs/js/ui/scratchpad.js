@@ -61,8 +61,12 @@ RCloud.UI.scratchpad = {
                 alert("Asset names cannot start with 'part', sorry!");
                 return;
             }
-            shell.notebook.controller.append_asset(
-                "# New file " + filename, filename).select();
+            var found = shell.notebook.model.has_asset(filename);
+            if(found)
+                found.controller.select();
+            else
+                shell.notebook.controller.append_asset(
+                    "# New file " + filename, filename).select();
         });
     },
     // FIXME this is completely backwards
@@ -122,6 +126,12 @@ RCloud.UI.scratchpad = {
         this.change_content(changed);
         this.widget.getSelection().setSelectionRange(range);
         return changed;
+    }, set_readonly: function(readonly) {
+        ui_utils.set_ace_readonly(this.widget, readonly);
+        if(readonly)
+            $('#new-asset').hide();
+        else
+            $('#new-asset').show();
     }, clear: function() {
         if(!this.exists)
             return;
