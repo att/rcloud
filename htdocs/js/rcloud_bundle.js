@@ -3431,10 +3431,18 @@ RCloud.UI.init = function() {
         return {height: height, padding: padding};
     });
 
+    // hmm maybe greedy isn't greedy enough
     $("#collapse-help").data("panel-sizer", function(el) {
         if($('#help-body').css('display') === 'none')
             return RCloud.UI.collapsible_column.default_sizer(el);
         else return {
+            padding: RCloud.UI.collapsible_column.default_padder(el),
+            height: 9000
+        };
+    });
+
+    $("#collapse-assets").data("panel-sizer", function(el) {
+        return {
             padding: RCloud.UI.collapsible_column.default_padder(el),
             height: 9000
         };
@@ -3726,7 +3734,6 @@ RCloud.UI.scratchpad = {
             that.widget = widget;
             var doc = session.doc;
             session.on('change', function() {
-                div.css({'height': ui_utils.ace_editor_height(widget, 25) + "px"});
                 widget.resize();
             });
 
@@ -3738,7 +3745,6 @@ RCloud.UI.scratchpad = {
             widget.resize();
             ui_utils.on_next_tick(function() {
                 session.getUndoManager().reset();
-                div.css({'height': ui_utils.ace_editor_height(widget, 25) + "px"});
                 widget.resize();
             });
             that.change_content = ui_utils.ignore_programmatic_changes(

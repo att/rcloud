@@ -144,10 +144,18 @@ RCloud.UI.init = function() {
         return {height: height, padding: padding};
     });
 
+    // hmm maybe greedy isn't greedy enough
     $("#collapse-help").data("panel-sizer", function(el) {
         if($('#help-body').css('display') === 'none')
             return RCloud.UI.collapsible_column.default_sizer(el);
         else return {
+            padding: RCloud.UI.collapsible_column.default_padder(el),
+            height: 9000
+        };
+    });
+
+    $("#collapse-assets").data("panel-sizer", function(el) {
+        return {
             padding: RCloud.UI.collapsible_column.default_padder(el),
             height: 9000
         };
