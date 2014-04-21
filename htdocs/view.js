@@ -43,6 +43,7 @@ window.onload = function() {
         });
         return promise;
     }).catch(function(err) {
+        console.log(err.stack);
         RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Could not load notebook. You may need to login to see it.", "Login"));
     });
 };
