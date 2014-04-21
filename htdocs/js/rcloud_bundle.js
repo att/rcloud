@@ -2933,7 +2933,12 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             if(persist === undefined)
                 persist = true;
             if(collapsed_) {
-                set_collapse(target, false, persist);
+                collapsibles().each(function() {
+                    if(this===target[0])
+                        set_collapse($(this), false, persist);
+                    else
+                        set_collapse($(this), true, persist);
+                });
                 this.show(true);
                 return;
             }
