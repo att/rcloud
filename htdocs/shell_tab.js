@@ -44,8 +44,10 @@ var shell = (function() {
         var opts = undefined;
         if(duration !== undefined)
             opts = {animation: {duration: duration}};
-        var y = $("#rcloud-cellarea").scrollTop() + $("#prompt-div").position().top +  $("#prompt-div").height();
-        $("#rcloud-cellarea").scrollTo(null, y, opts);
+        window.setTimeout(function() {
+            var y = $("#rcloud-cellarea").scrollTop() + $("#prompt-div").position().top +  $("#prompt-div").height();
+            $("#rcloud-cellarea").scrollTo(null, y, opts);
+        }, 100);
     }
 
     var result = {
