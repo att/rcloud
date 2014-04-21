@@ -64,6 +64,9 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             };
             $(sel_accordion).on("shown.bs.collapse", shadow_sizer);
             $(sel_accordion).on("reshadow", shadow_sizer);
+            collapsibles().on("size-changed", function() {
+                that.resize();
+            });
             $(sel_collapser).click(function() {
                 if (collapsed_)
                     that.show(true);

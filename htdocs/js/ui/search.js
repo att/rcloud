@@ -1,7 +1,7 @@
 RCloud.UI.search = {
     exec: function(query) {
         function summary(html) {
-            $("#search-summary").css('display', 'table-row').html($("<h4 />").append(html));
+            $("#search-summary").show().html($("<h4 />").append(html));
         }
         function create_list_of_search_results(d) {
             var i;
@@ -92,6 +92,7 @@ RCloud.UI.search = {
                 });
                 $("#accordion-left").trigger("reshadow");
             }
+            $("#collapse-search").trigger("size-changed");
         };
 
         summary("Searching...");

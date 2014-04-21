@@ -2877,6 +2877,9 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             };
             $(sel_accordion).on("shown.bs.collapse", shadow_sizer);
             $(sel_accordion).on("reshadow", shadow_sizer);
+            collapsibles().on("size-changed", function() {
+                that.resize();
+            });
             $(sel_collapser).click(function() {
                 if (collapsed_)
                     that.show(true);
@@ -3407,6 +3410,7 @@ RCloud.UI.init = function() {
     $("#collapse-search").data("panel-sizer", function(el) {
         var padding = RCloud.UI.collapsible_column.default_padder(el);
         var height = 24 + $('#search-summary').height() + $('#search-results').height();
+        height += 30; // fudge
         return {height: height, padding: padding};
     });
 
@@ -3825,7 +3829,7 @@ RCloud.UI.scratchpad = {
 RCloud.UI.search = {
     exec: function(query) {
         function summary(html) {
-            $("#search-summary").css('display', 'table-row').html($("<h4 />").append(html));
+            $("#search-summary").show().html($("<h4 />").append(html));
         }
         function create_list_of_search_results(d) {
             var i;
@@ -3916,6 +3920,7 @@ RCloud.UI.search = {
                 });
                 $("#accordion-left").trigger("reshadow");
             }
+            $("#collapse-search").trigger("size-changed");
         };
 
         summary("Searching...");

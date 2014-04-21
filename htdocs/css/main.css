@@ -402,12 +402,12 @@ li.jqtree-selected .notebook-commands {
     margin: 0;
 }
 
-#search-form {
+#search-header {
     display: table-row;
 }
 
 #search-summary {
-    display: none; // will be display: table-row;
+    display: none;
 }
 
 #search-results-row {
