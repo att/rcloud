@@ -18,11 +18,8 @@ var append_session_info = function(msg) {
 var oob_handlers = {
     "browsePath": function(v) {
         var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
-        $("#help-body").css('display', 'table-row');
-        $("#help-body").attr('data-widgetheight', "greedy");
-        $("#collapse-help").trigger('size-changed');
         $("#help-frame").attr("src", x);
-        RCloud.UI.left_panel.collapse($("#collapse-help"), false);
+        RCloud.UI.help_frame.show();
     },
     "pager": function(v) {
         var files = v[0], header = v[1], title = v[2];
@@ -33,7 +30,7 @@ var oob_handlers = {
             html += "<pre>" + files[i] + "</pre>";
         }
         $("#help-frame").contents().find('body').html(html);
-        RCloud.UI.left_panel.collapse($("#collapse-help"), false);
+        RCloud.UI.help_frame.show();
     },
     "editor": function(v) {
         // what is an object to edit, content is file content to edit
