@@ -2873,6 +2873,14 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     function opt_to_sel(opt) {
         return opt.replace('ui/', '#');
     }
+    var reshadow = function() {
+        $(".panel-shadow").each(function(v) {
+            var h = $(this).parent().height();
+            if (h === 0)
+                h = "100%";
+            $(this).attr("height", h);
+        });
+    };
     _.extend(result, {
         init: function() {
             var that = this;
@@ -2885,16 +2893,6 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 that.collapse(target, target.hasClass('in'));
                 return false;
             });
-            var shadow_sizer = function() {
-                $(".panel-shadow").each(function(v) {
-                    var h = $(this).parent().height();
-                    if (h === 0)
-                        h = "100%";
-                    $(this).attr("height", h);
-                });
-            };
-            $(sel_accordion).on("shown.bs.collapse", shadow_sizer);
-            $(sel_accordion).on("reshadow", shadow_sizer);
             collapsibles().on("size-changed", function() {
                 that.resize();
             });
@@ -3008,6 +3006,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             }
             for(id in heights)
                 $('#' + id).find(".panel-body").height(heights[id]);
+            reshadow();
             var expected = $(sel_column).height();
             var got = d3.sum(_.values(padding)) + d3.sum(_.values(heights)) + total_headings;
             if(do_fit && expected != got)

@@ -90,7 +90,6 @@ RCloud.UI.search = {
                     editor.open_notebook(gistname, null, true, e.metaKey || e.ctrlKey);
                     return false;
                 });
-                $("#accordion-left").trigger("reshadow");
             }
             $("#collapse-search").trigger("size-changed");
         };
