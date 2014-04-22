@@ -3326,7 +3326,7 @@ RCloud.UI.fatal_dialog = function(message, label, href) {
                                     .append(body))));
         $("body").append(fatal_dialog_);
     }
-    fatal_dialog_.modal({keyboard: false, backdrop: 'static'});
+    fatal_dialog_.modal({keyboard: false});
 };
 
 })();
