@@ -658,27 +658,28 @@ var editor = function () {
             whither = 'sha';
             where = current_.version;
         }
-        var promise = add_history_nodes(node, whither, where);
-        if(current_.version)
-            promise = promise.then(function(node) {
-                $tree_.tree('openNode', node);
-                var n2 = $tree_.tree('getNodeById',
-                                     node_id(root, user, gistname, current_.version));
-                if(!n2)
-                    throw 'tree node was not created for current history';
-                return n2;
-            });
-        return promise;
+        return add_history_nodes(node, whither, where);
     }
 
     function update_notebook_view(user, gistname, entry, selroot) {
+        function open_and_select(node) {
+            if(current_.version) {
+                $tree_.tree('openNode', node);
+                var n2 = $tree_.tree('getNodeById',
+                                     node_id(node.root, user, gistname, current_.version));
+                if(!n2)
+                    throw new Error('tree node was not created for current history');
+                node = n2;
+            }
+            select_node(node);
+        }
         var p;
         if(selroot === true)
             selroot = my_stars_[gistname] ? 'interests' : 'alls';
         if(my_stars_[gistname]) {
             p = update_tree_entry('interests', user, gistname, entry, true);
             if(selroot==='interests')
-                p.then(select_node);
+                p.then(open_and_select);
         }
         if(gistname === current_.notebook) {
             star_notebook_button_.set_state(my_stars_[gistname]);
@@ -687,12 +688,12 @@ var editor = function () {
         if(my_friends_[user]) {
             p = update_tree_entry('friends', user, gistname, entry, true);
             if(selroot==='friends')
-                p.then(select_node);
+                p.then(open_and_select);
         }
 
         p = update_tree_entry('alls', user, gistname, entry, true);
         if(selroot==='alls')
-            p.then(select_node);
+            p.then(open_and_select);
     }
 
     // hack to fake a hover over a node (or the next one if it's deleted)
@@ -731,7 +732,7 @@ var editor = function () {
         do_remove(node_id('alls', user, gistname));
     }
 
-    function unstar_notebook_view(user, gistname, select) {
+    function unstar_notebook_view(user, gistname, selroot) {
         var inter_id = node_id('interests', user, gistname);
         var node = $tree_.tree('getNodeById', inter_id);
         if(!node) {
@@ -739,7 +740,7 @@ var editor = function () {
             return;
         }
         remove_node(node);
-        update_notebook_view(user, gistname, get_notebook_info(gistname));
+        update_notebook_view(user, gistname, get_notebook_info(gistname), selroot);
     }
 
     function update_notebook_from_gist(result, history, selroot) {
