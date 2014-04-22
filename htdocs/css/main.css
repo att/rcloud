@@ -582,6 +582,8 @@ li.jqtree-selected .notebook-commands {
 #session-info-out {
     word-wrap: normal;
     white-space: pre;
+    max-width: none;
+    display: inline-block;
 }
 
 .session-error {
