@@ -3296,6 +3296,32 @@ RCloud.UI.configure_readonly = function() {
             .removeAttr("disabled");
     }
 };
+(function() {
+
+var fatal_dialog_;
+
+RCloud.UI.fatal_dialog = function(message, label, href) {
+    if (_.isUndefined(fatal_dialog_)) {
+        var button = $("<button type='button' class='btn btn-primary' style='float:right'>" + label + "</button>"),
+            body = $('<div />')
+                .append('<h1>Aw, shucks</h1>',
+                        '<p>' + message + '</p>',
+                        button,
+                       '<div style="clear: both;"></div>');
+        button.button().click(function() {
+            window.location = href;
+        });
+        fatal_dialog_ = $('<div id="fatal-dialog" class="modal fade" />')
+            .append($('<div class="modal-dialog" />')
+                    .append($('<div class="modal-content" />')
+                            .append($('<div class="modal-body" />')
+                                    .append(body))));
+        $("body").append(fatal_dialog_);
+    }
+    fatal_dialog_.modal({keyboard: false, backdrop: 'static'});
+};
+
+})();
 RCloud.UI.help_frame = {
     init: function() {
         // i can't be bothered to figure out why the iframe causes onload to be triggered early
@@ -3437,6 +3463,7 @@ RCloud.UI.init = function() {
     });
 
     RCloud.UI.left_panel.init();
+    RCloud.UI.middle_column.init();
     RCloud.UI.right_panel.init();
     RCloud.UI.session_pane.init();
 
@@ -3585,7 +3612,7 @@ RCloud.UI.load = function(promise) {
     RCloud.UI.right_panel.load(promise);
 };
 RCloud.UI.middle_column = (function() {
-    var result = RCloud.UI.column("#middle-column, #prompt-div", 5);
+    var result = RCloud.UI.column("#middle-column, #prompt-div");
 
     _.extend(result, {
         update: function() {
@@ -4033,11 +4060,14 @@ RCloud.UI.session_pane = {
 
     },
     post_error: function(msg, dest) {
-        if (typeof msg === 'string')
+        var errclass = 'session-error';
+        if (typeof msg === 'string') {
             msg = ui_utils.string_error(msg);
-        if (typeof msg !== 'object')
+            errclass = 'session-error spare';
+        }
+        else if (typeof msg !== 'object')
             throw new Error("post_error expects a string or a jquery div");
-        msg.addClass('session-error');
+        msg.addClass(errclass);
         dest = dest || this.error_dest_;
         dest.append(msg);
         this.show_error_area();

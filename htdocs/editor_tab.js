@@ -966,6 +966,7 @@ var editor = function () {
     }
 
     function make_main_url(opts) {
+        opts = opts || {};
         var url = window.location.protocol + '//' + window.location.host + '/main.html';
         if(opts.notebook) {
             url += '?notebook=' + opts.notebook;
@@ -1009,7 +1010,14 @@ var editor = function () {
             username_ = rcloud.username();
             var promise = load_everything().then(function() {
                 if(opts.notebook) // notebook specified in url
-                    return that.load_notebook(opts.notebook, opts.version);
+                    return that.load_notebook(opts.notebook, opts.version)
+                    .catch(function(xep) {
+                        var message = "Could not open notebook " + opts.notebook;
+                        if(opts.version)
+                            message += "(version " + opts.version + ")";
+                        RCloud.UI.fatal_dialog(message, "Continue", make_main_url());
+                        throw xep;
+                    });
                 else if(!opts.new_notebook && current_.notebook)
                     return that.load_notebook(current_.notebook, current_.version);
 

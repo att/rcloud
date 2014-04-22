@@ -329,6 +329,10 @@ form input.linkbox {
     color: #ddd;
 }
 
+#fatal-dialog .modal-content {
+    background-color: #f2dede;
+}
+
 /******************************************************************************/
 
 ul.jqtree-tree .jqtree-toggler {
