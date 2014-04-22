@@ -2816,6 +2816,7 @@ RCloud.session = {
             this.first_session_ = false;
             return RCloud.UI.with_progress(function() {});
         }
+        $("#session-info").empty();
         return RCloud.UI.with_progress(function() {
             var anonymous = rclient.allow_anonymous_;
             rclient.close();
