@@ -3323,6 +3323,9 @@ RCloud.UI.init = function() {
     $('#import-notebook-file').click(function() {
         shell.import_notebook_file();
     });
+    $("#file").change(function() {
+        $("#progress-bar").css("width", "0%");
+    });
     $("#upload-submit").click(function() {
         if($("#file")[0].files.length===0)
             return;
