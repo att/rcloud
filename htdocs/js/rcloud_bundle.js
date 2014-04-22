@@ -2874,8 +2874,8 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         return opt.replace('ui/', '#');
     }
     var reshadow = function() {
-        $(".panel-shadow").each(function(v) {
-            var h = $(this).parent().height();
+        $(sel_accordion + " .panel-shadow").each(function(v) {
+            var h = $(this).parent().find('.panel-body').outerHeight();
             if (h === 0)
                 h = "100%";
             $(this).attr("height", h);
