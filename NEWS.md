@@ -1,5 +1,10 @@
 ## RCloud develop branch
 
+### Deprecations
+
+* the flat-file backend for RCS is to be considered deprecated. In
+  future releases we will only support the redis backend.
+
 ### Features
 
 * `rcloud.install.js.module` now takes an optional boolean parameter
