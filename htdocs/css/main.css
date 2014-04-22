@@ -510,10 +510,51 @@ li.jqtree-selected .notebook-commands {
 }
 
 /******************************************************************************/
+#file-upload-div {
+    height: 100%;
+    width: 100%;
+}
+
+#file-upload-wrapper {
+    display: table;
+    table-layout: fixed;
+    height: 100%;
+    width: 100%;
+}
+
+#file-upload-controls {
+    display: table-row;
+}
+
+#file-upload-results .progress {
+    margin-top: 7px;
+    margin-bottom: 7px;
+}
+
+#file-upload-results-row {
+    display: table-row;
+    height: 100%;
+}
+
+#file-upload-results-scroller {
+    height: 100%;
+    overflow-y: auto;
+}
+
+#file-upload-results > .alert {
+    margin-bottom: 10px;
+    padding: 10px 15px;
+}
+
+#file-upload-results .close {
+    line-height: 63%;
+}
+
+/******************************************************************************/
 
 #comments-wrapper {
     height: 100%;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 .comment-container {

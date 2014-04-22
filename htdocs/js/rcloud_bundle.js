@@ -3329,20 +3329,28 @@ RCloud.UI.init = function() {
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
         var replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
 
+        function results_append($div) {
+            $("#file-upload-results").append($div);
+            $("#collapse-file-upload").trigger("size-changed");
+            ui_utils.on_next_tick(function() {
+                ui_utils.scroll_to_after($("#file-upload-results"));
+            });
+        }
+
         function success(lst) {
             var path = lst[0], file = lst[1], notebook = lst[2];
-            $("#file-upload-div").append(
+            results_append(
                 bootstrap_utils.alert({
                     "class": 'alert-info',
                     text: (to_notebook ? "Asset " : "File ") + file.name + (replacing ? " replaced." : " uploaded."),
                     on_close: function() {
                         $(".progress").hide();
+                        $("#collapse-file-upload").trigger("size-changed");
                     }
                 })
             );
             if(to_notebook) {
                 var content = notebook.files[file.name].content;
-                editor.update_notebook_file_list(notebook.files);
                 var controller;
                 if(replacing) {
                     replacing.content(content);
@@ -3358,9 +3366,10 @@ RCloud.UI.init = function() {
 
         function failure(what) {
             var overwrite_click = function() {
+                $("#collapse-file-upload").trigger("size-changed");
                 rcloud.upload_file(true, function(err, value) {
                     if (err) {
-                        $("#file-upload-div").append(
+                        $("#file-upload-results").append(
                             bootstrap_utils.alert({
                                 "class": 'alert-danger',
                                 text: err
@@ -3391,7 +3400,7 @@ RCloud.UI.init = function() {
                 p = $("<p>(unexpected) " + what + "</p>");
             }
             alert_element.append(p);
-            $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
+            results_append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
         }
 
         var upload_function = to_notebook
@@ -3452,6 +3461,13 @@ RCloud.UI.init = function() {
             padding: RCloud.UI.collapsible_column.default_padder(el),
             height: 9000
         };
+    });
+
+    $("#collapse-file-upload").data("panel-sizer", function(el) {
+        var padding = RCloud.UI.collapsible_column.default_padder(el);
+        var height = 24 + $('#file-upload-controls').height() + $('#file-upload-results').height();
+        //height += 30; // there is only so deep you can dig
+        return {height: height, padding: padding};
     });
 
     $("#insert-new-cell").click(function() {
