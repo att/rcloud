@@ -1380,6 +1380,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         }
     });
     coalesce_button.click(function(e) {
+        coalesce_button.tooltip('destroy');
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             shell.coalesce_prior_cell(cell_model);
         }
