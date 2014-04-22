@@ -2,6 +2,8 @@
 
 // FIXME this is just a proof of concept - using Rserve console OOBs
 var append_session_info = function(msg) {
+    if(!$('#session-info').length)
+        return; // workaround for view mode
     // one hacky way is to maintain a <pre> that we fill as we go
     // note that R will happily spit out incomplete lines so it's
     // not trivial to maintain each output in some separate structure

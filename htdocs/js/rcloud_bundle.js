@@ -2704,6 +2704,8 @@ Notebook.is_part_name = function(filename) {
 
 // FIXME this is just a proof of concept - using Rserve console OOBs
 var append_session_info = function(msg) {
+    if(!$('#session-info').length)
+        return; // workaround for view mode
     // one hacky way is to maintain a <pre> that we fill as we go
     // note that R will happily spit out incomplete lines so it's
     // not trivial to maintain each output in some separate structure
@@ -2834,8 +2836,11 @@ RCloud.UI.column = function(sel_column) {
     }
     var result = {
         init: function() {
+            var $sel = $(sel_column);
+            if($sel.length === 0)
+                return; // e.g. view mode
             // find current column width from classes
-            var classes = $(sel_column).attr('class').split(/\s+/);
+            var classes = $sel.attr('class').split(/\s+/);
             classes.forEach(function(c) {
                 var cw = /^col-(?:md|sm)-(\d+)$/.exec(c);
                 if(cw) {
@@ -3350,6 +3355,7 @@ RCloud.UI.init = function() {
         if(result !== null)
             shell.open_from_github(result);
     });
+
     $("#import-notebooks").click(function() {
         shell.import_notebooks();
     });

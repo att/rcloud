@@ -13,6 +13,7 @@ RCloud.UI.init = function() {
         if(result !== null)
             shell.open_from_github(result);
     });
+
     $("#import-notebooks").click(function() {
         shell.import_notebooks();
     });

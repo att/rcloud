@@ -5,8 +5,11 @@ RCloud.UI.column = function(sel_column) {
     }
     var result = {
         init: function() {
+            var $sel = $(sel_column);
+            if($sel.length === 0)
+                return; // e.g. view mode
             // find current column width from classes
-            var classes = $(sel_column).attr('class').split(/\s+/);
+            var classes = $sel.attr('class').split(/\s+/);
             classes.forEach(function(c) {
                 var cw = /^col-(?:md|sm)-(\d+)$/.exec(c);
                 if(cw) {
