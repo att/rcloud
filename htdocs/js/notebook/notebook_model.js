@@ -239,9 +239,12 @@ Notebook.create_model = function()
             }
             return user_;
         },
-        update_urls: function(files) {
-            for(var i = 0; i<this.assets.length; ++i)
-                this.assets[i].raw_url = files[this.assets[i].filename()].raw_url;
+        update_files: function(files) {
+            for(var i = 0; i<this.assets.length; ++i) {
+                var ghfile = files[this.assets[i].filename()];
+                this.assets[i].raw_url = ghfile.raw_url;;
+                this.assets[i].language(ghfile.language || 'Text');
+            }
             _.each(this.views, function(view) {
                 view.update_urls();
             });

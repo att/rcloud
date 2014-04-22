@@ -57,16 +57,20 @@ RCloud.UI.scratchpad = {
             var filename = prompt("Choose a filename for your asset");
             if (!filename)
                 return;
-            if (filename.toLocaleLowerCase().substring(0,4) === "part") {
-                alert("Asset names cannot start with 'part', sorry!");
+            if (Notebook.is_part_name(filename)) {
+                alert("Asset names cannot start with 'part[0-9]', sorry!");
                 return;
             }
             var found = shell.notebook.model.has_asset(filename);
             if(found)
                 found.controller.select();
-            else
-                shell.notebook.controller.append_asset(
-                    "# New file " + filename, filename).select();
+            else {
+                shell.notebook.controller
+                    .append_asset("# New file " + filename, filename)
+                    .then(function(controller) {
+                        controller.select();
+                    });
+            }
         });
     },
     // FIXME this is completely backwards
@@ -74,13 +78,6 @@ RCloud.UI.scratchpad = {
         var that = this;
         if(!this.exists)
             return;
-        var modes = {
-            r: "ace/mode/r",
-            py: "ace/mode/python",
-            md: "ace/mode/rmarkdown",
-            css: "ace/mode/css",
-            txt: "ace/mode/text"
-        };
         if (this.current_model) {
             this.current_model.cursor_position(this.widget.getCursorPosition());
             // if this isn't a code smell I don't know what is.
@@ -112,9 +109,7 @@ RCloud.UI.scratchpad = {
         ui_utils.on_next_tick(function() {
             that.session.getUndoManager().reset();
         });
-        var lang = asset_model.language().toLocaleLowerCase();
-        var mode = require(modes[lang] || modes.txt).Mode;
-        that.session.setMode(new mode(false, that.session.doc, that.session));
+        that.language_updated();
         that.widget.resize();
         that.widget.focus();
     },
@@ -129,6 +124,18 @@ RCloud.UI.scratchpad = {
         this.change_content(changed);
         this.widget.getSelection().setSelectionRange(range);
         return changed;
+    }, language_updated: function() {
+        // github gist detected manuages
+        var modes = {
+            R: "ace/mode/r",
+            Python: "ace/mode/python",
+            Markdown: "ace/mode/rmarkdown",
+            CSS: "ace/mode/css",
+            Text: "ace/mode/text"
+        };
+        var lang = this.current_model.language();
+        var mode = require(modes[lang] || modes.Text).Mode;
+        this.session.setMode(new mode(false, this.session.doc, this.session));
     }, set_readonly: function(readonly) {
         if(!shell.is_view_mode()) {
             ui_utils.set_ace_readonly(this.widget, readonly);

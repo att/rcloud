@@ -1,4 +1,4 @@
-Notebook.Buffer.create_model = function(content) {
+Notebook.Buffer.create_model = function(content, language) {
     // by default, consider this a new cell
     var checkpoint_ = "";
 
@@ -26,6 +26,21 @@ Notebook.Buffer.create_model = function(content) {
                 else return null;
             }
             return content;
+        },
+        language: function(new_language) {
+            if (!_.isUndefined(new_language)) {
+                if(language != new_language) {
+                    language = new_language;
+                    this.notify_views(function(view) {
+                        view.language_updated();
+                    });
+                    return language;
+                }
+                else return null;
+            }
+            if(language === undefined)
+                throw new Error("tried to read no language");
+            return language;
         },
         change_object: function(obj) {
             if(obj.content)

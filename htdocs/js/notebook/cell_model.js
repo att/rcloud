@@ -1,23 +1,10 @@
 Notebook.Cell.create_model = function(content, language)
 {
     var id_ = -1;
-    var result = Notebook.Buffer.create_model(content);
+    var result = Notebook.Buffer.create_model(content, language);
     var base_change_object = result.change_object;
 
     _.extend(result, {
-        language: function(new_language) {
-            if (!_.isUndefined(new_language)) {
-                if(language != new_language) {
-                    language = new_language;
-                    this.notify_views(function(view) {
-                        view.language_updated();
-                    });
-                    return language;
-                }
-                else return null;
-            }
-            return language;
-        },
         id: function(new_id) {
             if (!_.isUndefined(new_id) && new_id != id_) {
                 id_ = new_id;
@@ -35,7 +22,7 @@ Notebook.Cell.create_model = function(content, language)
         json: function() {
             return {
                 content: content,
-                language: language
+                language: this.language()
             };
         },
         change_object: function(obj) {

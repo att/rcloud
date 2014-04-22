@@ -55,7 +55,7 @@ Notebook.create_controller = function(model)
                 if (k === "r_attributes" || k === "r_type")
                     return;
                 var filename = file.filename;
-                if(/^part/.test(filename)) {
+                if(Notebook.is_part_name(filename)) {
                     // cells
                     var number = parseInt(filename.slice(4).split('.')[0]);
                     if(!isNaN(number))
@@ -75,11 +75,11 @@ Notebook.create_controller = function(model)
                 asset_controller = asset_controller || result;
             }
             model.user(notebook.user.login);
+            model.update_files(notebook.files);
             if(asset_controller)
                 asset_controller.select();
             else
                 RCloud.UI.scratchpad.set_model(null);
-            model.update_urls(notebook.files);
 
             // we set read-only last because it ripples MVC events through to
             // make the display look impermeable
@@ -165,7 +165,7 @@ Notebook.create_controller = function(model)
                 if('error' in notebook)
                     throw notebook;
                 current_gist_ = notebook;
-                model.update_urls(notebook.files);
+                model.update_files(notebook.files);
                 return notebook;
             });
     }
@@ -206,9 +206,9 @@ Notebook.create_controller = function(model)
         },
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);
-            update_notebook(refresh_buffers().concat(cch.changes))
-                .then(default_callback_);
-            return cch.controller;
+            return update_notebook(refresh_buffers().concat(cch.changes))
+                .then(default_callback_)
+                .return(cch.controller);
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);

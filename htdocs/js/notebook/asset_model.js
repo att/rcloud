@@ -25,15 +25,6 @@ Notebook.Asset.create_model = function(content, filename)
                 cursor_position_ = new_cursor_position;
             return cursor_position_;
         },
-        language: function() {
-            if(arguments.length)
-                throw new Error("set language of asset not supported");
-            var extension = filename.match(/\.([^.]+)$/);
-            if (!extension)
-                return "";
-            extension = extension[1];
-            return extension;
-        },
         filename: function(new_filename) {
             if (!_.isUndefined(new_filename)) {
                 if(filename != new_filename) {
