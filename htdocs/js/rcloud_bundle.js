@@ -3310,14 +3310,18 @@ var fatal_dialog_;
 
 RCloud.UI.fatal_dialog = function(message, label, href) {
     if (_.isUndefined(fatal_dialog_)) {
-        var button = $("<button type='button' class='btn btn-primary' style='float:right'>" + label + "</button>"),
+        var default_button = $("<span class='btn btn-primary' style='float:right'>" + label + "</span>"),
+            ignore_button = $("<span class='btn' style='float:right'>Ignore</span>"),
             body = $('<div />')
                 .append('<h1>Aw, shucks</h1>',
                         '<p>' + message + '</p>',
-                        button,
+                        default_button, ignore_button,
                        '<div style="clear: both;"></div>');
-        button.button().click(function() {
+        default_button.click(function() {
             window.location = href;
+        });
+        ignore_button.click(function() {
+            fatal_dialog_.modal("hide");
         });
         fatal_dialog_ = $('<div id="fatal-dialog" class="modal fade" />')
             .append($('<div class="modal-dialog" />')
