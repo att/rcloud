@@ -21,7 +21,6 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         return $(sel_accordion + " > .panel > div.panel-collapse");
     }
     function togglers() {
-        // return $(sel_accordion + " > .panel > div.panel-heading > a.accordion-toggle");
         return $(sel_accordion + " > .panel > div.panel-heading");
     }
     function set_collapse(target, collapse, persist) {
@@ -57,7 +56,6 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 $(this).data("would-collapse", !$(this).hasClass('in') && !$(this).hasClass('out'));
             });
             togglers().click(function() {
-                // var target = $(this.hash);
                 var target = $(this.dataset.target);
                 that.collapse(target, target.hasClass('in'));
                 return false;
