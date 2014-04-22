@@ -258,11 +258,6 @@ rect.frame {
     z-index: 100000;
 }
 
-.help-iframe {
-    width: 100%;
-    height: 100%;
-}
-
 /**********************************************************************
  Override some of bootstrap's css
 */
