@@ -1,24 +1,40 @@
-RCloud.UI.column = function(sel_column, colwidth) {
+RCloud.UI.column = function(sel_column) {
+    var colwidth_ = undefined;
     function classes(cw) {
         return "col-md-" + cw + " col-sm-" + cw;
     }
     var result = {
+        init: function() {
+            // find current column width from classes
+            var classes = $(sel_column).attr('class').split(/\s+/);
+            classes.forEach(function(c) {
+                var cw = /^col-(?:md|sm)-(\d+)$/.exec(c);
+                if(cw) {
+                    cw = +cw[1];
+                    if(colwidth_ === undefined)
+                        colwidth_ = cw;
+                    else if(colwidth_ !== cw)
+                        throw new Error("mismatched col-md- or col-sm- in column classes");
+                }
+            });
+        },
         colwidth: function(val) {
-            if(!_.isUndefined(val) && val != colwidth) {
-                $(sel_column).removeClass(classes(colwidth)).addClass(classes(val));
-                colwidth = val;
+            if(!_.isUndefined(val) && val != colwidth_) {
+                $(sel_column).removeClass(classes(colwidth_)).addClass(classes(val));
+                colwidth_ = val;
             }
-            return colwidth;
+            return colwidth_;
         }
     };
     return result;
 };
 
-RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser, colwidth) {
+RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser) {
     var collapsed_ = false;
-    var result = RCloud.UI.column(sel_column, colwidth);
+    var result = RCloud.UI.column(sel_column);
+    var parent_init = result.init.bind(result);
     function collapsibles() {
-        return $(sel_accordion + " > .panel > div.panel-collapse");
+        return $(sel_accordion + " > .panel > div.panel-collapse:not(.out)");
     }
     function togglers() {
         return $(sel_accordion + " > .panel > div.panel-heading");
@@ -41,7 +57,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     function opt_to_sel(opt) {
         return opt.replace('ui/', '#');
     }
-    var reshadow = function() {
+    function reshadow() {
         $(sel_accordion + " .panel-shadow").each(function(v) {
             var h = $(this).parent().find('.panel-body').outerHeight();
             if (h === 0)
@@ -52,6 +68,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     _.extend(result, {
         init: function() {
             var that = this;
+            parent_init();
             collapsibles().each(function() {
                 $(this).data("would-collapse", !$(this).hasClass('in') && !$(this).hasClass('out'));
             });
@@ -226,7 +243,7 @@ RCloud.UI.collapsible_column.default_padder = function(el) {
 
 RCloud.UI.collapsible_column.default_sizer = function(el) {
     var el$ = $(el),
-        $izer = el$.find(".widget-vsize:not(.out)"),
+        $izer = el$.find(".widget-vsize"),
         height = $izer.height(),
         padding = RCloud.UI.collapsible_column.default_padder(el);
     return {height: height, padding: padding};
