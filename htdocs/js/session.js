@@ -97,6 +97,9 @@ function rclient_promise(allow_anonymous) {
             rclient.post_response(hello);
     }).catch(function(error) { // e.g. couldn't connect with github
         rclient.close();
+        if (error.message === "Authentication required") {
+            RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R");
+        }
         throw error;
     }).then(function() {
         rcloud.display.set_device_pixel_ratio();
