@@ -63,20 +63,14 @@ var shell = (function() {
         is_view_mode: function() {
             return view_mode_;
         },
-        new_markdown_cell: function(content, execute) {
-            var cell = notebook_controller_.append_cell(content, "Markdown");
+        new_cell: function(content, language, execute) {
+            var cell = notebook_controller_.append_cell(content, language);
             RCloud.UI.command_prompt.history.execute(content);
             if(execute) {
                 cell.execute().then(scroll_to_end);
             }
-        }, new_interactive_cell: function(content, execute) {
-            var cell = notebook_controller_.append_cell(content, "R");
-            RCloud.UI.command_prompt.history.execute(content);
-            if(execute) {
-                cell.execute().then(scroll_to_end);
-            }
-            return cell;
-        }, scroll_to_end: scroll_to_end,
+        },
+        scroll_to_end: scroll_to_end,
         insert_markdown_cell_before: function(index) {
             return notebook_controller_.insert_cell("", "Markdown", index);
         }, coalesce_prior_cell: function(cell_model) {

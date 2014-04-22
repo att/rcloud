@@ -184,11 +184,7 @@ RCloud.UI.init = function() {
 
     $("#insert-new-cell").click(function() {
         var language = $("#insert-cell-language option:selected").text();
-        if (language === 'Markdown') {
-            shell.new_markdown_cell("");
-        } else if (language === 'R') {
-            shell.new_interactive_cell("", false);
-        }
+        shell.new_cell("", language, false);
         var vs = shell.notebook.view.sub_views;
         vs[vs.length-1].show_source();
     });

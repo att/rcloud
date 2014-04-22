@@ -772,7 +772,7 @@ ui_utils.ace_set_pos = function(widget, row, column) {
     sel.setSelectionRange(range);
 };
 
-ui_utils.install_common_ace_key_bindings = function(widget) {
+ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
     var Autocomplete = require("ace/autocomplete").Autocomplete;
     var session = widget.getSession();
 
@@ -804,7 +804,7 @@ ui_utils.install_common_ace_key_bindings = function(widget) {
                     var range = new Range(pos.row, 0, pos.row+1, 0);
                     code = session.getTextRange(range);
                 }
-                shell.new_interactive_cell(code, true);
+                shell.new_cell(code, get_language(), true);
             }
         }
     ]);
@@ -1505,7 +1505,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     ui_utils.add_ace_grab_affordance(widget.container);
 
-    ui_utils.install_common_ace_key_bindings(widget);
+    ui_utils.install_common_ace_key_bindings(widget, function() {
+        return language;
+    });
     widget.commands.addCommands([{
         name: 'sendToR',
         bindKey: {
@@ -3092,6 +3094,9 @@ RCloud.UI.command_prompt = {
         this.history = this.setup_prompt_history();
         this.prompt = this.setup_command_prompt();
     },
+    get_language: function() {
+        return $("#insert-cell-language option:selected").text();
+    },
     focus: function() {
         // surely not the right way to do this
         if (!this.prompt)
@@ -3186,12 +3191,7 @@ RCloud.UI.command_prompt = {
         function execute(widget, args, request) {
             var code = session.getValue();
             if(code.length) {
-                var language = $("#insert-cell-language option:selected").text();
-                if (language === 'Markdown') {
-                    shell.new_markdown_cell(code, true);
-                } else if (language === 'R') {
-                    shell.new_interactive_cell(code, true);
-                }
+                shell.new_cell(code, that.get_language(), true);
                 change_prompt('');
             }
         }
@@ -3213,7 +3213,7 @@ RCloud.UI.command_prompt = {
             ui_utils.ace_set_pos(widget, r, last_col(widget, r));
         }
 
-        ui_utils.install_common_ace_key_bindings(widget);
+        ui_utils.install_common_ace_key_bindings(widget, this.get_language.bind(this));
 
         var up_handler = widget.commands.commandKeyBinding[0]["up"],
             down_handler = widget.commands.commandKeyBinding[0]["down"];
@@ -3533,11 +3533,7 @@ RCloud.UI.init = function() {
 
     $("#insert-new-cell").click(function() {
         var language = $("#insert-cell-language option:selected").text();
-        if (language === 'Markdown') {
-            shell.new_markdown_cell("");
-        } else if (language === 'R') {
-            shell.new_interactive_cell("", false);
-        }
+        shell.new_cell("", language, false);
         var vs = shell.notebook.view.sub_views;
         vs[vs.length-1].show_source();
     });
@@ -3835,7 +3831,9 @@ RCloud.UI.scratchpad = {
                     if (that.current_model)
                         that.current_model.parent_model.on_dirty();
                 });
-            ui_utils.install_common_ace_key_bindings(widget);
+            ui_utils.install_common_ace_key_bindings(widget, function() {
+                return that.current_model.language();
+            });
             $("#collapse-assets").on("shown.bs.collapse", function() {
                 widget.resize();
             });

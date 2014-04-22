@@ -40,7 +40,9 @@ RCloud.UI.scratchpad = {
                     if (that.current_model)
                         that.current_model.parent_model.on_dirty();
                 });
-            ui_utils.install_common_ace_key_bindings(widget);
+            ui_utils.install_common_ace_key_bindings(widget, function() {
+                return that.current_model.language();
+            });
             $("#collapse-assets").on("shown.bs.collapse", function() {
                 widget.resize();
             });
