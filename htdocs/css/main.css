@@ -391,6 +391,8 @@ li.jqtree-selected .notebook-commands {
     margin: 0;
 }
 
+/******************************************************************************/
+
 #search-wrapper {
     display: table;
     table-layout: fixed;
@@ -447,6 +449,8 @@ li.jqtree-selected .notebook-commands {
     padding-left: 0.5ex;
 }
 
+/******************************************************************************/
+
 #help-wrapper {
     display: table;
     table-layout: fixed;
@@ -469,21 +473,7 @@ li.jqtree-selected .notebook-commands {
     height: 100%;
 }
 
-#session-info-panel {
-    overflow-y: auto;
-    overflow-x: auto;
-    padding: 5px;
-}
-
-#session-info-out {
-    word-wrap: normal;
-    white-space: pre;
-}
-
-.session-error {
-    padding: .75ex 3em .75ex .75ex;
-    margin: 0
-}
+/******************************************************************************/
 
 #asset-area {
     display: table;
@@ -543,6 +533,24 @@ li.jqtree-selected .notebook-commands {
 #comment-entry {
     width: 100%;
     padding-bottom: 2px; // scroll was cutting it off
+}
+
+/******************************************************************************/
+
+#session-info-panel {
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 5px;
+}
+
+#session-info-out {
+    word-wrap: normal;
+    white-space: pre;
+}
+
+.session-error {
+    padding: .75ex 3em .75ex .75ex;
+    margin: 0
 }
 
 /******************************************************************************/
