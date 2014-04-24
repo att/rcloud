@@ -21,5 +21,5 @@ Notebook.empty_for_github = function(text) {
 };
 
 Notebook.is_part_name = function(filename) {
-    return filename.match(/^part\d+\.([rR]|[mM][dD])$/);
+    return filename.match(/^part\d+\./);
 };

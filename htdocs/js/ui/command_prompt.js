@@ -5,6 +5,9 @@ RCloud.UI.command_prompt = {
         this.history = this.setup_prompt_history();
         this.prompt = this.setup_command_prompt();
     },
+    get_language: function() {
+        return $("#insert-cell-language option:selected").text();
+    },
     focus: function() {
         // surely not the right way to do this
         if (!this.prompt)
@@ -99,12 +102,7 @@ RCloud.UI.command_prompt = {
         function execute(widget, args, request) {
             var code = session.getValue();
             if(code.length) {
-                var language = $("#insert-cell-language option:selected").text();
-                if (language === 'Markdown') {
-                    shell.new_markdown_cell(code, true);
-                } else if (language === 'R') {
-                    shell.new_interactive_cell(code, true);
-                }
+                shell.new_cell(code, that.get_language(), true);
                 change_prompt('');
             }
         }
@@ -126,7 +124,7 @@ RCloud.UI.command_prompt = {
             ui_utils.ace_set_pos(widget, r, last_col(widget, r));
         }
 
-        ui_utils.install_common_ace_key_bindings(widget);
+        ui_utils.install_common_ace_key_bindings(widget, this.get_language.bind(this));
 
         var up_handler = widget.commands.commandKeyBinding[0]["up"],
             down_handler = widget.commands.commandKeyBinding[0]["down"];

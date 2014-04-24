@@ -161,7 +161,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     ui_utils.add_ace_grab_affordance(widget.container);
 
-    ui_utils.install_common_ace_key_bindings(widget);
+    ui_utils.install_common_ace_key_bindings(widget, function() {
+        return language;
+    });
     widget.commands.addCommands([{
         name: 'sendToR',
         bindKey: {

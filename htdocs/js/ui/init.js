@@ -62,16 +62,18 @@ RCloud.UI.init = function() {
             );
             if(to_notebook) {
                 var content = notebook.files[file.name].content;
-                var controller;
+                var promise_controller;
                 if(replacing) {
                     replacing.content(content);
-                    shell.notebook.controller.update_asset(replacing);
-                    controller = replacing.controller;
+                    promise_controller = shell.notebook.controller.update_asset(replacing)
+                        .return(replacing.controller);
                 }
                 else {
-                    controller = shell.notebook.controller.append_asset(content, file.name);
+                    promise_controller = shell.notebook.controller.append_asset(content, file.name);
                 }
-                controller.select();
+                promise_controller.then(function(controller) {
+                    controller.select();
+                });
             }
         };
 
@@ -184,11 +186,7 @@ RCloud.UI.init = function() {
 
     $("#insert-new-cell").click(function() {
         var language = $("#insert-cell-language option:selected").text();
-        if (language === 'Markdown') {
-            shell.new_markdown_cell("");
-        } else if (language === 'R') {
-            shell.new_interactive_cell("", false);
-        }
+        shell.new_cell("", language, false);
         var vs = shell.notebook.view.sub_views;
         vs[vs.length-1].show_source();
     });
