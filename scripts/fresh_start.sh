@@ -13,8 +13,6 @@ else
 fi
 cd ../..
 R CMD build rcloud.support && R CMD INSTALL rcloud.support_`sed -n 's/Version: *//p' rcloud.support/DESCRIPTION`.tar.gz || exit
-killall -9 Rserve
-#Kill Rserve debug instances as well
-killall -9 Rserve.dbg
+killall -9 RsrvSRV
 rm -f conf/rcloud.auth
-./conf/start -d
+./conf/start $*
