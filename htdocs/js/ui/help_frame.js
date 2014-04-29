@@ -9,5 +9,13 @@ RCloud.UI.help_frame = {
         $("#help-body").attr('data-widgetheight', "greedy");
         $("#collapse-help").trigger('size-changed');
         RCloud.UI.left_panel.collapse($("#collapse-help"), false);
+    },
+    display_content: function(content) {
+        $("#help-frame").contents().find('body').html(content);
+        this.show();
+    },
+    display_href: function(href) {
+        $("#help-frame").attr("src", href);
+        this.show();
     }
 };

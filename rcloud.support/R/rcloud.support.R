@@ -372,7 +372,12 @@ rcloud.get.completions <- function(text, pos) {
 }
 
 rcloud.help <- function(topic) {
-  print(help(topic))
+  result <- help(topic)
+  if(length(result)) {
+    print(result)
+    TRUE
+  }
+  else FALSE 
 }
 
 ## FIXME: won't work - uses a global file!
