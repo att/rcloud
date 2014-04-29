@@ -535,6 +535,8 @@ rcloud.set.notebook.info <- function(id, info) {
 
 rcloud.purl.source <- function(contents)
 {
+  if(length(contents)==1 && contents[[1]]=="")
+    return(contents)
   input.file <- tempfile(fileext="Rmd")
   output.file <- tempfile(fileext="R")
   cat(contents, file = input.file)

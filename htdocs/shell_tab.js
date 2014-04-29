@@ -213,7 +213,9 @@ var shell = (function() {
                         strings.push(parts[i]);
                 strings.push("");
                 rcloud.purl_source(strings.join("\n")).then(function(purled_lines) {
-                    var purled_source = purled_lines.join("\n");
+                    // rserve.js length-1 array special case making our lives difficult again
+                    var purled_source = _.isString(purled_lines) ? purled_lines :
+                            purled_lines.join("\n");
                     var a=document.createElement('a');
                     a.textContent='download';
                     a.download=notebook.description + ".R";
