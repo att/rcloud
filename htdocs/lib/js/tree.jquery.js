@@ -775,6 +775,8 @@ limitations under the License.
   ElementsRenderer = (function() {
     function ElementsRenderer(tree_widget) {
       this.tree_widget = tree_widget;
+      this.opened_icon_text = this.getHtmlText(tree_widget.options.openedIcon);
+      this.closed_icon_text = this.getHtmlText(tree_widget.options.closedIcon);
     }
 
     ElementsRenderer.prototype.render = function(from_node) {
@@ -807,96 +809,106 @@ limitations under the License.
       var $element;
       $element = this.tree_widget.element;
       $element.empty();
-      return this.createDomElements($element, this.tree_widget.tree.children, true, true);
+      return this.createDomElements($element[0], this.tree_widget.tree.children, true, true);
     };
 
     ElementsRenderer.prototype.renderFromNode = function(from_node) {
       var node_element;
       node_element = this.tree_widget._getNodeElementForNode(from_node);
       node_element.getUl().remove();
-      return this.createDomElements(node_element.$element, from_node.children, false, false);
+      return this.createDomElements(node_element.$element[0], from_node.children, false, false);
     };
 
-    ElementsRenderer.prototype.createDomElements = function($element, children, is_root_node, is_open) {
-      var $li, $ul, child, _i, _len;
-      $ul = this.createUl(is_root_node);
-      $element.append($ul);
+    ElementsRenderer.prototype.createDomElements = function(element, children, is_root_node, is_open) {
+      var child, li, ul, _i, _len;
+      ul = this.createUl(is_root_node);
+      element.appendChild(ul);
       for (_i = 0, _len = children.length; _i < _len; _i++) {
         child = children[_i];
-        $li = this.createLi(child);
-        $ul.append($li);
-        this.attachNodeData(child, $li);
+        li = this.createLi(child);
+        ul.appendChild(li);
+        this.attachNodeData(child, li);
         if (child.hasChildren()) {
-          this.createDomElements($li, child.children, false, child.is_open);
+          this.createDomElements(li, child.children, false, child.is_open);
         }
       }
       return null;
     };
 
-    ElementsRenderer.prototype.attachNodeData = function(node, $li) {
-      node.element = $li[0];
-      return $li.data('node', node);
+    ElementsRenderer.prototype.attachNodeData = function(node, li) {
+      node.element = li;
+      return $(li).data('node', node);
     };
 
     ElementsRenderer.prototype.createUl = function(is_root_node) {
-      var class_string;
+      var class_string, ul;
       if (is_root_node) {
         class_string = 'jqtree-tree';
       } else {
         class_string = '';
       }
-      return $($.el.ul({
-        'class': "jqtree_common " + class_string
-      }));
+      ul = document.createElement('ul');
+      ul.className = "jqtree_common " + class_string;
+      return ul;
     };
 
     ElementsRenderer.prototype.createLi = function(node) {
-      var $li;
+      var li;
       if (node.isFolder()) {
-        $li = this.createFolderLi(node);
+        li = this.createFolderLi(node);
       } else {
-        $li = this.createNodeLi(node);
+        li = this.createNodeLi(node);
       }
       if (this.tree_widget.options.onCreateLi) {
-        this.tree_widget.options.onCreateLi(node, $li);
+        this.tree_widget.options.onCreateLi(node, $(li));
       }
-      return $li;
+      return li;
     };
 
     ElementsRenderer.prototype.createFolderLi = function(node) {
-      var button_char, button_classes, folder_classes;
+      var button_char, button_classes, button_link, div, escaped_name, folder_classes, li, title_span;
       button_classes = this.getButtonClasses(node);
       folder_classes = this.getFolderClasses(node);
+      escaped_name = this.escapeIfNecessary(node.name);
       if (node.is_open) {
-        button_char = this.tree_widget.options.openedIcon;
+        button_char = this.opened_icon_text;
       } else {
-        button_char = this.tree_widget.options.closedIcon;
+        button_char = this.closed_icon_text;
       }
-      return $($.el.li({
-        'class': "jqtree_common " + folder_classes
-      }, $.el.div({
-        'class': 'jqtree-element jqtree_common'
-      }, $.el.a({
-        'class': "jqtree_common " + button_classes
-      }, button_char), $.el.span({
-        'class': "jqtree_common jqtree-title"
-      }, node.name))));
+      li = document.createElement('li');
+      li.className = "jqtree_common " + folder_classes;
+      div = document.createElement('div');
+      div.className = "jqtree-element jqtree_common";
+      li.appendChild(div);
+      button_link = document.createElement('a');
+      button_link.className = "jqtree_common " + button_classes;
+      button_link.appendChild(document.createTextNode(button_char));
+      div.appendChild(button_link);
+      title_span = document.createElement('span');
+      title_span.className = "jqtree_common jqtree-title";
+      div.appendChild(title_span);
+      title_span.innerHTML = escaped_name;
+      return li;
     };
 
     ElementsRenderer.prototype.createNodeLi = function(node) {
-      var class_string, li_classes;
+      var class_string, div, escaped_name, li, li_classes, title_span;
       li_classes = ['jqtree_common'];
       if (this.tree_widget.select_node_handler && this.tree_widget.select_node_handler.isNodeSelected(node)) {
         li_classes.push('jqtree-selected');
       }
       class_string = li_classes.join(' ');
-      return $($.el.li({
-        'class': class_string
-      }, $.el.div({
-        'class': 'jqtree-element jqtree_common'
-      }, $.el.span({
-        'class': 'jqtree-title jqtree_common'
-      }, node.name))));
+      escaped_name = this.escapeIfNecessary(node.name);
+      li = document.createElement('li');
+      li.className = class_string;
+      div = document.createElement('div');
+      div.className = "jqtree-element jqtree_common";
+      li.appendChild(div);
+      title_span = document.createElement('span');
+      title_span.className = "jqtree-title jqtree_common";
+      title_span.innerHTML = escaped_name;
+      div.appendChild(title_span);
+      return li;
     };
 
     ElementsRenderer.prototype.getButtonClasses = function(node) {
@@ -926,6 +938,10 @@ limitations under the License.
       } else {
         return value;
       }
+    };
+
+    ElementsRenderer.prototype.getHtmlText = function(entity_text) {
+      return $(document.createElement('div')).html(entity_text).text();
     };
 
     return ElementsRenderer;
@@ -972,8 +988,8 @@ limitations under the License.
       onLoadFailed: null,
       autoEscape: true,
       dataUrl: null,
-      closedIcon: String.fromCharCode(0x25ba),
-      openedIcon: String.fromCharCode(0x25bc),
+      closedIcon: '&#x25ba;',
+      openedIcon: '&#x25bc;',
       slide: true,
       nodeClass: Node,
       dataFilter: null,
@@ -1083,6 +1099,10 @@ limitations under the License.
       return this._loadDataFromUrl(url, parent_node, on_finished);
     };
 
+    JqTreeWidget.prototype.reload = function() {
+      return this.loadDataFromUrl();
+    };
+
     JqTreeWidget.prototype._loadDataFromUrl = function(url_info, parent_node, on_finished) {
       var $el, addLoadingClass, parseUrlInfo, removeLoadingClass;
       $el = null;
@@ -1168,7 +1188,7 @@ limitations under the License.
       if (!parent_node) {
         this._initTree(data);
       } else {
-        selected_nodes_under_parent = this.select_node_handler.getSelectedNodes(parent_node);
+        selected_nodes_under_parent = this.select_node_handler.getSelectedNodesUnder(parent_node);
         for (_i = 0, _len = selected_nodes_under_parent.length; _i < _len; _i++) {
           n = selected_nodes_under_parent[_i];
           this.select_node_handler.removeFromSelection(n);
@@ -2084,6 +2104,26 @@ limitations under the License.
       }
     };
 
+    SelectNodeHandler.prototype.getSelectedNodesUnder = function(parent) {
+      var id, node, selected_nodes;
+      if (this.selected_single_node) {
+        if (parent.isParentOf(selected_single_node)) {
+          return this.selected_single_node;
+        } else {
+          return null;
+        }
+      } else {
+        selected_nodes = [];
+        for (id in this.selected_nodes) {
+          node = this.tree_widget.getNodeById(id);
+          if (node && parent.isParentOf(node)) {
+            selected_nodes.push(node);
+          }
+        }
+        return selected_nodes;
+      }
+    };
+
     SelectNodeHandler.prototype.isNodeSelected = function(node) {
       if (node.id) {
         return this.selected_nodes[node.id];
@@ -2808,7 +2848,7 @@ limitations under the License.
       })(this);
       moveRight = (function(_this) {
         return function() {
-          if (current_node.hasChildren() && !current_node.is_open) {
+          if (current_node.isFolder() && !current_node.is_open) {
             _this.tree_widget.openNode(current_node);
             return false;
           } else {
@@ -2818,7 +2858,7 @@ limitations under the License.
       })(this);
       moveLeft = (function(_this) {
         return function() {
-          if (current_node.hasChildren() && current_node.is_open) {
+          if (current_node.isFolder() && current_node.is_open) {
             _this.tree_widget.closeNode(current_node);
             return false;
           } else {

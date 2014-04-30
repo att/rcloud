@@ -5,6 +5,9 @@ RCloud.UI.command_prompt = {
         this.history = this.setup_prompt_history();
         this.prompt = this.setup_command_prompt();
     },
+    get_language: function() {
+        return $("#insert-cell-language option:selected").text();
+    },
     focus: function() {
         // surely not the right way to do this
         if (!this.prompt)
@@ -46,9 +49,15 @@ RCloud.UI.command_prompt = {
                 curr_ = entries_.length;
                 window.localStorage[prefix_+(curr_-1)] = cmd;
             },
+            has_last: function() {
+                return curr_>0;
+            },
             last: function() {
                 if(curr_>0) --curr_;
                 return curr_cmd();
+            },
+            has_next: function() {
+                return curr_<entries_.length;
             },
             next: function() {
                 if(curr_<entries_.length) ++curr_;
@@ -67,8 +76,10 @@ RCloud.UI.command_prompt = {
         if (!prompt_div.length)
             return null;
         function set_ace_height() {
-            prompt_div.css({'height': ui_utils.ace_editor_height(widget) + "px"});
+            var EXTRA_HEIGHT = 6;
+            prompt_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
             widget.resize();
+            shell.scroll_to_end(0);
         }
         prompt_div.css({'background-color': "#fff"});
         prompt_div.addClass("r-language-pseudo");
@@ -91,12 +102,7 @@ RCloud.UI.command_prompt = {
         function execute(widget, args, request) {
             var code = session.getValue();
             if(code.length) {
-                var language = $("#insert-cell-language option:selected").text();
-                if (language === 'Markdown') {
-                    shell.new_markdown_cell(code, true);
-                } else if (language === 'R') {
-                    shell.new_interactive_cell(code, true);
-                }
+                shell.new_cell(code, that.get_language(), true);
                 change_prompt('');
             }
         }
@@ -112,15 +118,14 @@ RCloud.UI.command_prompt = {
         }
 
         function restore_prompt() {
-            var cmd = that.init();
+            var cmd = that.history.init();
             change_prompt(cmd);
             var r = last_row(widget);
             ui_utils.ace_set_pos(widget, r, last_col(widget, r));
         }
 
-        ui_utils.install_common_ace_key_bindings(widget);
+        ui_utils.install_common_ace_key_bindings(widget, this.get_language.bind(this));
 
-        // note ace.js typo which we need to correct when we update ace
         var up_handler = widget.commands.commandKeyBinding[0]["up"],
             down_handler = widget.commands.commandKeyBinding[0]["down"];
         widget.commands.addCommands([{
@@ -134,8 +139,8 @@ RCloud.UI.command_prompt = {
         }, {
             name: 'execute-2',
             bindKey: {
-                win: 'Ctrl-Return',
-                mac: 'Command-Return',
+                win: 'Alt-Return',
+                mac: 'Alt-Return',
                 sender: 'editor'
             },
             exec: execute
@@ -143,26 +148,36 @@ RCloud.UI.command_prompt = {
             name: 'up-with-history',
             bindKey: 'up',
             exec: function(widget, args, request) {
-                var pos = widget.getCursorPosition();
+                var pos = widget.getCursorPositionScreen();
                 if(pos.row > 0)
                     up_handler.exec(widget, args, request);
                 else {
-                    change_prompt(that.history.last());
-                    var r = last_row(widget);
-                    ui_utils.ace_set_pos(widget, r, last_col(widget, r));
+                    if(that.history.has_last()) {
+                        change_prompt(that.history.last());
+                        var r = widget.getSession().getScreenLength();
+                        ui_utils.ace_set_pos(widget, r, pos.column);
+                    }
+                    else
+                        ui_utils.ace_set_pos(widget, 0, 0);
                 }
             }
         }, {
             name: 'down-with-history',
             bindKey: 'down',
             exec: function(widget, args, request) {
-                var pos = widget.getCursorPosition();
-                var r = last_row(widget);
-                if(pos.row < r)
+                var pos = widget.getCursorPositionScreen();
+                var r = widget.getSession().getScreenLength();
+                if(pos.row < r-1)
                     down_handler.exec(widget, args, request);
                 else {
-                    change_prompt(that.history.next());
-                    ui_utils.ace_set_pos(widget, 0, last_col(widget, 0));
+                    if(that.history.has_next()) {
+                        change_prompt(that.history.next());
+                        ui_utils.ace_set_pos(widget, 0, pos.column);
+                    }
+                    else {
+                        var r = last_row(widget);
+                        ui_utils.ace_set_pos(widget, r, last_col(widget, r));
+                    }
                 }
             }
         }

@@ -41,4 +41,9 @@ fi
 ## those that choose to use the RCloud Rlib shall be supported ...
 : ${R_LIBS="$ROOT/Rlib"}
 
+## create run directory for the PID file if it doesn't exist
+if [ ! -d "$ROOT/run" ]; then
+    mkdir "$ROOT/run"
+fi
+
 "$RBIN" --slave --no-restore --vanilla --file="$ROOT/conf/run_rcloud.R" --args "$ROOT/conf/rserve.conf"

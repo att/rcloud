@@ -25,15 +25,22 @@ rcloud_bundle.js: \
 	notebook.js \
 	session.js \
 	ui/_begin.js \
+	ui/column.js \
+	ui/command_prompt.js \
+	ui/configure_readonly.js \
+	ui/fatal_dialog.js \
+	ui/help_frame.js \
 	ui/init.js \
 	ui/left_panel.js \
-	ui/right_panel.js \
+	ui/load.js \
 	ui/middle_column.js \
+	ui/notebook_title.js \
+	ui/progress.js \
+	ui/right_panel.js \
 	ui/scratchpad.js \
-	ui/command_prompt.js \
-	ui/share_button.js \
-	ui/configure_readonly.js \
-	ui/notebook_title.js
+	ui/search.js \
+	ui/session_pane.js \
+	ui/share_button.js
 
 rcloud_bundle.min.js: rcloud_bundle.js Makefile
 	@rm -f $@
@@ -44,7 +51,7 @@ rcloud_bundle.js: Makefile
 	echo $^
 	@rm -f $@
 	cat $(filter %.js,$^) > $@
-ifeq ($(CHECK),1) 
+ifeq ($(CHECK),1)
 	jshint $(filter %.js,$(filter-out lib/%.js,$(filter-out %/_begin.js,$(filter-out %/_end.js, $^))))
 endif
 	chmod -w $@

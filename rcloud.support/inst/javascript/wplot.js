@@ -36,7 +36,7 @@ Chart.get_selections = function(group_id) {
 
 Chart.set_selections = function(group_id, sel) {
     for (var i = 0; i < sel.length; i++)
-	selections[group_id][i] = sel[i];
+        selections[group_id][i] = sel[i];
     _.each(models[group_id], function(model) {
         _.each(model.views, function(v) {
             v.selection_changed();
