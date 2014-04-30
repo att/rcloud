@@ -9,20 +9,9 @@
 # to invoke, run
 # ROOT=<rcloud-root-dir> R -f upgradeRCS1_0.R
 
-root <- Sys.getenv("ROOT")
-if (!nzchar(root)) {
-  if (file.exists("/data/rcloud/conf/rcloud.conf")) {
-    root <- "/data/rcloud"
-    Sys.setenv(ROOT=root)
-  } else stop("ERROR: ROOT not set - please set ROOT first before using")
-}
-if (!file.exists(file.path(root, "conf", "rcloud.conf")))
-  stop("ERROR: ROOT is invalid - it must point to the root of the RCloud installation")
-
 Sys.setenv(RCS_SILENCE_LOADCHECK=1)
 require('rcloud.support')
-rcloud.support:::configure.rcloud()
-rcloud.support:::start.rcloud.anonymously()
+rcloud.support:::configure.rcloud("script")
 
 rcs.key <- rcloud.support:::rcs.key
 
