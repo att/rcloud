@@ -20,8 +20,8 @@
 <field name="created_at_txt" type="text_general" indexed="true" stored="true"/>
 <field name="updated_at_txt" type="text_general" indexed="true" stored="true"/>
 <field name="content_type" type="string" indexed="true" stored="true" multiValued="true"/>
-
-<field name="text" type="text_general" indexed="true" stored="true" multiValued="true"/>
+<field name="code" type="string" indexed="true" stored="true" required="false" multiValued="false" />    
+<field name="text" type="text_sourcecode" indexed="true" stored="true" multiValued="true"/>
 <field name="manu_exact" type="string" indexed="true" stored="false"/>
 <field name="payloads" type="payloads" indexed="true" stored="true"/>
 <field name="_version_" type="long" indexed="true" stored="true"/>
@@ -30,6 +30,7 @@
 <uniqueKey>id</uniqueKey>
 
 <copyField source="content" dest="text"/>
+<copyField source="content" dest="code"/>
 <copyField source="description" dest="text"/>
 <copyField source="user" dest="text"/>
 <copyField source="created_at" dest="text"/>
@@ -65,26 +66,30 @@
       </analyzer>
     </fieldtype>
 
-<fieldType name="sourcecode" class="solr.TextField" positionIncrementGap="100" autoGeneratePhraseQueries="true">
+<fieldType name="text_sourcecode" class="solr.TextField" positionIncrementGap="100">
 	<analyzer type="index">
 		<charFilter class="solr.HTMLStripCharFilterFactory"/>
-		<tokenizer class="solr.StandardTokenizerFactory"/>
+                <charFilter class="solr.PatternReplaceCharFilterFactory" pattern="\\n" replacement=" "/>
+                <charFilter class="solr.PatternReplaceCharFilterFactory" pattern="\\t" replacement=" "/>
+                <charFilter class="solr.PatternReplaceCharFilterFactory" pattern="\\b" replacement=" "/>
+                <charFilter class="solr.PatternReplaceCharFilterFactory" pattern="\\r" replacement=" "/>
+                <charFilter class="solr.PatternReplaceCharFilterFactory" pattern="\\u" replacement="u"/>
+        	<tokenizer class="solr.WhitespaceTokenizerFactory"/>
+		<filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" catenateWords="1" catenateNumbers="1" catenateAll="1" splitOnNumerics="0" splitOnCaseChange="0" preserveOriginal="1" types="word-delim-types.txt"/>
 		<filter class="solr.StopFilterFactory"
 			ignoreCase="true"
 			words="lang/stopwords_en.txt"
-			enablePositionIncrements="true"
 		/>
 		<filter class="solr.LowerCaseFilterFactory"/>
 	</analyzer>
 	<analyzer type="query">
-		<tokenizer class="solr.StandardTokenizerFactory"/>
-		<charFilter class="solr.HTMLStripCharFilterFactory"/>
-		<filter class="solr.StopFilterFactory"
-			ignoreCase="true"
-			words="lang/stopwords_en.txt"
-			enablePositionIncrements="true"
-		/>
-		<filter class="solr.LowerCaseFilterFactory"/>
+		<tokenizer class="solr.WhitespaceTokenizerFactory"/>
+                <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" catenateWords="1" catenateNumbers="1" catenateAll="1" splitOnNumerics="0" splitOnCaseChange="0" preserveOriginal="1" types="word-delim-types.txt"/>
+                <filter class="solr.StopFilterFactory"
+                        ignoreCase="true"
+                        words="lang/stopwords_en.txt"
+                />
+                <filter class="solr.LowerCaseFilterFactory"/>
 	</analyzer>
 </fieldType>
 
@@ -92,7 +97,7 @@
 	<analyzer type="index">
 		<charFilter class="solr.HTMLStripCharFilterFactory"/>
 		<charFilter class="solr.PatternReplaceCharFilterFactory" pattern="\\n" replacement=" "/>
-        <charFilter class="solr.PatternReplaceCharFilterFactory" pattern="\\t" replacement=" "/>
+	        <charFilter class="solr.PatternReplaceCharFilterFactory" pattern="\\t" replacement=" "/>
 		<charFilter class="solr.PatternReplaceCharFilterFactory" pattern="\\b" replacement=" "/>
 		<charFilter class="solr.PatternReplaceCharFilterFactory" pattern="\\r" replacement=" "/>
 		<charFilter class="solr.PatternReplaceCharFilterFactory" pattern="\\u" replacement="u"/>
