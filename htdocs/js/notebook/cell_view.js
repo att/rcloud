@@ -202,6 +202,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         language_updated: function() {
             language = cell_model.language();
             ace_div.css({ 'background-color': languages[language]["background-color"] });
+            select.val(cell_model.language());
         },
         result_updated: function(r) {
             r_result_div.hide();
