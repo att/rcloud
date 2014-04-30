@@ -27,6 +27,31 @@ Interested? Read on.
 
 # Setting up RCloud
 
+## Installing from a distribution tar ball
+
+This is a quick-start guide for installing RCloud from a distribution
+tar ball. For full instructions using the repository, read from next
+section on.
+
+Make sure R 3.1.0 or higher is installed. Download the distribution tar
+ball, change to the directory where you want to install it,
+e.g. `/data` and run
+
+    $ tar fxz rcloud-1.0.tar.gz
+    $ cd rcloud
+    $ sh scripts/bootstrapR.sh
+
+It will install the packages included in the release tar ball. Copy
+`conf/rcloud.conf.samp` to `conf/rcloud.conf` and edit it to match
+your GitHub setup. Then start RCloud via
+
+    $ sh scripts/fresh_start.sh
+
+The same script can be used to re-start RCloud later.
+
+
+## Installing RCloud from GitHub
+
 ### Checking out the code
 
 You will need to do
