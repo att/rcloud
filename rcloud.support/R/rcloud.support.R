@@ -119,7 +119,7 @@ rcloud.unauthenticated.call.FastRWeb.notebook <- function(id, version = NULL, ar
 }
 
 rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
-  result <- rcloud.call.notebook(id, version, args)
+  result <- rcloud.call.notebook(id, version, NULL)
   if (is.function(result)) {
     require(FastRWeb)
     l <- as.list(as.WebResult(do.call(result, args, envir=environment(result))))
