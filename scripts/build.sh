@@ -29,7 +29,7 @@ R CMD build rcloud.support && RCS_SILENCE_LOADCHECK=TRUE R CMD INSTALL rcloud.su
 
 # build internal packages (not in git)
 if [ -e internal ]; then
-    for pkg in `ls internal/*/DESCRIPTION | sed -e 's:internal/::' -e 's:/DESCRIPTION::'`; do
+    for pkg in `ls internal/*/DESCRIPTION 2>/dev/null | sed -e 's:internal/::' -e 's:/DESCRIPTION::'`; do
 	(cd internal && R CMD build $pkg && R CMD INSTALL `sed -n 's/Package: *//p' $pkg/DESCRIPTION`_`sed -n 's/Version: *//p' $pkg/DESCRIPTION`.tar.gz)
     done
 fi
