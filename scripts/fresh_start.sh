@@ -1,18 +1,45 @@
-#!/bin/bash
-cd htdocs/js;
-if [ -d node_modules ]; then
-    make || exit;
-else
-    echo Skipping javascript build because node.js modules are not installed. Refer to Readme.md for details.
+#!/bin/sh
+
+if [ ! -e rcloud.support/DESCRIPTION ]; then
+    if [ -n "$ROOT" ]; then
+        echo "NOTE: changing to '$ROOT' according to ROOT"
+        cd "$ROOT"
+    fi
 fi
-cd ../lib;
-if [ -d node_modules ]; then
-    make || exit;
-else
-    echo Skipping javascript build because node.js modules are not installed. Refer to Readme.md for details.
+
+if [ ! -e rcloud.support/DESCRIPTION ]; then
+    echo '' 2>&1
+    echo ' ERROR: cannot find rcloud.support. Please make sure you are' 2>&1
+    echo '        running this script from the RCloud root directory!' 2>&1
+    echo '' 2>&1
+    exit 1
 fi
-cd ../..
-R CMD build rcloud.support && R CMD INSTALL rcloud.support_`sed -n 's/Version: *//p' rcloud.support/DESCRIPTION`.tar.gz || exit
-killall -9 RsrvSRV
+
+if [ `id -u` = 0 ]; then
+    echo "WARNING: running as root, skipping build step!"
+    echo ''
+else
+    sh scripts/build.sh || exit 1
+fi
+
+sudo_cmd=''
+## check if user switching is enabled - in that case we have to sudo
+if grep -i ^exec.match.user conf/rcloud.conf >/dev/null 2>&1; then
+    if [ `id -u` != 0 ]; then
+	echo "NOTE: user switching is enabled, using sudo"
+	sudo_cmd=sudo
+    fi
+fi
+
+pid=`cat run/rserve.pid 2>/dev/null`
+if [ -n "$pid" ]; then
+    ## FIXME: should we check that it's the right process?
+    echo " - shutdown RCloud server $pid"
+    ${sudo_cmd} kill -INT "$pid"
+fi
+
+## FIXME: this should go - it's the wrong place anyway
 rm -f conf/rcloud.auth
-./conf/start $*
+
+echo " - starting RCloud..."
+${sudo_cmd} conf/start $*
