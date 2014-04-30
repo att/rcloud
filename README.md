@@ -148,11 +148,8 @@ The safest way to install rcloud currently is to simply run the
 `scripts/fresh_start.sh` script. This will reinstall the
 `rcloud.support` package, recompile the javascript files (if you have
 node.js and the necessary dependencies installed), kill any old
-instances of Rcloud running, deauthorize all login tokens, and start a
-new version of Rcloud.
-
-FIXME: currently `fresh_start.sh` actually kills all Rserve instances
-via killall. Yes, this is blunt and stupid.
+instances of RCloud running, deauthorize all login tokens (only if
+SessionServer is not used), and start a new version of RCloud.
 
 ### Pitfalls
 
@@ -190,8 +187,8 @@ future releases.
 
 RCloud 1.0 uses Apache Solr to index gists and provide search
 functionality if desired. See `conf/solr/README.md` for
-details. Quick start: install tomcat (Debian/Ubuntu
-`sudo apt-get install tomcat7`) and run
+details. Quick start: install Java JDK (Debian/Ubuntu
+`sudo apt-get install openjdk-7-jdk`) and run
 
     cd $ROOT/conf/solr
     sh solrsetup.sh $ROOT/services/solr
