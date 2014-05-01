@@ -177,6 +177,12 @@ Notebook.create_controller = function(model)
                 current_gist_ = notebook;
                 model.update_files(notebook.files);
                 return notebook;
+            })
+            .catch(function(e) {
+                // this should not ever happen but there is no choice but to reload if it does
+                if(/non-existent/.test(e.message))
+                    editor.fatal_reload(e.message);
+                throw e;
             });
     }
     function refresh_buffers() {
