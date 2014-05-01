@@ -1,6 +1,30 @@
 ## RCloud develop branch
 
-## RCloud 0.9.1
+### Deprecations
+
+* the flat-file backend for RCS is to be considered deprecated. In
+  future releases we will only support the redis backend.
+
+### Features
+
+* `rcloud.install.js.module` now takes an optional boolean parameter
+  force to force reloading, to help with JS development.
+
+* `view.html` and `main.html` now support referencing notebooks by
+  name. Use, for example,
+  `view.html?user=cscheid&path=tests/project1/notebook1`.
+
+### Installation/Administration
+
+* RCloud configuration now defaults to using a single port for both
+  HTTP and WebSockets. This simplifies many things since there is now
+  only one place to configure the port (`rserve.conf`), only one port
+  to forward when needed and only one connection to setup TLS for if
+  needed. However, it requires more care when using a reverse proxy
+  since it has to also proxy WebSocket upgrade requests accordingly.
+
+
+## RCloud 0.9.2
 
 ### Features
 
@@ -11,8 +35,31 @@
 * Logout page includes a link to GitHub logout as well (#294)
   Note that the default for `goodbye.page` has changed to `/goodbye.R`
 
+* Users can get a notebook asset by name via the
+  `rcloud.get.notebook.asset` function. This is useful for getting to
+  files that have been uploaded to the notebook without needing to go
+  through the GitHub URL.
 
-### Bugfixes
+* Users can control warnings via the `rcloud.disable.warnings` and
+  `rcloud.enable.warnings` functions. This controls warnings for the
+  current RCloud session, and is not reset after each evaluation
+  (which happens, say, with `options(warn=-1)`). By default, warnings
+  are displayed, as before.
+
+* Users can export a notebook as a single R source file via the
+  'Export Notebook as R Source File' button in the Advanced menu.
+
+* Users can control echoing via the `rcloud.disable.echo` and
+  `rcloud.enable.echo` functions. When echoing is disabled, the
+  commands themselves do not appear in subsequent evaluation calls
+  (notice that the call to `rcloud.disable.echo` itself still
+  appears..) By default, echoing is enabled, as before.
+  In addition, the option `&quiet=1` to view.html now calls
+  `rcloud.disable.echo()` before any evaluation, mitigating the
+  flashing of code described
+  [here](https://github.com/att/rcloud/issues/216).
+
+### bugfixes
 
 * Empty markdown cells no longer cause an error (#173)
 

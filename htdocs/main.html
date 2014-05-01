@@ -6,6 +6,7 @@
     <link rel="stylesheet" type="text/css" href="css/jqtree.css"/>
     <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
     <link rel="stylesheet" type="text/css" href="css/rmarkdown.css"/>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-rcloud-tweaks.css"/>
     <link rel="stylesheet" type="text/css" href="css/main.css"/>
     <link rel="stylesheet" type="text/css" href="css/dc.css"/>
 
@@ -33,35 +34,24 @@
 
     <script type="text/javascript" src="lib/dependencies_bundle.js" charset="utf-8"></script>
     <script type="text/javascript">MathJax = undefined;</script>
-    <script type="text/javascript"
-	src="https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-    </script>
-        <!-- src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" -->
-    <script type="text/javascript">MathJax && MathJax.Hub.Config({tex2jax: {processEscapes: true,
-        processEnvironments: false, inlineMath: [ ['\\(','\\)'] ],
-        displayMath: [ ['\\[','\\]'] ] },
-        "HTML-CSS": { minScaleAdjust: 125 } });
-    </script>
-
     <script type="text/javascript" src="js/rcloud_bundle.js"></script>
-
     <script type="text/javascript" src="main.js"></script>
   </head>
-<body>
+<body style="overflow:hidden">
 <div class="navbar navbar-inverse navbar-fixed-top">
   <div>
     <!--div class="container"-->
       <div class="navbar-header">
         <a class="navbar-brand" href="#">RCloud</a>
       </div>
-      <div class="nav-collapse collapse">
+      <div class="nav-collapse">
         <ul class="nav navbar-nav">
           <li><span><a href="#" id="share-link" title="Shareable Link" class="btn btn-link navbar-btn" style="text-decoration:none" target="_blank"><i class="icon-share"></i></a></span></li> <!-- the span breaks the damn bootstrap li > a before .btn business-->
           <li><a href="#" id="fork-revert-notebook" style="display:none;">Fork</a></li>
           <li><button id="save-notebook" title="Save" type="button" class="btn btn-link navbar-btn disabled"><i class="icon-save"></i></button></li>
           <li><button id="star-notebook" title="Add to Interests" type="button" class="btn btn-link navbar-btn"><i class="icon-star-empty"></i><sub><span id="curr-star-count" /></sub></button></li>
           <li><button id="run-notebook" title="Run All" type="button" class="btn btn-link navbar-btn"><i class="icon-play"></i></button></li>
-          <li><a href="#" id="rename-notebook" title="Change Title">[<span id="notebook-title">Untitled</span>]</a></li>
+          <li><a href="#" id="rename-notebook" title="Change Title">[<span id="notebook-title">loading...</span>]</a></li>
         </ul>
         <ul class="nav navbar-nav navbar-right">
           <li class="dropdown">
@@ -72,11 +62,9 @@
               <li><a href="#" id="import-notebooks">Import External Notebooks</a></li>
               <li><a href="#" id="export-notebook-file">Export Notebook to File</a></li>
               <li><a href="#" id="import-notebook-file">Import Notebook from File</a></li>
+              <li><a href="#" id="export-notebook-as-r">Export Notebook as R Source File</a></li>
               <li><a href="#" id="show-source"><i class="icon-check"></i>&nbsp;Show Source</a></li>
               <li><a href="#" id="publish-notebook"><i class="icon-check"></i>&nbsp;Publish notebook</a></li>
-              <li class="divider"></li>
-              <li><span class="disabled"><div>&nbsp;&nbsp;ID: <span id="github-notebook-id"></span></li>
-              <li><span class="disabled" id="notebook-assets-header">&nbsp;&nbsp;&nbsp;Notebook assets</span></li>
             </ul>
           </li>
           <li class="divider-vertical"></li>
@@ -87,85 +75,83 @@
   </div>
 </div>
 
-<div class="container" id="main-div">
+<div class="container nopad" id="main-div">
   <div class="row">
-    <!--div class="col-md-1"></div-->
-    <div class="col-md-8">
-      <div id="tabs-1">
-        <div id="output" class="tab-div">
-        </div>
-
-        <div id="prompt-div">
-          <button style="float: right; width:20%;" id="new-md-cell-button">New RMarkdown cell</button>
-          <div id="command-prompt"
-               style="float: left; width:79%; height: 50px; background:#FFFFFF; border:1px solid #DDDDDD"></div>
-        </div>
-        <div style="padding:1em; clear:both"></div>
+    <div class="col-md-1 col-sm-1 no-padding" style="height:100%" id="left-column">
+      <div style="position: absolute; left:0; top:0px">
+        <svg height="20" width="20" id="notebook-clicker" style="position:absolute; left:0; top:0px">
+          <polygon points="0,0 20,0 0,20" style="fill:#222;stroke:none"/>
+        </svg>
+        <a id="left-pane-collapser"><i class="icon-minus" style="font-size:0.8em; color:#999; position:absolute; left:2px; top:1px; cursor:pointer"></i> </a>
       </div>
-    </div>
-    <div class="col-md-3" style="position:fixed;top:60;right:10">
       <div id="tabs-2">
         <div class="tab-div">
-          <div class="panel-group" id="accordion">
+          <div class="panel-group" id="accordion-left">
             <div class="panel panel-default">
-              <div class="panel-heading">
-                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">Notebooks</a>
-                <a class="header-button" href="#" id="new-notebook"><i class="icon-plus"></i></a>
+              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" data-target="#collapse-notebook-tree">
+                <a class="accordion-toggle left" href="#collapse-notebook-tree"><i class="icon-folder-open"></i> <span class="title-offset">Notebooks</span></a>
+                <a class="header-button" href="#" id="new-notebook" style="display:none"><i class="icon-plus"></i></a>
               </div>
-              <div id="collapseOne" class="panel-collapse collapse">
+              <div id="collapse-notebook-tree" class="panel-collapse collapse" data-colwidth="3" data-widgetheight="greedy">
+                <img height="100%" width="5px" src="img/right_bordergray.png" class="panel-shadow left" />
                 <div class="panel-body notebook-tree">
-                  <div id="editor-book-tree"></div>
+                  <div id="editor-book-tree" class="widget-vsize"></div>
                 </div>
               </div>
             </div>
+
             <div class="panel panel-default">
-              <div class="panel-heading">
-                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseFour">File Upload</a>
+              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" data-target="#collapse-search">
+                <a class="accordion-toggle left" href="#collapse-search"><i class="icon-search"></i> <span class="title-offset">Search</span></a>
               </div>
-              <div id="collapseFour" class="panel-collapse collapse in">
+              <div id="collapse-search" class="panel-collapse collapse" data-colwidth="4">
+                <img height="100%" width="5px" src="img/right_bordergray.png" class="panel-shadow left" />
                 <div class="panel-body">
-                  <div id="file-upload-div">
-                    <div class="progress-bar" id="file-progress"style="height: 5px;"></div>
-                    <input type="file" id="file"></input>
-		    <input type="checkbox" id="upload-to-notebook"> Upload to notebook</input>
-                    <input type="submit" id="upload-submit" value="Upload" style="float: right;"></input>
-                    <div style="clear: both"></div>
+                  <div id="search-wrapper" class="widget-vsize"> <!-- only for sizing -->
+                    <div id="search-header">
+                      <form id="search-form" action="#">Full-text search for <input type="text" value="" id="input-text-search"></input><button type='submit'>search</button>
+                      </form>
+                      <div id="search-summary"></div>
+                    </div>
+                    <div id="search-results-row">
+                      <div id="search-results-scroller">
+                        <div id="search-results"></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+
             <div class="panel panel-default">
-              <div class="panel-heading">
-                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">Search</a>
+              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" data-target="#collapse-help">
+                <a class="accordion-toggle left" href="#collapse-help"><i class="icon-question"></i> <span class="title-offset">Help</span></a>
               </div>
-              <div id="collapseTwo" class="panel-collapse collapse in">
-                <div class="panel-body">
-                  Coming soon!
-                  <!--  Search disabled for Version 0.9
-                  <div>Full-text search for <input type="text" value="" id="input-text-search"></input></div>
-                  <h4 id="input-text-source-results-title" style="padding-bottom: 0; margin-bottom: 0">Source results</h4>
-                  <table id="input-text-source-results-table">
-                  </table>
-                  <h4 id="input-text-history-results-title" style="padding-bottom: 0; margin-bottom: 0">History results</h4>
-                  <table id="input-text-history-results-table">
-                  </table>
-                  -->
+              <div id="collapse-help" class="panel-collapse collapse" data-colwidth="5">
+                <img height="100%" width="5px" src="img/right_bordergray.png" class="panel-shadow left" />
+                <div id="help-wrapper" class="panel-body widget-vsize">
+                  <div id="help-header">
+                    <form id="help-form" action="#">
+                      <div>Get help on <input type="text" value="" id="input-text-help"></input>
+                        <button type='submit'>help</button>
+                      </div>
+                    </form>
+                  </div>
+                  <div id="help-body"></div>
                 </div>
               </div>
             </div>
+
+            <!-- If only I could tell you the ways in which I'm not proud of this -->
             <div class="panel panel-default">
-              <div class="panel-heading">
-                <a class="accordion-toggle" data-toggle="collapse"
-                   data-parent="#accordion"
-                   href="#collapseFive">Comments (<span id="comment-count">0</span>)</a>
-              </div>
-              <div id="collapseFive" class="panel-collapse collapse in">
-                <div class="panel-body">
-                  <div id="comments-container"></div>
-                  <div id="comment-entry">
-                    <textarea id="comment-entry-body"></textarea>
-                    <input type="button" id="comment-submit" value="comment"></input>
-                  </div>
+              <div id="collapseSix" class="panel-collapse out">
+                <div class="panel-body"
+                     style="border-top-color: transparent; background-color: #777">
+                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
                 </div>
               </div>
             </div>
@@ -173,7 +159,151 @@
         </div>
       </div>
     </div>
-    <div class="col-md-1"></div>
+    <div class="col-md-1 col-sm-1 no-padding" id="fake-left-column"></div>
+    <div class="col-md-10 col-sm-10 no-padding" id="middle-column">
+      <div id="rcloud-cellarea">
+        <div id="output" class="tab-div">
+        </div>
+
+        <div id="end-of-output"></div>
+
+        <div id="prompt-div" class="rcloud-prompt">
+          <div class="cell-status">
+            <div class="cell-controls">
+              <table>
+                <td><span id="insert-new-cell" class="fontawesome-button"><i class="icon-plus"></i></span></td>
+                <td>
+                  <select id="insert-cell-language" class="form-control">
+                    <option selected>R</option>
+                    <option>Markdown</option>
+                  </select>
+                </td>
+              </table>
+            </div>
+          </div>
+
+          <div id="command-prompt" style="float: left; width:100%;
+          height: 50px; background:#FFFFFF; border:1px solid
+          #DDDDDD"></div>
+        </div>
+
+      </div>
+    </div>
+    <div class="col-md-1 col-sm-1 no-padding" style="height:100%; min-height: 0" id="right-column">
+      <div id="right-tabs">
+        <div class="tab-div">
+          <div style="position: absolute; right:0; top:0px">
+            <svg height="20" width="20" id="notebook-clicker" style="position:absolute; right:0; top:0px">
+              <polygon points="0,0 20,0 20,20" style="fill:#222;stroke:none"/>
+            </svg>
+            <a id="right-pane-collapser"><i class="icon-minus" style="font-size:0.8em; color:#999; position:absolute; right:2px; top:1px; cursor:pointer"></i> </a>
+          </div>
+          <div class="panel-group" id="accordion-right">
+
+            <div class="panel panel-default">
+              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion-right" data-target="#collapse-assets">
+		<a class="accordion-toggle right" href="#collapse-assets"><span class="title-offset">Assets</span><div style="position: relative"><i class="icon-copy"></i></div>&nbsp;</a>
+              </div>
+              <div id="collapse-assets" class="panel-collapse collapse" data-colwidth="4" data-widgetheight="greedy">
+                <img height="100%" width="5px" src="img/left_bordergray.png" class="panel-shadow right" />
+                <div id="scratchpad-wrapper" class="panel-body" style="padding:0;border:0">
+                  <div id="asset-area">
+                    <div id="asset-list-wrapper">
+                      <ul class="nav nav-tabs" id="asset-list"
+                          style="background-color:white; padding-top:5px;
+                                 padding-left: 5px"><li id="new-asset"><a href="#">[New Asset]</a></li></ul>
+                    </div>
+                    <div id="scratchpad-editor-wrapper">
+                      <div id="scratchpad-editor" class="widget-vsize">
+                        <a id="asset-link" target="_blank" href="#">link</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel panel-default">
+              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion-right" data-target="#collapse-file-upload">
+                <a class="accordion-toggle right" href="#collapse-file-upload"><div style="position: relative"><i class="icon-upload"></i></div>&nbsp;<span class="title-offset">File Upload</span></a>
+              </div>
+              <div id="collapse-file-upload" class="panel-collapse collapse" data-colwidth="2">
+                <img height="100%" width="5px" src="img/left_bordergray.png" class="panel-shadow right" />
+                <div class="panel-body">
+                  <div id="file-upload-div" class="widget-vsize">
+                    <div id="file-upload-wrapper">
+                      <div id="file-upload-controls">
+                        <input type="file" id="file" style="display: inline;"></input>
+                        <input type="submit" id="upload-submit" value="Upload" style="clear: both; float: right;"></input>
+                        <br /><input type="checkbox" id="upload-to-notebook"> Upload to notebook</input>
+                        <div class="progress" style="display:none">
+                          <div id="progress-bar" class="progress-bar" id="file-progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
+                        </div>
+                      </div>
+                      <div id="file-upload-results-row">
+                        <div id="file-upload-results-scroller">
+                          <div id="file-upload-results">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel panel-default right">
+              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion-right" data-target="#collapse-comments">
+                <a class="accordion-toggle right"
+                   href="#collapse-comments"><div style="position:relative"><i class="icon-comments"></i></div>&nbsp;<span class="title-offset"><span id="comment-count">0</span> Comments</span></a>
+              </div>
+              <div id="collapse-comments" class="panel-collapse collapse" data-colwidth="2">
+                <img height="100%" width="5px" src="img/left_bordergray.png" class="panel-shadow right" />
+                <div class="panel-body">
+                  <div id="comments-wrapper">
+                    <div id="comments-qux" class="widget-vsize">
+                      <div id="comments-container"></div>
+                      <div id="comment-entry">
+                        <textarea id="comment-entry-body"></textarea>
+                        <input type="button" id="comment-submit" value="comment"></input>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel panel-default right">
+              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion-right" data-target="#collapse-session-info">
+                <a class="accordion-toggle right"
+                   href="#collapse-session-info"><div style="position:relative"><i class="icon-info"></i></div>&nbsp;<span class="title-offset">Session</span></a>
+              </div>
+              <div id="collapse-session-info" class="panel-collapse collapse" data-colwidth="3">
+                <img height="100%" width="5px" src="img/left_bordergray.png" class="panel-shadow right" />
+                <div class="panel-body" id="session-info-panel">
+                  <div id="session-info" class="widget-vsize"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- If only I could tell you the ways in which I'm not proud of this -->
+            <div class="panel panel-default">
+              <div id="collapseSix" class="panel-collapse out">
+                <div class="panel-body"
+                     style="border-top-color: transparent; background-color: #777">
+                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -193,5 +323,13 @@
 <script src="editor_tab.js"></script>
 <script src="shell_tab.js"></script>
 <script src="wdcplot.js"></script>
+<script type="text/javascript"
+        src="https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/javascript">MathJax && MathJax.Hub.Config({tex2jax: {processEscapes: true,
+  processEnvironments: false, inlineMath: [ ['\\(','\\)'] ],
+  displayMath: [ ['\\[','\\]'] ] },
+  "HTML-CSS": { minScaleAdjust: 125 } });
+</script>
 
 </body></html>

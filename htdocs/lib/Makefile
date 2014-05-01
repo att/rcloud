@@ -13,17 +13,22 @@ ace_bundle.js:	\
 	js/ace/mode-markdown.js \
         js/ace/sweave_background_highlighter.js \
 	js/ace/ext-language_tools.js \
-	js/ace/ext-searchbox.js
+	js/ace/ext-searchbox.js \
+	js/ace/mode-python.js \
+	js/ace/mode-sh.js
+
 
 dependencies_bundle.js: \
 	js/jquery-1.10.2.js \
+	js/laconic.js \
 	js/jquery.cookies.2.2.0.js \
 	js/tree.jquery.js \
-	js/jquery-ui-1.8.18.custom.min.js \
+	js/jquery-ui-1.10.4.custom.min.js \
 	js/jquery.scrollto.js \
 	js/underscore-min.js \
 	js/d3.v3.js \
 	js/lux.js \
+	js/bluebird.js \
 	js/crossfilter.js \
 	js/dc.js \
 	js/colorbrewer.js \

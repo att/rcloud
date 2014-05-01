@@ -1,4 +1,4 @@
-RCloud 0.8 beta release
+RCloud 0.9.2 beta release
 -----------------------
 
 Requirements:
@@ -27,7 +27,7 @@ github.client.secret entries in
 conf/rcloud.conf
 
 to match the application in Github you have created (refer to
-"Github authentication" in https://github.com/cscheid/rcloud)
+"Github authentication" in https://github.com/att/rcloud/blob/develop/README.md)
 Once that is done, you can start up the server using
 
 conf/start
