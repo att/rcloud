@@ -9,20 +9,9 @@
 # to invoke, run
 # ROOT=<rcloud-root-dir> R -f upgradeRCS1_0.R
 
-root <- Sys.getenv("ROOT")
-if (!nzchar(root)) {
-  if (file.exists("/data/rcloud/conf/rcloud.conf")) {
-    root <- "/data/rcloud"
-    Sys.setenv(ROOT=root)
-  } else stop("ERROR: ROOT not set - please set ROOT first before using")
-}
-if (!file.exists(file.path(root, "conf", "rcloud.conf")))
-  stop("ERROR: ROOT is invalid - it must point to the root of the RCloud installation")
-
 Sys.setenv(RCS_SILENCE_LOADCHECK=1)
 require('rcloud.support')
-rcloud.support:::configure.rcloud()
-rcloud.support:::start.rcloud.anonymously()
+rcloud.support:::configure.rcloud("script")
 
 rcs.key <- rcloud.support:::rcs.key
 
@@ -52,6 +41,16 @@ migrate.notebook.keys <- function(keep) {
   }
   nb_migrate(rcs.list("notebook/*/*/*"))
   nb_migrate(rcs.list("notebook/*/*"))
+
+  # migrate any new stars (old notebooks, new stars)
+  oldstarred <- Filter(function(k) !keep(id_part(k)), rcs.list("notebook/*/stars/*"))
+  Map(function(dest) {
+    if(is.null(rcs.get(dest))) {
+      rcs.set(dest, TRUE)
+      count <- rcs.incr(usr.key(user = ".notebook", notebook = id_part(dest), "starcount"))
+      cat("Star notebook", id_part(dest), "to count", count, "\n", sep=' ')
+    }
+  }, gsub("notebook", ".notebook", oldstarred))
 }
 
 # notebook metadata now gets stored globally under .notebook
@@ -96,7 +95,7 @@ explode.user.configs <- function(keep) {
       # options
       opts <- usr.key(user = username, notebook = "system", "config");
 
-      # add any notebooks created in old RCloud
+      # add any new notebooks created in old RCloud
       newbooks <- Filter(keep, names(config$all_books))
       if(length(newbooks)) {
         lapply(rcs.key(opts, "notebooks", newbooks),

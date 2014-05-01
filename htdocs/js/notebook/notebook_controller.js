@@ -147,15 +147,25 @@ Notebook.create_controller = function(model)
         }
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
-            var files = {};
+            var files = {}, creates = {};
             // play the changes in order - they must be sequenced so this makes sense
             _.each(changes, function(change) {
                 if(change.erase || change.rename) {
-                    files[change.filename] = null;
+                    if(creates[change.filename])
+                        delete files[change.filename];
+                    else
+                        files[change.filename] = null;
                     if(change.rename)
                         files[change.rename] = {content: change.content};
                 }
-                else files[change.filename] = {content: change.content};
+                else {
+                    // if the first time we see a filename in the changeset is a create,
+                    // we need to remember that so that if the last change is a delete,
+                    // we just send "no change"
+                    if(change.create && !(change.filename in files))
+                        creates[change.filename] = true;
+                    files[change.filename] = {content: change.content};
+                }
             });
             return {files: files};
         }
@@ -167,6 +177,12 @@ Notebook.create_controller = function(model)
                 current_gist_ = notebook;
                 model.update_files(notebook.files);
                 return notebook;
+            })
+            .catch(function(e) {
+                // this should not ever happen but there is no choice but to reload if it does
+                if(/non-existent/.test(e.message))
+                    editor.fatal_reload(e.message);
+                throw e;
             });
     }
     function refresh_buffers() {

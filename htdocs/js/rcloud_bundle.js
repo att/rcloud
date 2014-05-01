@@ -247,7 +247,10 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         rcloud.help = function(topic) {
-            return rcloud_ocaps.helpAsync(topic);
+            return rcloud_ocaps.helpAsync(topic).then(function(found) {
+                if(!found)
+                    RCloud.UI.help_frame.display_content("<h2>No help found for <em>" + topic + "</em></h2>");
+            });
         };
 
         rcloud.get_users = function() {
@@ -960,18 +963,22 @@ ui_utils.editable = function(elem$, command) {
     var old_opts = options(),
         new_opts = old_opts;
     if(_.isObject(command)) {
-        var defaults = {
-            on_change: function() { return true; },
-            allow_edit: true,
-            inactive_text: elem$.text(),
-            active_text: elem$.text(),
-            select: function(el) {
-                var range = document.createRange();
-                range.selectNodeContents(el);
-                return range;
-            }
-        };
-        new_opts = $.extend(old_opts || defaults, command);
+        var defaults;
+        if(old_opts)
+            defaults = $.extend({}, old_opts);
+        else
+            defaults = {
+                on_change: function() { return true; },
+                allow_edit: true,
+                inactive_text: elem$.text(),
+                active_text: elem$.text(),
+                select: function(el) {
+                    var range = document.createRange();
+                    range.selectNodeContents(el);
+                    return range;
+                }
+            };
+        new_opts = $.extend(defaults, command);
         elem$.data('__editable', new_opts);
     }
     else {
@@ -1189,6 +1196,10 @@ Notebook.Buffer.create_model = function(content, language) {
                 if(!is_empty(content)) {
                     if(content != checkpoint_) // * => stuff: create/modify
                         change.content = content;
+                    // we need to remember creates for one round
+                    // (see notebook_controller's update_notebook)
+                    if(is_empty(checkpoint_))
+                        change.create = true;
                     // else no-op
                 }
                 else {
@@ -1556,6 +1567,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         language_updated: function() {
             language = cell_model.language();
             ace_div.css({ 'background-color': languages[language]["background-color"] });
+            select.val(cell_model.language());
         },
         result_updated: function(r) {
             r_result_div.hide();
@@ -2372,15 +2384,25 @@ Notebook.create_controller = function(model)
         }
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
-            var files = {};
+            var files = {}, creates = {};
             // play the changes in order - they must be sequenced so this makes sense
             _.each(changes, function(change) {
                 if(change.erase || change.rename) {
-                    files[change.filename] = null;
+                    if(creates[change.filename])
+                        delete files[change.filename];
+                    else
+                        files[change.filename] = null;
                     if(change.rename)
                         files[change.rename] = {content: change.content};
                 }
-                else files[change.filename] = {content: change.content};
+                else {
+                    // if the first time we see a filename in the changeset is a create,
+                    // we need to remember that so that if the last change is a delete,
+                    // we just send "no change"
+                    if(change.create && !(change.filename in files))
+                        creates[change.filename] = true;
+                    files[change.filename] = {content: change.content};
+                }
             });
             return {files: files};
         }
@@ -2392,6 +2414,12 @@ Notebook.create_controller = function(model)
                 current_gist_ = notebook;
                 model.update_files(notebook.files);
                 return notebook;
+            })
+            .catch(function(e) {
+                // this should not ever happen but there is no choice but to reload if it does
+                if(/non-existent/.test(e.message))
+                    editor.fatal_reload(e.message);
+                throw e;
             });
     }
     function refresh_buffers() {
@@ -2705,6 +2733,7 @@ Notebook.is_part_name = function(filename) {
 (function() {
 
 // FIXME this is just a proof of concept - using Rserve console OOBs
+// FIXME this should use RCloud.session_pane
 var append_session_info = function(msg) {
     if(!$('#session-info').length)
         return; // workaround for view mode
@@ -2723,9 +2752,8 @@ var append_session_info = function(msg) {
 // FIXME this needs to go away as well.
 var oob_handlers = {
     "browsePath": function(v) {
-        var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
-        $("#help-frame").attr("src", x);
-        RCloud.UI.help_frame.show();
+        var url=" "+ window.location.protocol + "//" + window.location.host + v+" ";
+        RCloud.UI.help_frame.display_href(url);
     },
     "pager": function(v) {
         var files = v[0], header = v[1], title = v[2];
@@ -2735,8 +2763,7 @@ var oob_handlers = {
                 html += "<h3>" + header[i] + "</h3>\n";
             html += "<pre>" + files[i] + "</pre>";
         }
-        $("#help-frame").contents().find('body').html(html);
-        RCloud.UI.help_frame.show();
+        RCloud.UI.help_frame.display_content(html);
     },
     "editor": function(v) {
         // what is an object to edit, content is file content to edit
@@ -3345,6 +3372,14 @@ RCloud.UI.help_frame = {
         $("#help-body").attr('data-widgetheight', "greedy");
         $("#collapse-help").trigger('size-changed');
         RCloud.UI.left_panel.collapse($("#collapse-help"), false);
+    },
+    display_content: function(content) {
+        $("#help-frame").contents().find('body').html(content);
+        this.show();
+    },
+    display_href: function(href) {
+        $("#help-frame").attr("src", href);
+        this.show();
     }
 };
 RCloud.UI.init = function() {

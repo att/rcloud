@@ -288,18 +288,22 @@ ui_utils.editable = function(elem$, command) {
     var old_opts = options(),
         new_opts = old_opts;
     if(_.isObject(command)) {
-        var defaults = {
-            on_change: function() { return true; },
-            allow_edit: true,
-            inactive_text: elem$.text(),
-            active_text: elem$.text(),
-            select: function(el) {
-                var range = document.createRange();
-                range.selectNodeContents(el);
-                return range;
-            }
-        };
-        new_opts = $.extend(old_opts || defaults, command);
+        var defaults;
+        if(old_opts)
+            defaults = $.extend({}, old_opts);
+        else
+            defaults = {
+                on_change: function() { return true; },
+                allow_edit: true,
+                inactive_text: elem$.text(),
+                active_text: elem$.text(),
+                select: function(el) {
+                    var range = document.createRange();
+                    range.selectNodeContents(el);
+                    return range;
+                }
+            };
+        new_opts = $.extend(defaults, command);
         elem$.data('__editable', new_opts);
     }
     else {

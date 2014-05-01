@@ -152,7 +152,10 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         rcloud.help = function(topic) {
-            return rcloud_ocaps.helpAsync(topic);
+            return rcloud_ocaps.helpAsync(topic).then(function(found) {
+                if(!found)
+                    RCloud.UI.help_frame.display_content("<h2>No help found for <em>" + topic + "</em></h2>");
+            });
         };
 
         rcloud.get_users = function() {

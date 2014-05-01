@@ -1,6 +1,7 @@
 (function() {
 
 // FIXME this is just a proof of concept - using Rserve console OOBs
+// FIXME this should use RCloud.session_pane
 var append_session_info = function(msg) {
     if(!$('#session-info').length)
         return; // workaround for view mode
@@ -19,9 +20,8 @@ var append_session_info = function(msg) {
 // FIXME this needs to go away as well.
 var oob_handlers = {
     "browsePath": function(v) {
-        var x=" "+ window.location.protocol + "//" + window.location.host + v+" ";
-        $("#help-frame").attr("src", x);
-        RCloud.UI.help_frame.show();
+        var url=" "+ window.location.protocol + "//" + window.location.host + v+" ";
+        RCloud.UI.help_frame.display_href(url);
     },
     "pager": function(v) {
         var files = v[0], header = v[1], title = v[2];
@@ -31,8 +31,7 @@ var oob_handlers = {
                 html += "<h3>" + header[i] + "</h3>\n";
             html += "<pre>" + files[i] + "</pre>";
         }
-        $("#help-frame").contents().find('body').html(html);
-        RCloud.UI.help_frame.show();
+        RCloud.UI.help_frame.display_content(html);
     },
     "editor": function(v) {
         // what is an object to edit, content is file content to edit

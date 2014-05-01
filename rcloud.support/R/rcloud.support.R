@@ -119,7 +119,7 @@ rcloud.unauthenticated.call.FastRWeb.notebook <- function(id, version = NULL, ar
 }
 
 rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
-  result <- rcloud.call.notebook(id, version, args)
+  result <- rcloud.call.notebook(id, version, NULL)
   if (is.function(result)) {
     require(FastRWeb)
     l <- as.list(as.WebResult(do.call(result, args, envir=environment(result))))
@@ -372,7 +372,12 @@ rcloud.get.completions <- function(text, pos) {
 }
 
 rcloud.help <- function(topic) {
-  print(help(topic))
+  result <- help(topic)
+  if(length(result)) {
+    print(result)
+    TRUE
+  }
+  else FALSE 
 }
 
 ## FIXME: won't work - uses a global file!
@@ -535,6 +540,8 @@ rcloud.set.notebook.info <- function(id, info) {
 
 rcloud.purl.source <- function(contents)
 {
+  if(length(contents)==1 && contents[[1]]=="")
+    return(contents)
   input.file <- tempfile(fileext="Rmd")
   output.file <- tempfile(fileext="R")
   cat(contents, file = input.file)

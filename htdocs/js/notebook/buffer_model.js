@@ -73,6 +73,10 @@ Notebook.Buffer.create_model = function(content, language) {
                 if(!is_empty(content)) {
                     if(content != checkpoint_) // * => stuff: create/modify
                         change.content = content;
+                    // we need to remember creates for one round
+                    // (see notebook_controller's update_notebook)
+                    if(is_empty(checkpoint_))
+                        change.create = true;
                     // else no-op
                 }
                 else {
