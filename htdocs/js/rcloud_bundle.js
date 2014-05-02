@@ -170,6 +170,7 @@ RCloud.create = function(rcloud_ocaps) {
 
     function setup_unauthenticated_ocaps() {
         var paths = [
+            ["version_info"],
             ["anonymous_session_init"],
             ["prefix_uuid"],
             ["get_conf_value"],
@@ -207,6 +208,10 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.github_token = function() {
             return $.cookies.get('token');
+        };
+
+        rcloud.version_info = function() {
+            return rcloud_ocaps.version_infoAsync.apply(null, arguments);
         };
 
         rcloud.anonymous_session_init = function() {

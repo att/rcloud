@@ -40,6 +40,7 @@ unauthenticated.ocaps <- function()
     # ocaps used by rcloud.js
     rcloud=list(
       authenticated = FALSE,
+      version_info = make.oc(rcloud.info),
       anonymous_session_init = make.oc(rcloud.anonymous.session.init),
       prefix_uuid = make.oc(rcloud.prefix.uuid),
       reset_session = make.oc(rcloud.reset.session),
