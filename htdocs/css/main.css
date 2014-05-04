@@ -240,8 +240,7 @@ rect.frame {
 }
 
 .notebook-tree {
-    height: 450px;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 .header-button {
@@ -257,11 +256,6 @@ rect.frame {
 
 .tooltip {
     z-index: 100000;
-}
-
-.help-iframe {
-    width: 100%;
-    height: 100%;
 }
 
 /**********************************************************************
@@ -298,6 +292,8 @@ rect.frame {
 }
 
 #main-div {
+    top: 51px; left: 0px; right: 0px; bottom: 0px;
+    overflow: hidden;
     padding-bottom: 2.5em; /* must be .footer height + 2 * .footer.padding */
 }
 
@@ -331,6 +327,10 @@ form input.linkbox {
 
 .nav li sub {
     color: #ddd;
+}
+
+#fatal-dialog .modal-content {
+    background-color: #f2dede;
 }
 
 /******************************************************************************/
@@ -390,12 +390,39 @@ li.jqtree-selected .notebook-commands {
     margin: 0;
 }
 
-#search-results {
-    overflow: auto;
-    display: none;
+/******************************************************************************/
+
+#search-wrapper {
+    display: table;
+    table-layout: fixed;
+    height: 100%;
+    width: 100%;
 }
+
+#search-wrapper td, #search-wrapper tr {
+    padding: 0;
+    margin: 0;
+}
+
+#search-header {
+    display: table-row;
+    width: 100%;
+}
+
 #search-summary {
     display: none;
+}
+
+#search-results-row {
+    display: none; // will be display: table-row;
+    height: 100%;
+    width: 100%;
+}
+
+#search-results-scroller {
+    overflow: auto;
+    width: 100%;
+    height: 100%;
 }
 
 .search-result-item {
@@ -408,6 +435,10 @@ li.jqtree-selected .notebook-commands {
 .search-result-modified-date {
     margin-left: 1ex;
 }
+.search-result-part-name {
+    font-size:11px;
+    padding-left:1em;
+}
 .search-result-line-number {
     width:10px;
     border-right:solid 1px gray;
@@ -417,12 +448,113 @@ li.jqtree-selected .notebook-commands {
     padding-left: 0.5ex;
 }
 
+/******************************************************************************/
+
+#help-wrapper {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
+    padding: 1ex;
+}
+
+#help-header {
+    display: table-row;
+}
+
+#help-body {
+    display: none;
+    width: 100%;
+    height: 100%;
+}
+
 #help-frame {
     width: 100%;
-    height: 50vh;
+    height: 100%;
 }
 
 /******************************************************************************/
+
+#asset-area {
+    display: table;
+    table-layout: fixed;
+    padding:1px;
+    margin:0px;
+    background-color:#ddd;
+    width: 100%;
+    height: 100%;
+}
+
+#asset-list-wrapper {
+    display: table-row;
+}
+
+#scratchpad-editor-wrapper {
+    display: table-row;
+    height: 100%;
+    width: 100%;
+}
+
+#scratchpad-editor {
+    position: relative;
+    height: 100%;
+    width: 100%;
+}
+
+#asset-link {
+    position: absolute;
+    right: 1ex;
+    bottom: 1ex;
+    z-index: 10000;
+    display: none;
+}
+
+/******************************************************************************/
+#file-upload-div {
+    height: 100%;
+    width: 100%;
+}
+
+#file-upload-wrapper {
+    display: table;
+    table-layout: fixed;
+    height: 100%;
+    width: 100%;
+}
+
+#file-upload-controls {
+    display: table-row;
+}
+
+#file-upload-results .progress {
+    margin-top: 7px;
+    margin-bottom: 7px;
+}
+
+#file-upload-results-row {
+    display: table-row;
+    height: 100%;
+}
+
+#file-upload-results-scroller {
+    height: 100%;
+    overflow-y: auto;
+}
+
+#file-upload-results > .alert {
+    margin-bottom: 10px;
+    padding: 10px 15px;
+}
+
+#file-upload-results .close {
+    line-height: 63%;
+}
+
+/******************************************************************************/
+
+#comments-wrapper {
+    height: 100%;
+    overflow-y: auto;
+}
 
 .comment-container {
     margin-bottom: .4em;
@@ -439,7 +571,28 @@ li.jqtree-selected .notebook-commands {
 }
 
 #comment-entry {
-    width: 100%
+    width: 100%;
+    padding-bottom: 2px; // scroll was cutting it off
+}
+
+/******************************************************************************/
+
+#session-info-panel {
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 5px;
+}
+
+#session-info-out {
+    word-wrap: normal;
+    white-space: pre;
+    max-width: none;
+    display: inline-block;
+}
+
+.session-error.spare {
+    padding: .75ex 3em .75ex .75ex;
+    margin: 0
 }
 
 /******************************************************************************/
@@ -498,18 +651,17 @@ pre {
 }
 
 .tab-div {
-    margin-bottom: 51px;
 }
 
-.rcloud-cellarea {
-    height: 80vh;
-    overflow-y: scroll;
+#rcloud-cellarea {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
     overflow-x: hidden;
 }
 
 .rcloud-prompt {
-    position: fixed;
-    bottom: 0;
+    width: 100%;
     z-index: 10;
     padding: 0;
     background-color: #777;
@@ -518,6 +670,10 @@ pre {
 .btn {
     border-radius: 0;
     font-size: inherit;
+}
+
+#prompt-div {
+    padding-top: 5px;
 }
 
 #prompt-div button {
@@ -557,7 +713,6 @@ a.accordion-toggle:hover {
 
 a.accordion-toggle [class^="icon-"], a.accordion-toggle [class*="icon-"] {
     position: relative;
-    top: 2px;
 }
 
 a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="icon-"] {
@@ -567,6 +722,7 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
 
 .panel-default > .panel-heading {
     background-color: #777;
+    cursor: pointer;
 }
 
 .panel-default > .panel-heading > .accordion-toggle {
@@ -638,7 +794,6 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
 }
 .r-result-div pre code:not(.r) {
     width: 800px;
-    margin-left: auto;
     margin-right: auto;
     border-left: 1px solid rgba(0,0,0,0.15);
     border-right: 1px solid rgba(0,0,0,0.15);

@@ -34,11 +34,16 @@ code {
     border-radius: 0;
 }
 
+.collapsing {
+    -webkit-transition: none;
+    transition: none;
+}
+
 .panel-group .panel {
     border-radius: 0;
 }
 
-.container {
+.container.nopad {
     padding-left: 0;
     padding-right: 0;
 }
@@ -46,6 +51,7 @@ code {
 .no-padding {
     padding-left: 0;
     padding-right: 0;
+    min-height: 0;
 }
 
 .row {
@@ -59,6 +65,11 @@ code {
 
 .panel-default > .panel-heading {
     border-style: none;
+}
+
+div.panel-heading:hover {
+    background-color: #888;
+    color: #0f0;
 }
 
 .panel-default {

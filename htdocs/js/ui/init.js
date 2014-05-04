@@ -13,6 +13,7 @@ RCloud.UI.init = function() {
         if(result !== null)
             shell.open_from_github(result);
     });
+
     $("#import-notebooks").click(function() {
         shell.import_notebooks();
     });
@@ -30,33 +31,61 @@ RCloud.UI.init = function() {
     $('#import-notebook-file').click(function() {
         shell.import_notebook_file();
     });
+    $("#file").change(function() {
+        $("#progress-bar").css("width", "0%");
+    });
     $("#upload-submit").click(function() {
+        if($("#file")[0].files.length===0)
+            return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
+        var replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
+
+        function results_append($div) {
+            $("#file-upload-results").append($div);
+            $("#collapse-file-upload").trigger("size-changed");
+            ui_utils.on_next_tick(function() {
+                ui_utils.scroll_to_after($("#file-upload-results"));
+            });
+        }
+
         function success(lst) {
             var path = lst[0], file = lst[1], notebook = lst[2];
-            $("#file-upload-div").append(
+            results_append(
                 bootstrap_utils.alert({
                     "class": 'alert-info',
-                    text: (to_notebook ? "Asset " : "File ") + file.name + " uploaded.",
+                    text: (to_notebook ? "Asset " : "File ") + file.name + (replacing ? " replaced." : " uploaded."),
                     on_close: function() {
                         $(".progress").hide();
+                        $("#collapse-file-upload").trigger("size-changed");
                     }
                 })
             );
-            if(to_notebook)
-                editor.update_notebook_file_list(notebook.files);
+            if(to_notebook) {
+                var content = notebook.files[file.name].content;
+                var promise_controller;
+                if(replacing) {
+                    replacing.content(content);
+                    promise_controller = shell.notebook.controller.update_asset(replacing)
+                        .return(replacing.controller);
+                }
+                else {
+                    promise_controller = shell.notebook.controller.append_asset(content, file.name);
+                }
+                promise_controller.then(function(controller) {
+                    controller.select();
+                });
+            }
         };
 
-        // FIXME check for more failures besides file exists
-        function failure() {
+        function failure(what) {
             var overwrite_click = function() {
+                $("#collapse-file-upload").trigger("size-changed");
                 rcloud.upload_file(true, function(err, value) {
                     if (err) {
-                        var msg = exception_value;
-                        $("#file-upload-div").append(
+                        $("#file-upload-results").append(
                             bootstrap_utils.alert({
                                 "class": 'alert-danger',
-                                text: msg
+                                text: err
                             })
                         );
                     } else {
@@ -65,14 +94,26 @@ RCloud.UI.init = function() {
                 });
             };
             var alert_element = $("<div></div>");
-            var p = $("<p>File exists. </p>");
+            var p;
+            if(/exists/.test(what)) {
+                p = $("<p>File exists. </p>");
+                var overwrite = bootstrap_utils
+                        .button({"class": 'btn-danger'})
+                        .click(overwrite_click)
+                        .text("Overwrite");
+                p.append(overwrite);
+            }
+            else if(what==="empty") {
+                p = $("<p>File is empty.</p>");
+            }
+            else if(what==="badname") {
+                p = $("<p>Filename not allowed.</p>");
+            }
+            else {
+                p = $("<p>(unexpected) " + what + "</p>");
+            }
             alert_element.append(p);
-            var overwrite = bootstrap_utils
-                .button({"class": 'btn-danger'})
-                .click(overwrite_click)
-                .text("Overwrite");
-            p.append(overwrite);
-            $("#file-upload-div").append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
+            results_append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
         }
 
         var upload_function = to_notebook
@@ -88,42 +129,71 @@ RCloud.UI.init = function() {
     });
 
     RCloud.UI.left_panel.init();
+    RCloud.UI.middle_column.init();
     RCloud.UI.right_panel.init();
+    RCloud.UI.session_pane.init();
 
     var non_notebook_panel_height = 246;
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
 
-    $("#search").submit(function() {
+    $("#search-form").submit(function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         var qry = $('#input-text-search').val();
+        $('#input-text-search').blur();
         RCloud.UI.search.exec(qry);
         return false;
     });
+    $('#help-form').submit(function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var topic = $('#input-text-help').val();
+        $('#input-text-help').blur();
+        rcloud.help(topic);
+        return false;
+    });
+
+    $("#collapse-search").data("panel-sizer", function(el) {
+        var padding = RCloud.UI.collapsible_column.default_padder(el);
+        var height = 24 + $('#search-summary').height() + $('#search-results').height();
+        height += 30; // there is only so deep you can dig
+        return {height: height, padding: padding};
+    });
+
+    // hmm maybe greedy isn't greedy enough
+    $("#collapse-help").data("panel-sizer", function(el) {
+        if($('#help-body').css('display') === 'none')
+            return RCloud.UI.collapsible_column.default_sizer(el);
+        else return {
+            padding: RCloud.UI.collapsible_column.default_padder(el),
+            height: 9000
+        };
+    });
+
+    $("#collapse-assets").data("panel-sizer", function(el) {
+        return {
+            padding: RCloud.UI.collapsible_column.default_padder(el),
+            height: 9000
+        };
+    });
+
+    $("#collapse-file-upload").data("panel-sizer", function(el) {
+        var padding = RCloud.UI.collapsible_column.default_padder(el);
+        var height = 24 + $('#file-upload-controls').height() + $('#file-upload-results').height();
+        //height += 30; // there is only so deep you can dig
+        return {height: height, padding: padding};
+    });
 
     $("#insert-new-cell").click(function() {
-        debugger;
         var language = $("#insert-cell-language option:selected").text();
-        if (language === 'Markdown') {
-            shell.new_markdown_cell("");
-        } else if (language === 'R') {
-            shell.new_interactive_cell("", false);
-        }
+        shell.new_cell("", language, false);
         var vs = shell.notebook.view.sub_views;
         vs[vs.length-1].show_source();
     });
 
-    // $("#new-md-cell-button").click(function() {
-    //     shell.new_markdown_cell("");
-    //     var vs = shell.notebook.view.sub_views;
-    //     vs[vs.length-1].show_source();
-    // });
-    // $("#new-r-cell-button").click(function() {
-    //     shell.new_interactive_cell("", false);
-    //     var vs = shell.notebook.view.sub_views;
-    //     vs[vs.length-1].show_source();
-    // });
     $("#rcloud-logout").click(function() {
-	// let the server-side script handle this so it can
-	// also revoke all tokens
+        // let the server-side script handle this so it can
+        // also revoke all tokens
         window.location.href = '/logout.R';
     });
 
@@ -144,6 +214,8 @@ RCloud.UI.init = function() {
             items: "> .notebook-cell",
             start: function(e, info) {
                 $(e.toElement).addClass("grabbing");
+                // http://stackoverflow.com/questions/6140680/jquery-sortable-placeholder-height-problem
+                info.placeholder.height(info.item.height());
             },
             stop: function(e, info) {
                 $(e.toElement).removeClass("grabbing");
@@ -156,7 +228,8 @@ RCloud.UI.init = function() {
             },
             handle: " .ace_gutter-layer",
             scroll: true,
-            scrollSensitivity: 40
+            scrollSensitivity: 40,
+            forcePlaceholderSize: true
         });
     }
     make_cells_sortable();
@@ -176,5 +249,4 @@ RCloud.UI.init = function() {
     $("#edit-notebook").click(function() {
         window.location = "main.html?notebook=" + shell.gistname();
     });
-
 };

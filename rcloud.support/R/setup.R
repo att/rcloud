@@ -2,16 +2,42 @@
 # setup the r-side environment
 # this is called once in the main Rserve instance, so it should do and load
 # everything that is common to all connections
-# the per-connection setup is done by start.rcloud()
-configure.rcloud <- function () {
-  require(rcloud.support) ## make sure we're on the search path (may not be needed once we switch to OCap)
+# the per-connection setup is done by start.cloud()
+#
+# mode = "startup" is assuming regular startup via Rserve
+# mode = "script"  will attempt to login anonymously, intended to be
+#                  used in scripts
+configure.rcloud <- function (mode=c("startup", "script")) {
+  mode <- match.arg(mode)
+
+  ## If we're running in startup mode, suicide on error!
+  if (mode == "startup")
+    options(error=function(...) {
+      cat("\n***FATAL ERROR** aborting RCloud startup\n")
+      tools:::pskill(Sys.getpid())
+    })
+
+  ## FIXME: should not be needed - try out?
+  require(rcloud.support)
+
+  ## FIXME: this is needed, because github is only in Suggests
+  ##        since it's not on CRAN. We load it for convenience
+  ##        later but this is a note that it's really needed.
+  require(github)
 
   ## it is useful to have access to the root of your
   ## installation from R scripts -- for RCloud this is *mandatory*
   setConf("root", Sys.getenv("ROOT"))
   if (!nzConf("root")) {
-    setConf("root", "/var/FastRWeb")
-    warning("Invalid ROOT - falling back to", getConf("root"))
+    ## some fall-back attempts
+    for (guess in c("/data/rcloud", "/var/rcloud", "/usr/local/rcloud")) {
+      if (file.exists(file.path(guess, "conf", "rcloud.conf"))) {
+        setConf("root", guess)
+        warning("ROOT is unset, falling back to `", getConf("root"), "'")
+      }
+    }
+    if (!nzConf("root"))
+      stop("FATAL: ROOT not specified and cannot guess RCloud location, please set ROOT!")
   }
 
   ## forward our HTTP handler so Rserve can use it
@@ -142,11 +168,67 @@ configure.rcloud <- function () {
 
   setConf("instanceID", generate.uuid())
 
+  ## sanity check on redis
+  if (isTRUE(getConf("rcs.engine") == "redis")) {
+    redis <- rcs.redis(getConf("rcs.redis.host"))
+    if (is.null(redis$handle)) stop("ERROR: cannot connect to redis host `",getConf("rcs.redis.host"),"', aborting")
+    ## FIXME: we don't expose close in RCS, so do it by hand
+    rediscc::redis.close(redis$handle)
+    cat("Redis back-end .... OK\n")
+  }
   options(HTTPUserAgent=paste(getOption("HTTPUserAgent"), "- RCloud (http://github.com/cscheid/rcloud)"))
 
-  TRUE
+  ## determine verison/revision/branch
+  ##
+  ## in absence of a VERSION file claim 0.0
+  ver <- 0.0
+  v.parts <- c(0L, 0L, 0L)
+  f.ver <- "0.0-UNKNOWN"
+  rev <- ""
+  branch <- ""
+  revFn <- pathConf("root", "REVISION")
+  verFn <- pathConf("root", "VERSION")
+  if (file.exists(revFn)) {
+    vl <- readLines(revFn)
+    branch <- vl[1]
+    rev <- substr(vl[2],1,7)
+  }
+  if (file.exists(verFn)) {
+    f.ver <- readLines(verFn, 1L)
+    ver <- gsub("[^0-9.]+.*","", f.ver)
+    v.parts <- as.integer(strsplit(ver, ".", TRUE)[[1]])
+    if (length(v.parts) >= 2)
+      ver <- as.numeric(paste(v.parts[1], v.parts[2], sep='.'))
+    else
+      ver <- v.parts[1]
+    v.parts <- c(v.parts, 0L, 0L)
+  }
+
+  rcloud.info <- list()
+  rcloud.version <- ver
+  rcloud.info$version.string <- f.ver
+  rcloud.info$ver.major <- v.parts[1]
+  rcloud.info$ver.minor <- v.parts[2]
+  rcloud.info$ver.patch <- v.parts[3]
+  rcloud.info$revision <- rev
+  rcloud.info$branch <- branch
+
+  .info$rcloud.info <- rcloud.info
+  .info$rcloud.version <- rcloud.version
+
+  if (mode == "startup") ## reset error suicide
+    options(error=NULL)
+
+  if (mode == "script")
+    rcloud.support:::start.rcloud.anonymously()
+  else
+    TRUE
 }
 
+rcloud.version <- function() .info$rcloud.version
+rcloud.info <- function(name) if (missing(name)) .info$rcloud.info else .info$rcloud.info[[name]]
+
+.info <- new.env(emptyenv())
 
 start.rcloud.common <- function(...) {
 
@@ -168,8 +250,19 @@ start.rcloud.common <- function(...) {
   })
 
   ## while at it, pass other requests as OOB, too
-  options(pager = function(...) self.oobSend(list("pager", ...)))
-  options(editor = function(...) self.oobSend(list("editor", ...)))
+  options(pager = function(files, header, title, delete.file) {
+    content <- lapply(files, function(fn) {
+      c <- readLines(fn)
+      if (isTRUE(delete.file)) unlink(fn)
+      paste(c, collapse='\n')
+    })
+    self.oobSend(list("pager", content, header, title))
+  })
+  options(editor = function(what, file, name) {
+    ## FIXME: this should be oobMessage()
+    if (nzchar(file)) file <- paste(readLines(file), collapse="\n")
+    self.oobSend(list("editor", what, file, name))
+  })
 
   ## and some options that may be of interest
   options(demo.ask = FALSE)
@@ -209,7 +302,7 @@ start.rcloud.common <- function(...) {
 ## --- RCloud part folows ---
 ## this is called by session.init() on per-connection basis
 start.rcloud <- function(username="", token="", ...) {
-  if (rcloud.debug.level()) cat("start.rcloud(", username, ", ", token, ")\n", sep='')
+  # if (rcloud.debug.level()) cat("start.rcloud(", username, ", ", token, ")\n", sep='')
   if (!check.user.token.pair(username, token))
     stop("bad username/token pair");
   .session$username <- username
@@ -227,7 +320,7 @@ start.rcloud <- function(username="", token="", ...) {
 }
 
 start.rcloud.anonymously <- function(...) {
-  if (rcloud.debug.level()) cat("start.rcloud.anonymously()")
+  # if (rcloud.debug.level()) cat("start.rcloud.anonymously()")
   if (nzConf("gist.deployment.stash"))
     .session$deployment.stash <- getConf("gist.deployment.stash")
   else

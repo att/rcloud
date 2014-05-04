@@ -14,7 +14,7 @@ RCloud.UI.search = {
                 if(typeof (d) == "string") {
                     d = JSON.parse("[" + d + "]");
                 }
-                //convertin any string type part to json object : not required most of the time
+                //convert any string type part to json object : not required most of the time
                 for(i = 0; i < d.length; i++) {
                     if(typeof (d[i]) == "string") {
                         d[i] = JSON.parse(d[i]);
@@ -52,7 +52,7 @@ RCloud.UI.search = {
                                 if(typeof content == "string")
                                     content = [content];
                                 if(content.length > 0)
-                                    parts_table += "<tr><th style=\"font-size:11px\">" + d[i].parts[k].filename + "</th></tr>";
+                                    parts_table += "<tr><th class='search-result-part-name'>" + d[i].parts[k].filename + "</th></tr>";
                                 for(var l = 0; l < content.length; l++)
                                     inner_table += "<tr><td class='search-result-line-number'>" + (l + 1) + "</td><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
 
@@ -66,7 +66,10 @@ RCloud.UI.search = {
                         if(parts_table != "") {
                             parts_table = "<table>" + parts_table + "</table>";
                         }
-                        search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" + "<a id=\"open_" + i + "\" href='javascript:editor.load_notebook(\"" + notebook_id + "\")' class='search-result-heading'>" + d[i].user + " / " + d[i].notebook + "</a>" + image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
+                        search_results += "<table class='search-result-item' width=100%><tr><td width=10%>"
+                            + "<a id=\"open_" + i + "\" href='#' data-gistname='" + notebook_id + "' class='search-result-heading'>"
+                            + d[i].user + " / " + d[i].notebook + "</a>"
+                            + image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
                         if(parts_table != "")
                             search_results += "<tr><td colspan=2 width=100% style='font-size: 12'><div>" + parts_table + "</div></td></tr>";
                         search_results += "</table>";
@@ -79,18 +82,27 @@ RCloud.UI.search = {
                 qry = qry.replace(/\>/g,'&gt;');
                 var search_summary = len + " Results Found"; //+ " <i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i>";
                 summary(search_summary);
-                $("#search-results").show().css("height", "50vh").html(search_results);
+                $("#search-results-row").css('display', 'table-row');
+                $('#search-results').html(search_results);
+                $("#search-results .search-result-heading").click(function(e) {
+                    e.preventDefault();
+                    var gistname = $(this).attr("data-gistname");
+                    editor.open_notebook(gistname, null, true, e.metaKey || e.ctrlKey);
+                    return false;
+                });
             }
+            $("#collapse-search").trigger("size-changed");
         };
 
         summary("Searching...");
-        $("#search-results").hide().html("");
+        $("#search-results-row").hide();
+        $("#search-results").html("");
         query = encodeURIComponent(query);
-        rcloud.with_progress(function(done) {
-            rcloud.search(query).then(function (v) {
-                create_list_of_search_results(v);
-                done();
-            });
+        RCloud.UI.with_progress(function() {
+            return rcloud.search(query)
+                .then(function(v) {
+                    create_list_of_search_results(v);
+                });
         });
     }
 };

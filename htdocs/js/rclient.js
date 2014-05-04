@@ -1,3 +1,5 @@
+// FIXME all RCloud.*.post_error calls should be handled elsewhere
+
 RClient = {
     create: function(opts) {
         opts = _.defaults(opts, {
@@ -5,7 +7,7 @@ RClient = {
         });
         function on_connect() {
             if (!rserve.ocap_mode) {
-                result.post_error(result.disconnection_error("Expected an object-capability Rserve. Shutting Down!"));
+                RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Expected an object-capability Rserve. Shutting Down!"));
                 shutdown();
                 return;
             }
@@ -39,7 +41,7 @@ RClient = {
             }
             if (opts.on_error && opts.on_error(msg, status_code))
                 return;
-            result.post_error(result.disconnection_error(msg));
+            RCloud.UI.session_pane.post_error(ui_utils.disconnection_error(msg));
             shutdown();
         }
 
@@ -48,22 +50,10 @@ RClient = {
                 debugger;
             }
             if (!clean) {
-                result.post_error(result.disconnection_error("Socket was closed. Goodbye!"));
+                RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Socket was closed. Goodbye!"));
                 shutdown();
             }
         };
-        // detect where we will show errors
-
-        var error_dest_ = $("#session-info");
-        var show_error_area;
-        if(error_dest_.length)
-            show_error_area = function() {
-                RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
-            };
-        else {
-            error_dest_ = $("#output");
-            show_error_area = function() {};
-        }
 
         var token = $.cookies.get().token;  // document access token
         var execToken = $.cookies.get().execToken; // execution token (if enabled)
@@ -83,55 +73,15 @@ RClient = {
             host: opts.host,
             running: false,
 
-            //////////////////////////////////////////////////////////////////
-            // FIXME: all of this should move out of rclient and into
-            // the notebook objects.
-
-            string_error: function(msg) {
-                var button = $("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>");
-                var result = $("<div class='alert alert-danger alert-dismissable'></div>");
-                var text = $("<span></span>");
-                result.append(button);
-                result.append(text);
-                text.text(msg);
-                return result;
-            },
-
-            disconnection_error: function(msg, label) {
-                var result = $("<div class='alert alert-danger'></div>");
-                result.append($("<span></span>").text(msg));
-                label = label || "Reconnect";
-                var button = $("<button type='button' class='close'>" + label + "</button>");
-                result.append(button);
-                button.click(function() {
-                    window.location =
-                        (window.location.protocol +
-                         '//' + window.location.host +
-                         '/login.R?redirect=' +
-                         encodeURIComponent(window.location.pathname + window.location.search));
-                });
-                return result;
-            },
-
-            post_error: function (msg, dest) {
-                if (typeof msg === 'string')
-                    msg = this.string_error(msg);
-                if (typeof msg !== 'object')
-                    throw new Error("post_error expects a string or a jquery div");
-                msg.css("margin", "-15px"); // hack
-                dest = dest || error_dest_;
-                dest.append(msg);
-                show_error_area();
-            },
-
             post_response: function (msg) {
                 var d = $("<pre class='response'></pre>").html(msg);
                 $("#output").append(d);
-                window.scrollTo(0, document.body.scrollHeight);
+                // not sure what this was for
+                //window.scrollTo(0, document.body.scrollHeight);
             },
 
             post_rejection: function(e) {
-                rclient.post_error(e.message);
+                RCloud.UI.session_pane.post_error(e.message);
                 throw e;
             },
 

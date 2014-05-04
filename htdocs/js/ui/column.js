@@ -1,29 +1,48 @@
-RCloud.UI.column = function(sel_column, colwidth) {
+RCloud.UI.column = function(sel_column) {
+    var colwidth_ = undefined;
     function classes(cw) {
         return "col-md-" + cw + " col-sm-" + cw;
     }
     var result = {
+        init: function() {
+            var $sel = $(sel_column);
+            if($sel.length === 0)
+                return; // e.g. view mode
+            // find current column width from classes
+            var classes = $sel.attr('class').split(/\s+/);
+            classes.forEach(function(c) {
+                var cw = /^col-(?:md|sm)-(\d+)$/.exec(c);
+                if(cw) {
+                    cw = +cw[1];
+                    if(colwidth_ === undefined)
+                        colwidth_ = cw;
+                    else if(colwidth_ !== cw)
+                        throw new Error("mismatched col-md- or col-sm- in column classes");
+                }
+            });
+        },
         colwidth: function(val) {
-            if(!_.isUndefined(val) && val != colwidth) {
-                $(sel_column).removeClass(classes(colwidth)).addClass(classes(val));
-                colwidth = val;
+            if(!_.isUndefined(val) && val != colwidth_) {
+                $(sel_column).removeClass(classes(colwidth_)).addClass(classes(val));
+                colwidth_ = val;
             }
-            return colwidth;
+            return colwidth_;
         }
     };
     return result;
 };
 
-RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser, colwidth) {
+RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser) {
     var collapsed_ = false;
-    var result = RCloud.UI.column(sel_column, colwidth);
+    var result = RCloud.UI.column(sel_column);
+    var parent_init = result.init.bind(result);
     function collapsibles() {
-        return $(sel_accordion + " > .panel > div.panel-collapse");
+        return $(sel_accordion + " > .panel > div.panel-collapse:not(.out)");
     }
     function togglers() {
-        return $(sel_accordion + " > .panel > div.panel-heading > a.accordion-toggle");
+        return $(sel_accordion + " > .panel > div.panel-heading");
     }
-    function collapse(target, collapse, persist) {
+    function set_collapse(target, collapse, persist) {
         target.data("would-collapse", collapse);
         if(persist && rcloud.config) {
             var opt = 'ui/' + target[0].id;
@@ -41,30 +60,28 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     function opt_to_sel(opt) {
         return opt.replace('ui/', '#');
     }
+    function reshadow() {
+        $(sel_accordion + " .panel-shadow").each(function(v) {
+            var h = $(this).parent().find('.panel-body').outerHeight();
+            if (h === 0)
+                h = "100%";
+            $(this).attr("height", h);
+        });
+    };
     _.extend(result, {
         init: function() {
             var that = this;
+            parent_init();
             collapsibles().each(function() {
                 $(this).data("would-collapse", !$(this).hasClass('in') && !$(this).hasClass('out'));
             });
             togglers().click(function() {
-                var target = $(this.hash);
+                var target = $(this.dataset.target);
                 that.collapse(target, target.hasClass('in'));
                 return false;
             });
-            $(sel_accordion).on("show.bs.collapse", function(e) {
+            collapsibles().on("size-changed", function() {
                 that.resize();
-            });
-            $(sel_accordion).on("hide.bs.collapse", function(e) {
-                that.resize();
-            });
-            $(sel_accordion).on("shown.bs.collapse", function() {
-                $(".panel-shadow").each(function(v) {
-                    var h = $(this).parent().height();
-                    if (h === 0)
-                        h = "100%";
-                    $(this).attr("height", h);
-                });
             });
             $(sel_collapser).click(function() {
                 if (collapsed_)
@@ -73,47 +90,114 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                     that.hide(true);
             });
         },
-        load: function() {
+        load: function(promise) { // takes: promise that everything else has loaded
             var that = this;
             var sels = $.makeArray(collapsibles()).map(function(el) { return '#' + el.id; });
             sels.push(sel_accordion);
             var opts = sels.map(sel_to_opt);
-            rcloud.config.get_user_option(opts).then(function(settings) {
-                var hide_column;
-                for(var k in settings) {
-                    var id = opt_to_sel(k);
-                    if(id === sel_accordion)
-                        hide_column = settings[k];
-                    else if(typeof settings[k] === "boolean")
-                        collapse($(id), settings[k], false);
-                }
-                // do the column last because it will affect all its children
-                if(typeof hide_column === "boolean") {
-                    if(hide_column)
-                        that.hide(false);
-                    else
-                        that.show(false);
-                }
-                else that.show(true); // make sure we have a setting
-            });
+            Promise.all([promise, rcloud.config.get_user_option(opts)])
+                .spread(function(_, settings) {
+                    var hide_column;
+                    for(var k in settings) {
+                        var id = opt_to_sel(k);
+                        if(id === sel_accordion)
+                            hide_column = settings[k];
+                        else if(typeof settings[k] === "boolean")
+                            set_collapse($(id), settings[k], false);
+                    }
+                    // do the column last because it will affect all its children
+                    if(typeof hide_column === "boolean") {
+                        if(hide_column)
+                            that.hide(false);
+                        else
+                            that.show(false);
+                    }
+                    else that.show(true); // make sure we have a setting
+                });
         },
-        collapse: function(target, whether) {
+        collapse: function(target, whether, persist) {
+            if(persist === undefined)
+                persist = true;
             if(collapsed_) {
-                collapse(target, false, true);
+                collapsibles().each(function() {
+                    if(this===target[0])
+                        set_collapse($(this), false, persist);
+                    else
+                        set_collapse($(this), true, persist);
+                });
                 this.show(true);
                 return;
             }
-            collapse(target, whether, true);
+            set_collapse(target, whether, persist);
             if(all_collapsed())
-                this.hide(true);
+                this.hide(persist);
             else
-                this.show(true);
+                this.show(persist);
         },
         resize: function() {
             var cw = this.calcwidth();
-            console.log("resizing " + sel_column + " to " + cw);
             this.colwidth(cw);
             RCloud.UI.middle_column.update();
+            var heights = {}, padding = {}, cbles = collapsibles(), ncollapse = cbles.length;
+            var greedy_one = null;
+            cbles.each(function() {
+                if(!$(this).hasClass("out") && !$(this).data("would-collapse")) {
+                    var spf = $(this).data("panel-sizer");
+                    var sp = spf ? spf(this) : RCloud.UI.collapsible_column.default_sizer(this);
+                    heights[this.id] = sp.height;
+                    padding[this.id] = sp.padding;
+                    // remember the first greedy panel
+                    if(!greedy_one && $(this).attr("data-widgetheight")==="greedy")
+                        greedy_one = $(this);
+                }
+            });
+            var available = $(sel_column).height();
+            var total_headings = d3.sum($(sel_accordion + " .panel-heading")
+                                        .map(function(_, ph) { return $(ph).outerHeight(); }));
+            available -= total_headings;
+            for(id in padding)
+                available -= padding[id];
+            var id, left = available, do_fit = false;
+            for(id in heights)
+                left -= heights[id];
+            if(left>=0) {
+                // they all fit, now just give the rest to greedy one (if any)
+                if(greedy_one != null) {
+                    heights[greedy_one.get(0).id] += left;
+                    do_fit = true;
+                }
+            }
+            else {
+                // they didn't fit
+                left = available;
+                var remaining = _.keys(heights),
+                    done = false, i;
+                var split = left/remaining.length;
+
+                // see which need less than an even split and be done with those
+                while(remaining.length && !done) {
+                    done = true;
+                    for(i = 0; i < remaining.length; ++i)
+                        if(heights[remaining[i]] < split) {
+                            left -= heights[remaining[i]];
+                            remaining.splice(i,1);
+                            --i;
+                            done = false;
+                        }
+                    split = left/remaining.length;
+                }
+                // split the rest among the remainders
+                for(i = 0; i < remaining.length; ++i)
+                    heights[remaining[i]] = split;
+                do_fit = true;
+            }
+            for(id in heights)
+                $('#' + id).find(".panel-body").height(heights[id]);
+            reshadow();
+            var expected = $(sel_column).height();
+            var got = d3.sum(_.values(padding)) + d3.sum(_.values(heights)) + total_headings;
+            if(do_fit && expected != got)
+                console.log("Error in vertical layout algo: filling " + expected + " pixels with " + got);
         },
         hide: function(persist) {
             // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
@@ -126,7 +210,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         },
         show: function(persist) {
             if(all_collapsed())
-                collapse($(collapsibles()[0]), false, true);
+                set_collapse($(collapsibles()[0]), false, true);
             collapsibles().each(function() {
                 $(this).collapse($(this).data("would-collapse") ? "hide" : "show");
             });
@@ -149,4 +233,21 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         }
     });
     return result;
+};
+
+
+RCloud.UI.collapsible_column.default_padder = function(el) {
+    var el$ = $(el),
+        body$ = el$.find('.panel-body'),
+        padding = el$.outerHeight() - el$.height() +
+            body$.outerHeight() - body$.height();
+    return padding;
+};
+
+RCloud.UI.collapsible_column.default_sizer = function(el) {
+    var el$ = $(el),
+        $izer = el$.find(".widget-vsize"),
+        height = $izer.height(),
+        padding = RCloud.UI.collapsible_column.default_padder(el);
+    return {height: height, padding: padding};
 };

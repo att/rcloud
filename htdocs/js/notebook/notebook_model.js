@@ -25,6 +25,11 @@ Notebook.create_model = function()
             var assets_removed = this.remove_asset(null,this.assets.length);
             return cells_removed.concat(assets_removed);
         },
+        has_asset: function(filename) {
+            return _.find(this.assets, function(asset) {
+                return asset.filename() == filename;
+            });
+        },
         append_asset: function(asset_model, filename, skip_event) {
             asset_model.parent_model = this;
             var changes = [];
@@ -38,6 +43,7 @@ Notebook.create_model = function()
         },
         append_cell: function(cell_model, id, skip_event) {
             cell_model.parent_model = this;
+            cell_model.renew_content();
             var changes = [];
             var n = 1;
             id = id || 1;
@@ -150,12 +156,13 @@ Notebook.create_model = function()
             var changes = [];
             while(x<this.cells.length && n) {
                 if(this.cells[x].id() == id) {
+                    var cell = this.cells[x];
+                    this.cells.splice(x, 1);
                     if(!skip_event)
                         _.each(this.views, function(view) {
-                            view.cell_removed(that.cells[x], x);
+                            view.cell_removed(cell, x);
                         });
-                    changes.push(that.cells[x].change_object({ erase: 1 }));
-                    this.cells.splice(x, 1);
+                    changes.push(cell.change_object({ erase: 1 }));
                 }
                 ++id;
                 --n;
@@ -208,7 +215,10 @@ Notebook.create_model = function()
                 if (contents[i] !== null)
                     changes.push(this.cells[i].change_object());
             var asset_change = RCloud.UI.scratchpad.update_model();
-            if (asset_change) {
+            // too subtle here: update_model distinguishes between no change (null)
+            // and change-to-empty.  we care about change-to-empty and let github
+            // delete the asset but leave it on the screen until reload (as with cells)
+            if (asset_change !== null) {
                 var active_asset_model = RCloud.UI.scratchpad.current_model;
                 changes.push(active_asset_model.change_object());
             }
@@ -228,6 +238,16 @@ Notebook.create_model = function()
                 user_ = user;
             }
             return user_;
+        },
+        update_files: function(files) {
+            for(var i = 0; i<this.assets.length; ++i) {
+                var ghfile = files[this.assets[i].filename()];
+                this.assets[i].raw_url = ghfile.raw_url;;
+                this.assets[i].language(ghfile.language || 'Text');
+            }
+            _.each(this.views, function(view) {
+                view.update_urls();
+            });
         },
         on_dirty: function() {
             _.each(this.dishers, function(disher) {

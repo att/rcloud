@@ -1,7 +1,7 @@
 (function() {
 
 function create_markdown_cell_html_view(language) { return function(cell_model) {
-    var EXTRA_HEIGHT = 26;
+    var EXTRA_HEIGHT = 27;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
     update_div_id();
     notebook_cell_div.data('rcloud.model', cell_model);
@@ -24,6 +24,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     function update_div_id() {
         notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
     }
+    function set_widget_height() {
+        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
+    }
     var enable = ui_utils.enable_fa_button;
     var disable = ui_utils.disable_fa_button;
 
@@ -33,6 +36,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         }
     });
     coalesce_button.click(function(e) {
+        coalesce_button.tooltip('destroy');
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             shell.coalesce_prior_cell(cell_model);
         }
@@ -71,8 +75,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         result.show_result();
         if(new_content!==null) // if any change (including removing the content)
             cell_model.parent_model.controller.update_cell(cell_model);
-        rcloud.with_progress(function(done) {
-            cell_model.controller.execute().then(done);
+
+        RCloud.UI.with_progress(function() {
+            return cell_model.controller.execute();
         });
     }
     run_md_button.click(function(e) {
@@ -140,18 +145,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         session.getUndoManager().reset();
     });
     var doc = session.doc;
-    var am_read_only = cell_model.parent_model.read_only();
-    if (am_read_only) {
-        disable(remove_button);
-        disable(insert_cell_button);
-    }
-    widget.setReadOnly(am_read_only);
+    var am_read_only = undefined; // we don't know yet
     widget.setOptions({
         enableBasicAutocompletion: true
     });
     session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
-        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
+        set_widget_height();
         widget.resize();
     });
 
@@ -159,12 +159,16 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     session.setUseWrapMode(true);
     widget.resize();
 
-    ui_utils.install_common_ace_key_bindings(widget);
+    ui_utils.add_ace_grab_affordance(widget.container);
+
+    ui_utils.install_common_ace_key_bindings(widget, function() {
+        return language;
+    });
     widget.commands.addCommands([{
         name: 'sendToR',
         bindKey: {
-            win: 'Ctrl-Return',
-            mac: 'Command-Return',
+            win: 'Alt-Return',
+            mac: 'Alt-Return',
             sender: 'editor'
         },
         exec: function(widget, args, request) {
@@ -198,6 +202,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         language_updated: function() {
             language = cell_model.language();
             ace_div.css({ 'background-color': languages[language]["background-color"] });
+            select.val(cell_model.language());
         },
         result_updated: function(r) {
             r_result_div.hide();
@@ -212,8 +217,24 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             }
 
             // click on code to edit
-            $("code.r", r_result_div).off('click')
-                .click(result.show_source);
+            var code_div = $("code.r", r_result_div);
+            code_div.off('click');
+            if(!shell.is_view_mode()) {
+                // distinguish between a click and a drag
+                // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
+                code_div.on('mousedown', function(e) {
+                    $(this).data('p0', { x: e.pageX, y: e.pageY });
+                }).on('mouseup', function(e) {
+                    var p0 = $(this).data('p0');
+                    if(p0) {
+                        var p1 = { x: e.pageX, y: e.pageY },
+                            d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
+                        if (d < 4) {
+                            result.show_source();
+                        }
+                    }
+                });
+            }
 
             // we use the cached version of DPR instead of getting window.devicePixelRatio
             // because it might have changed (by moving the user agent window across monitors)
@@ -244,7 +265,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                         if (RCloud.is_exception(future)) {
                             var data = RCloud.exception_message(future);
                             $(that).replaceWith(function() {
-                                return rclient.string_error(data);
+                                return ui_utils.string_error(data);
                             });
                         } else {
                             var data = future();
@@ -279,13 +300,18 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
         set_readonly: function(readonly) {
             am_read_only = readonly;
-            widget.setReadOnly(readonly);
+            ui_utils.set_ace_readonly(widget, readonly);
             if (readonly) {
                 disable(remove_button);
                 disable(insert_cell_button);
+                disable(split_button);
+                disable(coalesce_button);
+                $(widget.container).find(".grab-affordance").hide();
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
+                enable(split_button);
+                enable(coalesce_button);
             }
         },
 
@@ -331,19 +357,20 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // do the two-change dance to make ace happy
             outer_ace_div.show();
             widget.resize(true);
-            notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
+            set_widget_height();
             widget.resize(true);
             disable(source_button);
             enable(result_button);
             // enable(hide_button);
             if (!am_read_only) {
                 enable(remove_button);
+                enable(split_button);
             }
             //editor_row.show();
 
             outer_ace_div.show();
             r_result_div.hide();
-            widget.resize();
+            widget.resize(); // again?!?
             widget.focus();
 
             current_mode = "source";
@@ -352,6 +379,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             notebook_cell_div.css({'height': ''});
             enable(source_button);
             disable(result_button);
+            disable(split_button);
             // enable(hide_button);
             if (!am_read_only) {
                 enable(remove_button);
@@ -389,6 +417,21 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
         get_content: function() { // for debug
             return cell_model.content();
+        },
+        reformat: function() {
+            if(current_mode === "source") {
+                // resize once to get right height, then set height,
+                // then resize again to get ace scrollbars right (?)
+                widget.resize();
+                set_widget_height();
+                widget.resize();
+            }
+        },
+        check_buttons: function() {
+            if(!cell_model.parent_model.prior_cell(cell_model))
+                coalesce_button.hide();
+            else if(!am_read_only)
+                coalesce_button.show();
         }
     };
 

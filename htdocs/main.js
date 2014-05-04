@@ -4,29 +4,33 @@ function main() {
     function getURLParameter(name) {
         return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
     }
-    console.log("hello");
 
     RCloud.UI.init();
     RCloud.session.init().then(function() {
-        RCloud.UI.load();
         if(!rcloud.search)
-            $("#collapse-search div.panel-body > div").text("Search engine not enabled on server");
-        var notebook = null, version = null;
+            $("#search").text("Search engine not enabled on server");
+        var opts = {};
+        var promise = Promise.cast(true);
         if (location.search.length > 0) {
-            notebook = getURLParameter("notebook");
-            version = getURLParameter("version");
+            opts.notebook = getURLParameter("notebook");
+            opts.version = getURLParameter("version");
+            if (opts.notebook === null && getURLParameter("new_notebook"))
+                opts = {new_notebook: true};
+            if (opts.notebook === null && getURLParameter("user")) {
+                 promise = promise.then(function() {
+                     return rcloud.get_notebook_by_name(getURLParameter("path"), getURLParameter("user"));
+                 }).then(function(result) {
+                     opts.notebook = result[0];
+                 });
+            }
         }
-        shell.init();
-        editor.init(notebook, version);
-        /*
-         // disabling navigation for now - concurrency issues
-         window.addEventListener("popstate", function(e) {
-         if(e.state === "rcloud.notebook") {
-         var notebook2 = getURLParameter("notebook");
-         var version2 = getURLParameter("version");
-         editor.load_notebook(notebook2, version2, true, false);
-         }
-         });
-         */
+        promise = promise.then(shell.init.bind(shell))
+            .then(editor.init.bind(editor, opts));
+        RCloud.UI.load(promise);
+    }).catch(function(error) {
+        if (error.message === "Authentication required") {
+            RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Please login first!"));
+        } else
+            throw error;
     });
 }

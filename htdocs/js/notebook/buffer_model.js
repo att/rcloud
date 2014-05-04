@@ -1,9 +1,9 @@
-Notebook.Buffer.create_model = function(content) {
+Notebook.Buffer.create_model = function(content, language) {
     // by default, consider this a new cell
     var checkpoint_ = "";
 
     function is_empty(text) {
-        return /^\s*$/.test(text);
+        return Notebook.empty_for_github(text);
     }
 
     var result = {
@@ -26,6 +26,21 @@ Notebook.Buffer.create_model = function(content) {
                 else return null;
             }
             return content;
+        },
+        language: function(new_language) {
+            if (!_.isUndefined(new_language)) {
+                if(language != new_language) {
+                    language = new_language;
+                    this.notify_views(function(view) {
+                        view.language_updated();
+                    });
+                    return language;
+                }
+                else return null;
+            }
+            if(language === undefined)
+                throw new Error("tried to read no language");
+            return language;
         },
         change_object: function(obj) {
             if(obj.content)
@@ -58,6 +73,10 @@ Notebook.Buffer.create_model = function(content) {
                 if(!is_empty(content)) {
                     if(content != checkpoint_) // * => stuff: create/modify
                         change.content = content;
+                    // we need to remember creates for one round
+                    // (see notebook_controller's update_notebook)
+                    if(is_empty(checkpoint_))
+                        change.create = true;
                     // else no-op
                 }
                 else {

@@ -1,18 +1,7 @@
 ################################################################################
 # rcloud_status stuff goes here
 
-## FIXME: should we really allow JS to supply the username in all of the below?
-## If we do, then some access control would be in order ...
-
-## Yes. The right way to do this is when a user has successfully connected,
-## we create a unique session key, send this key to Javascript-side on startup,
-## and check the session key at every attempt at execution. This way users
-## cannot (easily) fake identities.
-
-## We're almost there now that we use github for authentication. The next step
-## is to move all of these to require the session token to match against
-## the one we have stored during the login process.
-
+# FIXME what's the relationship between this and rcloud.config in conf.R?
 rcloud.get.conf.value <- function(key) {
   Allowed <- c('host', 'github.base.url', 'github.api.url', 'github.gist.url')
   if(key %in% Allowed)
@@ -38,7 +27,7 @@ rcloud.load.notebook <- function(id, version = NULL) {
 
 rcloud.install.notebook.stylesheets <- function() {
   n <- .session$current.notebook$content
-  urls <- sapply(grep('css$', names(n$files)), function(v) {
+  urls <- sapply(grep('^rcloud-.*\\.css$', names(n$files)), function(v) {
     n$files[[v]]$raw_url
   })
   rcloud.install.css(urls)
@@ -78,6 +67,9 @@ rcloud.get.notebook <- function(id, version = NULL) {
 ## this is extremely experimental -- use at your own risk
 ## the meaining of args is ambiguous and probably a bad idea - it jsut makes the client code a bit easier to write ...
 
+## FIXME shouldn't the detection of unauthenticated vs authenticated happen
+## transparently so we don't need to write different calls for different
+## situations?
 rcloud.unauthenticated.call.notebook <- function(id, version = NULL, args = NULL) {
   if (!rcloud.is.notebook.published(id))
     stop("Notebook does not exist or has not been published")
@@ -117,6 +109,9 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE
   } else NULL
 }
 
+## FIXME shouldn't the detection of unauthenticated vs authenticated happen
+## transparently so we don't need to write different calls for different
+## situations?
 rcloud.unauthenticated.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
   if (!rcloud.is.notebook.published(id))
     stop("Notebook does not exist or has not been published")
@@ -124,7 +119,7 @@ rcloud.unauthenticated.call.FastRWeb.notebook <- function(id, version = NULL, ar
 }
 
 rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
-  result <- rcloud.call.notebook(id, version, args)
+  result <- rcloud.call.notebook(id, version, NULL)
   if (is.function(result)) {
     require(FastRWeb)
     l <- as.list(as.WebResult(do.call(result, args, envir=environment(result))))
@@ -143,22 +138,23 @@ rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
 }
 
 rcloud.notebook.by.name <- function(name, user=.session$username, path=TRUE) {
-  # fixme
-  cfg <- rcloud.load.user.config(user)
-  if (cfg == "null") stop("user `", user, "' not found")
-  if (inherits(cfg, "try-error")) stop("Error while loading user `", user, "' configuration: ", cfg)
-  cfg <- rjson::fromJSON(cfg)
-  nbs <- lapply(cfg$all_books, function(o) o$description)
-  ok <- sapply(nbs, function(s) (name == s || (path && substr(name, 1, nchar(s)) == s && substr(name, nchar(s)+1L, nchar(s)+1L) == "/")))
+  nl <- user.all.notebooks(user)
+  if (!length(nl)) return(if(path) NULL else character(0))
+  names <- unlist(rcs.get(usr.key("description", user=".notebook", notebook=nl), TRUE))
+  names(names) <- nl ## we want the ids as keys, not the RCS keys
+  ok <- sapply(names, function(s) (name == s || (path && substr(name, 1, nchar(s)) == s && substr(name, nchar(s)+1L, nchar(s)+1L) == "/")))
   if (!any(ok)) return(if(path) NULL else character(0))
-  notebook <- as.character(names(nbs)[ok])
+  notebook <- as.character(names(names)[ok])
   if (!path) return(notebook)
-  extra.path <- sapply(nbs[ok], function(nmatch) if (nmatch == name) "" else substr(name, nchar(nmatch) + 1L, nchar(name)))
+  extra.path <- sapply(names[ok], function(nmatch) if (nmatch == name) "" else substr(name, nchar(nmatch) + 1L, nchar(name)))
   m <- matrix(c(notebook, extra.path),,2)
   colnames(m) <- c("id", "extra.path")
   m
 }
 
+## FIXME shouldn't the detection of unauthenticated vs authenticated happen
+## transparently so we don't need to write different calls for different
+## situations?
 rcloud.unauthenticated.notebook.by.name <- function(name, user=.session$username, path=TRUE) {
   candidates <- rcloud.notebook.by.name(name, user)
   if (length(candidates) < 1L) return(candidates)
@@ -375,6 +371,15 @@ rcloud.get.completions <- function(text, pos) {
   utils:::.CompletionEnv[["comps"]]
 }
 
+rcloud.help <- function(topic) {
+  result <- help(topic)
+  if(length(result)) {
+    print(result)
+    TRUE
+  }
+  else FALSE 
+}
+
 ## FIXME: won't work - uses a global file!
 ## FIXME: should search be using this instead of update notebook?!?
 rcloud.record.cell.execution <- function(user = .session$username, json.string) {
@@ -442,8 +447,13 @@ user.all.notebooks <- function(user) {
   notebooks <- gsub(".*/", "", rcs.list(usr.key(user=user, notebook="system", "config", "notebooks", "*")))
   if(user == .session$username)
     notebooks
-  else # filter notebooks on their visibility before they get to the client
-    notebooks[unlist(rcs.get(usr.key(user=".notebook", notebook=notebooks, "visible"), TRUE))]
+  else { # filter notebooks on their visibility before they get to the client
+    visible <- unlist(rcs.get(usr.key(user=".notebook", notebook=notebooks, "visible"), TRUE))
+    if (length(visible)) {
+      visible.notebooks <- gsub("\\.notebook/(.*)/visible","\\1", names(visible)[visible])
+      notebooks[notebooks %in% visible.notebooks]
+    } else character()
+  }
 }
 
 rcloud.config.all.notebooks <- function()
@@ -479,7 +489,7 @@ rcloud.config.new.notebook.number <- function()
 
 rcloud.config.get.recent.notebooks <- function() {
   keys <- rcs.list(usr.key(user=.session$username, notebook="system", "config", "recent", "*"))
-  vals <- rcs.get(keys)
+  vals <- rcs.get(keys, list=TRUE)
   names(vals) <- gsub(".*/", "", names(vals))
   vals
 }
@@ -508,10 +518,11 @@ rcloud.config.set.user.option <- function(key, value)
 
 rcloud.get.notebook.info <- function(id) {
   base <- usr.key(user=".notebook", notebook=id)
-  list(username = rcs.get(rcs.key(base, "username")),
-       description = rcs.get(rcs.key(base, "description")),
-       last_commit = rcs.get(rcs.key(base, "last_commit")),
-       visible = rcs.get(rcs.key(base, "visible")))
+  fields <- c("username", "description", "last_commit", "visible")
+  keys <- rcs.key(base, fields)
+  results <- rcs.get(keys, list=TRUE)
+  names(results) <- fields
+  results
 }
 
 rcloud.get.multiple.notebook.infos <- function(ids) {
@@ -529,6 +540,8 @@ rcloud.set.notebook.info <- function(id, info) {
 
 rcloud.purl.source <- function(contents)
 {
+  if(length(contents)==1 && contents[[1]]=="")
+    return(contents)
   input.file <- tempfile(fileext="Rmd")
   output.file <- tempfile(fileext="R")
   cat(contents, file = input.file)

@@ -1,3 +1,4 @@
+# FIXME rename
 show.iframe <- function(url, width=960, height=600)
 {
   path <- system.file("javascript", "show_iframe.js", package="rcloud.support");
