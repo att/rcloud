@@ -26,7 +26,7 @@ dependencies_bundle.js: \
 	js/bluebird.js \
 	js/colorbrewer.js \
 	js/crossfilter.js \
-	js/d3.v3.js \
+	js/d3.js \
 	js/dataframe.js \
 	js/dc.js \
 	js/dcplot.js \
@@ -60,6 +60,7 @@ dependencies_bundle.min.js: dependencies_bundle.js Makefile
 	@rm -f $@
 	$(JS_COMPILER) < $< > $@
 	chmod -w $@
+	echo Note: dependencies_bundle is obsolete and unused!
 
 dependencies_bundle.js: Makefile
 	echo $^
