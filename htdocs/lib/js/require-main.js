@@ -25,11 +25,11 @@ requirejs.config({
 var deps = [
     // AMD-compatible
     "bluebird", "lux", "underscore",
-    "d3", "dc", "dcplot", "wdcplot",
+    "d3", "dc", "dcplot", "dataframe", "wdcplot",
     // soon-to-be-amdized
     "jquery-1.10.2",
     // other
-    "crossfilter", "dataframe",
+    "crossfilter",
     "hl.min", "jDataView", "jquery.cookies.2.2.0",
     "jquery.scrollto", "laconic", "jquery-ui-1.10.4.custom",
     "bootstrap", "peg-0.6.2.min",
@@ -48,8 +48,8 @@ require(deps,
             window.Lux = Lux;
             window._ = _;
             window.d3 = d3;
-            // dc, dcplot not needed
-            window.dcplot = dcplot;
+            // dc only used modularly
+            // window.dcplot = dcplot;
             window.wdcplot = wdcplot;
             main();
         });

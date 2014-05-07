@@ -1,7 +1,7 @@
 // R to dc.js bridge code.  This should probably become a library in js/,
 // just deploying it separately for now to ease development
 //////////////////////////////////////////////////////////////////////////////
-(function() { function _wdcplot(dcplot) {
+(function() { function _wdcplot(dcplot, dataframe) {
     var chart_group = 0;
     window.charts = {}; // initialize a global namespace for charts
 
@@ -456,11 +456,11 @@
     return wdcplot;
 }
 if(typeof define === "function" && define.amd) {
-    define(["dcplot"], _wdcplot);
+    define(["dcplot", "dataframe"], _wdcplot);
 } else if(typeof module === "object" && module.exports) {
-    module.exports = _wdcplot(dcplot);
+    module.exports = _wdcplot(dcplot, dataframe);
 } else {
-    this.wdcplot = _wdcplot(dcplot);
+    this.wdcplot = _wdcplot(dcplot, dataframe);
 }
 }
 )();
