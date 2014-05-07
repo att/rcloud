@@ -254,7 +254,7 @@ Notebook.create_controller = function(model)
             update_notebook(changes)
                 .then(default_callback_);
         },
-        coalesce_prior_cell: function(cell_model) {
+        join_prior_cell: function(cell_model) {
             var prior = model.prior_cell(cell_model);
             if(!prior)
                 return;
