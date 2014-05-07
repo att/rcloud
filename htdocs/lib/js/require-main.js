@@ -6,26 +6,30 @@ requirejs.config({
         "ace": "../ace_bundle"
     },
     "shim": {
+        "crossfilter": {
+            deps: [],
+            exports: "crossfilter"
+        },
         "tree.jquery": ["jquery"],
         "jquery-ui-1.10.4.custom": ["jquery"],
+        laconic: ["jquery"],
         "jquery.cookies.2.2.0": ["jquery"],
         "jquery.scrollto": ["jquery"],
         "bootstrap": ["jquery"],
-        "dcplot": ["dc", "crossfilter"],
-        "../../wdcplot": ["dcplot"],
         "../../shell_tab": ["rcloud_bundle", "../../editor_tab"],
-        "../../editor_tab": ["rcloud_bundle"],
+        "../../editor_tab": ["rcloud_bundle", "laconic"],
         "rcloud_bundle": ["ace", "dc"]
     }
 });
 
 var deps = [
     // AMD-compatible
-    "bluebird", "lux", "underscore", "d3", "dc",
+    "bluebird", "lux", "underscore",
+    "d3", "dc", "dcplot", "wdcplot",
     // soon-to-be-amdized
     "jquery-1.10.2",
     // other
-    "crossfilter", "dataframe", "../../wdcplot",
+    "crossfilter", "dataframe",
     "hl.min", "jDataView", "jquery.cookies.2.2.0",
     "jquery.scrollto", "laconic", "jquery-ui-1.10.4.custom",
     "bootstrap", "peg-0.6.2.min",
@@ -39,9 +43,13 @@ var deps = [
 ];
 
 require(deps,
-        function(Promise, Lux, _) {
+        function(Promise, Lux, _, d3, dc, dcplot, wdcplot) {
             window.Promise = Promise;
             window.Lux = Lux;
             window._ = _;
+            window.d3 = d3;
+            // dc, dcplot not needed
+            window.dcplot = dcplot;
+            window.wdcplot = wdcplot;
             main();
         });
