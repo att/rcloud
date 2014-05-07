@@ -811,6 +811,8 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                     var Range = require('ace/range').Range;
                     var range = new Range(pos.row, 0, pos.row+1, 0);
                     code = session.getTextRange(range);
+                    widget.navigateDown(1);
+                    widget.navigateLineEnd();
                 }
                 shell.new_cell(code, get_language(), true);
             }
