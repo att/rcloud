@@ -125,6 +125,8 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                 sender: 'editor'
             },
             exec: function(widget, args, request) {
+                if (widget.getOption("readOnly"))
+                    return;
                 var code = session.getTextRange(widget.getSelectionRange());
                 if(code.length==0) {
                     var pos = widget.getCursorPosition();
