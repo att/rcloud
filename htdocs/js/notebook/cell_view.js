@@ -1,6 +1,7 @@
 (function() {
 
 function create_markdown_cell_html_view(language) { return function(cell_model) {
+    var EXTRA_HEIGHT = 27;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
     update_div_id();
     notebook_cell_div.data('rcloud.model', cell_model);
@@ -9,8 +10,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     // button bar
 
     var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
+    var join_button = ui_utils.fa_button("icon-link", "join cells");
     var source_button = ui_utils.fa_button("icon-edit", "source");
     var result_button = ui_utils.fa_button("icon-picture", "result");
+    var split_button = ui_utils.fa_button("icon-unlink", "split cell");
     var remove_button = ui_utils.fa_button("icon-trash", "remove");
     var run_md_button = ui_utils.fa_button("icon-play", "run");
     var gap = $('<div/>').html('&nbsp;').css({'line-height': '25%'});
@@ -21,12 +24,31 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     function update_div_id() {
         notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
     }
+    function set_widget_height() {
+        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
+    }
     var enable = ui_utils.enable_fa_button;
     var disable = ui_utils.disable_fa_button;
 
     insert_cell_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             shell.insert_markdown_cell_before(cell_model.id());
+        }
+    });
+    join_button.click(function(e) {
+        join_button.tooltip('destroy');
+        if (!$(e.currentTarget).hasClass("button-disabled")) {
+            shell.join_prior_cell(cell_model);
+        }
+    });
+    split_button.click(function(e) {
+        if (!$(e.currentTarget).hasClass("button-disabled")) {
+            var range = widget.getSelection().getRange();
+            var point1, point2 = undefined;
+            point1 = ui_utils.character_offset_of_pos(widget, range.start);
+            if(!range.isEmpty())
+                point2 = ui_utils.character_offset_of_pos(widget, range.end);
+            shell.split_cell(cell_model, point1, point2);
         }
     });
     source_button.click(function(e) {
@@ -53,8 +75,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         result.show_result();
         if(new_content!==null) // if any change (including removing the content)
             cell_model.parent_model.controller.update_cell(cell_model);
-        rcloud.with_progress(function(done) {
-            cell_model.controller.execute().then(done);
+
+        RCloud.UI.with_progress(function() {
+            return cell_model.controller.execute();
         });
     }
     run_md_button.click(function(e) {
@@ -87,7 +110,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     });
 
     col.append($("<div></div>").append(select));
-    $.each([run_md_button, source_button, result_button, gap, remove_button],
+    $.each([run_md_button, source_button, result_button, gap, split_button, remove_button],
            function() {
                col.append($('<td/>').append($(this)));
            });
@@ -96,6 +119,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     notebook_cell_div.append(cell_status);
 
     var insert_button_float = $("<div class='cell-insert-control'></div>");
+    insert_button_float.append(join_button);
     insert_button_float.append(insert_cell_button);
     notebook_cell_div.append(insert_button_float);
 
@@ -124,18 +148,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         session.getUndoManager().reset();
     });
     var doc = session.doc;
-    var am_read_only = cell_model.parent_model.read_only();
-    if (am_read_only) {
-        disable(remove_button);
-        disable(insert_cell_button);
-    }
-    widget.setReadOnly(am_read_only);
+    var am_read_only = undefined; // we don't know yet
     widget.setOptions({
         enableBasicAutocompletion: true
     });
     session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
-        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + 24) + "px"});
+        set_widget_height();
         widget.resize();
     });
 
@@ -143,12 +162,16 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     session.setUseWrapMode(true);
     widget.resize();
 
-    ui_utils.install_common_ace_key_bindings(widget);
+    ui_utils.add_ace_grab_affordance(widget.container);
+
+    ui_utils.install_common_ace_key_bindings(widget, function() {
+        return language;
+    });
     widget.commands.addCommands([{
         name: 'sendToR',
         bindKey: {
-            win: 'Ctrl-Return',
-            mac: 'Command-Return',
+            win: 'Alt-Return',
+            mac: 'Alt-Return',
             sender: 'editor'
         },
         exec: function(widget, args, request) {
@@ -182,6 +205,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         language_updated: function() {
             language = cell_model.language();
             ace_div.css({ 'background-color': languages[language]["background-color"] });
+            select.val(cell_model.language());
         },
         result_updated: function(r) {
             r_result_div.hide();
@@ -192,7 +216,27 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             var uuid = rcloud.deferred_knitr_uuid;
 
             if (cell_model.language() === 'R' && inner_div.find("pre code").length === 0) {
-                r_result_div.prepend("<pre><code>" + cell_model.content() + "</code></pre>");
+                r_result_div.prepend("<pre><code class='r'>" + cell_model.content() + "</code></pre>");
+            }
+
+            // click on code to edit
+            var code_div = $("code.r", r_result_div);
+            code_div.off('click');
+            if(!shell.is_view_mode()) {
+                // distinguish between a click and a drag
+                // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
+                code_div.on('mousedown', function(e) {
+                    $(this).data('p0', { x: e.pageX, y: e.pageY });
+                }).on('mouseup', function(e) {
+                    var p0 = $(this).data('p0');
+                    if(p0) {
+                        var p1 = { x: e.pageX, y: e.pageY },
+                            d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
+                        if (d < 4) {
+                            result.show_source();
+                        }
+                    }
+                });
             }
 
             // we use the cached version of DPR instead of getting window.devicePixelRatio
@@ -203,7 +247,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             var dpr = rcloud.display.get_device_pixel_ratio();
             // fix image width so that retina displays are set correctly
             inner_div.find("img")
-                .each(function(i, img) { img.style.width = img.width / dpr; });
+                .each(function(i, img) {
+                    function update() { img.style.width = img.width / dpr; }
+                    if (img.width === 0) {
+                        $(img).on("load", update);
+                    } else {
+                        update();
+                    };
+                });
 
             // capture deferred knitr results
             inner_div.find("pre code")
@@ -224,7 +275,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                         if (RCloud.is_exception(future)) {
                             var data = RCloud.exception_message(future);
                             $(that).replaceWith(function() {
-                                return rclient.string_error(data);
+                                return ui_utils.string_error(data);
                             });
                         } else {
                             var data = future();
@@ -259,14 +310,19 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
         set_readonly: function(readonly) {
             am_read_only = readonly;
-            widget.setReadOnly(readonly);
+            ui_utils.set_ace_readonly(widget, readonly);
             if (readonly) {
                 disable(remove_button);
                 disable(insert_cell_button);
+                disable(split_button);
+                disable(join_button);
+                $(widget.container).find(".grab-affordance").hide();
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
-            }            
+                enable(split_button);
+                enable(join_button);
+            }
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -309,23 +365,22 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
              *
              */
             // do the two-change dance to make ace happy
-            var obj = {'height': (ui_utils.ace_editor_height(widget) + 25) + "px"};
-            notebook_cell_div.css(obj);
             outer_ace_div.show();
             widget.resize(true);
-            notebook_cell_div.css(obj);
+            set_widget_height();
             widget.resize(true);
             disable(source_button);
             enable(result_button);
             // enable(hide_button);
             if (!am_read_only) {
                 enable(remove_button);
+                enable(split_button);
             }
             //editor_row.show();
 
             outer_ace_div.show();
             r_result_div.hide();
-            widget.resize();
+            widget.resize(); // again?!?
             widget.focus();
 
             current_mode = "source";
@@ -334,6 +389,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             notebook_cell_div.css({'height': ''});
             enable(source_button);
             disable(result_button);
+            disable(split_button);
             // enable(hide_button);
             if (!am_read_only) {
                 enable(remove_button);
@@ -360,13 +416,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 outer_ace_div.slideUp(150); // hide();
             }
         },
-        /*
-        // this doesn't make sense: changes should go through controller
-        remove_self: function() {
-            cell_model.parent_model.remove_cell(cell_model);
-            notebook_cell_div.remove();
-        },
-        */
         div: function() {
             return notebook_cell_div;
         },
@@ -378,6 +427,21 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
         get_content: function() { // for debug
             return cell_model.content();
+        },
+        reformat: function() {
+            if(current_mode === "source") {
+                // resize once to get right height, then set height,
+                // then resize again to get ace scrollbars right (?)
+                widget.resize();
+                set_widget_height();
+                widget.resize();
+            }
+        },
+        check_buttons: function() {
+            if(!cell_model.parent_model.prior_cell(cell_model))
+                join_button.hide();
+            else if(!am_read_only)
+                join_button.show();
         }
     };
 

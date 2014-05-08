@@ -20,43 +20,37 @@ RCloud.create = function(rcloud_ocaps) {
             v = v[path[i]];
         return v;
     }
+
     function set(path, val) {
         var v = rcloud_ocaps;
         for (var i=0; i<path.length-1; ++i)
             v = v[path[i]];
         v[path[path.length-1] + "Async"] = val;
     }
+
     function process_paths(paths) {
         _.each(paths, function(path) {
-            set(path, rcloud_handler(Promise.promisify(get(path))));
+            var fn = get(path);
+            set(path, fn ? rcloud_handler(path.join('.'), Promise.promisify(fn)) : null);
         });
     }
 
-    //////////////////////////////////////////////////////////////////////////////    
+    //////////////////////////////////////////////////////////////////////////////
     function json_p(promise) {
         return promise.then(JSON.parse)
-            .catch(function(e) {
-                rclient.post_error(e.message);
-                throw e;
-            });
+            .catch(rclient.post_rejection);
     }
 
-    function rcloud_handler(promise_fn) {
+    function rcloud_handler(command, promise_fn) {
         function success(result) {
-            if (result && result.r_attributes &&
-                result.r_attributes['class'] === "try-error") {
-                throw result;
+            if(result && RCloud.is_exception(result)) {
+                throw new Error(command + ": " + result[0]);
             }
             return result;
         }
-        function failure(err) {
-            if (RCloud.is_exception(err)) {
-                rclient.post_error(err[0]);
-            }
-            throw err;
-        }
+
         return function() {
-            return promise_fn.apply(this, arguments).then(success).catch(failure);
+            return promise_fn.apply(this, arguments).then(success);
         };
     }
 
@@ -65,47 +59,23 @@ RCloud.create = function(rcloud_ocaps) {
             if (result.ok) {
                 return result.content;
             } else {
-                throw result.content;
+                throw new Error(command + ': ' + result.content.message);
             }
         }
+
         function failure(err) {
             var message = _.isObject(err) && 'ok' in err
                 ? err.content.message : err.toString();
-            rclient.post_error(command + ': ' + message);
-            throw err;
+            throw new Error(command + ': ' + message);
         }
         return promise.then(success).catch(failure);
     }
 
-    // function rcloud_github_handler(command, promise) {
-    //     function success(result) {
-    //         if (result.r_attributes['class'] === "try-error") {
-    //             throw result;
-    //         }
-    //         if (result.ok) {
-    //             return result.content;
-    //         } else {
-    //             throw result.content;
-    //         }
-    //     }
-    //     function failure(err) {
-    //         if (RCloud.is_exception(err)) {
-    //             rclient.post_error(err[0]);
-    //         } else {
-    //             var message = _.isObject(err) && 'ok' in err
-    //                 ? err.content.message : err.toString();
-    //             rclient.post_error(command + ': ' + message);
-    //         }
-    //         throw err;
-    //     }
-    //     return promise.then(success).catch(failure);
-    // }
-
     var rcloud = {};
 
     function setup_unauthenticated_ocaps() {
-
         var paths = [
+            ["version_info"],
             ["anonymous_session_init"],
             ["prefix_uuid"],
             ["get_conf_value"],
@@ -117,6 +87,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["log", "record_cell_execution"],
             ["setup_js_installer"],
             ["comments","get_all"],
+            ["help"],
             ["debug","raise"],
             ["stars","star_notebook"],
             ["stars","unstar_notebook"],
@@ -130,7 +101,10 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "enable_echo"],
             ["api", "disable_echo"],
             ["api", "enable_warnings"],
-            ["api", "disable_warnings"]
+            ["api", "disable_warnings"],
+            ["api", "set_url"],
+            ["api", "get_url"],
+            ["get_notebook_by_name"]
         ];
         process_paths(paths);
 
@@ -139,6 +113,10 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.github_token = function() {
             return $.cookies.get('token');
+        };
+
+        rcloud.version_info = function() {
+            return rcloud_ocaps.version_infoAsync.apply(null, arguments);
         };
 
         rcloud.anonymous_session_init = function() {
@@ -178,8 +156,15 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.install_notebook_stylesheetsAsync();
         };
 
-        rcloud.get_users = function(user) {
-            return rcloud_ocaps.get_usersAsync(user);
+        rcloud.help = function(topic) {
+            return rcloud_ocaps.helpAsync(topic).then(function(found) {
+                if(!found)
+                    RCloud.UI.help_frame.display_content("<h2>No help found for <em>" + topic + "</em></h2>");
+            });
+        };
+
+        rcloud.get_users = function() {
+            return rcloud_ocaps.get_usersAsync();
         };
 
         rcloud.record_cell_execution = function(cell_model) {
@@ -260,6 +245,10 @@ RCloud.create = function(rcloud_ocaps) {
             return cached_device_pixel_ratio;
         };
 
+        rcloud.get_notebook_by_name = function(user, path) {
+            return rcloud_ocaps.get_notebook_by_nameAsync(user, path);
+        };
+
         ////////////////////////////////////////////////////////////////////////////////
         // access the runtime API in javascript as well
 
@@ -276,15 +265,18 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.api.enable_echo = function() {
             return rcloud_ocaps.api.enable_echoAsync();
         };
+        rcloud.api.set_url = function(url) {
+            return rcloud_ocaps.api.set_urlAsync(url);
+        };
+        rcloud.api.get_url = function() {
+            return rcloud_ocaps.api.get_urlAsync();
+        };
     }
 
     function setup_authenticated_ocaps() {
         var paths = [
             ["session_init"],
             ["search"],
-            ["load_user_config"],
-            ["load_multiple_user_configs"],
-            ["save_user_config"],
             ["update_notebook"],
             ["create_notebook"],
             ["fork_notebook"],
@@ -303,36 +295,45 @@ RCloud.create = function(rcloud_ocaps) {
             ["is_notebook_published"],
             ["publish_notebook"],
             ["unpublish_notebook"],
+            ["set_notebook_visibility"],
             ["api","disable_warnings"],
             ["api","enable_echo"],
             ["api","disable_warnings"],
-            ["api","enable_echo"]
+            ["api","enable_echo"],
+            ["config", "all_notebooks"],
+            ["config", "all_notebooks_multiple_users"],
+            ["config", "add_notebook"],
+            ["config", "remove_notebook"],
+            ["config", "get_current_notebook"],
+            ["config", "set_current_notebook"],
+            ["config", "new_notebook_number"],
+            ["config", "get_recent_notebooks"],
+            ["config", "set_recent_notebook"],
+            ["config", "clear_recent_notebook"],
+            ["config", "get_user_option"],
+            ["config", "set_user_option"],
+            ["get_notebook_info"],
+            ["get_multiple_notebook_infos"],
+            ["set_notebook_info"],
+            ["notebook_by_name"]
         ];
         process_paths(paths);
 
         rcloud.session_init = function(username, token) {
             return rcloud_ocaps.session_initAsync(username, token);
         };
-        rcloud.search = function(search_string) {
-            return rcloud_ocaps.searchAsync(search_string);
-        };
-        rcloud.load_user_config = function(user) {
-            return json_p(rcloud_ocaps.load_user_configAsync(user));
-        };
-        rcloud.load_multiple_user_configs = function(users) {
-            return json_p(rcloud_ocaps.load_multiple_user_configsAsync(users));
-        };
-        rcloud.save_user_config = function(user, content) {
-            return json_p(rcloud_ocaps.save_user_configAsync(user, JSON.stringify(content)));
-        };
+
         rcloud.update_notebook = function(id, content) {
             return rcloud_github_handler(
                 "rcloud.update.notebook",
                 rcloud_ocaps.update_notebookAsync(id, JSON.stringify(content)));
         };
+
+        rcloud.search = rcloud_ocaps.searchAsync; // may be null
+
         rcloud.create_notebook = function(content) {
             return rcloud_github_handler(
-                "rcloud.create.notebook", 
+                "rcloud.create.notebook",
                 rcloud_ocaps.create_notebookAsync(JSON.stringify(content)));
         };
         rcloud.fork_notebook = function(id) {
@@ -344,7 +345,7 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.port_notebooksAsync(source, notebooks, prefix);
         };
         rcloud.purl_source = function(source) {
-            rcloud_ocaps.purl_sourceAsync(source);
+            return rcloud_ocaps.purl_sourceAsync(source);
         };
 
         rcloud.get_completions = function(text, pos) {
@@ -406,10 +407,13 @@ RCloud.create = function(rcloud_ocaps) {
                         fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                     } else {
                         // done, push to notebook.
-                        rcloud_ocaps.notebook_upload(
+                        var content = String.fromCharCode.apply(null, new Uint16Array(file_to_upload));
+                        if(Notebook.empty_for_github(content))
+                            on_failure("empty");
+                        else rcloud_ocaps.notebook_upload(
                             file_to_upload.buffer, file.name, function(err, result) {
                                 if (err) {
-                                    on_failure(err);
+                                    on_failure("exists", err);
                                 } else {
                                     on_success([file_to_upload, file, result.content]);
                                 }
@@ -422,6 +426,10 @@ RCloud.create = function(rcloud_ocaps) {
             var file=$("#file")[0].files[0];
             if(_.isUndefined(file))
                 throw new Error("No file selected!");
+            if(Notebook.is_part_name(file.name)) {
+                on_failure("badname");
+                return;
+            }
 
             rcloud_ocaps.file_upload.upload_path(function(err, path) {
                 if (err) {
@@ -443,7 +451,6 @@ RCloud.create = function(rcloud_ocaps) {
             function do_upload(path, file) {
                 var upload_name = path + '/' + file.name;
                 rcloud_ocaps.file_upload.create(upload_name, force, function(err, result) {
-                    debugger;
                     if (RCloud.is_exception(result)) {
                         on_failure(RCloud.exception_message(result));
                         return;
@@ -483,11 +490,11 @@ RCloud.create = function(rcloud_ocaps) {
             }
 
             if(!(window.File && window.FileReader && window.FileList && window.Blob))
-                throw "File API not supported by browser.";
+                throw new Error("File API not supported by browser.");
             else {
                 var file=$("#file")[0].files[0];
                 if(_.isUndefined(file))
-                    throw "No file selected!";
+                    throw new Error("No file selected!");
                 else {
                     /*FIXME add logged in user */
                     rcloud_ocaps.file_upload.upload_path(function(err, path) {
@@ -517,6 +524,10 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.unpublish_notebookAsync(id);
         };
 
+        rcloud.set_notebook_visibility = function(id, value) {
+            return rcloud_ocaps.set_notebook_visibilityAsync(id, value);
+        };
+
         // stars
         rcloud.stars = {};
         rcloud.stars.star_notebook = function(id) {
@@ -538,86 +549,41 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.stars.get_my_starred_notebooksAsync();
         };
 
+        // config
+        rcloud.config = {
+            all_notebooks: rcloud_ocaps.config.all_notebooksAsync,
+            all_notebooks_multiple_users: rcloud_ocaps.config.all_notebooks_multiple_usersAsync,
+            add_notebook: rcloud_ocaps.config.add_notebookAsync,
+            remove_notebook: rcloud_ocaps.config.remove_notebookAsync,
+            get_current_notebook: rcloud_ocaps.config.get_current_notebookAsync,
+            set_current_notebook: rcloud_ocaps.config.set_current_notebookAsync,
+            new_notebook_number: rcloud_ocaps.config.new_notebook_numberAsync,
+            get_recent_notebooks: rcloud_ocaps.config.get_recent_notebooksAsync,
+            set_recent_notebook: rcloud_ocaps.config.set_recent_notebookAsync,
+            clear_recent_notebook: rcloud_ocaps.config.clear_recent_notebookAsync,
+            get_user_option: rcloud_ocaps.config.get_user_optionAsync,
+            set_user_option: rcloud_ocaps.config.set_user_optionAsync
+        };
+
+        // notebook cache
+        rcloud.get_notebook_info = rcloud_ocaps.get_notebook_infoAsync;
+        rcloud.get_multiple_notebook_infos = rcloud_ocaps.get_multiple_notebook_infosAsync;
+        rcloud.set_notebook_info = function(id, info) {
+            if(!info.username) return Promise.reject("attempt to set info no username");
+            if(!info.description) return Promise.reject("attempt to set info no description");
+            if(!info.last_commit) return Promise.reject("attempt to set info no last_commit");
+            return rcloud_ocaps.set_notebook_infoAsync(id, info);
+        };
+
+        rcloud.get_notebook_by_name = function(user, path) {
+            return rcloud_ocaps.notebook_by_nameAsync(user, path);
+        };
     }
 
     rcloud.authenticated = rcloud_ocaps.authenticated;
     setup_unauthenticated_ocaps();
     if (rcloud.authenticated)
         setup_authenticated_ocaps();
-
-    //////////////////////////////////////////////////////////////////////////
-    // Progress indication
-
-    // FIXME this doesn't feel like it belongs on rcloud, but then again,
-    // where would it?
-
-    var progress_dialog;
-    var progress_counter = 0;
-    var allowed = 1;
-    var curtains_on = false;
-
-    function set_curtain() {
-        if (curtains_on)
-            return;
-        curtains_on = true;
-        if (_.isUndefined(progress_dialog)) {
-            progress_dialog = $('<div id="progress-dialog" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-body">Please wait...</div></div></div>');
-            $("body").append(progress_dialog);
-        }
-        progress_dialog.modal({keyboard: true});
-    }
-    function clear_curtain() {
-        if (!curtains_on)
-            return;
-        curtains_on = false;
-        progress_dialog.modal('hide');
-    }
-    function set_cursor() {
-        _.delay(function() {
-            document.body.style.cursor = "wait";
-        }, 0);
-    }
-    function clear_cursor() {
-        _.delay(function() {
-            document.body.style.cursor = '';
-        }, 0);
-    }
-    rcloud.with_progress = function(thunk, delay) {
-        if (_.isUndefined(delay))
-            delay = 2000;
-        set_cursor();
-        function done() {
-            progress_counter -= 1;
-            if (progress_counter === 0) {
-                clear_cursor();
-                clear_curtain();
-            }
-        }
-        _.delay(function() {
-            if (progress_counter > 0 && allowed > 0)
-                set_curtain();
-        }, delay);
-        progress_counter += 1;
-        return Promise.cast(done).then(thunk);
-    };
-    rcloud.prevent_progress_modal = function() {
-        if (allowed === 1) {
-            if (progress_counter > 0) {
-                clear_cursor();
-                clear_curtain();
-            }
-        }
-        allowed -= 1;
-    };
-    rcloud.allow_progress_modal = function() {
-        if (allowed === 0) {
-            if (progress_counter > 0) {
-                set_cursor();
-                set_curtain();
-            }
-        }
-        allowed += 1;
-    };
 
     return rcloud;
 };

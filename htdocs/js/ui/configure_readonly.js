@@ -9,11 +9,17 @@ RCloud.UI.configure_readonly = function() {
         fork_revert.show();
         $('#save-notebook').hide();
         $('#output').sortable('disable');
+        $('#upload-to-notebook')
+            .prop('checked', false)
+            .attr("disabled", true);
     }
     else {
         $('#prompt-div').show();
         fork_revert.hide();
         $('#save-notebook').show();
         $('#output').sortable('enable');
+        $('#upload-to-notebook')
+            .prop('checked', false)
+            .removeAttr("disabled");
     }
 };

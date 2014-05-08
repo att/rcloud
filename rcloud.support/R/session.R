@@ -79,7 +79,7 @@ session.markdown.eval <- function(command, language, silent) {
   opts_chunk$set(dev="CairoPNG", tidy=FALSE)
 
   if (command == "") command <- " "
-  val <- try(markdownToHTML(text=paste(knit(text=command, envir=.session$knitr.env), collapse="\n"),
+  val <- try(markdownToHTML(text=paste(knit(text=command, envir=.GlobalEnv), collapse="\n"),
                             fragment=TRUE), silent=TRUE)
   if (!inherits(val, "try-error") && !silent && rcloud.debug.level()) print(val)
   if (inherits(val, "try-error")) {
@@ -105,10 +105,10 @@ rcloud.session.init <- function(...) {
   .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
   start.rcloud(...)
   rcloud.reset.session()
-  revFn <- pathConf("root", "REVISION")
-  ver <- ''
-  if (file.exists(revFn)) try({ vl <- readLines(revFn); ver <- paste0("RCloud ", vl[1], " (", substr(vl[2],1,7),") --- ") })
+  ## FIXME: this should be started only on-demand
   rcloud.start.python()
+  ver <- paste0('RCloud ', rcloud.info("version.string"), ' ')
+  if (nzchar(rcloud.info("revision"))) ver <- paste0(ver, "(", rcloud.info("branch"), "/", rcloud.info("revision"), "), ")
   paste0(ver, R.version.string, "<br>Welcome, ", .session$username)
 }
 

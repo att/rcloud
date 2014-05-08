@@ -1,6 +1,7 @@
 RCloud.UI.scratchpad = {
     session: null,
     widget: null,
+    exists: false,
     current_model: null,
     change_content: null,
     init: function() {
@@ -21,7 +22,6 @@ RCloud.UI.scratchpad = {
             that.widget = widget;
             var doc = session.doc;
             session.on('change', function() {
-                div.css({'height': ui_utils.ace_editor_height(widget, 30) + "px"});
                 widget.resize();
             });
 
@@ -33,7 +33,6 @@ RCloud.UI.scratchpad = {
             widget.resize();
             ui_utils.on_next_tick(function() {
                 session.getUndoManager().reset();
-                div.css({'height': ui_utils.ace_editor_height(widget, 30) + "px"});
                 widget.resize();
             });
             that.change_content = ui_utils.ignore_programmatic_changes(
@@ -41,10 +40,16 @@ RCloud.UI.scratchpad = {
                     if (that.current_model)
                         that.current_model.parent_model.on_dirty();
                 });
-            ui_utils.install_common_ace_key_bindings(widget);
+            ui_utils.install_common_ace_key_bindings(widget, function() {
+                return that.current_model.language();
+            });
+            $("#collapse-assets").on("shown.bs.collapse", function() {
+                widget.resize();
+            });
         }
         var scratchpad_editor = $("#scratchpad-editor");
         if (scratchpad_editor.length) {
+            this.exists = true;
             setup_scratchpad(scratchpad_editor);
         }
         $("#new-asset > a").click(function() {
@@ -52,24 +57,27 @@ RCloud.UI.scratchpad = {
             var filename = prompt("Choose a filename for your asset");
             if (!filename)
                 return;
-            if (filename.toLocaleLowerCase().substring(0,4) === "part") {
-                alert("Asset names cannot start with 'part', sorry!");
+            if (Notebook.is_part_name(filename)) {
+                alert("Asset names cannot start with 'part[0-9]', sorry!");
                 return;
             }
-            shell.notebook.controller.append_asset(
-                "# New file " + filename, filename).select();
+            var found = shell.notebook.model.has_asset(filename);
+            if(found)
+                found.controller.select();
+            else {
+                shell.notebook.controller
+                    .append_asset("# New file " + filename, filename)
+                    .then(function(controller) {
+                        controller.select();
+                    });
+            }
         });
     },
     // FIXME this is completely backwards
     set_model: function(asset_model) {
         var that = this;
-        var modes = {
-            r: "ace/mode/r",
-            py: "ace/mode/python",
-            md: "ace/mode/rmarkdown",
-            css: "ace/mode/css",
-            txt: "ace/mode/text"
-        };
+        if(!this.exists)
+            return;
         if (this.current_model) {
             this.current_model.cursor_position(this.widget.getCursorPosition());
             // if this isn't a code smell I don't know what is.
@@ -79,11 +87,18 @@ RCloud.UI.scratchpad = {
         }
         this.current_model = asset_model;
         if (!this.current_model) {
-            that.session.setValue("");
+            that.change_content("");
             that.widget.resize();
+            that.widget.setReadOnly(true);
+            $('#scratchpad-editor > *').hide();
+            $('#asset-link').hide();
             return;
         }
+        that.widget.setReadOnly(false);
+        $('#scratchpad-editor > *').show();
         this.change_content(this.current_model.content());
+        this.update_asset_url();
+        $('#asset-link').show();
         // restore cursor
         var model_cursor = asset_model.cursor_position();
         if (model_cursor) {
@@ -94,19 +109,49 @@ RCloud.UI.scratchpad = {
         ui_utils.on_next_tick(function() {
             that.session.getUndoManager().reset();
         });
-        var lang = asset_model.language().toLocaleLowerCase();
-        var mode = require(modes[lang] || modes.txt).Mode;
-        that.session.setMode(new mode(false, that.session.doc, that.session));
+        that.language_updated();
         that.widget.resize();
         that.widget.focus();
     },
     // this behaves like cell_view's update_model
     update_model: function() {
-        return this.current_model.content(this.widget.getSession().getValue());
+        return this.current_model
+            ? this.current_model.content(this.widget.getSession().getValue())
+            : null;
+    }, content_updated: function() {
+        var range = this.widget.getSelection().getRange();
+        var changed = this.current_model.content();
+        this.change_content(changed);
+        this.widget.getSelection().setSelectionRange(range);
+        return changed;
+    }, language_updated: function() {
+        // github gist detected manuages
+        var modes = {
+            R: "ace/mode/r",
+            Python: "ace/mode/python",
+            Markdown: "ace/mode/rmarkdown",
+            CSS: "ace/mode/css",
+            Text: "ace/mode/text"
+        };
+        var lang = this.current_model.language();
+        var mode = require(modes[lang] || modes.Text).Mode;
+        this.session.setMode(new mode(false, this.session.doc, this.session));
+    }, set_readonly: function(readonly) {
+        if(!shell.is_view_mode()) {
+            ui_utils.set_ace_readonly(this.widget, readonly);
+            if(readonly)
+                $('#new-asset').hide();
+            else
+                $('#new-asset').show();
+        }
+    }, update_asset_url: function() {
+        if(this.current_model)
+            $('#asset-link').attr('href', this.current_model.raw_url);
     }, clear: function() {
-        var that = this;
-        that.session.setValue("");
-        that.session.getUndoManager().reset();
-        that.widget.resize();
+        if(!this.exists)
+            return;
+        this.change_content("");
+        this.session.getUndoManager().reset();
+        this.widget.resize();
     }
 };

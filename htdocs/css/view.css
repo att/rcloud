@@ -88,7 +88,7 @@ rect.frame {
 }
 
 .left-pane-header {
-    width:100%; 
+    width:100%;
     background-color:#ddd;
 }
 
@@ -221,8 +221,9 @@ div.r-result-div h5 {
 }
 
 div.r-result-div p {
-    margin-left: 16px;
-    margin-right: 16px;
+    background-color: #fff;
+    padding: 0 0 10px;
+    margin: 0;
 };
 
 pre {
@@ -232,3 +233,10 @@ pre {
 #accordion { visibility: hidden; }
 
 #input-div { visibility: hidden; }
+
+#main-div { background-color: #e5e5e5; }
+
+p img {
+    display: block;
+    margin: auto;
+};

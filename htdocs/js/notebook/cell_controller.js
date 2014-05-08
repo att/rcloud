@@ -28,7 +28,6 @@ Notebook.Cell.create_controller = function(cell_model)
         },
         change_language: function(language) {
             cell_model.language(language);
-            
         }
     };
 

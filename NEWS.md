@@ -1,5 +1,19 @@
 ## RCloud develop branch
 
+### Deprecations
+
+* the flat-file backend for RCS is to be considered deprecated. In
+  future releases we will only support the redis backend.
+
+### Features
+
+* `rcloud.install.js.module` now takes an optional boolean parameter
+  force to force reloading, to help with JS development.
+
+* `view.html` and `main.html` now support referencing notebooks by
+  name. Use, for example,
+  `view.html?user=cscheid&path=tests/project1/notebook1`.
+
 ### Installation/Administration
 
 * RCloud configuration now defaults to using a single port for both
