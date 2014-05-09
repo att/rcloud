@@ -23,6 +23,73 @@
   needed. However, it requires more care when using a reverse proxy
   since it has to also proxy WebSocket upgrade requests accordingly.
 
+## RCloud 1.0.1
+
+### Bugfixes
+
+* Fixed issue where nothing would work if no notebooks were starred (#630)
+
+* Fixed bug that prevented code completion from working past the first
+  token (#645)
+
+* Fixed issue where typing in the prompt could cause the notebook to
+  "bounce" up and down (#634)
+
+* Fixed issue where image width was sometimes getting set to zero (#633)
+
+
+## RCloud 1.0
+
+### Features
+
+* Major interface update with side panels
+
+* Help panel, showing R help as well as paged output such as `data()`
+
+* Asset editor / scratch pane.  Pressing Cmd-Enter (or Ctrl-Enter) executes
+  the current line or selection as a new cell.
+
+* Search notebooks, with notebooks indexed using SOLR
+
+* Session info panel displays stdout/stderr messages, as well as errors.
+  Custom messages can be displayed with `rcloud.out`.
+
+* People I Starred tree shows all notebooks of people whose notebooks you
+  have starred.  My Notebooks are in a folder just like anyone else's,
+  to reduce clutter.
+
+* Notebook is automatically saved when navigating away from the page,
+  and when any operation changes the notebook.
+
+* Ability to change cell language
+
+* URL now updated to include notebook ID and version
+
+* Notebook lists and options are now stored with fine granularity in RCS,
+  so that multiple sessions are less likely to interfere with each other
+
+* Revamp of JavaScript code to use promises for improved asynchonous
+  operation and robustness.  In addition, most JS errors are shown in the
+  session info panel.
+
+* Export notebook as R source
+
+* Split and join cells
+
+* Reorder cells by dragging and dropping the handle in the left gutter
+
+* Click to edit source of already=run cells
+
+* Instead of creating a new notebook when deleting the current notebook,
+  the most recent notebook is opened
+
+* Change notebook name by clicking on the name in the notebook list or
+  the navigation bar
+
+### Bugfixes
+
+* Too many to list
+
 
 ## RCloud 0.9.2
 

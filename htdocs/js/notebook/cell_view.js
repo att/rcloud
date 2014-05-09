@@ -244,7 +244,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             var dpr = rcloud.display.get_device_pixel_ratio();
             // fix image width so that retina displays are set correctly
             inner_div.find("img")
-                .each(function(i, img) { img.style.width = img.width / dpr; });
+                .each(function(i, img) {
+                    function update() { img.style.width = img.width / dpr; }
+                    if (img.width === 0) {
+                        $(img).on("load", update);
+                    } else {
+                        update();
+                    };
+                });
 
             // capture deferred knitr results
             inner_div.find("pre code")

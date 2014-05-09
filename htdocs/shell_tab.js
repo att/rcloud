@@ -39,9 +39,15 @@ var shell = (function() {
     }
 
     function scroll_to_end(duration) {
-        window.setTimeout(function() {
-            ui_utils.scroll_to_after($("#prompt-div"));
-        }, 100);
+        if(duration===0) {
+            var div = $("#rcloud-cellarea");
+            div.scrollTop(div[0].scrollHeight);
+        }
+        else {
+            window.setTimeout(function() {
+                ui_utils.scroll_to_after($("#prompt-div"));
+            }, 100);
+        }
     }
 
     var result = {
