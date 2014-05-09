@@ -154,7 +154,12 @@ RCloud.create = function(rcloud_ocaps) {
             if (result.ok) {
                 return result.content;
             } else {
-                throw new Error(command + ': ' + result.content.message);
+                var message;
+                if(result.content && result.content.message)
+                    message = result.content.message;
+                else
+                    message = "error code " + result.code;
+                throw new Error(command + ': ' + message);
             }
         }
 
@@ -805,7 +810,8 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                 sender: 'editor'
             },
             exec: function(widget, args, request) {
-                debugger;
+                if (widget.getOption("readOnly"))
+                    return;
                 var code = session.getTextRange(widget.getSelectionRange());
                 if(code.length==0) {
                     var pos = widget.getCursorPosition();
