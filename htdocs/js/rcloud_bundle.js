@@ -154,7 +154,12 @@ RCloud.create = function(rcloud_ocaps) {
             if (result.ok) {
                 return result.content;
             } else {
-                throw new Error(command + ': ' + result.content.message);
+                var message;
+                if(result.content && result.content.message)
+                    message = result.content.message;
+                else
+                    message = "error code " + result.code;
+                throw new Error(command + ': ' + message);
             }
         }
 
