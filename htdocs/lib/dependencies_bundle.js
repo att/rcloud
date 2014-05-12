@@ -17880,67 +17880,77 @@ function crossfilter_capacity(w) {
   }
 }();/* an attempt to wrap dataframe access in an abstract
  interface that should work for other data too (?)
+ note: test on array-of-records data!
  */
-var dataframe = {
-    cols: function(data) {
-        var result = {
-            access: function(column) {
-                if(!(column in data))
-                    throw "dataframe doesn't have column " + column.toString();
-                var columnv = data[column];
-                var f = function(i) {
-                    return columnv[i];
-                };
-                // access e.g. R attributes through access("col").attrs
-                f.attrs = columnv;
-                return f;
-            },
-            index: function(i) {
-                return i;
-            },
-            num_rows: function() {
-                for(var col in data)
-                    return data[col].length;
-            },
-            has: function(k) {
-                return k in data;
-            },
-            records: function() {
-                return _.range(0, this.num_rows());
-            }
-        };
-        return result;
-    },
-    rows: function(data) {
-        var result = {
-            access: function(column) {
-                var f = function(i) {
-                    return data[i][column];
-                };
-                // to support attributes, add a field called 'attrs'
-                // to the row array!
-                if('attrs' in data && _.isObject(data.attrs))
-                    f.attrs = data.attrs[column];
-                return f;
-            },
-            // we could get rid of row indices and just use rows
-            // except here (?)
-            index: function(i) {
-                return i;
-            },
-            num_rows: function() {
-                return data.length;
-            },
-            has: function(k) {
-                return k in data[0];
-            },
-            records: function() {
-                return _.range(0, this.num_rows());
-            }
-        };
-        return result;
+(function() {
+    var dataframe = {
+        cols: function(data) {
+            var result = {
+                access: function(column) {
+                    if(!(column in data))
+                        throw "dataframe doesn't have column " + column.toString();
+                    var columnv = data[column];
+                    var f = function(i) {
+                        return columnv[i];
+                    };
+                    // access e.g. R attributes through access("col").attrs
+                    f.attrs = columnv;
+                    return f;
+                },
+                index: function(i) {
+                    return i;
+                },
+                num_rows: function() {
+                    for(var col in data)
+                        return data[col].length;
+                },
+                has: function(k) {
+                    return k in data;
+                },
+                records: function() {
+                    return _.range(0, this.num_rows());
+                }
+            };
+            return result;
+        },
+        rows: function(data) {
+            var result = {
+                access: function(column) {
+                    var f = function(i) {
+                        return data[i][column];
+                    };
+                    // to support attributes, add a field called 'attrs'
+                    // to the row array!
+                    if('attrs' in data && _.isObject(data.attrs))
+                        f.attrs = data.attrs[column];
+                    return f;
+                },
+                // we could get rid of row indices and just use rows
+                // except here (?)
+                index: function(i) {
+                    return i;
+                },
+                num_rows: function() {
+                    return data.length;
+                },
+                has: function(k) {
+                    return k in data[0];
+                },
+                records: function() {
+                    return _.range(0, this.num_rows());
+                }
+            };
+            return result;
+        }
+    };
+    if(typeof define === "function" && define.amd) {
+        define(dataframe);
+    } else if(typeof module === "object" && module.exports) {
+        module.exports = dataframe;
+    } else {
+        this.dataframe = dataframe;
     }
-};
+})();
 /*!
  *  dc 2.0.0-dev
  *  http://dc-js.github.io/dc.js/
@@ -25190,1011 +25200,1012 @@ if(typeof define === "function" && define.amd) {
  and charts.  returns the resulting charts in a map.
  */
 
-(function() { function _dcplot(dc, crossfilter) {
+(function() {
+    function _dcplot(dc, crossfilter) {
+        // todo? the groupvalue function could access subfields of the dimension value?
+        dcplot.group = {
+            identity: function(dim) { return dim.group(); },
+            bin: function(binwidth) {
+                var f = function(dim) {
+                    return dim.group(
+                        function(x) {
+                            return Math.floor(x/binwidth)*binwidth;
+                        });
+                };
+                f.binwidth = binwidth;
+                return f;
+            }
+        };
 
-// todo? the groupvalue function could access subfields of the dimension value?
-var group = {
-    identity: function(dim) { return dim.group(); },
-    bin: function(binwidth) {
-        var f = function(dim) {
-            return dim.group(
-                function(x) {
-                    return Math.floor(x/binwidth)*binwidth;
+        // yes! these are fourth-order functions!
+        // the methods on this object take an access-thing and return an object for accessor()
+        // accessor() will bind access to a real accessor function
+        // that function is ready to take a group
+        // and pass it the functions it composes to call the true accessor
+        dcplot.reduce = {
+            count: function(group) { return group.reduceCount(); },
+            countFilter: function(access, level) {
+                return dcplot.reduce.sum(function (a) {
+                    return (access(a) == level) ? 1 : 0;
                 });
-        };
-        f.binwidth = binwidth;
-        return f;
-    }
-};
-
-// yes! these are fourth-order functions!
-// the methods on this object take an access-thing and return an object for accessor()
-// accessor() will bind access to a real accessor function
-// that function is ready to take a group
-// and pass it the functions it composes to call the true accessor
-var reduce = {
-    count: function(group) { return group.reduceCount(); },
-    countFilter: function(access, level) {
-        return reduce.sum(function (a) {
-            return (access(a) == level) ? 1 : 0;
-        });
-    },
-    filter: function(reduce, access, level) {
-        function wrapper(acc) {
-            return function (a) {
-                return (access(a) == level) ? acc(a) : 0;
-            };
-        }
-        return {
-            arg: reduce.arg,
-            fun: function(acc) { return reduce.fun(wrapper(acc)); }
-        };
-    },
-    sum: function(access, wacc) {
-        return {
-            arg: access,
-            fun: function(acc2) {
-                if(wacc == undefined)
-                    return function(group) {
-                        return group.reduceSum(
-                            function(item) {
-                                return acc2(item);
-                            }
-                        );
+            },
+            filter: function(reduce, access, level) {
+                function wrapper(acc) {
+                    return function (a) {
+                        return (access(a) == level) ? acc(a) : 0;
                     };
-                else return function(group) {
-                    return group.reduce(
-                        function(p, v) {
-                            p.sum += (acc2(v)*wacc(v));
-                            return p;
-                        },
-                        function(p, v) {
-                            p.sum -= (acc2(v)*wacc(v));
-                            return p;
-                        },
-                        function(p, v) {
-                            return {sum: 0, valueOf: function() { return this.sum; }};
-                        });
-                };
-            }
-        };
-    },
-    any: function(access) {
-        return {
-            arg: access,
-            fun: function(acc2) {
-                return function(group) {
-                    return group.reduce(
-                        function(p, v) {
-                            return acc2(v);
-                        },
-                        function(p, v) {
-                            return p;
-                        },
-                        function(p, v) {
-                            return 0;
-                        });
-                };
-            }
-        };
-    },
-    avg: function(access, wacc) {
-        return {
-            arg: access,
-            fun: function(acc2) {
-                if(wacc == undefined) return function(group) {
-                    return group.reduce(
-                        function(p, v) {
-                            ++p.count;
-                            p.sum += acc2(v);
-                            p.avg = p.sum / p.count;
-                            return p;
-                        },
-                        function(p, v) {
-                            --p.count;
-                            p.sum -= acc2(v);
-                            p.avg = p.count ? p.sum / p.count : 0;
-                            return p;
-                        },
-                        function(p, v) {
-                            return {count: 0, sum: 0, avg: 0, valueOf: function() { return this.avg; }};
-                        });
-                };
-                else return function(group) {
-                    return group.reduce(
-                        function(p, v) {
-                            p.count += wacc(v);
-                            p.sum += (acc2(v)*wacc(v));
-                            p.avg = p.sum / p.count;
-                            return p;
-                        },
-                        function(p, v) {
-                            p.count -= wacc(v);
-                            p.sum -= (acc2(v)*wacc(v));
-                            p.avg = p.count ? p.sum / p.count : 0;
-                            return p;
-                        },
-                        function(p, v) {
-                            return {count: 0, sum: 0, avg: 0, valueOf: function() { return this.avg; }};
-                        });
-                };
-            }
-        };
-    },
-    value: function(field) {
-        return function(key, value) {
-            return value[field];
-        };
-    }
-};
-
-/*
- many stages of filling in the blanks for dimensions, groups, and charts
-
- 1. fill in defaults for missing attributes
- 2. infer other missing attributes from what's there
- 3. check for required and unknown attributes
- 4. check for logical errors
- 5. finally, generate
-
- */
-
-// a map of attr->required to check for at the end to make sure we have everything
-// warning: don't put method calls for defaults which must be constructed each time!
-var chart_attrs = {
-    base: {
-        supported: true,
-        div: {required: true}, // actually sent to parent selector for chart constructor
-        title: {required: false}, // title for html in the div, handled outside this lib
-        dimension: {required: true},
-        group: {required: true},
-        ordering: {required: false},
-        width: {required: true, default: 300},
-        height: {required: true, default: 300},
-        'transition.duration': {required: false},
-        label: {required: false}, // or null for no labels
-        tips: {required: false}, // dc 'title', or null for no tips
-        more: {required: false} // executes arbitrary extra code on the dc.js chart object
-        // key, value are terrible names: handle as variables below
-    },
-    color: {
-        supported: true,
-        color: {required: false}, // colorAccessor
-        'color.scale': {required: false}, // the d3 way not the dc way
-        'color.domain': {required: false},
-        'color.range': {required: false}
-    },
-    stackable: {
-        supported: true,
-        stack: {required: false},
-        'stack.levels': {required: false}
-    },
-    coordinateGrid: {
-        supported: true,
-        parents: ['base', 'color'],
-        margins: {required: false},
-        x: {required: false}, // keyAccessor
-        y: {required: false}, // valueAccessor
-        // prob would be good to subgroup these?
-        'x.ordinal': {required: false},
-        'x.scale': {required: true}, // scale component of x
-        'x.domain': {required: false}, // domain component of x
-        'x.units': {required: false}, // the most horrible thing EVER
-        'x.round': {required: false},
-        'x.elastic': {required: false},
-        'x.padding': {required: false},
-        // likewise
-        'y.scale': {required: false},
-        'y.domain': {required: false},
-        'y.elastic': {required: false},
-        'y.padding': {required: false},
-        gridLines: {required: false}, // horizontal and/or vertical
-        brush: {required: false}
-        // etc...
-    },
-    pie: {
-        supported: true,
-        concrete: true,
-        parents: ['base', 'color'],
-        radius: {required: false},
-        innerRadius: {required: false},
-        wedge: {required: false}, // keyAccessor (okay these could just be x/y)
-        size: {required: false} // valueAccessor
-        // etc...
-    },
-    row: {
-        supported: false,
-        parents: ['base', 'color']
-    },
-    bar: {
-        supported: true,
-        concrete: true,
-        parents: ['coordinateGrid', 'stackable'],
-        width: {default: 700},
-        height: {default: 250},
-        centerBar: {required: false},
-        gap: {required: false},
-        'color.x': {default: true}, // color bars individually when not stacked
-        'x.units': {required: true} // the most horrible thing EVER
-    },
-    line: {
-        supported: true,
-        concrete: true,
-        parents: ['coordinateGrid', 'stackable'],
-        width: {default: 800},
-        height: {default: 250},
-        area: {required: false},
-        dotRadius: {required: false}
-    },
-    composite: {
-        parents: ['coordinateGrid'],
-        supported: false
-    },
-    abstractBubble: {
-        supported: true,
-        parents: ['color'],
-        r: {default: 2}, // radiusValueAccessor
-        'r.scale': {required: false}, // scale component of r
-        'r.domain': {required: false} // domain component of r
-    },
-    bubble: {
-        concrete: true,
-        parents: ['coordinateGrid', 'abstractBubble'],
-        width: {default: 400},
-        label: {default: null}, // do not label by default; use ..key.. to label with keys
-        color: {default: 0}, // by default use first color in palette
-        supported: true,
-        'r.elastic': {required: false}
-    },
-    bubbleOverlay: {
-        supported: false, // this chart is a crime!
-        parents: ['base', 'abstractBubble']
-    },
-    geoCloropleth: {
-        supported: false
-    },
-    dataCount: {
-        supported: false
-    },
-    dataTable: {
-        supported: true,
-        concrete: true,
-        parents: ['base'],
-        columns: {required: true},
-        size: {required: false},
-        sortBy: {required: false}
-    }
-};
-
-function skip_attr(a) {
-    return a==='supported' || a=='concrete' || a==='parents';
-}
-
-function parents_first_traversal(map, iter, callbacks) {
-    if(!(iter in map))
-        throw 'unknown chart type ' + defn.type;
-    var curr = map[iter];
-    if('parents' in curr)
-        for(var i = 0; i < curr.parents.length; ++i)
-            parents_first_traversal(map, curr.parents[i], callbacks);
-    callbacks[iter]();
-}
-function parents_last_traversal(map, iter, callbacks) {
-    if(!(iter in map))
-        throw 'unknown chart type ' + defn.type;
-    callbacks[iter]();
-    var curr = map[iter];
-    if('parents' in curr)
-        for(var i = 0; i < curr.parents.length; ++i)
-            parents_last_traversal(map, curr.parents[i], callbacks);
-}
-
-// dc.js formats all numbers as ints - override
-var _psv = dc.utils.printSingleValue;
-dc.utils.printSingleValue = function(filter) {
-    if(typeof(filter) == 'number') {
-        if(filter%1 === 0)
-            return filter;
-        else if(filter>10000 || filter < -10000)
-            return Math.round(filter);
-        else
-            return filter.toPrecision(4);
-    }
-    else return _psv(filter);
-}
-
-dcplot.format_error = function(e) {
-    var tab;
-    if(_.isArray(e)) { // expected exception: input error
-        tab = $('<table/>');
-        $.each(e, function(i) {
-            var err = e[i], formatted_errors = $('<td/>');
-            if(_.isString(err.errors))
-                formatted_errors.text(err.errors);
-            else if(_.isArray(err.errors))
-                $.each(err.errors, function(e) {
-                    formatted_errors.append($('<p/>').text(err.errors[e]));
-                });
-            else formatted_errors.text(err.errors.message.toString());
-            var name = err.name.replace(/_\d*_\d*$/, '');
-            tab.append($('<tr valign=top/>').
-                       append($('<td/>').text(err.type)).
-                       append($('<td/>').text(name)).
-                       append(formatted_errors)
-                      );
-        });
-    }
-    else // unexpected exception: probably logic error
-        tab = $('<p/>').text(e.toString());
-    var error_report = $('<div/>').
-            append($('<p/>').text('dcplot errors!')).
-            append(tab);
-    return error_report;
-};
-
-
-function dcplot(frame, groupname, definition) {
-
-    // generalization of _.has
-    function mhas(obj) {
-        for(var i=1; i<arguments.length; ++i)
-            if(!_.has(obj, arguments[i]) || obj[arguments[i]] == undefined)
-                return false;
-            else obj = obj[arguments[i]];
-        return true;
-    }
-
-    // defaults
-    function default_dimension(name, defn) {
-        // nothing (yet?)
-    }
-    function default_group(name, defn, dims) {
-        var errors = [];
-        if(!_.has(defn, 'group'))
-            defn.group = group.identity;
-        if(!_.has(defn, 'reduce'))
-            defn.reduce = definition.defreduce;
-
-        if(errors.length)
-            throw errors;
-    }
-    function default_chart(name, defn, dims, groups) {
-        // exclusively from chart_attrs
-        function do_defaults(defn, type) {
-            var cattrs = chart_attrs[type];
-            if(!cattrs.supported)
-                throw 'chart type ' + type + ' not supported';
-            for(var a in cattrs) {
-                if(skip_attr(a))
-                    continue;
-                if(_.has(cattrs[a], 'default') && defn[a]===undefined)
-                    defn[a] = cattrs[a].default;
-            }
-            // parents last
-            if('parents' in cattrs)
-                for(var i = 0; i < cattrs.parents.length; ++i)
-                    do_defaults(defn, cattrs.parents[i]);
-
-        }
-        do_defaults(defn, defn.type);
-    }
-
-    function accessor(a) {
-        function constant_fn(v) {
-            return function() { return v; };
-        }
-        if(_.isFunction(a))
-            return a;
-        else if(_.isString(a))
-            return frame.has(a) ? frame.access(a) : constant_fn(a);
-        else if(_.isObject(a)) {
-            if(('fun' in a) && ('arg' in a)) {
-                var fun = a.fun, arg = a.arg;
-                var resolve = accessor(arg);
-                return fun(resolve);
-            }
-            else return constant_fn(a);
-        }
-        else if(_.isNumber(a))
-            return constant_fn(a);
-        else throw "illegal accessor " + a.toString();
-    }
-
-    function one_stack(defn) {
-        return !_.has(defn,'stack.levels') ||
-            (_.has(defn,'stack.levels') && defn['stack.levels'].length == 1);
-    }
-
-    // inferences
-    function infer_dimension(name, defn) {
-        // nothing (yet?)
-    }
-    function infer_group(name, defn, dims) {
-    }
-    function infer_chart(name, defn, dims, groups) {
-        var errors = [];
-        function find_unused(hash, base) {
-            if(!hash[base])
-                return base;
-            var n = 1;
-            while(hash[base + n]) ++n;
-            return base + n;
-        }
-        // abstract this into a plugin - this is RCloud-specific (rserve.js)
-        function get_levels(dim) {
-            var levels = null;
-            if(_.isFunction(dim)) levels = dim.attrs.r_attributes.levels;
-            else if(_.has(dims, dim) && mhas(accessor(dims[dim]), 'attrs', 'r_attributes', 'levels'))
-                levels = accessor(dims[dim]).attrs.r_attributes.levels;
-            return levels;
-        }
-        function looks_ordinal(dim) {
-            return _.has(dims, dim) && _.isString(accessor(dims[dim])(0));
-        }
-
-        var callbacks = {
-            base: function() {
-                if(!('div' in defn))
-                    defn.div = '#' + name;
-                if(defn.group) {
-                    if(!groups[defn.group])
-                        errors.push('unknown group "' + defn.group + '"');
-                    else if(!defn.dimension)
-                        defn.dimension = groups[defn.group].dimension;
                 }
-                else if(defn.dimension) {
-                    if(!dims[defn.dimension])
-                        errors.push('unknown dimension "' + defn.dimension + '"');
-                    else {
-                        defn.group = find_unused(groups, defn.dimension);
-                        var g = groups[defn.group] = {};
-                        g.dimension = defn.dimension;
-                        default_group(defn.group, g, dims);
-                        infer_group(defn.group, g, dims);
-                    }
-                }
-                if(!_.has(defn, 'ordering')) {
-                    // note it's a little messy to have this as a property of the chart rather than
-                    // the group, but dc.js sometimes needs an ordering and sometimes doesn't
-                    var levels = get_levels(defn.dimension);
-                    if(levels != null) {
-                        var rmap = _.object(levels, _.range(levels.length));
-                        // the ordering function uses a reverse map of the levels
-                        defn.ordering = function(p) {
-                            return rmap[p.key];
+                return {
+                    arg: reduce.arg,
+                    fun: function(acc) { return reduce.fun(wrapper(acc)); }
+                };
+            },
+            sum: function(access, wacc) {
+                return {
+                    arg: access,
+                    fun: function(acc2) {
+                        if(wacc == undefined)
+                            return function(group) {
+                                return group.reduceSum(
+                                    function(item) {
+                                        return acc2(item);
+                                    }
+                                );
+                            };
+                        else return function(group) {
+                            return group.reduce(
+                                function(p, v) {
+                                    p.sum += (acc2(v)*wacc(v));
+                                    return p;
+                                },
+                                function(p, v) {
+                                    p.sum -= (acc2(v)*wacc(v));
+                                    return p;
+                                },
+                                function(p, v) {
+                                    return {sum: 0, valueOf: function() { return this.sum; }};
+                                });
                         };
                     }
-                }
-
+                };
             },
-            color: function() {
-                if(!defn['color.scale']) {
-                    // note stackable bleeds in here: since they are on different branches
-                    // of the hierarchy, there is no sensible way for stackable to override
-                    // color here
-                    var levels = get_levels(defn.stack || defn.dimension);
-                    defn['color.scale'] = (levels != null && levels.length>10)
-                        ? d3.scale.category20() : d3.scale.category10();
-                }
-                if(!defn['color.domain']) {
-                    // this also should be abstracted out into a plugin (RCloud-specific)
-                    if(mhas(defn, 'color', 'attrs', 'r_attributes', 'levels'))
-                        defn['color.domain'] = defn.color.attrs.r_attributes.levels;
-                }
-            },
-            stackable: function() {
-                if(_.has(defn,'stack')) {
-                    if(!_.has(defn,'stack.levels'))
-                        defn['stack.levels'] = get_levels(defn['stack']);
-                    var levels = defn['stack.levels'];
-
-                    // Change reduce functions to filter on stack levels
-                    for(var s = 0; s<defn['stack.levels'].length; s++) {
-                        var newName = defn.group+defn['stack.levels'][s];
-                        var newGroupDefn = _.clone(groups[defn.group]);
-
-                        // Special treatment for counts, otherwise generic filter wrapper
-                        if(newGroupDefn.reduce == reduce.count)
-                            newGroupDefn.reduce = reduce.countFilter(defn['stack'],defn['stack.levels'][s]);
-                        else newGroupDefn.reduce = reduce.filter(newGroupDefn.reduce,defn['stack'],defn['stack.levels'][s]);
-
-                        groups[newName] = newGroupDefn;
+            any: function(access) {
+                return {
+                    arg: access,
+                    fun: function(acc2) {
+                        return function(group) {
+                            return group.reduce(
+                                function(p, v) {
+                                    return acc2(v);
+                                },
+                                function(p, v) {
+                                    return p;
+                                },
+                                function(p, v) {
+                                    return 0;
+                                });
+                        };
                     }
-                }
+                };
             },
-            coordinateGrid: function() {
-                var levels = get_levels(defn.dimension);
-                if(!('x.ordinal' in defn))
-                    defn['x.ordinal'] = (('x.units' in defn) && defn['x.units'] === dc.units.ordinal)
-                    || (levels != null) || looks_ordinal(defn.dimension);
-
-                if(!('x.scale' in defn) && defn['x.ordinal'])
-                    defn['x.scale'] = d3.scale.ordinal();
-                if(!('x.units' in defn) && defn['x.ordinal'])
-                    defn['x.units'] = dc.units.ordinal;
-                if(!('x.domain' in defn) && levels)
-                    defn['x.domain'] = levels;
-
-                // not a default because we must construct a new object each time
-                if(!('x.scale' in defn))
-                    defn['x.scale'] = levels ? d3.scale.ordinal() : d3.scale.linear();
-                if(!('y.scale' in defn))
-                    defn['y.scale'] = d3.scale.linear();
-
-                // this won't work incrementally out of the box
-                if(!('x.domain' in defn) && !('x.elastic' in defn))
-                    defn['x.elastic'] = true;
-                if(!('y.domain' in defn) && !('y.elastic' in defn))
-                    defn['y.elastic'] = true;
-            },
-            pie: function() {
-            },
-            bar: function() {
-                /* in practice, dc's xUnits seem to be based on either the bin width
-                 for a histogram, or the set of ordinals */
-                if(!('x.units' in defn) && defn.group) {
-                    var group = groups[defn.group];
-                    if(mhas(group, 'group', 'binwidth'))
-                        defn['x.units'] = dc.units.fp.precision(group.group.binwidth);
-                }
-                if(!_.has(defn, 'color.domain')) {
-                    var levels;
-                    if(one_stack(defn)) {
-                        if(defn['color.x']) {
-                            levels = get_levels(defn.dimension);
-                            if(levels)
-                                defn['color.domain'] = levels;
-                        }
+            avg: function(access, wacc) {
+                return {
+                    arg: access,
+                    fun: function(acc2) {
+                        if(wacc == undefined) return function(group) {
+                            return group.reduce(
+                                function(p, v) {
+                                    ++p.count;
+                                    p.sum += acc2(v);
+                                    p.avg = p.sum / p.count;
+                                    return p;
+                                },
+                                function(p, v) {
+                                    --p.count;
+                                    p.sum -= acc2(v);
+                                    p.avg = p.count ? p.sum / p.count : 0;
+                                    return p;
+                                },
+                                function(p, v) {
+                                    return {count: 0, sum: 0, avg: 0, valueOf: function() { return this.avg; }};
+                                });
+                        };
+                        else return function(group) {
+                            return group.reduce(
+                                function(p, v) {
+                                    p.count += wacc(v);
+                                    p.sum += (acc2(v)*wacc(v));
+                                    p.avg = p.sum / p.count;
+                                    return p;
+                                },
+                                function(p, v) {
+                                    p.count -= wacc(v);
+                                    p.sum -= (acc2(v)*wacc(v));
+                                    p.avg = p.count ? p.sum / p.count : 0;
+                                    return p;
+                                },
+                                function(p, v) {
+                                    return {count: 0, sum: 0, avg: 0, valueOf: function() { return this.avg; }};
+                                });
+                        };
                     }
-                    else {
-                        levels = get_levels(defn.stack);
-                        if(levels)
-                            defn['color.domain'] = levels;
-                    }
-                }
+                };
             },
-            line: function() {
-            },
-            abstractBubble: function() {
-            },
-            bubble: function() {
-            },
-            dataTable: function() {
-                var bad = _.find(defn.columns,
-                                 function(col) { return !frame.has(col); });
-                if(bad)
-                    throw bad + " not a valid column!";
-            }
-        };
-        parents_first_traversal(chart_attrs, defn.type, callbacks);
-
-        if(errors.length)
-            throw errors;
-    }
-
-
-    // look for required attrs not filled and unknown attrs
-    function check_dimension_attrs(name, defn) {
-    }
-    function check_group_attrs(name, defn) {
-        var expected = ['dimension', 'group', 'reduce'];
-        var k = _.keys(defn),
-            missing = _.difference(expected, k),
-            unknown = _.difference(k, expected),
-            errors = [];
-        if(missing.length)
-            errors.push('definition is missing required attrs: ' + missing.join(', '));
-        if(unknown.length)
-            errors.push('definition has unknown attrs: ' + unknown.join(', '));
-
-        if(errors.length)
-            throw errors;
-    }
-    function check_chart_attrs(name, defn) {
-        function find_discreps(defn, type, missing, found) {
-            var cattrs = chart_attrs[type];
-            if(!cattrs.supported)
-                throw 'type "' + type + '" not supported';
-            if('parents' in cattrs)
-                for(var i = 0; i < cattrs.parents.length; ++i)
-                    find_discreps(defn, cattrs.parents[i], missing, found);
-            for(var a in cattrs) {
-                if(skip_attr(a))
-                    continue;
-                if(cattrs[a].required && defn[a]===undefined)
-                    missing.push(a);
-                if(_.has(found, a))
-                    found[a] = true;
-            }
-        }
-        function empty_found_map(defn) {
-            var k = _.without(_.keys(defn), 'type'), n = k.length, v = [];
-            while(n--) v.push(false);
-            return _.object(k,v);
-        }
-        var missing = [], found = empty_found_map(defn);
-        find_discreps(defn, defn.type, missing, found);
-        var errors = [];
-        if(missing.length)
-            errors.push('definition is missing required attrs: ' + missing.join(', '));
-        var unknown = _.map(_.reject(_.pairs(found),
-                                     function(p) { return p[1]; }),
-                            function(p) { return p[0]; });
-        if(unknown.length)
-            errors.push('definition has unknown attrs: ' + unknown.join(', '));
-
-        if(errors.length)
-            throw errors;
-    }
-
-
-    // logic errors
-    function check_dimension_logic(name, defn) {
-        // nothing (yet?)
-    }
-    function check_group_logic(name, defn, dims) {
-        var errors = [];
-        if(!_.has(dims, defn.dimension))
-            errors.push('unknown dimension "' + defn.dimension + '"');
-
-        if(errors.length)
-            throw errors;
-    }
-    function check_chart_logic(name, defn, dims, groups) {
-        var errors = [];
-        var callbacks = {
-            base: function() {
-                if(defn.dimension && defn.dimension!=groups[defn.group].dimension)
-                    errors.push('group "' + defn.group + '" dimension "' + groups[defn.group].dimension
-                                + '" does not match chart dimension "' + defn.dimension + '"');
-            },
-            color: function() {
-            },
-            stackable: function() {
-            },
-            coordinateGrid: function() {
-                // dc.js doesn't require domain but in practice it's needed unless elastic
-                if(!defn['x.elastic'] && !('x.domain' in defn))
-                    throw 'need x.domain unless x.elastic';
-                if(!defn['y.elastic'] && !('y.domain' in defn))
-                    throw 'need y.domain unless y.elastic';
-            },
-            pie: function() {
-            },
-            bar: function() {
-            },
-            line: function() {
-            },
-            abstractBubble: function() {
-            },
-            bubble: function() {
-            },
-            dataTable: function() {
+            value: function(field) {
+                return function(key, value) {
+                    return value[field];
+                };
             }
         };
 
-        parents_first_traversal(chart_attrs, defn.type, callbacks);
+        /*
+         many stages of filling in the blanks for dimensions, groups, and charts
 
-        if(errors.length)
-            throw errors;
-    }
+         1. fill in defaults for missing attributes
+         2. infer other missing attributes from what's there
+         3. check for required and unknown attributes
+         4. check for logical errors
+         5. finally, generate
 
-    function create_group(defn, dimensions) {
-        return accessor(defn.reduce)(defn.group(dimensions[defn.dimension]));
-    }
-
-
-    // this is a hopefully a lot of boilerplate with not too much logic
-    // maps from dcplot attributes to dc.js methods
-    function create_chart(groupname, defn, dimensions, groups) {
-        var ctor, chart;
-
-        /* create uniformity between crossfilter dimension and reduce functions,
-         and dc.js accessor functions with a simple trick: for the latter,
-         split the input, which is {key, value}, into two params. this works
-         because crossfilter functions work with just the 'key'
-
-         i.e. in crossfilter:
-         * dimension functions are key -> key
-         * group.group functions are key -> key
-         * group.reduce functions are key -> value
-         in dc:
-         * accessor functions are {key,value} -> whatever
-
-         so instead we make them (key,value) -> whatever and then they look like
-         crossfilter functions!
          */
-        function key_value(f) { return function(kv) { return f(kv.key, kv.value); }; }
 
-        var callbacks = {
-            base: function() {
-                chart = ctor(defn.div, groupname);
-                chart.dimension(dimensions[defn.dimension])
-                    .group(groups[defn.group])
-                    .width(defn.width)
-                    .height(defn.height);
-                if(_.has(defn, 'ordering'))
-                    chart.ordering(defn.ordering);
-                if(_.has(defn, 'transition.duration'))
-                    chart.transitionDuration(defn['transition.duration']);
-                if(_.has(defn, 'label')) {
-                    if(defn.label)
-                        chart.label(key_value(defn.label));
-                    else
-                        chart.renderLabel(false);
-                }
-                if(_.has(defn, 'tips')) {
-                    if(defn.tips)
-                        chart.title(key_value(defn.tips));
-                    else
-                        chart.renderTitle(false);
-                }
+        // a map of attr->required to check for at the end to make sure we have everything
+        // warning: don't put method calls for defaults which must be constructed each time!
+        var chart_attrs = {
+            base: {
+                supported: true,
+                div: {required: true}, // actually sent to parent selector for chart constructor
+                title: {required: false}, // title for html in the div, handled outside this lib
+                dimension: {required: true},
+                group: {required: true},
+                ordering: {required: false},
+                width: {required: true, default: 300},
+                height: {required: true, default: 300},
+                'transition.duration': {required: false},
+                label: {required: false}, // or null for no labels
+                tips: {required: false}, // dc 'title', or null for no tips
+                more: {required: false} // executes arbitrary extra code on the dc.js chart object
+                // key, value are terrible names: handle as variables below
             },
-            color: function() {
-                // i am cool with dc.js's color accessor
-                if(_.has(defn, 'color'))
-                    chart.colorAccessor(key_value(accessor(defn.color)));
-                // however i don't understand why dc chooses to use a
-                // "color calculator" when a d3 scale seems like it ought
-                // to serve the purpose. so just plug a d3 scale into colors
-                // and override the calculator to use it
-                // also default to category10 which seems better for discrete colors
-
-                var scale = defn['color.scale'];
-                if(_.has(defn, 'color.domain'))
-                    scale.domain(defn['color.domain']);
-                if(_.has(defn, 'color.range'))
-                    scale.range(defn['color.range']);
-                chart.colors(scale);
-                chart.colorCalculator(function(x) { return chart.colors()(x); });
+            color: {
+                supported: true,
+                color: {required: false}, // colorAccessor
+                'color.scale': {required: false}, // the d3 way not the dc way
+                'color.domain': {required: false},
+                'color.range': {required: false}
             },
-            stackable: function() {
-                if(_.has(defn, 'stack') && _.has(defn, 'stack.levels')) {
-                    for(var s = 0; s<defn['stack.levels'].length; s++) {
-                        var stackGroup = groups[defn.group+defn['stack.levels'][s]];
+            stackable: {
+                supported: true,
+                stack: {required: false},
+                'stack.levels': {required: false}
+            },
+            coordinateGrid: {
+                supported: true,
+                parents: ['base', 'color'],
+                margins: {required: false},
+                x: {required: false}, // keyAccessor
+                y: {required: false}, // valueAccessor
+                // prob would be good to subgroup these?
+                'x.ordinal': {required: false},
+                'x.scale': {required: true}, // scale component of x
+                'x.domain': {required: false}, // domain component of x
+                'x.units': {required: false}, // the most horrible thing EVER
+                'x.round': {required: false},
+                'x.elastic': {required: false},
+                'x.padding': {required: false},
+                // likewise
+                'y.scale': {required: false},
+                'y.domain': {required: false},
+                'y.elastic': {required: false},
+                'y.padding': {required: false},
+                gridLines: {required: false}, // horizontal and/or vertical
+                brush: {required: false}
+                // etc...
+            },
+            pie: {
+                supported: true,
+                concrete: true,
+                parents: ['base', 'color'],
+                radius: {required: false},
+                innerRadius: {required: false},
+                wedge: {required: false}, // keyAccessor (okay these could just be x/y)
+                size: {required: false} // valueAccessor
+                // etc...
+            },
+            row: {
+                supported: false,
+                parents: ['base', 'color']
+            },
+            bar: {
+                supported: true,
+                concrete: true,
+                parents: ['coordinateGrid', 'stackable'],
+                width: {default: 700},
+                height: {default: 250},
+                centerBar: {required: false},
+                gap: {required: false},
+                'color.x': {default: true}, // color bars individually when not stacked
+                'x.units': {required: true} // the most horrible thing EVER
+            },
+            line: {
+                supported: true,
+                concrete: true,
+                parents: ['coordinateGrid', 'stackable'],
+                width: {default: 800},
+                height: {default: 250},
+                area: {required: false},
+                dotRadius: {required: false}
+            },
+            composite: {
+                parents: ['coordinateGrid'],
+                supported: false
+            },
+            abstractBubble: {
+                supported: true,
+                parents: ['color'],
+                r: {default: 2}, // radiusValueAccessor
+                'r.scale': {required: false}, // scale component of r
+                'r.domain': {required: false} // domain component of r
+            },
+            bubble: {
+                concrete: true,
+                parents: ['coordinateGrid', 'abstractBubble'],
+                width: {default: 400},
+                label: {default: null}, // do not label by default; use ..key.. to label with keys
+                color: {default: 0}, // by default use first color in palette
+                supported: true,
+                'r.elastic': {required: false}
+            },
+            bubbleOverlay: {
+                supported: false, // this chart is a crime!
+                parents: ['base', 'abstractBubble']
+            },
+            geoCloropleth: {
+                supported: false
+            },
+            dataCount: {
+                supported: false
+            },
+            dataTable: {
+                supported: true,
+                concrete: true,
+                parents: ['base'],
+                columns: {required: true},
+                size: {required: false},
+                sortBy: {required: false}
+            }
+        };
 
-                        if(s == 0)
-                            chart.group(stackGroup);
-                        else chart.stack(stackGroup);
+        function skip_attr(a) {
+            return a==='supported' || a=='concrete' || a==='parents';
+        }
+
+        function parents_first_traversal(map, iter, callbacks) {
+            if(!(iter in map))
+                throw 'unknown chart type ' + defn.type;
+            var curr = map[iter];
+            if('parents' in curr)
+                for(var i = 0; i < curr.parents.length; ++i)
+                    parents_first_traversal(map, curr.parents[i], callbacks);
+            callbacks[iter]();
+        }
+        function parents_last_traversal(map, iter, callbacks) {
+            if(!(iter in map))
+                throw 'unknown chart type ' + defn.type;
+            callbacks[iter]();
+            var curr = map[iter];
+            if('parents' in curr)
+                for(var i = 0; i < curr.parents.length; ++i)
+                    parents_last_traversal(map, curr.parents[i], callbacks);
+        }
+
+        // dc.js formats all numbers as ints - override
+        var _psv = dc.utils.printSingleValue;
+        dc.utils.printSingleValue = function(filter) {
+            if(typeof(filter) == 'number') {
+                if(filter%1 === 0)
+                    return filter;
+                else if(filter>10000 || filter < -10000)
+                    return Math.round(filter);
+                else
+                    return filter.toPrecision(4);
+            }
+            else return _psv(filter);
+        }
+
+        dcplot.format_error = function(e) {
+            var tab;
+            if(_.isArray(e)) { // expected exception: input error
+                tab = $('<table/>');
+                $.each(e, function(i) {
+                    var err = e[i], formatted_errors = $('<td/>');
+                    if(_.isString(err.errors))
+                        formatted_errors.text(err.errors);
+                    else if(_.isArray(err.errors))
+                        $.each(err.errors, function(e) {
+                            formatted_errors.append($('<p/>').text(err.errors[e]));
+                        });
+                    else formatted_errors.text(err.errors.message.toString());
+                    var name = err.name.replace(/_\d*_\d*$/, '');
+                    tab.append($('<tr valign=top/>').
+                               append($('<td/>').text(err.type)).
+                               append($('<td/>').text(name)).
+                               append(formatted_errors)
+                              );
+                });
+            }
+            else // unexpected exception: probably logic error
+                tab = $('<p/>').text(e.toString());
+            var error_report = $('<div/>').
+                    append($('<p/>').text('dcplot errors!')).
+                    append(tab);
+            return error_report;
+        };
+
+
+        function dcplot(frame, groupname, definition) {
+
+            // generalization of _.has
+            function mhas(obj) {
+                for(var i=1; i<arguments.length; ++i)
+                    if(!_.has(obj, arguments[i]) || obj[arguments[i]] == undefined)
+                        return false;
+                else obj = obj[arguments[i]];
+                return true;
+            }
+
+            // defaults
+            function default_dimension(name, defn) {
+                // nothing (yet?)
+            }
+            function default_group(name, defn, dims) {
+                var errors = [];
+                if(!_.has(defn, 'group'))
+                    defn.group = dcplot.group.identity;
+                if(!_.has(defn, 'reduce'))
+                    defn.reduce = definition.defreduce;
+
+                if(errors.length)
+                    throw errors;
+            }
+            function default_chart(name, defn, dims, groups) {
+                // exclusively from chart_attrs
+                function do_defaults(defn, type) {
+                    var cattrs = chart_attrs[type];
+                    if(!cattrs.supported)
+                        throw 'chart type ' + type + ' not supported';
+                    for(var a in cattrs) {
+                        if(skip_attr(a))
+                            continue;
+                        if(_.has(cattrs[a], 'default') && defn[a]===undefined)
+                            defn[a] = cattrs[a].default;
+                    }
+                    // parents last
+                    if('parents' in cattrs)
+                        for(var i = 0; i < cattrs.parents.length; ++i)
+                            do_defaults(defn, cattrs.parents[i]);
+
+                }
+                do_defaults(defn, defn.type);
+            }
+
+            function accessor(a) {
+                function constant_fn(v) {
+                    return function() { return v; };
+                }
+                if(_.isFunction(a))
+                    return a;
+                else if(_.isString(a))
+                    return frame.has(a) ? frame.access(a) : constant_fn(a);
+                else if(_.isObject(a)) {
+                    if(('fun' in a) && ('arg' in a)) {
+                        var fun = a.fun, arg = a.arg;
+                        var resolve = accessor(arg);
+                        return fun(resolve);
+                    }
+                    else return constant_fn(a);
+                }
+                else if(_.isNumber(a))
+                    return constant_fn(a);
+                else throw "illegal accessor " + a.toString();
+            }
+
+            function one_stack(defn) {
+                return !_.has(defn,'stack.levels') ||
+                    (_.has(defn,'stack.levels') && defn['stack.levels'].length == 1);
+            }
+
+            // inferences
+            function infer_dimension(name, defn) {
+                // nothing (yet?)
+            }
+            function infer_group(name, defn, dims) {
+            }
+            function infer_chart(name, defn, dims, groups) {
+                var errors = [];
+                function find_unused(hash, base) {
+                    if(!hash[base])
+                        return base;
+                    var n = 1;
+                    while(hash[base + n]) ++n;
+                    return base + n;
+                }
+                // abstract this into a plugin - this is RCloud-specific (rserve.js)
+                function get_levels(dim) {
+                    var levels = null;
+                    if(_.isFunction(dim)) levels = dim.attrs.r_attributes.levels;
+                    else if(_.has(dims, dim) && mhas(accessor(dims[dim]), 'attrs', 'r_attributes', 'levels'))
+                        levels = accessor(dims[dim]).attrs.r_attributes.levels;
+                    return levels;
+                }
+                function looks_ordinal(dim) {
+                    return _.has(dims, dim) && _.isString(accessor(dims[dim])(0));
+                }
+
+                var callbacks = {
+                    base: function() {
+                        if(!('div' in defn))
+                            defn.div = '#' + name;
+                        if(defn.group) {
+                            if(!groups[defn.group])
+                                errors.push('unknown group "' + defn.group + '"');
+                            else if(!defn.dimension)
+                                defn.dimension = groups[defn.group].dimension;
+                        }
+                        else if(defn.dimension) {
+                            if(!dims[defn.dimension])
+                                errors.push('unknown dimension "' + defn.dimension + '"');
+                            else {
+                                defn.group = find_unused(groups, defn.dimension);
+                                var g = groups[defn.group] = {};
+                                g.dimension = defn.dimension;
+                                default_group(defn.group, g, dims);
+                                infer_group(defn.group, g, dims);
+                            }
+                        }
+                        if(!_.has(defn, 'ordering')) {
+                            // note it's a little messy to have this as a property of the chart rather than
+                            // the group, but dc.js sometimes needs an ordering and sometimes doesn't
+                            var levels = get_levels(defn.dimension);
+                            if(levels != null) {
+                                var rmap = _.object(levels, _.range(levels.length));
+                                // the ordering function uses a reverse map of the levels
+                                defn.ordering = function(p) {
+                                    return rmap[p.key];
+                                };
+                            }
+                        }
+
+                    },
+                    color: function() {
+                        if(!defn['color.scale']) {
+                            // note stackable bleeds in here: since they are on different branches
+                            // of the hierarchy, there is no sensible way for stackable to override
+                            // color here
+                            var levels = get_levels(defn.stack || defn.dimension);
+                            defn['color.scale'] = (levels != null && levels.length>10)
+                                ? d3.scale.category20() : d3.scale.category10();
+                        }
+                        if(!defn['color.domain']) {
+                            // this also should be abstracted out into a plugin (RCloud-specific)
+                            if(mhas(defn, 'color', 'attrs', 'r_attributes', 'levels'))
+                                defn['color.domain'] = defn.color.attrs.r_attributes.levels;
+                        }
+                    },
+                    stackable: function() {
+                        if(_.has(defn,'stack')) {
+                            if(!_.has(defn,'stack.levels'))
+                                defn['stack.levels'] = get_levels(defn['stack']);
+                            var levels = defn['stack.levels'];
+
+                            // Change reduce functions to filter on stack levels
+                            for(var s = 0; s<defn['stack.levels'].length; s++) {
+                                var newName = defn.group+defn['stack.levels'][s];
+                                var newGroupDefn = _.clone(groups[defn.group]);
+
+                                // Special treatment for counts, otherwise generic filter wrapper
+                                if(newGroupDefn.reduce == dcplot.reduce.count)
+                                    newGroupDefn.reduce = dcplot.reduce.countFilter(defn['stack'],defn['stack.levels'][s]);
+                                else newGroupDefn.reduce = dcplot.reduce.filter(newGroupDefn.reduce,defn['stack'],defn['stack.levels'][s]);
+
+                                groups[newName] = newGroupDefn;
+                            }
+                        }
+                    },
+                    coordinateGrid: function() {
+                        var levels = get_levels(defn.dimension);
+                        if(!('x.ordinal' in defn))
+                            defn['x.ordinal'] = (('x.units' in defn) && defn['x.units'] === dc.units.ordinal)
+                            || (levels != null) || looks_ordinal(defn.dimension);
+
+                        if(!('x.scale' in defn) && defn['x.ordinal'])
+                            defn['x.scale'] = d3.scale.ordinal();
+                        if(!('x.units' in defn) && defn['x.ordinal'])
+                            defn['x.units'] = dc.units.ordinal;
+                        if(!('x.domain' in defn) && levels)
+                            defn['x.domain'] = levels;
+
+                        // not a default because we must construct a new object each time
+                        if(!('x.scale' in defn))
+                            defn['x.scale'] = levels ? d3.scale.ordinal() : d3.scale.linear();
+                        if(!('y.scale' in defn))
+                            defn['y.scale'] = d3.scale.linear();
+
+                        // this won't work incrementally out of the box
+                        if(!('x.domain' in defn) && !('x.elastic' in defn))
+                            defn['x.elastic'] = true;
+                        if(!('y.domain' in defn) && !('y.elastic' in defn))
+                            defn['y.elastic'] = true;
+                    },
+                    pie: function() {
+                    },
+                    bar: function() {
+                        /* in practice, dc's xUnits seem to be based on either the bin width
+                         for a histogram, or the set of ordinals */
+                        if(!('x.units' in defn) && defn.group) {
+                            var group = groups[defn.group];
+                            if(mhas(group, 'group', 'binwidth'))
+                                defn['x.units'] = dc.units.fp.precision(group.binwidth);
+                        }
+                        if(!_.has(defn, 'color.domain')) {
+                            var levels;
+                            if(one_stack(defn)) {
+                                if(defn['color.x']) {
+                                    levels = get_levels(defn.dimension);
+                                    if(levels)
+                                        defn['color.domain'] = levels;
+                                }
+                            }
+                            else {
+                                levels = get_levels(defn.stack);
+                                if(levels)
+                                    defn['color.domain'] = levels;
+                            }
+                        }
+                    },
+                    line: function() {
+                    },
+                    abstractBubble: function() {
+                    },
+                    bubble: function() {
+                    },
+                    dataTable: function() {
+                        var bad = _.find(defn.columns,
+                                         function(col) { return !frame.has(col); });
+                        if(bad)
+                            throw bad + " not a valid column!";
+                    }
+                };
+                parents_first_traversal(chart_attrs, defn.type, callbacks);
+
+                if(errors.length)
+                    throw errors;
+            }
+
+
+            // look for required attrs not filled and unknown attrs
+            function check_dimension_attrs(name, defn) {
+            }
+            function check_group_attrs(name, defn) {
+                var expected = ['dimension', 'group', 'reduce'];
+                var k = _.keys(defn),
+                    missing = _.difference(expected, k),
+                    unknown = _.difference(k, expected),
+                    errors = [];
+                if(missing.length)
+                    errors.push('definition is missing required attrs: ' + missing.join(', '));
+                if(unknown.length)
+                    errors.push('definition has unknown attrs: ' + unknown.join(', '));
+
+                if(errors.length)
+                    throw errors;
+            }
+            function check_chart_attrs(name, defn) {
+                function find_discreps(defn, type, missing, found) {
+                    var cattrs = chart_attrs[type];
+                    if(!cattrs.supported)
+                        throw 'type "' + type + '" not supported';
+                    if('parents' in cattrs)
+                        for(var i = 0; i < cattrs.parents.length; ++i)
+                            find_discreps(defn, cattrs.parents[i], missing, found);
+                    for(var a in cattrs) {
+                        if(skip_attr(a))
+                            continue;
+                        if(cattrs[a].required && defn[a]===undefined)
+                            missing.push(a);
+                        if(_.has(found, a))
+                            found[a] = true;
                     }
                 }
-            },
-            coordinateGrid: function() {
-                if(_.has(defn, 'margins')) chart.margins(defn.margins);
-                else chart.margins({top: 10, right: 50, bottom: 30, left: 60});
-                if(_.has(defn, 'x'))
-                    chart.keyAccessor(key_value(accessor(defn.x)));
-                if(_.has(defn, 'y'))
-                    chart.valueAccessor(key_value(accessor(defn.y)));
-
-                var xtrans = defn['x.scale'];
-                if(_.has(defn, 'x.domain'))
-                    xtrans.domain(defn['x.domain']);
-                chart.x(xtrans)
-                    .xUnits(defn['x.units']);
-                if(_.has(defn, 'x.round'))
-                    chart.round(defn['x.round']);
-                if(_.has(defn, 'x.elastic'))
-                    chart.elasticX(defn['x.elastic']);
-                if(_.has(defn, 'x.padding'))
-                    chart.xAxisPadding(defn['x.padding']);
-
-                if(_.has(defn, 'y.scale')) {
-                    var ytrans = defn['y.scale'];
-                    if(_.has(defn, 'y.domain'))
-                        ytrans.domain(defn['y.domain']);
-                    chart.y(ytrans);
+                function empty_found_map(defn) {
+                    var k = _.without(_.keys(defn), 'type'), n = k.length, v = [];
+                    while(n--) v.push(false);
+                    return _.object(k,v);
                 }
-                if(_.has(defn, 'y.elastic'))
-                    chart.elasticY(defn['y.elastic']);
-                if(_.has(defn, 'y.padding'))
-                    chart.yAxisPadding(defn['y.padding']);
+                var missing = [], found = empty_found_map(defn);
+                find_discreps(defn, defn.type, missing, found);
+                var errors = [];
+                if(missing.length)
+                    errors.push('definition is missing required attrs: ' + missing.join(', '));
+                var unknown = _.map(_.reject(_.pairs(found),
+                                             function(p) { return p[1]; }),
+                                    function(p) { return p[0]; });
+                if(unknown.length)
+                    errors.push('definition has unknown attrs: ' + unknown.join(', '));
 
-                if(_.has(defn, 'gridLines')) {
-                    var lines = defn.gridLines;
-                    if('horizontal' in lines)
-                        chart.renderVerticalGridLines(lines.horizontal);
-                    if('vertical' in lines)
-                        chart.renderVerticalGridLines(lines.vertical);
-                }
-                if(_.has(defn, 'brush'))
-                    chart.brushOn(defn.brush);
-            },
-            pie: function() {
-                if(_.has(defn, 'wedge'))
-                    chart.keyAccessor(key_value(defn.wedge));
-                if(_.has(defn, 'size'))
-                    chart.keyAccessor(key_value(defn.size));
+                if(errors.length)
+                    throw errors;
+            }
 
-                if(_.has(defn, 'radius'))
-                    chart.radius(defn.radius);
-                if(_.has(defn, 'innerRadius'))
-                    chart.innerRadius(defn.innerRadius);
-            },
-            bar: function() {
-                if(_.has(defn, 'centerBar'))
-                    chart.centerBar(defn.centerBar);
-                if(_.has(defn, 'gap'))
-                    chart.gap(defn.gap);
-                // optionally color the bars when ordinal and not stacked or one stack
-                if(_.has(defn,'x.ordinal') && defn['x.ordinal'] && defn['color.x'] && one_stack(defn)) {
-                    chart.renderlet(function(chart) {
-                        chart.selectAll("rect.bar").style('fill', function(d,i) {
-                            if(d3.select(this).classed(dc.constants.DESELECTED_CLASS))
-                                return null;
-                            else return chart.colors()(d.x);
-                        });
-                    });
-                }
-                else if(!one_stack(defn)) {
-                    // dc.js does not automatically color the stacks different colors (!)
-                    chart.renderlet(function(chart) {
-                        chart.selectAll("g."+dc.constants.STACK_CLASS)
-                            .each(function(d,i) {
-                                var stack = defn['stack.levels'][i];
-                                d3.select(this).selectAll("rect.bar")
-                                    .style('fill', function(d,i) {
-                                        if(d3.select(this).classed(dc.constants.DESELECTED_CLASS))
-                                            return null;
-                                        else return chart.colors()(stack);
-                                    })
-                                    .select('title')
-                                    .text(function(d,i) {
-                                        return stack + ", " + d3.select(this).text();
+
+            // logic errors
+            function check_dimension_logic(name, defn) {
+                // nothing (yet?)
+            }
+            function check_group_logic(name, defn, dims) {
+                var errors = [];
+                if(!_.has(dims, defn.dimension))
+                    errors.push('unknown dimension "' + defn.dimension + '"');
+
+                if(errors.length)
+                    throw errors;
+            }
+            function check_chart_logic(name, defn, dims, groups) {
+                var errors = [];
+                var callbacks = {
+                    base: function() {
+                        if(defn.dimension && defn.dimension!=groups[defn.group].dimension)
+                            errors.push('group "' + defn.group + '" dimension "' + groups[defn.group].dimension
+                                        + '" does not match chart dimension "' + defn.dimension + '"');
+                    },
+                    color: function() {
+                    },
+                    stackable: function() {
+                    },
+                    coordinateGrid: function() {
+                        // dc.js doesn't require domain but in practice it's needed unless elastic
+                        if(!defn['x.elastic'] && !('x.domain' in defn))
+                            throw 'need x.domain unless x.elastic';
+                        if(!defn['y.elastic'] && !('y.domain' in defn))
+                            throw 'need y.domain unless y.elastic';
+                    },
+                    pie: function() {
+                    },
+                    bar: function() {
+                    },
+                    line: function() {
+                    },
+                    abstractBubble: function() {
+                    },
+                    bubble: function() {
+                    },
+                    dataTable: function() {
+                    }
+                };
+
+                parents_first_traversal(chart_attrs, defn.type, callbacks);
+
+                if(errors.length)
+                    throw errors;
+            }
+
+            function create_group(defn, dimensions) {
+                return accessor(defn.reduce)(defn.group(dimensions[defn.dimension]));
+            }
+
+
+            // this is a hopefully a lot of boilerplate with not too much logic
+            // maps from dcplot attributes to dc.js methods
+            function create_chart(groupname, defn, dimensions, groups) {
+                var ctor, chart;
+
+                /* create uniformity between crossfilter dimension and reduce functions,
+                 and dc.js accessor functions with a simple trick: for the latter,
+                 split the input, which is {key, value}, into two params. this works
+                 because crossfilter functions work with just the 'key'
+
+                 i.e. in crossfilter:
+                 * dimension functions are key -> key
+                 * group.group functions are key -> key
+                 * group.reduce functions are key -> value
+                 in dc:
+                 * accessor functions are {key,value} -> whatever
+
+                 so instead we make them (key,value) -> whatever and then they look like
+                 crossfilter functions!
+                 */
+                function key_value(f) { return function(kv) { return f(kv.key, kv.value); }; }
+
+                var callbacks = {
+                    base: function() {
+                        chart = ctor(defn.div, groupname);
+                        chart.dimension(dimensions[defn.dimension])
+                            .group(groups[defn.group])
+                            .width(defn.width)
+                            .height(defn.height);
+                        if(_.has(defn, 'ordering'))
+                            chart.ordering(defn.ordering);
+                        if(_.has(defn, 'transition.duration'))
+                            chart.transitionDuration(defn['transition.duration']);
+                        if(_.has(defn, 'label')) {
+                            if(defn.label)
+                                chart.label(key_value(defn.label));
+                            else
+                                chart.renderLabel(false);
+                        }
+                        if(_.has(defn, 'tips')) {
+                            if(defn.tips)
+                                chart.title(key_value(defn.tips));
+                            else
+                                chart.renderTitle(false);
+                        }
+                    },
+                    color: function() {
+                        // i am cool with dc.js's color accessor
+                        if(_.has(defn, 'color'))
+                            chart.colorAccessor(key_value(accessor(defn.color)));
+                        // however i don't understand why dc chooses to use a
+                        // "color calculator" when a d3 scale seems like it ought
+                        // to serve the purpose. so just plug a d3 scale into colors
+                        // and override the calculator to use it
+                        // also default to category10 which seems better for discrete colors
+
+                        var scale = defn['color.scale'];
+                        if(_.has(defn, 'color.domain'))
+                            scale.domain(defn['color.domain']);
+                        if(_.has(defn, 'color.range'))
+                            scale.range(defn['color.range']);
+                        chart.colors(scale);
+                        chart.colorCalculator(function(x) { return chart.colors()(x); });
+                    },
+                    stackable: function() {
+                        if(_.has(defn, 'stack') && _.has(defn, 'stack.levels')) {
+                            for(var s = 0; s<defn['stack.levels'].length; s++) {
+                                var stackGroup = groups[defn.group+defn['stack.levels'][s]];
+
+                                if(s == 0)
+                                    chart.group(stackGroup);
+                                else chart.stack(stackGroup);
+                            }
+                        }
+                    },
+                    coordinateGrid: function() {
+                        if(_.has(defn, 'margins')) chart.margins(defn.margins);
+                        else chart.margins({top: 10, right: 50, bottom: 30, left: 60});
+                        if(_.has(defn, 'x'))
+                            chart.keyAccessor(key_value(accessor(defn.x)));
+                        if(_.has(defn, 'y'))
+                            chart.valueAccessor(key_value(accessor(defn.y)));
+
+                        var xtrans = defn['x.scale'];
+                        if(_.has(defn, 'x.domain'))
+                            xtrans.domain(defn['x.domain']);
+                        chart.x(xtrans)
+                            .xUnits(defn['x.units']);
+                        if(_.has(defn, 'x.round'))
+                            chart.round(defn['x.round']);
+                        if(_.has(defn, 'x.elastic'))
+                            chart.elasticX(defn['x.elastic']);
+                        if(_.has(defn, 'x.padding'))
+                            chart.xAxisPadding(defn['x.padding']);
+
+                        if(_.has(defn, 'y.scale')) {
+                            var ytrans = defn['y.scale'];
+                            if(_.has(defn, 'y.domain'))
+                                ytrans.domain(defn['y.domain']);
+                            chart.y(ytrans);
+                        }
+                        if(_.has(defn, 'y.elastic'))
+                            chart.elasticY(defn['y.elastic']);
+                        if(_.has(defn, 'y.padding'))
+                            chart.yAxisPadding(defn['y.padding']);
+
+                        if(_.has(defn, 'gridLines')) {
+                            var lines = defn.gridLines;
+                            if('horizontal' in lines)
+                                chart.renderVerticalGridLines(lines.horizontal);
+                            if('vertical' in lines)
+                                chart.renderVerticalGridLines(lines.vertical);
+                        }
+                        if(_.has(defn, 'brush'))
+                            chart.brushOn(defn.brush);
+                    },
+                    pie: function() {
+                        if(_.has(defn, 'wedge'))
+                            chart.keyAccessor(key_value(defn.wedge));
+                        if(_.has(defn, 'size'))
+                            chart.keyAccessor(key_value(defn.size));
+
+                        if(_.has(defn, 'radius'))
+                            chart.radius(defn.radius);
+                        if(_.has(defn, 'innerRadius'))
+                            chart.innerRadius(defn.innerRadius);
+                    },
+                    bar: function() {
+                        if(_.has(defn, 'centerBar'))
+                            chart.centerBar(defn.centerBar);
+                        if(_.has(defn, 'gap'))
+                            chart.gap(defn.gap);
+                        // optionally color the bars when ordinal and not stacked or one stack
+                        if(_.has(defn,'x.ordinal') && defn['x.ordinal'] && defn['color.x'] && one_stack(defn)) {
+                            chart.renderlet(function(chart) {
+                                chart.selectAll("rect.bar").style('fill', function(d,i) {
+                                    if(d3.select(this).classed(dc.constants.DESELECTED_CLASS))
+                                        return null;
+                                    else return chart.colors()(d.x);
+                                });
+                            });
+                        }
+                        else if(!one_stack(defn)) {
+                            // dc.js does not automatically color the stacks different colors (!)
+                            chart.renderlet(function(chart) {
+                                chart.selectAll("g."+dc.constants.STACK_CLASS)
+                                    .each(function(d,i) {
+                                        var stack = defn['stack.levels'][i];
+                                        d3.select(this).selectAll("rect.bar")
+                                            .style('fill', function(d,i) {
+                                                if(d3.select(this).classed(dc.constants.DESELECTED_CLASS))
+                                                    return null;
+                                                else return chart.colors()(stack);
+                                            })
+                                            .select('title')
+                                            .text(function(d,i) {
+                                                return stack + ", " + d3.select(this).text();
+                                            });
                                     });
                             });
-                    });
+                        }
+
+                    },
+                    line: function() {
+                        if(_.has(defn, 'area'))
+                            chart.renderArea(defn.area);
+                        if(_.has(defn, 'dotRadius'))
+                            chart.dotRadius(defn.dotRadius);
+                    },
+                    abstractBubble: function() {
+                    },
+                    bubble: function() {
+                        if(_.has(defn, 'r'))
+                            chart.radiusValueAccessor(key_value(accessor(defn.r)));
+                        if(_.has(defn, 'r.scale') || _.has(defn, 'r.domain')) {
+                            var rtrans = defn['r.scale'] || d3.scale.linear();
+                            rtrans.domain(defn['r.domain'] || [0,100]);
+                            chart.r(rtrans);
+                        }
+                    },
+                    dataTable: function() {
+                        chart.group(accessor(defn.dimension));
+                        chart.columns(defn['columns'].map(accessor));
+                        chart.size(defn.size || frame.records().length);
+                        if(_.has(defn,'sortBy'))
+                            chart.sortBy(accessor(defn['sortBy']));
+                    }
+                };
+                ctor = {
+                    pie: dc.pieChart,
+                    bar: dc.barChart,
+                    line: dc.lineChart,
+                    bubble: dc.bubbleChart,
+                    dataTable: dc.dataTable
+                }[defn.type];
+
+                parents_first_traversal(chart_attrs, defn.type, callbacks);
+
+                // perform any extra post-processing
+                if(_.has(defn, 'more'))
+                    defn.more(chart);
+
+                return chart;
+            }
+
+
+            function aggregate_errors(dimension_fn, group_fn, chart_fn) {
+                var errors = [];
+                for(var d in definition.dimensions) {
+                    defn = definition.dimensions[d];
+                    try {
+                        dimension_fn(d, defn);
+                    }
+                    catch(e) {
+                        errors.push({type: 'dimension', name: d, errors: e});
+                    }
                 }
-
-            },
-            line: function() {
-                if(_.has(defn, 'area'))
-                    chart.renderArea(defn.area);
-                if(_.has(defn, 'dotRadius'))
-                    chart.dotRadius(defn.dotRadius);
-            },
-            abstractBubble: function() {
-            },
-            bubble: function() {
-                if(_.has(defn, 'r'))
-                    chart.radiusValueAccessor(key_value(accessor(defn.r)));
-                if(_.has(defn, 'r.scale') || _.has(defn, 'r.domain')) {
-                    var rtrans = defn['r.scale'] || d3.scale.linear();
-                    rtrans.domain(defn['r.domain'] || [0,100]);
-                    chart.r(rtrans);
+                if(!_.has(definition, 'groups'))
+                    definition.groups = {};
+                for(var g in definition.groups) {
+                    defn = definition.groups[g];
+                    try {
+                        group_fn(g, defn, definition.dimensions);
+                    }
+                    catch(e) {
+                        errors.push({type: 'group', name: g, errors: e});
+                    }
                 }
-            },
-            dataTable: function() {
-                chart.group(accessor(defn.dimension));
-                chart.columns(defn['columns'].map(accessor));
-                chart.size(defn.size || frame.records().length);
-                if(_.has(defn,'sortBy'))
-                    chart.sortBy(accessor(defn['sortBy']));
+                for(var c in definition.charts) {
+                    defn = definition.charts[c];
+                    try {
+                        chart_fn(c, defn, definition.dimensions, definition.groups);
+                    }
+                    catch(e) {
+                        errors.push({type: 'chart', name: c, errors: e});
+                    }
+                }
+                return errors;
             }
-        };
-        ctor = {
-            pie: dc.pieChart,
-            bar: dc.barChart,
-            line: dc.lineChart,
-            bubble: dc.bubbleChart,
-            dataTable: dc.dataTable
-        }[defn.type];
 
-        parents_first_traversal(chart_attrs, defn.type, callbacks);
+            var errors = [];
+            var defn;
 
-        // perform any extra post-processing
-        if(_.has(defn, 'more'))
-            defn.more(chart);
-
-        return chart;
-    }
-
-
-    function aggregate_errors(dimension_fn, group_fn, chart_fn) {
-        var errors = [];
-        for(var d in definition.dimensions) {
-            defn = definition.dimensions[d];
-            try {
-                dimension_fn(d, defn);
+            // first check all chart types because the traversals are unchecked
+            for(var c in definition.charts) {
+                defn = definition.charts[c];
+                if(!(defn.type in chart_attrs))
+                    throw 'unknown chart type "' + defn.type + '"';
+                if(!chart_attrs[defn.type].supported)
+                    throw 'unsupported chart type "' + defn.type + '"';
+                if(!chart_attrs[defn.type].concrete)
+                    throw "can't create abstract chart type \"" + defn.type + '"';
             }
-            catch(e) {
-                errors.push({type: 'dimension', name: d, errors: e});
+
+            // fill in anything easily defaultable (will not happen in incremental mode)
+            // [but are there things we only want to default after inference?]
+            errors = aggregate_errors(default_dimension, default_group, default_chart);
+            if(errors.length)
+                throw errors;
+
+            // infer attributes from other attributes
+            errors = aggregate_errors(infer_dimension, infer_group, infer_chart);
+            if(errors.length)
+                throw errors;
+
+            // check for missing or unknown attrs
+            errors = aggregate_errors(check_dimension_attrs, check_group_attrs, check_chart_attrs);
+            if(errors.length)
+                throw errors;
+
+            // check for inconsistencies and other specific badness
+            errors = aggregate_errors(check_dimension_logic, check_group_logic, check_chart_logic);
+            if(errors.length)
+                throw errors;
+
+            console.log("dcplot charts definition:");
+            console.log(definition);
+
+            // create / fill stuff in
+            var dimensions = {};
+            var groups = {};
+            var charts = {};
+
+            var ndx = crossfilter(frame.records());
+            for(var d in definition.dimensions) {
+                defn = definition.dimensions[d];
+                dimensions[d] = ndx.dimension(accessor(defn));
             }
+            for(var g in definition.groups) {
+                defn = definition.groups[g];
+                groups[g] = create_group(defn, dimensions);
+            }
+
+            for(c in definition.charts) {
+                defn = definition.charts[c];
+                charts[c] = create_chart(groupname, defn, dimensions, groups);
+            }
+
+            dc.renderAll(groupname);
+
+            return charts;
         }
-        if(!_.has(definition, 'groups'))
-            definition.groups = {};
-        for(var g in definition.groups) {
-            defn = definition.groups[g];
-            try {
-                group_fn(g, defn, definition.dimensions);
-            }
-            catch(e) {
-                errors.push({type: 'group', name: g, errors: e});
-            }
-        }
-        for(var c in definition.charts) {
-            defn = definition.charts[c];
-            try {
-                chart_fn(c, defn, definition.dimensions, definition.groups);
-            }
-            catch(e) {
-                errors.push({type: 'chart', name: c, errors: e});
-            }
-        }
-        return errors;
+        return dcplot;
     }
-
-    var errors = [];
-    var defn;
-
-    // first check all chart types because the traversals are unchecked
-    for(var c in definition.charts) {
-        defn = definition.charts[c];
-        if(!(defn.type in chart_attrs))
-            throw 'unknown chart type "' + defn.type + '"';
-        if(!chart_attrs[defn.type].supported)
-            throw 'unsupported chart type "' + defn.type + '"';
-        if(!chart_attrs[defn.type].concrete)
-            throw "can't create abstract chart type \"" + defn.type + '"';
+    // crossfilter is not amd-ized, therefore not a dependency here
+    if(typeof define === "function" && define.amd) {
+        define(["dc", "crossfilter"], _dcplot);
+    } else if(typeof module === "object" && module.exports) {
+        module.exports = _dcplot(dc, crossfilter);
+    } else {
+        this.dcplot = _dcplot(dc, crossfilter);
     }
-
-    // fill in anything easily defaultable (will not happen in incremental mode)
-    // [but are there things we only want to default after inference?]
-    errors = aggregate_errors(default_dimension, default_group, default_chart);
-    if(errors.length)
-        throw errors;
-
-    // infer attributes from other attributes
-    errors = aggregate_errors(infer_dimension, infer_group, infer_chart);
-    if(errors.length)
-        throw errors;
-
-    // check for missing or unknown attrs
-    errors = aggregate_errors(check_dimension_attrs, check_group_attrs, check_chart_attrs);
-    if(errors.length)
-        throw errors;
-
-    // check for inconsistencies and other specific badness
-    errors = aggregate_errors(check_dimension_logic, check_group_logic, check_chart_logic);
-    if(errors.length)
-        throw errors;
-
-    console.log("dcplot charts definition:");
-    console.log(definition);
-
-    // create / fill stuff in
-    var dimensions = {};
-    var groups = {};
-    var charts = {};
-
-    var ndx = crossfilter(frame.records());
-    for(var d in definition.dimensions) {
-        defn = definition.dimensions[d];
-        dimensions[d] = ndx.dimension(accessor(defn));
-    }
-    for(var g in definition.groups) {
-        defn = definition.groups[g];
-        groups[g] = create_group(defn, dimensions);
-    }
-
-    for(c in definition.charts) {
-        defn = definition.charts[c];
-        charts[c] = create_chart(groupname, defn, dimensions, groups);
-    }
-
-    dc.renderAll(groupname);
-
-    return charts;
-}
-return dcplot;
-}
-if(typeof define === "function" && define.amd) {
-    define(["dc", "crossfilter"], _dcplot);
-} else if(typeof module === "object" && module.exports) {
-    module.exports = _dcplot(dc, crossfilter);
-} else {
-    this.dcplot = _dcplot(dc, crossfilter);
-}
 }
 )();
 var hljs=new function(){function m(p){return p.replace(/&/gm,"&amp;").replace(/</gm,"&lt;")}function f(r,q,p){return RegExp(q,"m"+(r.cI?"i":"")+(p?"g":""))}function b(r){for(var p=0;p<r.childNodes.length;p++){var q=r.childNodes[p];if(q.nodeName=="CODE"){return q}if(!(q.nodeType==3&&q.nodeValue.match(/\s+/))){break}}}function h(t,s){var p="";for(var r=0;r<t.childNodes.length;r++){if(t.childNodes[r].nodeType==3){var q=t.childNodes[r].nodeValue;if(s){q=q.replace(/\n/g,"")}p+=q}else{if(t.childNodes[r].nodeName=="BR"){p+="\n"}else{p+=h(t.childNodes[r])}}}if(/MSIE [678]/.test(navigator.userAgent)){p=p.replace(/\r/g,"\n")}return p}function a(s){var r=s.className.split(/\s+/);r=r.concat(s.parentNode.className.split(/\s+/));for(var q=0;q<r.length;q++){var p=r[q].replace(/^language-/,"");if(e[p]){return p}}}function c(q){var p=[];(function(s,t){for(var r=0;r<s.childNodes.length;r++){if(s.childNodes[r].nodeType==3){t+=s.childNodes[r].nodeValue.length}else{if(s.childNodes[r].nodeName=="BR"){t+=1}else{if(s.childNodes[r].nodeType==1){p.push({event:"start",offset:t,node:s.childNodes[r]});t=arguments.callee(s.childNodes[r],t);p.push({event:"stop",offset:t,node:s.childNodes[r]})}}}}return t})(q,0);return p}function k(y,w,x){var q=0;var z="";var s=[];function u(){if(y.length&&w.length){if(y[0].offset!=w[0].offset){return(y[0].offset<w[0].offset)?y:w}else{return w[0].event=="start"?y:w}}else{return y.length?y:w}}function t(D){var A="<"+D.nodeName.toLowerCase();for(var B=0;B<D.attributes.length;B++){var C=D.attributes[B];A+=" "+C.nodeName.toLowerCase();if(C.value!==undefined&&C.value!==false&&C.value!==null){A+='="'+m(C.value)+'"'}}return A+">"}while(y.length||w.length){var v=u().splice(0,1)[0];z+=m(x.substr(q,v.offset-q));q=v.offset;if(v.event=="start"){z+=t(v.node);s.push(v.node)}else{if(v.event=="stop"){var p,r=s.length;do{r--;p=s[r];z+=("</"+p.nodeName.toLowerCase()+">")}while(p!=v.node);s.splice(r,1);while(r<s.length){z+=t(s[r]);r++}}}}return z+m(x.substr(q))}function j(){function q(x,y,v){if(x.compiled){return}var u;var s=[];if(x.k){x.lR=f(y,x.l||hljs.IR,true);for(var w in x.k){if(!x.k.hasOwnProperty(w)){continue}if(x.k[w] instanceof Object){u=x.k[w]}else{u=x.k;w="keyword"}for(var r in u){if(!u.hasOwnProperty(r)){continue}x.k[r]=[w,u[r]];s.push(r)}}}if(!v){if(x.bWK){x.b="\\b("+s.join("|")+")\\s"}x.bR=f(y,x.b?x.b:"\\B|\\b");if(!x.e&&!x.eW){x.e="\\B|\\b"}if(x.e){x.eR=f(y,x.e)}}if(x.i){x.iR=f(y,x.i)}if(x.r===undefined){x.r=1}if(!x.c){x.c=[]}x.compiled=true;for(var t=0;t<x.c.length;t++){if(x.c[t]=="self"){x.c[t]=x}q(x.c[t],y,false)}if(x.starts){q(x.starts,y,false)}}for(var p in e){if(!e.hasOwnProperty(p)){continue}q(e[p].dM,e[p],true)}}function d(B,C){if(!j.called){j();j.called=true}function q(r,M){for(var L=0;L<M.c.length;L++){if((M.c[L].bR.exec(r)||[null])[0]==r){return M.c[L]}}}function v(L,r){if(D[L].e&&D[L].eR.test(r)){return 1}if(D[L].eW){var M=v(L-1,r);return M?M+1:0}return 0}function w(r,L){return L.i&&L.iR.test(r)}function K(N,O){var M=[];for(var L=0;L<N.c.length;L++){M.push(N.c[L].b)}var r=D.length-1;do{if(D[r].e){M.push(D[r].e)}r--}while(D[r+1].eW);if(N.i){M.push(N.i)}return f(O,M.join("|"),true)}function p(M,L){var N=D[D.length-1];if(!N.t){N.t=K(N,E)}N.t.lastIndex=L;var r=N.t.exec(M);return r?[M.substr(L,r.index-L),r[0],false]:[M.substr(L),"",true]}function z(N,r){var L=E.cI?r[0].toLowerCase():r[0];var M=N.k[L];if(M&&M instanceof Array){return M}return false}function F(L,P){L=m(L);if(!P.k){return L}var r="";var O=0;P.lR.lastIndex=0;var M=P.lR.exec(L);while(M){r+=L.substr(O,M.index-O);var N=z(P,M);if(N){x+=N[1];r+='<span class="'+N[0]+'">'+M[0]+"</span>"}else{r+=M[0]}O=P.lR.lastIndex;M=P.lR.exec(L)}return r+L.substr(O,L.length-O)}function J(L,M){if(M.sL&&e[M.sL]){var r=d(M.sL,L);x+=r.keyword_count;return r.value}else{return F(L,M)}}function I(M,r){var L=M.cN?'<span class="'+M.cN+'">':"";if(M.rB){y+=L;M.buffer=""}else{if(M.eB){y+=m(r)+L;M.buffer=""}else{y+=L;M.buffer=r}}D.push(M);A+=M.r}function G(N,M,Q){var R=D[D.length-1];if(Q){y+=J(R.buffer+N,R);return false}var P=q(M,R);if(P){y+=J(R.buffer+N,R);I(P,M);return P.rB}var L=v(D.length-1,M);if(L){var O=R.cN?"</span>":"";if(R.rE){y+=J(R.buffer+N,R)+O}else{if(R.eE){y+=J(R.buffer+N,R)+O+m(M)}else{y+=J(R.buffer+N+M,R)+O}}while(L>1){O=D[D.length-2].cN?"</span>":"";y+=O;L--;D.length--}var r=D[D.length-1];D.length--;D[D.length-1].buffer="";if(r.starts){I(r.starts,"")}return R.rE}if(w(M,R)){throw"Illegal"}}var E=e[B];var D=[E.dM];var A=0;var x=0;var y="";try{var s,u=0;E.dM.buffer="";do{s=p(C,u);var t=G(s[0],s[1],s[2]);u+=s[0].length;if(!t){u+=s[1].length}}while(!s[2]);if(D.length>1){throw"Illegal"}return{r:A,keyword_count:x,value:y}}catch(H){if(H=="Illegal"){return{r:0,keyword_count:0,value:m(C)}}else{throw H}}}function g(t){var p={keyword_count:0,r:0,value:m(t)};var r=p;for(var q in e){if(!e.hasOwnProperty(q)){continue}var s=d(q,t);s.language=q;if(s.keyword_count+s.r>r.keyword_count+r.r){r=s}if(s.keyword_count+s.r>p.keyword_count+p.r){r=p;p=s}}if(r.language){p.second_best=r}return p}function i(r,q,p){if(q){r=r.replace(/^((<[^>]+>|\t)+)/gm,function(t,w,v,u){return w.replace(/\t/g,q)})}if(p){r=r.replace(/\n/g,"<br>")}return r}function n(t,w,r){var x=h(t,r);var v=a(t);var y,s;if(v){y=d(v,x)}else{return}var q=c(t);if(q.length){s=document.createElement("pre");s.innerHTML=y.value;y.value=k(q,c(s),x)}y.value=i(y.value,w,r);var u=t.className;if(!u.match("(\\s|^)(language-)?"+v+"(\\s|$)")){u=u?(u+" "+v):v}if(/MSIE [678]/.test(navigator.userAgent)&&t.tagName=="CODE"&&t.parentNode.tagName=="PRE"){s=t.parentNode;var p=document.createElement("div");p.innerHTML="<pre><code>"+y.value+"</code></pre>";t=p.firstChild.firstChild;p.firstChild.cN=s.cN;s.parentNode.replaceChild(p.firstChild,s)}else{t.innerHTML=y.value}t.className=u;t.result={language:v,kw:y.keyword_count,re:y.r};if(y.second_best){t.second_best={language:y.second_best.language,kw:y.second_best.keyword_count,re:y.second_best.r}}}function o(){if(o.called){return}o.called=true;var r=document.getElementsByTagName("pre");for(var p=0;p<r.length;p++){var q=b(r[p]);if(q){n(q,hljs.tabReplace)}}}function l(){if(window.addEventListener){window.addEventListener("DOMContentLoaded",o,false);window.addEventListener("load",o,false)}else{if(window.attachEvent){window.attachEvent("onload",o)}else{window.onload=o}}}var e={};this.LANGUAGES=e;this.highlight=d;this.highlightAuto=g;this.fixMarkup=i;this.highlightBlock=n;this.initHighlighting=o;this.initHighlightingOnLoad=l;this.IR="[a-zA-Z][a-zA-Z0-9_]*";this.UIR="[a-zA-Z_][a-zA-Z0-9_]*";this.NR="\\b\\d+(\\.\\d+)?";this.CNR="\\b(0[xX][a-fA-F0-9]+|(\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)";this.BNR="\\b(0b[01]+)";this.RSR="!|!=|!==|%|%=|&|&&|&=|\\*|\\*=|\\+|\\+=|,|\\.|-|-=|/|/=|:|;|<|<<|<<=|<=|=|==|===|>|>=|>>|>>=|>>>|>>>=|\\?|\\[|\\{|\\(|\\^|\\^=|\\||\\|=|\\|\\||~";this.ER="(?![\\s\\S])";this.BE={b:"\\\\.",r:0};this.ASM={cN:"string",b:"'",e:"'",i:"\\n",c:[this.BE],r:0};this.QSM={cN:"string",b:'"',e:'"',i:"\\n",c:[this.BE],r:0};this.CLCM={cN:"comment",b:"//",e:"$"};this.CBLCLM={cN:"comment",b:"/\\*",e:"\\*/"};this.HCM={cN:"comment",b:"#",e:"$"};this.NM={cN:"number",b:this.NR,r:0};this.CNM={cN:"number",b:this.CNR,r:0};this.BNM={cN:"number",b:this.BNR,r:0};this.inherit=function(r,s){var p={};for(var q in r){p[q]=r[q]}if(s){for(var q in s){p[q]=s[q]}}return p}}();hljs.LANGUAGES.r={dM:{c:[hljs.HCM,{cN:"number",b:"\\b0[xX][0-9a-fA-F]+[Li]?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+(?:[eE][+\\-]?\\d*)?L\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+\\.(?!\\d)(?:i\\b)?",e:hljs.IMMEDIATE_RE,r:1},{cN:"number",b:"\\b\\d+(?:\\.\\d*)?(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\.\\d+(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"keyword",b:"(?:tryCatch|library|setGeneric|setGroupGeneric)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\.",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\d+(?![\\w.])",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\b(?:function)",e:hljs.IMMEDIATE_RE,r:2},{cN:"keyword",b:"(?:if|in|break|next|repeat|else|for|return|switch|while|try|stop|warning|require|attach|detach|source|setMethod|setClass)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"literal",b:"(?:NA|NA_integer_|NA_real_|NA_character_|NA_complex_)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"literal",b:"(?:NULL|TRUE|FALSE|T|F|Inf|NaN)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"identifier",b:"[a-zA-Z.][a-zA-Z0-9._]*\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"<\\-(?!\\s*\\d)",e:hljs.IMMEDIATE_RE,r:2},{cN:"operator",b:"\\->|<\\-",e:hljs.IMMEDIATE_RE,r:1},{cN:"operator",b:"%%|~",e:hljs.IMMEDIATE_RE},{cN:"operator",b:">=|<=|==|!=|\\|\\||&&|=|\\+|\\-|\\*|/|\\^|>|<|!|&|\\||\\$|:",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"%",e:"%",i:"\\n",r:1},{cN:"identifier",b:"`",e:"`",r:0},{cN:"string",b:'"',e:'"',c:[hljs.BE],r:0},{cN:"string",b:"'",e:"'",c:[hljs.BE],r:0},{cN:"paren",b:"[[({\\])}]",e:hljs.IMMEDIATE_RE,r:0}]}};
