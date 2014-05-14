@@ -13,5 +13,5 @@ rcloud.start.python <- function()
 
 rcloud.exec.python <- function(cmd)
 {
-  .session$python.run(cmd)
+  py.call(.session$python.run, cmd)
 }
