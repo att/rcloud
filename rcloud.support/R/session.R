@@ -48,7 +48,6 @@ rcloud.set.device.pixel.ratio <- function(ratio) {
 
 session.python.eval <- function(command) {
   result <- rcloud.exec.python(command)
-  "<pre>Success!</pre>"
   to.chunk <- function(chunk) {
     if (chunk$output_type == "pyout") {
       paste("\n    ", chunk$text, sep='')
