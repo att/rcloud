@@ -10,6 +10,9 @@ Notebook.part_name = function(id, language) {
     case 'Markdown':
         ext = 'md';
         break;
+    case 'Python':
+        ext = 'py';
+        break;
     default:
         throw "Unknown language " + language;
     }
