@@ -220,7 +220,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             }
 
             // click on code to edit
-            var code_div = $("code.r", r_result_div);
+            var code_div = $("code.r,code.py", r_result_div);
             code_div.off('click');
             if(!shell.is_view_mode()) {
                 // distinguish between a click and a drag
