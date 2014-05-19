@@ -1466,12 +1466,12 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     cell_status.append(button_float);
     cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
-    var languages = { 
+    var languages = {
         "R": { 'background-color': "#E8F1FA",
                'ace_mode': "ace/mode/r" },
         "Markdown": { 'background-color': "#F7EEE4",
                       'ace_mode': "ace/mode/rmarkdown" },
-        "Python": { 'background-color': "#ff0000",
+        "Python": { 'background-color': "#E8F1FA",
                     'ace_mode': "ace/mode/python" }
         // ,
         // "Bash": { 'background-color': "#00ff00" }
@@ -1672,6 +1672,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             inner_div
                 .find("pre code")
                 .each(function(i, e) {
+                    // only highlight things which have
+                    // defined classes coming from knitr and markdown
+                    if (e.classList.length === 0)
+                        return;
                     hljs.highlightBlock(e);
                 });
 
