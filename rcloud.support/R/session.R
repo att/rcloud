@@ -49,6 +49,7 @@ rcloud.set.device.pixel.ratio <- function(ratio) {
 session.python.eval <- function(command) {
   result <- rcloud.exec.python(command)
   to.chunk <- function(chunk) {
+    chunk <- as.list(chunk)
     if (chunk$output_type == "pyout") {
       paste("\n    ", chunk$text, sep='')
     } else if (chunk$output_type == "stream") {
@@ -58,7 +59,7 @@ session.python.eval <- function(command) {
     } else ""
   }
   md <- paste(lapply(result, to.chunk), collapse='\n')
-  val <- markdownToHTML(text=md, fragment=TRUE)
+  val <- if (nzchar(md)) markdownToHTML(text=md, fragment=TRUE) else ""
   val
 }
 
