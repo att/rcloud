@@ -1,6 +1,6 @@
 rcloud.start.python <- function()
 {
-  require(rpython2)
+  require(rpython2, quietly=TRUE)
   py.init()
   sys <- py.import("sys")
   py.attr(sys, "path", .ref=TRUE)$append(dirname(system.file("python", "notebook_runner.py", package="rcloud.support")))

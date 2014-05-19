@@ -47,6 +47,10 @@ rcloud.set.device.pixel.ratio <- function(ratio) {
 }
 
 session.python.eval <- function(command) {
+  if (is.null(.session$python.started)) {
+    rcloud.start.python()
+    .session$python.started <- TRUE
+  }
   result <- rcloud.exec.python(command)
   to.chunk <- function(chunk) {
     chunk <- as.list(chunk)
@@ -105,8 +109,7 @@ rcloud.session.init <- function(...) {
   .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
   start.rcloud(...)
   rcloud.reset.session()
-  ## FIXME: this should be started only on-demand
-  rcloud.start.python()
+
   ver <- paste0('RCloud ', rcloud.info("version.string"), ' ')
   if (nzchar(rcloud.info("revision"))) ver <- paste0(ver, "(", rcloud.info("branch"), "/", rcloud.info("revision"), "), ")
   paste0(ver, R.version.string, "<br>Welcome, ", .session$username)
