@@ -62,7 +62,7 @@ session.python.eval <- function(command) {
       paste("<img src=\"data:image/png;base64,", sub("\\s+$", "", chunk$png), "\">\n", sep='')
     } else ""
   }
-  md <- paste(lapply(result, to.chunk), collapse='\n')
+  md <- paste("```py",command,"```\n",paste(lapply(result, to.chunk), collapse='\n'), sep='\n')
   val <- if (nzchar(md)) markdownToHTML(text=md, fragment=TRUE) else ""
   val
 }
@@ -79,7 +79,7 @@ session.markdown.eval <- function(command, language, silent) {
     opts_chunk$set(echo=FALSE)
   else
     opts_chunk$set(echo=TRUE)
-  opts_chunk$set(prompt=TRUE)
+  # opts_chunk$set(prompt=TRUE)
   opts_chunk$set(dev="CairoPNG", tidy=FALSE)
 
   if (command == "") command <- " "
