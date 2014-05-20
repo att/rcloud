@@ -270,6 +270,24 @@ Retry() {
     exit 1
 }
 
+SetupRCloudConfig() {
+    # setup rcloud.conf
+    cat > conf/rcloud.conf <<EOF
+Host: 127.0.0.1
+github.client.id: $GITHUB_CLIENT_ID
+github.client.secret: $GITHUB_CLIENT_SECRET
+github.base.url: https://github.com/
+github.api.url: https://api.github.com/
+github.gist.url: https://gist.github.com/
+rcs.engine: redis
+EOF
+
+}
+
+StartRCloud() {
+    ./scripts/fresh_start
+}
+
 COMMAND=$1
 echo "Running command: ${COMMAND}"
 shift
@@ -339,4 +357,14 @@ case $COMMAND in
     "dump_logs_by_extension")
         DumpLogsByExtension "$@"
         ;;
+    ##
+    ## setup the necessary config files
+    "setup_rcloud_config")
+        SetupRCloudConfig "$@"
+        ;;
+    ##
+    ## start running rcloud
+    "start_rcloud")
+	StartRCloud "$@"
+	;;
 esac
