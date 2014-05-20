@@ -16,6 +16,7 @@ before_install:
   - chmod 755 ./travis-tool.sh
   - ./travis-tool.sh bootstrap
   - ./travis-tool.sh aptget_install libxt-dev libcurl4-openssl-dev libcairo2-dev libreadline-dev git redis-server
+  - sudo service redis-server restart
 
 install:
   - ./travis-tool.sh install_deps
