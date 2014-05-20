@@ -691,6 +691,7 @@ RCloud.create = function(rcloud_ocaps) {
         };
     }
 
+    rcloud._ocaps = rcloud_ocaps;
     rcloud.authenticated = rcloud_ocaps.authenticated;
     setup_unauthenticated_ocaps();
     if (rcloud.authenticated)
