@@ -198,7 +198,7 @@ InstallGithub() {
 
 InstallDeps() {
     EnsureDevtools
-    Rscript -e 'library(devtools); library(methods); options(repos=c(CRAN="'"${CRAN}"'")); install_deps(dependencies = TRUE)'
+    Rscript -e 'install.packages("rcloud.support", repos=c("http://RForge.net", "http://R.research.att.com"), type="source")'
 }
 
 DumpSysinfo() {
