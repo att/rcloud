@@ -1,0 +1,33 @@
+# Sample .travis.yml for R projects.
+#
+# See README.md for instructions, or for more configuration options,
+# see the wiki:
+#   https://github.com/craigcitro/r-travis/wiki
+
+language: c
+
+before_install:
+  - curl -OL http://raw.github.com/att/rcloud/develop/scripts/travis-tool.sh
+  - chmod 755 ./travis-tool.sh
+  - ./travis-tool.sh bootstrap
+  - ./travis-tool.sh aptget_install libxt-dev libcurl4-openssl-dev libcairo2-dev libreadline-dev git
+
+install:
+  - ./travis-tool.sh install_deps
+
+script:
+  - ./travis-tool.sh run_tests
+
+on_failure:
+  - ./travis-tool.sh dump_logs
+  - cat /home/travis/build/cscheid/rgithub/github.Rcheck/00install.out
+
+notifications:
+  email:
+    on_success: change
+    on_failure: change
+
+# whitelist
+branches:
+  only:
+    - develop
