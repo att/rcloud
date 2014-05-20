@@ -39,9 +39,15 @@ var shell = (function() {
     }
 
     function scroll_to_end(duration) {
-        window.setTimeout(function() {
-            ui_utils.scroll_to_after($("#prompt-div"));
-        }, 100);
+        if(duration===0) {
+            var div = $("#rcloud-cellarea");
+            div.scrollTop(div[0].scrollHeight);
+        }
+        else {
+            window.setTimeout(function() {
+                ui_utils.scroll_to_after($("#prompt-div"));
+            }, 100);
+        }
     }
 
     var result = {
@@ -78,8 +84,8 @@ var shell = (function() {
         scroll_to_end: scroll_to_end,
         insert_markdown_cell_before: function(index) {
             return notebook_controller_.insert_cell("", "Markdown", index);
-        }, coalesce_prior_cell: function(cell_model) {
-            return notebook_controller_.coalesce_prior_cell(cell_model);
+        }, join_prior_cell: function(cell_model) {
+            return notebook_controller_.join_prior_cell(cell_model);
         }, split_cell: function(cell_model, point1, point2) {
             return notebook_controller_.split_cell(cell_model, point1, point2);
         },

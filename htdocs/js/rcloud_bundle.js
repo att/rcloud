@@ -154,7 +154,12 @@ RCloud.create = function(rcloud_ocaps) {
             if (result.ok) {
                 return result.content;
             } else {
-                throw new Error(command + ': ' + result.content.message);
+                var message;
+                if(result.content && result.content.message)
+                    message = result.content.message;
+                else
+                    message = "error code " + result.code;
+                throw new Error(command + ': ' + message);
             }
         }
 
@@ -469,8 +474,22 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.session_markdown_evalAsync(command, language, silent);
         };
 
+        function upload_opts(opts) {
+            if(_.isBoolean(opts))
+                opts = {force: opts};
+            else if(!_.isObject(opts))
+                throw new Error("didn't understand options " + opts);
+            return $.extend({
+                force: false,
+                $file: $("#file"),
+                $progress: $(".progress"),
+                $progress_bar: $("#progress-bar")
+            }, opts);
+        }
+
         // FIXME make into promises
-        rcloud.upload_to_notebook = function(force, k) {
+        rcloud.upload_to_notebook = function(options, k) {
+            var opts = upload_opts(options);
             k = k || _.identity;
             var on_success = function(v) { k(null, v); };
             var on_failure = function(v) { k(v, null); };
@@ -482,13 +501,13 @@ RCloud.create = function(rcloud_ocaps) {
                 var file_to_upload = new Uint8Array(f_size);
                 var bytes_read = 0;
                 var cur_pos = 0;
-                $(".progress").show();
-                $("#progress-bar").css("width", "0%");
-                $("#progress-bar").attr("aria-valuenow", "0");
+                opts.$progress.show();
+                opts.$progress_bar.css("width", "0%");
+                opts.$progress_bar.attr("aria-valuenow", "0");
                 fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                 fr.onload = function(e) {
-                    $("#progress-bar").attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
-                    $("#progress-bar").css("width", (100 * (bytes_read / f_size)) + "%");
+                    opts.$progress_bar.attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
+                    opts.$progress_bar.css("width", (100 * (bytes_read / f_size)) + "%");
                     if (e.target.result.byteLength > 0) {
                         // still sending data to user agent
                         var bytes = new Uint8Array(e.target.result);
@@ -514,7 +533,7 @@ RCloud.create = function(rcloud_ocaps) {
             }
             if(!(window.File && window.FileReader && window.FileList && window.Blob))
                 throw new Error("File API not supported by browser.");
-            var file=$("#file")[0].files[0];
+            var file=opts.$file[0].files[0];
             if(_.isUndefined(file))
                 throw new Error("No file selected!");
             if(Notebook.is_part_name(file.name)) {
@@ -526,7 +545,7 @@ RCloud.create = function(rcloud_ocaps) {
                 if (err) {
                     throw err;
                 }
-                var file=$("#file")[0].files[0];
+                var file=opts.$file[0].files[0];
                 if(_.isUndefined(file))
                     throw new Error("No file selected!");
                 do_upload(file);
@@ -534,14 +553,15 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         // FIXME make into promises
-        rcloud.upload_file = function(force, k) {
+        rcloud.upload_file = function(options, k) {
+            var opts = upload_opts(options);
             k = k || _.identity;
             var on_success = function(v) { k(null, v); };
             var on_failure = function(v) { k(v, null); };
 
             function do_upload(path, file) {
                 var upload_name = path + '/' + file.name;
-                rcloud_ocaps.file_upload.create(upload_name, force, function(err, result) {
+                rcloud_ocaps.file_upload.create(upload_name, opts.force, function(err, result) {
                     if (RCloud.is_exception(result)) {
                         on_failure(RCloud.exception_message(result));
                         return;
@@ -551,15 +571,15 @@ RCloud.create = function(rcloud_ocaps) {
                     var f_size=file.size;
                     var cur_pos=0;
                     var bytes_read = 0;
-                    $(".progress").show();
-                    $("#progress-bar").css("width", "0%");
-                    $("#progress-bar").attr("aria-valuenow", "0");
+                    opts.$progress.show();
+                    opts.$progress_bar.css("width", "0%");
+                    opts.$progress_bar.attr("aria-valuenow", "0");
                     //initiate the first chunk, and then another, and then another ...
                     // ...while waiting for one to complete before reading another
                     fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                     fr.onload = function(e) {
-                        $("#progress-bar").attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
-                        $("#progress-bar").css("width", (100 * (bytes_read / f_size)) + "%");
+                        opts.$progress_bar.attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
+                        opts.$progress_bar.css("width", (100 * (bytes_read / f_size)) + "%");
                         if (e.target.result.byteLength > 0) {
                             var bytes = new Uint8Array(e.target.result);
                             rcloud_ocaps.file_upload.write(bytes.buffer, function() {
@@ -583,14 +603,14 @@ RCloud.create = function(rcloud_ocaps) {
             if(!(window.File && window.FileReader && window.FileList && window.Blob))
                 throw new Error("File API not supported by browser.");
             else {
-                var file=$("#file")[0].files[0];
+                var file=opts.$file[0].files[0];
                 if(_.isUndefined(file))
                     throw new Error("No file selected!");
                 else {
                     /*FIXME add logged in user */
                     rcloud_ocaps.file_upload.upload_path(function(err, path) {
                         if (err) throw err;
-                        var file=$("#file")[0].files[0];
+                        var file=opts.$file[0].files[0];
                         if(_.isUndefined(file))
                             throw new Error("No file selected!");
                         do_upload(path, file);
@@ -671,6 +691,7 @@ RCloud.create = function(rcloud_ocaps) {
         };
     }
 
+    rcloud._ocaps = rcloud_ocaps;
     rcloud.authenticated = rcloud_ocaps.authenticated;
     setup_unauthenticated_ocaps();
     if (rcloud.authenticated)
@@ -805,12 +826,16 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                 sender: 'editor'
             },
             exec: function(widget, args, request) {
+                if (widget.getOption("readOnly"))
+                    return;
                 var code = session.getTextRange(widget.getSelectionRange());
                 if(code.length==0) {
                     var pos = widget.getCursorPosition();
                     var Range = ace.require('ace/range').Range;
                     var range = new Range(pos.row, 0, pos.row+1, 0);
                     code = session.getTextRange(range);
+                    widget.navigateDown(1);
+                    widget.navigateLineEnd();
                 }
                 shell.new_cell(code, get_language(), true);
             }
@@ -1380,7 +1405,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     // button bar
 
     var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
-    var coalesce_button = ui_utils.fa_button("icon-link", "coalesce cells");
+    var join_button = ui_utils.fa_button("icon-link", "join cells");
     var source_button = ui_utils.fa_button("icon-edit", "source");
     var result_button = ui_utils.fa_button("icon-picture", "result");
     var split_button = ui_utils.fa_button("icon-unlink", "split cell");
@@ -1405,10 +1430,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             shell.insert_markdown_cell_before(cell_model.id());
         }
     });
-    coalesce_button.click(function(e) {
-        coalesce_button.tooltip('destroy');
+    join_button.click(function(e) {
+        join_button.tooltip('destroy');
         if (!$(e.currentTarget).hasClass("button-disabled")) {
-            shell.coalesce_prior_cell(cell_model);
+            shell.join_prior_cell(cell_model);
         }
     });
     split_button.click(function(e) {
@@ -1486,7 +1511,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     notebook_cell_div.append(cell_status);
 
     var insert_button_float = $("<div class='cell-insert-control'></div>");
-    insert_button_float.append(coalesce_button);
+    insert_button_float.append(join_button);
     insert_button_float.append(insert_cell_button);
     notebook_cell_div.append(insert_button_float);
 
@@ -1614,7 +1639,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             var dpr = rcloud.display.get_device_pixel_ratio();
             // fix image width so that retina displays are set correctly
             inner_div.find("img")
-                .each(function(i, img) { img.style.width = img.width / dpr; });
+                .each(function(i, img) {
+                    function update() { img.style.width = img.width / dpr; }
+                    if (img.width === 0) {
+                        $(img).on("load", update);
+                    } else {
+                        update();
+                    };
+                });
 
             // capture deferred knitr results
             inner_div.find("pre code")
@@ -1675,13 +1707,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 disable(remove_button);
                 disable(insert_cell_button);
                 disable(split_button);
-                disable(coalesce_button);
+                disable(join_button);
                 $(widget.container).find(".grab-affordance").hide();
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
                 enable(split_button);
-                enable(coalesce_button);
+                enable(join_button);
             }
         },
 
@@ -1799,9 +1831,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
         check_buttons: function() {
             if(!cell_model.parent_model.prior_cell(cell_model))
-                coalesce_button.hide();
+                join_button.hide();
             else if(!am_read_only)
-                coalesce_button.show();
+                join_button.show();
         }
     };
 
@@ -2496,7 +2528,7 @@ Notebook.create_controller = function(model)
             update_notebook(changes)
                 .then(default_callback_);
         },
-        coalesce_prior_cell: function(cell_model) {
+        join_prior_cell: function(cell_model) {
             var prior = model.prior_cell(cell_model);
             if(!prior)
                 return;

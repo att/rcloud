@@ -10,7 +10,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     // button bar
 
     var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
-    var coalesce_button = ui_utils.fa_button("icon-link", "coalesce cells");
+    var join_button = ui_utils.fa_button("icon-link", "join cells");
     var source_button = ui_utils.fa_button("icon-edit", "source");
     var result_button = ui_utils.fa_button("icon-picture", "result");
     var split_button = ui_utils.fa_button("icon-unlink", "split cell");
@@ -35,10 +35,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             shell.insert_markdown_cell_before(cell_model.id());
         }
     });
-    coalesce_button.click(function(e) {
-        coalesce_button.tooltip('destroy');
+    join_button.click(function(e) {
+        join_button.tooltip('destroy');
         if (!$(e.currentTarget).hasClass("button-disabled")) {
-            shell.coalesce_prior_cell(cell_model);
+            shell.join_prior_cell(cell_model);
         }
     });
     split_button.click(function(e) {
@@ -116,7 +116,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     notebook_cell_div.append(cell_status);
 
     var insert_button_float = $("<div class='cell-insert-control'></div>");
-    insert_button_float.append(coalesce_button);
+    insert_button_float.append(join_button);
     insert_button_float.append(insert_cell_button);
     notebook_cell_div.append(insert_button_float);
 
@@ -244,7 +244,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             var dpr = rcloud.display.get_device_pixel_ratio();
             // fix image width so that retina displays are set correctly
             inner_div.find("img")
-                .each(function(i, img) { img.style.width = img.width / dpr; });
+                .each(function(i, img) {
+                    function update() { img.style.width = img.width / dpr; }
+                    if (img.width === 0) {
+                        $(img).on("load", update);
+                    } else {
+                        update();
+                    };
+                });
 
             // capture deferred knitr results
             inner_div.find("pre code")
@@ -305,13 +312,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 disable(remove_button);
                 disable(insert_cell_button);
                 disable(split_button);
-                disable(coalesce_button);
+                disable(join_button);
                 $(widget.container).find(".grab-affordance").hide();
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
                 enable(split_button);
-                enable(coalesce_button);
+                enable(join_button);
             }
         },
 
@@ -429,9 +436,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
         check_buttons: function() {
             if(!cell_model.parent_model.prior_cell(cell_model))
-                coalesce_button.hide();
+                join_button.hide();
             else if(!am_read_only)
-                coalesce_button.show();
+                join_button.show();
         }
     };
 
