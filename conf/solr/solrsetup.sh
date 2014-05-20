@@ -44,6 +44,7 @@ mkdir solr/example/solr/rcloudnotebooks/data
 rm solr/example/solr/rcloudnotebooks/core.properties 
 cp "$WD/schema.xml" solr/example/solr/rcloudnotebooks/conf/
 cp "$WD/solrconfig.xml" solr/example/solr/rcloudnotebooks/conf/
+cp "$WD/word-delim-types.txt" solr/example/solr/rcloudnotebooks/conf/
 cd solr/example/
 
 # Start apache Solr on default port
