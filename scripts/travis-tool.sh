@@ -272,6 +272,9 @@ Retry() {
 
 SetupRCloudConfig() {
     # setup rcloud.conf
+    echo "Will try creating the rcloud configuration files"
+    echo "Current directory:"
+    pwd
     cat > conf/rcloud.conf <<EOF
 Host: 127.0.0.1
 github.client.id: $GITHUB_CLIENT_ID
@@ -281,7 +284,11 @@ github.api.url: https://api.github.com/
 github.gist.url: https://gist.github.com/
 rcs.engine: redis
 EOF
-
+    echo "this is what I got:"
+    cat conf/rcloud | grep -v client
+    echo "directory:"
+    ls
+    ls conf
 }
 
 StartRCloud() {
