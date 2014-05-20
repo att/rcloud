@@ -40,7 +40,7 @@ class Main:
         self.out.markdown_cell('#' * cell[u'level'] + ' ' + " ".join(cell[u'source']))
 
     def markdown(self, cell):
-        self.out.markdown_cell("\n".join(cell[u'source']))
+        self.out.markdown_cell("".join(cell[u'source']))
 
     def code(self, cell):
         self.out.python_cell("".join(cell[u'input']))
