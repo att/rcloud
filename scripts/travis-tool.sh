@@ -273,14 +273,7 @@ Retry() {
 SetupRCloudConfig() {
     # setup rcloud.conf
     echo "Will try creating the rcloud configuration files"
-    echo "Current directory:"
-    pwd
     ./scripts/create-travis-configuration.sh
-    echo "this is what I got:"
-    cat conf/rcloud | grep -v client
-    echo "directory:"
-    ls
-    ls conf
 }
 
 StartRCloud() {
