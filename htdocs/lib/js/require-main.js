@@ -43,13 +43,10 @@ var deps = [
 ];
 
 require(deps,
-        function(Promise, Lux, _, d3, dc, dcplot, wdcplot) {
+        function(Promise, Lux, _, d3) {
             window.Promise = Promise;
             window.Lux = Lux;
             window._ = _;
             window.d3 = d3;
-            // dc only used modularly
-            // window.dcplot = dcplot;
-            window.wdcplot = wdcplot;
             main();
         });
