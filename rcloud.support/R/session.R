@@ -47,8 +47,13 @@ rcloud.set.device.pixel.ratio <- function(ratio) {
 }
 
 session.python.eval <- function(command) {
+  if (is.null(.session$python.started)) {
+    rcloud.start.python()
+    .session$python.started <- TRUE
+  }
   result <- rcloud.exec.python(command)
   to.chunk <- function(chunk) {
+    chunk <- as.list(chunk)
     if (chunk$output_type == "pyout") {
       paste("\n    ", chunk$text, sep='')
     } else if (chunk$output_type == "stream") {
@@ -57,8 +62,8 @@ session.python.eval <- function(command) {
       paste("<img src=\"data:image/png;base64,", sub("\\s+$", "", chunk$png), "\">\n", sep='')
     } else ""
   }
-  md <- paste(lapply(result, to.chunk), collapse='\n')
-  val <- markdownToHTML(text=md, fragment=TRUE)
+  md <- paste("```py",command,"```\n",paste(lapply(result, to.chunk), collapse='\n'), sep='\n')
+  val <- if (nzchar(md)) markdownToHTML(text=md, fragment=TRUE) else ""
   val
 }
 
@@ -74,7 +79,7 @@ session.markdown.eval <- function(command, language, silent) {
     opts_chunk$set(echo=FALSE)
   else
     opts_chunk$set(echo=TRUE)
-  opts_chunk$set(prompt=TRUE)
+  # opts_chunk$set(prompt=TRUE)
   opts_chunk$set(dev="CairoPNG", tidy=FALSE)
 
   if (command == "") command <- " "
@@ -104,8 +109,7 @@ rcloud.session.init <- function(...) {
   .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
   start.rcloud(...)
   rcloud.reset.session()
-  ## FIXME: this should be started only on-demand
-  rcloud.start.python()
+
   ver <- paste0('RCloud ', rcloud.info("version.string"), ' ')
   if (nzchar(rcloud.info("revision"))) ver <- paste0(ver, "(", rcloud.info("branch"), "/", rcloud.info("revision"), "), ")
   paste0(ver, R.version.string, "<br>Welcome, ", .session$username)

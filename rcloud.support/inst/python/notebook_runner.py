@@ -11,11 +11,42 @@ import logging
 
 from IPython.nbformat.current import read, write, NotebookNode
 from IPython.kernel import KernelManager
-
+from IPython.kernel.blocking.channels import BlockingShellChannel
+from IPython.kernel.blocking import BlockingKernelClient
+from IPython.utils.traitlets import (
+    Any, Instance, Type,
+)
+from IPython.kernel import (
+    make_ipkernel_cmd,
+    launch_kernel,
+)
+import json
 
 class NotebookError(Exception):
     pass
 
+class MagicBlockingShellChannel(BlockingShellChannel):
+    proxy_methods = [
+        'execute',
+        'complete',
+        'object_info',
+        'history',
+        'kernel_info',
+        'shutdown',
+        'magic', # this is the new proxy_method for the channel.
+    ]
+    def magic(self, magic_str):
+        """Run a magic in the kernel."""
+        # Create class for content/msg creation. Related to, but possibly
+        # not in Session.
+        content = dict(magic=magic_str,
+                       )
+        msg = self.session.msg('magic_request', content)
+        self._queue_send(msg)
+        return msg['header']['msg_id']
+
+class MyClient(BlockingKernelClient):
+    shell_channel_class = Type(MagicBlockingShellChannel)
 
 class NotebookRunner(object):
     # The kernel communicates with mime-types while the notebook
@@ -33,6 +64,9 @@ class NotebookRunner(object):
 
     def __init__(self, **kw):
         self.km = KernelManager()
+        self.km.kernel_cmd = make_ipkernel_cmd('import sys; sys.path.append("%s"); from rcloud_kernel import main; main()' % kw["rcloud_support_path"], **kw)
+        del kw["rcloud_support_path"]
+        self.km.client_factory = MyClient
         self.km.start_kernel(**kw)
 
         if platform.system() == 'Darwin':
@@ -62,6 +96,32 @@ class NotebookRunner(object):
                 d[k] = v
         self.run_cell(Cell())
         return d['outputs']
+
+    def run_magic(self, magic_line):
+        self.shell.magic(magic_line)
+
+    def wait_for_msg(self):
+        outs = list()
+        reply = self.shell.get_msg()
+        status = reply['content']['status']
+        if status == 'error':
+            logging.info('Cell raised uncaught exception: \n%s', '\n'.join(reply['content']['traceback']))
+        else:
+            logging.info('Cell returned')
+
+        while True:
+            try:
+                msg = self.iopub.get_msg(timeout=1)
+                if msg['msg_type'] == 'status':
+                    if msg['content']['execution_state'] == 'idle':
+                        break
+            except Empty:
+                # execution state should return to idle before the queue becomes empty,
+                # if it doesn't, something bad has happened
+                raise
+
+            outs.append(msg)
+        return outs
 
     def run_cell(self, cell):
         '''
@@ -124,7 +184,8 @@ class NotebookRunner(object):
         cell['outputs'] = outs
 
         if status == 'error':
-            raise NotebookError()
+            raise Exception(json.dumps(reply[u'content'][u'traceback']))
+            # raise NotebookError()
 
     def iter_code_cells(self, nb):
         '''
