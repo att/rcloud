@@ -8,6 +8,7 @@ js/node_modules
 htdocs/lib/node_modules
 htdocs/js/node_modules
 data
+run
 conf/rcloud.auth
 conf/github_info.txt
 conf/rcloud.conf*

@@ -154,7 +154,12 @@ RCloud.create = function(rcloud_ocaps) {
             if (result.ok) {
                 return result.content;
             } else {
-                throw new Error(command + ': ' + result.content.message);
+                var message;
+                if(result.content && result.content.message)
+                    message = result.content.message;
+                else
+                    message = "error code " + result.code;
+                throw new Error(command + ': ' + message);
             }
         }
 
@@ -473,8 +478,22 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.session_markdown_evalAsync(command, language, silent);
         };
 
+        function upload_opts(opts) {
+            if(_.isBoolean(opts))
+                opts = {force: opts};
+            else if(!_.isObject(opts))
+                throw new Error("didn't understand options " + opts);
+            return $.extend({
+                force: false,
+                $file: $("#file"),
+                $progress: $(".progress"),
+                $progress_bar: $("#progress-bar")
+            }, opts);
+        }
+
         // FIXME make into promises
-        rcloud.upload_to_notebook = function(force, k) {
+        rcloud.upload_to_notebook = function(options, k) {
+            var opts = upload_opts(options);
             k = k || _.identity;
             var on_success = function(v) { k(null, v); };
             var on_failure = function(v) { k(v, null); };
@@ -486,13 +505,13 @@ RCloud.create = function(rcloud_ocaps) {
                 var file_to_upload = new Uint8Array(f_size);
                 var bytes_read = 0;
                 var cur_pos = 0;
-                $(".progress").show();
-                $("#progress-bar").css("width", "0%");
-                $("#progress-bar").attr("aria-valuenow", "0");
+                opts.$progress.show();
+                opts.$progress_bar.css("width", "0%");
+                opts.$progress_bar.attr("aria-valuenow", "0");
                 fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                 fr.onload = function(e) {
-                    $("#progress-bar").attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
-                    $("#progress-bar").css("width", (100 * (bytes_read / f_size)) + "%");
+                    opts.$progress_bar.attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
+                    opts.$progress_bar.css("width", (100 * (bytes_read / f_size)) + "%");
                     if (e.target.result.byteLength > 0) {
                         // still sending data to user agent
                         var bytes = new Uint8Array(e.target.result);
@@ -518,7 +537,7 @@ RCloud.create = function(rcloud_ocaps) {
             }
             if(!(window.File && window.FileReader && window.FileList && window.Blob))
                 throw new Error("File API not supported by browser.");
-            var file=$("#file")[0].files[0];
+            var file=opts.$file[0].files[0];
             if(_.isUndefined(file))
                 throw new Error("No file selected!");
             if(Notebook.is_part_name(file.name)) {
@@ -530,7 +549,7 @@ RCloud.create = function(rcloud_ocaps) {
                 if (err) {
                     throw err;
                 }
-                var file=$("#file")[0].files[0];
+                var file=opts.$file[0].files[0];
                 if(_.isUndefined(file))
                     throw new Error("No file selected!");
                 do_upload(file);
@@ -538,14 +557,15 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         // FIXME make into promises
-        rcloud.upload_file = function(force, k) {
+        rcloud.upload_file = function(options, k) {
+            var opts = upload_opts(options);
             k = k || _.identity;
             var on_success = function(v) { k(null, v); };
             var on_failure = function(v) { k(v, null); };
 
             function do_upload(path, file) {
                 var upload_name = path + '/' + file.name;
-                rcloud_ocaps.file_upload.create(upload_name, force, function(err, result) {
+                rcloud_ocaps.file_upload.create(upload_name, opts.force, function(err, result) {
                     if (RCloud.is_exception(result)) {
                         on_failure(RCloud.exception_message(result));
                         return;
@@ -555,15 +575,15 @@ RCloud.create = function(rcloud_ocaps) {
                     var f_size=file.size;
                     var cur_pos=0;
                     var bytes_read = 0;
-                    $(".progress").show();
-                    $("#progress-bar").css("width", "0%");
-                    $("#progress-bar").attr("aria-valuenow", "0");
+                    opts.$progress.show();
+                    opts.$progress_bar.css("width", "0%");
+                    opts.$progress_bar.attr("aria-valuenow", "0");
                     //initiate the first chunk, and then another, and then another ...
                     // ...while waiting for one to complete before reading another
                     fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                     fr.onload = function(e) {
-                        $("#progress-bar").attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
-                        $("#progress-bar").css("width", (100 * (bytes_read / f_size)) + "%");
+                        opts.$progress_bar.attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
+                        opts.$progress_bar.css("width", (100 * (bytes_read / f_size)) + "%");
                         if (e.target.result.byteLength > 0) {
                             var bytes = new Uint8Array(e.target.result);
                             rcloud_ocaps.file_upload.write(bytes.buffer, function() {
@@ -587,14 +607,14 @@ RCloud.create = function(rcloud_ocaps) {
             if(!(window.File && window.FileReader && window.FileList && window.Blob))
                 throw new Error("File API not supported by browser.");
             else {
-                var file=$("#file")[0].files[0];
+                var file=opts.$file[0].files[0];
                 if(_.isUndefined(file))
                     throw new Error("No file selected!");
                 else {
                     /*FIXME add logged in user */
                     rcloud_ocaps.file_upload.upload_path(function(err, path) {
                         if (err) throw err;
-                        var file=$("#file")[0].files[0];
+                        var file=opts.$file[0].files[0];
                         if(_.isUndefined(file))
                             throw new Error("No file selected!");
                         do_upload(path, file);
@@ -675,6 +695,7 @@ RCloud.create = function(rcloud_ocaps) {
         };
     }
 
+    rcloud._ocaps = rcloud_ocaps;
     rcloud.authenticated = rcloud_ocaps.authenticated;
     setup_unauthenticated_ocaps();
     if (rcloud.authenticated)

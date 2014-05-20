@@ -305,6 +305,8 @@ var editor = function () {
     }
 
     function friend_from_all(datum) {
+        if(datum.delay_children)
+            load_children(datum);
         var d2 = _.pick(datum, "label", "name", "gistname", "user", "visible", "last_commit", "sort_order");
         d2.id = datum.id.replace("/alls/", "/friends/");
         d2.root = "friends";
