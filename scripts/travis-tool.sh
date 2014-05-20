@@ -275,15 +275,7 @@ SetupRCloudConfig() {
     echo "Will try creating the rcloud configuration files"
     echo "Current directory:"
     pwd
-    cat > conf/rcloud.conf <<EOF
-Host: 127.0.0.1
-github.client.id: $GITHUB_CLIENT_ID
-github.client.secret: $GITHUB_CLIENT_SECRET
-github.base.url: https://github.com/
-github.api.url: https://api.github.com/
-github.gist.url: https://gist.github.com/
-rcs.engine: redis
-EOF
+    ./scripts/create-travis-configuration.sh $GITHUB_CLIENT_ID $GITHUB_CLIENT_SECRET
     echo "this is what I got:"
     cat conf/rcloud | grep -v client
     echo "directory:"
