@@ -285,7 +285,7 @@ EOF
 }
 
 StartRCloud() {
-    ./scripts/fresh_start
+    ./scripts/fresh_start.sh
 }
 
 COMMAND=$1
