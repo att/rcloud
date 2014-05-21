@@ -3248,7 +3248,7 @@ dc.pieChart = function (parent, chartGroup) {
     };
 
     function calculateDataPie() {
-        return d3.layout.pie().sort(null).value(function (d) {
+        return d3.layout.pie().sort(function(a, b) { return _chart.ordering()(b) - _chart.ordering()(a); }).value(function (d) {
             return _chart.valueAccessor()(d);
         });
     }
@@ -3924,7 +3924,6 @@ dc.dataTable = function(parent, chartGroup) {
         return d3.nest()
             .key(_chart.group())
             .sortKeys(_order)
-            .sortValues(_order)
             .entries(_sort(entries, 0, entries.length));
     }
 
