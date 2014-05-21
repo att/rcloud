@@ -1,7 +1,10 @@
 rcloud.start.python <- function()
 {
   require(rpython2, quietly=TRUE)
-  py.init()
+  if (hasConf("rcloud.python.path"))
+    py.init(getConf("rcloud.python.path"))
+  else
+    py.init()
   sys <- py.import("sys")
   path <- system.file("python", package="rcloud.support")
   py.attr(sys, "path", .ref=TRUE)$append(path)
