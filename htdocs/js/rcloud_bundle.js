@@ -2831,7 +2831,9 @@ function on_connect_anonymous_allowed(ocaps) {
     } else {
         promise = rcloud.anonymous_session_init();
     }
-    return promise;
+    return promise.catch(function(e) {
+        RCloud.UI.fatal_dialog("Could not initalize session. GitHub backend might be down or you might have an invalid authorization token. (You could also try clearing your cookies, for example).", "Logout", "/logout.R");
+    });
 }
 
 function on_connect_anonymous_disallowed(ocaps) {
@@ -2867,6 +2869,8 @@ function rclient_promise(allow_anonymous) {
         rclient.close();
         if (error.message === "Authentication required") {
             RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R");
+        } else {
+            RCloud.UI.fatal_dialog("Could not initalize session. GitHub backend might be down or you might have an invalid authorization token. (You could also try clearing your cookies, for example).", "Logout", "/logout.R");
         }
         throw error;
     }).then(function() {
