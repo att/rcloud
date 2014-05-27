@@ -11,16 +11,29 @@ rcloud.start.python <- function()
   sys$argv <- c("rcloud")
   py.eval("import notebook_runner")
   py.eval(paste("runner = notebook_runner.NotebookRunner(rcloud_support_path='", path, "', extra_arguments=['--matplotlib=inline'], executable='python')", sep=''))
-  py.eval("def run(cmd): return runner.run_cmd(cmd)")
-  py.eval("def magic(cmd): return runner.run_magic(cmd)")
-  .session$python.run <- py.get("run", .ref=TRUE)
-  .session$python.magic <- py.get("magic", .ref=TRUE)
+  .session$python.runner <- py.get("runner", .ref=TRUE)
+  ## keep the runner reference only on the R side
+  py.eval("del runner");
+  f <- .GlobalEnv$.Rserve.done
+  .GlobalEnv$.Rserve.done <- function(...) { .shutdown.python(); if (!is.function(f)) f(...) }
 }
 
 rcloud.exec.python <- function(cmd)
 {
   if (.session$device.pixel.ratio > 1) {
-    py.call(.session$python.magic, "config InlineBackend.figure_format = 'retina'")
+    .session$python.runner$run_magic("config InlineBackend.figure_format = 'retina'")
   }
-  py.call(.session$python.run, cmd)
+  .session$python.runner$run_cmd(cmd)
+}
+
+.shutdown.python <- function() {
+  if (inherits(.session$python.runner, "pyref")) {
+    ## unfortunately reference-based shutdown (see below) doesn't work
+    ## so force shutdown
+    .session$python.runner$shutdown()
+
+    .session$python.runner <- NULL
+    ## force GC so R side holds no reference
+    invisible(gc())
+  }
 }

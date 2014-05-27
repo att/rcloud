@@ -47,10 +47,8 @@ rcloud.set.device.pixel.ratio <- function(ratio) {
 }
 
 session.python.eval <- function(command) {
-  if (is.null(.session$python.started)) {
+  if (is.null(.session$python.runner))
     rcloud.start.python()
-    .session$python.started <- TRUE
-  }
   result <- rcloud.exec.python(command)
   to.chunk <- function(chunk) {
     chunk <- as.list(chunk)
