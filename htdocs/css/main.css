@@ -792,11 +792,18 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
     height: 20px;
     font-size: 16px;
 }
-.r-result-div pre code:not(.r) {
-    width: 800px;
+
+.r-result-div pre code {
+    max-width: 800px;
     margin-right: auto;
+    margin-left: auto;
     border-left: 1px solid rgba(0,0,0,0.15);
     border-right: 1px solid rgba(0,0,0,0.15);
+}
+
+/* Annoying, I'll have to add new entries for every language class here. */
+.r-result-div pre code.r, .r-result-div pre code.py {
+    max-width: inherit;
 }
 
 .r-result-div p img {
