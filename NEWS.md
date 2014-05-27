@@ -14,6 +14,11 @@
   name. Use, for example,
   `view.html?user=cscheid&path=tests/project1/notebook1`.
 
+* Python cells are now supported. They are executed in a separate process
+  using IPython. This requires `rpython2` R package from RForge.net
+  and corresponding IPython packages in the Python installation.
+
+
 ### Installation/Administration
 
 * RCloud configuration now defaults to using a single port for both
