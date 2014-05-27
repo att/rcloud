@@ -198,7 +198,7 @@ update.solr <- function(notebook, starcount){
   fns <- as.vector(sapply(content.files, function(o) o$filename))
   ## only index cells for now ...
   ## FIXME: do we really want to exclude the scratch file?
-  indexable <- grep("^part.*\\.(R|md)$", fns)
+  indexable <- grep("^part.*\\.(R|md|py)$", fns)
   if (length(indexable)) {
     content.files <- content.files[indexable]
     sizes <- as.numeric(sapply(content.files, function(o) o$size))

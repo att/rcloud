@@ -289,6 +289,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["purl_source"],
             ["get_completions"],
             ["rename_notebook"],
+            ["authenticated_cell_eval"],
             ["session_markdown_eval"],
             ["notebook_upload"],
             ["file_upload","upload_path"],
@@ -374,6 +375,9 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_github_handler(
                 "rcloud.rename.notebook",
                 rcloud_ocaps.rename_notebookAsync(id, new_name));
+        };
+        rcloud.authenticated_cell_eval = function(command, language, silent) {
+            return rcloud_ocaps.authenticated_cell_evalAsync(command, language, silent);
         };
         rcloud.session_markdown_eval = function(command, language, silent) {
             return rcloud_ocaps.session_markdown_evalAsync(command, language, silent);
