@@ -361,10 +361,10 @@ class IPKernelApp(BaseIPythonApplication, InteractiveShellApp):
         for line in lines:
             self.log.info(line)
         # also raw print to the terminal if no parent_handle (`ipython kernel`)
-        if not self.parent_handle:
-            io.rprint(_ctrl_c_message)
-            for line in lines:
-                io.rprint(line)
+#        if not self.parent_handle:
+#            io.rprint(_ctrl_c_message)
+#            for line in lines:
+#                io.rprint(line)
 
         self.ports = dict(shell=self.shell_port, iopub=self.iopub_port,
                                 stdin=self.stdin_port, hb=self.hb_port,
