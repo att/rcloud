@@ -502,10 +502,33 @@ li.jqtree-selected .notebook-commands {
 
 #asset-link {
     position: absolute;
-    right: 1ex;
+    left: 1ex;
     bottom: 1ex;
     z-index: 10000;
     display: none;
+    text-shadow:
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee; /* CSS, let me count the ways I love thee */
+;/* , */
+      /* 1px -1px 0.1em #000, */
+      /* -1px 1px 0.1em #000, */
+      /*  1px 1px 0.1em #000; */
+}
+
+#asset-link:hover {
+    text-decoration: none;
+    font-weight: 500;
 }
 
 /******************************************************************************/

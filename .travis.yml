@@ -6,16 +6,24 @@
 
 language: c
 
+env:
+  global:
+    - secure: "C7zEyV7lCS5zkap31MRIbOnBF5pqH+aK47gT/TA22QsWaP4hOfB49OrcqQeO0EkIGEMIro6oQS4XNxi4Tk6vMen56BUgqcwbPB+UAdbdNNOVVnk0KVTsud/UAOiq0qh0kGgwjtqv0dlEyRU/DCtCRzLb05O3uDt3SWT52Ab9Des="
+    - secure: "Tc3U7opldL2TTPtjKO7FmIg2Xxlth/HJ1FUIWRzCMQdvi3eo9Uk9dHGJWA4me+fO0gyJ7OuSg5eSwFNsm9GvqKk53ZqzNdjLoxGyau0oPVfDz1VgYyhcWpR5WocZCl6ouhYja9OzfOs/EiwOv1qoTUDCQ51O17HNF4u8zzbqivI="
+
 before_install:
   - curl -OL http://raw.github.com/att/rcloud/develop/scripts/travis-tool.sh
   - chmod 755 ./travis-tool.sh
   - ./travis-tool.sh bootstrap
-  - ./travis-tool.sh aptget_install libxt-dev libcurl4-openssl-dev libcairo2-dev libreadline-dev git
+  - ./travis-tool.sh aptget_install libxt-dev libcurl4-openssl-dev libcairo2-dev libreadline-dev git redis-server
+  - sudo service redis-server restart
 
 install:
   - ./travis-tool.sh install_deps
+  - ./travis-tool.sh setup_rcloud_config
 
 script:
+  - ./travis-tool.sh start_rcloud
   - ./travis-tool.sh run_tests
 
 on_failure:

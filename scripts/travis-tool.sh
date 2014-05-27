@@ -270,6 +270,16 @@ Retry() {
     exit 1
 }
 
+SetupRCloudConfig() {
+    # setup rcloud.conf
+    echo "Will try creating the rcloud configuration files"
+    ./scripts/create-travis-configuration.sh
+}
+
+StartRCloud() {
+    ./scripts/fresh_start.sh
+}
+
 COMMAND=$1
 echo "Running command: ${COMMAND}"
 shift
@@ -339,4 +349,14 @@ case $COMMAND in
     "dump_logs_by_extension")
         DumpLogsByExtension "$@"
         ;;
+    ##
+    ## setup the necessary config files
+    "setup_rcloud_config")
+        SetupRCloudConfig "$@"
+        ;;
+    ##
+    ## start running rcloud
+    "start_rcloud")
+	StartRCloud "$@"
+	;;
 esac
