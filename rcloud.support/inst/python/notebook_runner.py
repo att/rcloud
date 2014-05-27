@@ -87,6 +87,10 @@ class NotebookRunner(object):
         self.kc.stop_channels()
         self.km.shutdown_kernel(now=True)
 
+    def shutdown(self):
+        self.kc.stop_channels()
+        self.km.shutdown_kernel(now=True)
+
     def run_cmd(self, cmd):
         d = {}
         class Cell(object):
