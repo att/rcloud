@@ -44,7 +44,7 @@ RCloud.create = function(rcloud_ocaps) {
     function rcloud_handler(command, promise_fn) {
         function success(result) {
             if(result && RCloud.is_exception(result)) {
-                throw new Error(command + ": " + result[0]);
+                throw new Error(command + ": " + result[0].replace('\n', ' '));
             }
             return result;
         }
