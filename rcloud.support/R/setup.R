@@ -299,6 +299,28 @@ start.rcloud.common <- function(...) {
       dir.create(fn, FALSE, TRUE, "0770")
   }
 
+  ## set up the languages which will be supported by this session
+  lang.list <- NULL
+  for (lang in gsub("^\\s+|\\s+$", "", strsplit(getConf("rcloud.languages"), ",")[[1]])) {
+    d <- getNamespace(lang)[["rcloud.language.support"]]
+    if (!is.function(d) && !is.primitive(d))
+      stop(paste("Could not find a function or primitive named rcloud.language.support in package '",lang,"'",sep=''))
+    d <- d()
+    if (!is.list(d))
+      stop(paste("result of calling rcloud.language.support for package '",lang,"' must be a list", sep=''))
+    if (is.null(d$language) || !is.character(d$language) || length(d$language) != 1)
+      stop(paste("'language' field of list returned by rcloud.language.support for package '", lang, "' must be a length-1 character", sep=''))
+    if (!is.function(d$run.cell) && !is.primitive(d$run.cell))
+      stop(paste("'run.cell' field of list returned by rcloud.language.support for package '", lang, "' must be either a function or a primitive", sep=''))
+    if (!is.function(d$setup) && !is.primitive(d$setup))
+      stop(paste("'setup' field of list returned by rcloud.language.support for package '", lang, "' must be either a function or a primitive", sep=''))
+    if (!is.function(d$teardown) && !is.primitive(d$teardown))
+      stop(paste("'teardown' field of list returned by rcloud.language.support for package '", lang, "' must be either a function or a primitive", sep=''))
+    lang.list[[d$language]] <- d
+    lang.list[[d$language]]$setup(.session)
+  }
+  .session$languages <- lang.list
+  
   ## pre-emptive GC to start clean
   gc()
   

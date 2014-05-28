@@ -1,0 +1,8 @@
+Package: rcloud.r
+Title: support for the R language in RCloud
+Version: 0.0.1
+Author: Carlos Scheidegger <cscheid@research.att.com>
+Maintainer: Carlos Scheidegger <cscheid@research.att.com>
+Description: Adds R bindings for RCloud
+Imports: knitr, markdown
+License: EPL

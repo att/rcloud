@@ -1,0 +1,9 @@
+Package: rcloud.python
+Title: support for the Python language in RCloud
+Version: 0.0.1
+Author: Carlos Scheidegger <cscheid@research.att.com>
+Maintainer: Carlos Scheidegger <cscheid@research.att.com>
+Description: Adds Python bindings for RCloud
+Imports: knitr, markdown
+Suggests: rpython2
+License: EPL
