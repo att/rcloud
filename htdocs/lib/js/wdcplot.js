@@ -1,5 +1,4 @@
-// R to dc.js bridge code.  This should probably become a library in js/,
-// just deploying it separately for now to ease development
+// generates dcplot chart descriptions from an EDSL in R
 //////////////////////////////////////////////////////////////////////////////
 (function() { function _wdcplot(dcplot, dataframe) {
     var chart_group = 0;
