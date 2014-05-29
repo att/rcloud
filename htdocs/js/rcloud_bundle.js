@@ -286,7 +286,10 @@ RCloud.create = function(rcloud_ocaps) {
                     rcloud.modules[name] = result;
                     k(null, result);
                 } catch (e) {
-                    k(e, null);
+                    var v = { "type": e.name,
+                              "message": e.message
+                            };
+                    k(v, null);
                 }
             },
             clear_css: function(current_notebook, k) {
