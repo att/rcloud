@@ -87,14 +87,20 @@ var shell = (function() {
         init: function() {
             rcloud.get_conf_value("github.base.url").then(function(url) { github_url_ = url; });
             rcloud.get_conf_value("github.gist.url").then(function(url) { gist_url_ = url; });
+
+            _.each(RCloud.language.available_languages(), function(lang) {
+                // FIXME hack: we force R to be the default-selected option.
+                var sel = lang === 'R' ? 'selected' : '';
+                var s = "<option " + sel + ">" + lang + "</option>";
+                $("#insert-cell-language").append($(s));
+            });
         },
         is_view_mode: function() {
             return view_mode_;
         },
         new_cell: function(content, language, execute) {
-            var supported = ['R', 'Markdown', 'Python'];
-            if(!_.contains(supported, language)) {
-                RCloud.UI.session_pane.post_error("Sorry, " + language + " notebook cells not supported (yet!)");
+            if(!_.contains(RCloud.language.available_languages(), language)) {
+                RCloud.UI.session_pane.post_error("Sorry, " + language + " notebook cells not supported in this deployment (yet!)");
                 return;
             }
             var cell = notebook_controller_.append_cell(content, language);

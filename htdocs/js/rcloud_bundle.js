@@ -208,7 +208,8 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "disable_warnings"],
             ["api", "set_url"],
             ["api", "get_url"],
-            ["get_notebook_by_name"]
+            ["get_notebook_by_name"],
+            ["languages", "get_list"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
@@ -391,6 +392,14 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.api.get_url = function() {
             return rcloud_ocaps.api.get_urlAsync();
+        };
+
+        //////////////////////////////////////////////////////////////////////
+        // languages
+
+        rcloud.languages = {};
+        rcloud.languages.get_list = function() {
+            return rcloud_ocaps.languages.get_listAsync();
         };
     }
 
@@ -1524,12 +1533,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     cell_status.append(button_float);
     cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
+    var languages = {};
     var select_lang = $("<select class='form-control'></select>");
     function add_language_selector(lang) {
         languages[lang].element = $("<option></option>").text(lang);
         select_lang.append(languages[lang].element);
     }
-    _.each(languages, function(value, key) {
+    _.each(RCloud.language.available_languages(), function(key) {
+        languages[key] = {};
         add_language_selector(key);
     });
     if(!languages[language]) { // unknown language: add it
@@ -1568,13 +1579,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
 
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
-    ace_div.css({ 'background-color': lang_info["background-color"] });
+    var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
+    ace_div.css({ 'background-color': bg_color });
 
     inner_div.append(outer_ace_div);
     outer_ace_div.append(ace_div);
     ace.require("ace/ext/language_tools");
     var widget = ace.edit(ace_div[0]);
-    var RMode = ace.require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
+    var RMode = require(RCloud.language.ace_mode(language)).Mode;
     var session = widget.getSession();
     widget.setValue(cell_model.content());
     ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
@@ -1644,7 +1656,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             language = cell_model.language();
             lang_info = languages[language];
             if(!lang_info) throw new Error("tried to set language to unknown language " + language);
-            ace_div.css({ 'background-color': lang_info["background-color"] });
+            var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
+            ace_div.css({ 'background-color': bg_color });
             select_lang.val(cell_model.language());
         },
         result_updated: function(r) {
@@ -1656,6 +1669,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // There's a list of things that we need to do to the output:
             var uuid = rcloud.deferred_knitr_uuid;
 
+            // FIXME None of these things should be hard-coded.
             if (cell_model.language() === 'R' && inner_div.find("pre code").length === 0) {
                 r_result_div.prepend("<pre><code class='r'>" + cell_model.content() + "</code></pre>");
             }
@@ -2985,7 +2999,11 @@ function rclient_promise(allow_anonymous) {
     }).then(function() {
         rcloud.display.set_device_pixel_ratio();
         rcloud.api.set_url(window.location.href);
-        return rcloud.init_client_side_data();
+        return rcloud.languages.get_list().then(function(lang_list) {
+            RCloud.language._set_available_languages(lang_list);
+        }).then(function() { 
+            return rcloud.init_client_side_data();
+        });
     });
 }
 
@@ -3009,6 +3027,35 @@ RCloud.session = {
     }, init: function(allow_anonymous) {
         this.first_session_ = true;
         return rclient_promise(allow_anonymous);
+    }
+};
+
+})();
+(function() {
+
+var langs = [];
+
+RCloud.language = {
+    ace_mode: function(language) {
+        var modes = {
+            R: "ace/mode/r",
+            Python: "ace/mode/python",
+            Markdown: "ace/mode/rmarkdown",
+            CSS: "ace/mode/css",
+            Text: "ace/mode/text"
+        };
+        return modes[language] || modes.Text;
+    },
+    // don't call _set_available_languages yourself; it's called
+    // by the session initialization code.
+    _set_available_languages: function(list) {
+        if (_.isArray(list))
+            langs = list;
+        else
+            langs = [list];
+    },
+    available_languages: function() {
+        return langs;
     }
 };
 

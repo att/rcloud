@@ -301,7 +301,10 @@ start.rcloud.common <- function(...) {
 
   ## set up the languages which will be supported by this session
   lang.list <- NULL
-  for (lang in gsub("^\\s+|\\s+$", "", strsplit(getConf("rcloud.languages"), ",")[[1]])) {
+  lang.str <- getConf("rcloud.languages")
+  if (!is.character(lang.str))
+    lang.str <- ""
+  for (lang in gsub("^\\s+|\\s+$", "", strsplit(lang.str, ",")[[1]])) {
     d <- getNamespace(lang)[["rcloud.language.support"]]
     if (!is.function(d) && !is.primitive(d))
       stop(paste("Could not find a function or primitive named rcloud.language.support in package '",lang,"'",sep=''))

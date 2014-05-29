@@ -19,17 +19,11 @@ rcloud.unauthenticated.session.cell.eval <- function(partname, language, silent)
 rcloud.session.cell.eval <- function(partname, language, silent) {
   ulog("RCloud rcloud.session.cell.eval(", partname, ",", language,")")
   command <- rcloud.get.gist.part(partname)
-  if (!is.null(.session$languages[language]))
-    .session$languages[[language]]$run.cell(command, silent, .session)
-  else if (language == "Markdown") {
-    session.markdown.eval(command, language, silent)
-  } else if (language == "Text") {
-    command
-  }
+  rcloud.authenticated.cell.eval(command, language, silent)
 }
 
 rcloud.authenticated.cell.eval <- function(command, language, silent) {
-  if (!is.null(.session$languages[language]))
+  if (!is.null(.session$languages[[language]]))
     .session$languages[[language]]$run.cell(command, silent, .session)
   else if (language == "Markdown") {
     session.markdown.eval(command, language, silent)
