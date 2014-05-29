@@ -139,7 +139,7 @@ RCloud.create = function(rcloud_ocaps) {
     function rcloud_handler(command, promise_fn) {
         function success(result) {
             if(result && RCloud.is_exception(result)) {
-                throw new Error(command + ": " + result[0]);
+                throw new Error(command + ": " + result[0].replace('\n', ' '));
             }
             return result;
         }
@@ -384,6 +384,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["purl_source"],
             ["get_completions"],
             ["rename_notebook"],
+            ["authenticated_cell_eval"],
             ["session_markdown_eval"],
             ["notebook_upload"],
             ["file_upload","upload_path"],
@@ -469,6 +470,9 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_github_handler(
                 "rcloud.rename.notebook",
                 rcloud_ocaps.rename_notebookAsync(id, new_name));
+        };
+        rcloud.authenticated_cell_eval = function(command, language, silent) {
+            return rcloud_ocaps.authenticated_cell_evalAsync(command, language, silent);
         };
         rcloud.session_markdown_eval = function(command, language, silent) {
             return rcloud_ocaps.session_markdown_evalAsync(command, language, silent);
@@ -1484,10 +1488,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
     var languages = {
-        "R": { 'background-color': "#E8F1FA" },
-        "Markdown": { 'background-color': "#F7EEE4" }
+        "R": { 'background-color': "#E8F1FA",
+               'ace_mode': "ace/mode/r" },
+        "Markdown": { 'background-color': "#F7EEE4",
+                      'ace_mode': "ace/mode/rmarkdown" },
+        "Python": { 'background-color': "#E8F1FA",
+                    'ace_mode': "ace/mode/python" }
         // ,
-        // "Python": { 'background-color': "#ff0000" },
         // "Bash": { 'background-color': "#00ff00" }
     };
     var select = $("<select class='form-control'></select>");
@@ -1612,7 +1619,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             }
 
             // click on code to edit
-            var code_div = $("code.r", r_result_div);
+            var code_div = $("code.r,code.py", r_result_div);
             code_div.off('click');
             if(!shell.is_view_mode()) {
                 // distinguish between a click and a drag
@@ -1686,6 +1693,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             inner_div
                 .find("pre code")
                 .each(function(i, e) {
+                    // only highlight things which have
+                    // defined classes coming from knitr and markdown
+                    if (e.classList.length === 0)
+                        return;
                     hljs.highlightBlock(e);
                 });
 
@@ -1904,7 +1915,7 @@ Notebook.Cell.create_controller = function(cell_model)
 
             rcloud.record_cell_execution(cell_model);
             if (rcloud.authenticated) {
-                promise = rcloud.session_markdown_eval(cell_model.content(), language, false);
+                promise = rcloud.authenticated_cell_eval(cell_model.content(), language, false);
             } else {
                 promise = rcloud.session_cell_eval(
                     Notebook.part_name(cell_model.id(),
@@ -2753,6 +2764,9 @@ Notebook.part_name = function(id, language) {
         break;
     case 'Markdown':
         ext = 'md';
+        break;
+    case 'Python':
+        ext = 'py';
         break;
     default:
         throw "Unknown language " + language;

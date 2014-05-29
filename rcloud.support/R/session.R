@@ -10,7 +10,7 @@ canonicalize.command <- function(command, language) {
   } else if (language == "Markdown") {
     command
   } else
-    stop("Don't know language '" + language + "' - only Markdown or R supported.")
+    stop(paste("Don't know language '",  language, "' - only Markdown or R supported."))
 }
 
 rcloud.get.gist.part <- function(partname) {
@@ -27,11 +27,42 @@ rcloud.unauthenticated.session.cell.eval <- function(partname, language, silent)
 
 rcloud.session.cell.eval <- function(partname, language, silent) {
   command <- rcloud.get.gist.part(partname)
-  session.markdown.eval(command, language, silent)
+  if (language == "R" || language == "Markdown") {
+    session.markdown.eval(command, language, silent)
+  } else if (language == "Python") {
+    session.python.eval(command)
+  }
+}
+
+rcloud.authenticated.cell.eval <- function(command, language, silent) {
+  if (language == "R" || language == "Markdown") {
+    session.markdown.eval(command, language, silent)
+  } else if (language == "Python") {
+    session.python.eval(command)
+  }
 }
 
 rcloud.set.device.pixel.ratio <- function(ratio) {
   .session$device.pixel.ratio <- ratio
+}
+
+session.python.eval <- function(command) {
+  if (is.null(.session$python.runner))
+    rcloud.start.python()
+  result <- rcloud.exec.python(command)
+  to.chunk <- function(chunk) {
+    chunk <- as.list(chunk)
+    if (chunk$output_type == "pyout") {
+      paste("\n    ", chunk$text, sep='')
+    } else if (chunk$output_type == "stream") {
+      paste("\n    ", chunk$text, sep='')
+    } else if (chunk$output_type == "display_data") {
+      paste("<img src=\"data:image/png;base64,", sub("\\s+$", "", chunk$png), "\">\n", sep='')
+    } else ""
+  }
+  md <- paste("```py",command,"```\n",paste(lapply(result, to.chunk), collapse='\n'), sep='\n')
+  val <- if (nzchar(md)) markdownToHTML(text=md, fragment=TRUE) else ""
+  val
 }
 
 session.markdown.eval <- function(command, language, silent) {
@@ -46,7 +77,7 @@ session.markdown.eval <- function(command, language, silent) {
     opts_chunk$set(echo=FALSE)
   else
     opts_chunk$set(echo=TRUE)
-  opts_chunk$set(prompt=TRUE)
+  # opts_chunk$set(prompt=TRUE)
   opts_chunk$set(dev="CairoPNG", tidy=FALSE)
 
   if (command == "") command <- " "
@@ -76,6 +107,7 @@ rcloud.session.init <- function(...) {
   .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
   start.rcloud(...)
   rcloud.reset.session()
+
   ver <- paste0('RCloud ', rcloud.info("version.string"), ' ')
   if (nzchar(rcloud.info("revision"))) ver <- paste0(ver, "(", rcloud.info("branch"), "/", rcloud.info("revision"), "), ")
   paste0(ver, R.version.string, "<br>Welcome, ", .session$username)
