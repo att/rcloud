@@ -101,7 +101,7 @@ ui_utils.ace_set_pos = function(widget, row, column) {
 };
 
 ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
-    var Autocomplete = require("ace/autocomplete").Autocomplete;
+    var Autocomplete = ace.require("ace/autocomplete").Autocomplete;
     var session = widget.getSession();
 
     widget.commands.addCommands([
@@ -130,7 +130,7 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                 var code = session.getTextRange(widget.getSelectionRange());
                 if(code.length==0) {
                     var pos = widget.getCursorPosition();
-                    var Range = require('ace/range').Range;
+                    var Range = ace.require('ace/range').Range;
                     var range = new Range(pos.row, 0, pos.row+1, 0);
                     code = session.getTextRange(range);
                     widget.navigateDown(1);
@@ -233,7 +233,7 @@ ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
 // how to do it.
 ui_utils.make_prompt_chevron_gutter = function(widget)
 {
-    var dom = require("ace/lib/dom");
+    var dom = ace.require("ace/lib/dom");
     widget.renderer.$gutterLayer.update = function(config) {
         var emptyAnno = {className: ""};
         var html = [];

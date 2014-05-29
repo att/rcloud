@@ -1,3 +1,9 @@
+(function() {
+// hide the true requirejs from ace so it doesn't trip over itself
+var requirejs = undefined;
+var require = undefined;
+var old_requirejs = window.requirejs;
+var old_require = window.require;
 /* ***** BEGIN LICENSE BLOCK *****
  * Distributed under the BSD license:
  *
@@ -25296,3 +25302,11 @@ oop.inherits(FoldMode, BaseFoldMode);
 }).call(FoldMode.prototype);
 
 });
+// restore true requirejs since ace clobbers global variable.
+var global = (function() {
+    return this;
+})();
+global.requirejs = old_requirejs;
+global.require = old_require;
+
+})();

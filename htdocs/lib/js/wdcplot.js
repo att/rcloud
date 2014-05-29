@@ -1,8 +1,7 @@
 // R to dc.js bridge code.  This should probably become a library in js/,
 // just deploying it separately for now to ease development
 //////////////////////////////////////////////////////////////////////////////
-
-var wdcplot = (function() {
+(function() { function _wdcplot(dcplot, dataframe) {
     var chart_group = 0;
     window.charts = {}; // initialize a global namespace for charts
 
@@ -215,8 +214,8 @@ var wdcplot = (function() {
     // are these recursive or is this top-level catch enough?
     function group_constructor(frame, sexp) {
         switch(sexp[0]) {
-        case 'bin': return group.bin(sexp[1]);
-        case 'identity': return group.identity;
+        case 'bin': return dcplot.group.bin(sexp[1]);
+        case 'identity': return dcplot.group.identity;
         default: return argument(frame, sexp); // but it's operating on keys?
         }
     }
@@ -234,10 +233,10 @@ var wdcplot = (function() {
         if(_.isNumber(wacc)) wacc = constant_fn(wacc);
 
         switch(fname) {
-        case 'count': return (w == undefined) ? reduce.count : reduce.sum(wacc);
-        case 'sum': return reduce.sum(argument(frame, sexp[1]),wacc);
-        case 'any': return reduce.any(argument(frame, sexp[1]));
-        case 'avg': return reduce.avg(argument(frame, sexp[1]),wacc);
+        case 'count': return (w == undefined) ? dcplot.reduce.count : dcplot.reduce.sum(wacc);
+        case 'sum': return dcplot.reduce.sum(argument(frame, sexp[1]),wacc);
+        case 'any': return dcplot.reduce.any(argument(frame, sexp[1]));
+        case 'avg': return dcplot.reduce.avg(argument(frame, sexp[1]),wacc);
         default: return argument(frame, sexp);
         }
     }
@@ -392,7 +391,7 @@ var wdcplot = (function() {
         ).append(table);
     }
 
-    var result = {
+    var wdcplot = {
         field : function(rdata, k, r) {
             return rdata[k][r];
         },
@@ -427,8 +426,8 @@ var wdcplot = (function() {
                 case 'groups':
                     var weight = _.find(secdata, function(exp) { return exp[0] === "weight"; });
                     definition.defreduce = (weight == undefined)
-                        ? reduce.count
-                        : reduce.sum(argument(frame, weight[1]));
+                        ? dcplot.reduce.count
+                        : dcplot.reduce.sum(argument(frame, weight[1]));
                     definition.groups = do_groups(frame, secdata, weight);
                     break;
                 case 'charts':
@@ -443,7 +442,7 @@ var wdcplot = (function() {
                 }
             }
             if(!definition.defreduce)
-                definition.defreduce = reduce.count;
+                definition.defreduce = dcplot.reduce.count;
 
             var divwrap = $('<div/>',{id:"chartdiv"+chart_group, style: "overflow:auto"});
             _.each(divs, function(div) { divwrap.append(div); });
@@ -454,5 +453,14 @@ var wdcplot = (function() {
                     groupname: chart_group_name(chart_group++)};
         }
     };
-    return result;
-})();
+    return wdcplot;
+}
+if(typeof define === "function" && define.amd) {
+    define(["dcplot", "dataframe"], _wdcplot);
+} else if(typeof module === "object" && module.exports) {
+    module.exports = _wdcplot(dcplot, dataframe);
+} else {
+    this.wdcplot = _wdcplot(dcplot, dataframe);
+}
+}
+)();

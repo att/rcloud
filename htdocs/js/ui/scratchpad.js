@@ -16,7 +16,7 @@ RCloud.UI.scratchpad = {
             inner_div.append(ace_div);
             ace.require("ace/ext/language_tools");
             var widget = ace.edit(ace_div[0]);
-            var RMode = require("ace/mode/r").Mode;
+            var RMode = ace.require("ace/mode/r").Mode;
             var session = widget.getSession();
             that.session = session;
             that.widget = widget;
@@ -134,7 +134,7 @@ RCloud.UI.scratchpad = {
             Text: "ace/mode/text"
         };
         var lang = this.current_model.language();
-        var mode = require(modes[lang] || modes.Text).Mode;
+        var mode = ace.require(modes[lang] || modes.Text).Mode;
         this.session.setMode(new mode(false, this.session.doc, this.session));
     }, set_readonly: function(readonly) {
         if(!shell.is_view_mode()) {
