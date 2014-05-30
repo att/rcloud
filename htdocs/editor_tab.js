@@ -436,8 +436,9 @@ var editor = function () {
         if(!parent) {
             var mine = user === username_; // yes it is possible I'm not my own friend
             parent = $tree_.tree('getNodeById', node_id(root));
-            if(!parent)
-                throw "root '" + root + "' of notebook tree not found!";
+            if(!parent) {
+                throw new Error("root '" + root + "' of notebook tree not found!");
+            }
             pdat = {
                 label: mine ? "My Notebooks" : someone_elses(user),
                 id: node_id(root, user),

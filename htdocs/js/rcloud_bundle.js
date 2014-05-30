@@ -895,6 +895,8 @@ ui_utils.set_ace_readonly = function(widget, readonly) {
 ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
                                   active_icon, inactive_icon) {
     function set_state(state) {
+        if (item.length === 0)
+            return;
         item[0].checked = state;
         var icon = item.find('i');
         if(state) {
@@ -1117,6 +1119,8 @@ ui_utils.add_ace_grab_affordance = function(element) {
 ui_utils.scroll_to_after = function($sel, duration) {
     // no idea why the plugin doesn't take current scroll into account when using
     // the element parameter version
+    if ($sel.length === 0)
+        return;
     var opts = undefined;
     if(duration !== undefined)
         opts = {animation: {duration: duration}};
@@ -2964,6 +2968,8 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         return $(sel_accordion + " > .panel > div.panel-heading");
     }
     function set_collapse(target, collapse, persist) {
+        if (target.length === 0)
+            return;
         target.data("would-collapse", collapse);
         if(persist && rcloud.config) {
             var opt = 'ui/' + target[0].id;
