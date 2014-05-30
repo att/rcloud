@@ -47,6 +47,9 @@
 body {
     font-family: Helvetica Neue, Verdana, Helvetica, Arial, sans-serif;
     padding-top: 51px; /* exact same height as navbar */
+    height: 100%;
+    margin: 0;
+    padding: 0
 }
 
 .internals-float {
@@ -295,6 +298,7 @@ rect.frame {
     top: 51px; left: 0px; right: 0px; bottom: 0px;
     overflow: hidden;
     padding-bottom: 2.5em; /* must be .footer height + 2 * .footer.padding */
+    position: absolute
 }
 
 .icon-check,
