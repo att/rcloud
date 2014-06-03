@@ -3,7 +3,7 @@ requirejs.config(requirejs_config_obj);
 var deps = common_deps; 
 
 deps.push(
-    // rcloud's main.js and bundle
+    // rcloud's view.js and bundle
     "../../view", "rcloud_bundle",
 
     // rcloud's other files
