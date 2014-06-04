@@ -45,6 +45,12 @@ configure.rcloud <- function (mode=c("startup", "script")) {
   ## forward oc.init
   .GlobalEnv$oc.init <- oc.init
 
+  .GlobalEnv$credentials <- 
+    if (!nzConf("session.server"))
+      session.server.credential.manager()
+    else
+      simple.credential.manager()
+
   debug.override <- FALSE
   if (nzchar(Sys.getenv("DEBUG"))) {
     dl <- as.integer(Sys.getenv("DEBUG"))
