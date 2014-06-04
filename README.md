@@ -1,5 +1,7 @@
 # RCloud: Integrated Exploratory Analysis, Visualization, and Deployment on the Web
 
+[![Build Status](https://travis-ci.org/att/rcloud.svg?branch=develop)](https://travis-ci.org/att/rcloud)
+
 RCloud is an environment for collaboratively creating and sharing data
 analysis scripts. RCloud lets you mix analysis code in R, HTML5, Markdown, Python, and others.
 Much like [Sage](http://www.sagemath.org/),
