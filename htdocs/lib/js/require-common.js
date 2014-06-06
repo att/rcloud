@@ -24,7 +24,7 @@ requirejs_config_obj = {
 
 var common_deps = [
     // AMD-compatible
-    "bluebird", "lux", "underscore",
+    "bluebird", "underscore",
     "d3", "dc", "dcplot", "dataframe", "wdcplot",
     // soon-to-be-amdized
     "jquery-1.10.2",
@@ -38,9 +38,8 @@ var common_deps = [
 
 function start_require(deps) {
     require(deps,
-            function(Promise, Lux, _, d3) {
+            function(Promise, _, d3) {
                 window.Promise = Promise;
-                window.Lux = Lux;
                 window._ = _;
                 window.d3 = d3;
                 main();

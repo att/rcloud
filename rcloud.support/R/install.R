@@ -1,7 +1,3 @@
-#github.install <- function(user, repo, base, branch="master") {
-#  https://github.research.att.com/_nodeload/kshirley/LDAtool/tar.gz/master
-#}
-
 check.installation <- function(install=TRUE, force.all=FALSE, update=FALSE) {
   dl.method <- "internal"
   if (isTRUE(system("wget --version >/dev/null 2>&1") == 0L)) dl.method <- "wget" else if (isTRUE(system("curl --version >/dev/null 2>&1") == 0L)) dl.method <- "curl"

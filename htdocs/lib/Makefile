@@ -37,7 +37,6 @@ dependencies_bundle.js: \
 	js/jquery.cookies.2.2.0.js \
 	js/jquery.scrollto.js \
 	js/laconic.js \
-	js/lux.js \
 	js/underscore.js \
 	js/rserve.js \
 	js/tree.jquery.js
