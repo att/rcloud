@@ -7,5 +7,5 @@ Description: It's used by RCloud internally.
 Depends: base64enc, rjson, parallel
 Imports: uuid, RCurl, unixtools, Rserve (>= 1.8), rediscc (>= 0.1-1), jsonlite, github, knitr, markdown, png, Cairo, httr
 NOTE: --- packages that are not on CRAN/RForge.net *must* be in Suggests! ---
-Suggests: FastRWeb
+Suggests: FastRWeb, RSclient
 License: EPL
