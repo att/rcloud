@@ -2,6 +2,7 @@ run <- function(url, query, body, headers)
 {
   et <- "Unable to connect"
   tryCatch({
+    require(rcloud.client)
     caps <- connect.to.rcloud(url, query, body, headers)
     result <- resolve.notebook.id(caps, path.info)
 
