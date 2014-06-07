@@ -20,5 +20,5 @@ connect.to.rcloud <- function(url, query, body, headers)
   if (is.null(init.cap)) stop("Server refused to provide RCloud session initialization capabilites - access denied")
   
   RSclient::RS.eval.qap(c, as.call(list(init.cap, cookies$user, cookies$token)))
-  list(caps=caps, rserve=c)
+  list(caps=caps, rserve=c, anonymous=anonymous)
 }

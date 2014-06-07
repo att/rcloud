@@ -21,7 +21,7 @@ resolve.notebook.id <- function(conn, path)
     if (is.null(conn$caps$rcloud$notebook_by_name)) stop("Anonymous users are not allowed to use notebooks by path - try authenticating")
     nb <- RSclient::RS.eval.qap(conn$rserve, as.call(list(conn$caps$rcloud$notebook_by_name, nb.name, user)))
     if (inherits(nb, "try-error")) stop("Error finding notebook: ", nb)
-    if (is.null(nb)) stop("Notebook `", nb.name, "' by user `", user, "' not found", if (anonymous) " or not published" else "")
+    if (is.null(nb)) stop("Notebook `", nb.name, "' by user `", user, "' not found", if (conn$anonymous) " or not published" else "")
     extra.path <- nb[1L, 2L]
     nb.name <- substr(nb.name, 1, nchar(nb.name) - nchar(extra.path))
     notebook <- nb[1L, 1L]
