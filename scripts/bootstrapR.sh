@@ -24,7 +24,7 @@ fi
 export RCS_SILENCE_LOADCHECK=TRUE
 echo 'cat(sprintf("\n Using %s, installing packages...\n", R.version.string)); url="file://'"$WD"'/../pkg.repos/"; a=rownames(available.packages(paste0(url,"/src/contrib"))); install.packages(a,,url,type="source")' | R --slave --vanilla
 
-ok=`echo 'library(rcloud.support);library(Cairo);library(rjson);cat("OK\n")' | R --slave --vanilla`
+ok=`echo 'library(rcloud.support);library(rcloud.client);library(Cairo);library(rjson);cat("OK\n")' | R --slave --vanilla`
 if [ "x$ok" != "xOK" ]; then
     echo '' 2>&1
     echo ' ERROR: one or more packages could not be installed.' 2>&1
