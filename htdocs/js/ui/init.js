@@ -60,8 +60,6 @@ RCloud.UI.init = function() {
                     $('#file').val("");
                     $("#file")[0].files[0]=files[i];
                     upload_asset(true);
-                    console.log(files[i]);
-
                 })(i);
             }
 
