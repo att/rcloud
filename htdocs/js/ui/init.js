@@ -38,8 +38,38 @@ RCloud.UI.init = function() {
         if($("#file")[0].files.length===0)
             return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        var replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
+        upload_asset(to_notebook);
+    });
+    $('#scratchpad-wrapper').bind({
+        dragover: function () {
+            $(this).addClass('hover');
+            return false;
+        },
+        dragend: function () {
+            $(this).removeClass('hover');
+            return false;
+        },
+        drop: function (e) {
+            e = e || window.event
 
+            e.preventDefault();
+            e = e.originalEvent || e
+            var files = (e.files || e.dataTransfer.files);
+            for (var i = 0; i < 1; i++) {
+                (function (i) {
+                    $('#file').val("");
+                    $("#file")[0].files[0]=files[i];
+                    upload_asset(true);
+                    console.log(files[i]);
+
+                })(i);
+            }
+
+            return false;
+        }
+    });
+    upload_asset= function(to_notebook) {
+       var replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
         function results_append($div) {
             $("#file-upload-results").append($div);
             $("#collapse-file-upload").trigger("size-changed");
@@ -126,7 +156,7 @@ RCloud.UI.init = function() {
             else
                 success(value);
         });
-    });
+    }
 
     RCloud.UI.left_panel.init();
     RCloud.UI.middle_column.init();
