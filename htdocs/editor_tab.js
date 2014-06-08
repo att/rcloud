@@ -968,9 +968,9 @@ var editor = function () {
         element[0].appendChild(right[0]);
     }
 
-    function make_main_url(opts) {
+    function make_edit_url(opts) {
         opts = opts || {};
-        var url = window.location.protocol + '//' + window.location.host + '/main.html';
+        var url = window.location.protocol + '//' + window.location.host + '/edit.html';
         if(opts.notebook) {
             url += '?notebook=' + opts.notebook;
             if(opts.version)
@@ -1018,7 +1018,7 @@ var editor = function () {
                         var message = "Could not open notebook " + opts.notebook;
                         if(opts.version)
                             message += "(version " + opts.version + ")";
-                        RCloud.UI.fatal_dialog(message, "Continue", make_main_url());
+                        RCloud.UI.fatal_dialog(message, "Continue", make_edit_url());
                         throw xep;
                     });
                 else if(!opts.new_notebook && current_.notebook)
@@ -1030,7 +1030,7 @@ var editor = function () {
                 e.preventDefault();
                 e.stopPropagation();
                 if(e.metaKey || e.ctrlKey) {
-                    var url = make_main_url({new_notebook: true});
+                    var url = make_edit_url({new_notebook: true});
                     window.open(url, "_blank");
                 }
                 else
@@ -1057,7 +1057,7 @@ var editor = function () {
             return promise;
         },
         fatal_reload: function(message) {
-            var url = make_main_url({notebook: current_.notebook, version: current_.version});
+            var url = make_edit_url({notebook: current_.notebook, version: current_.version});
             message = "<p>Sorry, RCloud's internal state has become inconsistent.  Please reload to return to a working state.</p><p>" + message + "</p>";
             RCloud.UI.fatal_dialog(message, "Reload", url);
         },
@@ -1085,7 +1085,7 @@ var editor = function () {
         open_notebook: function(gistname, version, selroot, new_window) {
             // really just load_notebook except possibly in a new window
             if(new_window) {
-                var url = make_main_url({notebook: gistname, version: version});
+                var url = make_edit_url({notebook: gistname, version: version});
                 window.open(url, "_blank");
             }
             else
@@ -1248,7 +1248,7 @@ var editor = function () {
                      window.history.replaceState)
                     .bind(window.history)
                  */
-                var url = make_main_url({notebook: result.id, version: options.version});
+                var url = make_edit_url({notebook: result.id, version: options.version});
                 window.history.replaceState("rcloud.notebook", null, url);
                 rcloud.api.set_url(url);
 

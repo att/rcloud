@@ -247,6 +247,6 @@ RCloud.UI.init = function() {
     //////////////////////////////////////////////////////////////////////////
     // view mode things
     $("#edit-notebook").click(function() {
-        window.location = "main.html?notebook=" + shell.gistname();
+        window.location = "edit.html?notebook=" + shell.gistname();
     });
 };

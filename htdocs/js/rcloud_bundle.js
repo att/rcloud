@@ -3422,7 +3422,7 @@ RCloud.UI.fatal_dialog = function(message, label, href) {
 RCloud.UI.help_frame = {
     init: function() {
         // i can't be bothered to figure out why the iframe causes onload to be triggered early
-        // if this code is directly in main.html
+        // if this code is directly in edit.html
         $("#help-body").append('<iframe id="help-frame" frameborder="0" />');
     },
     show: function() {
@@ -3689,7 +3689,7 @@ RCloud.UI.init = function() {
     //////////////////////////////////////////////////////////////////////////
     // view mode things
     $("#edit-notebook").click(function() {
-        window.location = "main.html?notebook=" + shell.gistname();
+        window.location = "edit.html?notebook=" + shell.gistname();
     });
 };
 RCloud.UI.left_panel = (function() {

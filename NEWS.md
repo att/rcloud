@@ -1,11 +1,11 @@
 ## RCloud develop branch
 
-### Deprecations
+* `main.html` has been renamed `edit.html`. Currently main.html
+  redirects to edit.html, but this will be eventually removed.
 
-* the flat-file backend for RCS is to be considered deprecated. In
-  future releases we will only support the redis backend.
-
-### Features
+* DEPRECATION: the flat-file backend for RCS is to be considered
+  deprecated. In future releases we will only support the redis
+  backend.
 
 * `rcloud.install.js.module` now takes an optional boolean parameter
   force to force reloading, to help with JS development.
