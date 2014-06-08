@@ -25,6 +25,7 @@ for dir in htdocs/js  htdocs/lib; do
     fi
 done
 
+R CMD build rcloud.client && RCS_SILENCE_LOADCHECK=TRUE R CMD INSTALL rcloud.client_`sed -n 's/Version: *//p' rcloud.client/DESCRIPTION`.tar.gz || exit 1
 R CMD build rcloud.support && RCS_SILENCE_LOADCHECK=TRUE R CMD INSTALL rcloud.support_`sed -n 's/Version: *//p' rcloud.support/DESCRIPTION`.tar.gz || exit 1
 
 # build internal packages (not in git)
