@@ -57,16 +57,14 @@ RCloud.UI.init = function() {
             var files = (e.files || e.dataTransfer.files);
            //To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
            //for (var i = 0; i < files.length; i++) {
-            for (var i = 0; i < 1; i++) {
-                (function (i) {
-                    $('#file').val("");
-                    $("#file")[0].files[0]=files[i];
-                    upload_asset(true);
-                })(i);
+           for (var i = 0; i < 1; i++) {
+                $('#file').val("");
+                $("#file")[0].files[0]=files[i];
+                upload_asset(true);
             }
         }
     });
-    upload_asset= function(to_notebook) {
+    function upload_asset(to_notebook) {
        var replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
         function results_append($div) {
             $("#file-upload-results").append($div);
