@@ -46,8 +46,10 @@ Notebook.Asset.create_html_view = function (asset_model) {
 	});
 	anchor.click(function () {
 		// amol : added if-else conditions : github issue #387
-		if (!asset_model.active(true))
+		if (!asset_model.active(true)){
+			asset_old_name = filename_span.text();
 			filename_span.attr("contenteditable", "true");
+		}
 		else
 			asset_model.controller.select();
 	});
