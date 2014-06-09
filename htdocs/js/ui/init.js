@@ -50,10 +50,10 @@ RCloud.UI.init = function() {
             return false;
         },
         drop: function (e) {
-            e = e || window.event
+            e = e || window.event;
 
             e.preventDefault();
-            e = e.originalEvent || e
+            e = e.originalEvent || e;
             var files = (e.files || e.dataTransfer.files);
             for (var i = 0; i < 1; i++) {
                 (function (i) {
