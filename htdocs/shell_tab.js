@@ -26,7 +26,7 @@ var shell = (function() {
         return on_load(notebook);
     }
 
-    function on_load(notebook) {
+    function on_load(notebook) {		
         RCloud.UI.notebook_title.set(notebook.description);
         RCloud.UI.share_button.set_link(notebook);
         notebook_user_ = notebook.user.login;
@@ -92,10 +92,15 @@ var shell = (function() {
         load_notebook: function(gistname, version) {
             var that = this;
             notebook_controller_.save();
+			if(version!=null)
+                $("#new-asset").hide();
+            else
+                $("#new-asset").show();
             return RCloud.UI.with_progress(function() {
                 return RCloud.session.reset().then(function() {
                     return that.notebook.controller.load_notebook(gistname, version);
-                }).then(function(notebook) {
+                })				
+				.then(function(notebook) {
                     if (!_.isUndefined(notebook.error)) {
                         throw notebook.error;
                     }
@@ -104,12 +109,8 @@ var shell = (function() {
                     $(".rcloud-user-defined-css").remove();
                     return rcloud.install_notebook_stylesheets()
                         .return(notebook);
-                }).then(on_load).then(function(){
-                    if(version!=null)
-                        $("#new-asset").hide();
-                    else
-                        $("#new-asset").show();
-                }.bind(version));
+                })
+				.then(on_load);
             });
         }, save_notebook: function() {
             notebook_controller_.save();
