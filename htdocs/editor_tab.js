@@ -946,15 +946,15 @@ var editor = function () {
                 var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style, true);
                 remove.click(function(e) {
                    //issue #635 : added this for notebook delete confirmation
-					var yn = confirm("Do you want to remove this notebook permanantly?");
-					if (yn) {
-						e.stopPropagation();
-						e.preventDefault();
-						result.remove_notebook(node.user, node.gistname);
-						return false;
-					}else{
-						return false;
-					}
+                   var yn = confirm("Do you want to remove this notebook?");
+                   if (yn) {
+                       e.stopPropagation();
+                       e.preventDefault();
+                       result.remove_notebook(node.user, node.gistname);
+                       return false;
+                       } else {
+                           return false;
+                       }
                 });
                 add_buttons(remove);
             };
