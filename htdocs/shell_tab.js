@@ -105,12 +105,11 @@ var shell = (function() {
                     return rcloud.install_notebook_stylesheets()
                         .return(notebook);
                 }).then(on_load).then(function(){
-					// issue #616 : disabling the new-asset tab for history version of notebook
-					if(version!=null)
-						$("#new-asset").hide();
-					else
-						$("#new-asset").show();					
-				}.bind(version));
+                    if(version!=null)
+                        $("#new-asset").hide();
+                    else
+                        $("#new-asset").show();
+                }.bind(version));
             });
         }, save_notebook: function() {
             notebook_controller_.save();
