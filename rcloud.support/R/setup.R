@@ -10,6 +10,13 @@
 configure.rcloud <- function (mode=c("startup", "script")) {
   mode <- match.arg(mode)
 
+  ## Setup credentials
+  .GlobalEnv$credentials <- 
+    if (nzConf("session.server"))
+      session.server.credential.manager()
+    else
+      simple.credential.manager()
+
   ## If we're running in startup mode, suicide on error!
   if (mode == "startup")
     options(error=function(...) {
