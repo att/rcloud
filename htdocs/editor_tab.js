@@ -285,7 +285,13 @@ var editor = function () {
             };
             user_nodes.push(node);
         });
-
+        for(var i=0;i<user_nodes.length;i++){
+            if(user_nodes[i].label != username_){
+                for(var j=0;j<user_nodes[i].children.length;j++){
+                    user_nodes[i].children[j].label = user_nodes[i].children[j].label+"[read only]";
+                }
+            }
+        }
         return {
             label: 'All Notebooks',
             id: '/alls',
@@ -428,6 +434,8 @@ var editor = function () {
             throw new Error("need user");
         if(!gistname)
             throw new Error("need gistname");
+        if(user != username_)
+            path.label = path.label+"[read only]";
         // make sure parents exist
         var parid = node_id(root, user),
             parent = $tree_.tree('getNodeById', parid),
