@@ -92,15 +92,14 @@ var shell = (function() {
         load_notebook: function(gistname, version) {
             var that = this;
             notebook_controller_.save();
-			if(version!=null)
+            if(version!=null)
                 $("#new-asset").hide();
             else
                 $("#new-asset").show();
             return RCloud.UI.with_progress(function() {
                 return RCloud.session.reset().then(function() {
                     return that.notebook.controller.load_notebook(gistname, version);
-                })				
-				.then(function(notebook) {
+                }).then(function(notebook) {
                     if (!_.isUndefined(notebook.error)) {
                         throw notebook.error;
                     }
