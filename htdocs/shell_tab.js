@@ -101,8 +101,7 @@ var shell = (function() {
                     }
                     gistname_ = gistname;
                     version_ = version;
-					//issue #607 : added this line to add notebook desc as tab title
-					document.title = notebook.description
+                    document.title = notebook.description;
                     $(".rcloud-user-defined-css").remove();
                     return rcloud.install_notebook_stylesheets()
                         .return(notebook);
