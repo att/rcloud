@@ -952,9 +952,9 @@ var editor = function () {
                        e.preventDefault();
                        result.remove_notebook(node.user, node.gistname);
                        return false;
-                       } else {
-                           return false;
-                       }
+                   } else {
+                       return false;
+                   }
                 });
                 add_buttons(remove);
             };
