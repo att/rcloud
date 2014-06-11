@@ -101,6 +101,7 @@ var shell = (function() {
                     }
                     gistname_ = gistname;
                     version_ = version;
+                    document.title = notebook.description + " - RCloud";
                     $(".rcloud-user-defined-css").remove();
                     return rcloud.install_notebook_stylesheets()
                         .return(notebook);
