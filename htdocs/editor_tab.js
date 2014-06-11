@@ -434,8 +434,6 @@ var editor = function () {
             throw new Error("need user");
         if(!gistname)
             throw new Error("need gistname");
-        if(user != username_)
-            path.label = path.label+"[read only]";
         // make sure parents exist
         var parid = node_id(root, user),
             parent = $tree_.tree('getNodeById', parid),
@@ -1082,9 +1080,8 @@ var editor = function () {
             $tree_.bind('tree.open', tree_open);
         },
         load_notebook: function(gistname, version, selroot, push_history) {
-            var that = this;
+			var that = this;
             selroot = selroot || true;
-
             return shell.load_notebook(gistname, version)
                 .then(this.load_callback({version: version,
                                           selroot: selroot,
