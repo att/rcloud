@@ -8,7 +8,7 @@ RCloud.UI.configure_readonly = function() {
         $('#prompt-div').hide();
         fork_revert.text(shell.notebook.controller.is_mine() ? 'Revert' : 'Fork');
         fork_revert.show();
-		readonly_notebook.html("<span style=\"color:#fff;\">Authored By "+shell.notebook.model.user()+" <small><i>*Current Notebook is read-only</i></small></span>");
+		readonly_notebook.html("<span style=\"color:#fff;\">Authored By <b>"+shell.notebook.model.user()+"</b> <small><i>*This Notebook is read-only</i></small></span>");
 		readonly_notebook.show();
         $('#save-notebook').hide();
         $('#output').sortable('disable');
