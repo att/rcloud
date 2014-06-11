@@ -606,7 +606,7 @@ var editor = function () {
                     nshow = show_sha(histories_[node.gistname], where);
                 process_history(nshow);
                 return node;
-            });
+        });
     }
 
     function scroll_into_view(node) {
