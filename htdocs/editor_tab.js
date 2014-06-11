@@ -285,13 +285,6 @@ var editor = function () {
             };
             user_nodes.push(node);
         });
-        for(var i=0;i<user_nodes.length;i++){
-            if(user_nodes[i].label != username_){
-                for(var j=0;j<user_nodes[i].children.length;j++){
-                    user_nodes[i].children[j].label = user_nodes[i].children[j].label+"[read only]";
-                }
-            }
-        }
         return {
             label: 'All Notebooks',
             id: '/alls',
@@ -1080,7 +1073,7 @@ var editor = function () {
             $tree_.bind('tree.open', tree_open);
         },
         load_notebook: function(gistname, version, selroot, push_history) {
-			var that = this;
+            var that = this;
             selroot = selroot || true;
             return shell.load_notebook(gistname, version)
                 .then(this.load_callback({version: version,
