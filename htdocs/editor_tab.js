@@ -945,10 +945,15 @@ var editor = function () {
             if(node.user===username_) {
                 var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style, true);
                 remove.click(function(e) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    result.remove_notebook(node.user, node.gistname);
-                    return false;
+                   var yn = confirm("Do you want to remove this notebook?");
+                   if (yn) {
+                       e.stopPropagation();
+                       e.preventDefault();
+                       result.remove_notebook(node.user, node.gistname);
+                       return false;
+                   } else {
+                       return false;
+                   }
                 });
                 add_buttons(remove);
             };
