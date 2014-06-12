@@ -50,6 +50,24 @@ var shell = (function() {
         }
     }
 
+    function do_load(f) {
+        return RCloud.UI.with_progress(function() {
+            return RCloud.session.reset()
+                .then(f)
+                .spread(function(notebook, gistname, version) {
+                    if (!_.isUndefined(notebook.error)) {
+                        throw notebook.error;
+                    }
+                    gistname_ = gistname;
+                    version_ = version;
+                    document.title = notebook.description + " - RCloud";
+                    $(".rcloud-user-defined-css").remove();
+                    return rcloud.install_notebook_stylesheets()
+                        .return(notebook);
+                }).then(on_load);
+        });
+    }
+
     var result = {
         notebook: {
             model: notebook_model_,
@@ -90,23 +108,11 @@ var shell = (function() {
             return notebook_controller_.split_cell(cell_model, point1, point2);
         },
         load_notebook: function(gistname, version) {
-            var that = this;
             notebook_controller_.save();
-            return RCloud.UI.with_progress(function() {
-                return RCloud.session.reset().then(function() {
-                    return that.notebook.controller.load_notebook(gistname, version);
-                }).then(function(notebook) {
-                    if (!_.isUndefined(notebook.error)) {
-                        throw notebook.error;
-                    }
-                    gistname_ = gistname;
-                    version_ = version;
-                    document.title = notebook.description + " - RCloud";
-                    $(".rcloud-user-defined-css").remove();
-                    return rcloud.install_notebook_stylesheets()
-                        .return(notebook);
-                }).then(on_load);
-            });
+            return do_load(function() {
+                return [notebook_controller_.load_notebook(gistname, version),
+                        gistname, version];
+            }, gistname, version);
         }, save_notebook: function() {
             notebook_controller_.save();
         }, new_notebook: function(desc) {
@@ -121,36 +127,18 @@ var shell = (function() {
         }, rename_notebook: function(desc) {
             return notebook_controller_.rename_notebook(desc);
         }, fork_notebook: function(is_mine, gistname, version) {
-            // force a full reload in all cases, as a sanity check
-            // we might know what the notebook state should be,
-            // but load the notebook and reset the session to be sure
-            return RCloud.UI.with_progress(function() {
-                return RCloud.session.reset().then(function() {
-                    notebook_model_.read_only(false);
-                    return notebook_controller_
-                        .fork_notebook(gistname, version)
-                        .then(function(notebook) {
-                            gistname_ = notebook.id;
-                            version_ = null;
-                            return notebook;
-                        }).then(on_load);
-                });
+            return do_load(function() {
+                return notebook_controller_.fork_notebook(gistname, version)
+                    .then(function(notebook) {
+                        return [notebook, notebook.id, null];
+                    });
             });
         }, revert_notebook: function(gistname, version) {
-            // force a full reload in all cases, as a sanity check
-            // we might know what the notebook state should be,
-            // but load the notebook and reset the session to be sure
-            return RCloud.UI.with_progress(function() {
-                return RCloud.session.reset().then(function() {
-                    notebook_model_.read_only(false);
-                    return notebook_controller_
-                        .revert_notebook(gistname, version)
-                        .then(function(notebook) {
-                            gistname_ = notebook.id;
-                            version_ = null;
-                            return notebook;
-                        }).then(on_load);
-                });
+            return do_load(function() {
+                return notebook_controller_.revert_notebook(gistname, version)
+                    .then(function(notebook) {
+                        return [notebook, notebook.id, null];
+                    });
             });
         }, github_url: function() {
             var url;

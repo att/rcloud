@@ -373,24 +373,25 @@ Notebook.create_controller = function(model)
                 .then(_.bind(on_load,this,null));
         },
         revert_notebook: function(gistname, version) {
+            model.read_only(false); // so that update_notebook doesn't throw
             // get HEAD, calculate changes from there to here, and apply
             return rcloud.load_notebook(gistname, null).then(function(notebook) {
                 return [find_changes_from(notebook), gistname];
             }).spread(apply_changes_and_load);
         },
         fork_notebook: function(gistname, version) {
-            var that = this;
-            // 1. figure out the changes
-            return rcloud.fork_notebook(gistname).then(function(notebook) {
-                if(version)
-                    // fork, then get changes from there to where we are in the past, and apply
-                    // git api does not return the files on fork, so load
-                    return rcloud.get_notebook(notebook.id, null)
-                    .then(function(notebook2) {
-                        return [find_changes_from(notebook2), notebook2.id];
-                    });
-                else return [[], notebook.id];
-            }).spread(apply_changes_and_load);
+            model.read_only(false); // so that update_notebook doesn't throw
+            return rcloud.fork_notebook(gistname)
+                .then(function(notebook) {
+                    if(version)
+                        // fork, then get changes from there to where we are in the past, and apply
+                        // git api does not return the files on fork, so load
+                        return rcloud.get_notebook(notebook.id, null)
+                        .then(function(notebook2) {
+                            return [find_changes_from(notebook2), notebook2.id];
+                        });
+                    else return [[], notebook.id];
+                }).spread(apply_changes_and_load);
         },
         update_cell: function(cell_model) {
             return update_notebook(refresh_buffers().concat(model.update_cell(cell_model)))
