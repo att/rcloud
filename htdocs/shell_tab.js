@@ -128,7 +128,31 @@ var shell = (function() {
             return notebook_controller_.rename_notebook(desc);
         }, fork_notebook: function(is_mine, gistname, version) {
             return do_load(function() {
-                return notebook_controller_.fork_notebook(gistname, version)
+                var promise_fork;
+                if(is_mine) {
+                    // hack: copy without history as a first pass, because github forbids forking oneself
+                    promise_fork = rcloud.get_notebook(gistname, version)
+                        .then(function(notebook) {
+                            notebook = sanitize_notebook(notebook);
+                            notebook.description = editor.find_next_copy_name(notebook.description);
+                            return notebook_controller_.create_notebook(notebook);
+                        });
+                }
+                else promise_fork = notebook_controller_
+                    .fork_notebook(gistname, version)
+                    .then(function(notebook) {
+                        /*
+                         // it would be nice to choose a new name if we've forked someone
+                         // else's notebook and we already have a notebook of that name
+                         // but this slams into the github concurrency problem
+                        var new_desc = editor.find_next_copy_name(notebook.description);
+                        if(new_desc != notebook.description)
+                            return notebook_controller_.rename_notebook(new_desc);
+                        else
+                         */
+                        return notebook;
+                    });
+                return promise_fork
                     .then(function(notebook) {
                         return [notebook, notebook.id, null];
                     });

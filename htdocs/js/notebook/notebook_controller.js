@@ -391,7 +391,7 @@ Notebook.create_controller = function(model)
                             return [find_changes_from(notebook2), notebook2.id];
                         });
                     else return [[], notebook.id];
-                }).spread(apply_changes_and_load);
+            }).spread(apply_changes_and_load);
         },
         update_cell: function(cell_model) {
             return update_notebook(refresh_buffers().concat(model.update_cell(cell_model)))

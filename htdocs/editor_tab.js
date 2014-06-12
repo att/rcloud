@@ -1242,8 +1242,6 @@ var editor = function () {
             update_notebook_view(username_, gistname, get_notebook_info(gistname), false);
         },
         fork_notebook: function(is_mine, gistname, version) {
-            if(is_mine)
-                return Promise.reject(new Error("attempted to fork own notebook - patience!!!"));
             return shell.fork_notebook(is_mine, gistname, version)
                 .bind(this)
                 .then(function(notebook) {
