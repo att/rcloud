@@ -117,16 +117,18 @@ var editor = function () {
         return ret;
     }
 
+    var trnexp = /^(.*) ([0-9]+)$/;
+
     function compare_nodes(a, b) {
         var so = a.sort_order-b.sort_order;
         if(so) return so;
         else {
             var alab = a.name || a.label, blab = b.name || b.label;
-            // haha horrible special case to sort "Notebook X" numerically!
-            if(/Notebook /.test(alab) && /Notebook /.test(blab)) {
-                var an = alab.slice(9), bn = blab.slice(9);
-                if($.isNumeric(an) && $.isNumeric(bn))
-                    return an-bn;
+            // cut trailing numbers and sort separately
+            var amatch = trnexp.exec(alab), bmatch = trnexp.exec(blab);
+            if(amatch && bmatch && amatch[1] == bmatch[1]) {
+                var an = +amatch[2], bn = +bmatch[2];
+                return an - bn;
             }
             var lc = alab.localeCompare(blab);
             if(lc === 0) // make sort stable on gist id (creation time would be better)
@@ -134,6 +136,45 @@ var editor = function () {
             return lc;
         }
     }
+
+    // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
+    function find_next_copy_name(username, description) {
+        var pid = node_id("alls", username);
+        var parent = $tree_.tree('getNodeById', pid);
+        if(parent.delay_children)
+            load_children(parent);
+        var map = _.object(_.map(parent.children, function(c) { return [c.name, true]; }));
+        if(!map[description])
+            return description;
+        var match, base, n;
+        if((match = trnexp.exec(description)))
+            base = match[1], n = +match[2];
+        else
+            base = description, n = 1;
+        var copy_name;
+        do
+            copy_name = base + " " + ++n;
+        while(map[copy_name]);
+        return copy_name;
+/*
+        var fake_node = { label: description };
+        var bs = d3.bisector(compare_nodes);
+        var i = bs.left(parent.children, fake_node);
+        if(i >= parent.children.length || compare_nodes(parent.children[i], fake_node))
+            return description;
+        var match;
+        if((match = trnexp.exec(parent.children[i].label))) {
+            var base = match[0], n = +match[1];
+            var copy_name;
+            do
+                copy_name = base + " " + ++n;
+            while(++i < parent.children.length && parent.children[i].label === copy_name);
+            return copy_name;
+        }
+        else return node.label + " 1";
+*/
+    }
+
 
     function as_folder_hierarchy(nodes, prefix, name_prefix) {
         function is_in_folder(v) { return v.label.match(/([^/]+)\/(.+)/); }
@@ -1072,6 +1113,9 @@ var editor = function () {
             });
             $tree_.bind('tree.click', tree_click);
             $tree_.bind('tree.open', tree_open);
+        },
+        find_next_copy_name: function(name) {
+            return find_next_copy_name(username_, name);
         },
         load_notebook: function(gistname, version, selroot, push_history) {
             var that = this;
