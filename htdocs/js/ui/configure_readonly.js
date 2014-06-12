@@ -12,6 +12,7 @@ RCloud.UI.configure_readonly = function() {
         $('#upload-to-notebook')
             .prop('checked', false)
             .attr("disabled", true);
+        RCloud.UI.scratchpad.set_readonly(true);
     }
     else {
         $('#prompt-div').show();
@@ -21,5 +22,6 @@ RCloud.UI.configure_readonly = function() {
         $('#upload-to-notebook')
             .prop('checked', false)
             .removeAttr("disabled");
+        RCloud.UI.scratchpad.set_readonly(false);
     }
 };
