@@ -1214,9 +1214,9 @@ var editor = function () {
         },
         revert_notebook: function(is_mine, gistname, version) {
             if(!is_mine)
-                return Promise.reject(Error("attempted to revert notebook not mine"));
+                return Promise.reject(new Error("attempted to revert notebook not mine"));
             if(!version)
-                return Promise.reject(Error("attempted to revert current version"));
+                return Promise.reject(new Error("attempted to revert current version"));
             return shell.revert_notebook(gistname, version)
                 .then(this.load_callback({is_change: true, selroot: true}));
         },

@@ -141,7 +141,7 @@ Notebook.create_controller = function(model)
             return change.content || change.erase || change.rename;
         });
         if (model.read_only())
-            return Promise.reject("attempted to update read-only notebook");
+            return Promise.reject(new Error("attempted to update read-only notebook"));
         if (!changes.length && _.isUndefined(more)) {
             return Promise.cast(current_gist_);
         }
