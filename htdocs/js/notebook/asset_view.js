@@ -12,45 +12,55 @@ Notebook.Asset.create_html_view = function(asset_model)
     filename_div.append(anchor);
     anchor.append(remove);
 
-    //issue #387 : added keypress event triggering the recreation operation
     var asset_old_name = "";
-    filename_span.keypress(function (e) {
-        if (e.which == 13) {
-            e.preventDefault();
-            filename_span.attr("contenteditable", "false");
-            //get new asset name
-            var new_asset_name = filename_span.text();
-            //get old asset content
-            var old_asset_contet = asset_model.content();
-            //create new asset
-            if (new_asset_name == "") {
-                filename_span.text(asset_old_name);
-                return;
-            }
-            if (Notebook.is_part_name(new_asset_name)) {
-                alert("Asset names cannot start with 'part[0-9]', sorry!");
-                filename_span.text(asset_old_name);
-                return;
-            }
-            var found = shell.notebook.model.has_asset(new_asset_name);
-            if (found){
-                found.controller.select();
-            }
-            else {
-               shell.notebook.controller
-               .append_asset(old_asset_contet, new_asset_name)
-               .then(function (controller) {
-                    controller.select();
-                });
-                //delete old asset after creating new one
-                asset_model.controller.remove(true);
-            }
-        }
-    });
     anchor.click(function() {
         if(!asset_model.active(true)){
             asset_old_name = filename_span.text();
-            ui_utils.editable(filename_span, $.extend({allow_edit: true}));			
+            //ui_utils.editable(filename_span, $.extend({allow_edit: true}));
+            var rename_file = function(v){
+                //get new asset name
+                var new_asset_name = filename_span.text();
+                //get old asset content
+                var old_asset_contet = asset_model.content();
+                //create new asset
+                if (new_asset_name == "") {
+                    filename_span.text(asset_old_name);
+                    return;
+                }
+                if (Notebook.is_part_name(new_asset_name)) {
+                    alert("Asset names cannot start with 'part[0-9]', sorry!");
+                    filename_span.text(asset_old_name);
+                    return;
+                }
+                var found = shell.notebook.model.has_asset(new_asset_name);
+                if (found){
+                    found.controller.select();
+                }
+                else {
+                    shell.notebook.controller
+                    .append_asset(old_asset_contet, new_asset_name)
+                    .then(function (controller) {
+                        controller.select();
+                    });
+                    //delete old asset after creating new one
+                    asset_model.controller.remove(true);
+                }
+            }
+            function select(el) {
+                if(el.childNodes.length !== 1 || el.firstChild.nodeType != el.TEXT_NODE)
+                    throw new Error('expecting simple element with child text');
+                var text = el.firstChild.textContent;
+                var range = document.createRange();
+                range.setStart(el.firstChild, text.lastIndexOf('/') + 1);
+                range.setEnd(el.firstChild, text.length);
+                return range;
+            }
+            var editable_opts = {
+                change: rename_file,
+                select: select,
+                validate: function(name) { return editor.validate_name(name); }
+            };
+            ui_utils.editable(filename_span, $.extend({allow_edit: true,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
         }
         else {
             asset_model.controller.select();
