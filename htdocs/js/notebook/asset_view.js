@@ -16,13 +16,9 @@ Notebook.Asset.create_html_view = function(asset_model)
     anchor.click(function() {
         if(!asset_model.active(true)){
             asset_old_name = filename_span.text();
-            //ui_utils.editable(filename_span, $.extend({allow_edit: true}));
             var rename_file = function(v){
-                //get new asset name
                 var new_asset_name = filename_span.text();
-                //get old asset content
                 var old_asset_contet = asset_model.content();
-                //create new asset
                 if (new_asset_name == "") {
                     filename_span.text(asset_old_name);
                     return;
@@ -42,7 +38,6 @@ Notebook.Asset.create_html_view = function(asset_model)
                     .then(function (controller) {
                         controller.select();
                     });
-                    //delete old asset after creating new one
                     asset_model.controller.remove(true);
                 }
             }
