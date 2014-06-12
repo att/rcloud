@@ -1197,21 +1197,28 @@ var editor = function () {
             set_visibility(gistname, visible);
             update_notebook_view(username_, gistname, get_notebook_info(gistname), false);
         },
-        fork_or_revert_notebook: function(is_mine, gistname, version) {
-            shell.fork_or_revert_notebook(is_mine, gistname, version)
+        fork_notebook: function(is_mine, gistname, version) {
+            if(is_mine)
+                return Promise.reject(new Error("attempted to fork own notebook - patience!!!"));
+            return shell.fork_notebook(is_mine, gistname, version)
                 .bind(this)
                 .then(function(notebook) {
-                    var promise = is_mine ?
-                            this.load_callback({is_change: true, selroot: true})(notebook) :
-                        this.star_notebook(true, {notebook: notebook,
-                                                  make_current: true,
-                                                  is_change: !!version,
-                                                  version: null});
-                    return promise.return(notebook.id);
+                    return this.star_notebook(true, {notebook: notebook,
+                                                     make_current: true,
+                                                     is_change: !!version,
+                                                     version: null})
+                        .return(notebook.id);
                 }).then(function(gistname) {
-                    if(!is_mine)
-                        this.set_notebook_visibility(gistname, true);
+                    this.set_notebook_visibility(gistname, true);
                 });
+        },
+        revert_notebook: function(is_mine, gistname, version) {
+            if(!is_mine)
+                return Promise.reject(Error("attempted to revert notebook not mine"));
+            if(!version)
+                return Promise.reject(Error("attempted to revert current version"));
+            return shell.revert_notebook(gistname, version)
+                .then(this.load_callback({is_change: true, selroot: true}));
         },
         show_history: function(node, toggle) {
             var whither = 'more';

@@ -120,18 +120,31 @@ var shell = (function() {
             });
         }, rename_notebook: function(desc) {
             return notebook_controller_.rename_notebook(desc);
-        }, fork_or_revert_notebook: function(is_mine, gistname, version) {
+        }, fork_notebook: function(is_mine, gistname, version) {
             // force a full reload in all cases, as a sanity check
             // we might know what the notebook state should be,
             // but load the notebook and reset the session to be sure
-            if(is_mine && !version)
-                throw "unexpected revert of current version";
             return RCloud.UI.with_progress(function() {
                 return RCloud.session.reset().then(function() {
-                    var that = this;
                     notebook_model_.read_only(false);
                     return notebook_controller_
-                        .fork_or_revert_notebook(is_mine, gistname, version)
+                        .fork_notebook(gistname, version)
+                        .then(function(notebook) {
+                            gistname_ = notebook.id;
+                            version_ = null;
+                            return notebook;
+                        }).then(on_load);
+                });
+            });
+        }, revert_notebook: function(gistname, version) {
+            // force a full reload in all cases, as a sanity check
+            // we might know what the notebook state should be,
+            // but load the notebook and reset the session to be sure
+            return RCloud.UI.with_progress(function() {
+                return RCloud.session.reset().then(function() {
+                    notebook_model_.read_only(false);
+                    return notebook_controller_
+                        .revert_notebook(gistname, version)
                         .then(function(notebook) {
                             gistname_ = notebook.id;
                             version_ = null;

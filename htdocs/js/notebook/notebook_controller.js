@@ -185,6 +185,13 @@ Notebook.create_controller = function(model)
                 throw e;
             });
     }
+
+    function apply_changes_and_load(changes, gistname) {
+        return changes.length
+            ? update_notebook(changes, gistname)
+            : result.load_notebook(gistname, null); // do a load - we need to refresh
+    }
+
     function refresh_buffers() {
         return model.reread_buffers();
     }
@@ -365,31 +372,25 @@ Notebook.create_controller = function(model)
             return rcloud.create_notebook(content)
                 .then(_.bind(on_load,this,null));
         },
-        fork_or_revert_notebook: function(is_mine, gistname, version) {
+        revert_notebook: function(gistname, version) {
+            // get HEAD, calculate changes from there to here, and apply
+            return rcloud.load_notebook(gistname, null).then(function(notebook) {
+                return [find_changes_from(notebook), gistname];
+            }).spread(apply_changes_and_load);
+        },
+        fork_notebook: function(gistname, version) {
             var that = this;
             // 1. figure out the changes
-            var promiseChanges;
-            if(is_mine) // revert: get HEAD, calculate changes from there to here, and apply
-                promiseChanges = rcloud.load_notebook(gistname, null).then(function(notebook) {
-                    return [find_changes_from(notebook), gistname];
-                });
-            else // fork:
-                promiseChanges = rcloud.fork_notebook(gistname).then(function(notebook) {
-                    if(version)
-                        // fork, then get changes from there to where we are in the past, and apply
-                        // git api does not return the files on fork, so load
-                        return rcloud.get_notebook(notebook.id, null)
-                            .then(function(notebook2) {
-                                return [find_changes_from(notebook2), notebook2.id];
-                            });
-                    else return [[], notebook.id];
-                });
-            // 2. apply the changes, if any
-            return promiseChanges.spread(function(changes, gistname) {
-                return changes.length
-                    ? update_notebook(changes, gistname)
-                    : that.load_notebook(gistname, null); // do a load - we need to refresh
-            });
+            return rcloud.fork_notebook(gistname).then(function(notebook) {
+                if(version)
+                    // fork, then get changes from there to where we are in the past, and apply
+                    // git api does not return the files on fork, so load
+                    return rcloud.get_notebook(notebook.id, null)
+                    .then(function(notebook2) {
+                        return [find_changes_from(notebook2), notebook2.id];
+                    });
+                else return [[], notebook.id];
+            }).spread(apply_changes_and_load);
         },
         update_cell: function(cell_model) {
             return update_notebook(refresh_buffers().concat(model.update_cell(cell_model)))

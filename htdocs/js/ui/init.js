@@ -1,9 +1,15 @@
 RCloud.UI.init = function() {
-    $("#fork-revert-notebook").click(function() {
+    $("#fork-notebook").click(function() {
         var is_mine = shell.notebook.controller.is_mine();
         var gistname = shell.gistname();
         var version = shell.version();
-        editor.fork_or_revert_notebook(is_mine, gistname, version);
+        editor.fork_notebook(is_mine, gistname, version);
+    });
+    $("#revert-notebook").click(function() {
+        var is_mine = shell.notebook.controller.is_mine();
+        var gistname = shell.gistname();
+        var version = shell.version();
+        editor.revert_notebook(is_mine, gistname, version);
     });
     $("#open-in-github").click(function() {
         window.open(shell.github_url(), "_blank");
