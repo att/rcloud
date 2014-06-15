@@ -1509,10 +1509,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     });
     $(languages[language].element).attr('selected', true);
     select_lang.on("change", function() {
-        if(!$(e.currentTarget).hasClass("button-disabled")) {
-            var l = select_lang.find("option:selected").text();
-            cell_model.parent_model.controller.change_cell_language(cell_model, l);
-        }
+        var l = select_lang.find("option:selected").text();
+        cell_model.parent_model.controller.change_cell_language(cell_model, l);
     });
 
     col.append($("<div></div>").append(select_lang));
