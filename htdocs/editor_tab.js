@@ -336,7 +336,6 @@ var editor = function () {
             };
             user_nodes.push(node);
         });
-
         return {
             label: 'All Notebooks',
             id: '/alls',
@@ -658,7 +657,7 @@ var editor = function () {
                     nshow = show_sha(histories_[node.gistname], where);
                 process_history(nshow);
                 return node;
-            });
+        });
     }
 
     function scroll_into_view(node) {
@@ -1135,7 +1134,6 @@ var editor = function () {
         load_notebook: function(gistname, version, selroot, push_history) {
             var that = this;
             selroot = selroot || true;
-
             return shell.load_notebook(gistname, version)
                 .then(this.load_callback({version: version,
                                           selroot: selroot,

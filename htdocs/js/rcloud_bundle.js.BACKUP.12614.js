@@ -2681,7 +2681,7 @@ Notebook.create_controller = function(model)
                             return [find_changes_from(notebook2), notebook2.id];
                         });
                     else return [[], notebook.id];
-            }).spread(apply_changes_and_load);
+                }).spread(apply_changes_and_load);
         },
         update_cell: function(cell_model) {
             return update_notebook(refresh_buffers().concat(model.update_cell(cell_model)))
@@ -3372,7 +3372,7 @@ RCloud.UI.command_prompt = {
  * Adjusts the UI depending on whether notebook is read-only
  */
 RCloud.UI.configure_readonly = function() {
-    var readonly_notebook = $("#readonly-notebook");
+<<<<<<< HEAD
     if(shell.notebook.controller.is_mine()) {
         if(shell.notebook.model.read_only()) {
             $('#revert-notebook').show();
@@ -3388,7 +3388,15 @@ RCloud.UI.configure_readonly = function() {
     }
     if(shell.notebook.model.read_only()) {
         $('#prompt-div').hide();
+=======
+    var fork_revert = $('#fork-revert-notebook');
+    var readonly_notebook = $("#readonly-notebook");
+    if(shell.notebook.model.read_only()) {
+        $('#prompt-div').hide();
+        fork_revert.text(shell.notebook.controller.is_mine() ? 'Revert' : 'Fork');
+        fork_revert.show();
         readonly_notebook.show();
+>>>>>>> pr/694
         $('#save-notebook').hide();
         $('#output').sortable('disable');
         $('#upload-to-notebook')
@@ -3397,7 +3405,11 @@ RCloud.UI.configure_readonly = function() {
     }
     else {
         $('#prompt-div').show();
+<<<<<<< HEAD
+=======
+        fork_revert.hide();
         readonly_notebook.hide();
+>>>>>>> pr/694
         $('#save-notebook').show();
         $('#output').sortable('enable');
         $('#upload-to-notebook')
