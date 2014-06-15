@@ -11,7 +11,7 @@ RCloud.UI.configure_readonly = function() {
         fork_revert.show();
         notebook_author.text(shell.notebook.model.user());
         notebook_author.show();
-        readonly_notebook.html("<span style=\"color:#fff;\">(read-only)</span>");
+        readonly_notebook.html("(read-only)");
         readonly_notebook.show();
         $('#save-notebook').hide();
         $('#output').sortable('disable');
