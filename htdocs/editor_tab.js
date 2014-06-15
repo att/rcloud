@@ -131,8 +131,18 @@ var editor = function () {
                 return an - bn;
             }
             var lc = alab.localeCompare(blab);
-            if(lc === 0) // make sort stable on gist id (creation time would be better)
+            if(lc === 0) {
+                // put a folder with the same name as a notebook first
+                if(a.children) {
+                    if(b.children)
+                        throw new Error("uh oh, parallel folders");
+                    return -1;
+                }
+                else if(b.children)
+                    return 1;
+                // make sort stable on gist id (creation time would be better)
                 lc = a.gistname.localeCompare(b.gistname);
+            }
             return lc;
         }
     }
