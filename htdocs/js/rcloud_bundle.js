@@ -1502,18 +1502,20 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         // ,
         // "Bash": { 'background-color': "#00ff00" }
     };
-    var select = $("<select class='form-control'></select>");
+    var select_lang = $("<select class='form-control'></select>");
     _.each(languages, function(value, key) {
         languages[key].element = $("<option></option>").text(key);
-        select.append(languages[key].element);
+        select_lang.append(languages[key].element);
     });
     $(languages[language].element).attr('selected', true);
-    select.on("change", function() {
-        var l = select.find("option:selected").text();
-        cell_model.parent_model.controller.change_cell_language(cell_model, l);
+    select_lang.on("change", function() {
+        if(!$(e.currentTarget).hasClass("button-disabled")) {
+            var l = select_lang.find("option:selected").text();
+            cell_model.parent_model.controller.change_cell_language(cell_model, l);
+        }
     });
 
-    col.append($("<div></div>").append(select));
+    col.append($("<div></div>").append(select_lang));
     $.each([run_md_button, source_button, result_button, gap, split_button, remove_button],
            function() {
                col.append($('<td/>').append($(this)));
@@ -1609,7 +1611,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         language_updated: function() {
             language = cell_model.language();
             ace_div.css({ 'background-color': languages[language]["background-color"] });
-            select.val(cell_model.language());
+            select_lang.val(cell_model.language());
         },
         result_updated: function(r) {
             r_result_div.hide();
@@ -1725,11 +1727,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 disable(split_button);
                 disable(join_button);
                 $(widget.container).find(".grab-affordance").hide();
+                select_lang.prop("disabled", "disabled");
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
                 enable(split_button);
                 enable(join_button);
+                select_lang.prop("disabled", false);
             }
         },
 
