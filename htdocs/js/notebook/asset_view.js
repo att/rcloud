@@ -55,10 +55,12 @@ Notebook.Asset.create_html_view = function(asset_model)
                 select: select,
                 validate: function(name) { return editor.validate_name(name); }
             };
-            ui_utils.editable(filename_span, $.extend({allow_edit: true,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
+            var editable_mode = !shell.notebook.model.read_only();
+            ui_utils.editable(filename_span, $.extend({allow_edit: editable_mode,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
         }
         else {
             asset_model.controller.select();
+            filename_span.attr("contenteditable",""+!shell.notebook.model.read_only());
         }
     });
     remove.click(function() {
