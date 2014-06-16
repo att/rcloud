@@ -2,19 +2,19 @@ Notebook.Asset.create_html_view = function(asset_model)
 {
     var filename_div = $("<li></li>");
     var anchor = $("<a href='#'></a>");
-    var filename_span = $("<span>" + asset_model.filename() + "</span>");
+    var filename_span = $("<span  style='cursor:pointer'>" + asset_model.filename() + "</span>");
     var remove = ui_utils.fa_button("icon-remove", "remove", '',
                                     { 'position': 'relative',
-                                      'left': '2px',
-                                      'opacity': '0.75'
+                                        'left': '2px',
+                                        'opacity': '0.75'
                                     }, true);
     anchor.append(filename_span);
     filename_div.append(anchor);
     anchor.append(remove);
-
+    filename_span.attr("contenteditable","true");
     var asset_old_name = "";
-    anchor.click(function() {
-        if(!asset_model.active(true)){
+    filename_span.click(function() {
+        if(asset_model.active()){
             asset_old_name = filename_span.text();
             var rename_file = function(v){
                 var new_asset_name = filename_span.text();
