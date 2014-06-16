@@ -231,6 +231,7 @@ Notebook.create_model = function()
                     view.set_readonly(readonly_);
                 });
             }
+            RCloud.UI.scratchpad.set_readonly(readonly_);
             return readonly_;
         },
         user: function(user) {
