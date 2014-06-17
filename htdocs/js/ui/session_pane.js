@@ -17,7 +17,7 @@ RCloud.UI.session_pane = {
         // bluebird unhandled promise handler
         Promise.onPossiblyUnhandledRejection(function(e, promise) {
             console.log(e.stack);
-            that.post_error("Internal error, unhandled promise rejection\nStack trace:\n" + e.stack);
+            that.post_error(e.stack);
         });
 
     },
