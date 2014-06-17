@@ -46,19 +46,36 @@ RCloud.UI.init = function() {
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
         upload_asset(to_notebook);
     });
+    //prevent drag in rest of the page except asset pane and enable overlay on asset pane
+    $(document).on('dragenter', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        $('#asset-drop-overlay').css({'opacity':'0.8','backgroundColor' : 'grey','display': 'block','border':'dotted'});
+    });
+    $(document).on('dragover', function (e)  {
+        e.stopPropagation();
+        e.preventDefault();
+        $('#asset-drop-overlay').css({'opacity':'0.8','backgroundColor' : 'grey','display': 'block','border':'dotted'});
+    });
+    $(document).on('drop', function (e)  {
+        e.stopPropagation();
+        e.preventDefault();
+        $('#asset-drop-overlay').css({'display': 'none'});
+    });
+
+    $("#close-overlay").click(function() {
+        $('#asset-drop-overlay').css({'display': 'none'});
+    });
+    //allow asset drag from local to asset pane and highlight overlay for drop area in asset pane
     $('#scratchpad-wrapper').bind({
-        dragover: function () {
-            $(this).addClass('hover');
-            return false;
+        dragenter: function () {
+            $('#asset-drop-overlay').css({'opacity':'0.8','backgroundColor' : 'grey','display': 'block','border':'dotted'});
         },
-        dragend: function () {
-            $(this).removeClass('hover');
-            return false;
+        dragover: function () {
+            $('#asset-drop-overlay').css({'opacity':'0.8','backgroundColor' : 'grey','display': 'block','border':'dotted'});
         },
         drop: function (e) {
-            e = e || window.event;
-
-            e.preventDefault();
+            $('#asset-drop-overlay').css({'display': 'none'});
             e = e.originalEvent || e;
             var files = (e.files || e.dataTransfer.files);
            //To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
