@@ -162,13 +162,7 @@ RCloud.create = function(rcloud_ocaps) {
                 throw new Error(command + ': ' + message);
             }
         }
-
-        function failure(err) {
-            var message = _.isObject(err) && 'ok' in err
-                ? err.content.message : err.toString();
-            throw new Error(command + ': ' + message);
-        }
-        return promise.then(success).catch(failure);
+        return promise.then(success);
     }
 
     var rcloud = {};
