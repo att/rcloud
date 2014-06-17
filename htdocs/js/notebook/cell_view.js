@@ -94,7 +94,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         "Markdown": { 'background-color': "#F7EEE4",
                       'ace_mode': "ace/mode/rmarkdown" },
         "Python": { 'background-color': "#E8F1FA",
-                    'ace_mode': "ace/mode/python" }
+                    'ace_mode': "ace/mode/python" },
+        "Text": { 'background-color': "#dddddd",
+                  'ace_mode': "foo" }
         // ,
         // "Bash": { 'background-color': "#00ff00" }
     };
