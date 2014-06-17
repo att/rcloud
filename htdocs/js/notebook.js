@@ -14,7 +14,7 @@ Notebook.part_name = function(id, language) {
         ext = 'py';
         break;
     default:
-        throw "Unknown language " + language;
+        throw new Error("Unknown language " + language);
     }
     return 'part' + id + '.' + ext;
 };

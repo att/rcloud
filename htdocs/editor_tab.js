@@ -559,7 +559,7 @@ var editor = function () {
         function show_sha(history, sha) {
             var sha_ind = find_index(history, function(hist) { return hist.version===sha; });
             if(sha_ind<0)
-                throw "didn't find sha " + where + " in history";
+                throw new Error("didn't find sha " + where + " in history");
             return sha_ind + INCR - 1; // show this many including curr (?)
         }
 
@@ -644,7 +644,7 @@ var editor = function () {
             if(histories_[node.gistname])
                 nshow = show_sha(histories_[node.gistname], where);
         }
-        else throw "add_history_nodes don't understand how to seek '" + whither + "'";
+        else throw new Error("add_history_nodes don't understand how to seek '" + whither + "'");
 
         if(histories_[node.gistname]) {
             process_history(nshow);
@@ -978,14 +978,14 @@ var editor = function () {
                 make_private.click(function() {
                     fake_hover(node);
                     if(node.user !== username_)
-                        throw "attempt to set visibility on notebook not mine";
+                        throw new Error("attempt to set visibility on notebook not mine");
                     else
                         result.set_notebook_visibility(node.gistname, false);
                 });
                 make_public.click(function() {
                     fake_hover(node);
                     if(node.user !== username_)
-                        throw "attempt to set visibility on notebook not mine";
+                        throw new Error("attempt to set visibility on notebook not mine");
                     else
                         result.set_notebook_visibility(node.gistname, true);
                     return false;
@@ -1366,7 +1366,7 @@ var editor = function () {
                                 line.substring(result[1])];
                     }
                 }
-                throw "shouldn't get here";
+                throw new Error("shouldn't get here");
             };
             function split_history_search_lines(line) {
                 var t = line.indexOf(':');
@@ -1383,7 +1383,7 @@ var editor = function () {
                                 line.substring(result[1])];
                     }
                 }
-                throw "shouldn't get here";
+                throw new Error("shouldn't get here");
             };
 
             function update_source_search(result) {

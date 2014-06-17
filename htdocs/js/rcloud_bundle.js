@@ -2133,7 +2133,7 @@ Notebook.create_model = function()
                 asset_index = this.assets.indexOf(asset_model);
                 filename = asset_model.filename();
                 if (asset_index === -1) {
-                    throw "asset_model not in notebook model?!";
+                    throw new Error("asset_model not in notebook model?!");
                 }
             }
             else {
@@ -2165,7 +2165,7 @@ Notebook.create_model = function()
                 cell_index = this.cells.indexOf(cell_model);
                 id = cell_model.id();
                 if (cell_index === -1) {
-                    throw "cell_model not in notebook model?!";
+                    throw new Error("cell_model not in notebook model?!");
                 }
             }
             else {
@@ -2229,7 +2229,7 @@ Notebook.create_model = function()
                 return view.update_model();
             });
             if(changed_cells_per_view.length != 1)
-                throw "not expecting more than one notebook view";
+                throw new Error("not expecting more than one notebook view");
             var contents = changed_cells_per_view[0];
             var changes = [];
             for (var i=0; i<contents.length; ++i)
@@ -2781,7 +2781,7 @@ Notebook.part_name = function(id, language) {
         ext = 'py';
         break;
     default:
-        throw "Unknown language " + language;
+        throw new Error("Unknown language " + language);
     }
     return 'part' + id + '.' + ext;
 };
