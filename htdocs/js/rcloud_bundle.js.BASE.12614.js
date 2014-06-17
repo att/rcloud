@@ -687,9 +687,9 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.get_notebook_info = rcloud_ocaps.get_notebook_infoAsync;
         rcloud.get_multiple_notebook_infos = rcloud_ocaps.get_multiple_notebook_infosAsync;
         rcloud.set_notebook_info = function(id, info) {
-            if(!info.username) return Promise.reject(new Error("attempt to set info no username"));
-            if(!info.description) return Promise.reject(new Error("attempt to set info no description"));
-            if(!info.last_commit) return Promise.reject(new Error("attempt to set info no last_commit"));
+            if(!info.username) return Promise.reject("attempt to set info no username");
+            if(!info.description) return Promise.reject("attempt to set info no description");
+            if(!info.last_commit) return Promise.reject("attempt to set info no last_commit");
             return rcloud_ocaps.set_notebook_infoAsync(id, info);
         };
 
@@ -1388,7 +1388,7 @@ Notebook.Asset.create_controller = function(asset_model)
             asset_model.active(false);
         },
         remove: function(force) {
-            var msg = "Are you sure you want to remove the asset from the notebook?";
+            var msg = "Are you sure? This will remove the asset from the notebook.";
             if (force || confirm(msg)) {
                 asset_model.parent_model.controller.remove_asset(asset_model);
                 var assets = asset_model.parent_model.assets;
@@ -1502,18 +1502,18 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         // ,
         // "Bash": { 'background-color': "#00ff00" }
     };
-    var select_lang = $("<select class='form-control'></select>");
+    var select = $("<select class='form-control'></select>");
     _.each(languages, function(value, key) {
         languages[key].element = $("<option></option>").text(key);
-        select_lang.append(languages[key].element);
+        select.append(languages[key].element);
     });
     $(languages[language].element).attr('selected', true);
-    select_lang.on("change", function() {
-        var l = select_lang.find("option:selected").text();
+    select.on("change", function() {
+        var l = select.find("option:selected").text();
         cell_model.parent_model.controller.change_cell_language(cell_model, l);
     });
 
-    col.append($("<div></div>").append(select_lang));
+    col.append($("<div></div>").append(select));
     $.each([run_md_button, source_button, result_button, gap, split_button, remove_button],
            function() {
                col.append($('<td/>').append($(this)));
@@ -1609,7 +1609,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         language_updated: function() {
             language = cell_model.language();
             ace_div.css({ 'background-color': languages[language]["background-color"] });
-            select_lang.val(cell_model.language());
+            select.val(cell_model.language());
         },
         result_updated: function(r) {
             r_result_div.hide();
@@ -1725,13 +1725,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 disable(split_button);
                 disable(join_button);
                 $(widget.container).find(".grab-affordance").hide();
-                select_lang.prop("disabled", "disabled");
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
                 enable(split_button);
                 enable(join_button);
-                select_lang.prop("disabled", false);
             }
         },
 
@@ -2299,28 +2297,17 @@ Notebook.create_controller = function(model)
         save_timeout_ = 30000, // 30s
         show_source_checkbox_ = null;
 
-    // only create the callbacks once, but delay creating them until the editor
-    // is initialized
-    var default_callback = function() {
-        var cb_ = null,
-            editor_callback_ = null;
-        return function() {
-            if(!cb_) {
-                editor_callback_ = editor.load_callback({is_change: true, selroot: true});
-                cb_ = function(notebook) {
-                    if(save_button_)
-                        ui_utils.disable_bs_button(save_button_);
-                    dirty_ = false;
-                    if(save_timer_) {
-                        window.clearTimeout(save_timer_);
-                        save_timer_ = null;
-                    }
-                    return editor_callback_(notebook);
-                };
+    var editor_callback_ = editor.load_callback({is_change: true, selroot: true}),
+        default_callback_ = function(notebook) {
+            if(save_button_)
+                ui_utils.disable_bs_button(save_button_);
+            dirty_ = false;
+            if(save_timer_) {
+                window.clearTimeout(save_timer_);
+                save_timer_ = null;
             }
-            return cb_;
+            return editor_callback_(notebook);
         };
-    }();
 
     function append_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
@@ -2444,7 +2431,7 @@ Notebook.create_controller = function(model)
             return change.content || change.erase || change.rename;
         });
         if (model.read_only())
-            return Promise.reject(new Error("attempted to update read-only notebook"));
+            return Promise.reject("attempted to update read-only notebook");
         if (!changes.length && _.isUndefined(more)) {
             return Promise.cast(current_gist_);
         }
@@ -2488,13 +2475,6 @@ Notebook.create_controller = function(model)
                 throw e;
             });
     }
-
-    function apply_changes_and_load(changes, gistname) {
-        return changes.length
-            ? update_notebook(changes, gistname)
-            : result.load_notebook(gistname, null); // do a load - we need to refresh
-    }
-
     function refresh_buffers() {
         return model.reread_buffers();
     }
@@ -2533,36 +2513,36 @@ Notebook.create_controller = function(model)
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);
             return update_notebook(refresh_buffers().concat(cch.changes))
-                .then(default_callback())
+                .then(default_callback_)
                 .return(cch.controller);
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
             update_notebook(refresh_buffers().concat(cch.changes))
-                .then(default_callback());
+                .then(default_callback_);
             return cch.controller;
         },
         insert_cell: function(content, type, id) {
             var cch = insert_cell_helper(content, type, id);
             update_notebook(refresh_buffers().concat(cch.changes))
-                .then(default_callback());
+                .then(default_callback_);
             return cch.controller;
         },
         remove_cell: function(cell_model) {
             var changes = refresh_buffers().concat(model.remove_cell(cell_model));
             RCloud.UI.command_prompt.prompt.widget.focus(); // there must be a better way
             update_notebook(changes)
-                .then(default_callback());
+                .then(default_callback_);
         },
         remove_asset: function(asset_model) {
             var changes = refresh_buffers().concat(model.remove_asset(asset_model));
             update_notebook(changes)
-                .then(default_callback());
+                .then(default_callback_);
         },
         move_cell: function(cell_model, before) {
             var changes = refresh_buffers().concat(model.move_cell(cell_model, before ? before.id() : -1));
             update_notebook(changes)
-                .then(default_callback());
+                .then(default_callback_);
         },
         join_prior_cell: function(cell_model) {
             var prior = model.prior_cell(cell_model);
@@ -2612,7 +2592,7 @@ Notebook.create_controller = function(model)
             }
             _.each(prior.views, function(v) { v.show_source(); });
             update_notebook(changes.concat(model.remove_cell(cell_model)))
-                .then(default_callback());
+                .then(default_callback_);
         },
         split_cell: function(cell_model, point1, point2) {
             function resplit(a) {
@@ -2653,12 +2633,12 @@ Notebook.create_controller = function(model)
             for(var i=1; i<parts.length; ++i)
                 changes = changes.concat(insert_cell_helper(parts[i], language, id+i).changes);
             update_notebook(changes)
-                .then(default_callback());
+                .then(default_callback_);
         },
         change_cell_language: function(cell_model, language) {
             var changes = refresh_buffers().concat(model.change_cell_language(cell_model, language));
             update_notebook(changes)
-                .then(default_callback());
+                .then(default_callback_);
         },
         clear: function() {
             model.clear();
@@ -2675,44 +2655,49 @@ Notebook.create_controller = function(model)
             return rcloud.create_notebook(content)
                 .then(_.bind(on_load,this,null));
         },
-        revert_notebook: function(gistname, version) {
-            model.read_only(false); // so that update_notebook doesn't throw
-            // get HEAD, calculate changes from there to here, and apply
-            return rcloud.load_notebook(gistname, null).then(function(notebook) {
-                return [find_changes_from(notebook), gistname];
-            }).spread(apply_changes_and_load);
-        },
-        fork_notebook: function(gistname, version) {
-            model.read_only(false); // so that update_notebook doesn't throw
-            return rcloud.fork_notebook(gistname)
-                .then(function(notebook) {
+        fork_or_revert_notebook: function(is_mine, gistname, version) {
+            var that = this;
+            // 1. figure out the changes
+            var promiseChanges;
+            if(is_mine) // revert: get HEAD, calculate changes from there to here, and apply
+                promiseChanges = rcloud.load_notebook(gistname, null).then(function(notebook) {
+                    return [find_changes_from(notebook), gistname];
+                });
+            else // fork:
+                promiseChanges = rcloud.fork_notebook(gistname).then(function(notebook) {
                     if(version)
                         // fork, then get changes from there to where we are in the past, and apply
                         // git api does not return the files on fork, so load
                         return rcloud.get_notebook(notebook.id, null)
-                        .then(function(notebook2) {
-                            return [find_changes_from(notebook2), notebook2.id];
-                        });
+                            .then(function(notebook2) {
+                                return [find_changes_from(notebook2), notebook2.id];
+                            });
                     else return [[], notebook.id];
-            }).spread(apply_changes_and_load);
+                });
+            // 2. apply the changes, if any
+            return promiseChanges.spread(function(changes, gistname) {
+                return changes.length
+                    ? update_notebook(changes, gistname)
+                    : that.load_notebook(gistname, null); // do a load - we need to refresh
+            });
         },
         update_cell: function(cell_model) {
             return update_notebook(refresh_buffers().concat(model.update_cell(cell_model)))
-                .then(default_callback());
+                .then(default_callback_);
         },
         update_asset: function(asset_model) {
             return update_notebook(refresh_buffers().concat(model.update_asset(asset_model)))
-                .then(default_callback());
+                .then(default_callback_);
         },
         rename_notebook: function(desc) {
             return update_notebook(refresh_buffers(), null, {description: desc})
-                .then(default_callback());
+                .then(default_callback_);
         },
         save: function() {
             if(!dirty_)
                 return Promise.resolve(undefined);
             return update_notebook(refresh_buffers())
-                .then(default_callback());
+                .then(default_callback_);
         },
         run_all: function() {
             this.save();
@@ -3385,23 +3370,11 @@ RCloud.UI.command_prompt = {
  * Adjusts the UI depending on whether notebook is read-only
  */
 RCloud.UI.configure_readonly = function() {
-    var readonly_notebook = $("#readonly-notebook");
-    if(shell.notebook.controller.is_mine()) {
-        if(shell.notebook.model.read_only()) {
-            $('#revert-notebook').show();
-            $('#save-notebook').hide();
-        }
-        else {
-            $('#revert-notebook').hide();
-            $('#save-notebook').show();
-        }
-    }
-    else {
-        $('#revert-notebook,#save-notebook').hide();
-    }
+    var fork_revert = $('#fork-revert-notebook');
     if(shell.notebook.model.read_only()) {
         $('#prompt-div').hide();
-        readonly_notebook.show();
+        fork_revert.text(shell.notebook.controller.is_mine() ? 'Revert' : 'Fork');
+        fork_revert.show();
         $('#save-notebook').hide();
         $('#output').sortable('disable');
         $('#upload-to-notebook')
@@ -3410,7 +3383,7 @@ RCloud.UI.configure_readonly = function() {
     }
     else {
         $('#prompt-div').show();
-        readonly_notebook.hide();
+        fork_revert.hide();
         $('#save-notebook').show();
         $('#output').sortable('enable');
         $('#upload-to-notebook')
@@ -3470,17 +3443,11 @@ RCloud.UI.help_frame = {
     }
 };
 RCloud.UI.init = function() {
-    $("#fork-notebook").click(function() {
+    $("#fork-revert-notebook").click(function() {
         var is_mine = shell.notebook.controller.is_mine();
         var gistname = shell.gistname();
         var version = shell.version();
-        editor.fork_notebook(is_mine, gistname, version);
-    });
-    $("#revert-notebook").click(function() {
-        var is_mine = shell.notebook.controller.is_mine();
-        var gistname = shell.gistname();
-        var version = shell.version();
-        editor.revert_notebook(is_mine, gistname, version);
+        editor.fork_or_revert_notebook(is_mine, gistname, version);
     });
     $("#open-in-github").click(function() {
         window.open(shell.github_url(), "_blank");
@@ -3515,34 +3482,8 @@ RCloud.UI.init = function() {
         if($("#file")[0].files.length===0)
             return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        upload_asset(to_notebook);
-    });
-    $('#scratchpad-wrapper').bind({
-        dragover: function () {
-            $(this).addClass('hover');
-            return false;
-        },
-        dragend: function () {
-            $(this).removeClass('hover');
-            return false;
-        },
-        drop: function (e) {
-            e = e || window.event;
+        var replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
 
-            e.preventDefault();
-            e = e.originalEvent || e;
-            var files = (e.files || e.dataTransfer.files);
-           //To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
-           //for (var i = 0; i < files.length; i++) {
-           for (var i = 0; i < 1; i++) {
-                $('#file').val("");
-                $("#file")[0].files[0]=files[i];
-                upload_asset(true);
-            }
-        }
-    });
-    function upload_asset(to_notebook) {
-       var replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
         function results_append($div) {
             $("#file-upload-results").append($div);
             $("#collapse-file-upload").trigger("size-changed");
@@ -3629,7 +3570,7 @@ RCloud.UI.init = function() {
             else
                 success(value);
         });
-    }
+    });
 
     RCloud.UI.left_panel.init();
     RCloud.UI.middle_column.init();
@@ -3814,9 +3755,6 @@ RCloud.UI.notebook_title = (function() {
 
     var result = {
         set: function (text) {
-            $("#notebook-author").text(shell.notebook.model.user());
-            $('#author-title-dash').show();
-
             var is_read_only = shell.notebook.model.read_only();
             var active_text = text;
             var ellipt_start = false, ellipt_end = false;

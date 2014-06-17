@@ -1,9 +1,15 @@
 RCloud.UI.init = function() {
-    $("#fork-revert-notebook").click(function() {
+    $("#fork-notebook").click(function() {
         var is_mine = shell.notebook.controller.is_mine();
         var gistname = shell.gistname();
         var version = shell.version();
-        editor.fork_or_revert_notebook(is_mine, gistname, version);
+        editor.fork_notebook(is_mine, gistname, version);
+    });
+    $("#revert-notebook").click(function() {
+        var is_mine = shell.notebook.controller.is_mine();
+        var gistname = shell.gistname();
+        var version = shell.version();
+        editor.revert_notebook(is_mine, gistname, version);
     });
     $("#open-in-github").click(function() {
         window.open(shell.github_url(), "_blank");
@@ -38,8 +44,34 @@ RCloud.UI.init = function() {
         if($("#file")[0].files.length===0)
             return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        var replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
+        upload_asset(to_notebook);
+    });
+    $('#scratchpad-wrapper').bind({
+        dragover: function () {
+            $(this).addClass('hover');
+            return false;
+        },
+        dragend: function () {
+            $(this).removeClass('hover');
+            return false;
+        },
+        drop: function (e) {
+            e = e || window.event;
 
+            e.preventDefault();
+            e = e.originalEvent || e;
+            var files = (e.files || e.dataTransfer.files);
+           //To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
+           //for (var i = 0; i < files.length; i++) {
+           for (var i = 0; i < 1; i++) {
+                $('#file').val("");
+                $("#file")[0].files[0]=files[i];
+                upload_asset(true);
+            }
+        }
+    });
+    function upload_asset(to_notebook) {
+       var replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
         function results_append($div) {
             $("#file-upload-results").append($div);
             $("#collapse-file-upload").trigger("size-changed");
@@ -126,7 +158,7 @@ RCloud.UI.init = function() {
             else
                 success(value);
         });
-    });
+    }
 
     RCloud.UI.left_panel.init();
     RCloud.UI.middle_column.init();
@@ -247,6 +279,6 @@ RCloud.UI.init = function() {
     //////////////////////////////////////////////////////////////////////////
     // view mode things
     $("#edit-notebook").click(function() {
-        window.location = "main.html?notebook=" + shell.gistname();
+        window.location = "edit.html?notebook=" + shell.gistname();
     });
 };

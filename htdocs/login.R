@@ -43,7 +43,7 @@ run <- function(url, query, body, headers)
                   "text/html", paste0("Refresh: 0.1; url=", ret)))
   }
   if (is.null(redirect))
-    redirect = '/main.html'
+    redirect = '/edit.html'
   state <- list(nonce=rnorm(1),
                 redirect=as.vector(redirect))
   list(paste("<html><head><meta http-equiv='refresh' content='0;URL=\"",rcloud.support:::.rc.conf$github.base.url,

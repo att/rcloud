@@ -1,3 +1,6 @@
+## auto-convert mime-type based on the extension because typically GitHub jsut gives us text/plain
+auto.convert.ext <- c(js = "application/javascript", css ="text/css", html = "text/html")
+
 cookies <- function(headers) {
   a <- strsplit(rawToChar(headers), "\n")
   if (length(a) && length(c <- grep("^cookie:", a[[1]], TRUE)) &&
@@ -69,12 +72,18 @@ run <- function(url, query, body, headers)
       RSclient::RS.eval.qap(c, as.call(list(caps$rcloud$call_fastrweb_notebook, notebook, version, query)))
     } else { ## extra path => get the contents
       ## ready to get the notebook
+      et <- paste0("Error fetching contents from notebook '",notebook,"', version '",version,"'")
       nb <- RSclient::RS.eval.qap(c, as.call(list(caps$rcloud$get_notebook, notebook, version)))
-      if (!isTRUE(nb$ok)) stop("Cannot get notebook contents")
+      if (!isTRUE(nb$ok)) stop("Cannot get notebook contents:", paste(capture.output(str(nb)),collapse="\n"))
       extra.path <- gsub("^/+", "", extra.path)
       payload <- nb$content$files[[extra.path]]$content
       if (is.null(payload)) stop("File `", extra.path, "' not found in notebook `", nb.name, "'")
       type <- nb$content$files[[extra.path]]$type
+
+      ## override types according to the extension (c.f. #680)
+      ac <- which(sapply(seq.int(auto.convert.ext), function(i) isTRUE(grepl(paste0("\\.",names(auto.convert.ext)[i],"$"),extra.path))))
+      if (length(ac)) type <- as.vector(auto.convert.ext[ac[1L]])
+      
       list(payload, type)
     }
   }, error=function(e) {

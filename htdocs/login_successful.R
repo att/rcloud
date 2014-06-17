@@ -22,7 +22,7 @@ run <- function(url, query, body, headers)
                                rcloud.config("github.client.secret"),
                                token)
 
-  if (!is.character(ret <- state$redirect) || !length(ret) || !nzchar(ret[1L])) ret <- '/main.html'
+  if (!is.character(ret <- state$redirect) || !length(ret) || !nzchar(ret[1L])) ret <- '/edit.html'
   
   if (rcloud.debug.level()) cat("context: ", ctx$user$login, token, "\n")
   rcloud.support:::set.token(ctx$user$login, token)

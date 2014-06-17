@@ -13,11 +13,11 @@ casper.echo("This test suite will print 'Failed to load image information -'");
 casper.echo("throughout its execution. Please ignore that.\n");
 
 login.login(casper)
-    .thenOpen("http://127.0.0.1:8080/main.html?notebook=6aebcdb2c2e174b98454")
+    .thenOpen("http://127.0.0.1:8080/edit.html?notebook=6aebcdb2c2e174b98454")
     .then(utils.sleep(3000))
     .then(utils.asserts_evals_truthy(function() {
         return $("#session-info").children().length === 0;
-    }, "main.html simple load"));
+    }, "edit.html simple load"));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test that a simple notebook can be viewed
@@ -40,7 +40,7 @@ casper.thenOpen("http://127.0.0.1:8080/view.html?notebook=6aebcdb2c2e174b98454")
  For some reason mouseover and mousemove are not enough to trigger
  the bootstrap tooltip...
 
-casper.thenOpen("http://127.0.0.1:8080/main.html?notebook=766ba6e2baee4435bd9e&version=346993bff128b211248b58fe421f9ebadc9425da")
+casper.thenOpen("http://127.0.0.1:8080/edit.html?notebook=766ba6e2baee4435bd9e&version=346993bff128b211248b58fe421f9ebadc9425da")
     .then(utils.sleep(5000))
     .then(utils.asserts_evals_truthy(function() {
         return $("#fork-revert-notebook").text() === "Revert";

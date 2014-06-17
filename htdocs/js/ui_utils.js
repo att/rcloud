@@ -409,6 +409,8 @@ ui_utils.add_ace_grab_affordance = function(element) {
 ui_utils.scroll_to_after = function($sel, duration) {
     // no idea why the plugin doesn't take current scroll into account when using
     // the element parameter version
+    if ($sel.length === 0)
+        return;
     var opts = undefined;
     if(duration !== undefined)
         opts = {animation: {duration: duration}};
