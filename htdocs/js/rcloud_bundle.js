@@ -1172,7 +1172,7 @@ Notebook.Buffer.create_model = function(content, language) {
         },
         content: function(new_content) {
             if (!_.isUndefined(new_content)) {
-                if(content != new_content) {
+                if(content !== new_content) {
                     content = new_content;
                     this.notify_views(function(view) {
                         view.content_updated();
@@ -1185,7 +1185,7 @@ Notebook.Buffer.create_model = function(content, language) {
         },
         language: function(new_language) {
             if (!_.isUndefined(new_language)) {
-                if(language != new_language) {
+                if(language !== new_language) {
                     language = new_language;
                     this.notify_views(function(view) {
                         view.language_updated();
@@ -1196,6 +1196,8 @@ Notebook.Buffer.create_model = function(content, language) {
             }
             if(language === undefined)
                 throw new Error("tried to read no language");
+            else if(language === null)
+                return 'Text'; // Github considers null a synonym for Text; nip that in the bud
             return language;
         },
         change_object: function(obj) {
@@ -1396,6 +1398,19 @@ Notebook.Asset.create_controller = function(asset_model)
 };
 (function() {
 
+var languages = {
+    "R": { 'background-color': "#E8F1FA",
+           'ace_mode': "ace/mode/r" },
+    "Markdown": { 'background-color': "#F7EEE4",
+                  'ace_mode': "ace/mode/rmarkdown" },
+    "Python": { 'background-color': "#E8F1FA",
+                'ace_mode': "ace/mode/python" },
+    "Text": { 'background-color': "#dddddd",
+              'ace_mode': "foo" }
+    // ,
+    // "Bash": { 'background-color': "#00ff00" }
+};
+
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var EXTRA_HEIGHT = 27;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
@@ -1484,24 +1499,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     cell_status.append(button_float);
     cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
-    var languages = {
-        "R": { 'background-color': "#E8F1FA",
-               'ace_mode': "ace/mode/r" },
-        "Markdown": { 'background-color': "#F7EEE4",
-                      'ace_mode': "ace/mode/rmarkdown" },
-        "Python": { 'background-color': "#E8F1FA",
-                    'ace_mode': "ace/mode/python" },
-        "Text": { 'background-color': "#dddddd",
-                  'ace_mode': "foo" }
-        // ,
-        // "Bash": { 'background-color': "#00ff00" }
-    };
     var select_lang = $("<select class='form-control'></select>");
     _.each(languages, function(value, key) {
         languages[key].element = $("<option></option>").text(key);
         select_lang.append(languages[key].element);
     });
-    $(languages[language].element).attr('selected', true);
+    var lang_info = languages[language];
+    $(lang_info.element).attr('selected', true);
     select_lang.on("change", function() {
         var l = select_lang.find("option:selected").text();
         cell_model.parent_model.controller.change_cell_language(cell_model, l);
@@ -1531,7 +1535,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
 
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
-    ace_div.css({ 'background-color': languages[language]["background-color"] });
+    ace_div.css({ 'background-color': lang_info["background-color"] });
 
     inner_div.append(outer_ace_div);
     outer_ace_div.append(ace_div);
@@ -1602,7 +1606,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         id_updated: update_div_id,
         language_updated: function() {
             language = cell_model.language();
-            ace_div.css({ 'background-color': languages[language]["background-color"] });
+            ace_div.css({ 'background-color': lang_info["background-color"] });
             select_lang.val(cell_model.language());
         },
         result_updated: function(r) {
@@ -1908,7 +1912,7 @@ Notebook.Cell.create_controller = function(cell_model)
     var result = {
         execute: function() {
             var that = this;
-            var language = cell_model.language();
+            var language = cell_model.language() || 'Text'; // null is a synonym for Text
             function callback(r) {
                 that.set_status_message(r);
             }
@@ -2266,7 +2270,7 @@ Notebook.create_model = function()
             for(var i = 0; i<this.assets.length; ++i) {
                 var ghfile = files[this.assets[i].filename()];
                 this.assets[i].raw_url = ghfile.raw_url;;
-                this.assets[i].language(ghfile.language || 'Text');
+                this.assets[i].language(ghfile.language);
             }
             _.each(this.views, function(view) {
                 view.update_urls();
@@ -4085,7 +4089,7 @@ RCloud.UI.scratchpad = {
             Text: "ace/mode/text"
         };
         var lang = this.current_model.language();
-        var mode = ace.require(modes[lang] || modes.Text).Mode;
+        var mode = ace.require(modes[lang]).Mode;
         this.session.setMode(new mode(false, this.session.doc, this.session));
     }, set_readonly: function(readonly) {
         if(!shell.is_view_mode()) {
