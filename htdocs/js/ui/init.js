@@ -66,21 +66,20 @@ RCloud.UI.init = function() {
     $('#scratchpad-wrapper').bind({
         drop: function (e) {
             if(!shell.notebook.model.read_only()) {
-            e = e.originalEvent || e;
-            var files = (e.files || e.dataTransfer.files);
-            if($("#collapse-file-upload").hasClass('panel-collapse collapse')) {
+              e = e.originalEvent || e;
+              var files = (e.files || e.dataTransfer.files);
+              if($("#collapse-file-upload").hasClass('panel-collapse collapse')) {
                 $("#collapse-file-upload").css('height','auto');
                 $("#collapse-file-upload").removeClass('panel-collapse collapse').addClass('panel-collapse in');
-            }
-           //To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
-           //for (var i = 0; i < files.length; i++) {
-           for (var i = 0; i < 1; i++) {
+              }//To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
+              //for (var i = 0; i < files.length; i++) {
+              for (var i = 0; i < 1; i++) {
                 $('#file').val("");
                 $("#file")[0].files[0]=files[i];
                 upload_asset(true);
+              }
             }
-        }
-            $('#asset-drop-overlay').css({'display': 'none'});
+          $('#asset-drop-overlay').css({'display': 'none'});
         }
     });
     function upload_asset(to_notebook) {
