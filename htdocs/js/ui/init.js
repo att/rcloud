@@ -54,10 +54,13 @@ RCloud.UI.init = function() {
             $('#asset-drop-overlay').css({'display': 'block'});
         }
     });
-    $(document).on('drop dragend draghover dragleave', function (e)  {
+    $(document).on('drop dragleave', function (e)  {
         e.stopPropagation();
         e.preventDefault();
-        $('#asset-drop-overlay').css({'display': 'none'});
+        setTimeout(function() {
+            $('#asset-drop-overlay').css({'display': 'none'});
+            console.log("hello");
+        }, 1500);
     });
     //allow asset drag from local to asset pane and highlight overlay for drop area in asset pane
     $('#scratchpad-wrapper').bind({
@@ -67,8 +70,7 @@ RCloud.UI.init = function() {
             var files = (e.files || e.dataTransfer.files);
             if($("#collapse-file-upload").hasClass('panel-collapse collapse')) {
                 $("#collapse-file-upload").css('height','auto');
-                $("#collapse-file-upload").removeClass('panel-collapse collapse').removeClass('collapse')
-                    .addClass('panel-collapse in');
+                $("#collapse-file-upload").removeClass('panel-collapse collapse').addClass('panel-collapse in');
             }
            //To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
            //for (var i = 0; i < files.length; i++) {
