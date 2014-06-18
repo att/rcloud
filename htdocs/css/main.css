@@ -835,11 +835,12 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
     margin-right: auto;
 }
 .drop-asset-body {
-    background-color: #fff;
     display: none;
     opacity:.8;
-    position: relative;
-    border:1;
+    outline: 2px dashed lightslategray;
+    outline-offset:-20px;
+    border: 1px solid #999;
+    background-color: whitesmoke;
     position:absolute;
     z-index:999;
     height:100%;
