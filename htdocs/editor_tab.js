@@ -117,23 +117,74 @@ var editor = function () {
         return ret;
     }
 
+    var trnexp = /^(.*) ([0-9]+)$/;
+
     function compare_nodes(a, b) {
         var so = a.sort_order-b.sort_order;
         if(so) return so;
         else {
             var alab = a.name || a.label, blab = b.name || b.label;
-            // haha horrible special case to sort "Notebook X" numerically!
-            if(/Notebook /.test(alab) && /Notebook /.test(blab)) {
-                var an = alab.slice(9), bn = blab.slice(9);
-                if($.isNumeric(an) && $.isNumeric(bn))
-                    return an-bn;
+            // cut trailing numbers and sort separately
+            var amatch = trnexp.exec(alab), bmatch = trnexp.exec(blab);
+            if(amatch && bmatch && amatch[1] == bmatch[1]) {
+                var an = +amatch[2], bn = +bmatch[2];
+                return an - bn;
             }
             var lc = alab.localeCompare(blab);
-            if(lc === 0) // make sort stable on gist id (creation time would be better)
+            if(lc === 0) {
+                // put a folder with the same name as a notebook first
+                if(a.children) {
+                    if(b.children)
+                        throw new Error("uh oh, parallel folders");
+                    return -1;
+                }
+                else if(b.children)
+                    return 1;
+                // make sort stable on gist id (creation time would be better)
                 lc = a.gistname.localeCompare(b.gistname);
+            }
             return lc;
         }
     }
+
+    // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
+    function find_next_copy_name(username, description) {
+        var pid = node_id("alls", username);
+        var parent = $tree_.tree('getNodeById', pid);
+        if(parent.delay_children)
+            load_children(parent);
+        var map = _.object(_.map(parent.children, function(c) { return [c.name, true]; }));
+        if(!map[description])
+            return description;
+        var match, base, n;
+        if((match = trnexp.exec(description)))
+            base = match[1], n = +match[2];
+        else
+            base = description, n = 1;
+        var copy_name;
+        do
+            copy_name = base + " " + ++n;
+        while(map[copy_name]);
+        return copy_name;
+/*
+        var fake_node = { label: description };
+        var bs = d3.bisector(compare_nodes);
+        var i = bs.left(parent.children, fake_node);
+        if(i >= parent.children.length || compare_nodes(parent.children[i], fake_node))
+            return description;
+        var match;
+        if((match = trnexp.exec(parent.children[i].label))) {
+            var base = match[0], n = +match[1];
+            var copy_name;
+            do
+                copy_name = base + " " + ++n;
+            while(++i < parent.children.length && parent.children[i].label === copy_name);
+            return copy_name;
+        }
+        else return node.label + " 1";
+*/
+    }
+
 
     function as_folder_hierarchy(nodes, prefix, name_prefix) {
         function is_in_folder(v) { return v.label.match(/([^/]+)\/(.+)/); }
@@ -285,7 +336,6 @@ var editor = function () {
             };
             user_nodes.push(node);
         });
-
         return {
             label: 'All Notebooks',
             id: '/alls',
@@ -509,7 +559,7 @@ var editor = function () {
         function show_sha(history, sha) {
             var sha_ind = find_index(history, function(hist) { return hist.version===sha; });
             if(sha_ind<0)
-                throw "didn't find sha " + where + " in history";
+                throw new Error("didn't find sha " + where + " in history");
             return sha_ind + INCR - 1; // show this many including curr (?)
         }
 
@@ -594,7 +644,7 @@ var editor = function () {
             if(histories_[node.gistname])
                 nshow = show_sha(histories_[node.gistname], where);
         }
-        else throw "add_history_nodes don't understand how to seek '" + whither + "'";
+        else throw new Error("add_history_nodes don't understand how to seek '" + whither + "'");
 
         if(histories_[node.gistname]) {
             process_history(nshow);
@@ -607,7 +657,7 @@ var editor = function () {
                     nshow = show_sha(histories_[node.gistname], where);
                 process_history(nshow);
                 return node;
-            });
+        });
     }
 
     function scroll_into_view(node) {
@@ -929,14 +979,14 @@ var editor = function () {
                 make_private.click(function() {
                     fake_hover(node);
                     if(node.user !== username_)
-                        throw "attempt to set visibility on notebook not mine";
+                        throw new Error("attempt to set visibility on notebook not mine");
                     else
                         result.set_notebook_visibility(node.gistname, false);
                 });
                 make_public.click(function() {
                     fake_hover(node);
                     if(node.user !== username_)
-                        throw "attempt to set visibility on notebook not mine";
+                        throw new Error("attempt to set visibility on notebook not mine");
                     else
                         result.set_notebook_visibility(node.gistname, true);
                     return false;
@@ -946,10 +996,15 @@ var editor = function () {
             if(node.user===username_) {
                 var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style, true);
                 remove.click(function(e) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    result.remove_notebook(node.user, node.gistname);
-                    return false;
+                   var yn = confirm("Do you want to remove this notebook?");
+                   if (yn) {
+                       e.stopPropagation();
+                       e.preventDefault();
+                       result.remove_notebook(node.user, node.gistname);
+                       return false;
+                   } else {
+                       return false;
+                   }
                 });
                 add_buttons(remove);
             };
@@ -1074,10 +1129,12 @@ var editor = function () {
             $tree_.bind('tree.click', tree_click);
             $tree_.bind('tree.open', tree_open);
         },
+        find_next_copy_name: function(name) {
+            return find_next_copy_name(username_, name);
+        },
         load_notebook: function(gistname, version, selroot, push_history) {
             var that = this;
             selroot = selroot || true;
-
             return shell.load_notebook(gistname, version)
                 .then(this.load_callback({version: version,
                                           selroot: selroot,
@@ -1198,21 +1255,26 @@ var editor = function () {
             set_visibility(gistname, visible);
             update_notebook_view(username_, gistname, get_notebook_info(gistname), false);
         },
-        fork_or_revert_notebook: function(is_mine, gistname, version) {
-            shell.fork_or_revert_notebook(is_mine, gistname, version)
+        fork_notebook: function(is_mine, gistname, version) {
+            return shell.fork_notebook(is_mine, gistname, version)
                 .bind(this)
                 .then(function(notebook) {
-                    var promise = is_mine ?
-                            this.load_callback({is_change: true, selroot: true})(notebook) :
-                        this.star_notebook(true, {notebook: notebook,
-                                                  make_current: true,
-                                                  is_change: !!version,
-                                                  version: null});
-                    return promise.return(notebook.id);
+                    return this.star_notebook(true, {notebook: notebook,
+                                                     make_current: true,
+                                                     is_change: !!version,
+                                                     version: null})
+                        .return(notebook.id);
                 }).then(function(gistname) {
-                    if(!is_mine)
-                        this.set_notebook_visibility(gistname, true);
+                    this.set_notebook_visibility(gistname, true);
                 });
+        },
+        revert_notebook: function(is_mine, gistname, version) {
+            if(!is_mine)
+                return Promise.reject(new Error("attempted to revert notebook not mine"));
+            if(!version)
+                return Promise.reject(new Error("attempted to revert current version"));
+            return shell.revert_notebook(gistname, version)
+                .then(this.load_callback({is_change: true, selroot: true}));
         },
         show_history: function(node, toggle) {
             var whither = 'more';
@@ -1305,7 +1367,7 @@ var editor = function () {
                                 line.substring(result[1])];
                     }
                 }
-                throw "shouldn't get here";
+                throw new Error("shouldn't get here");
             };
             function split_history_search_lines(line) {
                 var t = line.indexOf(':');
@@ -1322,7 +1384,7 @@ var editor = function () {
                                 line.substring(result[1])];
                     }
                 }
-                throw "shouldn't get here";
+                throw new Error("shouldn't get here");
             };
 
             function update_source_search(result) {

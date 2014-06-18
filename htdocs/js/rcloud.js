@@ -67,13 +67,7 @@ RCloud.create = function(rcloud_ocaps) {
                 throw new Error(command + ': ' + message);
             }
         }
-
-        function failure(err) {
-            var message = _.isObject(err) && 'ok' in err
-                ? err.content.message : err.toString();
-            throw new Error(command + ': ' + message);
-        }
-        return promise.then(success).catch(failure);
+        return promise.then(success);
     }
 
     var rcloud = {};
@@ -592,9 +586,9 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.get_notebook_info = rcloud_ocaps.get_notebook_infoAsync;
         rcloud.get_multiple_notebook_infos = rcloud_ocaps.get_multiple_notebook_infosAsync;
         rcloud.set_notebook_info = function(id, info) {
-            if(!info.username) return Promise.reject("attempt to set info no username");
-            if(!info.description) return Promise.reject("attempt to set info no description");
-            if(!info.last_commit) return Promise.reject("attempt to set info no last_commit");
+            if(!info.username) return Promise.reject(new Error("attempt to set info no username"));
+            if(!info.description) return Promise.reject(new Error("attempt to set info no description"));
+            if(!info.last_commit) return Promise.reject(new Error("attempt to set info no last_commit"));
             return rcloud_ocaps.set_notebook_infoAsync(id, info);
         };
 
