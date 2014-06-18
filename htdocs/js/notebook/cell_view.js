@@ -6,9 +6,7 @@ var languages = {
     "Markdown": { 'background-color': "#F7EEE4",
                   'ace_mode': "ace/mode/rmarkdown" },
     "Python": { 'background-color': "#E8F1FA",
-                'ace_mode': "ace/mode/python" },
-    "Text": { 'background-color': "#dddddd",
-              'ace_mode': "foo" }
+                'ace_mode': "ace/mode/python" }
     // ,
     // "Bash": { 'background-color': "#00ff00" }
 };
