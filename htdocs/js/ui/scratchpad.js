@@ -134,7 +134,7 @@ RCloud.UI.scratchpad = {
             Text: "ace/mode/text"
         };
         var lang = this.current_model.language();
-        var mode = ace.require(modes[lang] || modes.Text).Mode;
+        var mode = ace.require(modes[lang]).Mode;
         this.session.setMode(new mode(false, this.session.doc, this.session));
     }, set_readonly: function(readonly) {
         if(!shell.is_view_mode()) {

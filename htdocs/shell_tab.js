@@ -88,7 +88,7 @@ var shell = (function() {
             return view_mode_;
         },
         new_cell: function(content, language, execute) {
-            var supported = ['R', 'Markdown', 'Python'];
+            var supported = ['R', 'Markdown', 'Python', 'Text'];
             if(!_.contains(supported, language)) {
                 RCloud.UI.session_pane.post_error("Sorry, " + language + " notebook cells not supported (yet!)");
                 return;
