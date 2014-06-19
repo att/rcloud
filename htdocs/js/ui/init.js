@@ -71,7 +71,10 @@ RCloud.UI.init = function() {
         }
     });
     function upload_asset(to_notebook) {
-       var replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
+        var replacing = false;
+        if(to_notebook) {
+            replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
+        }
         function results_append($div) {
             $("#file-upload-results").append($div);
             $("#collapse-file-upload").trigger("size-changed");
