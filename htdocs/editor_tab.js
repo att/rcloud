@@ -1345,14 +1345,14 @@ var editor = function () {
         },
         post_comment: function(comment) {
             comment = JSON.stringify({"body":comment});
-            return rcloud.post_comment(current_.notebook, comment).then(function(result) {
-                if (!result)
-                    return null;
-                return rcloud.get_all_comments(current_.notebook).then(function(data) {
-                    populate_comments(data);
-                    $('#comment-entry-body').val('');
+            return rcloud.post_comment(current_.notebook, comment)
+                .then(function() {
+                    return rcloud.get_all_comments(current_.notebook)
+                        .then(function(data) {
+                            populate_comments(data);
+                            $('#comment-entry-body').val('');
+                        });
                 });
-            });
         },
         search: function(search_string) {
             var that = this;

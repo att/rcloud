@@ -526,7 +526,9 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         rcloud.post_comment = function(id, content) {
-            return rcloud_ocaps.comments.postAsync(id, content);
+            return rcloud_github_handler(
+                "rcloud.post.comment",
+                rcloud_ocaps.comments.postAsync(id, content));
         };
 
         // publishing notebooks
