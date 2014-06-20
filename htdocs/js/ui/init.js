@@ -233,6 +233,13 @@ RCloud.UI.init = function() {
         editor.post_comment($("#comment-entry-body").val());
         return false;
     });
+    
+    $("#comment-entry-body").keydown(function (e) {
+        if ((e.keyCode == 10 || e.keyCode == 13 || e.keyCode == 115 || e.keyCode == 19) && (e.ctrlKey || e.metaKey)) {
+            editor.post_comment($("#comment-entry-body").val());
+            return false;
+        }
+    });
 
     $("#run-notebook").click(shell.run_notebook);
 
