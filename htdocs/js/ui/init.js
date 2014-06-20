@@ -46,21 +46,26 @@ RCloud.UI.init = function() {
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
         upload_asset(to_notebook);
     });
+    var showOverlay_;
     //prevent drag in rest of the page except asset pane and enable overlay on asset pane
     $(document).on('dragstart dragenter dragover', function (e) {
         e.stopPropagation();
         e.preventDefault();
         if(!shell.notebook.model.read_only()) {
             $('#asset-drop-overlay').css({'display': 'block'});
+            showOverlay_ = true;
         }
     });
     $(document).on('drop dragleave', function (e)  {
         e.stopPropagation();
         e.preventDefault();
+        showOverlay_ = false;
         setTimeout(function() {
-            $('#asset-drop-overlay').css({'display': 'none'});
-            console.log("hello");
-        }, 1500);
+            if(!showOverlay_) {
+                $('#asset-drop-overlay').css({'display': 'none'});
+                console.log("hello");
+            }
+        }, 100);
     });
     //allow asset drag from local to asset pane and highlight overlay for drop area in asset pane
     $('#scratchpad-wrapper').bind({
