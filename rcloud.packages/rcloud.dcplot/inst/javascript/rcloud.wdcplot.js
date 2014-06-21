@@ -1,4 +1,8 @@
-({
+((function() {
+
+
+
+return {
     handle_dcplot: function(data, k) {
         require(["wdcplot", "dcplot"], function(wdcplot, dcplot) {
             var charts, elem;
@@ -24,4 +28,5 @@
             k(function() { return charts.elem; });
         });
     }
-})
+};
+})())
