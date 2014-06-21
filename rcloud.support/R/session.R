@@ -31,6 +31,8 @@ rcloud.session.cell.eval <- function(partname, language, silent) {
     session.markdown.eval(command, language, silent)
   } else if (language == "Python") {
     session.python.eval(command)
+  } else if (language == "Text") {
+    command
   }
 }
 
@@ -39,6 +41,8 @@ rcloud.authenticated.cell.eval <- function(command, language, silent) {
     session.markdown.eval(command, language, silent)
   } else if (language == "Python") {
     session.python.eval(command)
+  } else if (language == "Text") {
+    command
   }
 }
 

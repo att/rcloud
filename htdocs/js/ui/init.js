@@ -46,32 +46,52 @@ RCloud.UI.init = function() {
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
         upload_asset(to_notebook);
     });
+    var showOverlay_;
+    //prevent drag in rest of the page except asset pane and enable overlay on asset pane
+    $(document).on('dragstart dragenter dragover', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        if(!shell.notebook.model.read_only()) {
+            $('#asset-drop-overlay').css({'display': 'block'});
+            showOverlay_ = true;
+        }
+    });
+    $(document).on('drop dragleave', function (e)  {
+        e.stopPropagation();
+        e.preventDefault();
+        showOverlay_ = false;
+        setTimeout(function() {
+            if(!showOverlay_) {
+                $('#asset-drop-overlay').css({'display': 'none'});
+                console.log("hello");
+            }
+        }, 100);
+    });
+    //allow asset drag from local to asset pane and highlight overlay for drop area in asset pane
     $('#scratchpad-wrapper').bind({
-        dragover: function () {
-            $(this).addClass('hover');
-            return false;
-        },
-        dragend: function () {
-            $(this).removeClass('hover');
-            return false;
-        },
         drop: function (e) {
-            e = e || window.event;
-
-            e.preventDefault();
-            e = e.originalEvent || e;
-            var files = (e.files || e.dataTransfer.files);
-           //To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
-           //for (var i = 0; i < files.length; i++) {
-           for (var i = 0; i < 1; i++) {
+            if(!shell.notebook.model.read_only()) {
+              e = e.originalEvent || e;
+              var files = (e.files || e.dataTransfer.files);
+              if($("#collapse-file-upload").hasClass('panel-collapse collapse')) {
+                $("#collapse-file-upload").css('height','auto');
+                $("#collapse-file-upload").removeClass('panel-collapse collapse').addClass('panel-collapse in');
+              }//To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
+              //for (var i = 0; i < files.length; i++) {
+              for (var i = 0; i < 1; i++) {
                 $('#file').val("");
                 $("#file")[0].files[0]=files[i];
                 upload_asset(true);
+              }
             }
+          $('#asset-drop-overlay').css({'display': 'none'});
         }
     });
     function upload_asset(to_notebook) {
-       var replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
+        var replacing = false;
+        if(to_notebook) {
+            replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
+        }
         function results_append($div) {
             $("#file-upload-results").append($div);
             $("#collapse-file-upload").trigger("size-changed");

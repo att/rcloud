@@ -18,6 +18,30 @@
   using IPython. This requires `rpython2` R package from RForge.net
   and corresponding IPython packages in the Python installation.
 
+* RCloud now uses RequireJS for loading JavaScript libraries.  This
+  makes it far easier for RCloud packages to use external JS libraries,
+  and in particular allows upgrading wdcplot on the fly.  You can also
+  use require to load JS libraries stored as assets, by using the link
+  in the asset pane.
+
+* Ability to fork any notebook, even if it is your own.  The navbar
+  always displays the fork button, and will also show a save button
+  if the notebook is yours, or a revert button if the notebook is
+  yours on a prior version.  Caution: currently when you fork your
+  own notebook, the history is lost; we hope to fix this soon.
+
+* Confirmation dialog on removing a notebook.
+
+* The navbar now displays the notebook author and whether the editor
+  is in read-only mode.
+
+* The browser title now includes the notebook name.
+
+* Drag individual files onto the asset pane in order to upload them
+  as assets
+
+* Press cmd- or ctrl- <enter> in the comment area to submit a comment
+
 
 ### Installation/Administration
 
