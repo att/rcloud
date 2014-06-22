@@ -11,6 +11,9 @@ var languages = {
     // "Bash": { 'background-color': "#00ff00" }
 };
 
+var non_language = { 'background-color': '#dddddd',
+                     'ace_mode': 'ace/mode/text' };
+
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var EXTRA_HEIGHT = 27;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
@@ -100,10 +103,17 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
     var select_lang = $("<select class='form-control'></select>");
+    function add_language_selector(lang) {
+        languages[lang].element = $("<option></option>").text(lang);
+        select_lang.append(languages[lang].element);
+    }
     _.each(languages, function(value, key) {
-        languages[key].element = $("<option></option>").text(key);
-        select_lang.append(languages[key].element);
+        add_language_selector(key);
     });
+    if(!languages[language]) { // unknown language: add it
+        languages[language] = _.clone(non_language);
+        add_language_selector(language);
+    }
     var lang_info = languages[language];
     $(lang_info.element).attr('selected', true);
     select_lang.on("change", function() {
@@ -206,6 +216,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         id_updated: update_div_id,
         language_updated: function() {
             language = cell_model.language();
+            lang_info = languages[language];
+            if(!lang_info) throw new Error("tried to set language to unknown language " + language);
             ace_div.css({ 'background-color': lang_info["background-color"] });
             select_lang.val(cell_model.language());
         },

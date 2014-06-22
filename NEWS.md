@@ -7,6 +7,9 @@
   deprecated. In future releases we will only support the redis
   backend.
 
+* Cascading style sheets held in assets will only be loaded if
+  the filename matches `rcloud-*.css`.
+
 * `rcloud.install.js.module` now takes an optional boolean parameter
   force to force reloading, to help with JS development.
 
