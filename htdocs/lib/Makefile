@@ -15,6 +15,7 @@ ace_bundle.js:	\
         js/ace/sweave_background_highlighter.js \
 	js/ace/ext-language_tools.js \
 	js/ace/ext-searchbox.js \
+	js/ace/mode-javascript.js \
 	js/ace/mode-python.js \
 	js/ace/mode-sh.js \
 	js/ace/_end.js
