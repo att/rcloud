@@ -127,7 +127,7 @@ RCloud.UI.init = function() {
                     controller.select();
                 });
             }
-        };
+        }
 
         function failure(what) {
             var overwrite_click = function() {
@@ -168,9 +168,9 @@ RCloud.UI.init = function() {
             results_append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
         }
 
-        var upload_function = to_notebook
-            ? rcloud.upload_to_notebook
-            : rcloud.upload_file;
+        var upload_function = to_notebook ?
+                rcloud.upload_to_notebook :
+                rcloud.upload_file;
 
         upload_function(false, function(err, value) {
             if (err)
@@ -250,8 +250,21 @@ RCloud.UI.init = function() {
     });
 
     $("#comment-submit").click(function() {
-        editor.post_comment($("#comment-entry-body").val());
+        if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
+            editor.post_comment($("#comment-entry-body").val());
+        }
         return false;
+    });
+
+    $("#comment-entry-body").keydown(function (e) {
+        if ((e.keyCode == 10 || e.keyCode == 13 || e.keyCode == 115 || e.keyCode == 19) &&
+            (e.ctrlKey || e.metaKey)) {
+            if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
+                editor.post_comment($("#comment-entry-body").val());
+            }
+            return false;
+        }
+        return undefined;
     });
 
     $("#run-notebook").click(shell.run_notebook);
