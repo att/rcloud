@@ -250,21 +250,24 @@ RCloud.UI.init = function() {
     });
 
     $("#comment-submit").click(function() {
-        editor.post_comment($("#comment-entry-body").val());
+        if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
+            editor.post_comment($("#comment-entry-body").val());
+        }
         return false;
     });
-    
+
     $("#comment-entry-body").keydown(function (e) {
-        if ((e.keyCode == 10 || e.keyCode == 13 || e.keyCode == 115 || e.keyCode == 19) && (e.ctrlKey || e.metaKey)) {
+        if ((e.keyCode == 10 || e.keyCode == 13 || e.keyCode == 115 || e.keyCode == 19) &&
+            (e.ctrlKey || e.metaKey)) {
             if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
                 editor.post_comment($("#comment-entry-body").val());
             }
             return false;
         }
-    });
-    
-    $("#run-notebook").click(shell.run_notebook);
         return undefined;
+    });
+
+    $("#run-notebook").click(shell.run_notebook);
 
     RCloud.UI.scratchpad.init();
     RCloud.UI.command_prompt.init();
