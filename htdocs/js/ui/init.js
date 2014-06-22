@@ -127,7 +127,7 @@ RCloud.UI.init = function() {
                     controller.select();
                 });
             }
-        };
+        }
 
         function failure(what) {
             var overwrite_click = function() {
@@ -168,9 +168,9 @@ RCloud.UI.init = function() {
             results_append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
         }
 
-        var upload_function = to_notebook
-            ? rcloud.upload_to_notebook
-            : rcloud.upload_file;
+        var upload_function = to_notebook ?
+                rcloud.upload_to_notebook :
+                rcloud.upload_file;
 
         upload_function(false, function(err, value) {
             if (err)
@@ -264,6 +264,7 @@ RCloud.UI.init = function() {
     });
     
     $("#run-notebook").click(shell.run_notebook);
+        return undefined;
 
     RCloud.UI.scratchpad.init();
     RCloud.UI.command_prompt.init();
