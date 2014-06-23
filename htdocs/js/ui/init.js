@@ -51,7 +51,8 @@ RCloud.UI.init = function() {
     $(document).on('dragstart dragenter dragover', function (e) {
         e.stopPropagation();
         e.preventDefault();
-        if(!shell.notebook.model.read_only()) {
+        var dt = e.originalEvent.dataTransfer;
+        if(dt.types != null && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.contains('application/x-moz-file')) && !shell.notebook.model.read_only()) {
             $('#asset-drop-overlay').css({'display': 'block'});
             showOverlay_ = true;
         }
