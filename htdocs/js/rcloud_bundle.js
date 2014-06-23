@@ -621,7 +621,9 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         rcloud.post_comment = function(id, content) {
-            return rcloud_ocaps.comments.postAsync(id, content);
+            return rcloud_github_handler(
+                "rcloud.post.comment",
+                rcloud_ocaps.comments.postAsync(id, content));
         };
 
         // publishing notebooks
@@ -1172,7 +1174,7 @@ Notebook.Buffer.create_model = function(content, language) {
         },
         content: function(new_content) {
             if (!_.isUndefined(new_content)) {
-                if(content != new_content) {
+                if(content !== new_content) {
                     content = new_content;
                     this.notify_views(function(view) {
                         view.content_updated();
@@ -1185,7 +1187,7 @@ Notebook.Buffer.create_model = function(content, language) {
         },
         language: function(new_language) {
             if (!_.isUndefined(new_language)) {
-                if(language != new_language) {
+                if(language !== new_language) {
                     language = new_language;
                     this.notify_views(function(view) {
                         view.language_updated();
@@ -1196,6 +1198,8 @@ Notebook.Buffer.create_model = function(content, language) {
             }
             if(language === undefined)
                 throw new Error("tried to read no language");
+            else if(language === null)
+                return 'Text'; // Github considers null a synonym for Text; nip that in the bud
             return language;
         },
         change_object: function(obj) {
@@ -1397,6 +1401,20 @@ Notebook.Asset.create_controller = function(asset_model)
 };
 (function() {
 
+var languages = {
+    "R": { 'background-color': "#E8F1FA",
+           'ace_mode': "ace/mode/r" },
+    "Markdown": { 'background-color': "#F7EEE4",
+                  'ace_mode': "ace/mode/rmarkdown" },
+    "Python": { 'background-color': "#E8F1FA",
+                'ace_mode': "ace/mode/python" }
+    // ,
+    // "Bash": { 'background-color': "#00ff00" }
+};
+
+var non_language = { 'background-color': '#dddddd',
+                     'ace_mode': 'ace/mode/text' };
+
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var EXTRA_HEIGHT = 27;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
@@ -1485,22 +1503,20 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     cell_status.append(button_float);
     cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
-    var languages = {
-        "R": { 'background-color': "#E8F1FA",
-               'ace_mode': "ace/mode/r" },
-        "Markdown": { 'background-color': "#F7EEE4",
-                      'ace_mode': "ace/mode/rmarkdown" },
-        "Python": { 'background-color': "#E8F1FA",
-                    'ace_mode': "ace/mode/python" }
-        // ,
-        // "Bash": { 'background-color': "#00ff00" }
-    };
     var select_lang = $("<select class='form-control'></select>");
+    function add_language_selector(lang) {
+        languages[lang].element = $("<option></option>").text(lang);
+        select_lang.append(languages[lang].element);
+    }
     _.each(languages, function(value, key) {
-        languages[key].element = $("<option></option>").text(key);
-        select_lang.append(languages[key].element);
+        add_language_selector(key);
     });
-    $(languages[language].element).attr('selected', true);
+    if(!languages[language]) { // unknown language: add it
+        languages[language] = _.clone(non_language);
+        add_language_selector(language);
+    }
+    var lang_info = languages[language];
+    $(lang_info.element).attr('selected', true);
     select_lang.on("change", function() {
         var l = select_lang.find("option:selected").text();
         cell_model.parent_model.controller.change_cell_language(cell_model, l);
@@ -1530,7 +1546,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
 
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
-    ace_div.css({ 'background-color': languages[language]["background-color"] });
+    ace_div.css({ 'background-color': lang_info["background-color"] });
 
     inner_div.append(outer_ace_div);
     outer_ace_div.append(ace_div);
@@ -1601,7 +1617,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         id_updated: update_div_id,
         language_updated: function() {
             language = cell_model.language();
-            ace_div.css({ 'background-color': languages[language]["background-color"] });
+            lang_info = languages[language];
+            if(!lang_info) throw new Error("tried to set language to unknown language " + language);
+            ace_div.css({ 'background-color': lang_info["background-color"] });
             select_lang.val(cell_model.language());
         },
         result_updated: function(r) {
@@ -1907,7 +1925,7 @@ Notebook.Cell.create_controller = function(cell_model)
     var result = {
         execute: function() {
             var that = this;
-            var language = cell_model.language();
+            var language = cell_model.language() || 'Text'; // null is a synonym for Text
             function callback(r) {
                 that.set_status_message(r);
             }
@@ -2265,7 +2283,7 @@ Notebook.create_model = function()
             for(var i = 0; i<this.assets.length; ++i) {
                 var ghfile = files[this.assets[i].filename()];
                 this.assets[i].raw_url = ghfile.raw_url;;
-                this.assets[i].language(ghfile.language || 'Text');
+                this.assets[i].language(ghfile.language);
             }
             _.each(this.views, function(view) {
                 view.update_urls();
@@ -2780,6 +2798,9 @@ Notebook.part_name = function(id, language) {
         break;
     case 'Python':
         ext = 'py';
+        break;
+    case 'Text':
+        ext = 'txt';
         break;
     default:
         throw new Error("Unknown language " + language);
@@ -3514,32 +3535,52 @@ RCloud.UI.init = function() {
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
         upload_asset(to_notebook);
     });
+    var showOverlay_;
+    //prevent drag in rest of the page except asset pane and enable overlay on asset pane
+    $(document).on('dragstart dragenter dragover', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        if(!shell.notebook.model.read_only()) {
+            $('#asset-drop-overlay').css({'display': 'block'});
+            showOverlay_ = true;
+        }
+    });
+    $(document).on('drop dragleave', function (e)  {
+        e.stopPropagation();
+        e.preventDefault();
+        showOverlay_ = false;
+        setTimeout(function() {
+            if(!showOverlay_) {
+                $('#asset-drop-overlay').css({'display': 'none'});
+                console.log("hello");
+            }
+        }, 100);
+    });
+    //allow asset drag from local to asset pane and highlight overlay for drop area in asset pane
     $('#scratchpad-wrapper').bind({
-        dragover: function () {
-            $(this).addClass('hover');
-            return false;
-        },
-        dragend: function () {
-            $(this).removeClass('hover');
-            return false;
-        },
         drop: function (e) {
-            e = e || window.event;
-
-            e.preventDefault();
-            e = e.originalEvent || e;
-            var files = (e.files || e.dataTransfer.files);
-           //To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
-           //for (var i = 0; i < files.length; i++) {
-           for (var i = 0; i < 1; i++) {
+            if(!shell.notebook.model.read_only()) {
+              e = e.originalEvent || e;
+              var files = (e.files || e.dataTransfer.files);
+              if($("#collapse-file-upload").hasClass('panel-collapse collapse')) {
+                $("#collapse-file-upload").css('height','auto');
+                $("#collapse-file-upload").removeClass('panel-collapse collapse').addClass('panel-collapse in');
+              }//To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
+              //for (var i = 0; i < files.length; i++) {
+              for (var i = 0; i < 1; i++) {
                 $('#file').val("");
                 $("#file")[0].files[0]=files[i];
                 upload_asset(true);
+              }
             }
+          $('#asset-drop-overlay').css({'display': 'none'});
         }
     });
     function upload_asset(to_notebook) {
-       var replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
+        var replacing = false;
+        if(to_notebook) {
+            replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
+        }
         function results_append($div) {
             $("#file-upload-results").append($div);
             $("#collapse-file-upload").trigger("size-changed");
@@ -3575,7 +3616,7 @@ RCloud.UI.init = function() {
                     controller.select();
                 });
             }
-        };
+        }
 
         function failure(what) {
             var overwrite_click = function() {
@@ -3616,9 +3657,9 @@ RCloud.UI.init = function() {
             results_append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
         }
 
-        var upload_function = to_notebook
-            ? rcloud.upload_to_notebook
-            : rcloud.upload_file;
+        var upload_function = to_notebook ?
+                rcloud.upload_to_notebook :
+                rcloud.upload_file;
 
         upload_function(false, function(err, value) {
             if (err)
@@ -3698,8 +3739,21 @@ RCloud.UI.init = function() {
     });
 
     $("#comment-submit").click(function() {
-        editor.post_comment($("#comment-entry-body").val());
+        if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
+            editor.post_comment($("#comment-entry-body").val());
+        }
         return false;
+    });
+
+    $("#comment-entry-body").keydown(function (e) {
+        if ((e.keyCode == 10 || e.keyCode == 13 || e.keyCode == 115 || e.keyCode == 19) &&
+            (e.ctrlKey || e.metaKey)) {
+            if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
+                editor.post_comment($("#comment-entry-body").val());
+            }
+            return false;
+        }
+        return undefined;
     });
 
     $("#run-notebook").click(shell.run_notebook);
@@ -4078,6 +4132,7 @@ RCloud.UI.scratchpad = {
             Python: "ace/mode/python",
             Markdown: "ace/mode/rmarkdown",
             CSS: "ace/mode/css",
+            JavaScript: "ace/mode/javascript",
             Text: "ace/mode/text"
         };
         var lang = this.current_model.language();

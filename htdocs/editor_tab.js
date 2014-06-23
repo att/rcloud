@@ -1062,6 +1062,31 @@ var editor = function () {
             load_children(n);
         $('#collapse-notebook-tree').trigger('size-changed');
     }
+    function open_last_loadable() {
+        return rcloud.config.get_recent_notebooks()
+            .then(function(recent) {
+                var sorted = _.chain(recent)
+                        .pairs()
+                        .filter(function(kv) { return kv[0] != 'r_attributes' && kv[0] != 'r_type'; })
+                        .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
+                        .sortBy(function(kv) { return kv[1]; })
+                        .value();
+                // a recursive error handler
+                function try_last() {
+                    var last = sorted.pop();
+                    if(!last)
+                        return result.new_notebook();
+                    else
+                        return result.load_notebook(last[0], null)
+                        .catch(function(err) {
+                            if(/Not Found/.test(err))
+                                rcloud.config.clear_recent_notebook(last);
+                            return try_last();
+                        });
+                }
+                return try_last();
+            });
+    }
 
     var result = {
         init: function(opts) {
@@ -1078,9 +1103,10 @@ var editor = function () {
                         throw xep;
                     });
                 else if(!opts.new_notebook && current_.notebook)
-                    return that.load_notebook(current_.notebook, current_.version);
-
-                return that.new_notebook();
+                    return that.load_notebook(current_.notebook, current_.version)
+                    .catch(open_last_loadable);
+                else
+                    return that.new_notebook();
             });
             $('#new-notebook').click(function(e) {
                 e.preventDefault();
@@ -1218,37 +1244,15 @@ var editor = function () {
         },
         remove_notebook: function(user, gistname) {
             var that = this;
-            (!my_stars_[gistname] ? Promise.resolve() :
-                this.star_notebook(false, {user: user, gistname: gistname}))
+            return (!my_stars_[gistname] ? Promise.resolve() :
+                    this.star_notebook(false, {user: user, gistname: gistname}))
                 .then(function() {
                     remove_notebook_info(user, gistname);
                     remove_notebook_view(user, gistname);
                     var promise = rcloud.config.clear_recent_notebook(gistname);
                     if(gistname === current_.notebook)
-                        promise.then(function() {
-                            return rcloud.config.get_recent_notebooks();
-                        })
-                        .then(function(recent) {
-                            var sorted = _.chain(recent)
-                                    .pairs()
-                                    .filter(function(kv) { return kv[0] != 'r_attributes' && kv[0] != 'r_type'; })
-                                    .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
-                                    .sortBy(function(kv) { return kv[1]; })
-                                    .value();
-                            function try_last() {
-                                var last = sorted.pop();
-                                if(!last)
-                                    that.new_notebook();
-                                else
-                                    that.load_notebook(last[0], null)
-                                    .catch(function(err) {
-                                        if(/Not Found/.test(err))
-                                            rcloud.config.clear_recent_notebook(last);
-                                        try_last();
-                                    });
-                            }
-                            try_last();
-                        });
+                        promise = promise.then(open_last_loadable);
+                    return promise;
                 });
         },
         set_notebook_visibility: function(gistname, visible) {
@@ -1342,14 +1346,14 @@ var editor = function () {
         },
         post_comment: function(comment) {
             comment = JSON.stringify({"body":comment});
-            return rcloud.post_comment(current_.notebook, comment).then(function(result) {
-                if (!result)
-                    return null;
-                return rcloud.get_all_comments(current_.notebook).then(function(data) {
-                    populate_comments(data);
-                    $('#comment-entry-body').val('');
+            return rcloud.post_comment(current_.notebook, comment)
+                .then(function() {
+                    return rcloud.get_all_comments(current_.notebook)
+                        .then(function(data) {
+                            populate_comments(data);
+                            $('#comment-entry-body').val('');
+                        });
                 });
-            });
         },
         search: function(search_string) {
             var that = this;
