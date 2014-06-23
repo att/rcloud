@@ -31,5 +31,21 @@ rcloud.post.comment <- function(id, content)
   if (nzConf("solr.url")) mcparallel(.solr.post.comment(id, content), detached=TRUE)
   if (!res$ok)
     print(res)
+  rcloud.modify.comment(id,1250574,content)
+  #rcloud.delete.comment(id,1250554)
+  #resI <- delete.gist.comment(id,1250554, ctx = .session$rgithub.context)
+  #write(toJSON(resI$content),"/vagrant/work/content.data.after.delete-3.txt")
+  res$ok
+}
+
+rcloud.modify.comment <- function(id, cid, content)
+{
+  res <- modify.gist.comment(id,cid,content, ctx = .session$rgithub.context)
+  res$ok
+}
+
+rcloud.delete.comment <- function(id,cid)
+{
+  res <- delete.gist.comment(id,1250554, ctx = .session$rgithub.context)
   res$ok
 }

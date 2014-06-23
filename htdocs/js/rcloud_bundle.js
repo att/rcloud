@@ -389,6 +389,8 @@ RCloud.create = function(rcloud_ocaps) {
             ["file_upload","write"],
             ["file_upload","close"],
             ["comments","post"],
+            ["comments","modify"],
+            ["comments","delete"],
             ["is_notebook_published"],
             ["publish_notebook"],
             ["unpublish_notebook"],
@@ -623,7 +625,15 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.post_comment = function(id, content) {
             return rcloud_ocaps.comments.postAsync(id, content);
         };
+//>>>>field
+        rcloud.modify_comment = function(id, cid,content) {
+            return rcloud_ocaps.comments.modifyAsync(id, cid,content);
+        };
 
+        rcloud.delete_comment = function(id, cid) {
+            return rcloud_ocaps.comments.deleteAsync(id, cid);
+        };
+//<<<<<field
         // publishing notebooks
         rcloud.is_notebook_published = function(id) {
             return rcloud_ocaps.is_notebook_publishedAsync(id);
@@ -1150,7 +1160,7 @@ Notebook = {};
 //////////////////////////////////////////////////////////////////////////////
 //
 // roughly a MVC-kinda-thing per cell, plus a MVC for all the cells
-// 
+//
 Notebook.Buffer = {};
 Notebook.Cell = {};
 Notebook.Asset = {};
@@ -3700,7 +3710,6 @@ RCloud.UI.init = function() {
         editor.post_comment($("#comment-entry-body").val());
         return false;
     });
-
     $("#run-notebook").click(shell.run_notebook);
 
     RCloud.UI.scratchpad.init();
