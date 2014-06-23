@@ -3,7 +3,7 @@ Notebook.Cell.create_controller = function(cell_model)
     var result = {
         execute: function() {
             var that = this;
-            var language = cell_model.language();
+            var language = cell_model.language() || 'Text'; // null is a synonym for Text
             function callback(r) {
                 that.set_status_message(r);
             }

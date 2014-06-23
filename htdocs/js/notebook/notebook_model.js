@@ -243,7 +243,7 @@ Notebook.create_model = function()
             for(var i = 0; i<this.assets.length; ++i) {
                 var ghfile = files[this.assets[i].filename()];
                 this.assets[i].raw_url = ghfile.raw_url;;
-                this.assets[i].language(ghfile.language || 'Text');
+                this.assets[i].language(ghfile.language);
             }
             _.each(this.views, function(view) {
                 view.update_urls();

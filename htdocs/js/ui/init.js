@@ -46,32 +46,52 @@ RCloud.UI.init = function() {
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
         upload_asset(to_notebook);
     });
+    var showOverlay_;
+    //prevent drag in rest of the page except asset pane and enable overlay on asset pane
+    $(document).on('dragstart dragenter dragover', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        if(!shell.notebook.model.read_only()) {
+            $('#asset-drop-overlay').css({'display': 'block'});
+            showOverlay_ = true;
+        }
+    });
+    $(document).on('drop dragleave', function (e)  {
+        e.stopPropagation();
+        e.preventDefault();
+        showOverlay_ = false;
+        setTimeout(function() {
+            if(!showOverlay_) {
+                $('#asset-drop-overlay').css({'display': 'none'});
+                console.log("hello");
+            }
+        }, 100);
+    });
+    //allow asset drag from local to asset pane and highlight overlay for drop area in asset pane
     $('#scratchpad-wrapper').bind({
-        dragover: function () {
-            $(this).addClass('hover');
-            return false;
-        },
-        dragend: function () {
-            $(this).removeClass('hover');
-            return false;
-        },
         drop: function (e) {
-            e = e || window.event;
-
-            e.preventDefault();
-            e = e.originalEvent || e;
-            var files = (e.files || e.dataTransfer.files);
-           //To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
-           //for (var i = 0; i < files.length; i++) {
-           for (var i = 0; i < 1; i++) {
+            if(!shell.notebook.model.read_only()) {
+              e = e.originalEvent || e;
+              var files = (e.files || e.dataTransfer.files);
+              if($("#collapse-file-upload").hasClass('panel-collapse collapse')) {
+                $("#collapse-file-upload").css('height','auto');
+                $("#collapse-file-upload").removeClass('panel-collapse collapse').addClass('panel-collapse in');
+              }//To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
+              //for (var i = 0; i < files.length; i++) {
+              for (var i = 0; i < 1; i++) {
                 $('#file').val("");
                 $("#file")[0].files[0]=files[i];
                 upload_asset(true);
+              }
             }
+          $('#asset-drop-overlay').css({'display': 'none'});
         }
     });
     function upload_asset(to_notebook) {
-       var replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
+        var replacing = false;
+        if(to_notebook) {
+            replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
+        }
         function results_append($div) {
             $("#file-upload-results").append($div);
             $("#collapse-file-upload").trigger("size-changed");
@@ -107,7 +127,7 @@ RCloud.UI.init = function() {
                     controller.select();
                 });
             }
-        };
+        }
 
         function failure(what) {
             var overwrite_click = function() {
@@ -148,9 +168,9 @@ RCloud.UI.init = function() {
             results_append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
         }
 
-        var upload_function = to_notebook
-            ? rcloud.upload_to_notebook
-            : rcloud.upload_file;
+        var upload_function = to_notebook ?
+                rcloud.upload_to_notebook :
+                rcloud.upload_file;
 
         upload_function(false, function(err, value) {
             if (err)
@@ -230,8 +250,21 @@ RCloud.UI.init = function() {
     });
 
     $("#comment-submit").click(function() {
-        editor.post_comment($("#comment-entry-body").val());
+        if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
+            editor.post_comment($("#comment-entry-body").val());
+        }
         return false;
+    });
+
+    $("#comment-entry-body").keydown(function (e) {
+        if ((e.keyCode == 10 || e.keyCode == 13 || e.keyCode == 115 || e.keyCode == 19) &&
+            (e.ctrlKey || e.metaKey)) {
+            if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
+                editor.post_comment($("#comment-entry-body").val());
+            }
+            return false;
+        }
+        return undefined;
     });
 
     $("#run-notebook").click(shell.run_notebook);
