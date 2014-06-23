@@ -49,10 +49,10 @@ RCloud.UI.init = function() {
     var showOverlay_;
     //prevent drag in rest of the page except asset pane and enable overlay on asset pane
     $(document).on('dragstart dragenter dragover', function (e) {
-        e.stopPropagation();
-        e.preventDefault();
         var dt = e.originalEvent.dataTransfer;
         if(dt.types != null && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.contains('application/x-moz-file')) && !shell.notebook.model.read_only()) {
+            e.stopPropagation();
+            e.preventDefault();
             $('#asset-drop-overlay').css({'display': 'block'});
             showOverlay_ = true;
         }
