@@ -797,6 +797,7 @@ var editor = function () {
     }
 
     function update_notebook_from_gist(result, history, selroot) {
+        document.title = result.description + " - RCloud";
         var t = performance.now();
         var user = result.user.login, gistname = result.id;
         // we only receive history here if we're at HEAD, so use that if we get
