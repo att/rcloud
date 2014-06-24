@@ -50,6 +50,10 @@ RCloud.UI.init = function() {
     //prevent drag in rest of the page except asset pane and enable overlay on asset pane
     $(document).on('dragstart dragenter dragover', function (e) {
         var dt = e.originalEvent.dataTransfer;
+        if(dt.items.length > 1) {
+            e.stopPropagation();
+            e.preventDefault();
+        }else
         if(dt.types != null && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.contains('application/x-moz-file')) && !shell.notebook.model.read_only()) {
             e.stopPropagation();
             e.preventDefault();
@@ -71,9 +75,15 @@ RCloud.UI.init = function() {
     //allow asset drag from local to asset pane and highlight overlay for drop area in asset pane
     $('#scratchpad-wrapper').bind({
         drop: function (e) {
+            e = e.originalEvent || e;
+            var files = (e.files || e.dataTransfer.files);
+            var dt = e.dataTransfer;
+            if(dt.items.length>1) {
+                e.stopPropagation();
+                e.preventDefault();
+            } else
             if(!shell.notebook.model.read_only()) {
-              e = e.originalEvent || e;
-              var files = (e.files || e.dataTransfer.files);
+
               if($("#collapse-file-upload").hasClass('panel-collapse collapse')) {
                 $("#collapse-file-upload").css('height','auto');
                 $("#collapse-file-upload").removeClass('panel-collapse collapse').addClass('panel-collapse in');
