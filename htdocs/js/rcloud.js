@@ -185,6 +185,7 @@ RCloud.create = function(rcloud_ocaps) {
                     rcloud.modules[name] = result;
                     k(null, result);
                 } catch (e) {
+                    Promise.reject(e); // print error
                     var v = { "type": e.name,
                               "message": e.message
                             };
