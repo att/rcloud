@@ -857,8 +857,7 @@ var editor = function () {
             RCloud.UI.session_pane.post_error("populate comments: " + e.message);
             return;
         }
-        d3.select("#comment-count")
-            .text(String(comments.length));
+        d3.select("#comment-count").text(String(comments.length));
         // no update logic, clearing/rebuilding is easier
         d3.select("#comments-container").selectAll("div").remove();
         var comment_div = d3.select("#comments-container")
@@ -875,38 +874,42 @@ var editor = function () {
         comment_div
             .append("div")
             .attr("class", "comment-body")
-            .text(function(d) { return d.body; });
+            .text(function(d) { return d.body; })
+            .on("mouseover",function(e){
+                var comment_element = $(this);
+                var edit_comment = function(v){
+                    var comment_text = comment_element.html();
+                    editor.modify_comment($(comment_element.parent()).attr("comment_id"),comment_text);
+                }
+                function select(el) {
+                    if(el.childNodes.length !== 1 || el.firstChild.nodeType != el.TEXT_NODE)
+                        throw new Error('expecting simple element with child text');
+                    var text = el.firstChild.textContent;
+                    var range = document.createRange();
+                    range.setStart(el.firstChild, 0);
+                    range.setEnd(el.firstChild, text.length);
+                    return range;
+                }
+                var editable_opts = {
+                    change: edit_comment,
+                    select: select,
+                    validate: function(name) { return editor.validate_name(name); }
+                };
+                ui_utils.editable(comment_element, $.extend({allow_edit: true,inactive_text: comment_element.text(),active_text: comment_element.text()},editable_opts));
+            });
         $('#collapse-comments').trigger('size-changed');
-        
-                var comment_element = comment_div.selectAll("div.comment-body");
+        var comment_element = comment_div.selectAll("div.comment-body");
         if(true){
             comment_div
                 .append("i")
                 .attr("class", "icon-remove comment-header")
                 .on("click", function (e) {
-                    $(this).parent().hide();
-                });
-            comment_div
-                .append("i")
-                .attr("class", "icon-edit comment-header")
-                .on("click", function (e) {
                     var current_comment_element = $(this).parent();
-                    var current_comment_text = $($(this).parent().children()[1]).html();
-                    var update_button = $("<button>Update</button>");
-                    var cancel_button = $("<button>Cancel</button>");
-                    update_button.click(function(e){
-                        editor.modify_comment(current_comment_element.attr("comment_id"),$("#comment-entry-body").val()).then(function(v){update_button.remove();cancel_button.remove();$("#comment-submit").show();});
-                    });
-                    cancel_button.click(function(e){current_comment_element.show();$("#comment-entry-body").val("");$("#comment-submit").show();update_button.hide();cancel_button.hide()});
-                    $("#comment-entry-body").val(current_comment_text);
-                    $("#comment-entry").append(update_button);
-                    $("#comment-entry").append(cancel_button);
-                    $("#comment-submit").hide();
-                    current_comment_element.hide();
+                    $(this).parent().hide();
+                    //github comment delete call is not working properly, need to make that work
+                    //editor.delete_comment(current_comment_element.attr("comment_id")).then(function(v){console.log(v);});
                 });
         }
-
-        
         ui_utils.on_next_tick(function() {
             ui_utils.scroll_to_after($("#comments-qux"));
         });
