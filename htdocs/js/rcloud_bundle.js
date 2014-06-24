@@ -713,9 +713,9 @@ ui_utils.disconnection_error = function(msg, label) {
     button.click(function() {
         window.location =
             (window.location.protocol +
-             '//' + window.location.host +
-             '/login.R?redirect=' +
-             encodeURIComponent(window.location.pathname + window.location.search));
+            '//' + window.location.host +
+            '/login.R?redirect=' +
+            encodeURIComponent(window.location.pathname + window.location.search));
     });
     return result;
 };
@@ -753,7 +753,7 @@ ui_utils.fa_button = function(which, title, classname, style, container_is_self)
 {
     var icon = $.el.i({'class': which});
     var span = $.el.span({'class': 'fontawesome-button ' + (classname || '')},
-                         icon);
+                        icon);
     if(style) {
         for (var k in style)
             icon.style[k] = style[k];
@@ -889,7 +889,7 @@ ui_utils.set_ace_readonly = function(widget, readonly) {
 };
 
 ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
-                                  active_icon, inactive_icon) {
+                                    active_icon, inactive_icon) {
     function set_state(state) {
         item[0].checked = state;
         var icon = item.find('i');
@@ -922,7 +922,7 @@ ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
 // not that i'm at all happy with the look
 ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
     var ret = ui_utils.twostate_icon(item, on_check, on_uncheck,
-                                     'icon-check', 'icon-check-empty');
+                                    'icon-check', 'icon-check-empty');
     var base_enable = ret.enable;
     ret.enable = function(val) {
         // bootstrap menu items go in in an <li /> that takes the disabled class
@@ -1082,6 +1082,7 @@ ui_utils.editable = function(elem$, command) {
         });
         elem$.keydown(function(e) {
             if(e.keyCode === 13) {
+                e.preventDefault();
                 var result = elem$.text();
                 result = decode(result);
                 if(options().validate(result)) {
@@ -1263,20 +1264,65 @@ Notebook.Buffer.create_model = function(content, language) {
     };
     return result;
 };
-
 Notebook.Asset.create_html_view = function(asset_model)
 {
     var filename_div = $("<li></li>");
-    var anchor = $("<a href='#'>" + asset_model.filename() + "</a>");
+    var anchor = $("<a href='#'></a>");
+    var filename_span = $("<span  style='cursor:pointer'>" + asset_model.filename() + "</span>");
     var remove = ui_utils.fa_button("icon-remove", "remove", '',
                                     { 'position': 'relative',
-                                      'left': '2px',
-                                      'opacity': '0.75'
+                                        'left': '2px',
+                                        'opacity': '0.75'
                                     }, true);
+    anchor.append(filename_span);
     filename_div.append(anchor);
     anchor.append(remove);
-    anchor.click(function() {
-        asset_model.controller.select();
+    var asset_old_name = filename_span.text();
+    var rename_file = function(v){
+        var new_asset_name = filename_span.text();
+        var old_asset_content = asset_model.content();
+        if (new_asset_name == "") {
+            filename_span.text(asset_old_name);
+            return;
+        }
+        if (Notebook.is_part_name(new_asset_name)) {
+            alert("Asset names cannot start with 'part[0-9]', sorry!");
+            filename_span.text(asset_old_name);
+            return;
+        }
+        var found = shell.notebook.model.has_asset(new_asset_name);
+        if (found){
+            found.controller.select();
+        }
+        else {
+            shell.notebook.controller
+            .append_asset(old_asset_content, new_asset_name)
+            .then(function (controller) {
+                controller.select();
+            });
+            asset_model.controller.remove(true);
+        }
+    };
+    function select(el) {
+        if(el.childNodes.length !== 1 || el.firstChild.nodeType != el.TEXT_NODE)
+            throw new Error('expecting simple element with child text');
+        var text = el.firstChild.textContent;
+        var range = document.createRange();
+        range.setStart(el.firstChild, text.lastIndexOf('/') + 1);
+        range.setEnd(el.firstChild, text.length);
+        return range;
+    }
+    var editable_opts = {
+        change: rename_file,
+        select: select,
+        validate: function(name) { return editor.validate_name(name); }
+    };
+    var editable_mode = !shell.notebook.model.read_only();
+    ui_utils.editable(filename_span, $.extend({allow_edit: editable_mode,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
+    filename_span.click(function() {
+        if(!asset_model.active()){
+            asset_model.controller.select();
+        }
     });
     remove.click(function() {
         asset_model.controller.remove();
