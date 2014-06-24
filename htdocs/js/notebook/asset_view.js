@@ -36,7 +36,7 @@ Notebook.Asset.create_html_view = function(asset_model)
             });
             asset_model.controller.remove(true);
         }
-    }
+    };
     function select(el) {
         if(el.childNodes.length !== 1 || el.firstChild.nodeType != el.TEXT_NODE)
             throw new Error('expecting simple element with child text');
@@ -57,7 +57,7 @@ Notebook.Asset.create_html_view = function(asset_model)
         if(!asset_model.active()){
             asset_model.controller.select();
         }
-        filename_span.attr("contenteditable",""+!shell.notebook.model.read_only());        
+        filename_span.attr("contenteditable",""+!shell.notebook.model.read_only());
     });
     remove.click(function() {
         asset_model.controller.remove();
