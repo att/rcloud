@@ -1492,6 +1492,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var enable = ui_utils.enable_fa_button;
     var disable = ui_utils.disable_fa_button;
 
+    var has_result = false;
+
     insert_cell_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             shell.insert_markdown_cell_before(cell_model.id());
@@ -1567,6 +1569,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     select_lang.on("change", function() {
         var l = select_lang.find("option:selected").text();
         cell_model.parent_model.controller.change_cell_language(cell_model, l);
+        result.clear_result();
     });
 
     col.append($("<div></div>").append(select_lang));
@@ -1653,6 +1656,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         // pubsub event handlers
 
         content_updated: function() {
+            // note: it's inconsistent, but not clearing the result for every
+            // change, just particular ones, because one may want to refer to
+            // the result if just typing but seems unlikely for other changes
             var range = widget.getSelection().getRange();
             var changed = change_content(cell_model.content());
             widget.getSelection().setSelectionRange(range);
@@ -1670,6 +1676,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             select_lang.val(cell_model.language());
         },
         result_updated: function(r) {
+            has_result = true;
             r_result_div.hide();
             r_result_div.html(r);
             r_result_div.slideDown(150);
@@ -1774,6 +1781,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
             this.show_result();
         },
+        clear_result: function() {
+            has_result = false;
+            disable(result_button);
+            this.show_source();
+        },
         set_readonly: function(readonly) {
             am_read_only = readonly;
             ui_utils.set_ace_readonly(widget, readonly);
@@ -1838,7 +1850,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             set_widget_height();
             widget.resize(true);
             disable(source_button);
-            enable(result_button);
+            if(has_result)
+                enable(result_button);
             // enable(hide_button);
             if (!am_read_only) {
                 enable(remove_button);
@@ -2672,7 +2685,7 @@ Notebook.create_controller = function(model)
                     changes = changes.concat(model.update_cell(prior));
                 }
             }
-            _.each(prior.views, function(v) { v.show_source(); });
+            _.each(prior.views, function(v) { v.clear_result(); });
             update_notebook(changes.concat(model.remove_cell(cell_model)))
                 .then(default_callback());
         },
@@ -2710,6 +2723,7 @@ Notebook.create_controller = function(model)
                            content.substring(point2));
             resplit(parts);
             cell_model.content(parts[0]);
+            _.each(cell_model.views, function(v) { v.clear_result(); });
             changes = changes.concat(model.update_cell(cell_model));
             // not great to do multiple inserts here - but not quite important enough to enable insert-n
             for(var i=1; i<parts.length; ++i)

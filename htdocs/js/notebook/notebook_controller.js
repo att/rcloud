@@ -322,7 +322,7 @@ Notebook.create_controller = function(model)
                     changes = changes.concat(model.update_cell(prior));
                 }
             }
-            _.each(prior.views, function(v) { v.show_source(); });
+            _.each(prior.views, function(v) { v.clear_result(); });
             update_notebook(changes.concat(model.remove_cell(cell_model)))
                 .then(default_callback());
         },
@@ -360,6 +360,7 @@ Notebook.create_controller = function(model)
                            content.substring(point2));
             resplit(parts);
             cell_model.content(parts[0]);
+            _.each(cell_model.views, function(v) { v.clear_result(); });
             changes = changes.concat(model.update_cell(cell_model));
             // not great to do multiple inserts here - but not quite important enough to enable insert-n
             for(var i=1; i<parts.length; ++i)
