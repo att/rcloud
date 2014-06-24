@@ -14,7 +14,7 @@ Notebook.Asset.create_html_view = function(asset_model)
     var asset_old_name = filename_span.text();
     var rename_file = function(v){
         var new_asset_name = filename_span.text();
-        var old_asset_contet = asset_model.content();
+        var old_asset_content = asset_model.content();
         if (new_asset_name == "") {
             filename_span.text(asset_old_name);
             return;
@@ -30,7 +30,7 @@ Notebook.Asset.create_html_view = function(asset_model)
         }
         else {
             shell.notebook.controller
-            .append_asset(old_asset_contet, new_asset_name)
+            .append_asset(old_asset_content, new_asset_name)
             .then(function (controller) {
                 controller.select();
             });
