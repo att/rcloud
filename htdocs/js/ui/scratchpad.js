@@ -146,8 +146,13 @@ RCloud.UI.scratchpad = {
                 $('#new-asset').show();
         }
     }, update_asset_url: function() {
+        // this function probably belongs elsewhere
+        function make_asset_url(model) {
+            return window.location.protocol + '//' + window.location.host + '/notebook.R/' +
+                    model.parent_model.controller.current_gist().id + '/' + model.filename();
+        }
         if(this.current_model)
-            $('#asset-link').attr('href', this.current_model.raw_url);
+            $('#asset-link').attr('href', make_asset_url(this.current_model));
     }, clear: function() {
         if(!this.exists)
             return;

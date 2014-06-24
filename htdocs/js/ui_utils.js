@@ -9,9 +9,9 @@ ui_utils.disconnection_error = function(msg, label) {
     button.click(function() {
         window.location =
             (window.location.protocol +
-             '//' + window.location.host +
-             '/login.R?redirect=' +
-             encodeURIComponent(window.location.pathname + window.location.search));
+            '//' + window.location.host +
+            '/login.R?redirect=' +
+            encodeURIComponent(window.location.pathname + window.location.search));
     });
     return result;
 };
@@ -49,7 +49,7 @@ ui_utils.fa_button = function(which, title, classname, style, container_is_self)
 {
     var icon = $.el.i({'class': which});
     var span = $.el.span({'class': 'fontawesome-button ' + (classname || '')},
-                         icon);
+                        icon);
     if(style) {
         for (var k in style)
             icon.style[k] = style[k];
@@ -185,7 +185,7 @@ ui_utils.set_ace_readonly = function(widget, readonly) {
 };
 
 ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
-                                  active_icon, inactive_icon) {
+                                    active_icon, inactive_icon) {
     function set_state(state) {
         item[0].checked = state;
         var icon = item.find('i');
@@ -218,7 +218,7 @@ ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
 // not that i'm at all happy with the look
 ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
     var ret = ui_utils.twostate_icon(item, on_check, on_uncheck,
-                                     'icon-check', 'icon-check-empty');
+                                    'icon-check', 'icon-check-empty');
     var base_enable = ret.enable;
     ret.enable = function(val) {
         // bootstrap menu items go in in an <li /> that takes the disabled class
@@ -378,6 +378,7 @@ ui_utils.editable = function(elem$, command) {
         });
         elem$.keydown(function(e) {
             if(e.keyCode === 13) {
+                e.preventDefault();
                 var result = elem$.text();
                 result = decode(result);
                 if(options().validate(result)) {

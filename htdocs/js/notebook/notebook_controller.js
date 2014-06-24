@@ -53,6 +53,7 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(version, notebook) {
+        current_gist_ = notebook;
         if (!_.isUndefined(notebook.files)) {
             var i;
             // we can't do much with a notebook with no name, so give it one
@@ -95,7 +96,6 @@ Notebook.create_controller = function(model)
             // we set read-only last because it ripples MVC events through to
             // make the display look impermeable
             model.read_only(version != null || notebook.user.login != rcloud.username());
-            current_gist_ = notebook;
         }
         return notebook;
     }
@@ -232,6 +232,10 @@ Notebook.create_controller = function(model)
     model.dishers.push({on_dirty: on_dirty});
 
     var result = {
+        current_gist: function() {
+            // are there reasons we shouldn't be exposing this?
+            return current_gist_;
+        },
         save_button: function(save_button) {
             if(arguments.length) {
                 save_button_ = save_button;
@@ -318,7 +322,7 @@ Notebook.create_controller = function(model)
                     changes = changes.concat(model.update_cell(prior));
                 }
             }
-            _.each(prior.views, function(v) { v.show_source(); });
+            _.each(prior.views, function(v) { v.clear_result(); });
             update_notebook(changes.concat(model.remove_cell(cell_model)))
                 .then(default_callback());
         },
@@ -356,6 +360,7 @@ Notebook.create_controller = function(model)
                            content.substring(point2));
             resplit(parts);
             cell_model.content(parts[0]);
+            _.each(cell_model.views, function(v) { v.clear_result(); });
             changes = changes.concat(model.update_cell(cell_model));
             // not great to do multiple inserts here - but not quite important enough to enable insert-n
             for(var i=1; i<parts.length; ++i)
