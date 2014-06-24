@@ -57,6 +57,7 @@ Notebook.Asset.create_html_view = function(asset_model)
         if(!asset_model.active()){
             asset_model.controller.select();
         }
+        filename_span.attr("contenteditable",""+!shell.notebook.model.read_only());
     });
     remove.click(function() {
         asset_model.controller.remove();
