@@ -1,6 +1,17 @@
 ((function() {
 
-
+requirejs.config({
+    paths: {
+        "crossfilter": "//cdnjs.cloudflare.com/ajax/libs/crossfilter/1.3.7/crossfilter",
+        "dc": "http://cdnjs.cloudflare.com/ajax/libs/dc/1.7.0/dc.js"
+    },
+    "shim": {
+        "crossfilter": {
+            deps: [],
+            exports: "crossfilter"
+        }
+    }
+});
 
 return {
     handle_dcplot: function(data, k) {
