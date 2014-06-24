@@ -69,6 +69,5 @@ rcloud.delete.comment <- function(id,cid)
 {
   mcparallel(.solr.delete.comment(id, cid), detached=TRUE)
   res <- delete.gist.comment(id,cid, ctx = .session$rgithub.context)
-  write(toJSON(res),"/vagrant/work/debug/res.txt")
   res$ok
 }
