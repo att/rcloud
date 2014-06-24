@@ -20,6 +20,16 @@ var shell = (function() {
         return notebook;
     }
 
+    function download_as_file(filename, content, mimetype) {
+        var element = document.createElement('a'),
+            file = new Blob([content], {type: mimetype}),
+            fileURL = URL.createObjectURL(file);
+        element.download = filename;
+        element.href = fileURL;
+        element.dataset.downloadurl = [mimetype, element.download, element.href].join(":");
+        element.click();
+    }
+
     function on_new(notebook) {
         gistname_ = notebook.id;
         version_ = null;
@@ -247,22 +257,14 @@ var shell = (function() {
                     // rserve.js length-1 array special case making our lives difficult again
                     var purled_source = _.isString(purled_lines) ? purled_lines :
                             purled_lines.join("\n");
-                    var a=document.createElement('a');
-                    a.textContent='download';
-                    a.download=notebook.description + ".R";
-                    a.href='data:text/plain;charset=utf-8,'+escape(purled_source);
-                    a.click();
+                    download_as_file(notebook.description + ".R", purled_source, 'text/plain');
                 });
             });
         }, export_notebook_file: function() {
             return rcloud.get_notebook(gistname_, version_).then(function(notebook) {
                 notebook = sanitize_notebook(notebook);
                 var gisttext = JSON.stringify(notebook);
-                var a=document.createElement('a');
-                a.textContent='download';
-                a.download=notebook.description + ".gist";
-                a.href='data:text/json;charset=utf-8,'+escape(gisttext);
-                a.click();
+                download_as_file(notebook.description + ".gist", gisttext, 'text/json');
                 return notebook;
             });
         }, import_notebook_file: function() {
