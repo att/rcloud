@@ -2281,7 +2281,7 @@ Notebook.create_model = function()
         update_files: function(files) {
             for(var i = 0; i<this.assets.length; ++i) {
                 var ghfile = files[this.assets[i].filename()];
-                this.assets[i].raw_url = ghfile.raw_url;;
+                // note this is where to get the asset raw_url if we need it again
                 this.assets[i].language(ghfile.language);
             }
             _.each(this.views, function(view) {
@@ -2355,6 +2355,7 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(version, notebook) {
+        current_gist_ = notebook;
         if (!_.isUndefined(notebook.files)) {
             var i;
             // we can't do much with a notebook with no name, so give it one
@@ -2397,7 +2398,6 @@ Notebook.create_controller = function(model)
             // we set read-only last because it ripples MVC events through to
             // make the display look impermeable
             model.read_only(version != null || notebook.user.login != rcloud.username());
-            current_gist_ = notebook;
         }
         return notebook;
     }
@@ -2534,6 +2534,10 @@ Notebook.create_controller = function(model)
     model.dishers.push({on_dirty: on_dirty});
 
     var result = {
+        current_gist: function() {
+            // are there reasons we shouldn't be exposing this?
+            return current_gist_;
+        },
         save_button: function(save_button) {
             if(arguments.length) {
                 save_button_ = save_button;
@@ -4148,8 +4152,13 @@ RCloud.UI.scratchpad = {
                 $('#new-asset').show();
         }
     }, update_asset_url: function() {
+        // this function probably belongs elsewhere
+        function make_asset_url(model) {
+            return window.location.protocol + '//' + window.location.host + '/notebook.R/' +
+                    model.parent_model.controller.current_gist().id + '/' + model.filename();
+        }
         if(this.current_model)
-            $('#asset-link').attr('href', this.current_model.raw_url);
+            $('#asset-link').attr('href', make_asset_url(this.current_model));
     }, clear: function() {
         if(!this.exists)
             return;
