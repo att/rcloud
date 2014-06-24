@@ -131,6 +131,7 @@ RCloud.UI.scratchpad = {
             Python: "ace/mode/python",
             Markdown: "ace/mode/rmarkdown",
             CSS: "ace/mode/css",
+            JavaScript: "ace/mode/javascript",
             Text: "ace/mode/text"
         };
         var lang = this.current_model.language();

@@ -13,6 +13,9 @@ Notebook.part_name = function(id, language) {
     case 'Python':
         ext = 'py';
         break;
+    case 'Text':
+        ext = 'txt';
+        break;
     default:
         throw new Error("Unknown language " + language);
     }

@@ -834,3 +834,15 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
     margin-left: auto;
     margin-right: auto;
 }
+.drop-asset-body {
+    display: none;
+    opacity:.8;
+    outline: 2px dashed lightslategray;
+    outline-offset:-20px;
+    border: 1px solid #999;
+    background-color: whitesmoke;
+    position:absolute;
+    z-index:999;
+    height:100%;
+    width:100%;
+}

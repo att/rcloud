@@ -1,5 +1,19 @@
 (function() {
 
+var languages = {
+    "R": { 'background-color': "#E8F1FA",
+           'ace_mode': "ace/mode/r" },
+    "Markdown": { 'background-color': "#F7EEE4",
+                  'ace_mode': "ace/mode/rmarkdown" },
+    "Python": { 'background-color': "#E8F1FA",
+                'ace_mode': "ace/mode/python" }
+    // ,
+    // "Bash": { 'background-color': "#00ff00" }
+};
+
+var non_language = { 'background-color': '#dddddd',
+                     'ace_mode': 'ace/mode/text' };
+
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var EXTRA_HEIGHT = 27;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
@@ -88,22 +102,20 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     cell_status.append(button_float);
     cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
-    var languages = {
-        "R": { 'background-color': "#E8F1FA",
-               'ace_mode': "ace/mode/r" },
-        "Markdown": { 'background-color': "#F7EEE4",
-                      'ace_mode': "ace/mode/rmarkdown" },
-        "Python": { 'background-color': "#E8F1FA",
-                    'ace_mode': "ace/mode/python" }
-        // ,
-        // "Bash": { 'background-color': "#00ff00" }
-    };
     var select_lang = $("<select class='form-control'></select>");
+    function add_language_selector(lang) {
+        languages[lang].element = $("<option></option>").text(lang);
+        select_lang.append(languages[lang].element);
+    }
     _.each(languages, function(value, key) {
-        languages[key].element = $("<option></option>").text(key);
-        select_lang.append(languages[key].element);
+        add_language_selector(key);
     });
-    $(languages[language].element).attr('selected', true);
+    if(!languages[language]) { // unknown language: add it
+        languages[language] = _.clone(non_language);
+        add_language_selector(language);
+    }
+    var lang_info = languages[language];
+    $(lang_info.element).attr('selected', true);
     select_lang.on("change", function() {
         var l = select_lang.find("option:selected").text();
         cell_model.parent_model.controller.change_cell_language(cell_model, l);
@@ -133,7 +145,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
 
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
-    ace_div.css({ 'background-color': languages[language]["background-color"] });
+    ace_div.css({ 'background-color': lang_info["background-color"] });
 
     inner_div.append(outer_ace_div);
     outer_ace_div.append(ace_div);
@@ -204,7 +216,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         id_updated: update_div_id,
         language_updated: function() {
             language = cell_model.language();
-            ace_div.css({ 'background-color': languages[language]["background-color"] });
+            lang_info = languages[language];
+            if(!lang_info) throw new Error("tried to set language to unknown language " + language);
+            ace_div.css({ 'background-color': lang_info["background-color"] });
             select_lang.val(cell_model.language());
         },
         result_updated: function(r) {

@@ -16,7 +16,7 @@ Notebook.Buffer.create_model = function(content, language) {
         },
         content: function(new_content) {
             if (!_.isUndefined(new_content)) {
-                if(content != new_content) {
+                if(content !== new_content) {
                     content = new_content;
                     this.notify_views(function(view) {
                         view.content_updated();
@@ -29,7 +29,7 @@ Notebook.Buffer.create_model = function(content, language) {
         },
         language: function(new_language) {
             if (!_.isUndefined(new_language)) {
-                if(language != new_language) {
+                if(language !== new_language) {
                     language = new_language;
                     this.notify_views(function(view) {
                         view.language_updated();
@@ -40,6 +40,8 @@ Notebook.Buffer.create_model = function(content, language) {
             }
             if(language === undefined)
                 throw new Error("tried to read no language");
+            else if(language === null)
+                return 'Text'; // Github considers null a synonym for Text; nip that in the bud
             return language;
         },
         change_object: function(obj) {
