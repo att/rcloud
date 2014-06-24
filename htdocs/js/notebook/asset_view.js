@@ -46,8 +46,8 @@ Notebook.Asset.create_html_view = function(asset_model)
             throw new Error('expecting simple element with child text');
         var text = el.firstChild.textContent;
         var range = document.createRange();
-        range.setStart(el.firstChild, text.lastIndexOf('/') + 1);
-        range.setEnd(el.firstChild, text.length);
+        range.setStart(el.firstChild, 0);
+        range.setEnd(el.firstChild, (text.lastIndexOf('.')>0?text.lastIndexOf('.'):text.length));
         return range;
     }
     var editable_opts = {
@@ -59,7 +59,7 @@ Notebook.Asset.create_html_view = function(asset_model)
     ui_utils.editable(filename_span, $.extend({allow_edit: true,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
     filename_span.click(function() {
         if(!asset_model.active()){
-            asset_model.controller.select();
+            asset_model.controller.select()
         }
     });
     remove.click(function() {
