@@ -634,7 +634,7 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.delete_comment = function(id, cid) {
             return rcloud_ocaps.comments.deleteAsync(id, cid);
-         };
+        };
 
         // publishing notebooks
         rcloud.is_notebook_published = function(id) {

@@ -872,11 +872,11 @@ var editor = function () {
             .append("i")
             .attr("class", "icon-remove comment-header")
             .on("click", function (e) {
-                var commentor = $($($(this).parent()).children()[0]).html();
+                var commentor = $($($(this).parent()).children()[1]).html();
                 var current_user = shell.notebook.model.user();
                 var is_author = ((commentor==current_user)?true:false);
                 is_editable = !shell.notebook.model.read_only() && is_author;
-                var current_comment_element = $(this).parent();
+                var current_comment_element = $($(this).parent());
                 if(is_editable)
                     editor.delete_comment(current_comment_element.attr("comment_id")).then(function(v){console.log(v);});
             });
@@ -908,7 +908,7 @@ var editor = function () {
                     select: select,
                     validate: function(name) { return editor.validate_name(name); }
                 };
-                var commentor = $($($(this).parent()).children()[0]).html();
+                var commentor = $($($(this).parent()).children()[1]).html();
                 var current_user = shell.notebook.model.user();
                 var is_author = ((commentor==current_user)?true:false);
                 is_editable = !shell.notebook.model.read_only() && is_author;
