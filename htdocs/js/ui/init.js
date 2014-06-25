@@ -54,11 +54,17 @@ RCloud.UI.init = function() {
             e.stopPropagation();
             e.preventDefault();
         }else
-        if(dt.types != null && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.contains('application/x-moz-file')) && !shell.notebook.model.read_only()) {
-            e.stopPropagation();
-            e.preventDefault();
-            $('#asset-drop-overlay').css({'display': 'block'});
-            showOverlay_ = true;
+        if (dt.types != null && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.contains('application/x-moz-file'))) {
+            if (!shell.notebook.model.read_only()) {
+                e.stopPropagation();
+                e.preventDefault();
+                $('#asset-drop-overlay').css({'display': 'block'});
+                showOverlay_ = true;
+            }
+            else {
+                e.stopPropagation();
+                e.preventDefault();
+            }
         }
     });
     $(document).on('drop dragleave', function (e)  {
