@@ -89,7 +89,6 @@ RCloud.UI.init = function() {
                 e.preventDefault();
             } else
             if(!shell.notebook.model.read_only()) {
-
               if($("#collapse-file-upload").hasClass('panel-collapse collapse')) {
                 $("#collapse-file-upload").css('height','auto');
                 $("#collapse-file-upload").removeClass('panel-collapse collapse').addClass('panel-collapse in');
