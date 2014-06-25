@@ -53,6 +53,8 @@ RCloud.UI.init = function() {
         if(dt.items.length > 1) {
             e.stopPropagation();
             e.preventDefault();
+            e.originalEvent.dataTransfer.effectAllowed= 'none';
+            e.originalEvent.dataTransfer.dropEffect= 'none';
         }else
         if (dt.types != null && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.contains('application/x-moz-file'))) {
             if (!shell.notebook.model.read_only()) {
