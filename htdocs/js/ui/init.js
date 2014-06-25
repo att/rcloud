@@ -66,6 +66,8 @@ RCloud.UI.init = function() {
             else {
                 e.stopPropagation();
                 e.preventDefault();
+                e.originalEvent.dataTransfer.effectAllowed= 'none';
+                e.originalEvent.dataTransfer.dropEffect= 'none';
             }
         }
     });
