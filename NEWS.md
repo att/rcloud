@@ -3,9 +3,9 @@
 * `main.html` has been renamed `edit.html`. Currently main.html
   redirects to edit.html, but this will be eventually removed.
 
-* DEPRECATION: the flat-file backend for RCS is to be considered
-  deprecated. In future releases we will only support the redis
-  backend.
+* DEPRECATION: the flat-file backend for [RCS](https://github.com/att/rcloud/wiki/RCS)
+  is to be considered deprecated. In future releases we will only
+  support the redis backend.
 
 * Cascading style sheets held in assets will only be loaded if
   the filename matches `rcloud-*.css`.
