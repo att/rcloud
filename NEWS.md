@@ -41,9 +41,9 @@
 * The browser title now includes the notebook name.
 
 * Drag individual files onto the asset pane in order to upload them
-  as assets
+  as assets.
 
-* Press cmd- or ctrl- <enter> in the comment area to submit a comment
+* Press cmd-enter or ctrl-enter in the comment area to submit a comment.
 
 
 ### Installation/Administration
