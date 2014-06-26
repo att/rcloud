@@ -31,12 +31,7 @@ if grep -i ^exec.match.user conf/rcloud.conf >/dev/null 2>&1; then
     fi
 fi
 
-pid=`cat run/rserve.pid 2>/dev/null`
-if [ -n "$pid" ]; then
-    ## FIXME: should we check that it's the right process?
-    echo " - shutdown RCloud server $pid"
-    ${sudo_cmd} kill -INT "$pid"
-fi
+sh scripts/shutdown.sh
 
 ## FIXME: this should go - it's the wrong place anyway
 rm -f conf/rcloud.auth
