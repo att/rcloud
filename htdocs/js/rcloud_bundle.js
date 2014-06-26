@@ -3646,10 +3646,7 @@ RCloud.UI.init = function() {
                 e.preventDefault();
             } else
             if(!shell.notebook.model.read_only()) {
-              if($("#collapse-file-upload").hasClass('panel-collapse collapse')) {
-                $("#collapse-file-upload").css('height','auto');
-                $("#collapse-file-upload").removeClass('panel-collapse collapse').addClass('panel-collapse in');
-              }//To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
+              //To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
               //for (var i = 0; i < files.length; i++) {
               for (var i = 0; i < 1; i++) {
                 $('#file').val("");
@@ -3666,6 +3663,7 @@ RCloud.UI.init = function() {
         }
     });
     function upload_asset(to_notebook) {
+        RCloud.UI.right_panel.collapse($("#collapse-file-upload"), false);
         var replacing = false;
         if(to_notebook) {
             replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
@@ -3709,10 +3707,9 @@ RCloud.UI.init = function() {
 
         function failure(what) {
             var overwrite_click = function() {
-                $("#collapse-file-upload").trigger("size-changed");
                 rcloud.upload_file(true, function(err, value) {
                     if (err) {
-                        $("#file-upload-results").append(
+                        results_append(
                             bootstrap_utils.alert({
                                 "class": 'alert-danger',
                                 text: err
