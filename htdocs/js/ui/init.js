@@ -53,8 +53,6 @@ RCloud.UI.init = function() {
         if(dt.items.length > 1) {
             e.stopPropagation();
             e.preventDefault();
-            e.originalEvent.dataTransfer.effectAllowed= 'none';
-            e.originalEvent.dataTransfer.dropEffect= 'none';
         }else
         if (dt.types != null && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.contains('application/x-moz-file'))) {
             if (!shell.notebook.model.read_only()) {
@@ -66,8 +64,6 @@ RCloud.UI.init = function() {
             else {
                 e.stopPropagation();
                 e.preventDefault();
-                e.originalEvent.dataTransfer.effectAllowed= 'none';
-                e.originalEvent.dataTransfer.dropEffect= 'none';
             }
         }
     });
@@ -105,6 +101,11 @@ RCloud.UI.init = function() {
               }
             }
           $('#asset-drop-overlay').css({'display': 'none'});
+        },
+        "dragenter dragover": function(e) {
+            var dt = e.originalEvent.dataTransfer;
+            if(dt.items.length === 1 && !shell.notebook.model.read_only())
+                dt.dropEffect = 'copy';
         }
     });
     function upload_asset(to_notebook) {
