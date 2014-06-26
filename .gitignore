@@ -13,7 +13,8 @@ conf/rcloud.auth
 conf/github_info.txt
 conf/rcloud.conf*
 conf/selected.conf.txt
-rcloud.support_1.0-0.tar.gz
+rcloud.support_*.tar.gz
+rcloud.client_*.tar.gz
 REVISION
 run
 services

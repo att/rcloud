@@ -3,9 +3,9 @@
 * `main.html` has been renamed `edit.html`. Currently main.html
   redirects to edit.html, but this will be eventually removed.
 
-* DEPRECATION: the flat-file backend for RCS is to be considered
-  deprecated. In future releases we will only support the redis
-  backend.
+* DEPRECATION: the flat-file backend for [RCS](https://github.com/att/rcloud/wiki/RCS)
+  is to be considered deprecated. In future releases we will only
+  support the redis backend.
 
 * Cascading style sheets held in assets will only be loaded if
   the filename matches `rcloud-*.css`.
@@ -41,9 +41,9 @@
 * The browser title now includes the notebook name.
 
 * Drag individual files onto the asset pane in order to upload them
-  as assets
+  as assets.
 
-* Press cmd- or ctrl- <enter> in the comment area to submit a comment
+* Press cmd-enter or ctrl-enter in the comment area to submit a comment.
 
 
 ### Installation/Administration

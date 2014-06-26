@@ -280,6 +280,7 @@ RCloud.create = function(rcloud_ocaps) {
                     rcloud.modules[name] = result;
                     k(null, result);
                 } catch (e) {
+                    Promise.reject(e); // print error
                     var v = { "type": e.name,
                               "message": e.message
                             };
@@ -723,9 +724,9 @@ ui_utils.disconnection_error = function(msg, label) {
     button.click(function() {
         window.location =
             (window.location.protocol +
-             '//' + window.location.host +
-             '/login.R?redirect=' +
-             encodeURIComponent(window.location.pathname + window.location.search));
+            '//' + window.location.host +
+            '/login.R?redirect=' +
+            encodeURIComponent(window.location.pathname + window.location.search));
     });
     return result;
 };
@@ -763,7 +764,7 @@ ui_utils.fa_button = function(which, title, classname, style, container_is_self)
 {
     var icon = $.el.i({'class': which});
     var span = $.el.span({'class': 'fontawesome-button ' + (classname || '')},
-                         icon);
+                        icon);
     if(style) {
         for (var k in style)
             icon.style[k] = style[k];
@@ -899,7 +900,7 @@ ui_utils.set_ace_readonly = function(widget, readonly) {
 };
 
 ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
-                                  active_icon, inactive_icon) {
+                                    active_icon, inactive_icon) {
     function set_state(state) {
         item[0].checked = state;
         var icon = item.find('i');
@@ -932,7 +933,7 @@ ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
 // not that i'm at all happy with the look
 ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
     var ret = ui_utils.twostate_icon(item, on_check, on_uncheck,
-                                     'icon-check', 'icon-check-empty');
+                                    'icon-check', 'icon-check-empty');
     var base_enable = ret.enable;
     ret.enable = function(val) {
         // bootstrap menu items go in in an <li /> that takes the disabled class
@@ -1092,6 +1093,7 @@ ui_utils.editable = function(elem$, command) {
         });
         elem$.keydown(function(e) {
             if(e.keyCode === 13) {
+                e.preventDefault();
                 var result = elem$.text();
                 result = decode(result);
                 if(options().validate(result)) {
@@ -1276,16 +1278,63 @@ Notebook.Buffer.create_model = function(content, language) {
 Notebook.Asset.create_html_view = function(asset_model)
 {
     var filename_div = $("<li></li>");
-    var anchor = $("<a href='#'>" + asset_model.filename() + "</a>");
+    var anchor = $("<a href='#'></a>");
+    var filename_span = $("<span  style='cursor:pointer'>" + asset_model.filename() + "</span>");
     var remove = ui_utils.fa_button("icon-remove", "remove", '',
                                     { 'position': 'relative',
-                                      'left': '2px',
-                                      'opacity': '0.75'
+                                        'left': '2px',
+                                        'opacity': '0.75'
                                     }, true);
+    anchor.append(filename_span);
     filename_div.append(anchor);
     anchor.append(remove);
-    anchor.click(function() {
-        asset_model.controller.select();
+    var asset_old_name = filename_span.text();
+    var rename_file = function(v){
+        var new_asset_name = filename_span.text();
+        var old_asset_content = asset_model.content();
+        if (new_asset_name == "") {
+            filename_span.text(asset_old_name);
+            return;
+        }
+        if (Notebook.is_part_name(new_asset_name)) {
+            alert("Asset names cannot start with 'part[0-9]', sorry!");
+            filename_span.text(asset_old_name);
+            return;
+        }
+        var found = shell.notebook.model.has_asset(new_asset_name);
+        if (found){
+            found.controller.select();
+        }
+        else {
+            shell.notebook.controller
+            .append_asset(old_asset_content, new_asset_name)
+            .then(function (controller) {
+                controller.select();
+            });
+            asset_model.controller.remove(true);
+        }
+    };
+    function select(el) {
+        if(el.childNodes.length !== 1 || el.firstChild.nodeType != el.TEXT_NODE)
+            throw new Error('expecting simple element with child text');
+        var text = el.firstChild.textContent;
+        var range = document.createRange();
+        range.setStart(el.firstChild, text.lastIndexOf('/') + 1);
+        range.setEnd(el.firstChild, text.length);
+        return range;
+    }
+    var editable_opts = {
+        change: rename_file,
+        select: select,
+        validate: function(name) { return editor.validate_name(name); }
+    };
+    var editable_mode = !shell.notebook.model.read_only();
+    ui_utils.editable(filename_span, $.extend({allow_edit: editable_mode,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
+    filename_span.click(function() {
+        if(!asset_model.active()){
+            asset_model.controller.select();
+        }
+        filename_span.attr("contenteditable",""+!shell.notebook.model.read_only());
     });
     remove.click(function() {
         asset_model.controller.remove();
@@ -1454,6 +1503,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var enable = ui_utils.enable_fa_button;
     var disable = ui_utils.disable_fa_button;
 
+    var has_result = false;
+
     insert_cell_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             shell.insert_markdown_cell_before(cell_model.id());
@@ -1529,6 +1580,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     select_lang.on("change", function() {
         var l = select_lang.find("option:selected").text();
         cell_model.parent_model.controller.change_cell_language(cell_model, l);
+        result.clear_result();
     });
 
     col.append($("<div></div>").append(select_lang));
@@ -1615,6 +1667,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         // pubsub event handlers
 
         content_updated: function() {
+            // note: it's inconsistent, but not clearing the result for every
+            // change, just particular ones, because one may want to refer to
+            // the result if just typing but seems unlikely for other changes
             var range = widget.getSelection().getRange();
             var changed = change_content(cell_model.content());
             widget.getSelection().setSelectionRange(range);
@@ -1632,6 +1687,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             select_lang.val(cell_model.language());
         },
         result_updated: function(r) {
+            has_result = true;
             r_result_div.hide();
             r_result_div.html(r);
             r_result_div.slideDown(150);
@@ -1736,6 +1792,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
             this.show_result();
         },
+        clear_result: function() {
+            has_result = false;
+            disable(result_button);
+            this.show_source();
+        },
         set_readonly: function(readonly) {
             am_read_only = readonly;
             ui_utils.set_ace_readonly(widget, readonly);
@@ -1800,7 +1861,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             set_widget_height();
             widget.resize(true);
             disable(source_button);
-            enable(result_button);
+            if(has_result)
+                enable(result_button);
             // enable(hide_button);
             if (!am_read_only) {
                 enable(remove_button);
@@ -2291,7 +2353,7 @@ Notebook.create_model = function()
         update_files: function(files) {
             for(var i = 0; i<this.assets.length; ++i) {
                 var ghfile = files[this.assets[i].filename()];
-                this.assets[i].raw_url = ghfile.raw_url;;
+                // note this is where to get the asset raw_url if we need it again
                 this.assets[i].language(ghfile.language);
             }
             _.each(this.views, function(view) {
@@ -2365,6 +2427,7 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(version, notebook) {
+        current_gist_ = notebook;
         if (!_.isUndefined(notebook.files)) {
             var i;
             // we can't do much with a notebook with no name, so give it one
@@ -2407,7 +2470,6 @@ Notebook.create_controller = function(model)
             // we set read-only last because it ripples MVC events through to
             // make the display look impermeable
             model.read_only(version != null || notebook.user.login != rcloud.username());
-            current_gist_ = notebook;
         }
         return notebook;
     }
@@ -2544,6 +2606,10 @@ Notebook.create_controller = function(model)
     model.dishers.push({on_dirty: on_dirty});
 
     var result = {
+        current_gist: function() {
+            // are there reasons we shouldn't be exposing this?
+            return current_gist_;
+        },
         save_button: function(save_button) {
             if(arguments.length) {
                 save_button_ = save_button;
@@ -2630,7 +2696,7 @@ Notebook.create_controller = function(model)
                     changes = changes.concat(model.update_cell(prior));
                 }
             }
-            _.each(prior.views, function(v) { v.show_source(); });
+            _.each(prior.views, function(v) { v.clear_result(); });
             update_notebook(changes.concat(model.remove_cell(cell_model)))
                 .then(default_callback());
         },
@@ -2668,6 +2734,7 @@ Notebook.create_controller = function(model)
                            content.substring(point2));
             resplit(parts);
             cell_model.content(parts[0]);
+            _.each(cell_model.views, function(v) { v.clear_result(); });
             changes = changes.concat(model.update_cell(cell_model));
             // not great to do multiple inserts here - but not quite important enough to enable insert-n
             for(var i=1; i<parts.length; ++i)
@@ -2880,6 +2947,8 @@ var on_data = function(v) {
     oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
 };
 
+var could_not_initialize_error = "Could not initialize session. The GitHub backend might be down or you might have an invalid authorization token. (You could try clearing your cookies, for example).";
+
 function on_connect_anonymous_allowed(ocaps) {
     var promise;
     rcloud = RCloud.create(ocaps.rcloud);
@@ -2889,7 +2958,7 @@ function on_connect_anonymous_allowed(ocaps) {
         promise = rcloud.anonymous_session_init();
     }
     return promise.catch(function(e) {
-        RCloud.UI.fatal_dialog("Could not initalize session. GitHub backend might be down or you might have an invalid authorization token. (You could also try clearing your cookies, for example).", "Logout", "/logout.R");
+        RCloud.UI.fatal_dialog(could_not_initialize_error, "Logout", "/logout.R");
     });
 }
 
@@ -2927,7 +2996,7 @@ function rclient_promise(allow_anonymous) {
         if (error.message === "Authentication required") {
             RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R");
         } else {
-            RCloud.UI.fatal_dialog("Could not initalize session. GitHub backend might be down or you might have an invalid authorization token. (You could also try clearing your cookies, for example).", "Logout", "/logout.R");
+            RCloud.UI.fatal_dialog(could_not_initialize_error, "Logout", "/logout.R");
         }
         throw error;
     }).then(function() {
@@ -3547,11 +3616,22 @@ RCloud.UI.init = function() {
     var showOverlay_;
     //prevent drag in rest of the page except asset pane and enable overlay on asset pane
     $(document).on('dragstart dragenter dragover', function (e) {
-        e.stopPropagation();
-        e.preventDefault();
-        if(!shell.notebook.model.read_only()) {
-            $('#asset-drop-overlay').css({'display': 'block'});
-            showOverlay_ = true;
+        var dt = e.originalEvent.dataTransfer;
+        if(dt.items.length > 1) {
+            e.stopPropagation();
+            e.preventDefault();
+        }else
+        if (dt.types != null && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.contains('application/x-moz-file'))) {
+            if (!shell.notebook.model.read_only()) {
+                e.stopPropagation();
+                e.preventDefault();
+                $('#asset-drop-overlay').css({'display': 'block'});
+                showOverlay_ = true;
+            }
+            else {
+                e.stopPropagation();
+                e.preventDefault();
+            }
         }
     });
     $(document).on('drop dragleave', function (e)  {
@@ -3568,13 +3648,15 @@ RCloud.UI.init = function() {
     //allow asset drag from local to asset pane and highlight overlay for drop area in asset pane
     $('#scratchpad-wrapper').bind({
         drop: function (e) {
+            e = e.originalEvent || e;
+            var files = (e.files || e.dataTransfer.files);
+            var dt = e.dataTransfer;
+            if(dt.items.length>1) {
+                e.stopPropagation();
+                e.preventDefault();
+            } else
             if(!shell.notebook.model.read_only()) {
-              e = e.originalEvent || e;
-              var files = (e.files || e.dataTransfer.files);
-              if($("#collapse-file-upload").hasClass('panel-collapse collapse')) {
-                $("#collapse-file-upload").css('height','auto');
-                $("#collapse-file-upload").removeClass('panel-collapse collapse').addClass('panel-collapse in');
-              }//To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
+              //To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
               //for (var i = 0; i < files.length; i++) {
               for (var i = 0; i < 1; i++) {
                 $('#file').val("");
@@ -3583,9 +3665,15 @@ RCloud.UI.init = function() {
               }
             }
           $('#asset-drop-overlay').css({'display': 'none'});
+        },
+        "dragenter dragover": function(e) {
+            var dt = e.originalEvent.dataTransfer;
+            if(dt.items.length === 1 && !shell.notebook.model.read_only())
+                dt.dropEffect = 'copy';
         }
     });
     function upload_asset(to_notebook) {
+        RCloud.UI.right_panel.collapse($("#collapse-file-upload"), false);
         var replacing = false;
         if(to_notebook) {
             replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
@@ -3629,10 +3717,9 @@ RCloud.UI.init = function() {
 
         function failure(what) {
             var overwrite_click = function() {
-                $("#collapse-file-upload").trigger("size-changed");
                 rcloud.upload_file(true, function(err, value) {
                     if (err) {
-                        $("#file-upload-results").append(
+                        results_append(
                             bootstrap_utils.alert({
                                 "class": 'alert-danger',
                                 text: err
@@ -4156,8 +4243,13 @@ RCloud.UI.scratchpad = {
                 $('#new-asset').show();
         }
     }, update_asset_url: function() {
+        // this function probably belongs elsewhere
+        function make_asset_url(model) {
+            return window.location.protocol + '//' + window.location.host + '/notebook.R/' +
+                    model.parent_model.controller.current_gist().id + '/' + model.filename();
+        }
         if(this.current_model)
-            $('#asset-link').attr('href', this.current_model.raw_url);
+            $('#asset-link').attr('href', make_asset_url(this.current_model));
     }, clear: function() {
         if(!this.exists)
             return;

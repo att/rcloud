@@ -735,7 +735,8 @@ var editor = function () {
                 p.then(open_and_select);
         }
         if(gistname === current_.notebook) {
-            star_notebook_button_.set_state(my_stars_[gistname]);
+            if(!_.isUndefined(star_notebook_button_) && !_.isNull(star_notebook_button_))
+                star_notebook_button_.set_state(my_stars_[gistname]);
             $('#curr-star-count').text(num_stars_[gistname] || 0);
         }
         if(my_friends_[user]) {
@@ -797,6 +798,7 @@ var editor = function () {
     }
 
     function update_notebook_from_gist(result, history, selroot) {
+        document.title = result.description+" - RCloud";
         var t = performance.now();
         var user = result.user.login, gistname = result.id;
         // we only receive history here if we're at HEAD, so use that if we get
