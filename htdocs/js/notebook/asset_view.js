@@ -30,8 +30,18 @@ Notebook.Asset.create_html_view = function(asset_model)
         }
         var found = shell.notebook.model.has_asset(new_asset_name);
         if (found){
-            filename_span.text(asset_old_name);
-            found.controller.select();
+            var msg = "Asset with the same name is aready exists, do you want to replace it?";
+            if (confirm(msg)){
+                found.controller.remove(true);
+                shell.notebook.controller.append_asset(old_asset_content, new_asset_name)
+                    .then(function (controller) {
+                        asset_model.controller.remove(true);
+                        controller.select();
+                    });
+            } else {
+                filename_span.text(asset_old_name);
+                found.controller.select();
+            }
         }
         else {
             shell.notebook.controller
