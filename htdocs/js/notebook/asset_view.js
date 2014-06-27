@@ -19,7 +19,7 @@ Notebook.Asset.create_html_view = function(asset_model)
         }
         var new_asset_name = filename_span.text();
         var old_asset_content = asset_model.content();
-        if (new_asset_name === "") {
+        if (new_asset_name==="") {
             filename_span.text(asset_old_name);
             return;
         }
