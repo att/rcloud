@@ -30,6 +30,7 @@ Notebook.Asset.create_html_view = function(asset_model)
         }
         var found = shell.notebook.model.has_asset(new_asset_name);
         if (found){
+            filename_span.text(asset_old_name);
             found.controller.select();
         }
         else {
