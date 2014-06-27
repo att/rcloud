@@ -36,6 +36,14 @@
         return _.isString(v) ? '"' + v + '"' : v;
     }
 
+    function comma_sep(frame, args, ctx) {
+        var elems = _.map(args, function(arg) { return expression(frame, arg, ctx); });
+        return {
+            lambda: _.some(elems, function(e) { return e.lambda; }),
+            text: _.pluck(elems, 'text').join(', ')
+        };
+    }
+
     var operators = {
         "$": bin_op('.'),
         "-": una_or_bin_op('-'),
@@ -46,9 +54,9 @@
             return "Math.pow(" + left + ", " + right + ")";
         }),
         "c" : function(frame, args, ctx) {
-            return '[' + _.map(args.slice(1), function(arg) {
-                return value(arg); })
-                + ']';
+            var elems = comma_sep(frame, args.slice(1), ctx);
+            return {lambda: elems.lambda,
+                    text: '[' + elems.text + ']'};
         },
         "[": function(frame, args, ctx) {
             var ray = expression(frame, args[1], ctx),
@@ -58,19 +66,19 @@
         },
         default: function(frame, args, ctx) { // parens or function application
             var fun = expression(frame, args[0], ctx),
-                memo = {lambda: fun.lambda, text: (fun.text==='(' ? '' : fun.text) + '('};
-            var call = _.foldl(args.slice(1), function(mem, arg, i) {
-                var expr = expression(frame, arg, ctx),
-                    comma = i>0 ? ', ' : '';
-                return {lambda: mem.lambda || expr.lambda, text: mem.text + comma + expr.text};
-            }, memo);
-            call.text += ')';
-            return call;
+                elems = comma_sep(frame, args.slice(1), ctx);
+            return {
+                lambda: elems.lambda,
+                text: (fun.text==='(' ? '' : fun.text) + '(' +
+                    elems.text + ')'
+            };
         }
     };
 
     function lambda_body(frame, exprs, ctx) {
-        var body = _.map(exprs, function(arg) { return expression(frame, arg, ctx).text; });
+        var body = _.map(exprs, function(arg) {
+            return expression(frame, arg, ctx).text;
+        });
         body[body.length-1] = "return " + body[body.length-1];
         var cr = "\n", indent = Array(ctx.indent+1).join("\t");
         return indent + body.join(";" + cr + indent) + ";";
@@ -80,11 +88,11 @@
         ctx.indent++;
         var args = sexp[0].slice(1);
         var cr = "\n";
-        var text = "function (" + args.join() + ") {" + cr +
+        var text = "(function (" + args.join() + ") {" + cr +
             lambda_body(frame, sexp.slice(1), ctx) + cr;
         ctx.indent--;
         var indent = Array(ctx.indent+1).join("\t");
-        text += indent + "}";
+        text += indent + "})";
         // what? not a lambda? no, we just don't need to wrap it as one
         // if it ends up evaluating into a lambda that's cool
         return {lambda: false, text: text};
@@ -161,6 +169,8 @@
             return leaf(frame, sexp, ctx);
     }
 
+    var wdcplot_expr_num = 1;
+
     /* a wdcplot argument may be
      - null
      - a column accessor or special variable marked with class attribute
@@ -169,8 +179,6 @@
      - otherwise we build javascript from the expression tree; if it contains
      field names identifiers, it's a lambda(key,value) else execute it immediately
      */
-    var wdcplot_expr_num = 1;
-
     function argument(frame, sexp) {
         if(sexp==null)
             return null;
@@ -195,6 +203,8 @@
             return sexp;
         var ctx = {indent:0};
         var js_expr = expression(frame, sexp, ctx);
+        // incantation to make code show up in the debugger
+        js_expr.text += "\n//@ sourceURL=wdcplot.expr." + wdcplot_expr_num++ + ".js";
         if(js_expr.lambda) {
             // it seems kind of screwy to use eval here but it has the nice property
             // of using a closure, which new Function() does not, which makes it
@@ -205,8 +215,6 @@
         else {
             // the expression didn't involve any variables, so we can execute it now
             return eval(js_expr.text);
-        // incantation to make code show up in the debugger
-        js_expr.text += "\n//@ sourceURL=wdcplot.expr." + wdcplot_expr_num++ + ".js";
         }
     }
 
