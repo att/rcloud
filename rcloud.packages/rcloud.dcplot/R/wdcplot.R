@@ -3,11 +3,6 @@ wdcplot.column <- function(name) structure(name, wdcplot.placeholder = "column")
 
 wdcplot <- function(data, dims=NULL, groups=NULL, charts=NULL)
 {
-
-  path <- system.file("javascript", "wdcplot-rcloud.js", package="rcloud.support");
-  caps <- rcloud.install.js.module("wdcplot",
-                                   paste(readLines(path), collapse='\n'))
-
   # make a pseudo-environment which maps columns and special variables to placeholders
   specials <- list(..index.. = wdcplot.special.variable('index'),
                    ..value.. = wdcplot.special.variable('value'),
@@ -32,5 +27,5 @@ wdcplot <- function(data, dims=NULL, groups=NULL, charts=NULL)
   groups2 <- bfp(substitute(groups))
   charts2 <- bfp(substitute(charts))
 
-  deferred.rcloud.result(function() caps$handle_dcplot(list("dcplot", data, dims2, groups2, charts2)))
+  deferred.rcloud.result(function() dcplot.caps$handle_dcplot(list("dcplot", data, dims2, groups2, charts2)))
 }
