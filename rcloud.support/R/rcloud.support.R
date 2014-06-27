@@ -193,7 +193,6 @@ update.solr <- function(notebook, starcount){
 
   ## FIXME: gracefully handle unavailability
   curlTemplate <- paste0(url, "/update/json?commit=true")
-
   content.files <- notebook$content$files
   fns <- as.vector(sapply(content.files, function(o) o$filename))
   ## only index cells for now ...
@@ -258,7 +257,7 @@ rcloud.search <-function(query) {
             response.high[[i]]$content <- "[{\"filename\":\"part1.R\",\"content\":[]}]"
 	    parts.content <- fromJSON(response.high[[i]]$content)
           }
-	  if(!is.null(response.high[[i]]$comments)) parts.content[[length(parts.content)+1]] <- list(filename="comments", content=response.high[[i]]$comments)
+          if(!is.null(response.high[[i]]$comments)) parts.content[[length(parts.content)+1]] <- list(filename="comments", content=response.high[[i]]$comments)
           response.high[[i]]$content <- toJSON(parts.content)
                                         #Handling HTML content
           response.high[[i]]$content <- gsub("<","&lt;",response.high[[i]]$content)
