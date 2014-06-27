@@ -14,15 +14,14 @@ requirejs_config_obj = {
         "jquery.scrollto": ["jquery"],
         "bootstrap": ["jquery"],
         "../../shell_tab": ["rcloud_bundle", "../../editor_tab"],
-        "../../editor_tab": ["rcloud_bundle", "laconic"],
-        "rcloud_bundle": ["ace", "dc"]
+        "../../editor_tab": ["rcloud_bundle", "laconic", "tree.jquery"],
+        "rcloud_bundle": ["ace"]
     }
 };
 
 var common_deps = [
     // AMD-compatible
-    "bluebird", "underscore",
-    "d3",
+    "bluebird", "underscore", "d3",
     // soon-to-be-amdized
     "jquery-1.10.2",
     // other
