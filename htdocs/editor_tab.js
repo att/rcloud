@@ -898,7 +898,7 @@ var editor = function () {
         comment_div
             .append("div")
             .attr("class", "comment-header")
-            .style({"max-width":"40%"})
+            .style({"max-width":"40%","width":"auto"})
             .text(function(d) { return d.user.login; });
         comment_div
             .append("span")
