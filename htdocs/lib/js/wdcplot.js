@@ -169,6 +169,8 @@
      - otherwise we build javascript from the expression tree; if it contains
      field names identifiers, it's a lambda(key,value) else execute it immediately
      */
+    var wdcplot_expr_num = 1;
+
     function argument(frame, sexp) {
         if(sexp==null)
             return null;
@@ -203,6 +205,8 @@
         else {
             // the expression didn't involve any variables, so we can execute it now
             return eval(js_expr.text);
+        // incantation to make code show up in the debugger
+        js_expr.text += "\n//@ sourceURL=wdcplot.expr." + wdcplot_expr_num++ + ".js";
         }
     }
 
