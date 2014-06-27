@@ -198,9 +198,7 @@ update.solr <- function(notebook, starcount){
   fns <- as.vector(sapply(content.files, function(o) o$filename))
   ## only index cells for now ...
   ## FIXME: do we really want to exclude the scratch file?
-  #indexable <- grep("^part.*\\.(R|md|py)$", fns)
   if (length(content.files)) {
-    #content.files <- content.files[indexable]
     sizes <- as.numeric(sapply(content.files, function(o) o$size))
     size <- sum(sizes, na.rm=TRUE)
     desc <- notebook$content$description
@@ -244,9 +242,9 @@ rcloud.search <-function(query) {
     if(length(response.docs) > 0){
       for(i in 1:length(response.high)){
         if(length(response.high[[i]]) != 0){
-		  if(!is.null(response.high[[i]]$content)) {
+	  if(!is.null(response.high[[i]]$content)) {
             parts.content <- fromJSON(response.high[[i]]$content)
-		    for(j in 1:length(parts.content)){
+	    for(j in 1:length(parts.content)){
               strmatched <- grep("open_b_close",strsplit(parts.content[[j]]$content,'\n')[[1]],value=T,fixed=T)
               if(length(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1]) !=0)) {
                 if(which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])%in%1 | (which(strsplit(parts.content[[j]]$content,'\n')[[1]] == strmatched[1])%in%length(strsplit(parts.content[[j]]$content,'\n')[[1]]))) {
@@ -256,11 +254,11 @@ rcloud.search <-function(query) {
               } else
                 parts.content[[j]]$content <- grep("open_b_close",strsplit(parts.content[[j]]$content,'\n')[[1]],value=T,ignore.case=T)
             }
-		  } else {
-		    response.high[[i]]$content <- "[{\"filename\":\"part1.R\",\"content\":[]}]"
-			parts.content <- fromJSON(response.high[[i]]$content)
-		  }
-		  if(!is.null(response.high[[i]]$comments)) parts.content[[length(parts.content)+1]] <- list(filename="comments", content=response.high[[i]]$comments)
+	  } else {
+            response.high[[i]]$content <- "[{\"filename\":\"part1.R\",\"content\":[]}]"
+	    parts.content <- fromJSON(response.high[[i]]$content)
+          }
+	  if(!is.null(response.high[[i]]$comments)) parts.content[[length(parts.content)+1]] <- list(filename="comments", content=response.high[[i]]$comments)
           response.high[[i]]$content <- toJSON(parts.content)
                                         #Handling HTML content
           response.high[[i]]$content <- gsub("<","&lt;",response.high[[i]]$content)
