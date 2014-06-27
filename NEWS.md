@@ -45,6 +45,25 @@
 
 * Press cmd-enter or ctrl-enter in the comment area to submit a comment.
 
+* Rename assets by clicking on the filename.
+
+* Lux and dcplot are now "RCloud packages".  They are installed
+  automatically by `fresh_start.sh` (and `build.sh`), but any notebooks
+  that use `wgeoplot` or `wtour` will need to `require(rcloud.lux)`, and
+  andy that use `wdcplot` will need to `require(rcloud.dcplot)`.
+
+* Fixed an issue with arrays in `wdcplot` expressions, and arrays
+  can now contain `wdcplot` placeholders (e.g. dataframe columns).
+
+* Fixed an issue where downloaded files were being named `download`.
+
+* Fixed erroneous cell results where there were no cell results.
+
+* The asset editor now has a JavaScript mode.
+
+* Fixed a couple of issues with R code completion.
+
+
 
 ### Installation/Administration
 
