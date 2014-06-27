@@ -3,7 +3,7 @@
 requirejs.config({
     paths: {
         "crossfilter": "//cdnjs.cloudflare.com/ajax/libs/crossfilter/1.3.7/crossfilter",
-        "dc": "http://cdnjs.cloudflare.com/ajax/libs/dc/1.7.0/dc.js"
+        "dc": "//cdnjs.cloudflare.com/ajax/libs/dc/1.7.0/dc"
     },
     "shim": {
         "crossfilter": {
