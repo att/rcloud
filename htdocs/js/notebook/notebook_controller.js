@@ -53,7 +53,9 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(version, notebook) {
+        var is_read_only = version != null || notebook.user.login != rcloud.username();
         current_gist_ = notebook;
+        model.read_only(is_read_only);
         if (!_.isUndefined(notebook.files)) {
             var i;
             // we can't do much with a notebook with no name, so give it one
@@ -92,10 +94,8 @@ Notebook.create_controller = function(model)
                 asset_controller.select();
             else
                 RCloud.UI.scratchpad.set_model(null);
-
-            // we set read-only last because it ripples MVC events through to
-            // make the display look impermeable
-            model.read_only(version != null || notebook.user.login != rcloud.username());
+            // set read-only again to trickle MVC events through to the display :-(
+            model.read_only(is_read_only);
         }
         return notebook;
     }

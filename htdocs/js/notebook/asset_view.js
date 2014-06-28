@@ -59,9 +59,8 @@ Notebook.Asset.create_html_view = function(asset_model)
     var editable_mode = !shell.notebook.model.read_only();
     ui_utils.editable(filename_span, $.extend({allow_edit: editable_mode,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
     filename_span.click(function() {
-        if(!asset_model.active()){
+        if(!asset_model.active())
             asset_model.controller.select();
-        }
     });
     remove.click(function() {
         asset_model.controller.remove();

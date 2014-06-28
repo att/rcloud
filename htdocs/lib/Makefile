@@ -26,10 +26,8 @@ dependencies_bundle.js: \
 	js/require.js \
 	js/bluebird.js \
 	js/colorbrewer.js \
-	js/crossfilter.js \
 	js/d3.js \
 	js/dataframe.js \
-	js/dc.js \
 	js/dcplot.js \
 	js/hl.min.js \
 	js/jquery-1.10.2.js \

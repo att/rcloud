@@ -1321,10 +1321,8 @@ Notebook.Asset.create_html_view = function(asset_model)
     var editable_mode = !shell.notebook.model.read_only();
     ui_utils.editable(filename_span, $.extend({allow_edit: editable_mode,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
     filename_span.click(function() {
-        if(!asset_model.active()){
+        if(!asset_model.active())
             asset_model.controller.select();
-        }
-        filename_span.attr("contenteditable",""+!shell.notebook.model.read_only());
     });
     remove.click(function() {
         asset_model.controller.remove();
@@ -2417,7 +2415,9 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(version, notebook) {
+        var is_read_only = version != null || notebook.user.login != rcloud.username();
         current_gist_ = notebook;
+        model.read_only(is_read_only);
         if (!_.isUndefined(notebook.files)) {
             var i;
             // we can't do much with a notebook with no name, so give it one
@@ -2456,10 +2456,8 @@ Notebook.create_controller = function(model)
                 asset_controller.select();
             else
                 RCloud.UI.scratchpad.set_model(null);
-
-            // we set read-only last because it ripples MVC events through to
-            // make the display look impermeable
-            model.read_only(version != null || notebook.user.login != rcloud.username());
+            // set read-only again to trickle MVC events through to the display :-(
+            model.read_only(is_read_only);
         }
         return notebook;
     }
