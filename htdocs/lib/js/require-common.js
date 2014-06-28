@@ -7,10 +7,6 @@ requirejs_config_obj = {
         "ace": "../ace_bundle"
     },
     "shim": {
-        "crossfilter": {
-            deps: [],
-            exports: "crossfilter"
-        },
         "tree.jquery": ["jquery"],
         "jquery-ui-1.10.4.custom": ["jquery"],
         laconic: ["jquery"],
@@ -18,19 +14,17 @@ requirejs_config_obj = {
         "jquery.scrollto": ["jquery"],
         "bootstrap": ["jquery"],
         "../../shell_tab": ["rcloud_bundle", "../../editor_tab"],
-        "../../editor_tab": ["rcloud_bundle", "laconic"],
-        "rcloud_bundle": ["ace", "dc"]
+        "../../editor_tab": ["rcloud_bundle", "laconic", "tree.jquery"],
+        "rcloud_bundle": ["ace"]
     }
 };
 
 var common_deps = [
     // AMD-compatible
-    "bluebird", "underscore",
-    "d3", "dc", "dcplot", "dataframe", "wdcplot",
+    "bluebird", "underscore", "d3",
     // soon-to-be-amdized
     "jquery-1.10.2",
     // other
-    "crossfilter",
     "hl.min", "jDataView", "jquery.cookies.2.2.0",
     "jquery.scrollto", "laconic", "jquery-ui-1.10.4.custom",
     "bootstrap", "peg-0.6.2.min",
