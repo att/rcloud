@@ -874,19 +874,19 @@ var editor = function () {
                 var current_user = username_;
                 var is_editable = ((commentor==current_user)?true:false);
                 if(is_editable){
-                    d3.select($(this).children()[0]).style({"visibility":"visible"});
-                    d3.select($(this).children()[1]).style({"visibility":"hidden"});
+                    $('.comment-header-close', this).show();
+                    $('.comment-header', this).hide();
                 }
             })
             .on("mouseout",function(d){
-                d3.select($(this).children()[0]).style({"visibility":"hidden"});
-                d3.select($(this).children()[1]).style({"visibility":"visible"});
+                $('.comment-header-close', this).hide();
+                $('.comment-header', this).show();
             })
             .attr("comment_id",function(d) { return d.id; });
         comment_div
             .append("i")
-            .attr("class", "icon-remove comment-header")
-            .style({"visibility":"hidden"})
+            .attr("class", "icon-remove comment-header-close")
+            .style({"visibility":"visible"})
             .on("click", function (d) {
                 var commentor = d.user.login;
                 var current_user = username_;
