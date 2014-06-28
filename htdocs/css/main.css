@@ -591,7 +591,8 @@ li.jqtree-selected .notebook-commands {
 
 .comment-header-close {
     float: right;
-    color: #aaa
+    color: #aaa;
+    display:none;
 }
 
 .comment-body {

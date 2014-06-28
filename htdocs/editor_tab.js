@@ -886,7 +886,6 @@ var editor = function () {
         comment_div
             .append("i")
             .attr("class", "icon-remove comment-header-close")
-            .style({"visibility":"hidden"})
             .on("click", function (d) {
                 var commentor = d.user.login;
                 var current_user = username_;
