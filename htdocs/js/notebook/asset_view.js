@@ -30,18 +30,8 @@ Notebook.Asset.create_html_view = function(asset_model)
         }
         var found = shell.notebook.model.has_asset(new_asset_name);
         if (found){
-            var msg = "Asset with the same name is aready exists, do you want to replace it?";
-            if (confirm(msg)){
-                found.controller.remove(true);
-                shell.notebook.controller.append_asset(old_asset_content, new_asset_name)
-                    .then(function (controller) {
-                        asset_model.controller.remove(true);
-                        controller.select();
-                    });
-            } else {
-                filename_span.text(asset_old_name);
-                found.controller.select();
-            }
+            filename_span.text(asset_old_name);
+            found.controller.select();
         }
         else {
             shell.notebook.controller
@@ -67,7 +57,7 @@ Notebook.Asset.create_html_view = function(asset_model)
         validate: function(name) { return editor.validate_name(name); }
     };
     var editable_mode = !shell.notebook.model.read_only();
-    ui_utils.editable(filename_span, $.extend({allow_edit: true,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
+    ui_utils.editable(filename_span, $.extend({allow_edit: editable_mode,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
     filename_span.click(function() {
         if(!asset_model.active()){
             asset_model.controller.select();
