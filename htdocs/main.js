@@ -8,7 +8,7 @@ function main() {
     RCloud.UI.init();
     RCloud.session.init().then(function() {
         if(!rcloud.search)
-            $("#search").text("Search engine not enabled on server");
+            $("#search-wrapper").text("Search engine not enabled on server");
         var opts = {};
         var promise = Promise.cast(true);
         if (location.search.length > 0) {
