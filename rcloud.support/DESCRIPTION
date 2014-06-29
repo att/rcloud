@@ -8,4 +8,4 @@ Depends: base64enc, rjson, parallel
 Imports: uuid, RCurl, unixtools, Rserve (>= 1.8), rediscc (>= 0.1-1), jsonlite, github, knitr, markdown, png, Cairo, httr
 NOTE: --- packages that are not on CRAN/RForge.net *must* be in Suggests! ---
 Suggests: FastRWeb, RSclient, rcloud.client
-License: EPL
+License: MIT
