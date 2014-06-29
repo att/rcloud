@@ -13,16 +13,8 @@ Notebook.Asset.create_html_view = function(asset_model)
     anchor.append(remove);
     var asset_old_name = filename_span.text();
     var rename_file = function(v){
-        if(shell.notebook.model.read_only()){
-            filename_span.text(asset_old_name);
-            return;
-        }
         var new_asset_name = filename_span.text();
         var old_asset_content = asset_model.content();
-        if (new_asset_name==="") {
-            filename_span.text(asset_old_name);
-            return;
-        }
         if (Notebook.is_part_name(new_asset_name)) {
             alert("Asset names cannot start with 'part[0-9]', sorry!");
             filename_span.text(asset_old_name);
@@ -56,8 +48,8 @@ Notebook.Asset.create_html_view = function(asset_model)
         select: select,
         validate: function(name) { return editor.validate_name(name); }
     };
-    var editable_mode = !shell.notebook.model.read_only();
-    ui_utils.editable(filename_span, $.extend({allow_edit: editable_mode,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
+    if(!shell.notebook.model.read_only())
+        ui_utils.editable(filename_span, $.extend({allow_edit: true,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
     filename_span.click(function() {
         if(!asset_model.active())
             asset_model.controller.select();
