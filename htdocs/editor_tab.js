@@ -711,7 +711,8 @@ var editor = function () {
         }
         var p;
         if(selroot === true)
-            selroot = my_stars_[gistname] ? 'interests' : 'alls';
+            selroot = my_stars_[gistname] ? 'interests' :
+                my_friends_[user] ? 'friends' : 'alls';
         if(my_stars_[gistname]) {
             p = update_tree_entry('interests', user, gistname, entry, true);
             if(selroot==='interests')
