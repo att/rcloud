@@ -846,3 +846,23 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
     height:100%;
     width:100%;
 }
+
+/******************************************************************************/
+
+/* from http://en.wikipedia.org/wiki/ANSI_escape_code
+   We're using Windows XP colors. They're ugly but they're darker, so they
+   work better in our bright-background cells. 
+*/
+.vt100 .color-30 { color: black; }
+.vt100 .color-31 { color: rgb(128,0,0); }
+.vt100 .color-32 { color: rgb(0,128,0); }
+.vt100 .color-33 { color: rgb(128,128,0); }
+.vt100 .color-34 { color: rgb(0,0,128); }
+.vt100 .color-35 { color: rgb(128,0,128); }
+.vt100 .color-36 { color: rgb(0,128,128); }
+.vt100 .color-37 { color: rgb(128,128,128); }
+
+pre > .vt100 {
+    padding: 16px;
+    display: block;
+}
