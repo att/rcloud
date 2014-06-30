@@ -1292,10 +1292,6 @@ Notebook.Asset.create_html_view = function(asset_model)
     var rename_file = function(v){
         var new_asset_name = filename_span.text();
         var old_asset_content = asset_model.content();
-        if (new_asset_name == "") {
-            filename_span.text(asset_old_name);
-            return;
-        }
         if (Notebook.is_part_name(new_asset_name)) {
             alert("Asset names cannot start with 'part[0-9]', sorry!");
             filename_span.text(asset_old_name);
@@ -1303,6 +1299,7 @@ Notebook.Asset.create_html_view = function(asset_model)
         }
         var found = shell.notebook.model.has_asset(new_asset_name);
         if (found){
+            filename_span.text(asset_old_name);
             found.controller.select();
         }
         else {
@@ -1319,8 +1316,8 @@ Notebook.Asset.create_html_view = function(asset_model)
             throw new Error('expecting simple element with child text');
         var text = el.firstChild.textContent;
         var range = document.createRange();
-        range.setStart(el.firstChild, text.lastIndexOf('/') + 1);
-        range.setEnd(el.firstChild, text.length);
+        range.setStart(el.firstChild, 0);
+        range.setEnd(el.firstChild, (text.lastIndexOf('.')>0?text.lastIndexOf('.'):text.length));
         return range;
     }
     var editable_opts = {
@@ -1328,8 +1325,8 @@ Notebook.Asset.create_html_view = function(asset_model)
         select: select,
         validate: function(name) { return editor.validate_name(name); }
     };
-    var editable_mode = !shell.notebook.model.read_only();
-    ui_utils.editable(filename_span, $.extend({allow_edit: editable_mode,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
+    if(!shell.notebook.model.read_only())
+        ui_utils.editable(filename_span, $.extend({allow_edit: true,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
     filename_span.click(function() {
         if(!asset_model.active())
             asset_model.controller.select();
@@ -3518,14 +3515,15 @@ var fatal_dialog_;
 
 RCloud.UI.fatal_dialog = function(message, label, href) {
     if (_.isUndefined(fatal_dialog_)) {
-        var default_button = $("<span class='btn btn-primary' style='float:right'>" + label + "</span>"),
+        var default_button = $("<button type='submit' class='btn btn-primary' style='float:right'>" + label + "</span>"),
             ignore_button = $("<span class='btn' style='float:right'>Ignore</span>"),
             body = $('<div />')
                 .append('<h1>Aw, shucks</h1>',
                         '<p>' + message + '</p>',
                         default_button, ignore_button,
-                       '<div style="clear: both;"></div>');
-        default_button.click(function() {
+                        '<div style="clear: both;"></div>');
+        default_button.click(function(e) {
+            e.preventDefault();
             window.location = href;
         });
         ignore_button.click(function() {
@@ -3537,6 +3535,9 @@ RCloud.UI.fatal_dialog = function(message, label, href) {
                             .append($('<div class="modal-body" />')
                                     .append(body))));
         $("body").append(fatal_dialog_);
+        fatal_dialog_.on("shown.bs.modal", function() {
+            default_button.focus();
+        });
     }
     fatal_dialog_.modal({keyboard: false});
 };

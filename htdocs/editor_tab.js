@@ -166,23 +166,6 @@ var editor = function () {
             copy_name = base + " " + ++n;
         while(map[copy_name]);
         return copy_name;
-/*
-        var fake_node = { label: description };
-        var bs = d3.bisector(compare_nodes);
-        var i = bs.left(parent.children, fake_node);
-        if(i >= parent.children.length || compare_nodes(parent.children[i], fake_node))
-            return description;
-        var match;
-        if((match = trnexp.exec(parent.children[i].label))) {
-            var base = match[0], n = +match[1];
-            var copy_name;
-            do
-                copy_name = base + " " + ++n;
-            while(++i < parent.children.length && parent.children[i].label === copy_name);
-            return copy_name;
-        }
-        else return node.label + " 1";
-*/
     }
 
 
@@ -728,7 +711,8 @@ var editor = function () {
         }
         var p;
         if(selroot === true)
-            selroot = my_stars_[gistname] ? 'interests' : 'alls';
+            selroot = my_stars_[gistname] ? 'interests' :
+                my_friends_[user] ? 'friends' : 'alls';
         if(my_stars_[gistname]) {
             p = update_tree_entry('interests', user, gistname, entry, true);
             if(selroot==='interests')

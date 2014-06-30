@@ -7,4 +7,4 @@ Description: rcloud.client provides an R interface for communicating
   with an RCloud instance. It's used internally by some of the RCloud
   http entry points but might be more generally useful.
 Depends: RSclient
-License: EPL
+License: MIT
