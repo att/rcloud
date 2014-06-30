@@ -23,7 +23,27 @@ rcloud.exec.python <- function(cmd)
   if (.session$device.pixel.ratio > 1) {
     .session$python.runner$run_magic("config InlineBackend.figure_format = 'retina'")
   }
-  .session$python.runner$run_cmd(cmd)
+  tryCatch({
+    .session$python.runner$run_cmd(cmd)
+  }, error=function(e) {
+    # FIXME: we're signalling exceptions in-band by creating a new
+    # output type "pyexception". This could actually clash with
+    # ipython's output.
+    # See to.chunk in session.python.eval
+    msg <- e$`message`
+    cat(msg, file="/tmp/python_rcloud.log", append=TRUE)
+
+    # In addition, and this is a gigantic kludge, for some reason
+    # the exception message comes back with "Python exception: <type 'exceptions.Exception'> "
+    # appended to it. So we test for that prefix, bail if the prefix is not there,
+    # and trim it away to get the JSON payload.
+    prefix <- substr(msg, 1, 48)
+    if (prefix != "Python exception: <type 'exceptions.Exception'> ") {
+      stop("Internal Error: python exception was not returned as expected")
+    }
+    list(c(output_type="pyexception",
+           text=fromJSON(substr(msg, 49, nchar(msg)))$traceback))
+  })
 }
 
 .shutdown.python <- function() {
