@@ -1,5 +1,5 @@
 requirejs_config_obj = {
-    "baseUrl": "lib/js",
+    "baseUrl": "/lib/js",
     waitSeconds: 30,
     paths: {
         "jquery": "jquery-1.10.2",
