@@ -419,3 +419,25 @@ ui_utils.scroll_to_after = function($sel, duration) {
     var y = $parent.scrollTop() + $sel.position().top +  $sel.outerHeight();
     $parent.scrollTo(null, y, opts);
 };
+
+ui_utils.prevent_backspace = function($doc) {
+    // Prevent the backspace key from navigating back.
+    // from http://stackoverflow.com/a/2768256/676195
+    $doc.unbind('keydown').bind('keydown', function (event) {
+        var doPrevent = false;
+        if (event.keyCode === 8) {
+            var d = event.srcElement || event.target;
+            if ((d.tagName.toUpperCase() === 'INPUT' && (d.type.toUpperCase() === 'TEXT' || d.type.toUpperCase() === 'PASSWORD' || d.type.toUpperCase() === 'FILE' || d.type.toUpperCase() === 'EMAIL' ))
+                || d.tagName.toUpperCase() === 'TEXTAREA') {
+                doPrevent = d.readOnly || d.disabled;
+            }
+            else {
+                doPrevent = true;
+            }
+        }
+
+        if (doPrevent) {
+            event.preventDefault();
+        }
+    });
+};

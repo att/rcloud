@@ -9,6 +9,7 @@ RCloud.UI.help_frame = {
         $("#help-body").attr('data-widgetheight', "greedy");
         $("#collapse-help").trigger('size-changed');
         RCloud.UI.left_panel.collapse($("#collapse-help"), false);
+        ui_utils.prevent_backspace($("#help-frame").contents());
     },
     display_content: function(content) {
         $("#help-frame").contents().find('body').html(content);
