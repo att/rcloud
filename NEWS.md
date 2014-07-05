@@ -1,4 +1,4 @@
-## RCloud develop branch
+## RCloud 1.1
 
 * `main.html` has been renamed `edit.html`. Currently main.html
   redirects to edit.html, but this will be eventually removed.
