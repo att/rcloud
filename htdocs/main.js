@@ -1,6 +1,6 @@
-Promise.longStackTraces();
+function main() {
+    Promise.longStackTraces();
 
-window.onload = function() {
     function getURLParameter(name) {
         return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
     }
@@ -8,7 +8,7 @@ window.onload = function() {
     RCloud.UI.init();
     RCloud.session.init().then(function() {
         if(!rcloud.search)
-            $("#search").text("Search engine not enabled on server");
+            $("#search-wrapper").text("Search engine not enabled on server");
         var opts = {};
         var promise = Promise.cast(true);
         if (location.search.length > 0) {
@@ -33,4 +33,4 @@ window.onload = function() {
         } else
             throw error;
     });
-};
+}

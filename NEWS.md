@@ -1,11 +1,14 @@
 ## RCloud develop branch
 
-### Deprecations
+* `main.html` has been renamed `edit.html`. Currently main.html
+  redirects to edit.html, but this will be eventually removed.
 
-* the flat-file backend for RCS is to be considered deprecated. In
-  future releases we will only support the redis backend.
+* DEPRECATION: the flat-file backend for [RCS](https://github.com/att/rcloud/wiki/RCS)
+  is to be considered deprecated. In future releases we will only
+  support the redis backend.
 
-### Features
+* Cascading style sheets held in assets will only be loaded if
+  the filename matches `rcloud-*.css`.
 
 * `rcloud.install.js.module` now takes an optional boolean parameter
   force to force reloading, to help with JS development.
@@ -13,6 +16,54 @@
 * `view.html` and `main.html` now support referencing notebooks by
   name. Use, for example,
   `view.html?user=cscheid&path=tests/project1/notebook1`.
+
+* Python cells are now supported. They are executed in a separate process
+  using IPython. This requires `rpython2` R package from RForge.net
+  and corresponding IPython packages in the Python installation.
+
+* RCloud now uses RequireJS for loading JavaScript libraries.  This
+  makes it far easier for RCloud packages to use external JS libraries,
+  and in particular allows upgrading wdcplot on the fly.  You can also
+  use require to load JS libraries stored as assets, by using the link
+  in the asset pane.
+
+* Ability to fork any notebook, even if it is your own.  The navbar
+  always displays the fork button, and will also show a save button
+  if the notebook is yours, or a revert button if the notebook is
+  yours on a prior version.  Caution: currently when you fork your
+  own notebook, the history is lost; we hope to fix this soon.
+
+* Confirmation dialog on removing a notebook.
+
+* The navbar now displays the notebook author and whether the editor
+  is in read-only mode.
+
+* The browser title now includes the notebook name.
+
+* Drag individual files onto the asset pane in order to upload them
+  as assets.
+
+* Press cmd-enter or ctrl-enter in the comment area to submit a comment.
+
+* Rename assets by clicking on the filename.
+
+* Lux and dcplot are now "RCloud packages".  They are installed
+  automatically by `fresh_start.sh` (and `build.sh`), but any notebooks
+  that use `wgeoplot` or `wtour` will need to `require(rcloud.lux)`, and
+  andy that use `wdcplot` will need to `require(rcloud.dcplot)`.
+
+* Fixed an issue with arrays in `wdcplot` expressions, and arrays
+  can now contain `wdcplot` placeholders (e.g. dataframe columns).
+
+* Fixed an issue where downloaded files were being named `download`.
+
+* Fixed erroneous cell results where there were no cell results.
+
+* The asset editor now has a JavaScript mode.
+
+* Fixed a couple of issues with R code completion.
+
+
 
 ### Installation/Administration
 

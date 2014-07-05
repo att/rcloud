@@ -1,6 +1,6 @@
 ################################################################################
 # setup the r-side environment
-# this is called once in the main Rserve instance, so it should do and load
+# configure.rcloud is called once in the main Rserve instance, so it should do and load
 # everything that is common to all connections
 # the per-connection setup is done by start.cloud()
 #

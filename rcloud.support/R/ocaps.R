@@ -40,6 +40,7 @@ unauthenticated.ocaps <- function()
     # ocaps used by rcloud.js
     rcloud=list(
       authenticated = FALSE,
+      version_info = make.oc(rcloud.info),
       anonymous_session_init = make.oc(rcloud.anonymous.session.init),
       prefix_uuid = make.oc(rcloud.prefix.uuid),
       reset_session = make.oc(rcloud.reset.session),
@@ -113,6 +114,7 @@ authenticated.ocaps <- function()
       authenticated = TRUE,
       session_init = make.oc(rcloud.session.init),
       session_markdown_eval = make.oc(session.markdown.eval),
+      authenticated_cell_eval = make.oc(rcloud.authenticated.cell.eval),
       get_notebook = make.oc(rcloud.get.notebook),
       load_notebook = make.oc(rcloud.load.notebook),
       notebook_by_name = make.oc(rcloud.notebook.by.name),

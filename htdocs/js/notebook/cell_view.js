@@ -1,5 +1,19 @@
 (function() {
 
+var languages = {
+    "R": { 'background-color': "#E8F1FA",
+           'ace_mode': "ace/mode/r" },
+    "Markdown": { 'background-color': "#F7EEE4",
+                  'ace_mode': "ace/mode/rmarkdown" },
+    "Python": { 'background-color': "#E8F1FA",
+                'ace_mode': "ace/mode/python" }
+    // ,
+    // "Bash": { 'background-color': "#00ff00" }
+};
+
+var non_language = { 'background-color': '#dddddd',
+                     'ace_mode': 'ace/mode/text' };
+
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var EXTRA_HEIGHT = 27;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
@@ -10,7 +24,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     // button bar
 
     var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
-    var coalesce_button = ui_utils.fa_button("icon-link", "coalesce cells");
+    var join_button = ui_utils.fa_button("icon-link", "join cells");
     var source_button = ui_utils.fa_button("icon-edit", "source");
     var result_button = ui_utils.fa_button("icon-picture", "result");
     var split_button = ui_utils.fa_button("icon-unlink", "split cell");
@@ -30,15 +44,17 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var enable = ui_utils.enable_fa_button;
     var disable = ui_utils.disable_fa_button;
 
+    var has_result = false;
+
     insert_cell_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             shell.insert_markdown_cell_before(cell_model.id());
         }
     });
-    coalesce_button.click(function(e) {
-        coalesce_button.tooltip('destroy');
+    join_button.click(function(e) {
+        join_button.tooltip('destroy');
         if (!$(e.currentTarget).hasClass("button-disabled")) {
-            shell.coalesce_prior_cell(cell_model);
+            shell.join_prior_cell(cell_model);
         }
     });
     split_button.click(function(e) {
@@ -88,25 +104,27 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     cell_status.append(button_float);
     cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
-    var languages = {
-        "R": { 'background-color': "#E8F1FA" },
-        "Markdown": { 'background-color': "#F7EEE4" }
-        // ,
-        // "Python": { 'background-color': "#ff0000" },
-        // "Bash": { 'background-color': "#00ff00" }
-    };
-    var select = $("<select class='form-control'></select>");
+    var select_lang = $("<select class='form-control'></select>");
+    function add_language_selector(lang) {
+        languages[lang].element = $("<option></option>").text(lang);
+        select_lang.append(languages[lang].element);
+    }
     _.each(languages, function(value, key) {
-        languages[key].element = $("<option></option>").text(key);
-        select.append(languages[key].element);
+        add_language_selector(key);
     });
-    $(languages[language].element).attr('selected', true);
-    select.on("change", function() {
-        var l = select.find("option:selected").text();
+    if(!languages[language]) { // unknown language: add it
+        languages[language] = _.clone(non_language);
+        add_language_selector(language);
+    }
+    var lang_info = languages[language];
+    $(lang_info.element).attr('selected', true);
+    select_lang.on("change", function() {
+        var l = select_lang.find("option:selected").text();
         cell_model.parent_model.controller.change_cell_language(cell_model, l);
+        result.clear_result();
     });
 
-    col.append($("<div></div>").append(select));
+    col.append($("<div></div>").append(select_lang));
     $.each([run_md_button, source_button, result_button, gap, split_button, remove_button],
            function() {
                col.append($('<td/>').append($(this)));
@@ -116,7 +134,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     notebook_cell_div.append(cell_status);
 
     var insert_button_float = $("<div class='cell-insert-control'></div>");
-    insert_button_float.append(coalesce_button);
+    insert_button_float.append(join_button);
     insert_button_float.append(insert_cell_button);
     notebook_cell_div.append(insert_button_float);
 
@@ -130,13 +148,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
 
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
-    ace_div.css({ 'background-color': languages[language]["background-color"] });
+    ace_div.css({ 'background-color': lang_info["background-color"] });
 
     inner_div.append(outer_ace_div);
     outer_ace_div.append(ace_div);
     ace.require("ace/ext/language_tools");
     var widget = ace.edit(ace_div[0]);
-    var RMode = require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
+    var RMode = ace.require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
     var session = widget.getSession();
     widget.setValue(cell_model.content());
     ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
@@ -190,6 +208,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         // pubsub event handlers
 
         content_updated: function() {
+            // note: it's inconsistent, but not clearing the result for every
+            // change, just particular ones, because one may want to refer to
+            // the result if just typing but seems unlikely for other changes
             var range = widget.getSelection().getRange();
             var changed = change_content(cell_model.content());
             widget.getSelection().setSelectionRange(range);
@@ -201,10 +222,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         id_updated: update_div_id,
         language_updated: function() {
             language = cell_model.language();
-            ace_div.css({ 'background-color': languages[language]["background-color"] });
-            select.val(cell_model.language());
+            lang_info = languages[language];
+            if(!lang_info) throw new Error("tried to set language to unknown language " + language);
+            ace_div.css({ 'background-color': lang_info["background-color"] });
+            select_lang.val(cell_model.language());
         },
         result_updated: function(r) {
+            has_result = true;
             r_result_div.hide();
             r_result_div.html(r);
             r_result_div.slideDown(150);
@@ -217,7 +241,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             }
 
             // click on code to edit
-            var code_div = $("code.r", r_result_div);
+            var code_div = $("code.r,code.py", r_result_div);
             code_div.off('click');
             if(!shell.is_view_mode()) {
                 // distinguish between a click and a drag
@@ -291,6 +315,10 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             inner_div
                 .find("pre code")
                 .each(function(i, e) {
+                    // only highlight things which have
+                    // defined classes coming from knitr and markdown
+                    if (e.classList.length === 0)
+                        return;
                     hljs.highlightBlock(e);
                 });
 
@@ -305,6 +333,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
             this.show_result();
         },
+        clear_result: function() {
+            has_result = false;
+            disable(result_button);
+            this.show_source();
+        },
         set_readonly: function(readonly) {
             am_read_only = readonly;
             ui_utils.set_ace_readonly(widget, readonly);
@@ -312,13 +345,15 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 disable(remove_button);
                 disable(insert_cell_button);
                 disable(split_button);
-                disable(coalesce_button);
+                disable(join_button);
                 $(widget.container).find(".grab-affordance").hide();
+                select_lang.prop("disabled", "disabled");
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
                 enable(split_button);
-                enable(coalesce_button);
+                enable(join_button);
+                select_lang.prop("disabled", false);
             }
         },
 
@@ -367,7 +402,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             set_widget_height();
             widget.resize(true);
             disable(source_button);
-            enable(result_button);
+            if(has_result)
+                enable(result_button);
             // enable(hide_button);
             if (!am_read_only) {
                 enable(remove_button);
@@ -436,9 +472,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
         check_buttons: function() {
             if(!cell_model.parent_model.prior_cell(cell_model))
-                coalesce_button.hide();
+                join_button.hide();
             else if(!am_read_only)
-                coalesce_button.show();
+                join_button.show();
         }
     };
 

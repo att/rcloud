@@ -20,6 +20,16 @@ var shell = (function() {
         return notebook;
     }
 
+    function download_as_file(filename, content, mimetype) {
+        var element = document.createElement('a'),
+            file = new Blob([content], {type: mimetype}),
+            fileURL = URL.createObjectURL(file);
+        element.download = filename;
+        element.href = fileURL;
+        element.dataset.downloadurl = [mimetype, element.download, element.href].join(":");
+        element.click();
+    }
+
     function on_new(notebook) {
         gistname_ = notebook.id;
         version_ = null;
@@ -28,7 +38,7 @@ var shell = (function() {
 
     function on_load(notebook) {
         RCloud.UI.notebook_title.set(notebook.description);
-        RCloud.UI.share_button.set_link();
+        RCloud.UI.share_button.set_link(notebook);
         notebook_user_ = notebook.user.login;
         RCloud.UI.configure_readonly();
         _.each(notebook_view_.sub_views, function(cell_view) {
@@ -48,6 +58,23 @@ var shell = (function() {
                 ui_utils.scroll_to_after($("#prompt-div"));
             }, 100);
         }
+    }
+
+    function do_load(f) {
+        return RCloud.UI.with_progress(function() {
+            return RCloud.session.reset()
+                .then(f)
+                .spread(function(notebook, gistname, version) {
+                    if (!_.isUndefined(notebook.error)) {
+                        throw notebook.error;
+                    }
+                    gistname_ = gistname;
+                    version_ = version;
+                    $(".rcloud-user-defined-css").remove();
+                    return rcloud.install_notebook_stylesheets()
+                        .return(notebook);
+                }).then(on_load);
+        });
     }
 
     var result = {
@@ -70,7 +97,7 @@ var shell = (function() {
             return view_mode_;
         },
         new_cell: function(content, language, execute) {
-            var supported = ['R', 'Markdown'];
+            var supported = ['R', 'Markdown', 'Python'];
             if(!_.contains(supported, language)) {
                 RCloud.UI.session_pane.post_error("Sorry, " + language + " notebook cells not supported (yet!)");
                 return;
@@ -84,28 +111,17 @@ var shell = (function() {
         scroll_to_end: scroll_to_end,
         insert_markdown_cell_before: function(index) {
             return notebook_controller_.insert_cell("", "Markdown", index);
-        }, coalesce_prior_cell: function(cell_model) {
-            return notebook_controller_.coalesce_prior_cell(cell_model);
+        }, join_prior_cell: function(cell_model) {
+            return notebook_controller_.join_prior_cell(cell_model);
         }, split_cell: function(cell_model, point1, point2) {
             return notebook_controller_.split_cell(cell_model, point1, point2);
         },
         load_notebook: function(gistname, version) {
-            var that = this;
             notebook_controller_.save();
-            return RCloud.UI.with_progress(function() {
-                return RCloud.session.reset().then(function() {
-                    return that.notebook.controller.load_notebook(gistname, version);
-                }).then(function(notebook) {
-                    if (!_.isUndefined(notebook.error)) {
-                        throw notebook.error;
-                    }
-                    gistname_ = gistname;
-                    version_ = version;
-                    $(".rcloud-user-defined-css").remove();
-                    return rcloud.install_notebook_stylesheets()
-                        .return(notebook);
-                }).then(on_load);
-            });
+            return do_load(function() {
+                return [notebook_controller_.load_notebook(gistname, version),
+                        gistname, version];
+            }, gistname, version);
         }, save_notebook: function() {
             notebook_controller_.save();
         }, new_notebook: function(desc) {
@@ -119,24 +135,43 @@ var shell = (function() {
             });
         }, rename_notebook: function(desc) {
             return notebook_controller_.rename_notebook(desc);
-        }, fork_or_revert_notebook: function(is_mine, gistname, version) {
-            // force a full reload in all cases, as a sanity check
-            // we might know what the notebook state should be,
-            // but load the notebook and reset the session to be sure
-            if(is_mine && !version)
-                throw "unexpected revert of current version";
-            return RCloud.UI.with_progress(function() {
-                return RCloud.session.reset().then(function() {
-                    var that = this;
-                    notebook_model_.read_only(false);
-                    return notebook_controller_
-                        .fork_or_revert_notebook(is_mine, gistname, version)
+        }, fork_notebook: function(is_mine, gistname, version) {
+            return do_load(function() {
+                var promise_fork;
+                if(is_mine) {
+                    // hack: copy without history as a first pass, because github forbids forking oneself
+                    promise_fork = rcloud.get_notebook(gistname, version)
                         .then(function(notebook) {
-                            gistname_ = notebook.id;
-                            version_ = null;
-                            return notebook;
-                        }).then(on_load);
-                });
+                            notebook = sanitize_notebook(notebook);
+                            notebook.description = editor.find_next_copy_name(notebook.description);
+                            return notebook_controller_.create_notebook(notebook);
+                        });
+                }
+                else promise_fork = notebook_controller_
+                    .fork_notebook(gistname, version)
+                    .then(function(notebook) {
+                        /*
+                         // it would be nice to choose a new name if we've forked someone
+                         // else's notebook and we already have a notebook of that name
+                         // but this slams into the github concurrency problem
+                        var new_desc = editor.find_next_copy_name(notebook.description);
+                        if(new_desc != notebook.description)
+                            return notebook_controller_.rename_notebook(new_desc);
+                        else
+                         */
+                        return notebook;
+                    });
+                return promise_fork
+                    .then(function(notebook) {
+                        return [notebook, notebook.id, null];
+                    });
+            });
+        }, revert_notebook: function(gistname, version) {
+            return do_load(function() {
+                return notebook_controller_.revert_notebook(gistname, version)
+                    .then(function(notebook) {
+                        return [notebook, notebook.id, null];
+                    });
             });
         }, github_url: function() {
             var url;
@@ -222,22 +257,14 @@ var shell = (function() {
                     // rserve.js length-1 array special case making our lives difficult again
                     var purled_source = _.isString(purled_lines) ? purled_lines :
                             purled_lines.join("\n");
-                    var a=document.createElement('a');
-                    a.textContent='download';
-                    a.download=notebook.description + ".R";
-                    a.href='data:text/plain;charset=utf-8,'+escape(purled_source);
-                    a.click();
+                    download_as_file(notebook.description + ".R", purled_source, 'text/plain');
                 });
             });
         }, export_notebook_file: function() {
             return rcloud.get_notebook(gistname_, version_).then(function(notebook) {
                 notebook = sanitize_notebook(notebook);
                 var gisttext = JSON.stringify(notebook);
-                var a=document.createElement('a');
-                a.textContent='download';
-                a.download=notebook.description + ".gist";
-                a.href='data:text/json;charset=utf-8,'+escape(gisttext);
-                a.click();
+                download_as_file(notebook.description + ".gist", gisttext, 'text/json');
                 return notebook;
             });
         }, import_notebook_file: function() {

@@ -1,0 +1,9 @@
+Package: rcloud.lux
+Title: High-performance WebGL plots for RCloud using Lux
+Version: 0.1
+Author: Carlos Scheidegger <cscheid@research.att.com>
+Maintainer: Carlos Scheidegger <cscheid@research.att.com>
+Description: rcloud.lux provides high-performance plots for RCloud using WebGL.
+Depends: rcloud.support
+NOTE: --- packages that are not on CRAN/RForge.net *must* be in Suggests! ---
+License: EPL

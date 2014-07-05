@@ -3,6 +3,7 @@ JS_COMPILER = ./node_modules/uglify-js/bin/uglifyjs
 all: ace_bundle.js ace_bundle.min.js dependencies_bundle.js dependencies_bundle.min.js
 
 ace_bundle.js:	\
+	js/ace/_begin.js \
 	js/ace/ace.js \
 	js/ace/theme-chrome.js \
 	js/ace/mode-r.js \
@@ -14,29 +15,30 @@ ace_bundle.js:	\
         js/ace/sweave_background_highlighter.js \
 	js/ace/ext-language_tools.js \
 	js/ace/ext-searchbox.js \
+	js/ace/mode-javascript.js \
 	js/ace/mode-python.js \
-	js/ace/mode-sh.js
+	js/ace/mode-sh.js \
+	js/ace/_end.js
 
 
+# requirejs must go before anything else
 dependencies_bundle.js: \
-	js/jquery-1.10.2.js \
-	js/laconic.js \
-	js/jquery.cookies.2.2.0.js \
-	js/tree.jquery.js \
-	js/jquery-ui-1.10.4.custom.min.js \
-	js/jquery.scrollto.js \
-	js/underscore-min.js \
-	js/d3.v3.js \
-	js/lux.js \
+	js/require.js \
 	js/bluebird.js \
-	js/crossfilter.js \
-	js/dc.js \
 	js/colorbrewer.js \
+	js/d3.js \
 	js/dataframe.js \
 	js/dcplot.js \
-	js/rserve.js \
 	js/hl.min.js \
-	js/bootstrap.js
+	js/jquery-1.10.2.js \
+	js/bootstrap.js \
+	js/jquery-ui-1.10.4.custom.min.js \
+	js/jquery.cookies.2.2.0.js \
+	js/jquery.scrollto.js \
+	js/laconic.js \
+	js/underscore.js \
+	js/rserve.js \
+	js/tree.jquery.js
 
 ace_bundle.min.js: ace_bundle.js Makefile
 	@rm -f $@
@@ -56,6 +58,7 @@ dependencies_bundle.min.js: dependencies_bundle.js Makefile
 	@rm -f $@
 	$(JS_COMPILER) < $< > $@
 	chmod -w $@
+	echo Note: dependencies_bundle is obsolete and unused!
 
 dependencies_bundle.js: Makefile
 	echo $^

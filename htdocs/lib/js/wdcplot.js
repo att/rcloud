@@ -1,8 +1,6 @@
-// R to dc.js bridge code.  This should probably become a library in js/,
-// just deploying it separately for now to ease development
+// generates dcplot chart descriptions from an EDSL in R
 //////////////////////////////////////////////////////////////////////////////
-
-var wdcplot = (function() {
+(function() { function _wdcplot(dcplot, dataframe) {
     var chart_group = 0;
     window.charts = {}; // initialize a global namespace for charts
 
@@ -38,6 +36,14 @@ var wdcplot = (function() {
         return _.isString(v) ? '"' + v + '"' : v;
     }
 
+    function comma_sep(frame, args, ctx) {
+        var elems = _.map(args, function(arg) { return expression(frame, arg, ctx); });
+        return {
+            lambda: _.some(elems, function(e) { return e.lambda; }),
+            text: _.pluck(elems, 'text').join(', ')
+        };
+    }
+
     var operators = {
         "$": bin_op('.'),
         "-": una_or_bin_op('-'),
@@ -48,9 +54,9 @@ var wdcplot = (function() {
             return "Math.pow(" + left + ", " + right + ")";
         }),
         "c" : function(frame, args, ctx) {
-            return '[' + _.map(args.slice(1), function(arg) {
-                return value(arg); })
-                + ']';
+            var elems = comma_sep(frame, args.slice(1), ctx);
+            return {lambda: elems.lambda,
+                    text: '[' + elems.text + ']'};
         },
         "[": function(frame, args, ctx) {
             var ray = expression(frame, args[1], ctx),
@@ -60,19 +66,19 @@ var wdcplot = (function() {
         },
         default: function(frame, args, ctx) { // parens or function application
             var fun = expression(frame, args[0], ctx),
-                memo = {lambda: fun.lambda, text: (fun.text==='(' ? '' : fun.text) + '('};
-            var call = _.foldl(args.slice(1), function(mem, arg, i) {
-                var expr = expression(frame, arg, ctx),
-                    comma = i>0 ? ', ' : '';
-                return {lambda: mem.lambda || expr.lambda, text: mem.text + comma + expr.text};
-            }, memo);
-            call.text += ')';
-            return call;
+                elems = comma_sep(frame, args.slice(1), ctx);
+            return {
+                lambda: elems.lambda,
+                text: (fun.text==='(' ? '' : fun.text) + '(' +
+                    elems.text + ')'
+            };
         }
     };
 
     function lambda_body(frame, exprs, ctx) {
-        var body = _.map(exprs, function(arg) { return expression(frame, arg, ctx).text; });
+        var body = _.map(exprs, function(arg) {
+            return expression(frame, arg, ctx).text;
+        });
         body[body.length-1] = "return " + body[body.length-1];
         var cr = "\n", indent = Array(ctx.indent+1).join("\t");
         return indent + body.join(";" + cr + indent) + ";";
@@ -82,11 +88,11 @@ var wdcplot = (function() {
         ctx.indent++;
         var args = sexp[0].slice(1);
         var cr = "\n";
-        var text = "function (" + args.join() + ") {" + cr +
+        var text = "(function (" + args.join() + ") {" + cr +
             lambda_body(frame, sexp.slice(1), ctx) + cr;
         ctx.indent--;
         var indent = Array(ctx.indent+1).join("\t");
-        text += indent + "}";
+        text += indent + "})";
         // what? not a lambda? no, we just don't need to wrap it as one
         // if it ends up evaluating into a lambda that's cool
         return {lambda: false, text: text};
@@ -163,6 +169,8 @@ var wdcplot = (function() {
             return leaf(frame, sexp, ctx);
     }
 
+    var wdcplot_expr_num = 1;
+
     /* a wdcplot argument may be
      - null
      - a column accessor or special variable marked with class attribute
@@ -195,6 +203,8 @@ var wdcplot = (function() {
             return sexp;
         var ctx = {indent:0};
         var js_expr = expression(frame, sexp, ctx);
+        // incantation to make code show up in the debugger
+        js_expr.text += "\n//@ sourceURL=wdcplot.expr." + wdcplot_expr_num++ + ".js";
         if(js_expr.lambda) {
             // it seems kind of screwy to use eval here but it has the nice property
             // of using a closure, which new Function() does not, which makes it
@@ -215,8 +225,8 @@ var wdcplot = (function() {
     // are these recursive or is this top-level catch enough?
     function group_constructor(frame, sexp) {
         switch(sexp[0]) {
-        case 'bin': return group.bin(sexp[1]);
-        case 'identity': return group.identity;
+        case 'bin': return dcplot.group.bin(sexp[1]);
+        case 'identity': return dcplot.group.identity;
         default: return argument(frame, sexp); // but it's operating on keys?
         }
     }
@@ -234,10 +244,10 @@ var wdcplot = (function() {
         if(_.isNumber(wacc)) wacc = constant_fn(wacc);
 
         switch(fname) {
-        case 'count': return (w == undefined) ? reduce.count : reduce.sum(wacc);
-        case 'sum': return reduce.sum(argument(frame, sexp[1]),wacc);
-        case 'any': return reduce.any(argument(frame, sexp[1]));
-        case 'avg': return reduce.avg(argument(frame, sexp[1]),wacc);
+        case 'count': return (w == undefined) ? dcplot.reduce.count : dcplot.reduce.sum(wacc);
+        case 'sum': return dcplot.reduce.sum(argument(frame, sexp[1]),wacc);
+        case 'any': return dcplot.reduce.any(argument(frame, sexp[1]));
+        case 'avg': return dcplot.reduce.avg(argument(frame, sexp[1]),wacc);
         default: return argument(frame, sexp);
         }
     }
@@ -392,7 +402,7 @@ var wdcplot = (function() {
         ).append(table);
     }
 
-    var result = {
+    var wdcplot = {
         field : function(rdata, k, r) {
             return rdata[k][r];
         },
@@ -427,8 +437,8 @@ var wdcplot = (function() {
                 case 'groups':
                     var weight = _.find(secdata, function(exp) { return exp[0] === "weight"; });
                     definition.defreduce = (weight == undefined)
-                        ? reduce.count
-                        : reduce.sum(argument(frame, weight[1]));
+                        ? dcplot.reduce.count
+                        : dcplot.reduce.sum(argument(frame, weight[1]));
                     definition.groups = do_groups(frame, secdata, weight);
                     break;
                 case 'charts':
@@ -443,7 +453,7 @@ var wdcplot = (function() {
                 }
             }
             if(!definition.defreduce)
-                definition.defreduce = reduce.count;
+                definition.defreduce = dcplot.reduce.count;
 
             var divwrap = $('<div/>',{id:"chartdiv"+chart_group, style: "overflow:auto"});
             _.each(divs, function(div) { divwrap.append(div); });
@@ -454,5 +464,14 @@ var wdcplot = (function() {
                     groupname: chart_group_name(chart_group++)};
         }
     };
-    return result;
-})();
+    return wdcplot;
+}
+if(typeof define === "function" && define.amd) {
+    define(["dcplot", "dataframe"], _wdcplot);
+} else if(typeof module === "object" && module.exports) {
+    module.exports = _wdcplot(dcplot, dataframe);
+} else {
+    this.wdcplot = _wdcplot(dcplot, dataframe);
+}
+}
+)();

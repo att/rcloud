@@ -502,10 +502,33 @@ li.jqtree-selected .notebook-commands {
 
 #asset-link {
     position: absolute;
-    right: 1ex;
+    left: 1ex;
     bottom: 1ex;
     z-index: 10000;
     display: none;
+    text-shadow:
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee,
+      0 0 0.9em #eee; /* CSS, let me count the ways I love thee */
+;/* , */
+      /* 1px -1px 0.1em #000, */
+      /* -1px 1px 0.1em #000, */
+      /*  1px 1px 0.1em #000; */
+}
+
+#asset-link:hover {
+    text-decoration: none;
+    font-weight: 500;
 }
 
 /******************************************************************************/
@@ -792,15 +815,54 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
     height: 20px;
     font-size: 16px;
 }
-.r-result-div pre code:not(.r) {
-    width: 800px;
+
+.r-result-div pre code {
+    max-width: 800px;
     margin-right: auto;
+    margin-left: auto;
     border-left: 1px solid rgba(0,0,0,0.15);
     border-right: 1px solid rgba(0,0,0,0.15);
+}
+
+/* Annoying, I'll have to add new entries for every language class here. */
+.r-result-div pre code.r, .r-result-div pre code.py {
+    max-width: inherit;
 }
 
 .r-result-div p img {
     display: block;
     margin-left: auto;
     margin-right: auto;
+}
+.drop-asset-body {
+    display: none;
+    opacity:.8;
+    outline: 2px dashed lightslategray;
+    outline-offset:-20px;
+    border: 1px solid #999;
+    background-color: whitesmoke;
+    position:absolute;
+    z-index:999;
+    height:100%;
+    width:100%;
+}
+
+/******************************************************************************/
+
+/* from http://en.wikipedia.org/wiki/ANSI_escape_code
+   We're using Windows XP colors. They're ugly but they're darker, so they
+   work better in our bright-background cells. 
+*/
+.vt100 .color-30 { color: black; }
+.vt100 .color-31 { color: rgb(128,0,0); }
+.vt100 .color-32 { color: rgb(0,128,0); }
+.vt100 .color-33 { color: rgb(128,128,0); }
+.vt100 .color-34 { color: rgb(0,0,128); }
+.vt100 .color-35 { color: rgb(128,0,128); }
+.vt100 .color-36 { color: rgb(0,128,128); }
+.vt100 .color-37 { color: rgb(128,128,128); }
+
+pre > .vt100 {
+    padding: 16px;
+    display: block;
 }

@@ -29,7 +29,5 @@ rcloud.post.comment <- function(id, content)
 {
   res <- create.gist.comment(id, content, ctx = .session$rgithub.context)
   if (nzConf("solr.url")) mcparallel(.solr.post.comment(id, content), detached=TRUE)
-  if (!res$ok)
-    print(res)
-  res$ok
+  res
 }

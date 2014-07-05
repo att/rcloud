@@ -86,7 +86,7 @@ RCloud.UI.command_prompt = {
         ace.require("ace/ext/language_tools");
         var widget = ace.edit(prompt_div[0]);
         set_ace_height();
-        var RMode = require("ace/mode/r").Mode;
+        var RMode = ace.require("ace/mode/r").Mode;
         var session = widget.getSession();
         var doc = session.doc;
         widget.setOptions({

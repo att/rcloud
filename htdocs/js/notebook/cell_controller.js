@@ -3,7 +3,7 @@ Notebook.Cell.create_controller = function(cell_model)
     var result = {
         execute: function() {
             var that = this;
-            var language = cell_model.language();
+            var language = cell_model.language() || 'Text'; // null is a synonym for Text
             function callback(r) {
                 that.set_status_message(r);
             }
@@ -11,7 +11,7 @@ Notebook.Cell.create_controller = function(cell_model)
 
             rcloud.record_cell_execution(cell_model);
             if (rcloud.authenticated) {
-                promise = rcloud.session_markdown_eval(cell_model.content(), language, false);
+                promise = rcloud.authenticated_cell_eval(cell_model.content(), language, false);
             } else {
                 promise = rcloud.session_cell_eval(
                     Notebook.part_name(cell_model.id(),

@@ -16,7 +16,7 @@ RCloud.UI.scratchpad = {
             inner_div.append(ace_div);
             ace.require("ace/ext/language_tools");
             var widget = ace.edit(ace_div[0]);
-            var RMode = require("ace/mode/r").Mode;
+            var RMode = ace.require("ace/mode/r").Mode;
             var session = widget.getSession();
             that.session = session;
             that.widget = widget;
@@ -131,10 +131,11 @@ RCloud.UI.scratchpad = {
             Python: "ace/mode/python",
             Markdown: "ace/mode/rmarkdown",
             CSS: "ace/mode/css",
+            JavaScript: "ace/mode/javascript",
             Text: "ace/mode/text"
         };
         var lang = this.current_model.language();
-        var mode = require(modes[lang] || modes.Text).Mode;
+        var mode = ace.require(modes[lang] || modes.Text).Mode;
         this.session.setMode(new mode(false, this.session.doc, this.session));
     }, set_readonly: function(readonly) {
         if(!shell.is_view_mode()) {
@@ -145,8 +146,13 @@ RCloud.UI.scratchpad = {
                 $('#new-asset').show();
         }
     }, update_asset_url: function() {
+        // this function probably belongs elsewhere
+        function make_asset_url(model) {
+            return window.location.protocol + '//' + window.location.host + '/notebook.R/' +
+                    model.parent_model.controller.current_gist().id + '/' + model.filename();
+        }
         if(this.current_model)
-            $('#asset-link').attr('href', this.current_model.raw_url);
+            $('#asset-link').attr('href', make_asset_url(this.current_model));
     }, clear: function() {
         if(!this.exists)
             return;

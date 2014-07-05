@@ -7,17 +7,28 @@ Notebook.create_controller = function(model)
         save_timeout_ = 30000, // 30s
         show_source_checkbox_ = null;
 
-    var editor_callback_ = editor.load_callback({is_change: true, selroot: true}),
-        default_callback_ = function(notebook) {
-            if(save_button_)
-                ui_utils.disable_bs_button(save_button_);
-            dirty_ = false;
-            if(save_timer_) {
-                window.clearTimeout(save_timer_);
-                save_timer_ = null;
+    // only create the callbacks once, but delay creating them until the editor
+    // is initialized
+    var default_callback = function() {
+        var cb_ = null,
+            editor_callback_ = null;
+        return function() {
+            if(!cb_) {
+                editor_callback_ = editor.load_callback({is_change: true, selroot: true});
+                cb_ = function(notebook) {
+                    if(save_button_)
+                        ui_utils.disable_bs_button(save_button_);
+                    dirty_ = false;
+                    if(save_timer_) {
+                        window.clearTimeout(save_timer_);
+                        save_timer_ = null;
+                    }
+                    return editor_callback_(notebook);
+                };
             }
-            return editor_callback_(notebook);
+            return cb_;
         };
+    }();
 
     function append_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
@@ -42,6 +53,9 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(version, notebook) {
+        var is_read_only = version != null || notebook.user.login != rcloud.username();
+        current_gist_ = notebook;
+        model.read_only(is_read_only);
         if (!_.isUndefined(notebook.files)) {
             var i;
             // we can't do much with a notebook with no name, so give it one
@@ -80,11 +94,8 @@ Notebook.create_controller = function(model)
                 asset_controller.select();
             else
                 RCloud.UI.scratchpad.set_model(null);
-
-            // we set read-only last because it ripples MVC events through to
-            // make the display look impermeable
-            model.read_only(version != null || notebook.user.login != rcloud.username());
-            current_gist_ = notebook;
+            // set read-only again to trickle MVC events through to the display :-(
+            model.read_only(is_read_only);
         }
         return notebook;
     }
@@ -141,7 +152,7 @@ Notebook.create_controller = function(model)
             return change.content || change.erase || change.rename;
         });
         if (model.read_only())
-            return Promise.reject("attempted to update read-only notebook");
+            return Promise.reject(new Error("attempted to update read-only notebook"));
         if (!changes.length && _.isUndefined(more)) {
             return Promise.cast(current_gist_);
         }
@@ -185,6 +196,13 @@ Notebook.create_controller = function(model)
                 throw e;
             });
     }
+
+    function apply_changes_and_load(changes, gistname) {
+        return changes.length
+            ? update_notebook(changes, gistname)
+            : result.load_notebook(gistname, null); // do a load - we need to refresh
+    }
+
     function refresh_buffers() {
         return model.reread_buffers();
     }
@@ -214,6 +232,10 @@ Notebook.create_controller = function(model)
     model.dishers.push({on_dirty: on_dirty});
 
     var result = {
+        current_gist: function() {
+            // are there reasons we shouldn't be exposing this?
+            return current_gist_;
+        },
         save_button: function(save_button) {
             if(arguments.length) {
                 save_button_ = save_button;
@@ -223,38 +245,38 @@ Notebook.create_controller = function(model)
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);
             return update_notebook(refresh_buffers().concat(cch.changes))
-                .then(default_callback_)
+                .then(default_callback())
                 .return(cch.controller);
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
             update_notebook(refresh_buffers().concat(cch.changes))
-                .then(default_callback_);
+                .then(default_callback());
             return cch.controller;
         },
         insert_cell: function(content, type, id) {
             var cch = insert_cell_helper(content, type, id);
             update_notebook(refresh_buffers().concat(cch.changes))
-                .then(default_callback_);
+                .then(default_callback());
             return cch.controller;
         },
         remove_cell: function(cell_model) {
             var changes = refresh_buffers().concat(model.remove_cell(cell_model));
             RCloud.UI.command_prompt.prompt.widget.focus(); // there must be a better way
             update_notebook(changes)
-                .then(default_callback_);
+                .then(default_callback());
         },
         remove_asset: function(asset_model) {
             var changes = refresh_buffers().concat(model.remove_asset(asset_model));
             update_notebook(changes)
-                .then(default_callback_);
+                .then(default_callback());
         },
         move_cell: function(cell_model, before) {
             var changes = refresh_buffers().concat(model.move_cell(cell_model, before ? before.id() : -1));
             update_notebook(changes)
-                .then(default_callback_);
+                .then(default_callback());
         },
-        coalesce_prior_cell: function(cell_model) {
+        join_prior_cell: function(cell_model) {
             var prior = model.prior_cell(cell_model);
             if(!prior)
                 return;
@@ -300,9 +322,9 @@ Notebook.create_controller = function(model)
                     changes = changes.concat(model.update_cell(prior));
                 }
             }
-            _.each(prior.views, function(v) { v.show_source(); });
+            _.each(prior.views, function(v) { v.clear_result(); });
             update_notebook(changes.concat(model.remove_cell(cell_model)))
-                .then(default_callback_);
+                .then(default_callback());
         },
         split_cell: function(cell_model, point1, point2) {
             function resplit(a) {
@@ -338,17 +360,18 @@ Notebook.create_controller = function(model)
                            content.substring(point2));
             resplit(parts);
             cell_model.content(parts[0]);
+            _.each(cell_model.views, function(v) { v.clear_result(); });
             changes = changes.concat(model.update_cell(cell_model));
             // not great to do multiple inserts here - but not quite important enough to enable insert-n
             for(var i=1; i<parts.length; ++i)
                 changes = changes.concat(insert_cell_helper(parts[i], language, id+i).changes);
             update_notebook(changes)
-                .then(default_callback_);
+                .then(default_callback());
         },
         change_cell_language: function(cell_model, language) {
             var changes = refresh_buffers().concat(model.change_cell_language(cell_model, language));
             update_notebook(changes)
-                .then(default_callback_);
+                .then(default_callback());
         },
         clear: function() {
             model.clear();
@@ -365,49 +388,44 @@ Notebook.create_controller = function(model)
             return rcloud.create_notebook(content)
                 .then(_.bind(on_load,this,null));
         },
-        fork_or_revert_notebook: function(is_mine, gistname, version) {
-            var that = this;
-            // 1. figure out the changes
-            var promiseChanges;
-            if(is_mine) // revert: get HEAD, calculate changes from there to here, and apply
-                promiseChanges = rcloud.load_notebook(gistname, null).then(function(notebook) {
-                    return [find_changes_from(notebook), gistname];
-                });
-            else // fork:
-                promiseChanges = rcloud.fork_notebook(gistname).then(function(notebook) {
+        revert_notebook: function(gistname, version) {
+            model.read_only(false); // so that update_notebook doesn't throw
+            // get HEAD, calculate changes from there to here, and apply
+            return rcloud.load_notebook(gistname, null).then(function(notebook) {
+                return [find_changes_from(notebook), gistname];
+            }).spread(apply_changes_and_load);
+        },
+        fork_notebook: function(gistname, version) {
+            model.read_only(false); // so that update_notebook doesn't throw
+            return rcloud.fork_notebook(gistname)
+                .then(function(notebook) {
                     if(version)
                         // fork, then get changes from there to where we are in the past, and apply
                         // git api does not return the files on fork, so load
                         return rcloud.get_notebook(notebook.id, null)
-                            .then(function(notebook2) {
-                                return [find_changes_from(notebook2), notebook2.id];
-                            });
+                        .then(function(notebook2) {
+                            return [find_changes_from(notebook2), notebook2.id];
+                        });
                     else return [[], notebook.id];
-                });
-            // 2. apply the changes, if any
-            return promiseChanges.spread(function(changes, gistname) {
-                return changes.length
-                    ? update_notebook(changes, gistname)
-                    : that.load_notebook(gistname, null); // do a load - we need to refresh
-            });
+            }).spread(apply_changes_and_load);
         },
         update_cell: function(cell_model) {
             return update_notebook(refresh_buffers().concat(model.update_cell(cell_model)))
-                .then(default_callback_);
+                .then(default_callback());
         },
         update_asset: function(asset_model) {
             return update_notebook(refresh_buffers().concat(model.update_asset(asset_model)))
-                .then(default_callback_);
+                .then(default_callback());
         },
         rename_notebook: function(desc) {
             return update_notebook(refresh_buffers(), null, {description: desc})
-                .then(default_callback_);
+                .then(default_callback());
         },
         save: function() {
             if(!dirty_)
                 return Promise.resolve(undefined);
             return update_notebook(refresh_buffers())
-                .then(default_callback_);
+                .then(default_callback());
         },
         run_all: function() {
             this.save();

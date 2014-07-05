@@ -9,9 +9,9 @@ ui_utils.disconnection_error = function(msg, label) {
     button.click(function() {
         window.location =
             (window.location.protocol +
-             '//' + window.location.host +
-             '/login.R?redirect=' +
-             encodeURIComponent(window.location.pathname + window.location.search));
+            '//' + window.location.host +
+            '/login.R?redirect=' +
+            encodeURIComponent(window.location.pathname + window.location.search));
     });
     return result;
 };
@@ -49,7 +49,7 @@ ui_utils.fa_button = function(which, title, classname, style, container_is_self)
 {
     var icon = $.el.i({'class': which});
     var span = $.el.span({'class': 'fontawesome-button ' + (classname || '')},
-                         icon);
+                        icon);
     if(style) {
         for (var k in style)
             icon.style[k] = style[k];
@@ -101,7 +101,7 @@ ui_utils.ace_set_pos = function(widget, row, column) {
 };
 
 ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
-    var Autocomplete = require("ace/autocomplete").Autocomplete;
+    var Autocomplete = ace.require("ace/autocomplete").Autocomplete;
     var session = widget.getSession();
 
     widget.commands.addCommands([
@@ -125,12 +125,16 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                 sender: 'editor'
             },
             exec: function(widget, args, request) {
+                if (widget.getOption("readOnly"))
+                    return;
                 var code = session.getTextRange(widget.getSelectionRange());
                 if(code.length==0) {
                     var pos = widget.getCursorPosition();
-                    var Range = require('ace/range').Range;
+                    var Range = ace.require('ace/range').Range;
                     var range = new Range(pos.row, 0, pos.row+1, 0);
                     code = session.getTextRange(range);
+                    widget.navigateDown(1);
+                    widget.navigateLineEnd();
                 }
                 shell.new_cell(code, get_language(), true);
             }
@@ -181,7 +185,7 @@ ui_utils.set_ace_readonly = function(widget, readonly) {
 };
 
 ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
-                                  active_icon, inactive_icon) {
+                                    active_icon, inactive_icon) {
     function set_state(state) {
         item[0].checked = state;
         var icon = item.find('i');
@@ -214,7 +218,7 @@ ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
 // not that i'm at all happy with the look
 ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
     var ret = ui_utils.twostate_icon(item, on_check, on_uncheck,
-                                     'icon-check', 'icon-check-empty');
+                                    'icon-check', 'icon-check-empty');
     var base_enable = ret.enable;
     ret.enable = function(val) {
         // bootstrap menu items go in in an <li /> that takes the disabled class
@@ -229,7 +233,7 @@ ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
 // how to do it.
 ui_utils.make_prompt_chevron_gutter = function(widget)
 {
-    var dom = require("ace/lib/dom");
+    var dom = ace.require("ace/lib/dom");
     widget.renderer.$gutterLayer.update = function(config) {
         var emptyAnno = {className: ""};
         var html = [];
@@ -374,6 +378,7 @@ ui_utils.editable = function(elem$, command) {
         });
         elem$.keydown(function(e) {
             if(e.keyCode === 13) {
+                e.preventDefault();
                 var result = elem$.text();
                 result = decode(result);
                 if(options().validate(result)) {
@@ -405,6 +410,8 @@ ui_utils.add_ace_grab_affordance = function(element) {
 ui_utils.scroll_to_after = function($sel, duration) {
     // no idea why the plugin doesn't take current scroll into account when using
     // the element parameter version
+    if ($sel.length === 0)
+        return;
     var opts = undefined;
     if(duration !== undefined)
         opts = {animation: {duration: duration}};

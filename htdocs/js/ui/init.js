@@ -1,9 +1,15 @@
 RCloud.UI.init = function() {
-    $("#fork-revert-notebook").click(function() {
+    $("#fork-notebook").click(function() {
         var is_mine = shell.notebook.controller.is_mine();
         var gistname = shell.gistname();
         var version = shell.version();
-        editor.fork_or_revert_notebook(is_mine, gistname, version);
+        editor.fork_notebook(is_mine, gistname, version);
+    });
+    $("#revert-notebook").click(function() {
+        var is_mine = shell.notebook.controller.is_mine();
+        var gistname = shell.gistname();
+        var version = shell.version();
+        editor.revert_notebook(is_mine, gistname, version);
     });
     $("#open-in-github").click(function() {
         window.open(shell.github_url(), "_blank");
@@ -38,8 +44,73 @@ RCloud.UI.init = function() {
         if($("#file")[0].files.length===0)
             return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        var replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
-
+        upload_asset(to_notebook);
+    });
+    var showOverlay_;
+    //prevent drag in rest of the page except asset pane and enable overlay on asset pane
+    $(document).on('dragstart dragenter dragover', function (e) {
+        var dt = e.originalEvent.dataTransfer;
+        if(dt.items.length > 1) {
+            e.stopPropagation();
+            e.preventDefault();
+        }else
+        if (dt.types != null && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.contains('application/x-moz-file'))) {
+            if (!shell.notebook.model.read_only()) {
+                e.stopPropagation();
+                e.preventDefault();
+                $('#asset-drop-overlay').css({'display': 'block'});
+                showOverlay_ = true;
+            }
+            else {
+                e.stopPropagation();
+                e.preventDefault();
+            }
+        }
+    });
+    $(document).on('drop dragleave', function (e)  {
+        e.stopPropagation();
+        e.preventDefault();
+        showOverlay_ = false;
+        setTimeout(function() {
+            if(!showOverlay_) {
+                $('#asset-drop-overlay').css({'display': 'none'});
+                console.log("hello");
+            }
+        }, 100);
+    });
+    //allow asset drag from local to asset pane and highlight overlay for drop area in asset pane
+    $('#scratchpad-wrapper').bind({
+        drop: function (e) {
+            e = e.originalEvent || e;
+            var files = (e.files || e.dataTransfer.files);
+            var dt = e.dataTransfer;
+            if(dt.items.length>1) {
+                e.stopPropagation();
+                e.preventDefault();
+            } else
+            if(!shell.notebook.model.read_only()) {
+              //To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
+              //for (var i = 0; i < files.length; i++) {
+              for (var i = 0; i < 1; i++) {
+                $('#file').val("");
+                $("#file")[0].files[0]=files[i];
+                upload_asset(true);
+              }
+            }
+          $('#asset-drop-overlay').css({'display': 'none'});
+        },
+        "dragenter dragover": function(e) {
+            var dt = e.originalEvent.dataTransfer;
+            if(dt.items.length === 1 && !shell.notebook.model.read_only())
+                dt.dropEffect = 'copy';
+        }
+    });
+    function upload_asset(to_notebook) {
+        RCloud.UI.right_panel.collapse($("#collapse-file-upload"), false);
+        var replacing = false;
+        if(to_notebook) {
+            replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
+        }
         function results_append($div) {
             $("#file-upload-results").append($div);
             $("#collapse-file-upload").trigger("size-changed");
@@ -75,14 +146,13 @@ RCloud.UI.init = function() {
                     controller.select();
                 });
             }
-        };
+        }
 
         function failure(what) {
             var overwrite_click = function() {
-                $("#collapse-file-upload").trigger("size-changed");
                 rcloud.upload_file(true, function(err, value) {
                     if (err) {
-                        $("#file-upload-results").append(
+                        results_append(
                             bootstrap_utils.alert({
                                 "class": 'alert-danger',
                                 text: err
@@ -116,9 +186,9 @@ RCloud.UI.init = function() {
             results_append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
         }
 
-        var upload_function = to_notebook
-            ? rcloud.upload_to_notebook
-            : rcloud.upload_file;
+        var upload_function = to_notebook ?
+                rcloud.upload_to_notebook :
+                rcloud.upload_file;
 
         upload_function(false, function(err, value) {
             if (err)
@@ -126,7 +196,7 @@ RCloud.UI.init = function() {
             else
                 success(value);
         });
-    });
+    }
 
     RCloud.UI.left_panel.init();
     RCloud.UI.middle_column.init();
@@ -198,8 +268,21 @@ RCloud.UI.init = function() {
     });
 
     $("#comment-submit").click(function() {
-        editor.post_comment($("#comment-entry-body").val());
+        if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
+            editor.post_comment($("#comment-entry-body").val());
+        }
         return false;
+    });
+
+    $("#comment-entry-body").keydown(function (e) {
+        if ((e.keyCode == 10 || e.keyCode == 13 || e.keyCode == 115 || e.keyCode == 19) &&
+            (e.ctrlKey || e.metaKey)) {
+            if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
+                editor.post_comment($("#comment-entry-body").val());
+            }
+            return false;
+        }
+        return undefined;
     });
 
     $("#run-notebook").click(shell.run_notebook);
@@ -247,6 +330,6 @@ RCloud.UI.init = function() {
     //////////////////////////////////////////////////////////////////////////
     // view mode things
     $("#edit-notebook").click(function() {
-        window.location = "main.html?notebook=" + shell.gistname();
+        window.location = "edit.html?notebook=" + shell.gistname();
     });
 };

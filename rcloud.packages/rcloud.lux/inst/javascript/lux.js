@@ -23130,7 +23130,10 @@ Lux.Scene.Transform.Camera.perspective = function(opts)
     return scene;
 };
     if (typeof define === "function" && define.amd) {
-        define(Lux);
+        // Because we're loading lux.js from outside a require, we need to force
+	// a named module definition
+	// (we're using rcloud's install module thing which does an explicit eval)
+        define("lux", Lux);
     } else if (typeof module === "object" && module.exports) {
         module.exports = Lux;
     } else {

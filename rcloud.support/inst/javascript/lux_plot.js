@@ -1,6 +1,7 @@
 ((function() {
 
 var LuxChart = {};
+var Shade = Lux.Shade;
 
 LuxChart.lux_tour_plot = function(array_list)
 {
