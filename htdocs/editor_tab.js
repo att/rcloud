@@ -1281,7 +1281,7 @@ var editor = function () {
                         history_len = histories_[node.gistname].length;
                     }
                     if(history_len==1) {
-                        $(".icon-time",$(node.element)).addClass("button-disabled");
+                        $(".history i",$(node.element)).addClass("button-disabled");
                     }
                     $tree_.tree('openNode', node);
                 });
