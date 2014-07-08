@@ -853,46 +853,38 @@ var editor = function () {
             .enter()
             .append("div")
             .attr("class", "comment-container")
-            .on("mouseover",function(d){ 
+            .on("mouseover",function(d){
                 var commentor = d.user.login;
                 var current_user = username_;
                 var is_editable = ((commentor==current_user)?true:false);
                 if(is_editable){
                     $('.comment-header-close', this).show();
-                    $('.comment-header', this).hide();
                 }
             })
             .on("mouseout",function(d){
                 $('.comment-header-close', this).hide();
-                $('.comment-header', this).show();
             })
             .attr("comment_id",function(d) { return d.id; });
         comment_div
-            .append("i")
-            .attr("class", "icon-remove comment-header-close")
-            .on("click", function (d) {
-                var commentor = d.user.login;
-                var current_user = username_;
-                var is_editable = ((commentor==current_user)?true:false);
-                var current_comment_element = $($(this).parent());
-                if(is_editable)
-                    editor.delete_comment(current_comment_element.attr("comment_id")).then(function(v){console.log(v);});
-            });
-        comment_div
             .append("div")
             .attr("class", "comment-header")
-            .style({"max-width":"40%","width":"auto"})
+            .style({"max-width":"30%"})
             .text(function(d) { return d.user.login; });
+
         comment_div
-            .append("span")
+            .append("div")
             .attr("class", "comment-body")
-            .style({"max-width":"60%","width":"auto"})
+            .style({"max-width":"70%"})
+            .append("div")
+            .attr("class", "comment-body-text")
+            .style({"max-width":"95%"})
             .text(function(d) { return d.body; })
             .each(function(d){
                 var comment_element = $(this);
                 var edit_comment = function(v){
                     var comment_text = comment_element.html();
-                    editor.modify_comment($(comment_element.parent()).attr("comment_id"),comment_text);
+                    var id = $(comment_element.parent().parent()).attr("comment_id");
+                    editor.modify_comment(id,comment_text);
                 };
                 var editable_opts = {
                     change: edit_comment,
@@ -902,6 +894,19 @@ var editor = function () {
                 var current_user = username_;
                 var is_editable = ((commentor==current_user)?true:false);
                 ui_utils.editable(comment_element, $.extend({allow_edit: is_editable,inactive_text: comment_element.text(),active_text: comment_element.text()},editable_opts));
+            });
+        var text_div = d3.selectAll(".comment-body",this);
+        text_div
+            .append("i")
+            .attr("class", "icon-remove comment-header-close")
+            .style({"max-width":"5%"})
+            .on("click", function (d) {
+                var commentor = d.user.login;
+                var current_user = username_;
+                var is_editable = ((commentor==current_user)?true:false);
+                var current_comment_parent_element = d3.select(this.parentNode.parentNode);
+                if(is_editable)
+                    editor.delete_comment(current_comment_parent_element.attr("comment_id")).then(function(v){console.log(v);});
             });
         $('#collapse-comments').trigger('size-changed');        
         ui_utils.on_next_tick(function() {
