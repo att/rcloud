@@ -861,7 +861,7 @@ var editor = function () {
         comment_div
             .append("div")
             .attr("class", "comment-body")
-            .text(function(d) { return d.body; });
+            .html(function(d) { return d.body; });
         $('#collapse-comments').trigger('size-changed');
         ui_utils.on_next_tick(function() {
             ui_utils.scroll_to_after($("#comments-qux"));

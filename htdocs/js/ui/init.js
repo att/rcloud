@@ -269,7 +269,7 @@ RCloud.UI.init = function() {
 
     $("#comment-submit").click(function() {
         if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
-            editor.post_comment($("#comment-entry-body").val());
+            editor.post_comment($("#comment-entry-body").val(). replace(/\n/g, "<br/>"));
         }
         return false;
     });
@@ -278,7 +278,7 @@ RCloud.UI.init = function() {
         if ((e.keyCode == 10 || e.keyCode == 13 || e.keyCode == 115 || e.keyCode == 19) &&
             (e.ctrlKey || e.metaKey)) {
             if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
-                editor.post_comment($("#comment-entry-body").val());
+                editor.post_comment($("#comment-entry-body").val(). replace(/\n/g, "<br/>"));
             }
             return false;
         }
