@@ -332,4 +332,6 @@ RCloud.UI.init = function() {
     $("#edit-notebook").click(function() {
         window.location = "edit.html?notebook=" + shell.gistname();
     });
+
+    ui_utils.prevent_backspace($(document));
 };

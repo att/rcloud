@@ -1317,6 +1317,13 @@ var editor = function () {
             }
             add_history_nodes(node, whither, null)
                 .then(function(node) {
+                    var history_len = 0;
+                    if(histories_[node.gistname]) {
+                        history_len = histories_[node.gistname].length;
+                    }
+                    if(history_len==1) {
+                        $(".history i",$(node.element)).addClass("button-disabled");
+                    }
                     $tree_.tree('openNode', node);
                 });
         },

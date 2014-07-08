@@ -557,6 +557,7 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         // FIXME make into promises
+        // FIXME the UI shouldn't be tied up with the functionality
         rcloud.upload_file = function(options, k) {
             var opts = upload_opts(options);
             k = k || _.identity;
@@ -1133,6 +1134,28 @@ ui_utils.scroll_to_after = function($sel, duration) {
     var $parent = $sel.parent();
     var y = $parent.scrollTop() + $sel.position().top +  $sel.outerHeight();
     $parent.scrollTo(null, y, opts);
+};
+
+ui_utils.prevent_backspace = function($doc) {
+    // Prevent the backspace key from navigating back.
+    // from http://stackoverflow.com/a/2768256/676195
+    $doc.unbind('keydown').bind('keydown', function (event) {
+        var doPrevent = false;
+        if (event.keyCode === 8) {
+            var d = event.srcElement || event.target;
+            if ((d.tagName.toUpperCase() === 'INPUT' && (d.type.toUpperCase() === 'TEXT' || d.type.toUpperCase() === 'PASSWORD' || d.type.toUpperCase() === 'FILE' || d.type.toUpperCase() === 'EMAIL' ))
+                || d.tagName.toUpperCase() === 'TEXTAREA') {
+                doPrevent = d.readOnly || d.disabled;
+            }
+            else {
+                doPrevent = true;
+            }
+        }
+
+        if (doPrevent) {
+            event.preventDefault();
+        }
+    });
 };
 var bootstrap_utils = {};
 
@@ -3554,6 +3577,7 @@ RCloud.UI.help_frame = {
         $("#help-body").attr('data-widgetheight', "greedy");
         $("#collapse-help").trigger('size-changed');
         RCloud.UI.left_panel.collapse($("#collapse-help"), false);
+        ui_utils.prevent_backspace($("#help-frame").contents());
     },
     display_content: function(content) {
         $("#help-frame").contents().find('body').html(content);
@@ -3898,6 +3922,8 @@ RCloud.UI.init = function() {
     $("#edit-notebook").click(function() {
         window.location = "edit.html?notebook=" + shell.gistname();
     });
+
+    ui_utils.prevent_backspace($(document));
 };
 RCloud.UI.left_panel = (function() {
     var result = RCloud.UI.collapsible_column("#left-column,#fake-left-column",

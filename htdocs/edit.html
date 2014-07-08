@@ -1,17 +1,16 @@
 <html>
   <head>
     <title>RCloud</title>
-    <link rel="stylesheet" type="text/css" href="css/custom-theme/jquery-ui-1.8.18.custom.css" />
-    <link rel="stylesheet" type="text/css" href="css/font-awesome.css"/>
-    <link rel="stylesheet" type="text/css" href="css/jqtree.css"/>
-    <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
-    <link rel="stylesheet" type="text/css" href="css/rmarkdown.css"/>
-    <link rel="stylesheet" type="text/css" href="css/bootstrap-rcloud-tweaks.css"/>
-    <link rel="stylesheet" type="text/css" href="css/main.css"/>
-    <link rel="stylesheet" type="text/css" href="css/dc.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/custom-theme/jquery-ui-1.8.18.custom.css" />
+    <link rel="stylesheet" type="text/css" href="/css/font-awesome.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/jqtree.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/rmarkdown.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/bootstrap-rcloud-tweaks.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/main.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/dc.css"/>
 
-    <!-- We bundle all dependencies to make maintenance of different
-    pages easier, and to cut down on the number of requests.
+    <!-- 
 
     jquery,                             http://jquery.com
     jquery-ui,                          http://jqueryui.com
@@ -32,13 +31,8 @@
 
     -->
 
-    <script src="lib/js/require-common.js"></script>
-    <script type="text/javascript" data-main="lib/js/require-main.js" src="lib/js/require.js"></script>
-
-    <!-- <script type="text/javascript" src="lib/dependencies_bundle.js" charset="utf-8"></script> -->
-    <!-- <script type="text/javascript">MathJax = undefined;</script> -->
-    <!-- <script type="text/javascript" src="js/rcloud_bundle.js"></script> -->
-    <!-- <script type="text/javascript" src="main.js"></script> -->
+    <script src="/lib/js/require-common.js"></script>
+    <script type="text/javascript" data-main="/lib/js/require-main.js" src="/lib/js/require.js"></script>
   </head>
 <body style="overflow:hidden">
 <div class="navbar navbar-inverse navbar-fixed-top">
@@ -98,7 +92,7 @@
                 <a class="header-button" href="#" id="new-notebook" style="display:none"><i class="icon-plus"></i></a>
               </div>
               <div id="collapse-notebook-tree" class="panel-collapse collapse" data-colwidth="3" data-widgetheight="greedy">
-                <img height="100%" width="5px" src="img/right_bordergray.png" class="panel-shadow left" />
+                <img height="100%" width="5px" src="/img/right_bordergray.png" class="panel-shadow left" />
                 <div class="panel-body notebook-tree">
                   <div id="editor-book-tree" class="widget-vsize"></div>
                 </div>
@@ -110,7 +104,7 @@
                 <a class="accordion-toggle left" href="#collapse-search"><i class="icon-search"></i> <span class="title-offset">Search</span></a>
               </div>
               <div id="collapse-search" class="panel-collapse collapse" data-colwidth="4">
-                <img height="100%" width="5px" src="img/right_bordergray.png" class="panel-shadow left" />
+                <img height="100%" width="5px" src="/img/right_bordergray.png" class="panel-shadow left" />
                 <div class="panel-body">
                   <div id="search-wrapper" class="widget-vsize"> <!-- only for sizing -->
                     <div id="search-header">
@@ -133,7 +127,7 @@
                 <a class="accordion-toggle left" href="#collapse-help"><i class="icon-question"></i> <span class="title-offset">Help</span></a>
               </div>
               <div id="collapse-help" class="panel-collapse collapse" data-colwidth="5">
-                <img height="100%" width="5px" src="img/right_bordergray.png" class="panel-shadow left" />
+                <img height="100%" width="5px" src="/img/right_bordergray.png" class="panel-shadow left" />
                 <div id="help-wrapper" class="panel-body widget-vsize">
                   <div id="help-header">
                     <form id="help-form" action="#">
@@ -211,7 +205,7 @@
 		<a class="accordion-toggle right" href="#collapse-assets"><span class="title-offset">Assets</span><div style="position: relative"><i class="icon-copy"></i></div>&nbsp;</a>
               </div>
               <div id="collapse-assets" class="panel-collapse collapse" data-colwidth="4" data-widgetheight="greedy">
-                <img height="100%" width="5px" src="img/left_bordergray.png" class="panel-shadow right" />
+                <img height="100%" width="5px" src="/img/left_bordergray.png" class="panel-shadow right" />
                 <div id="scratchpad-wrapper" class="panel-body" style="padding:0;border:0;position:relative;z-index:1;">
                   <div id="asset-drop-overlay" class="drop-asset-body">
                       <h1 style="vertical-align:middle;position:relative;text-align:center;padding-top:5%;color: lightslategray">Drop File to Asset</h1>
@@ -237,7 +231,7 @@
                 <a class="accordion-toggle right" href="#collapse-file-upload"><div style="position: relative"><i class="icon-upload"></i></div>&nbsp;<span class="title-offset">File Upload</span></a>
               </div>
               <div id="collapse-file-upload" class="panel-collapse collapse" data-colwidth="2">
-                <img height="100%" width="5px" src="img/left_bordergray.png" class="panel-shadow right" />
+                <img height="100%" width="5px" src="/img/left_bordergray.png" class="panel-shadow right" />
                 <div class="panel-body">
                   <div id="file-upload-div" class="widget-vsize">
                     <div id="file-upload-wrapper">
@@ -267,7 +261,7 @@
                    href="#collapse-comments"><div style="position:relative"><i class="icon-comments"></i></div>&nbsp;<span class="title-offset"><span id="comment-count">0</span> Comments</span></a>
               </div>
               <div id="collapse-comments" class="panel-collapse collapse" data-colwidth="2">
-                <img height="100%" width="5px" src="img/left_bordergray.png" class="panel-shadow right" />
+                <img height="100%" width="5px" src="/img/left_bordergray.png" class="panel-shadow right" />
                 <div class="panel-body">
                   <div id="comments-wrapper">
                     <div id="comments-qux" class="widget-vsize">
@@ -288,7 +282,7 @@
                    href="#collapse-session-info"><div style="position:relative"><i class="icon-info"></i></div>&nbsp;<span class="title-offset">Session</span></a>
               </div>
               <div id="collapse-session-info" class="panel-collapse collapse" data-colwidth="3">
-                <img height="100%" width="5px" src="img/left_bordergray.png" class="panel-shadow right" />
+                <img height="100%" width="5px" src="/img/left_bordergray.png" class="panel-shadow right" />
                 <div class="panel-body" id="session-info-panel">
                   <div id="session-info" class="widget-vsize"></div>
                 </div>
@@ -327,10 +321,6 @@
     ace.js                              http://ace.ajax.org
 
   -->
-<!-- <script src="lib/ace_bundle.js" charset="utf-8"></script> -->
-<!-- <script src="editor_tab.js"></script> -->
-<!-- <script src="shell_tab.js"></script> -->
-<!-- <script src="wdcplot.js"></script> -->
 
 <script type="text/javascript"
         src="https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">

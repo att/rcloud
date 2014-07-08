@@ -462,6 +462,7 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         // FIXME make into promises
+        // FIXME the UI shouldn't be tied up with the functionality
         rcloud.upload_file = function(options, k) {
             var opts = upload_opts(options);
             k = k || _.identity;

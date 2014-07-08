@@ -50,13 +50,31 @@ rcloud.set.device.pixel.ratio <- function(ratio) {
   .session$device.pixel.ratio <- ratio
 }
 
+## Exceedingly crappy vt100 color translation
+vt100.translate <- function(s) {
+  preamble <- "<span class='vt100'><span>"
+  postamble <- "</span>"
+  s <- gsub("\033\\[0;([[:digit:]][[:digit:]])m", "</span><span class='color-\\1'>", s)
+  s <- gsub("\033\\[0m", "</span><span>", s)
+  paste(preamble, s, postamble, sep='')
+}
+
+html.escape <- function(s) {
+  s <- gsub("&", "&amp;", s)
+  s <- gsub("<", "&lt;", s)
+  s <- gsub(">", "&gt;", s)
+  s
+}
+
 session.python.eval <- function(command) {
   if (is.null(.session$python.runner))
     rcloud.start.python()
   result <- rcloud.exec.python(command)
   to.chunk <- function(chunk) {
     chunk <- as.list(chunk)
-    if (chunk$output_type == "pyout") {
+    if (chunk$output_type == "pyexception") {
+      paste("<pre>", vt100.translate(html.escape(chunk$text)), "</pre>", sep='')
+    } else if (chunk$output_type == "pyout") {
       paste("\n    ", chunk$text, sep='')
     } else if (chunk$output_type == "stream") {
       paste("\n    ", chunk$text, sep='')

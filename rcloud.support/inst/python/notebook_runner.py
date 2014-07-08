@@ -188,7 +188,7 @@ class NotebookRunner(object):
         cell['outputs'] = outs
 
         if status == 'error':
-            raise Exception(json.dumps(reply[u'content'][u'traceback']))
+            raise Exception(json.dumps(out))
             # raise NotebookError()
 
     def iter_code_cells(self, nb):
