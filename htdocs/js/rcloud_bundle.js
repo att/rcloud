@@ -2933,7 +2933,12 @@ var on_data = function(v) {
     oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
 };
 
-var could_not_initialize_error = "Could not initialize session. The GitHub backend might be down or you might have an invalid authorization token. (You could try clearing your cookies, for example).";
+function could_not_initialize_error(err) {
+    var msg = "Could not initialize session. The GitHub backend might be down or you might have an invalid authorization token. (You could try clearing your cookies, for example).";
+    if(err)
+        msg += "<br />Error: " + err.toString();
+    return msg;
+}
 
 function on_connect_anonymous_allowed(ocaps) {
     var promise;
@@ -2944,7 +2949,7 @@ function on_connect_anonymous_allowed(ocaps) {
         promise = rcloud.anonymous_session_init();
     }
     return promise.catch(function(e) {
-        RCloud.UI.fatal_dialog(could_not_initialize_error, "Logout", "/logout.R");
+        RCloud.UI.fatal_dialog(could_not_initialize_error(e), "Logout", "/logout.R");
     });
 }
 
@@ -2978,11 +2983,12 @@ function rclient_promise(allow_anonymous) {
         if (!$("#output > .response").length)
             rclient.post_response(hello);
     }).catch(function(error) { // e.g. couldn't connect with github
-        rclient.close();
+        if(rclient)
+            rclient.close();
         if (error.message === "Authentication required") {
             RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R");
         } else {
-            RCloud.UI.fatal_dialog(could_not_initialize_error, "Logout", "/logout.R");
+            RCloud.UI.fatal_dialog(could_not_initialize_error(error), "Logout", "/logout.R");
         }
         throw error;
     }).then(function() {
