@@ -162,6 +162,7 @@ RCloud.UI.init = function() {
                         success(value);
                     }
                 });
+                $(this).parent().parent().parent().remove();
             };
             var alert_element = $("<div></div>");
             var p;
