@@ -428,7 +428,8 @@ ui_utils.prevent_backspace = function($doc) {
         if (event.keyCode === 8) {
             var d = event.srcElement || event.target;
             if ((d.tagName.toUpperCase() === 'INPUT' && (d.type.toUpperCase() === 'TEXT' || d.type.toUpperCase() === 'PASSWORD' || d.type.toUpperCase() === 'FILE' || d.type.toUpperCase() === 'EMAIL' ))
-                || d.tagName.toUpperCase() === 'TEXTAREA') {
+                || d.tagName.toUpperCase() === 'TEXTAREA'
+                || d.contentEditable) {
                 doPrevent = d.readOnly || d.disabled;
             }
             else {
