@@ -1,6 +1,6 @@
 // generates dcplot chart descriptions from an EDSL in R
 //////////////////////////////////////////////////////////////////////////////
-(function() { function _wdcplot(dcplot, dataframe) {
+(function() { function _wdcplot(dcplot, dataframe, dc) {
     var chart_group = 0;
     window.charts = {}; // initialize a global namespace for charts
 
@@ -385,6 +385,18 @@
             props['class'] = 'table table-hover';
         }
 
+        var reset = $('<a/>',
+                      {class: 'reset',
+                       href: '#',
+                       style: "display: none;"})
+                .append("reset")
+                .click(function(group_name) {
+                    return function() {
+                        window.charts[name].filterAll();
+                        dc.redrawAll(group_name);
+                    };
+                }(chart_group_name(chart_group)));
+
         return $('<div/>',props)
             .append($('<div/>')
                     .append($('<strong/>').append(title))
@@ -393,11 +405,7 @@
                             .append('Current filter: ')
                             .append($('<span/>', {class: 'filter'})))
                     .append('&nbsp;&nbsp;')
-                    .append($('<a/>',
-                              {class: 'reset',
-                               href: "javascript:window.charts['"+name+"'].filterAll(); dc.redrawAll('" + chart_group_name(chart_group) + "');",
-                               style: "display: none;"})
-                            .append("reset"))
+                    .append(reset)
 
         ).append(table);
     }
@@ -467,7 +475,7 @@
     return wdcplot;
 }
 if(typeof define === "function" && define.amd) {
-    define(["dcplot", "dataframe"], _wdcplot);
+    define(["dcplot", "dataframe", "dc"], _wdcplot);
 } else if(typeof module === "object" && module.exports) {
     module.exports = _wdcplot(dcplot, dataframe);
 } else {
