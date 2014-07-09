@@ -22,6 +22,10 @@ from IPython.kernel import (
 )
 import json
 
+_debugging = False
+if _debugging:
+    logging.basicConfig(filename="/tmp/ipython_output")
+
 class NotebookError(Exception):
     pass
 
