@@ -1255,7 +1255,7 @@ var editor = function () {
                         .return(notebook.id);
                 }).then(function(gistname) {
                     this.set_notebook_visibility(gistname, true);
-                });
+                }).then(rcloud.config.new_notebook_number());
         },
         revert_notebook: function(is_mine, gistname, version) {
             if(!is_mine)
