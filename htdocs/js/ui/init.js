@@ -162,7 +162,7 @@ RCloud.UI.init = function() {
                         success(value);
                     }
                 });
-                alert_element.parent().remove();
+                d3.select('.alert-danger').remove();
             };
             var alert_element = $("<div></div>");
             var p;
