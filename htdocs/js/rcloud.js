@@ -295,6 +295,8 @@ RCloud.create = function(rcloud_ocaps) {
             ["file_upload","write"],
             ["file_upload","close"],
             ["comments","post"],
+            ["comments","modify"],
+            ["comments","delete"],
             ["is_notebook_published"],
             ["publish_notebook"],
             ["unpublish_notebook"],
@@ -531,6 +533,14 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_github_handler(
                 "rcloud.post.comment",
                 rcloud_ocaps.comments.postAsync(id, content));
+        };
+
+        rcloud.modify_comment = function(id, cid, content) {
+            return rcloud_ocaps.comments.modifyAsync(id, cid,content);
+        };
+
+        rcloud.delete_comment = function(id, cid) {
+            return rcloud_ocaps.comments.deleteAsync(id, cid);
         };
 
         // publishing notebooks

@@ -557,7 +557,6 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         // FIXME make into promises
-        // FIXME the UI shouldn't be tied up with the functionality
         rcloud.upload_file = function(options, k) {
             var opts = upload_opts(options);
             k = k || _.identity;
@@ -629,15 +628,15 @@ RCloud.create = function(rcloud_ocaps) {
                 "rcloud.post.comment",
                 rcloud_ocaps.comments.postAsync(id, content));
         };
-
-        rcloud.modify_comment = function(id, cid, content) {
+        
+        rcloud.modify_comment = function(id, cid,content) {
             return rcloud_ocaps.comments.modifyAsync(id, cid,content);
         };
 
         rcloud.delete_comment = function(id, cid) {
             return rcloud_ocaps.comments.deleteAsync(id, cid);
         };
-
+        
         // publishing notebooks
         rcloud.is_notebook_published = function(id) {
             return rcloud_ocaps.is_notebook_publishedAsync(id);
@@ -1134,29 +1133,6 @@ ui_utils.scroll_to_after = function($sel, duration) {
     var $parent = $sel.parent();
     var y = $parent.scrollTop() + $sel.position().top +  $sel.outerHeight();
     $parent.scrollTo(null, y, opts);
-};
-
-ui_utils.prevent_backspace = function($doc) {
-    // Prevent the backspace key from navigating back.
-    // from http://stackoverflow.com/a/2768256/676195
-    $doc.unbind('keydown').bind('keydown', function (event) {
-        var doPrevent = false;
-        if (event.keyCode === 8) {
-            var d = event.srcElement || event.target;
-            if ((d.tagName.toUpperCase() === 'INPUT' && (d.type.toUpperCase() === 'TEXT' || d.type.toUpperCase() === 'PASSWORD' || d.type.toUpperCase() === 'FILE' || d.type.toUpperCase() === 'EMAIL' ))
-                || d.tagName.toUpperCase() === 'TEXTAREA'
-                || d.contentEditable) {
-                doPrevent = d.readOnly || d.disabled;
-            }
-            else {
-                doPrevent = true;
-            }
-        }
-
-        if (doPrevent) {
-            event.preventDefault();
-        }
-    });
 };
 var bootstrap_utils = {};
 
@@ -2966,12 +2942,7 @@ var on_data = function(v) {
     oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
 };
 
-function could_not_initialize_error(err) {
-    var msg = "Could not initialize session. The GitHub backend might be down or you might have an invalid authorization token. (You could try clearing your cookies, for example).";
-    if(err)
-        msg += "<br />Error: " + err.toString();
-    return msg;
-}
+var could_not_initialize_error = "Could not initialize session. The GitHub backend might be down or you might have an invalid authorization token. (You could try clearing your cookies, for example).";
 
 function on_connect_anonymous_allowed(ocaps) {
     var promise;
@@ -2982,7 +2953,7 @@ function on_connect_anonymous_allowed(ocaps) {
         promise = rcloud.anonymous_session_init();
     }
     return promise.catch(function(e) {
-        RCloud.UI.fatal_dialog(could_not_initialize_error(e), "Logout", "/logout.R");
+        RCloud.UI.fatal_dialog(could_not_initialize_error, "Logout", "/logout.R");
     });
 }
 
@@ -3016,12 +2987,11 @@ function rclient_promise(allow_anonymous) {
         if (!$("#output > .response").length)
             rclient.post_response(hello);
     }).catch(function(error) { // e.g. couldn't connect with github
-        if(rclient)
-            rclient.close();
+        rclient.close();
         if (error.message === "Authentication required") {
             RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R");
         } else {
-            RCloud.UI.fatal_dialog(could_not_initialize_error(error), "Logout", "/logout.R");
+            RCloud.UI.fatal_dialog(could_not_initialize_error, "Logout", "/logout.R");
         }
         throw error;
     }).then(function() {
@@ -3584,7 +3554,6 @@ RCloud.UI.help_frame = {
         $("#help-body").attr('data-widgetheight', "greedy");
         $("#collapse-help").trigger('size-changed');
         RCloud.UI.left_panel.collapse($("#collapse-help"), false);
-        ui_utils.prevent_backspace($("#help-frame").contents());
     },
     display_content: function(content) {
         $("#help-frame").contents().find('body').html(content);
@@ -3866,7 +3835,8 @@ RCloud.UI.init = function() {
 
     $("#comment-submit").click(function() {
         if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
-            editor.post_comment($("#comment-entry-body").val());
+            //editor.post_comment($("#comment-entry-body").val());
+            editor.post_comment($("#comment-entry-body").val(). replace(/\n/g, "<br/>"));
         }
         return false;
     });
@@ -3929,8 +3899,6 @@ RCloud.UI.init = function() {
     $("#edit-notebook").click(function() {
         window.location = "edit.html?notebook=" + shell.gistname();
     });
-
-    ui_utils.prevent_backspace($(document));
 };
 RCloud.UI.left_panel = (function() {
     var result = RCloud.UI.collapsible_column("#left-column,#fake-left-column",
