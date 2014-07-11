@@ -1017,7 +1017,7 @@ var editor = function () {
             if(node.user===username_) {
                 var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style, true);
                 remove.click(function(e) {
-                   var yn = confirm("Do you want to remove this notebook?");
+                   var yn = confirm("Do you want to remove '"+node.full_name+"'?");
                    if (yn) {
                        e.stopPropagation();
                        e.preventDefault();
