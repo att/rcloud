@@ -854,10 +854,7 @@ var editor = function () {
             .append("div")
             .attr("class", "comment-container")
             .on("mouseover",function(d){
-                var commentor = d.user.login;
-                var current_user = username_;
-                var is_editable = ((commentor==current_user)?true:false);
-                if(is_editable){
+                if(d.user.login===username_) {
                     $('.comment-header-close', this).show();
                 }
             })
@@ -883,16 +880,13 @@ var editor = function () {
                 var comment_element = $(this);
                 var edit_comment = function(v){
                     var comment_text = comment_element.html();
-                    var id = $(comment_element.parent().parent()).attr("comment_id");
-                    editor.modify_comment(id,comment_text);
+                    editor.modify_comment(d.id, comment_text);
                 };
                 var editable_opts = {
                     change: edit_comment,
                     validate: function(name) { return editor.validate_name(name); }
                 };
-                var commentor = d.user.login;
-                var current_user = username_;
-                var is_editable = ((commentor==current_user)?true:false);
+                var is_editable = d.user.login===username_;
                 ui_utils.editable(comment_element, $.extend({allow_edit: is_editable,inactive_text: comment_element.text(),active_text: comment_element.text()},editable_opts));
             });
         var text_div = d3.selectAll(".comment-body",this);
@@ -901,14 +895,10 @@ var editor = function () {
             .attr("class", "icon-remove comment-header-close")
             .style({"max-width":"5%"})
             .on("click", function (d) {
-                var commentor = d.user.login;
-                var current_user = username_;
-                var is_editable = ((commentor==current_user)?true:false);
-                var current_comment_parent_element = d3.select(this.parentNode.parentNode);
-                if(is_editable)
-                    editor.delete_comment(current_comment_parent_element.attr("comment_id")).then(function(v){console.log(v);});
+                if(d.user.login===username_)
+                    editor.delete_comment(d.id).then(function(v){console.log(v);});
             });
-        $('#collapse-comments').trigger('size-changed');        
+        $('#collapse-comments').trigger('size-changed');
         ui_utils.on_next_tick(function() {
             ui_utils.scroll_to_after($("#comments-qux"));
         });
