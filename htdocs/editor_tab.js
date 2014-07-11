@@ -979,9 +979,9 @@ var editor = function () {
                 add_buttons(make_private, make_public);
             }
             if(node.user===username_) {
-                var remove = ui_utils.fa_button('icon-trash', 'remove', 'remove', icon_style, true);
+                var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style, true);
                 remove.click(function(e) {
-                   var yn = confirm("Do you want to remove "+node.full_name+" ?");
+                   var yn = confirm("Do you want to remove '"+node.full_name+"'?");
                    if (yn) {
                        e.stopPropagation();
                        e.preventDefault();
