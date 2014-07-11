@@ -4274,7 +4274,7 @@ RCloud.UI.scratchpad = {
         this.widget.getSelection().setSelectionRange(range);
         return changed;
     }, language_updated: function() {
-        // github gist detected manuages
+        // github gist detected languages
         var modes = {
             R: "ace/mode/r",
             Python: "ace/mode/python",
