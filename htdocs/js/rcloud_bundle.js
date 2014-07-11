@@ -1705,6 +1705,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             ace_div.css({ 'background-color': lang_info["background-color"] });
             select_lang.val(cell_model.language());
         },
+        progress_message: function(msg) {
+            r_result_div.hide();
+            r_result_div.html(msg);
+            r_result_div.slideDown(150);
+        },
         result_updated: function(r) {
             has_result = true;
             r_result_div.hide();
@@ -1715,7 +1720,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             var uuid = rcloud.deferred_knitr_uuid;
 
             if (cell_model.language() === 'R' && inner_div.find("pre code").length === 0) {
-                r_result_div.prepend("<pre><code class='r'>" + cell_model.content() + "</code></pre>");
+                r_result_div.prepend("<pre><code class='r'>" + _.escape(cell_model.content()) + "</code></pre>");
             }
 
             // click on code to edit
@@ -2035,7 +2040,7 @@ Notebook.Cell.create_controller = function(cell_model)
         },
         set_status_message: function(msg) {
             _.each(cell_model.views, function(view) {
-                view.result_updated(msg);
+                view.progress_message(msg);
             });
         },
         change_language: function(language) {
