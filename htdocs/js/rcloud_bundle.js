@@ -4202,10 +4202,22 @@ RCloud.UI.scratchpad = {
             if(found)
                 found.controller.select();
             else {
+                // very silly i know
+                function comment_text(text, ext) {
+                    switch(ext) {
+                    case 'css': return '/* ' + text + ' */\n';
+                    case 'js': return '// ' + text + '\n';
+                    case 'html': return '<!-- ' + text + ' -->\n';
+                    default: return '# ' + text + '\n';
+                    }
+                }
                 shell.notebook.controller
-                    .append_asset("# New file " + filename, filename)
+                    .append_asset(comment_text("New file " + filename, filename.match(/\.(.*)/)[1]), filename)
                     .then(function(controller) {
                         controller.select();
+                    })
+                    .then(function() {
+                        ui_utils.ace_set_pos(RCloud.UI.scratchpad.widget, 2, 1);
                     });
             }
         });
