@@ -167,6 +167,7 @@ RCloud.UI.init = function() {
             var alert_element = $("<div></div>");
             var p;
             if(/exists/.test(what)) {
+                replacing = true;
                 p = $("<p>File exists. </p>");
                 var overwrite = bootstrap_utils
                         .button({"class": 'btn-danger'})
