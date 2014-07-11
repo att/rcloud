@@ -162,7 +162,7 @@ RCloud.UI.init = function() {
                         success(value);
                     }
                 });
-                d3.select('.alert-danger').remove();
+                alert_box.remove();
             };
             var alert_element = $("<div></div>");
             var p;
@@ -184,7 +184,8 @@ RCloud.UI.init = function() {
                 p = $("<p>(unexpected) " + what + "</p>");
             }
             alert_element.append(p);
-            results_append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
+            var alert_box = bootstrap_utils.alert({'class': 'alert-danger', html: alert_element});
+            results_append(alert_box);
         }
 
         var upload_function = to_notebook ?
