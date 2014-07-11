@@ -3764,10 +3764,12 @@ RCloud.UI.init = function() {
                         success(value);
                     }
                 });
+                alert_box.remove();
             };
             var alert_element = $("<div></div>");
             var p;
             if(/exists/.test(what)) {
+                replacing = true;
                 p = $("<p>File exists. </p>");
                 var overwrite = bootstrap_utils
                         .button({"class": 'btn-danger'})
@@ -3785,7 +3787,8 @@ RCloud.UI.init = function() {
                 p = $("<p>(unexpected) " + what + "</p>");
             }
             alert_element.append(p);
-            results_append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
+            var alert_box = bootstrap_utils.alert({'class': 'alert-danger', html: alert_element});
+            results_append(alert_box);
         }
 
         var upload_function = to_notebook ?
