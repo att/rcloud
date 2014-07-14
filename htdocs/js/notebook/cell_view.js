@@ -60,7 +60,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     split_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             var range = widget.getSelection().getRange();
-            var point1, point2 = undefined;
+            var point1, point2;
             point1 = ui_utils.character_offset_of_pos(widget, range.start);
             if(!range.isEmpty())
                 point2 = ui_utils.character_offset_of_pos(widget, range.end);
@@ -163,7 +163,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         session.getUndoManager().reset();
     });
     var doc = session.doc;
-    var am_read_only = undefined; // we don't know yet
+    var am_read_only = "unknown";
     widget.setOptions({
         enableBasicAutocompletion: true
     });
@@ -279,7 +279,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                         $(img).on("load", update);
                     } else {
                         update();
-                    };
+                    }
                 });
 
             // capture deferred knitr results
@@ -298,13 +298,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                     var f = rclient._rserve.wrap_ocap(ocap);
 
                     f(function(err, future) {
+                        var data;
                         if (RCloud.is_exception(future)) {
-                            var data = RCloud.exception_message(future);
+                            data = RCloud.exception_message(future);
                             $(that).replaceWith(function() {
                                 return ui_utils.string_error(data);
                             });
                         } else {
-                            var data = future();
+                            data = future();
                             $(that).replaceWith(function() {
                                 return data;
                             });
@@ -485,7 +486,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     result.show_result();
     return result;
-}};
+};}
 
 Notebook.Cell.create_html_view = function(cell_model)
 {

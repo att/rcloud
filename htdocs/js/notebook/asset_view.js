@@ -58,7 +58,6 @@ Notebook.Asset.create_html_view = function(asset_model)
         asset_model.controller.remove();
     });
     var result = {
-        div: filename_div,
         filename_updated: function() {
             anchor.text(asset_model.filename());
         },

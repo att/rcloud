@@ -51,7 +51,8 @@ var oob_handlers = {
 
 var on_data = function(v) {
     v = v.value.json();
-    oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
+    if(oob_handlers[v[0]])
+        oob_handlers[v[0]](v.slice(1));
 };
 
 function could_not_initialize_error(err) {

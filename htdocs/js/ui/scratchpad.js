@@ -66,14 +66,14 @@ RCloud.UI.scratchpad = {
                 found.controller.select();
             else {
                 // very silly i know
-                function comment_text(text, ext) {
+                var comment_text = function(text, ext) {
                     switch(ext) {
                     case 'css': return '/* ' + text + ' */\n';
                     case 'js': return '// ' + text + '\n';
                     case 'html': return '<!-- ' + text + ' -->\n';
                     default: return '# ' + text + '\n';
                     }
-                }
+                };
                 shell.notebook.controller
                     .append_asset(comment_text("New file " + filename, filename.match(/\.(.*)/)[1]), filename)
                     .then(function(controller) {
@@ -127,9 +127,9 @@ RCloud.UI.scratchpad = {
     },
     // this behaves like cell_view's update_model
     update_model: function() {
-        return this.current_model
-            ? this.current_model.content(this.widget.getSession().getValue())
-            : null;
+        return this.current_model ?
+            this.current_model.content(this.widget.getSession().getValue()) :
+            null;
     }, content_updated: function() {
         var range = this.widget.getSelection().getRange();
         var changed = this.current_model.content();

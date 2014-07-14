@@ -181,6 +181,7 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.setup_js_installer({
             install_js: function(name, content, k) {
                 try {
+                    /*jshint -W061 */
                     var result = eval(content);
                     rcloud.modules[name] = result;
                     k(null, result);
