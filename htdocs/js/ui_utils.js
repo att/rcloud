@@ -397,7 +397,7 @@ ui_utils.editable = function(elem$, command, isMultiline) {
             // allow default action but don't bubble (causing eroneous reselection in notebook tree)
         });
         elem$.keydown(function(e) {
-            if(e.keyCode === 13) {
+            if((e.keyCode === 10 || e.keyCode === 13 || e.keyCode === 115 || e.keyCode === 19) && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 var result = elem$.text();
                 result = decode(result);
