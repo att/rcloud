@@ -273,7 +273,8 @@ ui_utils.make_prompt_chevron_gutter = function(widget)
 // different active and inactive text, and customized selection.
 // this is a vague imitation of what a jquery.ui library might look like
 // except without putting it into $ namespace
-ui_utils.editable = function(elem$, command) {
+// isMultiline is for taking care of linebreaks
+ui_utils.editable = function(elem$, command, isMultiline) {
     function selectRange(range) {
         var sel = window.getSelection();
         sel.removeAllRanges();
@@ -283,9 +284,15 @@ ui_utils.editable = function(elem$, command) {
         return elem$.data('__editable');
     }
     function encode(s) {
+        if(isMultiline) {
+            s = s.replace(/\n/g, "<br/>");
+        }
         return s.replace(/  /g, ' \xa0'); // replace every space with nbsp
     }
     function decode(s) {
+        if(isMultiline) {
+            s = s.replace(/<br>/g, "\n");
+        }
         return s.replace(/\xa0/g,' '); // replace nbsp's with spaces
     }
 
@@ -345,8 +352,13 @@ ui_utils.editable = function(elem$, command) {
     else if((old_opts && old_opts.allow_edit) && (!new_opts || !new_opts.allow_edit))
         action = 'freeze';
 
-    if(new_opts)
+    if(new_opts) {
+        if(isMultiline) {
+            elem$.html(encode(options().__active ? new_opts.active_text : new_opts.inactive_text));
+        } else {
         elem$.text(encode(options().__active ? new_opts.active_text : new_opts.inactive_text));
+        }
+    }
 
     switch(action) {
     case 'freeze':
@@ -361,12 +373,20 @@ ui_utils.editable = function(elem$, command) {
         elem$.focus(function() {
             if(!options().__active) {
                 options().__active = true;
+                if(isMultiline) {
+                    elem$.html(encode(options().active_text));
+                }else {
                 elem$.text(encode(options().active_text));
+                }
                 window.setTimeout(function() {
                     selectRange(options().select(elem$[0]));
                     elem$.off('blur');
                     elem$.blur(function() {
-                        elem$.text(encode(options().inactive_text));
+                        if(isMultiline) {
+                            elem$.html(encode(options().inactive_text));
+                        }else {
+                            elem$.text(encode(options().inactive_text));
+                        }
                         options().__active = false;
                     }); // click-off cancels
                 }, 10);

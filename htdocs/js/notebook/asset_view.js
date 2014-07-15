@@ -49,7 +49,7 @@ Notebook.Asset.create_html_view = function(asset_model)
         validate: function(name) { return editor.validate_name(name); }
     };
     if(!shell.notebook.model.read_only())
-        ui_utils.editable(filename_span, $.extend({allow_edit: true,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
+        ui_utils.editable(filename_span, $.extend({allow_edit: true,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts),false);
     filename_span.click(function() {
         if(!asset_model.active())
             asset_model.controller.select();
