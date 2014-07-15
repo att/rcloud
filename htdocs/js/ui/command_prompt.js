@@ -126,8 +126,8 @@ RCloud.UI.command_prompt = {
 
         ui_utils.install_common_ace_key_bindings(widget, this.get_language.bind(this));
 
-        var up_handler = widget.commands.commandKeyBinding[0]["up"],
-            down_handler = widget.commands.commandKeyBinding[0]["down"];
+        var up_handler = widget.commands.commandKeyBinding[0].up,
+            down_handler = widget.commands.commandKeyBinding[0].down;
         widget.commands.addCommands([{
             name: 'execute',
             bindKey: {
@@ -175,7 +175,7 @@ RCloud.UI.command_prompt = {
                         ui_utils.ace_set_pos(widget, 0, pos.column);
                     }
                     else {
-                        var r = last_row(widget);
+                        r = last_row(widget);
                         ui_utils.ace_set_pos(widget, r, last_col(widget, r));
                     }
                 }

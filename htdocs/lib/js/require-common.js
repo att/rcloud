@@ -15,6 +15,7 @@ requirejs_config_obj = {
         "bootstrap": ["jquery"],
         "../../shell_tab": ["rcloud_bundle", "../../editor_tab"],
         "../../editor_tab": ["rcloud_bundle", "laconic", "tree.jquery"],
+        "rserve": ["underscore"],
         "rcloud_bundle": ["ace"]
     }
 };

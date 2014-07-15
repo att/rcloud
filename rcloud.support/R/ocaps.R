@@ -144,7 +144,9 @@ authenticated.ocaps <- function()
 
       # commenting ocaps
       comments = list(
-        post = make.oc(rcloud.post.comment)
+        post = make.oc(rcloud.post.comment),
+        modify = make.oc(rcloud.modify.comment),
+        delete = make.oc(rcloud.delete.comment)
         ),
 
       config = list(

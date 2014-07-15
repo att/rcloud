@@ -3,44 +3,44 @@
     margin: 2px;
 }
 .sessioncontent {
-	background-color: #fff;
-	border-radius: 3px;
-	margin-bottom: 12px;
-	padding: 1px;
+    background-color: #fff;
+    border-radius: 3px;
+    margin-bottom: 12px;
+    padding: 1px;
 }
 .headerDiv {
-	margin-left: 20px;
-	height: 530px;
-	margin-right: 30px;
-	border:solid 1px #000;
-	font-family:Arial, Helvetica, sans-serif;
-	font-size:15px;
-	color:#fff;
-	font-weight:bold;
-	padding:6px 4px 6px 4px;
-	background-color: white;
-	position: absolute;
-	z-index: 10;
-	overflow: auto;
-	border-bottom-left-radius: 5px;
-	border-bottom-right-radius: 5px;
+    margin-left: 20px;
+    height: 530px;
+    margin-right: 30px;
+    border:solid 1px #000;
+    font-family:Arial, Helvetica, sans-serif;
+    font-size:15px;
+    color:#fff;
+    font-weight:bold;
+    padding:6px 4px 6px 4px;
+    background-color: white;
+    position: absolute;
+    z-index: 10;
+    overflow: auto;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
 }
 .closeButtonDiv {
-	margin-left: 20px;
-	margin-right: 30px;
-	margin-top: 55px;
-	text-align: center;
-	border-top-radius: 5px;
-	border:solid 1px #000;
-	font-family:Arial, Helvetica, sans-serif;
-	font-size:14px;
-	color: white;
-	height: 40px;
-	font-weight:bold;
-	background-color: black;
-	z-index: 11;
-	border-top-right-radius: 2px;
-	border-top-left-radius: 2px;
+    margin-left: 20px;
+    margin-right: 30px;
+    margin-top: 55px;
+    text-align: center;
+    border-top-radius: 5px;
+    border:solid 1px #000;
+    font-family:Arial, Helvetica, sans-serif;
+    font-size:14px;
+    color: white;
+    height: 40px;
+    font-weight:bold;
+    background-color: black;
+    z-index: 11;
+    border-top-right-radius: 2px;
+    border-top-left-radius: 2px;
 }
 /*     End */
 
@@ -91,14 +91,14 @@ body {
 }
 
 .x line, .y line {
-  stroke: #fff;
-  stroke-width: 1.5px;
+    stroke: #fff;
+    stroke-width: 1.5px;
 }
 
 path.dot {
-  fill: black;
-  stroke-width: 1.5px;
-  stroke: white;
+    fill: black;
+    stroke-width: 1.5px;
+    stroke: white;
 }
 
 rect.extent {
@@ -108,9 +108,9 @@ rect.extent {
 }
 
 rect.frame {
-  fill: #fff;
-  fill-opacity: .7;
-  stroke: #aaa;
+    fill: #fff;
+    fill-opacity: .7;
+    stroke: #aaa;
 }
 
 .figure-icon {
@@ -507,23 +507,23 @@ li.jqtree-selected .notebook-commands {
     z-index: 10000;
     display: none;
     text-shadow:
-      0 0 0.9em #eee,
-      0 0 0.9em #eee,
-      0 0 0.9em #eee,
-      0 0 0.9em #eee,
-      0 0 0.9em #eee,
-      0 0 0.9em #eee,
-      0 0 0.9em #eee,
-      0 0 0.9em #eee,
-      0 0 0.9em #eee,
-      0 0 0.9em #eee,
-      0 0 0.9em #eee,
-      0 0 0.9em #eee,
-      0 0 0.9em #eee; /* CSS, let me count the ways I love thee */
+    0 0 0.9em #eee,
+    0 0 0.9em #eee,
+    0 0 0.9em #eee,
+    0 0 0.9em #eee,
+    0 0 0.9em #eee,
+    0 0 0.9em #eee,
+    0 0 0.9em #eee,
+    0 0 0.9em #eee,
+    0 0 0.9em #eee,
+    0 0 0.9em #eee,
+    0 0 0.9em #eee,
+    0 0 0.9em #eee,
+    0 0 0.9em #eee; /* CSS, let me count the ways I love thee */
 ;/* , */
-      /* 1px -1px 0.1em #000, */
-      /* -1px 1px 0.1em #000, */
-      /*  1px 1px 0.1em #000; */
+    /* 1px -1px 0.1em #000, */
+    /* -1px 1px 0.1em #000, */
+    /*  1px 1px 0.1em #000; */
 }
 
 #asset-link:hover {
@@ -580,7 +580,7 @@ li.jqtree-selected .notebook-commands {
 }
 
 .comment-container {
-    margin-bottom: .4em;
+    margin-bottom: .8em;
     clear: both;
 }
 
@@ -589,13 +589,29 @@ li.jqtree-selected .notebook-commands {
     color: #aaa
 }
 
+.comment-header-close {
+    float: left;
+    color: #000;
+    display:none;
+}
+.comment-header-close:hover{
+    cursor: pointer;
+}
 .comment-body {
     color: #555
 }
 
+.comment-body-text {
+    color: #555;
+    float: left;
+    margin-bottom: .4em;
+}
+
 #comment-entry {
     width: 100%;
-    padding-bottom: 2px; // scroll was cutting it off
+    padding-bottom: 2px;
+    clear:both
+
 }
 
 /******************************************************************************/
@@ -622,13 +638,13 @@ li.jqtree-selected .notebook-commands {
 /* Bring in some of bootstrap's more up-to-date CSS */
 
 .dropdown-menu > li > a {
-  display: block;
-  padding: 3px 20px;
-  clear: both;
-  font-weight: normal;
-  line-height: 20px;
-  color: #333333;
-  white-space: nowrap;
+    display: block;
+    padding: 3px 20px;
+    clear: both;
+    font-weight: normal;
+    line-height: 20px;
+    color: #333333;
+    white-space: nowrap;
 }
 
 a.footer-dropdown-toggle {

@@ -40,4 +40,4 @@ return {
         });
     }
 };
-})())
+})()) /*jshint -W033 */ // this is an expression not a statement

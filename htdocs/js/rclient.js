@@ -18,6 +18,7 @@ RClient = {
                 ocaps = Promise.promisifyAll(ocaps);
                 if (ocaps !== null) {
                     result.running = true;
+                    /*jshint -W030 */
                     opts.on_connect && opts.on_connect.call(result, ocaps);
                 } else {
                     on_error("Login failed. Shutting down!");
@@ -37,6 +38,7 @@ RClient = {
 
         function on_error(msg, status_code) {
             if (opts.debug) {
+                /*jshint -W087 */
                 debugger;
             }
             if (opts.on_error && opts.on_error(msg, status_code))
@@ -47,13 +49,14 @@ RClient = {
 
         function on_close(msg) {
             if (opts.debug) {
+                /*jshint -W087 */
                 debugger;
             }
             if (!clean) {
                 RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Socket was closed. Goodbye!"));
                 shutdown();
             }
-        };
+        }
 
         var token = $.cookies.get().token;  // document access token
         var execToken = $.cookies.get().execToken; // execution token (if enabled)

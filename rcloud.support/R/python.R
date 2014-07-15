@@ -31,7 +31,6 @@ rcloud.exec.python <- function(cmd)
     # ipython's output.
     # See to.chunk in session.python.eval
     msg <- e$`message`
-    cat(msg, file="/tmp/python_rcloud.log", append=TRUE)
 
     # In addition, and this is a gigantic kludge, for some reason
     # the exception message comes back with "Python exception: <type 'exceptions.Exception'> "
@@ -42,7 +41,7 @@ rcloud.exec.python <- function(cmd)
       stop("Internal Error: python exception was not returned as expected")
     }
     list(c(output_type="pyexception",
-           text=fromJSON(substr(msg, 49, nchar(msg)))$traceback))
+           text=paste(fromJSON(substr(msg, 49, nchar(msg)))$traceback, collapse='\n')))
   })
 }
 

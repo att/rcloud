@@ -65,10 +65,22 @@ RCloud.UI.scratchpad = {
             if(found)
                 found.controller.select();
             else {
+                // very silly i know
+                var comment_text = function(text, ext) {
+                    switch(ext) {
+                    case 'css': return '/* ' + text + ' */\n';
+                    case 'js': return '// ' + text + '\n';
+                    case 'html': return '<!-- ' + text + ' -->\n';
+                    default: return '# ' + text + '\n';
+                    }
+                };
                 shell.notebook.controller
-                    .append_asset("# New file " + filename, filename)
+                    .append_asset(comment_text("New file " + filename, filename.match(/\.(.*)/)[1]), filename)
                     .then(function(controller) {
                         controller.select();
+                    })
+                    .then(function() {
+                        ui_utils.ace_set_pos(RCloud.UI.scratchpad.widget, 2, 1);
                     });
             }
         });
@@ -115,9 +127,9 @@ RCloud.UI.scratchpad = {
     },
     // this behaves like cell_view's update_model
     update_model: function() {
-        return this.current_model
-            ? this.current_model.content(this.widget.getSession().getValue())
-            : null;
+        return this.current_model ?
+            this.current_model.content(this.widget.getSession().getValue()) :
+            null;
     }, content_updated: function() {
         var range = this.widget.getSelection().getRange();
         var changed = this.current_model.content();
@@ -125,7 +137,7 @@ RCloud.UI.scratchpad = {
         this.widget.getSelection().setSelectionRange(range);
         return changed;
     }, language_updated: function() {
-        // github gist detected manuages
+        // github gist detected languages
         var modes = {
             R: "ace/mode/r",
             Python: "ace/mode/python",

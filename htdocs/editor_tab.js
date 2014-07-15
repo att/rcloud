@@ -37,7 +37,7 @@ var editor = function () {
         current_ = null; // current notebook and version
 
     // view
-    var $tree_ = undefined,
+    var $tree_ = null,
         publish_notebook_checkbox_ = null,
         star_notebook_button_ = null;
 
@@ -157,13 +157,17 @@ var editor = function () {
         if(!map[description])
             return description;
         var match, base, n;
-        if((match = trnexp.exec(description)))
-            base = match[1], n = +match[2];
-        else
-            base = description, n = 1;
+        if((match = trnexp.exec(description))) {
+            base = match[1];
+            n = +match[2];
+        }
+        else {
+            base = description;
+            n = 1;
+        }
         var copy_name;
         do
-            copy_name = base + " " + ++n;
+            copy_name = base + " " + (++n);
         while(map[copy_name]);
         return copy_name;
     }
@@ -240,8 +244,8 @@ var editor = function () {
                            invalid_notebooks_[book] = null;
                            return users;
                        }
-                       if(!entry.username || entry.username === "undefined"
-                          || !entry.description || !entry.last_commit) {
+                       if(!entry.username || entry.username === "undefined" ||
+                          !entry.description || !entry.last_commit) {
                            invalid_notebooks_[book] = entry;
                            return users;
                        }
@@ -290,8 +294,8 @@ var editor = function () {
                         invalid_notebooks_[book] = null;
                         return false;
                     }
-                    if(!entry.username || entry.username === "undefined"
-                       || !entry.description || !entry.last_commit) {
+                    if(!entry.username || entry.username === "undefined" ||
+                       !entry.description || !entry.last_commit) {
                         invalid_notebooks_[book] = entry;
                         return false;
                     }
@@ -530,7 +534,7 @@ var editor = function () {
     // add_history_nodes
     // whither is 'hide' - erase all, 'index' - show thru index, 'sha' - show thru sha, 'more' - show INCR more
     function add_history_nodes(node, whither, where) {
-        const INCR = 5;
+        var INCR = 5;
         var debug_colors = false;
         var ellipsis = null;
         if(node.children.length && node.children[node.children.length-1].id == 'showmore')
@@ -613,7 +617,7 @@ var editor = function () {
                 }
             }
         }
-        var nshow = undefined;
+        var nshow;
         if(whither==='hide') {
             for(var i = node.children.length-1; i >= 0; --i)
                 $tree_.tree('removeNode', node.children[i]);
@@ -651,11 +655,11 @@ var editor = function () {
             p = p.parent;
         }
         if($(node.element).position().top > height)
-            $tree_.parent().scrollTo(null, $tree_.parent().scrollTop()
-                                     + $(node.element).position().top - height + 50);
+            $tree_.parent().scrollTo(null, $tree_.parent().scrollTop() +
+                                     $(node.element).position().top - height + 50);
         else if($(node.element).position().top < 0)
-            $tree_.parent().scrollTo(null, $tree_.parent().scrollTop()
-                                     + $(node.element).position().top - 100);
+            $tree_.parent().scrollTo(null, $tree_.parent().scrollTop() +
+                                     $(node.element).position().top - 100);
     }
 
     function select_node(node) {
@@ -843,8 +847,8 @@ var editor = function () {
             RCloud.UI.session_pane.post_error("populate comments: " + e.message);
             return;
         }
-        d3.select("#comment-count")
-            .text(String(comments.length));
+        var is_editable=false;
+        d3.select("#comment-count").text(String(comments.length));
         // no update logic, clearing/rebuilding is easier
         d3.select("#comments-container").selectAll("div").remove();
         var comment_div = d3.select("#comments-container")
@@ -852,23 +856,63 @@ var editor = function () {
             .data(comments)
             .enter()
             .append("div")
-            .attr("class", "comment-container");
-
+            .attr("class", "comment-container")
+            .on("mouseover",function(d){
+                if(d.user.login===username_) {
+                    $('.comment-header-close', this).show();
+                }
+            })
+            .on("mouseout",function(d){
+                $('.comment-header-close', this).hide();
+            })
+            .attr("comment_id",function(d) { return d.id; });
         comment_div
             .append("div")
             .attr("class", "comment-header")
+            .style({"max-width":"30%"})
             .text(function(d) { return d.user.login; });
+
         comment_div
             .append("div")
             .attr("class", "comment-body")
+<<<<<<< HEAD
             .html(function(d) { return d.body; });
+=======
+            .style({"max-width":"70%"})
+            .append("div")
+            .attr("class", "comment-body-text")
+            .style({"max-width":"95%"})
+            .text(function(d) { return d.body; })
+            .each(function(d){
+                var comment_element = $(this);
+                var edit_comment = function(v){
+                    var comment_text = comment_element.html();
+                    editor.modify_comment(d.id, comment_text);
+                };
+                var editable_opts = {
+                    change: edit_comment,
+                    validate: function(name) { return editor.validate_name(name); }
+                };
+                var is_editable = d.user.login===username_;
+                ui_utils.editable(comment_element, $.extend({allow_edit: is_editable,inactive_text: comment_element.text(),active_text: comment_element.text()},editable_opts));
+            });
+        var text_div = d3.selectAll(".comment-body",this);
+        text_div
+            .append("i")
+            .attr("class", "icon-remove comment-header-close")
+            .style({"max-width":"5%"})
+            .on("click", function (d) {
+                if(d.user.login===username_)
+                    editor.delete_comment(d.id).then(function(v){console.log(v);});
+            });
+>>>>>>> 6e82329e8a3c7cace548ee1f3109937623607094
         $('#collapse-comments').trigger('size-changed');
         ui_utils.on_next_tick(function() {
             ui_utils.scroll_to_after($("#comments-qux"));
         });
     }
 
-    const icon_style = {'line-height': '90%'};
+    var icon_style = {'line-height': '90%'};
     function on_create_tree_li(node, $li) {
         var element = $li.find('.jqtree-element'),
             title = element.find('.jqtree-title');
@@ -981,7 +1025,7 @@ var editor = function () {
             if(node.user===username_) {
                 var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style, true);
                 remove.click(function(e) {
-                   var yn = confirm("Do you want to remove this notebook?");
+                   var yn = confirm("Do you want to remove '"+node.full_name+"'?");
                    if (yn) {
                        e.stopPropagation();
                        e.preventDefault();
@@ -992,7 +1036,7 @@ var editor = function () {
                    }
                 });
                 add_buttons(remove);
-            };
+            }
             var wid = add_buttons.width()+'px';
             add_buttons.commit();
             appear.css({left: '-'+wid, width: wid});
@@ -1030,8 +1074,8 @@ var editor = function () {
             else {
                 // it's weird that a notebook exists in two trees but only one is selected (#220)
                 // just select - and this enables editability
-                if(event.node.gistname === current_.notebook
-                   && event.node.version == current_.version) // nulliness ok here
+                if(event.node.gistname === current_.notebook &&
+                   event.node.version == current_.version) // nulliness ok here
                     select_node(event.node);
                 else
                     result.open_notebook(event.node.gistname, event.node.version || null, event.node.root, false);
@@ -1078,18 +1122,19 @@ var editor = function () {
             var that = this;
             username_ = rcloud.username();
             var promise = load_everything().then(function() {
-                if(opts.notebook) // notebook specified in url
+                if(opts.notebook) { // notebook specified in url
                     return that.load_notebook(opts.notebook, opts.version)
-                    .catch(function(xep) {
-                        var message = "Could not open notebook " + opts.notebook;
-                        if(opts.version)
-                            message += "(version " + opts.version + ")";
-                        RCloud.UI.fatal_dialog(message, "Continue", make_edit_url());
-                        throw xep;
-                    });
-                else if(!opts.new_notebook && current_.notebook)
+                        .catch(function(xep) {
+                            var message = "Could not open notebook " + opts.notebook;
+                            if(opts.version)
+                                message += "(version " + opts.version + ")";
+                            RCloud.UI.fatal_dialog(message, "Continue", make_edit_url());
+                            throw xep;
+                        });
+                } else if(!opts.new_notebook && current_.notebook) {
                     return that.load_notebook(current_.notebook, current_.version)
-                    .catch(open_last_loadable);
+                        .catch(open_last_loadable);
+                }
                 else
                     return that.new_notebook();
             });
@@ -1182,12 +1227,12 @@ var editor = function () {
             // else if opts has notebook, use notebook id & user
             // else use current notebook & user
             opts = opts || {};
-            var gistname = opts.gistname
-                    || opts.notebook&&opts.notebook.id
-                    || current_.notebook;
-            var user = opts.user
-                    || opts.notebook&&opts.notebook.user&&opts.notebook.user.login
-                    || notebook_info_[gistname].username;
+            var gistname = opts.gistname ||
+                    opts.notebook&&opts.notebook.id ||
+                    current_.notebook;
+            var user = opts.user ||
+                    opts.notebook&&opts.notebook.user&&opts.notebook.user.login ||
+                    notebook_info_[gistname].username;
             // keep selected if was
             if(gistname === current_.notebook)
                 opts.selroot = opts.selroot || true;
@@ -1347,6 +1392,29 @@ var editor = function () {
                         });
                 });
         },
+        modify_comment: function (cid,comment) {
+            comment = JSON.stringify({
+                "body": comment
+            });
+            return rcloud.modify_comment(current_.notebook,cid, comment).then(function (result) {
+                if (!result)
+                    return null;
+                return rcloud.get_all_comments(current_.notebook).then(function (data) {
+                    populate_comments(data);
+                    $('#comment-entry-body').val('');
+                });
+            });
+        },
+        delete_comment: function (cid) {            
+            return rcloud.delete_comment(current_.notebook,cid).then(function (result) {
+                if (!result)
+                    return null;
+                return rcloud.get_all_comments(current_.notebook).then(function (data) {
+                    populate_comments(data);
+                    $('#comment-entry-body').val('');
+                });
+            });
+        },
         search: function(search_string) {
             var that = this;
             function split_source_search_lines(line) {
@@ -1364,7 +1432,7 @@ var editor = function () {
                     }
                 }
                 throw new Error("shouldn't get here");
-            };
+            }
             function split_history_search_lines(line) {
                 var t = line.indexOf(':');
                 var r = /\|/g;
@@ -1381,7 +1449,7 @@ var editor = function () {
                     }
                 }
                 throw new Error("shouldn't get here");
-            };
+            }
 
             function update_source_search(result) {
                 d3.select("#input-text-source-results-title")
@@ -1425,7 +1493,7 @@ var editor = function () {
                         that.load_notebook(notebook, null);
                     })
                 ;
-            };
+            }
             function update_history_search(result) {
                 d3.select("#input-text-history-results-title")
                     .style("display", (result !== null && result.length >= 1)?null:"none");
@@ -1459,7 +1527,7 @@ var editor = function () {
                     .on("click", function(d, i) {
                     })
                 ;
-            };
+            }
             rcloud.search(search_string).then(function(result) {
                 update_source_search(result[0]);
                 update_history_search(result[1]);

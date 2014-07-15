@@ -53,8 +53,10 @@ RCloud.UI.init = function() {
         if(dt.items.length > 1) {
             e.stopPropagation();
             e.preventDefault();
-        }else
-        if (dt.types != null && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.contains('application/x-moz-file'))) {
+        } else if (dt.types !== null &&
+                   (dt.types.indexOf ?
+                    dt.types.indexOf('Files') != -1 :
+                    dt.types.contains('application/x-moz-file'))) {
             if (!shell.notebook.model.read_only()) {
                 e.stopPropagation();
                 e.preventDefault();
@@ -67,7 +69,7 @@ RCloud.UI.init = function() {
             }
         }
     });
-    $(document).on('drop dragleave', function (e)  {
+    $(document).on('drop dragleave', function (e) {
         e.stopPropagation();
         e.preventDefault();
         showOverlay_ = false;
@@ -162,10 +164,12 @@ RCloud.UI.init = function() {
                         success(value);
                     }
                 });
+                alert_box.remove();
             };
             var alert_element = $("<div></div>");
             var p;
             if(/exists/.test(what)) {
+                replacing = true;
                 p = $("<p>File exists. </p>");
                 var overwrite = bootstrap_utils
                         .button({"class": 'btn-danger'})
@@ -183,7 +187,8 @@ RCloud.UI.init = function() {
                 p = $("<p>(unexpected) " + what + "</p>");
             }
             alert_element.append(p);
-            results_append(bootstrap_utils.alert({'class': 'alert-danger', html: alert_element}));
+            var alert_box = bootstrap_utils.alert({'class': 'alert-danger', html: alert_element});
+            results_append(alert_box);
         }
 
         var upload_function = to_notebook ?

@@ -5,18 +5,18 @@ RCloud.UI.search = {
         }
         function create_list_of_search_results(d) {
             var i;
-            if(d == null || d == "null" || d == "") {
+            if(d === null || d === "null" || d === "") {
                 summary("No Results Found");
-            } else if(d[0] == "error") {
+            } else if(d[0] === "error") {
                 d[1] = d[1].replace(/\n/g, "<br/>");
                 summary("ERROR:\n" + d[1]);
             } else {
-                if(typeof (d) == "string") {
+                if(typeof (d) === "string") {
                     d = JSON.parse("[" + d + "]");
                 }
                 //convert any string type part to json object : not required most of the time
                 for(i = 0; i < d.length; i++) {
-                    if(typeof (d[i]) == "string") {
+                    if(typeof (d[i]) === "string") {
                         d[i] = JSON.parse(d[i]);
                     }
                 }
@@ -47,9 +47,9 @@ RCloud.UI.search = {
                         for(var k = 0; k < d[i].parts.length && added_parts < 5; k++) {
                             inner_table = "";
                             var ks = Object.keys(d[i].parts[k]);
-                            if(ks.length > 0 && d[i].parts[k].content != "") {
+                            if(ks.length > 0 && d[i].parts[k].content !== "") {
                                 var content = d[i].parts[k].content;
-                                if(typeof content == "string")
+                                if(typeof content === "string")
                                     content = [content];
                                 if(content.length > 0)
                                     parts_table += "<tr><th class='search-result-part-name'>" + d[i].parts[k].filename + "</th></tr>";
@@ -58,19 +58,19 @@ RCloud.UI.search = {
 
                                 added_parts++;
                             }
-                            if(inner_table != "") {
+                            if(inner_table !== "") {
                                 inner_table = "<table>" + inner_table + "</table>";
                                 parts_table += "<tr><td>" + inner_table + "</td></tr>";
                             }
                         }
-                        if(parts_table != "") {
+                        if(parts_table !== "") {
                             parts_table = "<table>" + parts_table + "</table>";
                         }
-                        search_results += "<table class='search-result-item' width=100%><tr><td width=10%>"
-                            + "<a id=\"open_" + i + "\" href='#' data-gistname='" + notebook_id + "' class='search-result-heading'>"
-                            + d[i].user + " / " + d[i].notebook + "</a>"
-                            + image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
-                        if(parts_table != "")
+                        search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" +
+                            "<a id=\"open_" + i + "\" href='#' data-gistname='" + notebook_id + "' class='search-result-heading'>" +
+                            d[i].user + " / " + d[i].notebook + "</a>" +
+                            image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
+                        if(parts_table !== "")
                             search_results += "<tr><td colspan=2 width=100% style='font-size: 12'><div>" + parts_table + "</div></td></tr>";
                         search_results += "</table>";
                     } catch(e) {
@@ -78,8 +78,8 @@ RCloud.UI.search = {
                     }
                 }
                 var qry = decodeURIComponent(query);
-                qry = qry.replace(/\</g,'&lt;');
-                qry = qry.replace(/\>/g,'&gt;');
+                qry = qry.replace(/</g,'&lt;');
+                qry = qry.replace(/>/g,'&gt;');
                 var search_summary = len + " Results Found"; //+ " <i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i>";
                 summary(search_summary);
                 $("#search-results-row").css('display', 'table-row');
@@ -92,7 +92,7 @@ RCloud.UI.search = {
                 });
             }
             $("#collapse-search").trigger("size-changed");
-        };
+        }
 
         summary("Searching...");
         $("#search-results-row").hide();

@@ -1,4 +1,12 @@
-## RCloud develop branch
+## RCloud 1.1.1
+
+* Properly handle failed connections (was throwing in an error handler). Add
+  require dependency rserve -> underscore.
+
+* Fix reset links in wdcplot charts.
+
+
+## RCloud 1.1
 
 * `main.html` has been renamed `edit.html`. Currently main.html
   redirects to edit.html, but this will be eventually removed.
