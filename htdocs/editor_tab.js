@@ -151,6 +151,8 @@ var editor = function () {
     function find_next_copy_name(username, description) {
         var pid = node_id("alls", username);
         var parent = $tree_.tree('getNodeById', pid);
+        if(parent === undefined)
+           return description;
         if(parent.delay_children)
             load_children(parent);
         var map = _.object(_.map(parent.children, function(c) { return [c.name, true]; }));
@@ -158,7 +160,7 @@ var editor = function () {
             return description;
         var match, base, n;
         if((match = trnexp.exec(description)))
-            base = match[1], n = +match[2];
+            base = match[1], n = 1;
         else
             base = description, n = 1;
         var copy_name;
@@ -1198,8 +1200,8 @@ var editor = function () {
         },
         new_notebook: function() {
             var that = this;
-            return rcloud.config.new_notebook_number()
-                .then(function(number) { return "Notebook " + number; })
+            return Promise.cast(find_next_copy_name(username_,"Notebook 1"))
+                .then(function (desc) { return desc; },function(e){ return "Notebook 1"; })
                 .then(shell.new_notebook.bind(shell))
                 .then(function(notebook) {
                     set_visibility(notebook.id, true);
