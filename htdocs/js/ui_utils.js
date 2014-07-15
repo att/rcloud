@@ -356,7 +356,7 @@ ui_utils.editable = function(elem$, command, isMultiline) {
         if(isMultiline) {
             elem$.html(encode(options().__active ? new_opts.active_text : new_opts.inactive_text));
         } else {
-        elem$.text(encode(options().__active ? new_opts.active_text : new_opts.inactive_text));
+            elem$.text(encode(options().__active ? new_opts.active_text : new_opts.inactive_text));
         }
     }
 
@@ -375,8 +375,8 @@ ui_utils.editable = function(elem$, command, isMultiline) {
                 options().__active = true;
                 if(isMultiline) {
                     elem$.html(encode(options().active_text));
-                }else {
-                elem$.text(encode(options().active_text));
+                } else {
+                    elem$.text(encode(options().active_text));
                 }
                 window.setTimeout(function() {
                     selectRange(options().select(elem$[0]));
@@ -384,7 +384,7 @@ ui_utils.editable = function(elem$, command, isMultiline) {
                     elem$.blur(function() {
                         if(isMultiline) {
                             elem$.html(encode(options().inactive_text));
-                        }else {
+                        } else {
                             elem$.text(encode(options().inactive_text));
                         }
                         options().__active = false;
