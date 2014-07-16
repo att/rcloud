@@ -888,10 +888,11 @@ var editor = function () {
                 };
                 var editable_opts = {
                     change: edit_comment,
+                    allow_multiline: true,
                     validate: function(name) { return editor.validate_name(name); }
                 };
                 var is_editable = d.user.login===username_;
-                ui_utils.editable(comment_element, $.extend({allow_edit: is_editable,inactive_text: comment_element.text(),active_text: comment_element.text()},editable_opts),true);
+                ui_utils.editable(comment_element, $.extend({allow_edit: is_editable,inactive_text: comment_element.text(),active_text: comment_element.text()},editable_opts));
             });
         var text_div = d3.selectAll(".comment-body",this);
         text_div

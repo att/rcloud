@@ -49,19 +49,19 @@ RCloud.UI.notebook_title = (function() {
             ui_utils.editable(title, $.extend({allow_edit: !is_read_only,
                                                inactive_text: title.text(),
                                                active_text: active_text},
-                                              editable_opts),false);
+                                              editable_opts));
         }, make_editable: function(node, editable) {
             function get_title(node) {
                 return $('.jqtree-title:not(.history)', node.element);
             }
             if(last_editable_ && (!node || last_editable_ !== node))
-                ui_utils.editable(get_title(last_editable_), 'destroy',false);
+                ui_utils.editable(get_title(last_editable_), 'destroy');
             if(node) {
                 ui_utils.editable(get_title(node),
                                   $.extend({allow_edit: editable,
                                             inactive_text: node.name,
                                             active_text: node.full_name},
-                                           editable_opts),false);
+                                           editable_opts));
             }
             last_editable_ = node;
         }

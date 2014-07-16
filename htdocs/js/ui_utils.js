@@ -273,8 +273,7 @@ ui_utils.make_prompt_chevron_gutter = function(widget)
 // different active and inactive text, and customized selection.
 // this is a vague imitation of what a jquery.ui library might look like
 // except without putting it into $ namespace
-// isMultiline is for taking care of linebreaks
-ui_utils.editable = function(elem$, command, isMultiline) {
+ui_utils.editable = function(elem$, command) {
     function selectRange(range) {
         var sel = window.getSelection();
         sel.removeAllRanges();
@@ -284,13 +283,13 @@ ui_utils.editable = function(elem$, command, isMultiline) {
         return elem$.data('__editable');
     }
     function encode(s) {
-        if(isMultiline) {
+        if(command.allow_multiline) {
             s = s.replace(/\n/g, "<br/>");
         }
         return s.replace(/  /g, ' \xa0'); // replace every space with nbsp
     }
     function decode(s) {
-        if(isMultiline) {
+        if(command.allow_multiline) {
             s = s.replace(/<br>/g, "\n");
         }
         return s.replace(/\xa0/g,' '); // replace nbsp's with spaces
@@ -308,6 +307,7 @@ ui_utils.editable = function(elem$, command, isMultiline) {
                 allow_edit: true,
                 inactive_text: elem$.text(),
                 active_text: elem$.text(),
+                allow_multiline: false,
                 select: function(el) {
                     var range = document.createRange();
                     range.selectNodeContents(el);
@@ -353,7 +353,7 @@ ui_utils.editable = function(elem$, command, isMultiline) {
         action = 'freeze';
 
     if(new_opts) {
-        if(isMultiline) {
+        if(command.allow_multiline) {
             elem$.html(encode(options().__active ? new_opts.active_text : new_opts.inactive_text));
         } else {
             elem$.text(encode(options().__active ? new_opts.active_text : new_opts.inactive_text));
@@ -373,7 +373,7 @@ ui_utils.editable = function(elem$, command, isMultiline) {
         elem$.focus(function() {
             if(!options().__active) {
                 options().__active = true;
-                if(isMultiline) {
+                if(command.allow_multiline) {
                     elem$.html(encode(options().active_text));
                 } else {
                     elem$.text(encode(options().active_text));
@@ -382,7 +382,7 @@ ui_utils.editable = function(elem$, command, isMultiline) {
                     selectRange(options().select(elem$[0]));
                     elem$.off('blur');
                     elem$.blur(function() {
-                        if(isMultiline) {
+                        if(command.allow_multiline) {
                             elem$.html(encode(options().inactive_text));
                         } else {
                             elem$.text(encode(options().inactive_text));
@@ -398,7 +398,7 @@ ui_utils.editable = function(elem$, command, isMultiline) {
         });
         elem$.keydown(function(e) {
             var ctrl_key = (e.keyCode === 10 || e.keyCode === 13 || e.keyCode === 115 || e.keyCode === 19);
-            if((isMultiline && (ctrl_key && (e.ctrlKey || e.metaKey))) || (ctrl_key && !isMultiline)) {
+            if((command.allow_multiline && (ctrl_key && (e.ctrlKey || e.metaKey))) || (ctrl_key && !command.allow_multiline)){
                 e.preventDefault();
                 var result = elem$.text();
                 result = decode(result);
@@ -407,11 +407,15 @@ ui_utils.editable = function(elem$, command, isMultiline) {
                     elem$.off('blur'); // don't cancel!
                     elem$.blur();
                     options().change(result);
-                }
-                else return false; // don't let CR through!
+                } else {
+                    return false;
+                } // don't let CR through!
             }
-            else if(e.keyCode === 27)
+            else if(e.keyCode === 27) {
                 elem$.blur(); // and cancel
+            } else if(ctrl_key) {
+                elem$.css({"border":"1px dotted grey"})
+            }
             return true;
         });
         break;
