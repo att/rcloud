@@ -42,9 +42,9 @@ RCloud.UI.notebook_title = (function() {
                     ellipt_end = true;
                     text = text.substr(0, text.length - 2);
                 }
-                title.text((ellipt_start ? '.../' : '')
-                                          + text +
-                                          (ellipt_end ? '...' : ''));
+                title.text((ellipt_start ? '.../' : '') +
+                           text +
+                           (ellipt_end ? '...' : ''));
             }
             ui_utils.editable(title, $.extend({allow_edit: !is_read_only,
                                                inactive_text: title.text(),

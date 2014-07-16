@@ -1,5 +1,5 @@
 RCloud.UI.column = function(sel_column) {
-    var colwidth_ = undefined;
+    var colwidth_;
     function classes(cw) {
         return "col-md-" + cw + " col-sm-" + cw;
     }
@@ -67,7 +67,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 h = "100%";
             $(this).attr("height", h);
         });
-    };
+    }
     _.extend(result, {
         init: function() {
             var that = this;
@@ -155,14 +155,14 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             var total_headings = d3.sum($(sel_accordion + " .panel-heading")
                                         .map(function(_, ph) { return $(ph).outerHeight(); }));
             available -= total_headings;
-            for(id in padding)
+            for(var id in padding)
                 available -= padding[id];
-            var id, left = available, do_fit = false;
+            var left = available, do_fit = false;
             for(id in heights)
                 left -= heights[id];
             if(left>=0) {
                 // they all fit, now just give the rest to greedy one (if any)
-                if(greedy_one != null) {
+                if(greedy_one !== null) {
                     heights[greedy_one.get(0).id] += left;
                     do_fit = true;
                 }

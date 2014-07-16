@@ -37,7 +37,7 @@ var editor = function () {
         current_ = null; // current notebook and version
 
     // view
-    var $tree_ = undefined,
+    var $tree_ = null,
         publish_notebook_checkbox_ = null,
         star_notebook_button_ = null;
 
@@ -157,13 +157,17 @@ var editor = function () {
         if(!map[description])
             return description;
         var match, base, n;
-        if((match = trnexp.exec(description)))
-            base = match[1], n = +match[2];
-        else
-            base = description, n = 1;
+        if((match = trnexp.exec(description))) {
+            base = match[1];
+            n = +match[2];
+        }
+        else {
+            base = description;
+            n = 1;
+        }
         var copy_name;
         do
-            copy_name = base + " " + ++n;
+            copy_name = base + " " + (++n);
         while(map[copy_name]);
         return copy_name;
     }
@@ -240,8 +244,8 @@ var editor = function () {
                            invalid_notebooks_[book] = null;
                            return users;
                        }
-                       if(!entry.username || entry.username === "undefined"
-                          || !entry.description || !entry.last_commit) {
+                       if(!entry.username || entry.username === "undefined" ||
+                          !entry.description || !entry.last_commit) {
                            invalid_notebooks_[book] = entry;
                            return users;
                        }
@@ -290,8 +294,8 @@ var editor = function () {
                         invalid_notebooks_[book] = null;
                         return false;
                     }
-                    if(!entry.username || entry.username === "undefined"
-                       || !entry.description || !entry.last_commit) {
+                    if(!entry.username || entry.username === "undefined" ||
+                       !entry.description || !entry.last_commit) {
                         invalid_notebooks_[book] = entry;
                         return false;
                     }
@@ -530,7 +534,7 @@ var editor = function () {
     // add_history_nodes
     // whither is 'hide' - erase all, 'index' - show thru index, 'sha' - show thru sha, 'more' - show INCR more
     function add_history_nodes(node, whither, where) {
-        const INCR = 5;
+        var INCR = 5;
         var debug_colors = false;
         var ellipsis = null;
         if(node.children.length && node.children[node.children.length-1].id == 'showmore')
@@ -613,7 +617,7 @@ var editor = function () {
                 }
             }
         }
-        var nshow = undefined;
+        var nshow;
         if(whither==='hide') {
             for(var i = node.children.length-1; i >= 0; --i)
                 $tree_.tree('removeNode', node.children[i]);
@@ -651,11 +655,11 @@ var editor = function () {
             p = p.parent;
         }
         if($(node.element).position().top > height)
-            $tree_.parent().scrollTo(null, $tree_.parent().scrollTop()
-                                     + $(node.element).position().top - height + 50);
+            $tree_.parent().scrollTo(null, $tree_.parent().scrollTop() +
+                                     $(node.element).position().top - height + 50);
         else if($(node.element).position().top < 0)
-            $tree_.parent().scrollTo(null, $tree_.parent().scrollTop()
-                                     + $(node.element).position().top - 100);
+            $tree_.parent().scrollTo(null, $tree_.parent().scrollTop() +
+                                     $(node.element).position().top - 100);
     }
 
     function select_node(node) {
@@ -904,7 +908,7 @@ var editor = function () {
         });
     }
 
-    const icon_style = {'line-height': '90%'};
+    var icon_style = {'line-height': '90%'};
     function on_create_tree_li(node, $li) {
         var element = $li.find('.jqtree-element'),
             title = element.find('.jqtree-title');
@@ -1028,7 +1032,7 @@ var editor = function () {
                    }
                 });
                 add_buttons(remove);
-            };
+            }
             var wid = add_buttons.width()+'px';
             add_buttons.commit();
             appear.css({left: '-'+wid, width: wid});
@@ -1066,8 +1070,8 @@ var editor = function () {
             else {
                 // it's weird that a notebook exists in two trees but only one is selected (#220)
                 // just select - and this enables editability
-                if(event.node.gistname === current_.notebook
-                   && event.node.version == current_.version) // nulliness ok here
+                if(event.node.gistname === current_.notebook &&
+                   event.node.version == current_.version) // nulliness ok here
                     select_node(event.node);
                 else
                     result.open_notebook(event.node.gistname, event.node.version || null, event.node.root, false);
@@ -1114,18 +1118,19 @@ var editor = function () {
             var that = this;
             username_ = rcloud.username();
             var promise = load_everything().then(function() {
-                if(opts.notebook) // notebook specified in url
+                if(opts.notebook) { // notebook specified in url
                     return that.load_notebook(opts.notebook, opts.version)
-                    .catch(function(xep) {
-                        var message = "Could not open notebook " + opts.notebook;
-                        if(opts.version)
-                            message += "(version " + opts.version + ")";
-                        RCloud.UI.fatal_dialog(message, "Continue", make_edit_url());
-                        throw xep;
-                    });
-                else if(!opts.new_notebook && current_.notebook)
+                        .catch(function(xep) {
+                            var message = "Could not open notebook " + opts.notebook;
+                            if(opts.version)
+                                message += "(version " + opts.version + ")";
+                            RCloud.UI.fatal_dialog(message, "Continue", make_edit_url());
+                            throw xep;
+                        });
+                } else if(!opts.new_notebook && current_.notebook) {
                     return that.load_notebook(current_.notebook, current_.version)
-                    .catch(open_last_loadable);
+                        .catch(open_last_loadable);
+                }
                 else
                     return that.new_notebook();
             });
@@ -1218,12 +1223,12 @@ var editor = function () {
             // else if opts has notebook, use notebook id & user
             // else use current notebook & user
             opts = opts || {};
-            var gistname = opts.gistname
-                    || opts.notebook&&opts.notebook.id
-                    || current_.notebook;
-            var user = opts.user
-                    || opts.notebook&&opts.notebook.user&&opts.notebook.user.login
-                    || notebook_info_[gistname].username;
+            var gistname = opts.gistname ||
+                    opts.notebook&&opts.notebook.id ||
+                    current_.notebook;
+            var user = opts.user ||
+                    opts.notebook&&opts.notebook.user&&opts.notebook.user.login ||
+                    notebook_info_[gistname].username;
             // keep selected if was
             if(gistname === current_.notebook)
                 opts.selroot = opts.selroot || true;
@@ -1423,7 +1428,7 @@ var editor = function () {
                     }
                 }
                 throw new Error("shouldn't get here");
-            };
+            }
             function split_history_search_lines(line) {
                 var t = line.indexOf(':');
                 var r = /\|/g;
@@ -1440,7 +1445,7 @@ var editor = function () {
                     }
                 }
                 throw new Error("shouldn't get here");
-            };
+            }
 
             function update_source_search(result) {
                 d3.select("#input-text-source-results-title")
@@ -1484,7 +1489,7 @@ var editor = function () {
                         that.load_notebook(notebook, null);
                     })
                 ;
-            };
+            }
             function update_history_search(result) {
                 d3.select("#input-text-history-results-title")
                     .style("display", (result !== null && result.length >= 1)?null:"none");
@@ -1518,7 +1523,7 @@ var editor = function () {
                     .on("click", function(d, i) {
                     })
                 ;
-            };
+            }
             rcloud.search(search_string).then(function(result) {
                 update_source_search(result[0]);
                 update_history_search(result[1]);

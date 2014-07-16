@@ -31,7 +31,7 @@ Notebook.Cell.create_model = function(content, language)
                 throw new Error("must specify only id or filename");
             if(!obj.filename) {
                 var id = obj.id || this.id();
-                if(!(id>0)) // negative, NaN, null, undefined, etc etc.  note: this isn't <=
+                if((id>0)!==true) // negative, NaN, null, undefined, etc etc.  note: this isn't <=
                     throw new Error("bad id for cell change object: " + id);
                 obj.filename = Notebook.part_name(id, this.language());
             }

@@ -5,7 +5,7 @@ function main() {
 
     function getQueryArgs() {
         var r, res = {}, s = location.search;
-        while ((r = (new RegExp('[?|&]([^=&]+?)=([^&;#]+)(.*)').exec(s))) != null) {
+        while ((r = (new RegExp('[?|&]([^=&]+?)=([^&;#]+)(.*)').exec(s))) !== null) {
             res[decodeURIComponent(r[1])] = decodeURIComponent(r[2]);
             s = r[3];
         }

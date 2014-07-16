@@ -29,7 +29,7 @@ ui_utils.string_error = function(msg) {
             var indent = match[0].length / 4;
             el.css("left", indent +"em");
             el.css("position", "relative");
-        };
+        }
         return el;
     });
     result.append(text);
@@ -128,7 +128,7 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                 if (widget.getOption("readOnly"))
                     return;
                 var code = session.getTextRange(widget.getSelectionRange());
-                if(code.length==0) {
+                if(code.length===0) {
                     var pos = widget.getCursorPosition();
                     var Range = ace.require('ace/range').Range;
                     var range = new Range(pos.row, 0, pos.row+1, 0);
@@ -313,10 +313,10 @@ ui_utils.editable = function(elem$, command) {
     else {
         if(command !== 'destroy' && !old_opts)
             throw new Error('expected already editable for command ' + command);
-        function set_option(key, value) {
+        var set_option = function(key, value) {
             old_opts = $.extend({}, old_opts);
             new_opts[key] = value;
-        }
+        };
         switch(command) {
         case 'destroy':
             elem$.data('__editable', null);
@@ -413,7 +413,7 @@ ui_utils.scroll_to_after = function($sel, duration) {
     // the element parameter version
     if ($sel.length === 0)
         return;
-    var opts = undefined;
+    var opts;
     if(duration !== undefined)
         opts = {animation: {duration: duration}};
     var $parent = $sel.parent();
@@ -428,9 +428,11 @@ ui_utils.prevent_backspace = function($doc) {
         var doPrevent = false;
         if (event.keyCode === 8) {
             var d = event.srcElement || event.target;
-            if ((d.tagName.toUpperCase() === 'INPUT' && (d.type.toUpperCase() === 'TEXT' || d.type.toUpperCase() === 'PASSWORD' || d.type.toUpperCase() === 'FILE' || d.type.toUpperCase() === 'EMAIL' ))
-                || d.tagName.toUpperCase() === 'TEXTAREA'
-                || d.contentEditable) {
+            if((d.tagName.toUpperCase() === 'INPUT' &&
+                (d.type.toUpperCase() === 'TEXT' || d.type.toUpperCase() === 'PASSWORD' ||
+                 d.type.toUpperCase() === 'FILE' || d.type.toUpperCase() === 'EMAIL' )) ||
+               d.tagName.toUpperCase() === 'TEXTAREA' ||
+               d.contentEditable) {
                 doPrevent = d.readOnly || d.disabled;
             }
             else {
@@ -438,8 +440,7 @@ ui_utils.prevent_backspace = function($doc) {
             }
         }
 
-        if (doPrevent) {
+        if(doPrevent)
             event.preventDefault();
-        }
     });
 };
