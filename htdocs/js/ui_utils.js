@@ -414,7 +414,7 @@ ui_utils.editable = function(elem$, command) {
             else if(e.keyCode === 27) {
                 elem$.blur(); // and cancel
             } else if(ctrl_key) {
-                elem$.css({"border":"1px dotted grey"})
+                elem$.css({"border":"1px dotted grey","min-width":"95%"});
             }
             return true;
         });
