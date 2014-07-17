@@ -3899,15 +3899,21 @@ RCloud.UI.init = function() {
         },
         stop: function(event, ui) {
             // position is relative to parent, the notebook
-            var diff;
+            var diff, size;
             if($(this).hasClass('left')) {
                 diff = Math.round(ui.position.left/wid_over_12);
-                RCloud.UI.left_panel.colwidth(+RCloud.UI.left_panel.colwidth() + diff);
+                size = Math.max(1,
+                                Math.min(+RCloud.UI.left_panel.colwidth() + diff,
+                                         11 - RCloud.UI.right_panel.colwidth()));
+                RCloud.UI.left_panel.colwidth(size);
                 RCloud.UI.middle_column.update();
             }
             else if($(this).hasClass('right')) {
                 diff = Math.round(ui.position.left/wid_over_12) - RCloud.UI.middle_column.colwidth();
-                RCloud.UI.right_panel.colwidth(+RCloud.UI.right_panel.colwidth() - diff);
+                size = Math.max(1,
+                                Math.min(+RCloud.UI.right_panel.colwidth() - diff,
+                                         11 - RCloud.UI.left_panel.colwidth()));
+                RCloud.UI.right_panel.colwidth(size);
                 RCloud.UI.middle_column.update();
             }
             else throw new Error('unexpected shadow drag with classes ' + $(this).attr('class'));
@@ -3934,7 +3940,7 @@ RCloud.UI.init = function() {
     });
 };
 RCloud.UI.left_panel = (function() {
-    var result = RCloud.UI.collapsible_column("#left-column,#fake-left-column",
+    var result = RCloud.UI.collapsible_column("#left-column",
                                               "#accordion-left", "#left-pane-collapser");
     var base_hide = result.hide.bind(result),
         base_show = result.show.bind(result);
@@ -4124,7 +4130,7 @@ RCloud.UI.allow_progress_modal = function() {
 
 })();
 RCloud.UI.right_panel = (function() {
-    var result = RCloud.UI.collapsible_column("#right-column,#fake-right-column",
+    var result = RCloud.UI.collapsible_column("#right-column",
                                               "#accordion-right", "#right-pane-collapser");
     return result;
 }());
