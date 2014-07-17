@@ -3944,6 +3944,17 @@ RCloud.UI.init = function() {
     });
 
     ui_utils.prevent_backspace($(document));
+
+    // prevent unwanted document scrolling e.g. by dragging
+    $(document).on('scroll', function() {
+        $(this).scrollLeft(0);
+        $(this).scrollTop(0);
+    });
+
+    // prevent left-right scrolling of notebook area
+    $('#rcloud-cellarea').on('scroll', function() {
+        $(this).scrollLeft(0);
+    });
 };
 RCloud.UI.left_panel = (function() {
     var result = RCloud.UI.collapsible_column("#left-column,#fake-left-column",
