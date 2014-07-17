@@ -324,24 +324,33 @@ RCloud.UI.init = function() {
     //////////////////////////////////////////////////////////////////////////
     // resizeable panels
     var wid_over_12 = window.innerWidth/12; // not responsive
-    $('.panel-shadow').draggable({
+    $('.notebook-sizer').draggable({
         axis: 'x',
         opacity: 0.75,
         zindex: 10000,
         revert: true,
         revertDuration: 0,
         grid: [wid_over_12, 0],
+        start: function(event, ui) {
+            $(".bar", this).show();
+        },
         stop: function(event, ui) {
+            // position is relative to parent, the notebook
+            var diff;
             if($(this).hasClass('left')) {
-                RCloud.UI.left_panel.colwidth(Math.round(ui.position.left/wid_over_12));
+                diff = Math.round(ui.position.left/wid_over_12);
+                RCloud.UI.left_panel.colwidth(+RCloud.UI.left_panel.colwidth() + diff);
                 RCloud.UI.middle_column.update();
             }
             else if($(this).hasClass('right')) {
-                // position is relative to parent
-                RCloud.UI.right_panel.colwidth(RCloud.UI.right_panel.colwidth() - Math.round(ui.position.left/wid_over_12));
+                diff = Math.round(ui.position.left/wid_over_12) - RCloud.UI.middle_column.colwidth();
+                RCloud.UI.right_panel.colwidth(+RCloud.UI.right_panel.colwidth() - diff);
                 RCloud.UI.middle_column.update();
             }
             else throw new Error('unexpected shadow drag with classes ' + $(this).attr('class'));
+            // revert to absolute position
+            $(this).css({left: "", top: ""});
+            $(".bar", this).hide();
         }
     });
 
