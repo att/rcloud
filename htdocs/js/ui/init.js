@@ -50,11 +50,13 @@ RCloud.UI.init = function() {
     //prevent drag in rest of the page except asset pane and enable overlay on asset pane
     $(document).on('dragstart dragenter dragover', function (e) {
         var dt = e.originalEvent.dataTransfer;
+        if(!dt)
+            return;
         if(dt.items.length > 1) {
             e.stopPropagation();
             e.preventDefault();
-        }else
-        if (dt.types != null && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.contains('application/x-moz-file'))) {
+        }
+        else if (dt.types != null && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.contains('application/x-moz-file'))) {
             if (!shell.notebook.model.read_only()) {
                 e.stopPropagation();
                 e.preventDefault();
@@ -291,6 +293,8 @@ RCloud.UI.init = function() {
     RCloud.UI.command_prompt.init();
     RCloud.UI.help_frame.init();
 
+    //////////////////////////////////////////////////////////////////////////
+    // allow reordering cells by dragging them
     function make_cells_sortable() {
         var cells = $('#output');
         cells.sortable({
@@ -316,6 +320,30 @@ RCloud.UI.init = function() {
         });
     }
     make_cells_sortable();
+
+    //////////////////////////////////////////////////////////////////////////
+    // resizeable panels
+    var wid_over_12 = window.innerWidth/12; // not responsive
+    $('.panel-shadow').draggable({
+        axis: 'x',
+        opacity: 0.75,
+        zindex: 10000,
+        revert: true,
+        revertDuration: 0,
+        grid: [wid_over_12, 0],
+        stop: function(event, ui) {
+            if($(this).hasClass('left')) {
+                RCloud.UI.left_panel.colwidth(Math.round(ui.position.left/wid_over_12));
+                RCloud.UI.middle_column.update();
+            }
+            else if($(this).hasClass('right')) {
+                // position is relative to parent
+                RCloud.UI.right_panel.colwidth(RCloud.UI.right_panel.colwidth() - Math.round(ui.position.left/wid_over_12));
+                RCloud.UI.middle_column.update();
+            }
+            else throw new Error('unexpected shadow drag with classes ' + $(this).attr('class'));
+        }
+    });
 
     //////////////////////////////////////////////////////////////////////////
     // autosave when exiting. better default than dropping data, less annoying
