@@ -217,7 +217,7 @@ RCloud.UI.init = function() {
         e.preventDefault();
         e.stopPropagation();
         var qry = $('#input-text-search').val();
-        $('#input-text-search').blur();
+        $('#input-text-search').focus();
         RCloud.UI.search.exec(qry);
         return false;
     });
