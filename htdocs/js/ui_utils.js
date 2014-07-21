@@ -378,7 +378,6 @@ ui_utils.editable = function(elem$, command) {
         });
         elem$.keydown(function(e) {
             if(e.keyCode === 13) {
-                alert("381");
                 e.preventDefault();
                 var result = elem$.text();
                 result = decode(result);
