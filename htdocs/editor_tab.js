@@ -1206,7 +1206,6 @@ var editor = function () {
         new_notebook: function() {
             var that = this;
             return Promise.cast(find_next_copy_name(username_,"Notebook 1"))
-                .then(function (desc) { return desc; })
                 .then(shell.new_notebook.bind(shell))
                 .then(function(notebook) {
                     set_visibility(notebook.id, true);
