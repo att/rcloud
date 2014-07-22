@@ -291,7 +291,7 @@ start.rcloud.common <- function(...) {
 
   ## per-user setup
   if (nzchar(.session$username)) {
-    .session$username <- gsub("[^a-zA-Z0-9_.]+", "_", .session$username)
+    .session$username <- gsub("[^a-zA-Z0-9_.-]+", "_", .session$username)
     if (!file.exists(fn <- pathConf("data.root", "userfiles", .session$username)))
       dir.create(fn, FALSE, TRUE, "0770")
   }
