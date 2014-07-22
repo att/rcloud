@@ -1066,7 +1066,12 @@ var editor = function () {
                         .catch(function(err) {
                             if(/Not Found/.test(err))
                                 rcloud.config.clear_recent_notebook(last);
-                            return try_last();
+                            // if loading fails for a reason that is not actually a loading problem
+                            // then don't keep trying.
+                            if(err.from_load)
+                                return try_last();
+                            else
+                                return Promise.resolve(false);
                         });
                 }
                 return try_last();
@@ -1087,9 +1092,16 @@ var editor = function () {
                         RCloud.UI.fatal_dialog(message, "Continue", make_edit_url());
                         throw xep;
                     });
-                else if(!opts.new_notebook && current_.notebook)
+                else if(!opts.new_notebook && current_.notebook) {
                     return that.load_notebook(current_.notebook, current_.version)
-                    .catch(open_last_loadable);
+                        .catch(function(xep) {
+                            // if loading fails for a reason that is not actually a loading problem
+                            // then don't keep trying.
+                            if(xep.from_load)
+                                open_last_loadable();
+                            else throw xep;
+                        });
+                }
                 else
                     return that.new_notebook();
             });
@@ -1147,6 +1159,10 @@ var editor = function () {
             var that = this;
             selroot = selroot || true;
             return shell.load_notebook(gistname, version)
+                .catch(function(xep) {
+                    xep.from_load = true;
+                    throw xep;
+                })
                 .then(this.load_callback({version: version,
                                           selroot: selroot,
                                           push_history: push_history}));
