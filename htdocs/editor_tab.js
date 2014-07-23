@@ -1215,7 +1215,7 @@ var editor = function () {
             return newname && !Notebook.empty_for_github(newname); // not null and not empty or just whitespace
         },
         rename_notebook: function(desc) {
-            return shell.rename_notebook(desc);
+            return shell.notebook.controller.rename_notebook(desc);
         },
         star_notebook: function(star, opts) {
             var that = this;
@@ -1338,6 +1338,7 @@ var editor = function () {
                 current_ = {notebook: result.id, version: options.version};
                 rcloud.config.set_current_notebook(current_);
                 rcloud.config.set_recent_notebook(result.id, (new Date()).toString());
+                RCloud.UI.share_button.set_link(result);
 
                 /*
                 // disabling inter-notebook navigation for now - concurrency issues
