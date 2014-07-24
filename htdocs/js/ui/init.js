@@ -135,6 +135,9 @@ RCloud.UI.init = function() {
                     }
                 })
             );
+            window.setTimeout(function() {
+                $(".progress").hide();
+            }, 5000);
             if(to_notebook) {
                 var content = notebook.files[file.name].content;
                 var promise_controller;
