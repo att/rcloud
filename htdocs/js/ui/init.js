@@ -52,10 +52,7 @@ RCloud.UI.init = function() {
         var dt = e.originalEvent.dataTransfer;
         if(!dt)
             return;
-        if(dt.items.length > 1) {
-            e.stopPropagation();
-            e.preventDefault();
-        } else if (dt.types !== null &&
+        if (dt.types !== null &&
                    (dt.types.indexOf ?
                     dt.types.indexOf('Files') != -1 :
                     dt.types.contains('application/x-moz-file'))) {
@@ -87,10 +84,6 @@ RCloud.UI.init = function() {
             e = e.originalEvent || e;
             var files = (e.files || e.dataTransfer.files);
             var dt = e.dataTransfer;
-            if(dt.items.length>1) {
-                e.stopPropagation();
-                e.preventDefault();
-            } else
             if(!shell.notebook.model.read_only())
                 RCloud.UI.upload_files(true, {files: files});
             $('#asset-drop-overlay').css({'display': 'none'});
