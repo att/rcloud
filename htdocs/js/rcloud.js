@@ -453,7 +453,7 @@ a                    } else {
                 callback(null, fr.result);
             };
             fr.onerror = function(e) {
-                callback(e, null);
+                callback(fr.error, null);
             };
             fr.readAsText(file);
         });

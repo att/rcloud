@@ -114,6 +114,7 @@ RCloud.UI.upload_files = (function() {
             }
             else {
                 p = $("<p>(unexpected) " + message + "</p>");
+                console.log(message, err.stack);
             }
             alert_element.append(p);
             var alert_box = bootstrap_utils.alert({'class': 'alert-danger', html: alert_element});
@@ -121,6 +122,7 @@ RCloud.UI.upload_files = (function() {
             if(done)
                 callback(null, undefined);
         });
+
 
         var promise = to_notebook ?
                 rcloud.upload_assets(options, asset_react(options)) :
