@@ -384,19 +384,7 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.session_markdown_evalAsync(command, language, silent);
         };
 
-        function upload_opts(opts) {
-            if(_.isBoolean(opts))
-                opts = {force: opts};
-            else if(!_.isObject(opts))
-                throw new Error("didn't understand options " + opts);
-            return $.extend({
-                force: false,
-                $file: $("#file"),
-                $progress: $(".progress"),
-                $progress_bar: $("#progress-bar")
-            }, opts);
-        }
-
+/*
         // FIXME make into promises
         rcloud.upload_to_notebook = function(options, k) {
             var opts = upload_opts(options);
@@ -425,13 +413,13 @@ RCloud.create = function(rcloud_ocaps) {
                         cur_pos += bytes.byteLength;
                         bytes_read += e.target.result.byteLength;
                         fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-                    } else {
+a                    } else {
                         // done, push to notebook.
                         var content = String.fromCharCode.apply(null, new Uint16Array(file_to_upload));
                         if(Notebook.empty_for_github(content))
                             on_failure("empty");
                         else rcloud_ocaps.notebook_upload(
-                            file_to_upload.buffer, file.name, function(err, result) {
+                            file_to_upload.buffer, file, function(err, result) {
                                 if (err) {
                                     on_failure("exists", err);
                                 } else {
@@ -443,89 +431,126 @@ RCloud.create = function(rcloud_ocaps) {
             }
             if(!(window.File && window.FileReader && window.FileList && window.Blob))
                 throw new Error("File API not supported by browser.");
-            var file=opts.$file[0].files[0];
-            if(_.isUndefined(file))
-                throw new Error("No file selected!");
-            if(Notebook.is_part_name(file.name)) {
-                on_failure("badname");
-                return;
+            if(_.isUndefined(opts.files))
+                throw new Error("No files selected!");
+            if(!opts.force) {
+                opts.files.forEach(function(file) {
+                    if(Notebook.is_part_name(file.name)) {
+                        on_failure("badname");
+                        return;
+                    }
+                });
             }
-
-            rcloud_ocaps.file_upload.upload_path(function(err, path) {
-                if (err) {
-                    throw err;
-                }
-                var file=opts.$file[0].files[0];
-                if(_.isUndefined(file))
-                    throw new Error("No file selected!");
+            opts.files.forEach(function(file) {
                 do_upload(file);
             });
         };
+*/
 
-        // FIXME make into promises
-        // FIXME the UI shouldn't be tied up with the functionality
-        rcloud.upload_file = function(options, k) {
-            var opts = upload_opts(options);
-            k = k || _.identity;
-            var on_success = function(v) { k(null, v); };
-            var on_failure = function(v) { k(v, null); };
+        var text_reader = Promise.promisify(function(file, callback) {
+            var fr = new FileReader();
+            fr.onload = function(e) {
+                callback(null, fr.result);
+            };
+            fr.onerror = function(e) {
+                callback(e, null);
+            };
+            fr.readAsText(file);
+        });
 
-            function do_upload(path, file) {
-                var upload_name = path + '/' + file.name;
-                rcloud_ocaps.file_upload.create(upload_name, opts.force, function(err, result) {
-                    if (RCloud.is_exception(result)) {
-                        on_failure(RCloud.exception_message(result));
-                        return;
-                    }
-                    var fr = new FileReader();
-                    var chunk_size = 1024*1024;
-                    var f_size=file.size;
-                    var cur_pos=0;
-                    var bytes_read = 0;
-                    opts.$progress.show();
-                    opts.$progress_bar.css("width", "0%");
-                    opts.$progress_bar.attr("aria-valuenow", "0");
-                    //initiate the first chunk, and then another, and then another ...
-                    // ...while waiting for one to complete before reading another
-                    fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-                    fr.onload = function(e) {
-                        opts.$progress_bar.attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
-                        opts.$progress_bar.css("width", (100 * (bytes_read / f_size)) + "%");
-                        if (e.target.result.byteLength > 0) {
-                            var bytes = new Uint8Array(e.target.result);
-                            rcloud_ocaps.file_upload.write(bytes.buffer, function() {
+        rcloud.upload_assets = function(options, react) {
+            function upload_asset(filename, content) {
+                var replacing = shell.notebook.model.has_asset(filename);
+                var promise_controller;
+                if(replacing) {
+                    if(react.replace)
+                        react.replace(filename);
+                    replacing.content(content);
+                    promise_controller = shell.notebook.controller.update_asset(replacing)
+                        .return(replacing.controller);
+                }
+                else {
+                    if(react.add)
+                        react.add(filename);
+                    promise_controller = shell.notebook.controller.append_asset(content, filename);
+                }
+                return promise_controller.then(function(controller) {
+                    controller.select();
+                });
+            }
+            var file = options.files[0];
+            //_.each(options.files, function(file) {
+            return text_reader(file) // (we don't know how to deal with binary anyway)
+                .then(function(content) {
+                    if(Notebook.empty_for_github(content))
+                        throw new Error("empty");
+                    return upload_asset(file.name, content);
+                });
+            //});
+        };
+
+        function binary_upload(upload_ocaps, react) {
+            return Promise.promisify(function(file, callback) {
+                var fr = new FileReader();
+                var chunk_size = 1024*1024;
+                var f_size=file.size;
+                var cur_pos=0;
+                var bytes_read = 0;
+                if(react.start)
+                    react.start(file.name);
+                //initiate the first chunk, and then another, and then another ...
+                // ...while waiting for one to complete before reading another
+                fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+                fr.onload = function(e) {
+                    if(react.progress)
+                        react.progress(bytes_read, f_size);
+                    var promise;
+                    if (e.target.result.byteLength > 0) {
+                        var bytes = new Uint8Array(e.target.result);
+                        promise = upload_ocaps.writeAsync(bytes.buffer)
+                            .then(function() {
                                 bytes_read += e.target.result.byteLength;
                                 cur_pos += chunk_size;
                                 fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
                             });
-                        } else {
-                            rcloud_ocaps.file_upload.close(function(err, result){
-                                if (err) {
-                                    on_failure(err);
-                                } else {
-                                    on_success([path, file]);
-                                }
+                    } else {
+                        promise = upload_ocaps.closeAsync()
+                            .then(function() {
+                                if(react.done)
+                                    react.done(file.name);
+                                callback(null, true);
                             });
-                        }
-                    };
-                });
+                    }
+                    promise.catch(function(err) {
+                        callback(err, null);
+                    });
+                };
+            });
+        }
+
+        rcloud.upload_files = function(options, react) {
+            var upload_ocaps = options.upload_ocaps || rcloud_ocaps.file_upload;
+            function upload_file(path, file) {
+                var upload_name = path + '/' + file.name;
+                return rcloud_ocaps.file_upload.createAsync(upload_name, options.force)
+                    .return(file)
+                    .then(binary_upload(upload_ocaps, react));
             }
 
             if(!(window.File && window.FileReader && window.FileList && window.Blob))
-                throw new Error("File API not supported by browser.");
+                return Promise.reject(new Error("File API not supported by browser."));
             else {
-                var file=opts.$file[0].files[0];
-                if(_.isUndefined(file))
-                    throw new Error("No file selected!");
+                if(_.isUndefined(options.files) || !options.files.length)
+                    return Promise.reject(new Error("No files selected!"));
                 else {
                     /*FIXME add logged in user */
-                    rcloud_ocaps.file_upload.upload_path(function(err, path) {
-                        if (err) throw err;
-                        var file=opts.$file[0].files[0];
-                        if(_.isUndefined(file))
-                            throw new Error("No file selected!");
-                        do_upload(path, file);
-                    });
+                    return rcloud_ocaps.file_upload.upload_pathAsync()
+                        .then(function(path) {
+                            var file = options.files[0];
+                            //_.each(options.files, function(file) {
+                            return upload_file(path, file);
+                            //});
+                        });
                 }
             }
         };

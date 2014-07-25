@@ -572,6 +572,11 @@ li.jqtree-selected .notebook-commands {
     line-height: 63%;
 }
 
+.progress-bar {
+    text-align: left;
+    padding-left: 1em;
+}
+
 /******************************************************************************/
 
 #comments-wrapper {
