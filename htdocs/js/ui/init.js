@@ -78,7 +78,6 @@ RCloud.UI.init = function() {
         setTimeout(function() {
             if(!showOverlay_) {
                 $('#asset-drop-overlay').css({'display': 'none'});
-                console.log("hello");
             }
         }, 100);
     });
