@@ -40,7 +40,8 @@ rcloud_bundle.js: \
 	ui/scratchpad.js \
 	ui/search.js \
 	ui/session_pane.js \
-	ui/share_button.js
+	ui/share_button.js \
+	ui/upload.js
 
 rcloud_bundle.min.js: rcloud_bundle.js Makefile
 	@rm -f $@

@@ -1,3 +1,20 @@
+## RCloud 1.2
+
+* Multiple file upload.  File upload interface has been modernized to use
+  promises and to split the UI from the back-end.  `rcloud.upload_to_notebook`
+  and `rcloud.upload_file` are replaced with `rcloud.upload_files` and
+  `rcloud.upload_assets`, which return promises and get rid of the callback,
+  and also take a `react` struct which handles the UI.  The best analog of the
+  old functions with UI is `RCloud.UI.upload_files(to_notebook, options)`
+
+* Delete and edit comments
+
+* CSS highlighting and syntax
+
+* Disabled backspace as "go back as history" to prevent some accidental
+  navigation away from RCloud
+
+
 ## RCloud 1.1.1
 
 * Properly handle failed connections (was throwing in an error handler). Add
