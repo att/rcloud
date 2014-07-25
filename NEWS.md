@@ -15,6 +15,13 @@
   navigation away from RCloud
 
 
+## RCloud 1.1.2
+
+* set CRAN mirror `repos` option if not already set to aviod interactive
+  prompt. The default will be either `CRAN.mirror` entry from `rcloud.conf`
+  or `http://cran.r-project.org` if not specified.
+
+
 ## RCloud 1.1.1
 
 * Properly handle failed connections (was throwing in an error handler). Add
