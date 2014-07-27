@@ -44,7 +44,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     }
     function set_collapse(target, collapse, persist) {
         target.data("would-collapse", collapse);
-        if(persist && rcloud.config) {
+        if(persist && rcloud.config && target.length) {
             var opt = 'ui/' + target[0].id;
             rcloud.config.set_user_option(opt, collapse);
         }
