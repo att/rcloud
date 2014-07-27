@@ -53,8 +53,14 @@ RCloud.UI.search = {
                                     content = [content];
                                 if(content.length > 0)
                                     parts_table += "<tr><th class='search-result-part-name'>" + d[i].parts[k].filename + "</th></tr>";
-                                for(var l = 0; l < content.length; l++)
+                                for(var l = 0; l < content.length; l++) {
+                                    //stripping off first 8 characters in each comment coming containing code till ":".
+                                    // Example comment from gist- 1270633 : open_b_closeRcloud is goodopen_/b_close"
+                                    if(d[i].parts[k].filename === "comments" && content[l].indexOf(":") > 0) {
+                                        content[l] = content[l].substring(content[l].indexOf(":") + 1, content[l].length);
+                                    }
                                     inner_table += "<tr><td class='search-result-line-number'>" + (l + 1) + "</td><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
+                                }
 
                                 added_parts++;
                             }
