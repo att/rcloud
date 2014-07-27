@@ -112,8 +112,8 @@ RCloud.UI.upload_files = (function() {
 
 
         var promise = to_notebook ?
-                rcloud.upload_assets(options, asset_react(options)) :
-                rcloud.upload_files(options, file_react(options));
+                RCloud.upload_assets(options, asset_react(options)) :
+                RCloud.upload_files(options, file_react(options));
 
         // U won't want to wait on this promise because it's after all overwrites etc.
         return promise.catch(function(err) {
