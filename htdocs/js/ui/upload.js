@@ -1,95 +1,96 @@
 RCloud.UI.upload_files = (function() {
-    function upload_opts(opts) {
+    function upload_ui_opts(opts) {
         if(_.isBoolean(opts))
             opts = {force: opts};
         else if(!_.isObject(opts))
             throw new Error("didn't understand options " + opts);
         opts = $.extend({
-            force: false,
             $file: $("#file"),
             $progress: $(".progress"),
-            $progress_bar: $("#progress-bar")
+            $progress_bar: $("#progress-bar"),
+            $upload_results: $("#file-upload-results").length ?
+                $("#file-upload-results") :
+                RCloud.UI.session_pane.error_dest(),
+            $result_panel: $("#collapse-file-upload")
         }, opts);
-        if(!opts.files)
-            opts.files = opts.$file[0].files;
         return opts;
     }
 
-    // we could easily continue optionifying this
-    function results_append($div) {
-        $("#file-upload-results").append($div);
-        $("#collapse-file-upload").trigger("size-changed");
-        ui_utils.on_next_tick(function() {
-            ui_utils.scroll_to_after($("#file-upload-results"));
-        });
-    }
-
-    function result_alert($content) {
-        var alert_element = $("<div></div>");
-        alert_element.append($content);
-        var alert_box = bootstrap_utils.alert({'class': 'alert-danger', html: alert_element});
-        results_append(alert_box);
-        return alert_box;
-    }
-
-    function result_success(message) {
-        results_append(
-            bootstrap_utils.alert({
-                "class": 'alert-info',
-                text: message,
-                on_close: function() {
-                    $(".progress").hide();
-                    $("#collapse-file-upload").trigger("size-changed");
-                }
-            }));
-    }
-
-    function asset_react(options) {
-        return {
-            add: function(file) {
-                result_success("Asset " + file + " added.");
-            },
-            replace: function(file) {
-                result_success("Asset " + file + " replaced.");
-            }
-        };
-    }
-
-    function file_react(options) {
-        return {
-            start: function(filename) {
-                options.$progress.show();
-                options.$progress_bar.css("width", "0%");
-                options.$progress_bar.attr("aria-valuenow", "0");
-            },
-            progress: function(read, size) {
-                options.$progress_bar.attr("aria-valuenow", ~~(100 * (read / size)));
-                options.$progress_bar.css("width", (100 * (read / size)) + "%");
-            },
-            done: function(is_replace, filename) {
-                result_success("File " + filename + " " + (is_replace ? "replaced." : "uploaded."));
-            },
-            confirm_replace: Promise.promisify(function(filename, callback) {
-                var overwrite_click = function() {
-                    alert_box.remove();
-                    callback(null, true);
-                };
-                var p = $("<p>File " + filename + " exists. </p>");
-                var overwrite = bootstrap_utils
-                        .button({"class": 'btn-danger'})
-                        .click(overwrite_click)
-                        .text("Overwrite");
-                p.append(overwrite);
-                var alert_box = result_alert(p);
-                $('button.close', alert_box).click(function() {
-                    callback(null, false);
-                });
-            })
-        };
-    }
-
     function upload_files(to_notebook, options) {
-        options = upload_opts(options || {});
+        // we could easily continue optionifying this
+        function results_append($div) {
+            options.$upload_results.append($div);
+            options.$result_panel.trigger("size-changed");
+            ui_utils.on_next_tick(function() {
+                ui_utils.scroll_to_after($("#file-upload-results"));
+            });
+        }
+
+        function result_alert($content) {
+            var alert_element = $("<div></div>");
+            alert_element.append($content);
+            var alert_box = bootstrap_utils.alert({'class': 'alert-danger', html: alert_element});
+            results_append(alert_box);
+            return alert_box;
+        }
+
+        function result_success(message) {
+            results_append(
+                bootstrap_utils.alert({
+                    "class": 'alert-info',
+                    text: message,
+                    on_close: function() {
+                        $(".progress").hide();
+                        $("#collapse-file-upload").trigger("size-changed");
+                    }
+                }));
+        }
+
+        function asset_react(options) {
+            return {
+                add: function(file) {
+                    result_success("Asset " + file + " added.");
+                },
+                replace: function(file) {
+                    result_success("Asset " + file + " replaced.");
+                }
+            };
+        }
+
+        function file_react(options) {
+            return {
+                start: function(filename) {
+                    options.$progress.show();
+                    options.$progress_bar.css("width", "0%");
+                    options.$progress_bar.attr("aria-valuenow", "0");
+                },
+                progress: function(read, size) {
+                    options.$progress_bar.attr("aria-valuenow", ~~(100 * (read / size)));
+                    options.$progress_bar.css("width", (100 * (read / size)) + "%");
+                },
+                done: function(is_replace, filename) {
+                    result_success("File " + filename + " " + (is_replace ? "replaced." : "uploaded."));
+                },
+                confirm_replace: Promise.promisify(function(filename, callback) {
+                    var overwrite_click = function() {
+                        alert_box.remove();
+                        callback(null, true);
+                    };
+                    var p = $("<p>File " + filename + " exists. </p>");
+                    var overwrite = bootstrap_utils
+                            .button({"class": 'btn-danger'})
+                            .click(overwrite_click)
+                            .text("Overwrite");
+                    p.append(overwrite);
+                    var alert_box = result_alert(p);
+                    $('button.close', alert_box).click(function() {
+                        callback(null, false);
+                    });
+                })
+            };
+        }
+
+        options = upload_ui_opts(options || {});
         RCloud.UI.right_panel.collapse($("#collapse-file-upload"), false);
 
         var file_error_handler = Promise.promisify(function(err, options, callback) {

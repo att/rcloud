@@ -1,4 +1,16 @@
 (function() {
+    function upload_opts(opts) {
+        if(_.isBoolean(opts) || _.isUndefined(opts))
+            opts = {force: !!opts};
+        else if(!_.isObject(opts))
+            throw new Error("didn't understand options " + opts);
+        opts = $.extend({
+            force: false
+        }, opts);
+        if(!opts.files)
+            opts.files = opts.$file ? opts.$file[0].files : [];
+        return opts;
+    }
 
     function text_reader() {
         return Promise.promisify(function(file, callback) {
@@ -33,6 +45,7 @@
 
     RCloud.upload_assets = function(options, react) {
         react = react || {};
+        options = upload_opts(options);
         function upload_asset(filename, content) {
             var replacing = shell.notebook.model.has_asset(filename);
             var promise_controller;
@@ -52,7 +65,6 @@
                 controller.select();
             });
         }
-        var file = options.files[0];
         return promise_sequence(
             options.files,
             function(file) {
@@ -107,6 +119,7 @@
     RCloud.upload_files = function(options, react) {
         var upload_ocaps = options.upload_ocaps || rcloud_ocaps.file_upload;
         react = react || {};
+        options = upload_opts(options);
         var upload = binary_upload(upload_ocaps, react);
         function upload_file(path, file) {
             var upload_name = path + '/' + file.name;
