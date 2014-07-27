@@ -332,7 +332,7 @@ RCloud.UI.init = function() {
         revertDuration: 0,
         grid: [wid_over_12, 0],
         start: function(event, ui) {
-            $(".bar", this).show();
+            $(".bar", this).css('opacity', 1);
         },
         stop: function(event, ui) {
             // position is relative to parent, the notebook
@@ -356,7 +356,7 @@ RCloud.UI.init = function() {
             else throw new Error('unexpected shadow drag with classes ' + $(this).attr('class'));
             // revert to absolute position
             $(this).css({left: "", top: ""});
-            $(".bar", this).hide();
+            $(".bar").css('opacity', 0);
         }
     });
 

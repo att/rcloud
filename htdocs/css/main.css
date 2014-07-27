@@ -799,7 +799,7 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
     height: 1000px;
     width: 0.25em;
     background-color: #777;
-    display: none;
+    opacity: 0;
     position: absolute;
     bottom: 0;
     left: 0.5em;
