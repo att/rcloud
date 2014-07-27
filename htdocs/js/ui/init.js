@@ -339,6 +339,10 @@ RCloud.UI.init = function() {
                 size = Math.max(1,
                                 Math.min(+RCloud.UI.left_panel.colwidth() + diff,
                                          11 - RCloud.UI.right_panel.colwidth()));
+                if(size===1)
+                    RCloud.UI.left_panel.hide(true, true);
+                else
+                    RCloud.UI.left_panel.show(true, true);
                 RCloud.UI.left_panel.colwidth(size);
                 RCloud.UI.middle_column.update();
             }
@@ -347,6 +351,10 @@ RCloud.UI.init = function() {
                 size = Math.max(1,
                                 Math.min(+RCloud.UI.right_panel.colwidth() - diff,
                                          11 - RCloud.UI.left_panel.colwidth()));
+                if(size===1)
+                    RCloud.UI.right_panel.hide(true, true);
+                else
+                    RCloud.UI.right_panel.show(true, true);
                 RCloud.UI.right_panel.colwidth(size);
                 RCloud.UI.middle_column.update();
             }
