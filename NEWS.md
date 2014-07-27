@@ -1,11 +1,18 @@
 ## RCloud 1.2
 
 * Multiple file upload.  File upload interface has been modernized to use
-  promises and to split the UI from the back-end.  `rcloud.upload_to_notebook`
-  and `rcloud.upload_file` are replaced with `rcloud.upload_files` and
-  `rcloud.upload_assets`, which return promises and get rid of the callback,
-  and also take a `react` struct which handles the UI.  The best analog of the
-  old functions with UI is `RCloud.UI.upload_files(to_notebook, options)`
+  promises and to split the UI from the back-end.
+  `rcloud.upload_to_notebook` and `rcloud.upload_file` are replaced with
+  `RCloud.upload_files` and `RCloud.upload_assets`, which return promises
+  instead of using a callback.  and also take a `react` struct for progress
+  messages and overwrite confirmation.
+
+  `RCloud.UI.upload_files(to_notebook, options)` takes the place of the old
+  functions.  All its UI elements are configurable.  By default it will
+  send messages and confirmations to the Upload Files pane in edit mode, and
+  to the main output div in view mode.  Upload can also be enabled in
+  published notebooks running anonymously through the technique [in this
+  notebook](https://gist.github.com/gordonwoodhull/8bf3ccc607b4164c8f22).
 
 * Delete and edit comments
 
