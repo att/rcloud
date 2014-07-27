@@ -3211,9 +3211,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             else
                 this.show(persist);
         },
-        resize: function() {
-            var cw = this.calcwidth();
-            this.colwidth(cw);
+        resize: function(skip_calc) {
+            if(!skip_calc) {
+                var cw = this.calcwidth();
+                this.colwidth(cw);
+            }
             RCloud.UI.middle_column.update();
             var heights = {}, padding = {}, cbles = collapsibles(), ncollapse = cbles.length;
             var greedy_one = null;
@@ -3276,16 +3278,16 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             if(do_fit && expected != got)
                 console.log("Error in vertical layout algo: filling " + expected + " pixels with " + got);
         },
-        hide: function(persist) {
+        hide: function(persist, skip_calc) {
             // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
             $(sel_accordion + " > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
             $(sel_collapser + " i").removeClass("icon-minus").addClass("icon-plus");
             collapsed_ = true;
-            this.resize();
+            this.resize(skip_calc);
             if(persist && rcloud.config)
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), true);
         },
-        show: function(persist) {
+        show: function(persist, skip_calc) {
             if(all_collapsed())
                 set_collapse($(collapsibles()[0]), false, true);
             collapsibles().each(function() {
@@ -3293,7 +3295,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             });
             $(sel_collapser + " i").removeClass("icon-plus").addClass("icon-minus");
             collapsed_ = false;
-            this.resize();
+            this.resize(skip_calc);
             if(persist && rcloud.config)
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), false);
         },
@@ -3836,18 +3838,15 @@ RCloud.UI.init = function() {
 
     //////////////////////////////////////////////////////////////////////////
     // resizeable panels
-    var wid_over_12 = window.innerWidth/12; // not responsive
     $('.notebook-sizer').draggable({
         axis: 'x',
         opacity: 0.75,
         zindex: 10000,
         revert: true,
         revertDuration: 0,
-        grid: [wid_over_12, 0],
-        start: function(event, ui) {
-            $(".bar", this).show();
-        },
+        grid: [window.innerWidth/12, 0],
         stop: function(event, ui) {
+            var wid_over_12 = window.innerWidth/12;
             // position is relative to parent, the notebook
             var diff, size;
             if($(this).hasClass('left')) {
@@ -3855,6 +3854,10 @@ RCloud.UI.init = function() {
                 size = Math.max(1,
                                 Math.min(+RCloud.UI.left_panel.colwidth() + diff,
                                          11 - RCloud.UI.right_panel.colwidth()));
+                if(size===1)
+                    RCloud.UI.left_panel.hide(true, true);
+                else
+                    RCloud.UI.left_panel.show(true, true);
                 RCloud.UI.left_panel.colwidth(size);
                 RCloud.UI.middle_column.update();
             }
@@ -3863,14 +3866,23 @@ RCloud.UI.init = function() {
                 size = Math.max(1,
                                 Math.min(+RCloud.UI.right_panel.colwidth() - diff,
                                          11 - RCloud.UI.left_panel.colwidth()));
+                if(size===1)
+                    RCloud.UI.right_panel.hide(true, true);
+                else
+                    RCloud.UI.right_panel.show(true, true);
                 RCloud.UI.right_panel.colwidth(size);
                 RCloud.UI.middle_column.update();
             }
             else throw new Error('unexpected shadow drag with classes ' + $(this).attr('class'));
             // revert to absolute position
             $(this).css({left: "", top: ""});
-            $(".bar", this).hide();
         }
+    });
+
+    // make grid responsive to window resize
+    $(window).resize(function() {
+        var wid_over_12 = window.innerWidth/12;
+        $('.notebook-sizer').draggable('option', 'grid', [wid_over_12, 0]);
     });
 
     //////////////////////////////////////////////////////////////////////////
@@ -3909,11 +3921,11 @@ RCloud.UI.left_panel = (function() {
         base_show = result.show.bind(result);
 
     _.extend(result, {
-        hide: function(persist) {
+        hide: function(persist, calc) {
             $("#new-notebook").hide();
-            base_hide(persist);
+            base_hide(persist, calc);
         },
-        show: function(persist) {
+        show: function(persist, calc) {
             $("#new-notebook").show();
             base_show(persist);
         }
