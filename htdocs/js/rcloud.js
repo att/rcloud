@@ -10,37 +10,10 @@ RCloud.exception_message = function(v) {
     return v[0];
 };
 
-RCloud.create = function(rcloud_ocaps) {
-    //////////////////////////////////////////////////////////////////////////////
-    // promisification
+//////////////////////////////////////////////////////////////////////////////
+// promisification
 
-    function get(path) {
-        var v = rcloud_ocaps;
-        for (var i=0; i<path.length; ++i)
-            v = v[path[i]];
-        return v;
-    }
-
-    function set(path, val) {
-        var v = rcloud_ocaps;
-        for (var i=0; i<path.length-1; ++i)
-            v = v[path[i]];
-        v[path[path.length-1] + "Async"] = val;
-    }
-
-    function process_paths(paths) {
-        _.each(paths, function(path) {
-            var fn = get(path);
-            set(path, fn ? rcloud_handler(path.join('.'), Promise.promisify(fn)) : null);
-        });
-    }
-
-    //////////////////////////////////////////////////////////////////////////////
-    function json_p(promise) {
-        return promise.then(JSON.parse)
-            .catch(rclient.post_rejection);
-    }
-
+RCloud.promisify_paths = (function() {
     function rcloud_handler(command, promise_fn) {
         function success(result) {
             if(result && RCloud.is_exception(result)) {
@@ -54,6 +27,32 @@ RCloud.create = function(rcloud_ocaps) {
         };
     }
 
+    function process_paths(ocaps, paths) {
+        function get(path) {
+            var v = ocaps;
+            for (var i=0; i<path.length; ++i)
+                v = v[path[i]];
+            return v;
+        }
+
+        function set(path, val) {
+            var v = ocaps;
+            for (var i=0; i<path.length-1; ++i)
+                v = v[path[i]];
+            v[path[path.length-1] + "Async"] = val;
+        }
+
+        _.each(paths, function(path) {
+            var fn = get(path);
+            set(path, fn ? rcloud_handler(path.join('.'), Promise.promisify(fn)) : null);
+        });
+        return ocaps;
+    }
+
+    return process_paths;
+})();
+
+RCloud.create = function(rcloud_ocaps) {
     function rcloud_github_handler(command, promise) {
         function success(result) {
             if (result.ok) {
@@ -105,7 +104,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "get_url"],
             ["get_notebook_by_name"]
         ];
-        process_paths(paths);
+        RCloud.promisify_paths(rcloud_ocaps, paths);
 
         rcloud.username = function() {
             return $.cookies.get('user');
@@ -323,7 +322,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["set_notebook_info"],
             ["notebook_by_name"]
         ];
-        process_paths(paths);
+        RCloud.promisify_paths(rcloud_ocaps, paths);
 
         rcloud.session_init = function(username, token) {
             return rcloud_ocaps.session_initAsync(username, token);
