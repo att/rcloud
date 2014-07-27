@@ -781,14 +781,15 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
     z-index: 10000;
     cursor: ew-resize;
     bottom:.25em;
+    opacity: 0;
 }
 
 .notebook-sizer.left {
-    left:-.7em;
+    left:0em;
 }
 
 .notebook-sizer.right {
-    right:-.7em;
+    right:0em;
 }
 
 .notebook-sizer > i {
@@ -799,10 +800,9 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
     height: 1000px;
     width: 0.25em;
     background-color: #777;
-    opacity: 0;
     position: absolute;
     bottom: 0;
-    left: 0.5em;
+    left: 0;
 }
 
 .navbar-inverse {

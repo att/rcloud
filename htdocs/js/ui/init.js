@@ -323,18 +323,15 @@ RCloud.UI.init = function() {
 
     //////////////////////////////////////////////////////////////////////////
     // resizeable panels
-    var wid_over_12 = window.innerWidth/12; // not responsive
     $('.notebook-sizer').draggable({
         axis: 'x',
         opacity: 0.75,
         zindex: 10000,
         revert: true,
         revertDuration: 0,
-        grid: [wid_over_12, 0],
-        start: function(event, ui) {
-            $(".bar", this).css('opacity', 1);
-        },
+        grid: [window.innerWidth/12, 0],
         stop: function(event, ui) {
+            var wid_over_12 = window.innerWidth/12;
             // position is relative to parent, the notebook
             var diff, size;
             if($(this).hasClass('left')) {
@@ -356,8 +353,13 @@ RCloud.UI.init = function() {
             else throw new Error('unexpected shadow drag with classes ' + $(this).attr('class'));
             // revert to absolute position
             $(this).css({left: "", top: ""});
-            $(".bar").css('opacity', 0);
         }
+    });
+
+    // make grid responsive to window resize
+    $(window).resize(function() {
+        var wid_over_12 = window.innerWidth/12;
+        $('.notebook-sizer').draggable('option', 'grid', [wid_over_12, 0]);
     });
 
     //////////////////////////////////////////////////////////////////////////
