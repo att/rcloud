@@ -785,7 +785,7 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
 }
 
 .notebook-sizer.left {
-    left:0em;
+    left:-.25em;
 }
 
 .notebook-sizer.right {
