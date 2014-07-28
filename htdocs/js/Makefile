@@ -24,6 +24,7 @@ rcloud_bundle.js: \
 	notebook/util.js \
 	notebook.js \
 	session.js \
+	upload_utils.js \
 	ui/_begin.js \
 	ui/column.js \
 	ui/command_prompt.js \

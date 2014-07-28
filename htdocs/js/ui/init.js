@@ -219,18 +219,15 @@ RCloud.UI.init = function() {
 
     //////////////////////////////////////////////////////////////////////////
     // resizeable panels
-    var wid_over_12 = window.innerWidth/12; // not responsive
     $('.notebook-sizer').draggable({
         axis: 'x',
         opacity: 0.75,
         zindex: 10000,
         revert: true,
         revertDuration: 0,
-        grid: [wid_over_12, 0],
-        start: function(event, ui) {
-            $(".bar", this).show();
-        },
+        grid: [window.innerWidth/12, 0],
         stop: function(event, ui) {
+            var wid_over_12 = window.innerWidth/12;
             // position is relative to parent, the notebook
             var diff, size;
             if($(this).hasClass('left')) {
@@ -238,6 +235,10 @@ RCloud.UI.init = function() {
                 size = Math.max(1,
                                 Math.min(+RCloud.UI.left_panel.colwidth() + diff,
                                          11 - RCloud.UI.right_panel.colwidth()));
+                if(size===1)
+                    RCloud.UI.left_panel.hide(true, true);
+                else
+                    RCloud.UI.left_panel.show(true, true);
                 RCloud.UI.left_panel.colwidth(size);
                 RCloud.UI.middle_column.update();
             }
@@ -246,14 +247,23 @@ RCloud.UI.init = function() {
                 size = Math.max(1,
                                 Math.min(+RCloud.UI.right_panel.colwidth() - diff,
                                          11 - RCloud.UI.left_panel.colwidth()));
+                if(size===1)
+                    RCloud.UI.right_panel.hide(true, true);
+                else
+                    RCloud.UI.right_panel.show(true, true);
                 RCloud.UI.right_panel.colwidth(size);
                 RCloud.UI.middle_column.update();
             }
             else throw new Error('unexpected shadow drag with classes ' + $(this).attr('class'));
             // revert to absolute position
             $(this).css({left: "", top: ""});
-            $(".bar", this).hide();
         }
+    });
+
+    // make grid responsive to window resize
+    $(window).resize(function() {
+        var wid_over_12 = window.innerWidth/12;
+        $('.notebook-sizer').draggable('option', 'grid', [wid_over_12, 0]);
     });
 
     //////////////////////////////////////////////////////////////////////////

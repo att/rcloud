@@ -26,6 +26,9 @@ RCloud.UI.session_pane = {
         });
 
     },
+    error_dest: function() {
+        return this.error_dest_;
+    },
     post_error: function(msg, dest) {
         var errclass = 'session-error';
         if (typeof msg === 'string') {
