@@ -117,7 +117,7 @@
     }
 
     RCloud.upload_files = function(options, react) {
-        var upload_ocaps = options.upload_ocaps || rcloud_ocaps.file_upload;
+        var upload_ocaps = options.upload_ocaps || rcloud._ocaps.file_upload;
         react = react || {};
         options = upload_opts(options);
         var upload = binary_upload(upload_ocaps, react);
