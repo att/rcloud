@@ -1,4 +1,4 @@
-RCloud.UI.upload_files = (function() {
+RCloud.UI.upload_with_alerts = (function() {
     function upload_ui_opts(opts) {
         if(_.isBoolean(opts))
             opts = {force: opts};
@@ -41,7 +41,8 @@ RCloud.UI.upload_files = (function() {
                     text: message,
                     on_close: function() {
                         $(".progress").hide();
-                        $("#collapse-file-upload").trigger("size-changed");
+                        if(options.$result_panel)
+                            options.$result_panel.trigger("size-changed");
                     }
                 }));
         }
@@ -91,7 +92,8 @@ RCloud.UI.upload_files = (function() {
         }
 
         options = upload_ui_opts(options || {});
-        RCloud.UI.right_panel.collapse($("#collapse-file-upload"), false);
+        if(options.$result_panel && options.$result_panel.length && RCloud.UI.right_panel)
+            RCloud.UI.right_panel.collapse($("#collapse-file-upload"), false);
 
         var file_error_handler = Promise.promisify(function(err, options, callback) {
             var message = err.message;

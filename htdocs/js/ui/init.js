@@ -44,7 +44,7 @@ RCloud.UI.init = function() {
         if($("#file")[0].files.length===0)
             return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        RCloud.UI.upload_files(to_notebook);
+        RCloud.UI.upload_with_alerts(to_notebook);
     });
     var showOverlay_;
     //prevent drag in rest of the page except asset pane and enable overlay on asset pane
@@ -85,7 +85,7 @@ RCloud.UI.init = function() {
             var files = (e.files || e.dataTransfer.files);
             var dt = e.dataTransfer;
             if(!shell.notebook.model.read_only())
-                RCloud.UI.upload_files(true, {files: files});
+                RCloud.UI.upload_with_alerts(true, {files: files});
             $('#asset-drop-overlay').css({'display': 'none'});
         },
         "dragenter dragover": function(e) {

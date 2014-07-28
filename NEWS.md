@@ -3,7 +3,7 @@
 * Multiple file upload.  File upload interface has been modernized to use
   promises and to split the UI from the back-end.
 
-  `RCloud.UI.upload_files(to_notebook, options)` takes the place of the old
+  `RCloud.UI.upload_with_alerts(to_notebook, options)` takes the place of the old
   functions `rcloud.upload_to_notebook` and `rcloud.upload_file`.  All its UI
   elements are configurable.  By default it will send messages and
   confirmations to the Upload Files pane in edit mode, and to the main output

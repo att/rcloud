@@ -3665,7 +3665,7 @@ RCloud.UI.init = function() {
         if($("#file")[0].files.length===0)
             return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        RCloud.UI.upload_files(to_notebook);
+        RCloud.UI.upload_with_alerts(to_notebook);
     });
     var showOverlay_;
     //prevent drag in rest of the page except asset pane and enable overlay on asset pane
@@ -3706,7 +3706,7 @@ RCloud.UI.init = function() {
             var files = (e.files || e.dataTransfer.files);
             var dt = e.dataTransfer;
             if(!shell.notebook.model.read_only())
-                RCloud.UI.upload_files(true, {files: files});
+                RCloud.UI.upload_with_alerts(true, {files: files});
             $('#asset-drop-overlay').css({'display': 'none'});
         },
         "dragenter dragover": function(e) {
@@ -4455,7 +4455,7 @@ RCloud.UI.share_button = {
         $("#share-link").attr("href", link);
     }
 };
-RCloud.UI.upload_files = (function() {
+RCloud.UI.upload_with_alerts = (function() {
     function upload_ui_opts(opts) {
         if(_.isBoolean(opts))
             opts = {force: opts};
@@ -4498,7 +4498,8 @@ RCloud.UI.upload_files = (function() {
                     text: message,
                     on_close: function() {
                         $(".progress").hide();
-                        $("#collapse-file-upload").trigger("size-changed");
+                        if(options.$result_panel)
+                            options.$result_panel.trigger("size-changed");
                     }
                 }));
         }
@@ -4548,7 +4549,8 @@ RCloud.UI.upload_files = (function() {
         }
 
         options = upload_ui_opts(options || {});
-        RCloud.UI.right_panel.collapse($("#collapse-file-upload"), false);
+        if(options.$result_panel && options.$result_panel.length && RCloud.UI.right_panel)
+            RCloud.UI.right_panel.collapse($("#collapse-file-upload"), false);
 
         var file_error_handler = Promise.promisify(function(err, options, callback) {
             var message = err.message;
