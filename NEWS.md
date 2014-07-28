@@ -1,3 +1,40 @@
+## RCloud 1.2
+
+* Multiple file upload.  File upload interface has been modernized to use
+  promises and to split the UI from the back-end.
+  `rcloud.upload_to_notebook` and `rcloud.upload_file` are replaced with
+  `RCloud.upload_files` and `RCloud.upload_assets`, which return promises
+  instead of using a callback.  and also take a `react` struct for progress
+  messages and overwrite confirmation.
+
+  `RCloud.UI.upload_files(to_notebook, options)` takes the place of the old
+  functions.  All its UI elements are configurable.  By default it will
+  send messages and confirmations to the Upload Files pane in edit mode, and
+  to the main output div in view mode.  Upload can also be enabled in
+  published notebooks running anonymously through the technique [in this
+  notebook](https://gist.github.com/gordonwoodhull/8bf3ccc607b4164c8f22).
+
+* Delete and edit comments
+
+* CSS highlighting and syntax
+
+* Disabled backspace as "go back as history" to prevent some accidental
+  navigation away from RCloud
+
+
+## RCloud 1.1.2
+
+* Set CRAN mirror `repos` option if not already set to aviod interactive
+  prompt. The default will be either `CRAN.mirror` entry from `rcloud.conf`
+  or `http://cran.r-project.org` if not specified.
+
+* Fix crash on Safari where RCloud would keep trying to open earlier and
+  earlier notebooks
+
+* Resizeable side panels.  Temporarily gives you more room to work on assets
+  or read help.  Lasts until a panel is opened or collapsed.
+
+
 ## RCloud 1.1.1
 
 * Properly handle failed connections (was throwing in an error handler). Add
