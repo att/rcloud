@@ -1352,6 +1352,7 @@ var editor = function () {
                 current_ = {notebook: result.id, version: options.version};
                 rcloud.config.set_current_notebook(current_);
                 rcloud.config.set_recent_notebook(result.id, (new Date()).toString());
+                RCloud.UI.share_button.set_link(result);
 
                 /*
                 // disabling inter-notebook navigation for now - concurrency issues

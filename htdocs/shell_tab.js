@@ -38,7 +38,6 @@ var shell = (function() {
 
     function on_load(notebook) {
         RCloud.UI.notebook_title.set(notebook.description);
-        RCloud.UI.share_button.set_link(notebook);
         notebook_user_ = notebook.user.login;
         RCloud.UI.configure_readonly();
         _.each(notebook_view_.sub_views, function(cell_view) {
