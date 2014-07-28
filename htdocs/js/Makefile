@@ -24,6 +24,7 @@ rcloud_bundle.js: \
 	notebook/util.js \
 	notebook.js \
 	session.js \
+	upload_utils.js \
 	ui/_begin.js \
 	ui/column.js \
 	ui/command_prompt.js \
@@ -40,7 +41,8 @@ rcloud_bundle.js: \
 	ui/scratchpad.js \
 	ui/search.js \
 	ui/session_pane.js \
-	ui/share_button.js
+	ui/share_button.js \
+	ui/upload.js
 
 rcloud_bundle.min.js: rcloud_bundle.js Makefile
 	@rm -f $@
