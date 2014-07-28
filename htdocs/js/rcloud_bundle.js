@@ -3217,8 +3217,10 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                     heights[remaining[i]] = split;
                 do_fit = true;
             }
-            for(id in heights)
+            for(id in heights) {
                 $('#' + id).find(".panel-body").height(heights[id]);
+                $('#' + id).trigger('panel-resize');
+            }
             reshadow();
             var expected = $(sel_column).height();
             var got = d3.sum(_.values(padding)) + d3.sum(_.values(heights)) + total_headings;
@@ -4191,7 +4193,7 @@ RCloud.UI.scratchpad = {
             ui_utils.install_common_ace_key_bindings(widget, function() {
                 return that.current_model.language();
             });
-            $("#collapse-assets").on("shown.bs.collapse", function() {
+            $("#collapse-assets").on("shown.bs.collapse panel-resize", function() {
                 widget.resize();
             });
         }
