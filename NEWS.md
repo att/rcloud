@@ -37,6 +37,8 @@
 * Resizeable side panels.  Temporarily gives you more room to work on assets
   or read help.  Lasts until a panel is opened or collapsed.
 
+* Fixes bug where asset editor did not always size to fit its panel.
+
 
 ## RCloud 1.1.1
 
