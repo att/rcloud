@@ -128,8 +128,9 @@ RCloud.session = {
             this.first_session_ = false;
             return RCloud.UI.with_progress(function() {});
         }
-        // if we need a third of these, probably we need callbacks
+        // perhaps we need an event to listen on here
         $("#session-info").empty();
+        $(".progress").hide();
         $("#file-upload-results").empty();
         return RCloud.UI.with_progress(function() {
             var anonymous = rclient.allow_anonymous_;
