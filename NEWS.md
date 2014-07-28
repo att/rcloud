@@ -21,7 +21,7 @@
 
 * CSS highlighting and syntax
 
-* Disabled backspace as "go back as history" to prevent some accidental
+* Disabled backspace as a shortcut to the back button to prevent some accidental
   navigation away from RCloud
 
 
