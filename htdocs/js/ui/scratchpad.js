@@ -43,7 +43,7 @@ RCloud.UI.scratchpad = {
             ui_utils.install_common_ace_key_bindings(widget, function() {
                 return that.current_model.language();
             });
-            $("#collapse-assets").on("shown.bs.collapse", function() {
+            $("#collapse-assets").on("shown.bs.collapse panel-resize", function() {
                 widget.resize();
             });
         }
