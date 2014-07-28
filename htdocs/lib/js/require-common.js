@@ -8,7 +8,7 @@ requirejs_config_obj = {
     },
     "shim": {
         "tree.jquery": ["jquery"],
-        "jquery-ui-1.10.4.custom": ["jquery"],
+        "jquery-ui": ["jquery"],
         laconic: ["jquery"],
         "jquery.cookies.2.2.0": ["jquery"],
         "jquery.scrollto": ["jquery"],
@@ -27,7 +27,7 @@ var common_deps = [
     "jquery-1.10.2",
     // other
     "hl.min", "jDataView", "jquery.cookies.2.2.0",
-    "jquery.scrollto", "laconic", "jquery-ui-1.10.4.custom",
+    "jquery.scrollto", "laconic", "jquery-ui",
     "bootstrap", "peg-0.6.2.min",
     "rserve", "tree.jquery"
 ];

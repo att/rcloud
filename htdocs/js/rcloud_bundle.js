@@ -3158,9 +3158,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             else
                 this.show(persist);
         },
-        resize: function() {
-            var cw = this.calcwidth();
-            this.colwidth(cw);
+        resize: function(skip_calc) {
+            if(!skip_calc) {
+                var cw = this.calcwidth();
+                this.colwidth(cw);
+            }
             RCloud.UI.middle_column.update();
             var heights = {}, padding = {}, cbles = collapsibles(), ncollapse = cbles.length;
             var greedy_one = null;
@@ -3215,24 +3217,26 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                     heights[remaining[i]] = split;
                 do_fit = true;
             }
-            for(id in heights)
+            for(id in heights) {
                 $('#' + id).find(".panel-body").height(heights[id]);
+                $('#' + id).trigger('panel-resize');
+            }
             reshadow();
             var expected = $(sel_column).height();
             var got = d3.sum(_.values(padding)) + d3.sum(_.values(heights)) + total_headings;
             if(do_fit && expected != got)
                 console.log("Error in vertical layout algo: filling " + expected + " pixels with " + got);
         },
-        hide: function(persist) {
+        hide: function(persist, skip_calc) {
             // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
             $(sel_accordion + " > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
             $(sel_collapser + " i").removeClass("icon-minus").addClass("icon-plus");
             collapsed_ = true;
-            this.resize();
+            this.resize(skip_calc);
             if(persist && rcloud.config)
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), true);
         },
-        show: function(persist) {
+        show: function(persist, skip_calc) {
             if(all_collapsed())
                 set_collapse($(collapsibles()[0]), false, true);
             collapsibles().each(function() {
@@ -3240,7 +3244,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             });
             $(sel_collapser + " i").removeClass("icon-plus").addClass("icon-minus");
             collapsed_ = false;
-            this.resize();
+            this.resize(skip_calc);
             if(persist && rcloud.config)
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), false);
         },
@@ -3613,11 +3617,13 @@ RCloud.UI.init = function() {
     //prevent drag in rest of the page except asset pane and enable overlay on asset pane
     $(document).on('dragstart dragenter dragover', function (e) {
         var dt = e.originalEvent.dataTransfer;
+        if(!dt)
+            return;
         if(dt.items.length > 1) {
             e.stopPropagation();
             e.preventDefault();
-        }else
-        if (dt.types != null && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.contains('application/x-moz-file'))) {
+        }
+        else if (dt.types != null && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.contains('application/x-moz-file'))) {
             if (!shell.notebook.model.read_only()) {
                 e.stopPropagation();
                 e.preventDefault();
@@ -3854,6 +3860,8 @@ RCloud.UI.init = function() {
     RCloud.UI.command_prompt.init();
     RCloud.UI.help_frame.init();
 
+    //////////////////////////////////////////////////////////////////////////
+    // allow reordering cells by dragging them
     function make_cells_sortable() {
         var cells = $('#output');
         cells.sortable({
@@ -3881,6 +3889,55 @@ RCloud.UI.init = function() {
     make_cells_sortable();
 
     //////////////////////////////////////////////////////////////////////////
+    // resizeable panels
+    $('.notebook-sizer').draggable({
+        axis: 'x',
+        opacity: 0.75,
+        zindex: 10000,
+        revert: true,
+        revertDuration: 0,
+        grid: [window.innerWidth/12, 0],
+        stop: function(event, ui) {
+            var wid_over_12 = window.innerWidth/12;
+            // position is relative to parent, the notebook
+            var diff, size;
+            if($(this).hasClass('left')) {
+                diff = Math.round(ui.position.left/wid_over_12);
+                size = Math.max(1,
+                                Math.min(+RCloud.UI.left_panel.colwidth() + diff,
+                                         11 - RCloud.UI.right_panel.colwidth()));
+                if(size===1)
+                    RCloud.UI.left_panel.hide(true, true);
+                else
+                    RCloud.UI.left_panel.show(true, true);
+                RCloud.UI.left_panel.colwidth(size);
+                RCloud.UI.middle_column.update();
+            }
+            else if($(this).hasClass('right')) {
+                diff = Math.round(ui.position.left/wid_over_12) - RCloud.UI.middle_column.colwidth();
+                size = Math.max(1,
+                                Math.min(+RCloud.UI.right_panel.colwidth() - diff,
+                                         11 - RCloud.UI.left_panel.colwidth()));
+                if(size===1)
+                    RCloud.UI.right_panel.hide(true, true);
+                else
+                    RCloud.UI.right_panel.show(true, true);
+                RCloud.UI.right_panel.colwidth(size);
+                RCloud.UI.middle_column.update();
+            }
+            else throw new Error('unexpected shadow drag with classes ' + $(this).attr('class'));
+            // revert to absolute position
+            $(this).css({left: "", top: ""});
+        }
+    });
+
+    // make grid responsive to window resize
+    $(window).resize(function() {
+        var wid_over_12 = window.innerWidth/12;
+        $('.notebook-sizer').draggable('option', 'grid', [wid_over_12, 0]);
+    });
+
+    //////////////////////////////////////////////////////////////////////////
     // autosave when exiting. better default than dropping data, less annoying
     // than prompting
     $(window).bind("unload", function() {
@@ -3897,17 +3954,17 @@ RCloud.UI.init = function() {
     });
 };
 RCloud.UI.left_panel = (function() {
-    var result = RCloud.UI.collapsible_column("#left-column,#fake-left-column",
+    var result = RCloud.UI.collapsible_column("#left-column",
                                               "#accordion-left", "#left-pane-collapser");
     var base_hide = result.hide.bind(result),
         base_show = result.show.bind(result);
 
     _.extend(result, {
-        hide: function(persist) {
+        hide: function(persist, calc) {
             $("#new-notebook").hide();
-            base_hide(persist);
+            base_hide(persist, calc);
         },
-        show: function(persist) {
+        show: function(persist, calc) {
             $("#new-notebook").show();
             base_show(persist);
         }
@@ -4087,7 +4144,7 @@ RCloud.UI.allow_progress_modal = function() {
 
 })();
 RCloud.UI.right_panel = (function() {
-    var result = RCloud.UI.collapsible_column("#right-column,#fake-right-column",
+    var result = RCloud.UI.collapsible_column("#right-column",
                                               "#accordion-right", "#right-pane-collapser");
     return result;
 }());
@@ -4136,7 +4193,7 @@ RCloud.UI.scratchpad = {
             ui_utils.install_common_ace_key_bindings(widget, function() {
                 return that.current_model.language();
             });
-            $("#collapse-assets").on("shown.bs.collapse", function() {
+            $("#collapse-assets").on("shown.bs.collapse panel-resize", function() {
                 widget.resize();
             });
         }
@@ -4380,8 +4437,13 @@ RCloud.UI.session_pane = {
         //////////////////////////////////////////////////////////////////////
         // bluebird unhandled promise handler
         Promise.onPossiblyUnhandledRejection(function(e, promise) {
-            console.log(e.stack);
-            that.post_error(e.stack);
+            var msg = "";
+            // bluebird will print the message for Chrome/Opera but no other browser
+            if(!window.chrome && e.message)
+                msg += "Error: " + e.message + "\n";
+            msg += e.stack;
+            console.log(msg);
+            that.post_error(msg);
         });
 
     },

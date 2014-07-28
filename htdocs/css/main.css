@@ -776,6 +776,35 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
     left:0px
 }
 
+.notebook-sizer {
+    position:absolute;
+    z-index: 10000;
+    cursor: ew-resize;
+    bottom: 0;
+    opacity: 0;
+}
+
+.notebook-sizer.left {
+    left:-.25em;
+}
+
+.notebook-sizer.right {
+    right:0em;
+}
+
+.notebook-sizer > i {
+    font-size:1.5em;
+}
+
+.notebook-sizer > .bar {
+    height: 1000px;
+    width: 0.25em;
+    background-color: #333;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+}
+
 .navbar-inverse {
     border-color: #222;
 }

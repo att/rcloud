@@ -1,3 +1,18 @@
+## RCloud 1.1.2
+
+* Set CRAN mirror `repos` option if not already set to aviod interactive
+  prompt. The default will be either `CRAN.mirror` entry from `rcloud.conf`
+  or `http://cran.r-project.org` if not specified.
+
+* Fix crash on Safari where RCloud would keep trying to open earlier and
+  earlier notebooks
+
+* Resizeable side panels.  Temporarily gives you more room to work on assets
+  or read help.  Lasts until a panel is opened or collapsed.
+
+* Fixes bug where asset editor did not always size to fit its panel.
+
+
 ## RCloud 1.1.1
 
 * Properly handle failed connections (was throwing in an error handler). Add
