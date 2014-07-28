@@ -38,7 +38,6 @@ var shell = (function() {
 
     function on_load(notebook) {
         RCloud.UI.notebook_title.set(notebook.description);
-        RCloud.UI.share_button.set_link(notebook);
         notebook_user_ = notebook.user.login;
         RCloud.UI.configure_readonly();
         _.each(notebook_view_.sub_views, function(cell_view) {
@@ -133,6 +132,8 @@ var shell = (function() {
                     return notebook_controller_.create_notebook(content).then(on_new);
                 });
             });
+        }, rename_notebook: function(desc) {
+            return notebook_controller_.rename_notebook(desc);
         }, fork_notebook: function(is_mine, gistname, version) {
             return do_load(function() {
                 var promise_fork;

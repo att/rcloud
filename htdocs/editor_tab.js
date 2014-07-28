@@ -1228,7 +1228,7 @@ var editor = function () {
             return newname && !Notebook.empty_for_github(newname); // not null and not empty or just whitespace
         },
         rename_notebook: function(desc) {
-            return shell.notebook.controller.rename_notebook(desc);
+            return shell.rename_notebook(desc);
         },
         star_notebook: function(star, opts) {
             var that = this;
