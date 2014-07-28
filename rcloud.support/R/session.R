@@ -138,6 +138,10 @@ rcloud.session.init <- function(...) {
   start.rcloud(...)
   rcloud.reset.session()
 
+  ## set default mirror if not specified to avoid interactive selection
+  if (isTRUE("@CRAN@" %in% getOption("repos")))
+      options(repos=c(CRAN = if(nzConf("cran.mirror")) getConf("cran.mirror") else "http://cran.r-project.org"))
+  
   ver <- paste0('RCloud ', rcloud.info("version.string"), ' ')
   if (nzchar(rcloud.info("revision"))) ver <- paste0(ver, "(", rcloud.info("branch"), "/", rcloud.info("revision"), "), ")
   paste0(ver, R.version.string, "<br>Welcome, ", .session$username)

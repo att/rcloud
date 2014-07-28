@@ -10,37 +10,10 @@ RCloud.exception_message = function(v) {
     return v[0];
 };
 
-RCloud.create = function(rcloud_ocaps) {
-    //////////////////////////////////////////////////////////////////////////////
-    // promisification
+//////////////////////////////////////////////////////////////////////////////
+// promisification
 
-    function get(path) {
-        var v = rcloud_ocaps;
-        for (var i=0; i<path.length; ++i)
-            v = v[path[i]];
-        return v;
-    }
-
-    function set(path, val) {
-        var v = rcloud_ocaps;
-        for (var i=0; i<path.length-1; ++i)
-            v = v[path[i]];
-        v[path[path.length-1] + "Async"] = val;
-    }
-
-    function process_paths(paths) {
-        _.each(paths, function(path) {
-            var fn = get(path);
-            set(path, fn ? rcloud_handler(path.join('.'), Promise.promisify(fn)) : null);
-        });
-    }
-
-    //////////////////////////////////////////////////////////////////////////////
-    function json_p(promise) {
-        return promise.then(JSON.parse)
-            .catch(rclient.post_rejection);
-    }
-
+RCloud.promisify_paths = (function() {
     function rcloud_handler(command, promise_fn) {
         function success(result) {
             if(result && RCloud.is_exception(result)) {
@@ -54,6 +27,32 @@ RCloud.create = function(rcloud_ocaps) {
         };
     }
 
+    function process_paths(ocaps, paths) {
+        function get(path) {
+            var v = ocaps;
+            for (var i=0; i<path.length; ++i)
+                v = v[path[i]];
+            return v;
+        }
+
+        function set(path, val) {
+            var v = ocaps;
+            for (var i=0; i<path.length-1; ++i)
+                v = v[path[i]];
+            v[path[path.length-1] + "Async"] = val;
+        }
+
+        _.each(paths, function(path) {
+            var fn = get(path);
+            set(path, fn ? rcloud_handler(path.join('.'), Promise.promisify(fn)) : null);
+        });
+        return ocaps;
+    }
+
+    return process_paths;
+})();
+
+RCloud.create = function(rcloud_ocaps) {
     function rcloud_github_handler(command, promise) {
         function success(result) {
             if (result.ok) {
@@ -105,7 +104,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "get_url"],
             ["get_notebook_by_name"]
         ];
-        process_paths(paths);
+        RCloud.promisify_paths(rcloud_ocaps, paths);
 
         rcloud.username = function() {
             return $.cookies.get('user');
@@ -323,7 +322,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["set_notebook_info"],
             ["notebook_by_name"]
         ];
-        process_paths(paths);
+        RCloud.promisify_paths(rcloud_ocaps, paths);
 
         rcloud.session_init = function(username, token) {
             return rcloud_ocaps.session_initAsync(username, token);
@@ -382,152 +381,6 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.session_markdown_eval = function(command, language, silent) {
             return rcloud_ocaps.session_markdown_evalAsync(command, language, silent);
-        };
-
-        function upload_opts(opts) {
-            if(_.isBoolean(opts))
-                opts = {force: opts};
-            else if(!_.isObject(opts))
-                throw new Error("didn't understand options " + opts);
-            return $.extend({
-                force: false,
-                $file: $("#file"),
-                $progress: $(".progress"),
-                $progress_bar: $("#progress-bar")
-            }, opts);
-        }
-
-        // FIXME make into promises
-        rcloud.upload_to_notebook = function(options, k) {
-            var opts = upload_opts(options);
-            k = k || _.identity;
-            var on_success = function(v) { k(null, v); };
-            var on_failure = function(v) { k(v, null); };
-
-            function do_upload(file) {
-                var fr = new FileReader();
-                var chunk_size = 1024*1024;
-                var f_size = file.size;
-                var file_to_upload = new Uint8Array(f_size);
-                var bytes_read = 0;
-                var cur_pos = 0;
-                opts.$progress.show();
-                opts.$progress_bar.css("width", "0%");
-                opts.$progress_bar.attr("aria-valuenow", "0");
-                fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-                fr.onload = function(e) {
-                    opts.$progress_bar.attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
-                    opts.$progress_bar.css("width", (100 * (bytes_read / f_size)) + "%");
-                    if (e.target.result.byteLength > 0) {
-                        // still sending data to user agent
-                        var bytes = new Uint8Array(e.target.result);
-                        file_to_upload.set(bytes, cur_pos);
-                        cur_pos += bytes.byteLength;
-                        bytes_read += e.target.result.byteLength;
-                        fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-                    } else {
-                        // done, push to notebook.
-                        var content = String.fromCharCode.apply(null, new Uint16Array(file_to_upload));
-                        if(Notebook.empty_for_github(content))
-                            on_failure("empty");
-                        else rcloud_ocaps.notebook_upload(
-                            file_to_upload.buffer, file.name, function(err, result) {
-                                if (err) {
-                                    on_failure("exists", err);
-                                } else {
-                                    on_success([file_to_upload, file, result.content]);
-                                }
-                            });
-                    }
-                };
-            }
-            if(!(window.File && window.FileReader && window.FileList && window.Blob))
-                throw new Error("File API not supported by browser.");
-            var file=opts.$file[0].files[0];
-            if(_.isUndefined(file))
-                throw new Error("No file selected!");
-            if(Notebook.is_part_name(file.name)) {
-                on_failure("badname");
-                return;
-            }
-
-            rcloud_ocaps.file_upload.upload_path(function(err, path) {
-                if (err) {
-                    throw err;
-                }
-                var file=opts.$file[0].files[0];
-                if(_.isUndefined(file))
-                    throw new Error("No file selected!");
-                do_upload(file);
-            });
-        };
-
-        // FIXME make into promises
-        // FIXME the UI shouldn't be tied up with the functionality
-        rcloud.upload_file = function(options, k) {
-            var opts = upload_opts(options);
-            k = k || _.identity;
-            var on_success = function(v) { k(null, v); };
-            var on_failure = function(v) { k(v, null); };
-
-            function do_upload(path, file) {
-                var upload_name = path + '/' + file.name;
-                rcloud_ocaps.file_upload.create(upload_name, opts.force, function(err, result) {
-                    if (RCloud.is_exception(result)) {
-                        on_failure(RCloud.exception_message(result));
-                        return;
-                    }
-                    var fr = new FileReader();
-                    var chunk_size = 1024*1024;
-                    var f_size=file.size;
-                    var cur_pos=0;
-                    var bytes_read = 0;
-                    opts.$progress.show();
-                    opts.$progress_bar.css("width", "0%");
-                    opts.$progress_bar.attr("aria-valuenow", "0");
-                    //initiate the first chunk, and then another, and then another ...
-                    // ...while waiting for one to complete before reading another
-                    fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-                    fr.onload = function(e) {
-                        opts.$progress_bar.attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
-                        opts.$progress_bar.css("width", (100 * (bytes_read / f_size)) + "%");
-                        if (e.target.result.byteLength > 0) {
-                            var bytes = new Uint8Array(e.target.result);
-                            rcloud_ocaps.file_upload.write(bytes.buffer, function() {
-                                bytes_read += e.target.result.byteLength;
-                                cur_pos += chunk_size;
-                                fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-                            });
-                        } else {
-                            rcloud_ocaps.file_upload.close(function(err, result){
-                                if (err) {
-                                    on_failure(err);
-                                } else {
-                                    on_success([path, file]);
-                                }
-                            });
-                        }
-                    };
-                });
-            }
-
-            if(!(window.File && window.FileReader && window.FileList && window.Blob))
-                throw new Error("File API not supported by browser.");
-            else {
-                var file=opts.$file[0].files[0];
-                if(_.isUndefined(file))
-                    throw new Error("No file selected!");
-                else {
-                    /*FIXME add logged in user */
-                    rcloud_ocaps.file_upload.upload_path(function(err, path) {
-                        if (err) throw err;
-                        var file=opts.$file[0].files[0];
-                        if(_.isUndefined(file))
-                            throw new Error("No file selected!");
-                        do_upload(path, file);
-                    });
-                }
-            }
         };
 
         rcloud.post_comment = function(id, content) {

@@ -32,7 +32,7 @@ dependencies_bundle.js: \
 	js/hl.min.js \
 	js/jquery-1.10.2.js \
 	js/bootstrap.js \
-	js/jquery-ui-1.10.4.custom.min.js \
+	js/jquery-ui.min.js \
 	js/jquery.cookies.2.2.0.js \
 	js/jquery.scrollto.js \
 	js/laconic.js \
