@@ -44,7 +44,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     }
     function set_collapse(target, collapse, persist) {
         target.data("would-collapse", collapse);
-        if(persist && rcloud.config) {
+        if(persist && rcloud.config && target.length) {
             var opt = 'ui/' + target[0].id;
             rcloud.config.set_user_option(opt, collapse);
         }
@@ -134,9 +134,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             else
                 this.show(persist);
         },
-        resize: function() {
-            var cw = this.calcwidth();
-            this.colwidth(cw);
+        resize: function(skip_calc) {
+            if(!skip_calc) {
+                var cw = this.calcwidth();
+                this.colwidth(cw);
+            }
             RCloud.UI.middle_column.update();
             var heights = {}, padding = {}, cbles = collapsibles(), ncollapse = cbles.length;
             var greedy_one = null;
@@ -199,16 +201,16 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             if(do_fit && expected != got)
                 console.log("Error in vertical layout algo: filling " + expected + " pixels with " + got);
         },
-        hide: function(persist) {
+        hide: function(persist, skip_calc) {
             // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
             $(sel_accordion + " > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
             $(sel_collapser + " i").removeClass("icon-minus").addClass("icon-plus");
             collapsed_ = true;
-            this.resize();
+            this.resize(skip_calc);
             if(persist && rcloud.config)
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), true);
         },
-        show: function(persist) {
+        show: function(persist, skip_calc) {
             if(all_collapsed())
                 set_collapse($(collapsibles()[0]), false, true);
             collapsibles().each(function() {
@@ -216,7 +218,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             });
             $(sel_collapser + " i").removeClass("icon-plus").addClass("icon-minus");
             collapsed_ = false;
-            this.resize();
+            this.resize(skip_calc);
             if(persist && rcloud.config)
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), false);
         },

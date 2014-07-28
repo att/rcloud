@@ -44,16 +44,15 @@ RCloud.UI.init = function() {
         if($("#file")[0].files.length===0)
             return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        upload_asset(to_notebook);
+        RCloud.UI.upload_files(to_notebook);
     });
     var showOverlay_;
     //prevent drag in rest of the page except asset pane and enable overlay on asset pane
     $(document).on('dragstart dragenter dragover', function (e) {
         var dt = e.originalEvent.dataTransfer;
-        if(dt.items.length > 1) {
-            e.stopPropagation();
-            e.preventDefault();
-        } else if (dt.types !== null &&
+        if(!dt)
+            return;
+        if (dt.types !== null &&
                    (dt.types.indexOf ?
                     dt.types.indexOf('Files') != -1 :
                     dt.types.contains('application/x-moz-file'))) {
@@ -76,7 +75,6 @@ RCloud.UI.init = function() {
         setTimeout(function() {
             if(!showOverlay_) {
                 $('#asset-drop-overlay').css({'display': 'none'});
-                console.log("hello");
             }
         }, 100);
     });
@@ -86,20 +84,9 @@ RCloud.UI.init = function() {
             e = e.originalEvent || e;
             var files = (e.files || e.dataTransfer.files);
             var dt = e.dataTransfer;
-            if(dt.items.length>1) {
-                e.stopPropagation();
-                e.preventDefault();
-            } else
-            if(!shell.notebook.model.read_only()) {
-              //To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
-              //for (var i = 0; i < files.length; i++) {
-              for (var i = 0; i < 1; i++) {
-                $('#file').val("");
-                $("#file")[0].files[0]=files[i];
-                upload_asset(true);
-              }
-            }
-          $('#asset-drop-overlay').css({'display': 'none'});
+            if(!shell.notebook.model.read_only())
+                RCloud.UI.upload_files(true, {files: files});
+            $('#asset-drop-overlay').css({'display': 'none'});
         },
         "dragenter dragover": function(e) {
             var dt = e.originalEvent.dataTransfer;
@@ -107,101 +94,7 @@ RCloud.UI.init = function() {
                 dt.dropEffect = 'copy';
         }
     });
-    function upload_asset(to_notebook) {
-        RCloud.UI.right_panel.collapse($("#collapse-file-upload"), false);
-        var replacing = false;
-        if(to_notebook) {
-            replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
-        }
-        function results_append($div) {
-            $("#file-upload-results").append($div);
-            $("#collapse-file-upload").trigger("size-changed");
-            ui_utils.on_next_tick(function() {
-                ui_utils.scroll_to_after($("#file-upload-results"));
-            });
-        }
 
-        function success(lst) {
-            var path = lst[0], file = lst[1], notebook = lst[2];
-            results_append(
-                bootstrap_utils.alert({
-                    "class": 'alert-info',
-                    text: (to_notebook ? "Asset " : "File ") + file.name + (replacing ? " replaced." : " uploaded."),
-                    on_close: function() {
-                        $(".progress").hide();
-                        $("#collapse-file-upload").trigger("size-changed");
-                    }
-                })
-            );
-            if(to_notebook) {
-                var content = notebook.files[file.name].content;
-                var promise_controller;
-                if(replacing) {
-                    replacing.content(content);
-                    promise_controller = shell.notebook.controller.update_asset(replacing)
-                        .return(replacing.controller);
-                }
-                else {
-                    promise_controller = shell.notebook.controller.append_asset(content, file.name);
-                }
-                promise_controller.then(function(controller) {
-                    controller.select();
-                });
-            }
-        }
-
-        function failure(what) {
-            var overwrite_click = function() {
-                rcloud.upload_file(true, function(err, value) {
-                    if (err) {
-                        results_append(
-                            bootstrap_utils.alert({
-                                "class": 'alert-danger',
-                                text: err
-                            })
-                        );
-                    } else {
-                        success(value);
-                    }
-                });
-                alert_box.remove();
-            };
-            var alert_element = $("<div></div>");
-            var p;
-            if(/exists/.test(what)) {
-                replacing = true;
-                p = $("<p>File exists. </p>");
-                var overwrite = bootstrap_utils
-                        .button({"class": 'btn-danger'})
-                        .click(overwrite_click)
-                        .text("Overwrite");
-                p.append(overwrite);
-            }
-            else if(what==="empty") {
-                p = $("<p>File is empty.</p>");
-            }
-            else if(what==="badname") {
-                p = $("<p>Filename not allowed.</p>");
-            }
-            else {
-                p = $("<p>(unexpected) " + what + "</p>");
-            }
-            alert_element.append(p);
-            var alert_box = bootstrap_utils.alert({'class': 'alert-danger', html: alert_element});
-            results_append(alert_box);
-        }
-
-        var upload_function = to_notebook ?
-                rcloud.upload_to_notebook :
-                rcloud.upload_file;
-
-        upload_function(false, function(err, value) {
-            if (err)
-                failure(err);
-            else
-                success(value);
-        });
-    }
 
     RCloud.UI.left_panel.init();
     RCloud.UI.middle_column.init();
@@ -296,6 +189,8 @@ RCloud.UI.init = function() {
     RCloud.UI.command_prompt.init();
     RCloud.UI.help_frame.init();
 
+    //////////////////////////////////////////////////////////////////////////
+    // allow reordering cells by dragging them
     function make_cells_sortable() {
         var cells = $('#output');
         cells.sortable({
@@ -323,6 +218,55 @@ RCloud.UI.init = function() {
     make_cells_sortable();
 
     //////////////////////////////////////////////////////////////////////////
+    // resizeable panels
+    $('.notebook-sizer').draggable({
+        axis: 'x',
+        opacity: 0.75,
+        zindex: 10000,
+        revert: true,
+        revertDuration: 0,
+        grid: [window.innerWidth/12, 0],
+        stop: function(event, ui) {
+            var wid_over_12 = window.innerWidth/12;
+            // position is relative to parent, the notebook
+            var diff, size;
+            if($(this).hasClass('left')) {
+                diff = Math.round(ui.position.left/wid_over_12);
+                size = Math.max(1,
+                                Math.min(+RCloud.UI.left_panel.colwidth() + diff,
+                                         11 - RCloud.UI.right_panel.colwidth()));
+                if(size===1)
+                    RCloud.UI.left_panel.hide(true, true);
+                else
+                    RCloud.UI.left_panel.show(true, true);
+                RCloud.UI.left_panel.colwidth(size);
+                RCloud.UI.middle_column.update();
+            }
+            else if($(this).hasClass('right')) {
+                diff = Math.round(ui.position.left/wid_over_12) - RCloud.UI.middle_column.colwidth();
+                size = Math.max(1,
+                                Math.min(+RCloud.UI.right_panel.colwidth() - diff,
+                                         11 - RCloud.UI.left_panel.colwidth()));
+                if(size===1)
+                    RCloud.UI.right_panel.hide(true, true);
+                else
+                    RCloud.UI.right_panel.show(true, true);
+                RCloud.UI.right_panel.colwidth(size);
+                RCloud.UI.middle_column.update();
+            }
+            else throw new Error('unexpected shadow drag with classes ' + $(this).attr('class'));
+            // revert to absolute position
+            $(this).css({left: "", top: ""});
+        }
+    });
+
+    // make grid responsive to window resize
+    $(window).resize(function() {
+        var wid_over_12 = window.innerWidth/12;
+        $('.notebook-sizer').draggable('option', 'grid', [wid_over_12, 0]);
+    });
+
+    //////////////////////////////////////////////////////////////////////////
     // autosave when exiting. better default than dropping data, less annoying
     // than prompting
     $(window).bind("unload", function() {
@@ -339,4 +283,15 @@ RCloud.UI.init = function() {
     });
 
     ui_utils.prevent_backspace($(document));
+
+    // prevent unwanted document scrolling e.g. by dragging
+    $(document).on('scroll', function() {
+        $(this).scrollLeft(0);
+        $(this).scrollTop(0);
+    });
+
+    // prevent left-right scrolling of notebook area
+    $('#rcloud-cellarea').on('scroll', function() {
+        $(this).scrollLeft(0);
+    });
 };

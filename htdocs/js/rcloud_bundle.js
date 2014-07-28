@@ -108,37 +108,10 @@ RCloud.exception_message = function(v) {
     return v[0];
 };
 
-RCloud.create = function(rcloud_ocaps) {
-    //////////////////////////////////////////////////////////////////////////////
-    // promisification
+//////////////////////////////////////////////////////////////////////////////
+// promisification
 
-    function get(path) {
-        var v = rcloud_ocaps;
-        for (var i=0; i<path.length; ++i)
-            v = v[path[i]];
-        return v;
-    }
-
-    function set(path, val) {
-        var v = rcloud_ocaps;
-        for (var i=0; i<path.length-1; ++i)
-            v = v[path[i]];
-        v[path[path.length-1] + "Async"] = val;
-    }
-
-    function process_paths(paths) {
-        _.each(paths, function(path) {
-            var fn = get(path);
-            set(path, fn ? rcloud_handler(path.join('.'), Promise.promisify(fn)) : null);
-        });
-    }
-
-    //////////////////////////////////////////////////////////////////////////////
-    function json_p(promise) {
-        return promise.then(JSON.parse)
-            .catch(rclient.post_rejection);
-    }
-
+RCloud.promisify_paths = (function() {
     function rcloud_handler(command, promise_fn) {
         function success(result) {
             if(result && RCloud.is_exception(result)) {
@@ -152,6 +125,32 @@ RCloud.create = function(rcloud_ocaps) {
         };
     }
 
+    function process_paths(ocaps, paths) {
+        function get(path) {
+            var v = ocaps;
+            for (var i=0; i<path.length; ++i)
+                v = v[path[i]];
+            return v;
+        }
+
+        function set(path, val) {
+            var v = ocaps;
+            for (var i=0; i<path.length-1; ++i)
+                v = v[path[i]];
+            v[path[path.length-1] + "Async"] = val;
+        }
+
+        _.each(paths, function(path) {
+            var fn = get(path);
+            set(path, fn ? rcloud_handler(path.join('.'), Promise.promisify(fn)) : null);
+        });
+        return ocaps;
+    }
+
+    return process_paths;
+})();
+
+RCloud.create = function(rcloud_ocaps) {
     function rcloud_github_handler(command, promise) {
         function success(result) {
             if (result.ok) {
@@ -203,7 +202,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "get_url"],
             ["get_notebook_by_name"]
         ];
-        process_paths(paths);
+        RCloud.promisify_paths(rcloud_ocaps, paths);
 
         rcloud.username = function() {
             return $.cookies.get('user');
@@ -421,7 +420,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["set_notebook_info"],
             ["notebook_by_name"]
         ];
-        process_paths(paths);
+        RCloud.promisify_paths(rcloud_ocaps, paths);
 
         rcloud.session_init = function(username, token) {
             return rcloud_ocaps.session_initAsync(username, token);
@@ -480,152 +479,6 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.session_markdown_eval = function(command, language, silent) {
             return rcloud_ocaps.session_markdown_evalAsync(command, language, silent);
-        };
-
-        function upload_opts(opts) {
-            if(_.isBoolean(opts))
-                opts = {force: opts};
-            else if(!_.isObject(opts))
-                throw new Error("didn't understand options " + opts);
-            return $.extend({
-                force: false,
-                $file: $("#file"),
-                $progress: $(".progress"),
-                $progress_bar: $("#progress-bar")
-            }, opts);
-        }
-
-        // FIXME make into promises
-        rcloud.upload_to_notebook = function(options, k) {
-            var opts = upload_opts(options);
-            k = k || _.identity;
-            var on_success = function(v) { k(null, v); };
-            var on_failure = function(v) { k(v, null); };
-
-            function do_upload(file) {
-                var fr = new FileReader();
-                var chunk_size = 1024*1024;
-                var f_size = file.size;
-                var file_to_upload = new Uint8Array(f_size);
-                var bytes_read = 0;
-                var cur_pos = 0;
-                opts.$progress.show();
-                opts.$progress_bar.css("width", "0%");
-                opts.$progress_bar.attr("aria-valuenow", "0");
-                fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-                fr.onload = function(e) {
-                    opts.$progress_bar.attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
-                    opts.$progress_bar.css("width", (100 * (bytes_read / f_size)) + "%");
-                    if (e.target.result.byteLength > 0) {
-                        // still sending data to user agent
-                        var bytes = new Uint8Array(e.target.result);
-                        file_to_upload.set(bytes, cur_pos);
-                        cur_pos += bytes.byteLength;
-                        bytes_read += e.target.result.byteLength;
-                        fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-                    } else {
-                        // done, push to notebook.
-                        var content = String.fromCharCode.apply(null, new Uint16Array(file_to_upload));
-                        if(Notebook.empty_for_github(content))
-                            on_failure("empty");
-                        else rcloud_ocaps.notebook_upload(
-                            file_to_upload.buffer, file.name, function(err, result) {
-                                if (err) {
-                                    on_failure("exists", err);
-                                } else {
-                                    on_success([file_to_upload, file, result.content]);
-                                }
-                            });
-                    }
-                };
-            }
-            if(!(window.File && window.FileReader && window.FileList && window.Blob))
-                throw new Error("File API not supported by browser.");
-            var file=opts.$file[0].files[0];
-            if(_.isUndefined(file))
-                throw new Error("No file selected!");
-            if(Notebook.is_part_name(file.name)) {
-                on_failure("badname");
-                return;
-            }
-
-            rcloud_ocaps.file_upload.upload_path(function(err, path) {
-                if (err) {
-                    throw err;
-                }
-                var file=opts.$file[0].files[0];
-                if(_.isUndefined(file))
-                    throw new Error("No file selected!");
-                do_upload(file);
-            });
-        };
-
-        // FIXME make into promises
-        // FIXME the UI shouldn't be tied up with the functionality
-        rcloud.upload_file = function(options, k) {
-            var opts = upload_opts(options);
-            k = k || _.identity;
-            var on_success = function(v) { k(null, v); };
-            var on_failure = function(v) { k(v, null); };
-
-            function do_upload(path, file) {
-                var upload_name = path + '/' + file.name;
-                rcloud_ocaps.file_upload.create(upload_name, opts.force, function(err, result) {
-                    if (RCloud.is_exception(result)) {
-                        on_failure(RCloud.exception_message(result));
-                        return;
-                    }
-                    var fr = new FileReader();
-                    var chunk_size = 1024*1024;
-                    var f_size=file.size;
-                    var cur_pos=0;
-                    var bytes_read = 0;
-                    opts.$progress.show();
-                    opts.$progress_bar.css("width", "0%");
-                    opts.$progress_bar.attr("aria-valuenow", "0");
-                    //initiate the first chunk, and then another, and then another ...
-                    // ...while waiting for one to complete before reading another
-                    fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-                    fr.onload = function(e) {
-                        opts.$progress_bar.attr("aria-valuenow", ~~(100 * (bytes_read / f_size)));
-                        opts.$progress_bar.css("width", (100 * (bytes_read / f_size)) + "%");
-                        if (e.target.result.byteLength > 0) {
-                            var bytes = new Uint8Array(e.target.result);
-                            rcloud_ocaps.file_upload.write(bytes.buffer, function() {
-                                bytes_read += e.target.result.byteLength;
-                                cur_pos += chunk_size;
-                                fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
-                            });
-                        } else {
-                            rcloud_ocaps.file_upload.close(function(err, result){
-                                if (err) {
-                                    on_failure(err);
-                                } else {
-                                    on_success([path, file]);
-                                }
-                            });
-                        }
-                    };
-                });
-            }
-
-            if(!(window.File && window.FileReader && window.FileList && window.Blob))
-                throw new Error("File API not supported by browser.");
-            else {
-                var file=opts.$file[0].files[0];
-                if(_.isUndefined(file))
-                    throw new Error("No file selected!");
-                else {
-                    /*FIXME add logged in user */
-                    rcloud_ocaps.file_upload.upload_path(function(err, path) {
-                        if (err) throw err;
-                        var file=opts.$file[0].files[0];
-                        if(_.isUndefined(file))
-                            throw new Error("No file selected!");
-                        do_upload(path, file);
-                    });
-                }
-            }
         };
 
         rcloud.post_comment = function(id, content) {
@@ -3047,8 +2900,9 @@ RCloud.session = {
             this.first_session_ = false;
             return RCloud.UI.with_progress(function() {});
         }
-        // if we need a third of these, probably we need callbacks
+        // perhaps we need an event to listen on here
         $("#session-info").empty();
+        $(".progress").hide();
         $("#file-upload-results").empty();
         return RCloud.UI.with_progress(function() {
             var anonymous = rclient.allow_anonymous_;
@@ -3061,6 +2915,164 @@ RCloud.session = {
     }
 };
 
+})();
+(function() {
+    function upload_opts(opts) {
+        if(_.isBoolean(opts) || _.isUndefined(opts))
+            opts = {force: !!opts};
+        else if(!_.isObject(opts))
+            throw new Error("didn't understand options " + opts);
+        opts = $.extend({
+            force: false
+        }, opts);
+        if(!opts.files)
+            opts.files = opts.$file ? opts.$file[0].files : [];
+        return opts;
+    }
+
+    function text_reader() {
+        return Promise.promisify(function(file, callback) {
+            var fr = new FileReader();
+            fr.onload = function(e) {
+                callback(null, fr.result);
+            };
+            fr.onerror = function(e) {
+                callback(fr.error, null);
+            };
+            fr.readAsText(file);
+        });
+    }
+
+    function promise_for(condition, action, value) {
+        if(!condition(value))
+            return value;
+        return action(value).then(promise_for.bind(null, condition, action));
+    }
+
+    // like Promise.each but each promise is not *started* until the last one completes
+    function promise_sequence(collection, operator) {
+        return promise_for(
+            function(i) {
+                return i < collection.length;
+            },
+            function(i) {
+                return operator(collection[i]).return(++i);
+            },
+            0);
+    }
+
+    RCloud.upload_assets = function(options, react) {
+        react = react || {};
+        options = upload_opts(options);
+        function upload_asset(filename, content) {
+            var replacing = shell.notebook.model.has_asset(filename);
+            var promise_controller;
+            if(replacing) {
+                if(react.replace)
+                    react.replace(filename);
+                replacing.content(content);
+                promise_controller = shell.notebook.controller.update_asset(replacing)
+                    .return(replacing.controller);
+            }
+            else {
+                if(react.add)
+                    react.add(filename);
+                promise_controller = shell.notebook.controller.append_asset(content, filename);
+            }
+            return promise_controller.then(function(controller) {
+                controller.select();
+            });
+        }
+        return promise_sequence(
+            options.files,
+            function(file) {
+                return text_reader()(file) // (we don't know how to deal with binary anyway)
+                    .then(function(content) {
+                        if(Notebook.empty_for_github(content))
+                            throw new Error("empty");
+                        return upload_asset(file.name, content);
+                    });
+            });
+    };
+
+    function binary_upload(upload_ocaps, react) {
+        return Promise.promisify(function(file, is_replace, callback) {
+            var fr = new FileReader();
+            var chunk_size = 1024*1024;
+            var f_size=file.size;
+            var cur_pos=0;
+            var bytes_read = 0;
+            if(react.start)
+                react.start(file.name);
+            //initiate the first chunk, and then another, and then another ...
+            // ...while waiting for one to complete before reading another
+            fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+            fr.onload = function(e) {
+                if(react.progress)
+                    react.progress(bytes_read, f_size);
+                var promise;
+                if (e.target.result.byteLength > 0) {
+                    var bytes = new Uint8Array(e.target.result);
+                    promise = upload_ocaps.writeAsync(bytes.buffer)
+                        .then(function() {
+                            bytes_read += e.target.result.byteLength;
+                            cur_pos += chunk_size;
+                            fr.readAsArrayBuffer(file.slice(cur_pos, cur_pos + chunk_size));
+                        });
+                } else {
+                    promise = upload_ocaps.closeAsync()
+                        .then(function() {
+                            if(react.done)
+                                react.done(is_replace, file.name);
+                            callback(null, true);
+                        });
+                }
+                promise.catch(function(err) {
+                    callback(err, null);
+                });
+            };
+        });
+    }
+
+    RCloud.upload_files = function(options, react) {
+        var upload_ocaps = options.upload_ocaps || rcloud_ocaps.file_upload;
+        react = react || {};
+        options = upload_opts(options);
+        var upload = binary_upload(upload_ocaps, react);
+        function upload_file(path, file) {
+            var upload_name = path + '/' + file.name;
+            return upload_ocaps.createAsync(upload_name, options.force)
+                .catch(function(err) {
+                    if(react.confirm_replace && /exists/.test(err.message)) {
+                        return react.confirm_replace(file.name)
+                            .then(function(confirm) {
+                                return confirm ?
+                                    upload_ocaps.createAsync(upload_name, true)
+                                    .return("overwrite") :
+                                    Promise.resolve(false);
+                            });
+                    }
+                    else throw err;
+                })
+                .then(function(whether) {
+                    return whether ? upload(file, whether==="overwrite") : Promise.resolve(undefined);
+                });
+        }
+
+        if(!(window.File && window.FileReader && window.FileList && window.Blob))
+            return Promise.reject(new Error("File API not supported by browser."));
+        else {
+            if(_.isUndefined(options.files) || !options.files.length)
+                return Promise.reject(new Error("No files selected!"));
+            else {
+                /*FIXME add logged in user */
+                return upload_ocaps.upload_pathAsync()
+                    .then(function(path) {
+                        return promise_sequence(options.files, upload_file.bind(null, path));
+                    });
+            }
+        }
+    };
 })();
 RCloud.UI = {};
 RCloud.UI.column = function(sel_column) {
@@ -3109,7 +3121,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     }
     function set_collapse(target, collapse, persist) {
         target.data("would-collapse", collapse);
-        if(persist && rcloud.config) {
+        if(persist && rcloud.config && target.length) {
             var opt = 'ui/' + target[0].id;
             rcloud.config.set_user_option(opt, collapse);
         }
@@ -3199,9 +3211,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             else
                 this.show(persist);
         },
-        resize: function() {
-            var cw = this.calcwidth();
-            this.colwidth(cw);
+        resize: function(skip_calc) {
+            if(!skip_calc) {
+                var cw = this.calcwidth();
+                this.colwidth(cw);
+            }
             RCloud.UI.middle_column.update();
             var heights = {}, padding = {}, cbles = collapsibles(), ncollapse = cbles.length;
             var greedy_one = null;
@@ -3264,16 +3278,16 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             if(do_fit && expected != got)
                 console.log("Error in vertical layout algo: filling " + expected + " pixels with " + got);
         },
-        hide: function(persist) {
+        hide: function(persist, skip_calc) {
             // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
             $(sel_accordion + " > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
             $(sel_collapser + " i").removeClass("icon-minus").addClass("icon-plus");
             collapsed_ = true;
-            this.resize();
+            this.resize(skip_calc);
             if(persist && rcloud.config)
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), true);
         },
-        show: function(persist) {
+        show: function(persist, skip_calc) {
             if(all_collapsed())
                 set_collapse($(collapsibles()[0]), false, true);
             collapsibles().each(function() {
@@ -3281,7 +3295,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             });
             $(sel_collapser + " i").removeClass("icon-plus").addClass("icon-minus");
             collapsed_ = false;
-            this.resize();
+            this.resize(skip_calc);
             if(persist && rcloud.config)
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), false);
         },
@@ -3649,16 +3663,15 @@ RCloud.UI.init = function() {
         if($("#file")[0].files.length===0)
             return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        upload_asset(to_notebook);
+        RCloud.UI.upload_files(to_notebook);
     });
     var showOverlay_;
     //prevent drag in rest of the page except asset pane and enable overlay on asset pane
     $(document).on('dragstart dragenter dragover', function (e) {
         var dt = e.originalEvent.dataTransfer;
-        if(dt.items.length > 1) {
-            e.stopPropagation();
-            e.preventDefault();
-        } else if (dt.types !== null &&
+        if(!dt)
+            return;
+        if (dt.types !== null &&
                    (dt.types.indexOf ?
                     dt.types.indexOf('Files') != -1 :
                     dt.types.contains('application/x-moz-file'))) {
@@ -3681,7 +3694,6 @@ RCloud.UI.init = function() {
         setTimeout(function() {
             if(!showOverlay_) {
                 $('#asset-drop-overlay').css({'display': 'none'});
-                console.log("hello");
             }
         }, 100);
     });
@@ -3691,20 +3703,9 @@ RCloud.UI.init = function() {
             e = e.originalEvent || e;
             var files = (e.files || e.dataTransfer.files);
             var dt = e.dataTransfer;
-            if(dt.items.length>1) {
-                e.stopPropagation();
-                e.preventDefault();
-            } else
-            if(!shell.notebook.model.read_only()) {
-              //To be uncommented and comment the next line when we enable multiple asset drag after implementing multiple file upload.
-              //for (var i = 0; i < files.length; i++) {
-              for (var i = 0; i < 1; i++) {
-                $('#file').val("");
-                $("#file")[0].files[0]=files[i];
-                upload_asset(true);
-              }
-            }
-          $('#asset-drop-overlay').css({'display': 'none'});
+            if(!shell.notebook.model.read_only())
+                RCloud.UI.upload_files(true, {files: files});
+            $('#asset-drop-overlay').css({'display': 'none'});
         },
         "dragenter dragover": function(e) {
             var dt = e.originalEvent.dataTransfer;
@@ -3712,101 +3713,7 @@ RCloud.UI.init = function() {
                 dt.dropEffect = 'copy';
         }
     });
-    function upload_asset(to_notebook) {
-        RCloud.UI.right_panel.collapse($("#collapse-file-upload"), false);
-        var replacing = false;
-        if(to_notebook) {
-            replacing = shell.notebook.model.has_asset($("#file")[0].files[0].name);
-        }
-        function results_append($div) {
-            $("#file-upload-results").append($div);
-            $("#collapse-file-upload").trigger("size-changed");
-            ui_utils.on_next_tick(function() {
-                ui_utils.scroll_to_after($("#file-upload-results"));
-            });
-        }
 
-        function success(lst) {
-            var path = lst[0], file = lst[1], notebook = lst[2];
-            results_append(
-                bootstrap_utils.alert({
-                    "class": 'alert-info',
-                    text: (to_notebook ? "Asset " : "File ") + file.name + (replacing ? " replaced." : " uploaded."),
-                    on_close: function() {
-                        $(".progress").hide();
-                        $("#collapse-file-upload").trigger("size-changed");
-                    }
-                })
-            );
-            if(to_notebook) {
-                var content = notebook.files[file.name].content;
-                var promise_controller;
-                if(replacing) {
-                    replacing.content(content);
-                    promise_controller = shell.notebook.controller.update_asset(replacing)
-                        .return(replacing.controller);
-                }
-                else {
-                    promise_controller = shell.notebook.controller.append_asset(content, file.name);
-                }
-                promise_controller.then(function(controller) {
-                    controller.select();
-                });
-            }
-        }
-
-        function failure(what) {
-            var overwrite_click = function() {
-                rcloud.upload_file(true, function(err, value) {
-                    if (err) {
-                        results_append(
-                            bootstrap_utils.alert({
-                                "class": 'alert-danger',
-                                text: err
-                            })
-                        );
-                    } else {
-                        success(value);
-                    }
-                });
-                alert_box.remove();
-            };
-            var alert_element = $("<div></div>");
-            var p;
-            if(/exists/.test(what)) {
-                replacing = true;
-                p = $("<p>File exists. </p>");
-                var overwrite = bootstrap_utils
-                        .button({"class": 'btn-danger'})
-                        .click(overwrite_click)
-                        .text("Overwrite");
-                p.append(overwrite);
-            }
-            else if(what==="empty") {
-                p = $("<p>File is empty.</p>");
-            }
-            else if(what==="badname") {
-                p = $("<p>Filename not allowed.</p>");
-            }
-            else {
-                p = $("<p>(unexpected) " + what + "</p>");
-            }
-            alert_element.append(p);
-            var alert_box = bootstrap_utils.alert({'class': 'alert-danger', html: alert_element});
-            results_append(alert_box);
-        }
-
-        var upload_function = to_notebook ?
-                rcloud.upload_to_notebook :
-                rcloud.upload_file;
-
-        upload_function(false, function(err, value) {
-            if (err)
-                failure(err);
-            else
-                success(value);
-        });
-    }
 
     RCloud.UI.left_panel.init();
     RCloud.UI.middle_column.init();
@@ -3901,6 +3808,8 @@ RCloud.UI.init = function() {
     RCloud.UI.command_prompt.init();
     RCloud.UI.help_frame.init();
 
+    //////////////////////////////////////////////////////////////////////////
+    // allow reordering cells by dragging them
     function make_cells_sortable() {
         var cells = $('#output');
         cells.sortable({
@@ -3928,6 +3837,55 @@ RCloud.UI.init = function() {
     make_cells_sortable();
 
     //////////////////////////////////////////////////////////////////////////
+    // resizeable panels
+    $('.notebook-sizer').draggable({
+        axis: 'x',
+        opacity: 0.75,
+        zindex: 10000,
+        revert: true,
+        revertDuration: 0,
+        grid: [window.innerWidth/12, 0],
+        stop: function(event, ui) {
+            var wid_over_12 = window.innerWidth/12;
+            // position is relative to parent, the notebook
+            var diff, size;
+            if($(this).hasClass('left')) {
+                diff = Math.round(ui.position.left/wid_over_12);
+                size = Math.max(1,
+                                Math.min(+RCloud.UI.left_panel.colwidth() + diff,
+                                         11 - RCloud.UI.right_panel.colwidth()));
+                if(size===1)
+                    RCloud.UI.left_panel.hide(true, true);
+                else
+                    RCloud.UI.left_panel.show(true, true);
+                RCloud.UI.left_panel.colwidth(size);
+                RCloud.UI.middle_column.update();
+            }
+            else if($(this).hasClass('right')) {
+                diff = Math.round(ui.position.left/wid_over_12) - RCloud.UI.middle_column.colwidth();
+                size = Math.max(1,
+                                Math.min(+RCloud.UI.right_panel.colwidth() - diff,
+                                         11 - RCloud.UI.left_panel.colwidth()));
+                if(size===1)
+                    RCloud.UI.right_panel.hide(true, true);
+                else
+                    RCloud.UI.right_panel.show(true, true);
+                RCloud.UI.right_panel.colwidth(size);
+                RCloud.UI.middle_column.update();
+            }
+            else throw new Error('unexpected shadow drag with classes ' + $(this).attr('class'));
+            // revert to absolute position
+            $(this).css({left: "", top: ""});
+        }
+    });
+
+    // make grid responsive to window resize
+    $(window).resize(function() {
+        var wid_over_12 = window.innerWidth/12;
+        $('.notebook-sizer').draggable('option', 'grid', [wid_over_12, 0]);
+    });
+
+    //////////////////////////////////////////////////////////////////////////
     // autosave when exiting. better default than dropping data, less annoying
     // than prompting
     $(window).bind("unload", function() {
@@ -3944,19 +3902,30 @@ RCloud.UI.init = function() {
     });
 
     ui_utils.prevent_backspace($(document));
+
+    // prevent unwanted document scrolling e.g. by dragging
+    $(document).on('scroll', function() {
+        $(this).scrollLeft(0);
+        $(this).scrollTop(0);
+    });
+
+    // prevent left-right scrolling of notebook area
+    $('#rcloud-cellarea').on('scroll', function() {
+        $(this).scrollLeft(0);
+    });
 };
 RCloud.UI.left_panel = (function() {
-    var result = RCloud.UI.collapsible_column("#left-column,#fake-left-column",
+    var result = RCloud.UI.collapsible_column("#left-column",
                                               "#accordion-left", "#left-pane-collapser");
     var base_hide = result.hide.bind(result),
         base_show = result.show.bind(result);
 
     _.extend(result, {
-        hide: function(persist) {
+        hide: function(persist, calc) {
             $("#new-notebook").hide();
-            base_hide(persist);
+            base_hide(persist, calc);
         },
-        show: function(persist) {
+        show: function(persist, calc) {
             $("#new-notebook").show();
             base_show(persist);
         }
@@ -4136,7 +4105,7 @@ RCloud.UI.allow_progress_modal = function() {
 
 })();
 RCloud.UI.right_panel = (function() {
-    var result = RCloud.UI.collapsible_column("#right-column,#fake-right-column",
+    var result = RCloud.UI.collapsible_column("#right-column",
                                               "#accordion-right", "#right-pane-collapser");
     return result;
 }());
@@ -4441,10 +4410,18 @@ RCloud.UI.session_pane = {
         //////////////////////////////////////////////////////////////////////
         // bluebird unhandled promise handler
         Promise.onPossiblyUnhandledRejection(function(e, promise) {
-            console.log(e.stack);
-            that.post_error(e.stack);
+            var msg = "";
+            // bluebird will print the message for Chrome/Opera but no other browser
+            if(!window.chrome && e.message)
+                msg += "Error: " + e.message + "\n";
+            msg += e.stack;
+            console.log(msg);
+            that.post_error(msg);
         });
 
+    },
+    error_dest: function() {
+        return this.error_dest_;
     },
     post_error: function(msg, dest) {
         var errclass = 'session-error';
@@ -4476,3 +4453,133 @@ RCloud.UI.share_button = {
         $("#share-link").attr("href", link);
     }
 };
+RCloud.UI.upload_files = (function() {
+    function upload_ui_opts(opts) {
+        if(_.isBoolean(opts))
+            opts = {force: opts};
+        else if(!_.isObject(opts))
+            throw new Error("didn't understand options " + opts);
+        opts = $.extend({
+            $file: $("#file"),
+            $progress: $(".progress"),
+            $progress_bar: $("#progress-bar"),
+            $upload_results: $("#file-upload-results").length ?
+                $("#file-upload-results") :
+                RCloud.UI.session_pane.error_dest(),
+            $result_panel: $("#collapse-file-upload")
+        }, opts);
+        return opts;
+    }
+
+    function upload_files(to_notebook, options) {
+        // we could easily continue optionifying this
+        function results_append($div) {
+            options.$upload_results.append($div);
+            options.$result_panel.trigger("size-changed");
+            ui_utils.on_next_tick(function() {
+                ui_utils.scroll_to_after($("#file-upload-results"));
+            });
+        }
+
+        function result_alert($content) {
+            var alert_element = $("<div></div>");
+            alert_element.append($content);
+            var alert_box = bootstrap_utils.alert({'class': 'alert-danger', html: alert_element});
+            results_append(alert_box);
+            return alert_box;
+        }
+
+        function result_success(message) {
+            results_append(
+                bootstrap_utils.alert({
+                    "class": 'alert-info',
+                    text: message,
+                    on_close: function() {
+                        $(".progress").hide();
+                        $("#collapse-file-upload").trigger("size-changed");
+                    }
+                }));
+        }
+
+        function asset_react(options) {
+            return {
+                add: function(file) {
+                    result_success("Asset " + file + " added.");
+                },
+                replace: function(file) {
+                    result_success("Asset " + file + " replaced.");
+                }
+            };
+        }
+
+        function file_react(options) {
+            return {
+                start: function(filename) {
+                    options.$progress.show();
+                    options.$progress_bar.css("width", "0%");
+                    options.$progress_bar.attr("aria-valuenow", "0");
+                },
+                progress: function(read, size) {
+                    options.$progress_bar.attr("aria-valuenow", ~~(100 * (read / size)));
+                    options.$progress_bar.css("width", (100 * (read / size)) + "%");
+                },
+                done: function(is_replace, filename) {
+                    result_success("File " + filename + " " + (is_replace ? "replaced." : "uploaded."));
+                },
+                confirm_replace: Promise.promisify(function(filename, callback) {
+                    var overwrite_click = function() {
+                        alert_box.remove();
+                        callback(null, true);
+                    };
+                    var p = $("<p>File " + filename + " exists. </p>");
+                    var overwrite = bootstrap_utils
+                            .button({"class": 'btn-danger'})
+                            .click(overwrite_click)
+                            .text("Overwrite");
+                    p.append(overwrite);
+                    var alert_box = result_alert(p);
+                    $('button.close', alert_box).click(function() {
+                        callback(null, false);
+                    });
+                })
+            };
+        }
+
+        options = upload_ui_opts(options || {});
+        RCloud.UI.right_panel.collapse($("#collapse-file-upload"), false);
+
+        var file_error_handler = Promise.promisify(function(err, options, callback) {
+            var message = err.message;
+            var p, done = true;
+            if(message==="empty") {
+                p = $("<p>File is empty.</p>");
+            }
+            else if(message==="badname") {
+                p = $("<p>Filename not allowed.</p>");
+            }
+            else {
+                p = $("<p>(unexpected) " + message + "</p>");
+                console.log(message, err.stack);
+            }
+            result_alert(p);
+            if(done)
+                callback(null, undefined);
+        });
+
+
+        var promise = to_notebook ?
+                RCloud.upload_assets(options, asset_react(options)) :
+                RCloud.upload_files(options, file_react(options));
+
+        // U won't want to wait on this promise because it's after all overwrites etc.
+        return promise.catch(function(err) {
+            return file_error_handler(err, options);
+        }).then(function() {
+            window.setTimeout(function() {
+                $(".progress").hide();
+            }, 5000);
+        });
+    }
+
+    return upload_files;
+})();
