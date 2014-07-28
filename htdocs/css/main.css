@@ -780,7 +780,7 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
     position:absolute;
     z-index: 10000;
     cursor: ew-resize;
-    bottom:.25em;
+    bottom: 0;
     opacity: 0;
 }
 
@@ -799,7 +799,7 @@ a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="ico
 .notebook-sizer > .bar {
     height: 1000px;
     width: 0.25em;
-    background-color: #777;
+    background-color: #333;
     position: absolute;
     bottom: 0;
     left: 0;
