@@ -6,16 +6,18 @@ DST="$SRC/dist"
 ## list of packages that are to be fetched from RForge instead of CRAN
 ## - Rserve and FastRWeb are on CRAN by typically as older versions
 ## - others are not on CRAN
-RFORGE_PKG=Rserve,github,unixtools,rediscc,FastRWeb
+RFORGE_PKG=Rserve,github,unixtools,rediscc,FastRWeb,rpython2
 
-## distribution list 
+## distribution list
 dist_files="LICENSE \
 NEWS.md \
 README.md \
+VERSION \
 conf \
-dcchart.md \
 doc \
 htdocs \
+rcloud.client \
+rcloud.packages \
 rcloud.support \
 scripts"
 
@@ -25,10 +27,18 @@ if [ "x$1" = "x-h" ]; then
     echo " Usage: $0"
     echo ''
     echo ' Configuration environment variables:'
-    echo ' SRC [.]          RCloud source root'
-    echo ' DST [$SRC/dist]  distribution destination'
+    echo ' SRC [.] RCloud source root'
+    echo ' DST [$SRC/dist] distribution destination'
     echo ''
     exit 0
+fi
+
+if [ ! -e "$SRC/rcloud.client/DESCRIPTION" ]; then
+    echo "ERROR: cannot find $SRC/rcloud.client/DESCRIPTION"
+    echo ''
+    echo "This script must be run from the RCloud sources root"
+    echo "or SRC must be set to such"
+    exit 1
 fi
 
 if [ ! -e "$SRC/rcloud.support/DESCRIPTION" ]; then
@@ -50,6 +60,19 @@ mkdir "$DST/tmp"
 REV=`( cd "$SRC" && git rev-list --abbrev-commit -n 1 HEAD )`
 BRANCH=`( cd "$SRC" && git status | sed -n 's:.*On branch ::p' | sed 's:/:-:g' )`
 
+#-------------------Build RCloud Client------------------------------------#
+echo '' && echo "=== building rcloud.client ===" && echo ''
+
+(cd "$DST/tmp"; cp -pR "$SRC/rcloud.client" "rcloud.client"; R CMD build rcloud.client)
+rcc=`ls "$DST/tmp/rcloud.client_"*.tar.gz 2>/dev/null`
+if [ -z "$rcc" ]; then
+    echo "ERROR: unable to build rcloud.client package"
+    exit 1
+fi
+mv "$rcc" "$DST/pkg.repos/src/contrib"
+echo "tools:::write_PACKAGES('$DST/pkg.repos/src/contrib')" | R --vanilla --slave
+
+#-------------------Build RCloud Support------------------------------------#
 echo '' && echo "=== building rcloud.support ===" && echo ''
 
 (cd "$DST/tmp"; cp -pR "$SRC/rcloud.support" "rcloud.support"; R CMD build rcloud.support)
@@ -63,13 +86,15 @@ echo "tools:::write_PACKAGES('$DST/pkg.repos/src/contrib')" | R --vanilla --slav
 
 echo '' && echo "=== downloading dependencies ===" && echo ''
 
-echo "options(warn=2);cran=available.packages(contrib.url('http://r.research.att.com/',type='source'),type='source');rf=available.packages(contrib.url('http://rforge.net/',type='source'),type='source');local=available.packages(contrib.url('file://$DST/pkg.repos',type='source'),type='source');rf.pkg=strsplit('$RFORGE_PKG',',',T)[[1]];stage1=unique(unlist(tools:::package_dependencies('rcloud.support',local,'all')));print(stage1);stage2=unique(c(stage1,unlist(tools:::package_dependencies(stage1,rbind(cran,rf,local),,TRUE))));rec=rownames(installed.packages(,'high'));stage2=stage2[!(stage2 %in% rec)];print(stage2);download.packages(rf.pkg,'$DST/pkg.repos/src/contrib',,'http://rforge.net',type='source');cran.pkg=stage2[!(stage2 %in% c('rcloud.support',rf.pkg))];download.packages(cran.pkg,'$DST/pkg.repos/src/contrib',,'http://r.research.att.com',type='source');writeLines(stage2,'$DST/pkg.repos/pkg.list')" | R --vanilla --slave
+echo "options(warn=2);cran=available.packages(contrib.url('http://r.research.att.com/',type='source'),type='source');rf=available.packages(contrib.url('http://rforge.net/',type='source'),type='source');local=available.packages(contrib.url('file://$DST/pkg.repos',type='source'),type='source');rf.pkg=strsplit('$RFORGE_PKG',',',T)[[1]];stage1=unique(unlist(tools:::package_dependencies(c('rcloud.support','rcloud.client'),local,'all')));print(stage1);stage2=unique(c(stage1,unlist(tools:::package_dependencies(stage1,rbind(cran,rf,local),,TRUE))));rec=rownames(installed.packages(,'high'));stage2=stage2[!(stage2 %in% rec)];print(stage2);download.packages(rf.pkg,'$DST/pkg.repos/src/contrib',,'http://rforge.net',type='source');cran.pkg=stage2[!(stage2 %in% c(c('rcloud.support','rcloud.client'),rf.pkg))];download.packages(cran.pkg,'$DST/pkg.repos/src/contrib',,'http://r.research.att.com',type='source');writeLines(stage2,'$DST/pkg.repos/pkg.list')" | R --vanilla --slave
 
 ## explicit overrides:
 ## * evaluate >0.5.1 has a fatal bug concerning plots so we have to fall back to 0.5.1
 rm -f "$DST/pkg.repos/src/contrib/"evaluate_*.tar.gz
 echo "download.file('http://cran.r-project.org/src/contrib/00Archive/evaluate/evaluate_0.5.1.tar.gz','$DST/pkg.repos/src/contrib/evaluate_0.5.1.tar.gz')" | R --vanilla --slave
 
+rm -f "$DST/pkg.repos/src/contrib/"knitr_*.tar.gz
+echo "download.file('http://cran.r-project.org/src/contrib/00Archive/knitr/knitr_1.5.tar.gz','$DST/pkg.repos/src/contrib/knitr_1.5.tar.gz')" | R --vanilla --slave
 echo "tools:::write_PACKAGES('$DST/pkg.repos/src/contrib')" | R --vanilla --slave
 
 if [ ! -e "$DST/pkg.repos/pkg.list" ]; then
