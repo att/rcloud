@@ -4550,7 +4550,7 @@ RCloud.UI.upload_with_alerts = (function() {
 
         options = upload_ui_opts(options || {});
         if(options.$result_panel.length)
-            RCloud.UI.right_panel.collapse($("#collapse-file-upload"), false);
+            RCloud.UI.right_panel.collapse(options.$result_panel, false);
 
         var file_error_handler = Promise.promisify(function(err, options, callback) {
             var message = err.message;
