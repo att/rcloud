@@ -878,7 +878,7 @@ var editor = function () {
             .style({"max-width":"70%"})
             .append("div")
             .attr("class", "comment-body-text")
-            .style({"max-width":"95%"})
+            .style({"max-width":"95%","min-width":"5%"})
             .text(function(d) { return d.body; })
             .each(function(d){
                 var comment_element = $(this);
@@ -888,6 +888,7 @@ var editor = function () {
                 };
                 var editable_opts = {
                     change: edit_comment,
+                    allow_multiline: true,
                     validate: function(name) { return editor.validate_name(name); }
                 };
                 var is_editable = d.user.login===username_;
