@@ -888,6 +888,7 @@ var editor = function () {
                 };
                 var editable_opts = {
                     change: edit_comment,
+                    allow_multiline: true,
                     validate: function(name) { return editor.validate_name(name); }
                 };
                 var is_editable = d.user.login===username_;
