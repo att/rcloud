@@ -272,7 +272,7 @@ rcloud.search <-function(query) {
         time <- solr.res$responseHeader$QTime
         notebook <- response.docs[[i]]$description
         id <- response.docs[[i]]$id
-        visibility<-rcloud.is.notebook.visible(id)
+        visibility <- rcloud.is.notebook.visible(id)
         starcount <- response.docs[[i]]$starcount
         updated.at <- response.docs[[i]]$updated_at
         user <- response.docs[[i]]$user
