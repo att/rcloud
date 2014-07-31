@@ -48,7 +48,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     insert_cell_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
-            shell.insert_markdown_cell_before(cell_model.id());
+            shell.insert_cell_before(cell_model.language(), cell_model.id());
         }
     });
     join_button.click(function(e) {
