@@ -85,7 +85,7 @@ RCloud.UI.upload_with_alerts = (function() {
                     p.append(overwrite);
                     var alert_box = result_alert(p);
                     $('button.close', alert_box).click(function() {
-                        callback(null, false);
+                        callback(new Error("Overwrite cancelled"), null);
                     });
                 })
             };
@@ -95,11 +95,14 @@ RCloud.UI.upload_with_alerts = (function() {
         if(options.$result_panel.length)
             RCloud.UI.right_panel.collapse(options.$result_panel, false);
 
-        var file_error_handler = Promise.promisify(function(err, options, callback) {
+        var file_error_handler = function(err) {
             var message = err.message;
             var p, done = true;
             if(message==="empty") {
                 p = $("<p>File is empty.</p>");
+            }
+            else if(message==="Overwrite cancelled") {
+                p = $('<p>').append(message);
             }
             else if(message==="badname") {
                 p = $("<p>Filename not allowed.</p>");
@@ -109,16 +112,15 @@ RCloud.UI.upload_with_alerts = (function() {
                 console.log(message, err.stack);
             }
             result_alert(p);
-            if(done)
-                callback(null, undefined);
-        });
+            throw err;
+        };
 
 
         var promise = to_notebook ?
                 RCloud.upload_assets(options, asset_react(options)) :
                 RCloud.upload_files(options, file_react(options));
 
-        // U won't want to wait on this promise because it's after all overwrites etc.
+        // this promise is after all overwrites etc.
         return promise.catch(function(err) {
             return file_error_handler(err, options);
         }).then(function() {

@@ -3665,7 +3665,8 @@ RCloud.UI.init = function() {
         if($("#file")[0].files.length===0)
             return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        RCloud.UI.upload_with_alerts(to_notebook);
+        RCloud.UI.upload_with_alerts(to_notebook)
+            .catch(function() {}); // we have special handling for upload errors
     });
     var showOverlay_;
     //prevent drag in rest of the page except asset pane and enable overlay on asset pane
@@ -3705,8 +3706,10 @@ RCloud.UI.init = function() {
             e = e.originalEvent || e;
             var files = (e.files || e.dataTransfer.files);
             var dt = e.dataTransfer;
-            if(!shell.notebook.model.read_only())
-                RCloud.UI.upload_with_alerts(true, {files: files});
+            if(!shell.notebook.model.read_only()) {
+                RCloud.UI.upload_with_alerts(true, {files: files})
+                    .catch(function() {}); // we have special handling for upload errors
+            }
             $('#asset-drop-overlay').css({'display': 'none'});
         },
         "dragenter dragover": function(e) {
@@ -4542,7 +4545,7 @@ RCloud.UI.upload_with_alerts = (function() {
                     p.append(overwrite);
                     var alert_box = result_alert(p);
                     $('button.close', alert_box).click(function() {
-                        callback(null, false);
+                        callback(new Error("Overwrite cancelled"), null);
                     });
                 })
             };
@@ -4552,11 +4555,14 @@ RCloud.UI.upload_with_alerts = (function() {
         if(options.$result_panel.length)
             RCloud.UI.right_panel.collapse(options.$result_panel, false);
 
-        var file_error_handler = Promise.promisify(function(err, options, callback) {
+        var file_error_handler = function(err) {
             var message = err.message;
             var p, done = true;
             if(message==="empty") {
                 p = $("<p>File is empty.</p>");
+            }
+            else if(message==="Overwrite cancelled") {
+                p = $('<p>').append(message);
             }
             else if(message==="badname") {
                 p = $("<p>Filename not allowed.</p>");
@@ -4566,16 +4572,15 @@ RCloud.UI.upload_with_alerts = (function() {
                 console.log(message, err.stack);
             }
             result_alert(p);
-            if(done)
-                callback(null, undefined);
-        });
+            throw err;
+        };
 
 
         var promise = to_notebook ?
                 RCloud.upload_assets(options, asset_react(options)) :
                 RCloud.upload_files(options, file_react(options));
 
-        // U won't want to wait on this promise because it's after all overwrites etc.
+        // this promise is after all overwrites etc.
         return promise.catch(function(err) {
             return file_error_handler(err, options);
         }).then(function() {
