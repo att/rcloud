@@ -126,7 +126,7 @@ RCloud.UI.upload_with_alerts = (function() {
         }).then(function() {
             if(options.$progress.length)
                 window.setTimeout(function() {
-                    $(".progress").hide();
+                    options.$progress.hide();
                 }, 5000);
         });
     }
