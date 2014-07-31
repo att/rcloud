@@ -47,7 +47,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var has_result = false;
 
     insert_cell_button.click(function(e) {
-        shell.insert_cell_before(cell_model.language(), cell_model.id());
+        if (!$(e.currentTarget).hasClass("button-disabled")) {
+            shell.insert_cell_before(cell_model.language(), cell_model.id());
+        }
     });
     join_button.click(function(e) {
         join_button.tooltip('destroy');
