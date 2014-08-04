@@ -18,4 +18,3 @@ rcloud.client_*.tar.gz
 rcloud.packages/*.tar.gz
 REVISION
 run
-services

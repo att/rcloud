@@ -1,0 +1,11 @@
+#!/bin/sh
+
+:${JAVA=/usr/bin/java}
+cd /data/rcloud/services/SessionKeyServer
+
+if [ ! -e key.db ]; then
+   mkdir key.db
+   chmod 0700 key.db
+fi
+
+exec $JAVA -Xmx256m -Djava.library.path=. -cp SessionKeyServer.jar com.att.research.RCloud.SessionKeyServer -l 127.0.0.1 -p 4301 -d key.db >> server.log
