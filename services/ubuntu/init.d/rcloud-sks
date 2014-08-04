@@ -1,19 +1,16 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          skeleton
+# Provides:          rcloud-sks
 # Required-Start:    $remote_fs $syslog
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Example initscript
-# Description:       This file should be used to construct scripts to be
-#                    placed in /etc/init.d.
+# Short-Description: RCloud SessionKeyServer
+# Description:       Starts/stops SessionKeyServer used by RCloud
 ### END INIT INFO
 
-# Author: Foo Bar <foobar@baz.org>
+# Author: Simnon Urbanek <urbanek@research.att.com>
 #
-# Please remove the "Author" lines above and replace them
-# with your own name if you copy and modify this script.
 
 # Do NOT "set -e"
 
@@ -21,7 +18,7 @@
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="RCloud SessionKeyServer service"
 NAME=rcloud-sks
-JAVA=/usr/lib/jvm/java-7-openjdk-amd64/bin/java
+JAVA=/usr/bin/java
 SKS=/data/rcloud/services/SessionKeyServer
 CHUID=ubuntu:ubuntu
 DAEMON=/data/rcloud/services/$NAME
@@ -29,13 +26,13 @@ DAEMON_ARGS=""
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
-export JAVA
-
 # Exit if the package is not installed
 [ -x "$DAEMON" ] || exit 0
 
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+export JAVA
 
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh
