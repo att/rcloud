@@ -36,13 +36,16 @@ To start the server, run `/data/rcloud/services/rcloud-sks`.
 
 The RCloud sources include `init.d` scripts for Ubuntu in
 `services/ubuntu/init.d`. You can copy those in `/etc/init.d` and
-create the corresponding symlinks in `/etc/rc?.d` (if you don't know
-what it means, have your sysadmin help you with that).
+create the corresponding symlinks in `/etc/rc?.d` -- the easiest way
+is probably to use (as root):
+
+    update-rc.d rcloud-sks defaults
+    update-rc.d rcloud-solr defaults
 
 
 ### Security considerations
 
-Althouhg it is usual to run each service as its own user, both SOLR
+Although it is usual to run each service as its own user, both SOLR
 and the SessionKeyServer can be run as the same user, but that user
 should be distinct from your RCloud users. In particular the
 SessionKeyServer should be run such that no regular user has read
