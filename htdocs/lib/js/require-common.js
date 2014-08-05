@@ -22,7 +22,7 @@ requirejs_config_obj = {
 
 var common_deps = [
     // AMD-compatible
-    "bluebird", "underscore", "d3",
+    "bluebird", "underscore", "d3", "sha256",
     // soon-to-be-amdized
     "jquery-1.10.2",
     // other
@@ -34,10 +34,11 @@ var common_deps = [
 
 function start_require(deps) {
     require(deps,
-            function(Promise, _, d3) {
+            function(Promise, _, d3, sha256) {
                 window.Promise = Promise;
                 window._ = _;
                 window.d3 = d3;
+                window.sha256 = sha256;
                 main();
             });
 }
