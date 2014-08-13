@@ -4,9 +4,13 @@
 .mk.ts <- function(ts)
   format(ts, "%Y-%m-%dT%H:%M:%SZ", tz="GMT")
 
-.mk.files <- function(repo) {
+.mk.files <- function(repo, version=NULL) {
   if (repo$is_empty()) return(list())
-  t <- repo$head()$peel(guitar::GIT_OBJ_TREE)
+  t <- if (is.null(version))
+    repo$head()$peel(guitar::GIT_OBJ_TREE)
+  else
+    repo$object_lookup(OID$new(version), guitar::GIT_OBJ_COMMIT)$tree()
+
   n <- t$entry_count()
   l <- lapply(seq.int(n), function(i) {
     e <- t$entry_by_index(i - 1L)
@@ -45,24 +49,40 @@ create.gist.context <- function(username, gist.git.root, ...)
 
 .v <- function(x, def) if (is.null(x)) def else x
 
-.get.meta <- function(r) {
+.get.meta <- function(r, version=NULL) {
   if (!r$is_empty()) {
-    t <- r$head()$peel(guitar::GIT_OBJ_TREE)
+    t <- if (is.null(version))
+      r$head()$peel(guitar::GIT_OBJ_TREE)
+    else
+      r$object_lookup(OID$new(version), guitar::GIT_OBJ_COMMIT)$tree()
     tryCatch(rjson::fromJSON(rawToChar(t$entry_by_name(".meta")$object(r)$data())), error=function(e) list())
   } else list()
 }
 
+## this is probably horribly inefficient ...
+.get.history <- function(r)
+  lapply(r$commits(NULL), function(c)
+         list(user = .mk.user(c$author$name),
+              version = c$id,
+              committed_at = .mk.ts(c$time),
+              change_status = list(), ## FIXME: N/A
+              url = ""
+              )
+         )
+#                change_status = list(total = 2, additions = 1, deletions = 1),
+
+
 get.gist.gitgistcontext <- function (id, version = NULL, ctx) {
   if (.iserr(r <- .repo(ctx, id))) return(list(ok = FALSE, content=r))
   
-  meta <- .get.meta(r)
+  meta <- .get.meta(r, version)
   
   list(ok = TRUE,
        content = list(
          url = "", forks_url="", commits_url="",
          id = id,
          git_pull_url = "", git_push_url="", html_url="",
-         files = .mk.files(r),
+         files = .mk.files(r, version),
          public = FALSE,
          created_at = .mk.ts(Sys.time()),
          updated_at = .mk.ts(Sys.time()),
@@ -70,21 +90,14 @@ get.gist.gitgistcontext <- function (id, version = NULL, ctx) {
          comments = 0,
          user = .v(meta$user, .mk.user("-unknown-")),
          comments_url = "",
-         forks = list(
+         forks = .v(meta$forks, list()),
 #           list(url = "",
 #                user = .mk.user(),
 #                id = "",
 #                created_at = .mk.ts(Sys.time()),
 #                updated_at = .mk.ts(Sys.time())
 #                )
-           ),
-         history = list(
-#           list(user = .mk.user("me"),
-#                version = "hash",
-#                committed_at = .mk.ts(),
-#                change_status = list(total = 2, additions = 1, deletions = 1),
-#                url = "")
-           ),
+         history = .get.history(r),
          fork_of = list(
 #           url = "",
 #           forks_url = "",
