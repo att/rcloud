@@ -4,8 +4,11 @@ WD=`pwd`
 if [ ! -e "$WD/../pkg.repos/src/contrib/PACKAGES" ]; then
     echo '' 2>&1
     if [ -e "$WD/rcloud.support/DESCRIPTION" ]; then
-	echo ' ERROR: this script only works from the release distribution' 2>&1
-	echo '        (not git checkout) and must be run from the RCloud root directory!' 2>&1
+	mkdir -p "$WD/packages/src/contrib" 2>/dev/null
+	echo " -- building RCloud packages repository"
+	( cd "$WD/packages/src/contrib"; for src in `ls $WD/rcloud.*/DESCRIPTION $WD/rcloud.packages/*/DESCRIPTION $WD/packages/*/DESCRIPTION 2>/dev/null`; do R CMD build `dirname "$src"`; done )
+	echo "tools:::write_PACKAGES('$WD/packages/src/contrib'); install.packages(unique(gsub('_.*','',basename(Sys.glob('$WD/packages/src/contrib/*.tar.gz')))),repos=c('file://$WD/packages','http://r.research.att.com','http://rforge.net'),type='source')" | R --vanilla --slave --no-save
+	exit 0
     else
 	echo ' ERROR: you must run this script from the RCloud root directory!' 2>&1
     fi
