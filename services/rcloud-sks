@@ -1,6 +1,6 @@
 #!/bin/sh
 
-:${JAVA=/usr/bin/java}
+: ${JAVA=/usr/bin/java}
 cd /data/rcloud/services/SessionKeyServer
 
 if [ ! -e key.db ]; then

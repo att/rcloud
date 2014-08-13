@@ -1,5 +1,5 @@
 #!/bin/sh
 
-:${JAVA=/usr/bin/java}
+: ${JAVA=/usr/bin/java}
 cd /data/rcloud/services/solr/example
 exec $JAVA -jar start.jar >> solr.out
