@@ -133,17 +133,25 @@ modify.gist.gitgistcontext  <- function (id, content, ctx) {
       meta[[i]] <- content[[i]]
     changes[[".meta"]] <- rjson::toJSON(meta)
   }
+  if ((old.mask <- Sys.umask()) != 18) {
+    Sys.umask("22")
+    on.exit(Sys.umask(old.mask))
+  }
   commit_HEAD_changes(r, changes, ctx$username, "modify.gist")
   get.gist(id=id, ctx=ctx)
 }
 
 create.gist.gitgistcontext  <- function (content, ctx) {
   id <- paste(c(0:9,letters[1:6])[as.integer(runif(20,0,15.999))], collapse='')
+  old.mask <- Sys.umask()
   r <- try({
+    Sys.umask("0") ## for the directories we have to allow 777
     ## path leading to the repo
     dir.create(file.path(ctx$root.dir, substr(id,1L,2L), substr(id,3L,4L)), FALSE, TRUE, "0777")
     ## repo itself
     dir.create(file.path(ctx$root.dir, substr(id,1L,2L), substr(id,3L,4L), substr(id,5L,20L)), FALSE, TRUE, "0755")
+    Sys.umask("22")
+    on.exit(Sys.umask(old.mask))
     repository_init(file.path(ctx$root.dir, substr(id,1L,2L), substr(id,3L,4L), substr(id,5L,20L)), TRUE)
   }, silent=TRUE)
   if (.iserr(r)) return(list(ok = FALSE, content=r))
