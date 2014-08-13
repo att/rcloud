@@ -46,7 +46,7 @@ rcloud.get.notebook <- function(id, version = NULL) {
     res <- rcs.get(stash.key(stash, id, version))
     if (is.null(res$ok)) res <- list(ok=FALSE)
     res
-  } else suppressWarnings(get.gist(id, version, ctx = .session$rgithub.context))
+  } else suppressWarnings(get.gist(id, version, ctx = .session$gist.context))
   ## FIXME: suppressWarnings is a hack to get rid of the stupid "Duplicated curl options"
   ##        which seem to be a httr bug
   if (rcloud.debug.level() > 1L) {
@@ -178,7 +178,7 @@ rcloud.upload.to.notebook <- function(file, name) {
 }
 
 rcloud.update.notebook <- function(id, content) {
-  res <- modify.gist(id, content, ctx = .session$rgithub.context)
+  res <- modify.gist(id, content, ctx = .session$gist.context)
   .session$current.notebook <- res
   if (nzConf("solr.url")) {
     star.count <- rcloud.notebook.star.count(id)
@@ -286,21 +286,20 @@ rcloud.search <-function(query) {
 }
 
 rcloud.create.notebook <- function(content) {
-  res <- create.gist(content, ctx = .session$rgithub.context)
+  res <- create.gist(content, ctx = .session$gist.context)
   if (res$ok) {
     .session$current.notebook <- res
     rcloud.reset.session()
   }
   res
-
 }
 
 rcloud.rename.notebook <- function(id, new.name)
   modify.gist(id,
               list(description=new.name),
-              ctx = .session$rgithub.context)
+              ctx = .session$gist.context)
 
-rcloud.fork.notebook <- function(id) fork.gist(id, ctx = .session$rgithub.context)
+rcloud.fork.notebook <- function(id) fork.gist(id, ctx = .session$gist.context)
 
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
   ## also note that we are looking deep in the config space - this shold be really much easier ...
@@ -309,7 +308,7 @@ rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abus
 # sloooow, but we don't have any other way of verifying the owner
 notebook.is.mine <- function(id) {
   nb <- rcloud.get.notebook(id)
-  nb$content$user$login == .session$rgithub.context$user$login
+  nb$content$user$login == .session$username
 }
 
 rcloud.publish.notebook <- function(id) {

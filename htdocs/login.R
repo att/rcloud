@@ -44,12 +44,9 @@ run <- function(url, query, body, headers)
   }
   if (is.null(redirect))
     redirect = '/edit.html'
-  state <- list(nonce=rnorm(1),
-                redirect=as.vector(redirect))
-  list(paste("<html><head><meta http-equiv='refresh' content='0;URL=\"",rcloud.support:::.rc.conf$github.base.url,
-             "login/oauth/authorize?client_id=", rcloud.support:::.rc.conf$github.client.id, 
-             "&state=",URLencode(toJSON(state), TRUE),
-             "&scope=gist,user:email",
-             "\"'></head></html>", sep=''),
+  ctx <- create.gist.backend(as.character(cookies$user), as.character(cookies$token))
+  url <- gist::auth.url(redirect, ctx=ctx)
+  if (is.null(url)) url <- redirect ## module needs no redirection, so just go ahead
+  list(paste("<html><head><meta http-equiv='refresh' content='0;URL=\"",url,"\"'></head></html>", sep=''),
        "text/html", extra.headers)
 }
