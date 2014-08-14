@@ -40,6 +40,7 @@ config.options <- function() list(gist.git.root=TRUE)
 create.gist.context <- function(username, gist.git.root, ...)
   structure(list(root.dir=gist.git.root, username=username), class="gitgistcontext")
 
+## create repository from id
 .repo <- function(ctx, id) {
   path <- file.path(ctx$root.dir, substr(id,1L,2L), substr(id,3L,4L), substr(id,5L,20L))
   try(Repository$new(path), silent=TRUE)
@@ -71,9 +72,10 @@ create.gist.context <- function(username, gist.git.root, ...)
          )
 #                change_status = list(total = 2, additions = 1, deletions = 1),
 
+.err <- function(x) list(ok=FALSE, content=list(message=x))
 
 get.gist.gitgistcontext <- function (id, version = NULL, ctx) {
-  if (.iserr(r <- .repo(ctx, id))) return(list(ok = FALSE, content=r))
+  if (.iserr(r <- .repo(ctx, id))) return(.err(r))
   
   meta <- .get.meta(r, version)
   
@@ -131,7 +133,7 @@ fork.gist.gitgistcontext  <- function (id, ctx) {
 }
 
 modify.gist.gitgistcontext  <- function (id, content, ctx) {
-  if (.iserr(r <- .repo(ctx, id))) return(list(ok = FALSE, content=r))
+  if (.iserr(r <- .repo(ctx, id))) return(.err(r))
   if (is.character(content)) content <- rjson::fromJSON(content)
   if (length(content$files)) {
     changes <- lapply(content$files, function(o) o$content)
@@ -167,27 +169,27 @@ create.gist.gitgistcontext  <- function (content, ctx) {
     on.exit(Sys.umask(old.mask))
     repository_init(file.path(ctx$root.dir, substr(id,1L,2L), substr(id,3L,4L), substr(id,5L,20L)), TRUE)
   }, silent=TRUE)
-  if (.iserr(r)) return(list(ok = FALSE, content=r))
+  if (.iserr(r)) return(.err(r))
   modify.gist(id=id, content=content, ctx=ctx)
 }
 
 delete.gist.comment.gitgistcontext  <- function (gist.id, comment.id, ctx) {
-  if (.iserr(r <- .repo(ctx, gist.id))) return(list(ok = FALSE, content=r))
-  list(ok = FALSE, content = "Sorry, currently unsupported")
+  if (.iserr(r <- .repo(ctx, gist.id))) return(.err(r))
+  .err("Sorry, currently unsupported")
 }
 
 modify.gist.comment.gitgistcontext  <- function (gist.id, comment.id, content, ctx) {
-  if (.iserr(r <- .repo(ctx, gist.id))) return(list(ok = FALSE, content=r))
-  list(ok = FALSE, content = "Sorry, currently unsupported")
+  if (.iserr(r <- .repo(ctx, gist.id))) return(.err(r))
+  .err("Sorry, currently unsupported")
 }
 
 create.gist.comment.gitgistcontext  <- function (gist.id, content, ctx) {
-  if (.iserr(r <- .repo(ctx, gist.id))) return(list(ok = FALSE, content=r))
-  list(ok = FALSE, content = "Sorry, currently unsupported")
+  if (.iserr(r <- .repo(ctx, gist.id))) return(.err(r))
+  .err("Sorry, currently unsupported")
 }
 
 get.gist.comments.gitgistcontext  <- function (id, ctx) {
-  if (.iserr(r <- .repo(ctx, id))) return(list(ok = FALSE, content=r))
+  if (.iserr(r <- .repo(ctx, id))) return(.err(r))
   list(ok=TRUE, content=list())
 }
 
