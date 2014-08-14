@@ -76,9 +76,12 @@ create.gist.context <- function(username, gist.git.root, ...)
 
 get.gist.gitgistcontext <- function (id, version = NULL, ctx) {
   if (.iserr(r <- .repo(ctx, id))) return(.err(r))
-  
-  meta <- .get.meta(r, version)
-  
+
+  meta <- .get.meta(r)
+  ## FIXME: some metadata like the user and description should probably not be versioned
+  ##        otherwise reverting will also revert re-names, go back to the original fork etc.
+  ##        is it ok to always pull HEAD of metadata regardless of the version?
+
   list(ok = TRUE,
        content = list(
          url = "", forks_url="", commits_url="",
@@ -86,8 +89,9 @@ get.gist.gitgistcontext <- function (id, version = NULL, ctx) {
          git_pull_url = "", git_push_url="", html_url="",
          files = .mk.files(r, version),
          public = FALSE,
-         created_at = .mk.ts(Sys.time()),
-         updated_at = .mk.ts(Sys.time()),
+         created_at = .v(meta$created_at, .mk.ts(Sys.time())),
+#         updated_at = .mk.ts(Sys.time()),
+         updated_at = if (r$is_empty()) .v(meta$created_at, .mk.ts(Sys.time())) else .mk.ts(.POSIXct(r$head()$peel(guitar::GIT_OBJ_COMMIT)$time()$time, "GMT")),
          description = .v(meta$description, ""),
          comments = 0,
          user = .v(meta$user, .mk.user("-unknown-")),
@@ -100,7 +104,7 @@ get.gist.gitgistcontext <- function (id, version = NULL, ctx) {
 #                updated_at = .mk.ts(Sys.time())
 #                )
          history = .get.history(r),
-         fork_of = list(
+         fork_of = .v(meta$fork_of, list())
 #           url = "",
 #           forks_url = "",
 #           commits_url = "",
@@ -116,11 +120,10 @@ get.gist.gitgistcontext <- function (id, version = NULL, ctx) {
 #           comments = 0,
 #           user = .mk.user(),
 #           comments_url = "")
-           )
-         ),
+         ), ## content
        headers = list(
          server = "",
-         date = "",
+         date = .mk.ts(Sys.time()),
          `content-type` = "",
          status = "200",
          statusmessage = "OK"
@@ -129,7 +132,26 @@ get.gist.gitgistcontext <- function (id, version = NULL, ctx) {
        )
 }
 
-fork.gist.gitgistcontext  <- function (id, ctx) {
+.rpath <- function(id, ctx) file.path(ctx$root.dir, substr(id,1L,2L), substr(id,3L,4L), substr(id,5L,20L))
+  
+fork.gist.gitgistcontext  <- function (src.id, ctx) {
+  id <- paste(c(0:9,letters[1:6])[as.integer(runif(20,0,15.999))], collapse='')
+  old.mask <- Sys.umask()
+  r <- try({
+    Sys.umask("0") ## for the directories we have to allow 777
+    ## path leading to the repo
+    dir.create(file.path(ctx$root.dir, substr(id,1L,2L), substr(id,3L,4L)), FALSE, TRUE, "0777")
+    ## repo itself
+    dir.create(dir <- .rpath(id, ctx), FALSE, TRUE, "0755")
+    Sys.umask("22")
+    on.exit(Sys.umask(old.mask))
+    ## FIXME: we are using "git" in teh shell to clone since it's a serious pain to do in libgit2
+    system(paste0("git clone --bare --quiet ",shQuote(.rpath(src.id, ctx))," ",shQuote(dir)))
+    Repository$new(dir)
+  }, silent=TRUE)
+  if (.iserr(r)) return(.err(r))
+  ## FIXME: we populate fork_of in the new repo, but not forks in the old repo
+  modify.gist(id=id, content=list(fork_of=get.gist(id=src.id, ctx=ctx), user=.mk.user(ctx$username), created_at=.mk.ts(Sys.time())), ctx=ctx)
 }
 
 modify.gist.gitgistcontext  <- function (id, content, ctx) {
@@ -140,8 +162,10 @@ modify.gist.gitgistcontext  <- function (id, content, ctx) {
     names(changes) <- names(content$files)
   } else changes <- list()
   if (!is.null(content$files)) content$files <- NULL
-  if (r$is_empty() && is.null(content$user)) ## empty repo - we have to create the user entry if it's not part of the contents
+  if (r$is_empty() && is.null(content$user)) { ## empty repo - we have to create mandatory fields
     content$user <- .mk.user(ctx$username)
+    content$created_at <- .mk.ts(Sys.time())
+  }
   if (length(content)) {
     meta <- .get.meta(r)
     for (i in names(content))
