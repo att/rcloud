@@ -17,9 +17,13 @@ run <- function(url, query, body, headers)
 {
   cookies <- cookies(headers)
   extra.headers <- character(0)
+
+  ## redirect is either in the query or body, but we have to also guard against nonsensical values
   redirect <- query["redirect"]
   if (is.null(redirect)) redirect <- body["redirect"]
-  if (isTRUE(any(is.na(redirect)))) redirect <- NULL
+  if (is.character(redirect) && !nzchar(redirect)) redirect <- NULL
+  if (!is.null(redirect) && isTRUE(any(is.na(redirect)))) redirect <- NULL
+
   if (!is.null(.rc.conf$exec.auth)) {
     ret <- rcloud.support:::getConf("welcome.page")
     if (is.null(ret)) ret <- '/welcome.html'
@@ -43,10 +47,25 @@ run <- function(url, query, body, headers)
                   "text/html", paste0("Refresh: 0.1; url=", ret)))
   }
   if (is.null(redirect))
-    redirect = '/edit.html'
+    redirect <- '/edit.html'
   ctx <- create.gist.backend(as.character(cookies$user), as.character(cookies$token))
   url <- gist::auth.url(redirect, ctx=ctx)
-  if (is.null(url)) url <- redirect ## module needs no redirection, so just go ahead
+  if (is.null(url)) {
+    ## module signals that it doesn't use authentication
+    ## so let's check if we have execAuth to replace it
+    if (!is.null(.rc.conf$exec.auth) && !isTRUE(cookies$user == usr)) {
+      ## at this point it is guaranteed to be valid since it was checked above
+      ## so we can generate a token
+      token <- paste(c(0:9,letters)[as.integer(runif(16,0,35.999))], collapse='')
+      rcloud.support:::set.token(usr, token)
+      extra.headers <- c(paste0("Set-Cookie: user=", usr, "; domain=", .rc.conf$cookie.domain,"; path=/;\r\nSet-Cookie: token=", token, "; domain=", .rc.conf$cookie.domain,"; path=/;"), extra.headers)
+      ## re-create the back-end because the username/token have changed
+      ctx <- create.gist.backend(usr, token)
+      url <- gist::auth.url(redirect, ctx=ctx)
+    }
+  }
+  if (!is.character(url) || length(url) != 1 || !nzchar(url))
+    url <- redirect ## safe-guard against bad return values
   list(paste("<html><head><meta http-equiv='refresh' content='0;URL=\"",url,"\"'></head></html>", sep=''),
        "text/html", extra.headers)
 }
