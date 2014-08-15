@@ -40,9 +40,13 @@ config.options <- function() list(gist.git.root=TRUE)
 create.gist.context <- function(username, gist.git.root, ...)
   structure(list(root.dir=gist.git.root, username=username), class="gitgistcontext")
 
+# global: FALSE=owner-writable only, TRUE=write-all
+.rpath <- function(id, ctx, global=FALSE)
+  file.path(ctx$root.dir, substr(id,1L,2L), substr(id,3L,4L), paste0(substr(id,5L,20L), if (global) ".global" else ""))
+
 ## create repository from id
-.repo <- function(ctx, id) {
-  path <- file.path(ctx$root.dir, substr(id,1L,2L), substr(id,3L,4L), substr(id,5L,20L))
+.repo <- function(ctx, id, global=FALSE) {
+  path <- .rpath(id, ctx, global)
   try(Repository$new(path), silent=TRUE)
 }
 
@@ -74,6 +78,37 @@ create.gist.context <- function(username, gist.git.root, ...)
 
 .err <- function(x) list(ok=FALSE, content=list(message=x))
 
+.get.global.json <- function(id, name, ctx, version=NULL) {
+  if (.iserr(r <- .repo(ctx, id, TRUE))) return(list())
+  if (!r$is_empty()) {
+    t <- if (is.null(version))
+      r$head()$peel(guitar::GIT_OBJ_TREE)
+    else
+      r$object_lookup(OID$new(version), guitar::GIT_OBJ_COMMIT)$tree()
+    tryCatch(rjson::fromJSON(rawToChar(t$entry_by_name(name)$object(r)$data())),
+             error=function(e) list())
+  } else list()
+}
+
+.set.global.json <- function(id, name, value, ctx) {
+  if (.iserr(r <- .repo(ctx, id, TRUE))) return(.err(r))
+  if (length(name) > 1) {
+    changes <- value
+    names(changes) <- name
+  } else {
+    changes <- list(value)
+    names(changes) <- name
+  }
+  for (i in seq.int(length(changes)))
+    if (!is.character(changes[[i]])) changes[[i]] <- rjson::toJSON(changes[[i]])
+  old.mask <- Sys.umask()
+  if (old.mask > 0) {
+    Sys.umask("0")
+    on.exit(Sys.umask(old.mask))
+  }
+  commit_HEAD_changes(r, changes, ctx$username, "gitgist")
+}
+
 get.gist.gitgistcontext <- function (id, version = NULL, ctx) {
   if (.iserr(r <- .repo(ctx, id))) return(.err(r))
 
@@ -82,6 +117,9 @@ get.gist.gitgistcontext <- function (id, version = NULL, ctx) {
   ##        otherwise reverting will also revert re-names, go back to the original fork etc.
   ##        is it ok to always pull HEAD of metadata regardless of the version?
 
+  ## do we really needs this or could we just skip it? We need onyl the number after all ...
+  comments <- .get.global.json(id, ".comments.json", ctx)
+  
   list(ok = TRUE,
        content = list(
          url = "", forks_url="", commits_url="",
@@ -93,7 +131,7 @@ get.gist.gitgistcontext <- function (id, version = NULL, ctx) {
 #         updated_at = .mk.ts(Sys.time()),
          updated_at = if (r$is_empty()) .v(meta$created_at, .mk.ts(Sys.time())) else .mk.ts(.POSIXct(r$head()$peel(guitar::GIT_OBJ_COMMIT)$time()$time, "GMT")),
          description = .v(meta$description, ""),
-         comments = 0,
+         comments = length(comments),
          user = .v(meta$user, .mk.user("-unknown-")),
          comments_url = "",
          forks = .v(meta$forks, list()),
@@ -132,8 +170,6 @@ get.gist.gitgistcontext <- function (id, version = NULL, ctx) {
        )
 }
 
-.rpath <- function(id, ctx) file.path(ctx$root.dir, substr(id,1L,2L), substr(id,3L,4L), substr(id,5L,20L))
-  
 fork.gist.gitgistcontext  <- function (src.id, ctx) {
   id <- paste(c(0:9,letters[1:6])[as.integer(runif(20,0,15.999)) + 1L], collapse='')
   old.mask <- Sys.umask()
@@ -197,24 +233,66 @@ create.gist.gitgistcontext  <- function (content, ctx) {
   modify.gist(id=id, content=content, ctx=ctx)
 }
 
+.mk.comment <- function(content, num, ctx) {
+  if (is.null(content$user)) content$user <- .mk.user(ctx$username)
+  content$created_at <- content$updated_at <- .mk.ts(Sys.time())
+  content$id <- num
+  content
+}
+
 delete.gist.comment.gitgistcontext  <- function (gist.id, comment.id, ctx) {
-  if (.iserr(r <- .repo(ctx, gist.id))) return(.err(r))
-  .err("Sorry, currently unsupported")
+  cid <- as.integer(comment.id)
+  if (any(is.na(cid)) || any(cid < 1L)) stop("invalid comments id `", comment.id, "'")
+  comments <- .get.global.json(gist.id, ".comments.json", ctx)
+  ids <- sapply(comments, function(o) as.integer(o$id))
+  m <- match(cid, ids)
+  if (is.na(m)) stop("comment with id `", comment.id, "' not found")
+  if (!isTRUE(comments[[m]]$user$login == ctx$username)) stop("you are not authorized to edit other user's comments")
+  comments[[m]] <- NULL
+  .set.global.json(gist.id, ".comments.json", comments, ctx)
+  list(ok=TRUE)
 }
 
 modify.gist.comment.gitgistcontext  <- function (gist.id, comment.id, content, ctx) {
-  if (.iserr(r <- .repo(ctx, gist.id))) return(.err(r))
-  .err("Sorry, currently unsupported")
+  cid <- as.integer(comment.id)
+  if (is.character(content)) content <- rjson::fromJSON(content)
+  if (any(is.na(cid)) || any(cid < 1L)) stop("invalid comments id `", comment.id, "'")
+  comments <- .get.global.json(gist.id, ".comments.json", ctx)
+  ids <- sapply(comments, function(o) as.integer(o$id))
+  m <- match(cid, ids)
+  if (is.na(m)) stop("comment with id `", comment.id, "' not found")
+  if (!isTRUE(comments[[m]]$user$login == ctx$username)) stop("you are not authorized to edit other user's comments")
+  mod <- .mk.comment(content, cid, ctx)
+  mod$user <- NULL
+  mod$created_at <- NULL
+  for (n in names(mod)) comments[[m]][[n]] <- mod[[n]]
+  .set.global.json(gist.id, ".comments.json", comments, ctx)
+  list(ok=TRUE, content=comments[[m]]) ## FIXME: we don't return the actually stored object ...
 }
 
 create.gist.comment.gitgistcontext  <- function (gist.id, content, ctx) {
-  if (.iserr(r <- .repo(ctx, gist.id))) return(.err(r))
-  .err("Sorry, currently unsupported")
+  id <- gist.id
+  if (is.character(content)) content <- rjson::fromJSON(content)
+  if (.iserr(r <- .repo(ctx, id, TRUE))) { ## no global repo - have to create one
+    old.mask <- Sys.umask("0") ## for the directories we have to allow 777
+    on.exit(Sys.umask(old.mask))
+    ## path leading to the repo
+    dir.create(file.path(ctx$root.dir, substr(id,1L,2L), substr(id,3L,4L)), FALSE, TRUE, "0777")
+    ## repo itself
+    dir.create(dir <- .rpath(id, ctx, TRUE), FALSE, TRUE, "0777")
+    repository_init(dir, TRUE)
+  }
+  comments <- .get.global.json(id, ".comments.json", ctx)
+  n <- if (length(comments))
+    max(c(0L, unlist(lapply(comments, function(o) as.integer(o$id)[1L]))), na.rm=TRUE) + 1L
+  else
+    1L
+  comments <- c(comments, list(.mk.comment(content, n, ctx)))
+  .set.global.json(id, ".comments.json", comments, ctx)
+  list(ok=TRUE, content=comments[[length(comments)]]) ## FIXME: we don't return the actually stored object ...
 }
 
-get.gist.comments.gitgistcontext  <- function (id, ctx) {
-  if (.iserr(r <- .repo(ctx, id))) return(.err(r))
-  list(ok=TRUE, content=list())
-}
+get.gist.comments.gitgistcontext  <- function (id, ctx)
+  list(ok=TRUE, content=.get.global.json(id, ".comments.json", ctx))
 
 auth.url.gitgistcontext <- function(redirect, ctx) NULL ## no auth provided
