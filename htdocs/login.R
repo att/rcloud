@@ -56,7 +56,7 @@ run <- function(url, query, body, headers)
     if (!is.null(.rc.conf$exec.auth) && !isTRUE(cookies$user == usr)) {
       ## at this point it is guaranteed to be valid since it was checked above
       ## so we can generate a token
-      token <- paste(c(0:9,letters)[as.integer(runif(16,0,35.999))], collapse='')
+      token <- paste(c(0:9,letters)[as.integer(runif(16,0,35.999))+1L], collapse='')
       rcloud.support:::set.token(usr, token)
       extra.headers <- c(paste0("Set-Cookie: user=", usr, "; domain=", .rc.conf$cookie.domain,"; path=/;\r\nSet-Cookie: token=", token, "; domain=", .rc.conf$cookie.domain,"; path=/;"), extra.headers)
       ## re-create the back-end because the username/token have changed
