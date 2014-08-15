@@ -217,4 +217,4 @@ get.gist.comments.gitgistcontext  <- function (id, ctx) {
   list(ok=TRUE, content=list())
 }
 
-auth.url.gitgistcontext <- function(redirect, ctx) redirect ## no auth needed
+auth.url.gitgistcontext <- function(redirect, ctx) NULL ## no auth provided
