@@ -2,11 +2,8 @@ config.options <- function() list(github.api.url="https://api.github.com/", gith
 
 create.gist.context <- function(username, token, github.api.url, github.client.id, github.client.secret, github.base.url, ...) {
   if (is.character(token) && !isTRUE(nzchar(token))) token <- NULL ## github requires token to be NULL if not used
-  if (is.character(username) && !isTRUE(nzchar(username))) username <- NULL ## github requires username to be NULL if not used
-  cat("token:"); str(token)
   ctx <- github::create.github.context(api_url=github.api.url, client_id=github.client.id, client_secret=github.client.secret, access_token=token)
   ctx$github.base.url=github.base.url
-  str(ctx)
   ctx
 }
 
