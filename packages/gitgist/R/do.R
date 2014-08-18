@@ -181,12 +181,13 @@ fork.gist.gitgistcontext  <- function (src.id, ctx) {
     dir.create(dir <- .rpath(id, ctx), FALSE, TRUE, "0755")
     Sys.umask("22")
     on.exit(Sys.umask(old.mask))
-    ## FIXME: we are using "git" in teh shell to clone since it's a serious pain to do in libgit2
-    system(paste0("git clone --bare --quiet ",shQuote(.rpath(src.id, ctx))," ",shQuote(dir)))
-    Repository$new(dir)
+    ## FIXME: we are not forking the corresponding global repo - e.g., comments. Is that ok?
+    guitar::clone(URLencode(paste0("file://", normalizePath(.rpath(src.id, ctx), '/', TRUE))),
+                  dir, TRUE, TRUE)
   }, silent=TRUE)
   if (.iserr(r)) return(.err(r))
   ## FIXME: we populate fork_of in the new repo, but not forks in the old repo
+  ## should we perhaps record "forks" in the global repo?
   modify.gist(id=id, content=list(fork_of=get.gist(id=src.id, ctx=ctx), user=.mk.user(ctx$username), created_at=.mk.ts(Sys.time())), ctx=ctx)
 }
 
