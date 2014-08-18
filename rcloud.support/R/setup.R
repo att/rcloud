@@ -310,8 +310,8 @@ create.gist.backend <- function(username="", token="", ...) {
       stop("Following options required by `", gb, "' are missing: ", paste(names(gbns$config.options())[l0 & req]), collapse=', ')
   }
   
-  l$username=username
-  l$token=token
+  l["username"]=list(username)
+  l["token"]=list(token)
   if (rcloud.debug.level()) {
     cat("create.gist.ctx call:\n")
     str(l)
