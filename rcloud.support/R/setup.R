@@ -294,7 +294,8 @@ create.gist.backend <- function(username="", token="", ...) {
   if (is.null(gb <- getConf("gist.backend"))) {
     ## FIXME: for compatibility only
     gb <- "githubgist"
-    cat(" ** WARNING: no gist.backend specified in the config file, using 'githubgist' which may change in the future!")
+    ## don't issue a warning for now since this get run in the user's session so it's user-visible
+    ## cat(" ** WARNING: no gist.backend specified in the config file, using 'githubgist' which may change in the future!\n")
   }
   if (!require(gb, quietly=TRUE, character.only=TRUE))
     stop(" *** FATAL: cannot load gist.backend package `", gb, "'")
