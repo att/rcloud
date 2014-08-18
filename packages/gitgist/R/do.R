@@ -40,6 +40,11 @@ config.options <- function() list(gist.git.root=TRUE)
 create.gist.context <- function(username, gist.git.root, ...)
   structure(list(root.dir=gist.git.root, username=username), class="gitgistcontext")
 
+# we don't use tokens
+access.token.gitgistcontext <- function(...) NULL
+
+context.info.gitgistcontext <- function(ctx) list(username=username)
+
 # global: FALSE=owner-writable only, TRUE=write-all
 .rpath <- function(id, ctx, global=FALSE)
   file.path(ctx$root.dir, substr(id,1L,2L), substr(id,3L,4L), paste0(substr(id,5L,20L), if (global) ".global" else ""))
