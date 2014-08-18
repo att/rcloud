@@ -187,8 +187,8 @@ fork.gist.gitgistcontext  <- function (src.id, ctx) {
     Sys.umask("22")
     on.exit(Sys.umask(old.mask))
     ## FIXME: we are not forking the corresponding global repo - e.g., comments. Is that ok?
-    guitar::clone(URLencode(paste0("file://", normalizePath(.rpath(src.id, ctx), '/', TRUE))),
-                  dir, TRUE, TRUE)
+    guitar::repository_clone(URLencode(paste0("file://", normalizePath(.rpath(src.id, ctx), '/', TRUE))),
+                             dir, TRUE, TRUE)
   }, silent=TRUE)
   if (.iserr(r)) return(.err(r))
   ## FIXME: we populate fork_of in the new repo, but not forks in the old repo
