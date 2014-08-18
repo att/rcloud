@@ -7,8 +7,5 @@ fork.gist  <- function (id, ctx = current.gist.context())
 modify.gist  <- function (id, content, ctx = current.gist.context())
   UseMethod("modify.gist", ctx)
 
-create.gist  <- function (content, ctx = current.gist.context()) {
-  cat("create.gist, ctx:")
-  str(ctx)
+create.gist  <- function (content, ctx = current.gist.context())
   UseMethod("create.gist", ctx)
-}
