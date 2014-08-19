@@ -313,7 +313,13 @@ var shell = (function() {
                             editor.star_notebook(true, {notebook: notebook}).then(function() {
                                 editor.set_notebook_visibility(notebook.id, true);
                             });
-                        });
+                        }).then(function(v){
+                            $("#notebook-file-upload").remove();
+                            var file_select = $('<input type="file" id="notebook-file-upload" size="50"></input>');
+                            file_select.click(function() { ui_utils.disable_bs_button(import_button); })
+                                .change(function() { do_upload(file_select[0].files[0]); });
+                            $(body.children()[0]).append(file_select);
+                        });;
                     }
                     dialog.modal('hide');
                 }
