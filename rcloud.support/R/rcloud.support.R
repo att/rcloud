@@ -79,6 +79,9 @@ rcloud.unauthenticated.call.notebook <- function(id, version = NULL, args = NULL
 rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE) {
   res <- rcloud.get.notebook(id, version)
   if (res$ok) {
+    if (is.null(.session$current.notebook)) ## no top level? set us as the session notebook so that get.asset et al work
+      .session$current.notebook <- res
+      
     args <- as.list(args)
     ## this is a hack for now - we should have a more general infrastructure for this ...
     ## get all files
