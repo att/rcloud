@@ -25,11 +25,13 @@ for dir in htdocs/js  htdocs/lib; do
     fi
 done
 
-R CMD build rcloud.client && RCS_SILENCE_LOADCHECK=TRUE R CMD INSTALL rcloud.client_`sed -n 's/Version: *//p' rcloud.client/DESCRIPTION`.tar.gz || exit 1
-R CMD build rcloud.support && RCS_SILENCE_LOADCHECK=TRUE R CMD INSTALL rcloud.support_`sed -n 's/Version: *//p' rcloud.support/DESCRIPTION`.tar.gz || exit 1
+export RCS_SILENCE_LOADCHECK=TRUE
+
+R CMD build rcloud.client && R CMD INSTALL rcloud.client_`sed -n 's/Version: *//p' rcloud.client/DESCRIPTION`.tar.gz || exit 1
+R CMD build rcloud.support && R CMD INSTALL rcloud.support_`sed -n 's/Version: *//p' rcloud.support/DESCRIPTION`.tar.gz || exit 1
 
 # build internal packages (not in git) & rcloud.packages
-for dir in internal rcloud.packages; do
+for dir in internal rcloud.packages packages; do
     if [ -e $dir ]; then
         for pkg in `ls $dir/*/DESCRIPTION 2>/dev/null | sed -e s:$dir/:: -e 's:/DESCRIPTION::'`; do
             echo $pkg
