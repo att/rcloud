@@ -223,7 +223,7 @@ modify.gist.gitgistcontext  <- function (id, content, ctx) {
 }
 
 create.gist.gitgistcontext  <- function (content, ctx) {
-  id <- paste(c(0:9,letters[1:6])[as.integer(runif(20,0,15.999))], collapse='')
+  id <- paste(c(0:9,letters[1:6])[as.integer(runif(20,0,15.999)) + 1L], collapse='')
   old.mask <- Sys.umask()
   r <- try({
     Sys.umask("0") ## for the directories we have to allow 777
