@@ -1337,7 +1337,7 @@ var editor = function () {
                                                      is_change: !!version,
                                                      version: null})
                         .return(notebook.id);
-                }).then(function(gistname) {
+                }).then(function(forkedgistname) {
                     this.set_notebook_visibility(forkedgistname, true, gistname);
                 });
         },
