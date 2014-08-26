@@ -17,9 +17,13 @@ RCloud.UI.command_prompt = {
     },
     setup_prompt_history: function() {
         var entries_ = [], alt_ = [];
+        var entries_ = [], alt_ = [], alt_lang_ = [];
         var curr_ = 0;
         function curr_cmd() {
             return alt_[curr_] || (curr_<entries_.length ? entries_[curr_] : "");
+        }
+        function curr_lang() {
+            return alt_lang_[curr_] || "R";
         }
         var prefix_ = null;
         var result = {
@@ -28,24 +32,31 @@ RCloud.UI.command_prompt = {
                 var i = 0;
                 entries_ = [];
                 alt_ = [];
+                alt_lang_ = [];
                 while(1) {
                     var cmd = window.localStorage[prefix_+i],
-                        cmda = window.localStorage[prefix_+i+".alt"];
+                        cmda = window.localStorage[prefix_+i+".alt"],
+                        langa = window.localStorage[prefix_+"_lang_"+i+".alt"];
                     if(cmda !== undefined)
                         alt_[i] = cmda;
+                    if(langa !== undefined) {
+                        alt_lang_[i] = langa;
+                    }
                     if(cmd === undefined)
                         break;
                     entries_.push(cmd);
                     ++i;
                 }
                 curr_ = entries_.length;
-                return curr_cmd();
+                return {"cmd":curr_cmd(),"lang":curr_lang()};
             },
             execute: function(cmd) {
                 if(cmd==="") return;
                 alt_[entries_.length] = null;
+                alt_lang_[entries_.length] = null;
                 entries_.push(cmd);
                 alt_[curr_] = null;
+                alt_lang_[curr_] = null;
                 curr_ = entries_.length;
                 window.localStorage[prefix_+(curr_-1)] = cmd;
             },
@@ -65,6 +76,7 @@ RCloud.UI.command_prompt = {
             },
             change: function(cmd) {
                 window.localStorage[prefix_+curr_+".alt"] = alt_[curr_] = cmd;
+                window.localStorage[prefix_+"_lang_"+curr_+".alt"] = alt_lang_[curr_] = $("#insert-cell-language").val();
             }
         };
         return result;
@@ -118,8 +130,9 @@ RCloud.UI.command_prompt = {
         }
 
         function restore_prompt() {
-            var cmd = that.history.init();
-            change_prompt(cmd);
+            var prop = that.history.init();
+            change_prompt(prop.cmd);
+            $("#insert-cell-language").val(prop.lang);
             var r = last_row(widget);
             ui_utils.ace_set_pos(widget, r, last_col(widget, r));
         }
