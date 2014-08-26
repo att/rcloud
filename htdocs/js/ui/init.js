@@ -282,6 +282,17 @@ RCloud.UI.init = function() {
     //////////////////////////////////////////////////////////////////////////
     // view mode things
     $("#edit-notebook").click(function() {
+        function getUrlParameter(key) {
+            var query = window.location.search.substring(1);
+            var variables = query.split('&');
+            for (var i = 0; i < variables.length; i++) {
+                var pair = variables[i].split('=');
+                if (pair[0] === key) {
+                    return pair[1];
+                }
+            }
+        }
+        window.localStorage['last_shared_notebook'] = getUrlParameter("notebook");
         window.location = "edit.html?notebook=" + shell.gistname();
     });
 

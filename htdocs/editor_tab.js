@@ -402,6 +402,8 @@ var editor = function () {
                 var root_data = [];
                 return Promise.all([rcloud.config.get_current_notebook()
                                     .then(function(current) {
+                                        current.notebook=(window.localStorage['last_shared_notebook']===""? current.notebook : window.localStorage['last_shared_notebook']);
+                                        window.localStorage['last_shared_notebook'] = "";
                                         current_ = current;
                                     }),
                                     rcloud.stars.get_multiple_notebook_star_counts(all_notebooks)
