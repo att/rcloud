@@ -284,9 +284,9 @@ RCloud.UI.init = function() {
     $("#edit-notebook").click(function() {
         function getUrlParameter(key) {
             var query = window.location.search.substring(1);
-            var variables = query.split('&');
-            for (var i = 0; i < variables.length; i++) {
-                var pair = variables[i].split('=');
+            var params = query.split('&');
+            for (var i = 0; i < params.length; i++) {
+                var pair = params[i].split('=');
                 if (pair[0] === key) {
                     return pair[1];
                 }
