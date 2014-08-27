@@ -804,8 +804,7 @@ var editor = function () {
             var entry = update_notebook_model(user, gistname,
                 result.description,
                     result.updated_at || result.history[0].committed_at, parentgistname);
-        }
-        else {
+        } else {
             entry = update_notebook_model(user, gistname,
                 result.description,
                     result.updated_at || result.history[0].committed_at,get_notebook_info(gistname).parent_notebook);
