@@ -1057,8 +1057,7 @@ var editor = function () {
                                 var parent_notebook_info = get_notebook_info(notebook_info.parent_notebook);
                                 if (parent_notebook_info.description) {
                                     $li.attr("title", "notebook forked from : " + parent_notebook_info.description);
-                                }
-                                else {
+                                } else {
                                     $li.attr("title", "notebook forked from : " + notebook_info.parent_notebook);
                                 }
                             } catch (e) {
