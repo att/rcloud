@@ -828,16 +828,21 @@ var editor = function () {
         }
     }
 
-    function display_date(ds) {
+    function display_date(ds,is_ts) {
         function pad(n) { return n<10 ? '0'+n : n; }
         if(ds==='none')
             return '';
         var date = new Date(ds);
         var diff = Date.now() - date;
-        if(diff < 24*60*60*1000)
+        if(diff < 24*60*60*1000) {
             return date.getHours() + ':' + pad(date.getMinutes());
-        else
-            return (date.getMonth()+1) + '/' + date.getDate();
+        } else {
+            if (is_ts) {
+                return (date.getMonth() + 1) + '/' + date.getDate() + ' ' + date.getHours() + ':' + pad(date.getMinutes());
+            } else {
+                return  date.getHours() + ':' + pad(date.getMinutes());
+            }
+        }
     }
 
     function populate_comments(comments) {
@@ -909,6 +914,8 @@ var editor = function () {
     }
 
     var icon_style = {'line-height': '90%'};
+    var last_date = "";
+    var hist_clicked = false;
     function on_create_tree_li(node, $li) {
         var element = $li.find('.jqtree-element'),
             title = element.find('.jqtree-title');
@@ -918,12 +925,37 @@ var editor = function () {
         if(node.version || node.id === 'showmore')
             title.addClass('history');
         var right = $($.el.span({'class': 'notebook-right'}));
+        var curr_date = new Date(node.last_commit);
         if(node.last_commit && (!node.version ||
                                 display_date(node.last_commit) != display_date(node.parent.last_commit))) {
-            right[0].appendChild($.el.span({'id': 'date',
-                                            'class': 'notebook-date'},
-                                           display_date(node.last_commit)));
+            if(last_date != "" && (typeof(last_date) != 'undefined')) {
+                var is_mon_eq = (last_date.getMonth() === curr_date.getMonth());
+                var is_dt_eq = (last_date.getDate() === curr_date.getDate());
+                var is_hr_eq = (last_date.getHours() === curr_date.getHours());
+                var is_min_eq = (last_date.getMinutes() === curr_date.getMinutes());
+                if (is_mon_eq && is_dt_eq && is_hr_eq && is_min_eq) {
+                    right[0].appendChild($.el.span({'id': 'date','class': 'notebook-date'},'...'));
+                    last_date =  new Date(node.last_commit);
+                } else if (is_mon_eq && is_dt_eq && ((!is_hr_eq && is_min_eq) ||
+                    (is_hr_eq && !is_min_eq) || (!is_hr_eq && !is_min_eq))  ) {
+                    right[0].appendChild($.el.span({'id': 'date','class': 'notebook-date'},
+                    display_date(node.last_commit, false)));
+                    last_date =  new Date(node.last_commit);
+                } else {
+                    right[0].appendChild($.el.span({'id': 'date','class': 'notebook-date'},
+                    display_date(node.last_commit, true)));
+                    last_date =  new Date(node.last_commit);
         }
+            } else {
+                right[0].appendChild($.el.span({'id': 'date','class': 'notebook-date'},
+                display_date(node.last_commit, true)));
+                hist_clicked = false;
+            }
+        } else {
+            last_date =  new Date(node.last_commit);
+        }
+
+        last_date =  new Date(node.last_commit);
         if(node.gistname && !node.version) {
             if($tree_.tree('isNodeSelected', node))
                 RCloud.UI.notebook_title.make_editable(
