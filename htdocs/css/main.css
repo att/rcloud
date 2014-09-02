@@ -916,3 +916,24 @@ pre > .vt100 {
     padding: 16px;
     display: block;
 }
+.btn-icon-rcloud {
+    color: #333333;
+    background-color: #ffffff;
+    height: 20px;
+    width: 25px;
+}
+.btn-icon-rcloud:hover,
+.btn-icon-rcloud:focus,
+.btn-icon-rcloud:active,
+.btn-icon-rcloud.active,
+.open .dropdown-toggle.btn-icon-rcloud {
+    color: #333333;
+    background-color: #ebebeb;
+    border-color: #adadad;
+}
+.form-control-rcloud {
+    -webkit-appearance: none;
+    height: 20px;
+    width: 120px;
+    font-size: 12px;
+}

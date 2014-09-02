@@ -108,7 +108,11 @@
                 <div class="panel-body">
                   <div id="search-wrapper" class="widget-vsize"> <!-- only for sizing -->
                     <div id="search-header">
-                      <form id="search-form" action="#">Full-text search for <input type="text" value="" id="input-text-search"></input><button type='submit'>search</button>
+                      <form id="search-form" action="#">
+                        <input type="text" class="form-control-rcloud" value="" id="input-text-search" placeholder="..Search Keyword" style="height: 20px;"></input>
+                        <button class="btn-icon-rcloud" type="submit">
+                          <i class="icon-search"></i>
+                        </button>
                       </form>
                       <div id="search-summary"></div>
                     </div>
@@ -131,8 +135,11 @@
                 <div id="help-wrapper" class="panel-body widget-vsize">
                   <div id="help-header">
                     <form id="help-form" action="#">
-                      <div>Get help on <input type="text" value="" id="input-text-help"></input>
-                        <button type='submit'>help</button>
+                      <div style="padding-left: 8px">
+                        <input type="text" class="form-control-rcloud" value="" id="input-text-help" style="height: 20px;" placeholder="..Help me find"></input>
+                        <button class="btn-icon-rcloud" type="submit" >
+                          <i class="icon-question"></i>
+                        </button>
                       </div>
                     </form>
                   </div>
@@ -208,7 +215,7 @@
 
             <div class="panel panel-default">
               <div class="panel-heading" data-toggle="collapse" data-parent="#accordion-right" data-target="#collapse-assets">
-		<a class="accordion-toggle right" href="#collapse-assets"><span class="title-offset">Assets</span><div style="position: relative"><i class="icon-copy"></i></div>&nbsp;</a>
+		        <a class="accordion-toggle right" href="#collapse-assets"><span class="title-offset">Assets</span><div style="position: relative"><i class="icon-copy"></i></div>&nbsp;</a>
               </div>
               <div id="collapse-assets" class="panel-collapse collapse" data-colwidth="4" data-widgetheight="greedy">
                 <img height="100%" width="5px" src="/img/left_bordergray.png" class="panel-shadow right" />
@@ -243,8 +250,11 @@
                     <div id="file-upload-wrapper">
                       <div id="file-upload-controls">
                         <input type="file" id="file" style="display: inline;" multiple></input>
-                        <input type="submit" id="upload-submit" value="Upload" style="clear: both; float: right;"></input>
-                        <br /><input type="checkbox" id="upload-to-notebook"> Upload to notebook</input>
+                        <button id="upload-submit" style="clear: both; float: right;" class="btn-icon-rcloud" type="submit" >
+                          <i class="icon-upload"></i>
+                        </button>
+                        <br/>
+                        <input type="checkbox" id="upload-to-notebook"> Upload to notebook</input>
                         <div class="progress" style="display:none">
                           <div id="progress-bar" class="progress-bar" id="file-progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
                         </div>
@@ -274,7 +284,9 @@
                       <div id="comments-container"></div>
                       <div id="comment-entry">
                         <textarea id="comment-entry-body"></textarea>
-                        <input type="button" id="comment-submit" value="comment"></input>
+                        <button id="comment-submit" class="btn-icon-rcloud" type="submit" value="comment" >
+                          <i class="icon-comment"></i>
+                        </button>
                       </div>
                     </div>
                   </div>
