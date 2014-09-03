@@ -8,7 +8,6 @@ run <- function(url, query, body, headers)
   ## create empty context
   ctx <- create.gist.backend()
   res <- gist::access.token(query, ctx=ctx)
-  cat("result: "); str(res)
   token <- res$token
   ret <- res$redirect
   if (is.null(ret)) ret <- '/edit.html'
