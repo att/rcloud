@@ -1104,6 +1104,7 @@ var editor = function () {
                     else
                         return result.load_notebook(last[0], null)
                         .catch(function(err) {
+                            RCloud.UI.session_pane.post_rejection(err);
                             if(/Not Found/.test(err))
                                 rcloud.config.clear_recent_notebook(last);
                             // if loading fails for a reason that is not actually a loading problem
