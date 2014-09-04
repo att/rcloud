@@ -27,9 +27,6 @@ done
 
 export RCS_SILENCE_LOADCHECK=TRUE
 
-R CMD build rcloud.client && R CMD INSTALL rcloud.client_`sed -n 's/Version: *//p' rcloud.client/DESCRIPTION`.tar.gz || exit 1
-R CMD build rcloud.support && R CMD INSTALL rcloud.support_`sed -n 's/Version: *//p' rcloud.support/DESCRIPTION`.tar.gz || exit 1
-
 # build internal packages (not in git) & rcloud.packages
 for dir in internal rcloud.packages packages; do
     if [ -e $dir ]; then
@@ -39,6 +36,9 @@ for dir in internal rcloud.packages packages; do
         done
     fi
 done
+
+R CMD build rcloud.client && R CMD INSTALL rcloud.client_`sed -n 's/Version: *//p' rcloud.client/DESCRIPTION`.tar.gz || exit 1
+R CMD build rcloud.support && R CMD INSTALL rcloud.support_`sed -n 's/Version: *//p' rcloud.support/DESCRIPTION`.tar.gz || exit 1
 
 if [ -e ".git" ]; then
 # update branch/revision info
