@@ -915,7 +915,6 @@ var editor = function () {
 
     var icon_style = {'line-height': '90%'};
     var last_date = "";
-    var hist_clicked = false;
     function on_create_tree_li(node, $li) {
         var element = $li.find('.jqtree-element'),
             title = element.find('.jqtree-title');
@@ -949,7 +948,6 @@ var editor = function () {
             } else {
                 right[0].appendChild($.el.span({'id': 'date','class': 'notebook-date'},
                 display_date(node.last_commit, true)));
-                hist_clicked = false;
             }
         } else {
             last_date =  new Date(node.last_commit);
