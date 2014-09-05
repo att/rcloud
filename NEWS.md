@@ -24,10 +24,28 @@
 * Disabled backspace as a shortcut to the back button to prevent some accidental
   navigation away from RCloud
 
+* The notebook store is now abstrated through the `gist` package,
+  allowing arbitrary back-ends. The traditional GitHub Gist backend is
+  now handled by the `githubhist` package. Alternative back-end based
+  on local git repositories is implemented in `gitgist`. The back-end
+  is selected by the `gist.backend` configuration option. It curretnly
+  defaults to `githubgist` but it will eventually become a mandatory
+  option.
+
+* `notebook.R` allows trailing paths to be processed by the notebook
+   code (instead of asset lookup) if they start with `/.self/`. The
+   subsequent path part is passed to the `run` function as the
+   `.path.info` argument. This allows notebooks to handle full tree
+   structure on top of a single notebook URL, .e.g.:
+   `https://rcloud.mydomain.com/notebook.R/user/notebook/.self/foo/bar`
+   will call the notebook with `.path.info` set to `/foo/bar`. Note
+   that the `.self` part distinguishes asset lookup from a path info
+   call.
+
 
 ## RCloud 1.1.2
 
-* Set CRAN mirror `repos` option if not already set to aviod interactive
+* Set CRAN mirror `repos` option if not already set to avoid interactive
   prompt. The default will be either `CRAN.mirror` entry from `rcloud.conf`
   or `http://cran.r-project.org` if not specified.
 

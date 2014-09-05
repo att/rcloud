@@ -1,0 +1,7 @@
+Package: gist
+Title: Common API for gist storage platforms
+Version: 1.0-0
+Author: Simon Urbanek <urbanek@research.att.com>
+Maintainer: Simon Urbanek <urbanek@research.att.com>
+Description: Interface to gist storage platform implementations
+License: MIT

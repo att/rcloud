@@ -25,11 +25,18 @@ for dir in htdocs/js  htdocs/lib; do
     fi
 done
 
-R CMD build rcloud.client && RCS_SILENCE_LOADCHECK=TRUE R CMD INSTALL rcloud.client_`sed -n 's/Version: *//p' rcloud.client/DESCRIPTION`.tar.gz || exit 1
-R CMD build rcloud.support && RCS_SILENCE_LOADCHECK=TRUE R CMD INSTALL rcloud.support_`sed -n 's/Version: *//p' rcloud.support/DESCRIPTION`.tar.gz || exit 1
+# Create a local copy of mathjax library in htdocs
+MATHJAX_INSTALL_DIR=mathjax
+if [ ! -e "htdocs/$MATHJAX_INSTALL_DIR" ]; then
+    mkdir -p "htdocs/$MATHJAX_INSTALL_DIR"
+    echo 'Downloading MathJax'
+    curl -L https://codeload.github.com/mathjax/MathJax/legacy.tar.gz/master | tar -xz -C "htdocs/$MATHJAX_INSTALL_DIR" --strip-components=1
+fi
+
+export RCS_SILENCE_LOADCHECK=TRUE
 
 # build internal packages (not in git) & rcloud.packages
-for dir in internal rcloud.packages; do
+for dir in internal rcloud.packages packages; do
     if [ -e $dir ]; then
         for pkg in `ls $dir/*/DESCRIPTION 2>/dev/null | sed -e s:$dir/:: -e 's:/DESCRIPTION::'`; do
             echo $pkg
@@ -37,6 +44,9 @@ for dir in internal rcloud.packages; do
         done
     fi
 done
+
+R CMD build rcloud.client && R CMD INSTALL rcloud.client_`sed -n 's/Version: *//p' rcloud.client/DESCRIPTION`.tar.gz || exit 1
+R CMD build rcloud.support && R CMD INSTALL rcloud.support_`sed -n 's/Version: *//p' rcloud.support/DESCRIPTION`.tar.gz || exit 1
 
 if [ -e ".git" ]; then
 # update branch/revision info
