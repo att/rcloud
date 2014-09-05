@@ -359,6 +359,11 @@
             }
 
             // defaults
+            function default_definition(defn) {
+                // defaults on the definition as a whole
+                if(!definition.defreduce)
+                    definition.defreduce = dcplot.reduce.count;
+            }
             function default_dimension(name, defn) {
                 // nothing (yet?)
             }
@@ -955,6 +960,7 @@
 
             // fill in anything easily defaultable (will not happen in incremental mode)
             // [but are there things we only want to default after inference?]
+            default_definition(definition);
             errors = aggregate_errors(default_dimension, default_group, default_chart);
             if(errors.length)
                 throw errors;
