@@ -384,7 +384,7 @@ ui_utils.editable = function(elem$, command) {
                 elem$.blur();
                 options().fork(result);
             }
-            else if(e.keyCode === 13) {
+            else if(e.keyCode === 10 || e.keyCode === 13 || e.keyCode === 115 || e.keyCode === 19) {
                 e.preventDefault();
                 var result = elem$.text();
                 result = decode(result);
