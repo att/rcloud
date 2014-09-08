@@ -1,0 +1,4 @@
+import(guitar)
+import(gist)
+export(create.gist.context, config.options)
+exportPattern("*.gitgistcontext$")

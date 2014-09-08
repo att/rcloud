@@ -1,0 +1,8 @@
+== NEWS for rcloud.web ==
+
+1.0-1	(under development)
+    o	rcw.set/prepend/append call as.character() implicitly and
+	collapse vectors by joining them with newlines
+
+1.0-0
+    o	initial release with basic tools

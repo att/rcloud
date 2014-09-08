@@ -1,6 +1,6 @@
 rcloud.get.comments <- function(id)
 {
-  res <- get.gist.comments(id, ctx = .session$rgithub.context)
+  res <- get.gist.comments(id, ctx = .session$gist.context)
   if (res$ok)
     toJSON(res$content)
   else
@@ -19,7 +19,7 @@ rcloud.get.comments <- function(id)
 
   ## send the update request
   curlTemplate <- paste0(url,"/update/json?commit=true")
-  metadata <- paste0('{"id":"', id, '","comments":{"', method, '":"', paste(comment.id,':',comment.content), '"}}')
+  metadata <- paste0('{"id":"', id, '","comments":{"', method, '":"', paste0('{\'id\':\'',comment.id,'\',\'content\':\'',comment.content,'\',\'user\':\'',.session$rgithub.context$user$login,'\'}'),'"}}')
   postForm(curlTemplate, .opts = list(
                            postfields = paste0("[",metadata,"]"),
                            httpheader = c('Content-Type' = 'application/json',Accept = 'application/json')))
@@ -27,7 +27,7 @@ rcloud.get.comments <- function(id)
 
 rcloud.post.comment <- function(id, content)
 {
-  res <- create.gist.comment(id, content, ctx = .session$rgithub.context)
+  res <- create.gist.comment(id, content, ctx = .session$gist.context)
   if (nzConf("solr.url")) mcparallel(.solr.post.comment(id, content, res$content$id), detached=TRUE)
   res
 }
@@ -37,7 +37,7 @@ rcloud.post.comment <- function(id, content)
   solr.url <- URLencode(paste0(url, "/select?q=id:",id,"&start=0&rows=1000&fl=comments&wt=json"))
   solr.res <- fromJSON(getURL(solr.url,.encoding = 'utf-8',.mapUnicode=FALSE))
   index <- grep(cid, solr.res$response$docs[[1]]$comments)
-  solr.res$response$docs[[1]]$comments[[index]] <- paste(cid, fromJSON(content)$body, sep=' : ')
+  solr.res$response$docs[[1]]$comments[[index]] <- paste0('{\'id\':\'',cid,'\',\'content\':\'',fromJSON(content)$body,'\',\'user\':\'',.session$rgithub.context$user$login,'\'}')
   curlTemplate <- paste0(url,"/update/json?commit=true")
   metadata <- paste0('{"id":"',id,'","comments":{"set":[\"',paste(solr.res$response$docs[[1]]$comments, collapse="\",\""),'\"]}}')
   postForm(curlTemplate, .opts = list(
@@ -47,7 +47,7 @@ rcloud.post.comment <- function(id, content)
 
 rcloud.modify.comment <- function(id, cid, content)
 {
-  res <- modify.gist.comment(id,cid,content, ctx = .session$rgithub.context)
+  res <- modify.gist.comment(id,cid,content, ctx = .session$gist.context)
   mcparallel(.solr.modify.comment(id, content, cid), detached=TRUE)
   res$ok
 }
@@ -69,6 +69,6 @@ rcloud.modify.comment <- function(id, cid, content)
 rcloud.delete.comment <- function(id,cid)
 {
   mcparallel(.solr.delete.comment(id, cid), detached=TRUE)
-  res <- delete.gist.comment(id,cid, ctx = .session$rgithub.context)
+  res <- delete.gist.comment(id,cid, ctx = .session$gist.context)
   res$ok
 }

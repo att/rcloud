@@ -26,6 +26,7 @@ rcloud.unauthenticated.session.cell.eval <- function(partname, language, silent)
 }
 
 rcloud.session.cell.eval <- function(partname, language, silent) {
+  ulog("RCloud rcloud.session.cell.eval(", partname, ",", language,")")
   command <- rcloud.get.gist.part(partname)
   if (language == "R" || language == "Markdown") {
     session.markdown.eval(command, language, silent)

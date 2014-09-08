@@ -14,6 +14,15 @@ var languages = {
 var non_language = { 'background-color': '#dddddd',
                      'ace_mode': 'ace/mode/text' };
 
+function ensure_image_has_hash(img)
+{
+    if (img.dataset.sha256)
+        return img.dataset.sha256;
+    var hasher = new sha256(img.getAttribute("src"), "TEXT");
+    img.dataset.sha256 = hasher.getHash("SHA-256", "HEX");
+    return img.dataset.sha256;
+}
+
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var EXTRA_HEIGHT = 27;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
@@ -48,7 +57,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     insert_cell_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
-            shell.insert_markdown_cell_before(cell_model.id());
+            shell.insert_cell_before(cell_model.language(), cell_model.id());
         }
     });
     join_button.click(function(e) {
@@ -331,6 +340,19 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             if (!shell.notebook.controller._r_source_visible) {
                 Notebook.hide_r_source(inner_div);
             }
+
+            // Workaround a persistently annoying knitr bug:
+            // https://github.com/att/rcloud/issues/456
+
+            _($("img")).each(function(img, ix, $q) {
+                ensure_image_has_hash(img);
+                if (img.getAttribute("src").substr(0,10) === "data:image" &&
+                    img.getAttribute("alt").substr(0,13) === "plot of chunk" &&
+                    ix > 0 &&
+                    img.dataset.sha256 === $q[ix-1].dataset.sha256) {
+                    $(img).css("display", "none");
+                }
+            });
 
             this.show_result();
         },

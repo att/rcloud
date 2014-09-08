@@ -38,7 +38,6 @@ var shell = (function() {
 
     function on_load(notebook) {
         RCloud.UI.notebook_title.set(notebook.description);
-        RCloud.UI.share_button.set_link(notebook);
         notebook_user_ = notebook.user.login;
         RCloud.UI.configure_readonly();
         _.each(notebook_view_.sub_views, function(cell_view) {
@@ -109,7 +108,9 @@ var shell = (function() {
             }
         },
         scroll_to_end: scroll_to_end,
-        insert_markdown_cell_before: function(index) {
+        insert_cell_before: function(language, index) {
+            notebook_controller_.insert_cell("", language, index);
+        }, insert_markdown_cell_before: function(index) {
             return notebook_controller_.insert_cell("", "Markdown", index);
         }, join_prior_cell: function(cell_model) {
             return notebook_controller_.join_prior_cell(cell_model);

@@ -18,6 +18,7 @@ rcloud.unauthenticated.load.notebook <- function(id, version = NULL) {
 
 rcloud.load.notebook <- function(id, version = NULL) {
   res <- rcloud.get.notebook(id, version)
+  ulog("RCloud rcloud.load.notebook(",id,",",version,", user=", .session$username,"): ", if(res$ok) "OK" else "FAILED")
   if (res$ok) {
     .session$current.notebook <- res
     rcloud.reset.session()
@@ -46,7 +47,7 @@ rcloud.get.notebook <- function(id, version = NULL) {
     res <- rcs.get(stash.key(stash, id, version))
     if (is.null(res$ok)) res <- list(ok=FALSE)
     res
-  } else suppressWarnings(get.gist(id, version, ctx = .session$rgithub.context))
+  } else suppressWarnings(get.gist(id, version, ctx = .session$gist.context))
   ## FIXME: suppressWarnings is a hack to get rid of the stupid "Duplicated curl options"
   ##        which seem to be a httr bug
   if (rcloud.debug.level() > 1L) {
@@ -77,8 +78,13 @@ rcloud.unauthenticated.call.notebook <- function(id, version = NULL, args = NULL
 }
 
 rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE) {
+  ulog("RCloud rcloud.call.notebook(", id, ",", version, ")")
+  
   res <- rcloud.get.notebook(id, version)
   if (res$ok) {
+    if (is.null(.session$current.notebook)) ## no top level? set us as the session notebook so that get.asset et al work
+      .session$current.notebook <- res
+      
     args <- as.list(args)
     ## this is a hack for now - we should have a more general infrastructure for this ...
     ## get all files
@@ -169,6 +175,7 @@ rcloud.upload.to.notebook <- function(file, name) {
   if (is.null(.session$current.notebook))
     stop("Notebook must be loaded")
   id <- .session$current.notebook$content$id
+  ulog("RCloud rcloud.upload.to.notebook(id=", id, ", name=", name, ")")
   files <- list()
   files[[name]] <- list(content=rawToChar(file))
   content <- list(files = files)
@@ -178,7 +185,7 @@ rcloud.upload.to.notebook <- function(file, name) {
 }
 
 rcloud.update.notebook <- function(id, content) {
-  res <- modify.gist(id, content, ctx = .session$rgithub.context)
+  res <- modify.gist(id, content, ctx = .session$gist.context)
   .session$current.notebook <- res
   if (nzConf("solr.url")) {
     star.count <- rcloud.notebook.star.count(id)
@@ -286,21 +293,22 @@ rcloud.search <-function(query) {
 }
 
 rcloud.create.notebook <- function(content) {
-  res <- create.gist(content, ctx = .session$rgithub.context)
+  res <- create.gist(content, ctx = .session$gist.context)
   if (res$ok) {
     .session$current.notebook <- res
     rcloud.reset.session()
   }
   res
-
 }
 
-rcloud.rename.notebook <- function(id, new.name)
+rcloud.rename.notebook <- function(id, new.name) {
+  ulog("RCloud rcloud.rename.notebook(", id, ", ", toJSON(new.name), ")")
   modify.gist(id,
               list(description=new.name),
-              ctx = .session$rgithub.context)
+              ctx = .session$gist.context)
+}
 
-rcloud.fork.notebook <- function(id) fork.gist(id, ctx = .session$rgithub.context)
+rcloud.fork.notebook <- function(id) fork.gist(id, ctx = .session$gist.context)
 
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
   ## also note that we are looking deep in the config space - this shold be really much easier ...
@@ -309,7 +317,7 @@ rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abus
 # sloooow, but we don't have any other way of verifying the owner
 notebook.is.mine <- function(id) {
   nb <- rcloud.get.notebook(id)
-  nb$content$user$login == .session$rgithub.context$user$login
+  nb$content$user$login == .session$username
 }
 
 rcloud.publish.notebook <- function(id) {

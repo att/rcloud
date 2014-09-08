@@ -16,13 +16,7 @@ RCloud.UI.session_pane = {
         //////////////////////////////////////////////////////////////////////
         // bluebird unhandled promise handler
         Promise.onPossiblyUnhandledRejection(function(e, promise) {
-            var msg = "";
-            // bluebird will print the message for Chrome/Opera but no other browser
-            if(!window.chrome && e.message)
-                msg += "Error: " + e.message + "\n";
-            msg += e.stack;
-            console.log(msg);
-            that.post_error(msg);
+            that.post_rejection(e);
         });
 
     },
@@ -44,5 +38,15 @@ RCloud.UI.session_pane = {
         ui_utils.on_next_tick(function() {
             ui_utils.scroll_to_after($("#session-info"));
         });
+    },
+    post_rejection: function(e) {
+        // print exceptions/rejections
+        var msg = "";
+        // bluebird will print the message for Chrome/Opera but no other browser
+        if(!window.chrome && e.message)
+            msg += "Error: " + e.message + "\n";
+        msg += e.stack;
+        console.log(msg);
+        this.post_error(msg);
     }
 };

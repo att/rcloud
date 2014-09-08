@@ -5,7 +5,7 @@ Author: Carlos Scheidegger <cscheid@research.att.com>, Simon Urbanek <urbanek@re
 Maintainer: Carlos Scheidegger <cscheid@research.att.com>
 Description: It's used by RCloud internally.
 Depends: base64enc, rjson, parallel
-Imports: uuid, RCurl, unixtools, Rserve (>= 1.8), rediscc (>= 0.1-1), jsonlite, github, knitr, markdown, png, Cairo, httr
+Imports: uuid, RCurl, unixtools, Rserve (>= 1.8), rediscc (>= 0.1-1), jsonlite, knitr, markdown, png, Cairo, httr, gist
 NOTE: --- packages that are not on CRAN/RForge.net *must* be in Suggests! ---
 Suggests: FastRWeb, RSclient, rcloud.client
 License: MIT

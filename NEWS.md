@@ -2,29 +2,50 @@
 
 * Multiple file upload.  File upload interface has been modernized to use
   promises and to split the UI from the back-end.
-  `rcloud.upload_to_notebook` and `rcloud.upload_file` are replaced with
-  `RCloud.upload_files` and `RCloud.upload_assets`, which return promises
-  instead of using a callback.  and also take a `react` struct for progress
-  messages and overwrite confirmation.
 
-  `RCloud.UI.upload_files(to_notebook, options)` takes the place of the old
-  functions.  All its UI elements are configurable.  By default it will
-  send messages and confirmations to the Upload Files pane in edit mode, and
-  to the main output div in view mode.  Upload can also be enabled in
-  published notebooks running anonymously through the technique [in this
+  `RCloud.UI.upload_with_alerts(to_notebook, options)` takes the place of the old
+  functions `rcloud.upload_to_notebook` and `rcloud.upload_file`.  All its UI
+  elements are configurable.  By default it will send messages and
+  confirmations to the Upload Files pane in edit mode, and to the main output
+  div in view mode.  Upload can also be enabled in published notebooks running
+  anonymously through the technique [in this
   notebook](https://gist.github.com/gordonwoodhull/8bf3ccc607b4164c8f22).
+
+  In addition, there are lower-level JavaScript upload functions when you
+  don't want the use of Bootstrap alerts. `RCloud.upload_files` and
+  `RCloud.upload_assets`, which return promises instead of using a callback,
+  take a `react` struct for progress messages and overwrite confirmation.
+
 
 * Delete and edit comments
 
 * CSS highlighting and syntax
 
-* Disabled backspace as "go back as history" to prevent some accidental
+* Disabled backspace as a shortcut to the back button to prevent some accidental
   navigation away from RCloud
+
+* The notebook store is now abstrated through the `gist` package,
+  allowing arbitrary back-ends. The traditional GitHub Gist backend is
+  now handled by the `githubhist` package. Alternative back-end based
+  on local git repositories is implemented in `gitgist`. The back-end
+  is selected by the `gist.backend` configuration option. It curretnly
+  defaults to `githubgist` but it will eventually become a mandatory
+  option.
+
+* `notebook.R` allows trailing paths to be processed by the notebook
+   code (instead of asset lookup) if they start with `/.self/`. The
+   subsequent path part is passed to the `run` function as the
+   `.path.info` argument. This allows notebooks to handle full tree
+   structure on top of a single notebook URL, .e.g.:
+   `https://rcloud.mydomain.com/notebook.R/user/notebook/.self/foo/bar`
+   will call the notebook with `.path.info` set to `/foo/bar`. Note
+   that the `.self` part distinguishes asset lookup from a path info
+   call.
 
 
 ## RCloud 1.1.2
 
-* Set CRAN mirror `repos` option if not already set to aviod interactive
+* Set CRAN mirror `repos` option if not already set to avoid interactive
   prompt. The default will be either `CRAN.mirror` entry from `rcloud.conf`
   or `http://cran.r-project.org` if not specified.
 
@@ -33,6 +54,8 @@
 
 * Resizeable side panels.  Temporarily gives you more room to work on assets
   or read help.  Lasts until a panel is opened or collapsed.
+
+* Fixes bug where asset editor did not always size to fit its panel.
 
 
 ## RCloud 1.1.1

@@ -23,6 +23,9 @@ setDiv: function(div, content, k) {
   }, error=function(...) warning("NOTE: rcloud.web can only be used in an RCloud session!"))
 }
 
-rcw.append <- function(element, what) caps$appendDiv(element, what)
-rcw.prepend <- function(element, what) caps$prependDiv(element, what)
-rcw.set <- function(element, what) caps$setDiv(element, what)
+## FIXME: we could also treat WebResult properly by converting it to HTML as needed
+.html.in <- function(x) paste(as.character(x), collapse='\n')
+
+rcw.append <- function(element, what) caps$appendDiv(element, .html.in(what))
+rcw.prepend <- function(element, what) caps$prependDiv(element, .html.in(what))
+rcw.set <- function(element, what) caps$setDiv(element, .html.in(what))

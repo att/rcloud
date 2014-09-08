@@ -44,7 +44,8 @@ RCloud.UI.init = function() {
         if($("#file")[0].files.length===0)
             return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        RCloud.UI.upload_files(to_notebook);
+        RCloud.UI.upload_with_alerts(to_notebook)
+            .catch(function() {}); // we have special handling for upload errors
     });
     var showOverlay_;
     //prevent drag in rest of the page except asset pane and enable overlay on asset pane
@@ -84,8 +85,10 @@ RCloud.UI.init = function() {
             e = e.originalEvent || e;
             var files = (e.files || e.dataTransfer.files);
             var dt = e.dataTransfer;
-            if(!shell.notebook.model.read_only())
-                RCloud.UI.upload_files(true, {files: files});
+            if(!shell.notebook.model.read_only()) {
+                RCloud.UI.upload_with_alerts(true, {files: files})
+                    .catch(function() {}); // we have special handling for upload errors
+            }
             $('#asset-drop-overlay').css({'display': 'none'});
         },
         "dragenter dragover": function(e) {
@@ -108,7 +111,7 @@ RCloud.UI.init = function() {
         e.preventDefault();
         e.stopPropagation();
         var qry = $('#input-text-search').val();
-        $('#input-text-search').blur();
+        $('#input-text-search').focus();
         RCloud.UI.search.exec(qry);
         return false;
     });

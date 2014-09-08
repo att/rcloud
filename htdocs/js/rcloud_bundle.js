@@ -1349,6 +1349,15 @@ var languages = {
 var non_language = { 'background-color': '#dddddd',
                      'ace_mode': 'ace/mode/text' };
 
+function ensure_image_has_hash(img)
+{
+    if (img.dataset.sha256)
+        return img.dataset.sha256;
+    var hasher = new sha256(img.getAttribute("src"), "TEXT");
+    img.dataset.sha256 = hasher.getHash("SHA-256", "HEX");
+    return img.dataset.sha256;
+}
+
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var EXTRA_HEIGHT = 27;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
@@ -1383,7 +1392,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     insert_cell_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
-            shell.insert_markdown_cell_before(cell_model.id());
+            shell.insert_cell_before(cell_model.language(), cell_model.id());
         }
     });
     join_button.click(function(e) {
@@ -1666,6 +1675,19 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             if (!shell.notebook.controller._r_source_visible) {
                 Notebook.hide_r_source(inner_div);
             }
+
+            // Workaround a persistently annoying knitr bug:
+            // https://github.com/att/rcloud/issues/456
+
+            _($("img")).each(function(img, ix, $q) {
+                ensure_image_has_hash(img);
+                if (img.getAttribute("src").substr(0,10) === "data:image" &&
+                    img.getAttribute("alt").substr(0,13) === "plot of chunk" &&
+                    ix > 0 &&
+                    img.dataset.sha256 === $q[ix-1].dataset.sha256) {
+                    $(img).css("display", "none");
+                }
+            });
 
             this.show_result();
         },
@@ -3035,7 +3057,7 @@ RCloud.session = {
     }
 
     RCloud.upload_files = function(options, react) {
-        var upload_ocaps = options.upload_ocaps || rcloud_ocaps.file_upload;
+        var upload_ocaps = options.upload_ocaps || rcloud._ocaps.file_upload;
         react = react || {};
         options = upload_opts(options);
         var upload = binary_upload(upload_ocaps, react);
@@ -3270,8 +3292,10 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                     heights[remaining[i]] = split;
                 do_fit = true;
             }
-            for(id in heights)
+            for(id in heights) {
                 $('#' + id).find(".panel-body").height(heights[id]);
+                $('#' + id).trigger('panel-resize');
+            }
             reshadow();
             var expected = $(sel_column).height();
             var got = d3.sum(_.values(padding)) + d3.sum(_.values(heights)) + total_headings;
@@ -3663,7 +3687,8 @@ RCloud.UI.init = function() {
         if($("#file")[0].files.length===0)
             return;
         var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        RCloud.UI.upload_files(to_notebook);
+        RCloud.UI.upload_with_alerts(to_notebook)
+            .catch(function() {}); // we have special handling for upload errors
     });
     var showOverlay_;
     //prevent drag in rest of the page except asset pane and enable overlay on asset pane
@@ -3703,8 +3728,10 @@ RCloud.UI.init = function() {
             e = e.originalEvent || e;
             var files = (e.files || e.dataTransfer.files);
             var dt = e.dataTransfer;
-            if(!shell.notebook.model.read_only())
-                RCloud.UI.upload_files(true, {files: files});
+            if(!shell.notebook.model.read_only()) {
+                RCloud.UI.upload_with_alerts(true, {files: files})
+                    .catch(function() {}); // we have special handling for upload errors
+            }
             $('#asset-drop-overlay').css({'display': 'none'});
         },
         "dragenter dragover": function(e) {
@@ -3727,7 +3754,7 @@ RCloud.UI.init = function() {
         e.preventDefault();
         e.stopPropagation();
         var qry = $('#input-text-search').val();
-        $('#input-text-search').blur();
+        $('#input-text-search').focus();
         RCloud.UI.search.exec(qry);
         return false;
     });
@@ -4154,7 +4181,7 @@ RCloud.UI.scratchpad = {
             ui_utils.install_common_ace_key_bindings(widget, function() {
                 return that.current_model.language();
             });
-            $("#collapse-assets").on("shown.bs.collapse", function() {
+            $("#collapse-assets").on("shown.bs.collapse panel-resize", function() {
                 widget.resize();
             });
         }
@@ -4410,13 +4437,7 @@ RCloud.UI.session_pane = {
         //////////////////////////////////////////////////////////////////////
         // bluebird unhandled promise handler
         Promise.onPossiblyUnhandledRejection(function(e, promise) {
-            var msg = "";
-            // bluebird will print the message for Chrome/Opera but no other browser
-            if(!window.chrome && e.message)
-                msg += "Error: " + e.message + "\n";
-            msg += e.stack;
-            console.log(msg);
-            that.post_error(msg);
+            that.post_rejection(e);
         });
 
     },
@@ -4438,6 +4459,16 @@ RCloud.UI.session_pane = {
         ui_utils.on_next_tick(function() {
             ui_utils.scroll_to_after($("#session-info"));
         });
+    },
+    post_rejection: function(e) {
+        // print exceptions/rejections
+        var msg = "";
+        // bluebird will print the message for Chrome/Opera but no other browser
+        if(!window.chrome && e.message)
+            msg += "Error: " + e.message + "\n";
+        msg += e.stack;
+        console.log(msg);
+        this.post_error(msg);
     }
 };
 RCloud.UI.share_button = {
@@ -4453,7 +4484,7 @@ RCloud.UI.share_button = {
         $("#share-link").attr("href", link);
     }
 };
-RCloud.UI.upload_files = (function() {
+RCloud.UI.upload_with_alerts = (function() {
     function upload_ui_opts(opts) {
         if(_.isBoolean(opts))
             opts = {force: opts};
@@ -4476,9 +4507,10 @@ RCloud.UI.upload_files = (function() {
         function results_append($div) {
             options.$upload_results.append($div);
             options.$result_panel.trigger("size-changed");
-            ui_utils.on_next_tick(function() {
-                ui_utils.scroll_to_after($("#file-upload-results"));
-            });
+            if(options.$upload_results.length)
+                ui_utils.on_next_tick(function() {
+                    ui_utils.scroll_to_after(options.$upload_results);
+                });
         }
 
         function result_alert($content) {
@@ -4495,8 +4527,8 @@ RCloud.UI.upload_files = (function() {
                     "class": 'alert-info',
                     text: message,
                     on_close: function() {
-                        $(".progress").hide();
-                        $("#collapse-file-upload").trigger("size-changed");
+                        options.$progress.hide();
+                        options.$result_panel.trigger("size-changed");
                     }
                 }));
         }
@@ -4539,20 +4571,24 @@ RCloud.UI.upload_files = (function() {
                     p.append(overwrite);
                     var alert_box = result_alert(p);
                     $('button.close', alert_box).click(function() {
-                        callback(null, false);
+                        callback(new Error("Overwrite cancelled"), null);
                     });
                 })
             };
         }
 
         options = upload_ui_opts(options || {});
-        RCloud.UI.right_panel.collapse($("#collapse-file-upload"), false);
+        if(options.$result_panel.length)
+            RCloud.UI.right_panel.collapse(options.$result_panel, false);
 
-        var file_error_handler = Promise.promisify(function(err, options, callback) {
+        var file_error_handler = function(err) {
             var message = err.message;
             var p, done = true;
             if(message==="empty") {
                 p = $("<p>File is empty.</p>");
+            }
+            else if(message==="Overwrite cancelled") {
+                p = $('<p>').append(message);
             }
             else if(message==="badname") {
                 p = $("<p>Filename not allowed.</p>");
@@ -4562,22 +4598,22 @@ RCloud.UI.upload_files = (function() {
                 console.log(message, err.stack);
             }
             result_alert(p);
-            if(done)
-                callback(null, undefined);
-        });
+            throw err;
+        };
 
 
         var promise = to_notebook ?
                 RCloud.upload_assets(options, asset_react(options)) :
                 RCloud.upload_files(options, file_react(options));
 
-        // U won't want to wait on this promise because it's after all overwrites etc.
+        // this promise is after all overwrites etc.
         return promise.catch(function(err) {
             return file_error_handler(err, options);
         }).then(function() {
-            window.setTimeout(function() {
-                $(".progress").hide();
-            }, 5000);
+            if(options.$progress.length)
+                window.setTimeout(function() {
+                    options.$progress.hide();
+                }, 5000);
         });
     }
 
