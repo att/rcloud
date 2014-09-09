@@ -46,3 +46,9 @@ modify.gist.githubcontext <- github::modify.gist
 create.gist.comment.githubcontext <- github::create.gist.comment
 
 get.gist.comments.githubcontext <- github::get.gist.comments
+
+delete.gist.comment.githubcontext <- github::delete.gist.comment
+
+modify.gist.comment.githubcontext <- github::modify.gist.comment
+
+
