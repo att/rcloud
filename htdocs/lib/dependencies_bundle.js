@@ -16908,6 +16908,11 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
             }
 
             // defaults
+            function default_definition(defn) {
+                // defaults on the definition as a whole
+                if(!definition.defreduce)
+                    definition.defreduce = dcplot.reduce.count;
+            }
             function default_dimension(name, defn) {
                 // nothing (yet?)
             }
@@ -17504,6 +17509,7 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
 
             // fill in anything easily defaultable (will not happen in incremental mode)
             // [but are there things we only want to default after inference?]
+            default_definition(definition);
             errors = aggregate_errors(default_dimension, default_group, default_chart);
             if(errors.length)
                 throw errors;
