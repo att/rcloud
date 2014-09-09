@@ -16,6 +16,7 @@ conf/rcloud.conf*
 conf/selected.conf.txt
 rcloud.support_*.tar.gz
 rcloud.client_*.tar.gz
+packages/*.tar.gz
 rcloud.packages/*.tar.gz
 REVISION
 run
