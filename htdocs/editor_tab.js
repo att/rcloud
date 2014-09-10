@@ -828,20 +828,29 @@ var editor = function () {
         }
     }
 
-    function display_date(ds,is_ts) {
+    function display_date(ds,dt_disp) {
         function pad(n) { return n<10 ? '0'+n : n; }
         if(ds==='none')
             return '';
         var date = new Date(ds);
         var diff = Date.now() - date;
         if(diff < 24*60*60*1000) {
+            dt_disp = 0;
             return date.getHours() + ':' + pad(date.getMinutes());
-        } else {
-            if (is_ts) {
-                return (date.getMonth() + 1) + '/' + date.getDate() + ' ' + date.getHours() + ':' + pad(date.getMinutes());
-            } else {
-                return  date.getHours() + ':' + pad(date.getMinutes());
-            }
+        }
+        switch(dt_disp) {
+            case 0:
+                return date.getHours() + ':' + pad(date.getMinutes());
+                break;
+            case 1:
+            return (date.getMonth() + 1) + '/' + date.getDate() + ' ' + date.getHours() + ':' + pad(date.getMinutes());
+                break;
+            case 2:
+            return  date.getHours() + ':' + pad(date.getMinutes());
+                break;
+            case 3:
+                return (date.getMonth()+1) + '/' + date.getDate();
+                break;
         }
     }
 
@@ -916,44 +925,42 @@ var editor = function () {
     var icon_style = {'line-height': '90%'};
     var last_date = "";
     function on_create_tree_li(node, $li) {
+        var hist_clicked = false;
         var element = $li.find('.jqtree-element'),
             title = element.find('.jqtree-title');
         title.css('color', node.color);
         if(node.gistname && !node.visible)
             title.addClass('private');
-        if(node.version || node.id === 'showmore')
+        if(node.version || node.id === 'showmore') {
             title.addClass('history');
+            hist_clicked = true;
+        }
         var right = $($.el.span({'class': 'notebook-right'}));
         var curr_date = new Date(node.last_commit);
         if(node.last_commit && (!node.version ||
                                 display_date(node.last_commit) != display_date(node.parent.last_commit))) {
-            if(last_date != "" && (typeof(last_date) != 'undefined')) {
+            if(hist_clicked) {
                 var is_mon_eq = (last_date.getMonth() === curr_date.getMonth());
                 var is_dt_eq = (last_date.getDate() === curr_date.getDate());
                 var is_hr_eq = (last_date.getHours() === curr_date.getHours());
                 var is_min_eq = (last_date.getMinutes() === curr_date.getMinutes());
                 if (is_mon_eq && is_dt_eq && is_hr_eq && is_min_eq) {
-                    right[0].appendChild($.el.span({'id': 'date','class': 'notebook-date'},'...'));
-                    last_date =  new Date(node.last_commit);
+                    right[0].appendChild($.el.span({'id': 'date', 'class': 'notebook-date'}, '...'));
                 } else if (is_mon_eq && is_dt_eq && ((!is_hr_eq && is_min_eq) ||
-                    (is_hr_eq && !is_min_eq) || (!is_hr_eq && !is_min_eq))  ) {
-                    right[0].appendChild($.el.span({'id': 'date','class': 'notebook-date'},
-                    display_date(node.last_commit, false)));
-                    last_date =  new Date(node.last_commit);
+                    (is_hr_eq && !is_min_eq) || (!is_hr_eq && !is_min_eq))) {
+                    right[0].appendChild($.el.span({'id': 'date', 'class': 'notebook-date'},
+                    display_date(node.last_commit, 2)));
                 } else {
-                    right[0].appendChild($.el.span({'id': 'date','class': 'notebook-date'},
-                    display_date(node.last_commit, true)));
-                    last_date =  new Date(node.last_commit);
-        }
+                    right[0].appendChild($.el.span({'id': 'date', 'class': 'notebook-date'},
+                    display_date(node.last_commit, 1)));
+                }
+                 last_date = new Date(node.last_commit);
             } else {
-                right[0].appendChild($.el.span({'id': 'date','class': 'notebook-date'},
-                display_date(node.last_commit, true)));
+                right[0].appendChild($.el.span({'id': 'date', 'class': 'notebook-date'},
+                display_date(node.last_commit, 3)));
+                last_date = new Date();
             }
-        } else {
-            last_date =  new Date(node.last_commit);
         }
-
-        last_date =  new Date(node.last_commit);
         if(node.gistname && !node.version) {
             if($tree_.tree('isNodeSelected', node))
                 RCloud.UI.notebook_title.make_editable(
