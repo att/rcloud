@@ -315,7 +315,7 @@ var shell = (function() {
                             });
                         }).then(function(v){
                             $("#notebook-file-upload")[0].value = null;
-                        });;
+                        });
                     }
                     dialog.modal('hide');
                 }
