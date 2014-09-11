@@ -14,7 +14,7 @@ Notebook.Asset.create_html_view = function(asset_model)
     var asset_old_name = filename_span.text();
     var rename_file = function(v){
         var new_asset_name = filename_span.text();
-        new_asset_name = new_asset_name.replace(/[^a-zA-Z ]/g, " ");
+        new_asset_name = new_asset_name.replace(/[^a-zA-Z0-9_ .-]/g, " ");
         var old_asset_content = asset_model.content();
         if (Notebook.is_part_name(new_asset_name)) {
             alert("Asset names cannot start with 'part[0-9]', sorry!");
