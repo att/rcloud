@@ -35,7 +35,7 @@ RCloud.UI.command_prompt = {
                 while(1) {
                     var cmd = window.localStorage[prefix_+i],
                         cmda = window.localStorage[prefix_+i+".alt"],
-                        langa = window.localStorage["last_lang"];
+                        langa = window.localStorage["last_cell_lang"];
                     if(cmda !== undefined)
                         alt_[i] = cmda;
                     if(langa !== undefined) {
@@ -73,7 +73,7 @@ RCloud.UI.command_prompt = {
             },
             change: function(cmd) {
                 window.localStorage[prefix_+curr_+".alt"] = alt_[curr_] = cmd;
-                window.localStorage["last_lang"] = $("#insert-cell-language").val();
+                window.localStorage["last_cell_lang"] = $("#insert-cell-language").val();
             }
         };
         return result;
