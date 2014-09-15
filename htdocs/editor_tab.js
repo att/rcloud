@@ -830,8 +830,12 @@ var editor = function () {
 
     function display_date(ds,dt_disp) {
         function pad(n) { return n<10 ? '0'+n : n; }
-        if(ds==='none')
+        if(ds==='none') {
             return '';
+        }
+        if(dt_disp === undefined) {
+            dt_disp = 1;
+        }    
         var date = new Date(ds);
         var diff = Date.now() - date;
         if(diff < 24*60*60*1000) {
@@ -839,17 +843,11 @@ var editor = function () {
             return date.getHours() + ':' + pad(date.getMinutes());
         }
         switch(dt_disp) {
-            case 0:
-                return date.getHours() + ':' + pad(date.getMinutes());
-                break;
             case 1:
             return (date.getMonth() + 1) + '/' + date.getDate() + ' ' + date.getHours() + ':' + pad(date.getMinutes());
                 break;
             case 2:
             return  date.getHours() + ':' + pad(date.getMinutes());
-                break;
-            case 3:
-                return (date.getMonth()+1) + '/' + date.getDate();
                 break;
         }
     }
@@ -957,7 +955,7 @@ var editor = function () {
                  last_date = new Date(node.last_commit);
             } else {
                 right[0].appendChild($.el.span({'id': 'date', 'class': 'notebook-date'},
-                display_date(node.last_commit, 3)));
+                display_date(node.last_commit, 1)));
                 last_date = new Date();
             }
         }
