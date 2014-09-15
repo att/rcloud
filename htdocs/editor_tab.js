@@ -839,7 +839,7 @@ var editor = function () {
         var date = new Date(ds);
         var diff = Date.now() - date;
         if(diff < 24*60*60*1000) {
-            dt_disp = 0;
+            dt_disp = 2;
             return date.getHours() + ':' + pad(date.getMinutes());
         }
         switch(dt_disp) {
