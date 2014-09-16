@@ -109,10 +109,12 @@
                   <div id="search-wrapper" class="widget-vsize"> <!-- only for sizing -->
                     <div id="search-header">
                       <form id="search-form" action="#">
-                        <input type="text" class="form-control-rcloud" value="" id="input-text-search" placeholder="..Search Keyword" style="height: 20px;"></input>
-                        <button class="btn-icon-rcloud" type="submit">
-                          <i class="icon-search"></i>
-                        </button>
+                        <div class="btn-group-sm">
+                          <input type="text" id="input-text-search" placeholder="..Search Keyword"></input>
+                          <button class="btn btn-default" type="submit">
+                            <i class="icon-search"></i>
+                          </button>
+                        </div>
                       </form>
                       <div id="search-summary"></div>
                     </div>
@@ -135,9 +137,9 @@
                 <div id="help-wrapper" class="panel-body widget-vsize">
                   <div id="help-header">
                     <form id="help-form" action="#">
-                      <div style="padding-left: 8px">
-                        <input type="text" class="form-control-rcloud" value="" id="input-text-help" style="height: 20px;" placeholder="..Help me find"></input>
-                        <button class="btn-icon-rcloud" type="submit" >
+                      <div class="btn-group-sm" style="padding-left: 8px;">
+                        <input type="text" id="input-text-help" placeholder="..Help me find"></input>
+                        <button class="btn btn-default" type="submit">
                           <i class="icon-question"></i>
                         </button>
                       </div>
@@ -248,9 +250,9 @@
                 <div class="panel-body">
                   <div id="file-upload-div" class="widget-vsize">
                     <div id="file-upload-wrapper">
-                      <div id="file-upload-controls">
+                      <div id="file-upload-controls" class="btn-group-sm">
                         <input type="file" id="file" style="display: inline;" multiple></input>
-                        <button id="upload-submit" style="clear: both; float: right;" class="btn-icon-rcloud" type="submit" >
+                        <button id="upload-submit" class="btn btn-default" type="submit" style="clear: both;float: right;">
                           <i class="icon-upload"></i>
                         </button>
                         <br/>
@@ -282,9 +284,9 @@
                   <div id="comments-wrapper">
                     <div id="comments-qux" class="widget-vsize">
                       <div id="comments-container"></div>
-                      <div id="comment-entry">
+                      <div id="comment-entry" class="btn-group-sm">
                         <textarea id="comment-entry-body"></textarea>
-                        <button id="comment-submit" class="btn-icon-rcloud" type="submit" value="comment" >
+                        <button id="comment-submit" class="btn btn-default" type="submit" >
                           <i class="icon-comment"></i>
                         </button>
                       </div>
