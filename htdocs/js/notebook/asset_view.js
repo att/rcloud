@@ -22,8 +22,8 @@ Notebook.Asset.create_html_view = function(asset_model)
         }
         var found = shell.notebook.model.has_asset(new_asset_name);
         if (found){
+            alert("Asset with the same name is already exists\nPlease try with different name");
             filename_span.text(asset_old_name);
-            found.controller.select();
         }
         else {
             shell.notebook.controller
