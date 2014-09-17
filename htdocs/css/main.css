@@ -916,3 +916,27 @@ pre > .vt100 {
     padding: 16px;
     display: block;
 }
+
+.btn-default-ext {
+    color: #333333;
+    background-color: #ffffff;
+    border-color: #cccccc;
+    width: 32px;
+    height: 24px;
+}
+
+.form-control-ext {
+    width: 125px;
+    height: 24px;
+    font-size: inherit;
+    line-height: inherit;
+    color: #555555;
+    vertical-align: middle;
+    background-color: #ffffff;
+    border: 1px solid rgb(169, 169, 169);
+    border-radius: 3px;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    -webkit-transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+    transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+}
