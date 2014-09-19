@@ -74,6 +74,107 @@
   </div>
 </div>
 
+<!-- snippets for panels, see load_snippet -->
+<script type="text/html" id="notebooks-snippet">
+  <div class="panel-body notebook-tree">
+    <div id="editor-book-tree" class="widget-vsize"></div>
+  </div>
+</script>
+
+<script type="text/html" id="search-snippet">
+  <div class="panel-body">
+    <div id="search-wrapper" class="widget-vsize"> <!-- only for sizing -->
+      <div id="search-header">
+        <form id="search-form" action="#">Full-text search for <input type="text" value="" id="input-text-search"></input><button type='submit'>search</button>
+        </form>
+        <div id="search-summary"></div>
+      </div>
+      <div id="search-results-row">
+        <div id="search-results-scroller">
+          <div id="search-results"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</script>
+
+<script type="text/html" id="help-snippet">
+  <div id="help-wrapper" class="panel-body widget-vsize">
+    <div id="help-header">
+      <form id="help-form" action="#">
+        <div>Get help on <input type="text" value="" id="input-text-help"></input>
+          <button type='submit'>help</button>
+        </div>
+      </form>
+    </div>
+    <div id="help-body"></div>
+  </div>
+</script>
+
+<script type="text/html" id="assets-snippet">
+  <div id="scratchpad-wrapper" class="panel-body" style="padding:0;border:0;position:relative;z-index:1;">
+    <div id="asset-drop-overlay" class="drop-asset-body">
+      <h1 style="vertical-align:middle;position:relative;text-align:center;padding-top:5%;color: lightslategray">Drop File to Asset</h1>
+    </div>
+    <div id="asset-area">
+      <div id="asset-list-wrapper">
+        <ul class="nav nav-tabs" id="asset-list"
+            style="background-color:white; padding-top:5px;
+                   padding-left: 5px"><li id="new-asset"><a href="#">[New Asset]</a></li></ul>
+      </div>
+      <div id="scratchpad-editor-wrapper">
+        <div id="scratchpad-editor" class="widget-vsize">
+          <a id="asset-link" target="_blank" href="#">link</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</script>
+
+<script type="text/html" id="file-upload-snippet">
+  <div class="panel-body">
+    <div id="file-upload-div" class="widget-vsize">
+      <div id="file-upload-wrapper">
+        <div id="file-upload-controls">
+          <input type="file" id="file" style="display: inline;" multiple></input>
+          <input type="submit" id="upload-submit" value="Upload" style="clear: both; float: right;"></input>
+          <br /><input type="checkbox" id="upload-to-notebook"> Upload to notebook</input>
+          <div class="progress" style="display:none">
+            <div id="progress-bar" class="progress-bar" id="file-progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
+          </div>
+        </div>
+        <div id="file-upload-results-row">
+          <div id="file-upload-results-scroller">
+            <div id="file-upload-results">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</script>
+
+<script type="text/html", id="comments-snippet">
+  <div class="panel-body">
+    <div id="comments-wrapper">
+      <div id="comments-qux" class="widget-vsize">
+        <div id="comments-container"></div>
+        <div id="comment-entry">
+          <textarea id="comment-entry-body"></textarea>
+          <input type="button" id="comment-submit" value="comment"></input>
+        </div>
+      </div>
+    </div>
+  </div>
+</script>
+
+<script type="text/html" id="session-info-snippet">
+  <div class="panel-body" id="session-info-panel">
+    <div id="session-info" class="widget-vsize"></div>
+  </div>
+</script>
+
+
 <div class="container nopad" id="main-div">
   <div class="row">
     <div class="col-md-1 col-sm-1 no-padding" style="height:100%" id="left-column">
@@ -86,74 +187,7 @@
       <div id="tabs-2">
         <div class="tab-div">
           <div class="panel-group" id="accordion-left">
-            <div class="panel panel-default">
-              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" data-target="#collapse-notebook-tree">
-                <a class="accordion-toggle left" href="#collapse-notebook-tree"><i class="icon-folder-open"></i> <span class="title-offset">Notebooks</span></a>
-                <a class="header-button" href="#" id="new-notebook" style="display:none"><i class="icon-plus"></i></a>
-              </div>
-              <div id="collapse-notebook-tree" class="panel-collapse collapse" data-colwidth="3" data-widgetheight="greedy">
-                <img height="100%" width="5px" src="/img/right_bordergray.png" class="panel-shadow left" />
-                <div class="panel-body notebook-tree">
-                  <div id="editor-book-tree" class="widget-vsize"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel panel-default">
-              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" data-target="#collapse-search">
-                <a class="accordion-toggle left" href="#collapse-search"><i class="icon-search"></i> <span class="title-offset">Search</span></a>
-              </div>
-              <div id="collapse-search" class="panel-collapse collapse" data-colwidth="4">
-                <img height="100%" width="5px" src="/img/right_bordergray.png" class="panel-shadow left" />
-                <div class="panel-body">
-                  <div id="search-wrapper" class="widget-vsize"> <!-- only for sizing -->
-                    <div id="search-header">
-                      <form id="search-form" action="#">Full-text search for <input type="text" value="" id="input-text-search"></input><button type='submit'>search</button>
-                      </form>
-                      <div id="search-summary"></div>
-                    </div>
-                    <div id="search-results-row">
-                      <div id="search-results-scroller">
-                        <div id="search-results"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel panel-default">
-              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" data-target="#collapse-help">
-                <a class="accordion-toggle left" href="#collapse-help"><i class="icon-question"></i> <span class="title-offset">Help</span></a>
-              </div>
-              <div id="collapse-help" class="panel-collapse collapse" data-colwidth="5">
-                <img height="100%" width="5px" src="/img/right_bordergray.png" class="panel-shadow left" />
-                <div id="help-wrapper" class="panel-body widget-vsize">
-                  <div id="help-header">
-                    <form id="help-form" action="#">
-                      <div>Get help on <input type="text" value="" id="input-text-help"></input>
-                        <button type='submit'>help</button>
-                      </div>
-                    </form>
-                  </div>
-                  <div id="help-body"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- If only I could tell you the ways in which I'm not proud of this -->
-            <div class="panel panel-default">
-              <div id="collapseSix" class="panel-collapse out">
-                <div class="panel-body"
-                     style="border-top-color: transparent; background-color: #777">
-                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
-                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
-                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
-                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
-                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
-                </div>
-              </div>
-            </div>
+            <!-- filled in by RCloud.UI.load_panels -->
           </div>
         </div>
       </div>
@@ -205,110 +239,7 @@
             <a id="right-pane-collapser"><i class="icon-minus" style="font-size:0.8em; color:#999; position:absolute; right:2px; top:1px; cursor:pointer"></i> </a>
           </div>
           <div class="panel-group" id="accordion-right">
-
-            <div class="panel panel-default">
-              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion-right" data-target="#collapse-assets">
-		<a class="accordion-toggle right" href="#collapse-assets"><span class="title-offset">Assets</span><div style="position: relative"><i class="icon-copy"></i></div>&nbsp;</a>
-              </div>
-              <div id="collapse-assets" class="panel-collapse collapse" data-colwidth="4" data-widgetheight="greedy">
-                <img height="100%" width="5px" src="/img/left_bordergray.png" class="panel-shadow right" />
-                <div id="scratchpad-wrapper" class="panel-body" style="padding:0;border:0;position:relative;z-index:1;">
-                  <div id="asset-drop-overlay" class="drop-asset-body">
-                      <h1 style="vertical-align:middle;position:relative;text-align:center;padding-top:5%;color: lightslategray">Drop File to Asset</h1>
-                  </div>
-                  <div id="asset-area">
-                    <div id="asset-list-wrapper">
-                      <ul class="nav nav-tabs" id="asset-list"
-                          style="background-color:white; padding-top:5px;
-                                 padding-left: 5px"><li id="new-asset"><a href="#">[New Asset]</a></li></ul>
-                    </div>
-                    <div id="scratchpad-editor-wrapper">
-                      <div id="scratchpad-editor" class="widget-vsize">
-                        <a id="asset-link" target="_blank" href="#">link</a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel panel-default">
-              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion-right" data-target="#collapse-file-upload">
-                <a class="accordion-toggle right" href="#collapse-file-upload"><div style="position: relative"><i class="icon-upload"></i></div>&nbsp;<span class="title-offset">File Upload</span></a>
-              </div>
-              <div id="collapse-file-upload" class="panel-collapse collapse" data-colwidth="2">
-                <img height="100%" width="5px" src="/img/left_bordergray.png" class="panel-shadow right" />
-                <div class="panel-body">
-                  <div id="file-upload-div" class="widget-vsize">
-                    <div id="file-upload-wrapper">
-                      <div id="file-upload-controls">
-                        <input type="file" id="file" style="display: inline;" multiple></input>
-                        <input type="submit" id="upload-submit" value="Upload" style="clear: both; float: right;"></input>
-                        <br /><input type="checkbox" id="upload-to-notebook"> Upload to notebook</input>
-                        <div class="progress" style="display:none">
-                          <div id="progress-bar" class="progress-bar" id="file-progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
-                        </div>
-                      </div>
-                      <div id="file-upload-results-row">
-                        <div id="file-upload-results-scroller">
-                          <div id="file-upload-results">
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel panel-default right">
-              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion-right" data-target="#collapse-comments">
-                <a class="accordion-toggle right"
-                   href="#collapse-comments"><div style="position:relative"><i class="icon-comments"></i></div>&nbsp;<span class="title-offset"><span id="comment-count">0</span> Comments</span></a>
-              </div>
-              <div id="collapse-comments" class="panel-collapse collapse" data-colwidth="2">
-                <img height="100%" width="5px" src="/img/left_bordergray.png" class="panel-shadow right" />
-                <div class="panel-body">
-                  <div id="comments-wrapper">
-                    <div id="comments-qux" class="widget-vsize">
-                      <div id="comments-container"></div>
-                      <div id="comment-entry">
-                        <textarea id="comment-entry-body"></textarea>
-                        <input type="button" id="comment-submit" value="comment"></input>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel panel-default right">
-              <div class="panel-heading" data-toggle="collapse" data-parent="#accordion-right" data-target="#collapse-session-info">
-                <a class="accordion-toggle right"
-                   href="#collapse-session-info"><div style="position:relative"><i class="icon-info"></i></div>&nbsp;<span class="title-offset">Session</span></a>
-              </div>
-              <div id="collapse-session-info" class="panel-collapse collapse" data-colwidth="3">
-                <img height="100%" width="5px" src="/img/left_bordergray.png" class="panel-shadow right" />
-                <div class="panel-body" id="session-info-panel">
-                  <div id="session-info" class="widget-vsize"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- If only I could tell you the ways in which I'm not proud of this -->
-            <div class="panel panel-default">
-              <div id="collapseSix" class="panel-collapse out">
-                <div class="panel-body"
-                     style="border-top-color: transparent; background-color: #777">
-                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
-                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
-                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
-                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
-                  <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
-                </div>
-              </div>
-            </div>
-
+            <!-- filled in by RCloud.UI.load_panels -->
           </div>
         </div>
       </div>

@@ -98,6 +98,7 @@ RCloud.UI.init = function() {
         }
     });
 
+    RCloud.UI.load_panels();
 
     RCloud.UI.left_panel.init();
     RCloud.UI.middle_column.init();
