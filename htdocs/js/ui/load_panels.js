@@ -7,7 +7,6 @@ RCloud.UI.load_panels = function() {
                                 'data-toggle': 'collapse',
                                 'data-parent': '#' + parent_id, // note: left was broken '#accordion'
                                 'data-target': '#' + collapse_id};
-        var heading;
         var title_span = $.el.span({'class': 'title-offset'},
                                    title),
             icon = $.el.i({'class': icon_class}),
@@ -15,6 +14,7 @@ RCloud.UI.load_panels = function() {
                                    'href': '#' + collapse_id},
                                   icon, '\u00a0', title_span);
 
+        var heading;
         if(side==='left') {
             heading = $.el.div(heading_attrs,
                                heading_link,
@@ -26,6 +26,7 @@ RCloud.UI.load_panels = function() {
                                heading_link);
         }
         else throw new Error('Unknown panel side ' + side);
+
         var collapse_attrs = {'id': collapse_id,
                              'class': 'panel-collapse collapse',
                              'data-colwidth': colwidth};
