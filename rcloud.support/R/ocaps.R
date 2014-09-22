@@ -57,9 +57,6 @@ unauthenticated.ocaps <- function()
 
       get_users = make.oc(rcloud.get.users),
 
-      # externally used ocaps
-      load_module_package = make.oc(rcloud.load.module.package),
-
       # javascript.R
       setup_js_installer = make.oc(rcloud.setup.js.installer),
 
@@ -133,6 +130,9 @@ authenticated.ocaps <- function()
       # call_fastrweb_notebook...
       call_fastrweb_notebook = make.oc(rcloud.call.FastRWeb.notebook),
 
+      # externally used ocaps
+      load_module_package = make.oc(rcloud.load.module.package),
+      
       # file upload ocaps
       file_upload = list(
         create = make.oc(rcloud.upload.create.file),
