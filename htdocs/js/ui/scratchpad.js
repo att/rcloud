@@ -213,7 +213,8 @@ RCloud.UI.scratchpad = {
         this.session.setMode(new mode(false, this.session.doc, this.session));
     }, set_readonly: function(readonly) {
         if(!shell.is_view_mode()) {
-            ui_utils.set_ace_readonly(this.widget, readonly);
+            if(this.widget)
+                ui_utils.set_ace_readonly(this.widget, readonly);
             if(readonly)
                 $('#new-asset').hide();
             else
