@@ -49,6 +49,11 @@ body {
     padding-top: 51px; /* exact same height as navbar */
 }
 
+body, .navbar-fixed-top, .navbar-fixed-bottom {
+  margin-right: 0 !important;
+}
+
+
 .internals-float {
     float: left;
     background-color: #eee;
