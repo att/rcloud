@@ -1,4 +1,7 @@
 RCloud.UI.search = {
+    body: function() {
+        return RCloud.UI.panel_loader.load_snippet('search-snippet');
+    },
     init: function() {
         if(!rcloud.search)
             $("#search-wrapper").text("Search engine not enabled on server");

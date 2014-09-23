@@ -1,4 +1,7 @@
 RCloud.UI.upload_frame = {
+    body: function() {
+        return RCloud.UI.panel_loader.load_snippet('file-upload-snippet');
+    },
     init: function() {
         $("#file").change(function() {
             $("#progress-bar").css("width", "0%");

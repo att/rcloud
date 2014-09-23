@@ -1,4 +1,7 @@
 RCloud.UI.help_frame = {
+    body: function() {
+        return RCloud.UI.panel_loader.load_snippet('help-snippet');
+    },
     init: function() {
         // i can't be bothered to figure out why the iframe causes onload to be triggered early
         // if this code is directly in edit.html

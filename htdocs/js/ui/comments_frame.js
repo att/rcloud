@@ -1,4 +1,7 @@
-RCloud.UI.comment_frame = {
+RCloud.UI.comments_frame = {
+    body: function() {
+        return RCloud.UI.panel_loader.load_snippet('comments-snippet');
+    },
     init: function() {
         $("#comment-submit").click(function() {
             if(!Notebook.empty_for_github($("#comment-entry-body").val())) {

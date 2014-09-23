@@ -1,4 +1,7 @@
 RCloud.UI.session_pane = {
+    body: function() {
+        return RCloud.UI.panel_loader.load_snippet('session-info-snippet');
+    },
     init: function() {
         // detect where we will show errors
         this.error_dest_ = $("#session-info");

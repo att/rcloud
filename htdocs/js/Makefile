@@ -29,16 +29,17 @@ rcloud_bundle.js: \
 	ui/column.js \
 	ui/column_sizer.js \
 	ui/command_prompt.js \
-	ui/comment_frame.js \
+	ui/comments_frame.js \
 	ui/configure_readonly.js \
 	ui/fatal_dialog.js \
 	ui/help_frame.js \
 	ui/init.js \
 	ui/left_panel.js \
 	ui/load_options.js \
-	ui/load_panels.js \
 	ui/middle_column.js \
 	ui/notebook_title.js \
+	ui/notebooks_frame.js \
+	ui/panel_loader.js \
 	ui/progress.js \
 	ui/right_panel.js \
 	ui/scratchpad.js \

@@ -4,6 +4,9 @@ RCloud.UI.scratchpad = {
     exists: false,
     current_model: null,
     change_content: null,
+    body: function() {
+        return RCloud.UI.panel_loader.load_snippet('assets-snippet');
+    },
     init: function() {
         var that = this;
         function setup_scratchpad(div) {
