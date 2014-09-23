@@ -47,10 +47,63 @@ RCloud.UI.scratchpad = {
                 widget.resize();
             });
         }
+        function setup_asset_drop() {
+            var showOverlay_;
+            //prevent drag in rest of the page except asset pane and enable overlay on asset pane
+            $(document).on('dragstart dragenter dragover', function (e) {
+                var dt = e.originalEvent.dataTransfer;
+                if(!dt)
+                    return;
+                if (dt.types !== null &&
+                    (dt.types.indexOf ?
+                     dt.types.indexOf('Files') != -1 :
+                     dt.types.contains('application/x-moz-file'))) {
+                    if (!shell.notebook.model.read_only()) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        $('#asset-drop-overlay').css({'display': 'block'});
+                        showOverlay_ = true;
+                    }
+                    else {
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }
+                }
+            });
+            $(document).on('drop dragleave', function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+                showOverlay_ = false;
+                setTimeout(function() {
+                    if(!showOverlay_) {
+                        $('#asset-drop-overlay').css({'display': 'none'});
+                    }
+                }, 100);
+            });
+            //allow asset drag from local to asset pane and highlight overlay for drop area in asset pane
+            $('#scratchpad-wrapper').bind({
+                drop: function (e) {
+                    e = e.originalEvent || e;
+                    var files = (e.files || e.dataTransfer.files);
+                    var dt = e.dataTransfer;
+                    if(!shell.notebook.model.read_only()) {
+                        RCloud.UI.upload_with_alerts(true, {files: files})
+                            .catch(function() {}); // we have special handling for upload errors
+                    }
+                    $('#asset-drop-overlay').css({'display': 'none'});
+                },
+                "dragenter dragover": function(e) {
+                    var dt = e.originalEvent.dataTransfer;
+                    if(dt.items.length === 1 && !shell.notebook.model.read_only())
+                        dt.dropEffect = 'copy';
+                }
+            });
+        }
         var scratchpad_editor = $("#scratchpad-editor");
         if (scratchpad_editor.length) {
             this.exists = true;
             setup_scratchpad(scratchpad_editor);
+            setup_asset_drop();
         }
         $("#new-asset > a").click(function() {
             // FIXME prompt, yuck. I know, I know.

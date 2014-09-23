@@ -3354,6 +3354,60 @@ RCloud.UI.collapsible_column.default_sizer = function(el) {
         padding = RCloud.UI.collapsible_column.default_padder(el);
     return {height: height, padding: padding};
 };
+//////////////////////////////////////////////////////////////////////////
+// resize left and right panels by dragging on the divider
+
+RCloud.UI.column_sizer = {
+    init: function() {
+        $('.notebook-sizer').draggable({
+            axis: 'x',
+            opacity: 0.75,
+            zindex: 10000,
+            revert: true,
+            revertDuration: 0,
+            grid: [window.innerWidth/12, 0],
+            stop: function(event, ui) {
+                var wid_over_12 = window.innerWidth/12;
+                // position is relative to parent, the notebook
+                var diff, size;
+                if($(this).hasClass('left')) {
+                    diff = Math.round(ui.position.left/wid_over_12);
+                    size = Math.max(1,
+                                    Math.min(+RCloud.UI.left_panel.colwidth() + diff,
+                                             11 - RCloud.UI.right_panel.colwidth()));
+                    if(size===1)
+                        RCloud.UI.left_panel.hide(true, true);
+                    else
+                        RCloud.UI.left_panel.show(true, true);
+                    RCloud.UI.left_panel.colwidth(size);
+                    RCloud.UI.middle_column.update();
+                }
+                else if($(this).hasClass('right')) {
+                    diff = Math.round(ui.position.left/wid_over_12) - RCloud.UI.middle_column.colwidth();
+                    size = Math.max(1,
+                                    Math.min(+RCloud.UI.right_panel.colwidth() - diff,
+                                             11 - RCloud.UI.left_panel.colwidth()));
+                    if(size===1)
+                        RCloud.UI.right_panel.hide(true, true);
+                    else
+                        RCloud.UI.right_panel.show(true, true);
+                    RCloud.UI.right_panel.colwidth(size);
+                    RCloud.UI.middle_column.update();
+                }
+                else throw new Error('unexpected shadow drag with classes ' + $(this).attr('class'));
+                // revert to absolute position
+                $(this).css({left: "", top: ""});
+            }
+        });
+
+        // make grid responsive to window resize
+        $(window).resize(function() {
+            var wid_over_12 = window.innerWidth/12;
+            $('.notebook-sizer').draggable('option', 'grid', [wid_over_12, 0]);
+        });
+    }
+};
+
 RCloud.UI.command_prompt = {
     prompt: null,
     history: null,
@@ -3546,6 +3600,27 @@ RCloud.UI.command_prompt = {
         };
     }
 };
+RCloud.UI.comment_frame = {
+    init: function() {
+        $("#comment-submit").click(function() {
+            if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
+                editor.post_comment($("#comment-entry-body").val());
+            }
+            return false;
+        });
+
+        $("#comment-entry-body").keydown(function (e) {
+            if ((e.keyCode == 10 || e.keyCode == 13 || e.keyCode == 115 || e.keyCode == 19) &&
+                (e.ctrlKey || e.metaKey)) {
+                if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
+                    editor.post_comment($("#comment-entry-body").val());
+                }
+                return false;
+            }
+            return undefined;
+        });
+    }
+};
 /*
  * Adjusts the UI depending on whether notebook is read-only
  */
@@ -3624,6 +3699,14 @@ RCloud.UI.help_frame = {
         // i can't be bothered to figure out why the iframe causes onload to be triggered early
         // if this code is directly in edit.html
         $("#help-body").append('<iframe id="help-frame" frameborder="0" />');
+        $('#help-form').submit(function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var topic = $('#input-text-help').val();
+            $('#input-text-help').blur();
+            rcloud.help(topic);
+            return false;
+        });
     },
     show: function() {
         $("#help-body").css('display', 'table-row');
@@ -3724,54 +3807,7 @@ RCloud.UI.init = function() {
     }
     make_cells_sortable();
 
-    //////////////////////////////////////////////////////////////////////////
-    // resizeable panels
-    $('.notebook-sizer').draggable({
-        axis: 'x',
-        opacity: 0.75,
-        zindex: 10000,
-        revert: true,
-        revertDuration: 0,
-        grid: [window.innerWidth/12, 0],
-        stop: function(event, ui) {
-            var wid_over_12 = window.innerWidth/12;
-            // position is relative to parent, the notebook
-            var diff, size;
-            if($(this).hasClass('left')) {
-                diff = Math.round(ui.position.left/wid_over_12);
-                size = Math.max(1,
-                                Math.min(+RCloud.UI.left_panel.colwidth() + diff,
-                                         11 - RCloud.UI.right_panel.colwidth()));
-                if(size===1)
-                    RCloud.UI.left_panel.hide(true, true);
-                else
-                    RCloud.UI.left_panel.show(true, true);
-                RCloud.UI.left_panel.colwidth(size);
-                RCloud.UI.middle_column.update();
-            }
-            else if($(this).hasClass('right')) {
-                diff = Math.round(ui.position.left/wid_over_12) - RCloud.UI.middle_column.colwidth();
-                size = Math.max(1,
-                                Math.min(+RCloud.UI.right_panel.colwidth() - diff,
-                                         11 - RCloud.UI.left_panel.colwidth()));
-                if(size===1)
-                    RCloud.UI.right_panel.hide(true, true);
-                else
-                    RCloud.UI.right_panel.show(true, true);
-                RCloud.UI.right_panel.colwidth(size);
-                RCloud.UI.middle_column.update();
-            }
-            else throw new Error('unexpected shadow drag with classes ' + $(this).attr('class'));
-            // revert to absolute position
-            $(this).css({left: "", top: ""});
-        }
-    });
-
-    // make grid responsive to window resize
-    $(window).resize(function() {
-        var wid_over_12 = window.innerWidth/12;
-        $('.notebook-sizer').draggable('option', 'grid', [wid_over_12, 0]);
-    });
+    RCloud.UI.column_sizer.init();
 
     //////////////////////////////////////////////////////////////////////////
     // autosave when exiting. better default than dropping data, less annoying
@@ -3830,20 +3866,9 @@ RCloud.UI.load_options = function() {
         RCloud.UI.command_prompt.init();
         RCloud.UI.help_frame.init();
 
-        if(!rcloud.search)
-            $("#search-wrapper").text("Search engine not enabled on server");
-
-        $("#file").change(function() {
-            $("#progress-bar").css("width", "0%");
-        });
-
-        $("#upload-submit").click(function() {
-            if($("#file")[0].files.length===0)
-                return;
-            var to_notebook = ($('#upload-to-notebook').is(':checked'));
-            RCloud.UI.upload_with_alerts(to_notebook)
-                .catch(function() {}); // we have special handling for upload errors
-        });
+        RCloud.UI.comment_frame.init();
+        RCloud.UI.search.init();
+        RCloud.UI.upload_frame.init();
 
         $("#collapse-search").data("panel-sizer", function(el) {
             var padding = RCloud.UI.collapsible_column.default_padder(el);
@@ -3876,92 +3901,6 @@ RCloud.UI.load_options = function() {
         });
 
         $(".panel-collapse").collapse({toggle: false});
-
-        var showOverlay_;
-        //prevent drag in rest of the page except asset pane and enable overlay on asset pane
-        $(document).on('dragstart dragenter dragover', function (e) {
-            var dt = e.originalEvent.dataTransfer;
-            if(!dt)
-                return;
-            if (dt.types !== null &&
-                (dt.types.indexOf ?
-                 dt.types.indexOf('Files') != -1 :
-                 dt.types.contains('application/x-moz-file'))) {
-                if (!shell.notebook.model.read_only()) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    $('#asset-drop-overlay').css({'display': 'block'});
-                    showOverlay_ = true;
-                }
-                else {
-                    e.stopPropagation();
-                    e.preventDefault();
-                }
-            }
-        });
-        $(document).on('drop dragleave', function (e) {
-            e.stopPropagation();
-            e.preventDefault();
-            showOverlay_ = false;
-            setTimeout(function() {
-                if(!showOverlay_) {
-                    $('#asset-drop-overlay').css({'display': 'none'});
-                }
-            }, 100);
-        });
-        //allow asset drag from local to asset pane and highlight overlay for drop area in asset pane
-        $('#scratchpad-wrapper').bind({
-            drop: function (e) {
-                e = e.originalEvent || e;
-                var files = (e.files || e.dataTransfer.files);
-                var dt = e.dataTransfer;
-                if(!shell.notebook.model.read_only()) {
-                    RCloud.UI.upload_with_alerts(true, {files: files})
-                        .catch(function() {}); // we have special handling for upload errors
-                }
-                $('#asset-drop-overlay').css({'display': 'none'});
-            },
-            "dragenter dragover": function(e) {
-                var dt = e.originalEvent.dataTransfer;
-                if(dt.items.length === 1 && !shell.notebook.model.read_only())
-                    dt.dropEffect = 'copy';
-            }
-        });
-
-        $("#search-form").submit(function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            var qry = $('#input-text-search').val();
-            $('#input-text-search').focus();
-            RCloud.UI.search.exec(qry);
-            return false;
-        });
-        $('#help-form').submit(function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            var topic = $('#input-text-help').val();
-            $('#input-text-help').blur();
-            rcloud.help(topic);
-            return false;
-        });
-
-        $("#comment-submit").click(function() {
-            if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
-                editor.post_comment($("#comment-entry-body").val());
-            }
-            return false;
-        });
-
-        $("#comment-entry-body").keydown(function (e) {
-            if ((e.keyCode == 10 || e.keyCode == 13 || e.keyCode == 115 || e.keyCode == 19) &&
-                (e.ctrlKey || e.metaKey)) {
-                if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
-                    editor.post_comment($("#comment-entry-body").val());
-                }
-                return false;
-            }
-            return undefined;
-        });
 
         return Promise.all([RCloud.UI.left_panel.load_options(),
                            RCloud.UI.right_panel.load_options()]);
@@ -4297,10 +4236,63 @@ RCloud.UI.scratchpad = {
                 widget.resize();
             });
         }
+        function setup_asset_drop() {
+            var showOverlay_;
+            //prevent drag in rest of the page except asset pane and enable overlay on asset pane
+            $(document).on('dragstart dragenter dragover', function (e) {
+                var dt = e.originalEvent.dataTransfer;
+                if(!dt)
+                    return;
+                if (dt.types !== null &&
+                    (dt.types.indexOf ?
+                     dt.types.indexOf('Files') != -1 :
+                     dt.types.contains('application/x-moz-file'))) {
+                    if (!shell.notebook.model.read_only()) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        $('#asset-drop-overlay').css({'display': 'block'});
+                        showOverlay_ = true;
+                    }
+                    else {
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }
+                }
+            });
+            $(document).on('drop dragleave', function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+                showOverlay_ = false;
+                setTimeout(function() {
+                    if(!showOverlay_) {
+                        $('#asset-drop-overlay').css({'display': 'none'});
+                    }
+                }, 100);
+            });
+            //allow asset drag from local to asset pane and highlight overlay for drop area in asset pane
+            $('#scratchpad-wrapper').bind({
+                drop: function (e) {
+                    e = e.originalEvent || e;
+                    var files = (e.files || e.dataTransfer.files);
+                    var dt = e.dataTransfer;
+                    if(!shell.notebook.model.read_only()) {
+                        RCloud.UI.upload_with_alerts(true, {files: files})
+                            .catch(function() {}); // we have special handling for upload errors
+                    }
+                    $('#asset-drop-overlay').css({'display': 'none'});
+                },
+                "dragenter dragover": function(e) {
+                    var dt = e.originalEvent.dataTransfer;
+                    if(dt.items.length === 1 && !shell.notebook.model.read_only())
+                        dt.dropEffect = 'copy';
+                }
+            });
+        }
         var scratchpad_editor = $("#scratchpad-editor");
         if (scratchpad_editor.length) {
             this.exists = true;
             setup_scratchpad(scratchpad_editor);
+            setup_asset_drop();
         }
         $("#new-asset > a").click(function() {
             // FIXME prompt, yuck. I know, I know.
@@ -4424,6 +4416,18 @@ RCloud.UI.scratchpad = {
     }
 };
 RCloud.UI.search = {
+    init: function() {
+        if(!rcloud.search)
+            $("#search-wrapper").text("Search engine not enabled on server");
+        $("#search-form").submit(function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var qry = $('#input-text-search').val();
+            $('#input-text-search').focus();
+            RCloud.UI.search.exec(qry);
+            return false;
+        });
+    },
     exec: function(query) {
         function summary(html) {
             $("#search-summary").show().html($("<h4 />").append(html));
@@ -4734,3 +4738,20 @@ RCloud.UI.upload_with_alerts = (function() {
 
     return upload_files;
 })();
+RCloud.UI.upload_frame = {
+    init: function() {
+        $("#file").change(function() {
+            $("#progress-bar").css("width", "0%");
+        });
+
+        $("#upload-submit").click(function() {
+            if($("#file")[0].files.length===0)
+                return;
+            var to_notebook = ($('#upload-to-notebook').is(':checked'));
+            RCloud.UI.upload_with_alerts(to_notebook)
+                .catch(function() {}); // we have special handling for upload errors
+        });
+
+    }
+};
+
