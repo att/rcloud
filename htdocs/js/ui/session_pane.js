@@ -23,7 +23,7 @@ RCloud.UI.session_pane = {
     error_dest: function() {
         return this.error_dest_;
     },
-    post_error: function(msg, dest) {
+    post_error: function(msg, dest, logged) { // post error to UI
         var errclass = 'session-error';
         if (typeof msg === 'string') {
             msg = ui_utils.string_error(msg);
@@ -33,20 +33,23 @@ RCloud.UI.session_pane = {
             throw new Error("post_error expects a string or a jquery div");
         msg.addClass(errclass);
         dest = dest || this.error_dest_;
-        dest.append(msg);
-        this.show_error_area();
-        ui_utils.on_next_tick(function() {
-            ui_utils.scroll_to_after($("#session-info"));
-        });
+        if(dest) { // if initialized, we can use the UI
+            dest.append(msg);
+            this.show_error_area();
+            ui_utils.on_next_tick(function() {
+                ui_utils.scroll_to_after($("#session-info"));
+            });
+        }
+        if(!logged)
+            console.log("pre-init post_error: " + msg);
     },
-    post_rejection: function(e) {
-        // print exceptions/rejections
+    post_rejection: function(e) { // print exception on stack and then post to UI
         var msg = "";
         // bluebird will print the message for Chrome/Opera but no other browser
         if(!window.chrome && e.message)
             msg += "Error: " + e.message + "\n";
         msg += e.stack;
         console.log(msg);
-        this.post_error(msg);
+        this.post_error(msg, undefined, true);
     }
 };
