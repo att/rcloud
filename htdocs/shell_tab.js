@@ -493,14 +493,6 @@ var shell = (function() {
                     .append($('<div class="col-md-12 col-sm-12"></div>')
                         .append($('<div class="modal-content" style="margin:2%;width: 95%;height: 90%;"></div>')
                             .append(header).append(body).append(footer)));
-
-                dialog
-                    .on('show.bs.modal', function() {
-                        $('#import-gists').val('');
-                    })
-                    .on('shown.bs.modal', function() {
-                        $('#import-source').focus().select();
-                    });
                 return dialog;
             }
             var dialog = $("#slide-show-notebooks-dialog");
