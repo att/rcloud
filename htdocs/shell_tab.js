@@ -444,6 +444,73 @@ var shell = (function() {
             }).then(function() {
                 RCloud.UI.command_prompt.focus();
             });
+        }, slide_show_notebooks: function() {
+            var desc = shell.notebook.controller.current_gist().description;
+            var files = shell.notebook.controller.current_gist().files;
+            var attributes = files["r_attributes"]["names"];
+            var cnt = 0;
+            var dialog;
+            var interval;
+            var elements= $('.r-result-div','#output');
+            executed_cells = [];
+            cell_cnt = 0;
+            for(var i=0 ; i < elements.length;i++) {
+                var output_cell = $(elements[i]).children();
+                if(output_cell.length > 1) {
+                    executed_cells[cell_cnt] = output_cell[1];
+                    cell_cnt++;
+                }
+            }
+            function do_show(delta) {
+                if(cnt < cell_cnt && cnt >= 0) {
+                    cnt = cnt + delta;
+                    $("#slide-show-body").empty();
+                    $("#slide-show-body").html($(executed_cells[cnt]).html());
+                }
+                else {
+                    cnt = 0;
+                    dialog.modal('hide');
+                }
+            }
+            function create_slide_show_notebook_dialog() {
+                var body = $('<div id="slide-show-body" class="container" style="border-radius:0px; margin:1%;width: 95%;height: 70%;overflow: auto"/>');
+
+                var cancel = $('<span class="btn">Cancel</span>')
+                    .on('click', function() { $(dialog).modal('hide'); });
+                var next = $('<span class="btn btn-primary">Next</span>')
+                    .on('click', function(e){do_show(1);});
+                var prev = $('<span class="btn btn-primary">Prev</span>')
+                    .on('click', function(e){do_show(-1);});
+                var footer = $('<div class="modal-footer" style="background: #363636"></div>')
+                    .append(cancel).append(prev).append(next);
+                var header = $(['<div class="modal-header" style="background: #2b81af;height: 14%">',
+                    '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>',
+                        '<div id="slide-desc" style="color: #ffffff; float: left; font-size: 24px">'+desc+'</div>',
+                    '<div id="slide-name" style="color: #ffffff;float: right;padding:20px"></div>',
+                    '<div id="slide-lang" style="color: #ffffff; float: right;padding:10px"></div>',
+                    '</div>'].join(''));
+                dialog = $('<div id="slide-show-notebooks-dialog" class="modal fade" style="border:1px solid white;"></div>')
+                    .append($('<div class="col-md-12 col-sm-12"></div>')
+                        .append($('<div class="modal-content" style="margin:2%;width: 95%;height: 90%;"></div>')
+                            .append(header).append(body).append(footer)));
+
+                dialog
+                    .on('show.bs.modal', function() {
+                        $('#import-gists').val('');
+                    })
+                    .on('shown.bs.modal', function() {
+                        $('#import-source').focus().select();
+                    });
+                return dialog;
+            }
+            var dialog = $("#slide-show-notebooks-dialog");
+            if(!dialog.length) {
+                dialog = create_slide_show_notebook_dialog();
+                $("body").append(dialog);
+            }
+            cnt = 0;
+            do_show(0);
+            dialog.modal({keyboard: true});
         }
     };
 
