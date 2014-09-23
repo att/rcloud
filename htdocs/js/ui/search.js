@@ -5,14 +5,16 @@ RCloud.UI.search = {
     init: function() {
         if(!rcloud.search)
             $("#search-wrapper").text("Search engine not enabled on server");
-        $("#search-form").submit(function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            var qry = $('#input-text-search').val();
-            $('#input-text-search').focus();
-            RCloud.UI.search.exec(qry);
-            return false;
-        });
+        else {
+            $("#search-form").submit(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var qry = $('#input-text-search').val();
+                $('#input-text-search').focus();
+                RCloud.UI.search.exec(qry);
+                return false;
+            });
+        }
     },
     panel_sizer: function(el) {
         var padding = RCloud.UI.collapsible_column.default_padder(el);
