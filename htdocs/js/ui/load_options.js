@@ -13,35 +13,10 @@ RCloud.UI.load_options = function() {
         RCloud.UI.search.init();
         RCloud.UI.upload_frame.init();
 
-        $("#collapse-search").data("panel-sizer", function(el) {
-            var padding = RCloud.UI.collapsible_column.default_padder(el);
-            var height = 24 + $('#search-summary').height() + $('#search-results').height();
-            height += 30; // there is only so deep you can dig
-            return {height: height, padding: padding};
-        });
-
-        $("#collapse-help").data("panel-sizer", function(el) {
-            if($('#help-body').css('display') === 'none')
-                return RCloud.UI.collapsible_column.default_sizer(el);
-            else return {
-                padding: RCloud.UI.collapsible_column.default_padder(el),
-                height: 9000
-            };
-        });
-
-        $("#collapse-assets").data("panel-sizer", function(el) {
-            return {
-                padding: RCloud.UI.collapsible_column.default_padder(el),
-                height: 9000
-            };
-        });
-
-        $("#collapse-file-upload").data("panel-sizer", function(el) {
-            var padding = RCloud.UI.collapsible_column.default_padder(el);
-            var height = 24 + $('#file-upload-controls').height() + $('#file-upload-results').height();
-            //height += 30; // there is only so deep you can dig
-            return {height: height, padding: padding};
-        });
+        $("#collapse-search").data("panel-sizer", RCloud.UI.search.panel_sizer);
+        $("#collapse-help").data("panel-sizer", RCloud.UI.help_frame.panel_sizer);
+        $("#collapse-assets").data("panel-sizer", RCloud.UI.scratchpad.panel_sizer);
+        $("#collapse-file-upload").data("panel-sizer", RCloud.UI.upload_frame.panel_sizer);
 
         $(".panel-collapse").collapse({toggle: false});
 

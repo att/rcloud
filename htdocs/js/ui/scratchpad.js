@@ -138,6 +138,12 @@ RCloud.UI.scratchpad = {
             }
         });
     },
+    panel_sizer: function(el) {
+        return {
+            padding: RCloud.UI.collapsible_column.default_padder(el),
+            height: 9000
+        };
+    },
     // FIXME this is completely backwards
     set_model: function(asset_model) {
         var that = this;

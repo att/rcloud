@@ -12,6 +12,11 @@ RCloud.UI.upload_frame = {
                 .catch(function() {}); // we have special handling for upload errors
         });
 
+    },
+    panel_sizer: function(el) {
+        var padding = RCloud.UI.collapsible_column.default_padder(el);
+        var height = 24 + $('#file-upload-controls').height() + $('#file-upload-results').height();
+        return {height: height, padding: padding};
     }
 };
 
