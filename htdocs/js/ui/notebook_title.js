@@ -16,9 +16,19 @@ RCloud.UI.notebook_title = (function() {
         range.setEnd(el.firstChild, text.length);
         return range;
     }
+    var fork = function(forked_gist_name) {
+        var is_mine = shell.notebook.controller.is_mine();
+        var gistname = shell.gistname();
+        var version = shell.version();
+        editor.fork_notebook(is_mine, gistname, version)
+            .then(function rename(v){
+                rename_current_notebook(forked_gist_name)
+            });
+    }
     var editable_opts = {
         change: rename_current_notebook,
         select: select,
+        fork:fork,
         validate: function(name) { return editor.validate_name(name); }
     };
 
