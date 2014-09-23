@@ -12,11 +12,14 @@ requirejs_config_obj = {
         laconic: ["jquery"],
         "jquery.cookies.2.2.0": ["jquery"],
         "jquery.scrollto": ["jquery"],
+        "jquery.whiny": ["jquery"],
         "bootstrap": ["jquery"],
         "../../shell_tab": ["rcloud_bundle", "../../editor_tab"],
         "../../editor_tab": ["rcloud_bundle", "laconic", "tree.jquery"],
         "rserve": ["underscore"],
-        "rcloud_bundle": ["ace", "jquery"]
+        "rcloud_bundle": ["ace", "jquery"
+                          ,"jquery.whiny" // enable/disable jquery.whiny here
+                         ]
     }
 };
 
