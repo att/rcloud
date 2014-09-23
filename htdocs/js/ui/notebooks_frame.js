@@ -11,5 +11,8 @@ RCloud.UI.notebooks_frame = {
                                           'style': 'display:none'},
                                          $.el.i({'class': 'icon-plus'}));
         return new_notebook_button;
+    },
+    heading_content_selector: function() {
+        return $("#new-notebook");
     }
 };

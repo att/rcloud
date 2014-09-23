@@ -146,6 +146,8 @@ RCloud.UI.panel_loader = (function() {
                         p.panel.init();
                     if(p.panel.panel_sizer)
                         $('#' + collapse_name(p.name)).data("panel-sizer",p.panel.panel_sizer);
+                    if(p.panel.heading_content_selector)
+                        $('#' + collapse_name(p.name)).data("heading-content-selector", p.panel.heading_content_selector());
                 }
                 var chosen = _.filter(panels, function(p) { return p.side === side && !p.skip; });
                 chosen.sort(function(a, b) { return a.sort - b.sort; });

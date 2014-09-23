@@ -3303,6 +3303,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 console.log("Error in vertical layout algo: filling " + expected + " pixels with " + got);
         },
         hide: function(persist, skip_calc) {
+            collapsibles().each(function() {
+                var heading_sel = $(this).data('heading-content-selector');
+                if(heading_sel)
+                    heading_sel.hide();
+            });
             // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
             $(sel_accordion + " > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
             $(sel_collapser + " i").removeClass("icon-minus").addClass("icon-plus");
@@ -3312,6 +3317,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), true);
         },
         show: function(persist, skip_calc) {
+            collapsibles().each(function() {
+                var heading_sel = $(this).data('heading-content-selector');
+                if(heading_sel)
+                    heading_sel.show();
+            });
             if(all_collapsed())
                 set_collapse($(collapsibles()[0]), false, true);
             collapsibles().each(function() {
@@ -3850,25 +3860,9 @@ RCloud.UI.init = function() {
         $(this).scrollLeft(0);
     });
 };
-RCloud.UI.left_panel = (function() {
-    var result = RCloud.UI.collapsible_column("#left-column",
-                                              "#accordion-left", "#left-pane-collapser");
-    var base_hide = result.hide.bind(result),
-        base_show = result.show.bind(result);
-
-    _.extend(result, {
-        hide: function(persist, calc) {
-            $("#new-notebook").hide();
-            base_hide(persist, calc);
-        },
-        show: function(persist, calc) {
-            $("#new-notebook").show();
-            base_show(persist);
-        }
-    });
-    return result;
-}());
-
+RCloud.UI.left_panel =
+    RCloud.UI.collapsible_column("#left-column",
+                                 "#accordion-left", "#left-pane-collapser");
 RCloud.UI.load_options = function() {
     RCloud.UI.panel_loader.init();
     return RCloud.UI.panel_loader.load().then(function() {
@@ -3979,6 +3973,9 @@ RCloud.UI.notebooks_frame = {
                                           'style': 'display:none'},
                                          $.el.i({'class': 'icon-plus'}));
         return new_notebook_button;
+    },
+    heading_content_selector: function() {
+        return $("#new-notebook");
     }
 };
 RCloud.UI.panel_loader = (function() {
@@ -4103,7 +4100,6 @@ RCloud.UI.panel_loader = (function() {
                     icon_class: 'icon-comments',
                     colwidth: 2,
                     sort: 300,
-                    skip: true,
                     panel: RCloud.UI.comments_frame
                 },
                 Session: {
@@ -4130,6 +4126,8 @@ RCloud.UI.panel_loader = (function() {
                         p.panel.init();
                     if(p.panel.panel_sizer)
                         $('#' + collapse_name(p.name)).data("panel-sizer",p.panel.panel_sizer);
+                    if(p.panel.heading_content_selector)
+                        $('#' + collapse_name(p.name)).data("heading-content-selector", p.panel.heading_content_selector());
                 }
                 var chosen = _.filter(panels, function(p) { return p.side === side && !p.skip; });
                 chosen.sort(function(a, b) { return a.sort - b.sort; });
@@ -4230,11 +4228,9 @@ RCloud.UI.allow_progress_modal = function() {
 };
 
 })();
-RCloud.UI.right_panel = (function() {
-    var result = RCloud.UI.collapsible_column("#right-column",
-                                              "#accordion-right", "#right-pane-collapser");
-    return result;
-}());
+RCloud.UI.right_panel =
+    RCloud.UI.collapsible_column("#right-column",
+                                 "#accordion-right", "#right-pane-collapser");
 RCloud.UI.scratchpad = {
     session: null,
     widget: null,

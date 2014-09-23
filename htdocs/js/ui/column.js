@@ -206,6 +206,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 console.log("Error in vertical layout algo: filling " + expected + " pixels with " + got);
         },
         hide: function(persist, skip_calc) {
+            collapsibles().each(function() {
+                var heading_sel = $(this).data('heading-content-selector');
+                if(heading_sel)
+                    heading_sel.hide();
+            });
             // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
             $(sel_accordion + " > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
             $(sel_collapser + " i").removeClass("icon-minus").addClass("icon-plus");
@@ -215,6 +220,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), true);
         },
         show: function(persist, skip_calc) {
+            collapsibles().each(function() {
+                var heading_sel = $(this).data('heading-content-selector');
+                if(heading_sel)
+                    heading_sel.show();
+            });
             if(all_collapsed())
                 set_collapse($(collapsibles()[0]), false, true);
             collapsibles().each(function() {
