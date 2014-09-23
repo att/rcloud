@@ -313,8 +313,6 @@ var shell = (function() {
                             editor.star_notebook(true, {notebook: notebook}).then(function() {
                                 editor.set_notebook_visibility(notebook.id, true);
                             });
-                        }).then(function(v){
-                            $("#notebook-file-upload")[0].value = null;
                         });
                     }
                     dialog.modal('hide');
@@ -356,6 +354,7 @@ var shell = (function() {
                 $("body").append(dialog);
                 dialog
                     .on('show.bs.modal', function() {
+                        $("#notebook-file-upload")[0].value = null;
                         notebook_status.text('');
                         notebook_status.hide();
                         notebook_desc_content.val('');
