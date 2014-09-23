@@ -37,86 +37,6 @@ RCloud.UI.init = function() {
     $('#import-notebook-file').click(function() {
         shell.import_notebook_file();
     });
-    $("#file").change(function() {
-        $("#progress-bar").css("width", "0%");
-    });
-    $("#upload-submit").click(function() {
-        if($("#file")[0].files.length===0)
-            return;
-        var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        RCloud.UI.upload_with_alerts(to_notebook)
-            .catch(function() {}); // we have special handling for upload errors
-    });
-    var showOverlay_;
-    //prevent drag in rest of the page except asset pane and enable overlay on asset pane
-    $(document).on('dragstart dragenter dragover', function (e) {
-        var dt = e.originalEvent.dataTransfer;
-        if(!dt)
-            return;
-        if (dt.types !== null &&
-                   (dt.types.indexOf ?
-                    dt.types.indexOf('Files') != -1 :
-                    dt.types.contains('application/x-moz-file'))) {
-            if (!shell.notebook.model.read_only()) {
-                e.stopPropagation();
-                e.preventDefault();
-                $('#asset-drop-overlay').css({'display': 'block'});
-                showOverlay_ = true;
-            }
-            else {
-                e.stopPropagation();
-                e.preventDefault();
-            }
-        }
-    });
-    $(document).on('drop dragleave', function (e) {
-        e.stopPropagation();
-        e.preventDefault();
-        showOverlay_ = false;
-        setTimeout(function() {
-            if(!showOverlay_) {
-                $('#asset-drop-overlay').css({'display': 'none'});
-            }
-        }, 100);
-    });
-    //allow asset drag from local to asset pane and highlight overlay for drop area in asset pane
-    $('#scratchpad-wrapper').bind({
-        drop: function (e) {
-            e = e.originalEvent || e;
-            var files = (e.files || e.dataTransfer.files);
-            var dt = e.dataTransfer;
-            if(!shell.notebook.model.read_only()) {
-                RCloud.UI.upload_with_alerts(true, {files: files})
-                    .catch(function() {}); // we have special handling for upload errors
-            }
-            $('#asset-drop-overlay').css({'display': 'none'});
-        },
-        "dragenter dragover": function(e) {
-            var dt = e.originalEvent.dataTransfer;
-            if(dt.items.length === 1 && !shell.notebook.model.read_only())
-                dt.dropEffect = 'copy';
-        }
-    });
-
-    var non_notebook_panel_height = 246;
-    $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
-
-    $("#search-form").submit(function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var qry = $('#input-text-search').val();
-        $('#input-text-search').focus();
-        RCloud.UI.search.exec(qry);
-        return false;
-    });
-    $('#help-form').submit(function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var topic = $('#input-text-help').val();
-        $('#input-text-help').blur();
-        rcloud.help(topic);
-        return false;
-    });
 
     $("#insert-new-cell").click(function() {
         var language = $("#insert-cell-language option:selected").text();
@@ -129,24 +49,6 @@ RCloud.UI.init = function() {
         // let the server-side script handle this so it can
         // also revoke all tokens
         window.location.href = '/logout.R';
-    });
-
-    $("#comment-submit").click(function() {
-        if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
-            editor.post_comment($("#comment-entry-body").val());
-        }
-        return false;
-    });
-
-    $("#comment-entry-body").keydown(function (e) {
-        if ((e.keyCode == 10 || e.keyCode == 13 || e.keyCode == 115 || e.keyCode == 19) &&
-            (e.ctrlKey || e.metaKey)) {
-            if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
-                editor.post_comment($("#comment-entry-body").val());
-            }
-            return false;
-        }
-        return undefined;
     });
 
     $("#run-notebook").click(shell.run_notebook);
