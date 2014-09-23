@@ -1,4 +1,5 @@
 #!/bin/sh
+set +x
 
 if [ ! -e rcloud.support/DESCRIPTION ]; then
     if [ -n "$ROOT" ]; then
@@ -35,24 +36,29 @@ fi
 
 export RCS_SILENCE_LOADCHECK=TRUE
 
+build_package()
+{
+    R CMD build $1 && R CMD INSTALL `sed -n 's/Package: *//p' $1/DESCRIPTION`_`sed -n 's/Version: *//p' $1/DESCRIPTION`.tar.gz
+}
+
 # build internal packages (not in git) & rcloud.packages
 for dir in internal rcloud.packages packages; do
     if [ -e $dir ]; then
         for pkg in `ls $dir/*/DESCRIPTION 2>/dev/null | sed -e s:$dir/:: -e 's:/DESCRIPTION::'`; do
             echo $pkg
-	    (cd $dir  && R CMD build $pkg && R CMD INSTALL `sed -n 's/Package: *//p' $pkg/DESCRIPTION`_`sed -n 's/Version: *//p' $pkg/DESCRIPTION`.tar.gz)
+	    (cd $dir && build_package $pkg) || (echo;echo;echo; echo package $pkg FAILED to build!;echo;echo)
         done
     fi
 done
 
-R CMD build rcloud.client && R CMD INSTALL rcloud.client_`sed -n 's/Version: *//p' rcloud.client/DESCRIPTION`.tar.gz || exit 1
-R CMD build rcloud.support && R CMD INSTALL rcloud.support_`sed -n 's/Version: *//p' rcloud.support/DESCRIPTION`.tar.gz || exit 1
+build_package rcloud.client || exit 1
+build_package rcloud.support || exit 1
 
 if [ -e ".git" ]; then
 # update branch/revision info
     REV=`( git rev-list --abbrev-commit -n 1 HEAD )`
     BRANCH=`( git status | sed -n 's:.*On branch ::p' | sed 's:/:-:g' )`
-    
+
     if [ -n "$REV" ]; then
 	echo "$BRANCH" > REVISION
 	echo "$REV" >> REVISION
