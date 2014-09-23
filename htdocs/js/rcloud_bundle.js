@@ -4057,6 +4057,7 @@ RCloud.UI.panel_loader = (function() {
                     icon_class: 'icon-folder-open',
                     colwidth: 3,
                     greedy: true,
+                    sort: 100,
                     panel: RCloud.UI.notebooks_frame
                 },
                 Search: {
@@ -4065,6 +4066,7 @@ RCloud.UI.panel_loader = (function() {
                     title: 'Search',
                     icon_class: 'icon-search',
                     colwidth: 4,
+                    sort: 200,
                     panel: RCloud.UI.search
                 },
                 Help: {
@@ -4073,6 +4075,7 @@ RCloud.UI.panel_loader = (function() {
                     title: 'Help',
                     icon_class: 'icon-question',
                     colwidth: 5,
+                    sort: 300,
                     panel: RCloud.UI.help_frame
                 },
                 Assets: {
@@ -4081,6 +4084,7 @@ RCloud.UI.panel_loader = (function() {
                     title: 'Assets',
                     icon_class: 'icon-copy',
                     colwidth: 4,
+                    sort: 100,
                     panel: RCloud.UI.scratchpad
                 },
                 'File Upload': {
@@ -4089,6 +4093,7 @@ RCloud.UI.panel_loader = (function() {
                     title: 'File Upload',
                     icon_class: 'icon-upload',
                     colwidth: 2,
+                    sort: 200,
                     panel: RCloud.UI.upload_frame
                 },
                 Comments: {
@@ -4097,6 +4102,8 @@ RCloud.UI.panel_loader = (function() {
                     title: 'Comments',
                     icon_class: 'icon-comments',
                     colwidth: 2,
+                    sort: 300,
+                    skip: true,
                     panel: RCloud.UI.comments_frame
                 },
                 Session: {
@@ -4105,6 +4112,7 @@ RCloud.UI.panel_loader = (function() {
                     title: 'Session',
                     icon_class: 'icon-info',
                     colwidth: 3,
+                    sort: 400,
                     panel: RCloud.UI.session_pane
                 }
             });
@@ -4115,20 +4123,22 @@ RCloud.UI.panel_loader = (function() {
             return $($('#' + id).html())[0];
         },
         load: function() {
-            function do_panel(p) {
-                add_panel(p);
-                if(p.panel.init)
-                    p.panel.init();
-                if(p.panel.panel_sizer)
-                    $('#' + collapse_name(p.name)).data("panel-sizer",p.panel.panel_sizer);
+            function do_side(panels, side) {
+                function do_panel(p) {
+                    add_panel(p);
+                    if(p.panel.init)
+                        p.panel.init();
+                    if(p.panel.panel_sizer)
+                        $('#' + collapse_name(p.name)).data("panel-sizer",p.panel.panel_sizer);
+                }
+                var chosen = _.filter(panels, function(p) { return p.side === side && !p.skip; });
+                chosen.sort(function(a, b) { return a.sort - b.sort; });
+                chosen.forEach(do_panel);
+                add_filler_panel(side);
             }
-            var lefts = _.filter(this.panels, function(p) { return p.side === 'left'; });
-            lefts.forEach(do_panel);
-            add_filler_panel('left');
 
-            var rights = _.filter(this.panels, function(p) { return p.side === 'right'; });
-            rights.forEach(do_panel);
-            add_filler_panel('right');
+            do_side(this.panels, 'left');
+            do_side(this.panels, 'right');
 
             return Promise.cast(undefined); // until we are loading opts here
         }
@@ -4440,7 +4450,8 @@ RCloud.UI.scratchpad = {
         this.session.setMode(new mode(false, this.session.doc, this.session));
     }, set_readonly: function(readonly) {
         if(!shell.is_view_mode()) {
-            ui_utils.set_ace_readonly(this.widget, readonly);
+            if(this.widget)
+                ui_utils.set_ace_readonly(this.widget, readonly);
             if(readonly)
                 $('#new-asset').hide();
             else
@@ -4469,14 +4480,16 @@ RCloud.UI.search = {
     init: function() {
         if(!rcloud.search)
             $("#search-wrapper").text("Search engine not enabled on server");
-        $("#search-form").submit(function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            var qry = $('#input-text-search').val();
-            $('#input-text-search').focus();
-            RCloud.UI.search.exec(qry);
-            return false;
-        });
+        else {
+            $("#search-form").submit(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var qry = $('#input-text-search').val();
+                $('#input-text-search').focus();
+                RCloud.UI.search.exec(qry);
+                return false;
+            });
+        }
     },
     panel_sizer: function(el) {
         var padding = RCloud.UI.collapsible_column.default_padder(el);
