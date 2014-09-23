@@ -33,7 +33,7 @@ rcloud_bundle.js: \
 	ui/help_frame.js \
 	ui/init.js \
 	ui/left_panel.js \
-	ui/load.js \
+	ui/load_options.js \
 	ui/load_panels.js \
 	ui/middle_column.js \
 	ui/notebook_title.js \

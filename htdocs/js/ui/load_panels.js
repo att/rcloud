@@ -103,4 +103,6 @@ RCloud.UI.load_panels = function() {
               'icon-info', null, 3, false, session_info_body);
 
     add_filler_panel('right');
+
+    return Promise.cast(undefined); // until we are loading opts here
 };

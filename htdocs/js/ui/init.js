@@ -98,13 +98,6 @@ RCloud.UI.init = function() {
         }
     });
 
-    RCloud.UI.load_panels();
-
-    RCloud.UI.left_panel.init();
-    RCloud.UI.middle_column.init();
-    RCloud.UI.right_panel.init();
-    RCloud.UI.session_pane.init();
-
     var non_notebook_panel_height = 246;
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
 
@@ -123,37 +116,6 @@ RCloud.UI.init = function() {
         $('#input-text-help').blur();
         rcloud.help(topic);
         return false;
-    });
-
-    $("#collapse-search").data("panel-sizer", function(el) {
-        var padding = RCloud.UI.collapsible_column.default_padder(el);
-        var height = 24 + $('#search-summary').height() + $('#search-results').height();
-        height += 30; // there is only so deep you can dig
-        return {height: height, padding: padding};
-    });
-
-    // hmm maybe greedy isn't greedy enough
-    $("#collapse-help").data("panel-sizer", function(el) {
-        if($('#help-body').css('display') === 'none')
-            return RCloud.UI.collapsible_column.default_sizer(el);
-        else return {
-            padding: RCloud.UI.collapsible_column.default_padder(el),
-            height: 9000
-        };
-    });
-
-    $("#collapse-assets").data("panel-sizer", function(el) {
-        return {
-            padding: RCloud.UI.collapsible_column.default_padder(el),
-            height: 9000
-        };
-    });
-
-    $("#collapse-file-upload").data("panel-sizer", function(el) {
-        var padding = RCloud.UI.collapsible_column.default_padder(el);
-        var height = 24 + $('#file-upload-controls').height() + $('#file-upload-results').height();
-        //height += 30; // there is only so deep you can dig
-        return {height: height, padding: padding};
     });
 
     $("#insert-new-cell").click(function() {
@@ -188,10 +150,6 @@ RCloud.UI.init = function() {
     });
 
     $("#run-notebook").click(shell.run_notebook);
-
-    RCloud.UI.scratchpad.init();
-    RCloud.UI.command_prompt.init();
-    RCloud.UI.help_frame.init();
 
     //////////////////////////////////////////////////////////////////////////
     // allow reordering cells by dragging them
@@ -277,8 +235,6 @@ RCloud.UI.init = function() {
         shell.save_notebook();
         return true;
     });
-
-    $(".panel-collapse").collapse({toggle: false});
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things

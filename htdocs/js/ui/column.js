@@ -90,13 +90,13 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                     that.hide(true);
             });
         },
-        load: function(promise) { // takes: promise that everything else has loaded
+        load_options: function() {
             var that = this;
             var sels = $.makeArray(collapsibles()).map(function(el) { return '#' + el.id; });
             sels.push(sel_accordion);
             var opts = sels.map(sel_to_opt);
-            Promise.all([promise, rcloud.config.get_user_option(opts)])
-                .spread(function(_, settings) {
+            return rcloud.config.get_user_option(opts)
+                .then(function(settings) {
                     var hide_column;
                     for(var k in settings) {
                         var id = opt_to_sel(k);

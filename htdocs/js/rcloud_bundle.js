@@ -3180,7 +3180,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 return false;
             });
             collapsibles().on("size-changed", function() {
-                that.resize();
+                //that.resize();
             });
             $(sel_collapser).click(function() {
                 if (collapsed_)
@@ -3189,13 +3189,13 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                     that.hide(true);
             });
         },
-        load: function(promise) { // takes: promise that everything else has loaded
+        load_options: function() {
             var that = this;
             var sels = $.makeArray(collapsibles()).map(function(el) { return '#' + el.id; });
             sels.push(sel_accordion);
             var opts = sels.map(sel_to_opt);
-            Promise.all([promise, rcloud.config.get_user_option(opts)])
-                .spread(function(_, settings) {
+            return rcloud.config.get_user_option(opts)
+                .then(function(settings) {
                     var hide_column;
                     for(var k in settings) {
                         var id = opt_to_sel(k);
@@ -3205,13 +3205,15 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                             set_collapse($(id), settings[k], false);
                     }
                     // do the column last because it will affect all its children
-                    if(typeof hide_column === "boolean") {
-                        if(hide_column)
-                            that.hide(false);
-                        else
-                            that.show(false);
+                    var save_setting = false;  // make sure we have a setting
+                    if(hide_column === undefined) {
+                        hide_column = false;
+                        save_setting = true;
                     }
-                    else that.show(true); // make sure we have a setting
+                    if(hide_column)
+                        that.hide(save_setting);
+                    else
+                        that.show(save_setting);
                 });
         },
         collapse: function(target, whether, persist) {
@@ -3624,6 +3626,8 @@ RCloud.UI.help_frame = {
         // i can't be bothered to figure out why the iframe causes onload to be triggered early
         // if this code is directly in edit.html
         $("#help-body").append('<iframe id="help-frame" frameborder="0" />');
+        if(!rcloud.search)
+            $("#search-wrapper").text("Search engine not enabled on server");
     },
     show: function() {
         $("#help-body").css('display', 'table-row');
@@ -3741,13 +3745,6 @@ RCloud.UI.init = function() {
         }
     });
 
-    RCloud.UI.load_panels();
-
-    RCloud.UI.left_panel.init();
-    RCloud.UI.middle_column.init();
-    RCloud.UI.right_panel.init();
-    RCloud.UI.session_pane.init();
-
     var non_notebook_panel_height = 246;
     $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
 
@@ -3766,37 +3763,6 @@ RCloud.UI.init = function() {
         $('#input-text-help').blur();
         rcloud.help(topic);
         return false;
-    });
-
-    $("#collapse-search").data("panel-sizer", function(el) {
-        var padding = RCloud.UI.collapsible_column.default_padder(el);
-        var height = 24 + $('#search-summary').height() + $('#search-results').height();
-        height += 30; // there is only so deep you can dig
-        return {height: height, padding: padding};
-    });
-
-    // hmm maybe greedy isn't greedy enough
-    $("#collapse-help").data("panel-sizer", function(el) {
-        if($('#help-body').css('display') === 'none')
-            return RCloud.UI.collapsible_column.default_sizer(el);
-        else return {
-            padding: RCloud.UI.collapsible_column.default_padder(el),
-            height: 9000
-        };
-    });
-
-    $("#collapse-assets").data("panel-sizer", function(el) {
-        return {
-            padding: RCloud.UI.collapsible_column.default_padder(el),
-            height: 9000
-        };
-    });
-
-    $("#collapse-file-upload").data("panel-sizer", function(el) {
-        var padding = RCloud.UI.collapsible_column.default_padder(el);
-        var height = 24 + $('#file-upload-controls').height() + $('#file-upload-results').height();
-        //height += 30; // there is only so deep you can dig
-        return {height: height, padding: padding};
     });
 
     $("#insert-new-cell").click(function() {
@@ -3831,10 +3797,6 @@ RCloud.UI.init = function() {
     });
 
     $("#run-notebook").click(shell.run_notebook);
-
-    RCloud.UI.scratchpad.init();
-    RCloud.UI.command_prompt.init();
-    RCloud.UI.help_frame.init();
 
     //////////////////////////////////////////////////////////////////////////
     // allow reordering cells by dragging them
@@ -3961,9 +3923,53 @@ RCloud.UI.left_panel = (function() {
     return result;
 }());
 
-RCloud.UI.load = function(promise) {
-    RCloud.UI.left_panel.load(promise);
-    RCloud.UI.right_panel.load(promise);
+RCloud.UI.load_options = function() {
+    return RCloud.UI.load_panels().then(function() {
+        RCloud.UI.left_panel.init();
+        RCloud.UI.middle_column.init();
+        RCloud.UI.right_panel.init();
+
+        RCloud.UI.session_pane.init();
+        RCloud.UI.scratchpad.init();
+        RCloud.UI.command_prompt.init();
+        RCloud.UI.help_frame.init();
+
+    $("#collapse-search").data("panel-sizer", function(el) {
+        var padding = RCloud.UI.collapsible_column.default_padder(el);
+        var height = 24 + $('#search-summary').height() + $('#search-results').height();
+        height += 30; // there is only so deep you can dig
+        return {height: height, padding: padding};
+    });
+
+    $("#collapse-help").data("panel-sizer", function(el) {
+        if($('#help-body').css('display') === 'none')
+            return RCloud.UI.collapsible_column.default_sizer(el);
+        else return {
+            padding: RCloud.UI.collapsible_column.default_padder(el),
+            height: 9000
+        };
+    });
+
+    $("#collapse-assets").data("panel-sizer", function(el) {
+        return {
+            padding: RCloud.UI.collapsible_column.default_padder(el),
+            height: 9000
+        };
+    });
+
+    $("#collapse-file-upload").data("panel-sizer", function(el) {
+        var padding = RCloud.UI.collapsible_column.default_padder(el);
+        var height = 24 + $('#file-upload-controls').height() + $('#file-upload-results').height();
+        //height += 30; // there is only so deep you can dig
+        return {height: height, padding: padding};
+    });
+
+    $(".panel-collapse").collapse({toggle: false});
+
+        return Promise.all([RCloud.UI.left_panel.load_options(),
+                           RCloud.UI.right_panel.load_options()]);
+    }).then(function() {
+    });
 };
 RCloud.UI.load_panels = function() {
     function add_panel(side, name, title, icon_class, heading_content,
@@ -3974,7 +3980,6 @@ RCloud.UI.load_panels = function() {
                                 'data-toggle': 'collapse',
                                 'data-parent': '#' + parent_id, // note: left was broken '#accordion'
                                 'data-target': '#' + collapse_id};
-        var heading;
         var title_span = $.el.span({'class': 'title-offset'},
                                    title),
             icon = $.el.i({'class': icon_class}),
@@ -3982,6 +3987,7 @@ RCloud.UI.load_panels = function() {
                                    'href': '#' + collapse_id},
                                   icon, '\u00a0', title_span);
 
+        var heading;
         if(side==='left') {
             heading = $.el.div(heading_attrs,
                                heading_link,
@@ -3993,6 +3999,7 @@ RCloud.UI.load_panels = function() {
                                heading_link);
         }
         else throw new Error('Unknown panel side ' + side);
+
         var collapse_attrs = {'id': collapse_id,
                              'class': 'panel-collapse collapse',
                              'data-colwidth': colwidth};
@@ -4069,6 +4076,8 @@ RCloud.UI.load_panels = function() {
               'icon-info', null, 3, false, session_info_body);
 
     add_filler_panel('right');
+
+    return Promise.cast(undefined); // until we are loading opts here
 };
 RCloud.UI.middle_column = (function() {
     var result = RCloud.UI.column("#middle-column, #prompt-div");
@@ -4550,7 +4559,7 @@ RCloud.UI.session_pane = {
     error_dest: function() {
         return this.error_dest_;
     },
-    post_error: function(msg, dest) {
+    post_error: function(msg, dest, logged) { // post error to UI
         var errclass = 'session-error';
         if (typeof msg === 'string') {
             msg = ui_utils.string_error(msg);
@@ -4560,21 +4569,24 @@ RCloud.UI.session_pane = {
             throw new Error("post_error expects a string or a jquery div");
         msg.addClass(errclass);
         dest = dest || this.error_dest_;
-        dest.append(msg);
-        this.show_error_area();
-        ui_utils.on_next_tick(function() {
-            ui_utils.scroll_to_after($("#session-info"));
-        });
+        if(dest) { // if initialized, we can use the UI
+            dest.append(msg);
+            this.show_error_area();
+            ui_utils.on_next_tick(function() {
+                ui_utils.scroll_to_after($("#session-info"));
+            });
+        }
+        if(!logged)
+            console.log("pre-init post_error: " + msg);
     },
-    post_rejection: function(e) {
-        // print exceptions/rejections
+    post_rejection: function(e) { // print exception on stack and then post to UI
         var msg = "";
         // bluebird will print the message for Chrome/Opera but no other browser
         if(!window.chrome && e.message)
             msg += "Error: " + e.message + "\n";
         msg += e.stack;
         console.log(msg);
-        this.post_error(msg);
+        this.post_error(msg, undefined, true);
     }
 };
 RCloud.UI.share_button = {
