@@ -345,8 +345,14 @@ rcloud.is.notebook.published <- function(id) {
   !is.null(rcs.get(rcs.key(".notebook", id, "public")))
 }
 
-rcloud.is.notebook.visible <- function(id)
-  rcs.get(rcs.key(".notebook", id, "visible"))
+rcloud.is.notebook.visible <- function(id) {
+  visibility <- rcs.get(rcs.key(".notebook", id, "visible"))
+  if(is.null(visibility) | length(visibility) == 0) {
+    FALSE
+  } else {
+    TRUE
+  }
+}
 
 rcloud.set.notebook.visibility <- function(id, value) {
   if(notebook.is.mine(id)) {
