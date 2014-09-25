@@ -918,9 +918,9 @@ pre > .vt100 {
 }
 
 .btn-default-ext {
-    color: #333333;
-    background-color: #ffffff;
-    border-color: #cccccc;
+    color: #ffffff;
+    background-color: #428bca;
+    border-color: #357ebd;
     width: 33px;
     height: 24px;
 }
@@ -946,9 +946,9 @@ pre > .vt100 {
 .btn-default-ext:active,
 .btn-default-ext.active,
 .open .dropdown-toggle.btn-default-ext {
-    color: #333333;
-    background-color: #ebebeb;
-    border-color: #adadad;
+    color: #ffffff;
+    background-color: #3276b1;
+    border-color: #285e8e;
 }
 
 .btn-default-ext:active,
