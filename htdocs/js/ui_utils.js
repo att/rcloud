@@ -283,12 +283,24 @@ ui_utils.editable = function(elem$, command) {
         return elem$.data('__editable');
     }
     function encode(s) {
+        if(command.allow_multiline) {
+            s = s.replace(/\n/g, "<br/>");
+        }
         return s.replace(/  /g, ' \xa0'); // replace every space with nbsp
     }
     function decode(s) {
+        if(command.allow_multiline) {
+            s = s.replace(/<br>/g, "\n");
+        }
         return s.replace(/\xa0/g,' '); // replace nbsp's with spaces
     }
-
+    function set_content_type(is_multiline,content) {
+        if(is_multiline) {
+            elem$.html(content);
+        } else {
+            elem$.text(content);
+        }
+    }
     var old_opts = options(),
         new_opts = old_opts;
     if(_.isObject(command)) {
@@ -301,6 +313,7 @@ ui_utils.editable = function(elem$, command) {
                 allow_edit: true,
                 inactive_text: elem$.text(),
                 active_text: elem$.text(),
+                allow_multiline: false,
                 select: function(el) {
                     var range = document.createRange();
                     range.selectNodeContents(el);
@@ -346,7 +359,7 @@ ui_utils.editable = function(elem$, command) {
         action = 'freeze';
 
     if(new_opts)
-        elem$.text(encode(options().__active ? new_opts.active_text : new_opts.inactive_text));
+        set_content_type(command.allow_multiline,encode(options().__active ? new_opts.active_text : new_opts.inactive_text));
 
     switch(action) {
     case 'freeze':
@@ -361,12 +374,12 @@ ui_utils.editable = function(elem$, command) {
         elem$.focus(function() {
             if(!options().__active) {
                 options().__active = true;
-                elem$.text(encode(options().active_text));
+                set_content_type(command.allow_multiline,encode(options().active_text));
                 window.setTimeout(function() {
                     selectRange(options().select(elem$[0]));
                     elem$.off('blur');
                     elem$.blur(function() {
-                        elem$.text(encode(options().inactive_text));
+                        set_content_type(command.allow_multiline,encode(options().inactive_text));
                         options().__active = false;
                     }); // click-off cancels
                 }, 10);
@@ -377,7 +390,8 @@ ui_utils.editable = function(elem$, command) {
             // allow default action but don't bubble (causing eroneous reselection in notebook tree)
         });
         elem$.keydown(function(e) {
-            if(e.keyCode === 13) {
+            var entr_key = (e.keyCode === 13);
+            if((command.allow_multiline && (entr_key && (e.ctrlKey || e.metaKey))) || (entr_key && !command.allow_multiline)) {
                 e.preventDefault();
                 var result = elem$.text();
                 result = decode(result);
@@ -386,11 +400,12 @@ ui_utils.editable = function(elem$, command) {
                     elem$.off('blur'); // don't cancel!
                     elem$.blur();
                     options().change(result);
+                } else {
+                    return false; // don't let CR through!
                 }
-                else return false; // don't let CR through!
-            }
-            else if(e.keyCode === 27)
+            } else if(e.keyCode === 27) {
                 elem$.blur(); // and cancel
+            }
             return true;
         });
         break;
