@@ -32,16 +32,18 @@ rcloud.exec.python <- function(cmd)
     # See to.chunk in session.python.eval
     msg <- e$`message`
 
-    # In addition, and this is a gigantic kludge, for some reason
-    # the exception message comes back with "Python exception: <type 'exceptions.Exception'> "
-    # appended to it. So we test for that prefix, bail if the prefix is not there,
-    # and trim it away to get the JSON payload.
-    prefix <- substr(msg, 1, 48)
-    if (prefix != "Python exception: <type 'exceptions.Exception'> ") {
-      stop("Internal Error: python exception was not returned as expected")
-    }
-    list(c(output_type="pyexception",
-           text=paste(fromJSON(substr(msg, 49, nchar(msg)))$traceback, collapse='\n')))
+    # SSI - moving this logic to python module (we have better handle there)
+    # # In addition, and this is a gigantic kludge, for some reason
+    # # the exception message comes back with "Python exception: <type 'exceptions.Exception'> "
+    # # appended to it. So we test for that prefix, bail if the prefix is not there,
+    # # and trim it away to get the JSON payload.
+    # prefix <- substr(msg, 1, 48)
+    # if (prefix != "Python exception: <type 'exceptions.Exception'> ") {
+    #   stop("Internal Error: python exception was not returned as expected")
+    # }
+    list(c(output_type="pyerr", html=msg, collapse='\n'))
+    # list(c(output_type="pyexception",
+    #        text=paste(fromJSON(substr(msg, 49, nchar(msg)))$traceback, collapse='\n')))
   })
 }
 
