@@ -8,7 +8,7 @@ list(paste0(
     <link rel="stylesheet" type="text/css" href="css/jqtree.css"/>
     <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
     <link rel="stylesheet" type="text/css" href="css/rmarkdown.css"/>
-    <link rel="stylesheet" type="text/css" href="css/main.css"/>
+    <link rel="stylesheet" type="text/css" href="css/edit.css"/>
     <link rel="stylesheet" type="text/css" href="css/dc.css"/>
   </head>
   <body>
