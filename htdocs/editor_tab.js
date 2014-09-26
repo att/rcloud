@@ -557,12 +557,16 @@ var editor = function () {
                 if(debug_colors)
                     dat.color = color;
             }
-            function add_hist_node(hist, insf, color) {
+            function add_hist_node(hist, insf, color, i) {
                 var hdat = _.clone(node);
                 var sha = hist.version.substring(0, 10);
+                var d=hist.committed_at;
+                if(i+1 < history.length) {
+                    d = get_date_diff(hist.committed_at, history[i + 1].committed_at);
+                }
                 hdat.label = sha;
                 hdat.version = hist.version;
-                hdat.last_commit = hist.committed_at;
+                hdat.last_commit = (d ? d : 'none');
                 hdat.id = node.id + '/' + hdat.version;
                 do_color(hdat, color);
                 var nn = insf(hdat);
@@ -589,7 +593,7 @@ var editor = function () {
                 insf = function(dat) { return $tree_.tree('appendNode', dat, node); };
             }
             for(var i=0; i<nins; ++i)
-                add_hist_node(history[i], insf, 'green');
+                add_hist_node(history[i], insf, 'green',i);
 
             var count = curr_count();
             if(count < nshow) { // top up
@@ -598,7 +602,7 @@ var editor = function () {
                 else
                     insf = function(dat) { return $tree_.tree('appendNode', dat, node); };
                 for(i=count; i<nshow; ++i)
-                    add_hist_node(history[i], insf, 'mediumpurple');
+                    add_hist_node(history[i], insf, 'mediumpurple',i);
             }
             else if(count > nshow) // trim any excess
                 for(i=count-1; i>=nshow; --i)
@@ -613,7 +617,8 @@ var editor = function () {
                 if(nshow < history.length) {
                     var data = {
                         label: '...',
-                        id: 'showmore'
+                        id: 'showmore',
+                        last_commit : history[history.length-count].committed_at
                     };
                     $tree_.tree('appendNode', data, node);
                 }
@@ -837,7 +842,24 @@ var editor = function () {
         if(diff < 24*60*60*1000)
             return date.getHours() + ':' + pad(date.getMinutes());
         else
-            return (date.getMonth()+1) + '/' + date.getDate();
+            return (date.getMonth()+1) + '/' + date.getDate() + ' ' + date.getHours() + ':' + pad(date.getMinutes());
+    }
+
+    function get_date_diff(d1,d2) {
+        function pad(n) { return n<10 ? '0'+n : n; }
+        d1 = new Date(d1);
+        d2 = new Date(d2);
+        var diff = d1 - d2;
+        if(diff <= 60*1000 && d1.getHours() === d2.getHours() && d1.getMinutes() === d2.getMinutes())
+            return null;
+        else if(diff < 24*60*60*1000 && d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth()) {
+            var d = new Date(Date.now());
+            d1.setMonth(d.getMonth());
+            d1.setDate(d.getDate());
+            return d1;
+        }
+        else
+            return d1;
     }
 
     function populate_comments(comments) {
