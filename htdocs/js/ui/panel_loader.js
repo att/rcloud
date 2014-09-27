@@ -1,4 +1,6 @@
 RCloud.UI.panel_loader = (function() {
+    var panels_ = {};
+
     function collapse_name(name) {
         return 'collapse-' + name;
     }
@@ -63,10 +65,12 @@ RCloud.UI.panel_loader = (function() {
     }
 
     return {
-        panels: {},
+        add: function(P) {
+            _.extend(panels_, P);
+        },
         init: function() {
             // built-in panels
-            _.extend(this.panels, {
+            this.add({
                 Notebooks: {
                     side: 'left',
                     name: 'notebook-tree',
@@ -149,14 +153,14 @@ RCloud.UI.panel_loader = (function() {
                     if(p.panel.heading_content_selector)
                         $('#' + collapse_name(p.name)).data("heading-content-selector", p.panel.heading_content_selector());
                 }
-                var chosen = _.filter(panels, function(p) { return p.side === side && !p.skip; });
+                var chosen = _.filter(panels, function(p) { return p.side === side; });
                 chosen.sort(function(a, b) { return a.sort - b.sort; });
                 chosen.forEach(do_panel);
                 add_filler_panel(side);
             }
 
-            do_side(this.panels, 'left');
-            do_side(this.panels, 'right');
+            do_side(panels_, 'left');
+            do_side(panels_, 'right');
 
             return Promise.cast(undefined); // until we are loading opts here
         }
