@@ -16,13 +16,11 @@
   `RCloud.upload_assets`, which return promises instead of using a callback,
   take a `react` struct for progress messages and overwrite confirmation.
 
-
-* Delete and edit comments
-
-* CSS highlighting and syntax
-
 * Disabled backspace as a shortcut to the back button to prevent some accidental
   navigation away from RCloud
+
+* MathJax is installed directly into the htdocs/ directly, to speed startup
+  and make RCloud easier to install in private intranets.
 
 * The notebook store is now abstrated through the `gist` package,
   allowing arbitrary back-ends. The traditional GitHub Gist backend is
@@ -41,6 +39,28 @@
    will call the notebook with `.path.info` set to `/foo/bar`. Note
    that the `.self` part distinguishes asset lookup from a path info
    call.
+
+* Actions are logged on the server side using Rserve's `ulog`.
+
+* Delete and edit comments.
+
+* Newlines are displayed properly in comments.
+
+* Assets without filename extensions are allowed.
+
+* CSS highlighting and syntax
+
+* Insert cell button inserts a cell of the same language as the cell
+  below it.
+
+* Clear error for attempting to replace an asset by renaming another
+  one.
+
+* Improved, more consistent control styles.
+
+* Date and time of notebook versions are shown in a minimal but more
+  informative format, displaying only the parts that are different
+  from the previous version.
 
 
 ## RCloud 1.1.2
