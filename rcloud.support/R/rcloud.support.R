@@ -233,13 +233,13 @@ update.solr <- function(notebook, starcount){
   }
 }
 
-rcloud.search <-function(query) {
+rcloud.search <-function(query,sortby,orderby) {
   url <- getConf("solr.url")
   if (is.null(url)) stop("solr is not enabled")
 
   ## FIXME: shouldn't we URL-encode the query?!?
   q <- gsub("%20","+",query)
-  solr.url <- paste0(url,"/select?q=",q,"&start=0&rows=1000&wt=json&indent=true&fl=description,id,user,updated_at,starcount&hl=true&hl.fl=content,comments&hl.fragsize=0&hl.maxAnalyzedChars=-1")
+  solr.url <- paste0(url,"/select?q=",q,"&start=0&rows=1000&wt=json&indent=true&fl=description,id,user,updated_at,starcount&hl=true&hl.fl=content,comments&hl.fragsize=0&hl.maxAnalyzedChars=-1&sort=",sortby,"+",orderby)
   solr.res <- getURL(solr.url, .encoding = 'utf-8', .mapUnicode=FALSE)
   solr.res <- fromJSON(solr.res)
   response.docs <- solr.res$response$docs
