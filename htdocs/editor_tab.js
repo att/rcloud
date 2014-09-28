@@ -568,7 +568,7 @@ var editor = function () {
                 else
                     return format_date_time(d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
             }
-            function display_date(i) {
+            function display_date_for_entry(i) {
                 var hist = history[i];
                 var d;
                 if(i+1 < history.length) {
@@ -584,7 +584,7 @@ var editor = function () {
                 var sha = hist.version.substring(0, 10);
                 var d;
                 hdat.committed_at = new Date(hist.committed_at);
-                hdat.last_commit = force_date ? hdat.committed_at : display_date(i);
+                hdat.last_commit = force_date ? hdat.committed_at : display_date_for_entry(i);
                 hdat.label = sha;
                 hdat.version = hist.version;
                 hdat.id = node.id + '/' + hdat.version;
@@ -606,7 +606,7 @@ var editor = function () {
                 $tree_.tree('updateNode',
                             node.children[node.children.length-2],
                             {
-                                last_commit: display_date(node.children.length-2)
+                                last_commit: display_date_for_entry(node.children.length-2)
                             });
             }
 
