@@ -1,4 +1,27 @@
 RCloud.UI.search = {
+    body: function() {
+        return RCloud.UI.panel_loader.load_snippet('search-snippet');
+    },
+    init: function() {
+        if(!rcloud.search)
+            $("#search-wrapper").text("Search engine not enabled on server");
+        else {
+            $("#search-form").submit(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var qry = $('#input-text-search').val();
+                $('#input-text-search').focus();
+                RCloud.UI.search.exec(qry);
+                return false;
+            });
+        }
+    },
+    panel_sizer: function(el) {
+        var padding = RCloud.UI.collapsible_column.default_padder(el);
+        var height = 24 + $('#search-summary').height() + $('#search-results').height();
+        height += 30; // there is only so deep you can dig
+        return {height: height, padding: padding};
+    },
     exec: function(query) {
         function summary(html) {
             $("#search-summary").show().html($("<h4 />").append(html));

@@ -1,7 +1,5 @@
 Notebook.create_html_view = function(model, root_div)
 {
-    var root_asset_div = $("#asset-list");
-
     function on_rearrange() {
         _.each(result.sub_views, function(view) {
             view.check_buttons();
@@ -23,7 +21,7 @@ Notebook.create_html_view = function(model, root_div)
         asset_appended: function(asset_model) {
             var asset_view = Notebook.Asset.create_html_view(asset_model);
             asset_model.views.push(asset_view);
-            root_asset_div.append(asset_view.div());
+            $("#asset-list").append(asset_view.div());
             this.asset_sub_views.push(asset_view);
             on_rearrange();
             return asset_view;

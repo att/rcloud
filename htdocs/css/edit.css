@@ -766,13 +766,13 @@ a.accordion-toggle:hover {
     text-decoration: none;
 }
 
-a.accordion-toggle [class^="icon-"], a.accordion-toggle [class*="icon-"] {
+a.accordion-toggle.left > i {
     position: relative;
 }
 
-a.accordion-toggle.right [class^="icon-"], a.accordion-toggle.right [class*="icon-"] {
+a.accordion-toggle.right > i {
     position: absolute;
-    right: 0px;
+    right: 1.1em;
 }
 
 .panel-default > .panel-heading {
