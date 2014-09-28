@@ -1,5 +1,5 @@
 RCloud.UI.search = {
-    exec: function(query) {
+    exec: function(query,sortby,orderby) {
         function summary(html) {
             $("#search-summary").show().html($("<h4 />").append(html));
         }
@@ -99,7 +99,7 @@ RCloud.UI.search = {
         $("#search-results").html("");
         query = encodeURIComponent(query);
         RCloud.UI.with_progress(function() {
-            return rcloud.search(query)
+            return rcloud.search(query,sortby,orderby)
                 .then(function(v) {
                     create_list_of_search_results(v);
                 });
