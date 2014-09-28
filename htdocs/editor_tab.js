@@ -864,35 +864,6 @@ var editor = function () {
         }
     }
 
-    function format_date(month, date) {
-        return (month+1) + '/' + date;
-    }
-
-    function format_time(hours, minutes) {
-        function pad(n) { return n<10 ? '0'+n : n; }
-        return '<span class="notebook-time">' + hours + ':' + pad(minutes) + '</span>';
-    }
-
-    function format_date_time(month, date, hours, minutes) {
-        return '<span>' + format_date(month, date) + ' ' + format_time(hours, minutes) + '</span>';
-    }
-
-    function display_date(ds) {
-        if(ds==='none')
-            return '';
-        if(typeof ds==='string')
-            return ds;
-        var date = new Date(ds);
-        var diff = Date.now() - date;
-        var stret;
-        if(diff < 24*60*60*1000)
-            stret = format_time(date.getHours(), date.getMinutes());
-        else
-            stret = format_date_time(date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
-        // return an element
-        return $(stret)[0];
-    }
-
     function populate_comments(comments) {
         try {
             comments = JSON.parse(comments);
@@ -960,6 +931,35 @@ var editor = function () {
         ui_utils.on_next_tick(function() {
             ui_utils.scroll_to_after($("#comments-qux"));
         });
+    }
+
+    function format_date(month, date) {
+        return (month+1) + '/' + date;
+    }
+
+    function format_time(hours, minutes) {
+        function pad(n) { return n<10 ? '0'+n : n; }
+        return '<span class="notebook-time">' + hours + ':' + pad(minutes) + '</span>';
+    }
+
+    function format_date_time(month, date, hours, minutes) {
+        return '<span>' + format_date(month, date) + ' ' + format_time(hours, minutes) + '</span>';
+    }
+
+    function display_date(ds) {
+        if(ds==='none')
+            return '';
+        if(typeof ds==='string')
+            return ds;
+        var date = new Date(ds);
+        var diff = Date.now() - date;
+        var stret;
+        if(diff < 24*60*60*1000)
+            stret = format_time(date.getHours(), date.getMinutes());
+        else
+            stret = format_date_time(date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
+        // return an element
+        return $(stret)[0];
     }
 
     var icon_style = {'line-height': '90%'};
