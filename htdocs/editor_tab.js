@@ -101,7 +101,7 @@ var editor = function () {
 
         entry.username = user;
         entry.description = description;
-        entry.last_commit = time;
+        entry.last_commit = new Date(time);
 
         add_notebook_info(user, gistname, entry);
         return entry; // note: let go of promise
@@ -227,7 +227,7 @@ var editor = function () {
                 user: username,
                 root: root,
                 visible: attrs.visible,
-                last_commit: attrs.last_commit || 'none',
+                last_commit: attrs.last_commit ? new Date(attrs.last_commit) : 'none',
                 id: node_id(root, username, name),
                 sort_order: ordering.NOTEBOOK
             };
@@ -557,19 +557,39 @@ var editor = function () {
                 if(debug_colors)
                     dat.color = color;
             }
-            function add_hist_node(hist, insf, color, i) {
-                var hdat = _.clone(node);
-                var sha = hist.version.substring(0, 10);
-                var d=hist.committed_at;
+            function get_date_diff(d1,d2) {
+                d1 = new Date(d1);
+                d2 = new Date(d2);
+                var diff = d1 - d2;
+                if(diff <= 60*1000 && d1.getHours() === d2.getHours() && d1.getMinutes() === d2.getMinutes())
+                    return null;
+                else if(diff < 24*60*60*1000 && d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth())
+                    return format_time(d1.getHours(), d1.getMinutes());
+                else
+                    return format_date_time(d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
+            }
+            function display_date(i) {
+                var hist = history[i];
+                var d;
                 if(i+1 < history.length) {
                     d = get_date_diff(hist.committed_at, history[i + 1].committed_at);
                 }
+                else
+                    d = new Date(hist.committed_at);
+                return d || 'none';
+            }
+            function make_hist_node(color, i, force_date) {
+                var hist = history[i];
+                var hdat = _.clone(node);
+                var sha = hist.version.substring(0, 10);
+                var d;
+                hdat.committed_at = new Date(hist.committed_at);
+                hdat.last_commit = force_date ? hdat.committed_at : display_date(i);
                 hdat.label = sha;
                 hdat.version = hist.version;
-                hdat.last_commit = (d ? d : 'none');
                 hdat.id = node.id + '/' + hdat.version;
                 do_color(hdat, color);
-                var nn = insf(hdat);
+                return hdat;
             }
             var history = histories_[node.gistname].slice(1); // first item is current version
             if(!history)
@@ -581,9 +601,18 @@ var editor = function () {
                 for(var ii = 0, ee = curr_count(); ii<ee; ++ii)
                     $tree_.tree('updateNode', node.children[ii], {color: ''});
 
+            // remove forced date on version above ellipsis, if any
+            if(ellipsis) {
+                $tree_.tree('updateNode',
+                            node.children[node.children.length-2],
+                            {
+                                last_commit: display_date(node.children.length-2)
+                            });
+            }
+
             // insert at top
-            var nins, insf = null;
-            if(node.children.length) {
+            var nins, insf = null, starting = node.children.length===0;
+            if(!starting) {
                 var first = node.children[0];
                 nins = find_index(history, function(h) { return h.version==first.version; });
                 insf = function(dat) { return $tree_.tree('addNodeBefore', dat, first); };
@@ -593,7 +622,7 @@ var editor = function () {
                 insf = function(dat) { return $tree_.tree('appendNode', dat, node); };
             }
             for(var i=0; i<nins; ++i)
-                add_hist_node(history[i], insf, 'green',i);
+                insf(make_hist_node('green', i, starting && i==nins-1));
 
             var count = curr_count();
             if(count < nshow) { // top up
@@ -602,25 +631,27 @@ var editor = function () {
                 else
                     insf = function(dat) { return $tree_.tree('appendNode', dat, node); };
                 for(i=count; i<nshow; ++i)
-                    add_hist_node(history[i], insf, 'mediumpurple',i);
+                    insf(make_hist_node('mediumpurple', i, i==nshow-1));
             }
             else if(count > nshow) // trim any excess
                 for(i=count-1; i>=nshow; --i)
                     $tree_.tree('removeNode', node.children[i]);
 
+
             // hide or show ellipsis
             if(ellipsis) {
-                if(nshow === history.length)
+                if(nshow === history.length) {
                     $tree_.tree('removeNode', ellipsis);
+                    ellipsis = null;
+                }
             }
             else {
                 if(nshow < history.length) {
                     var data = {
                         label: '...',
-                        id: 'showmore',
-                        last_commit : history[history.length-count].committed_at
+                        id: 'showmore'
                     };
-                    $tree_.tree('appendNode', data, node);
+                    ellipsis = $tree_.tree('appendNode', data, node);
                 }
             }
         }
@@ -833,33 +864,30 @@ var editor = function () {
         }
     }
 
-    function display_date(ds) {
+    function format_date(month, date) {
+        return (month+1) + '/' + date;
+    }
+
+    function format_time(hours, minutes) {
         function pad(n) { return n<10 ? '0'+n : n; }
+        return hours + ':' + pad(minutes);
+    }
+
+    function format_date_time(month, date, hours, minutes) {
+        return format_date(month, date) + ' ' + format_time(hours, minutes);
+    }
+
+    function display_date(ds) {
         if(ds==='none')
             return '';
+        if(typeof ds==='string')
+            return ds;
         var date = new Date(ds);
         var diff = Date.now() - date;
         if(diff < 24*60*60*1000)
-            return date.getHours() + ':' + pad(date.getMinutes());
+            return format_time(date.getHours(), date.getMinutes());
         else
-            return (date.getMonth()+1) + '/' + date.getDate() + ' ' + date.getHours() + ':' + pad(date.getMinutes());
-    }
-
-    function get_date_diff(d1,d2) {
-        function pad(n) { return n<10 ? '0'+n : n; }
-        d1 = new Date(d1);
-        d2 = new Date(d2);
-        var diff = d1 - d2;
-        if(diff <= 60*1000 && d1.getHours() === d2.getHours() && d1.getMinutes() === d2.getMinutes())
-            return null;
-        else if(diff < 24*60*60*1000 && d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth()) {
-            var d = new Date(Date.now());
-            d1.setMonth(d.getMonth());
-            d1.setDate(d.getDate());
-            return d1;
-        }
-        else
-            return d1;
+            return format_date_time(date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
     }
 
     function populate_comments(comments) {
@@ -940,8 +968,7 @@ var editor = function () {
         if(node.version || node.id === 'showmore')
             title.addClass('history');
         var right = $($.el.span({'class': 'notebook-right'}));
-        if(node.last_commit && (!node.version ||
-                                display_date(node.last_commit) != display_date(node.parent.last_commit))) {
+        if(node.last_commit) {
             right[0].appendChild($.el.span({'id': 'date',
                                             'class': 'notebook-date'},
                                            display_date(node.last_commit)));
