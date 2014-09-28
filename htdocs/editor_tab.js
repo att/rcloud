@@ -101,7 +101,7 @@ var editor = function () {
 
         entry.username = user;
         entry.description = description;
-        entry.last_commit = new Date(time);
+        entry.last_commit = time;
 
         add_notebook_info(user, gistname, entry);
         return entry; // note: let go of promise
@@ -712,7 +712,7 @@ var editor = function () {
 
     function update_tree_entry(root, user, gistname, entry, create) {
         var data = {label: entry.description,
-                    last_commit: entry.last_commit,
+                    last_commit: new Date(entry.last_commit),
                     sort_order: ordering.NOTEBOOK,
                     visible: entry.visible};
 
