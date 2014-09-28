@@ -367,6 +367,12 @@ ul.jqtree-tree .jqtree-title.private {
 .notebook-date {
 }
 
+.notebook-time {
+    display: inline-block;
+    min-width: 2.5em;
+    text-align: right;
+}
+
 .notebook-right {
     float: right;
 }

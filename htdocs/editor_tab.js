@@ -870,11 +870,11 @@ var editor = function () {
 
     function format_time(hours, minutes) {
         function pad(n) { return n<10 ? '0'+n : n; }
-        return hours + ':' + pad(minutes);
+        return '<span class="notebook-time">' + hours + ':' + pad(minutes) + '</span>';
     }
 
     function format_date_time(month, date, hours, minutes) {
-        return format_date(month, date) + ' ' + format_time(hours, minutes);
+        return '<span>' + format_date(month, date) + ' ' + format_time(hours, minutes) + '</span>';
     }
 
     function display_date(ds) {
@@ -884,10 +884,13 @@ var editor = function () {
             return ds;
         var date = new Date(ds);
         var diff = Date.now() - date;
+        var stret;
         if(diff < 24*60*60*1000)
-            return format_time(date.getHours(), date.getMinutes());
+            stret = format_time(date.getHours(), date.getMinutes());
         else
-            return format_date_time(date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
+            stret = format_date_time(date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
+        // return an element
+        return $(stret)[0];
     }
 
     function populate_comments(comments) {
