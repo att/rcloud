@@ -946,20 +946,21 @@ var editor = function () {
         return '<span>' + format_date(month, date) + ' ' + format_time(hours, minutes) + '</span>';
     }
 
-    function display_date(ds) {
+    function display_date_html(ds) {
         if(ds==='none')
             return '';
         if(typeof ds==='string')
             return ds;
         var date = new Date(ds);
         var diff = Date.now() - date;
-        var stret;
         if(diff < 24*60*60*1000)
-            stret = format_time(date.getHours(), date.getMinutes());
+            return format_time(date.getHours(), date.getMinutes());
         else
-            stret = format_date_time(date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
+            return format_date_time(date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
+    }
+    function display_date(ds) {
         // return an element
-        return $(stret)[0];
+        return $(display_date_html(ds))[0];
     }
 
     var icon_style = {'line-height': '90%'};
