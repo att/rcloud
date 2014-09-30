@@ -102,15 +102,14 @@ RCloud.UI.search = {
                                 if(content.length > 0)
                                     parts_table += "<tr><th class='search-result-part-name'>" + d[i].parts[k].filename + "</th></tr>";
                                 for(var l = 0; l < content.length; l++) {
-                                    if (d[i].parts[k].filename === "comments" && content[l].indexOf(":") > 0) {
-                                        content[l] = content[l].substring(content[l].indexOf(":") + 1, content[l].length);
-                                    }
                                     inner_table += "<tr><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
+                                }
+                                if (d[i].parts[k].filename != "comments") {
+                                    nooflines += inner_table.match(/\|-\|/g).length;
                                 }
                                 added_parts++;
                             }
                             if(inner_table !== "") {
-                                nooflines += inner_table.match(/\|-\|/g).length;
                                 inner_table = inner_table.replace(/\|-\|,/g, '<br>').replace(/\|-\|/g, '<br>');
                                 inner_table = inner_table.replace(/line_no/g,'|');
                                 inner_table = "<table>" + inner_table + "</table>";
