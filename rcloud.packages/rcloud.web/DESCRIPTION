@@ -1,9 +1,9 @@
 Package: rcloud.web
 Title: Support Package for the RCloud Web interface
-Version: 1.0-1
+Version: 1.0-0
 Author: Simon Urbanek <urbanek@research.att.com>
 Maintainer: Simon Urbanek <urbanek@research.att.com>
 Description: RCloud Web interface 
 Imports: Rserve (>= 1.8)
-Suggests: rcloud.support, FastRWeb
+Suggests: rcloud.support, FastRWeb, shiny
 License: MIT
