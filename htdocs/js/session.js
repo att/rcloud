@@ -87,7 +87,7 @@ function rclient_promise(allow_anonymous) {
     return new Promise(function(resolve, reject) {
         rclient = RClient.create({
             debug: false,
-            host:  "wss://rcloud-2.research.att.com:8084/rcloud-session", //location.href.replace(/^http/,"ws").replace(/#.*$/,""),
+            host:  location.href.replace(/^http/,"ws").replace(/#.*$/,""),
             on_connect: function (ocaps) { resolve(ocaps); },
             on_data: on_data,
             on_error: function(error) {
