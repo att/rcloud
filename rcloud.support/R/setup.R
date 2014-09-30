@@ -287,6 +287,8 @@ start.rcloud.common <- function(...) {
       dir.create(fn, FALSE, TRUE, "0770")
   }
 
+  ulog("RCloud start.rcloud.common() complete, user='", .session$username, "'")
+  
   TRUE
 }
 
