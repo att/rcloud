@@ -585,7 +585,7 @@ var editor = function () {
                 var d;
                 hdat.committed_at = new Date(hist.committed_at);
                 hdat.last_commit = force_date ? hdat.committed_at : display_date_for_entry(i);
-                hdat.label = sha;
+                hdat.label = (hist.tag?hist.tag.substring(0, 10):sha);
                 hdat.version = hist.version;
                 hdat.id = node.id + '/' + hdat.version;
                 do_color(hdat, color);
@@ -703,10 +703,10 @@ var editor = function () {
     function select_node(node) {
         $tree_.tree('selectNode', node);
         scroll_into_view(node);
-        if(!node.version)
+        if(!node.version || true) /* --- will make appropriate changes once stabilized*/
             RCloud.UI.notebook_title.make_editable(
                 node,
-                !shell.notebook.model.read_only());
+                /*!shell.notebook.model.read_only()*/true); /* --- will make appropriate changes once stabilized*/
         else RCloud.UI.notebook_title.make_editable(null);
     }
 
@@ -1032,7 +1032,7 @@ var editor = function () {
             var appear = $($.el.span({'class': 'notebook-commands appear'}));
             add_buttons = adder(appear);
             if(true) { // all notebooks have history - should it always be accessible?
-                var disable = current_.notebook===node.gistname && current_.version;
+                var disable = false &&(current_.notebook===node.gistname && current_.version); "--- will make appropriate changes"
                 var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style, true);
                 // jqtree recreates large portions of the tree whenever anything changes
                 // so far this seems safe but might need revisiting if that improves
@@ -1125,7 +1125,7 @@ var editor = function () {
                 // it's weird that a notebook exists in two trees but only one is selected (#220)
                 // just select - and this enables editability
                 if(event.node.gistname === current_.notebook &&
-                   event.node.version == current_.version) // nulliness ok here
+                   event.node.version == current_.version && event.node.version === null) // nulliness ok here
                     select_node(event.node);
                 else
                     result.open_notebook(event.node.gistname, event.node.version || null, event.node.root, false);
@@ -1285,6 +1285,18 @@ var editor = function () {
         },
         rename_notebook: function(desc) {
             return shell.rename_notebook(desc);
+        },
+
+        tag_notebook : function(tag_string,node) {
+            for(var i=0;i<histories_[node.parent.gistname].length;i++) {
+                if (histories_[node.parent.gistname][i].version === node.version) {
+                    histories_[node.parent.gistname][i].tag = tag_string;
+                }
+            }
+            rcloud.tag_notebook_version(node.version,tag_string)
+                .then(result.show_history(node.parent, true))
+                .then(function(v){$(node.element).text(tag_string)})
+                .then(result.open_notebook(node.gistname, node.version || null, node.root, false));
         },
         star_notebook: function(star, opts) {
             var that = this;

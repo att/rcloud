@@ -118,6 +118,7 @@ authenticated.ocaps <- function()
       update_notebook = make.oc(rcloud.update.notebook),
       create_notebook = make.oc(rcloud.create.notebook),
       rename_notebook = make.oc(rcloud.rename.notebook),
+      tag_notebook_version = make.oc(rcloud.tag.notebook.version),
       publish_notebook = make.oc(rcloud.publish.notebook),
       unpublish_notebook = make.oc(rcloud.unpublish.notebook),
       set_notebook_visibility = make.oc(rcloud.set.notebook.visibility),
