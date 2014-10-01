@@ -27,22 +27,27 @@ rcloud_bundle.js: \
 	upload_utils.js \
 	ui/_begin.js \
 	ui/column.js \
+	ui/column_sizer.js \
 	ui/command_prompt.js \
+	ui/comments_frame.js \
 	ui/configure_readonly.js \
 	ui/fatal_dialog.js \
 	ui/help_frame.js \
 	ui/init.js \
 	ui/left_panel.js \
-	ui/load.js \
+	ui/load_options.js \
 	ui/middle_column.js \
 	ui/notebook_title.js \
+	ui/notebooks_frame.js \
+	ui/panel_loader.js \
 	ui/progress.js \
 	ui/right_panel.js \
 	ui/scratchpad.js \
 	ui/search.js \
 	ui/session_pane.js \
 	ui/share_button.js \
-	ui/upload.js
+	ui/upload.js \
+	ui/upload_frame.js
 
 rcloud_bundle.min.js: rcloud_bundle.js Makefile
 	@rm -f $@

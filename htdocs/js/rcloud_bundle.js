@@ -856,12 +856,24 @@ ui_utils.editable = function(elem$, command) {
         return elem$.data('__editable');
     }
     function encode(s) {
+        if(command.allow_multiline) {
+            s = s.replace(/\n/g, "<br/>");
+        }
         return s.replace(/  /g, ' \xa0'); // replace every space with nbsp
     }
     function decode(s) {
+        if(command.allow_multiline) {
+            s = s.replace(/<br>/g, "\n");
+        }
         return s.replace(/\xa0/g,' '); // replace nbsp's with spaces
     }
-
+    function set_content_type(is_multiline,content) {
+        if(is_multiline) {
+            elem$.html(content);
+        } else {
+            elem$.text(content);
+        }
+    }
     var old_opts = options(),
         new_opts = old_opts;
     if(_.isObject(command)) {
@@ -874,6 +886,7 @@ ui_utils.editable = function(elem$, command) {
                 allow_edit: true,
                 inactive_text: elem$.text(),
                 active_text: elem$.text(),
+                allow_multiline: false,
                 select: function(el) {
                     var range = document.createRange();
                     range.selectNodeContents(el);
@@ -919,7 +932,7 @@ ui_utils.editable = function(elem$, command) {
         action = 'freeze';
 
     if(new_opts)
-        elem$.text(encode(options().__active ? new_opts.active_text : new_opts.inactive_text));
+        set_content_type(command.allow_multiline,encode(options().__active ? new_opts.active_text : new_opts.inactive_text));
 
     switch(action) {
     case 'freeze':
@@ -934,12 +947,12 @@ ui_utils.editable = function(elem$, command) {
         elem$.focus(function() {
             if(!options().__active) {
                 options().__active = true;
-                elem$.text(encode(options().active_text));
+                set_content_type(command.allow_multiline,encode(options().active_text));
                 window.setTimeout(function() {
                     selectRange(options().select(elem$[0]));
                     elem$.off('blur');
                     elem$.blur(function() {
-                        elem$.text(encode(options().inactive_text));
+                        set_content_type(command.allow_multiline,encode(options().inactive_text));
                         options().__active = false;
                     }); // click-off cancels
                 }, 10);
@@ -950,7 +963,8 @@ ui_utils.editable = function(elem$, command) {
             // allow default action but don't bubble (causing eroneous reselection in notebook tree)
         });
         elem$.keydown(function(e) {
-            if(e.keyCode === 13) {
+            var entr_key = (e.keyCode === 13);
+            if((command.allow_multiline && (entr_key && (e.ctrlKey || e.metaKey))) || (entr_key && !command.allow_multiline)) {
                 e.preventDefault();
                 var result = elem$.text();
                 result = decode(result);
@@ -959,11 +973,12 @@ ui_utils.editable = function(elem$, command) {
                     elem$.off('blur'); // don't cancel!
                     elem$.blur();
                     options().change(result);
+                } else {
+                    return false; // don't let CR through!
                 }
-                else return false; // don't let CR through!
-            }
-            else if(e.keyCode === 27)
+            } else if(e.keyCode === 27) {
                 elem$.blur(); // and cancel
+            }
             return true;
         });
         break;
@@ -1173,6 +1188,7 @@ Notebook.Asset.create_html_view = function(asset_model)
     var asset_old_name = filename_span.text();
     var rename_file = function(v){
         var new_asset_name = filename_span.text();
+        new_asset_name = new_asset_name.replace(/\s/g, " ");
         var old_asset_content = asset_model.content();
         if (Notebook.is_part_name(new_asset_name)) {
             alert("Asset names cannot start with 'part[0-9]', sorry!");
@@ -1181,8 +1197,8 @@ Notebook.Asset.create_html_view = function(asset_model)
         }
         var found = shell.notebook.model.has_asset(new_asset_name);
         if (found){
+            alert('An asset with the name "' + filename_span.text() + '" already exists. Please choose a different name.');
             filename_span.text(asset_old_name);
-            found.controller.select();
         }
         else {
             shell.notebook.controller
@@ -1927,8 +1943,6 @@ Notebook.Cell.create_controller = function(cell_model)
 };
 Notebook.create_html_view = function(model, root_div)
 {
-    var root_asset_div = $("#asset-list");
-
     function on_rearrange() {
         _.each(result.sub_views, function(view) {
             view.check_buttons();
@@ -1950,7 +1964,7 @@ Notebook.create_html_view = function(model, root_div)
         asset_appended: function(asset_model) {
             var asset_view = Notebook.Asset.create_html_view(asset_model);
             asset_model.views.push(asset_view);
-            root_asset_div.append(asset_view.div());
+            $("#asset-list").append(asset_view.div());
             this.asset_sub_views.push(asset_view);
             on_rearrange();
             return asset_view;
@@ -3189,13 +3203,13 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                     that.hide(true);
             });
         },
-        load: function(promise) { // takes: promise that everything else has loaded
+        load_options: function() {
             var that = this;
             var sels = $.makeArray(collapsibles()).map(function(el) { return '#' + el.id; });
             sels.push(sel_accordion);
             var opts = sels.map(sel_to_opt);
-            Promise.all([promise, rcloud.config.get_user_option(opts)])
-                .spread(function(_, settings) {
+            return rcloud.config.get_user_option(opts)
+                .then(function(settings) {
                     var hide_column;
                     for(var k in settings) {
                         var id = opt_to_sel(k);
@@ -3205,13 +3219,15 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                             set_collapse($(id), settings[k], false);
                     }
                     // do the column last because it will affect all its children
-                    if(typeof hide_column === "boolean") {
-                        if(hide_column)
-                            that.hide(false);
-                        else
-                            that.show(false);
+                    var save_setting = false;  // make sure we have a setting
+                    if(hide_column === undefined) {
+                        hide_column = false;
+                        save_setting = true;
                     }
-                    else that.show(true); // make sure we have a setting
+                    if(hide_column)
+                        that.hide(save_setting);
+                    else
+                        that.show(save_setting);
                 });
         },
         collapse: function(target, whether, persist) {
@@ -3303,6 +3319,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 console.log("Error in vertical layout algo: filling " + expected + " pixels with " + got);
         },
         hide: function(persist, skip_calc) {
+            collapsibles().each(function() {
+                var heading_sel = $(this).data('heading-content-selector');
+                if(heading_sel)
+                    heading_sel.hide();
+            });
             // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
             $(sel_accordion + " > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
             $(sel_collapser + " i").removeClass("icon-minus").addClass("icon-plus");
@@ -3312,6 +3333,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), true);
         },
         show: function(persist, skip_calc) {
+            collapsibles().each(function() {
+                var heading_sel = $(this).data('heading-content-selector');
+                if(heading_sel)
+                    heading_sel.show();
+            });
             if(all_collapsed())
                 set_collapse($(collapsibles()[0]), false, true);
             collapsibles().each(function() {
@@ -3354,6 +3380,60 @@ RCloud.UI.collapsible_column.default_sizer = function(el) {
         padding = RCloud.UI.collapsible_column.default_padder(el);
     return {height: height, padding: padding};
 };
+//////////////////////////////////////////////////////////////////////////
+// resize left and right panels by dragging on the divider
+
+RCloud.UI.column_sizer = {
+    init: function() {
+        $('.notebook-sizer').draggable({
+            axis: 'x',
+            opacity: 0.75,
+            zindex: 10000,
+            revert: true,
+            revertDuration: 0,
+            grid: [window.innerWidth/12, 0],
+            stop: function(event, ui) {
+                var wid_over_12 = window.innerWidth/12;
+                // position is relative to parent, the notebook
+                var diff, size;
+                if($(this).hasClass('left')) {
+                    diff = Math.round(ui.position.left/wid_over_12);
+                    size = Math.max(1,
+                                    Math.min(+RCloud.UI.left_panel.colwidth() + diff,
+                                             11 - RCloud.UI.right_panel.colwidth()));
+                    if(size===1)
+                        RCloud.UI.left_panel.hide(true, true);
+                    else
+                        RCloud.UI.left_panel.show(true, true);
+                    RCloud.UI.left_panel.colwidth(size);
+                    RCloud.UI.middle_column.update();
+                }
+                else if($(this).hasClass('right')) {
+                    diff = Math.round(ui.position.left/wid_over_12) - RCloud.UI.middle_column.colwidth();
+                    size = Math.max(1,
+                                    Math.min(+RCloud.UI.right_panel.colwidth() - diff,
+                                             11 - RCloud.UI.left_panel.colwidth()));
+                    if(size===1)
+                        RCloud.UI.right_panel.hide(true, true);
+                    else
+                        RCloud.UI.right_panel.show(true, true);
+                    RCloud.UI.right_panel.colwidth(size);
+                    RCloud.UI.middle_column.update();
+                }
+                else throw new Error('unexpected shadow drag with classes ' + $(this).attr('class'));
+                // revert to absolute position
+                $(this).css({left: "", top: ""});
+            }
+        });
+
+        // make grid responsive to window resize
+        $(window).resize(function() {
+            var wid_over_12 = window.innerWidth/12;
+            $('.notebook-sizer').draggable('option', 'grid', [wid_over_12, 0]);
+        });
+    }
+};
+
 RCloud.UI.command_prompt = {
     prompt: null,
     history: null,
@@ -3546,6 +3626,30 @@ RCloud.UI.command_prompt = {
         };
     }
 };
+RCloud.UI.comments_frame = {
+    body: function() {
+        return RCloud.UI.panel_loader.load_snippet('comments-snippet');
+    },
+    init: function() {
+        $("#comment-submit").click(function() {
+            if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
+                editor.post_comment($("#comment-entry-body").val());
+            }
+            return false;
+        });
+
+        $("#comment-entry-body").keydown(function (e) {
+            if ((e.keyCode == 10 || e.keyCode == 13 || e.keyCode == 115 || e.keyCode == 19) &&
+                (e.ctrlKey || e.metaKey)) {
+                if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
+                    editor.post_comment($("#comment-entry-body").val());
+                }
+                return false;
+            }
+            return undefined;
+        });
+    }
+};
 /*
  * Adjusts the UI depending on whether notebook is read-only
  */
@@ -3620,10 +3724,29 @@ RCloud.UI.fatal_dialog = function(message, label, href) {
 
 })();
 RCloud.UI.help_frame = {
+    body: function() {
+        return RCloud.UI.panel_loader.load_snippet('help-snippet');
+    },
     init: function() {
         // i can't be bothered to figure out why the iframe causes onload to be triggered early
         // if this code is directly in edit.html
         $("#help-body").append('<iframe id="help-frame" frameborder="0" />');
+        $('#help-form').submit(function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var topic = $('#input-text-help').val();
+            $('#input-text-help').blur();
+            rcloud.help(topic);
+            return false;
+        });
+    },
+    panel_sizer: function(el) {
+        if($('#help-body').css('display') === 'none')
+            return RCloud.UI.collapsible_column.default_sizer(el);
+        else return {
+            padding: RCloud.UI.collapsible_column.default_padder(el),
+            height: 9000
+        };
     },
     show: function() {
         $("#help-body").css('display', 'table-row');
@@ -3680,123 +3803,6 @@ RCloud.UI.init = function() {
     $('#import-notebook-file').click(function() {
         shell.import_notebook_file();
     });
-    $("#file").change(function() {
-        $("#progress-bar").css("width", "0%");
-    });
-    $("#upload-submit").click(function() {
-        if($("#file")[0].files.length===0)
-            return;
-        var to_notebook = ($('#upload-to-notebook').is(':checked'));
-        RCloud.UI.upload_with_alerts(to_notebook)
-            .catch(function() {}); // we have special handling for upload errors
-    });
-    var showOverlay_;
-    //prevent drag in rest of the page except asset pane and enable overlay on asset pane
-    $(document).on('dragstart dragenter dragover', function (e) {
-        var dt = e.originalEvent.dataTransfer;
-        if(!dt)
-            return;
-        if (dt.types !== null &&
-                   (dt.types.indexOf ?
-                    dt.types.indexOf('Files') != -1 :
-                    dt.types.contains('application/x-moz-file'))) {
-            if (!shell.notebook.model.read_only()) {
-                e.stopPropagation();
-                e.preventDefault();
-                $('#asset-drop-overlay').css({'display': 'block'});
-                showOverlay_ = true;
-            }
-            else {
-                e.stopPropagation();
-                e.preventDefault();
-            }
-        }
-    });
-    $(document).on('drop dragleave', function (e) {
-        e.stopPropagation();
-        e.preventDefault();
-        showOverlay_ = false;
-        setTimeout(function() {
-            if(!showOverlay_) {
-                $('#asset-drop-overlay').css({'display': 'none'});
-            }
-        }, 100);
-    });
-    //allow asset drag from local to asset pane and highlight overlay for drop area in asset pane
-    $('#scratchpad-wrapper').bind({
-        drop: function (e) {
-            e = e.originalEvent || e;
-            var files = (e.files || e.dataTransfer.files);
-            var dt = e.dataTransfer;
-            if(!shell.notebook.model.read_only()) {
-                RCloud.UI.upload_with_alerts(true, {files: files})
-                    .catch(function() {}); // we have special handling for upload errors
-            }
-            $('#asset-drop-overlay').css({'display': 'none'});
-        },
-        "dragenter dragover": function(e) {
-            var dt = e.originalEvent.dataTransfer;
-            if(dt.items.length === 1 && !shell.notebook.model.read_only())
-                dt.dropEffect = 'copy';
-        }
-    });
-
-
-    RCloud.UI.left_panel.init();
-    RCloud.UI.middle_column.init();
-    RCloud.UI.right_panel.init();
-    RCloud.UI.session_pane.init();
-
-    var non_notebook_panel_height = 246;
-    $('.notebook-tree').css('height', (window.innerHeight - non_notebook_panel_height)+'px');
-
-    $("#search-form").submit(function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var qry = $('#input-text-search').val();
-        $('#input-text-search').focus();
-        RCloud.UI.search.exec(qry);
-        return false;
-    });
-    $('#help-form').submit(function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var topic = $('#input-text-help').val();
-        $('#input-text-help').blur();
-        rcloud.help(topic);
-        return false;
-    });
-
-    $("#collapse-search").data("panel-sizer", function(el) {
-        var padding = RCloud.UI.collapsible_column.default_padder(el);
-        var height = 24 + $('#search-summary').height() + $('#search-results').height();
-        height += 30; // there is only so deep you can dig
-        return {height: height, padding: padding};
-    });
-
-    // hmm maybe greedy isn't greedy enough
-    $("#collapse-help").data("panel-sizer", function(el) {
-        if($('#help-body').css('display') === 'none')
-            return RCloud.UI.collapsible_column.default_sizer(el);
-        else return {
-            padding: RCloud.UI.collapsible_column.default_padder(el),
-            height: 9000
-        };
-    });
-
-    $("#collapse-assets").data("panel-sizer", function(el) {
-        return {
-            padding: RCloud.UI.collapsible_column.default_padder(el),
-            height: 9000
-        };
-    });
-
-    $("#collapse-file-upload").data("panel-sizer", function(el) {
-        var padding = RCloud.UI.collapsible_column.default_padder(el);
-        var height = 24 + $('#file-upload-controls').height() + $('#file-upload-results').height();
-        //height += 30; // there is only so deep you can dig
-        return {height: height, padding: padding};
-    });
 
     $("#insert-new-cell").click(function() {
         var language = $("#insert-cell-language option:selected").text();
@@ -3811,29 +3817,7 @@ RCloud.UI.init = function() {
         window.location.href = '/logout.R';
     });
 
-    $("#comment-submit").click(function() {
-        if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
-            editor.post_comment($("#comment-entry-body").val());
-        }
-        return false;
-    });
-
-    $("#comment-entry-body").keydown(function (e) {
-        if ((e.keyCode == 10 || e.keyCode == 13 || e.keyCode == 115 || e.keyCode == 19) &&
-            (e.ctrlKey || e.metaKey)) {
-            if(!Notebook.empty_for_github($("#comment-entry-body").val())) {
-                editor.post_comment($("#comment-entry-body").val());
-            }
-            return false;
-        }
-        return undefined;
-    });
-
     $("#run-notebook").click(shell.run_notebook);
-
-    RCloud.UI.scratchpad.init();
-    RCloud.UI.command_prompt.init();
-    RCloud.UI.help_frame.init();
 
     //////////////////////////////////////////////////////////////////////////
     // allow reordering cells by dragging them
@@ -3863,54 +3847,7 @@ RCloud.UI.init = function() {
     }
     make_cells_sortable();
 
-    //////////////////////////////////////////////////////////////////////////
-    // resizeable panels
-    $('.notebook-sizer').draggable({
-        axis: 'x',
-        opacity: 0.75,
-        zindex: 10000,
-        revert: true,
-        revertDuration: 0,
-        grid: [window.innerWidth/12, 0],
-        stop: function(event, ui) {
-            var wid_over_12 = window.innerWidth/12;
-            // position is relative to parent, the notebook
-            var diff, size;
-            if($(this).hasClass('left')) {
-                diff = Math.round(ui.position.left/wid_over_12);
-                size = Math.max(1,
-                                Math.min(+RCloud.UI.left_panel.colwidth() + diff,
-                                         11 - RCloud.UI.right_panel.colwidth()));
-                if(size===1)
-                    RCloud.UI.left_panel.hide(true, true);
-                else
-                    RCloud.UI.left_panel.show(true, true);
-                RCloud.UI.left_panel.colwidth(size);
-                RCloud.UI.middle_column.update();
-            }
-            else if($(this).hasClass('right')) {
-                diff = Math.round(ui.position.left/wid_over_12) - RCloud.UI.middle_column.colwidth();
-                size = Math.max(1,
-                                Math.min(+RCloud.UI.right_panel.colwidth() - diff,
-                                         11 - RCloud.UI.left_panel.colwidth()));
-                if(size===1)
-                    RCloud.UI.right_panel.hide(true, true);
-                else
-                    RCloud.UI.right_panel.show(true, true);
-                RCloud.UI.right_panel.colwidth(size);
-                RCloud.UI.middle_column.update();
-            }
-            else throw new Error('unexpected shadow drag with classes ' + $(this).attr('class'));
-            // revert to absolute position
-            $(this).css({left: "", top: ""});
-        }
-    });
-
-    // make grid responsive to window resize
-    $(window).resize(function() {
-        var wid_over_12 = window.innerWidth/12;
-        $('.notebook-sizer').draggable('option', 'grid', [wid_over_12, 0]);
-    });
+    RCloud.UI.column_sizer.init();
 
     //////////////////////////////////////////////////////////////////////////
     // autosave when exiting. better default than dropping data, less annoying
@@ -3919,8 +3856,6 @@ RCloud.UI.init = function() {
         shell.save_notebook();
         return true;
     });
-
-    $(".panel-collapse").collapse({toggle: false});
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
@@ -3941,28 +3876,23 @@ RCloud.UI.init = function() {
         $(this).scrollLeft(0);
     });
 };
-RCloud.UI.left_panel = (function() {
-    var result = RCloud.UI.collapsible_column("#left-column",
-                                              "#accordion-left", "#left-pane-collapser");
-    var base_hide = result.hide.bind(result),
-        base_show = result.show.bind(result);
+RCloud.UI.left_panel =
+    RCloud.UI.collapsible_column("#left-column",
+                                 "#accordion-left", "#left-pane-collapser");
+RCloud.UI.load_options = function() {
+    RCloud.UI.panel_loader.init();
+    return RCloud.UI.panel_loader.load().then(function() {
+        RCloud.UI.left_panel.init();
+        RCloud.UI.middle_column.init();
+        RCloud.UI.right_panel.init();
 
-    _.extend(result, {
-        hide: function(persist, calc) {
-            $("#new-notebook").hide();
-            base_hide(persist, calc);
-        },
-        show: function(persist, calc) {
-            $("#new-notebook").show();
-            base_show(persist);
-        }
+        RCloud.UI.command_prompt.init();
+
+        $(".panel-collapse").collapse({toggle: false});
+
+        return Promise.all([RCloud.UI.left_panel.load_options(),
+                           RCloud.UI.right_panel.load_options()]);
     });
-    return result;
-}());
-
-RCloud.UI.load = function(promise) {
-    RCloud.UI.left_panel.load(promise);
-    RCloud.UI.right_panel.load(promise);
 };
 RCloud.UI.middle_column = (function() {
     var result = RCloud.UI.column("#middle-column, #prompt-div");
@@ -4046,6 +3976,193 @@ RCloud.UI.notebook_title = (function() {
     };
     return result;
 })();
+// eventually more of editor_tab might land here.  for now, just
+// initialization for loadable panel
+RCloud.UI.notebooks_frame = {
+    body: function() {
+        return RCloud.UI.panel_loader.load_snippet('notebooks-snippet');
+    },
+    heading_content: function() {
+        var new_notebook_button = $.el.a({'class':'header-button',
+                                          'href': '#',
+                                          'id': 'new-notebook',
+                                          'style': 'display:none'},
+                                         $.el.i({'class': 'icon-plus'}));
+        return new_notebook_button;
+    },
+    heading_content_selector: function() {
+        return $("#new-notebook");
+    }
+};
+RCloud.UI.panel_loader = (function() {
+    var panels_ = {};
+
+    function collapse_name(name) {
+        return 'collapse-' + name;
+    }
+
+    function add_panel(opts) {
+        var parent_id = 'accordion-' + opts.side;
+        var collapse_id = collapse_name(opts.name);
+        var heading_attrs = {'class': 'panel-heading',
+                                'data-toggle': 'collapse',
+                                'data-parent': '#' + parent_id, // note: left was broken '#accordion'
+                                'data-target': '#' + collapse_id};
+        var title_span = $.el.span({'class': 'title-offset'},
+                                   opts.title),
+            icon = $.el.i({'class': opts.icon_class}),
+            heading_link = $.el.a({'class': 'accordion-toggle ' + opts.side,
+                                   'href': '#' + collapse_id},
+                                  icon, '\u00a0', title_span);
+
+        var heading_content = opts.panel.heading_content ? opts.panel.heading_content() : null;
+        var heading;
+        if(opts.side==='left') {
+            heading = $.el.div(heading_attrs,
+                               heading_link,
+                               heading_content);
+        }
+        else if(opts.side==='right') {
+            heading = $.el.div(heading_attrs,
+                               heading_content,
+                               heading_link);
+        }
+        else throw new Error('Unknown panel side ' + opts.side);
+
+        var collapse_attrs = {'id': collapse_id,
+                             'class': 'panel-collapse collapse',
+                             'data-colwidth': opts.colwidth};
+        if(opts.greedy)
+            collapse_attrs['data-widgetheight'] = 'greedy';
+        var collapse = $.el.div(collapse_attrs,
+                                $.el.img({'height': '100%',
+                                          'width': '5px',
+                                          'src': opts.side==='left' ? '/img/right_bordergray.png' : '/img/left_bordergray.png',
+                                          'class': 'panel-shadow ' + opts.side}),
+                                opts.panel.body());
+        var panel = $.el.div({'class': 'panel panel-default'},
+                             heading, collapse);
+
+        $('#' + parent_id).append(panel);
+    }
+
+    function add_filler_panel(side) {
+        var parent_id = 'accordion-' + side;
+        var body = $('<div/>', {'class': 'panel-body',
+                                'style': 'border-top-color: transparent; background-color: #777'});
+        for(var i=0; i<60; ++i)
+            body.append($.el.br());
+        var collapse = $.el.div({'class': 'panel-collapse out'},
+                                body[0]);
+        var panel = $.el.div({'class': 'panel panel-default'},
+                             collapse);
+
+        $('#' + parent_id).append(panel);
+    }
+
+    return {
+        add: function(P) {
+            _.extend(panels_, P);
+        },
+        init: function() {
+            // built-in panels
+            this.add({
+                Notebooks: {
+                    side: 'left',
+                    name: 'notebook-tree',
+                    title: 'Notebooks',
+                    icon_class: 'icon-folder-open',
+                    colwidth: 3,
+                    greedy: true,
+                    sort: 100,
+                    panel: RCloud.UI.notebooks_frame
+                },
+                Search: {
+                    side: 'left',
+                    name: 'search',
+                    title: 'Search',
+                    icon_class: 'icon-search',
+                    colwidth: 4,
+                    sort: 200,
+                    panel: RCloud.UI.search
+                },
+                Help: {
+                    side: 'left',
+                    name: 'help',
+                    title: 'Help',
+                    icon_class: 'icon-question',
+                    colwidth: 5,
+                    sort: 300,
+                    panel: RCloud.UI.help_frame
+                },
+                Assets: {
+                    side: 'right',
+                    name: 'assets',
+                    title: 'Assets',
+                    icon_class: 'icon-copy',
+                    colwidth: 4,
+                    sort: 100,
+                    panel: RCloud.UI.scratchpad
+                },
+                'File Upload': {
+                    side: 'right',
+                    name: 'file-upload',
+                    title: 'File Upload',
+                    icon_class: 'icon-upload',
+                    colwidth: 2,
+                    sort: 200,
+                    panel: RCloud.UI.upload_frame
+                },
+                Comments: {
+                    side: 'right',
+                    name: 'comments',
+                    title: 'Comments',
+                    icon_class: 'icon-comments',
+                    colwidth: 2,
+                    sort: 300,
+                    panel: RCloud.UI.comments_frame
+                },
+                Session: {
+                    side: 'right',
+                    name: 'session-info',
+                    title: 'Session',
+                    icon_class: 'icon-info',
+                    colwidth: 3,
+                    sort: 400,
+                    panel: RCloud.UI.session_pane
+                }
+            });
+        },
+        load_snippet: function(id) {
+            // embed html snippets in edit.html as "html scripts"
+            // technique described here: http://ejohn.org/blog/javascript-micro-templating/
+            return $($('#' + id).html())[0];
+        },
+        load: function() {
+            function do_side(panels, side) {
+                function do_panel(p) {
+                    add_panel(p);
+                    if(p.panel.init)
+                        p.panel.init();
+                    if(p.panel.panel_sizer)
+                        $('#' + collapse_name(p.name)).data("panel-sizer",p.panel.panel_sizer);
+                    if(p.panel.heading_content_selector)
+                        $('#' + collapse_name(p.name)).data("heading-content-selector", p.panel.heading_content_selector());
+                }
+                var chosen = _.filter(panels, function(p) { return p.side === side; });
+                chosen.sort(function(a, b) { return a.sort - b.sort; });
+                chosen.forEach(do_panel);
+                add_filler_panel(side);
+            }
+
+            do_side(panels_, 'left');
+            do_side(panels_, 'right');
+
+            return Promise.cast(undefined); // until we are loading opts here
+        }
+    };
+})();
+
 (function() {
 
 var progress_dialog;
@@ -4131,17 +4248,18 @@ RCloud.UI.allow_progress_modal = function() {
 };
 
 })();
-RCloud.UI.right_panel = (function() {
-    var result = RCloud.UI.collapsible_column("#right-column",
-                                              "#accordion-right", "#right-pane-collapser");
-    return result;
-}());
+RCloud.UI.right_panel =
+    RCloud.UI.collapsible_column("#right-column",
+                                 "#accordion-right", "#right-pane-collapser");
 RCloud.UI.scratchpad = {
     session: null,
     widget: null,
     exists: false,
     current_model: null,
     change_content: null,
+    body: function() {
+        return RCloud.UI.panel_loader.load_snippet('assets-snippet');
+    },
     init: function() {
         var that = this;
         function setup_scratchpad(div) {
@@ -4185,10 +4303,63 @@ RCloud.UI.scratchpad = {
                 widget.resize();
             });
         }
+        function setup_asset_drop() {
+            var showOverlay_;
+            //prevent drag in rest of the page except asset pane and enable overlay on asset pane
+            $(document).on('dragstart dragenter dragover', function (e) {
+                var dt = e.originalEvent.dataTransfer;
+                if(!dt)
+                    return;
+                if (dt.types !== null &&
+                    (dt.types.indexOf ?
+                     dt.types.indexOf('Files') != -1 :
+                     dt.types.contains('application/x-moz-file'))) {
+                    if (!shell.notebook.model.read_only()) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        $('#asset-drop-overlay').css({'display': 'block'});
+                        showOverlay_ = true;
+                    }
+                    else {
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }
+                }
+            });
+            $(document).on('drop dragleave', function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+                showOverlay_ = false;
+                setTimeout(function() {
+                    if(!showOverlay_) {
+                        $('#asset-drop-overlay').css({'display': 'none'});
+                    }
+                }, 100);
+            });
+            //allow asset drag from local to asset pane and highlight overlay for drop area in asset pane
+            $('#scratchpad-wrapper').bind({
+                drop: function (e) {
+                    e = e.originalEvent || e;
+                    var files = (e.files || e.dataTransfer.files);
+                    var dt = e.dataTransfer;
+                    if(!shell.notebook.model.read_only()) {
+                        RCloud.UI.upload_with_alerts(true, {files: files})
+                            .catch(function() {}); // we have special handling for upload errors
+                    }
+                    $('#asset-drop-overlay').css({'display': 'none'});
+                },
+                "dragenter dragover": function(e) {
+                    var dt = e.originalEvent.dataTransfer;
+                    if(dt.items.length === 1 && !shell.notebook.model.read_only())
+                        dt.dropEffect = 'copy';
+                }
+            });
+        }
         var scratchpad_editor = $("#scratchpad-editor");
         if (scratchpad_editor.length) {
             this.exists = true;
             setup_scratchpad(scratchpad_editor);
+            setup_asset_drop();
         }
         $("#new-asset > a").click(function() {
             // FIXME prompt, yuck. I know, I know.
@@ -4212,8 +4383,9 @@ RCloud.UI.scratchpad = {
                     default: return '# ' + text + '\n';
                     }
                 };
+                var ext = (filename.indexOf('.')!=-1?filename.match(/\.(.*)/)[1]:"");
                 shell.notebook.controller
-                    .append_asset(comment_text("New file " + filename, filename.match(/\.(.*)/)[1]), filename)
+                    .append_asset(comment_text("New file " + filename, ext), filename)
                     .then(function(controller) {
                         controller.select();
                     })
@@ -4222,6 +4394,12 @@ RCloud.UI.scratchpad = {
                     });
             }
         });
+    },
+    panel_sizer: function(el) {
+        return {
+            padding: RCloud.UI.collapsible_column.default_padder(el),
+            height: 9000
+        };
     },
     // FIXME this is completely backwards
     set_model: function(asset_model) {
@@ -4289,7 +4467,8 @@ RCloud.UI.scratchpad = {
         this.session.setMode(new mode(false, this.session.doc, this.session));
     }, set_readonly: function(readonly) {
         if(!shell.is_view_mode()) {
-            ui_utils.set_ace_readonly(this.widget, readonly);
+            if(this.widget)
+                ui_utils.set_ace_readonly(this.widget, readonly);
             if(readonly)
                 $('#new-asset').hide();
             else
@@ -4312,6 +4491,29 @@ RCloud.UI.scratchpad = {
     }
 };
 RCloud.UI.search = {
+    body: function() {
+        return RCloud.UI.panel_loader.load_snippet('search-snippet');
+    },
+    init: function() {
+        if(!rcloud.search)
+            $("#search-wrapper").text("Search engine not enabled on server");
+        else {
+            $("#search-form").submit(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var qry = $('#input-text-search').val();
+                $('#input-text-search').focus();
+                RCloud.UI.search.exec(qry);
+                return false;
+            });
+        }
+    },
+    panel_sizer: function(el) {
+        var padding = RCloud.UI.collapsible_column.default_padder(el);
+        var height = 24 + $('#search-summary').height() + $('#search-results').height();
+        height += 30; // there is only so deep you can dig
+        return {height: height, padding: padding};
+    },
     exec: function(query) {
         function summary(html) {
             $("#search-summary").show().html($("<h4 />").append(html));
@@ -4420,6 +4622,9 @@ RCloud.UI.search = {
     }
 };
 RCloud.UI.session_pane = {
+    body: function() {
+        return RCloud.UI.panel_loader.load_snippet('session-info-snippet');
+    },
     init: function() {
         // detect where we will show errors
         this.error_dest_ = $("#session-info");
@@ -4437,20 +4642,14 @@ RCloud.UI.session_pane = {
         //////////////////////////////////////////////////////////////////////
         // bluebird unhandled promise handler
         Promise.onPossiblyUnhandledRejection(function(e, promise) {
-            var msg = "";
-            // bluebird will print the message for Chrome/Opera but no other browser
-            if(!window.chrome && e.message)
-                msg += "Error: " + e.message + "\n";
-            msg += e.stack;
-            console.log(msg);
-            that.post_error(msg);
+            that.post_rejection(e);
         });
 
     },
     error_dest: function() {
         return this.error_dest_;
     },
-    post_error: function(msg, dest) {
+    post_error: function(msg, dest, logged) { // post error to UI
         var errclass = 'session-error';
         if (typeof msg === 'string') {
             msg = ui_utils.string_error(msg);
@@ -4460,11 +4659,24 @@ RCloud.UI.session_pane = {
             throw new Error("post_error expects a string or a jquery div");
         msg.addClass(errclass);
         dest = dest || this.error_dest_;
-        dest.append(msg);
-        this.show_error_area();
-        ui_utils.on_next_tick(function() {
-            ui_utils.scroll_to_after($("#session-info"));
-        });
+        if(dest) { // if initialized, we can use the UI
+            dest.append(msg);
+            this.show_error_area();
+            ui_utils.on_next_tick(function() {
+                ui_utils.scroll_to_after($("#session-info"));
+            });
+        }
+        if(!logged)
+            console.log("pre-init post_error: " + msg);
+    },
+    post_rejection: function(e) { // print exception on stack and then post to UI
+        var msg = "";
+        // bluebird will print the message for Chrome/Opera but no other browser
+        if(!window.chrome && e.message)
+            msg += "Error: " + e.message + "\n";
+        msg += e.stack;
+        console.log(msg);
+        this.post_error(msg, undefined, true);
     }
 };
 RCloud.UI.share_button = {
@@ -4615,3 +4827,28 @@ RCloud.UI.upload_with_alerts = (function() {
 
     return upload_files;
 })();
+RCloud.UI.upload_frame = {
+    body: function() {
+        return RCloud.UI.panel_loader.load_snippet('file-upload-snippet');
+    },
+    init: function() {
+        $("#file").change(function() {
+            $("#progress-bar").css("width", "0%");
+        });
+
+        $("#upload-submit").click(function() {
+            if($("#file")[0].files.length===0)
+                return;
+            var to_notebook = ($('#upload-to-notebook').is(':checked'));
+            RCloud.UI.upload_with_alerts(to_notebook)
+                .catch(function() {}); // we have special handling for upload errors
+        });
+
+    },
+    panel_sizer: function(el) {
+        var padding = RCloud.UI.collapsible_column.default_padder(el);
+        var height = 24 + $('#file-upload-controls').height() + $('#file-upload-results').height();
+        return {height: height, padding: padding};
+    }
+};
+

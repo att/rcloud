@@ -354,6 +354,7 @@ var shell = (function() {
                 $("body").append(dialog);
                 dialog
                     .on('show.bs.modal', function() {
+                        $("#notebook-file-upload")[0].value = null;
                         notebook_status.text('');
                         notebook_status.hide();
                         notebook_desc_content.val('');

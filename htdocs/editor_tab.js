@@ -227,7 +227,7 @@ var editor = function () {
                 user: username,
                 root: root,
                 visible: attrs.visible,
-                last_commit: attrs.last_commit || 'none',
+                last_commit: attrs.last_commit ? new Date(attrs.last_commit) : 'none',
                 id: node_id(root, username, name),
                 sort_order: ordering.NOTEBOOK
             };
@@ -557,15 +557,39 @@ var editor = function () {
                 if(debug_colors)
                     dat.color = color;
             }
-            function add_hist_node(hist, insf, color) {
+            function get_date_diff(d1,d2) {
+                d1 = new Date(d1);
+                d2 = new Date(d2);
+                var diff = d1 - d2;
+                if(diff <= 60*1000 && d1.getHours() === d2.getHours() && d1.getMinutes() === d2.getMinutes())
+                    return null;
+                else if(diff < 24*60*60*1000 && d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth())
+                    return format_time(d1.getHours(), d1.getMinutes());
+                else
+                    return format_date_time(d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
+            }
+            function display_date_for_entry(i) {
+                var hist = history[i];
+                var d;
+                if(i+1 < history.length) {
+                    d = get_date_diff(hist.committed_at, history[i + 1].committed_at);
+                }
+                else
+                    d = new Date(hist.committed_at);
+                return d || 'none';
+            }
+            function make_hist_node(color, i, force_date) {
+                var hist = history[i];
                 var hdat = _.clone(node);
                 var sha = hist.version.substring(0, 10);
+                var d;
+                hdat.committed_at = new Date(hist.committed_at);
+                hdat.last_commit = force_date ? hdat.committed_at : display_date_for_entry(i);
                 hdat.label = sha;
                 hdat.version = hist.version;
-                hdat.last_commit = hist.committed_at;
                 hdat.id = node.id + '/' + hdat.version;
                 do_color(hdat, color);
-                var nn = insf(hdat);
+                return hdat;
             }
             var history = histories_[node.gistname].slice(1); // first item is current version
             if(!history)
@@ -577,9 +601,18 @@ var editor = function () {
                 for(var ii = 0, ee = curr_count(); ii<ee; ++ii)
                     $tree_.tree('updateNode', node.children[ii], {color: ''});
 
+            // remove forced date on version above ellipsis, if any
+            if(ellipsis) {
+                $tree_.tree('updateNode',
+                            node.children[node.children.length-2],
+                            {
+                                last_commit: display_date_for_entry(node.children.length-2)
+                            });
+            }
+
             // insert at top
-            var nins, insf = null;
-            if(node.children.length) {
+            var nins, insf = null, starting = node.children.length===0;
+            if(!starting) {
                 var first = node.children[0];
                 nins = find_index(history, function(h) { return h.version==first.version; });
                 insf = function(dat) { return $tree_.tree('addNodeBefore', dat, first); };
@@ -589,7 +622,7 @@ var editor = function () {
                 insf = function(dat) { return $tree_.tree('appendNode', dat, node); };
             }
             for(var i=0; i<nins; ++i)
-                add_hist_node(history[i], insf, 'green');
+                insf(make_hist_node('green', i, starting && i==nins-1));
 
             var count = curr_count();
             if(count < nshow) { // top up
@@ -598,16 +631,19 @@ var editor = function () {
                 else
                     insf = function(dat) { return $tree_.tree('appendNode', dat, node); };
                 for(i=count; i<nshow; ++i)
-                    add_hist_node(history[i], insf, 'mediumpurple');
+                    insf(make_hist_node('mediumpurple', i, i==nshow-1));
             }
             else if(count > nshow) // trim any excess
                 for(i=count-1; i>=nshow; --i)
                     $tree_.tree('removeNode', node.children[i]);
 
+
             // hide or show ellipsis
             if(ellipsis) {
-                if(nshow === history.length)
+                if(nshow === history.length) {
                     $tree_.tree('removeNode', ellipsis);
+                    ellipsis = null;
+                }
             }
             else {
                 if(nshow < history.length) {
@@ -615,7 +651,7 @@ var editor = function () {
                         label: '...',
                         id: 'showmore'
                     };
-                    $tree_.tree('appendNode', data, node);
+                    ellipsis = $tree_.tree('appendNode', data, node);
                 }
             }
         }
@@ -676,7 +712,7 @@ var editor = function () {
 
     function update_tree_entry(root, user, gistname, entry, create) {
         var data = {label: entry.description,
-                    last_commit: entry.last_commit,
+                    last_commit: new Date(entry.last_commit),
                     sort_order: ordering.NOTEBOOK,
                     visible: entry.visible};
 
@@ -828,18 +864,6 @@ var editor = function () {
         }
     }
 
-    function display_date(ds) {
-        function pad(n) { return n<10 ? '0'+n : n; }
-        if(ds==='none')
-            return '';
-        var date = new Date(ds);
-        var diff = Date.now() - date;
-        if(diff < 24*60*60*1000)
-            return date.getHours() + ':' + pad(date.getMinutes());
-        else
-            return (date.getMonth()+1) + '/' + date.getDate();
-    }
-
     function populate_comments(comments) {
         try {
             comments = JSON.parse(comments);
@@ -878,7 +902,7 @@ var editor = function () {
             .style({"max-width":"70%"})
             .append("div")
             .attr("class", "comment-body-text")
-            .style({"max-width":"95%"})
+            .style({"max-width":"95%","min-width":"5%"})
             .text(function(d) { return d.body; })
             .each(function(d){
                 var comment_element = $(this);
@@ -888,6 +912,7 @@ var editor = function () {
                 };
                 var editable_opts = {
                     change: edit_comment,
+                    allow_multiline: true,
                     validate: function(name) { return editor.validate_name(name); }
                 };
                 var is_editable = d.user.login===username_;
@@ -908,6 +933,36 @@ var editor = function () {
         });
     }
 
+    function format_date(month, date) {
+        return (month+1) + '/' + date;
+    }
+
+    function format_time(hours, minutes) {
+        function pad(n) { return n<10 ? '0'+n : n; }
+        return '<span class="notebook-time">' + hours + ':' + pad(minutes) + '</span>';
+    }
+
+    function format_date_time(month, date, hours, minutes) {
+        return '<span>' + format_date(month, date) + ' ' + format_time(hours, minutes) + '</span>';
+    }
+
+    function display_date_html(ds) {
+        if(ds==='none')
+            return '';
+        if(typeof ds==='string')
+            return ds;
+        var date = new Date(ds);
+        var diff = Date.now() - date;
+        if(diff < 24*60*60*1000)
+            return format_time(date.getHours(), date.getMinutes());
+        else
+            return format_date_time(date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
+    }
+    function display_date(ds) {
+        // return an element
+        return $(display_date_html(ds))[0];
+    }
+
     var icon_style = {'line-height': '90%'};
     function on_create_tree_li(node, $li) {
         var element = $li.find('.jqtree-element'),
@@ -918,8 +973,7 @@ var editor = function () {
         if(node.version || node.id === 'showmore')
             title.addClass('history');
         var right = $($.el.span({'class': 'notebook-right'}));
-        if(node.last_commit && (!node.version ||
-                                display_date(node.last_commit) != display_date(node.parent.last_commit))) {
+        if(node.last_commit) {
             right[0].appendChild($.el.span({'id': 'date',
                                             'class': 'notebook-date'},
                                            display_date(node.last_commit)));
@@ -1104,6 +1158,7 @@ var editor = function () {
                     else
                         return result.load_notebook(last[0], null)
                         .catch(function(err) {
+                            RCloud.UI.session_pane.post_rejection(err);
                             if(/Not Found/.test(err))
                                 rcloud.config.clear_recent_notebook(last);
                             // if loading fails for a reason that is not actually a loading problem

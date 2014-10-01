@@ -4,6 +4,9 @@ RCloud.UI.scratchpad = {
     exists: false,
     current_model: null,
     change_content: null,
+    body: function() {
+        return RCloud.UI.panel_loader.load_snippet('assets-snippet');
+    },
     init: function() {
         var that = this;
         function setup_scratchpad(div) {
@@ -47,10 +50,63 @@ RCloud.UI.scratchpad = {
                 widget.resize();
             });
         }
+        function setup_asset_drop() {
+            var showOverlay_;
+            //prevent drag in rest of the page except asset pane and enable overlay on asset pane
+            $(document).on('dragstart dragenter dragover', function (e) {
+                var dt = e.originalEvent.dataTransfer;
+                if(!dt)
+                    return;
+                if (dt.types !== null &&
+                    (dt.types.indexOf ?
+                     dt.types.indexOf('Files') != -1 :
+                     dt.types.contains('application/x-moz-file'))) {
+                    if (!shell.notebook.model.read_only()) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        $('#asset-drop-overlay').css({'display': 'block'});
+                        showOverlay_ = true;
+                    }
+                    else {
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }
+                }
+            });
+            $(document).on('drop dragleave', function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+                showOverlay_ = false;
+                setTimeout(function() {
+                    if(!showOverlay_) {
+                        $('#asset-drop-overlay').css({'display': 'none'});
+                    }
+                }, 100);
+            });
+            //allow asset drag from local to asset pane and highlight overlay for drop area in asset pane
+            $('#scratchpad-wrapper').bind({
+                drop: function (e) {
+                    e = e.originalEvent || e;
+                    var files = (e.files || e.dataTransfer.files);
+                    var dt = e.dataTransfer;
+                    if(!shell.notebook.model.read_only()) {
+                        RCloud.UI.upload_with_alerts(true, {files: files})
+                            .catch(function() {}); // we have special handling for upload errors
+                    }
+                    $('#asset-drop-overlay').css({'display': 'none'});
+                },
+                "dragenter dragover": function(e) {
+                    var dt = e.originalEvent.dataTransfer;
+                    if(dt.items.length === 1 && !shell.notebook.model.read_only())
+                        dt.dropEffect = 'copy';
+                }
+            });
+        }
         var scratchpad_editor = $("#scratchpad-editor");
         if (scratchpad_editor.length) {
             this.exists = true;
             setup_scratchpad(scratchpad_editor);
+            setup_asset_drop();
         }
         $("#new-asset > a").click(function() {
             // FIXME prompt, yuck. I know, I know.
@@ -74,8 +130,9 @@ RCloud.UI.scratchpad = {
                     default: return '# ' + text + '\n';
                     }
                 };
+                var ext = (filename.indexOf('.')!=-1?filename.match(/\.(.*)/)[1]:"");
                 shell.notebook.controller
-                    .append_asset(comment_text("New file " + filename, filename.match(/\.(.*)/)[1]), filename)
+                    .append_asset(comment_text("New file " + filename, ext), filename)
                     .then(function(controller) {
                         controller.select();
                     })
@@ -84,6 +141,12 @@ RCloud.UI.scratchpad = {
                     });
             }
         });
+    },
+    panel_sizer: function(el) {
+        return {
+            padding: RCloud.UI.collapsible_column.default_padder(el),
+            height: 9000
+        };
     },
     // FIXME this is completely backwards
     set_model: function(asset_model) {
@@ -151,7 +214,8 @@ RCloud.UI.scratchpad = {
         this.session.setMode(new mode(false, this.session.doc, this.session));
     }, set_readonly: function(readonly) {
         if(!shell.is_view_mode()) {
-            ui_utils.set_ace_readonly(this.widget, readonly);
+            if(this.widget)
+                ui_utils.set_ace_readonly(this.widget, readonly);
             if(readonly)
                 $('#new-asset').hide();
             else

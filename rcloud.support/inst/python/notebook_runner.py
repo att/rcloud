@@ -1,3 +1,11 @@
+"""
+A "runner" for python cells in RCloud -- this serves as an intermediate proxy
+Code base adopted from an older version of code from
+https://github.com/minrk and https://github.com/paulgb/runipy 
+Modified for running python code in RCloud with this piece as an intermediate
+proxy... Also, some of the formatting required to use it in RCloud is handled here.
+"""
+
 try:
     # python 2
     from Queue import Empty
@@ -8,6 +16,21 @@ except:
 import platform
 from time import sleep
 import logging
+import ansi2html  # GPLV3 
+from xml.sax.saxutils import escape as html_escape # based on reco from moin/EscapingHtml
+
+_textFormatStr = """<pre style="font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;">{}</pre>"""
+def RClTextFormat(s, escape=True):
+    newtext = html_escape(s) if escape else s
+    return _textFormatStr.format(newtext)
+
+ansiconverter = ansi2html.Ansi2HTMLConverter(inline=True, dark_bg=False)
+def RClansiconv(ansitext, full=False):
+    """ Uses ansi2html (GPL V3) to produce a reasonably minimal html 
+    Seems that there is no need to escape this text...
+    """
+    htmlFragment = ansiconverter.convert(ansitext, full=full)
+    return _textFormatStr.format(htmlFragment, escape=False) # we already escaped the text
 
 from IPython.nbformat.current import read, write, NotebookNode
 from IPython.kernel import KernelManager
@@ -22,9 +45,13 @@ from IPython.kernel import (
 )
 import json
 
-_debugging = False
+import tempfile
+debugFD, debugFile = "", ""
+
+_debugging = True
 if _debugging:
-    logging.basicConfig(filename="/tmp/ipython_output")
+    debugFD, debugFile = tempfile.mkstemp(suffix=".log", prefix="ipy_log")
+    logging.basicConfig(filename=debugFile, level=logging.DEBUG)
 
 class NotebookError(Exception):
     pass
@@ -43,8 +70,7 @@ class MagicBlockingShellChannel(BlockingShellChannel):
         """Run a magic in the kernel."""
         # Create class for content/msg creation. Related to, but possibly
         # not in Session.
-        content = dict(magic=magic_str,
-                       )
+        content = dict(magic=magic_str)
         msg = self.session.msg('magic_request', content)
         self._queue_send(msg)
         return msg['header']['msg_id']
@@ -115,7 +141,7 @@ class NotebookRunner(object):
         if status == 'error':
             logging.info('Cell raised uncaught exception: \n%s', '\n'.join(reply['content']['traceback']))
         else:
-            logging.info('Cell returned')
+            logging.debug('Cell returned')
 
         while True:
             try:
@@ -135,14 +161,14 @@ class NotebookRunner(object):
         '''
         Run a notebook cell and update the output of that cell in-place.
         '''
-        logging.info('Running cell:\n%s\n', cell.input)
+        logging.debug('Running cell:\n%s\n', cell.input)
         self.shell.execute(cell.input)
         reply = self.shell.get_msg()
         status = reply['content']['status']
         if status == 'error':
             logging.info('Cell raised uncaught exception: \n%s', '\n'.join(reply['content']['traceback']))
         else:
-            logging.info('Cell returned')
+            logging.debug('Cell returned')
 
         outs = list()
         while True:
@@ -154,6 +180,7 @@ class NotebookRunner(object):
             except Empty:
                 # execution state should return to idle before the queue becomes empty,
                 # if it doesn't, something bad has happened
+                logging.warn('Execution state did not return to idle')
                 raise
 
             content = msg['content']
@@ -169,31 +196,25 @@ class NotebookRunner(object):
                 continue
             elif msg_type == 'stream':
                 out.stream = content['name']
-                out.text = content['data']
-                #print(out.text, end='')
+                out.html = RClTextFormat(content['data'])
             elif msg_type in ('display_data', 'pyout'):
                 for mime, data in content['data'].items():
                     try:
                         attr = self.MIME_MAP[mime]
                     except KeyError:
+                        logging.warning('unhandled mime type: %s' % mime)
                         raise NotImplementedError('unhandled mime type: %s' % mime)
-
                     setattr(out, attr, data)
-                #print(data, end='')
             elif msg_type == 'pyerr':
+                logging.info('Received an exception: ' + content['ename'])
                 out.ename = content['ename']
                 out.evalue = content['evalue']
                 out.traceback = content['traceback']
-
-                #logging.error('\n'.join(content['traceback']))
+                out.html = RClansiconv('\n'.join(out.traceback))
             else:
                 raise NotImplementedError('unhandled iopub message: %s' % msg_type)
             outs.append(out)
         cell['outputs'] = outs
-
-        if status == 'error':
-            raise Exception(json.dumps(out))
-            # raise NotebookError()
 
     def iter_code_cells(self, nb):
         '''

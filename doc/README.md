@@ -118,23 +118,23 @@ RCloud supports several logs depending on the kind of operation
 desired. In regular mode, an optional logging can be enabled to a
 syslog-comaptible logging service which will record every call into
 the R instance. This is done using the `ulog` directive of
-`reserv.conf`, typically
+`rserve.conf`, typically
 
     ulog ${ROOT}/run/ulog
 
 Make sure you create the `run` directory if not present. If the `ulog`
 socket doesn't exist, logging will be simply ignored, i.e., the log
-damon can be started at any point.
+daemon can be started at any point.
 
 For debugging purposes RCloud can be started in debug mode if
 `DEBUG=1` environment variable is set at start time. In that case,
-both RCloud abd Rserve will produce a lot of extra output. In addtion,
-every packet between client and server can be recurded if
+both RCloud and Rserve will produce a lot of extra output. In addition,
+every packet between client and server can be recorded if
 
     log.io enable
 
 is added to `rserve.conf`. This directive is effective only in debug
-mode, it is ignored in regular mode. Each process will create a
+mode; it is ignored in regular mode. Each process will create a
 separate file `/tmp/Rserve-io-*` which will record all I/O between
 Rserve and the client before the packet is interpreted (i.e., without
 any encapsulating layers such as WebSockets or SSL).

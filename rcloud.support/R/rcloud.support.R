@@ -18,6 +18,7 @@ rcloud.unauthenticated.load.notebook <- function(id, version = NULL) {
 
 rcloud.load.notebook <- function(id, version = NULL) {
   res <- rcloud.get.notebook(id, version)
+  ulog("RCloud rcloud.load.notebook(",id,",",version,", user=", .session$username,"): ", if(res$ok) "OK" else "FAILED")
   if (res$ok) {
     .session$current.notebook <- res
     rcloud.reset.session()
@@ -77,6 +78,8 @@ rcloud.unauthenticated.call.notebook <- function(id, version = NULL, args = NULL
 }
 
 rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE) {
+  ulog("RCloud rcloud.call.notebook(", id, ",", version, ")")
+  
   res <- rcloud.get.notebook(id, version)
   if (res$ok) {
     if (is.null(.session$current.notebook)) ## no top level? set us as the session notebook so that get.asset et al work
@@ -172,6 +175,7 @@ rcloud.upload.to.notebook <- function(file, name) {
   if (is.null(.session$current.notebook))
     stop("Notebook must be loaded")
   id <- .session$current.notebook$content$id
+  ulog("RCloud rcloud.upload.to.notebook(id=", id, ", name=", name, ")")
   files <- list()
   files[[name]] <- list(content=rawToChar(file))
   content <- list(files = files)
@@ -297,10 +301,12 @@ rcloud.create.notebook <- function(content) {
   res
 }
 
-rcloud.rename.notebook <- function(id, new.name)
+rcloud.rename.notebook <- function(id, new.name) {
+  ulog("RCloud rcloud.rename.notebook(", id, ", ", toJSON(new.name), ")")
   modify.gist(id,
               list(description=new.name),
               ctx = .session$gist.context)
+}
 
 rcloud.fork.notebook <- function(id) fork.gist(id, ctx = .session$gist.context)
 
