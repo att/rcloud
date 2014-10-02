@@ -405,6 +405,8 @@ ui_utils.editable = function(elem$, command) {
                 }
             } else if(e.keyCode === 27) {
                 elem$.blur(); // and cancel
+            } else if(e.keyCode === 40 || e.keyCode === 38) {
+                return false;
             }
             return true;
         });
