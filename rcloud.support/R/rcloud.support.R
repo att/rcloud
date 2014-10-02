@@ -37,8 +37,12 @@ rcloud.load.notebook <- function(id, version = NULL) {
   res
 }
 
-rcloud.tag.notebook.version <- function(version,tag_name) {
+rcloud.tag.notebook.version <- function(gist_id,version,tag_name) {
+  if(!is.null(rcs.get(paste0(gist_id,"_",tag_name)))) {
+    rcs.rm(rcs.get(paste0(gist_id,"_",tag_name)))
+  }
   rcs.set(version,tag_name)
+  rcs.set(paste0(gist_id,"_",tag_name),version)
 }
 
 rcloud.install.notebook.stylesheets <- function() {

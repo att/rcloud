@@ -1293,7 +1293,7 @@ var editor = function () {
                     histories_[node.parent.gistname][i].tag = tag_string;
                 }
             }
-            rcloud.tag_notebook_version(node.version,tag_string)
+            rcloud.tag_notebook_version(node.parent.gistname, node.version, tag_string)
                 .then(result.show_history(node.parent, true))
                 .then(function(v){$(node.element).text(tag_string)})
                 .then(result.open_notebook(node.gistname, node.version || null, node.root, false));
