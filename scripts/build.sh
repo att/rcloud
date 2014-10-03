@@ -1,7 +1,7 @@
 #!/bin/sh
 set +x
 
-if [[ $1 == "--skip-packages" ]]; then
+if [ "$1" = "--skip-packages" ]; then
     SKIP_PACKAGES=1
     shift
 fi
