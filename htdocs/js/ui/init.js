@@ -109,4 +109,12 @@ RCloud.UI.init = function() {
     $('#rcloud-cellarea').on('scroll', function() {
         $(this).scrollLeft(0);
     });
+    
+    //prevent default ctrl/cmd+s on browser and internally hit save icon
+    document.addEventListener("keydown", function(e) {
+        if (e.keyCode == 83 && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            $('#save-notebook').click();
+        }
+    });
 };
