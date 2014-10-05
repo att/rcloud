@@ -18,7 +18,7 @@ requirejs_config_obj = {
         "../../editor_tab": ["rcloud_bundle", "laconic", "tree.jquery"],
         "rserve": ["underscore"],
         "rcloud_bundle": ["ace", "jquery"
-                          ,"jquery.whiny" // enable/disable jquery.whiny here
+                          // ,"jquery.whiny" // enable/disable jquery.whiny here
                          ]
     }
 };
