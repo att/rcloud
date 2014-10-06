@@ -1,3 +1,10 @@
+.renderPage <- function(ui) {
+  textConn <- textConnection(NULL, "w")
+  on.exit(close(textConn))
+  shiny:::renderPage(ui, textConn, FALSE)
+  gsub('"shared/', '"/shared/', paste(textConnectionValue(textConn), collapse="\n"), fixed=TRUE)
+}
+
 rcloud.shinyApp <- function(ui, server, options) {
   require(rcloud.web)
   require(shiny)
@@ -40,6 +47,6 @@ rcloud.shinyApp <- function(ui, server, options) {
     server
   }
   appHandlers <- shiny:::createAppHandlers(NULL, serverFuncSource)
-  rcw.result(body = as.character(ui))
+  rcw.result(body = .renderPage(ui))
 }
 
