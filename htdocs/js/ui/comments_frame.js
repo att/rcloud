@@ -20,10 +20,10 @@ RCloud.UI.comments_frame = {
                 }
                 return false;
             }
-            var t = $("#comment-entry-body");
-            t.bind('input', function() {
-                t.css("height", '38 px');
-                t.css("height", t[0].scrollHeight  + 'px');
+            var comment = $("#comment-entry-body");
+            comment.bind('input', function() {
+                comment.css("height", '38 px');
+                comment.css("height", comment[0].scrollHeight  + 'px');
             });
             return undefined;
         });
