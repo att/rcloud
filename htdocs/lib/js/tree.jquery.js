@@ -2819,7 +2819,7 @@ limitations under the License.
       if (!this.tree_widget.options.keyboardSupport) {
         return;
       }
-      if ($(document.activeElement).is('textarea,input')) {
+      if ($(document.activeElement).is('textarea,input,div,span')) {
         return true;
       }
       current_node = this.tree_widget.getSelectedNode();
