@@ -2,7 +2,7 @@
   textConn <- textConnection(NULL, "w")
   on.exit(close(textConn))
   shiny:::renderPage(ui, textConn, FALSE)
-  gsub('"shared/', '"/shared/', paste(textConnectionValue(textConn), collapse="\n"), fixed=TRUE)
+  gsub('"shared/', '"../../shared/', paste(textConnectionValue(textConn), collapse="\n"), fixed=TRUE)
 }
 
 rcloud.shinyApp <- function(ui, server, options) {
