@@ -2,7 +2,8 @@ requirejs_config_obj = {
     "baseUrl": "/lib/js",
     waitSeconds: 30,
     paths: {
-        "jquery": "jquery-1.10.2",
+        "jquery": "../../shared/jquery",
+        "jquery-ui": "../../shared/jqueryui/1.10.4/jquery-ui",
         "rcloud_bundle": "../../js/rcloud_bundle",
         "ace": "../ace_bundle"
     },
