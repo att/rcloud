@@ -1,5 +1,7 @@
 ((function() {
 
+// FIXME: since shiny HTML generation injects shiny.js
+//        directly we can't use require for this (AFAICT) [SU]
 requirejs.config({
     paths: {
         "shiny": "../../shared/shiny"
@@ -37,11 +39,6 @@ return {
                 return fakeWebSocket();
             }
         };
-        setTimeout(function() {
-            // note: we intentionally continue before Shiny is loaded, because the DOM
-            // needs to be constructed for Shiny to find elements to drive
-            require(["shiny"], function() {});
-        }, 3000);
         k();
     },
     on_message: function(id, msg, k) {
