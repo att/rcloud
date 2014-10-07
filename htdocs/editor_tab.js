@@ -1243,7 +1243,7 @@ var editor = function () {
                 data: data,
                 onCreateLi: on_create_tree_li,
                 selectable: true,
-                keyboardSupport :false
+                keyboardSupport: false
             });
             $tree_.bind('tree.click', tree_click);
             $tree_.bind('tree.open', tree_open);
