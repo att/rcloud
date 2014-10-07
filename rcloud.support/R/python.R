@@ -8,9 +8,11 @@ rcloud.start.python <- function()
   sys <- py.import("sys")
   path <- system.file("python", package="rcloud.support")
   py.attr(sys, "path", .ref=TRUE)$append(path)
+  ## append any admin-specified paths (as ":" - separated paths)
+  if (nzConf("python.extra.libs")) path <- paste(path, getConf("python.extra.libs"), sep=":")
   sys$argv <- c("rcloud")
   py.eval("import notebook_runner")
-  py.eval(paste("runner = notebook_runner.NotebookRunner(rcloud_support_path='", path, "', extra_arguments=['--matplotlib=inline'], executable='python')", sep=''))
+  py.eval(paste("runner = notebook_runner.NotebookRunner(rcloud_python_lib_path='", path, "', extra_arguments=['--matplotlib=inline'], executable='python')", sep=''))
   .session$python.runner <- py.get("runner", .ref=TRUE)
   ## keep the runner reference only on the R side
   py.eval("del runner");
