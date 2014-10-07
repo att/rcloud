@@ -2913,7 +2913,7 @@ function rclient_promise(allow_anonymous) {
         if (!$("#output > .response").length)
             rclient.post_response(hello);
     }).catch(function(error) { // e.g. couldn't connect with github
-        if(rclient)
+        if(window.rclient)
             rclient.close();
         if (error.message === "Authentication required") {
             RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R");
@@ -3874,6 +3874,14 @@ RCloud.UI.init = function() {
     // prevent left-right scrolling of notebook area
     $('#rcloud-cellarea').on('scroll', function() {
         $(this).scrollLeft(0);
+    });
+    
+    //prevent default ctrl/cmd+s on browser and internally hit save icon
+    document.addEventListener("keydown", function(e) {
+        if (e.keyCode == 83 && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            shell.save_notebook();
+        }
     });
 };
 RCloud.UI.left_panel =
