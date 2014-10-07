@@ -1230,7 +1230,7 @@ var editor = function () {
                                        'icon-star', 'icon-star-empty');
             return promise;
         },
-        fatal_reload: function(message) {
+        fatal_reload: function(message) {swf
             var url = make_edit_url({notebook: current_.notebook, version: current_.version});
             message = "<p>Sorry, RCloud's internal state has become inconsistent.  Please reload to return to a working state.</p><p>" + message + "</p>";
             RCloud.UI.fatal_dialog(message, "Reload", url);
@@ -1242,7 +1242,8 @@ var editor = function () {
             $tree_.tree({
                 data: data,
                 onCreateLi: on_create_tree_li,
-                selectable: true
+                selectable: true,
+                keyboardSupport :false
             });
             $tree_.bind('tree.click', tree_click);
             $tree_.bind('tree.open', tree_open);
