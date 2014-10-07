@@ -96,12 +96,13 @@ var editor = function () {
             Promise.resolve();
     }
 
-    function update_notebook_model(user, gistname, description, time) {
+    function update_notebook_model(user, gistname, description, time, fork_of) {
         var entry = get_notebook_info(gistname);
 
         entry.username = user;
         entry.description = description;
         entry.last_commit = time;
+        entry.fork_of = fork_of;
 
         add_notebook_info(user, gistname, entry);
         return entry; // note: let go of promise
@@ -229,7 +230,8 @@ var editor = function () {
                 visible: attrs.visible,
                 last_commit: attrs.last_commit ? new Date(attrs.last_commit) : 'none',
                 id: node_id(root, username, name),
-                sort_order: ordering.NOTEBOOK
+                sort_order: ordering.NOTEBOOK,
+                fork_of:attrs.fork_of
             };
             notebook_nodes.push(result);
         }
@@ -831,10 +833,16 @@ var editor = function () {
         // add_history_nodes will do an async call to get the history.
         if(history)
             histories_[gistname] = history;
+        var fork_of = "";
+        if(result.fork_of)
+            fork_of = "@"+result.fork_of.owner.login+ " : " + result.fork_of.description;
+        if(!fork_of)
+            fork_of = "none";
 
         var entry = update_notebook_model(user, gistname,
                                           result.description,
-                                          result.updated_at || result.history[0].committed_at);
+                                          result.updated_at || result.history[0].committed_at,
+                                          fork_of);
 
         update_notebook_view(user, gistname, entry, selroot);
     }
@@ -1094,6 +1102,11 @@ var editor = function () {
             always[0].appendChild(appear[0]);
             $li.hover(
                 function() {
+                    var notebook_info = get_notebook_info(node.gistname);
+                    var parent_info = node.fork_of;
+                    if(parent_info) {
+                        $li.attr("title", "notebook forked from : " + parent_info);
+                    }
                     $('.notebook-commands.appear', this).show();
                 },
                 function() {

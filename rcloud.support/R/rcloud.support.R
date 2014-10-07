@@ -529,7 +529,7 @@ rcloud.config.set.user.option <- function(key, value)
 
 rcloud.get.notebook.info <- function(id) {
   base <- usr.key(user=".notebook", notebook=id)
-  fields <- c("username", "description", "last_commit", "visible")
+  fields <- c("username", "description", "last_commit", "visible", "fork_of")
   keys <- rcs.key(base, fields)
   results <- rcs.get(keys, list=TRUE)
   names(results) <- fields
@@ -547,6 +547,7 @@ rcloud.set.notebook.info <- function(id, info) {
   rcs.set(rcs.key(base, "username"), info$username)
   rcs.set(rcs.key(base, "description"), info$description)
   rcs.set(rcs.key(base, "last_commit"), info$last_commit)
+  rcs.set(rcs.key(base, "fork_of"), info$fork_of)
 }
 
 rcloud.purl.source <- function(contents)
