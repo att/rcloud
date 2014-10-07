@@ -1230,7 +1230,7 @@ var editor = function () {
                                        'icon-star', 'icon-star-empty');
             return promise;
         },
-        fatal_reload: function(message) {swf
+        fatal_reload: function(message) {
             var url = make_edit_url({notebook: current_.notebook, version: current_.version});
             message = "<p>Sorry, RCloud's internal state has become inconsistent.  Please reload to return to a working state.</p><p>" + message + "</p>";
             RCloud.UI.fatal_dialog(message, "Reload", url);
