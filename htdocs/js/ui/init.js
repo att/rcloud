@@ -114,7 +114,7 @@ RCloud.UI.init = function() {
     document.addEventListener("keydown", function(e) {
         if (e.keyCode == 83 && (e.ctrlKey || e.metaKey)) {
             e.preventDefault();
-            $('#save-notebook').click();
+            shell.save_notebook();
         }
     });
 };
