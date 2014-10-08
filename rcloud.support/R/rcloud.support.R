@@ -287,7 +287,7 @@ rcloud.search <-function(query) {
         if(visibility) {
           json[i] <- toJSON(c('QTime'=time,'notebook'=notebook,'id'=id,'starcount'=starcount,'updated_at'=updated.at,'user'=user,'parts'=parts))
         } else {
-          json[i] <- toJSON("")
+          json[i] <- toJSON('')
         }
       }
       return(json)
@@ -348,10 +348,9 @@ rcloud.is.notebook.published <- function(id) {
 rcloud.is.notebook.visible <- function(id) {
   visibility <- rcs.get(rcs.key(".notebook", id, "visible"))
   if(is.null(visibility) | length(visibility) == 0) {
-    FALSE
-  } else {
-    TRUE
+    visibility <- FALSE
   }
+  visibility
 }
 
 rcloud.set.notebook.visibility <- function(id, value) {

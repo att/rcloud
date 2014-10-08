@@ -28,6 +28,7 @@ RCloud.UI.search = {
                 var search_results = "";
                 var star_count;
                 var qtime = 0;
+                var match_count = 0;
                 //iterating for all the notebooks got in the result/response
                 for(i = 0; i < len; i++) {
                     try {
@@ -70,8 +71,10 @@ RCloud.UI.search = {
                             "<a id=\"open_" + i + "\" href='#' data-gistname='" + notebook_id + "' class='search-result-heading'>" +
                             d[i].user + " / " + d[i].notebook + "</a>" +
                             image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
-                        if(parts_table !== "")
+                        if(parts_table !== "") {
                             search_results += "<tr><td colspan=2 width=100% style='font-size: 12'><div>" + parts_table + "</div></td></tr>";
+                            match_count = match_count + 1
+                        }
                         search_results += "</table>";
                     } catch(e) {
                         summary("Error : \n" + e);
@@ -80,7 +83,7 @@ RCloud.UI.search = {
                 var qry = decodeURIComponent(query);
                 qry = qry.replace(/</g,'&lt;');
                 qry = qry.replace(/>/g,'&gt;');
-                var search_summary = len + " Results Found"; //+ " <i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i>";
+                var search_summary = match_count + " Results Found"; //+ " <i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i>";
                 summary(search_summary);
                 $("#search-results-row").css('display', 'table-row');
                 $('#search-results').html(search_results);
