@@ -621,13 +621,25 @@ li.jqtree-selected .notebook-commands {
     color: #555;
     float: left;
     margin-bottom: .4em;
+    max-width: 93%;
+    min-width: 93%;
+    padding: 2px;
+    margin: 0px 5px;
 }
 
 #comment-entry {
     width: 100%;
     padding-bottom: 2px;
     clear:both
+}
 
+#comment-entry-body {
+    height:41px;
+    min-height:41px;
+    width:65%;
+    overflow:hidden;
+    padding:2px;
+    margin:3px;
 }
 
 /******************************************************************************/
