@@ -28,7 +28,7 @@ var common_deps = [
     // AMD-compatible
     "bluebird", "underscore", "d3", "sha256",
     // soon-to-be-amdized
-    "jquery-1.10.2",
+    "jquery",
     // other
     "hl.min", "jDataView", "jquery.cookies.2.2.0",
     "jquery.scrollto", "laconic", "jquery-ui",
