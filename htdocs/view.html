@@ -18,39 +18,44 @@
     <!-- <script type="text/javascript" src="/js/rcloud_bundle.js"></script> -->
     <!-- <script type="text/javascript" src="/view.js"></script> -->
   </head>
-<body>
-
-<div class="navbar navbar-inverse navbar-fixed-top">
-  <div>
-    <!--div class="container"-->
-      <div class="navbar-header">
-        <a class="navbar-brand" href="#">RCloud</a>
-      </div>
-      <div class="nav-collapse "> <!-- why collapse not work here worx in main -->
-        <ul class="nav navbar-nav">
-          <li><button id="edit-notebook" title="Edit Notebook" type="button" class="btn btn-link navbar-btn"><i class="icon-edit"></i></button></li>
-          <li><button id="run-notebook" title="Run All" type="button" class="btn btn-link navbar-btn"><i class="icon-play"></i></button></li>
-          <li><a href="#" class="unclickable">[<span id="notebook-title">Untitled</span>]</a></li>
-        </ul>
-        <ul class="nav navbar-nav navbar-right">
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Advanced <b class="caret"></b></a>
-            <ul class="dropdown-menu">
-              <li><a href="#" id="open-in-github">Open in GitHub</a></li>
-              <li><a href="#" id="show-source"><i class="icon-check"></i>&nbsp;Show Source</a></li>
-            </ul>
-          </li>
-        </ul>
-      </div>
-    <!--/div-->
-  </div>
-</div>
+<body style="padding: 0px;">
 
 <div class="container" id="main-div">
   <div class="row">
     <!--div class="col-md-1"></div-->
     <div class="col-md-8 col-sm-8 col-md-offset-2 col-sm-offset-2 no-padding" id="middle-column">
       <div id="rcloud-cellarea">
+        <div class="navbar navbar-inverse" style="border-radius: 0px;">
+          <div>
+            <div class="container">
+              <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">RCloud</a>
+              </div>
+              <div class="navbar-collapse collapse"> <!-- why collapse not work here worx in main -->
+              <ul class="nav navbar-nav">
+                <li><button id="edit-notebook" title="Edit Notebook" type="button" class="btn btn-link navbar-btn"><i class="icon-edit"></i></button></li>
+                <li><button id="run-notebook" title="Run All" type="button" class="btn btn-link navbar-btn"><i class="icon-play"></i></button></li>
+                <li><a href="#" class="unclickable">[<span id="notebook-title">Untitled</span>]</a></li>
+              </ul>
+              <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Advanced <b class="caret"></b></a>
+                  <ul class="dropdown-menu">
+                    <li><a href="#" id="open-in-github">Open in GitHub</a></li>
+                    <li><a href="#" id="show-source"><i class="icon-check"></i>&nbsp;Show Source</a></li>
+                  </ul>
+                </li>
+              </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div id="output" class="tab-div">
         </div>
         <div style="padding:1em; clear:both"></div>
