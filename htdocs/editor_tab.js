@@ -864,74 +864,6 @@ var editor = function () {
         }
     }
 
-    function populate_comments(comments) {
-        try {
-            comments = JSON.parse(comments);
-        } catch (e) {
-            RCloud.UI.session_pane.post_error("populate comments: " + e.message);
-            return;
-        }
-        var is_editable=false;
-        d3.select("#comment-count").text(String(comments.length));
-        // no update logic, clearing/rebuilding is easier
-        d3.select("#comments-container").selectAll("div").remove();
-        var comment_div = d3.select("#comments-container")
-            .selectAll("div")
-            .data(comments)
-            .enter()
-            .append("div")
-            .attr("class", "comment-container")
-            .on("mouseover",function(d){
-                if(d.user.login===username_) {
-                    $('.comment-header-close', this).show();
-                }
-            })
-            .on("mouseout",function(d){
-                $('.comment-header-close', this).hide();
-            })
-            .attr("comment_id",function(d) { return d.id; });
-        comment_div
-            .append("div")
-            .attr("class", "comment-header")
-            .style({"max-width":"30%"})
-            .text(function(d) { return d.user.login; });
-
-        comment_div
-            .append("div")
-            .attr("class", "comment-body")
-            .style({"max-width":"70%"})
-            .append("div")
-            .attr("class", "comment-body-text")
-            .text(function(d) { return d.body; })
-            .each(function(d){
-                var comment_element = $(this);
-                var edit_comment = function(v){
-                    var comment_text = comment_element.html();
-                    editor.modify_comment(d.id, comment_text);
-                };
-                var editable_opts = {
-                    change: edit_comment,
-                    allow_multiline: true,
-                    validate: function(name) { return editor.validate_name(name); }
-                };
-                var is_editable = d.user.login===username_;
-                ui_utils.editable(comment_element, $.extend({allow_edit: is_editable,inactive_text: comment_element.text(),active_text: comment_element.text()},editable_opts));
-            });
-        var text_div = d3.selectAll(".comment-body",this);
-        text_div
-            .append("i")
-            .attr("class", "icon-remove comment-header-close")
-            .style({"max-width":"5%"})
-            .on("click", function (d) {
-                if(d.user.login===username_)
-                    editor.delete_comment(d.id).then(function(v){console.log(v);});
-            });
-        $('#collapse-comments').trigger('size-changed');
-        ui_utils.on_next_tick(function() {
-            ui_utils.scroll_to_after($("#comments-qux"));
-        });
-    }
-
     function format_date(month, date) {
         return (month+1) + '/' + date;
     }
@@ -1436,49 +1368,13 @@ var editor = function () {
                                    update_notebook_from_gist(result, history, options.selroot);
                                });
 
-                var comments_promise = rcloud.get_all_comments(result.id).then(function(data) {
-                    populate_comments(data);
-                });
+                var comments_promise = RCloud.UI.comments_frame.display_comments();
                 var publish_promise = rcloud.is_notebook_published(result.id).then(function(p) {
                     publish_notebook_checkbox_.set_state(p);
                     publish_notebook_checkbox_.enable(result.user.login === username_);
                 });
                 return Promise.all([stars_promise, comments_promise, publish_promise]).return(result);
             };
-        },
-        post_comment: function(comment) {
-            comment = JSON.stringify({"body":comment});
-            return rcloud.post_comment(current_.notebook, comment)
-                .then(function() {
-                    return rcloud.get_all_comments(current_.notebook)
-                        .then(function(data) {
-                            populate_comments(data);
-                            $('#comment-entry-body').val('');
-                        });
-                });
-        },
-        modify_comment: function (cid,comment) {
-            comment = JSON.stringify({
-                "body": comment
-            });
-            return rcloud.modify_comment(current_.notebook,cid, comment).then(function (result) {
-                if (!result)
-                    return null;
-                return rcloud.get_all_comments(current_.notebook).then(function (data) {
-                    populate_comments(data);
-                    $('#comment-entry-body').val('');
-                });
-            });
-        },
-        delete_comment: function (cid) {            
-            return rcloud.delete_comment(current_.notebook,cid).then(function (result) {
-                if (!result)
-                    return null;
-                return rcloud.get_all_comments(current_.notebook).then(function (data) {
-                    populate_comments(data);
-                    $('#comment-entry-body').val('');
-                });
-            });
         },
         search: function(search_string) {
             var that = this;
