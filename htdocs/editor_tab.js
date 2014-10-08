@@ -902,7 +902,7 @@ var editor = function () {
             .style({"max-width":"70%"})
             .append("div")
             .attr("class", "comment-body-text")
-            .style({"max-width":"95%","min-width":"95%","padding":"2px","margin":"2px"})
+            .style({"max-width":"93%","min-width":"93%","padding":"2px","margin":"2px"})
             .text(function(d) { return d.body; })
             .each(function(d){
                 var comment_element = $(this);
