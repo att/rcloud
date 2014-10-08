@@ -287,7 +287,7 @@ rcloud.search <-function(query) {
         if(visibility) {
           json[i] <- toJSON(c('QTime'=time,'notebook'=notebook,'id'=id,'starcount'=starcount,'updated_at'=updated.at,'user'=user,'parts'=parts))
         } else {
-          json[i] <- toJSON('')
+          json[i] <- toJSON('{}')
         }
       }
       return(json)
