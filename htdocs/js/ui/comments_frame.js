@@ -61,7 +61,7 @@ RCloud.UI.comments_frame = (function() {
             .style({"max-width":"5%"})
             .on("click", function (d) {
                 if(editable(d))
-                    result.delete_comment(d.id).then(function(v){console.log(v);});
+                    result.delete_comment(d.id);
             });
         $('#collapse-comments').trigger('size-changed');
         ui_utils.on_next_tick(function() {
@@ -130,7 +130,7 @@ RCloud.UI.comments_frame = (function() {
                 .then(this.display_comments.bind(this));
         },
         delete_comment: function (cid) {
-            return rcloud.delete_comment(current_.notebook,cid)
+            return rcloud.delete_comment(shell.gistname(), cid)
                 .then(this.display_comments.bind(this));
         }
     };
