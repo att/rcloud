@@ -33,7 +33,7 @@ var common_deps = [
     "hl.min", "jDataView", "jquery.cookies.2.2.0",
     "jquery.scrollto", "laconic", "jquery-ui",
     "bootstrap", "peg-0.6.2.min",
-    "rserve", "tree.jquery"
+    "rserve", "tree.jquery", "FileSaver"
 ];
 
 function start_require(deps) {

@@ -21,13 +21,8 @@ var shell = (function() {
     }
 
     function download_as_file(filename, content, mimetype) {
-        var element = document.createElement('a'),
-            file = new Blob([content], {type: mimetype}),
-            fileURL = URL.createObjectURL(file);
-        element.download = filename;
-        element.href = fileURL;
-        element.dataset.downloadurl = [mimetype, element.download, element.href].join(":");
-        element.click();
+        var file = new Blob([content], {type: mimetype});
+        saveAs(file, filename); // FileSaver.js
     }
 
     function on_new(notebook) {
