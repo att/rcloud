@@ -18,15 +18,20 @@
     <!-- <script type="text/javascript" src="/js/rcloud_bundle.js"></script> -->
     <!-- <script type="text/javascript" src="/view.js"></script> -->
   </head>
-<body>
+<body style="margin:0px;padding:0px">
 
-<div class="navbar navbar-inverse navbar-fixed-top">
+<div class="navbar navbar-inverse">
   <div>
     <!--div class="container"-->
       <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
         <a class="navbar-brand" href="#">RCloud</a>
       </div>
-      <div class="nav-collapse "> <!-- why collapse not work here worx in main -->
+      <div class="navbar-collapse collapse"> <!-- why collapse not work here worx in main -->
         <ul class="nav navbar-nav">
           <li><button id="edit-notebook" title="Edit Notebook" type="button" class="btn btn-link navbar-btn"><i class="icon-edit"></i></button></li>
           <li><button id="run-notebook" title="Run All" type="button" class="btn btn-link navbar-btn"><i class="icon-play"></i></button></li>
