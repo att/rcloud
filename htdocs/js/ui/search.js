@@ -28,6 +28,7 @@ RCloud.UI.search = {
                 } else {
                     $('#paging').html("");
                     $('#search-results').html("");
+                    $('#search-summary').html("");
                 }
             }
         }
@@ -118,7 +119,7 @@ RCloud.UI.search = {
                         }
                         var togid = i + "more";
                         if(parts_table !== "") {
-                            if(nooflines > 4) {
+                            if(nooflines > 10) {
                                 parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table>" + parts_table + "</table></div>" +
                                     "<div style=\"position: relative;\"><a href=\"#\" id='"+togid+"' onclick=\"toggle("+i+",'"+togid+"');\" style=\"color:orange\">Show me more...</a></div></div>";
                             } else {
@@ -137,7 +138,7 @@ RCloud.UI.search = {
                     }
                 }
                 if(!pgclick) {
-                    $('#page_navigation').html("");
+                    $('#paging').html("");
                     var number_of_pages = noofpages;
                     $('#current_page').val(0);
                     $('#show_per_page').val(show_per_page);
@@ -146,7 +147,7 @@ RCloud.UI.search = {
                         $("#paging").bootpag({
                             total: number_of_pages,
                             page: 1,
-                            maxVisible: 5
+                            maxVisible: 8
                         }).on('page', function(event, num){
                             go_to_page(num-1);
                         });
@@ -156,10 +157,26 @@ RCloud.UI.search = {
                 var qry = decodeURIComponent(query);
                 qry = qry.replace(/</g,'&lt;');
                 qry = qry.replace(/>/g,'&gt;');
-                var search_summary = numfound + " Results Found"; //+ " <i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i>";
+                var search_summary;
+                if(numfound === 0) {
+                    var search_summary = "No Results Found";
+                } else {
+                    search_summary = numfound +" Results Found, showing ";
+                    if(numfound-start === 1) {
+                        search_summary += (start + 1);
+                    } else if(numfound-start != 1 && numfound < noofrows) {
+                        search_summary += (start+1)+" - "+numfound;
+                    } else if(start === 1 ) {
+                        search_summary += start+" - "+noofrows;
+                    } else {
+                        search_summary += (start+1)+" - "+noofrows;
+                    }
+                }
                 summary(search_summary);
                 $("#search-results-row").css('display', 'table-row');
+                $("#search-results-row").animate({ scrollTop: $(document).height() }, "slow");
                 $('#search-results').html(search_results);
+                $('.next,.prev').removeClass('disabled');
                 $("#search-results .search-result-heading").click(function(e) {
                     e.preventDefault();
                     var gistname = $(this).attr("data-gistname");
@@ -207,7 +224,7 @@ function go_to_page(page_num){
     var sortby= $("#sort-by option:selected").val();
     var orderby= $("#order-by option:selected" ).val();
     $('#input-text-search').blur();
-
+    $('.next,.prev').addClass('disabled');
     if(!($('#input-text-search').val() === ""))
         RCloud.UI.search.exec(qry,sortby,orderby,start,end,true);
 }
@@ -294,7 +311,7 @@ function go_to_page(page_num){
         return this.each(function(){
 
             var $bootpag, lp, me = $(this),
-                p = ['<ul class="pagination bootpag">'];
+                p = ['<ul class="pagination pagination-sm bootpag">'];
 
             if(settings.prev){
                 p.push('<li data-lp="1" class="prev"><a href="'+href(1)+'">'+settings.prev+'</a></li>');
