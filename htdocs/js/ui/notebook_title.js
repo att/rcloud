@@ -1,5 +1,9 @@
 RCloud.UI.notebook_title = (function() {
     var last_editable_ =  null;
+    var node_ = null;
+    function tag_current_notebook(name) {
+        editor.tag_notebook(name,node_);
+    }
     function rename_current_notebook(name) {
         editor.rename_notebook(name)
             .then(function() {
@@ -52,15 +56,23 @@ RCloud.UI.notebook_title = (function() {
                                               editable_opts));
         }, make_editable: function(node, editable) {
             function get_title(node) {
-                return $('.jqtree-title:not(.history)', node.element);
+                if(!node.version) {
+                    return $('.jqtree-title:not(.history)', node.element);
+                } else {
+                    return $('.jqtree-title', node.element);
+                }
             }
             if(last_editable_ && (!node || last_editable_ !== node))
                 ui_utils.editable(get_title(last_editable_), 'destroy');
             if(node) {
+                if(node.version) {
+                    node_ = node;
+                    editable_opts.change = tag_current_notebook;
+                }
                 ui_utils.editable(get_title(node),
                                   $.extend({allow_edit: editable,
                                             inactive_text: node.name,
-                                            active_text: node.full_name},
+                                            active_text: node.name},
                                            editable_opts));
             }
             last_editable_ = node;
