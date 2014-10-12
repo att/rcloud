@@ -1,6 +1,12 @@
 #!/bin/sh
 set +x
 
+if [ "$1" = "--skip-packages" ]; then
+    SKIP_PACKAGES=1
+    shift
+fi
+
+
 if [ ! -e rcloud.support/DESCRIPTION ]; then
     if [ -n "$ROOT" ]; then
 	echo "NOTE: changing to '$ROOT' according to ROOT"
@@ -42,14 +48,16 @@ build_package()
 }
 
 # build internal packages (not in git) & rcloud.packages
-for dir in internal rcloud.packages packages; do
-    if [ -e $dir ]; then
-        for pkg in `ls $dir/*/DESCRIPTION 2>/dev/null | sed -e s:$dir/:: -e 's:/DESCRIPTION::'`; do
-            echo $pkg
-	    (cd $dir && build_package $pkg) || (echo;echo;echo; echo package $pkg FAILED to build!;echo;echo)
-        done
-    fi
-done
+if [ -z "$SKIP_PACKAGES" ]; then
+    for dir in internal rcloud.packages packages; do
+        if [ -e $dir ]; then
+            for pkg in `ls $dir/*/DESCRIPTION 2>/dev/null | sed -e s:$dir/:: -e 's:/DESCRIPTION::'`; do
+                echo $pkg
+	        (cd $dir && build_package $pkg) || (echo;echo;echo; echo package $pkg FAILED to build!;echo;echo)
+            done
+        fi
+    done
+fi
 
 build_package rcloud.client || exit 1
 build_package rcloud.support || exit 1

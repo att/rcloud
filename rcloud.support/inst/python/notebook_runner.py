@@ -94,8 +94,8 @@ class NotebookRunner(object):
 
     def __init__(self, **kw):
         self.km = KernelManager()
-        self.km.kernel_cmd = make_ipkernel_cmd('import sys; sys.path.append("%s"); from rcloud_kernel import main; main()' % kw["rcloud_support_path"], **kw)
-        del kw["rcloud_support_path"]
+        self.km.kernel_cmd = make_ipkernel_cmd('import sys; sys.path.extend("%s".split(":")); from rcloud_kernel import main; main()' % kw["rcloud_python_lib_path"], **kw)
+        del kw["rcloud_python_lib_path"]
         self.km.client_factory = MyClient
         self.km.start_kernel(**kw)
 
