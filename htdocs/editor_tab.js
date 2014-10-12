@@ -585,7 +585,7 @@ var editor = function () {
                 var d;
                 hdat.committed_at = new Date(hist.committed_at);
                 hdat.last_commit = force_date ? hdat.committed_at : display_date_for_entry(i);
-                hdat.label = (hist.tag?hist.tag.substring(0, 10):sha);
+                hdat.label = ((hist.tag && hist.tag!=="")?hist.tag:sha);
                 hdat.version = hist.version;
                 hdat.id = node.id + '/' + hdat.version;
                 do_color(hdat, color);

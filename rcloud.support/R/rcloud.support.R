@@ -25,9 +25,9 @@ rcloud.load.notebook <- function(id, version = NULL) {
   }
   hist <- res$content$history
   for(i in 1:length(hist)) {
-    res$content$history[[i]]$tag <- hist[[i]]$version;
+    res$content$history[[i]]$tag = "";
     tryCatch({
-      tag <- rcs.get(hist[[i]]$version)
+      tag <- rcs.get(res$content$history[[i]]$version)
       if (!is.na(tag)) {
         res$content$history[[i]]$tag <- tag;
       }
@@ -508,7 +508,7 @@ rcloud.config.get.current.notebook <- function() {
   base <- usr.key(user=.session$username, notebook="system", "config", "current")
   list(notebook = rcs.get(rcs.key(base, "notebook")),
        version = rcs.get(rcs.key(base, "version")),
-       tag = rcs.get(rcs.key(base, "tag"))),
+       tag = rcs.get(rcs.key(base, "tag")))
 }
 
 rcloud.config.set.current.notebook <- function(current) {
