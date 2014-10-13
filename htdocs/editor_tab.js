@@ -535,7 +535,7 @@ var editor = function () {
 
     // add_history_nodes
     // whither is 'hide' - erase all, 'index' - show thru index, 'sha' - show thru sha, 'more' - show INCR more
-    function add_history_nodes(node, whither, where) {
+    function update_history_nodes(node, whither, where) {
         var INCR = 5;
         var debug_colors = false;
         var ellipsis = null;
@@ -585,11 +585,19 @@ var editor = function () {
                 var d;
                 hdat.committed_at = new Date(hist.committed_at);
                 hdat.last_commit = force_date ? hdat.committed_at : display_date_for_entry(i);
-                hdat.label = sha;
+                hdat.label = (hist.tag?hist.tag:sha);
                 hdat.version = hist.version;
                 hdat.id = node.id + '/' + hdat.version;
                 do_color(hdat, color);
                 return hdat;
+            }
+            function update_hist_node(node, i) {
+                var hist = history[i];
+                var sha = hist.version.substring(0, 10);
+                var attrs = {
+                    label: (hist.tag?hist.tag:sha)
+                };
+                $tree_.tree('updateNode', node, attrs);
             }
             var history = histories_[node.gistname].slice(1); // first item is current version
             if(!history)
@@ -625,6 +633,11 @@ var editor = function () {
                 insf(make_hist_node('green', i, starting && i==nins-1));
 
             var count = curr_count();
+            // updates
+            for(i = nins; i<count; ++i)
+                update_hist_node(node.children[i], i);
+
+            // add or trim bottom
             if(count < nshow) { // top up
                 if(ellipsis)
                     insf = function(dat) { return $tree_.tree('addNodeBefore', dat, ellipsis); };
@@ -663,13 +676,15 @@ var editor = function () {
         }
         else if(whither==='index')
             nshow = Math.max(where, INCR);
+        else if(whither==='same')
+            nshow = curr_count();
         else if(whither==='more')
             nshow = curr_count() + INCR;
         else if(whither==='sha') {
             if(histories_[node.gistname])
                 nshow = show_sha(histories_[node.gistname], where);
         }
-        else throw new Error("add_history_nodes don't understand how to seek '" + whither + "'");
+        else throw new Error("update_history_nodes don't understand how to seek '" + whither + "'");
 
         if(histories_[node.gistname]) {
             process_history(nshow);
@@ -703,11 +718,7 @@ var editor = function () {
     function select_node(node) {
         $tree_.tree('selectNode', node);
         scroll_into_view(node);
-        if(!node.version)
-            RCloud.UI.notebook_title.make_editable(
-                node,
-                !shell.notebook.model.read_only());
-        else RCloud.UI.notebook_title.make_editable(null);
+        RCloud.UI.notebook_title.make_editable(node,true);
     }
 
     function update_tree_entry(root, user, gistname, entry, create) {
@@ -736,7 +747,7 @@ var editor = function () {
             whither = 'sha';
             where = current_.version;
         }
-        return add_history_nodes(node, whither, where);
+        return update_history_nodes(node, whither, where);
     }
 
     function update_notebook_view(user, gistname, entry, selroot) {
@@ -828,7 +839,7 @@ var editor = function () {
         var user = result.user.login, gistname = result.id;
         // we only receive history here if we're at HEAD, so use that if we get
         // it.  otherwise use the remembered history if any.  otherwise
-        // add_history_nodes will do an async call to get the history.
+        // update_history_nodes will do an async call to get the history.
         if(history)
             histories_[gistname] = history;
 
@@ -1036,6 +1047,8 @@ var editor = function () {
             url += '?notebook=' + opts.notebook;
             if(opts.version)
                 url = url + '&version='+opts.version;
+            if(opts.tag && opts.version)
+                url = url + '&tag='+opts.tag;
         }
         else if(opts.new_notebook)
             url += '?new_notebook=true';
@@ -1046,15 +1059,15 @@ var editor = function () {
             result.show_history(event.node.parent, false);
         else if(event.node.gistname) {
             if(event.click_event.metaKey || event.click_event.ctrlKey)
-                result.open_notebook(event.node.gistname, event.node.version, true, true);
+                result.open_notebook(event.node.gistname, event.node.version, event.node.name, true, true);
             else {
                 // it's weird that a notebook exists in two trees but only one is selected (#220)
                 // just select - and this enables editability
                 if(event.node.gistname === current_.notebook &&
-                   event.node.version == current_.version) // nulliness ok here
+                    event.node.version == current_.version && event.node.version === null) // nulliness ok here
                     select_node(event.node);
                 else
-                    result.open_notebook(event.node.gistname, event.node.version || null, event.node.root, false);
+                    result.open_notebook(event.node.gistname, event.node.version || null, event.node.name, event.node.root, false);
             }
         }
         else
@@ -1105,7 +1118,7 @@ var editor = function () {
             username_ = rcloud.username();
             var promise = load_everything().then(function() {
                 if(opts.notebook) { // notebook specified in url
-                    return that.load_notebook(opts.notebook, opts.version)
+                    return that.load_notebook(opts.notebook, opts.version, opts.tag)
                         .catch(function(xep) {
                             var message = "Could not open notebook " + opts.notebook;
                             if(opts.version)
@@ -1114,7 +1127,7 @@ var editor = function () {
                             throw xep;
                         });
                 } else if(!opts.new_notebook && current_.notebook) {
-                    return that.load_notebook(current_.notebook, current_.version)
+                    return that.load_notebook(current_.notebook, current_.version, current_.tag)
                         .catch(function(xep) {
                             // if loading fails for a reason that is not actually a loading problem
                             // then don't keep trying.
@@ -1177,7 +1190,7 @@ var editor = function () {
         find_next_copy_name: function(name) {
             return find_next_copy_name(username_, name);
         },
-        load_notebook: function(gistname, version, selroot, push_history) {
+        load_notebook: function(gistname, version, tag, selroot, push_history) {
             var that = this;
             selroot = selroot || true;
             return shell.load_notebook(gistname, version)
@@ -1189,14 +1202,14 @@ var editor = function () {
                                           selroot: selroot,
                                           push_history: push_history}));
         },
-        open_notebook: function(gistname, version, selroot, new_window) {
+        open_notebook: function(gistname, version, tag, selroot, new_window) {
             // really just load_notebook except possibly in a new window
             if(new_window) {
-                var url = make_edit_url({notebook: gistname, version: version});
+                var url = make_edit_url({notebook: gistname, version: version, tag: tag});
                 window.open(url, "_blank");
             }
             else
-                this.load_notebook(gistname, version, selroot);
+                this.load_notebook(gistname, version, tag, selroot);
         },
         new_notebook: function() {
             var that = this;
@@ -1212,6 +1225,19 @@ var editor = function () {
         },
         rename_notebook: function(desc) {
             return shell.rename_notebook(desc);
+        },
+        tag_notebook : function(tag_string,node) {
+            var history = histories_[node.parent.gistname];
+            for(var i=0;i<history.length;i++) {
+                if (history[i].version === node.version) {
+                    history[i].tag = tag_string;
+                }
+                if(history[i].tag === tag_string && history[i].version != node.version) {
+                    history[i].tag = undefined;
+                }
+            }
+            return rcloud.tag_notebook_version(node.parent.gistname, node.version, tag_string)
+                .then(result.show_history(node.parent, {update: true}));
         },
         star_notebook: function(star, opts) {
             var that = this;
@@ -1302,16 +1328,18 @@ var editor = function () {
             return shell.revert_notebook(gistname, version)
                 .then(this.load_callback({is_change: true, selroot: true}));
         },
-        show_history: function(node, toggle) {
-            var whither = 'more';
+        show_history: function(node, opts) {
+            if(_.isBoolean(opts))
+                opts = {toggle: opts};
+            var whither = opts.update ? 'same' : 'more';
             if(node.children.length) {
                 if(!node.is_open) {
                     $tree_.tree('openNode', node);
                     return;
                 }
-                if(toggle) whither = 'hide';
+                if(opts.toggle) whither = 'hide';
             }
-            add_history_nodes(node, whither, null)
+            update_history_nodes(node, whither, null)
                 .then(function(node) {
                     var history_len = 0;
                     if(histories_[node.gistname]) {
@@ -1331,7 +1359,14 @@ var editor = function () {
                  selroot: null,
                  push_history: true}, opts);
             return function(result) {
-                current_ = {notebook: result.id, version: options.version};
+                if(!options.tag) {
+                    for(var i=0;i<result.history.length;i++) {
+                        if(result.history[i].version === options.version) {
+                            options.tag = result.history[i].tag;
+                        }
+                    }
+                }
+                current_ = {notebook: result.id, version: options.version, tag: options.tag};
                 rcloud.config.set_current_notebook(current_);
                 rcloud.config.set_recent_notebook(result.id, (new Date()).toString());
                 RCloud.UI.share_button.set_link(result);
@@ -1345,7 +1380,7 @@ var editor = function () {
                      window.history.replaceState)
                     .bind(window.history)
                  */
-                var url = make_edit_url({notebook: result.id, version: options.version});
+                var url = make_edit_url({notebook: result.id, version: options.version, tag:options.tag});
                 window.history.replaceState("rcloud.notebook", null, url);
                 rcloud.api.set_url(url);
 

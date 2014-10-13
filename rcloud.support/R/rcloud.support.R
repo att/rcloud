@@ -23,7 +23,28 @@ rcloud.load.notebook <- function(id, version = NULL) {
     .session$current.notebook <- res
     rcloud.reset.session()
   }
+  hist <- res$content$history
+  for(i in 1:length(hist)) {
+    res$content$history[[i]]$tag = "";
+    tryCatch({
+      tag <- rcs.get(res$content$history[[i]]$version)
+      if (!is.na(tag)) {
+        res$content$history[[i]]$tag <- tag;
+      }
+    },
+    error=function(e){}
+    )
+  }
   res
+}
+
+rcloud.tag.notebook.version <- function(gist_id,version,tag_name) {
+  tag <- rcs.get(paste0(gist_id,"_",tag_name))
+  if(!is.null(tag)) {
+   rcs.rm(tag)
+  }
+  rcs.set(version,tag_name)
+  rcs.set(paste0(gist_id,"_",tag_name),version)
 }
 
 rcloud.install.notebook.stylesheets <- function() {
@@ -485,13 +506,15 @@ rcloud.config.remove.notebook <- function(id)
 rcloud.config.get.current.notebook <- function() {
   base <- usr.key(user=.session$username, notebook="system", "config", "current")
   list(notebook = rcs.get(rcs.key(base, "notebook")),
-       version = rcs.get(rcs.key(base, "version")))
+       version = rcs.get(rcs.key(base, "version")),
+       tag = rcs.get(rcs.key(base, "tag")))
 }
 
 rcloud.config.set.current.notebook <- function(current) {
   base <- usr.key(user=.session$username, notebook="system", "config", "current")
   rcs.set(rcs.key(base, "notebook"), current$notebook)
   rcs.set(rcs.key(base, "version"), current$version)
+  rcs.set(rcs.key(base, "tag"), current$tag)
 }
 
 rcloud.config.new.notebook.number <- function()
