@@ -1016,7 +1016,7 @@ var editor = function () {
             add_buttons.commit();
             appear.hide();
             always.append($.el.span({"class": "notebook-commands appear-wrapper"}, appear[0]));
-            $li.hover(
+            $li.find('*:not(ul)').hover(
                 function() {
                     $('.notebook-commands.appear', this).show();
                 },
