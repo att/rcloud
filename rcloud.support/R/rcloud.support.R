@@ -300,11 +300,16 @@ rcloud.search <-function(query) {
         time <- solr.res$responseHeader$QTime
         notebook <- response.docs[[i]]$description
         id <- response.docs[[i]]$id
+        visibility <- rcloud.is.notebook.visible(id)
         starcount <- response.docs[[i]]$starcount
         updated.at <- response.docs[[i]]$updated_at
         user <- response.docs[[i]]$user
         parts <- response.high[[i]]$content
-        json[i] <- toJSON(c('QTime'=time,'notebook'=notebook,'id'=id,'starcount'=starcount,'updated_at'=updated.at,'user'=user,'parts'=parts))
+        if(visibility) {
+          json[i] <- toJSON(c('QTime'=time,'notebook'=notebook,'id'=id,'starcount'=starcount,'updated_at'=updated.at,'user'=user,'parts'=parts))
+        } else {
+          json[i] <- toJSON('{}')
+        }
       }
       return(json)
     } else
@@ -361,8 +366,13 @@ rcloud.is.notebook.published <- function(id) {
   !is.null(rcs.get(rcs.key(".notebook", id, "public")))
 }
 
-rcloud.is.notebook.visible <- function(id)
-  rcs.get(rcs.key(".notebook", id, "visible"))
+rcloud.is.notebook.visible <- function(id) {
+  visibility <- rcs.get(rcs.key(".notebook", id, "visible"))
+  if(is.null(visibility) | length(visibility) == 0) {
+    visibility <- FALSE
+  }
+  visibility
+}
 
 rcloud.set.notebook.visibility <- function(id, value) {
   if(notebook.is.mine(id)) {
