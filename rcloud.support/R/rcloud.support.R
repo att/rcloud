@@ -23,7 +23,26 @@ rcloud.load.notebook <- function(id, version = NULL) {
     .session$current.notebook <- res
     rcloud.reset.session()
   }
+  for(i in 1:length(res$content$history)) {
+    ###load it from redis or ff ow just assign the same as version(10)
+    res$content$history[[i]]$tag <- res$content$history[[i]]$version;
+    tryCatch({
+      if (!is.na(rcs.get(res$content$history[[i]]$version))) {
+        res$content$history[[i]]$tag <- rcs.get(res$content$history[[i]]$version);
+      }
+    },
+    error=function(e){}
+    )
+  }
   res
+}
+
+rcloud.tag.notebook.version <- function(gist_id,version,tag_name) {
+  if(!is.null(rcs.get(paste0(gist_id,"_",tag_name)))) {
+    rcs.rm(rcs.get(paste0(gist_id,"_",tag_name)))
+  }
+  rcs.set(version,tag_name)
+  rcs.set(paste0(gist_id,"_",tag_name),version)
 }
 
 rcloud.install.notebook.stylesheets <- function() {
