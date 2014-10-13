@@ -613,6 +613,12 @@ li.jqtree-selected .notebook-commands {
     float: left;
     color: #000;
     display:none;
+    max-width:5%;
+    display:inline-block;
+    margin-left: 66%;
+    position:relative;
+    top:12px;
+    right:11px;
 }
 .comment-header-close:hover{
     cursor: pointer;
@@ -627,7 +633,7 @@ li.jqtree-selected .notebook-commands {
     margin-bottom: .4em;
     max-width: 93%;
     min-width: 93%;
-    padding: 2px;
+    padding: 4px 2px 2px 4px;
     margin: 0px 5px;
 }
 
