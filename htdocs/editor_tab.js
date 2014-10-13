@@ -743,6 +743,11 @@ var editor = function () {
 
     function update_notebook_view(user, gistname, entry, selroot) {
         function open_and_select(node) {
+            $("#forked-from-desc").text("");
+            if(entry.fork_of && entry.fork_of!=="none") {
+                $("#forked-from-desc").text("forked from "+entry.fork_of);
+            }
+
             if(current_.version) {
                 $tree_.tree('openNode', node);
                 var n2 = $tree_.tree('getNodeById',
@@ -1034,10 +1039,6 @@ var editor = function () {
             $li.hover(
                 function() {
                     var notebook_info = get_notebook_info(node.gistname);
-                    var parent_info = node.fork_of;
-                    if(parent_info) {
-                        $li.attr("title", "notebook forked from : " + parent_info);
-                    }
                     $('.notebook-commands.appear', this).show();
                 },
                 function() {
@@ -1064,7 +1065,7 @@ var editor = function () {
             result.show_history(event.node.parent, false);
         else if(event.node.gistname) {
             if(event.click_event.metaKey || event.click_event.ctrlKey)
-                result.open_notebook(event.node.gistname, event.node.version, true, true);
+                result.open_notebook(event.node.gistname, event.node.version, event.node.fork_of, true, true);
             else {
                 // it's weird that a notebook exists in two trees but only one is selected (#220)
                 // just select - and this enables editability
@@ -1072,7 +1073,7 @@ var editor = function () {
                    event.node.version == current_.version) // nulliness ok here
                     select_node(event.node);
                 else
-                    result.open_notebook(event.node.gistname, event.node.version || null, event.node.root, false);
+                    result.open_notebook(event.node.gistname, event.node.version || null, event.node.fork_of, event.node.root, false);
             }
         }
         else
@@ -1195,7 +1196,7 @@ var editor = function () {
         find_next_copy_name: function(name) {
             return find_next_copy_name(username_, name);
         },
-        load_notebook: function(gistname, version, selroot, push_history) {
+        load_notebook: function(gistname, version, selroot, fork_of, push_history) {
             var that = this;
             selroot = selroot || true;
             return shell.load_notebook(gistname, version)
@@ -1207,14 +1208,14 @@ var editor = function () {
                                           selroot: selroot,
                                           push_history: push_history}));
         },
-        open_notebook: function(gistname, version, selroot, new_window) {
+        open_notebook: function(gistname, version, fork_of, selroot, new_window) {
             // really just load_notebook except possibly in a new window
             if(new_window) {
                 var url = make_edit_url({notebook: gistname, version: version});
                 window.open(url, "_blank");
             }
             else
-                this.load_notebook(gistname, version, selroot);
+                this.load_notebook(gistname, version, selroot, fork_of);
         },
         new_notebook: function() {
             var that = this;
