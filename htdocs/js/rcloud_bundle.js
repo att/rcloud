@@ -179,6 +179,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["load_notebook"],
             ["call_notebook"],
             ["install_notebook_stylesheets"],
+            ["tag_notebook_version"],
             ["get_users"],
             ["log", "record_cell_execution"],
             ["setup_js_installer"],
@@ -240,6 +241,10 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_github_handler(
                 "rcloud.load.notebook " + id,
                 rcloud_ocaps.load_notebookAsync(id, version));
+        };
+
+        rcloud.tag_notebook_version = function(gist_id,version,tag_name) {
+            return rcloud_ocaps.tag_notebook_versionAsync(gist_id,version,tag_name);
         };
 
         rcloud.call_notebook = function(id, version) {
@@ -4031,6 +4036,10 @@ RCloud.UI.middle_column = (function() {
 }());
 RCloud.UI.notebook_title = (function() {
     var last_editable_ =  null;
+    var node_ = null;
+    function tag_current_notebook(name) {
+        editor.tag_notebook(name,node_);
+    }
     function rename_current_notebook(name) {
         editor.rename_notebook(name)
             .then(function() {
@@ -4083,15 +4092,23 @@ RCloud.UI.notebook_title = (function() {
                                               editable_opts));
         }, make_editable: function(node, editable) {
             function get_title(node) {
-                return $('.jqtree-title:not(.history)', node.element);
+                if(!node.version) {
+                    return $('.jqtree-title:not(.history)', node.element);
+                } else {
+                    return $('.jqtree-title', node.element);
+                }
             }
             if(last_editable_ && (!node || last_editable_ !== node))
                 ui_utils.editable(get_title(last_editable_), 'destroy');
             if(node) {
+                if(node.version) {
+                    node_ = node;
+                    editable_opts.change = tag_current_notebook;
+                }
                 ui_utils.editable(get_title(node),
                                   $.extend({allow_edit: editable,
                                             inactive_text: node.name,
-                                            active_text: node.full_name},
+                                            active_text: node.name},
                                            editable_opts));
             }
             last_editable_ = node;
@@ -4725,7 +4742,7 @@ RCloud.UI.search = {
                 $("#search-results .search-result-heading").click(function(e) {
                     e.preventDefault();
                     var gistname = $(this).attr("data-gistname");
-                    editor.open_notebook(gistname, null, true, e.metaKey || e.ctrlKey);
+                    editor.open_notebook(gistname, null, null, true, e.metaKey || e.ctrlKey);
                     return false;
                 });
             }
