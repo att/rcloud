@@ -1019,11 +1019,11 @@ var editor = function () {
             $li.find('*:not(ul)').hover(
                 function() {
                     $('.notebook-commands.appear', this).show();
-                    $('.notebook-date', this).hide();
+                    $('.notebook-date', this).css('visibility', 'hidden');
                 },
                 function() {
                     $('.notebook-commands.appear', this).hide();
-                    $('.notebook-date', this).show();
+                    $('.notebook-date', this).css('visibility', 'visible');
                 });
         }
         element.append(right);
