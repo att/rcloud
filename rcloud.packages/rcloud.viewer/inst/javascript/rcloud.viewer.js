@@ -32,7 +32,7 @@ return {
         if(nrows>1000) nrows = 1000;
         // styling the table would go better with CSS but we can only
         // install CSS by URL right now(?)
-        var header_style = 'border-style: solid; border-width: 1; border-color: #666666; background-color: #dedede';
+        var header_style = 'border-style: solid; border-width: 1; border-color: #666666; background-color: #dedede; font-family: sans-serif; font-size: 13px';
         var datum_style = 'border-style: solid; border-width: 1; border-color: #666666';
         var header = $.el.tr({}, [$.el.th({style: 'border: none'})].concat(columns.map(function(x) {
             return $.el.th({scope:'col', style: header_style}, x);
