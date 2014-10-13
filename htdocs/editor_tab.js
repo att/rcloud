@@ -535,7 +535,7 @@ var editor = function () {
 
     // add_history_nodes
     // whither is 'hide' - erase all, 'index' - show thru index, 'sha' - show thru sha, 'more' - show INCR more
-    function add_history_nodes(node, whither, where) {
+    function update_history_nodes(node, whither, where) {
         var INCR = 5;
         var debug_colors = false;
         var ellipsis = null;
@@ -585,11 +585,19 @@ var editor = function () {
                 var d;
                 hdat.committed_at = new Date(hist.committed_at);
                 hdat.last_commit = force_date ? hdat.committed_at : display_date_for_entry(i);
-                hdat.label = ((hist.tag && hist.tag!=="")?hist.tag:sha);
+                hdat.label = (hist.tag?hist.tag:sha);
                 hdat.version = hist.version;
                 hdat.id = node.id + '/' + hdat.version;
                 do_color(hdat, color);
                 return hdat;
+            }
+            function update_hist_node(node, i) {
+                var hist = history[i];
+                var sha = hist.version.substring(0, 10);
+                var attrs = {
+                    label: (hist.tag?hist.tag:sha)
+                };
+                $tree_.tree('updateNode', node, attrs);
             }
             var history = histories_[node.gistname].slice(1); // first item is current version
             if(!history)
@@ -625,6 +633,11 @@ var editor = function () {
                 insf(make_hist_node('green', i, starting && i==nins-1));
 
             var count = curr_count();
+            // updates
+            for(i = nins; i<count; ++i)
+                update_hist_node(node.children[i], i);
+
+            // add or trim bottom
             if(count < nshow) { // top up
                 if(ellipsis)
                     insf = function(dat) { return $tree_.tree('addNodeBefore', dat, ellipsis); };
@@ -663,13 +676,15 @@ var editor = function () {
         }
         else if(whither==='index')
             nshow = Math.max(where, INCR);
+        else if(whither==='same')
+            nshow = curr_count();
         else if(whither==='more')
             nshow = curr_count() + INCR;
         else if(whither==='sha') {
             if(histories_[node.gistname])
                 nshow = show_sha(histories_[node.gistname], where);
         }
-        else throw new Error("add_history_nodes don't understand how to seek '" + whither + "'");
+        else throw new Error("update_history_nodes don't understand how to seek '" + whither + "'");
 
         if(histories_[node.gistname]) {
             process_history(nshow);
@@ -732,7 +747,7 @@ var editor = function () {
             whither = 'sha';
             where = current_.version;
         }
-        return add_history_nodes(node, whither, where);
+        return update_history_nodes(node, whither, where);
     }
 
     function update_notebook_view(user, gistname, entry, selroot) {
@@ -824,7 +839,7 @@ var editor = function () {
         var user = result.user.login, gistname = result.id;
         // we only receive history here if we're at HEAD, so use that if we get
         // it.  otherwise use the remembered history if any.  otherwise
-        // add_history_nodes will do an async call to get the history.
+        // update_history_nodes will do an async call to get the history.
         if(history)
             histories_[gistname] = history;
 
@@ -1217,17 +1232,17 @@ var editor = function () {
             return shell.rename_notebook(desc);
         },
         tag_notebook : function(tag_string,node) {
-            for(var i=0;i<histories_[node.parent.gistname].length;i++) {
-                if (histories_[node.parent.gistname][i].version === node.version) {
-                    histories_[node.parent.gistname][i].tag = tag_string;
-                    }
-                if(histories_[node.parent.gistname][i].tag === tag_string && histories_[node.parent.gistname][i].version != node.version) {
-                    histories_[node.parent.gistname][i].tag = (node.version).substring(0,10);
-                    }
+            var history = histories_[node.parent.gistname];
+            for(var i=0;i<history.length;i++) {
+                if (history[i].version === node.version) {
+                    history[i].tag = tag_string;
                 }
-            rcloud.tag_notebook_version(node.parent.gistname, node.version, tag_string)
-            .then(result.show_history(node.parent, true))
-            .then(result.open_notebook(node.gistname, node.version || null, tag_string, node.root, false));
+                if(history[i].tag === tag_string && history[i].version != node.version) {
+                    history[i].tag = undefined;
+                }
+            }
+            return rcloud.tag_notebook_version(node.parent.gistname, node.version, tag_string)
+                .then(result.show_history(node.parent, {update: true}));
         },
         star_notebook: function(star, opts) {
             var that = this;
@@ -1318,16 +1333,18 @@ var editor = function () {
             return shell.revert_notebook(gistname, version)
                 .then(this.load_callback({is_change: true, selroot: true}));
         },
-        show_history: function(node, toggle) {
-            var whither = 'more';
+        show_history: function(node, opts) {
+            if(_.isBoolean(opts))
+                opts = {toggle: opts};
+            var whither = opts.update ? 'same' : 'more';
             if(node.children.length) {
                 if(!node.is_open) {
                     $tree_.tree('openNode', node);
                     return;
                 }
-                if(toggle) whither = 'hide';
+                if(opts.toggle) whither = 'hide';
             }
-            add_history_nodes(node, whither, null)
+            update_history_nodes(node, whither, null)
                 .then(function(node) {
                     var history_len = 0;
                     if(histories_[node.gistname]) {
