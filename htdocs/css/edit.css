@@ -388,10 +388,9 @@ ul.jqtree-tree .jqtree-title.private {
 }
 
 .notebook-commands.appear-wrapper {
-    background-color: white;
     position: absolute;
     right: 30px;
-    width: 80px; // block out date entirely
+    width: 100px;
 }
 
 .notebook-commands.appear {

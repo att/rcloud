@@ -1019,9 +1019,11 @@ var editor = function () {
             $li.find('*:not(ul)').hover(
                 function() {
                     $('.notebook-commands.appear', this).show();
+                    $('.notebook-date', this).hide();
                 },
                 function() {
                     $('.notebook-commands.appear', this).hide();
+                    $('.notebook-date', this).show();
                 });
         }
         element.append(right);
