@@ -164,6 +164,10 @@ rcloud.anonymous.session.init <- function(...) {
 rcloud.reset.session <- function() {
   ## use the global workspace as the parent to avoid long lookups across irrelevant namespaces
   .session$knitr.env <- new.env(parent=.GlobalEnv)
+  ## load all-user and per-user rcloud add-ons
+  all.addons <- rcs.get(rcs.key(user=".allusers", notebook="system", "config", "addons"), list=TRUE)
+  user.addons <- rcloud.config.get.user.option("addons")
+  lapply(c(all.addons,user.addons), function(x) { require(x, character.only=TRUE) })
   ## FIXME: we should reset the knitr graphics state which lingers as well as the current device which is dirty at this point
   NULL
 }
