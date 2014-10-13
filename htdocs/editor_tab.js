@@ -905,7 +905,7 @@ var editor = function () {
             title.addClass('history');
         var right = $($.el.span({'class': 'notebook-right'}));
         if(node.last_commit) {
-            right[0].appendChild($.el.span({'id': 'date',
+            right.append($.el.span({'id': 'date',
                                             'class': 'notebook-date'},
                                            display_date(node.last_commit)));
         }
@@ -953,11 +953,11 @@ var editor = function () {
                 state = !!val;
                 $(this).find('i').attr('class', states[state].class);
             };
-            star_unstar[0].appendChild($.el.sub(String(num_stars_[node.gistname] || 0)));
+            star_unstar.append($.el.sub(String(num_stars_[node.gistname] || 0)));
             add_buttons(star_unstar);
 
             add_buttons.commit();
-            right[0].appendChild(always[0]);
+            right.append(always);
 
             // commands that appear
             var appear = $($.el.span({'class': 'notebook-commands appear'}));
@@ -1022,7 +1022,7 @@ var editor = function () {
             add_buttons.commit();
             appear.css({left: '-'+wid, width: wid});
             appear.hide();
-            always[0].appendChild(appear[0]);
+            always.append(appear[0]);
             $li.hover(
                 function() {
                     $('.notebook-commands.appear', this).show();
@@ -1031,7 +1031,7 @@ var editor = function () {
                     $('.notebook-commands.appear', this).hide();
                 });
         }
-        element[0].appendChild(right[0]);
+        element.append(right);
     }
 
     function make_edit_url(opts) {
