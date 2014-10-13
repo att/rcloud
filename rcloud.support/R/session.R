@@ -89,18 +89,18 @@ session.python.eval <- function(command) {
       for (t in mime_order) {  # SSI -- this is a poor man's hack; I need to define handlers separately...
                                # Other option is to ensure the python runner always sends HTML?
          if (t %in% found_mimes) {
-            if (t == "html") { 
+            if (t == "html") {
                 best_repr <- chunk$html
             } else if (t %in% c("png", "jpeg")) {
-                best_repr <- paste("<img src=\"data:image/", t, ";base64,", 
+                best_repr <- paste("<img src=\"data:image/", t, ";base64,",
                                    sub("\\s+$", "", chunk$png), "\">\n", sep='')
             } else if (t == "text") {
                 best_repr <- paste("<pre>", chunk$text, "</pre>", sep='')
             }
-            break # bail out after the first representation we found along the hierarchy 
+            break # bail out after the first representation we found along the hierarchy
          }
       }
-    } 
+    }
     best_repr
   }
   # SSI -- Suggest dropping Markdown for formatting Python code -- considering Pygments is used for many languages!
@@ -146,7 +146,7 @@ rcloud.session.init <- function(...) {
   ## set default mirror if not specified to avoid interactive selection
   if (isTRUE("@CRAN@" %in% getOption("repos")))
       options(repos=c(CRAN = if(nzConf("cran.mirror")) getConf("cran.mirror") else "http://cran.r-project.org"))
-  
+
   ver <- paste0('RCloud ', rcloud.info("version.string"), ' ')
   if (nzchar(rcloud.info("revision"))) ver <- paste0(ver, "(", rcloud.info("branch"), "/", rcloud.info("revision"), "), ")
   paste0(ver, R.version.string, "<br>Welcome, ", .session$username)

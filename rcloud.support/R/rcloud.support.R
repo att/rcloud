@@ -474,7 +474,6 @@ rcloud.config.all.notebooks.multiple.users <- function(users) {
   result <- lapply(users, user.all.notebooks)
   names(result) <- users
   result
-
 }
 
 rcloud.config.add.notebook <- function(id)
