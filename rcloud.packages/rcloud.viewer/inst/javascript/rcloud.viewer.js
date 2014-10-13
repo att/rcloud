@@ -25,7 +25,7 @@ return {
     },
     view: function(data, title, k) {
         $('#viewer-body > table').remove();
-        var columns = _.without(_.keys(data).sort(), 'r_attributes', 'r_type');
+        var columns = _.without(data.r_attributes.names, 'r_attributes', 'r_type');
         if(columns.length<1)
             k();
         var nrows = data[columns[0]].length;
