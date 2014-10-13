@@ -3990,14 +3990,17 @@ RCloud.UI.init = function() {
     $('#rcloud-cellarea').on('scroll', function() {
         $(this).scrollLeft(0);
     });
-    
-    //prevent default ctrl/cmd+s on browser and internally hit save icon
-    document.addEventListener("keydown", function(e) {
-        if (e.keyCode == 83 && (e.ctrlKey || e.metaKey)) {
-            e.preventDefault();
-            shell.save_notebook();
-        }
-    });
+
+    // if we have a save button (e.g. not view mode), prevent browser's default
+    // ctrl/cmd+s and save notebook
+    if(saveb.size()) {
+        document.addEventListener("keydown", function(e) {
+            if (e.keyCode == 83 && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                shell.save_notebook();
+            }
+        });
+    }
 };
 RCloud.UI.left_panel =
     RCloud.UI.collapsible_column("#left-column",
