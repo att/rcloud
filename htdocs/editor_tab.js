@@ -914,16 +914,11 @@ var editor = function () {
                 RCloud.UI.notebook_title.make_editable(
                     node, !shell.notebook.model.read_only());
             var adder = function(target) {
-                var count = 0;
                 var lst = [];
                 function add(items) {
                     lst.push(document.createTextNode(String.fromCharCode(160)));
                     lst.push.apply(lst, arguments);
-                    ++count;
                 }
-                add.width = function() {
-                    return count*15;
-                };
                 add.commit = function() {
                     target.append.apply(target, lst);
                 };
@@ -1018,11 +1013,9 @@ var editor = function () {
                 });
                 add_buttons(remove);
             }
-            var wid = add_buttons.width()+'px';
             add_buttons.commit();
-            appear.css({left: '-'+wid, width: wid});
             appear.hide();
-            always.append(appear[0]);
+            always.append($.el.span({"class": "notebook-commands appear-wrapper"}, appear[0]));
             $li.hover(
                 function() {
                     $('.notebook-commands.appear', this).show();

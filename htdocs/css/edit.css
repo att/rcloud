@@ -387,10 +387,15 @@ ul.jqtree-tree .jqtree-title.private {
     color: black;
 }
 
-.notebook-commands.appear {
-    position: absolute;
-    bottom: 0px;
+.notebook-commands.appear-wrapper {
     background-color: white;
+    position: absolute;
+    right: 30px;
+    width: 80px; // block out date entirely
+}
+
+.notebook-commands.appear {
+    float: right;
 }
 
 li.jqtree-selected .notebook-commands {
