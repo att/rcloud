@@ -16,13 +16,10 @@ RCloud.UI.command_prompt = {
         this.prompt.restore();
     },
     setup_prompt_history: function() {
-        var entries_ = [], alt_ = [], alt_lang_ = "R";
+        var entries_ = [], alt_ = [];
         var curr_ = 0;
         function curr_cmd() {
             return alt_[curr_] || (curr_<entries_.length ? entries_[curr_] : "");
-        }
-        function curr_lang() {
-            return alt_lang_ || "R";
         }
         var prefix_ = null;
         var result = {
@@ -31,23 +28,19 @@ RCloud.UI.command_prompt = {
                 var i = 0;
                 entries_ = [];
                 alt_ = [];
-                alt_lang_ = "R";
+                var alt_lang_ = window.localStorage["last_cell_lang"] || "R";
                 while(1) {
                     var cmd = window.localStorage[prefix_+i],
-                        cmda = window.localStorage[prefix_+i+".alt"],
-                        langa = window.localStorage["last_cell_lang"];
+                        cmda = window.localStorage[prefix_+i+".alt"];
                     if(cmda !== undefined)
                         alt_[i] = cmda;
-                    if(langa !== undefined) {
-                        alt_lang_ = langa;
-                    }
                     if(cmd === undefined)
                         break;
                     entries_.push(cmd);
                     ++i;
                 }
                 curr_ = entries_.length;
-                return {"cmd":curr_cmd(),"lang":curr_lang()};
+                return {"cmd":curr_cmd(),"lang":alt_lang_};
             },
             execute: function(cmd) {
                 if(cmd==="") return;
