@@ -170,7 +170,7 @@ rcloud.reset.session <- function() {
     all.addons <- list()
   user.addons <- rcloud.config.get.user.option("addons")
   if(is.null(user.addons))
-    all.addons <- list()
+    user.addons <- list()
   lapply(c(all.addons,user.addons), function(x) { require(x, character.only=TRUE) })
   ## FIXME: we should reset the knitr graphics state which lingers as well as the current device which is dirty at this point
   NULL
