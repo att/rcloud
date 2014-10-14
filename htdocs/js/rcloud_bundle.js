@@ -969,15 +969,22 @@ ui_utils.editable = function(elem$, command) {
         });
         elem$.keydown(function(e) {
             var entr_key = (e.keyCode === 13);
-            if((command.allow_multiline && (entr_key && (e.ctrlKey || e.metaKey))) || (entr_key && !command.allow_multiline)) {
+            if (options().ctrl_cmd && entr_key && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
-                var result = elem$.text();
-                result = decode(result);
-                if(options().validate(result)) {
+                var txt = elem$.text();
+                txt = decode(txt);
+                elem$.blur();
+                options().ctrl_cmd(txt);
+            }
+            else if((command.allow_multiline && (entr_key && (e.ctrlKey || e.metaKey))) || (entr_key && !command.allow_multiline)) {
+                e.preventDefault();
+                var txt = elem$.text();
+                txt = decode(txt);
+                if(options().validate(txt)) {
                     options().__active = false;
                     elem$.off('blur'); // don't cancel!
                     elem$.blur();
-                    options().change(result);
+                    options().change(txt);
                 } else {
                     return false; // don't let CR through!
                 }
@@ -4064,9 +4071,19 @@ RCloud.UI.notebook_title = (function() {
         range.setEnd(el.firstChild, text.length);
         return range;
     }
+    var ctrl_cmd = function(forked_gist_name) {
+        var is_mine = shell.notebook.controller.is_mine();
+        var gistname = shell.gistname();
+        var version = shell.version();
+        editor.fork_notebook(is_mine, gistname, version)
+            .then(function rename(v){
+                    rename_current_notebook(forked_gist_name)
+                });
+    }
     var editable_opts = {
         change: rename_current_notebook,
         select: select,
+        ctrl_cmd:ctrl_cmd,
         validate: function(name) { return editor.validate_name(name); }
     };
 
