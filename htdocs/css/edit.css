@@ -1010,7 +1010,7 @@ pre > .vt100 {
 * extending bootstrap pagination class
 */
 .pagination {
-    margin: 1px 0;
+    margin: 6px 0;
 }
 .pagination-sm > li > a,
 .pagination-sm > li > span {
