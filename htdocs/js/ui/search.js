@@ -177,7 +177,6 @@ RCloud.UI.search = {
                 $("#search-results-row").css('display', 'table-row');
                 $("#search-results-row").animate({ scrollTop: $(document).height() }, "slow");
                 $('#search-results').html(search_results);
-                $('.next,.prev').removeClass('disabled');
                 $("#search-results .search-result-heading").click(function(e) {
                     e.preventDefault();
                     var gistname = $(this).attr("data-gistname");
@@ -193,7 +192,7 @@ RCloud.UI.search = {
         $("#search-results").html("");
         query = encodeURIComponent(query);
         RCloud.UI.with_progress(function() {
-            return rcloud.search(query,sortby,orderby,start,noofrows)
+            return rcloud.search(query,sortby,orderby,start)
                 .then(function(v) {
                     create_list_of_search_results(v);
                 });
@@ -225,7 +224,6 @@ function go_to_page(page_num){
     var sortby= $("#sort-by option:selected").val();
     var orderby= $("#order-by option:selected" ).val();
     $('#input-text-search').blur();
-    $('.next,.prev').addClass('disabled');
     if(!($('#input-text-search').val() === ""))
         RCloud.UI.search.exec(qry,sortby,orderby,start,end,true);
 }
