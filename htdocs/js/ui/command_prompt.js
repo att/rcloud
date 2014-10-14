@@ -28,6 +28,7 @@ RCloud.UI.command_prompt = {
                 var i = 0;
                 entries_ = [];
                 alt_ = [];
+                var last_lang = window.localStorage["last_cell_lang"] || "R";
                 while(1) {
                     var cmd = window.localStorage[prefix_+i],
                         cmda = window.localStorage[prefix_+i+".alt"];
@@ -39,7 +40,7 @@ RCloud.UI.command_prompt = {
                     ++i;
                 }
                 curr_ = entries_.length;
-                return curr_cmd();
+                return {"cmd":curr_cmd(),"lang":last_lang};
             },
             execute: function(cmd) {
                 if(cmd==="") return;
@@ -118,8 +119,9 @@ RCloud.UI.command_prompt = {
         }
 
         function restore_prompt() {
-            var cmd = that.history.init();
-            change_prompt(cmd);
+            var prop = that.history.init();
+            change_prompt(prop.cmd);
+            $("#insert-cell-language").val(prop.lang);
             var r = last_row(widget);
             ui_utils.ace_set_pos(widget, r, last_col(widget, r));
         }
