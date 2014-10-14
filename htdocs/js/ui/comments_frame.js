@@ -19,6 +19,14 @@ RCloud.UI.comments_frame = (function() {
             .enter()
             .append("div")
             .attr("class", "comment-container")
+            .on("mouseover",function(d){
+                    if(editable(d)) {
+                        $('.comment-header-close', this).css('visibility', 'visible');
+                    }
+            })
+            .on("mouseout",function(d){
+                    $('.comment-header-close', this).css('visibility', 'hidden');
+            })
             .attr("comment_id",function(d) { return d.id; });
         comment_div
             .append("i")
