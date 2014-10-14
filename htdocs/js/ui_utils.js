@@ -391,7 +391,7 @@ ui_utils.editable = function(elem$, command) {
         });
         elem$.keydown(function(e) {
             var entr_key = (e.keyCode === 13);
-            if (entr_key && (e.ctrlKey || e.metaKey)) {
+            if (options().ctrl_cmd && entr_key && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 var txt = elem$.text();
                 txt = decode(txt);
