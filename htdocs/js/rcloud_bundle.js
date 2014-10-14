@@ -179,6 +179,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["load_notebook"],
             ["call_notebook"],
             ["install_notebook_stylesheets"],
+            ["tag_notebook_version"],
             ["get_users"],
             ["log", "record_cell_execution"],
             ["setup_js_installer"],
@@ -240,6 +241,10 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_github_handler(
                 "rcloud.load.notebook " + id,
                 rcloud_ocaps.load_notebookAsync(id, version));
+        };
+
+        rcloud.tag_notebook_version = function(gist_id,version,tag_name) {
+            return rcloud_ocaps.tag_notebook_versionAsync(gist_id,version,tag_name);
         };
 
         rcloud.call_notebook = function(id, version) {
@@ -964,15 +969,22 @@ ui_utils.editable = function(elem$, command) {
         });
         elem$.keydown(function(e) {
             var entr_key = (e.keyCode === 13);
-            if((command.allow_multiline && (entr_key && (e.ctrlKey || e.metaKey))) || (entr_key && !command.allow_multiline)) {
+            if (options().ctrl_cmd && entr_key && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
-                var result = elem$.text();
-                result = decode(result);
-                if(options().validate(result)) {
+                var txt = elem$.text();
+                txt = decode(txt);
+                elem$.blur();
+                options().ctrl_cmd(txt);
+            }
+            else if((command.allow_multiline && (entr_key && (e.ctrlKey || e.metaKey))) || (entr_key && !command.allow_multiline)) {
+                e.preventDefault();
+                var txt = elem$.text();
+                txt = decode(txt);
+                if(options().validate(txt)) {
                     options().__active = false;
                     elem$.off('blur'); // don't cancel!
                     elem$.blur();
-                    options().change(result);
+                    options().change(txt);
                 } else {
                     return false; // don't let CR through!
                 }
@@ -3464,6 +3476,7 @@ RCloud.UI.command_prompt = {
                 var i = 0;
                 entries_ = [];
                 alt_ = [];
+                var last_lang = window.localStorage["last_cell_lang"] || "R";
                 while(1) {
                     var cmd = window.localStorage[prefix_+i],
                         cmda = window.localStorage[prefix_+i+".alt"];
@@ -3475,7 +3488,7 @@ RCloud.UI.command_prompt = {
                     ++i;
                 }
                 curr_ = entries_.length;
-                return curr_cmd();
+                return {"cmd":curr_cmd(),"lang":last_lang};
             },
             execute: function(cmd) {
                 if(cmd==="") return;
@@ -3554,8 +3567,9 @@ RCloud.UI.command_prompt = {
         }
 
         function restore_prompt() {
-            var cmd = that.history.init();
-            change_prompt(cmd);
+            var prop = that.history.init();
+            change_prompt(prop.cmd);
+            $("#insert-cell-language").val(prop.lang);
             var r = last_row(widget);
             ui_utils.ace_set_pos(widget, r, last_col(widget, r));
         }
@@ -3920,10 +3934,13 @@ RCloud.UI.init = function() {
     });
 
     $("#insert-new-cell").click(function() {
-        var language = $("#insert-cell-language option:selected").text();
+        var language = RCloud.UI.command_prompt.get_language();
         shell.new_cell("", language, false);
         var vs = shell.notebook.view.sub_views;
         vs[vs.length-1].show_source();
+    });
+    $("#insert-cell-language").change(function() {
+        window.localStorage["last_cell_lang"] = RCloud.UI.command_prompt.get_language();
     });
 
     $("#rcloud-logout").click(function() {
@@ -4034,6 +4051,10 @@ RCloud.UI.middle_column = (function() {
 }());
 RCloud.UI.notebook_title = (function() {
     var last_editable_ =  null;
+    var node_ = null;
+    function tag_current_notebook(name) {
+        editor.tag_notebook(name,node_);
+    }
     function rename_current_notebook(name) {
         editor.rename_notebook(name)
             .then(function() {
@@ -4050,9 +4071,19 @@ RCloud.UI.notebook_title = (function() {
         range.setEnd(el.firstChild, text.length);
         return range;
     }
+    var ctrl_cmd = function(forked_gist_name) {
+        var is_mine = shell.notebook.controller.is_mine();
+        var gistname = shell.gistname();
+        var version = shell.version();
+        editor.fork_notebook(is_mine, gistname, version)
+            .then(function rename(v){
+                    rename_current_notebook(forked_gist_name)
+                });
+    }
     var editable_opts = {
         change: rename_current_notebook,
         select: select,
+        ctrl_cmd:ctrl_cmd,
         validate: function(name) { return editor.validate_name(name); }
     };
 
@@ -4086,15 +4117,23 @@ RCloud.UI.notebook_title = (function() {
                                               editable_opts));
         }, make_editable: function(node, editable) {
             function get_title(node) {
-                return $('.jqtree-title:not(.history)', node.element);
+                if(!node.version) {
+                    return $('.jqtree-title:not(.history)', node.element);
+                } else {
+                    return $('.jqtree-title', node.element);
+                }
             }
             if(last_editable_ && (!node || last_editable_ !== node))
                 ui_utils.editable(get_title(last_editable_), 'destroy');
             if(node) {
+                if(node.version) {
+                    node_ = node;
+                    editable_opts.change = tag_current_notebook;
+                }
                 ui_utils.editable(get_title(node),
                                   $.extend({allow_edit: editable,
                                             inactive_text: node.name,
-                                            active_text: node.full_name},
+                                            active_text: node.name},
                                            editable_opts));
             }
             last_editable_ = node;
@@ -4669,6 +4708,7 @@ RCloud.UI.search = {
                 var search_results = "";
                 var star_count;
                 var qtime = 0;
+                var match_count = 0;
                 //iterating for all the notebooks got in the result/response
                 for(i = 0; i < len; i++) {
                     try {
@@ -4711,8 +4751,10 @@ RCloud.UI.search = {
                             "<a id=\"open_" + i + "\" href='#' data-gistname='" + notebook_id + "' class='search-result-heading'>" +
                             d[i].user + " / " + d[i].notebook + "</a>" +
                             image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
-                        if(parts_table !== "")
+                        if(parts_table !== "") {
                             search_results += "<tr><td colspan=2 width=100% style='font-size: 12'><div>" + parts_table + "</div></td></tr>";
+                            match_count = match_count + 1
+                        }
                         search_results += "</table>";
                     } catch(e) {
                         summary("Error : \n" + e);
@@ -4721,14 +4763,14 @@ RCloud.UI.search = {
                 var qry = decodeURIComponent(query);
                 qry = qry.replace(/</g,'&lt;');
                 qry = qry.replace(/>/g,'&gt;');
-                var search_summary = len + " Results Found"; //+ " <i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i>";
+                var search_summary = match_count + " Results Found"; //+ " <i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i>";
                 summary(search_summary);
                 $("#search-results-row").css('display', 'table-row');
                 $('#search-results').html(search_results);
                 $("#search-results .search-result-heading").click(function(e) {
                     e.preventDefault();
                     var gistname = $(this).attr("data-gistname");
-                    editor.open_notebook(gistname, null, true, e.metaKey || e.ctrlKey);
+                    editor.open_notebook(gistname, null, null, true, e.metaKey || e.ctrlKey);
                     return false;
                 });
             }
