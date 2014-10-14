@@ -612,9 +612,8 @@ li.jqtree-selected .notebook-commands {
 .comment-header-close {
     float: left;
     color: #000;
-    display:none;
     max-width:5%;
-    display:inline-block;
+    visibility: hidden;
     margin-left: 66%;
     position:relative;
     top:12px;
