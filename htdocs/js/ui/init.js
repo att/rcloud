@@ -39,10 +39,13 @@ RCloud.UI.init = function() {
     });
 
     $("#insert-new-cell").click(function() {
-        var language = $("#insert-cell-language option:selected").text();
+        var language = RCloud.UI.command_prompt.get_language();
         shell.new_cell("", language, false);
         var vs = shell.notebook.view.sub_views;
         vs[vs.length-1].show_source();
+    });
+    $("#insert-cell-language").change(function() {
+        window.localStorage["last_cell_lang"] = RCloud.UI.command_prompt.get_language();
     });
 
     $("#rcloud-logout").click(function() {
