@@ -393,20 +393,20 @@ ui_utils.editable = function(elem$, command) {
             var entr_key = (e.keyCode === 13);
             if (entr_key && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
-                var result = elem$.text();
-                result = decode(result);
+                var txt = elem$.text();
+                txt = decode(txt);
                 elem$.blur();
-                options().fork(result);
+                options().ctrl_cmd(txt);
             }
             else if((command.allow_multiline && (entr_key && (e.ctrlKey || e.metaKey))) || (entr_key && !command.allow_multiline)) {
                 e.preventDefault();
-                var result = elem$.text();
-                result = decode(result);
-                if(options().validate(result)) {
+                var txt = elem$.text();
+                txt = decode(txt);
+                if(options().validate(txt)) {
                     options().__active = false;
                     elem$.off('blur'); // don't cancel!
                     elem$.blur();
-                    options().change(result);
+                    options().change(txt);
                 } else {
                     return false; // don't let CR through!
                 }
