@@ -1,9 +1,12 @@
 RCloud.UI.command_prompt = {
     prompt: null,
     history: null,
+    show_prompt: true,
     init: function() {
         this.history = this.setup_prompt_history();
         this.prompt = this.setup_command_prompt();
+        if(this.show_prompt)
+            $('#rcloud-cellarea').append(RCloud.UI.panel_loader.load_snippet('command-prompt-snippet'));
     },
     get_language: function() {
         return $("#insert-cell-language option:selected").text();

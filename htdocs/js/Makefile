@@ -45,6 +45,7 @@ rcloud_bundle.js: \
 	ui/scratchpad.js \
 	ui/search.js \
 	ui/session_pane.js \
+	ui/settings_frame.js \
 	ui/share_button.js \
 	ui/upload.js \
 	ui/upload_frame.js

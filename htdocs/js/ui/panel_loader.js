@@ -90,6 +90,15 @@ RCloud.UI.panel_loader = (function() {
                     sort: 200,
                     panel: RCloud.UI.search
                 },
+                Settings: {
+                    side: 'left',
+                    name: 'settings',
+                    title: 'Settings',
+                    icon_class: 'icon-cog',
+                    colwidth: 3,
+                    sort: 250,
+                    panel: RCloud.UI.settings_frame
+                },
                 Help: {
                     side: 'left',
                     name: 'help',
