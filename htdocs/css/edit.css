@@ -606,7 +606,9 @@ li.jqtree-selected .notebook-commands {
 
 .comment-header {
     float: right;
-    color: #aaa
+    color: #aaa;
+    margin-top: 4px;
+    word-wrap: break-word;
 }
 
 .comment-header-close {
@@ -616,7 +618,7 @@ li.jqtree-selected .notebook-commands {
     visibility: hidden;
     margin-left: 66%;
     position:relative;
-    top:12px;
+    top:14px;
     right:11px;
 }
 .comment-header-close:hover{
@@ -632,7 +634,7 @@ li.jqtree-selected .notebook-commands {
     margin-bottom: .4em;
     max-width: 93%;
     min-width: 93%;
-    padding: 4px 2px 2px 4px;
+    padding: 8px 2px 2px 6px;
     margin: 0px 5px;
 }
 
