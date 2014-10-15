@@ -410,7 +410,7 @@ li.jqtree-selected .notebook-commands {
 #search-wrapper {
     display: table;
     table-layout: fixed;
-    height: 100%;
+    height: 90%;
     width: 100%;
 }
 
@@ -1005,4 +1005,14 @@ pre > .vt100 {
 .input-group-btn:last-child > .btn:not(:last-child):not(.dropdown-toggle) {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
+}
+/*
+* extending bootstrap pagination class
+*/
+.pagination {
+    margin: 6px 0px;
+}
+.pagination-sm > li > a,
+.pagination-sm > li > span {
+    padding: 3px 8px;
 }

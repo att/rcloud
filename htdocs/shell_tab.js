@@ -5,6 +5,7 @@ var shell = (function() {
         notebook_user_ = null,
         github_url_ = null,
         gist_url_ = null,
+        page_size_ = 10,
         notebook_model_ = Notebook.create_model(),
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
         notebook_controller_ = Notebook.create_controller(notebook_model_),
@@ -86,6 +87,7 @@ var shell = (function() {
         init: function() {
             rcloud.get_conf_value("github.base.url").then(function(url) { github_url_ = url; });
             rcloud.get_conf_value("github.gist.url").then(function(url) { gist_url_ = url; });
+            rcloud.get_conf_value("solr.page.size").then(function(rowcount) { page_size_ = rowcount; });
         },
         is_view_mode: function() {
             return view_mode_;
@@ -169,6 +171,8 @@ var shell = (function() {
                         return [notebook, notebook.id, null];
                     });
             });
+        }, page_size: function() {
+            return page_size_;
         }, github_url: function() {
             var url;
             if(gist_url_) {
