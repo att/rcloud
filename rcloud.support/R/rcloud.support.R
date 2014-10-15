@@ -38,12 +38,17 @@ rcloud.load.notebook <- function(id, version = NULL) {
 }
 
 rcloud.tag.notebook.version <- function(gist_id, version, tag_name) {
-  v <- rcs.get(rcs.key(username='.notebook', gist_id, 'tags', tag_name))
-  if(!is.null(v)) {
-   rcs.rm(rcs.key(username='.notebook', gist_id, 'tags', v))
+  if(!is.null(tag_name) && tag_name!='') {
+    v <- rcs.get(rcs.key(username='.notebook', gist_id, 'tags', tag_name))
+    if(!is.null(v)) {
+      rcs.rm(rcs.key(username='.notebook', gist_id, 'tags', v))
+    }
+    rcs.set(rcs.key(username='.notebook', gist_id, 'tags', version), tag_name)
+    rcs.set(rcs.key(username='.notebook', gist_id, 'tags', tag_name), version)
   }
-  rcs.set(rcs.key(username='.notebook', gist_id, 'tags', version), tag_name)
-  rcs.set(rcs.key(username='.notebook', gist_id, 'tags', tag_name), version)
+  else {
+    rcs.rm(rcs.key(username='.notebook', gist_id, 'tags', version))
+  }
 }
 
 rcloud.install.notebook.stylesheets <- function() {
