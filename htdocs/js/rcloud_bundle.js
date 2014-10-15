@@ -4835,7 +4835,7 @@ RCloud.UI.session_pane = {
             });
         }
         if(!logged)
-            console.log("pre-init post_error: " + msg);
+            console.log("pre-init post_error: " + msg.text());
     },
     post_rejection: function(e) { // print exception on stack and then post to UI
         var msg = "";
