@@ -4,7 +4,7 @@
 //        directly we can't use require for this (AFAICT) [SU]
 requirejs.config({
     paths: {
-        "shiny": "../../shared/shiny"
+        "shiny": "../../shared.R/shiny"
     }
 });
 
