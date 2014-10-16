@@ -256,7 +256,7 @@ rcloud.search <-function(query,sortby,orderby,start) {
   q <- gsub("%20","+",query)
   pagesize <- rcloud.get.conf.value("solr.page.size")
   if(is.null(pagesize)){
-    pagesize <- 5
+    pagesize <- 10
   }
   solr.url <- paste0(url,"/select?q=",q,"&start=",start,"&rows=",pagesize,"&wt=json&indent=true&fl=description,id,user,updated_at,starcount&hl=true&hl.preserveMulti=true&hl.fl=content,comments&hl.fragsize=0&hl.maxAnalyzedChars=-1&sort=",sortby,"+",orderby)
   solr.res <- getURL(solr.url, .encoding = 'utf-8', .mapUnicode=FALSE)
