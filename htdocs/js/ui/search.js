@@ -73,12 +73,11 @@ RCloud.UI.search = {
                 var qtime = 0;
                 var numfound = 0;
                 var show_per_page = 10;
-                if(shell.page_size() != null){
+                if(shell.page_size() != null) {
                     show_per_page = shell.page_size();
                 }
                 if(d[0] != undefined) {
                     numfound = d[0].numFound;
-
                 }
                 var noofpages =  Math.ceil(numfound/show_per_page);
                 //iterating for all the notebooks got in the result/response
