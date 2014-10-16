@@ -17,7 +17,7 @@ RCloud.UI.search = {
                 searchproc();
             });
             var searchproc=function() {
-                var start = 1;
+                var start = 0;
                 var noofrows = 10;
                 if(shell.page_size() != null){
                     noofrows = shell.page_size();
@@ -168,13 +168,11 @@ RCloud.UI.search = {
                 } else {
                     search_summary = numfound +" Results Found, showing ";
                     if(numfound-start === 1) {
-                        search_summary += (start + 1);
-                    } else if(numfound-start != 1 && numfound < noofrows) {
-                        search_summary += (start+1)+" - "+numfound;
-                    } else if(start === 1 ) {
-                        search_summary += start+" - "+noofrows;
-                    } else {
+                        search_summary += (start+1);
+                    } else if((numfound - noofrows) > 0) {
                         search_summary += (start+1)+" - "+noofrows;
+                    } else {
+                        search_summary += (start+1)+" - "+numfound;
                     }
                 }
                 summary(search_summary);
