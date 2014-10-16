@@ -19,6 +19,9 @@ RCloud.UI.search = {
             var searchproc=function() {
                 var start = 1;
                 var noofrows = shell.page_size();
+                if(shell.page_size() === null){
+                    noofrows = 10;
+                }
                 var qry = $('#input-text-search').val();
                 var sortby = $("#sort-by option:selected").val();
                 var orderby = $("#order-by option:selected").val();
@@ -71,6 +74,9 @@ RCloud.UI.search = {
                 var numfound = 0;
                 var show_per_page = 0;
                 show_per_page = shell.page_size();
+                if(shell.page_size() === null){
+                    show_per_page = 10;
+                }
                 if(d[0] != undefined) {
                     numfound = d[0].numFound;
 
