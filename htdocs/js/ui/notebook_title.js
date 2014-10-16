@@ -78,6 +78,7 @@ RCloud.UI.notebook_title = (function() {
                 if(node.version) {
                     node_ = node;
                     editable_opts.change = tag_current_notebook;
+                    editable_opts.ctrl_cmd = tag_current_notebook;
                     editable_opts.validate = function(name) { return true; }
                 }
                 ui_utils.editable(get_title(node),
