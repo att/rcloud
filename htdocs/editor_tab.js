@@ -1340,7 +1340,7 @@ var editor = function () {
                 rcloud.config.set_current_notebook(current_);
                 rcloud.config.set_recent_notebook(result.id, (new Date()).toString());
                 $('.view_menu li a').click(function(){
-                    $("#view_mode").html(selText+' <span class="caret"></span>');
+                    $("#view_mode").html($(this).text()+' <span class="caret"></span>');
                     RCloud.UI.share_button.set_link(result,$(this).text());
                 });
                 RCloud.UI.share_button.set_link(result);
