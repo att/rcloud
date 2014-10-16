@@ -18,9 +18,9 @@ RCloud.UI.search = {
             });
             var searchproc=function() {
                 var start = 1;
-                var noofrows = shell.page_size();
-                if(shell.page_size() === null){
-                    noofrows = 10;
+                var noofrows = 10;
+                if(shell.page_size() != null){
+                    noofrows = shell.page_size();
                 }
                 var qry = $('#input-text-search').val();
                 var sortby = $("#sort-by option:selected").val();
@@ -72,10 +72,9 @@ RCloud.UI.search = {
                 var star_count;
                 var qtime = 0;
                 var numfound = 0;
-                var show_per_page = 0;
-                show_per_page = shell.page_size();
-                if(shell.page_size() === null){
-                    show_per_page = 10;
+                var show_per_page = 10;
+                if(shell.page_size() != null){
+                    show_per_page = shell.page_size();
                 }
                 if(d[0] != undefined) {
                     numfound = d[0].numFound;
