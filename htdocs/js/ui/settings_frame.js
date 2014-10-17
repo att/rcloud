@@ -94,7 +94,7 @@ RCloud.UI.settings_frame = (function() {
                     for(var key in settings) {
                         if(key==="foo" || key==='r_attributes' || key==='r_type')
                             continue;
-                        var value = settings[key] !== undefined ?
+                        var value = settings[key] !== null ?
                                 settings[key] :
                                 options_[key].default_value;
                         set_option_noecho(key, value);
