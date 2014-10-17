@@ -57,7 +57,6 @@ Notebook.Asset.create_html_view = function(asset_model)
         if(!shell.notebook.model.read_only())
             ui_utils.editable(filename_span, $.extend({allow_edit: true,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
         $(this).focus();
-
     }).blur(
         function() {
             $(this).attr('contentEditable', false);
