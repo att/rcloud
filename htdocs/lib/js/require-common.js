@@ -2,11 +2,11 @@ requirejs_config_obj = {
     "baseUrl": "/lib/js",
     waitSeconds: 30,
     paths: {
-        "jquery": "../../shared/jquery",
-        "jquery-ui": "../../shared/jqueryui/1.10.4/jquery-ui",
+        "jquery": "../../shared.R/jquery",
+        "jquery-ui": "../../shared.R/jqueryui/1.10.4/jquery-ui",
         "rcloud_bundle": "../../js/rcloud_bundle",
         "ace": "../ace_bundle",
-        "selectize": "../../shared/selectize/js/selectize.min"
+        "selectize": "../../shared.R/selectize/js/selectize.min"
     },
     "shim": {
         "tree.jquery": ["jquery"],
