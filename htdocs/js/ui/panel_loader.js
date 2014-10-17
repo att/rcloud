@@ -78,7 +78,7 @@ RCloud.UI.panel_loader = (function() {
                     icon_class: 'icon-folder-open',
                     colwidth: 3,
                     greedy: true,
-                    sort: 100,
+                    sort: 1000,
                     panel: RCloud.UI.notebooks_frame
                 },
                 Search: {
@@ -87,7 +87,7 @@ RCloud.UI.panel_loader = (function() {
                     title: 'Search',
                     icon_class: 'icon-search',
                     colwidth: 4,
-                    sort: 200,
+                    sort: 2000,
                     panel: RCloud.UI.search
                 },
                 Settings: {
@@ -96,7 +96,7 @@ RCloud.UI.panel_loader = (function() {
                     title: 'Settings',
                     icon_class: 'icon-cog',
                     colwidth: 3,
-                    sort: 250,
+                    sort: 3000,
                     panel: RCloud.UI.settings_frame
                 },
                 Help: {
@@ -105,7 +105,7 @@ RCloud.UI.panel_loader = (function() {
                     title: 'Help',
                     icon_class: 'icon-question',
                     colwidth: 5,
-                    sort: 300,
+                    sort: 4000,
                     panel: RCloud.UI.help_frame
                 },
                 Assets: {
@@ -114,7 +114,7 @@ RCloud.UI.panel_loader = (function() {
                     title: 'Assets',
                     icon_class: 'icon-copy',
                     colwidth: 4,
-                    sort: 100,
+                    sort: 1000,
                     panel: RCloud.UI.scratchpad
                 },
                 'File Upload': {
@@ -123,7 +123,7 @@ RCloud.UI.panel_loader = (function() {
                     title: 'File Upload',
                     icon_class: 'icon-upload',
                     colwidth: 2,
-                    sort: 200,
+                    sort: 2000,
                     panel: RCloud.UI.upload_frame
                 },
                 Comments: {
@@ -132,7 +132,7 @@ RCloud.UI.panel_loader = (function() {
                     title: 'Comments',
                     icon_class: 'icon-comments',
                     colwidth: 2,
-                    sort: 300,
+                    sort: 3000,
                     panel: RCloud.UI.comments_frame
                 },
                 Session: {
@@ -141,7 +141,7 @@ RCloud.UI.panel_loader = (function() {
                     title: 'Session',
                     icon_class: 'icon-info',
                     colwidth: 3,
-                    sort: 400,
+                    sort: 4000,
                     panel: RCloud.UI.session_pane
                 }
             });

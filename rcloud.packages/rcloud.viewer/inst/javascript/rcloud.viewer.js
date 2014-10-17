@@ -17,7 +17,7 @@ return {
                 title: 'Viewer',
                 icon_class: 'icon-table',
                 colwidth: 3,
-                sort: 350,
+                sort: 3500,
                 panel: viewer_panel
             }
         });
