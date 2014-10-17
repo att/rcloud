@@ -75,7 +75,8 @@ run <- function(url, query, body, headers)
       ## ready to get the notebook
       et <- paste0("Error fetching contents from notebook '",notebook,"', version '",version,"'")
       nb <- RSclient::RS.eval.qap(c, as.call(list(caps$rcloud$get_notebook, notebook, version)))
-      if (!isTRUE(nb$ok)) stop("Cannot get notebook contents:", paste(capture.output(str(nb)),collapse="\n"))
+      if (inherits(nb, "try-error")) stop(nb)
+      if (!isTRUE(tryCatch(nb$ok, error=function(...) FALSE))) stop("Cannot get notebook contents:", paste(capture.output(str(nb)),collapse="\n"))
       extra.path <- gsub("^/+", "", extra.path)
       payload <- nb$content$files[[extra.path]]$content
       if (is.null(payload)) stop("File `", extra.path, "' not found in notebook `", nb.name, "'")
@@ -88,6 +89,6 @@ run <- function(url, query, body, headers)
       list(payload, type)
     }
   }, error=function(e) {
-    list(paste(et,"<pre>", paste(as.character(e), collapse='\n'), "</pre>"), "text/html")
+    list(paste(et,"<pre>", paste(as.character(e), collapse='\n'), "</pre>"), "text/html", character(), 500L)
   })
 }
