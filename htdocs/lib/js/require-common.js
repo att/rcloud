@@ -5,7 +5,8 @@ requirejs_config_obj = {
         "jquery": "../../shared/jquery",
         "jquery-ui": "../../shared/jqueryui/1.10.4/jquery-ui",
         "rcloud_bundle": "../../js/rcloud_bundle",
-        "ace": "../ace_bundle"
+        "ace": "../ace_bundle",
+        "selectize": "../../shared/selectize/js/selectize.min"
     },
     "shim": {
         "tree.jquery": ["jquery"],
@@ -33,7 +34,7 @@ var common_deps = [
     "hl.min", "jDataView", "jquery.cookies.2.2.0",
     "jquery.scrollto", "laconic", "jquery-ui",
     "bootstrap", "peg-0.6.2.min",
-    "rserve", "tree.jquery", "FileSaver"
+    "rserve", "tree.jquery", "FileSaver", "selectize"
 ];
 
 function start_require(deps) {
