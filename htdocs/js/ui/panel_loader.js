@@ -155,8 +155,14 @@ RCloud.UI.panel_loader = (function() {
             function do_side(panels, side) {
                 function do_panel(p) {
                     add_panel(p);
+                    // conceivably panels could be added to the DOM and initialized
+                    // before we have a session, and then loaded once we have it.
+                    // that's not currently how it works and i'm not sure if this
+                    // init/load distinction makes sense or is consistent
                     if(p.panel.init)
                         p.panel.init();
+                    if(p.panel.load)
+                        p.panel.load();
                     if(p.panel.panel_sizer)
                         $('#' + collapse_name(p.name)).data("panel-sizer",p.panel.panel_sizer);
                     if(p.panel.heading_content_selector)
