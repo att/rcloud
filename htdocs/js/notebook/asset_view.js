@@ -2,7 +2,7 @@ Notebook.Asset.create_html_view = function(asset_model)
 {
     var filename_div = $("<li></li>");
     var anchor = $("<a href='#'></a>");
-    var filename_span = $("<span  style='cursor:pointer'>" + asset_model.filename() + "</span>");
+    var filename_span = $("<span  style='cursor:pointer' contenteditable='false'>" + asset_model.filename() + "</span>");
     var remove = ui_utils.fa_button("icon-remove", "remove", '',
                                     { 'position': 'relative',
                                         'left': '2px',
@@ -49,12 +49,19 @@ Notebook.Asset.create_html_view = function(asset_model)
         select: select,
         validate: function(name) { return editor.validate_name(name); }
     };
-    if(!shell.notebook.model.read_only())
-        ui_utils.editable(filename_span, $.extend({allow_edit: true,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
     filename_span.click(function() {
         if(!asset_model.active())
             asset_model.controller.select();
     });
+    filename_span.dblclick(function() {
+        if(!shell.notebook.model.read_only())
+            ui_utils.editable(filename_span, $.extend({allow_edit: true,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
+        $(this).focus();
+
+    }).blur(
+        function() {
+            $(this).attr('contentEditable', false);
+        });
     remove.click(function() {
         asset_model.controller.remove();
     });
