@@ -9,8 +9,6 @@ rcloud.viewer.caps <- NULL
     caps
   }
   rcloud.viewer.caps <<- f("rcloud.viewer", "rcloud.viewer.js")
-  if(!is.null(rcloud.viewer.caps)) {
+  if(!is.null(rcloud.viewer.caps))
     rcloud.viewer.caps$init()
-    rcloud.out(rcloud.viewer.caps)
-  }
 }
