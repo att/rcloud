@@ -4366,6 +4366,10 @@ RCloud.UI.panel_loader = (function() {
             do_side(panels_, 'left');
             do_side(panels_, 'right');
 
+            // this is dumb but i don't want the collapser to show until load time
+            $('#left-column').append(this.load_snippet('left-pane-collapser-snippet'));
+            $('#right-column').append(this.load_snippet('right-pane-collapser-snippet'));
+
             return Promise.cast(undefined); // until we are loading opts here
         }
     };
