@@ -1,10 +1,17 @@
 RCloud.UI.command_prompt = (function() {
-    var show_prompt_ = true;
+    var show_prompt_ = false, // start hidden so it won't flash if user has it turned off
+        readonly_ = true;
+    function show_or_hide() {
+        if(!readonly_ && show_prompt_)
+            $('#prompt-div').show();
+        else
+            $('#prompt-div').hide();
+    }
     return {
         prompt: null,
         history: null,
         init: function() {
-            var prompt = RCloud.UI.panel_loader.load_snippet('command-prompt-snippet');
+            var prompt = $(RCloud.UI.panel_loader.load_snippet('command-prompt-snippet'));
             if(!show_prompt_)
                 prompt.hide();
             $('#rcloud-cellarea').append(prompt);
@@ -15,10 +22,14 @@ RCloud.UI.command_prompt = (function() {
             if(!arguments.length)
                 return show_prompt_;
             show_prompt_ = val;
-            if(show_prompt_)
-                $('#prompt-div').show();
-            else
-                $('#prompt-div').hide();
+            show_or_hide();
+            return this;
+        },
+        readonly: function(val) {
+            if(!arguments.length)
+                return readonly_;
+            readonly_ = val;
+            show_or_hide();
             return this;
         },
         get_language: function() {

@@ -3447,12 +3447,19 @@ RCloud.UI.column_sizer = {
 };
 
 RCloud.UI.command_prompt = (function() {
-    var show_prompt_ = true;
+    var show_prompt_ = false, // start hidden so it won't flash if user has it turned off
+        readonly_ = true;
+    function show_or_hide() {
+        if(!readonly_ && show_prompt_)
+            $('#prompt-div').show();
+        else
+            $('#prompt-div').hide();
+    }
     return {
         prompt: null,
         history: null,
         init: function() {
-            var prompt = RCloud.UI.panel_loader.load_snippet('command-prompt-snippet');
+            var prompt = $(RCloud.UI.panel_loader.load_snippet('command-prompt-snippet'));
             if(!show_prompt_)
                 prompt.hide();
             $('#rcloud-cellarea').append(prompt);
@@ -3463,10 +3470,14 @@ RCloud.UI.command_prompt = (function() {
             if(!arguments.length)
                 return show_prompt_;
             show_prompt_ = val;
-            if(show_prompt_)
-                $('#prompt-div').show();
-            else
-                $('#prompt-div').hide();
+            show_or_hide();
+            return this;
+        },
+        readonly: function(val) {
+            if(!arguments.length)
+                return readonly_;
+            readonly_ = val;
+            show_or_hide();
             return this;
         },
         get_language: function() {
@@ -3815,7 +3826,7 @@ RCloud.UI.configure_readonly = function() {
         $('#revert-notebook,#save-notebook').hide();
     }
     if(shell.notebook.model.read_only()) {
-        $('#prompt-div').hide();
+        RCloud.UI.command_prompt.readonly(true);
         readonly_notebook.show();
         $('#save-notebook').hide();
         $('#output').sortable('disable');
@@ -3825,7 +3836,7 @@ RCloud.UI.configure_readonly = function() {
         RCloud.UI.scratchpad.set_readonly(true);
     }
     else {
-        $('#prompt-div').show();
+        RCloud.UI.command_prompt.readonly(false);
         readonly_notebook.hide();
         $('#save-notebook').show();
         $('#output').sortable('enable');
