@@ -101,7 +101,7 @@ RCloud.UI.search = {
                         for(var k = 0; k < d[i].parts.length && added_parts < 5; k++) {
                             inner_table = "";
                             var ks = Object.keys(d[i].parts[k]);
-                            if(ks.length > 0 && d[i].parts[k].content !== "" && d[i].parts[k].filename != "scratch.R") {
+                            if(ks.length > 0 && d[i].parts[k].content !== "") {
                                 var content = d[i].parts[k].content;
                                 if(typeof content === "string")
                                     content = [content];
