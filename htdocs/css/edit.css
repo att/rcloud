@@ -330,9 +330,21 @@ form input.linkbox {
     padding: 2px;
 }
 
-.nav li sub {
-    color: #ddd;
+.nav .caret {
+    border-top-color: #ccc;
 }
+
+.nav a:hover .caret {
+    border-top-color: #aaa;
+    border-bottom-color: #aaa;
+}
+
+.nav .open > a,
+.nav .open > a:hover,
+.nav .open > a:focus {
+  background-color: black;
+}
+
 
 #fatal-dialog .modal-content {
     background-color: #f2dede;

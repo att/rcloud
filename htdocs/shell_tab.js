@@ -70,10 +70,6 @@ var shell = (function() {
                 }).then(on_load);
         });
     }
-    
-    function reset_ui_fields() {
-        $("#view_mode").html("View Type"+' <span class="caret"></span>');
-    }
 
     var result = {
         notebook: {
@@ -118,9 +114,6 @@ var shell = (function() {
         },
         load_notebook: function(gistname, version) {
             notebook_controller_.save();
-            //Not sure if this is the right place to reset fields.
-            // IN future we might want to save this in settings for each notebook.
-            reset_ui_fields();
             return do_load(function() {
                 return [notebook_controller_.load_notebook(gistname, version),
                         gistname, version];

@@ -92,6 +92,10 @@ RCloud.UI.init = function() {
     });
 
     //////////////////////////////////////////////////////////////////////////
+    // edit mode things - move more of them here
+    RCloud.UI.share_button.init();
+
+    //////////////////////////////////////////////////////////////////////////
     // view mode things
     $("#edit-notebook").click(function() {
         window.location = "edit.html?notebook=" + shell.gistname();

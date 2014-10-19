@@ -1336,14 +1336,15 @@ var editor = function () {
                  selroot: null,
                  push_history: true}, opts);
             return function(result) {
+                var promises = []; // fetch and setup various ui "in parallel"
                 current_ = {notebook: result.id, version: options.version};
                 rcloud.config.set_current_notebook(current_);
                 rcloud.config.set_recent_notebook(result.id, (new Date()).toString());
-                $('.view-menu li a').click(function() {
-                    $("#view-mode").html($(this).text()+' <span class="caret"></span>');
-                    RCloud.UI.share_button.set_link(result,$(this).text());
-                });
-                RCloud.UI.share_button.set_link(result);
+
+                promises.push(
+                    rcloud.get_notebook_property(result.id, "view-type")
+                        .then(function(type) { RCloud.UI.share_button.type(type); }));
+                RCloud.UI.share_button.update_link(result);
 
                 /*
                 // disabling inter-notebook navigation for now - concurrency issues
@@ -1366,19 +1367,19 @@ var editor = function () {
                 else
                     history = result.history;
 
-                var stars_promise = (_.has(num_stars_, result.id) ? Promise.resolve(undefined)
+                promises.push((_.has(num_stars_, result.id) ? Promise.resolve(undefined)
                                : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
                                    num_stars_[result.id] = count;
                                })).then(function() {
                                    update_notebook_from_gist(result, history, options.selroot);
-                               });
+                               }));
 
-                var comments_promise = RCloud.UI.comments_frame.display_comments();
-                var publish_promise = rcloud.is_notebook_published(result.id).then(function(p) {
+                promises.push(RCloud.UI.comments_frame.display_comments());
+                promises.push(rcloud.is_notebook_published(result.id).then(function(p) {
                     publish_notebook_checkbox_.set_state(p);
                     publish_notebook_checkbox_.enable(result.user.login === username_);
-                });
-                return Promise.all([stars_promise, comments_promise, publish_promise]).return(result);
+                }));
+                return Promise.all(promises).return(result);
             };
         },
         search: function(search_string) {
