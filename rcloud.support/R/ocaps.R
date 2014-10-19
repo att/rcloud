@@ -132,7 +132,7 @@ authenticated.ocaps <- function()
 
       # externally used ocaps
       load_module_package = make.oc(rcloud.load.module.package),
-      
+
       # file upload ocaps
       file_upload = list(
         create = make.oc(rcloud.upload.create.file),
@@ -168,6 +168,10 @@ authenticated.ocaps <- function()
       get_multiple_notebook_infos = make.oc(rcloud.get.multiple.notebook.infos),
       set_notebook_info = make.oc(rcloud.set.notebook.info),
 
+      get_notebook_property = make.oc(rcloud.get.notebook.property),
+      set_notebook_property = make.oc(rcloud.set.notebook.property),
+      remove_notebook_property = make.oc(rcloud.remove.notebook.property),
+
       purl_source = make.oc(rcloud.purl.source)
 
       )
@@ -176,6 +180,6 @@ authenticated.ocaps <- function()
   ## search is optional
   if (nzConf("solr.url"))
     changes$rcloud$search <- make.oc(rcloud.search)
-  
+
   modifyList(basic.ocaps, changes)
 }

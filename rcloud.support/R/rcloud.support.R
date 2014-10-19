@@ -320,37 +320,20 @@ notebook.is.mine <- function(id) {
   nb$content$user$login == .session$username
 }
 
-rcloud.publish.notebook <- function(id) {
-  if(notebook.is.mine(id)) {
-    rcs.set(rcs.key(".notebook", id, "public"), 1)
-    TRUE
-  } else
-    FALSE
-}
+rcloud.publish.notebook <- function(id)
+  rcloud.set.notebook.property(id, "public", 1)
 
-rcloud.unpublish.notebook <- function(id) {
-  if(notebook.is.mine(id)) {
-    rcs.rm(rcs.key(".notebook", id, "public"))
-    TRUE
-  } else
-    FALSE
-}
+rcloud.unpublish.notebook <- function(id)
+  rcloud.remove.notebook.property(id, "public")
 
-rcloud.is.notebook.published <- function(id) {
-  !is.null(rcs.get(rcs.key(".notebook", id, "public")))
-}
+rcloud.is.notebook.published <- function(id)
+  !is.null(rcloud.get.notebook.property(id, "public"))
 
 rcloud.is.notebook.visible <- function(id)
-  rcs.get(rcs.key(".notebook", id, "visible"))
+  rcloud.get.notebook.property(id, "visible")
 
-rcloud.set.notebook.visibility <- function(id, value) {
-  if(notebook.is.mine(id)) {
-    rcs.set(rcs.key(".notebook", id, "visible"), value != 0)
-    TRUE
-  }
-  else
-    FALSE
-}
+rcloud.set.notebook.visibility <- function(id, value)
+  rcloud.set.notebook.property("visibile", id, value != 0);
 
 rcloud.port.notebooks <- function(url, books, prefix) {
   foreign.ctx <- create.github.context(url)
@@ -548,6 +531,24 @@ rcloud.set.notebook.info <- function(id, info) {
   rcs.set(rcs.key(base, "description"), info$description)
   rcs.set(rcs.key(base, "last_commit"), info$last_commit)
 }
+
+# get/set another property of notebook
+# unlike info cache fields above, other properties can only
+# be set by owner
+rcloud.get.notebook.property <- function(id, key)
+  rcs.get(usr.key(user=".notebook", notebook=id, key))
+
+rcloud.set.notebook.property <- function(id, key, value)
+  if(notebook.is.mine(id)) {
+    rcs.set(usr.key(user=".notebook", notebook=id, key), value)
+    TRUE
+  } else FALSE
+
+rcloud.remove.notebook.property <- function(id, key)
+  if(notebook.is.mine(id)) {
+    rcs.rm(rcs.key(".notebook", id, "public"))
+    TRUE
+  } else FALSE
 
 rcloud.purl.source <- function(contents)
 {
