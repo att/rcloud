@@ -144,18 +144,20 @@ RCloud.UI.search = {
                 }
                 if(!pgclick) {
                     $('#paging').html("");
-                    var number_of_pages = noofpages;
-                    $('#current_page').val(0);
-                    $('#show_per_page').val(show_per_page);
-                    if(numfound != 0) {
-                        var current_link = 0;
-                        $("#paging").bootpag({
-                            total: number_of_pages,
-                            page: 1,
-                            maxVisible: 8
-                        }).on('page', function(event, num){
-                            go_to_page(num-1,show_per_page);
-                        });
+                    if((parseInt(numfound) - parseInt(show_per_page)) > 0) {
+                        var number_of_pages = noofpages;
+                        $('#current_page').val(0);
+                        $('#show_per_page').val(show_per_page);
+                        if (numfound != 0) {
+                            var current_link = 0;
+                            $("#paging").bootpag({
+                                total: number_of_pages,
+                                page: 1,
+                                maxVisible: 8
+                            }).on('page', function (event, num) {
+                                go_to_page(num - 1, show_per_page);
+                            });
+                        }
                     }
                 }
 
@@ -165,6 +167,8 @@ RCloud.UI.search = {
                 var search_summary;
                 if(numfound === 0) {
                     var search_summary = "No Results Found";
+                } else if((parseInt(numfound) - parseInt(show_per_page)) < 0){
+                    search_summary = numfound +" Results Found";
                 } else {
                     search_summary = numfound +" Results Found, showing ";
                     if(numfound-start === 1) {
