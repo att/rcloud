@@ -325,6 +325,9 @@ RCloud.create = function(rcloud_ocaps) {
             ["get_notebook_info"],
             ["get_multiple_notebook_infos"],
             ["set_notebook_info"],
+            ["get_notebook_property"],
+            ["set_notebook_property"],
+            ["remove_notebook_property"],
             ["notebook_by_name"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
@@ -464,6 +467,9 @@ RCloud.create = function(rcloud_ocaps) {
             if(!info.last_commit) return Promise.reject(new Error("attempt to set info no last_commit"));
             return rcloud_ocaps.set_notebook_infoAsync(id, info);
         };
+        rcloud.get_notebook_property = rcloud_ocaps.get_notebook_propertyAsync;
+        rcloud.set_notebook_property = rcloud_ocaps.set_notebook_propertyAsync;
+        rcloud.remove_notebook_property = rcloud_ocaps.remove_notebook_propertyAsync;
 
         rcloud.get_notebook_by_name = function(user, path) {
             return rcloud_ocaps.notebook_by_nameAsync(user, path);

@@ -423,6 +423,9 @@ RCloud.create = function(rcloud_ocaps) {
             ["get_notebook_info"],
             ["get_multiple_notebook_infos"],
             ["set_notebook_info"],
+            ["get_notebook_property"],
+            ["set_notebook_property"],
+            ["remove_notebook_property"],
             ["notebook_by_name"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
@@ -562,6 +565,9 @@ RCloud.create = function(rcloud_ocaps) {
             if(!info.last_commit) return Promise.reject(new Error("attempt to set info no last_commit"));
             return rcloud_ocaps.set_notebook_infoAsync(id, info);
         };
+        rcloud.get_notebook_property = rcloud_ocaps.get_notebook_propertyAsync;
+        rcloud.set_notebook_property = rcloud_ocaps.set_notebook_propertyAsync;
+        rcloud.remove_notebook_property = rcloud_ocaps.remove_notebook_propertyAsync;
 
         rcloud.get_notebook_by_name = function(user, path) {
             return rcloud_ocaps.notebook_by_nameAsync(user, path);
@@ -4018,6 +4024,10 @@ RCloud.UI.init = function() {
     });
 
     //////////////////////////////////////////////////////////////////////////
+    // edit mode things - move more of them here
+    RCloud.UI.share_button.init();
+
+    //////////////////////////////////////////////////////////////////////////
     // view mode things
     $("#edit-notebook").click(function() {
         window.location = "edit.html?notebook=" + shell.gistname();
@@ -5001,19 +5011,50 @@ RCloud.UI.settings_frame = (function() {
     return result;
 })();
 
-RCloud.UI.share_button = {
-    set_link: function(notebook) {
-        var link = window.location.protocol + '//' + window.location.host +
-            '/view.R/' + shell.notebook.model.user() +
-            '/' + notebook.description;
-        // var link = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
-        var v = shell.version();
-        if(v)
-            link += '&version='+v;
+RCloud.UI.share_button = (function() {
+    var type_;
 
-        $("#share-link").attr("href", link);
-    }
-};
+    return {
+        init: function() {
+            var that = this;
+            $('.view-menu li a').click(function() {
+                type_ = $(this).text();
+                rcloud.set_notebook_property(shell.gistname(), "view-type", type_);
+                that.type(type_);
+            });
+        },
+        type: function(val) {
+            if(!arguments.length) return type_;
+            type_ = val || "view.html";
+            $("#view-type li a").css("font-weight", function() {
+                return $(this).text() === type_ ? "bold" : "normal";
+            });
+            this.update_link();
+            return this;
+        },
+        update_link: function() {
+            var link = window.location.protocol + '//' + window.location.host + '/';
+            var suffix, query_started = true;
+            switch(type_) {
+            case 'notebook.R':
+                suffix = type_ + '/' + shell.gistname();
+                query_started = false;
+                break;
+            case 'mini.html':
+                suffix = type_ + '?notebook=' + shell.gistname();
+                break;
+            case 'view.html':
+            default:
+                suffix = 'view.html?notebook=' + shell.gistname();
+            }
+            link += suffix;
+            var v = shell.version();
+            if(v)
+                link += query_started?'&':'?' + 'version=' + v;
+            $("#share-link").attr("href", link);
+        }
+    };
+})();
 RCloud.UI.upload_with_alerts = (function() {
     function upload_ui_opts(opts) {
         if(_.isBoolean(opts))
