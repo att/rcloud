@@ -10,6 +10,26 @@ rcloud.get.conf.value <- function(key) {
     NULL
 }
 
+# any attributes we want to add onto what github gives us
+rcloud.augment.notebook <- function(res) {
+  notebook <- res$content
+  fork.of <- rcloud.get.notebook.property(notebook$id, 'fork_of')
+  if(!is.null(fork.of))
+    res$content$fork_of <- fork.of
+
+  hist <- res$content$history
+  versions <- lapply(hist, function(h) { h$version })
+  version2tag <- rcs.get(rcloud.support:::rcs.key('.notebook', notebook$id, 'version2tag', versions), list=TRUE)
+  names(version2tag) <- versions
+  version2tag <- Filter(Negate(is.null), version2tag)
+
+  for(i in 1:length(hist)) {
+    tag <- version2tag[[hist[[i]]$version]]
+    if(!is.null(tag))
+        res$content$history[[i]]$tag <- tag
+  }
+  res
+}
 rcloud.unauthenticated.load.notebook <- function(id, version = NULL) {
   if (!rcloud.is.notebook.published(id))
     stop("Notebook does not exist or has not been published")
@@ -22,18 +42,6 @@ rcloud.load.notebook <- function(id, version = NULL) {
   if (res$ok) {
     .session$current.notebook <- res
     rcloud.reset.session()
-  }
-  hist <- res$content$history
-
-  versions <- lapply(hist, function(h) { h$version })
-  version2tag <- rcs.get(rcloud.support:::rcs.key('.notebook', id, 'version2tag', versions), list=TRUE)
-  names(version2tag) <- versions
-  version2tag <- Filter(Negate(is.null), version2tag)
-
-  for(i in 1:length(hist)) {
-    tag <- version2tag[[hist[[i]]$version]]
-    if(!is.null(tag))
-        res$content$history[[i]]$tag <- tag;
   }
   res
 }
@@ -93,7 +101,7 @@ rcloud.get.notebook <- function(id, version = NULL) {
       print(res)
     }
   }
-  res
+  rcloud.augment.notebook(res)
 }
 
 ## this evaluates a notebook for its result
@@ -553,15 +561,13 @@ rcloud.config.remove.notebook <- function(id)
 rcloud.config.get.current.notebook <- function() {
   base <- usr.key(user=.session$username, notebook="system", "config", "current")
   list(notebook = rcs.get(rcs.key(base, "notebook")),
-       version = rcs.get(rcs.key(base, "version")),
-       fork_of = rcs.get(rcs.key(base, "fork_of")))
+       version = rcs.get(rcs.key(base, "version")))
 }
 
 rcloud.config.set.current.notebook <- function(current) {
   base <- usr.key(user=.session$username, notebook="system", "config", "current")
   rcs.set(rcs.key(base, "notebook"), current$notebook)
   rcs.set(rcs.key(base, "version"), current$version)
-  rcs.set(rcs.key(base, "fork_of"), current$fork_of)
 }
 
 rcloud.config.new.notebook.number <- function()
@@ -598,7 +604,7 @@ rcloud.config.set.user.option <- function(key, value)
 
 rcloud.get.notebook.info <- function(id) {
   base <- usr.key(user=".notebook", notebook=id)
-  fields <- c("username", "description", "last_commit", "visible", "fork_of")
+  fields <- c("username", "description", "last_commit", "visible")
   keys <- rcs.key(base, fields)
   results <- rcs.get(keys, list=TRUE)
   names(results) <- fields
@@ -616,7 +622,6 @@ rcloud.set.notebook.info <- function(id, info) {
   rcs.set(rcs.key(base, "username"), info$username)
   rcs.set(rcs.key(base, "description"), info$description)
   rcs.set(rcs.key(base, "last_commit"), info$last_commit)
-  rcs.set(rcs.key(base, "fork_of"), info$fork_of)
 }
 
 # get/set another property of notebook

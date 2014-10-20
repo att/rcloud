@@ -138,9 +138,18 @@ var shell = (function() {
                     // hack: copy without history as a first pass, because github forbids forking oneself
                     promise_fork = rcloud.get_notebook(gistname, version)
                         .then(function(notebook) {
+                            // this smells
+                            var fork_of = {owner: {login: notebook.user.login},
+                                           description: notebook.description,
+                                           id: notebook.id
+                                          };
                             notebook = sanitize_notebook(notebook);
                             notebook.description = editor.find_next_copy_name(notebook.description);
-                            return notebook_controller_.create_notebook(notebook);
+                            return notebook_controller_.create_notebook(notebook)
+                                .then(function(result) {
+                                    return rcloud.set_notebook_property(result.id, 'fork_of', fork_of)
+                                        .return(result);
+                                });
                         });
                 }
                 else promise_fork = notebook_controller_
