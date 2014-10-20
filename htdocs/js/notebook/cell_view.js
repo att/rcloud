@@ -425,12 +425,12 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             set_widget_height();
             widget.resize(true);
             disable(source_button);
+            enable(split_button);
             if(has_result)
                 enable(result_button);
             // enable(hide_button);
             if (!am_read_only) {
                 enable(remove_button);
-                enable(split_button);
             }
             //editor_row.show();
 
