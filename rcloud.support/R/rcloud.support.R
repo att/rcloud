@@ -26,13 +26,14 @@ rcloud.load.notebook <- function(id, version = NULL) {
   hist <- res$content$history
 
   versions <- lapply(hist, function(h) { h$version })
-  tags <- rcs.get(rcloud.support:::rcs.key('.notebook', id, 'tags', versions), list=TRUE)
-  names(tags) <- versions
-  tags <- Filter(Negate(is.null), tags)
+  version2tag <- rcs.get(rcloud.support:::rcs.key('.notebook', id, 'version2tag', versions), list=TRUE)
+  names(version2tag) <- versions
+  version2tag <- Filter(Negate(is.null), version2tag)
 
   for(i in 1:length(hist)) {
-    if(!is.null(tags[[hist[[i]]$version]]))
-        res$content$history[[i]]$tag <- tags[[hist[[i]]$version]];
+    tag <- version2tag[[hist[[i]]$version]]
+    if(!is.null(tag))
+        res$content$history[[i]]$tag <- tag;
   }
   res
 }
