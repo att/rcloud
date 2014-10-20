@@ -391,17 +391,19 @@ ui_utils.editable = function(elem$, command) {
         });
         elem$.keydown(function(e) {
             var entr_key = (e.keyCode === 13);
+            var txt = elem$.text();
+            txt = decode(txt);
             if (options().ctrl_cmd && entr_key && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
-                var txt = elem$.text();
-                txt = decode(txt);
-                elem$.blur();
-                options().ctrl_cmd(txt);
+                if(options().validate(txt)) {
+                    elem$.blur();
+                    options().ctrl_cmd(txt);
+                } else {
+                    return false;
+                }
             }
             else if((command.allow_multiline && (entr_key && (e.ctrlKey || e.metaKey))) || (entr_key && !command.allow_multiline)) {
                 e.preventDefault();
-                var txt = elem$.text();
-                txt = decode(txt);
                 if(options().validate(txt)) {
                     options().__active = false;
                     elem$.off('blur'); // don't cancel!
