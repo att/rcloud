@@ -1061,7 +1061,7 @@ var editor = function () {
             result.show_history(event.node.parent, false);
         else if(event.node.gistname) {
             if(event.click_event.metaKey || event.click_event.ctrlKey)
-                result.open_notebook(event.node.gistname, event.node.version, event.node.name, true, true);
+                result.open_notebook(event.node.gistname, event.node.version, true, true);
             else {
                 // it's weird that a notebook exists in two trees but only one is selected (#220)
                 // just select - and this enables editability
@@ -1069,7 +1069,7 @@ var editor = function () {
                     event.node.version == current_.version && event.node.version === null) // nulliness ok here
                     select_node(event.node);
                 else
-                    result.open_notebook(event.node.gistname, event.node.version || null, event.node.name, event.node.root, false);
+                    result.open_notebook(event.node.gistname, event.node.version || null, false);
             }
         }
         else
@@ -1120,7 +1120,7 @@ var editor = function () {
             username_ = rcloud.username();
             var promise = load_everything().then(function() {
                 if(opts.notebook) { // notebook specified in url
-                    return that.load_notebook(opts.notebook, opts.version, opts.tag)
+                    return that.load_notebook(opts.notebook, opts.version)
                         .catch(function(xep) {
                             var message = "Could not open notebook " + opts.notebook;
                             if(opts.version)
@@ -1129,7 +1129,7 @@ var editor = function () {
                             throw xep;
                         });
                 } else if(!opts.new_notebook && current_.notebook) {
-                    return that.load_notebook(current_.notebook, current_.version, current_.tag)
+                    return that.load_notebook(current_.notebook, current_.version)
                         .catch(function(xep) {
                             // if loading fails for a reason that is not actually a loading problem
                             // then don't keep trying.
@@ -1192,7 +1192,7 @@ var editor = function () {
         find_next_copy_name: function(name) {
             return find_next_copy_name(username_, name);
         },
-        load_notebook: function(gistname, version, tag, selroot, push_history) {
+        load_notebook: function(gistname, version, selroot, push_history) {
             var that = this;
             selroot = selroot || true;
             return shell.load_notebook(gistname, version)
@@ -1204,14 +1204,14 @@ var editor = function () {
                                           selroot: selroot,
                                           push_history: push_history}));
         },
-        open_notebook: function(gistname, version, tag, selroot, new_window) {
+        open_notebook: function(gistname, version, selroot, new_window) {
             // really just load_notebook except possibly in a new window
             if(new_window) {
-                var url = make_edit_url({notebook: gistname, version: version, tag: tag});
+                var url = make_edit_url({notebook: gistname, version: version});
                 window.open(url, "_blank");
             }
             else
-                this.load_notebook(gistname, version, tag, selroot);
+                this.load_notebook(gistname, version, selroot);
         },
         new_notebook: function() {
             var that = this;
@@ -1228,18 +1228,18 @@ var editor = function () {
         rename_notebook: function(desc) {
             return shell.rename_notebook(desc);
         },
-        tag_notebook : function(tag_string,node) {
-            var history = histories_[node.parent.gistname];
+        tag_version: function(id, version, tag_string) {
+            var history = histories_[id];
+            if(Notebook.empty_for_github(tag_string)) tag_string = '';
             for(var i=0;i<history.length;i++) {
-                if (history[i].version === node.version) {
+                if (history[i].version === version) {
                     history[i].tag = tag_string;
                 }
-                if(history[i].tag === tag_string && history[i].version != node.version) {
+                if(history[i].tag === tag_string && history[i].version != version) {
                     history[i].tag = undefined;
                 }
             }
-            return rcloud.tag_notebook_version(node.parent.gistname, node.version, tag_string)
-                .then(result.show_history(node.parent, {update: true}));
+            return rcloud.tag_notebook_version(id, version, tag_string);
         },
         star_notebook: function(star, opts) {
             var that = this;
@@ -1361,14 +1361,11 @@ var editor = function () {
                  selroot: null,
                  push_history: true}, opts);
             return function(result) {
-                if(!options.tag) {
-                    for(var i=0;i<result.history.length;i++) {
-                        if(result.history[i].version === options.version) {
-                            options.tag = result.history[i].tag;
-                        }
-                    }
-                }
-                current_ = {notebook: result.id, version: options.version, tag: options.tag};
+                var tag;
+                var find_version = _.find(result.history, function(x) { return x.version === options.version; });
+                if(find_version)
+                    tag = find_version.tag;
+                current_ = {notebook: result.id, version: options.version};
                 rcloud.config.set_current_notebook(current_);
                 rcloud.config.set_recent_notebook(result.id, (new Date()).toString());
                 RCloud.UI.share_button.set_link(result);
@@ -1382,7 +1379,7 @@ var editor = function () {
                      window.history.replaceState)
                     .bind(window.history)
                  */
-                var url = make_edit_url({notebook: result.id, version: options.version, tag:options.tag});
+                var url = make_edit_url({notebook: result.id, version: options.version, tag:tag});
                 window.history.replaceState("rcloud.notebook", null, url);
                 rcloud.api.set_url(url);
 
