@@ -1069,7 +1069,7 @@ var editor = function () {
                     event.node.version == current_.version && event.node.version === null) // nulliness ok here
                     select_node(event.node);
                 else
-                    result.open_notebook(event.node.gistname, event.node.version || null, false);
+                    result.open_notebook(event.node.gistname, event.node.version || null, event.node.root);
             }
         }
         else
