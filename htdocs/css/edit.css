@@ -410,8 +410,12 @@ li.jqtree-selected .notebook-commands {
 #search-wrapper {
     display: table;
     table-layout: fixed;
-    height: 85%;
+    height: 100%;
     width: 100%;
+}
+
+#search-form {
+    margin-bottom: 0px;
 }
 
 #search-wrapper td, #search-wrapper tr {
@@ -422,7 +426,11 @@ li.jqtree-selected .notebook-commands {
 #search-header {
     display: table-row;
     width: 100%;
-    height:55px;
+    height:50px;
+}
+
+#search-header form div.input-group {
+    margin: 0px -5px;
 }
 
 #search-summary {
@@ -433,6 +441,10 @@ li.jqtree-selected .notebook-commands {
     display: none; /* will be display: table-row; */
     height: 100%;
     width: 100%;
+}
+
+#search-results-pagination {
+    display:table-row;
 }
 
 #search-results-scroller {
@@ -1011,7 +1023,7 @@ pre > .vt100 {
 * extending bootstrap pagination class
 */
 .pagination {
-    margin: 6px 0px;
+    margin: 3px 0px;
 }
 .pagination-sm > li > a,
 .pagination-sm > li > span {

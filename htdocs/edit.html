@@ -82,25 +82,25 @@
 </script>
 
 <script type="text/html" id="search-snippet">
-  <div class="panel-body" style="padding-bottom: 1ex;padding-top:3px">
+  <div class="panel-body" style="padding-bottom: 0;padding-top:3px">
     <div id="search-wrapper" class="widget-vsize"> <!-- only for sizing -->
       <div id="search-header">
         <form id="search-form" action="#">
-          <div class="input-group input-group-sm" style="width: 160px;">
-            <input type="text" class="form-control-ext" id="input-text-search" placeholder="..Search Keyword" style="width: 128px;"></input>
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control-ext" id="input-text-search" placeholder="..Search Keyword" style="width: 100%;"></input>
             <div class="input-group-btn">
               <button class="btn btn-default-ext" type="submit" style="border-bottom-right-radius: 3;border-top-right-radius: 3">
                 <i class="icon-search"></i>
               </button>
                <!--Sort By :-->
-              <select id="sort-by" class="form-control-ext"  data-target="#sort-by">
+              <select id="sort-by" class="form-control-ext"  data-target="#sort-by" style="width: 95px;">
                 <option value="starcount" selected>No Of Stars</option>
                 <option value="user">User</option>
                 <option value="starcount">Notebook Name</option>
                 <option value="updated_at">Updated Date</option>
               </select>
               <!--Order By :-->
-              <select id="order-by" class="form-control-ext" style="width: 60px;">
+              <select id="order-by" class="form-control-ext" style="width: 55px;">
                 <option value="asc" selected>Asc</option>
                 <option value="desc">Desc</option>
               </select>
@@ -114,9 +114,9 @@
           <div id="search-results"></div>
         </div>
       </div>
-    </div>
-    <div style="text-align:center;">
-      <div id="paging" class="demo demo2"></div>
+      <div id="search-results-pagination" style="text-align:center">
+        <div id="paging" class="demo demo2"></div>
+      </div>
     </div>
   </div>
 </script>

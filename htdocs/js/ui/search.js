@@ -33,7 +33,7 @@ RCloud.UI.search = {
                     $('#search-results').html("");
                     $('#search-summary').html("");
                 }
-            }
+            };
         }
     },
     panel_sizer: function(el) {
