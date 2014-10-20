@@ -96,12 +96,13 @@ var editor = function () {
             Promise.resolve();
     }
 
-    function update_notebook_model(user, gistname, description, time) {
+    function update_notebook_model(user, gistname, description, time, fork_of) {
         var entry = get_notebook_info(gistname);
 
         entry.username = user;
         entry.description = description;
         entry.last_commit = time;
+        entry.fork_of = fork_of;
 
         add_notebook_info(user, gistname, entry);
         return entry; // note: let go of promise
@@ -229,7 +230,8 @@ var editor = function () {
                 visible: attrs.visible,
                 last_commit: attrs.last_commit ? new Date(attrs.last_commit) : 'none',
                 id: node_id(root, username, name),
-                sort_order: ordering.NOTEBOOK
+                sort_order: ordering.NOTEBOOK,
+                fork_of:attrs.fork_of
             };
             notebook_nodes.push(result);
         }
@@ -752,6 +754,11 @@ var editor = function () {
 
     function update_notebook_view(user, gistname, entry, selroot) {
         function open_and_select(node) {
+            $("#forked-from-desc").text("");
+            if(entry.fork_of && entry.fork_of!=="none") {
+                $("#forked-from-desc").text("forked from "+entry.fork_of);
+            }
+
             if(current_.version) {
                 $tree_.tree('openNode', node);
                 var n2 = $tree_.tree('getNodeById',
@@ -842,10 +849,16 @@ var editor = function () {
         // update_history_nodes will do an async call to get the history.
         if(history)
             histories_[gistname] = history;
+        var fork_of = "";
+        if(result.fork_of)
+            fork_of = "@"+result.fork_of.owner.login+ " : " + result.fork_of.description;
+        if(!fork_of)
+            fork_of = "none";
 
         var entry = update_notebook_model(user, gistname,
                                           result.description,
-                                          result.updated_at || result.history[0].committed_at);
+                                          result.updated_at || result.history[0].committed_at,
+                                          fork_of);
 
         update_notebook_view(user, gistname, entry, selroot);
     }
@@ -1030,6 +1043,7 @@ var editor = function () {
             always.append($.el.span({"class": "notebook-commands appear-wrapper"}, appear[0]));
             $li.find('*:not(ul)').hover(
                 function() {
+                    var notebook_info = get_notebook_info(node.gistname);
                     $('.notebook-commands.appear', this).show();
                     $('.notebook-date', this).css('visibility', 'hidden');
                 },
@@ -1060,7 +1074,7 @@ var editor = function () {
             result.show_history(event.node.parent, false);
         else if(event.node.gistname) {
             if(event.click_event.metaKey || event.click_event.ctrlKey)
-                result.open_notebook(event.node.gistname, event.node.version, true, true);
+                result.open_notebook(event.node.gistname, event.node.version, event.node.fork_of, true, true);
             else {
                 // it's weird that a notebook exists in two trees but only one is selected (#220)
                 // just select - and this enables editability
@@ -1068,7 +1082,7 @@ var editor = function () {
                     event.node.version == current_.version && event.node.version === null) // nulliness ok here
                     select_node(event.node);
                 else
-                    result.open_notebook(event.node.gistname, event.node.version || null, event.node.root);
+                    result.open_notebook(event.node.gistname, event.node.version || null, event.node.root, false);
             }
         }
         else
@@ -1191,7 +1205,7 @@ var editor = function () {
         find_next_copy_name: function(name) {
             return find_next_copy_name(username_, name);
         },
-        load_notebook: function(gistname, version, selroot, push_history) {
+        load_notebook: function(gistname, version, selroot, fork_of, push_history) {
             var that = this;
             selroot = selroot || true;
             return shell.load_notebook(gistname, version)
@@ -1203,14 +1217,14 @@ var editor = function () {
                                           selroot: selroot,
                                           push_history: push_history}));
         },
-        open_notebook: function(gistname, version, selroot, new_window) {
+        open_notebook: function(gistname, version, fork_of, selroot, new_window) {
             // really just load_notebook except possibly in a new window
             if(new_window) {
                 var url = make_edit_url({notebook: gistname, version: version});
                 window.open(url, "_blank");
             }
             else
-                this.load_notebook(gistname, version, selroot);
+                this.load_notebook(gistname, version, selroot, fork_of);
         },
         new_notebook: function() {
             var that = this;
