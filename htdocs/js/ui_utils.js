@@ -387,6 +387,7 @@ ui_utils.editable = function(elem$, command) {
         });
         elem$.click(function(e) {
             e.stopPropagation();
+            $(this).css("padding-right","3px");
             // allow default action but don't bubble (causing eroneous reselection in notebook tree)
         });
         elem$.keydown(function(e) {
