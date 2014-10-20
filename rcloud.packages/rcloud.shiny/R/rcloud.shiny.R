@@ -2,7 +2,7 @@
   textConn <- textConnection(NULL, "w")
   on.exit(close(textConn))
   shiny:::renderPage(ui, textConn, FALSE)
-  gsub('"shared/', '"../../shared.R/', paste(textConnectionValue(textConn), collapse="\n"), fixed=TRUE)
+  gsub('jquery.js', '../disabled.js', gsub('"shared/', '"../../shared.R/', paste(textConnectionValue(textConn), collapse="\n"), fixed=TRUE), fixed=TRUE)
 }
 
 rcloud.shinyApp <- function(ui, server, options) {
