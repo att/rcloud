@@ -19,9 +19,11 @@ RCloud.UI.init = function() {
         if(result !== null)
             shell.open_from_github(result);
     });
-
     $("#import-notebooks").click(function() {
         shell.import_notebooks();
+    });
+    $("#slide-show-notebooks").click(function() {
+        shell.slide_show_notebooks();
     });
     var saveb = $("#save-notebook");
     saveb.click(function() {

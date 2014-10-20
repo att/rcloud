@@ -963,6 +963,33 @@ a.accordion-toggle.right > i {
 }
 
 /******************************************************************************/
+.slide-show-popup {
+    margin:2%;
+    width: 95%;
+    height: 90%;
+}
+.slide-show-popup-header {
+    background: #2b81af;
+    height: 12%;
+    color: #ffffff;
+    font-size: 24px;
+    padding:10px;
+}
+
+.slide-show-popup-body {
+    border-radius:0px;
+    margin:1%;
+    width: 95%;
+    height: 72%;
+    overflow: auto
+}
+
+.slide-show-popup-footer {
+    background: #363636;
+    height: 12%;
+}
+
+/******************************************************************************/
 
 /* from http://en.wikipedia.org/wiki/ANSI_escape_code
    We're using Windows XP colors. They're ugly but they're darker, so they
