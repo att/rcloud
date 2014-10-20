@@ -635,13 +635,20 @@ li.jqtree-selected .notebook-commands {
 
 .comment-header {
     float: right;
-    color: #aaa
+    color: #aaa;
+    margin-top: 4px;
+    word-wrap: break-word;
 }
 
 .comment-header-close {
     float: left;
     color: #000;
-    display:none;
+    max-width:5%;
+    visibility: hidden;
+    margin-left: 66%;
+    position:relative;
+    top:14px;
+    right:11px;
 }
 .comment-header-close:hover{
     cursor: pointer;
@@ -656,7 +663,7 @@ li.jqtree-selected .notebook-commands {
     margin-bottom: .4em;
     max-width: 93%;
     min-width: 93%;
-    padding: 2px;
+    padding: 8px 2px 2px 6px;
     margin: 0px 5px;
 }
 

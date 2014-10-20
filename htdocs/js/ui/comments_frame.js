@@ -14,20 +14,27 @@ RCloud.UI.comments_frame = (function() {
         // no update logic, clearing/rebuilding is easier
         d3.select("#comments-container").selectAll("div").remove();
         var comment_div = d3.select("#comments-container")
-                .selectAll("div")
-                .data(comments)
-                .enter()
-                .append("div")
-                .attr("class", "comment-container")
-                .on("mouseover",function(d){
+            .selectAll("div")
+            .data(comments)
+            .enter()
+            .append("div")
+            .attr("class", "comment-container")
+            .on("mouseover",function(d){
                     if(editable(d)) {
-                        $('.comment-header-close', this).show();
+                        $('.comment-header-close', this).css('visibility', 'visible');
                     }
-                })
-                .on("mouseout",function(d){
-                    $('.comment-header-close', this).hide();
-                })
-                .attr("comment_id",function(d) { return d.id; });
+            })
+            .on("mouseout",function(d){
+                    $('.comment-header-close', this).css('visibility', 'hidden');
+            })
+            .attr("comment_id",function(d) { return d.id; });
+        comment_div
+            .append("i")
+            .attr("class", "icon-remove comment-header-close")
+            .on("click", function (d) {
+                if(editable(d))
+                    result.delete_comment(d.id);
+            });
         comment_div
             .append("div")
             .attr("class", "comment-header")
@@ -53,15 +60,6 @@ RCloud.UI.comments_frame = (function() {
                     validate: function(name) { return !Notebook.empty_for_github(name); }
                 };
                 ui_utils.editable(comment_element, $.extend({allow_edit: editable(d),inactive_text: comment_element.text(),active_text: comment_element.text()},editable_opts));
-            });
-        var text_div = d3.selectAll(".comment-body",this);
-        text_div
-            .append("i")
-            .attr("class", "icon-remove comment-header-close")
-            .style({"max-width":"5%"})
-            .on("click", function (d) {
-                if(editable(d))
-                    result.delete_comment(d.id);
             });
         $('#collapse-comments').trigger('size-changed');
         ui_utils.on_next_tick(function() {
