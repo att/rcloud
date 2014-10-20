@@ -26,19 +26,36 @@ rcloud.load.notebook <- function(id, version = NULL) {
   hist <- res$content$history
 
   versions <- lapply(hist, function(h) { h$version })
-  tags <- rcs.get(rcloud.support:::rcs.key('.notebook', id, 'tags', versions), list=TRUE)
-  names(tags) <- versions
-  tags <- Filter(Negate(is.null), tags)
+  version2tag <- rcs.get(rcloud.support:::rcs.key('.notebook', id, 'version2tag', versions), list=TRUE)
+  names(version2tag) <- versions
+  version2tag <- Filter(Negate(is.null), version2tag)
 
   for(i in 1:length(hist)) {
-    if(!is.null(tags[[hist[[i]]$version]]))
-        res$content$history[[i]]$tag <- tags[[hist[[i]]$version]];
+    tag <- version2tag[[hist[[i]]$version]]
+    if(!is.null(tag))
+        res$content$history[[i]]$tag <- tag;
   }
   res
 }
 
 rcloud.tag.notebook.version <- function(gist_id, version, tag_name) {
-  rcs.set(rcs.key(username='.notebook', gist_id, 'tags', version), tag_name)
+  tag2version <- function(tag) rcs.key(username='.notebook', gist_id, 'tag2version', tag)
+  version2tag <- function(version) rcs.key(username='.notebook', gist_id, 'version2tag', version)
+  version.had.tag <- rcs.get(version2tag(version))
+  if(!is.null(version.had.tag)) {
+    rcs.rm(tag2version(version.had.tag))
+  }
+  if(!is.null(tag_name) && tag_name!='') {
+    tag.had.version <- rcs.get(tag2version(tag_name))
+    if(!is.null(tag.had.version)) {
+      rcs.rm(version2tag(tag.had.version))
+    }
+    rcs.set(version2tag(version), tag_name)
+    rcs.set(tag2version(tag_name), version)
+  }
+  else {
+    rcs.rm(version2tag(version))
+  }
 }
 
 rcloud.install.notebook.stylesheets <- function() {
