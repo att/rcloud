@@ -1,4 +1,41 @@
-RCloud.UI.search = {
+RCloud.UI.search = (function() {
+var page_size_ = 10;
+
+function go_to_page(page_num,incr_by){
+    //get the element number where to start the slice from
+    var start = (parseInt(page_num) * parseInt(incr_by));
+    var end = parseInt(start) + parseInt(incr_by);
+    var qry = $('#input-text-search').val();
+    var sortby= $("#sort-by option:selected").val();
+    var orderby= $("#order-by option:selected" ).val();
+    $('#input-text-search').blur();
+    if(!($('#input-text-search').val() === ""))
+        RCloud.UI.search.exec(qry,sortby,orderby,start,end,true);
+}
+
+function sortby() {
+    return $("#sort-by option:selected").val();
+}
+function orderby() {
+    return $("#order-by option:selected").val();
+}
+
+function order_from_sort() {
+    var orderby;
+    switch(sortby()) {
+    case 'starcount':
+    case 'updated_at':
+        orderby = "desc";
+        break;
+    case 'user':
+    case 'description':
+        orderby = "asc";
+        break;
+    }
+    $('#order-by').val(orderby);
+}
+
+return {
     body: function() {
         return RCloud.UI.panel_loader.load_snippet('search-snippet');
     },
@@ -11,30 +48,40 @@ RCloud.UI.search = {
                 return false;
             });
             $("#sort-by").change(function() {
+                rcloud.config.set_user_option('search-sort-by', sortby());
+                order_from_sort();
+                rcloud.config.set_user_option('search-order-by', orderby());
                 searchproc();
             });
             $("#order-by").change(function() {
+                rcloud.config.set_user_option('search-order-by', orderby());
                 searchproc();
             });
             var searchproc=function() {
                 var start = 0;
-                var noofrows = 10;
-                if(shell.page_size() != null){
-                    noofrows = shell.page_size();
-                }
                 var qry = $('#input-text-search').val();
-                var sortby = $("#sort-by option:selected").val();
-                var orderby = $("#order-by option:selected").val();
                 $('#input-text-search').focus();
                 if (!($('#input-text-search').val() === "")) {
-                    RCloud.UI.search.exec(qry, sortby, orderby, start, noofrows);
+                    RCloud.UI.search.exec(qry, sortby(), orderby(), start, page_size_);
                 } else {
                     $('#paging').html("");
                     $('#search-results').html("");
                     $('#search-summary').html("");
                 }
             };
-        }
+        };
+    },
+    load: function() {
+        return rcloud.config.get_user_option(['search-results-per-page', 'search-sort-by', 'search-order-by'])
+            .then(function(opts) {
+                if(opts['search-results-per-page']) page_size_ = opts['search-results-per-page'];
+                if(!opts['search-sort-by']) opts['search-sort-by'] = 'starcount'; // always init once
+                $('#sort-by').val(opts['search-sort-by']);
+                if(opts['search-order-by'])
+                    $('#order-by').val(opts['search-order-by']);
+                else
+                    order_from_sort();
+            });
     },
     panel_sizer: function(el) {
         var padding = RCloud.UI.collapsible_column.default_padder(el);
@@ -42,7 +89,22 @@ RCloud.UI.search = {
         height += 30; // there is only so deep you can dig
         return {height: height, padding: padding};
     },
-    exec: function(query,sortby,orderby,start,noofrows,pgclick) {
+    toggle: function(id,togid) {
+        $('#'+togid+'').text(function(_,txt) {
+            var ret='';
+            if ( txt.indexOf("Show me more...") > -1 ) {
+                ret = 'Show me less...';
+                $('#'+id+'').css('height',"auto");
+            }else{
+                ret = 'Show me more...';
+                $('#'+id+'').css('height',"150px");
+            }
+            return ret;
+        });
+        return false;
+    },
+
+    exec: function(query, sortby, orderby, start, noofrows, pgclick) {
         function summary(html) {
             $("#search-summary").show().html($("<h4 />").append(html));
         }
@@ -72,14 +134,10 @@ RCloud.UI.search = {
                 var star_count;
                 var qtime = 0;
                 var numfound = 0;
-                var show_per_page = 10;
-                if(shell.page_size() != null) {
-                    show_per_page = shell.page_size();
-                }
                 if(d[0] != undefined) {
                     numfound = d[0].numFound;
                 }
-                var noofpages =  Math.ceil(numfound/show_per_page);
+                var noofpages =  Math.ceil(numfound/page_size_);
                 //iterating for all the notebooks got in the result/response
                 for(i = 0; i < len; i++) {
                     try {
@@ -126,7 +184,7 @@ RCloud.UI.search = {
                         if(parts_table !== "") {
                             if(nooflines > 10) {
                                 parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table>" + parts_table + "</table></div>" +
-                                    "<div style=\"position: relative;\"><a href=\"#\" id='"+togid+"' onclick=\"toggle("+i+",'"+togid+"');\" style=\"color:orange\">Show me more...</a></div></div>";
+                                    "<div style=\"position: relative;\"><a href=\"#\" id='"+togid+"' onclick=\"RCloud.UI.search.toggle("+i+",'"+togid+"');\" style=\"color:orange\">Show me more...</a></div></div>";
                             } else {
                                 parts_table = "<div><div id='"+i+"'><table>" + parts_table + "</table></div></div>";
                             }
@@ -144,10 +202,9 @@ RCloud.UI.search = {
                 }
                 if(!pgclick) {
                     $('#paging').html("");
-                    if((parseInt(numfound) - parseInt(show_per_page)) > 0) {
+                    if((parseInt(numfound) - parseInt(page_size_)) > 0) {
                         var number_of_pages = noofpages;
                         $('#current_page').val(0);
-                        $('#show_per_page').val(show_per_page);
                         if (numfound != 0) {
                             var current_link = 0;
                             $("#paging").bootpag({
@@ -155,7 +212,7 @@ RCloud.UI.search = {
                                 page: 1,
                                 maxVisible: 8
                             }).on('page', function (event, num) {
-                                go_to_page(num - 1, show_per_page);
+                                go_to_page(num - 1, page_size_);
                             });
                         }
                     }
@@ -167,7 +224,7 @@ RCloud.UI.search = {
                 var search_summary;
                 if(numfound === 0) {
                     var search_summary = "No Results Found";
-                } else if((parseInt(numfound) - parseInt(show_per_page)) < 0){
+                } else if(parseInt(numfound) < page_size_){
                     search_summary = numfound +" Results Found";
                 } else {
                     search_summary = numfound +" Results Found, showing ";
@@ -198,38 +255,12 @@ RCloud.UI.search = {
         $("#search-results").html("");
         query = encodeURIComponent(query);
         RCloud.UI.with_progress(function() {
-            return rcloud.search(query,sortby,orderby,start)
+            return rcloud.search(query, sortby, orderby, start, page_size_)
                 .then(function(v) {
                     create_list_of_search_results(v);
                 });
         });
     }
 };
+})();
 
-function toggle(id,togid) {
-    $('#'+togid+'').text(function(_,txt) {
-        var ret='';
-        if ( txt.indexOf("Show me more...") > -1 ) {
-            ret = 'Show me less...';
-            $('#'+id+'').css('height',"auto");
-        }else{
-            ret = 'Show me more...';
-            $('#'+id+'').css('height',"150px");
-        }
-        return ret;
-    });
-    return false;
-}
-function go_to_page(page_num,incr_by){
-    //get the number of items shown per page
-    var show_per_page = parseInt($('#show_per_page').val());
-    //get the element number where to start the slice from
-    var start = (parseInt(page_num) * parseInt(incr_by));
-    var end = parseInt(start) + parseInt(incr_by);
-    var qry = $('#input-text-search').val();
-    var sortby= $("#sort-by option:selected").val();
-    var orderby= $("#order-by option:selected" ).val();
-    $('#input-text-search').blur();
-    if(!($('#input-text-search').val() === ""))
-        RCloud.UI.search.exec(qry,sortby,orderby,start,end,true);
-}
