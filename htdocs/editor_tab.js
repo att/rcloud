@@ -908,7 +908,6 @@ var editor = function () {
     var icon_style = {'line-height': '90%'};
     function on_create_tree_li(node, $li) {
         $li.css("min-height","15px");
-        $li.css("min-width","15px");
         var element = $li.find('.jqtree-element'),
             title = element.find('.jqtree-title');
         title.css('color', node.color);
