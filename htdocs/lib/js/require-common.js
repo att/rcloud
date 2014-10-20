@@ -12,13 +12,14 @@ requirejs_config_obj = {
         "jquery-ui": ["jquery"],
         laconic: ["jquery"],
         "jquery.cookies.2.2.0": ["jquery"],
+        "jquery.bootpag" : ["jquery"],
         "jquery.scrollto": ["jquery"],
         "jquery.whiny": ["jquery"],
         "bootstrap": ["jquery"],
         "../../shell_tab": ["rcloud_bundle", "../../editor_tab"],
         "../../editor_tab": ["rcloud_bundle", "laconic", "tree.jquery"],
         "rserve": ["underscore"],
-        "rcloud_bundle": ["ace", "jquery.cookies.2.2.0", "jquery.scrollto", "jquery-ui", "hl.min", "bootstrap"
+        "rcloud_bundle": ["ace", "jquery.cookies.2.2.0", "jquery.bootpag", "jquery.scrollto", "jquery-ui", "hl.min", "bootstrap"
                           // ,"jquery.whiny" // enable/disable jquery.whiny here
                          ]
     }
@@ -31,7 +32,7 @@ var common_deps = [
     "jquery",
     // other
     "hl.min", "jDataView", "jquery.cookies.2.2.0",
-    "jquery.scrollto", "laconic", "jquery-ui",
+    "jquery.bootpag", "jquery.scrollto", "laconic", "jquery-ui",
     "bootstrap", "peg-0.6.2.min",
     "rserve", "tree.jquery", "FileSaver"
 ];
