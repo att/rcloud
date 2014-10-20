@@ -642,12 +642,15 @@ li.jqtree-selected .notebook-commands {
     float: left;
     color: #000;
     display:none;
+    position: absolute;
+    right: 0.75ex
 }
 .comment-header-close:hover{
     cursor: pointer;
 }
 .comment-body {
-    color: #555
+    color: #555;
+    position: relative;
 }
 
 .comment-body-text {
