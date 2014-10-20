@@ -911,6 +911,14 @@ a.accordion-toggle.right > i {
     background-color: rgba(224,224,224,0.75);
 }
 
+#forked-from-desc {
+    color: #bbb;
+    position: absolute;
+    bottom: 4px;
+    left: 6ex;
+    width: 300px;
+}
+
 /*****************************************************************************/
 /* Fix that awful select from webkit */
 
