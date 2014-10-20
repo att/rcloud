@@ -39,16 +39,22 @@ rcloud.load.notebook <- function(id, version = NULL) {
 }
 
 rcloud.tag.notebook.version <- function(gist_id, version, tag_name) {
+  tag2version <- function(tag) rcs.key(username='.notebook', gist_id, 'tag2version', tag)
+  version2tag <- function(version) rcs.key(username='.notebook', gist_id, 'version2tag', version)
+  version.had.tag <- rcs.get(version2tag(version))
+  if(!is.null(version.had.tag)) {
+    rcs.rm(tag2version(version.had.tag))
+  }
   if(!is.null(tag_name) && tag_name!='') {
-    v <- rcs.get(rcs.key(username='.notebook', gist_id, 'tag2version', tag_name))
-    if(!is.null(v)) {
-      rcs.rm(rcs.key(username='.notebook', gist_id, 'version2tag', v))
+    tag.had.version <- rcs.get(tag2version(tag_name))
+    if(!is.null(tag.had.version)) {
+      rcs.rm(version2tag(tag.had.version))
     }
-    rcs.set(rcs.key(username='.notebook', gist_id, 'version2tag', version), tag_name)
-    rcs.set(rcs.key(username='.notebook', gist_id, 'tag2version', tag_name), version)
+    rcs.set(version2tag(version), tag_name)
+    rcs.set(tag2version(tag_name), version)
   }
   else {
-    rcs.rm(rcs.key(username='.notebook', gist_id, 'version2tag', version))
+    rcs.rm(version2tag(version))
   }
 }
 
