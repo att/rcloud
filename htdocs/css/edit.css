@@ -338,6 +338,10 @@ form input.linkbox {
     background-color: #f2dede;
 }
 
+input[type=text].form-control-ext {
+    padding-left: 5px;
+}
+
 /******************************************************************************/
 
 ul.jqtree-tree .jqtree-toggler {
