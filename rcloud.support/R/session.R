@@ -95,7 +95,7 @@ session.python.eval <- function(command) {
                 best_repr <- paste("<img src=\"data:image/", t, ";base64,",
                                    sub("\\s+$", "", chunk$png), "\">\n", sep='')
             } else if (t == "text") {
-                best_repr <- paste("<pre>", chunk$text, "</pre>", sep='')
+                best_repr <- chunk$text  # We assume things are html-escaped and in "<pre>"
             }
             break # bail out after the first representation we found along the hierarchy
          }
