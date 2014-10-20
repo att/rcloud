@@ -418,7 +418,7 @@ rcloud.is.notebook.visible <- function(id) {
 }
 
 rcloud.set.notebook.visibility <- function(id, value)
-  rcloud.set.notebook.property("visibile", id, value != 0);
+  rcloud.set.notebook.property(id, "visibile", value != 0);
 
 rcloud.port.notebooks <- function(url, books, prefix) {
   foreign.ctx <- create.github.context(url)
