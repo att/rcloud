@@ -15,6 +15,15 @@ RCloud.UI.command_prompt = (function() {
             if(!show_prompt_)
                 prompt.hide();
             $('#rcloud-cellarea').append(prompt);
+            $("#insert-new-cell").click(function() {
+                var language = RCloud.UI.command_prompt.get_language();
+                shell.new_cell("", language, false);
+                var vs = shell.notebook.view.sub_views;
+                vs[vs.length-1].show_source();
+            });
+            $("#insert-cell-language").change(function() {
+                window.localStorage["last_cell_lang"] = RCloud.UI.command_prompt.get_language();
+            });
             this.history = this.setup_prompt_history();
             this.prompt = this.setup_command_prompt();
         },
