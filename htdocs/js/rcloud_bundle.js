@@ -5188,7 +5188,7 @@ RCloud.UI.share_button = (function() {
             link += suffix;
             var v = shell.version();
             if(v)
-                link += query_started?'&':'?' + 'version=' + v;
+                link += (query_started?'&':'?') + 'version=' + v;
             $("#share-link").attr("href", link);
         }
     };
