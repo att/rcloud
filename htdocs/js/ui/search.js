@@ -114,6 +114,8 @@ return {
                 summary("No Results Found");
             } else if(d[0] === "error") {
                 d[1] = d[1].replace(/\n/g, "<br/>");
+                if($('#paging').html != "")
+                    $('#paging').html("");
                 summary("ERROR:\n" + d[1]);
             } else {
                 if(typeof (d) === "string") {
@@ -255,6 +257,13 @@ return {
         $("#search-results").html("");
         query = encodeURIComponent(query);
         RCloud.UI.with_progress(function() {
+            //This is a crude way. Need to find a better solution.
+            query = query.replace(/([-.+^=!:()|\[\]\/\\~])/g, "\\$1").
+                replace(/%3A/g,'%5C%3A').
+                replace(/%2B/g,'%5C%2B').
+                replace(/%2F/g,'%5C%2F').
+                replace(/%7D/g,'%5C%7D').
+                replace(/%7B/g,'%5C%7B');
             return rcloud.search(query, sortby, orderby, start, page_size_)
                 .then(function(v) {
                     create_list_of_search_results(v);
