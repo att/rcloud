@@ -62,7 +62,7 @@ Rserve.Robj = {
 		// FIXME: there is no reason why names should be the first or only
 		//        attribute, so the code should really look
 		//        for "names" and not cry if it doesn't exist
-                if(this.attributes.value[0].name == "names") {
+                if (this.attributes.value[0].name == "names") {
                     var keys   = this.attributes.value[0].value.value;
                     var result = {};
                     _.each(keys, function(key, i) {
@@ -70,8 +70,8 @@ Rserve.Robj = {
                     });
                     return result;
 		}
-		// FIXME: this doesn't pass-through any other attributes
-		//        including important ones like "class"
+		// FIXME: how can we pass other important attributes
+		//        like "class" ?
 		return values;
             }
         }
@@ -88,6 +88,11 @@ Rserve.Robj = {
             if (_.isUndefined(this.attributes)) {
                 return values;
             } else {
+		// FIXME: lang doens't have "names" attribute since
+		//        names are sent as tags (langs are pairlists)
+		//        so this seems superfluous (it is dangerous
+		//        if lang ever had attributes since there is
+		//        no reason to fail in that case)
                 if(this.attributes.value[0].name!="names")
                     throw "expected names here";
                 var keys   = this.attributes.value[0].value.value;
@@ -387,7 +392,7 @@ function read(m)
                 var c = this.data_view.getInt8(this.offset++);
                 if (c) result = result + String.fromCharCode(c);
             }
-            return result;
+            return decodeURIComponent(escape(result)); // UTF-8 to UTF-16
         },
         read_stream: function(length) {
             var old_offset = this.offset;
@@ -421,6 +426,7 @@ function read(m)
             var current_str = "";
             for (var i=0; i<a.length; ++i)
                 if (a[i] === 0) {
+		    current_str = decodeURIComponent(escape(current_str));
                     result.push(current_str);
                     current_str = "";
                 } else {
@@ -1184,10 +1190,14 @@ Rserve.determine_size = function(value, forced_type)
     case Rserve.Rsrv.XT_ARRAY_STR:
         if (_.isArray(value))
             return final_size(_.reduce(value, function(memo, str) {
-                return memo + str.length + 1;
+		// FIXME: this is a bit silly, since we'll be re-encoding this twice: once for the size and second time for the content
+		var utf8 = unescape(encodeURIComponent(str));
+                return memo + utf8.length + 1;
             }, 0));
-        else
-            return final_size(value.length + 1);
+        else {
+	    var utf8 = unescape(encodeURIComponent(value));
+            return final_size(utf8.length + 1);
+	}
     case Rserve.Rsrv.XT_ARRAY_DOUBLE:
         if (_.isNumber(value))
             return final_size(8);
@@ -1258,14 +1268,16 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type, convert
         if (_.isArray(value)) {
             var offset = payload_start;
             _.each(value, function(el) {
-                for (var i=0; i<el.length; ++i, ++offset)
-                    write_view.setUint8(offset, el.charCodeAt(i));
+		var utf8 = unescape(encodeURIComponent(el));
+                for (var i=0; i<utf8.length; ++i, ++offset)
+                    write_view.setUint8(offset, utf8.charCodeAt(i));
                 write_view.setUint8(offset++, 0);
             });
         } else {
-            for (i=0; i<value.length; ++i)
-                write_view.setUint8(payload_start + i, value.charCodeAt(i));
-            write_view.setUint8(payload_start + value.length, 0);
+	    var utf8 = unescape(encodeURIComponent(value));
+            for (i=0; i<utf8.length; ++i)
+                write_view.setUint8(payload_start + i, utf8.charCodeAt(i));
+            write_view.setUint8(payload_start + utf8.length, 0);
         }
         break;
     case Rserve.Rsrv.XT_ARRAY_DOUBLE:
