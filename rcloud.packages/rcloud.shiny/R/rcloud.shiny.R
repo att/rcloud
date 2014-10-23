@@ -41,8 +41,18 @@ rcloud.shinyApp <- function(ui, server, options) {
     connect = rcloud.support:::make.oc(connect),
     send = rcloud.support:::make.oc(receive)
   );
+  
+  file_upload = list(
+	create = rcloud.support:::make.oc(rcloud.upload.create.file),
+	write = rcloud.support:::make.oc(rcloud.upload.write.file),
+	close = rcloud.support:::make.oc(rcloud.upload.close.file),
+	upload_path = rcloud.support:::make.oc(rcloud.upload.path)
+  )  
 
   rcloud.shiny.caps$init(ocaps);
+  
+  rcloud.shiny.caps$setup_upload_ocaps(file_upload)
+  
   serverFuncSource <- function() {
     server
   }
