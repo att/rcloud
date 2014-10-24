@@ -36,6 +36,21 @@
    that the `.self` part distinguishes asset lookup from a path info
    call.
 
+* Search UI improvements.  Search results are paginated for improved navigability
+  and performance.  Search results show all results within each notebook.  (If
+  there are many results, they are hidden/shown inline with a "show more" link.)
+  Search results can be sorted by user, notebook name, date, or stars, in ascending
+  or descending order.  Improvements to display of result line numbers and
+  comment results.
+
+* Tagged versions: instead of using hexadecimal hashes for notebook versions,
+  you can tag them by clicking a second time on the version in the history in
+  the notebook tree, and entering a human-readable name. You can also load a
+  notebook version by specifying `&tag=name` instead of `&version=hash` in the
+  URL. Each version can only have one tag, and each tag can only have one
+  version: if a tag is reused, it is removed from the previous version. Enter a
+  blank tag (delete the tag and press enter) to remove it.
+
 * Actions are logged on the server side using Rserve's `ulog`.
 
 * Preliminary [RStudio Shiny](http://shiny.rstudio.com/) support via rcloud.shiny
@@ -43,7 +58,26 @@
   server and client instead of Shiny Server.  Basic functionality is supported,
   but Shiny extensions are not supported yet.
 
-* It is possible to create custom side panels for RCloud edit mode
+* It is possible to create custom side panels for RCloud edit mode.
+
+* Add-on packages can be loaded per-user (RCS key `<user>/system/config/addons`)
+  or for all users (`.allusers/system/config/addons`).  These packages are
+  loaded at the beginning of each session, and have access to the RCloud UI (via
+  ocaps) to add side panels or other UI elements.  See the example
+  rcloud.packages/rcloud.viewer
+
+* Object Viewer - `View(dataframe)` will show the contents of the dataframe
+  in the Viewer side panel
+
+* Forked-from notebook shown below notebook title, with link to the original
+  notebook.  Since github gists do not allow forking one's own notebooks, emulate
+  the `fork_of` value for self-forked notebooks.
+
+* shared.R allows packages to serve files via URLs.
+
+* Select the type of view (shareable link) for each notebook by using the
+  drop-down menu to the right of the Shareable Link button.
+
 
 ### Improvements
 
@@ -67,21 +101,40 @@
 * Ctrl-S and Cmd-S now save the notebook rather than invoking the browser's
   save command
 
-### Bug fixes
-
-* Assets without filename extensions are allowed.
+* It is possible to disable the command prompt, which is confusing to some
+  users.  The option is in the new Settings panel.
 
 * Insert cell button inserts a cell of the same language as the cell
   below it.
 
+* Default language for final insert button is saved per-user.
+
+* Shortcuts for forking notebooks.  When changing the title or tagging a version
+  of a notebook, press ctrl/cmd-enter to fork.
+
+### Bug fixes
+
+* Assets without filename extensions are allowed.
+
 * Error message for attempting to rename an asset over another one.
 
 * Downloading of files (Export Notebook / Export as R Source) now works
-  in Firefox
+  in Firefox.
 
 * Fixed a bug where arrow keys were captured by the notebook so the selection
-  could be moved off the current notebook
+  could be moved off the current notebook.
 
+* Fixed a glitch where notebook comman\ds could take more than one row to display;
+  hide date entirely when showing notebook commands, and don't show the commands
+  when hovering over notebook versions.
+
+* Fix to error propagation for notebook.R when an asset does not exist or the
+  notebook is not published.
+
+* Fixed URL for Sharable Link of notebook version.
+
+* Fixed Unicode support (for assets and everywhere) - repair mismatch between
+  JavaScript UTF-16 and R UTF-8 strings.
 
 ## RCloud 1.1.2
 
