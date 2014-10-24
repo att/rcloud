@@ -756,6 +756,7 @@ var editor = function () {
             var fork_desc = fork_of.owner.login+ " / " + fork_of.description;
             var url = make_edit_url({notebook: fork_of.id});
             $("#forked-from-desc").html("forked from <a href='" + url + "'>" + fork_desc + "</a>");
+            $("#forked-from-desc").css({"min-width":$("#forked-from-desc").width()});
         }
         else
             $("#forked-from-desc").text("");
