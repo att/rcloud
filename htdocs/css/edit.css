@@ -426,8 +426,9 @@ li.jqtree-selected .notebook-commands {
 #search-wrapper {
     display: table;
     table-layout: fixed;
-    height: 100%;
+    height: 95%;
     width: 100%;
+    padding-bottom: 8px;
 }
 
 #search-form {
@@ -1065,9 +1066,10 @@ pre > .vt100 {
 * extending bootstrap pagination class
 */
 .pagination {
-    margin: 3px 0px;
+    margin: -5px 0px;
+    text-align: center;
 }
-.pagination-sm > li > a,
-.pagination-sm > li > span {
+.pagination > li > a,
+.pagination > li > span {
     padding: 3px 8px;
 }
