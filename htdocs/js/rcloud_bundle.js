@@ -1967,6 +1967,11 @@ Notebook.create_html_view = function(model, root_div)
         });
     }
 
+    function init_cell_view(cell_view) {
+        cell_view.set_readonly(model.read_only()); // usu false but future-proof it
+        cell_view.show_source();
+    }
+
     var result = {
         model: model,
         sub_views: [],
@@ -1976,6 +1981,7 @@ Notebook.create_html_view = function(model, root_div)
             cell_model.views.push(cell_view);
             root_div.append(cell_view.div());
             this.sub_views.push(cell_view);
+            init_cell_view(cell_view);
             on_rearrange();
             return cell_view;
         },
@@ -1993,7 +1999,7 @@ Notebook.create_html_view = function(model, root_div)
             root_div.append(cell_view.div());
             $(cell_view.div()).insertBefore(root_div.children('.notebook-cell')[cell_index]);
             this.sub_views.splice(cell_index, 0, cell_view);
-            cell_view.show_source();
+            init_cell_view(cell_view);
             on_rearrange();
             return cell_view;
         },
@@ -3469,6 +3475,15 @@ RCloud.UI.command_prompt = (function() {
             if(!show_prompt_)
                 prompt.hide();
             $('#rcloud-cellarea').append(prompt);
+            $("#insert-new-cell").click(function() {
+                var language = RCloud.UI.command_prompt.get_language();
+                shell.new_cell("", language, false);
+                var vs = shell.notebook.view.sub_views;
+                vs[vs.length-1].show_source();
+            });
+            $("#insert-cell-language").change(function() {
+                window.localStorage["last_cell_lang"] = RCloud.UI.command_prompt.get_language();
+            });
             this.history = this.setup_prompt_history();
             this.prompt = this.setup_command_prompt();
         },
@@ -3967,16 +3982,6 @@ RCloud.UI.init = function() {
         shell.import_notebook_file();
     });
 
-    $("#insert-new-cell").click(function() {
-        var language = RCloud.UI.command_prompt.get_language();
-        shell.new_cell("", language, false);
-        var vs = shell.notebook.view.sub_views;
-        vs[vs.length-1].show_source();
-    });
-    $("#insert-cell-language").change(function() {
-        window.localStorage["last_cell_lang"] = RCloud.UI.command_prompt.get_language();
-    });
-
     $("#rcloud-logout").click(function() {
         // let the server-side script handle this so it can
         // also revoke all tokens
@@ -4139,7 +4144,7 @@ RCloud.UI.notebook_title = (function() {
             var ellipt_start = false, ellipt_end = false;
             var title = $('#notebook-title');
             title.text(text);
-            while(window.innerWidth - title.width() < 505) {
+            while(window.innerWidth - title.width() < 650) {
                 var slash = text.search('/');
                 if(slash >= 0) {
                     ellipt_start = true;
@@ -5189,7 +5194,7 @@ RCloud.UI.share_button = (function() {
             link += suffix;
             var v = shell.version();
             if(v)
-                link += query_started?'&':'?' + 'version=' + v;
+                link += (query_started?'&':'?') + 'version=' + v;
             $("#share-link").attr("href", link);
         }
     };

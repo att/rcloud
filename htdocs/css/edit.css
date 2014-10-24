@@ -912,12 +912,27 @@ a.accordion-toggle.right > i {
 }
 
 #forked-from-desc {
-    color: #bbb;
+    color: #777;
     position: absolute;
     bottom: 4px;
     left: 6ex;
-    width: 300px;
+    width: 100%;
+    pointer-events: none;
+    cursor: text;
+    overflow-y: hidden;
+    height: 1.5em;
 }
+
+#forked-from-desc a {
+    color: #4265a7;
+    pointer-events: auto;
+}
+
+#forked-from-desc a:hover {
+    color: #428bca
+}
+
+
 
 /*****************************************************************************/
 /* Fix that awful select from webkit */

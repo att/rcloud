@@ -38,16 +38,6 @@ RCloud.UI.init = function() {
         shell.import_notebook_file();
     });
 
-    $("#insert-new-cell").click(function() {
-        var language = RCloud.UI.command_prompt.get_language();
-        shell.new_cell("", language, false);
-        var vs = shell.notebook.view.sub_views;
-        vs[vs.length-1].show_source();
-    });
-    $("#insert-cell-language").change(function() {
-        window.localStorage["last_cell_lang"] = RCloud.UI.command_prompt.get_language();
-    });
-
     $("#rcloud-logout").click(function() {
         // let the server-side script handle this so it can
         // also revoke all tokens
