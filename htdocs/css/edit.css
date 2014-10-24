@@ -917,7 +917,7 @@ a.accordion-toggle.right > i {
     position: absolute;
     bottom: 4px;
     left: 6ex;
-    width: 100%;
+    width: 700;
     pointer-events: none;
     cursor: text;
     overflow-y: hidden;
