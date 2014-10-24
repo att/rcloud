@@ -243,7 +243,7 @@ return {
                 $("#search-results .search-result-heading").click(function(e) {
                     e.preventDefault();
                     var gistname = $(this).attr("data-gistname");
-                    editor.open_notebook(gistname, null, null, true, e.metaKey || e.ctrlKey);
+                    editor.open_notebook(gistname, null, null, e.metaKey || e.ctrlKey);
                     return false;
                 });
             }
