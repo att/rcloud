@@ -390,25 +390,26 @@ ui_utils.editable = function(elem$, command) {
             // allow default action but don't bubble (causing eroneous reselection in notebook tree)
         });
         elem$.keydown(function(e) {
-            var entr_key = (e.keyCode === 13);
-            if (options().ctrl_cmd && entr_key && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                var txt = elem$.text();
-                txt = decode(txt);
-                elem$.blur();
-                options().ctrl_cmd(txt);
-            }
-            else if((command.allow_multiline && (entr_key && (e.ctrlKey || e.metaKey))) || (entr_key && !command.allow_multiline)) {
-                e.preventDefault();
-                var txt = elem$.text();
-                txt = decode(txt);
-                if(options().validate(txt)) {
-                    options().__active = false;
-                    elem$.off('blur'); // don't cancel!
-                    elem$.blur();
-                    options().change(txt);
-                } else {
-                    return false; // don't let CR through!
+            if(e.keyCode === 13) {
+                var txt = decode(elem$.text());
+                function execute_if_valid_else_ignore(f) {
+                    if(options().validate(txt)) {
+                        options().__active = false;
+                        elem$.off('blur'); // don't cancel!
+                        elem$.blur();
+                        f(txt);
+                        return true;
+                    } else {
+                        return false; // don't let CR through!
+                    }
+                }
+                if (options().ctrl_cmd && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    return execute_if_valid_else_ignore(options().ctrl_cmd);
+                }
+                else if(!command.allow_multiline || (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    return execute_if_valid_else_ignore(options().change);
                 }
             } else if(e.keyCode === 27) {
                 elem$.blur(); // and cancel
