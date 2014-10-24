@@ -20,3 +20,4 @@ packages/*.tar.gz
 rcloud.packages/*.tar.gz
 REVISION
 run
+cf-ubuntu-lucid-deps.tar.gz
