@@ -199,7 +199,7 @@ Notebook.create_controller = function(model)
 
     function apply_changes_and_load(changes, gistname) {
         return changes.length ?
-            update_notebook(changes, gistname) :
+            update_notebook(changes, gistname).then(result.load_notebook(gistname, null)) :
             result.load_notebook(gistname, null); // do a load - we need to refresh
     }
 
