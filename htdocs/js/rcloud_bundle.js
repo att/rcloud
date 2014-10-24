@@ -4978,8 +4978,10 @@ return {
         }
 
         summary("Searching...");
-        $("#search-results-row").hide();
-        $("#search-results").html("");
+        if(!pgclick) {
+            $("#search-results-row").hide();
+            $("#search-results").html("");
+        }
         query = encodeURIComponent(query);
         RCloud.UI.with_progress(function() {
             return rcloud.search(query, sortby, orderby, start, page_size_)
