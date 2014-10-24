@@ -29,8 +29,8 @@ function main() {
         }
         promise = promise.then(function() {
             return shell.load_notebook(notebook, version).then(
-                function(v){
-                    document.title = $("#notebook-title").text()+" - RCloud";
+                function(result) {
+                    document.title = result.description + " - RCloud";
                 }
             );
         }).then(function() {
