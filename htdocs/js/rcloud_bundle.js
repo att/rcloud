@@ -2512,9 +2512,12 @@ Notebook.create_controller = function(model)
     }
 
     function apply_changes_and_load(changes, gistname) {
-        return changes.length ?
+        return (changes.length ?
             update_notebook(changes, gistname) :
-            result.load_notebook(gistname, null); // do a load - we need to refresh
+            Promise.resolve(undefined))
+            .then(function() {
+                return result.load_notebook(gistname, null); // do a load - we need to refresh
+            });
     }
 
     function refresh_buffers() {
