@@ -1242,17 +1242,21 @@ var editor = function () {
             return shell.rename_notebook(desc);
         },
         tag_version: function(id, version, tag_string) {
-            var history = histories_[id];
-            if(Notebook.empty_for_github(tag_string)) tag_string = '';
-            for(var i=0;i<history.length;i++) {
-                if (history[i].version === version) {
-                    history[i].tag = tag_string;
-                }
-                if(history[i].tag === tag_string && history[i].version != version) {
-                    history[i].tag = undefined;
-                }
-            }
-            return rcloud.tag_notebook_version(id, version, tag_string);
+            return rcloud.tag_notebook_version(id, version, tag_string)
+                .then(function(ret) {
+                    if(!ret)
+                        return;
+                    var history = histories_[id];
+                    if(Notebook.empty_for_github(tag_string)) tag_string = '';
+                    for(var i=0;i<history.length;i++) {
+                        if (history[i].version === version) {
+                            history[i].tag = tag_string;
+                        }
+                        if(history[i].tag === tag_string && history[i].version != version) {
+                            history[i].tag = undefined;
+                        }
+                    }
+                });
         },
         star_notebook: function(star, opts) {
             var that = this;

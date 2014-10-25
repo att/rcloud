@@ -47,6 +47,8 @@ rcloud.load.notebook <- function(id, version = NULL) {
 }
 
 rcloud.tag.notebook.version <- function(gist_id, version, tag_name) {
+  if(!notebook.is.mine(gist_id))
+    return(FALSE)
   tag2version <- function(tag) rcs.key(username='.notebook', gist_id, 'tag2version', tag)
   version2tag <- function(version) rcs.key(username='.notebook', gist_id, 'version2tag', version)
   version.had.tag <- rcs.get(version2tag(version))
@@ -64,6 +66,7 @@ rcloud.tag.notebook.version <- function(gist_id, version, tag_name) {
   else {
     rcs.rm(version2tag(version))
   }
+  TRUE
 }
 
 rcloud.install.notebook.stylesheets <- function() {
