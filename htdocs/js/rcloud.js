@@ -82,6 +82,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["call_notebook"],
             ["install_notebook_stylesheets"],
             ["tag_notebook_version"],
+            ["get_version_of_tag"],
             ["get_users"],
             ["log", "record_cell_execution"],
             ["setup_js_installer"],
@@ -147,6 +148,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.tag_notebook_version = function(gist_id,version,tag_name) {
             return rcloud_ocaps.tag_notebook_versionAsync(gist_id,version,tag_name);
+        };
+
+        rcloud.get_version_of_tag = function(gist_id,tag) {
+            return rcloud_ocaps.get_version_of_tagAsync(gist_id,tag);
         };
 
         rcloud.call_notebook = function(id, version) {

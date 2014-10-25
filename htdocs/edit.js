@@ -12,6 +12,7 @@ function main() {
             if (location.search.length > 0) {
                 opts.notebook = getURLParameter("notebook");
                 opts.version = getURLParameter("version");
+                opts.tag = getURLParameter("tag");
                 if (opts.notebook === null && getURLParameter("new_notebook"))
                     opts = {new_notebook: true};
                 if (opts.notebook === null && getURLParameter("user")) {

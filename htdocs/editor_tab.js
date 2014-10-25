@@ -1060,7 +1060,7 @@ var editor = function () {
         var url = window.location.protocol + '//' + window.location.host + '/edit.html';
         if(opts.notebook) {
             url += '?notebook=' + opts.notebook;
-            if(opts.version)
+            if(opts.version && !opts.tag)
                 url = url + '&version='+opts.version;
             if(opts.tag && opts.version)
                 url = url + '&tag='+opts.tag;
@@ -1131,28 +1131,32 @@ var editor = function () {
         init: function(opts) {
             var that = this;
             username_ = rcloud.username();
-            var promise = load_everything().then(function() {
-                if(opts.notebook) { // notebook specified in url
-                    return that.load_notebook(opts.notebook, opts.version)
-                        .catch(function(xep) {
-                            var message = "Could not open notebook " + opts.notebook;
-                            if(opts.version)
-                                message += "(version " + opts.version + ")";
-                            RCloud.UI.fatal_dialog(message, "Continue", make_edit_url());
-                            throw xep;
-                        });
-                } else if(!opts.new_notebook && current_.notebook) {
-                    return that.load_notebook(current_.notebook, current_.version)
-                        .catch(function(xep) {
-                            // if loading fails for a reason that is not actually a loading problem
-                            // then don't keep trying.
-                            if(xep.from_load)
-                                open_last_loadable();
-                            else throw xep;
-                        });
-                }
-                else
-                    return that.new_notebook();
+            var promise = load_everything()
+                .then(function(){return rcloud.get_version_of_tag(opts.notebook,opts.tag)})
+                .then(function(v) {
+                    if(v)
+                        opts.version = v;
+                    if(opts.notebook) { // notebook specified in url
+                        return that.load_notebook(opts.notebook, opts.version)
+                            .catch(function(xep) {
+                                var message = "Could not open notebook " + opts.notebook;
+                                if(opts.version)
+                                    message += "(version " + opts.version + ")";
+                                RCloud.UI.fatal_dialog(message, "Continue", make_edit_url());
+                                throw xep;
+                            });
+                    } else if(!opts.new_notebook && current_.notebook) {
+                        return that.load_notebook(current_.notebook, current_.version)
+                            .catch(function(xep) {
+                                // if loading fails for a reason that is not actually a loading problem
+                                // then don't keep trying.
+                                if(xep.from_load)
+                                    open_last_loadable();
+                                else throw xep;
+                            });
+                    }
+                    else
+                        return that.new_notebook();
             });
             $('#new-notebook').click(function(e) {
                 e.preventDefault();
