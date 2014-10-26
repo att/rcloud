@@ -3471,18 +3471,22 @@ RCloud.UI.command_prompt = (function() {
     var show_prompt_ = false, // start hidden so it won't flash if user has it turned off
         readonly_ = true;
     function show_or_hide() {
-        if(!readonly_ && show_prompt_)
-            $('#prompt-div').show();
-        else
-            $('#prompt-div').hide();
+        var prompt = $('#command-prompt'),
+            controls = $('#prompt-div .cell-status .cell-controls');
+        if(!readonly_ && show_prompt_) {
+            prompt.show();
+            controls.removeClass('flipped');
+        }
+        else {
+            prompt.hide();
+            controls.addClass('flipped');
+        }
     }
     return {
         prompt: null,
         history: null,
         init: function() {
             var prompt = $(RCloud.UI.panel_loader.load_snippet('command-prompt-snippet'));
-            if(!show_prompt_)
-                prompt.hide();
             $('#rcloud-cellarea').append(prompt);
             $("#insert-new-cell").click(function() {
                 var language = RCloud.UI.command_prompt.get_language();

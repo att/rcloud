@@ -227,6 +227,12 @@ rect.frame {
     background-color: white;
 }
 
+.cell-status .cell-controls.flipped {
+    top: 0;
+    bottom: auto;
+    border-radius: 0px 0px 4px 4px;
+}
+
 .notebook-cell .cell-insert-control {
     color: #555;
     position: absolute;
