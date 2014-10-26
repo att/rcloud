@@ -68,12 +68,12 @@ RCloud.UI.notebook_title = (function() {
                                                inactive_text: title.text(),
                                                active_text: active_text},
                                               editable_opts));
-        }, make_editable: function(node, editable) {
+        }, make_editable: function(node, $li, editable) {
             function get_title(node) {
                 if(!node.version) {
-                    return $('.jqtree-title:not(.history)', node.element);
+                    return $('.jqtree-title:not(.history)', $li);
                 } else {
-                    return $('.jqtree-title', node.element);
+                    return $('.jqtree-title', $li);
                 }
             }
             if(last_editable_ && (!node || last_editable_ !== node))

@@ -720,7 +720,7 @@ var editor = function () {
         $tree_.tree('selectNode', node);
         scroll_into_view(node);
         if(node.user === username_)
-            RCloud.UI.notebook_title.make_editable(node,true);
+            RCloud.UI.notebook_title.make_editable(node, node.element, true);
     }
 
     function update_tree_entry(root, user, gistname, entry, create) {
@@ -750,6 +750,12 @@ var editor = function () {
             where = current_.version;
         }
         return update_history_nodes(node, whither, where);
+    }
+
+    function update_url(opts) {
+        var url = make_edit_url(opts);
+        window.history.replaceState("rcloud.notebook", null, url);
+        rcloud.api.set_url(url);
     }
 
     function update_notebook_fork_info(fork_of) {
@@ -935,10 +941,9 @@ var editor = function () {
                                             'class': 'notebook-date'},
                                            display_date(node.last_commit)));
         }
+        if(node.user === username_ && $tree_.tree('isNodeSelected', node))
+            RCloud.UI.notebook_title.make_editable(node, $li, true);
         if(node.gistname && !node.version) {
-            if($tree_.tree('isNodeSelected', node))
-                RCloud.UI.notebook_title.make_editable(
-                    node, !shell.notebook.model.read_only());
             var adder = function(target) {
                 var lst = [];
                 function add(items) {
@@ -1132,32 +1137,28 @@ var editor = function () {
         init: function(opts) {
             var that = this;
             username_ = rcloud.username();
-            var promise = load_everything()
-                .then(function(){return rcloud.get_version_of_tag(opts.notebook,opts.tag)})
-                .then(function(v) {
-                    if(v)
-                        opts.version = v;
-                    if(opts.notebook) { // notebook specified in url
-                        return that.load_notebook(opts.notebook, opts.version)
-                            .catch(function(xep) {
-                                var message = "Could not open notebook " + opts.notebook;
-                                if(opts.version)
-                                    message += "(version " + opts.version + ")";
-                                RCloud.UI.fatal_dialog(message, "Continue", make_edit_url());
-                                throw xep;
-                            });
-                    } else if(!opts.new_notebook && current_.notebook) {
-                        return that.load_notebook(current_.notebook, current_.version)
-                            .catch(function(xep) {
-                                // if loading fails for a reason that is not actually a loading problem
-                                // then don't keep trying.
-                                if(xep.from_load)
-                                    open_last_loadable();
-                                else throw xep;
-                            });
-                    }
-                    else
-                        return that.new_notebook();
+            var promise = load_everything().then(function() {
+                if(opts.notebook) { // notebook specified in url
+                    return that.load_notebook(opts.notebook, opts.version)
+                        .catch(function(xep) {
+                            var message = "Could not open notebook " + opts.notebook;
+                            if(opts.version)
+                                message += "(version " + opts.version + ")";
+                            RCloud.UI.fatal_dialog(message, "Continue", make_edit_url());
+                            throw xep;
+                        });
+                } else if(!opts.new_notebook && current_.notebook) {
+                    return that.load_notebook(current_.notebook, current_.version)
+                        .catch(function(xep) {
+                            // if loading fails for a reason that is not actually a loading problem
+                            // then don't keep trying.
+                            if(xep.from_load)
+                                open_last_loadable();
+                            else throw xep;
+                        });
+                }
+                else
+                    return that.new_notebook();
             });
             $('#new-notebook').click(function(e) {
                 e.preventDefault();
@@ -1246,20 +1247,24 @@ var editor = function () {
         rename_notebook: function(desc) {
             return shell.rename_notebook(desc);
         },
-        tag_version: function(id, version, tag_string) {
-            return rcloud.tag_notebook_version(id, version, tag_string)
+        tag_version: function(id, version, tag) {
+            if(Notebook.empty_for_github(tag))
+                tag = null;
+            return rcloud.tag_notebook_version(id, version, tag)
                 .then(function(ret) {
                     if(!ret)
                         return;
                     var history = histories_[id];
-                    if(Notebook.empty_for_github(tag_string)) tag_string = '';
-                    for(var i=0;i<history.length;i++) {
+                    for(var i=0; i<history.length; ++i) {
                         if (history[i].version === version) {
-                            history[i].tag = tag_string;
+                            history[i].tag = tag;
                         }
-                        if(history[i].tag === tag_string && history[i].version != version) {
+                        if(history[i].tag === tag && history[i].version != version) {
                             history[i].tag = undefined;
                         }
+                    }
+                    if(id === current_.notebook && version === current_.version) {
+                        update_url({notebook: id, version: version, tag: tag});
                     }
                 });
         },
@@ -1407,9 +1412,7 @@ var editor = function () {
                      window.history.replaceState)
                     .bind(window.history)
                  */
-                var url = make_edit_url({notebook: result.id, version: options.version, tag:tag});
-                window.history.replaceState("rcloud.notebook", null, url);
-                rcloud.api.set_url(url);
+                update_url({notebook: result.id, version: options.version, tag:tag});
 
                 var history;
                 // when loading an old version you get truncated history

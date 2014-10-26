@@ -180,6 +180,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["call_notebook"],
             ["install_notebook_stylesheets"],
             ["tag_notebook_version"],
+            ["get_version_by_tag"],
             ["get_users"],
             ["log", "record_cell_execution"],
             ["setup_js_installer"],
@@ -245,6 +246,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.tag_notebook_version = function(gist_id,version,tag_name) {
             return rcloud_ocaps.tag_notebook_versionAsync(gist_id,version,tag_name);
+        };
+
+        rcloud.get_version_of_tag = function(gist_id,tag) {
+            return rcloud_ocaps.get_version_of_tagAsync(gist_id,tag);
         };
 
         rcloud.call_notebook = function(id, version) {
@@ -4166,12 +4171,12 @@ RCloud.UI.notebook_title = (function() {
                                                inactive_text: title.text(),
                                                active_text: active_text},
                                               editable_opts));
-        }, make_editable: function(node, editable) {
+        }, make_editable: function(node, $li, editable) {
             function get_title(node) {
                 if(!node.version) {
-                    return $('.jqtree-title:not(.history)', node.element);
+                    return $('.jqtree-title:not(.history)', $li);
                 } else {
-                    return $('.jqtree-title', node.element);
+                    return $('.jqtree-title', $li);
                 }
             }
             if(last_editable_ && (!node || last_editable_ !== node))

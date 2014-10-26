@@ -46,7 +46,7 @@ rcloud.load.notebook <- function(id, version = NULL) {
   res
 }
 
-rcloud.get.version.of.tag <- function(gist_id,tag) {
+rcloud.get.version.by.tag <- function(gist_id,tag) {
   v <- rcs.get(rcs.key(username='.notebook', gist_id, 'tag2version', tag))
 }
 

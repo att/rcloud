@@ -82,7 +82,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["call_notebook"],
             ["install_notebook_stylesheets"],
             ["tag_notebook_version"],
-            ["get_version_of_tag"],
+            ["get_version_by_tag"],
             ["get_users"],
             ["log", "record_cell_execution"],
             ["setup_js_installer"],
