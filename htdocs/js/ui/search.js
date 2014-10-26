@@ -243,7 +243,7 @@ return {
                 $("#search-results .search-result-heading").click(function(e) {
                     e.preventDefault();
                     var gistname = $(this).attr("data-gistname");
-                    editor.open_notebook(gistname, null, null, true, e.metaKey || e.ctrlKey);
+                    editor.open_notebook(gistname, null, null, e.metaKey || e.ctrlKey);
                     return false;
                 });
             }
@@ -251,8 +251,10 @@ return {
         }
 
         summary("Searching...");
-        $("#search-results-row").hide();
-        $("#search-results").html("");
+        if(!pgclick) {
+            $("#search-results-row").hide();
+            $("#search-results").html("");
+        }
         query = encodeURIComponent(query);
         RCloud.UI.with_progress(function() {
             return rcloud.search(query, sortby, orderby, start, page_size_)

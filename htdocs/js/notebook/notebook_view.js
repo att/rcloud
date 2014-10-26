@@ -6,6 +6,11 @@ Notebook.create_html_view = function(model, root_div)
         });
     }
 
+    function init_cell_view(cell_view) {
+        cell_view.set_readonly(model.read_only()); // usu false but future-proof it
+        cell_view.show_source();
+    }
+
     var result = {
         model: model,
         sub_views: [],
@@ -15,6 +20,7 @@ Notebook.create_html_view = function(model, root_div)
             cell_model.views.push(cell_view);
             root_div.append(cell_view.div());
             this.sub_views.push(cell_view);
+            init_cell_view(cell_view);
             on_rearrange();
             return cell_view;
         },
@@ -32,7 +38,7 @@ Notebook.create_html_view = function(model, root_div)
             root_div.append(cell_view.div());
             $(cell_view.div()).insertBefore(root_div.children('.notebook-cell')[cell_index]);
             this.sub_views.splice(cell_index, 0, cell_view);
-            cell_view.show_source();
+            init_cell_view(cell_view);
             on_rearrange();
             return cell_view;
         },

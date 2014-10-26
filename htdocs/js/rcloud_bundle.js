@@ -974,25 +974,26 @@ ui_utils.editable = function(elem$, command) {
             // allow default action but don't bubble (causing eroneous reselection in notebook tree)
         });
         elem$.keydown(function(e) {
-            var entr_key = (e.keyCode === 13);
-            if (options().ctrl_cmd && entr_key && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                var txt = elem$.text();
-                txt = decode(txt);
-                elem$.blur();
-                options().ctrl_cmd(txt);
-            }
-            else if((command.allow_multiline && (entr_key && (e.ctrlKey || e.metaKey))) || (entr_key && !command.allow_multiline)) {
-                e.preventDefault();
-                var txt = elem$.text();
-                txt = decode(txt);
-                if(options().validate(txt)) {
-                    options().__active = false;
-                    elem$.off('blur'); // don't cancel!
-                    elem$.blur();
-                    options().change(txt);
-                } else {
-                    return false; // don't let CR through!
+            if(e.keyCode === 13) {
+                var txt = decode(elem$.text());
+                function execute_if_valid_else_ignore(f) {
+                    if(options().validate(txt)) {
+                        options().__active = false;
+                        elem$.off('blur'); // don't cancel!
+                        elem$.blur();
+                        f(txt);
+                        return true;
+                    } else {
+                        return false; // don't let CR through!
+                    }
+                }
+                if (options().ctrl_cmd && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    return execute_if_valid_else_ignore(options().ctrl_cmd);
+                }
+                else if(!command.allow_multiline || (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    return execute_if_valid_else_ignore(options().change);
                 }
             } else if(e.keyCode === 27) {
                 elem$.blur(); // and cancel
@@ -1967,6 +1968,11 @@ Notebook.create_html_view = function(model, root_div)
         });
     }
 
+    function init_cell_view(cell_view) {
+        cell_view.set_readonly(model.read_only()); // usu false but future-proof it
+        cell_view.show_source();
+    }
+
     var result = {
         model: model,
         sub_views: [],
@@ -1976,6 +1982,7 @@ Notebook.create_html_view = function(model, root_div)
             cell_model.views.push(cell_view);
             root_div.append(cell_view.div());
             this.sub_views.push(cell_view);
+            init_cell_view(cell_view);
             on_rearrange();
             return cell_view;
         },
@@ -1993,7 +2000,7 @@ Notebook.create_html_view = function(model, root_div)
             root_div.append(cell_view.div());
             $(cell_view.div()).insertBefore(root_div.children('.notebook-cell')[cell_index]);
             this.sub_views.splice(cell_index, 0, cell_view);
-            cell_view.show_source();
+            init_cell_view(cell_view);
             on_rearrange();
             return cell_view;
         },
@@ -2505,9 +2512,12 @@ Notebook.create_controller = function(model)
     }
 
     function apply_changes_and_load(changes, gistname) {
-        return changes.length ?
+        return (changes.length ?
             update_notebook(changes, gistname) :
-            result.load_notebook(gistname, null); // do a load - we need to refresh
+            Promise.resolve(undefined))
+            .then(function() {
+                return result.load_notebook(gistname, null); // do a load - we need to refresh
+            });
     }
 
     function refresh_buffers() {
@@ -3764,7 +3774,7 @@ RCloud.UI.comments_frame = (function() {
             var scroll_height = "";
             $("#comment-submit").click(function() {
                 if(!Notebook.empty_for_github(comment.val())) {
-                    that.post_comment(comment.val());
+                    that.post_comment(_.escape(comment.val()));
                     comment.height("41px");
                 }
                 return false;
@@ -3773,7 +3783,7 @@ RCloud.UI.comments_frame = (function() {
             comment.keydown(function (e) {
                 if (e.keyCode == 13 && (e.ctrlKey || e.metaKey)) {
                     if(!Notebook.empty_for_github(comment.val())) {
-                        that.post_comment(comment.val());
+                        that.post_comment(_.escape(comment.val()));
                         comment.height("41px");
                         count = 0;
                         scroll_height = "";
@@ -4963,7 +4973,7 @@ return {
                 $("#search-results .search-result-heading").click(function(e) {
                     e.preventDefault();
                     var gistname = $(this).attr("data-gistname");
-                    editor.open_notebook(gistname, null, null, true, e.metaKey || e.ctrlKey);
+                    editor.open_notebook(gistname, null, null, e.metaKey || e.ctrlKey);
                     return false;
                 });
             }
@@ -4971,8 +4981,10 @@ return {
         }
 
         summary("Searching...");
-        $("#search-results-row").hide();
-        $("#search-results").html("");
+        if(!pgclick) {
+            $("#search-results-row").hide();
+            $("#search-results").html("");
+        }
         query = encodeURIComponent(query);
         RCloud.UI.with_progress(function() {
             return rcloud.search(query, sortby, orderby, start, page_size_)
