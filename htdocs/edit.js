@@ -14,12 +14,23 @@ function main() {
                 opts.version = getURLParameter("version");
                 if (opts.notebook === null && getURLParameter("new_notebook"))
                     opts = {new_notebook: true};
+                var promise = Promise.resolve(undefined);
                 if (opts.notebook === null && getURLParameter("user")) {
-                    return rcloud.get_notebook_by_name(getURLParameter("path"), getURLParameter("user"))
+                    promise = rcloud.get_notebook_by_name(getURLParameter("path"), getURLParameter("user"))
                         .then(function(result) {
                             opts.notebook = result[0];
                         });
                 }
+                var tag = getURLParameter("version");
+                if(!opts.version && tag) {
+                    promise = promise.then(function() {
+                        return rcloud.get_version_by_tag(opts.notebook, tag)
+                            .then(function(version) {
+                                opts.version = version;
+                            });
+                    });
+                };
+                return promise;
             }
             return undefined;
         }).then(shell.init.bind(shell))

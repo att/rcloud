@@ -227,6 +227,12 @@ rect.frame {
     background-color: white;
 }
 
+.cell-status .cell-controls.flipped {
+    top: 0;
+    bottom: auto;
+    border-radius: 0px 0px 4px 4px;
+}
+
 .notebook-cell .cell-insert-control {
     color: #555;
     position: absolute;
@@ -330,12 +336,28 @@ form input.linkbox {
     padding: 2px;
 }
 
-.nav li sub {
-    color: #ddd;
+.nav .caret {
+    border-top-color: #ccc;
 }
+
+.nav a:hover .caret {
+    border-top-color: #aaa;
+    border-bottom-color: #aaa;
+}
+
+.nav .open > a,
+.nav .open > a:hover,
+.nav .open > a:focus {
+  background-color: black;
+}
+
 
 #fatal-dialog .modal-content {
     background-color: #f2dede;
+}
+
+input[type=text].form-control-ext {
+    padding-left: 5px;
 }
 
 /******************************************************************************/
@@ -414,6 +436,10 @@ li.jqtree-selected .notebook-commands {
     width: 100%;
 }
 
+#search-form {
+    margin-bottom: 0px;
+}
+
 #search-wrapper td, #search-wrapper tr {
     padding: 0;
     margin: 0;
@@ -422,6 +448,11 @@ li.jqtree-selected .notebook-commands {
 #search-header {
     display: table-row;
     width: 100%;
+    height:50px;
+}
+
+#search-header form div.input-group {
+    margin: 0px -5px;
 }
 
 #search-summary {
@@ -432,6 +463,11 @@ li.jqtree-selected .notebook-commands {
     display: none; /* will be display: table-row; */
     height: 100%;
     width: 100%;
+}
+
+#search-results-pagination {
+    display:table-row;
+    text-align:center
 }
 
 #search-results-scroller {
@@ -613,12 +649,15 @@ li.jqtree-selected .notebook-commands {
     float: left;
     color: #000;
     display:none;
+    position: absolute;
+    right: 0.75ex
 }
 .comment-header-close:hover{
     cursor: pointer;
 }
 .comment-body {
-    color: #555
+    color: #555;
+    position: relative;
 }
 
 .comment-body-text {
@@ -879,6 +918,29 @@ a.accordion-toggle.right > i {
     background-color: rgba(224,224,224,0.75);
 }
 
+#forked-from-desc {
+    color: #777;
+    position: absolute;
+    bottom: 4px;
+    left: 6ex;
+    width: 700;
+    pointer-events: none;
+    cursor: text;
+    overflow-y: hidden;
+    height: 1.5em;
+}
+
+#forked-from-desc a {
+    color: #4265a7;
+    pointer-events: auto;
+}
+
+#forked-from-desc a:hover {
+    color: #428bca
+}
+
+
+
 /*****************************************************************************/
 /* Fix that awful select from webkit */
 
@@ -1005,4 +1067,14 @@ pre > .vt100 {
 .input-group-btn:last-child > .btn:not(:last-child):not(.dropdown-toggle) {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
+}
+/*
+* extending bootstrap pagination class
+*/
+.pagination {
+    margin: 3px 0px;
+}
+.pagination > li > a,
+.pagination > li > span {
+    padding: 3px 8px;
 }

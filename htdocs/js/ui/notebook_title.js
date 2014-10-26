@@ -1,8 +1,12 @@
 RCloud.UI.notebook_title = (function() {
     var last_editable_ =  null;
-    var node_ = null;
-    function tag_current_notebook(name) {
-        editor.tag_notebook(name,node_);
+    function version_tagger(node) {
+        return function(name) {
+            return editor.tag_version(node.gistname, node.version, name)
+                .then(function() {
+                    return editor.show_history(node.parent, {update: true});
+                });
+        };
     }
     function rename_current_notebook(name) {
         editor.rename_notebook(name)
@@ -20,19 +24,19 @@ RCloud.UI.notebook_title = (function() {
         range.setEnd(el.firstChild, text.length);
         return range;
     }
-    var ctrl_cmd = function(forked_gist_name) {
+    var fork_and_rename = function(forked_gist_name) {
         var is_mine = shell.notebook.controller.is_mine();
         var gistname = shell.gistname();
         var version = shell.version();
         editor.fork_notebook(is_mine, gistname, version)
             .then(function rename(v){
-                    rename_current_notebook(forked_gist_name)
+                    rename_current_notebook(forked_gist_name);
                 });
-    }
+    };
     var editable_opts = {
         change: rename_current_notebook,
         select: select,
-        ctrl_cmd:ctrl_cmd,
+        ctrl_cmd: fork_and_rename,
         validate: function(name) { return editor.validate_name(name); }
     };
 
@@ -46,7 +50,7 @@ RCloud.UI.notebook_title = (function() {
             var ellipt_start = false, ellipt_end = false;
             var title = $('#notebook-title');
             title.text(text);
-            while(window.innerWidth - title.width() < 505) {
+            while(window.innerWidth - title.width() < 650) {
                 var slash = text.search('/');
                 if(slash >= 0) {
                     ellipt_start = true;
@@ -64,26 +68,29 @@ RCloud.UI.notebook_title = (function() {
                                                inactive_text: title.text(),
                                                active_text: active_text},
                                               editable_opts));
-        }, make_editable: function(node, editable) {
+        }, make_editable: function(node, $li, editable) {
             function get_title(node) {
                 if(!node.version) {
-                    return $('.jqtree-title:not(.history)', node.element);
+                    return $('.jqtree-title:not(.history)', $li);
                 } else {
-                    return $('.jqtree-title', node.element);
+                    return $('.jqtree-title', $li);
                 }
             }
             if(last_editable_ && (!node || last_editable_ !== node))
                 ui_utils.editable(get_title(last_editable_), 'destroy');
             if(node) {
+                var opts = editable_opts;
                 if(node.version) {
-                    node_ = node;
-                    editable_opts.change = tag_current_notebook;
+                    opts = $.extend({}, editable_opts, {
+                        change: version_tagger(node),
+                        validate: function(name) { return true; }
+                    });
                 }
                 ui_utils.editable(get_title(node),
                                   $.extend({allow_edit: editable,
                                             inactive_text: node.name,
                                             active_text: node.name},
-                                           editable_opts));
+                                           opts));
             }
             last_editable_ = node;
         }

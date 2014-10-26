@@ -28,7 +28,11 @@ function main() {
             });
         }
         promise = promise.then(function() {
-            return shell.load_notebook(notebook, version);
+            return shell.load_notebook(notebook, version).then(
+                function(result) {
+                    document.title = result.description + " - RCloud";
+                }
+            );
         }).then(function() {
             if (Number(quiet)) {
                 $("#output > pre").first().hide();

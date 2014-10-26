@@ -180,6 +180,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["call_notebook"],
             ["install_notebook_stylesheets"],
             ["tag_notebook_version"],
+            ["get_version_by_tag"],
             ["get_users"],
             ["log", "record_cell_execution"],
             ["setup_js_installer"],
@@ -245,6 +246,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.tag_notebook_version = function(gist_id,version,tag_name) {
             return rcloud_ocaps.tag_notebook_versionAsync(gist_id,version,tag_name);
+        };
+
+        rcloud.get_version_of_tag = function(gist_id,tag) {
+            return rcloud_ocaps.get_version_of_tagAsync(gist_id,tag);
         };
 
         rcloud.call_notebook = function(id, version) {
@@ -423,6 +428,9 @@ RCloud.create = function(rcloud_ocaps) {
             ["get_notebook_info"],
             ["get_multiple_notebook_infos"],
             ["set_notebook_info"],
+            ["get_notebook_property"],
+            ["set_notebook_property"],
+            ["remove_notebook_property"],
             ["notebook_by_name"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
@@ -562,6 +570,9 @@ RCloud.create = function(rcloud_ocaps) {
             if(!info.last_commit) return Promise.reject(new Error("attempt to set info no last_commit"));
             return rcloud_ocaps.set_notebook_infoAsync(id, info);
         };
+        rcloud.get_notebook_property = rcloud_ocaps.get_notebook_propertyAsync;
+        rcloud.set_notebook_property = rcloud_ocaps.set_notebook_propertyAsync;
+        rcloud.remove_notebook_property = rcloud_ocaps.remove_notebook_propertyAsync;
 
         rcloud.get_notebook_by_name = function(user, path) {
             return rcloud_ocaps.notebook_by_nameAsync(user, path);
@@ -968,25 +979,26 @@ ui_utils.editable = function(elem$, command) {
             // allow default action but don't bubble (causing eroneous reselection in notebook tree)
         });
         elem$.keydown(function(e) {
-            var entr_key = (e.keyCode === 13);
-            if (options().ctrl_cmd && entr_key && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                var txt = elem$.text();
-                txt = decode(txt);
-                elem$.blur();
-                options().ctrl_cmd(txt);
-            }
-            else if((command.allow_multiline && (entr_key && (e.ctrlKey || e.metaKey))) || (entr_key && !command.allow_multiline)) {
-                e.preventDefault();
-                var txt = elem$.text();
-                txt = decode(txt);
-                if(options().validate(txt)) {
-                    options().__active = false;
-                    elem$.off('blur'); // don't cancel!
-                    elem$.blur();
-                    options().change(txt);
-                } else {
-                    return false; // don't let CR through!
+            if(e.keyCode === 13) {
+                var txt = decode(elem$.text());
+                function execute_if_valid_else_ignore(f) {
+                    if(options().validate(txt)) {
+                        options().__active = false;
+                        elem$.off('blur'); // don't cancel!
+                        elem$.blur();
+                        f(txt);
+                        return true;
+                    } else {
+                        return false; // don't let CR through!
+                    }
+                }
+                if (options().ctrl_cmd && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    return execute_if_valid_else_ignore(options().ctrl_cmd);
+                }
+                else if(!command.allow_multiline || (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    return execute_if_valid_else_ignore(options().change);
                 }
             } else if(e.keyCode === 27) {
                 elem$.blur(); // and cancel
@@ -1961,6 +1973,11 @@ Notebook.create_html_view = function(model, root_div)
         });
     }
 
+    function init_cell_view(cell_view) {
+        cell_view.set_readonly(model.read_only()); // usu false but future-proof it
+        cell_view.show_source();
+    }
+
     var result = {
         model: model,
         sub_views: [],
@@ -1970,6 +1987,7 @@ Notebook.create_html_view = function(model, root_div)
             cell_model.views.push(cell_view);
             root_div.append(cell_view.div());
             this.sub_views.push(cell_view);
+            init_cell_view(cell_view);
             on_rearrange();
             return cell_view;
         },
@@ -1987,7 +2005,7 @@ Notebook.create_html_view = function(model, root_div)
             root_div.append(cell_view.div());
             $(cell_view.div()).insertBefore(root_div.children('.notebook-cell')[cell_index]);
             this.sub_views.splice(cell_index, 0, cell_view);
-            cell_view.show_source();
+            init_cell_view(cell_view);
             on_rearrange();
             return cell_view;
         },
@@ -2499,9 +2517,12 @@ Notebook.create_controller = function(model)
     }
 
     function apply_changes_and_load(changes, gistname) {
-        return changes.length ?
+        return (changes.length ?
             update_notebook(changes, gistname) :
-            result.load_notebook(gistname, null); // do a load - we need to refresh
+            Promise.resolve(undefined))
+            .then(function() {
+                return result.load_notebook(gistname, null); // do a load - we need to refresh
+            });
     }
 
     function refresh_buffers() {
@@ -3450,19 +3471,32 @@ RCloud.UI.command_prompt = (function() {
     var show_prompt_ = false, // start hidden so it won't flash if user has it turned off
         readonly_ = true;
     function show_or_hide() {
-        if(!readonly_ && show_prompt_)
-            $('#prompt-div').show();
-        else
-            $('#prompt-div').hide();
+        var prompt = $('#command-prompt'),
+            controls = $('#prompt-div .cell-status .cell-controls');
+        if(!readonly_ && show_prompt_) {
+            prompt.show();
+            controls.removeClass('flipped');
+        }
+        else {
+            prompt.hide();
+            controls.addClass('flipped');
+        }
     }
     return {
         prompt: null,
         history: null,
         init: function() {
             var prompt = $(RCloud.UI.panel_loader.load_snippet('command-prompt-snippet'));
-            if(!show_prompt_)
-                prompt.hide();
             $('#rcloud-cellarea').append(prompt);
+            $("#insert-new-cell").click(function() {
+                var language = RCloud.UI.command_prompt.get_language();
+                shell.new_cell("", language, false);
+                var vs = shell.notebook.view.sub_views;
+                vs[vs.length-1].show_source();
+            });
+            $("#insert-cell-language").change(function() {
+                window.localStorage["last_cell_lang"] = RCloud.UI.command_prompt.get_language();
+            });
             this.history = this.setup_prompt_history();
             this.prompt = this.setup_command_prompt();
         },
@@ -3749,7 +3783,7 @@ RCloud.UI.comments_frame = (function() {
             var scroll_height = "";
             $("#comment-submit").click(function() {
                 if(!Notebook.empty_for_github(comment.val())) {
-                    that.post_comment(comment.val());
+                    that.post_comment(_.escape(comment.val()));
                     comment.height("41px");
                 }
                 return false;
@@ -3758,7 +3792,7 @@ RCloud.UI.comments_frame = (function() {
             comment.keydown(function (e) {
                 if (e.keyCode == 13 && (e.ctrlKey || e.metaKey)) {
                     if(!Notebook.empty_for_github(comment.val())) {
-                        that.post_comment(comment.val());
+                        that.post_comment(_.escape(comment.val()));
                         comment.height("41px");
                         count = 0;
                         scroll_height = "";
@@ -3961,16 +3995,6 @@ RCloud.UI.init = function() {
         shell.import_notebook_file();
     });
 
-    $("#insert-new-cell").click(function() {
-        var language = RCloud.UI.command_prompt.get_language();
-        shell.new_cell("", language, false);
-        var vs = shell.notebook.view.sub_views;
-        vs[vs.length-1].show_source();
-    });
-    $("#insert-cell-language").change(function() {
-        window.localStorage["last_cell_lang"] = RCloud.UI.command_prompt.get_language();
-    });
-
     $("#rcloud-logout").click(function() {
         // let the server-side script handle this so it can
         // also revoke all tokens
@@ -4016,6 +4040,10 @@ RCloud.UI.init = function() {
         shell.save_notebook();
         return true;
     });
+
+    //////////////////////////////////////////////////////////////////////////
+    // edit mode things - move more of them here
+    RCloud.UI.share_button.init();
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
@@ -4079,9 +4107,13 @@ RCloud.UI.middle_column = (function() {
 }());
 RCloud.UI.notebook_title = (function() {
     var last_editable_ =  null;
-    var node_ = null;
-    function tag_current_notebook(name) {
-        editor.tag_notebook(name,node_);
+    function version_tagger(node) {
+        return function(name) {
+            return editor.tag_version(node.gistname, node.version, name)
+                .then(function() {
+                    return editor.show_history(node.parent, {update: true});
+                });
+        };
     }
     function rename_current_notebook(name) {
         editor.rename_notebook(name)
@@ -4099,19 +4131,19 @@ RCloud.UI.notebook_title = (function() {
         range.setEnd(el.firstChild, text.length);
         return range;
     }
-    var ctrl_cmd = function(forked_gist_name) {
+    var fork_and_rename = function(forked_gist_name) {
         var is_mine = shell.notebook.controller.is_mine();
         var gistname = shell.gistname();
         var version = shell.version();
         editor.fork_notebook(is_mine, gistname, version)
             .then(function rename(v){
-                    rename_current_notebook(forked_gist_name)
+                    rename_current_notebook(forked_gist_name);
                 });
-    }
+    };
     var editable_opts = {
         change: rename_current_notebook,
         select: select,
-        ctrl_cmd:ctrl_cmd,
+        ctrl_cmd: fork_and_rename,
         validate: function(name) { return editor.validate_name(name); }
     };
 
@@ -4125,7 +4157,7 @@ RCloud.UI.notebook_title = (function() {
             var ellipt_start = false, ellipt_end = false;
             var title = $('#notebook-title');
             title.text(text);
-            while(window.innerWidth - title.width() < 505) {
+            while(window.innerWidth - title.width() < 650) {
                 var slash = text.search('/');
                 if(slash >= 0) {
                     ellipt_start = true;
@@ -4143,26 +4175,29 @@ RCloud.UI.notebook_title = (function() {
                                                inactive_text: title.text(),
                                                active_text: active_text},
                                               editable_opts));
-        }, make_editable: function(node, editable) {
+        }, make_editable: function(node, $li, editable) {
             function get_title(node) {
                 if(!node.version) {
-                    return $('.jqtree-title:not(.history)', node.element);
+                    return $('.jqtree-title:not(.history)', $li);
                 } else {
-                    return $('.jqtree-title', node.element);
+                    return $('.jqtree-title', $li);
                 }
             }
             if(last_editable_ && (!node || last_editable_ !== node))
                 ui_utils.editable(get_title(last_editable_), 'destroy');
             if(node) {
+                var opts = editable_opts;
                 if(node.version) {
-                    node_ = node;
-                    editable_opts.change = tag_current_notebook;
+                    opts = $.extend({}, editable_opts, {
+                        change: version_tagger(node),
+                        validate: function(name) { return true; }
+                    });
                 }
                 ui_utils.editable(get_title(node),
                                   $.extend({allow_edit: editable,
                                             inactive_text: node.name,
                                             active_text: node.name},
-                                           editable_opts));
+                                           opts));
             }
             last_editable_ = node;
         }
@@ -4702,7 +4737,44 @@ RCloud.UI.scratchpad = {
         this.widget.resize();
     }
 };
-RCloud.UI.search = {
+RCloud.UI.search = (function() {
+var page_size_ = 10;
+
+function go_to_page(page_num,incr_by){
+    //get the element number where to start the slice from
+    var start = (parseInt(page_num) * parseInt(incr_by));
+    var end = parseInt(start) + parseInt(incr_by);
+    var qry = $('#input-text-search').val();
+    var sortby= $("#sort-by option:selected").val();
+    var orderby= $("#order-by option:selected" ).val();
+    $('#input-text-search').blur();
+    if(!($('#input-text-search').val() === ""))
+        RCloud.UI.search.exec(qry,sortby,orderby,start,end,true);
+}
+
+function sortby() {
+    return $("#sort-by option:selected").val();
+}
+function orderby() {
+    return $("#order-by option:selected").val();
+}
+
+function order_from_sort() {
+    var orderby;
+    switch(sortby()) {
+    case 'starcount':
+    case 'updated_at':
+        orderby = "desc";
+        break;
+    case 'user':
+    case 'description':
+        orderby = "asc";
+        break;
+    }
+    $('#order-by').val(orderby);
+}
+
+return {
     body: function() {
         return RCloud.UI.panel_loader.load_snippet('search-snippet');
     },
@@ -4711,14 +4783,44 @@ RCloud.UI.search = {
             $("#search-wrapper").text("Search engine not enabled on server");
         else {
             $("#search-form").submit(function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                var qry = $('#input-text-search').val();
-                $('#input-text-search').focus();
-                RCloud.UI.search.exec(qry);
+                searchproc();
                 return false;
             });
-        }
+            $("#sort-by").change(function() {
+                rcloud.config.set_user_option('search-sort-by', sortby());
+                order_from_sort();
+                rcloud.config.set_user_option('search-order-by', orderby());
+                searchproc();
+            });
+            $("#order-by").change(function() {
+                rcloud.config.set_user_option('search-order-by', orderby());
+                searchproc();
+            });
+            var searchproc=function() {
+                var start = 0;
+                var qry = $('#input-text-search').val();
+                $('#input-text-search').focus();
+                if (!($('#input-text-search').val() === "")) {
+                    RCloud.UI.search.exec(qry, sortby(), orderby(), start, page_size_);
+                } else {
+                    $('#paging').html("");
+                    $('#search-results').html("");
+                    $('#search-summary').html("");
+                }
+            };
+        };
+    },
+    load: function() {
+        return rcloud.config.get_user_option(['search-results-per-page', 'search-sort-by', 'search-order-by'])
+            .then(function(opts) {
+                if(opts['search-results-per-page']) page_size_ = opts['search-results-per-page'];
+                if(!opts['search-sort-by']) opts['search-sort-by'] = 'starcount'; // always init once
+                $('#sort-by').val(opts['search-sort-by']);
+                if(opts['search-order-by'])
+                    $('#order-by').val(opts['search-order-by']);
+                else
+                    order_from_sort();
+            });
     },
     panel_sizer: function(el) {
         var padding = RCloud.UI.collapsible_column.default_padder(el);
@@ -4726,7 +4828,22 @@ RCloud.UI.search = {
         height += 30; // there is only so deep you can dig
         return {height: height, padding: padding};
     },
-    exec: function(query) {
+    toggle: function(id,togid) {
+        $('#'+togid+'').text(function(_,txt) {
+            var ret='';
+            if ( txt.indexOf("Show me more...") > -1 ) {
+                ret = 'Show me less...';
+                $('#'+id+'').css('height',"auto");
+            }else{
+                ret = 'Show me more...';
+                $('#'+id+'').css('height',"150px");
+            }
+            return ret;
+        });
+        return false;
+    },
+
+    exec: function(query, sortby, orderby, start, noofrows, pgclick) {
         function summary(html) {
             $("#search-summary").show().html($("<h4 />").append(html));
         }
@@ -4755,7 +4872,11 @@ RCloud.UI.search = {
                 var search_results = "";
                 var star_count;
                 var qtime = 0;
-                var match_count = 0;
+                var numfound = 0;
+                if(d[0] != undefined) {
+                    numfound = d[0].numFound;
+                }
+                var noofpages =  Math.ceil(numfound/page_size_);
                 //iterating for all the notebooks got in the result/response
                 for(i = 0; i < len; i++) {
                     try {
@@ -4772,6 +4893,8 @@ RCloud.UI.search = {
                         var inner_table = "";
                         var added_parts = 0;
                         //displaying only 5 parts of the notebook sorted based on relevancy from solr
+                        var partslen = d[i].parts.length;
+                        var nooflines =0;
                         for(var k = 0; k < d[i].parts.length && added_parts < 5; k++) {
                             inner_table = "";
                             var ks = Object.keys(d[i].parts[k]);
@@ -4781,43 +4904,85 @@ RCloud.UI.search = {
                                     content = [content];
                                 if(content.length > 0)
                                     parts_table += "<tr><th class='search-result-part-name'>" + d[i].parts[k].filename + "</th></tr>";
-                                for(var l = 0; l < content.length; l++)
-                                    inner_table += "<tr><td class='search-result-line-number'>" + (l + 1) + "</td><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
-
+                                for(var l = 0; l < content.length; l++) {
+                                    inner_table += "<tr><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
+                                }
+                                if (d[i].parts[k].filename != "comments") {
+                                    nooflines += inner_table.match(/\|-\|/g).length;
+                                }
                                 added_parts++;
                             }
                             if(inner_table !== "") {
+                                inner_table = inner_table.replace(/\|-\|,/g, '<br>').replace(/\|-\|/g, '<br>');
+                                inner_table = inner_table.replace(/line_no/g,'|');
                                 inner_table = "<table>" + inner_table + "</table>";
                                 parts_table += "<tr><td>" + inner_table + "</td></tr>";
                             }
                         }
+                        var togid = i + "more";
                         if(parts_table !== "") {
-                            parts_table = "<table>" + parts_table + "</table>";
+                            if(nooflines > 10) {
+                                parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table>" + parts_table + "</table></div>" +
+                                    "<div style=\"position: relative;\"><a href=\"#\" id='"+togid+"' onclick=\"RCloud.UI.search.toggle("+i+",'"+togid+"');\" style=\"color:orange\">Show me more...</a></div></div>";
+                            } else {
+                                parts_table = "<div><div id='"+i+"'><table>" + parts_table + "</table></div></div>";
+                            }
                         }
                         search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" +
                             "<a id=\"open_" + i + "\" href='#' data-gistname='" + notebook_id + "' class='search-result-heading'>" +
                             d[i].user + " / " + d[i].notebook + "</a>" +
                             image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
-                        if(parts_table !== "") {
+                        if(parts_table !== "")
                             search_results += "<tr><td colspan=2 width=100% style='font-size: 12'><div>" + parts_table + "</div></td></tr>";
-                            match_count = match_count + 1
-                        }
                         search_results += "</table>";
                     } catch(e) {
                         summary("Error : \n" + e);
                     }
                 }
+                if(!pgclick) {
+                    $('#paging').html("");
+                    if((parseInt(numfound) - parseInt(page_size_)) > 0) {
+                        var number_of_pages = noofpages;
+                        $('#current_page').val(0);
+                        if (numfound != 0) {
+                            var current_link = 0;
+                            $("#paging").bootpag({
+                                total: number_of_pages,
+                                page: 1,
+                                maxVisible: 8
+                            }).on('page', function (event, num) {
+                                go_to_page(num - 1, page_size_);
+                            });
+                        }
+                    }
+                }
+
                 var qry = decodeURIComponent(query);
                 qry = qry.replace(/</g,'&lt;');
                 qry = qry.replace(/>/g,'&gt;');
-                var search_summary = match_count + " Results Found"; //+ " <i style=\"font-size:10px\"> Response Time:"+qtime+"ms</i>";
+                var search_summary;
+                if(numfound === 0) {
+                    var search_summary = "No Results Found";
+                } else if(parseInt(numfound) < page_size_){
+                    search_summary = numfound +" Results Found";
+                } else {
+                    search_summary = numfound +" Results Found, showing ";
+                    if(numfound-start === 1) {
+                        search_summary += (start+1);
+                    } else if((numfound - noofrows) > 0) {
+                        search_summary += (start+1)+" - "+noofrows;
+                    } else {
+                        search_summary += (start+1)+" - "+numfound;
+                    }
+                }
                 summary(search_summary);
                 $("#search-results-row").css('display', 'table-row');
+                $("#search-results-row").animate({ scrollTop: $(document).height() }, "slow");
                 $('#search-results').html(search_results);
                 $("#search-results .search-result-heading").click(function(e) {
                     e.preventDefault();
                     var gistname = $(this).attr("data-gistname");
-                    editor.open_notebook(gistname, null, null, true, e.metaKey || e.ctrlKey);
+                    editor.open_notebook(gistname, null, null, e.metaKey || e.ctrlKey);
                     return false;
                 });
             }
@@ -4825,17 +4990,21 @@ RCloud.UI.search = {
         }
 
         summary("Searching...");
-        $("#search-results-row").hide();
-        $("#search-results").html("");
+        if(!pgclick) {
+            $("#search-results-row").hide();
+            $("#search-results").html("");
+        }
         query = encodeURIComponent(query);
         RCloud.UI.with_progress(function() {
-            return rcloud.search(query)
+            return rcloud.search(query, sortby, orderby, start, page_size_)
                 .then(function(v) {
                     create_list_of_search_results(v);
                 });
         });
     }
 };
+})();
+
 RCloud.UI.session_pane = {
     body: function() {
         return RCloud.UI.panel_loader.load_snippet('session-info-snippet');
@@ -5001,19 +5170,50 @@ RCloud.UI.settings_frame = (function() {
     return result;
 })();
 
-RCloud.UI.share_button = {
-    set_link: function(notebook) {
-        var link = window.location.protocol + '//' + window.location.host +
-            '/view.R/' + shell.notebook.model.user() +
-            '/' + notebook.description;
-        // var link = window.location.protocol + '//' + window.location.host + '/view.html?notebook=' + shell.gistname();
-        var v = shell.version();
-        if(v)
-            link += '&version='+v;
+RCloud.UI.share_button = (function() {
+    var type_;
 
-        $("#share-link").attr("href", link);
-    }
-};
+    return {
+        init: function() {
+            var that = this;
+            $('.view-menu li a').click(function() {
+                type_ = $(this).text();
+                rcloud.set_notebook_property(shell.gistname(), "view-type", type_);
+                that.type(type_);
+            });
+        },
+        type: function(val) {
+            if(!arguments.length) return type_;
+            type_ = val || "view.html";
+            $("#view-type li a").css("font-weight", function() {
+                return $(this).text() === type_ ? "bold" : "normal";
+            });
+            this.update_link();
+            return this;
+        },
+        update_link: function() {
+            var link = window.location.protocol + '//' + window.location.host + '/';
+            var suffix, query_started = true;
+            switch(type_) {
+            case 'notebook.R':
+                suffix = type_ + '/' + shell.gistname();
+                query_started = false;
+                break;
+            case 'mini.html':
+                suffix = type_ + '?notebook=' + shell.gistname();
+                break;
+            case 'view.html':
+            default:
+                suffix = 'view.html?notebook=' + shell.gistname();
+            }
+            link += suffix;
+            var v = shell.version();
+            if(v)
+                link += (query_started?'&':'?') + 'version=' + v;
+            $("#share-link").attr("href", link);
+        }
+    };
+})();
 RCloud.UI.upload_with_alerts = (function() {
     function upload_ui_opts(opts) {
         if(_.isBoolean(opts))
