@@ -37,7 +37,7 @@ def RClTextFormat(s, escape=True):
 
 def RClansiconv(inputtext, full=False):
     """ Uses Krounz/ansi2html (MIT) renamed to produce a reasonably minimal html"""
-    logging.info('Received ' + inputtext)
+    if _debugging: logging.info('Received ' + inputtext)
     try:
         txt = unicode(inputtext, 'utf-8') # we get unicode characters from IPython sometimes
     except:
@@ -149,7 +149,7 @@ main()""".format(RCPATH=kw["rcloud_python_lib_path"]), **kw)
         if status == 'error':
             logging.info('Cell raised uncaught exception: \n%s', '\n'.join(reply['content']['traceback']))
         else:
-            logging.debug('Cell returned')
+            if _debugging: logging.debug('Cell returned')
 
         while True:
             try:
@@ -169,14 +169,14 @@ main()""".format(RCPATH=kw["rcloud_python_lib_path"]), **kw)
         '''
         Run a notebook cell and update the output of that cell in-place.
         '''
-        logging.debug('Running cell:\n%s\n', cell.input)
+        if _debugging: logging.debug('Running cell:\n%s\n', cell.input)
         self.shell.execute(cell.input)
         reply = self.shell.get_msg()
         status = reply['content']['status']
         if status == 'error':
             logging.info('Cell raised uncaught exception: \n%s', '\n'.join(reply['content']['traceback']))
         else:
-            logging.debug('Cell returned')
+            if _debugging: logging.debug('Cell returned')
 
         outs = list()
         while True:
@@ -213,7 +213,7 @@ main()""".format(RCPATH=kw["rcloud_python_lib_path"]), **kw)
                         logging.warning('unhandled mime type: %s' % mime)
                         raise NotImplementedError('unhandled mime type: %s' % mime)
                     if attr == 'text':
-                        logging.info(data)
+                        if _debugging: logging.info(data)
                         setattr(out, attr, RClansiconv(data))
                     else:
                         setattr(out, attr, data)
@@ -256,5 +256,5 @@ main()""".format(RCPATH=kw["rcloud_python_lib_path"]), **kw)
                     raise
 
     def save_notebook(self, nb_out):
-        logging.info('Saving to %s', nb_out)
+        if _debugging: logging.info('Saving to %s', nb_out)
         write(self.nb, open(nb_out, 'w'), 'json')
