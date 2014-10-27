@@ -95,9 +95,15 @@ class NotebookRunner(object):
     }
 
     def __init__(self, **kw):
+        """Initializes the notebook runner.
+           Requires config rcloud_python_lib_path -- or raises exception"""
         self.km = KernelManager()
-        self.km.kernel_cmd = make_ipkernel_cmd('import sys; sys.path.append("%s"); from rcloud_kernel import main; main()' % kw["rcloud_support_path"], **kw)
-        del kw["rcloud_support_path"]
+        self.km.kernel_cmd = make_ipkernel_cmd("""
+import sys; 
+sys.path.extend("{RCPATH}".split(":")); 
+from rcloud_kernel import main; 
+main()""".format(RCPATH=kw["rcloud_python_lib_path"]), **kw)
+        del kw["rcloud_python_lib_path"]
         self.km.client_factory = MyClient
         self.km.start_kernel(**kw)
 
