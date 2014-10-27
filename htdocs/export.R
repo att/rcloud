@@ -12,6 +12,7 @@ run <- function(url, query, body, headers)
       canonicalize.command(cell$content, cell$language)
     })
     nbmd <- paste(canonicalized, collapse='\n')
+    paste(knit(text = nbmd, envir=.GlobalEnv), collapse='\n')
   }, error=function(e) {
     list(paste(et,"<pre>", paste(as.character(e), collapse='\n'), "</pre>"), "text/html")
   })
