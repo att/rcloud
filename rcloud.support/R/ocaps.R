@@ -125,6 +125,7 @@ authenticated.ocaps <- function()
       set_notebook_visibility = make.oc(rcloud.set.notebook.visibility),
       fork_notebook = make.oc(rcloud.fork.notebook),
       port_notebooks = make.oc(rcloud.port.notebooks),
+      notebook_cells = make.oc(rcloud.notebook.cells),
       call_notebook = make.oc(rcloud.call.notebook),
       get_completions = make.oc(rcloud.get.completions),
 

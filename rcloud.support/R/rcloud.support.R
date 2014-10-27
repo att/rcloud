@@ -124,14 +124,36 @@ rcloud.unauthenticated.call.notebook <- function(id, version = NULL, args = NULL
   rcloud.call.notebook(id, version, args)
 }
 
-rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE) {
-  ulog("RCloud rcloud.call.notebook(", id, ",", version, ")")
-  
+# get notebook cells, in sorted order
+rcloud.notebook.cells <- function(id, version = NULL) {
   res <- rcloud.get.notebook(id, version)
   if (res$ok) {
     if (is.null(.session$current.notebook)) ## no top level? set us as the session notebook so that get.asset et al work
       .session$current.notebook <- res
-      
+
+    ## get all files
+    p <- res$content$files
+    p <- p[grep("^part", names(p))]
+    n <- names(p)
+    if (!length(n)) return(NULL)
+    ## extract the integer number
+    i <- suppressWarnings(as.integer(gsub("^\\D+(\\d+)\\..*", "\\1", n)))
+    result <- NULL
+    ## sort
+    p[match(sort.int(i), i)]
+  }
+  else NULL
+}
+
+# todo: use rcloud.notebook.cells which was pulled out of here
+rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE) {
+  ulog("RCloud rcloud.call.notebook(", id, ",", version, ")")
+
+  res <- rcloud.notebook.cells(id, version)
+  if (res$ok) {
+    if (is.null(.session$current.notebook)) ## no top level? set us as the session notebook so that get.asset et al work
+      .session$current.notebook <- res
+
     args <- as.list(args)
     ## this is a hack for now - we should have a more general infrastructure for this ...
     ## get all files
