@@ -48,22 +48,24 @@
 return {
     init: function(ocaps, k) {
         ocaps_ = RCloud.promisify_paths(ocaps, [["refresh"], ["view_dataframe"]], true);
-        shell.notebook.model.execution_watchers = [{
-            run_cell: function() {
-                ocaps_.refresh();
-            }
-        }];
-        RCloud.UI.panel_loader.add({
-            Environment: {
-                side: 'right',
-                name: 'environment-viewer',
-                title: 'Environment',
-                icon_class: 'icon-sun',
-                colwidth: 3,
-                sort: 2500,
-                panel: enviewer_panel
-            }
-        });
+        if(window.shell) { // are we running in RCloud UI?
+            shell.notebook.model.execution_watchers = [{
+                run_cell: function() {
+                    ocaps_.refresh();
+                }
+            }];
+            RCloud.UI.panel_loader.add({
+                Environment: {
+                    side: 'right',
+                    name: 'environment-viewer',
+                    title: 'Environment',
+                    icon_class: 'icon-sun',
+                    colwidth: 3,
+                    sort: 2500,
+                    panel: enviewer_panel
+                }
+            });
+        }
         k();
     },
     display: function(data, k) {
