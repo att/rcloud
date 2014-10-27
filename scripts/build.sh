@@ -1,8 +1,8 @@
 #!/bin/sh
 set +x
 
-if [ "$1" = "--skip-packages" ]; then
-    SKIP_PACKAGES=1
+if [ "$1" = "--all" ]; then
+    BUILD_PACKAGES=1
     shift
 fi
 
@@ -42,25 +42,20 @@ fi
 
 export RCS_SILENCE_LOADCHECK=TRUE
 
-build_package()
-{
-    R CMD build $1 && R CMD INSTALL `sed -n 's/Package: *//p' $1/DESCRIPTION`_`sed -n 's/Version: *//p' $1/DESCRIPTION`.tar.gz
-}
-
 # build internal packages (not in git) & rcloud.packages
-if [ -z "$SKIP_PACKAGES" ]; then
+if [ -n "$BUILD_PACKAGES" ]; then
     for dir in internal rcloud.packages packages; do
         if [ -e $dir ]; then
-            for pkg in `ls $dir/*/DESCRIPTION 2>/dev/null | sed -e s:$dir/:: -e 's:/DESCRIPTION::'`; do
+            for pkg in `ls $dir/*/DESCRIPTION 2>/dev/null | sed -e 's:/DESCRIPTION::'`; do
                 echo $pkg
-	        (cd $dir && build_package $pkg) || (echo;echo;echo; echo package $pkg FAILED to build!;echo;echo)
+	        scripts/build_package.sh $pkg || (echo;echo;echo; echo package $pkg FAILED to build!;echo;echo)
             done
         fi
     done
 fi
 
-build_package rcloud.client || exit 1
-build_package rcloud.support || exit 1
+scripts/build_package.sh rcloud.client || exit 1
+scripts/build_package.sh rcloud.support || exit 1
 
 if [ -e ".git" ]; then
 # update branch/revision info
