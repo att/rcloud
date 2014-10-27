@@ -26,7 +26,7 @@
         var datum_style = 'border-style: solid; border-width: thin 0; border-color: #ccc';
         var header = $.el.tr($.el.th({colspan: 2, scope: 'col', style: header_style}, title));
         rows.push(header);
-        for(var key in _.keys(section).sort()) {
+        _.keys(section).sort().forEach(function(key) {
             function td(content) {
                 return $.el.td({style: datum_style}, content);
             }
@@ -43,7 +43,7 @@
                 }
             var items = [td(key), td(content)];
             rows.push($.el.tr({}, items));
-        }
+        });
     }
 return {
     init: function(ocaps, k) {
