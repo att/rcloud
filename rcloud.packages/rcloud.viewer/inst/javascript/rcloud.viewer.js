@@ -32,8 +32,8 @@ return {
         if(nrows>1000) nrows = 1000;
         // styling the table would go better with CSS but we can only
         // install CSS by URL right now(?)
-        var header_style = 'border-style: solid; border-width: 1; border-color: #666666; background-color: #dedede; font-family: sans-serif; font-size: 13px';
-        var datum_style = 'border-style: solid; border-width: 1; border-color: #666666';
+        var header_style = 'border: 0; background-color: #dedede; font-family: sans-serif; font-size: 12px; text-align: right; white-space: nowrap';
+        var datum_style = 'border-style: solid; border-width: thin 0; border-color: #aaa; text-align: right; padding-left: 10px; white-space: nowrap';
         var header = $.el.tr({}, [$.el.th({style: 'border: none'})].concat(columns.map(function(x) {
             return $.el.th({scope:'col', style: header_style}, x);
         })));
@@ -45,7 +45,9 @@ return {
             var items = [$.el.th({scope: 'row', style: header_style}, i)].concat(columns.map(fetch));;
             rows.push($.el.tr({}, items));
         }
-        $('#viewer-body').append($.el.table({style: "border-collapse: collapse;"}, rows));
+        $('#viewer-body').append($.el.table({style: "border-collapse: collapse; max-width: none"}, rows));
+        $('#viewer-body tr:first-child + tr td').css({'border-top': 0});
+        $('#viewer-body tr:first-child th').css({'padding-left': '10px'});
         RCloud.UI.right_panel.collapse($("#collapse-data-viewer"), false, false);
         k();
     }

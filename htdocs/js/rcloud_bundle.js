@@ -125,7 +125,7 @@ RCloud.promisify_paths = (function() {
         };
     }
 
-    function process_paths(ocaps, paths) {
+    function process_paths(ocaps, paths, replace) {
         function get(path) {
             var v = ocaps;
             for (var i=0; i<path.length; ++i)
@@ -137,9 +137,10 @@ RCloud.promisify_paths = (function() {
             var v = ocaps;
             for (var i=0; i<path.length-1; ++i)
                 v = v[path[i]];
-            v[path[path.length-1] + "Async"] = val;
+            v[path[path.length-1] + suffix] = val;
         }
 
+        var suffix = replace ? '' : 'Async';
         _.each(paths, function(path) {
             var fn = get(path);
             set(path, fn ? rcloud_handler(path.join('.'), Promise.promisify(fn)) : null);
@@ -1722,6 +1723,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             _($("img")).each(function(img, ix, $q) {
                 ensure_image_has_hash(img);
                 if (img.getAttribute("src").substr(0,10) === "data:image" &&
+                    img.getAttribute("alt") != null &&
                     img.getAttribute("alt").substr(0,13) === "plot of chunk" &&
                     ix > 0 &&
                     img.dataset.sha256 === $q[ix-1].dataset.sha256) {

@@ -10,7 +10,8 @@ rcloud.enviewer.caps <- NULL
   }
   rcloud.enviewer.caps <<- f("rcloud.enviewer", "rcloud.enviewer.js")
   if(!is.null(rcloud.enviewer.caps)) {
-    rcloud.authenticated.cell.eval <<- rcloud.enviewer.instrument(rcloud.authenticated.cell.eval)
-    rcloud.enviewer.caps$init()
+    ocaps <- list(refresh = rcloud.support:::make.oc(rcloud.enviewer.refresh),
+                  view_dataframe = rcloud.support:::make.oc(rcloud.enviewer.view.dataframe))
+    rcloud.enviewer.caps$init(ocaps)
   }
 }
