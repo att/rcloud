@@ -4859,6 +4859,8 @@ return {
                 summary("No Results Found");
             } else if(d[0] === "error") {
                 d[1] = d[1].replace(/\n/g, "<br/>");
+                if($('#paging').html != "")
+                    $('#paging').html("");
                 summary("ERROR:\n" + d[1]);
             } else {
                 if(typeof (d) === "string") {
