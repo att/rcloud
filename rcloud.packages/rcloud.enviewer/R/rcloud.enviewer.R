@@ -1,7 +1,7 @@
 rcloud.enviewer.instrument <- function(f)
   function(...) {
     ret <- f(...)
-    rcloud.enviewer.on.change()
+    rcloud.enviewer.on.change(parent.frame())
     ret
   }
 
@@ -28,25 +28,29 @@ rcloud.enviewer.display.function <- function(f) {
   "function"
 }
 
-rcloud.enviewer.on.change <- function()
-{
-  vars <- ls()
+rcloud.enviewer.build <- function(vars) {
   ret <- list(data = list(), values = list(), functions = list())
   lapply(vars, function(x) {
     val <- get(x)
     if(is.data.frame(val)) {
-      ret$data <- c(ret$data, x)
+      ret$data <<- c(ret$data, x)
     }
     else if(typeof(val) == "closure") {
       l <- list()
       l[[x]] <- rcloud.enviewer.display.function(val)
-      ret$functions <- c(ret$functions, l)
+      ret$functions <<- c(ret$functions, l)
     }
     else {
       l <- list()
       l[[x]] <- rcloud.enviewer.display.value(val)
-      ret$values <- c(ret$values, l)
+      ret$values <<- c(ret$values, l)
     }
   })
+  ret
+}
+
+rcloud.enviewer.on.change <- function(env)
+{
+  ret <- rcloud.enviewer.build(ls(envir=env))
   rcloud.enviewer.caps$on_change(ret)
 }

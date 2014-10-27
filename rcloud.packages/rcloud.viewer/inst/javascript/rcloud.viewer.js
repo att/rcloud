@@ -11,13 +11,13 @@
 return {
     init: function(k) {
         RCloud.UI.panel_loader.add({
-            Viewer: {
+            Dataframe: {
                 side: 'right',
                 name: 'data-viewer',
-                title: 'Viewer',
+                title: 'Dataframe',
                 icon_class: 'icon-table',
                 colwidth: 3,
-                sort: 3500,
+                sort: 2600,
                 panel: viewer_panel
             }
         });
@@ -50,4 +50,4 @@ return {
         k();
     }
 };
-})()) /*jshint -W033 */ // no semi; this is an expression not a statement
+})()) /*jshint -W033 */
