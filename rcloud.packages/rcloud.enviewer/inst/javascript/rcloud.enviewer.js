@@ -48,11 +48,11 @@
 return {
     init: function(ocaps, k) {
         ocaps_ = RCloud.promisify_paths(ocaps, [["refresh"], ["view_dataframe"]], true);
-        shell.notebook.model.execution_watchers.push({
+        shell.notebook.model.execution_watchers = [{
             run_cell: function() {
                 ocaps_.refresh();
             }
-        });
+        }];
         RCloud.UI.panel_loader.add({
             Environment: {
                 side: 'right',
