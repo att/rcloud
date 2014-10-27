@@ -1,0 +1,9 @@
+Package: rcloud.enviewer
+Title: Environment Viewer support for RCloud
+Version: 0.1
+Author: Gordon Woodhull <gordon@research.att.com>
+Maintainer: Gordon Woodhull <gordon@research.att.com>
+Description: rcloud.enviewer displays the current environment live in RCloud
+Depends: rcloud.support
+NOTE: --- packages that are not on CRAN/RForge.net *must* be in Suggests! ---
+License: MIT

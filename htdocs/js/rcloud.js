@@ -27,7 +27,7 @@ RCloud.promisify_paths = (function() {
         };
     }
 
-    function process_paths(ocaps, paths) {
+    function process_paths(ocaps, paths, replace) {
         function get(path) {
             var v = ocaps;
             for (var i=0; i<path.length; ++i)
@@ -39,9 +39,10 @@ RCloud.promisify_paths = (function() {
             var v = ocaps;
             for (var i=0; i<path.length-1; ++i)
                 v = v[path[i]];
-            v[path[path.length-1] + "Async"] = val;
+            v[path[path.length-1] + suffix] = val;
         }
 
+        var suffix = replace ? '' : 'Async';
         _.each(paths, function(path) {
             var fn = get(path);
             set(path, fn ? rcloud_handler(path.join('.'), Promise.promisify(fn)) : null);
