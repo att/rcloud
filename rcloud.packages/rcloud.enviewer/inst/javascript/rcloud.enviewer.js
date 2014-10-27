@@ -26,7 +26,7 @@
         var datum_style = 'border-style: solid; border-width: thin 0; border-color: #ccc';
         var header = $.el.tr($.el.th({colspan: 2, scope: 'col', style: header_style}, title));
         rows.push(header);
-        for(var key in section) {
+        for(var key in _.keys(section).sort()) {
             function td(content) {
                 return $.el.td({style: datum_style}, content);
             }
@@ -48,6 +48,11 @@
 return {
     init: function(ocaps, k) {
         ocaps_ = RCloud.promisify_paths(ocaps, [["refresh"], ["view_dataframe"]], true);
+        shell.notebook.model.execution_watchers.push({
+            run_cell: function() {
+                ocaps_.refresh();
+            }
+        });
         RCloud.UI.panel_loader.add({
             Environment: {
                 side: 'right',
