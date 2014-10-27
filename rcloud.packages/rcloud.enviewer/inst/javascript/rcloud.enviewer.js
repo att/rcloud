@@ -34,7 +34,7 @@ return {
                 side: 'right',
                 name: 'environment-viewer',
                 title: 'Environment',
-                icon_class: 'icon-table',
+                icon_class: 'icon-sun',
                 colwidth: 3,
                 sort: 2500,
                 panel: enviewer_panel
