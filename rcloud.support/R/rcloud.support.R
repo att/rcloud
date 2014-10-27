@@ -149,7 +149,7 @@ rcloud.notebook.cells <- function(id, version = NULL) {
 rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE) {
   ulog("RCloud rcloud.call.notebook(", id, ",", version, ")")
 
-  res <- rcloud.notebook.cells(id, version)
+  res <- rcloud.get.notebook(id, version)
   if (res$ok) {
     if (is.null(.session$current.notebook)) ## no top level? set us as the session notebook so that get.asset et al work
       .session$current.notebook <- res
