@@ -34,23 +34,48 @@ oc.init <- function(...) { ## this is the payload of the OCinit message
   }, "oc.init")
 }
 
-unauthenticated.ocaps <- function()
+compute.ocaps <- function(authenticated) {
+    caps <- list(
+        setup_js_installer = make.oc(rcloud.setup.js.installer),
+        install_notebook_stylesheets = make.oc(rcloud.install.notebook.stylesheets),
+        raise = make.oc(function(msg) stop(paste("Forced exception", msg))),
+        unauthenticated_session_cell_eval = make.oc(rcloud.unauthenticated.session.cell.eval),
+        unauthenticated_call_notebook = make.oc(rcloud.unauthenticated.call.notebook),
+        unauthenticated_call_fastrweb_notebook = make.oc(rcloud.unauthenticated.call.FastRWeb.notebook),
+        unauthenticated_compute_init = make.oc(rcloud.anonymous.compute.init),
+        reset_session = make.oc(rcloud.reset.session)
+        )
+    if (authenticated) c(caps, list(
+        compute_init = make.oc(rcloud.compute.init),
+        authenticated_session_cell_eval = make.oc(rcloud.authenticated.cell.eval),
+        call_notebook = make.oc(rcloud.call.notebook),
+        get_completions = make.oc(rcloud.get.completions),
+        call_fastrweb_notebook = make.oc(rcloud.call.FastRWeb.notebook),
+        load_module_package = make.oc(rcloud.load.module.package)
+        )) else caps
+}
+
+unauthenticated.ocaps <- function(compute)
 {
-  list(
+    if (missing(compute))
+        compute <- .Call(Rserve:::Rserve_fork_compute, quote(rcloud.support:::compute.ocaps(FALSE)))
+
+    list(
     # ocaps used by rcloud.js
     rcloud=list(
       authenticated = FALSE,
       version_info = make.oc(rcloud.info),
       anonymous_session_init = make.oc(rcloud.anonymous.session.init),
+      anonymous_compute_init = compute$unauthenticated_compute_init,
       prefix_uuid = make.oc(rcloud.prefix.uuid),
-      reset_session = make.oc(rcloud.reset.session),
+      reset_session = compute$reset_session,
       get_conf_value = make.oc(rcloud.get.conf.value),
       get_notebook = make.oc(rcloud.unauthenticated.get.notebook),
       load_notebook = make.oc(rcloud.unauthenticated.load.notebook),
-      call_notebook = make.oc(rcloud.unauthenticated.call.notebook),
-      call_fastrweb_notebook = make.oc(rcloud.unauthenticated.call.FastRWeb.notebook),
+      call_notebook = compute$unauthenticated_call_notebook,
+      call_fastrweb_notebook = compute$unauthenticated_call_fastrweb_notebook,
       notebook_by_name = make.oc(rcloud.unauthenticated.notebook.by.name),
-      install_notebook_stylesheets = make.oc(rcloud.install.notebook.stylesheets),
+      install_notebook_stylesheets = compute$install_notebook_stylesheets,
       is_notebook_published = make.oc(rcloud.is.notebook.published),
       is_notebook_visible = make.oc(rcloud.is.notebook.visible),
       help = make.oc(rcloud.help),
@@ -58,7 +83,7 @@ unauthenticated.ocaps <- function()
       get_users = make.oc(rcloud.get.users),
 
       # javascript.R
-      setup_js_installer = make.oc(rcloud.setup.js.installer),
+      setup_js_installer = compute$setup_js_installer,
 
       # logging ocaps
       log = list(
@@ -72,7 +97,7 @@ unauthenticated.ocaps <- function()
 
       # debugging
       debug=list(
-        raise=make.oc(function(msg) stop(paste("Forced exception", msg)))
+          raise=compute$raise
         ),
 
       # stars
@@ -85,7 +110,7 @@ unauthenticated.ocaps <- function()
         get_my_starred_notebooks = make.oc(rcloud.get.my.starred.notebooks)
         ),
 
-      session_cell_eval = make.oc(rcloud.unauthenticated.session.cell.eval),
+      session_cell_eval = compute$unauthenticated_session_cell_eval,
 
       # display info
       set_device_pixel_ratio = make.oc(rcloud.set.device.pixel.ratio),
@@ -105,13 +130,16 @@ unauthenticated.ocaps <- function()
 
 authenticated.ocaps <- function()
 {
-  basic.ocaps <- unauthenticated.ocaps()
+    compute <- .Call(Rserve:::Rserve_fork_compute, quote(rcloud.support:::compute.ocaps(TRUE)))
+    basic.ocaps <- unauthenticated.ocaps(compute)
+    
   changes <- list(
     rcloud = list(
       authenticated = TRUE,
       session_init = make.oc(rcloud.session.init),
+      compute_init = compute$compute_init,
       session_markdown_eval = make.oc(session.markdown.eval),
-      authenticated_cell_eval = make.oc(rcloud.authenticated.cell.eval),
+      authenticated_cell_eval = compute$authenticated_session_cell_eval,
       get_notebook = make.oc(rcloud.get.notebook),
       load_notebook = make.oc(rcloud.load.notebook),
       notebook_by_name = make.oc(rcloud.notebook.by.name),
@@ -126,15 +154,15 @@ authenticated.ocaps <- function()
       fork_notebook = make.oc(rcloud.fork.notebook),
       port_notebooks = make.oc(rcloud.port.notebooks),
       notebook_cells = make.oc(rcloud.notebook.cells),
-      call_notebook = make.oc(rcloud.call.notebook),
-      get_completions = make.oc(rcloud.get.completions),
+      call_notebook = compute$call_notebook,
+      get_completions = compute$get_completions,
 
       # This will cause bugs, because some notebooks want a
       # call_fastrweb_notebook...
-      call_fastrweb_notebook = make.oc(rcloud.call.FastRWeb.notebook),
+      call_fastrweb_notebook = compute$call_fastrweb_notebook,
 
       # externally used ocaps
-      load_module_package = make.oc(rcloud.load.module.package),
+      load_module_package = compute$load_module_package,
 
       # file upload ocaps
       file_upload = list(

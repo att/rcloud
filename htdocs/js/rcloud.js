@@ -76,6 +76,7 @@ RCloud.create = function(rcloud_ocaps) {
         var paths = [
             ["version_info"],
             ["anonymous_session_init"],
+            ["anonymous_compute_init"],
             ["prefix_uuid"],
             ["get_conf_value"],
             ["get_notebook"],
@@ -122,6 +123,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.anonymous_session_init = function() {
             return rcloud_ocaps.anonymous_session_initAsync();
+        };
+
+        rcloud.anonymous_compute_init = function() {
+            return rcloud_ocaps.anonymous_compute_initAsync();
         };
 
         rcloud.init_client_side_data = function() {
@@ -290,6 +295,7 @@ RCloud.create = function(rcloud_ocaps) {
     function setup_authenticated_ocaps() {
         var paths = [
             ["session_init"],
+            ["compute_init"],
             ["search"],
             ["update_notebook"],
             ["create_notebook"],
@@ -340,6 +346,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.session_init = function(username, token) {
             return rcloud_ocaps.session_initAsync(username, token);
+        };
+
+        rcloud.compute_init = function(username, token) {
+            return rcloud_ocaps.compute_initAsync(username, token);
         };
 
         rcloud.update_notebook = function(id, content) {

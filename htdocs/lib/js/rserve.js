@@ -568,7 +568,9 @@ function parse(msg)
         return result;
     }
 
-    if (!_.contains([Rserve.Rsrv.RESP_OK, Rserve.Rsrv.OOB_SEND, Rserve.Rsrv.OOB_MSG], result.header[0])) {
+    if (resp != Rserve.Rsrv.RESP_OK &&
+        (resp & 0xfff000) != Rserve.Rsrv.OOB_SEND &&
+        (resp & 0xfff000) != Rserve.Rsrv.OOB_MSG) {
         result.ok = false;
         result.message = "Unexpected response from RServe: " + result.header[0] + " status: " + Rserve.Rsrv.status_codes[status_code];
         return result;
@@ -900,35 +902,35 @@ Rserve.create = function(opts) {
             // handle_error(v.message, v.status_code);
         } else if (v.header[0] === Rserve.Rsrv.RESP_OK) {
             result_callback(null, v.payload);
-        } else if (v.header[0] === Rserve.Rsrv.OOB_SEND) {
+        } else if ((v.header[0] & 0xfff000) === Rserve.Rsrv.OOB_SEND) {
             opts.on_data && opts.on_data(v.payload);
-        } else if (v.header[0] === Rserve.Rsrv.OOB_MSG) {
+        } else if ((v.header[0] & 0xfff000) === Rserve.Rsrv.OOB_MSG) {
             if (result.ocap_mode) {
                 var p;
                 try {
                     p = Rserve.wrap_all_ocaps(result, v.payload); // .value.json(result.resolve_hash);
                 } catch (e) {
-                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | Rserve.Rsrv.OOB_MSG, 
+                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | v.header[0], 
                                   _encode_string(String(e)));
                     return;
                 }
                 if (!_.isFunction(p[0])) {
-                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | Rserve.Rsrv.OOB_MSG, 
+                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | v.header[0], 
                                   _encode_string("OOB Messages on ocap-mode must be javascript function calls"));
                     return;
                 }
                 var captured_function = p[0], params = p.slice(1);
                 params.push(function(err, result) {
                     if (err) {
-                        _send_cmd_now(Rserve.Rsrv.RESP_ERR | Rserve.Rsrv.OOB_MSG, _encode_value(err));
+                        _send_cmd_now(Rserve.Rsrv.RESP_ERR | v.header[0], _encode_value(err));
                     } else {
-                        _send_cmd_now(Rserve.Rsrv.OOB_MSG, _encode_value(result));
+                        _send_cmd_now(v.header[0], _encode_value(result));
                     }
                 });
                 captured_function.apply(undefined, params);
             } else {
                 if (_.isUndefined(opts.on_oob_message)) {
-                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | Rserve.Rsrv.OOB_MSG, 
+                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | v.header[0], 
                                   _encode_string("No handler installed"));
                 } else {
                     in_oob_message = true;
@@ -938,7 +940,7 @@ Rserve.create = function(opts) {
                             return;
                         }
                         in_oob_message = false;
-                        var header = Rserve.Rsrv.OOB_MSG | 
+                        var header = v.header[0] | 
                             (error ? Rserve.Rsrv.RESP_ERR : Rserve.Rsrv.RESP_OK);
                         _send_cmd_now(header, _encode_string(message));
                         bump_queue();

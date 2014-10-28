@@ -137,7 +137,7 @@ session.markdown.eval <- function(command, language, silent) {
 }
 
 ## WS init
-rcloud.session.init <- function(...) {
+rcloud.compute.init <- function(...) {
   set.seed(Sys.getpid()) # we want different seeds so we get different file names
   .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
   start.rcloud(...)
@@ -153,12 +153,20 @@ rcloud.session.init <- function(...) {
 }
 
 ## WS init
-rcloud.anonymous.session.init <- function(...) {
+rcloud.anonymous.compute.init <- function(...) {
   set.seed(Sys.getpid()) # we want different seeds so we get different file names
   .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
   start.rcloud.anonymously(...)
   rcloud.reset.session()
   paste(R.version.string, " --- welcome, anonymous user", sep='')
+}
+
+rcloud.session.init <- function(...) {
+    start.rcloud(...)
+}
+
+rcloud.anonymous.session.init <- function(...) {
+    start.rcloud.anonymously(...)
 }
 
 rcloud.reset.session <- function() {
