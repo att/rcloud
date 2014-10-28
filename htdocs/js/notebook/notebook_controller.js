@@ -253,6 +253,7 @@ Notebook.create_controller = function(model)
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
+            RCloud.UI.command_prompt.prompt.widget.focus();
             update_notebook(refresh_buffers().concat(cch.changes))
                 .then(default_callback());
             return cch.controller;
