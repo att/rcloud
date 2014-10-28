@@ -105,7 +105,8 @@ return {
     },
 
     exec: function(query, sortby, orderby, start, noofrows, pgclick) {
-        function summary(html) {
+        function summary(html, color) {
+            $('#search-summary').css('color', color || 'black');
             $("#search-summary").show().html($("<h4 />").append(html));
         }
         function create_list_of_search_results(d) {
@@ -116,7 +117,7 @@ return {
                 d[1] = d[1].replace(/\n/g, "<br/>");
                 if($('#paging').html != "")
                     $('#paging').html("");
-                summary("ERROR:\n" + d[1]);
+                summary("ERROR:\n" + d[1], 'darkred');
             } else {
                 if(typeof (d) === "string") {
                     d = JSON.parse("[" + d + "]");
@@ -199,7 +200,7 @@ return {
                             search_results += "<tr><td colspan=2 width=100% style='font-size: 12'><div>" + parts_table + "</div></td></tr>";
                         search_results += "</table>";
                     } catch(e) {
-                        summary("Error : \n" + e);
+                        summary("Error : \n" + e, 'darkred');
                     }
                 }
                 if(!pgclick) {
@@ -223,13 +224,12 @@ return {
                 var qry = decodeURIComponent(query);
                 qry = qry.replace(/</g,'&lt;');
                 qry = qry.replace(/>/g,'&gt;');
-                var search_summary;
                 if(numfound === 0) {
-                    var search_summary = "No Results Found";
+                    summary("No Results Found");
                 } else if(parseInt(numfound) < page_size_){
-                    search_summary = numfound +" Results Found";
+                    summary(numfound +" Results Found", 'darkgreen');
                 } else {
-                    search_summary = numfound +" Results Found, showing ";
+                    var search_summary = numfound +" Results Found, showing ";
                     if(numfound-start === 1) {
                         search_summary += (start+1);
                     } else if((numfound - noofrows) > 0) {
@@ -237,8 +237,8 @@ return {
                     } else {
                         search_summary += (start+1)+" - "+numfound;
                     }
+                    summary(search_summary, 'darkgreen');
                 }
-                summary(search_summary);
                 $("#search-results-row").css('display', 'table-row');
                 $("#search-results-row").animate({ scrollTop: $(document).height() }, "slow");
                 $('#search-results').html(search_results);
