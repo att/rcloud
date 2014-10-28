@@ -3494,15 +3494,21 @@ RCloud.UI.command_prompt = (function() {
     var show_prompt_ = false, // start hidden so it won't flash if user has it turned off
         readonly_ = true;
     function show_or_hide() {
-        var prompt = $('#command-prompt'),
+        var prompt_div = $('#prompt-div'),
+            prompt = $('#command-prompt'),
             controls = $('#prompt-div .cell-status .cell-controls');
-        if(!readonly_ && show_prompt_) {
-            prompt.show();
-            controls.removeClass('flipped');
-        }
+        if(readonly_)
+            prompt_div.hide();
         else {
-            prompt.hide();
-            controls.addClass('flipped');
+            prompt_div.show();
+            if(show_prompt_) {
+                prompt.show();
+                controls.removeClass('flipped');
+            }
+            else {
+                prompt.hide();
+                controls.addClass('flipped');
+            }
         }
     }
     return {
