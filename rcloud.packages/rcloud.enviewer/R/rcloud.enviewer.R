@@ -18,8 +18,11 @@ rcloud.enviewer.display.value <- function(val) {
   else if(t == 'logical' || t == 'integer' || t == 'double' ||
           t == 'character' || t == 'raw' || t == 'NULL') {
     if(length(val) > 1) {
-      ray <- if(length(val) > 10) paste(paste(val, collapse=' '), '...') else paste(val, collapse=' ')
-      paste(t, paste('[1:', length(val), ']', sep=''), ray)
+      chop = if(length(val) > 10) val[1:10] else val
+      fmt = if(t == 'double') signif(chop,3)
+      print = paste(fmt, collapse=' ')
+      if(length(val) > 10) print <- paste(print, '...')
+      paste(t, paste('[1:', length(val), ']', sep=''), print)
     }
     else val
   }

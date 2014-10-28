@@ -23,6 +23,9 @@ View <- function (x, title)
   if (!is.list(x) || !length(x) || !all(sapply(x, is.atomic)) ||
       !max(sapply(x, length)))
     stop("invalid 'x' argument")
+  x <- as.data.frame(x)
+  if(nrow(x) > 1000)
+    x <- x[1:1000,]
 
   # R calls invisible(.External2(C_dataviewer, x, title)) here
   invisible(rcloud.viewer.caps$view(x, title))
