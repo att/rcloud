@@ -4177,7 +4177,7 @@ RCloud.UI.notebook_title = (function() {
                            text +
                            (ellipt_end ? '...' : ''));
             }
-            ui_utils.editable(title, $.extend({allow_edit: !is_read_only,
+            ui_utils.editable(title, $.extend({allow_edit: !is_read_only && !shell.is_view_mode(),
                                                inactive_text: title.text(),
                                                active_text: active_text},
                                               editable_opts));
