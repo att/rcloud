@@ -68,7 +68,17 @@ RCloud.UI.notebook_title = (function() {
                                                inactive_text: title.text(),
                                                active_text: active_text},
                                               editable_opts));
-        }, make_editable: function(node, $li, editable) {
+        },
+        update_fork_info: function(fork_of) {
+            if(fork_of) {
+                var fork_desc = fork_of.owner.login+ " / " + fork_of.description;
+                var url = ui_utils.url_maker(shell.is_view_mode()?'view.html':'edit.html')({notebook: fork_of.id});
+                $("#forked-from-desc").html("forked from <a href='" + url + "'>" + fork_desc + "</a>");
+            }
+            else
+                $("#forked-from-desc").text("");
+        },
+        make_editable: function(node, $li, editable) {
             function get_title(node) {
                 if(!node.version) {
                     return $('.jqtree-title:not(.history)', $li);
