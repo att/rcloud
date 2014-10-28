@@ -99,6 +99,7 @@ var shell = (function() {
             var cell = notebook_controller_.append_cell(content, language);
             RCloud.UI.command_prompt.history.execute(content);
             if(execute) {
+                RCloud.UI.command_prompt.focus();
                 cell.execute().then(scroll_to_end);
             }
         },
