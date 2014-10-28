@@ -6,6 +6,8 @@ requirejs_config_obj = {
         "jquery-ui": "../../shared.R/jqueryui/1.10.4/jquery-ui",
         "rcloud_bundle": "../../js/rcloud_bundle",
         "ace": "../ace_bundle",
+        editor_tab: "../../editor_tab",
+        shell_tab: "../../shell_tab",
         "selectize": "../../shared.R/selectize/js/selectize.min"
     },
     "shim": {
@@ -17,8 +19,8 @@ requirejs_config_obj = {
         "jquery.scrollto": ["jquery"],
         "jquery.whiny": ["jquery"],
         "bootstrap": ["jquery"],
-        "../../shell_tab": ["rcloud_bundle", "../../editor_tab"],
-        "../../editor_tab": ["rcloud_bundle", "laconic", "tree.jquery"],
+        "shell_tab": ["rcloud_bundle", "editor_tab"],
+        "editor_tab": ["rcloud_bundle", "laconic", "tree.jquery"],
         "rserve": ["underscore"],
         "rcloud_bundle": ["ace", "jquery.cookies.2.2.0", "jquery.bootpag", "jquery.scrollto", "jquery-ui", "hl.min", "bootstrap"
                           // ,"jquery.whiny" // enable/disable jquery.whiny here
