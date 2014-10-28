@@ -10,10 +10,8 @@ RCLOUD_CONF=$ROOT/conf/rcloud.conf
 
 if [ "$(uname)" == "Darwin" ]
 then
-    cp $ROOT/conf/rcloud.conf.dev $RCLOUD_CONF
     sed -i '' "s|http.port [[:digit:]]*|http.port $PORT|" $RSERVE_CONF
 else
-    cp $ROOT/conf/rcloud.conf.prod $RCLOUD_CONF
     sed -i "s|http.port [[:digit:]]*|http.port $PORT|" $RSERVE_CONF
 fi
 
