@@ -1,7 +1,7 @@
 #!/bin/sh
 
 WD=`pwd`
-if [ ! -e "$WD/../pkg.repos/src/contrib/PACKAGES" ]; then
+if [ ! -e "$WD/R-Package-Repository/src/contrib/PACKAGES" ]; then
     echo '' 2>&1
     if [ -e "$WD/rcloud.support/DESCRIPTION" ]; then
 	mkdir -p "$WD/packages/src/contrib" 2>/dev/null
@@ -25,7 +25,7 @@ if [ "x$ok" != "xOK" ]; then
 fi
 
 export RCS_SILENCE_LOADCHECK=TRUE
-echo 'cat(sprintf("\n Using %s, installing packages...\n", R.version.string)); url="file://'"$WD"'/../pkg.repos/"; a=rownames(available.packages(paste0(url,"/src/contrib"))); install.packages(a,,url,type="source")' | R --slave --vanilla
+echo 'cat(sprintf("\n Using %s, installing packages...\n", R.version.string)); url="file://'"$WD"'/R-Package-Repository/"; a=rownames(available.packages(paste0(url,"/src/contrib"))); install.packages(a,,url,type="source")' | R --slave --vanilla
 
 ok=`echo 'library(rcloud.support);library(rcloud.client);library(Cairo);library(rjson);cat("OK\n")' | R --slave --vanilla`
 if [ "x$ok" != "xOK" ]; then
@@ -35,6 +35,9 @@ if [ "x$ok" != "xOK" ]; then
     echo '' 2>&1
     exit 1
 fi
+
+
+
 
 echo ''
 echo '============================================================================'

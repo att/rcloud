@@ -4,5 +4,6 @@ Version: 1.0-0
 Author: Simon Urbanek <urbanek@research.att.com>
 Maintainer: Simon Urbanek <urbanek@research.att.com>
 Description: Gist interface to GitHub
+Depends: github
 Imports: gist
 License: MIT

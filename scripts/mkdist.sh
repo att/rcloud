@@ -6,18 +6,22 @@ DST="$SRC/dist"
 ## list of packages that are to be fetched from RForge instead of CRAN
 ## - Rserve and FastRWeb are on CRAN by typically as older versions
 ## - others are not on CRAN
-RFORGE_PKG=Rserve,github,unixtools,rediscc,FastRWeb
+RFORGE_PKG=Rserve,github,unixtools,rediscc,FastRWeb,guitar
 
 ## distribution list 
-dist_files="LICENSE \
-NEWS.md \
-README.md \
-conf \
-dcchart.md \
+dist_files="conf \
 doc \
 htdocs \
+rcloud.client \
+rcloud.packages \
 rcloud.support \
-scripts"
+packages \
+scripts \
+INSTALL \
+LICENSE \
+NEWS.md \
+README.md \
+VERSION"
 
 
 if [ "x$1" = "x-h" ]; then
@@ -42,9 +46,15 @@ fi
 if [ -e "$DST" ]; then rm -rf "$DST"; fi
 mkdir "$DST"
 if [ ! -d "$DST" ]; then echo "ERROR: cannot create $DST"; exit 1; fi
+
+
+if [ ! -e "$DST/tmp" ]; then
+    rm -rf "$DST/tmp"
+fi
+
 ## need abs path
 ADST=`cd "$DST"; pwd`
-mkdir -p "$DST/pkg.repos/src/contrib"
+mkdir -p "$DST/R-Package-Repository/src/contrib"
 mkdir "$DST/tmp"
 
 REV=`( cd "$SRC" && git rev-list --abbrev-commit -n 1 HEAD )`
@@ -52,27 +62,53 @@ BRANCH=`( cd "$SRC" && git status | sed -n 's:.*On branch ::p' | sed 's:/:-:g' )
 
 echo '' && echo "=== building rcloud.support ===" && echo ''
 
-(cd "$DST/tmp"; cp -pR "$SRC/rcloud.support" "rcloud.support"; R CMD build rcloud.support)
+(cd "$DST/tmp"; cp -pR "$SRC/rcloud.support" "$DST/tmp/rcloud.support"; R CMD build rcloud.support)
+(cd "$DST/tmp"; cp -pR "$SRC/rcloud.client" "$DST/tmp/rcloud.client"; R CMD build rcloud.client)
+
+# build internal packages (not in git) but in rcloud.packages and packages
+for dir in "$SRC/rcloud.packages" "$SRC/packages"; do
+        echo $dir
+        for pkg in `ls -d $dir/*/`; do
+            cp -pR "$pkg" "$DST/tmp/"
+            cd "$DST/tmp"
+            R CMD build "$pkg"
+            mv `sed -n 's/Package: *//p' $pkg/DESCRIPTION`_`sed -n 's/Version: *//p' $pkg/DESCRIPTION`.tar.gz "$DST/R-Package-Repository/src/contrib"
+        done
+    done
+
 rcs=`ls "$DST/tmp/rcloud.support_"*.tar.gz 2>/dev/null`
+rcc=`ls "$DST/tmp/rcloud.client_"*.tar.gz 2>/dev/null`
+
 if [ -z "$rcs" ]; then
     echo "ERROR: unable to build rcloud.support package"
     exit 1
 fi
-mv "$rcs" "$DST/pkg.repos/src/contrib"
-echo "tools:::write_PACKAGES('$DST/pkg.repos/src/contrib')" | R --vanilla --slave
+if [ -z "$rcc" ]; then
+    echo "ERROR: unable to build rcloud.client package"
+    exit 1
+fi
+
+mv "$rcs" "$DST/R-Package-Repository/src/contrib"
+mv "$rcc" "$DST/R-Package-Repository/src/contrib"
+
+echo "tools:::write_PACKAGES('$DST/R-Package-Repository/src/contrib')" | R --vanilla --slave
 
 echo '' && echo "=== downloading dependencies ===" && echo ''
 
-echo "options(warn=2);cran=available.packages(contrib.url('http://r.research.att.com/',type='source'),type='source');rf=available.packages(contrib.url('http://rforge.net/',type='source'),type='source');local=available.packages(contrib.url('file://$DST/pkg.repos',type='source'),type='source');rf.pkg=strsplit('$RFORGE_PKG',',',T)[[1]];stage1=unique(unlist(tools:::package_dependencies('rcloud.support',local,'all')));print(stage1);stage2=unique(c(stage1,unlist(tools:::package_dependencies(stage1,rbind(cran,rf,local),,TRUE))));rec=rownames(installed.packages(,'high'));stage2=stage2[!(stage2 %in% rec)];print(stage2);download.packages(rf.pkg,'$DST/pkg.repos/src/contrib',,'http://rforge.net',type='source');cran.pkg=stage2[!(stage2 %in% c('rcloud.support',rf.pkg))];download.packages(cran.pkg,'$DST/pkg.repos/src/contrib',,'http://r.research.att.com',type='source');writeLines(stage2,'$DST/pkg.repos/pkg.list')" | R --vanilla --slave
+echo "options(warn=2);cran=available.packages(contrib.url('http://r.research.att.com/',type='source'),type='source');rf=available.packages(contrib.url('http://rforge.net/',type='source'),type='source');local=available.packages(contrib.url('file://$DST/R-Package-Repository',type='source'),type='source');rf.pkg=strsplit('$RFORGE_PKG',',',T)[[1]];stage1=unique(unlist(tools:::package_dependencies('rcloud.support',local)));print(stage1);stage2=unique(c(stage1,unlist(tools:::package_dependencies(stage1,rbind(cran,rf,local),,TRUE))));rec=rownames(installed.packages(,'high'));stage2=stage2[!(stage2 %in% rec)];print(stage2);download.packages(rf.pkg,'$DST/R-Package-Repository/src/contrib',,'http://rforge.net',type='source');cran.pkg=stage2[!(stage2 %in% c('rcloud.support',rf.pkg))];download.packages(cran.pkg,'$DST/R-Package-Repository/src/contrib',,'http://r.research.att.com',type='source');writeLines(stage2,'$DST/R-Package-Repository/pkg.list')" | R --vanilla --slave
 
 ## explicit overrides:
 ## * evaluate >0.5.1 has a fatal bug concerning plots so we have to fall back to 0.5.1
-rm -f "$DST/pkg.repos/src/contrib/"evaluate_*.tar.gz
-echo "download.file('http://cran.r-project.org/src/contrib/00Archive/evaluate/evaluate_0.5.1.tar.gz','$DST/pkg.repos/src/contrib/evaluate_0.5.1.tar.gz')" | R --vanilla --slave
+#rm -f "$DST/R-Package-Repository/src/contrib/"evaluate_*.tar.gz
+#echo "download.file('http://cran.r-project.org/src/contrib/00Archive/evaluate/evaluate_0.5.1.tar.gz','$DST/R-Package-Repository/src/contrib/evaluate_0.5.1.tar.gz')" | R --vanilla --slave
 
-echo "tools:::write_PACKAGES('$DST/pkg.repos/src/contrib')" | R --vanilla --slave
+## Removing gitgist and guitar only because guitar has dependency on libgit2 and boost. Boost is tricky to get
+## Will have to discuss the best way to fix this later in the next 1.3 release
+rm -rf "$DST/R-Package-Repository/src/contrib/"gitgist*.tar.gz
+rm -rf "$DST/R-Package-Repository/src/contrib/"guitar*.tar.gz
+echo "tools:::write_PACKAGES('$DST/R-Package-Repository/src/contrib')" | R --vanilla --slave
 
-if [ ! -e "$DST/pkg.repos/pkg.list" ]; then
+if [ ! -e "$DST/R-Package-Repository/pkg.list" ]; then
     echo "ERROR: download failed"
     exit 1
 fi
@@ -86,6 +122,14 @@ done
 
 echo $BRANCH > "$DST/rcloud/REVISION"
 echo $REV >> "$DST/rcloud/REVISION"
+
+## Pull mathjax to htdocs
+MATHJAX_INSTALL_DIR=mathjax
+if [ ! -e "$DST/rcloud/htdocs/mathjax" ]; then
+    mkdir -p "$DST/rcloud/htdocs/mathjax"
+    echo 'Downloading MathJax'
+    curl -L https://codeload.github.com/mathjax/MathJax/legacy.tar.gz/master | tar -xz -C "$DST/rcloud/htdocs/mathjax" --strip-components=1
+fi
 
 ## include SKS to simplify deployment
 mkdir -p "$DST/rcloud/services"
@@ -110,8 +154,10 @@ fi
 
 rm -rf "$DST/tmp"
 
-( cd "$DST"; tar fcz rcloud-$BRANCH-$REV.tar.gz rcloud pkg.repos )
+( cd "$DST"; mv R-Package-Repository rcloud; tar fcz rcloud-$BRANCH-$REV.tar.gz rcloud )
 
 echo '' && echo "=== done ===" && echo ''
 
 ls -l "$DST/rcloud-$BRANCH-$REV.tar.gz"
+
+
