@@ -24,24 +24,28 @@
         // styling the table will go better with CSS
         var header_style = 'border: 0; background-color: #dedede; font-family: sans-serif; font-size: 13px';
         var datum_style = 'border-style: solid; border-width: thin 0; border-color: #ccc';
-        var header = $.el.tr($.el.th({colspan: 2, scope: 'col', style: header_style}, title));
+        var header = $.el.tr($.el.th({colspan: 3, scope: 'col', style: header_style}, title));
         rows.push(header);
         _.keys(section).sort().forEach(function(key) {
-            function td(content) {
-                return $.el.td({style: datum_style}, content);
+            function td(content, style) {
+                return $.el.td({style: style ? datum_style + ';' + style : datum_style}, content);
             }
+            var items = [td(key)];
             var content;
             if(_.isString(section[key]) || _.isNumber(section[key]))
-                content = section[key];
-            else if(_.isObject(section[key]))
-                switch(section[key].command) {
-                case 'view':
-                    content = dataframe_link(key);
-                    break;
-                default:
-                    throw new Error('unknown rcloud.enviewer command ' + key);
-                }
-            var items = [td(key), td(content)];
+                items.push(td(section[key]));
+            else if(_.isObject(section[key])) {
+                if('command' in section[key])
+                    switch(section[key].command) {
+                    case 'view':
+                        items.push(td(dataframe_link(key)));
+                        break;
+                    default:
+                        throw new Error('unknown rcloud.enviewer command ' + key);
+                    }
+                else if('type' in section[key])
+                    items.push(td(section[key].type, 'white-space: nowrap'), td(section[key].value));
+            }
             rows.push($.el.tr({}, items));
         });
     }
