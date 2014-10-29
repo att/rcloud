@@ -138,31 +138,37 @@ session.markdown.eval <- function(command, language, silent) {
 
 ## WS init
 rcloud.compute.init <- function(...) {
-  set.seed(Sys.getpid()) # we want different seeds so we get different file names
-  .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
-  start.rcloud(...)
-  rcloud.reset.session()
+    if (!is.null(.session$compute.init.result)) return(.session$compute.init.result)
+    set.seed(Sys.getpid()) # we want different seeds so we get different file names
+    .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
+    start.rcloud(...)
+    rcloud.reset.session()
 
-  ## set default mirror if not specified to avoid interactive selection
-  if (isTRUE("@CRAN@" %in% getOption("repos")))
-      options(repos=c(CRAN = if(nzConf("cran.mirror")) getConf("cran.mirror") else "http://cran.r-project.org"))
-
-  ver <- paste0('RCloud ', rcloud.info("version.string"), ' ')
-  if (nzchar(rcloud.info("revision"))) ver <- paste0(ver, "(", rcloud.info("branch"), "/", rcloud.info("revision"), "), ")
-  paste0(ver, R.version.string, "<br>Welcome, ", .session$username)
+    ## set default mirror if not specified to avoid interactive selection
+    if (isTRUE("@CRAN@" %in% getOption("repos")))
+        options(repos=c(CRAN = if(nzConf("cran.mirror")) getConf("cran.mirror") else "http://cran.r-project.org"))
+    
+    ver <- paste0('RCloud ', rcloud.info("version.string"), ' ')
+    if (nzchar(rcloud.info("revision"))) ver <- paste0(ver, "(", rcloud.info("branch"), "/", rcloud.info("revision"), "), ")
+    .session$compute.init.result <- paste0(ver, R.version.string, "<br>Welcome, ", .session$username)
 }
 
 ## WS init
 rcloud.anonymous.compute.init <- function(...) {
-  set.seed(Sys.getpid()) # we want different seeds so we get different file names
-  .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
-  start.rcloud.anonymously(...)
-  rcloud.reset.session()
-  paste(R.version.string, " --- welcome, anonymous user", sep='')
+    if (isTRUE(.session$compute.initialized)) return("(already initialized)")
+    set.seed(Sys.getpid()) # we want different seeds so we get different file names
+    .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
+    start.rcloud.anonymously(...)
+    rcloud.reset.session()
+    .session$compute.initialized <- TRUE
+    paste(R.version.string, " --- welcome, anonymous user", sep='')
 }
 
 rcloud.session.init <- function(...) {
-    start.rcloud(...)
+    if (identical(.session$separate.compute, FALSE))
+        rcloud.compute.init(...)
+    else
+        start.rcloud(...)
 }
 
 rcloud.anonymous.session.init <- function(...) {

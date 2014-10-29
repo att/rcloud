@@ -20,21 +20,29 @@ wrap.all.js.funs <- function(v)
     v
 }
 
-oc.init <- function(...) { ## this is the payload of the OCinit message
-  ## remove myself from the global env since my job is done
-  if (identical(.GlobalEnv$oc.init, oc.init)) rm(oc.init, envir=.GlobalEnv)
-
-  ## simply send the cap that authenticates and returns supported caps
-  make.oc(function(v) {
+oc.init.authenticate <- function(v, mode="IDE") {
+    .session$mode <- mode
     if (RC.authenticate(v)) {
-      authenticated.ocaps()
+        ulog("INFO: oc.init.authenticate authenticated user='", .session$user, "', exec.usr='", as.character(.session$exec.usr), "', mode=", mode)
+        authenticated.ocaps(mode)
     } else if (RC.auth.anonymous(v)) {
-      unauthenticated.ocaps()
-    } else list() ## we don't allow anything if the access was denied
-  }, "oc.init")
+        ulog("INFO: oc.init.authenticate anonymous, exec.usr='", as.character(.session$exec.usr),"', mode=", mode)
+        unauthenticated.ocaps(mode)
+    } else {
+        ulog("INFO: oc.init.authenticate REJECTED")
+        list() ## we don't allow anything if the access was denied
+    }
 }
 
-compute.ocaps <- function(authenticated) {
+oc.init <- function(...) { ## this is the payload of the OCinit message
+    ## remove myself from the global env since my job is done
+    if (identical(.GlobalEnv$oc.init, oc.init)) rm(oc.init, envir=.GlobalEnv)
+    
+    ## simply send the cap that authenticates and returns supported caps
+    make.oc(oc.init.authenticate)
+}
+
+compute.ocaps <- function(mode, authenticated) {
     caps <- list(
         setup_js_installer = make.oc(rcloud.setup.js.installer),
         install_notebook_stylesheets = make.oc(rcloud.install.notebook.stylesheets),
@@ -55,15 +63,27 @@ compute.ocaps <- function(authenticated) {
         )) else caps
 }
 
-unauthenticated.ocaps <- function(compute)
-{
-    if (missing(compute))
-        compute <- .Call(Rserve:::Rserve_fork_compute, quote(rcloud.support:::compute.ocaps(FALSE)))
+## forks a compute process (if needed) and calls compute.ocaps()
+.setup.compute <- function(mode, authenticated) {
+    if (identical(mode, "IDE")) { ## use fork only in IDE mode
+        .session$separate.compute <- TRUE
+        .Call(Rserve:::Rserve_fork_compute, bquote(rcloud.support:::compute.ocaps(.(mode), .(authenticated))))
+    } else {
+        .session$separate.compute <- FALSE
+        rcloud.support:::compute.ocaps(mode, authenticated)
+    }
+}
 
+## compute is optional (intended as pass-through from authenticated) and will be created if not supplied
+unauthenticated.ocaps <- function(mode, compute)
+{
+    if (missing(compute)) compute <- .setup.compute(mode, FALSE)
+    
     list(
     # ocaps used by rcloud.js
     rcloud=list(
       authenticated = FALSE,
+      mode = mode,
       version_info = make.oc(rcloud.info),
       anonymous_session_init = make.oc(rcloud.anonymous.session.init),
       anonymous_compute_init = compute$unauthenticated_compute_init,
@@ -128,10 +148,10 @@ unauthenticated.ocaps <- function(compute)
     )
 }
 
-authenticated.ocaps <- function()
+authenticated.ocaps <- function(mode)
 {
-    compute <- .Call(Rserve:::Rserve_fork_compute, quote(rcloud.support:::compute.ocaps(TRUE)))
-    basic.ocaps <- unauthenticated.ocaps(compute)
+    compute <- .setup.compute(mode, TRUE)
+    basic.ocaps <- unauthenticated.ocaps(mode, compute)
     
   changes <- list(
     rcloud = list(
