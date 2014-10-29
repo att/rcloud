@@ -24,7 +24,7 @@ setDiv: function(div, content, k) {
 }
 
 ## FIXME: we could also treat WebResult properly by converting it to HTML as needed
-.html.in <- function(x) paste(as.character(x), collapse='\n')
+.html.in <- function(x) if (inherits(x, "javascript_function") || (is.characer(x) && length(x) == 1)) x else paste(as.character(x), collapse='\n')
 
 rcw.append <- function(element, what) caps$appendDiv(element, .html.in(what))
 rcw.prepend <- function(element, what) caps$prependDiv(element, .html.in(what))
