@@ -155,13 +155,12 @@ rcloud.compute.init <- function(...) {
 
 ## WS init
 rcloud.anonymous.compute.init <- function(...) {
-    if (isTRUE(.session$compute.initialized)) return("(already initialized)")
+    if (!is.null(.session$compute.init.result)) return(.session$compute.init.result)
     set.seed(Sys.getpid()) # we want different seeds so we get different file names
     .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
     start.rcloud.anonymously(...)
     rcloud.reset.session()
-    .session$compute.initialized <- TRUE
-    paste(R.version.string, " --- welcome, anonymous user", sep='')
+    .session$compute.init.result <- paste(R.version.string, " --- welcome, anonymous user", sep='')
 }
 
 rcloud.session.init <- function(...) {
