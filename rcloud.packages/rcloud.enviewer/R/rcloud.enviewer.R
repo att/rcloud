@@ -9,6 +9,12 @@ rcloud.enviewer.view.dataframe <- function(expr)
 rcloud.enviewer.display.dataframe <- function(x)
   list(command="view", object=x)
 
+rcloud.enviewer.display.double <- function(x)
+  signif(x,3)
+
+rcloud.enviewer.display.string <- function(x)
+  paste("'", x, "'", sep="")
+
 rcloud.enviewer.display.value <- function(val) {
   ## Current values are the vector types "logical", "integer", "double", "complex", "character", "raw" and "list", "NULL", "closure" (function), "special" and "builtin" (basic functions and operators), "environment", "S4" (some S4 objects) and others that are unlikely to be seen at user level ("symbol", "pairlist", "promise", "language", "char", "...", "any", "expression", "externalptr", "bytecode" and "weakref").
   t <- typeof(val)
@@ -17,11 +23,20 @@ rcloud.enviewer.display.value <- function(val) {
   }
   else if(t == 'logical' || t == 'integer' || t == 'double' ||
           t == 'character' || t == 'raw' || t == 'NULL') {
+    disp <- function(t, x)
+      switch(t,
+        double = rcloud.enviewer.display.double(x),
+        character = rcloud.enviewer.display.string(x),
+        x)
     if(length(val) > 1) {
-      ray <- if(length(val) > 10) paste(paste(val, collapse=' '), '...') else paste(val, collapse=' ')
-      paste(t, paste('[1:', length(val), ']', sep=''), ray)
+      chop = if(length(val) > 10) val[1:10] else val
+      fmt = disp(t, chop)
+      print = paste(fmt, collapse=' ')
+      if(length(val) > 10) print <- paste(print, '...')
+      type <- paste(t, paste('[1:', length(val), ']', sep=''))
+      list(type=type, value=print)
     }
-    else val
+    else list(type=t, value=disp(t, val))
   }
 }
 

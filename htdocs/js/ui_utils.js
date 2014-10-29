@@ -1,5 +1,22 @@
 var ui_utils = {};
 
+ui_utils.url_maker = function(page) {
+    return function(opts) {
+        opts = opts || {};
+        var url = window.location.protocol + '//' + window.location.host + '/' + page;
+        if(opts.notebook) {
+            url += '?notebook=' + opts.notebook;
+            if(opts.version && !opts.tag)
+                url = url + '&version='+opts.version;
+            if(opts.tag && opts.version)
+                url = url + '&tag='+opts.tag;
+        }
+        else if(opts.new_notebook)
+            url += '?new_notebook=true';
+        return url;
+    };
+};
+
 ui_utils.disconnection_error = function(msg, label) {
     var result = $("<div class='alert alert-danger'></div>");
     result.append($("<span></span>").text(msg));

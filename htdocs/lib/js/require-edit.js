@@ -7,7 +7,7 @@ deps.push(
     "../../edit", "rcloud_bundle",
 
     // rcloud's other files
-    "../../shell_tab", "../../editor_tab"
+    "shell_tab", "editor_tab"
 );
 
 start_require(deps);

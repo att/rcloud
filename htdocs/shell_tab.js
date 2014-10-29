@@ -33,6 +33,7 @@ var shell = (function() {
 
     function on_load(notebook) {
         RCloud.UI.notebook_title.set(notebook.description);
+        RCloud.UI.notebook_title.update_fork_info(notebook.fork_of);
         notebook_user_ = notebook.user.login;
         RCloud.UI.configure_readonly();
         _.each(notebook_view_.sub_views, function(cell_view) {
@@ -99,6 +100,7 @@ var shell = (function() {
             var cell = notebook_controller_.append_cell(content, language);
             RCloud.UI.command_prompt.history.execute(content);
             if(execute) {
+                RCloud.UI.command_prompt.focus();
                 cell.execute().then(scroll_to_end);
             }
         },

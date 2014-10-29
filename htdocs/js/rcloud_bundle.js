@@ -590,6 +590,23 @@ RCloud.create = function(rcloud_ocaps) {
 };
 var ui_utils = {};
 
+ui_utils.url_maker = function(page) {
+    return function(opts) {
+        opts = opts || {};
+        var url = window.location.protocol + '//' + window.location.host + '/' + page;
+        if(opts.notebook) {
+            url += '?notebook=' + opts.notebook;
+            if(opts.version && !opts.tag)
+                url = url + '&version='+opts.version;
+            if(opts.tag && opts.version)
+                url = url + '&tag='+opts.tag;
+        }
+        else if(opts.new_notebook)
+            url += '?new_notebook=true';
+        return url;
+    };
+};
+
 ui_utils.disconnection_error = function(msg, label) {
     var result = $("<div class='alert alert-danger'></div>");
     result.append($("<span></span>").text(msg));
@@ -3477,15 +3494,21 @@ RCloud.UI.command_prompt = (function() {
     var show_prompt_ = false, // start hidden so it won't flash if user has it turned off
         readonly_ = true;
     function show_or_hide() {
-        var prompt = $('#command-prompt'),
+        var prompt_div = $('#prompt-div'),
+            prompt = $('#command-prompt'),
             controls = $('#prompt-div .cell-status .cell-controls');
-        if(!readonly_ && show_prompt_) {
-            prompt.show();
-            controls.removeClass('flipped');
-        }
+        if(readonly_)
+            prompt_div.hide();
         else {
-            prompt.hide();
-            controls.addClass('flipped');
+            prompt_div.show();
+            if(show_prompt_) {
+                prompt.show();
+                controls.removeClass('flipped');
+            }
+            else {
+                prompt.hide();
+                controls.addClass('flipped');
+            }
         }
     }
     return {
@@ -4177,11 +4200,21 @@ RCloud.UI.notebook_title = (function() {
                            text +
                            (ellipt_end ? '...' : ''));
             }
-            ui_utils.editable(title, $.extend({allow_edit: !is_read_only,
+            ui_utils.editable(title, $.extend({allow_edit: !is_read_only && !shell.is_view_mode(),
                                                inactive_text: title.text(),
                                                active_text: active_text},
                                               editable_opts));
-        }, make_editable: function(node, $li, editable) {
+        },
+        update_fork_info: function(fork_of) {
+            if(fork_of) {
+                var fork_desc = fork_of.owner.login+ " / " + fork_of.description;
+                var url = ui_utils.url_maker(shell.is_view_mode()?'view.html':'edit.html')({notebook: fork_of.id});
+                $("#forked-from-desc").html("forked from <a href='" + url + "'>" + fork_desc + "</a>");
+            }
+            else
+                $("#forked-from-desc").text("");
+        },
+        make_editable: function(node, $li, editable) {
             function get_title(node) {
                 if(!node.version) {
                     return $('.jqtree-title:not(.history)', $li);
