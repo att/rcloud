@@ -16,20 +16,33 @@ except:
 import platform
 from time import sleep
 import logging
-import ansi2html  # GPLV3 
+from RCloud_ansi2html import ansi2html # MIT license from github:Kronuz/ansi2html (Oct 2014) + rename/our changes
 from xml.sax.saxutils import escape as html_escape # based on reco from moin/EscapingHtml
 
-_textFormatStr = """<pre style="font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;">{}</pre>"""
+import tempfile
+debugFD, debugFile = "", ""
+
+_debugging = False
+if _debugging:
+    debugFD, debugFile = tempfile.mkstemp(suffix=".log", prefix="ipy_log")
+    logging.basicConfig(filename=debugFile, level=logging.DEBUG)
+
+class NotebookError(Exception):
+    pass
+
+_textFormatStr = u'<pre style="font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;">{}</pre>'
 def RClTextFormat(s, escape=True):
     newtext = html_escape(s) if escape else s
     return _textFormatStr.format(newtext)
 
-ansiconverter = ansi2html.Ansi2HTMLConverter(inline=True, dark_bg=False)
-def RClansiconv(ansitext, full=False):
-    """ Uses ansi2html (GPL V3) to produce a reasonably minimal html 
-    Seems that there is no need to escape this text...
-    """
-    htmlFragment = ansiconverter.convert(ansitext, full=full)
+def RClansiconv(inputtext, full=False):
+    """ Uses Krounz/ansi2html (MIT) renamed to produce a reasonably minimal html"""
+    if _debugging: logging.info('Received ' + inputtext)
+    try:
+        txt = unicode(inputtext, 'utf-8') # we get unicode characters from IPython sometimes
+    except:
+        txt = inputtext # if it is already unicode
+    htmlFragment = ansi2html(txt).encode('ascii', 'xmlcharrefreplace')
     return _textFormatStr.format(htmlFragment, escape=False) # we already escaped the text
 
 from IPython.nbformat.current import read, write, NotebookNode
@@ -44,17 +57,6 @@ from IPython.kernel import (
     launch_kernel,
 )
 import json
-
-import tempfile
-debugFD, debugFile = "", ""
-
-_debugging = True
-if _debugging:
-    debugFD, debugFile = tempfile.mkstemp(suffix=".log", prefix="ipy_log")
-    logging.basicConfig(filename=debugFile, level=logging.DEBUG)
-
-class NotebookError(Exception):
-    pass
 
 class MagicBlockingShellChannel(BlockingShellChannel):
     proxy_methods = [
@@ -93,8 +95,14 @@ class NotebookRunner(object):
     }
 
     def __init__(self, **kw):
+        """Initializes the notebook runner.
+           Requires config rcloud_python_lib_path -- or raises exception"""
         self.km = KernelManager()
-        self.km.kernel_cmd = make_ipkernel_cmd('import sys; sys.path.extend("%s".split(":")); from rcloud_kernel import main; main()' % kw["rcloud_python_lib_path"], **kw)
+        self.km.kernel_cmd = make_ipkernel_cmd("""
+import sys; 
+sys.path.extend("{RCPATH}".split(":")); 
+from rcloud_kernel import main; 
+main()""".format(RCPATH=kw["rcloud_python_lib_path"]), **kw)
         del kw["rcloud_python_lib_path"]
         self.km.client_factory = MyClient
         self.km.start_kernel(**kw)
@@ -141,7 +149,7 @@ class NotebookRunner(object):
         if status == 'error':
             logging.info('Cell raised uncaught exception: \n%s', '\n'.join(reply['content']['traceback']))
         else:
-            logging.debug('Cell returned')
+            if _debugging: logging.debug('Cell returned')
 
         while True:
             try:
@@ -161,14 +169,14 @@ class NotebookRunner(object):
         '''
         Run a notebook cell and update the output of that cell in-place.
         '''
-        logging.debug('Running cell:\n%s\n', cell.input)
+        if _debugging: logging.debug('Running cell:\n%s\n', cell.input)
         self.shell.execute(cell.input)
         reply = self.shell.get_msg()
         status = reply['content']['status']
         if status == 'error':
             logging.info('Cell raised uncaught exception: \n%s', '\n'.join(reply['content']['traceback']))
         else:
-            logging.debug('Cell returned')
+            if _debugging: logging.debug('Cell returned')
 
         outs = list()
         while True:
@@ -196,7 +204,7 @@ class NotebookRunner(object):
                 continue
             elif msg_type == 'stream':
                 out.stream = content['name']
-                out.html = RClTextFormat(content['data'])
+                out.html = RClansiconv(content['data'])
             elif msg_type in ('display_data', 'pyout'):
                 for mime, data in content['data'].items():
                     try:
@@ -204,7 +212,11 @@ class NotebookRunner(object):
                     except KeyError:
                         logging.warning('unhandled mime type: %s' % mime)
                         raise NotImplementedError('unhandled mime type: %s' % mime)
-                    setattr(out, attr, data)
+                    if attr == 'text':
+                        if _debugging: logging.info(data)
+                        setattr(out, attr, RClansiconv(data))
+                    else:
+                        setattr(out, attr, data)
             elif msg_type == 'pyerr':
                 logging.info('Received an exception: ' + content['ename'])
                 out.ename = content['ename']
@@ -244,5 +256,5 @@ class NotebookRunner(object):
                     raise
 
     def save_notebook(self, nb_out):
-        logging.info('Saving to %s', nb_out)
+        if _debugging: logging.info('Saving to %s', nb_out)
         write(self.nb, open(nb_out, 'w'), 'json')
