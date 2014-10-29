@@ -151,7 +151,7 @@ return {
                             star_count = d[i].starcount;
                         }
                         var notebook_id = d[i].id;
-                        var image_string = "<i class=\"icon-star\" style=\"font-size: 110%; line-height: 90%;\"><sub>" + star_count + "</sub></i>";
+                        var image_string = "<i class=\"icon-star search-star\"><sub>" + star_count + "</sub></i>";
                         d[i].parts = JSON.parse(d[i].parts);
                         var parts_table = "";
                         var inner_table = "";
@@ -167,12 +167,18 @@ return {
                                 if(typeof content === "string")
                                     content = [content];
                                 if(content.length > 0)
-                                    parts_table += "<tr><th class='search-result-part-name'  style='padding: 0px;'><h3>" + d[i].parts[k].filename + "</h3></th></tr>";
+                                    parts_table += "<tr><th class='search-result-part-name'>" + d[i].parts[k].filename + "</th></tr>";
                                 for(var l = 0; l < content.length; l++) {
                                     if (d[i].parts[k].filename === "comments") {
-                                        var comment_content = content[l].substr(content[l].indexOf(":::")+3, content[l].lastIndexOf(":::")-content[l].indexOf(":::")-3);
-                                        var comment_author = content[l].substr(content[l].lastIndexOf(":::")+3, content[l].length-content[l].lastIndexOf(":::")-3);
-                                        inner_table += "<tr><td style='width:auto;padding:5px;'><b><i class='icon-user'/>" + comment_author + "</b><br/><i class='icon-comment-alt'><span class='search-result-code'>" + comment_content + "</span></i></td></tr>";
+                                        var split = content[l].split(/ *::: */);
+                                        if(split.length < 2)
+                                            split = content[l].split(/ *: */); // old format had single colons
+                                        var comment_content = split[1] || '';
+                                        if(!comment_content)
+                                            continue;
+                                        var comment_author = split[2] || '';
+                                        var display_comment = comment_author ? (comment_author + ': ' + comment_content) : comment_content;
+                                        inner_table += "<tr><td class='search-result-comment'><span class='search-result-comment-content'>" + comment_author + ": " + comment_content + "</span></td></tr>";
                                     }
                                     else {
                                         inner_table += "<tr><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";

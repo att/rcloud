@@ -4885,7 +4885,7 @@ return {
     exec: function(query, sortby, orderby, start, noofrows, pgclick) {
         function summary(html, color) {
             $('#search-summary').css('color', color || 'black');
-            $("#search-summary").show().html($("<h4 />").append(html));
+            $("#search-summary").show().html($("<h4/>").append(html));
         }
         function create_list_of_search_results(d) {
             var i;
@@ -4929,7 +4929,7 @@ return {
                             star_count = d[i].starcount;
                         }
                         var notebook_id = d[i].id;
-                        var image_string = "<i class=\"icon-star\" style=\"font-size: 110%; line-height: 90%;\"><sub>" + star_count + "</sub></i>";
+                        var image_string = "<i class=\"icon-star search-star\"><sub>" + star_count + "</sub></i>";
                         d[i].parts = JSON.parse(d[i].parts);
                         var parts_table = "";
                         var inner_table = "";
@@ -4947,8 +4947,22 @@ return {
                                 if(content.length > 0)
                                     parts_table += "<tr><th class='search-result-part-name'>" + d[i].parts[k].filename + "</th></tr>";
                                 for(var l = 0; l < content.length; l++) {
-                                    inner_table += "<tr><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
+                                    if (d[i].parts[k].filename === "comments") {
+                                        var split = content[l].split(/ *::: */);
+                                        if(split.length < 2)
+                                            split = content[l].split(/ *: */); // old format had single colons
+                                        var comment_content = split[1] || '';
+                                        if(!comment_content)
+                                            continue;
+                                        var comment_author = split[2] || '';
+                                        var display_comment = comment_author ? (comment_author + ': ' + comment_content) : comment_content;
+                                        inner_table += "<tr><td class='search-result-comment'><span class='search-result-comment-content'>" + comment_author + ": " + comment_content + "</span></td></tr>";
+                                    }
+                                    else {
+                                        inner_table += "<tr><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
+                                    }
                                 }
+
                                 if (d[i].parts[k].filename != "comments") {
                                     nooflines += inner_table.match(/\|-\|/g).length;
                                 }
@@ -4957,17 +4971,17 @@ return {
                             if(inner_table !== "") {
                                 inner_table = inner_table.replace(/\|-\|,/g, '<br>').replace(/\|-\|/g, '<br>');
                                 inner_table = inner_table.replace(/line_no/g,'|');
-                                inner_table = "<table>" + inner_table + "</table>";
+                                inner_table = "<table style='width: 100%'>" + inner_table + "</table>";
                                 parts_table += "<tr><td>" + inner_table + "</td></tr>";
                             }
                         }
                         var togid = i + "more";
                         if(parts_table !== "") {
                             if(nooflines > 10) {
-                                parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table>" + parts_table + "</table></div>" +
+                                parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div>" +
                                     "<div style=\"position: relative;\"><a href=\"#\" id='"+togid+"' onclick=\"RCloud.UI.search.toggle("+i+",'"+togid+"');\" style=\"color:orange\">Show me more...</a></div></div>";
                             } else {
-                                parts_table = "<div><div id='"+i+"'><table>" + parts_table + "</table></div></div>";
+                                parts_table = "<div><div id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div></div>";
                             }
                         }
                         search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" +
