@@ -168,10 +168,6 @@ return {
                                     content = [content];
                                 if(content.length > 0)
                                     parts_table += "<tr><th class='search-result-part-name'>" + d[i].parts[k].filename + "</th></tr>";
-                                /*for(var l = 0; l < content.length; l++) {
-                                    inner_table += "<tr><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
-                                }*/
-
                                 for(var l = 0; l < content.length; l++) {
                                     if (d[i].parts[k].filename === "comments") {
                                         var comment_content = content[l].substr(content[l].indexOf(":::")+3, content[l].lastIndexOf(":::")-content[l].indexOf(":::")-3);
