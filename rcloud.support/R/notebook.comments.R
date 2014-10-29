@@ -19,7 +19,7 @@ rcloud.get.comments <- function(id)
 
   ## send the update request
   curlTemplate <- paste0(url,"/update/json?commit=true")
-  metadata <- paste0('{"id":"', id, '","comments":{"', method, '":"', paste(comment.id,':',comment.content), '"}}')
+  metadata <- paste0('{"id":"', id, '","comments":{"', method, '":"', paste(comment.id,':::',comment.content,':::',.session$rgithub.context$user$login), '"}}')
   postForm(curlTemplate, .opts = list(
                            postfields = paste0("[",metadata,"]"),
                            httpheader = c('Content-Type' = 'application/json',Accept = 'application/json')))
