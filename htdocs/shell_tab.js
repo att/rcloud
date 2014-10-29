@@ -342,7 +342,7 @@ var shell = (function() {
                 body.append($('<p/>').append(file_select))
                     .append($('<p/>').append(notebook_status.hide()))
                     .append($('<p/>').append(notebook_desc.hide()));
-                var cancel = $('<span class="btn">Cancel</span>')
+                var cancel = $('<span class="btn btn-cancel">Cancel</span>')
                         .on('click', function() { $(dialog).modal('hide'); });
                 import_button = $('<span class="btn btn-primary">Import</span>')
                         .on('click', do_import);
@@ -411,11 +411,11 @@ var shell = (function() {
             function create_import_notebook_dialog() {
                 var body = $('<div class="container"/>').append(
                     $(['<p>Import notebooks from another GitHub instance.  Currently import does not preserve history.</p>',
-                       '<p>source repo api url:&nbsp;<input type="text" id="import-source" size="50" value="https://api.github.com"></input></td>',
-                       '<p>notebooks:<br /><textarea rows="10" cols="30" id="import-gists" form="port"></textarea></p>',
-                       '<p>prefix:&nbsp;<input type="text" id="import-prefix" size="50"></input>'].join('')));
+                       '<p>source repo api url:&nbsp;<input type="text" class="form-control-ext" id="import-source" style="width:100%;" value="https://api.github.com"></input></td>',
+                       '<p>notebooks:<br /><textarea class="form-control-ext" style="height: 20%;width: 50%;max-width: 100%" rows="10" cols="30" id="import-gists" form="port"></textarea></p>',
+                       '<p>prefix:&nbsp;<input type="text" class="form-control-ext" id="import-prefix" style="width:100%;"></input>'].join('')));
 
-                var cancel = $('<span class="btn">Cancel</span>')
+                var cancel = $('<span class="btn btn-cancel">Cancel</span>')
                         .on('click', function() { $(dialog).modal('hide'); });
                 var go = $('<span class="btn btn-primary">Import</span>')
                         .on('click', do_import);

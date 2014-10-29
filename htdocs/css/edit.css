@@ -1078,3 +1078,13 @@ pre > .vt100 {
 .pagination > li > span {
     padding: 3px 8px;
 }
+.btn-primary {
+    border-radius: 3px;
+}
+.btn-cancel {
+    color: #333;
+    background-color: #fff;
+    border-color: #ccc;
+    border-radius: 3px;
+}
+
