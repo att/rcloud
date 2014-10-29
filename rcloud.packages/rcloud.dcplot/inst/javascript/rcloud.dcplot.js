@@ -1,10 +1,6 @@
 ((function() {
 
 requirejs.config({
-    paths: {
-        "crossfilter": "crossfilter",
-        "dc": "dc"
-    },
     "shim": {
         "crossfilter": {
             deps: [],
