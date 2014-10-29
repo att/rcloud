@@ -166,12 +166,19 @@ rcloud.anonymous.compute.init <- function(...) {
 rcloud.session.init <- function(...) {
     if (identical(.session$separate.compute, FALSE))
         rcloud.compute.init(...)
-    else
+    else {
         start.rcloud(...)
+        "" ## return "" since the result is a dual promise for both resulting in an array
+    }
 }
 
 rcloud.anonymous.session.init <- function(...) {
-    start.rcloud.anonymously(...)
+    if (identical(.session$separate.compute, FALSE))
+        rcloud.compute.init(...)
+    else {
+        start.rcloud.anonymously(...)
+        ""
+    }
 }
 
 rcloud.reset.session <- function() {

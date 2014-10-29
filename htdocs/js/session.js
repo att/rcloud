@@ -66,10 +66,6 @@ function on_connect_anonymous_allowed(ocaps) {
     var promise_c, promise_s;
     rcloud = RCloud.create(ocaps.rcloud);
     
-    // FIXME: someone familiar with promises should check if this is
-    // parallelized properly.
-    // It is ok to fire up compute_init first and then session_init,
-    // because control (session) doesn't block on compute.
     if (rcloud.authenticated) {
         promise_c = rcloud.compute_init(rcloud.username(), rcloud.github_token());
         promise_s = rcloud.session_init(rcloud.username(), rcloud.github_token());
@@ -78,17 +74,18 @@ function on_connect_anonymous_allowed(ocaps) {
         promise_s = rcloud.anonymous_session_init();
     }
 
-    // compute returns the greeting
-    var res = promise_c.catch(function(e) {
+    promise_c.catch(function(e) {
         RCloud.UI.fatal_dialog(could_not_initialize_error(e), "Logout", "/logout.R");
     });
 
-    // control doesn't return anything useful at this point
     promise_s.catch(function(e) {
         RCloud.UI.fatal_dialog(could_not_initialize_error(e), "Logout", "/logout.R");
     });
 
-    return res;
+    // returns a promise covering both - note that the side-effect is that
+    // way down the food chain there will be an array of results
+    // from both
+    return Promise.all([promise_c, promise_s]);
 }
 
 function on_connect_anonymous_disallowed(ocaps) {
@@ -96,10 +93,11 @@ function on_connect_anonymous_disallowed(ocaps) {
     if (!rcloud.authenticated) {
         return Promise.reject(new Error("Authentication required"));
     }
-    // FIXME: is this ok?
+
     var res_c = rcloud.compute_init(rcloud.username(), rcloud.github_token());
     var res_s = rcloud.session_init(rcloud.username(), rcloud.github_token());
-    return res_c;
+
+    return Promise.all([res_c, res_s]);
 }
 
 function rclient_promise(allow_anonymous) {
