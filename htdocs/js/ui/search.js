@@ -107,7 +107,7 @@ return {
     exec: function(query, sortby, orderby, start, noofrows, pgclick) {
         function summary(html, color) {
             $('#search-summary').css('color', color || 'black');
-            $("#search-summary").show().html($("<h4 />").append(html));
+            $("#search-summary").show().html($("<h4/>").append(html));
         }
         function create_list_of_search_results(d) {
             var i;
@@ -167,12 +167,12 @@ return {
                                 if(typeof content === "string")
                                     content = [content];
                                 if(content.length > 0)
-                                    parts_table += "<tr><th class='search-result-part-name'>" + d[i].parts[k].filename + "</th></tr>";
+                                    parts_table += "<tr><th class='search-result-part-name'  style='padding: 0px;'><h3>" + d[i].parts[k].filename + "</h3></th></tr>";
                                 for(var l = 0; l < content.length; l++) {
                                     if (d[i].parts[k].filename === "comments") {
                                         var comment_content = content[l].substr(content[l].indexOf(":::")+3, content[l].lastIndexOf(":::")-content[l].indexOf(":::")-3);
                                         var comment_author = content[l].substr(content[l].lastIndexOf(":::")+3, content[l].length-content[l].lastIndexOf(":::")-3);
-                                        inner_table += "<tr><td width='auto'><b>" + comment_author + "</b>&nbsp;&nbsp;</td><td class='search-result-code'><i>" + comment_content + "</i></td></tr>";
+                                        inner_table += "<tr><td style='width:auto;padding:5px;'><b><i class='icon-user'/>" + comment_author + "</b><br/><i class='icon-comment-alt'><span class='search-result-code'>" + comment_content + "</span></i></td></tr>";
                                     }
                                     else {
                                         inner_table += "<tr><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
@@ -187,17 +187,17 @@ return {
                             if(inner_table !== "") {
                                 inner_table = inner_table.replace(/\|-\|,/g, '<br>').replace(/\|-\|/g, '<br>');
                                 inner_table = inner_table.replace(/line_no/g,'|');
-                                inner_table = "<table>" + inner_table + "</table>";
+                                inner_table = "<table style='width: 100%'>" + inner_table + "</table>";
                                 parts_table += "<tr><td>" + inner_table + "</td></tr>";
                             }
                         }
                         var togid = i + "more";
                         if(parts_table !== "") {
                             if(nooflines > 10) {
-                                parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table>" + parts_table + "</table></div>" +
+                                parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div>" +
                                     "<div style=\"position: relative;\"><a href=\"#\" id='"+togid+"' onclick=\"RCloud.UI.search.toggle("+i+",'"+togid+"');\" style=\"color:orange\">Show me more...</a></div></div>";
                             } else {
-                                parts_table = "<div><div id='"+i+"'><table>" + parts_table + "</table></div></div>";
+                                parts_table = "<div><div id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div></div>";
                             }
                         }
                         search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" +
