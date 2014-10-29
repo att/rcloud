@@ -758,16 +758,6 @@ var editor = function () {
         rcloud.api.set_url(url);
     }
 
-    function update_notebook_fork_info(fork_of) {
-        if(fork_of) {
-            var fork_desc = fork_of.owner.login+ " / " + fork_of.description;
-            var url = make_edit_url({notebook: fork_of.id});
-            $("#forked-from-desc").html("forked from <a href='" + url + "'>" + fork_desc + "</a>");
-        }
-        else
-            $("#forked-from-desc").text("");
-    }
-
     function update_notebook_view(user, gistname, entry, selroot) {
         function open_and_select(node) {
             if(current_.version) {
@@ -866,8 +856,6 @@ var editor = function () {
                                           result.updated_at || result.history[0].committed_at);
 
         update_notebook_view(user, gistname, entry, selroot);
-
-        update_notebook_fork_info(result.fork_of);
     }
 
     function change_folder_friendness(user) {
@@ -1061,20 +1049,8 @@ var editor = function () {
         element.append(right);
     }
 
-    function make_edit_url(opts) {
-        opts = opts || {};
-        var url = window.location.protocol + '//' + window.location.host + '/edit.html';
-        if(opts.notebook) {
-            url += '?notebook=' + opts.notebook;
-            if(opts.version && !opts.tag)
-                url = url + '&version='+opts.version;
-            if(opts.tag && opts.version)
-                url = url + '&tag='+opts.tag;
-        }
-        else if(opts.new_notebook)
-            url += '?new_notebook=true';
-        return url;
-    }
+    var make_edit_url = ui_utils.url_maker('edit.html');
+
     function tree_click(event) {
         if(event.node.id === 'showmore')
             result.show_history(event.node.parent, false);

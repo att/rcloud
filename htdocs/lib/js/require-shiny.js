@@ -4,6 +4,7 @@ requirejs_config_obj = {
     paths: {
         "jquery": "../../shared.R/jquery",
         "rcloud_bundle": "../../js/rcloud_bundle",
+        "mini": "../../mini",
         "selectize": "../../shared.R/selectize/js/selectize.min",
         "datatables": "../../shared.R/datatables/js/jquery.dataTables.min"
     },
@@ -14,12 +15,13 @@ requirejs_config_obj = {
         },
         "jquery.cookies.2.2.0": ["jquery"],
         "rserve": ["underscore"],
+        "mini": ["rcloud_bundle"],
         "rcloud_bundle": ["jquery.cookies.2.2.0"]
     }
 };
 
 var deps = [
-    "bluebird", "underscore", "rserve", "../../mini", "rcloud_bundle", "datatables", "selectize"
+    "bluebird", "underscore", "rserve", "mini", "rcloud_bundle", "datatables", "selectize"
 ];
 
 function start_require(deps) {

@@ -1,6 +1,6 @@
 requirejs.config(requirejs_config_obj);
 
-var deps = common_deps; 
+var deps = common_deps;
 
 deps.push(
     // rcloud's mini.js and bundle

@@ -45,10 +45,10 @@ rcloud.enviewer.display.function <- function(f) {
   "function"
 }
 
-rcloud.enviewer.build <- function(vars) {
+rcloud.enviewer.build <- function(vars, env) {
   ret <- list(data = list(), values = list(), functions = list())
   lapply(vars, function(x) {
-    val <- get(x)
+    val <- get(x, envir=env)
     if(is.data.frame(val)) {
       l <- list()
       l[[x]] <- rcloud.enviewer.display.dataframe(x)
@@ -70,6 +70,6 @@ rcloud.enviewer.build <- function(vars) {
 
 rcloud.enviewer.on.change <- function(env)
 {
-  ret <- rcloud.enviewer.build(ls(envir=env))
+  ret <- rcloud.enviewer.build(ls(envir=env), env)
   rcloud.enviewer.caps$display(ret)
 }
