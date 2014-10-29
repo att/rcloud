@@ -172,16 +172,14 @@ return {
                                     inner_table += "<tr><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
                                 }*/
 
-
                                 for(var l = 0; l < content.length; l++) {
                                     if (d[i].parts[k].filename === "comments") {
-                                        var comment_content = content[l].substr(content[l].indexOf(":::")+1, content[l].lastIndexOf(":::")-content[l].indexOf(":::")-1);
-                                        var comment_author = content[l].substr(content[l].lastIndexOf(":::")+1, content[l].length-content[l].lastIndexOf(":::")-1);
+                                        var comment_content = content[l].substr(content[l].indexOf(":::")+3, content[l].lastIndexOf(":::")-content[l].indexOf(":::")-3);
+                                        var comment_author = content[l].substr(content[l].lastIndexOf(":::")+3, content[l].length-content[l].lastIndexOf(":::")-3);
                                         inner_table += "<tr><td width='auto'><b>" + comment_author + "</b>&nbsp;&nbsp;</td><td class='search-result-code'><i>" + comment_content + "</i></td></tr>";
                                     }
                                     else {
                                         inner_table += "<tr><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
-                                        //inner_table += "<tr><td class='search-result-line-number'>" + (l + 1) + "</td><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
                                     }
                                 }
 
