@@ -5243,6 +5243,9 @@ RCloud.UI.share_button = (function() {
             case 'mini.html':
                 suffix = type_ + '?notebook=' + shell.gistname();
                 break;
+            case 'shiny.html':
+                suffix = type_ + '?notebook=' + shell.gistname();
+                break;
             case 'view.html':
             default:
                 suffix = 'view.html?notebook=' + shell.gistname();
