@@ -23,6 +23,12 @@ RCloud.UI.session_pane = {
         });
 
     },
+    panel_sizer: function(el) {
+        var def = RCloud.UI.collapsible_column.default_sizer(el);
+        if(def.height)
+            def.height += 20; // scrollbar height can screw it up
+        return def;
+    },
     error_dest: function() {
         return this.error_dest_;
     },
