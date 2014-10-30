@@ -31,6 +31,17 @@ function fakeWebSocket() {
     return fws;
 }
 
+function rcloud_uploadFiles(evt) {
+    var id = evt.target.id;
+     var file_opts = {
+                upload_ocaps: window.upload_ocaps,
+                force:true,
+                $file:$('#'+id),
+                $upload_results: $('#file-upload-results')
+              };
+    RCloud.UI.upload_with_alerts(false, file_opts).then(function(){alert('File uploaded');});
+}
+
 return {
     init: function(ocaps, k) {
         ocaps_ = RCloud.promisify_paths(ocaps, [["connect"], ["send"]]);
@@ -41,6 +52,25 @@ return {
         };
         k();
     },
+
+    setup_upload_ocaps: function(ocaps, k) {
+        var paths = [["upload_path"],
+            ["create"],
+            ["write"],
+            ["close"]];
+        window.upload_ocaps = RCloud.promisify_paths(ocaps, paths);
+
+        setTimeout(function() {
+			var fileObjects = $(document).find('input[type="file"]') || [];
+			for (var j = 0; j < fileObjects.length; j++) {
+				$(fileObjects[j]).off('change.fileInputBinding').on('change.fileInputBinding', rcloud_uploadFiles);
+			}
+        }, 1000);
+
+        k();
+        return;
+    },
+
     on_message: function(id, msg, k) {
         console.log("Shiny to client: ", msg);
         sockets_[0].onmessage({data:msg});
