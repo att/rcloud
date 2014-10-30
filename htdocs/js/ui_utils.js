@@ -409,6 +409,7 @@ ui_utils.editable = function(elem$, command) {
         });
         elem$.keydown(function(e) {
             if(e.keyCode === 13) {
+                $(this).css("padding-right","0px");
                 var txt = decode(elem$.text());
                 function execute_if_valid_else_ignore(f) {
                     if(options().validate(txt)) {
@@ -430,8 +431,10 @@ ui_utils.editable = function(elem$, command) {
                     return execute_if_valid_else_ignore(options().change);
                 }
             } else if(e.keyCode === 27) {
+                $(this).css("padding-right","0px");
                 elem$.blur(); // and cancel
             }
+            $(this).css("padding-right","2px");
             return true;
         });
         break;
