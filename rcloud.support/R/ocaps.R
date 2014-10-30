@@ -98,6 +98,7 @@ unauthenticated.ocaps <- function(mode, compute)
       install_notebook_stylesheets = compute$install_notebook_stylesheets,
       is_notebook_published = make.oc(rcloud.is.notebook.published),
       is_notebook_visible = make.oc(rcloud.is.notebook.visible),
+      signal_to_compute = make.oc(.signal.to.compute),
       help = make.oc(rcloud.help),
 
       get_users = make.oc(rcloud.get.users),

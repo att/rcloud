@@ -136,6 +136,13 @@ session.markdown.eval <- function(command, language, silent) {
   }
 }
 
+## we don't expose this because it can only be used by the control process
+.signal.to.compute <- function(signal){
+    signal <- as.integer(signal)[1L]
+    ulog(paste0("CTRL: sending signal ", signal, " to compute process"))
+    .Call(Rserve:::Rserve_kill_compute, signal)
+}
+
 ## WS init
 rcloud.compute.init <- function(...) {
     if (!is.null(.session$compute.init.result)) return(.session$compute.init.result)
