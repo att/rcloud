@@ -809,6 +809,11 @@ var editor = function () {
             if(selroot==='friends')
                 p.then(open_and_select);
         }
+        if(featured_.indexOf(user)>=0) {
+            p = update_tree_entry('featured', user, gistname, entry, true);
+            if(selroot==='featured')
+                p.then(open_and_select);
+        }
 
         p = update_tree_entry('alls', user, gistname, entry, true);
         if(selroot==='alls')
