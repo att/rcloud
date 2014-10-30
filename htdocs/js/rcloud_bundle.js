@@ -3212,11 +3212,14 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         return $(sel_accordion + " > .panel > div.panel-heading");
     }
     function set_collapse(target, collapse, persist) {
+        if(target.data("would-collapse") == collapse)
+            return false;
         target.data("would-collapse", collapse);
         if(persist && rcloud.config && target.length) {
             var opt = 'ui/' + target[0].id;
             rcloud.config.set_user_option(opt, collapse);
         }
+        return true;
     }
     function all_collapsed() {
         return $.makeArray(collapsibles()).every(function(el) {
@@ -3299,11 +3302,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 this.show(true);
                 return;
             }
-            set_collapse(target, whether, persist);
+            var change = set_collapse(target, whether, persist);
             if(all_collapsed())
-                this.hide(persist);
+                this.hide(persist, !change);
             else
-                this.show(persist);
+                this.show(persist, !change);
         },
         resize: function(skip_calc) {
             if(!skip_calc) {
