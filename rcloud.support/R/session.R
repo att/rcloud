@@ -1,6 +1,14 @@
 .session <- new.env(parent=emptyenv())
 .session$device.pixel.ratio <- 1
 
+rcloud.session.notebook.id <- function() {
+    .session$current.notebook$content$id
+}
+
+rcloud.session.notebook <- function() {
+    .session$current.notebook
+}
+
 ################################################################################
 ## evaluation of R code
 
@@ -14,11 +22,11 @@ canonicalize.command <- function(command, language) {
 }
 
 rcloud.get.gist.part <- function(partname) {
-  .session$current.notebook$content$files[[partname]]$content
+  rcloud.session.notebook()$content$files[[partname]]$content
 }
 
 rcloud.unauthenticated.session.cell.eval <- function(partname, language, silent) {
-  notebook.id <- .session$current.notebook$content$id
+  notebook.id <- rcloud.session.notebook.id()
   if (rcloud.is.notebook.published(notebook.id))
     rcloud.session.cell.eval(partname, language, silent)
   else

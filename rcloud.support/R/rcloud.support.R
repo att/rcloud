@@ -46,6 +46,10 @@ rcloud.load.notebook <- function(id, version = NULL) {
   res
 }
 
+## same as control, just don't return anything (and don't do anything if there is no separation)
+rcloud.load.notebook.compute <- function(...) { if (identical(.session$separate.compute, TRUE)) rcloud.load.notebook(...); NULL }
+rcloud.unauthenticated.load.notebook.compute <- function(...) { if (identical(.session$separate.compute, TRUE)) rcloud.unauthenticated.load.notebook(...); NULL }
+
 rcloud.get.version.by.tag <- function(gist_id,tag) {
   v <- rcs.get(rcs.key(username='.notebook', gist_id, 'tag2version', tag))
 }
@@ -74,7 +78,7 @@ rcloud.tag.notebook.version <- function(gist_id, version, tag_name) {
 }
 
 rcloud.install.notebook.stylesheets <- function() {
-  n <- .session$current.notebook$content
+  n <- rcloud.session.notebook()$content
   urls <- sapply(grep('^rcloud-.*\\.css$', names(n$files)), function(v) {
     n$files[[v]]$raw_url
   })
@@ -128,7 +132,7 @@ rcloud.unauthenticated.call.notebook <- function(id, version = NULL, args = NULL
 rcloud.notebook.cells <- function(id, version = NULL) {
   res <- rcloud.get.notebook(id, version)
   if (res$ok) {
-    if (is.null(.session$current.notebook)) ## no top level? set us as the session notebook so that get.asset et al work
+    if (is.null(rcloud.session.notebook())) ## no top level? set us as the session notebook so that get.asset et al work
       .session$current.notebook <- res
 
     ## get all files
@@ -151,7 +155,7 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE
 
   res <- rcloud.get.notebook(id, version)
   if (res$ok) {
-    if (is.null(.session$current.notebook)) ## no top level? set us as the session notebook so that get.asset et al work
+    if (is.null(rcloud.session.notebook())) ## no top level? set us as the session notebook so that get.asset et al work
       .session$current.notebook <- res
 
     args <- as.list(args)
@@ -241,9 +245,9 @@ rcloud.unauthenticated.notebook.by.name <- function(name, user=.session$username
 }
 
 rcloud.upload.to.notebook <- function(file, name) {
-  if (is.null(.session$current.notebook))
+  if (is.null(rcloud.session.notebook()))
     stop("Notebook must be loaded")
-  id <- .session$current.notebook$content$id
+  id <- rcloud.session.notebook.id()
   ulog("RCloud rcloud.upload.to.notebook(id=", id, ", name=", name, ")")
   files <- list()
   files[[name]] <- list(content=rawToChar(file))
