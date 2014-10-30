@@ -81,6 +81,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["get_conf_value"],
             ["get_notebook"],
             ["load_notebook"],
+            ["load_notebook_compute"],
             ["call_notebook"],
             ["install_notebook_stylesheets"],
             ["tag_notebook_version"],
@@ -147,6 +148,10 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         rcloud.load_notebook = function(id, version) {
+            // FIXME: some bluebird guru, please check this
+            // The intention is to call load_notebook_compute asynchronously and not care about the result
+            rcloud_ocaps.load_notebook_computeAsync(id, version);
+
             return rcloud_github_handler(
                 "rcloud.load.notebook " + id,
                 rcloud_ocaps.load_notebookAsync(id, version));

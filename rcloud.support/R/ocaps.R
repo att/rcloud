@@ -51,7 +51,8 @@ compute.ocaps <- function(mode, authenticated) {
         unauthenticated_call_notebook = make.oc(rcloud.unauthenticated.call.notebook),
         unauthenticated_call_fastrweb_notebook = make.oc(rcloud.unauthenticated.call.FastRWeb.notebook),
         unauthenticated_compute_init = make.oc(rcloud.anonymous.compute.init),
-        reset_session = make.oc(rcloud.reset.session)
+        reset_session = make.oc(rcloud.reset.session),
+        load_notebook = if (authenticated) make.oc(rcloud.load.notebook.compute) else make.oc(rcloud.unauthenticated.load.notebook.compute)
         )
     if (authenticated) c(caps, list(
         compute_init = make.oc(rcloud.compute.init),
@@ -92,6 +93,7 @@ unauthenticated.ocaps <- function(mode, compute)
       get_conf_value = make.oc(rcloud.get.conf.value),
       get_notebook = make.oc(rcloud.unauthenticated.get.notebook),
       load_notebook = make.oc(rcloud.unauthenticated.load.notebook),
+      load_notebook_compute = compute$load_notebook,
       call_notebook = compute$unauthenticated_call_notebook,
       call_fastrweb_notebook = compute$unauthenticated_call_fastrweb_notebook,
       notebook_by_name = make.oc(rcloud.unauthenticated.notebook.by.name),
