@@ -260,7 +260,7 @@ rcloud.update.notebook <- function(id, content) {
     star.count <- rcloud.notebook.star.count(id)
     mcparallel(update.solr(res, star.count), detached=TRUE)
   }
-  res
+  rcloud.augment.notebook(res)
 }
 
 update.solr <- function(notebook, starcount){
