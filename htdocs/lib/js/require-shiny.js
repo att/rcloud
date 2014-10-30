@@ -21,13 +21,15 @@ requirejs_config_obj = {
 };
 
 var deps = [
-    "bluebird", "underscore", "rserve", "mini", "rcloud_bundle", "datatables", "selectize"
+    "bluebird", "underscore", "d3", "rserve", "mini", "rcloud_bundle", "datatables", "selectize"
 ];
 
 function start_require(deps) {
     require(deps,
-        function(Promise) {
+        function(Promise, _, d3) {
             window.Promise = Promise;
+            window._ = _;
+            window.d3 = d3;
             main();
         });
 }
