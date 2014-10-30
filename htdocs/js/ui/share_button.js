@@ -30,6 +30,9 @@ RCloud.UI.share_button = (function() {
             case 'mini.html':
                 suffix = type_ + '?notebook=' + shell.gistname();
                 break;
+            case 'shiny.html':
+                suffix = type_ + '?notebook=' + shell.gistname();
+                break;
             case 'view.html':
             default:
                 suffix = 'view.html?notebook=' + shell.gistname();
@@ -37,7 +40,7 @@ RCloud.UI.share_button = (function() {
             link += suffix;
             var v = shell.version();
             if(v)
-                link += query_started?'&':'?' + 'version=' + v;
+                link += (query_started?'&':'?') + 'version=' + v;
             $("#share-link").attr("href", link);
         }
     };

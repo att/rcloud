@@ -125,7 +125,7 @@ RCloud.promisify_paths = (function() {
         };
     }
 
-    function process_paths(ocaps, paths) {
+    function process_paths(ocaps, paths, replace) {
         function get(path) {
             var v = ocaps;
             for (var i=0; i<path.length; ++i)
@@ -137,9 +137,10 @@ RCloud.promisify_paths = (function() {
             var v = ocaps;
             for (var i=0; i<path.length-1; ++i)
                 v = v[path[i]];
-            v[path[path.length-1] + "Async"] = val;
+            v[path[path.length-1] + suffix] = val;
         }
 
+        var suffix = replace ? '' : 'Async';
         _.each(paths, function(path) {
             var fn = get(path);
             set(path, fn ? rcloud_handler(path.join('.'), Promise.promisify(fn)) : null);
@@ -180,6 +181,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["call_notebook"],
             ["install_notebook_stylesheets"],
             ["tag_notebook_version"],
+            ["get_version_by_tag"],
             ["get_users"],
             ["log", "record_cell_execution"],
             ["setup_js_installer"],
@@ -245,6 +247,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.tag_notebook_version = function(gist_id,version,tag_name) {
             return rcloud_ocaps.tag_notebook_versionAsync(gist_id,version,tag_name);
+        };
+
+        rcloud.get_version_of_tag = function(gist_id,tag) {
+            return rcloud_ocaps.get_version_of_tagAsync(gist_id,tag);
         };
 
         rcloud.call_notebook = function(id, version) {
@@ -420,6 +426,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["config", "clear_recent_notebook"],
             ["config", "get_user_option"],
             ["config", "set_user_option"],
+            ["config", "get_alluser_option"],
             ["get_notebook_info"],
             ["get_multiple_notebook_infos"],
             ["set_notebook_info"],
@@ -553,7 +560,8 @@ RCloud.create = function(rcloud_ocaps) {
             set_recent_notebook: rcloud_ocaps.config.set_recent_notebookAsync,
             clear_recent_notebook: rcloud_ocaps.config.clear_recent_notebookAsync,
             get_user_option: rcloud_ocaps.config.get_user_optionAsync,
-            set_user_option: rcloud_ocaps.config.set_user_optionAsync
+            set_user_option: rcloud_ocaps.config.set_user_optionAsync,
+            get_alluser_option: rcloud_ocaps.config.get_alluser_optionAsync
         };
 
         // notebook cache
@@ -583,6 +591,23 @@ RCloud.create = function(rcloud_ocaps) {
     return rcloud;
 };
 var ui_utils = {};
+
+ui_utils.url_maker = function(page) {
+    return function(opts) {
+        opts = opts || {};
+        var url = window.location.protocol + '//' + window.location.host + '/' + page;
+        if(opts.notebook) {
+            url += '?notebook=' + opts.notebook;
+            if(opts.version && !opts.tag)
+                url = url + '&version='+opts.version;
+            if(opts.tag && opts.version)
+                url = url + '&tag='+opts.tag;
+        }
+        else if(opts.new_notebook)
+            url += '?new_notebook=true';
+        return url;
+    };
+};
 
 ui_utils.disconnection_error = function(msg, label) {
     var result = $("<div class='alert alert-danger'></div>");
@@ -974,25 +999,26 @@ ui_utils.editable = function(elem$, command) {
             // allow default action but don't bubble (causing eroneous reselection in notebook tree)
         });
         elem$.keydown(function(e) {
-            var entr_key = (e.keyCode === 13);
-            if (options().ctrl_cmd && entr_key && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                var txt = elem$.text();
-                txt = decode(txt);
-                elem$.blur();
-                options().ctrl_cmd(txt);
-            }
-            else if((command.allow_multiline && (entr_key && (e.ctrlKey || e.metaKey))) || (entr_key && !command.allow_multiline)) {
-                e.preventDefault();
-                var txt = elem$.text();
-                txt = decode(txt);
-                if(options().validate(txt)) {
-                    options().__active = false;
-                    elem$.off('blur'); // don't cancel!
-                    elem$.blur();
-                    options().change(txt);
-                } else {
-                    return false; // don't let CR through!
+            if(e.keyCode === 13) {
+                var txt = decode(elem$.text());
+                function execute_if_valid_else_ignore(f) {
+                    if(options().validate(txt)) {
+                        options().__active = false;
+                        elem$.off('blur'); // don't cancel!
+                        elem$.blur();
+                        f(txt);
+                        return true;
+                    } else {
+                        return false; // don't let CR through!
+                    }
+                }
+                if (options().ctrl_cmd && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    return execute_if_valid_else_ignore(options().ctrl_cmd);
+                }
+                else if(!command.allow_multiline || (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    return execute_if_valid_else_ignore(options().change);
                 }
             } else if(e.keyCode === 27) {
                 elem$.blur(); // and cancel
@@ -1716,6 +1742,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             _($("img")).each(function(img, ix, $q) {
                 ensure_image_has_hash(img);
                 if (img.getAttribute("src").substr(0,10) === "data:image" &&
+                    img.getAttribute("alt") != null &&
                     img.getAttribute("alt").substr(0,13) === "plot of chunk" &&
                     ix > 0 &&
                     img.dataset.sha256 === $q[ix-1].dataset.sha256) {
@@ -1932,6 +1959,9 @@ Notebook.Cell.create_controller = function(cell_model)
             var language = cell_model.language() || 'Text'; // null is a synonym for Text
             function callback(r) {
                 that.set_status_message(r);
+                _.each(cell_model.parent_model.execution_watchers, function(ew) {
+                    ew.run_cell(cell_model);
+                });
             }
             var promise;
 
@@ -1967,6 +1997,11 @@ Notebook.create_html_view = function(model, root_div)
         });
     }
 
+    function init_cell_view(cell_view) {
+        cell_view.set_readonly(model.read_only()); // usu false but future-proof it
+        cell_view.show_source();
+    }
+
     var result = {
         model: model,
         sub_views: [],
@@ -1976,6 +2011,7 @@ Notebook.create_html_view = function(model, root_div)
             cell_model.views.push(cell_view);
             root_div.append(cell_view.div());
             this.sub_views.push(cell_view);
+            init_cell_view(cell_view);
             on_rearrange();
             return cell_view;
         },
@@ -1993,7 +2029,7 @@ Notebook.create_html_view = function(model, root_div)
             root_div.append(cell_view.div());
             $(cell_view.div()).insertBefore(root_div.children('.notebook-cell')[cell_index]);
             this.sub_views.splice(cell_index, 0, cell_view);
-            cell_view.show_source();
+            init_cell_view(cell_view);
             on_rearrange();
             return cell_view;
         },
@@ -2064,6 +2100,7 @@ Notebook.create_model = function()
         assets: [],
         views: [], // sub list for cell content pubsub
         dishers: [], // for dirty bit pubsub
+        execution_watchers: [],
         clear: function() {
             var cells_removed = this.remove_cell(null,last_id(this.cells));
             var assets_removed = this.remove_asset(null,this.assets.length);
@@ -2505,9 +2542,12 @@ Notebook.create_controller = function(model)
     }
 
     function apply_changes_and_load(changes, gistname) {
-        return changes.length ?
+        return (changes.length ?
             update_notebook(changes, gistname) :
-            result.load_notebook(gistname, null); // do a load - we need to refresh
+            Promise.resolve(undefined))
+            .then(function() {
+                return result.load_notebook(gistname, null); // do a load - we need to refresh
+            });
     }
 
     function refresh_buffers() {
@@ -3174,11 +3214,14 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         return $(sel_accordion + " > .panel > div.panel-heading");
     }
     function set_collapse(target, collapse, persist) {
+        if(target.data("would-collapse") == collapse)
+            return false;
         target.data("would-collapse", collapse);
         if(persist && rcloud.config && target.length) {
             var opt = 'ui/' + target[0].id;
             rcloud.config.set_user_option(opt, collapse);
         }
+        return true;
     }
     function all_collapsed() {
         return $.makeArray(collapsibles()).every(function(el) {
@@ -3261,11 +3304,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 this.show(true);
                 return;
             }
-            set_collapse(target, whether, persist);
+            var change = set_collapse(target, whether, persist);
             if(all_collapsed())
-                this.hide(persist);
+                this.hide(persist, !change);
             else
-                this.show(persist);
+                this.show(persist, !change);
         },
         resize: function(skip_calc) {
             if(!skip_calc) {
@@ -3456,19 +3499,38 @@ RCloud.UI.command_prompt = (function() {
     var show_prompt_ = false, // start hidden so it won't flash if user has it turned off
         readonly_ = true;
     function show_or_hide() {
-        if(!readonly_ && show_prompt_)
-            $('#prompt-div').show();
-        else
-            $('#prompt-div').hide();
+        var prompt_div = $('#prompt-div'),
+            prompt = $('#command-prompt'),
+            controls = $('#prompt-div .cell-status .cell-controls');
+        if(readonly_)
+            prompt_div.hide();
+        else {
+            prompt_div.show();
+            if(show_prompt_) {
+                prompt.show();
+                controls.removeClass('flipped');
+            }
+            else {
+                prompt.hide();
+                controls.addClass('flipped');
+            }
+        }
     }
     return {
         prompt: null,
         history: null,
         init: function() {
             var prompt = $(RCloud.UI.panel_loader.load_snippet('command-prompt-snippet'));
-            if(!show_prompt_)
-                prompt.hide();
             $('#rcloud-cellarea').append(prompt);
+            $("#insert-new-cell").click(function() {
+                var language = RCloud.UI.command_prompt.get_language();
+                shell.new_cell("", language, false);
+                var vs = shell.notebook.view.sub_views;
+                vs[vs.length-1].show_source();
+            });
+            $("#insert-cell-language").change(function() {
+                window.localStorage["last_cell_lang"] = RCloud.UI.command_prompt.get_language();
+            });
             this.history = this.setup_prompt_history();
             this.prompt = this.setup_command_prompt();
         },
@@ -3755,7 +3817,7 @@ RCloud.UI.comments_frame = (function() {
             var scroll_height = "";
             $("#comment-submit").click(function() {
                 if(!Notebook.empty_for_github(comment.val())) {
-                    that.post_comment(comment.val());
+                    that.post_comment(_.escape(comment.val()));
                     comment.height("41px");
                 }
                 return false;
@@ -3764,7 +3826,7 @@ RCloud.UI.comments_frame = (function() {
             comment.keydown(function (e) {
                 if (e.keyCode == 13 && (e.ctrlKey || e.metaKey)) {
                     if(!Notebook.empty_for_github(comment.val())) {
-                        that.post_comment(comment.val());
+                        that.post_comment(_.escape(comment.val()));
                         comment.height("41px");
                         count = 0;
                         scroll_height = "";
@@ -3967,16 +4029,6 @@ RCloud.UI.init = function() {
         shell.import_notebook_file();
     });
 
-    $("#insert-new-cell").click(function() {
-        var language = RCloud.UI.command_prompt.get_language();
-        shell.new_cell("", language, false);
-        var vs = shell.notebook.view.sub_views;
-        vs[vs.length-1].show_source();
-    });
-    $("#insert-cell-language").change(function() {
-        window.localStorage["last_cell_lang"] = RCloud.UI.command_prompt.get_language();
-    });
-
     $("#rcloud-logout").click(function() {
         // let the server-side script handle this so it can
         // also revoke all tokens
@@ -4139,7 +4191,7 @@ RCloud.UI.notebook_title = (function() {
             var ellipt_start = false, ellipt_end = false;
             var title = $('#notebook-title');
             title.text(text);
-            while(window.innerWidth - title.width() < 505) {
+            while(window.innerWidth - title.width() < 650) {
                 var slash = text.search('/');
                 if(slash >= 0) {
                     ellipt_start = true;
@@ -4153,16 +4205,26 @@ RCloud.UI.notebook_title = (function() {
                            text +
                            (ellipt_end ? '...' : ''));
             }
-            ui_utils.editable(title, $.extend({allow_edit: !is_read_only,
+            ui_utils.editable(title, $.extend({allow_edit: !is_read_only && !shell.is_view_mode(),
                                                inactive_text: title.text(),
                                                active_text: active_text},
                                               editable_opts));
-        }, make_editable: function(node, editable) {
+        },
+        update_fork_info: function(fork_of) {
+            if(fork_of) {
+                var fork_desc = fork_of.owner.login+ " / " + fork_of.description;
+                var url = ui_utils.url_maker(shell.is_view_mode()?'view.html':'edit.html')({notebook: fork_of.id});
+                $("#forked-from-desc").html("forked from <a href='" + url + "'>" + fork_desc + "</a>");
+            }
+            else
+                $("#forked-from-desc").text("");
+        },
+        make_editable: function(node, $li, editable) {
             function get_title(node) {
                 if(!node.version) {
-                    return $('.jqtree-title:not(.history)', node.element);
+                    return $('.jqtree-title:not(.history)', $li);
                 } else {
-                    return $('.jqtree-title', node.element);
+                    return $('.jqtree-title', $li);
                 }
             }
             if(last_editable_ && (!node || last_editable_ !== node))
@@ -4806,7 +4868,7 @@ return {
     },
     panel_sizer: function(el) {
         var padding = RCloud.UI.collapsible_column.default_padder(el);
-        var height = 24 + $('#search-summary').height() + $('#search-results').height();
+        var height = 24 + $('#search-summary').height() + $('#search-results').height() + $('#search-results-pagination').height();
         height += 30; // there is only so deep you can dig
         return {height: height, padding: padding};
     },
@@ -4826,8 +4888,9 @@ return {
     },
 
     exec: function(query, sortby, orderby, start, noofrows, pgclick) {
-        function summary(html) {
-            $("#search-summary").show().html($("<h4 />").append(html));
+        function summary(html, color) {
+            $('#search-summary').css('color', color || 'black');
+            $("#search-summary").show().html($("<h4/>").append(html));
         }
         function create_list_of_search_results(d) {
             var i;
@@ -4835,7 +4898,9 @@ return {
                 summary("No Results Found");
             } else if(d[0] === "error") {
                 d[1] = d[1].replace(/\n/g, "<br/>");
-                summary("ERROR:\n" + d[1]);
+                if($('#paging').html != "")
+                    $('#paging').html("");
+                summary("ERROR:\n" + d[1], 'darkred');
             } else {
                 if(typeof (d) === "string") {
                     d = JSON.parse("[" + d + "]");
@@ -4869,7 +4934,7 @@ return {
                             star_count = d[i].starcount;
                         }
                         var notebook_id = d[i].id;
-                        var image_string = "<i class=\"icon-star\" style=\"font-size: 110%; line-height: 90%;\"><sub>" + star_count + "</sub></i>";
+                        var image_string = "<i class=\"icon-star search-star\"><sub>" + star_count + "</sub></i>";
                         d[i].parts = JSON.parse(d[i].parts);
                         var parts_table = "";
                         var inner_table = "";
@@ -4887,8 +4952,22 @@ return {
                                 if(content.length > 0)
                                     parts_table += "<tr><th class='search-result-part-name'>" + d[i].parts[k].filename + "</th></tr>";
                                 for(var l = 0; l < content.length; l++) {
-                                    inner_table += "<tr><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
+                                    if (d[i].parts[k].filename === "comments") {
+                                        var split = content[l].split(/ *::: */);
+                                        if(split.length < 2)
+                                            split = content[l].split(/ *: */); // old format had single colons
+                                        var comment_content = split[1] || '';
+                                        if(!comment_content)
+                                            continue;
+                                        var comment_author = split[2] || '';
+                                        var display_comment = comment_author ? (comment_author + ': ' + comment_content) : comment_content;
+                                        inner_table += "<tr><td class='search-result-comment'><span class='search-result-comment-content'>" + comment_author + ": " + comment_content + "</span></td></tr>";
+                                    }
+                                    else {
+                                        inner_table += "<tr><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
+                                    }
                                 }
+
                                 if (d[i].parts[k].filename != "comments") {
                                     nooflines += inner_table.match(/\|-\|/g).length;
                                 }
@@ -4897,17 +4976,17 @@ return {
                             if(inner_table !== "") {
                                 inner_table = inner_table.replace(/\|-\|,/g, '<br>').replace(/\|-\|/g, '<br>');
                                 inner_table = inner_table.replace(/line_no/g,'|');
-                                inner_table = "<table>" + inner_table + "</table>";
+                                inner_table = "<table style='width: 100%'>" + inner_table + "</table>";
                                 parts_table += "<tr><td>" + inner_table + "</td></tr>";
                             }
                         }
                         var togid = i + "more";
                         if(parts_table !== "") {
                             if(nooflines > 10) {
-                                parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table>" + parts_table + "</table></div>" +
+                                parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div>" +
                                     "<div style=\"position: relative;\"><a href=\"#\" id='"+togid+"' onclick=\"RCloud.UI.search.toggle("+i+",'"+togid+"');\" style=\"color:orange\">Show me more...</a></div></div>";
                             } else {
-                                parts_table = "<div><div id='"+i+"'><table>" + parts_table + "</table></div></div>";
+                                parts_table = "<div><div id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div></div>";
                             }
                         }
                         search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" +
@@ -4918,7 +4997,7 @@ return {
                             search_results += "<tr><td colspan=2 width=100% style='font-size: 12'><div>" + parts_table + "</div></td></tr>";
                         search_results += "</table>";
                     } catch(e) {
-                        summary("Error : \n" + e);
+                        summary("Error : \n" + e, 'darkred');
                     }
                 }
                 if(!pgclick) {
@@ -4942,13 +5021,12 @@ return {
                 var qry = decodeURIComponent(query);
                 qry = qry.replace(/</g,'&lt;');
                 qry = qry.replace(/>/g,'&gt;');
-                var search_summary;
                 if(numfound === 0) {
-                    var search_summary = "No Results Found";
+                    summary("No Results Found");
                 } else if(parseInt(numfound) < page_size_){
-                    search_summary = numfound +" Results Found";
+                    summary(numfound +" Results Found", 'darkgreen');
                 } else {
-                    search_summary = numfound +" Results Found, showing ";
+                    var search_summary = numfound +" Results Found, showing ";
                     if(numfound-start === 1) {
                         search_summary += (start+1);
                     } else if((numfound - noofrows) > 0) {
@@ -4956,15 +5034,15 @@ return {
                     } else {
                         search_summary += (start+1)+" - "+numfound;
                     }
+                    summary(search_summary, 'darkgreen');
                 }
-                summary(search_summary);
                 $("#search-results-row").css('display', 'table-row');
                 $("#search-results-row").animate({ scrollTop: $(document).height() }, "slow");
                 $('#search-results').html(search_results);
                 $("#search-results .search-result-heading").click(function(e) {
                     e.preventDefault();
                     var gistname = $(this).attr("data-gistname");
-                    editor.open_notebook(gistname, null, null, true, e.metaKey || e.ctrlKey);
+                    editor.open_notebook(gistname, null, null, e.metaKey || e.ctrlKey);
                     return false;
                 });
             }
@@ -4972,8 +5050,10 @@ return {
         }
 
         summary("Searching...");
-        $("#search-results-row").hide();
-        $("#search-results").html("");
+        if(!pgclick) {
+            $("#search-results-row").hide();
+            $("#search-results").html("");
+        }
         query = encodeURIComponent(query);
         RCloud.UI.with_progress(function() {
             return rcloud.search(query, sortby, orderby, start, page_size_)
@@ -5009,6 +5089,12 @@ RCloud.UI.session_pane = {
             that.post_rejection(e);
         });
 
+    },
+    panel_sizer: function(el) {
+        var def = RCloud.UI.collapsible_column.default_sizer(el);
+        if(def.height)
+            def.height += 20; // scrollbar height can screw it up
+        return def;
     },
     error_dest: function() {
         return this.error_dest_;
@@ -5182,6 +5268,9 @@ RCloud.UI.share_button = (function() {
             case 'mini.html':
                 suffix = type_ + '?notebook=' + shell.gistname();
                 break;
+            case 'shiny.html':
+                suffix = type_ + '?notebook=' + shell.gistname();
+                break;
             case 'view.html':
             default:
                 suffix = 'view.html?notebook=' + shell.gistname();
@@ -5189,7 +5278,7 @@ RCloud.UI.share_button = (function() {
             link += suffix;
             var v = shell.version();
             if(v)
-                link += query_started?'&':'?' + 'version=' + v;
+                link += (query_started?'&':'?') + 'version=' + v;
             $("#share-link").attr("href", link);
         }
     };

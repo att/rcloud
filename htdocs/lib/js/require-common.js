@@ -2,10 +2,11 @@ requirejs_config_obj = {
     "baseUrl": "/lib/js",
     waitSeconds: 30,
     paths: {
-        "jquery": "../../shared/jquery",
-        "jquery-ui": "../../shared/jqueryui/1.10.4/jquery-ui",
+        "jquery": "jquery-1.10.2",
         "rcloud_bundle": "../../js/rcloud_bundle",
-        "ace": "../ace_bundle"
+        "ace": "../ace_bundle",
+        editor_tab: "../../editor_tab",
+        shell_tab: "../../shell_tab"
     },
     "shim": {
         "tree.jquery": ["jquery"],
@@ -16,8 +17,8 @@ requirejs_config_obj = {
         "jquery.scrollto": ["jquery"],
         "jquery.whiny": ["jquery"],
         "bootstrap": ["jquery"],
-        "../../shell_tab": ["rcloud_bundle", "../../editor_tab"],
-        "../../editor_tab": ["rcloud_bundle", "laconic", "tree.jquery"],
+        "shell_tab": ["rcloud_bundle", "editor_tab"],
+        "editor_tab": ["rcloud_bundle", "laconic", "tree.jquery"],
         "rserve": ["underscore"],
         "rcloud_bundle": ["ace", "jquery.cookies.2.2.0", "jquery.bootpag", "jquery.scrollto", "jquery-ui", "hl.min", "bootstrap"
                           // ,"jquery.whiny" // enable/disable jquery.whiny here

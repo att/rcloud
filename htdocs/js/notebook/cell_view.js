@@ -347,6 +347,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             _($("img")).each(function(img, ix, $q) {
                 ensure_image_has_hash(img);
                 if (img.getAttribute("src").substr(0,10) === "data:image" &&
+                    img.getAttribute("alt") != null &&
                     img.getAttribute("alt").substr(0,13) === "plot of chunk" &&
                     ix > 0 &&
                     img.dataset.sha256 === $q[ix-1].dataset.sha256) {

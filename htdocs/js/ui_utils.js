@@ -1,5 +1,22 @@
 var ui_utils = {};
 
+ui_utils.url_maker = function(page) {
+    return function(opts) {
+        opts = opts || {};
+        var url = window.location.protocol + '//' + window.location.host + '/' + page;
+        if(opts.notebook) {
+            url += '?notebook=' + opts.notebook;
+            if(opts.version && !opts.tag)
+                url = url + '&version='+opts.version;
+            if(opts.tag && opts.version)
+                url = url + '&tag='+opts.tag;
+        }
+        else if(opts.new_notebook)
+            url += '?new_notebook=true';
+        return url;
+    };
+};
+
 ui_utils.disconnection_error = function(msg, label) {
     var result = $("<div class='alert alert-danger'></div>");
     result.append($("<span></span>").text(msg));
@@ -391,25 +408,26 @@ ui_utils.editable = function(elem$, command) {
             // allow default action but don't bubble (causing eroneous reselection in notebook tree)
         });
         elem$.keydown(function(e) {
-            var entr_key = (e.keyCode === 13);
-            if (options().ctrl_cmd && entr_key && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                var txt = elem$.text();
-                txt = decode(txt);
-                elem$.blur();
-                options().ctrl_cmd(txt);
-            }
-            else if((command.allow_multiline && (entr_key && (e.ctrlKey || e.metaKey))) || (entr_key && !command.allow_multiline)) {
-                e.preventDefault();
-                var txt = elem$.text();
-                txt = decode(txt);
-                if(options().validate(txt)) {
-                    options().__active = false;
-                    elem$.off('blur'); // don't cancel!
-                    elem$.blur();
-                    options().change(txt);
-                } else {
-                    return false; // don't let CR through!
+            if(e.keyCode === 13) {
+                var txt = decode(elem$.text());
+                function execute_if_valid_else_ignore(f) {
+                    if(options().validate(txt)) {
+                        options().__active = false;
+                        elem$.off('blur'); // don't cancel!
+                        elem$.blur();
+                        f(txt);
+                        return true;
+                    } else {
+                        return false; // don't let CR through!
+                    }
+                }
+                if (options().ctrl_cmd && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    return execute_if_valid_else_ignore(options().ctrl_cmd);
+                }
+                else if(!command.allow_multiline || (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    return execute_if_valid_else_ignore(options().change);
                 }
             } else if(e.keyCode === 27) {
                 elem$.blur(); // and cancel

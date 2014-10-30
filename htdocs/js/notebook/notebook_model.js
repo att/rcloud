@@ -22,6 +22,7 @@ Notebook.create_model = function()
         assets: [],
         views: [], // sub list for cell content pubsub
         dishers: [], // for dirty bit pubsub
+        execution_watchers: [],
         clear: function() {
             var cells_removed = this.remove_cell(null,last_id(this.cells));
             var assets_removed = this.remove_asset(null,this.assets.length);

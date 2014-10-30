@@ -10,6 +10,26 @@ rcloud.get.conf.value <- function(key) {
     NULL
 }
 
+# any attributes we want to add onto what github gives us
+rcloud.augment.notebook <- function(res) {
+  notebook <- res$content
+  fork.of <- rcloud.get.notebook.property(notebook$id, 'fork_of')
+  if(!is.null(fork.of))
+    res$content$fork_of <- fork.of
+
+  hist <- res$content$history
+  versions <- lapply(hist, function(h) { h$version })
+  version2tag <- rcs.get(rcloud.support:::rcs.key('.notebook', notebook$id, 'version2tag', versions), list=TRUE)
+  names(version2tag) <- versions
+  version2tag <- Filter(Negate(is.null), version2tag)
+
+  for(i in 1:length(hist)) {
+    tag <- version2tag[[hist[[i]]$version]]
+    if(!is.null(tag))
+        res$content$history[[i]]$tag <- tag
+  }
+  res
+}
 rcloud.unauthenticated.load.notebook <- function(id, version = NULL) {
   if (!rcloud.is.notebook.published(id))
     stop("Notebook does not exist or has not been published")
@@ -23,22 +43,16 @@ rcloud.load.notebook <- function(id, version = NULL) {
     .session$current.notebook <- res
     rcloud.reset.session()
   }
-  hist <- res$content$history
-
-  versions <- lapply(hist, function(h) { h$version })
-  version2tag <- rcs.get(rcloud.support:::rcs.key('.notebook', id, 'version2tag', versions), list=TRUE)
-  names(version2tag) <- versions
-  version2tag <- Filter(Negate(is.null), version2tag)
-
-  for(i in 1:length(hist)) {
-    tag <- version2tag[[hist[[i]]$version]]
-    if(!is.null(tag))
-        res$content$history[[i]]$tag <- tag;
-  }
   res
 }
 
+rcloud.get.version.by.tag <- function(gist_id,tag) {
+  v <- rcs.get(rcs.key(username='.notebook', gist_id, 'tag2version', tag))
+}
+
 rcloud.tag.notebook.version <- function(gist_id, version, tag_name) {
+  if(!notebook.is.mine(gist_id))
+    return(FALSE)
   tag2version <- function(tag) rcs.key(username='.notebook', gist_id, 'tag2version', tag)
   version2tag <- function(version) rcs.key(username='.notebook', gist_id, 'version2tag', version)
   version.had.tag <- rcs.get(version2tag(version))
@@ -56,6 +70,7 @@ rcloud.tag.notebook.version <- function(gist_id, version, tag_name) {
   else {
     rcs.rm(version2tag(version))
   }
+  TRUE
 }
 
 rcloud.install.notebook.stylesheets <- function() {
@@ -93,7 +108,7 @@ rcloud.get.notebook <- function(id, version = NULL) {
       print(res)
     }
   }
-  res
+  rcloud.augment.notebook(res)
 }
 
 ## this evaluates a notebook for its result
@@ -109,14 +124,36 @@ rcloud.unauthenticated.call.notebook <- function(id, version = NULL, args = NULL
   rcloud.call.notebook(id, version, args)
 }
 
-rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE) {
-  ulog("RCloud rcloud.call.notebook(", id, ",", version, ")")
-  
+# get notebook cells, in sorted order
+rcloud.notebook.cells <- function(id, version = NULL) {
   res <- rcloud.get.notebook(id, version)
   if (res$ok) {
     if (is.null(.session$current.notebook)) ## no top level? set us as the session notebook so that get.asset et al work
       .session$current.notebook <- res
-      
+
+    ## get all files
+    p <- res$content$files
+    p <- p[grep("^part", names(p))]
+    n <- names(p)
+    if (!length(n)) return(NULL)
+    ## extract the integer number
+    i <- suppressWarnings(as.integer(gsub("^\\D+(\\d+)\\..*", "\\1", n)))
+    result <- NULL
+    ## sort
+    p[match(sort.int(i), i)]
+  }
+  else NULL
+}
+
+# todo: use rcloud.notebook.cells which was pulled out of here
+rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE) {
+  ulog("RCloud rcloud.call.notebook(", id, ",", version, ")")
+
+  res <- rcloud.get.notebook(id, version)
+  if (res$ok) {
+    if (is.null(.session$current.notebook)) ## no top level? set us as the session notebook so that get.asset et al work
+      .session$current.notebook <- res
+
     args <- as.list(args)
     ## this is a hack for now - we should have a more general infrastructure for this ...
     ## get all files
@@ -418,7 +455,7 @@ rcloud.is.notebook.visible <- function(id) {
 }
 
 rcloud.set.notebook.visibility <- function(id, value)
-  rcloud.set.notebook.property("visibile", id, value != 0);
+  rcloud.set.notebook.property(id, "visible", value != 0);
 
 rcloud.port.notebooks <- function(url, books, prefix) {
   foreign.ctx <- create.github.context(url)
@@ -590,6 +627,9 @@ rcloud.config.get.user.option <- function(key) {
 
 rcloud.config.set.user.option <- function(key, value)
   rcs.set(rcs.key(user=.session$username, notebook="system", "config", key), value)
+
+rcloud.config.get.alluser.option <- function(key)
+  rcs.get(rcs.key(user=".allusers", notebook="system", "config", key))
 
 ################################################################################
 # notebook cache

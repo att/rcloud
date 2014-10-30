@@ -227,6 +227,12 @@ rect.frame {
     background-color: white;
 }
 
+.cell-status .cell-controls.flipped {
+    top: 0;
+    bottom: auto;
+    border-radius: 0px 0px 4px 4px;
+}
+
 .notebook-cell .cell-insert-control {
     color: #555;
     position: absolute;
@@ -434,11 +440,6 @@ li.jqtree-selected .notebook-commands {
     margin-bottom: 0px;
 }
 
-#search-wrapper td, #search-wrapper tr {
-    padding: 0;
-    margin: 0;
-}
-
 #search-header {
     display: table-row;
     width: 100%;
@@ -461,27 +462,42 @@ li.jqtree-selected .notebook-commands {
 
 #search-results-pagination {
     display:table-row;
+    text-align:center
 }
 
 #search-results-scroller {
     overflow: auto;
     width: 100%;
-    height: 100%;
+    height: 100px;
+    max-height: 100%;
+    min-height: 100%;
 }
 
 .search-result-item {
-    margin-top: 1ex;
+    margin-top: 0.5ex;
 }
 .search-result-heading {
+    font-family: sans-serif;
+    font-size:12px;
     margin-right: 1em;
-    padding-top: 1ex
+    padding: 0;
+    padding-top: 1ex;
 }
 .search-result-modified-date {
     margin-left: 1ex;
 }
 .search-result-part-name {
+    font-family: sans-serif;
     font-size:11px;
-    padding-left:1em;
+    padding: 0;
+    padding-top: 2px;
+    padding-left: 0.5ex;
+}
+.search-star {
+    line-height: 90%;
+}
+.search-result-part-name:first-child {
+    padding-top: 0;
 }
 .search-result-line-number {
     width:10px;
@@ -489,7 +505,16 @@ li.jqtree-selected .notebook-commands {
     padding-right: 0.5ex;
 }
 .search-result-code {
-    padding-left: 0.5ex;
+    padding-left: 1ex;
+}
+.search-result-code code {
+    font-size: 10px;
+}
+.search-result-comment {
+    font-size: 10px;
+    width: auto;
+    padding: 0;
+    padding-left: 1ex;
 }
 
 /******************************************************************************/
@@ -697,6 +722,8 @@ li.jqtree-selected .notebook-commands {
     white-space: pre;
     max-width: none;
     display: inline-block;
+    font-size: 12px;
+    background-color: initial;
 }
 
 .session-error.spare {
@@ -911,6 +938,29 @@ a.accordion-toggle.right > i {
     background-color: rgba(224,224,224,0.75);
 }
 
+#forked-from-desc {
+    color: #777;
+    position: absolute;
+    bottom: 4px;
+    left: 6ex;
+    width: 700;
+    pointer-events: none;
+    cursor: text;
+    overflow-y: hidden;
+    height: 1.5em;
+}
+
+#forked-from-desc a {
+    color: #4265a7;
+    pointer-events: auto;
+}
+
+#forked-from-desc a:hover {
+    color: #428bca
+}
+
+
+
 /*****************************************************************************/
 /* Fix that awful select from webkit */
 
@@ -1044,7 +1094,17 @@ pre > .vt100 {
 .pagination {
     margin: 3px 0px;
 }
-.pagination-sm > li > a,
-.pagination-sm > li > span {
+.pagination > li > a,
+.pagination > li > span {
     padding: 3px 8px;
 }
+.btn-primary {
+    border-radius: 3px;
+}
+.btn-cancel {
+    color: #333;
+    background-color: #fff;
+    border-color: #ccc;
+    border-radius: 3px;
+}
+

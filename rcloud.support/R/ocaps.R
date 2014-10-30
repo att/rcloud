@@ -119,11 +119,13 @@ authenticated.ocaps <- function()
       create_notebook = make.oc(rcloud.create.notebook),
       rename_notebook = make.oc(rcloud.rename.notebook),
       tag_notebook_version = make.oc(rcloud.tag.notebook.version),
+      get_version_of_tag = make.oc(rcloud.get.version.by.tag),
       publish_notebook = make.oc(rcloud.publish.notebook),
       unpublish_notebook = make.oc(rcloud.unpublish.notebook),
       set_notebook_visibility = make.oc(rcloud.set.notebook.visibility),
       fork_notebook = make.oc(rcloud.fork.notebook),
       port_notebooks = make.oc(rcloud.port.notebooks),
+      notebook_cells = make.oc(rcloud.notebook.cells),
       call_notebook = make.oc(rcloud.call.notebook),
       get_completions = make.oc(rcloud.get.completions),
 
@@ -162,7 +164,8 @@ authenticated.ocaps <- function()
         set_recent_notebook = make.oc(rcloud.config.set.recent.notebook),
         clear_recent_notebook = make.oc(rcloud.config.clear.recent.notebook),
         get_user_option = make.oc(rcloud.config.get.user.option),
-        set_user_option = make.oc(rcloud.config.set.user.option)
+        set_user_option = make.oc(rcloud.config.set.user.option),
+        get_alluser_option = make.oc(rcloud.config.get.alluser.option)
         ),
 
       get_notebook_info = make.oc(rcloud.get.notebook.info),

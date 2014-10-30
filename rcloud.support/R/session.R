@@ -95,7 +95,7 @@ session.python.eval <- function(command) {
                 best_repr <- paste("<img src=\"data:image/", t, ";base64,",
                                    sub("\\s+$", "", chunk$png), "\">\n", sep='')
             } else if (t == "text") {
-                best_repr <- paste("<pre>", chunk$text, "</pre>", sep='')
+                best_repr <- chunk$text  # We assume things are html-escaped and in "<pre>"
             }
             break # bail out after the first representation we found along the hierarchy
          }
@@ -165,9 +165,9 @@ rcloud.reset.session <- function() {
   ## use the global workspace as the parent to avoid long lookups across irrelevant namespaces
   .session$knitr.env <- new.env(parent=.GlobalEnv)
   ## load all-user and per-user rcloud add-ons
-  all.addons <- rcs.get(rcs.key(user=".allusers", notebook="system", "config", "addons"))
+  all.addons <- rcloud.config.get.alluser.option("addons")
   user.addons <- rcloud.config.get.user.option("addons")
-  lapply(c(all.addons,user.addons), function(x) { require(x, character.only=TRUE) })
+  lapply(c(all.addons,user.addons), function(x) { suppressWarnings(suppressMessages(require(x, character.only=TRUE))) })
   ## FIXME: we should reset the knitr graphics state which lingers as well as the current device which is dirty at this point
   NULL
 }

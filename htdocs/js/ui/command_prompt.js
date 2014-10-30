@@ -2,19 +2,38 @@ RCloud.UI.command_prompt = (function() {
     var show_prompt_ = false, // start hidden so it won't flash if user has it turned off
         readonly_ = true;
     function show_or_hide() {
-        if(!readonly_ && show_prompt_)
-            $('#prompt-div').show();
-        else
-            $('#prompt-div').hide();
+        var prompt_div = $('#prompt-div'),
+            prompt = $('#command-prompt'),
+            controls = $('#prompt-div .cell-status .cell-controls');
+        if(readonly_)
+            prompt_div.hide();
+        else {
+            prompt_div.show();
+            if(show_prompt_) {
+                prompt.show();
+                controls.removeClass('flipped');
+            }
+            else {
+                prompt.hide();
+                controls.addClass('flipped');
+            }
+        }
     }
     return {
         prompt: null,
         history: null,
         init: function() {
             var prompt = $(RCloud.UI.panel_loader.load_snippet('command-prompt-snippet'));
-            if(!show_prompt_)
-                prompt.hide();
             $('#rcloud-cellarea').append(prompt);
+            $("#insert-new-cell").click(function() {
+                var language = RCloud.UI.command_prompt.get_language();
+                shell.new_cell("", language, false);
+                var vs = shell.notebook.view.sub_views;
+                vs[vs.length-1].show_source();
+            });
+            $("#insert-cell-language").change(function() {
+                window.localStorage["last_cell_lang"] = RCloud.UI.command_prompt.get_language();
+            });
             this.history = this.setup_prompt_history();
             this.prompt = this.setup_command_prompt();
         },

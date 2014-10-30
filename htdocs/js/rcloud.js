@@ -27,7 +27,7 @@ RCloud.promisify_paths = (function() {
         };
     }
 
-    function process_paths(ocaps, paths) {
+    function process_paths(ocaps, paths, replace) {
         function get(path) {
             var v = ocaps;
             for (var i=0; i<path.length; ++i)
@@ -39,9 +39,10 @@ RCloud.promisify_paths = (function() {
             var v = ocaps;
             for (var i=0; i<path.length-1; ++i)
                 v = v[path[i]];
-            v[path[path.length-1] + "Async"] = val;
+            v[path[path.length-1] + suffix] = val;
         }
 
+        var suffix = replace ? '' : 'Async';
         _.each(paths, function(path) {
             var fn = get(path);
             set(path, fn ? rcloud_handler(path.join('.'), Promise.promisify(fn)) : null);
@@ -82,6 +83,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["call_notebook"],
             ["install_notebook_stylesheets"],
             ["tag_notebook_version"],
+            ["get_version_by_tag"],
             ["get_users"],
             ["log", "record_cell_execution"],
             ["setup_js_installer"],
@@ -147,6 +149,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.tag_notebook_version = function(gist_id,version,tag_name) {
             return rcloud_ocaps.tag_notebook_versionAsync(gist_id,version,tag_name);
+        };
+
+        rcloud.get_version_of_tag = function(gist_id,tag) {
+            return rcloud_ocaps.get_version_of_tagAsync(gist_id,tag);
         };
 
         rcloud.call_notebook = function(id, version) {
@@ -322,6 +328,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["config", "clear_recent_notebook"],
             ["config", "get_user_option"],
             ["config", "set_user_option"],
+            ["config", "get_alluser_option"],
             ["get_notebook_info"],
             ["get_multiple_notebook_infos"],
             ["set_notebook_info"],
@@ -455,7 +462,8 @@ RCloud.create = function(rcloud_ocaps) {
             set_recent_notebook: rcloud_ocaps.config.set_recent_notebookAsync,
             clear_recent_notebook: rcloud_ocaps.config.clear_recent_notebookAsync,
             get_user_option: rcloud_ocaps.config.get_user_optionAsync,
-            set_user_option: rcloud_ocaps.config.set_user_optionAsync
+            set_user_option: rcloud_ocaps.config.set_user_optionAsync,
+            get_alluser_option: rcloud_ocaps.config.get_alluser_optionAsync
         };
 
         // notebook cache

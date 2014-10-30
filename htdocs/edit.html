@@ -44,21 +44,22 @@
       <div class="nav-collapse">
         <ul class="nav navbar-nav">
           <li><span><a href="#" id="share-link" title="Shareable Link" class="btn btn-link navbar-btn" style="text-decoration:none; padding-right: 0px" target="_blank"><i class="icon-share"></i></a>
-              <span class="dropdown" style="position:relative">
+              <span class="dropdown" style="position:relative; margin-left: -2px; padding-right: 12px">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown" id="view-mode"><b class="caret"></b></a>
                 <ul class="dropdown-menu view-menu" id="view-type">
                   <li><a href="#" id="view">view.html</a></li>
                   <li><a href="#" id="notebook">notebook.R</a></li>
                   <li><a href="#" id="mini">mini.html</a></li>
+                  <li><a href="#" id="shiny">shiny.html</a></li>
                 </ul>
               </span>
           </span></li> <!-- the span breaks the damn bootstrap li > a before .btn business-->
-          <li><button id="star-notebook" title="Add to Interests" type="button" class="btn btn-link navbar-btn"><i class="icon-star-empty"></i><sub><span id="curr-star-count" /></sub></button></li>
+          <li><button id="star-notebook" title="Add to Interests" type="button" class="btn btn-link navbar-btn" style="padding-left: 3px"><i class="icon-star-empty"></i><sub><span id="curr-star-count" /></sub></button></li>
           <li><button id="fork-notebook" title="Fork" type="button" class="btn btn-link navbar-btn"><i class="icon-code-fork"></i></button></li>
           <li><button id="save-notebook" title="Save" type="button" class="btn btn-link navbar-btn disabled" style="display:none;"><i class="icon-save"></i></button></li>
           <li><button id="revert-notebook" title="Revert" type="button" class="btn btn-link navbar-btn" style="display:none;"><i class="icon-undo"></i></button></li>
           <li><button id="run-notebook" title="Run All" type="button" class="btn btn-link navbar-btn"><i class="icon-play"></i></button></li>
-          <li><a href="#"><span id="notebook-author"></span><span id="author-title-dash" style="display:none;">&nbsp;&ndash;&nbsp;</span><span id="rename-notebook" title="Change Title">[<span id="notebook-title">loading...</span>]</a></li>
+          <li><a href="#"><span id="notebook-author"></span><span id="author-title-dash" style="display:none;">&nbsp;&ndash;&nbsp;</span><span id="rename-notebook" title="Change Title">[<span id="notebook-title">loading...</span>]</a></span><small id="forked-from-desc"></small></li>
           <li><a href="#" id="readonly-notebook" style="display:none;">(read-only)</a></li>
         </ul>
         <ul class="nav navbar-nav navbar-right">
@@ -116,15 +117,15 @@
             </div>
           </div>
         </form>
-        <div id="search-summary" style="margin:1px;height:8px;color:darkgreen;"></div>
+        <div id="search-summary" style="margin:1px;height:8px;"></div>
       </div>
       <div id="search-results-row">
         <div id="search-results-scroller">
           <div id="search-results"></div>
         </div>
       </div>
-      <div id="search-results-pagination" style="text-align:center">
-        <div id="paging" class="demo demo2"></div>
+      <div id="search-results-pagination">
+        <div id="paging"></div>
       </div>
     </div>
   </div>
