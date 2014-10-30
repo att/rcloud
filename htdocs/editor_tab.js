@@ -33,6 +33,7 @@ var editor = function () {
         num_stars_ = {}, // number of stars for all known notebooks
         my_stars_ = {}, // set of notebooks starred by me
         my_friends_ = {}, // people whose notebooks i've starred
+        featured_ = [], // featured users - samples, intros, etc
         invalid_notebooks_ = {},
         current_ = null; // current notebook and version
 
@@ -344,29 +345,41 @@ var editor = function () {
         return t2;
     }
 
-    function friend_from_all(datum) {
-        if(datum.delay_children)
-            load_children(datum);
-        var d2 = _.pick(datum, "label", "name", "gistname", "user", "visible", "last_commit", "sort_order");
-        d2.id = datum.id.replace("/alls/", "/friends/");
-        d2.root = "friends";
-        return d2;
+    function transpose_notebook(destroot) {
+        return function(datum) {
+            if(datum.delay_children)
+                load_children(datum);
+            var d2 = _.pick(datum, "label", "name", "gistname", "user", "visible", "last_commit", "sort_order");
+            d2.id = datum.id.replace("/alls/", '/'+destroot+'/');
+            d2.root = destroot;
+            return d2;
+        };
+    }
+
+    function create_notebook_root(src_trees, root, title) {
+        var reroot = transpose_notebook(root);
+        var subtrees = src_trees.map(function(subtree) {
+            return duplicate_tree_data(subtree, reroot);
+        });
+        return {
+            label: title,
+            id: '/'+root,
+            children: subtrees
+        };
     }
 
     function populate_friends(alls_root) {
         var friend_subtrees = alls_root.children.filter(function(subtree) {
             return my_friends_[subtree.id.replace("/alls/","")]>0;
-        }).map(function(subtree) {
-            return duplicate_tree_data(subtree, friend_from_all);
         });
-        return [
-            {
-                label: 'People I Starred',
-                id: '/friends',
-                children: friend_subtrees
-            },
-            alls_root
-        ];
+        return create_notebook_root(friend_subtrees, 'friends', 'People I Starred');
+    }
+
+    function populate_featured(alls_root) {
+        var featured_subtrees = alls_root.children.filter(function(subtree) {
+            return featured_.indexOf(subtree.id.replace("/alls/",""))>=0;
+        });
+        return create_notebook_root(featured_subtrees, 'featured', 'RCloud Sample Notebooks');
     }
 
     function load_tree(root_data) {
@@ -412,13 +425,20 @@ var editor = function () {
                                     rcloud.get_multiple_notebook_infos(all_notebooks)
                                     .then(function(notebook_entries) {
                                         notebook_info_ = notebook_entries;
+                                    }),
+                                    rcloud.config.get_alluser_option('featured_users')
+                                    .then(function(featured) {
+                                        featured_ = featured;
                                     })])
-                    .then(populate_interests.bind(null, my_stars_array))
-                    .then(function(interests) { root_data.push(interests); })
-                    .then(populate_all_notebooks.bind(null, user_notebook_set))
-                    .then(populate_friends)
-                    .spread(function(friends, alls) { root_data.push(friends, alls); })
-                    .return(root_data);
+                    .then(function() {
+                        var alls_root = populate_all_notebooks(user_notebook_set);
+                        return [
+                            populate_interests(my_stars_array),
+                            populate_featured(alls_root),
+                            populate_friends(alls_root),
+                            alls_root
+                        ];
+                    });
             })
             .then(load_tree)
             .then(function() {
@@ -863,8 +883,9 @@ var editor = function () {
             var anode = $tree_.tree('getNodeById', node_id('alls', user));
             var ftree;
             if(anode)
-                ftree = duplicate_tree_data(anode, friend_from_all);
+                ftree = duplicate_tree_data(anode, transpose_notebook('friends'));
             else {
+                debugger;
                 // note: check what this case is really for
                 var mine = user === username_; // yes it is possible I'm not my own friend
                 ftree = {
