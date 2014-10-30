@@ -33,6 +33,7 @@ var shell = (function() {
 
     function on_load(notebook) {
         RCloud.UI.notebook_title.set(notebook.description);
+        RCloud.UI.notebook_title.update_fork_info(notebook.fork_of);
         notebook_user_ = notebook.user.login;
         RCloud.UI.configure_readonly();
         _.each(notebook_view_.sub_views, function(cell_view) {
@@ -99,6 +100,7 @@ var shell = (function() {
             var cell = notebook_controller_.append_cell(content, language);
             RCloud.UI.command_prompt.history.execute(content);
             if(execute) {
+                RCloud.UI.command_prompt.focus();
                 cell.execute().then(scroll_to_end);
             }
         },
@@ -328,7 +330,7 @@ var shell = (function() {
                 notebook_status = $('<span />');
                 notebook_status.append(notebook_status);
                 var notebook_desc = $('<span>Notebook description: </span>');
-                notebook_desc_content = $('<input type="text" size="50"></input>')
+                notebook_desc_content = $('<input type="text" class="form-control-ext" size="50"></input>')
                     .keypress(function(e) {
                         if (e.which === 13) {
                             do_import();
@@ -340,7 +342,7 @@ var shell = (function() {
                 body.append($('<p/>').append(file_select))
                     .append($('<p/>').append(notebook_status.hide()))
                     .append($('<p/>').append(notebook_desc.hide()));
-                var cancel = $('<span class="btn">Cancel</span>')
+                var cancel = $('<span class="btn btn-cancel">Cancel</span>')
                         .on('click', function() { $(dialog).modal('hide'); });
                 import_button = $('<span class="btn btn-primary">Import</span>')
                         .on('click', do_import);
@@ -408,12 +410,12 @@ var shell = (function() {
             }
             function create_import_notebook_dialog() {
                 var body = $('<div class="container"/>').append(
-                    $(['<p>Import notebooks from another GitHub instance.  Currently import does not preserve history.</p>',
-                       '<p>source repo api url:&nbsp;<input type="text" id="import-source" size="50" value="https://api.github.com"></input></td>',
-                       '<p>notebooks:<br /><textarea rows="10" cols="30" id="import-gists" form="port"></textarea></p>',
-                       '<p>prefix:&nbsp;<input type="text" id="import-prefix" size="50"></input>'].join('')));
+                    $(['<p>Import notebooks from another GitHub instance.</p><p>Currently import does not preserve history.</p>',
+                       '<p>source repo api url:&nbsp;<input type="text" class="form-control-ext" id="import-source" style="width:100%;" value="https://api.github.com"></input></td>',
+                       '<p>notebooks:<br /><textarea class="form-control-ext" style="height: 20%;width: 50%;max-width: 100%" rows="10" cols="30" id="import-gists" form="port"></textarea></p>',
+                       '<p>prefix (e.g. <code>folder/</code> to put notebooks in a folder):&nbsp;<input type="text" class="form-control-ext" id="import-prefix" style="width:100%;"></input>'].join('')));
 
-                var cancel = $('<span class="btn">Cancel</span>')
+                var cancel = $('<span class="btn btn-cancel">Cancel</span>')
                         .on('click', function() { $(dialog).modal('hide'); });
                 var go = $('<span class="btn btn-primary">Import</span>')
                         .on('click', do_import);

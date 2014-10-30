@@ -334,6 +334,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["config", "clear_recent_notebook"],
             ["config", "get_user_option"],
             ["config", "set_user_option"],
+            ["config", "get_alluser_option"],
             ["get_notebook_info"],
             ["get_multiple_notebook_infos"],
             ["set_notebook_info"],
@@ -471,7 +472,8 @@ RCloud.create = function(rcloud_ocaps) {
             set_recent_notebook: rcloud_ocaps.config.set_recent_notebookAsync,
             clear_recent_notebook: rcloud_ocaps.config.clear_recent_notebookAsync,
             get_user_option: rcloud_ocaps.config.get_user_optionAsync,
-            set_user_option: rcloud_ocaps.config.set_user_optionAsync
+            set_user_option: rcloud_ocaps.config.set_user_optionAsync,
+            get_alluser_option: rcloud_ocaps.config.get_alluser_optionAsync
         };
 
         // notebook cache

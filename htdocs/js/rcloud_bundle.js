@@ -426,6 +426,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["config", "clear_recent_notebook"],
             ["config", "get_user_option"],
             ["config", "set_user_option"],
+            ["config", "get_alluser_option"],
             ["get_notebook_info"],
             ["get_multiple_notebook_infos"],
             ["set_notebook_info"],
@@ -559,7 +560,8 @@ RCloud.create = function(rcloud_ocaps) {
             set_recent_notebook: rcloud_ocaps.config.set_recent_notebookAsync,
             clear_recent_notebook: rcloud_ocaps.config.clear_recent_notebookAsync,
             get_user_option: rcloud_ocaps.config.get_user_optionAsync,
-            set_user_option: rcloud_ocaps.config.set_user_optionAsync
+            set_user_option: rcloud_ocaps.config.set_user_optionAsync,
+            get_alluser_option: rcloud_ocaps.config.get_alluser_optionAsync
         };
 
         // notebook cache
@@ -589,6 +591,23 @@ RCloud.create = function(rcloud_ocaps) {
     return rcloud;
 };
 var ui_utils = {};
+
+ui_utils.url_maker = function(page) {
+    return function(opts) {
+        opts = opts || {};
+        var url = window.location.protocol + '//' + window.location.host + '/' + page;
+        if(opts.notebook) {
+            url += '?notebook=' + opts.notebook;
+            if(opts.version && !opts.tag)
+                url = url + '&version='+opts.version;
+            if(opts.tag && opts.version)
+                url = url + '&tag='+opts.tag;
+        }
+        else if(opts.new_notebook)
+            url += '?new_notebook=true';
+        return url;
+    };
+};
 
 ui_utils.disconnection_error = function(msg, label) {
     var result = $("<div class='alert alert-danger'></div>");
@@ -3195,11 +3214,14 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         return $(sel_accordion + " > .panel > div.panel-heading");
     }
     function set_collapse(target, collapse, persist) {
+        if(target.data("would-collapse") == collapse)
+            return false;
         target.data("would-collapse", collapse);
         if(persist && rcloud.config && target.length) {
             var opt = 'ui/' + target[0].id;
             rcloud.config.set_user_option(opt, collapse);
         }
+        return true;
     }
     function all_collapsed() {
         return $.makeArray(collapsibles()).every(function(el) {
@@ -3282,11 +3304,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 this.show(true);
                 return;
             }
-            set_collapse(target, whether, persist);
+            var change = set_collapse(target, whether, persist);
             if(all_collapsed())
-                this.hide(persist);
+                this.hide(persist, !change);
             else
-                this.show(persist);
+                this.show(persist, !change);
         },
         resize: function(skip_calc) {
             if(!skip_calc) {
@@ -3477,15 +3499,21 @@ RCloud.UI.command_prompt = (function() {
     var show_prompt_ = false, // start hidden so it won't flash if user has it turned off
         readonly_ = true;
     function show_or_hide() {
-        var prompt = $('#command-prompt'),
+        var prompt_div = $('#prompt-div'),
+            prompt = $('#command-prompt'),
             controls = $('#prompt-div .cell-status .cell-controls');
-        if(!readonly_ && show_prompt_) {
-            prompt.show();
-            controls.removeClass('flipped');
-        }
+        if(readonly_)
+            prompt_div.hide();
         else {
-            prompt.hide();
-            controls.addClass('flipped');
+            prompt_div.show();
+            if(show_prompt_) {
+                prompt.show();
+                controls.removeClass('flipped');
+            }
+            else {
+                prompt.hide();
+                controls.addClass('flipped');
+            }
         }
     }
     return {
@@ -4177,11 +4205,21 @@ RCloud.UI.notebook_title = (function() {
                            text +
                            (ellipt_end ? '...' : ''));
             }
-            ui_utils.editable(title, $.extend({allow_edit: !is_read_only,
+            ui_utils.editable(title, $.extend({allow_edit: !is_read_only && !shell.is_view_mode(),
                                                inactive_text: title.text(),
                                                active_text: active_text},
                                               editable_opts));
-        }, make_editable: function(node, $li, editable) {
+        },
+        update_fork_info: function(fork_of) {
+            if(fork_of) {
+                var fork_desc = fork_of.owner.login+ " / " + fork_of.description;
+                var url = ui_utils.url_maker(shell.is_view_mode()?'view.html':'edit.html')({notebook: fork_of.id});
+                $("#forked-from-desc").html("forked from <a href='" + url + "'>" + fork_desc + "</a>");
+            }
+            else
+                $("#forked-from-desc").text("");
+        },
+        make_editable: function(node, $li, editable) {
             function get_title(node) {
                 if(!node.version) {
                     return $('.jqtree-title:not(.history)', $li);
@@ -4830,7 +4868,7 @@ return {
     },
     panel_sizer: function(el) {
         var padding = RCloud.UI.collapsible_column.default_padder(el);
-        var height = 24 + $('#search-summary').height() + $('#search-results').height();
+        var height = 24 + $('#search-summary').height() + $('#search-results').height() + $('#search-results-pagination').height();
         height += 30; // there is only so deep you can dig
         return {height: height, padding: padding};
     },
@@ -4850,8 +4888,9 @@ return {
     },
 
     exec: function(query, sortby, orderby, start, noofrows, pgclick) {
-        function summary(html) {
-            $("#search-summary").show().html($("<h4 />").append(html));
+        function summary(html, color) {
+            $('#search-summary').css('color', color || 'black');
+            $("#search-summary").show().html($("<h4/>").append(html));
         }
         function create_list_of_search_results(d) {
             var i;
@@ -4861,7 +4900,7 @@ return {
                 d[1] = d[1].replace(/\n/g, "<br/>");
                 if($('#paging').html != "")
                     $('#paging').html("");
-                summary("ERROR:\n" + d[1]);
+                summary("ERROR:\n" + d[1], 'darkred');
             } else {
                 if(typeof (d) === "string") {
                     d = JSON.parse("[" + d + "]");
@@ -4895,7 +4934,7 @@ return {
                             star_count = d[i].starcount;
                         }
                         var notebook_id = d[i].id;
-                        var image_string = "<i class=\"icon-star\" style=\"font-size: 110%; line-height: 90%;\"><sub>" + star_count + "</sub></i>";
+                        var image_string = "<i class=\"icon-star search-star\"><sub>" + star_count + "</sub></i>";
                         d[i].parts = JSON.parse(d[i].parts);
                         var parts_table = "";
                         var inner_table = "";
@@ -4913,8 +4952,22 @@ return {
                                 if(content.length > 0)
                                     parts_table += "<tr><th class='search-result-part-name'>" + d[i].parts[k].filename + "</th></tr>";
                                 for(var l = 0; l < content.length; l++) {
-                                    inner_table += "<tr><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
+                                    if (d[i].parts[k].filename === "comments") {
+                                        var split = content[l].split(/ *::: */);
+                                        if(split.length < 2)
+                                            split = content[l].split(/ *: */); // old format had single colons
+                                        var comment_content = split[1] || '';
+                                        if(!comment_content)
+                                            continue;
+                                        var comment_author = split[2] || '';
+                                        var display_comment = comment_author ? (comment_author + ': ' + comment_content) : comment_content;
+                                        inner_table += "<tr><td class='search-result-comment'><span class='search-result-comment-content'>" + comment_author + ": " + comment_content + "</span></td></tr>";
+                                    }
+                                    else {
+                                        inner_table += "<tr><td class='search-result-code'><code>" + content[l] + "</code></td></tr>";
+                                    }
                                 }
+
                                 if (d[i].parts[k].filename != "comments") {
                                     nooflines += inner_table.match(/\|-\|/g).length;
                                 }
@@ -4923,17 +4976,17 @@ return {
                             if(inner_table !== "") {
                                 inner_table = inner_table.replace(/\|-\|,/g, '<br>').replace(/\|-\|/g, '<br>');
                                 inner_table = inner_table.replace(/line_no/g,'|');
-                                inner_table = "<table>" + inner_table + "</table>";
+                                inner_table = "<table style='width: 100%'>" + inner_table + "</table>";
                                 parts_table += "<tr><td>" + inner_table + "</td></tr>";
                             }
                         }
                         var togid = i + "more";
                         if(parts_table !== "") {
                             if(nooflines > 10) {
-                                parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table>" + parts_table + "</table></div>" +
+                                parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div>" +
                                     "<div style=\"position: relative;\"><a href=\"#\" id='"+togid+"' onclick=\"RCloud.UI.search.toggle("+i+",'"+togid+"');\" style=\"color:orange\">Show me more...</a></div></div>";
                             } else {
-                                parts_table = "<div><div id='"+i+"'><table>" + parts_table + "</table></div></div>";
+                                parts_table = "<div><div id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div></div>";
                             }
                         }
                         search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" +
@@ -4944,7 +4997,7 @@ return {
                             search_results += "<tr><td colspan=2 width=100% style='font-size: 12'><div>" + parts_table + "</div></td></tr>";
                         search_results += "</table>";
                     } catch(e) {
-                        summary("Error : \n" + e);
+                        summary("Error : \n" + e, 'darkred');
                     }
                 }
                 if(!pgclick) {
@@ -4968,13 +5021,12 @@ return {
                 var qry = decodeURIComponent(query);
                 qry = qry.replace(/</g,'&lt;');
                 qry = qry.replace(/>/g,'&gt;');
-                var search_summary;
                 if(numfound === 0) {
-                    var search_summary = "No Results Found";
+                    summary("No Results Found");
                 } else if(parseInt(numfound) < page_size_){
-                    search_summary = numfound +" Results Found";
+                    summary(numfound +" Results Found", 'darkgreen');
                 } else {
-                    search_summary = numfound +" Results Found, showing ";
+                    var search_summary = numfound +" Results Found, showing ";
                     if(numfound-start === 1) {
                         search_summary += (start+1);
                     } else if((numfound - noofrows) > 0) {
@@ -4982,8 +5034,8 @@ return {
                     } else {
                         search_summary += (start+1)+" - "+numfound;
                     }
+                    summary(search_summary, 'darkgreen');
                 }
-                summary(search_summary);
                 $("#search-results-row").css('display', 'table-row');
                 $("#search-results-row").animate({ scrollTop: $(document).height() }, "slow");
                 $('#search-results').html(search_results);
@@ -5037,6 +5089,12 @@ RCloud.UI.session_pane = {
             that.post_rejection(e);
         });
 
+    },
+    panel_sizer: function(el) {
+        var def = RCloud.UI.collapsible_column.default_sizer(el);
+        if(def.height)
+            def.height += 20; // scrollbar height can screw it up
+        return def;
     },
     error_dest: function() {
         return this.error_dest_;
@@ -5208,6 +5266,9 @@ RCloud.UI.share_button = (function() {
                 query_started = false;
                 break;
             case 'mini.html':
+                suffix = type_ + '?notebook=' + shell.gistname();
+                break;
+            case 'shiny.html':
                 suffix = type_ + '?notebook=' + shell.gistname();
                 break;
             case 'view.html':

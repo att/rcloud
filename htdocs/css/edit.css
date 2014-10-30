@@ -440,11 +440,6 @@ li.jqtree-selected .notebook-commands {
     margin-bottom: 0px;
 }
 
-#search-wrapper td, #search-wrapper tr {
-    padding: 0;
-    margin: 0;
-}
-
 #search-header {
     display: table-row;
     width: 100%;
@@ -473,22 +468,36 @@ li.jqtree-selected .notebook-commands {
 #search-results-scroller {
     overflow: auto;
     width: 100%;
-    height: 100%;
+    height: 100px;
+    max-height: 100%;
+    min-height: 100%;
 }
 
 .search-result-item {
-    margin-top: 1ex;
+    margin-top: 0.5ex;
 }
 .search-result-heading {
+    font-family: sans-serif;
+    font-size:12px;
     margin-right: 1em;
-    padding-top: 1ex
+    padding: 0;
+    padding-top: 1ex;
 }
 .search-result-modified-date {
     margin-left: 1ex;
 }
 .search-result-part-name {
+    font-family: sans-serif;
     font-size:11px;
-    padding-left:1em;
+    padding: 0;
+    padding-top: 2px;
+    padding-left: 0.5ex;
+}
+.search-star {
+    line-height: 90%;
+}
+.search-result-part-name:first-child {
+    padding-top: 0;
 }
 .search-result-line-number {
     width:10px;
@@ -496,7 +505,16 @@ li.jqtree-selected .notebook-commands {
     padding-right: 0.5ex;
 }
 .search-result-code {
-    padding-left: 0.5ex;
+    padding-left: 1ex;
+}
+.search-result-code code {
+    font-size: 10px;
+}
+.search-result-comment {
+    font-size: 10px;
+    width: auto;
+    padding: 0;
+    padding-left: 1ex;
 }
 
 /******************************************************************************/
@@ -704,6 +722,8 @@ li.jqtree-selected .notebook-commands {
     white-space: pre;
     max-width: none;
     display: inline-block;
+    font-size: 12px;
+    background-color: initial;
 }
 
 .session-error.spare {
@@ -1078,3 +1098,13 @@ pre > .vt100 {
 .pagination > li > span {
     padding: 3px 8px;
 }
+.btn-primary {
+    border-radius: 3px;
+}
+.btn-cancel {
+    color: #333;
+    background-color: #fff;
+    border-color: #ccc;
+    border-radius: 3px;
+}
+
