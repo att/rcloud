@@ -379,6 +379,8 @@ var editor = function () {
         var featured_subtrees = alls_root.children.filter(function(subtree) {
             return featured_.indexOf(subtree.id.replace("/alls/",""))>=0;
         });
+        if(!featured_subtrees.length)
+            return null;
         return create_notebook_root(featured_subtrees, 'featured', 'RCloud Sample Notebooks');
     }
 
@@ -428,7 +430,7 @@ var editor = function () {
                                     }),
                                     rcloud.config.get_alluser_option('featured_users')
                                     .then(function(featured) {
-                                        featured_ = featured;
+                                        featured_ = featured || [];
                                     })])
                     .then(function() {
                         var alls_root = populate_all_notebooks(user_notebook_set);
@@ -437,7 +439,7 @@ var editor = function () {
                             populate_featured(alls_root),
                             populate_friends(alls_root),
                             alls_root
-                        ];
+                        ].filter(function(t) { return !!t; });
                     });
             })
             .then(load_tree)
