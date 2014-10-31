@@ -655,7 +655,7 @@ li.jqtree-selected .notebook-commands {
 
 .comment-container {
     margin-bottom: .8em;
-    clear: both;
+   // clear: both;
 }
 
 .comment-header {
@@ -715,6 +715,7 @@ li.jqtree-selected .notebook-commands {
     overflow-y: auto;
     overflow-x: auto;
     padding: 5px;
+    background-color: rgb(255, 255, 248);
 }
 
 #session-info-out {
