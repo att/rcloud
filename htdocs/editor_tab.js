@@ -589,7 +589,7 @@ var editor = function () {
                 else if(diff < 24*60*60*1000 && d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth())
                     return format_time(d1.getHours(), d1.getMinutes());
                 else
-                    return format_date_time(d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
+                    return format_date_time(d1.getFullYear(),d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
             }
             function display_date_for_entry(i) {
                 var hist = history[i];
@@ -911,8 +911,8 @@ var editor = function () {
         }
     }
 
-    function format_date(month, date) {
-        return (month+1) + '/' + date;
+    function format_date(year, month, date) {
+        return year + '/' +(month+1) + '/' + date;
     }
 
     function format_time(hours, minutes) {
@@ -920,8 +920,8 @@ var editor = function () {
         return '<span class="notebook-time">' + hours + ':' + pad(minutes) + '</span>';
     }
 
-    function format_date_time(month, date, hours, minutes) {
-        return '<span>' + format_date(month, date) + ' ' + format_time(hours, minutes) + '</span>';
+    function format_date_time(year,month, date, hours, minutes) {
+        return '<span>' + format_date(year, month, date) + ' ' + format_time(hours, minutes) + '</span>';
     }
 
     function display_date_html(ds) {
@@ -934,7 +934,7 @@ var editor = function () {
         if(diff < 24*60*60*1000)
             return format_time(date.getHours(), date.getMinutes());
         else
-            return format_date_time(date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
+            return format_date_time(date.getFullYear(),date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
     }
     function display_date(ds) {
         // return an element
