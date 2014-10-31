@@ -4249,7 +4249,7 @@ RCloud.UI.notebook_title = (function() {
                 ui_utils.editable(get_title(node, $li),
                                   $.extend({allow_edit: editable,
                                             inactive_text: node.name,
-                                            active_text: node.name},
+                                            active_text: node.version ? node.name : node.full_name},
                                            opts));
             }
             last_editable_ = node;
