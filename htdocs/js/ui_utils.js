@@ -380,7 +380,7 @@ ui_utils.editable = function(elem$, command) {
 
     switch(action) {
     case 'freeze':
-        elem$.attr('contenteditable', 'false');
+        elem$.removeAttr('contenteditable');
         elem$.off('keydown.editable');
         elem$.off('focus.editable');
         elem$.off('click.editable');

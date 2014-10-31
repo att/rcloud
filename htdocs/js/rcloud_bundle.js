@@ -972,7 +972,7 @@ ui_utils.editable = function(elem$, command) {
 
     switch(action) {
     case 'freeze':
-        elem$.attr('contenteditable', 'false');
+        elem$.removeAttr('contenteditable');
         elem$.off('keydown.editable');
         elem$.off('focus.editable');
         elem$.off('click.editable');
@@ -4223,15 +4223,15 @@ RCloud.UI.notebook_title = (function() {
                 $("#forked-from-desc").text("");
         },
         make_editable: function(node, $li, editable) {
-            function get_title(node) {
+            function get_title(node, elem) {
                 if(!node.version) {
-                    return $('.jqtree-title:not(.history)', $li);
+                    return $('.jqtree-title:not(.history)', elem);
                 } else {
-                    return $('.jqtree-title', $li);
+                    return $('.jqtree-title', elem);
                 }
             }
             if(last_editable_ && (!node || last_editable_ !== node))
-                ui_utils.editable(get_title(last_editable_), 'destroy');
+                ui_utils.editable(get_title(last_editable_, last_editable_.element), 'destroy');
             if(node) {
                 var opts = editable_opts;
                 if(node.version) {
@@ -4240,7 +4240,7 @@ RCloud.UI.notebook_title = (function() {
                         validate: function(name) { return true; }
                     });
                 }
-                ui_utils.editable(get_title(node),
+                ui_utils.editable(get_title(node, $li),
                                   $.extend({allow_edit: editable,
                                             inactive_text: node.name,
                                             active_text: node.name},
