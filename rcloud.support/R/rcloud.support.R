@@ -12,21 +12,23 @@ rcloud.get.conf.value <- function(key) {
 
 # any attributes we want to add onto what github gives us
 rcloud.augment.notebook <- function(res) {
-  notebook <- res$content
-  fork.of <- rcloud.get.notebook.property(notebook$id, 'fork_of')
-  if(!is.null(fork.of))
-    res$content$fork_of <- fork.of
+  if(res$ok) {
+    notebook <- res$content
+    fork.of <- rcloud.get.notebook.property(notebook$id, 'fork_of')
+    if(!is.null(fork.of))
+      res$content$fork_of <- fork.of
 
-  hist <- res$content$history
-  versions <- lapply(hist, function(h) { h$version })
-  version2tag <- rcs.get(rcloud.support:::rcs.key('.notebook', notebook$id, 'version2tag', versions), list=TRUE)
-  names(version2tag) <- versions
-  version2tag <- Filter(Negate(is.null), version2tag)
+    hist <- res$content$history
+    versions <- lapply(hist, function(h) { h$version })
+    version2tag <- rcs.get(rcloud.support:::rcs.key('.notebook', notebook$id, 'version2tag', versions), list=TRUE)
+    names(version2tag) <- versions
+    version2tag <- Filter(Negate(is.null), version2tag)
 
-  for(i in 1:length(hist)) {
-    tag <- version2tag[[hist[[i]]$version]]
-    if(!is.null(tag))
+    for(i in 1:length(hist)) {
+      tag <- version2tag[[hist[[i]]$version]]
+      if(!is.null(tag))
         res$content$history[[i]]$tag <- tag
+    }
   }
   res
 }
