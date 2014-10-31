@@ -998,7 +998,7 @@ ui_utils.editable = function(elem$, command) {
             e.stopPropagation();
             // allow default action but don't bubble (causing eroneous reselection in notebook tree)
         });
-        elem$.keydown(function(e) {
+        elem$.on('keydown.editable', function(e) {
             if(e.keyCode === 13) {
                 var txt = decode(elem$.text());
                 function execute_if_valid_else_ignore(f) {
@@ -1230,28 +1230,32 @@ Notebook.Asset.create_html_view = function(asset_model)
     filename_div.append(anchor);
     anchor.append(remove);
     var asset_old_name = filename_span.text();
-    var rename_file = function(v){
-        var new_asset_name = filename_span.text();
-        new_asset_name = new_asset_name.replace(/\s/g, " ");
-        var old_asset_content = asset_model.content();
-        if (Notebook.is_part_name(new_asset_name)) {
-            alert("Asset names cannot start with 'part[0-9]', sorry!");
-            filename_span.text(asset_old_name);
-            return;
-        }
-        var found = shell.notebook.model.has_asset(new_asset_name);
-        if (found){
-            alert('An asset with the name "' + filename_span.text() + '" already exists. Please choose a different name.');
-            filename_span.text(asset_old_name);
-        }
-        else {
-            shell.notebook.controller
-            .append_asset(old_asset_content, new_asset_name)
-            .then(function (controller) {
-                controller.select();
-            });
-            asset_model.controller.remove(true);
-        }
+    var rename_file = function(v) {
+        // this is massively inefficient - actually three round-trips to the server when
+        // we could have one!  save, create new asset, delete old one
+        shell.notebook.controller.save().then(function() {
+            var new_asset_name = filename_span.text();
+            new_asset_name = new_asset_name.replace(/\s/g, " ");
+            var old_asset_content = asset_model.content();
+            if (Notebook.is_part_name(new_asset_name)) {
+                alert("Asset names cannot start with 'part[0-9]', sorry!");
+                filename_span.text(asset_old_name);
+                return;
+            }
+            var found = shell.notebook.model.has_asset(new_asset_name);
+            if (found) {
+                alert('An asset with the name "' + filename_span.text() + '" already exists. Please choose a different name.');
+                filename_span.text(asset_old_name);
+            }
+            else {
+                shell.notebook.controller
+                    .append_asset(old_asset_content, new_asset_name)
+                    .then(function (controller) {
+                        controller.select();
+                        asset_model.controller.remove(true);
+                    });
+            }
+        });
     };
     function select(el) {
         if(el.childNodes.length !== 1 || el.firstChild.nodeType != el.TEXT_NODE)

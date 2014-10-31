@@ -406,7 +406,7 @@ ui_utils.editable = function(elem$, command) {
             e.stopPropagation();
             // allow default action but don't bubble (causing eroneous reselection in notebook tree)
         });
-        elem$.keydown(function(e) {
+        elem$.on('keydown.editable', function(e) {
             if(e.keyCode === 13) {
                 var txt = decode(elem$.text());
                 function execute_if_valid_else_ignore(f) {
