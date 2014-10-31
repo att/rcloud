@@ -53,6 +53,11 @@ rcloud.get.version.by.tag <- function(gist_id,tag) {
   v <- rcs.get(rcs.key(username='.notebook', gist_id, 'tag2version', tag))
 }
 
+rcloud.get.tag.by.version <- function(gist_id,version) {
+  write("writing","/vagrant/work/tt.txt");
+  t <- rcs.get(rcs.key(username='.notebook', gist_id, 'version2tag', version))
+}
+
 rcloud.tag.notebook.version <- function(gist_id, version, tag_name) {
   if(!notebook.is.mine(gist_id))
     return(FALSE)
