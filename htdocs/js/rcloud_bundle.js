@@ -973,28 +973,28 @@ ui_utils.editable = function(elem$, command) {
     switch(action) {
     case 'freeze':
         elem$.attr('contenteditable', 'false');
-        elem$.off('keydown');
-        elem$.off('focus');
-        elem$.off('click');
-        elem$.off('blur');
+        elem$.off('keydown.editable');
+        elem$.off('focus.editable');
+        elem$.off('click.editable');
+        elem$.off('blur.editable');
         break;
     case 'melt':
         elem$.attr('contenteditable', 'true');
-        elem$.focus(function() {
+        elem$.on('focus.editable', function() {
             if(!options().__active) {
                 options().__active = true;
                 set_content_type(command.allow_multiline,encode(options().active_text));
                 window.setTimeout(function() {
                     selectRange(options().select(elem$[0]));
-                    elem$.off('blur');
-                    elem$.blur(function() {
+                    elem$.off('blur.editable');
+                    elem$.on('blur.editable', function() {
                         set_content_type(command.allow_multiline,encode(options().inactive_text));
                         options().__active = false;
                     }); // click-off cancels
                 }, 10);
             }
         });
-        elem$.click(function(e) {
+        elem$.on('click.editable', function(e) {
             e.stopPropagation();
             // allow default action but don't bubble (causing eroneous reselection in notebook tree)
         });
@@ -1004,7 +1004,7 @@ ui_utils.editable = function(elem$, command) {
                 function execute_if_valid_else_ignore(f) {
                     if(options().validate(txt)) {
                         options().__active = false;
-                        elem$.off('blur'); // don't cancel!
+                        elem$.off('blur.editable'); // don't cancel!
                         elem$.blur();
                         f(txt);
                         return true;
@@ -1267,8 +1267,6 @@ Notebook.Asset.create_html_view = function(asset_model)
         select: select,
         validate: function(name) { return editor.validate_name(name); }
     };
-    if(!shell.notebook.model.read_only())
-        ui_utils.editable(filename_span, $.extend({allow_edit: true,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
     filename_span.click(function() {
         if(!asset_model.active())
             asset_model.controller.select();
@@ -1289,10 +1287,15 @@ Notebook.Asset.create_html_view = function(asset_model)
                 RCloud.UI.scratchpad.language_updated();
         },
         active_updated: function() {
-            if (asset_model.active())
+            if (asset_model.active()) {
+                if(!shell.notebook.model.read_only())
+                    ui_utils.editable(filename_span, $.extend({allow_edit: true,inactive_text: filename_span.text(),active_text: filename_span.text()},editable_opts));
                 filename_div.addClass("active");
-            else
+            }
+            else {
+                ui_utils.editable(filename_span, "destroy");
                 filename_div.removeClass("active");
+            }
         },
         self_removed: function() {
             filename_div.remove();

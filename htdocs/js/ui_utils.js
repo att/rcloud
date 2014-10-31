@@ -381,28 +381,28 @@ ui_utils.editable = function(elem$, command) {
     switch(action) {
     case 'freeze':
         elem$.attr('contenteditable', 'false');
-        elem$.off('keydown');
-        elem$.off('focus');
-        elem$.off('click');
-        elem$.off('blur');
+        elem$.off('keydown.editable');
+        elem$.off('focus.editable');
+        elem$.off('click.editable');
+        elem$.off('blur.editable');
         break;
     case 'melt':
         elem$.attr('contenteditable', 'true');
-        elem$.focus(function() {
+        elem$.on('focus.editable', function() {
             if(!options().__active) {
                 options().__active = true;
                 set_content_type(command.allow_multiline,encode(options().active_text));
                 window.setTimeout(function() {
                     selectRange(options().select(elem$[0]));
-                    elem$.off('blur');
-                    elem$.blur(function() {
+                    elem$.off('blur.editable');
+                    elem$.on('blur.editable', function() {
                         set_content_type(command.allow_multiline,encode(options().inactive_text));
                         options().__active = false;
                     }); // click-off cancels
                 }, 10);
             }
         });
-        elem$.click(function(e) {
+        elem$.on('click.editable', function(e) {
             e.stopPropagation();
             // allow default action but don't bubble (causing eroneous reselection in notebook tree)
         });
@@ -412,7 +412,7 @@ ui_utils.editable = function(elem$, command) {
                 function execute_if_valid_else_ignore(f) {
                     if(options().validate(txt)) {
                         options().__active = false;
-                        elem$.off('blur'); // don't cancel!
+                        elem$.off('blur.editable'); // don't cancel!
                         elem$.blur();
                         f(txt);
                         return true;
