@@ -249,8 +249,8 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.tag_notebook_versionAsync(gist_id,version,tag_name);
         };
 
-        rcloud.get_version_of_tag = function(gist_id,tag) {
-            return rcloud_ocaps.get_version_of_tagAsync(gist_id,tag);
+        rcloud.get_version_by_tag = function(gist_id,tag) {
+            return rcloud_ocaps.get_version_by_tagAsync(gist_id,tag);
         };
 
         rcloud.call_notebook = function(id, version) {
