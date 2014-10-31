@@ -149,6 +149,7 @@ var shell = (function() {
                             notebook.description = editor.find_next_copy_name(notebook.description);
                             return notebook_controller_.create_notebook(notebook)
                                 .then(function(result) {
+                                    result.fork_of = fork_of;
                                     return rcloud.set_notebook_property(result.id, 'fork_of', fork_of)
                                         .return(result);
                                 });
