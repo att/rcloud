@@ -24,11 +24,12 @@ rcloud.augment.notebook <- function(res) {
     names(version2tag) <- versions
     version2tag <- Filter(Negate(is.null), version2tag)
 
-    for(i in 1:length(hist)) {
-      tag <- version2tag[[hist[[i]]$version]]
-      if(!is.null(tag))
-        res$content$history[[i]]$tag <- tag
-    }
+    if(length(hist)>0)
+      for(i in 1:length(hist)) {
+        tag <- version2tag[[hist[[i]]$version]]
+        if(!is.null(tag))
+          res$content$history[[i]]$tag <- tag
+      }
   }
   res
 }
