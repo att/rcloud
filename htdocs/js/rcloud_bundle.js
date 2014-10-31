@@ -3258,7 +3258,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 return false;
             });
             collapsibles().on("size-changed", function() {
-                that.resize();
+                that.resize(true);
             });
             $(sel_collapser).click(function() {
                 if (collapsed_)
@@ -3780,6 +3780,8 @@ RCloud.UI.comments_frame = (function() {
             .attr("class", "comment-body")
             .style({"max-width":"70%"})
             .append("div")
+            .attr("class", "comment-body-wrapper")
+            .append("div")
             .attr("class", "comment-body-text")
             .text(function(d) { return d.body; })
             .each(function(d){
@@ -3795,12 +3797,12 @@ RCloud.UI.comments_frame = (function() {
                 };
                 ui_utils.editable(comment_element, $.extend({allow_edit: editable(d),inactive_text: comment_element.text(),active_text: comment_element.text()},editable_opts));
             });
-        var text_div = d3.selectAll(".comment-body",this);
+        var text_div = d3.selectAll(".comment-body-wrapper",this);
         text_div
             .append("i")
             .attr("class", "icon-remove comment-header-close")
             .style({"max-width":"5%"})
-            .on("click", function (d) {
+            .on("click", function (d, e) {
                 if(editable(d))
                     result.delete_comment(d.id);
             });
