@@ -1147,7 +1147,7 @@ var editor = function () {
                         .catch(function(xep) {
                             var message = "Could not open notebook " + opts.notebook;
                             if(opts.version)
-                                message += "(version " + opts.version + ")";
+                                message += " (version " + opts.version + ")";
                             RCloud.UI.fatal_dialog(message, "Continue", make_edit_url());
                             throw xep;
                         });
@@ -1405,7 +1405,7 @@ var editor = function () {
                 promises.push(
                     rcloud.get_notebook_property(result.id, "view-type")
                         .then(function(type) { RCloud.UI.share_button.type(type); }));
-                RCloud.UI.share_button.update_link(result);
+                RCloud.UI.share_button.update_link();
 
                 /*
                 // disabling inter-notebook navigation for now - concurrency issues
