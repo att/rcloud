@@ -1105,7 +1105,10 @@ var editor = function () {
             load_children(n);
         $('#collapse-notebook-tree').trigger('size-changed');
     }
+    var NOTEBOOK_LOAD_FAILS = 5;
     function open_last_loadable() {
+        var tries_left = NOTEBOOK_LOAD_FAILS;
+        RCloud.UI.session_pane.allow_clear = false;
         return rcloud.config.get_recent_notebooks()
             .then(function(recent) {
                 var sorted = _.chain(recent)
@@ -1125,15 +1128,24 @@ var editor = function () {
                             RCloud.UI.session_pane.post_rejection(err);
                             if(/Not Found/.test(err))
                                 rcloud.config.clear_recent_notebook(last);
-                            // if loading fails for a reason that is not actually a loading problem
-                            // then don't keep trying.
-                            if(err.from_load)
+                            // if we reach the limit, stop trying.  if loading fails for a reason that
+                            // is not actually a loading problem then stop trying.
+                            if(--tries_left === 0) {
+                                var quit_err = new Error("Failed to load " + NOTEBOOK_LOAD_FAILS + " notebooks. Quitting.");
+                                RCloud.UI.session_pane.post_rejection(quit_err);
+                                return Promise.resolve(false);
+                            }
+                            else if(err.from_load)
                                 return try_last();
                             else
                                 return Promise.resolve(false);
                         });
                 }
                 return try_last();
+            })
+            .then(function(res) {
+                RCloud.UI.session_pane.allow_clear = true;
+                return res;
             });
     }
 

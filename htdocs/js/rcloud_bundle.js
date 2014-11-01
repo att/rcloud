@@ -2873,22 +2873,9 @@ Notebook.is_part_name = function(filename) {
 };
 (function() {
 
-// FIXME this is just a proof of concept - using Rserve console OOBs
-// FIXME this should use RCloud.session_pane
-var append_session_info = function(msg) {
-    if(!$('#session-info').length)
-        return; // workaround for view mode
-    // one hacky way is to maintain a <pre> that we fill as we go
-    // note that R will happily spit out incomplete lines so it's
-    // not trivial to maintain each output in some separate structure
-    if (!document.getElementById("session-info-out"))
-        $("#session-info").append($("<pre id='session-info-out'></pre>"));
-    $("#session-info-out").append(msg);
-    RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
-    ui_utils.on_next_tick(function() {
-        ui_utils.scroll_to_after($("#session-info"));
-    });
-};
+function append_session_info(text) {
+    RCloud.UI.session_pane.append_text(text);
+}
 
 // FIXME this needs to go away as well.
 var oob_handlers = {
@@ -3002,7 +2989,7 @@ RCloud.session = {
             return RCloud.UI.with_progress(function() {});
         }
         // perhaps we need an event to listen on here
-        $("#session-info").empty();
+        RCloud.UI.session_pane.clear();
         $(".progress").hide();
         $("#file-upload-results").empty();
         return RCloud.UI.with_progress(function() {
@@ -5075,6 +5062,8 @@ return {
 })();
 
 RCloud.UI.session_pane = {
+    error_dest_: null,
+    allow_clear: true,
     body: function() {
         return RCloud.UI.panel_loader.load_snippet('session-info-snippet');
     },
@@ -5107,6 +5096,25 @@ RCloud.UI.session_pane = {
     },
     error_dest: function() {
         return this.error_dest_;
+    },
+    clear: function() {
+        if(this.allow_clear)
+            $("#session-info").empty();
+    },
+    append_text: function(msg) {
+        // FIXME: dropped here from session.js, could be integrated better
+        if(!$('#session-info').length)
+            return; // workaround for view mode
+        // one hacky way is to maintain a <pre> that we fill as we go
+        // note that R will happily spit out incomplete lines so it's
+        // not trivial to maintain each output in some separate structure
+        if (!document.getElementById("session-info-out"))
+            $("#session-info").append($("<pre id='session-info-out'></pre>"));
+        $("#session-info-out").append(msg);
+        RCloud.UI.right_panel.collapse($("#collapse-session-info"), false, false);
+        ui_utils.on_next_tick(function() {
+            ui_utils.scroll_to_after($("#session-info"));
+        });
     },
     post_error: function(msg, dest, logged) { // post error to UI
         var errclass = 'session-error';
