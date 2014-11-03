@@ -1,9 +1,10 @@
 ## RCloud 1.2
 
-NOTE: Producing tarballs for offline installation of RCloud is not supported in
-this release, but will be restored in 1.2.1, coming soon!
-
 ### Features
+
+* The script `scripts/mkdist.sh`, which produces a tarball of RCloud and
+  all its dependencies (e.g. for off-line installation) has been consolidated
+  into `scripts/bootstrapR.sh --mk-dist`
 
 * Multiple file upload.  File upload interface has been modernized to use
   promises and to split the UI from the back-end.
