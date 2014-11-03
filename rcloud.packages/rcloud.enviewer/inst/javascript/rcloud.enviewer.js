@@ -54,6 +54,7 @@
     }
     function clear_display() {
         $('#enviewer-body > table').remove();
+        $('#viewer-body > table').remove();
     }
     function refresh_display() {
         clear_display();
