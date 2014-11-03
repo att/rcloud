@@ -10,6 +10,7 @@ function checkRVersion {
     fi
 }
 
+
 #-------------------------------Check if Script is called from the RCloud base directory-------------------#
 function checkWD {
     if [ ! -e rcloud.support/DESCRIPTION ]; then
@@ -171,6 +172,3 @@ case "$1" in
 
     helpScreen;;
 esac
-
-
-
