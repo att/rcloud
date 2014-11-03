@@ -34,7 +34,7 @@ fi
 : ${DISTREP="$WD/dist-repos"}
 : ${RBIN=R}
 
-ok=`echo 'if(R.version$major>=3)cat("OK\n")' | $RBIN --slave --vanilla`
+ok=`echo 'if(R.version$major>=3)cat("OK\n")' | "$RBIN" --slave --vanilla`
 if [ "x$ok" != "xOK" ]; then
     echo '' 1>&2
     echo ' ERROR: R is not available in the correct version.' 1>&2
@@ -88,7 +88,7 @@ else
     echo 'cat(sprintf("\n Using %s, installing packages...\n", R.version.string)); url="file://'"$DISTREP/"'"; a=rownames(available.packages(paste0(url,"/src/contrib"))); install.packages(a,,url,type="source")' | "$RBIN" --slave --vanilla
 fi
 
-ok=`echo 'library(rcloud.support);library(rcloud.client);library(Cairo);library(rjson);cat("OK\n")' | R --slave --vanilla`
+ok=`echo 'library(rcloud.support);library(rcloud.client);library(Cairo);library(rjson);cat("OK\n")' | "$RBIN" --slave --vanilla`
 if [ "x$ok" != "xOK" ]; then
     echo '' 1>&2
     echo ' ERROR: one or more packages could not be installed.' 1>&2
