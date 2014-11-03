@@ -144,8 +144,7 @@ function mkDistributionTarBall {
     cp "$WD/conf/solr/schema.xml" "$WD/services/solr/example/solr/rcloudnotebooks/conf/"
     cp "$WD/conf/solr/solrconfig.xml" "$WD/services/solr/example/solr/rcloudnotebooks/conf/"
     fi
-
-    ( tar fcz rcloud-$BRANCH-$REV.tar.gz "$WD" )
+    (tar fcz ../rcloud-$BRANCH-$REV.tar.gz "$WD" )
 
     echo "=== done ===" && echo ''
 
