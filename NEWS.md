@@ -1,5 +1,8 @@
 ## RCloud 1.2
 
+NOTE: Producing tarballs for offline installation of RCloud is not supported in
+this release, but will be restored in 1.2.1, coming soon!
+
 ### Features
 
 * Multiple file upload.  File upload interface has been modernized to use
@@ -47,7 +50,8 @@
   you can tag them by clicking a second time on the version in the history in
   the notebook tree, and entering a human-readable name. You can also load a
   notebook version by specifying `&tag=name` instead of `&version=hash` in the
-  URL. Each version can only have one tag, and each tag can only have one
+  URL (works with {edit,view,mini,shiny}.html; notebook.R not supported
+  yet). Each version can only have one tag, and each tag can only have one
   version: if a tag is reused, it is removed from the previous version. Enter a
   blank tag (delete the tag and press enter) to remove it.
 
@@ -66,8 +70,10 @@
   ocaps) to add side panels or other UI elements.  See the example
   rcloud.packages/rcloud.viewer
 
-* Object Viewer - `View(dataframe)` will show the contents of the dataframe
-  in the Viewer side panel
+* Workspace Viewer - shows variables in the environment and their current values.
+
+* Dataframe Viewer - `View(dataframe)` will show the contents of the dataframe
+  in the Viewer side panel.
 
 * Forked-from notebook shown below notebook title, with link to the original
   notebook.  Since github gists do not allow forking one's own notebooks, emulate
@@ -77,6 +83,9 @@
 
 * Select the type of view (shareable link) for each notebook by using the
   drop-down menu to the right of the Shareable Link button.
+
+* RCloud Sample Notebooks folder in the tree, to feature certain users and their
+  example notebooks.
 
 
 ### Improvements
@@ -135,6 +144,13 @@
 
 * Fixed Unicode support (for assets and everywhere) - repair mismatch between
   JavaScript UTF-16 and R UTF-8 strings.
+
+* Save asset before renaming it - changes were getting lost.
+
+* When a notebook fails to load, the previously loaded notebook gets loaded.
+  This could cause a near-infinite loop when there is a problem that causes
+  no notebooks to load, so this behavior is now limited to trying 5 notebooks.
+
 
 ## RCloud 1.1.2
 
