@@ -119,8 +119,8 @@ function mkDistributionTarBall {
     BRANCH=`( cd "$WD" && git status | sed -n 's:.*On branch ::p' | sed 's:/:-:g' )`
 
     MATHJAX_INSTALL_DIR=mathjax
-    if [ ! -e "$WD/rcloud/htdocs/mathjax" ]; then
-        mkdir -p "$WDrcloud/htdocs/mathjax"
+    if [ ! -e "$WD/htdocs/mathjax" ]; then
+        mkdir -p "$WD/htdocs/mathjax"
         echo 'Downloading MathJax'
         curl -L https://codeload.github.com/mathjax/MathJax/legacy.tar.gz/master | tar -xz -C "$WD/htdocs/mathjax" --strip-components=1
     fi
@@ -145,7 +145,7 @@ function mkDistributionTarBall {
     cp "$WD/conf/solr/solrconfig.xml" "$WD/services/solr/example/solr/rcloudnotebooks/conf/"
     fi
 
-    ( tar fcz rcloud-$BRANCH-$REV.tar.gz rcloud )
+    ( tar fcz rcloud-$BRANCH-$REV.tar.gz "$WD" )
 
     echo "=== done ===" && echo ''
 
