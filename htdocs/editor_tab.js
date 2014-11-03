@@ -1338,7 +1338,7 @@ var editor = function () {
         remove_notebook: function(user, gistname) {
             var that = this;
             return (!my_stars_[gistname] ? Promise.resolve() :
-                    this.star_notebook(false, {user: user, gistname: gistname}))
+                    this.star_notebook(false, {user: user, gistname: gistname, selroot: false}))
                 .then(function() {
                     remove_notebook_info(user, gistname);
                     remove_notebook_view(user, gistname);
