@@ -11,15 +11,8 @@ rcs.redis <- function(host=NULL) {
   structure(list(host=host, port=port, handle=redis.connect(host, port, 3, TRUE, TRUE)), class="RCSredis")
 }
 
-rcs.open.RCSredis <- function()
-    if (isTRUE(getConf("rcs.engine") == "redis")) {
-      .session$rcs.engine <- rcs.redis(getConf("rcs.redis.host"))
-      if (is.null(.session$rcs.engine$handle)) stop("ERROR: cannot connect to redis host `",getConf("rcs.redis.host"),"', aborting")
-      .session$rcs.engine
-    } else NULL
-
-rcs.close.RCSredis <- function()
-    rediscc::redis.close(.session$rcs.engine$handle)
+rcs.close.RCSredis <- function(engine=.session$rcs.engine)
+    redis.close(engine$handle)
 
 rcs.get.RCSredis <- function(key, list=FALSE, engine=.session$rcs.engine) redis.get(engine$handle, key, list)
 
