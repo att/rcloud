@@ -159,15 +159,19 @@ configure.rcloud <- function (mode=c("startup", "script")) {
 
   setConf("instanceID", generate.uuid())
 
-  ## sanity check on redis
-  if (isTRUE(getConf("rcs.engine") == "redis")) {
-    redis <- rcs.redis(getConf("rcs.redis.host"))
-    if (is.null(redis$handle)) stop("ERROR: cannot connect to redis host `",getConf("rcs.redis.host"),"', aborting")
-    ## FIXME: we don't expose close in RCS, so do it by hand
-    rediscc::redis.close(redis$handle)
-    cat("Redis back-end .... OK\n")
-  }
-  options(HTTPUserAgent=paste(getOption("HTTPUserAgent"), "- RCloud (http://github.com/cscheid/rcloud)"))
+  ## open RCS, initialize RCS .allusers/system/* based on conf rcs.system.*, close
+  rcs.open()
+  conf.keys <- keysConf()
+  system.config <- conf.keys[grep('^rcs\\.system\\..*', conf.keys)]
+  lapply(system.config, function(key) {
+    parts <- strsplit(key, '\\.')[[1]]
+    value <- strsplit(getConf(key), ' *, *')[[1]]
+    rcs.set(rcs.key('.allusers', parts[[2]], parts[[3]], parts[[4]]), value)
+  })
+  rcs.close();
+  cat("Redis back-end .... OK\n")
+
+  options(HTTPUserAgent=paste(getOption("HTTPUserAgent"), "- RCloud (http://github.com/att/rcloud)"))
 
   ## determine verison/revision/branch
   ##
@@ -263,17 +267,7 @@ start.rcloud.common <- function(...) {
   ## generate per-session result UUID (optional, really)
   .session$result.prefix.uuid <- generate.uuid()
 
-  if (isTRUE(getConf("rcs.engine") == "redis"))
-    .session$rcs.engine <- rcs.redis(getConf("rcs.redis.host"))
-
-  if (is.null(.session$rcs.engine)) { ## fall-back engine are flat files
-    if (nzConf("exec.auth") && identical(getConf("exec.match.user"), "login"))
-      warning("*** WARNING: user switching is enabled but no rcs.engine is specified!\n *** This will break due to permission conflicts! rcs.engine: redis is recommended for multi-user setup")
-    fdir <- pathConf("data.root", "rcs")
-    if (!file.exists(fdir))
-      dir.create(fdir, FALSE, TRUE, "0777")
-    .session$rcs.engine <- structure(list(root=fdir), class="RCSff")
-  }
+  rcs.open()
 
   ## last-minute updates (or custom initialization) to be loaded
   ## NB: it should be really fast since it will cause connect delay
@@ -288,7 +282,7 @@ start.rcloud.common <- function(...) {
   }
 
   ulog("RCloud start.rcloud.common() complete, user='", .session$username, "'")
-  
+
   TRUE
 }
 

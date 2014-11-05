@@ -368,17 +368,22 @@ var editor = function () {
         };
     }
 
+    function alls_name(subtree) {
+        return subtree.id.replace("/alls/","");
+    }
+
     function populate_friends(alls_root) {
         var friend_subtrees = alls_root.children.filter(function(subtree) {
-            return my_friends_[subtree.id.replace("/alls/","")]>0;
+            return my_friends_[alls_name(subtree)]>0;
         });
         return create_notebook_root(friend_subtrees, 'friends', 'People I Starred');
     }
 
     function populate_featured(alls_root) {
         var featured_subtrees = alls_root.children.filter(function(subtree) {
-            return featured_.indexOf(subtree.id.replace("/alls/",""))>=0;
+            return featured_.indexOf(alls_name(subtree))>=0;
         });
+        featured_ = featured_subtrees.map(alls_name); // remove any we didn't find in All Notebooks
         if(!featured_subtrees.length)
             return null;
         return create_notebook_root(featured_subtrees, 'featured', 'RCloud Sample Notebooks');
@@ -431,12 +436,14 @@ var editor = function () {
                                     rcloud.config.get_alluser_option('featured_users')
                                     .then(function(featured) {
                                         featured_ = featured || [];
+                                        if(_.isString(featured_)) 
+                                            featured_ = [featured_];
                                     })])
                     .then(function() {
                         var alls_root = populate_all_notebooks(user_notebook_set);
                         return [
-                            populate_interests(my_stars_array),
                             populate_featured(alls_root),
+                            populate_interests(my_stars_array),
                             populate_friends(alls_root),
                             alls_root
                         ].filter(function(t) { return !!t; });
@@ -794,8 +801,9 @@ var editor = function () {
         }
         var p;
         if(selroot === true)
-            selroot = my_stars_[gistname] ? 'interests' :
-                my_friends_[user] ? 'friends' : 'alls';
+            selroot = featured_.indexOf(user) >=0 ? 'featured' :
+                my_stars_[gistname] ? 'interests' :
+                my_friends_[user] ? 'friends': 'alls';
         if(my_stars_[gistname]) {
             p = update_tree_entry('interests', user, gistname, entry, true);
             if(selroot==='interests')
@@ -1338,7 +1346,7 @@ var editor = function () {
         remove_notebook: function(user, gistname) {
             var that = this;
             return (!my_stars_[gistname] ? Promise.resolve() :
-                    this.star_notebook(false, {user: user, gistname: gistname}))
+                    this.star_notebook(false, {user: user, gistname: gistname, selroot: false}))
                 .then(function() {
                     remove_notebook_info(user, gistname);
                     remove_notebook_view(user, gistname);

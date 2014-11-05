@@ -20,6 +20,17 @@ readRDS.if.exists <- function (file, refhook = NULL)
 
 rcs_ff_error <- rcs_ff_warning <- function(rv) function(w) rv
 
+rcs.open.RCSff <- function() {
+  if (nzConf("exec.auth") && identical(getConf("exec.match.user"), "login"))
+    warning("*** WARNING: user switching is enabled but no rcs.engine is specified!\n *** This will break due to permission conflicts! rcs.engine: redis is recommended for multi-user setup")
+  fdir <- pathConf("data.root", "rcs")
+  if (!file.exists(fdir))
+    dir.create(fdir, FALSE, TRUE, "0777")
+  .session$rcs.engine <- structure(list(root=fdir), class="RCSff")
+}
+
+rcs.close.RCSff <- function() {}
+
 rcs.get.RCSff <- function(key, list=FALSE, engine=.session$rcs.engine)
    if (list || length(key) != 1L) .lnapply(key, rcs.get.RCSff, FALSE, engine) else (tryCatch(readRDS.if.exists(.ffpath(key, engine)), warning=rcs_ff_warning(NULL), error=rcs_ff_error(NULL)))
 

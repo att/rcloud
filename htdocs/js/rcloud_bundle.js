@@ -2006,7 +2006,6 @@ Notebook.create_html_view = function(model, root_div)
 
     function init_cell_view(cell_view) {
         cell_view.set_readonly(model.read_only()); // usu false but future-proof it
-        cell_view.show_source();
     }
 
     var result = {
@@ -2037,6 +2036,7 @@ Notebook.create_html_view = function(model, root_div)
             $(cell_view.div()).insertBefore(root_div.children('.notebook-cell')[cell_index]);
             this.sub_views.splice(cell_index, 0, cell_view);
             init_cell_view(cell_view);
+        cell_view.show_source();
             on_rearrange();
             return cell_view;
         },
@@ -4385,7 +4385,7 @@ RCloud.UI.panel_loader = (function() {
                     side: 'right',
                     name: 'file-upload',
                     title: 'File Upload',
-                    icon_class: 'icon-upload',
+                    icon_class: 'icon-upload-alt',
                     colwidth: 2,
                     sort: 2000,
                     panel: RCloud.UI.upload_frame
@@ -4599,7 +4599,7 @@ RCloud.UI.scratchpad = {
                     return;
                 if (dt.types !== null &&
                     (dt.types.indexOf ?
-                     dt.types.indexOf('Files') != -1 :
+                     (dt.types.indexOf('Files') != -1 && dt.types.indexOf('text/html') == -1):
                      dt.types.contains('application/x-moz-file'))) {
                     if (!shell.notebook.model.read_only()) {
                         e.stopPropagation();
@@ -4637,7 +4637,7 @@ RCloud.UI.scratchpad = {
                 },
                 "dragenter dragover": function(e) {
                     var dt = e.originalEvent.dataTransfer;
-                    if(dt.items.length === 1 && !shell.notebook.model.read_only())
+                    if(!shell.notebook.model.read_only())
                         dt.dropEffect = 'copy';
                 }
             });
