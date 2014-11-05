@@ -83,6 +83,14 @@ if [ ! -e "$DISTREP/src/contrib/PACKAGES" -o -n "$mkdist" ]; then
         echo " Distributon packages created in $DISTREP"
         exit 0
     fi
+
+    # Create a local copy of mathjax library in htdocs
+    MATHJAX_INSTALL_DIR=mathjax
+    if [ ! -e "${WD}/htdocs/$MATHJAX_INSTALL_DIR" ]; then
+        mkdir -p "${WD}/htdocs/$MATHJAX_INSTALL_DIR"
+        echo 'Downloading MathJax'
+        curl -L https://codeload.github.com/mathjax/MathJax/legacy.tar.gz/master | tar -xz -C "${WD}/htdocs/$MATHJAX_INSTALL_DIR" --strip-components=1
+    fi
 else
     ## Installation from a distribution
     echo 'cat(sprintf("\n Using %s, installing packages...\n", R.version.string)); url="file://'"$DISTREP/"'"; a=rownames(available.packages(paste0(url,"/src/contrib"))); install.packages(a,,url,type="source")' | "$RBIN" --slave --vanilla

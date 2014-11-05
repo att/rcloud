@@ -55,11 +55,22 @@ echo -e "\n\nInstalling Make dependencies\n\n"
 apt-get install -y build-essential xutils-dev autoconf libtool gperf xsltproc
 
 #########################################
+echo -e "\n\nInstalling lib boost headers\n\n"
+
+(
+    source_dir=$BUILD_DIR/source/boost_1_57_0
+    vendor_dir=$BUILD_DIR/vendor
+
+    mkdir -p $source_dir
+    mkdir -p $vendor_dir
+    cd $source_dir
+    wget http://sourceforge.net/projects/boost/files/boost/1.57.0/boost_1_57_0.tar.gz/download -O boost_1_57_0.tar.gz
+    tar -xf boost_1_57_0.tar.gz -C /app/vendor/ boost_1_57_0/boost
+)
+
+#########################################
 echo -e "\n\nInstalling libs from source\n\n"
 
-# librsvg, poppler, ghostscript ??
-
-install_from_source libboost-all-dev
 install_from_source x11proto-core-dev
 install_from_source libpthread-stubs0-dev
 install_from_source libxau-dev

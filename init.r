@@ -8,27 +8,12 @@ dependencies = c(
 )
 
 for (dependency in dependencies) {
-    Sys.setenv( "PKG_CONFIG_PATH" = paste( Sys.getenv("PKG_CONFIG_PATH"), ":/app/vendor/", dependency[1], "/lib/pkgconfig", sep = "" ) )
+    Sys.setenv( "PKG_CONFIG_PATH" = paste0( Sys.getenv("PKG_CONFIG_PATH"), ":/app/vendor/", dependency[1], "/lib/pkgconfig") )
 }
 
-#######################
-print("Installing MathJax Dependencies")
-dir.create("htdocs/mathjax", recursive = TRUE)
-system2("curl", args = c("-L", "https://codeload.github.com/mathjax/MathJax/legacy.tar.gz/master", "|", "tar", "-xz", "-C", "htdocs/mathjax", "--strip-components=1"))
+Sys.setenv( "PKG_CXXFLAGS" = paste( Sys.getenv("PKG_CXXFLAGS"), "-I /app/vendor/boost_1_57_0"))
 
 ########################
 print("Installing RCloud")
-options(repos=c(CRAN = "http://cran.rstudio.com/", "http://RForge.net", "http://R.research.att.com"))
-#system2("./scripts/build.sh") # FIXME: This does not seem to work?
-install.packages("devtools", quiet = TRUE)
-
-packages = c(
-    "packages/gist", "packages/githubgist", "rcloud.support", "rcloud.client", "rcloud.packages/rcloud.dcplot",
-    "rcloud.packages/rcloud.lux", "rcloud.packages/rcloud.shiny", "rcloud.packages/rcloud.viewer", "rcloud.packages/rcloud.web"
-)
-
-for (package in packages) {
-    devtools::install(package, dependencies = TRUE, quiet = TRUE)
-}
-
-rcloud.support:::check.installation() # prevent the same command in conf/run_rcloud.R from slowing down the startup by pre-processing it
+system2("./scripts/bootstrapR.sh")
+rcloud.support:::check.installation()
