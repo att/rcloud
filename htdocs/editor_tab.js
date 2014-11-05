@@ -368,17 +368,22 @@ var editor = function () {
         };
     }
 
+    function alls_name(subtree) {
+        return subtree.id.replace("/alls/","");
+    }
+
     function populate_friends(alls_root) {
         var friend_subtrees = alls_root.children.filter(function(subtree) {
-            return my_friends_[subtree.id.replace("/alls/","")]>0;
+            return my_friends_[alls_name(subtree)]>0;
         });
         return create_notebook_root(friend_subtrees, 'friends', 'People I Starred');
     }
 
     function populate_featured(alls_root) {
         var featured_subtrees = alls_root.children.filter(function(subtree) {
-            return featured_.indexOf(subtree.id.replace("/alls/",""))>=0;
+            return featured_.indexOf(alls_name(subtree))>=0;
         });
+        featured_ = featured_subtrees.map(alls_name); // remove any we didn't find in All Notebooks
         if(!featured_subtrees.length)
             return null;
         return create_notebook_root(featured_subtrees, 'featured', 'RCloud Sample Notebooks');
@@ -431,6 +436,8 @@ var editor = function () {
                                     rcloud.config.get_alluser_option('featured_users')
                                     .then(function(featured) {
                                         featured_ = featured || [];
+                                        if(_.isString(featured_)) 
+                                            featured_ = [featured_];
                                     })])
                     .then(function() {
                         var alls_root = populate_all_notebooks(user_notebook_set);
