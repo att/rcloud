@@ -88,6 +88,9 @@
 * RCloud Sample Notebooks folder in the tree, to feature certain users and their
   example notebooks.
 
+* Initialize RCS keys under .allusers/system by adding rcloud.conf entries
+  `rcs.system.*`
+
 
 ### Improvements
 
