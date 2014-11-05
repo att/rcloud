@@ -435,8 +435,8 @@ var editor = function () {
                     .then(function() {
                         var alls_root = populate_all_notebooks(user_notebook_set);
                         return [
-                            populate_interests(my_stars_array),
                             populate_featured(alls_root),
+                            populate_interests(my_stars_array),
                             populate_friends(alls_root),
                             alls_root
                         ].filter(function(t) { return !!t; });
