@@ -1304,9 +1304,9 @@ var editor = function () {
             var user = opts.user ||
                     opts.notebook&&opts.notebook.user&&opts.notebook.user.login ||
                     notebook_info_[gistname].username;
-            // keep selected if was
-            if(gistname === current_.notebook)
-                opts.selroot = opts.selroot || true;
+            // keep selected if was (but don't try to select a removed notebook)
+            if(gistname === current_.notebook && opts.selroot === undefined)
+                opts.selroot = true;
             if(star) {
                 return rcloud.stars.star_notebook(gistname).then(function(count) {
                     num_stars_[gistname] = count;
