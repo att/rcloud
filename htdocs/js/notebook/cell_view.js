@@ -14,6 +14,15 @@ var languages = {
 var non_language = { 'background-color': '#dddddd',
                      'ace_mode': 'ace/mode/text' };
 
+function ensure_image_has_hash(img)
+{
+    if (img.dataset.sha256)
+        return img.dataset.sha256;
+    var hasher = new sha256(img.getAttribute("src"), "TEXT");
+    img.dataset.sha256 = hasher.getHash("SHA-256", "HEX");
+    return img.dataset.sha256;
+}
+
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var EXTRA_HEIGHT = 27;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
@@ -48,7 +57,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     insert_cell_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
-            shell.insert_markdown_cell_before(cell_model.id());
+            shell.insert_cell_before(cell_model.language(), cell_model.id());
         }
     });
     join_button.click(function(e) {
@@ -60,7 +69,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     split_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
             var range = widget.getSelection().getRange();
-            var point1, point2 = undefined;
+            var point1, point2;
             point1 = ui_utils.character_offset_of_pos(widget, range.start);
             if(!range.isEmpty())
                 point2 = ui_utils.character_offset_of_pos(widget, range.end);
@@ -163,7 +172,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         session.getUndoManager().reset();
     });
     var doc = session.doc;
-    var am_read_only = undefined; // we don't know yet
+    var am_read_only = "unknown";
     widget.setOptions({
         enableBasicAutocompletion: true
     });
@@ -274,7 +283,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                         $(img).on("load", update);
                     } else {
                         update();
-                    };
+                    }
                 });
 
             // capture deferred knitr results
@@ -293,13 +302,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                     var f = rclient._rserve.wrap_ocap(ocap);
 
                     f(function(err, future) {
+                        var data;
                         if (RCloud.is_exception(future)) {
-                            var data = RCloud.exception_message(future);
+                            data = RCloud.exception_message(future);
                             $(that).replaceWith(function() {
                                 return ui_utils.string_error(data);
                             });
                         } else {
-                            var data = future();
+                            data = future();
                             $(that).replaceWith(function() {
                                 return data;
                             });
@@ -330,6 +340,20 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             if (!shell.notebook.controller._r_source_visible) {
                 Notebook.hide_r_source(inner_div);
             }
+
+            // Workaround a persistently annoying knitr bug:
+            // https://github.com/att/rcloud/issues/456
+
+            _($("img")).each(function(img, ix, $q) {
+                ensure_image_has_hash(img);
+                if (img.getAttribute("src").substr(0,10) === "data:image" &&
+                    img.getAttribute("alt") != null &&
+                    img.getAttribute("alt").substr(0,13) === "plot of chunk" &&
+                    ix > 0 &&
+                    img.dataset.sha256 === $q[ix-1].dataset.sha256) {
+                    $(img).css("display", "none");
+                }
+            });
 
             this.show_result();
         },
@@ -480,7 +504,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     result.show_result();
     return result;
-}};
+};}
 
 Notebook.Cell.create_html_view = function(cell_model)
 {

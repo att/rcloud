@@ -20,11 +20,6 @@ configure.rcloud <- function (mode=c("startup", "script")) {
   ## FIXME: should not be needed - try out?
   require(rcloud.support)
 
-  ## FIXME: this is needed, because github is only in Suggests
-  ##        since it's not on CRAN. We load it for convenience
-  ##        later but this is a note that it's really needed.
-  require(github)
-
   ## it is useful to have access to the root of your
   ## installation from R scripts -- for RCloud this is *mandatory*
   setConf("root", Sys.getenv("ROOT"))
@@ -95,13 +90,9 @@ configure.rcloud <- function (mode=c("startup", "script")) {
     for (n in names(rc.c)) setConf(gsub("[ \t]", ".", tolower(n)), as.vector(rc.c[n]))
   }
 
-  ## use public github by default
+  ## use public github by default (FIXME: this should go away when set in the githubgist package)
   if (!nzConf("github.base.url")) setConf("github.base.url", "https://github.com/")
   if (!nzConf("github.api.url")) setConf("github.api.url", "https://api.github.com/")
-
-  if (!all(sapply(c("github.client.id", "github.client.secret"), nzConf))
-      && !nzConf("gist.deployment.stash"))
-    stop("*** ERROR: You need a GitHub configuration in rcloud.conf! Please refer to README.md for more instructions.")
 
   ## set locale - default is UTF-8
   locale <- getConf("locale")
@@ -110,7 +101,7 @@ configure.rcloud <- function (mode=c("startup", "script")) {
 
   ## This is jsut a friendly way to load package and report success/failure
   ## Cairo, knitr, markdown and png are mandatory, really
-  pkgs <- c("Cairo", "FastRWeb", "Rserve", "png", "knitr", "markdown", "base64enc", "rjson", "httr", "github", "RCurl")
+  pkgs <- c("Cairo", "FastRWeb", "Rserve", "png", "knitr", "markdown", "base64enc", "rjson", "httr", "RCurl")
   ## $CONFROOT/packages.txt can list additional packages
   if (file.exists(fn <- pathConf("configuration.root", "packages.txt")))
     pkgs <- c(pkgs, readLines(fn))
@@ -168,15 +159,19 @@ configure.rcloud <- function (mode=c("startup", "script")) {
 
   setConf("instanceID", generate.uuid())
 
-  ## sanity check on redis
-  if (isTRUE(getConf("rcs.engine") == "redis")) {
-    redis <- rcs.redis(getConf("rcs.redis.host"))
-    if (is.null(redis$handle)) stop("ERROR: cannot connect to redis host `",getConf("rcs.redis.host"),"', aborting")
-    ## FIXME: we don't expose close in RCS, so do it by hand
-    rediscc::redis.close(redis$handle)
-    cat("Redis back-end .... OK\n")
-  }
-  options(HTTPUserAgent=paste(getOption("HTTPUserAgent"), "- RCloud (http://github.com/cscheid/rcloud)"))
+  ## open RCS, initialize RCS .allusers/system/* based on conf rcs.system.*, close
+  rcs.open()
+  conf.keys <- keysConf()
+  system.config <- conf.keys[grep('^rcs\\.system\\..*', conf.keys)]
+  lapply(system.config, function(key) {
+    parts <- strsplit(key, '\\.')[[1]]
+    value <- strsplit(getConf(key), ' *, *')[[1]]
+    rcs.set(rcs.key('.allusers', parts[[2]], parts[[3]], parts[[4]]), value)
+  })
+  rcs.close();
+  cat("Redis back-end .... OK\n")
+
+  options(HTTPUserAgent=paste(getOption("HTTPUserAgent"), "- RCloud (http://github.com/att/rcloud)"))
 
   ## determine verison/revision/branch
   ##
@@ -272,17 +267,7 @@ start.rcloud.common <- function(...) {
   ## generate per-session result UUID (optional, really)
   .session$result.prefix.uuid <- generate.uuid()
 
-  if (isTRUE(getConf("rcs.engine") == "redis"))
-    .session$rcs.engine <- rcs.redis(getConf("rcs.redis.host"))
-
-  if (is.null(.session$rcs.engine)) { ## fall-back engine are flat files
-    if (nzConf("exec.auth") && identical(getConf("exec.match.user"), "login"))
-      warning("*** WARNING: user switching is enabled but no rcs.engine is specified!\n *** This will break due to permission conflicts! rcs.engine: redis is recommended for multi-user setup")
-    fdir <- pathConf("data.root", "rcs")
-    if (!file.exists(fdir))
-      dir.create(fdir, FALSE, TRUE, "0777")
-    .session$rcs.engine <- structure(list(root=fdir), class="RCSff")
-  }
+  rcs.open()
 
   ## last-minute updates (or custom initialization) to be loaded
   ## NB: it should be really fast since it will cause connect delay
@@ -291,46 +276,70 @@ start.rcloud.common <- function(...) {
 
   ## per-user setup
   if (nzchar(.session$username)) {
-    .session$username <- gsub("[^a-zA-Z0-9_.]+", "_", .session$username)
+    .session$username <- gsub("[^a-zA-Z0-9_.-]+", "_", .session$username)
     if (!file.exists(fn <- pathConf("data.root", "userfiles", .session$username)))
       dir.create(fn, FALSE, TRUE, "0770")
   }
 
+  ulog("RCloud start.rcloud.common() complete, user='", .session$username, "'")
+
   TRUE
 }
 
-## --- RCloud part folows ---
-## this is called by session.init() on per-connection basis
-start.rcloud <- function(username="", token="", ...) {
-  # if (rcloud.debug.level()) cat("start.rcloud(", username, ", ", token, ")\n", sep='')
-  if (!check.user.token.pair(username, token))
-    stop("bad username/token pair");
+create.gist.backend <- function(username="", token="", ...) {
+  if (is.null(gb <- getConf("gist.backend"))) {
+    ## FIXME: for compatibility only
+    gb <- "githubgist"
+    ## don't issue a warning for now since this get run in the user's session so it's user-visible
+    ## cat(" ** WARNING: no gist.backend specified in the config file, using 'githubgist' which may change in the future!\n")
+  }
+  if (!require(gb, quietly=TRUE, character.only=TRUE))
+    stop(" *** FATAL: cannot load gist.backend package `", gb, "'")
+  gbns <- getNamespace(gb)
+  l <- list()
+  if (is.function(gbns$config.options)) {
+    ## this is a bit ugly - we do ${ROOT} substitution regardless of the scope and we don't substitute anything else ...
+    l <- lapply(names(gbns$config.options()), function(o) { x <- getConf(o); if (!is.null(x)) gsub("${ROOT}", getConf("root"), x, fixed=TRUE) else x })
+    names(l) <- names(gbns$config.options())
+    l0 <- sapply(l, is.null)
+    req <- sapply(gbns$config.options(), isTRUE)
+    if (any(l0 & req))
+      stop("Following options required by `", gb, "' are missing: ", paste(names(gbns$config.options())[l0 & req]), collapse=', ')
+  }
+  
+  l["username"]=list(username)
+  l["token"]=list(token)
+  if (rcloud.debug.level()) {
+    cat("create.gist.ctx call:\n")
+    str(l)
+  }
+  gist::set.gist.context(do.call(gbns$create.gist.context, l))
+}
+
+
+## This sets up the gist context and calls start.rcloud.common
+## (FIXME: this exists only for historic reasons)
+start.rcloud.gist <- function(username="", token="", ...) {
   .session$username <- username
   .session$token <- token
-  if (nzConf("gist.deployment.stash"))
-    .session$deployment.stash <- getConf("gist.deployment.stash")
-  else
-    .session$rgithub.context <- create.github.context(
-                                getConf("github.api.url"), getConf("github.client.id"),
-                                getConf("github.client.secret"), token)
+  ## FIXME: we have really two places where the context is stored:
+  ## in the gist package's volatile and in the .session
+  ## The rationale was security such that user cannot use
+  ## set.gist.context to override it and steal credentials,
+  ## but then we may have to remove it from gists entirely.
+  .session$gist.context <- create.gist.backend(username=username, token=token, ...)
 
   if (is.function(getOption("RCloud.session.auth")))
     getOption("RCloud.session.auth")(username=username, ...)
   start.rcloud.common(...)
 }
 
-start.rcloud.anonymously <- function(...) {
-  # if (rcloud.debug.level()) cat("start.rcloud.anonymously()")
-  if (nzConf("gist.deployment.stash"))
-    .session$deployment.stash <- getConf("gist.deployment.stash")
-  else
-    .session$rgithub.context <- create.github.context(
-                                getConf("github.api.url"), getConf("github.client.id"),
-                                getConf("github.client.secret"))
-  .session$username <- ""
-  .session$token <- ""
-
-  if (is.function(getOption("RCloud.session.auth")))
-    getOption("RCloud.session.auth")(username=username, ...)
-  start.rcloud.common(...)
+## this is called by session.init() on per-connection basis
+start.rcloud <- function(username="", token="", ...) {
+  if (!check.user.token.pair(username, token))
+    stop("bad username/token pair");
+  start.rcloud.gist(username=username, token=token, ...)
 }
+
+start.rcloud.anonymously <- function(...)
+  start.rcloud.gist("", "", ...)

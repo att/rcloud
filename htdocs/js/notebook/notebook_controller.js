@@ -53,7 +53,7 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(version, notebook) {
-        var is_read_only = version != null || notebook.user.login != rcloud.username();
+        var is_read_only = version !== null || notebook.user.login !== rcloud.username();
         current_gist_ = notebook;
         model.read_only(is_read_only);
         if (!_.isUndefined(notebook.files)) {
@@ -198,9 +198,12 @@ Notebook.create_controller = function(model)
     }
 
     function apply_changes_and_load(changes, gistname) {
-        return changes.length
-            ? update_notebook(changes, gistname)
-            : result.load_notebook(gistname, null); // do a load - we need to refresh
+        return (changes.length ?
+            update_notebook(changes, gistname) :
+            Promise.resolve(undefined))
+            .then(function() {
+                return result.load_notebook(gistname, null); // do a load - we need to refresh
+            });
     }
 
     function refresh_buffers() {

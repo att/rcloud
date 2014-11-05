@@ -5,5 +5,5 @@ Author: Simon Urbanek <urbanek@research.att.com>
 Maintainer: Simon Urbanek <urbanek@research.att.com>
 Description: RCloud Web interface 
 Imports: Rserve (>= 1.8)
-Suggests: rcloud.support, FastRWeb
+Suggests: rcloud.support, FastRWeb, shiny
 License: MIT

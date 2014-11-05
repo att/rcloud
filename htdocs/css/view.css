@@ -173,9 +173,25 @@ rect.frame {
     text-decoration: none;
 }
 
-a.unclickable {
+#forked-from-desc {
+    color: #777;
+    position: absolute;
+    bottom: 4px;
+    left: 6ex;
+    width: 700;
     pointer-events: none;
-    cursor: default;
+    cursor: text;
+    overflow-y: hidden;
+    height: 1.5em;
+}
+
+#forked-from-desc a {
+    color: #4265a7;
+    pointer-events: auto;
+}
+
+#forked-from-desc a:hover {
+    color: #428bca
 }
 
 /* .markdown-div { */
@@ -239,4 +255,11 @@ pre {
 p img {
     display: block;
     margin: auto;
-};
+}
+
+#rcloud-cellarea {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}

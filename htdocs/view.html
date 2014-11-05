@@ -30,7 +30,7 @@
         <ul class="nav navbar-nav">
           <li><button id="edit-notebook" title="Edit Notebook" type="button" class="btn btn-link navbar-btn"><i class="icon-edit"></i></button></li>
           <li><button id="run-notebook" title="Run All" type="button" class="btn btn-link navbar-btn"><i class="icon-play"></i></button></li>
-          <li><a href="#" class="unclickable">[<span id="notebook-title">Untitled</span>]</a></li>
+          <li><a href="#"><span id="notebook-author"></span><span id="author-title-dash" style="display:none;">&nbsp;&ndash;&nbsp;</span><span id="rename-notebook" title="Change Title">[<span id="notebook-title">loading...</span>]</a></span><small id="forked-from-desc"></small></li>
         </ul>
         <ul class="nav navbar-nav navbar-right">
           <li class="dropdown">
@@ -49,12 +49,10 @@
 <div class="container" id="main-div">
   <div class="row">
     <!--div class="col-md-1"></div-->
-    <div class="col-md-8 col-sm-8 col-md-offset-2 col-sm-offset-2 no-padding">
-      <div id="tabs-1">
+    <div class="col-md-8 col-sm-8 col-md-offset-2 col-sm-offset-2 no-padding" id="middle-column">
+      <div id="rcloud-cellarea">
         <div id="output" class="tab-div">
         </div>
-
-
         <div style="padding:1em; clear:both"></div>
       </div>
     </div>
@@ -62,7 +60,7 @@
 </div>
 
 <script type="text/javascript"
-        src="https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+        src="/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 <script type="text/javascript">MathJax && MathJax.Hub.Config({tex2jax: {processEscapes: true,
   processEnvironments: false, inlineMath: [ ['\\(','\\)'] ],

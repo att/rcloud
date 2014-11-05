@@ -6,6 +6,9 @@ Notebook.Cell.create_controller = function(cell_model)
             var language = cell_model.language() || 'Text'; // null is a synonym for Text
             function callback(r) {
                 that.set_status_message(r);
+                _.each(cell_model.parent_model.execution_watchers, function(ew) {
+                    ew.run_cell(cell_model);
+                });
             }
             var promise;
 

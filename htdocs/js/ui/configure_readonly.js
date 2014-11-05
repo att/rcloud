@@ -17,7 +17,7 @@ RCloud.UI.configure_readonly = function() {
         $('#revert-notebook,#save-notebook').hide();
     }
     if(shell.notebook.model.read_only()) {
-        $('#prompt-div').hide();
+        RCloud.UI.command_prompt.readonly(true);
         readonly_notebook.show();
         $('#save-notebook').hide();
         $('#output').sortable('disable');
@@ -27,7 +27,7 @@ RCloud.UI.configure_readonly = function() {
         RCloud.UI.scratchpad.set_readonly(true);
     }
     else {
-        $('#prompt-div').show();
+        RCloud.UI.command_prompt.readonly(false);
         readonly_notebook.hide();
         $('#save-notebook').show();
         $('#output').sortable('enable');

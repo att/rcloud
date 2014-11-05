@@ -8,9 +8,11 @@ rcloud.start.python <- function()
   sys <- py.import("sys")
   path <- system.file("python", package="rcloud.support")
   py.attr(sys, "path", .ref=TRUE)$append(path)
+  ## append any admin-specified paths (as ":" - separated paths)
+  if (nzConf("python.extra.libs")) path <- paste(path, getConf("python.extra.libs"), sep=":")
   sys$argv <- c("rcloud")
   py.eval("import notebook_runner")
-  py.eval(paste("runner = notebook_runner.NotebookRunner(rcloud_support_path='", path, "', extra_arguments=['--matplotlib=inline'], executable='python')", sep=''))
+  py.eval(paste("runner = notebook_runner.NotebookRunner(rcloud_python_lib_path='", path, "', extra_arguments=['--matplotlib=inline'], executable='python')", sep=''))
   .session$python.runner <- py.get("runner", .ref=TRUE)
   ## keep the runner reference only on the R side
   py.eval("del runner");
@@ -32,16 +34,18 @@ rcloud.exec.python <- function(cmd)
     # See to.chunk in session.python.eval
     msg <- e$`message`
 
-    # In addition, and this is a gigantic kludge, for some reason
-    # the exception message comes back with "Python exception: <type 'exceptions.Exception'> "
-    # appended to it. So we test for that prefix, bail if the prefix is not there,
-    # and trim it away to get the JSON payload.
-    prefix <- substr(msg, 1, 48)
-    if (prefix != "Python exception: <type 'exceptions.Exception'> ") {
-      stop("Internal Error: python exception was not returned as expected")
-    }
-    list(c(output_type="pyexception",
-           text=fromJSON(substr(msg, 49, nchar(msg)))$traceback))
+    # SSI - moving this logic to python module (we have better handle there)
+    # # In addition, and this is a gigantic kludge, for some reason
+    # # the exception message comes back with "Python exception: <type 'exceptions.Exception'> "
+    # # appended to it. So we test for that prefix, bail if the prefix is not there,
+    # # and trim it away to get the JSON payload.
+    # prefix <- substr(msg, 1, 48)
+    # if (prefix != "Python exception: <type 'exceptions.Exception'> ") {
+    #   stop("Internal Error: python exception was not returned as expected")
+    # }
+    list(c(output_type="pyerr", html=msg, collapse='\n'))
+    # list(c(output_type="pyexception",
+    #        text=paste(fromJSON(substr(msg, 49, nchar(msg)))$traceback, collapse='\n')))
   })
 }
 

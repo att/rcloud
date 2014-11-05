@@ -57,9 +57,6 @@ unauthenticated.ocaps <- function()
 
       get_users = make.oc(rcloud.get.users),
 
-      # externally used ocaps
-      load_module_package = make.oc(rcloud.load.module.package),
-
       # javascript.R
       setup_js_installer = make.oc(rcloud.setup.js.installer),
 
@@ -121,17 +118,23 @@ authenticated.ocaps <- function()
       update_notebook = make.oc(rcloud.update.notebook),
       create_notebook = make.oc(rcloud.create.notebook),
       rename_notebook = make.oc(rcloud.rename.notebook),
+      tag_notebook_version = make.oc(rcloud.tag.notebook.version),
+      get_version_by_tag = make.oc(rcloud.get.version.by.tag),
       publish_notebook = make.oc(rcloud.publish.notebook),
       unpublish_notebook = make.oc(rcloud.unpublish.notebook),
       set_notebook_visibility = make.oc(rcloud.set.notebook.visibility),
       fork_notebook = make.oc(rcloud.fork.notebook),
       port_notebooks = make.oc(rcloud.port.notebooks),
+      notebook_cells = make.oc(rcloud.notebook.cells),
       call_notebook = make.oc(rcloud.call.notebook),
       get_completions = make.oc(rcloud.get.completions),
 
       # This will cause bugs, because some notebooks want a
       # call_fastrweb_notebook...
       call_fastrweb_notebook = make.oc(rcloud.call.FastRWeb.notebook),
+
+      # externally used ocaps
+      load_module_package = make.oc(rcloud.load.module.package),
 
       # file upload ocaps
       file_upload = list(
@@ -144,7 +147,9 @@ authenticated.ocaps <- function()
 
       # commenting ocaps
       comments = list(
-        post = make.oc(rcloud.post.comment)
+        post = make.oc(rcloud.post.comment),
+        modify = make.oc(rcloud.modify.comment),
+        delete = make.oc(rcloud.delete.comment)
         ),
 
       config = list(
@@ -159,12 +164,17 @@ authenticated.ocaps <- function()
         set_recent_notebook = make.oc(rcloud.config.set.recent.notebook),
         clear_recent_notebook = make.oc(rcloud.config.clear.recent.notebook),
         get_user_option = make.oc(rcloud.config.get.user.option),
-        set_user_option = make.oc(rcloud.config.set.user.option)
+        set_user_option = make.oc(rcloud.config.set.user.option),
+        get_alluser_option = make.oc(rcloud.config.get.alluser.option)
         ),
 
       get_notebook_info = make.oc(rcloud.get.notebook.info),
       get_multiple_notebook_infos = make.oc(rcloud.get.multiple.notebook.infos),
       set_notebook_info = make.oc(rcloud.set.notebook.info),
+
+      get_notebook_property = make.oc(rcloud.get.notebook.property),
+      set_notebook_property = make.oc(rcloud.set.notebook.property),
+      remove_notebook_property = make.oc(rcloud.remove.notebook.property),
 
       purl_source = make.oc(rcloud.purl.source)
 
@@ -174,6 +184,6 @@ authenticated.ocaps <- function()
   ## search is optional
   if (nzConf("solr.url"))
     changes$rcloud$search <- make.oc(rcloud.search)
-  
+
   modifyList(basic.ocaps, changes)
 }

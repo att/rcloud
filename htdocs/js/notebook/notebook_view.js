@@ -1,11 +1,13 @@
 Notebook.create_html_view = function(model, root_div)
 {
-    var root_asset_div = $("#asset-list");
-
     function on_rearrange() {
         _.each(result.sub_views, function(view) {
             view.check_buttons();
         });
+    }
+
+    function init_cell_view(cell_view) {
+        cell_view.set_readonly(model.read_only()); // usu false but future-proof it
     }
 
     var result = {
@@ -17,13 +19,14 @@ Notebook.create_html_view = function(model, root_div)
             cell_model.views.push(cell_view);
             root_div.append(cell_view.div());
             this.sub_views.push(cell_view);
+            init_cell_view(cell_view);
             on_rearrange();
             return cell_view;
         },
         asset_appended: function(asset_model) {
             var asset_view = Notebook.Asset.create_html_view(asset_model);
             asset_model.views.push(asset_view);
-            root_asset_div.append(asset_view.div());
+            $("#asset-list").append(asset_view.div());
             this.asset_sub_views.push(asset_view);
             on_rearrange();
             return asset_view;
@@ -34,7 +37,8 @@ Notebook.create_html_view = function(model, root_div)
             root_div.append(cell_view.div());
             $(cell_view.div()).insertBefore(root_div.children('.notebook-cell')[cell_index]);
             this.sub_views.splice(cell_index, 0, cell_view);
-            cell_view.show_source();
+            init_cell_view(cell_view);
+        cell_view.show_source();
             on_rearrange();
             return cell_view;
         },

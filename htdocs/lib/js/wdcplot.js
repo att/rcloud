@@ -24,7 +24,7 @@
 
     function una_or_bin_op(disp) {
         return function(frame, args, ctx) {
-            if(args.length==2) {
+            if(args.length===2) {
                 var operand = expression(frame, args[1], ctx);
                 return {lambda: operand.lambda, text: disp + operand.text};
             }
@@ -99,7 +99,7 @@
     }
 
     function node(frame, sexp, ctx) {
-        if($.isArray(sexp[0]) && sexp[0][0] == "func") // special case lambda expr trees
+        if($.isArray(sexp[0]) && sexp[0][0] === "func") // special case lambda expr trees
             return lambda(frame, sexp, ctx);
         var op = operators[sexp[0]] || operators.default;
         return op(frame, sexp, ctx);
@@ -110,13 +110,13 @@
     }
 
     function special_function(sexp) {
-        return is_wdcplot_placeholder(sexp) && sexp.r_attributes['wdcplot.placeholder'] === 'special'
-            ? sexp[0] : undefined;
+        return is_wdcplot_placeholder(sexp) && sexp.r_attributes['wdcplot.placeholder'] === 'special' ?
+            sexp[0] : undefined;
     }
 
     function dataframe_column(sexp) {
-        return is_wdcplot_placeholder(sexp) && sexp.r_attributes['wdcplot.placeholder'] === 'column'
-            ? sexp[0] : undefined;
+        return is_wdcplot_placeholder(sexp) && sexp.r_attributes['wdcplot.placeholder'] === 'column' ?
+            sexp[0] : undefined;
     }
 
     function col_name(elem) {
@@ -180,7 +180,7 @@
      field names identifiers, it's a lambda(key,value) else execute it immediately
      */
     function argument(frame, sexp) {
-        if(sexp==null)
+        if(sexp===null)
             return null;
         else if(_.isArray(sexp)) {
             // bypass eval for bare special variables and columns
@@ -205,6 +205,7 @@
         var js_expr = expression(frame, sexp, ctx);
         // incantation to make code show up in the debugger
         js_expr.text += "\n//@ sourceURL=wdcplot.expr." + wdcplot_expr_num++ + ".js";
+        /*jshint -W061 */
         if(js_expr.lambda) {
             // it seems kind of screwy to use eval here but it has the nice property
             // of using a closure, which new Function() does not, which makes it
@@ -235,16 +236,16 @@
         var w = weight;
         var fname = sexp[0];
         if(_.isArray(sexp)) {
-            if(sexp[2] != undefined) w = sexp[2];
-            if(sexp[0] == 'count' && sexp[1] != undefined) w = sexp[1];
+            if(sexp[2] !== undefined) w = sexp[2];
+            if(sexp[0] === 'count' && sexp[1] !== undefined) w = sexp[1];
         }
         else fname = sexp;
 
-        var wacc = (w == undefined) ? undefined: argument(frame, w);
+        var wacc = (w === undefined) ? undefined: argument(frame, w);
         if(_.isNumber(wacc)) wacc = constant_fn(wacc);
 
         switch(fname) {
-        case 'count': return (w == undefined) ? dcplot.reduce.count : dcplot.reduce.sum(wacc);
+        case 'count': return (w === undefined) ? dcplot.reduce.count : dcplot.reduce.sum(wacc);
         case 'sum': return dcplot.reduce.sum(argument(frame, sexp[1]),wacc);
         case 'any': return dcplot.reduce.any(argument(frame, sexp[1]));
         case 'avg': return dcplot.reduce.avg(argument(frame, sexp[1]),wacc);
@@ -315,7 +316,7 @@
         var ret = {};
         for(var i = 0; i < sexps.length; ++i) {
             var name = sexps[i][0], defn = sexps[i][1];
-            if(name == "weight") continue;
+            if(name === "weight") continue;
             defn = positionals(defn, [null, 'dimension', 'group', 'reduce', 'weight']);
             if(defn[0][0] !== null)
                 throw "expected a null here";
@@ -378,8 +379,8 @@
         if(_.has(definition,'columns')) {
             var chartname = name + "Div";
             var header = $('<tr/>', { class: 'header'});
-            for(var col in definition['columns'])
-                header.append($('<th/>').append(definition['columns'][col]));
+            for(var col in definition.columns)
+                header.append($('<th/>').append(definition.columns[col]));
             table = ($('<thead/>')
                 .append(header));
             props['class'] = 'table table-hover';
@@ -438,30 +439,29 @@
                     throw "unexpected repeated section " + section[1];
 
                 var secdata = arg.slice(1);
+                /*jshint -W083 */
                 switch(section_name) {
                 case 'dimensions':
                     definition.dimensions = do_dimensions(frame, secdata);
                     break;
                 case 'groups':
                     var weight = _.find(secdata, function(exp) { return exp[0] === "weight"; });
-                    definition.defreduce = (weight == undefined)
-                        ? dcplot.reduce.count
-                        : dcplot.reduce.sum(argument(frame, weight[1]));
+                    definition.defreduce = (weight === undefined) ?
+                        dcplot.reduce.count :
+                        dcplot.reduce.sum(argument(frame, weight[1]));
                     definition.groups = do_groups(frame, secdata, weight);
                     break;
                 case 'charts':
                     definition.charts = do_charts(frame, secdata);
                     divs = _.map(_.keys(definition.charts),
                                  function(key) {
-                                     return definition.charts[key].div
-                                         = make_chart_div(key, definition.charts[key])[0];
+                                     return (definition.charts[key].div =
+                                             make_chart_div(key, definition.charts[key])[0]);
                                  });
                     break;
                 default: throw "unexpected section " + section[1];
                 }
             }
-            if(!definition.defreduce)
-                definition.defreduce = dcplot.reduce.count;
 
             var divwrap = $('<div/>',{id:"chartdiv"+chart_group, style: "overflow:auto"});
             _.each(divs, function(div) { divwrap.append(div); });

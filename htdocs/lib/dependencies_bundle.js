@@ -16580,13 +16580,13 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
             count: function(group) { return group.reduceCount(); },
             countFilter: function(access, level) {
                 return dcplot.reduce.sum(function (a) {
-                    return (access(a) == level) ? 1 : 0;
+                    return (access(a) === level) ? 1 : 0;
                 });
             },
             filter: function(reduce, access, level) {
                 function wrapper(acc) {
                     return function (a) {
-                        return (access(a) == level) ? acc(a) : 0;
+                        return (access(a) === level) ? acc(a) : 0;
                     };
                 }
                 return {
@@ -16598,7 +16598,7 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
                 return {
                     arg: access,
                     fun: function(acc2) {
-                        if(wacc == undefined)
+                        if(wacc === undefined)
                             return function(group) {
                                 return group.reduceSum(
                                     function(item) {
@@ -16646,7 +16646,7 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
                 return {
                     arg: access,
                     fun: function(acc2) {
-                        if(wacc == undefined) return function(group) {
+                        if(wacc === undefined) return function(group) {
                             return group.reduce(
                                 function(p, v) {
                                     ++p.count;
@@ -16831,7 +16831,7 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
         };
 
         function skip_attr(a) {
-            return a==='supported' || a=='concrete' || a==='parents';
+            return a==='supported' || a==='concrete' || a==='parents';
         }
 
         function parents_first_traversal(map, iter, callbacks) {
@@ -16856,7 +16856,7 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
         // dc.js formats all numbers as ints - override
         var _psv = dc.utils.printSingleValue;
         dc.utils.printSingleValue = function(filter) {
-            if(typeof(filter) == 'number') {
+            if(typeof(filter) === 'number') {
                 if(filter%1 === 0)
                     return filter;
                 else if(filter>10000 || filter < -10000)
@@ -16865,7 +16865,7 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
                     return filter.toPrecision(4);
             }
             else return _psv(filter);
-        }
+        };
 
         dcplot.format_error = function(e) {
             var tab;
@@ -16896,19 +16896,23 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
             return error_report;
         };
 
-
         function dcplot(frame, groupname, definition) {
 
             // generalization of _.has
             function mhas(obj) {
                 for(var i=1; i<arguments.length; ++i)
-                    if(!_.has(obj, arguments[i]) || obj[arguments[i]] == undefined)
+                    if(!_.has(obj, arguments[i]) || obj[arguments[i]] === undefined)
                         return false;
                 else obj = obj[arguments[i]];
                 return true;
             }
 
             // defaults
+            function default_definition(defn) {
+                // defaults on the definition as a whole
+                if(!definition.defreduce)
+                    definition.defreduce = dcplot.reduce.count;
+            }
             function default_dimension(name, defn) {
                 // nothing (yet?)
             }
@@ -16966,7 +16970,7 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
 
             function one_stack(defn) {
                 return !_.has(defn,'stack.levels') ||
-                    (_.has(defn,'stack.levels') && defn['stack.levels'].length == 1);
+                    (_.has(defn,'stack.levels') && defn['stack.levels'].length === 1);
             }
 
             // inferences
@@ -17021,7 +17025,7 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
                             // note it's a little messy to have this as a property of the chart rather than
                             // the group, but dc.js sometimes needs an ordering and sometimes doesn't
                             var levels = get_levels(defn.dimension);
-                            if(levels != null) {
+                            if(levels !== null) {
                                 var rmap = _.object(levels, _.range(levels.length));
                                 // the ordering function uses a reverse map of the levels
                                 defn.ordering = function(p) {
@@ -17037,8 +17041,8 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
                             // of the hierarchy, there is no sensible way for stackable to override
                             // color here
                             var levels = get_levels(defn.stack || defn.dimension);
-                            defn['color.scale'] = (levels != null && levels.length>10)
-                                ? d3.scale.category20() : d3.scale.category10();
+                            defn['color.scale'] = (levels !== null && levels.length>10) ?
+                                d3.scale.category20() : d3.scale.category10();
                         }
                         if(!defn['color.domain']) {
                             // this also should be abstracted out into a plugin (RCloud-specific)
@@ -17049,7 +17053,7 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
                     stackable: function() {
                         if(_.has(defn,'stack')) {
                             if(!_.has(defn,'stack.levels'))
-                                defn['stack.levels'] = get_levels(defn['stack']);
+                                defn['stack.levels'] = get_levels(defn.stack);
                             var levels = defn['stack.levels'];
 
                             // Change reduce functions to filter on stack levels
@@ -17058,9 +17062,9 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
                                 var newGroupDefn = _.clone(groups[defn.group]);
 
                                 // Special treatment for counts, otherwise generic filter wrapper
-                                if(newGroupDefn.reduce == dcplot.reduce.count)
-                                    newGroupDefn.reduce = dcplot.reduce.countFilter(defn['stack'],defn['stack.levels'][s]);
-                                else newGroupDefn.reduce = dcplot.reduce.filter(newGroupDefn.reduce,defn['stack'],defn['stack.levels'][s]);
+                                if(newGroupDefn.reduce === dcplot.reduce.count)
+                                    newGroupDefn.reduce = dcplot.reduce.countFilter(defn.stack,defn['stack.levels'][s]);
+                                else newGroupDefn.reduce = dcplot.reduce.filter(newGroupDefn.reduce,defn.stack,defn['stack.levels'][s]);
 
                                 groups[newName] = newGroupDefn;
                             }
@@ -17068,9 +17072,10 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
                     },
                     coordinateGrid: function() {
                         var levels = get_levels(defn.dimension);
-                        if(!('x.ordinal' in defn))
-                            defn['x.ordinal'] = (('x.units' in defn) && defn['x.units'] === dc.units.ordinal)
-                            || (levels != null) || looks_ordinal(defn.dimension);
+                        if(!('x.ordinal' in defn)) {
+                            defn['x.ordinal'] = (('x.units' in defn) && defn['x.units'] === dc.units.ordinal) ||
+                                (levels !== null) || looks_ordinal(defn.dimension);
+                        }
 
                         if(!('x.scale' in defn) && defn['x.ordinal'])
                             defn['x.scale'] = d3.scale.ordinal();
@@ -17208,9 +17213,9 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
                 var errors = [];
                 var callbacks = {
                     base: function() {
-                        if(defn.dimension && defn.dimension!=groups[defn.group].dimension)
-                            errors.push('group "' + defn.group + '" dimension "' + groups[defn.group].dimension
-                                        + '" does not match chart dimension "' + defn.dimension + '"');
+                        if(defn.dimension && defn.dimension!==groups[defn.group].dimension)
+                            errors.push('group "' + defn.group + '" dimension "' + groups[defn.group].dimension +
+                                        '" does not match chart dimension "' + defn.dimension + '"');
                     },
                     color: function() {
                     },
@@ -17317,7 +17322,7 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
                             for(var s = 0; s<defn['stack.levels'].length; s++) {
                                 var stackGroup = groups[defn.group+defn['stack.levels'][s]];
 
-                                if(s == 0)
+                                if(s === 0)
                                     chart.group(stackGroup);
                                 else chart.stack(stackGroup);
                             }
@@ -17430,10 +17435,10 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
                     },
                     dataTable: function() {
                         chart.group(accessor(defn.dimension));
-                        chart.columns(defn['columns'].map(accessor));
+                        chart.columns(defn.columns.map(accessor));
                         chart.size(defn.size || frame.records().length);
                         if(_.has(defn,'sortBy'))
-                            chart.sortBy(accessor(defn['sortBy']));
+                            chart.sortBy(accessor(defn.sortBy));
                     }
                 };
                 ctor = {
@@ -17504,6 +17509,7 @@ RdYlGn:{3:["rgb(252,141,89)","rgb(255,255,191)","rgb(145,207,96)"],4:["rgb(215,2
 
             // fill in anything easily defaultable (will not happen in incremental mode)
             // [but are there things we only want to default after inference?]
+            default_definition(definition);
             errors = aggregate_errors(default_dimension, default_group, default_chart);
             if(errors.length)
                 throw errors;
@@ -31443,7 +31449,7 @@ Rserve.Robj = {
 		// FIXME: there is no reason why names should be the first or only
 		//        attribute, so the code should really look
 		//        for "names" and not cry if it doesn't exist
-                if(this.attributes.value[0].name == "names") {
+                if (this.attributes.value[0].name == "names") {
                     var keys   = this.attributes.value[0].value.value;
                     var result = {};
                     _.each(keys, function(key, i) {
@@ -31451,8 +31457,8 @@ Rserve.Robj = {
                     });
                     return result;
 		}
-		// FIXME: this doesn't pass-through any other attributes
-		//        including important ones like "class"
+		// FIXME: how can we pass other important attributes
+		//        like "class" ?
 		return values;
             }
         }
@@ -31469,6 +31475,11 @@ Rserve.Robj = {
             if (_.isUndefined(this.attributes)) {
                 return values;
             } else {
+		// FIXME: lang doens't have "names" attribute since
+		//        names are sent as tags (langs are pairlists)
+		//        so this seems superfluous (it is dangerous
+		//        if lang ever had attributes since there is
+		//        no reason to fail in that case)
                 if(this.attributes.value[0].name!="names")
                     throw "expected names here";
                 var keys   = this.attributes.value[0].value.value;
@@ -31768,7 +31779,7 @@ function read(m)
                 var c = this.data_view.getInt8(this.offset++);
                 if (c) result = result + String.fromCharCode(c);
             }
-            return result;
+            return decodeURIComponent(escape(result)); // UTF-8 to UTF-16
         },
         read_stream: function(length) {
             var old_offset = this.offset;
@@ -31802,6 +31813,7 @@ function read(m)
             var current_str = "";
             for (var i=0; i<a.length; ++i)
                 if (a[i] === 0) {
+		    current_str = decodeURIComponent(escape(current_str));
                     result.push(current_str);
                     current_str = "";
                 } else {
@@ -32565,10 +32577,14 @@ Rserve.determine_size = function(value, forced_type)
     case Rserve.Rsrv.XT_ARRAY_STR:
         if (_.isArray(value))
             return final_size(_.reduce(value, function(memo, str) {
-                return memo + str.length + 1;
+		// FIXME: this is a bit silly, since we'll be re-encoding this twice: once for the size and second time for the content
+		var utf8 = unescape(encodeURIComponent(str));
+                return memo + utf8.length + 1;
             }, 0));
-        else
-            return final_size(value.length + 1);
+        else {
+	    var utf8 = unescape(encodeURIComponent(value));
+            return final_size(utf8.length + 1);
+	}
     case Rserve.Rsrv.XT_ARRAY_DOUBLE:
         if (_.isNumber(value))
             return final_size(8);
@@ -32639,14 +32655,16 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type, convert
         if (_.isArray(value)) {
             var offset = payload_start;
             _.each(value, function(el) {
-                for (var i=0; i<el.length; ++i, ++offset)
-                    write_view.setUint8(offset, el.charCodeAt(i));
+		var utf8 = unescape(encodeURIComponent(el));
+                for (var i=0; i<utf8.length; ++i, ++offset)
+                    write_view.setUint8(offset, utf8.charCodeAt(i));
                 write_view.setUint8(offset++, 0);
             });
         } else {
-            for (i=0; i<value.length; ++i)
-                write_view.setUint8(payload_start + i, value.charCodeAt(i));
-            write_view.setUint8(payload_start + value.length, 0);
+	    var utf8 = unescape(encodeURIComponent(value));
+            for (i=0; i<utf8.length; ++i)
+                write_view.setUint8(payload_start + i, utf8.charCodeAt(i));
+            write_view.setUint8(payload_start + utf8.length, 0);
         }
         break;
     case Rserve.Rsrv.XT_ARRAY_DOUBLE:

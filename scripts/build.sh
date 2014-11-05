@@ -1,4 +1,11 @@
 #!/bin/sh
+set +x
+
+if [ "$1" = "--all" ]; then
+    BUILD_PACKAGES=1
+    shift
+fi
+
 
 if [ ! -e rcloud.support/DESCRIPTION ]; then
     if [ -n "$ROOT" ]; then
@@ -25,24 +32,36 @@ for dir in htdocs/js  htdocs/lib; do
     fi
 done
 
-R CMD build rcloud.client && RCS_SILENCE_LOADCHECK=TRUE R CMD INSTALL rcloud.client_`sed -n 's/Version: *//p' rcloud.client/DESCRIPTION`.tar.gz || exit 1
-R CMD build rcloud.support && RCS_SILENCE_LOADCHECK=TRUE R CMD INSTALL rcloud.support_`sed -n 's/Version: *//p' rcloud.support/DESCRIPTION`.tar.gz || exit 1
+# Create a local copy of mathjax library in htdocs
+MATHJAX_INSTALL_DIR=mathjax
+if [ ! -e "htdocs/$MATHJAX_INSTALL_DIR" ]; then
+    mkdir -p "htdocs/$MATHJAX_INSTALL_DIR"
+    echo 'Downloading MathJax'
+    curl -L https://codeload.github.com/mathjax/MathJax/legacy.tar.gz/master | tar -xz -C "htdocs/$MATHJAX_INSTALL_DIR" --strip-components=1
+fi
+
+export RCS_SILENCE_LOADCHECK=TRUE
 
 # build internal packages (not in git) & rcloud.packages
-for dir in internal rcloud.packages; do
-    if [ -e $dir ]; then
-        for pkg in `ls $dir/*/DESCRIPTION 2>/dev/null | sed -e s:$dir/:: -e 's:/DESCRIPTION::'`; do
-            echo $pkg
-	    (cd $dir  && R CMD build $pkg && R CMD INSTALL `sed -n 's/Package: *//p' $pkg/DESCRIPTION`_`sed -n 's/Version: *//p' $pkg/DESCRIPTION`.tar.gz)
-        done
-    fi
-done
+if [ -n "$BUILD_PACKAGES" ]; then
+    for dir in internal rcloud.packages packages; do
+        if [ -e $dir ]; then
+            for pkg in `ls $dir/*/DESCRIPTION 2>/dev/null | sed -e 's:/DESCRIPTION::'`; do
+                echo $pkg
+	        scripts/build_package.sh $pkg || (echo;echo;echo; echo package $pkg FAILED to build!;echo;echo)
+            done
+        fi
+    done
+fi
+
+scripts/build_package.sh rcloud.client || exit 1
+scripts/build_package.sh rcloud.support || exit 1
 
 if [ -e ".git" ]; then
 # update branch/revision info
     REV=`( git rev-list --abbrev-commit -n 1 HEAD )`
     BRANCH=`( git status | sed -n 's:.*On branch ::p' | sed 's:/:-:g' )`
-    
+
     if [ -n "$REV" ]; then
 	echo "$BRANCH" > REVISION
 	echo "$REV" >> REVISION

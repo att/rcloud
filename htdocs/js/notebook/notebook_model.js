@@ -1,3 +1,5 @@
+// these functions in loops are okay
+/*jshint -W083 */
 Notebook.create_model = function()
 {
     var readonly_ = false;
@@ -20,6 +22,7 @@ Notebook.create_model = function()
         assets: [],
         views: [], // sub list for cell content pubsub
         dishers: [], // for dirty bit pubsub
+        execution_watchers: [],
         clear: function() {
             var cells_removed = this.remove_cell(null,last_id(this.cells));
             var assets_removed = this.remove_asset(null,this.assets.length);
@@ -108,7 +111,7 @@ Notebook.create_model = function()
                 return [];
             var that = this;
             var asset_index, filename;
-            if(asset_model!=null) {
+            if(asset_model!==null) {
                 asset_index = this.assets.indexOf(asset_model);
                 filename = asset_model.filename();
                 if (asset_index === -1) {
@@ -140,7 +143,7 @@ Notebook.create_model = function()
         remove_cell: function(cell_model, n, skip_event) {
             var that = this;
             var cell_index, id;
-            if(cell_model!=null) {
+            if(cell_model!==null) {
                 cell_index = this.cells.indexOf(cell_model);
                 id = cell_model.id();
                 if (cell_index === -1) {
@@ -173,9 +176,9 @@ Notebook.create_model = function()
             // remove doesn't change any ids, so we can just remove then add
             var pre_index = this.cells.indexOf(cell_model),
                 changes = this.remove_cell(cell_model, 1, true)
-                    .concat(before >= 0
-                            ? this.insert_cell(cell_model, before, true)
-                            : this.append_cell(cell_model, null, true)),
+                    .concat(before >= 0 ?
+                            this.insert_cell(cell_model, before, true) :
+                            this.append_cell(cell_model, null, true)),
                 post_index = this.cells.indexOf(cell_model);
             _.each(this.views, function(view) {
                 view.cell_moved(cell_model, pre_index, post_index);

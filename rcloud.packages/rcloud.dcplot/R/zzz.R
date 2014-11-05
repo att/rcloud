@@ -8,5 +8,5 @@ dcplot.caps <- NULL
                                      paste(readLines(path), collapse='\n'))
     caps
   }
-  dcplot.caps <<- f("dcplot", "rcloud.dcplot.js")
+  dcplot.caps <<- f("rcloud.dcplot", "rcloud.dcplot.js")
 }

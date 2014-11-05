@@ -1,6 +1,164 @@
+## RCloud 1.2
+
+### Features
+
+* The script `scripts/mkdist.sh`, which produces a tarball of RCloud and
+  all its dependencies (e.g. for off-line installation) has been consolidated
+  into `scripts/bootstrapR.sh --mk-dist`
+
+* Multiple file upload.  File upload interface has been modernized to use
+  promises and to split the UI from the back-end.
+
+  `RCloud.UI.upload_with_alerts(to_notebook, options)` takes the place of the old
+  functions `rcloud.upload_to_notebook` and `rcloud.upload_file`.  All its UI
+  elements are configurable.  By default it will send messages and
+  confirmations to the Upload Files pane in edit mode, and to the main output
+  div in view mode.  Upload can also be enabled in published notebooks running
+  anonymously through the technique [in this
+  notebook](https://gist.github.com/gordonwoodhull/8bf3ccc607b4164c8f22).
+
+  In addition, there are lower-level JavaScript upload functions when you
+  don't want the use of Bootstrap alerts. `RCloud.upload_files` and
+  `RCloud.upload_assets`, which return promises instead of using a callback,
+  take a `react` struct for progress messages and overwrite confirmation.
+
+* The notebook store is now abstrated through the `gist` package,
+  allowing arbitrary back-ends. The traditional GitHub Gist backend is
+  now handled by the `githubhist` package. Alternative back-end based
+  on local git repositories is implemented in `gitgist`. The back-end
+  is selected by the `gist.backend` configuration option. It curretnly
+  defaults to `githubgist` but it will eventually become a mandatory
+  option.
+
+* `notebook.R` allows trailing paths to be processed by the notebook
+   code (instead of asset lookup) if they start with `/.self/`. The
+   subsequent path part is passed to the `run` function as the
+   `.path.info` argument. This allows notebooks to handle full tree
+   structure on top of a single notebook URL, .e.g.:
+   `https://rcloud.mydomain.com/notebook.R/user/notebook/.self/foo/bar`
+   will call the notebook with `.path.info` set to `/foo/bar`. Note
+   that the `.self` part distinguishes asset lookup from a path info
+   call.
+
+* Search UI improvements.  Search results are paginated for improved navigability
+  and performance.  Search results show all results within each notebook.  (If
+  there are many results, they are hidden/shown inline with a "show more" link.)
+  Search results can be sorted by user, notebook name, date, or stars, in ascending
+  or descending order.  Improvements to display of result line numbers and
+  comment results.
+
+* Tagged versions: instead of using hexadecimal hashes for notebook versions,
+  you can tag them by clicking a second time on the version in the history in
+  the notebook tree, and entering a human-readable name. You can also load a
+  notebook version by specifying `&tag=name` instead of `&version=hash` in the
+  URL (works with {edit,view,mini,shiny}.html; notebook.R not supported
+  yet). Each version can only have one tag, and each tag can only have one
+  version: if a tag is reused, it is removed from the previous version. Enter a
+  blank tag (delete the tag and press enter) to remove it.
+
+* Actions are logged on the server side using Rserve's `ulog`.
+
+* Preliminary [RStudio Shiny](http://shiny.rstudio.com/) support via rcloud.shiny
+  package.  rcloud.shiny emulates a network connection to run Shiny on an RCloud
+  server and client instead of Shiny Server.  Basic functionality is supported,
+  but Shiny extensions are not supported yet.
+
+* It is possible to create custom side panels for RCloud edit mode.
+
+* Add-on packages can be loaded per-user (RCS key `<user>/system/config/addons`)
+  or for all users (`.allusers/system/config/addons`).  These packages are
+  loaded at the beginning of each session, and have access to the RCloud UI (via
+  ocaps) to add side panels or other UI elements.  See the example
+  rcloud.packages/rcloud.viewer
+
+* Workspace Viewer - shows variables in the environment and their current values.
+
+* Dataframe Viewer - `View(dataframe)` will show the contents of the dataframe
+  in the Viewer side panel.
+
+* Forked-from notebook shown below notebook title, with link to the original
+  notebook.  Since github gists do not allow forking one's own notebooks, emulate
+  the `fork_of` value for self-forked notebooks.
+
+* shared.R allows packages to serve files via URLs.
+
+* Select the type of view (shareable link) for each notebook by using the
+  drop-down menu to the right of the Shareable Link button.
+
+* RCloud Sample Notebooks folder in the tree, to feature certain users and their
+  example notebooks.
+
+* Initialize RCS keys under .allusers/system by adding rcloud.conf entries
+  `rcs.system.*`
+
+
+### Improvements
+
+* Disabled backspace as a shortcut to the back button to prevent some accidental
+  navigation away from RCloud
+
+* MathJax is installed directly into the htdocs/ directly, to speed startup
+  and make RCloud easier to install in private intranets.
+
+* Delete and edit comments.  Multiline comments are allowed, and newlines
+  are displayed properly in comments.
+
+* Date and time of notebook versions are shown in a minimal but more
+  informative format, displaying only the parts that are different
+  from the previous version.
+
+* CSS highlighting and syntax
+
+* Improved, more consistent control styles.
+
+* Ctrl-S and Cmd-S now save the notebook rather than invoking the browser's
+  save command
+
+* It is possible to disable the command prompt, which is confusing to some
+  users.  The option is in the new Settings panel.
+
+* Insert cell button inserts a cell of the same language as the cell
+  below it.
+
+* Default language for final insert button is saved per-user.
+
+* Shortcuts for forking notebooks.  When changing the title or tagging a version
+  of a notebook, press ctrl/cmd-enter to fork.
+
+### Bug fixes
+
+* Assets without filename extensions are allowed.
+
+* Error message for attempting to rename an asset over another one.
+
+* Downloading of files (Export Notebook / Export as R Source) now works
+  in Firefox.
+
+* Fixed a bug where arrow keys were captured by the notebook so the selection
+  could be moved off the current notebook.
+
+* Fixed a glitch where notebook comman\ds could take more than one row to display;
+  hide date entirely when showing notebook commands, and don't show the commands
+  when hovering over notebook versions.
+
+* Fix to error propagation for notebook.R when an asset does not exist or the
+  notebook is not published.
+
+* Fixed URL for Sharable Link of notebook version.
+
+* Fixed Unicode support (for assets and everywhere) - repair mismatch between
+  JavaScript UTF-16 and R UTF-8 strings.
+
+* Save asset before renaming it - changes were getting lost.
+
+* When a notebook fails to load, the previously loaded notebook gets loaded.
+  This could cause a near-infinite loop when there is a problem that causes
+  no notebooks to load, so this behavior is now limited to trying 5 notebooks.
+
+
 ## RCloud 1.1.2
 
-* Set CRAN mirror `repos` option if not already set to aviod interactive
+* Set CRAN mirror `repos` option if not already set to avoid interactive
   prompt. The default will be either `CRAN.mirror` entry from `rcloud.conf`
   or `http://cran.r-project.org` if not specified.
 

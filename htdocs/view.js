@@ -9,8 +9,8 @@ function main() {
     RCloud.session.init(true).then(function() {
         shell.init();
         var notebook = getURLParameter("notebook"),
-        version = getURLParameter("version"),
-        quiet = getURLParameter("quiet");
+            version = getURLParameter("version"),
+            quiet = getURLParameter("quiet");
 
         var promise = Promise.resolve(true);
         if (Number(quiet)) {
@@ -27,8 +27,21 @@ function main() {
                 notebook = result[0];
             });
         }
+        var tag = getURLParameter("tag");
+        if(!version && tag) {
+            promise = promise.then(function() {
+                return rcloud.get_version_by_tag(notebook, tag)
+                    .then(function(v) {
+                        version = v;
+                    });
+            });
+        };
         promise = promise.then(function() {
-            return shell.load_notebook(notebook, version);
+            return shell.load_notebook(notebook, version).then(
+                function(result) {
+                    document.title = result.description + " - RCloud";
+                }
+            );
         }).then(function() {
             if (Number(quiet)) {
                 $("#output > pre").first().hide();
@@ -47,4 +60,4 @@ function main() {
         console.log(err.stack);
         RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Could not load notebook. You may need to login to see it.", "Login"));
     });
-};
+}

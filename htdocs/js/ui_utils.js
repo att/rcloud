@@ -1,5 +1,22 @@
 var ui_utils = {};
 
+ui_utils.url_maker = function(page) {
+    return function(opts) {
+        opts = opts || {};
+        var url = window.location.protocol + '//' + window.location.host + '/' + page;
+        if(opts.notebook) {
+            url += '?notebook=' + opts.notebook;
+            if(opts.version && !opts.tag)
+                url = url + '&version='+opts.version;
+            if(opts.tag && opts.version)
+                url = url + '&tag='+opts.tag;
+        }
+        else if(opts.new_notebook)
+            url += '?new_notebook=true';
+        return url;
+    };
+};
+
 ui_utils.disconnection_error = function(msg, label) {
     var result = $("<div class='alert alert-danger'></div>");
     result.append($("<span></span>").text(msg));
@@ -29,7 +46,7 @@ ui_utils.string_error = function(msg) {
             var indent = match[0].length / 4;
             el.css("left", indent +"em");
             el.css("position", "relative");
-        };
+        }
         return el;
     });
     result.append(text);
@@ -128,7 +145,7 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                 if (widget.getOption("readOnly"))
                     return;
                 var code = session.getTextRange(widget.getSelectionRange());
-                if(code.length==0) {
+                if(code.length===0) {
                     var pos = widget.getCursorPosition();
                     var Range = ace.require('ace/range').Range;
                     var range = new Range(pos.row, 0, pos.row+1, 0);
@@ -283,12 +300,24 @@ ui_utils.editable = function(elem$, command) {
         return elem$.data('__editable');
     }
     function encode(s) {
+        if(command.allow_multiline) {
+            s = s.replace(/\n/g, "<br/>");
+        }
         return s.replace(/  /g, ' \xa0'); // replace every space with nbsp
     }
     function decode(s) {
+        if(command.allow_multiline) {
+            s = s.replace(/<br>/g, "\n");
+        }
         return s.replace(/\xa0/g,' '); // replace nbsp's with spaces
     }
-
+    function set_content_type(is_multiline,content) {
+        if(is_multiline) {
+            elem$.html(content);
+        } else {
+            elem$.text(content);
+        }
+    }
     var old_opts = options(),
         new_opts = old_opts;
     if(_.isObject(command)) {
@@ -301,6 +330,7 @@ ui_utils.editable = function(elem$, command) {
                 allow_edit: true,
                 inactive_text: elem$.text(),
                 active_text: elem$.text(),
+                allow_multiline: false,
                 select: function(el) {
                     var range = document.createRange();
                     range.selectNodeContents(el);
@@ -313,10 +343,10 @@ ui_utils.editable = function(elem$, command) {
     else {
         if(command !== 'destroy' && !old_opts)
             throw new Error('expected already editable for command ' + command);
-        function set_option(key, value) {
+        var set_option = function(key, value) {
             old_opts = $.extend({}, old_opts);
             new_opts[key] = value;
-        }
+        };
         switch(command) {
         case 'destroy':
             elem$.data('__editable', null);
@@ -346,51 +376,61 @@ ui_utils.editable = function(elem$, command) {
         action = 'freeze';
 
     if(new_opts)
-        elem$.text(encode(options().__active ? new_opts.active_text : new_opts.inactive_text));
+        set_content_type(command.allow_multiline,encode(options().__active ? new_opts.active_text : new_opts.inactive_text));
 
     switch(action) {
     case 'freeze':
-        elem$.attr('contenteditable', 'false');
-        elem$.off('keydown');
-        elem$.off('focus');
-        elem$.off('click');
-        elem$.off('blur');
+        elem$.removeAttr('contenteditable');
+        elem$.off('keydown.editable');
+        elem$.off('focus.editable');
+        elem$.off('click.editable');
+        elem$.off('blur.editable');
         break;
     case 'melt':
         elem$.attr('contenteditable', 'true');
-        elem$.focus(function() {
+        elem$.on('focus.editable', function() {
             if(!options().__active) {
                 options().__active = true;
-                elem$.text(encode(options().active_text));
+                set_content_type(command.allow_multiline,encode(options().active_text));
                 window.setTimeout(function() {
                     selectRange(options().select(elem$[0]));
-                    elem$.off('blur');
-                    elem$.blur(function() {
-                        elem$.text(encode(options().inactive_text));
+                    elem$.off('blur.editable');
+                    elem$.on('blur.editable', function() {
+                        set_content_type(command.allow_multiline,encode(options().inactive_text));
                         options().__active = false;
                     }); // click-off cancels
                 }, 10);
             }
         });
-        elem$.click(function(e) {
+        elem$.on('click.editable', function(e) {
             e.stopPropagation();
             // allow default action but don't bubble (causing eroneous reselection in notebook tree)
         });
-        elem$.keydown(function(e) {
+        elem$.on('keydown.editable', function(e) {
             if(e.keyCode === 13) {
-                e.preventDefault();
-                var result = elem$.text();
-                result = decode(result);
-                if(options().validate(result)) {
-                    options().__active = false;
-                    elem$.off('blur'); // don't cancel!
-                    elem$.blur();
-                    options().change(result);
+                var txt = decode(elem$.text());
+                function execute_if_valid_else_ignore(f) {
+                    if(options().validate(txt)) {
+                        options().__active = false;
+                        elem$.off('blur.editable'); // don't cancel!
+                        elem$.blur();
+                        f(txt);
+                        return true;
+                    } else {
+                        return false; // don't let CR through!
+                    }
                 }
-                else return false; // don't let CR through!
-            }
-            else if(e.keyCode === 27)
+                if (options().ctrl_cmd && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    return execute_if_valid_else_ignore(options().ctrl_cmd);
+                }
+                else if(!command.allow_multiline || (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    return execute_if_valid_else_ignore(options().change);
+                }
+            } else if(e.keyCode === 27) {
                 elem$.blur(); // and cancel
+            }
             return true;
         });
         break;
@@ -412,10 +452,34 @@ ui_utils.scroll_to_after = function($sel, duration) {
     // the element parameter version
     if ($sel.length === 0)
         return;
-    var opts = undefined;
+    var opts;
     if(duration !== undefined)
         opts = {animation: {duration: duration}};
     var $parent = $sel.parent();
     var y = $parent.scrollTop() + $sel.position().top +  $sel.outerHeight();
     $parent.scrollTo(null, y, opts);
+};
+
+ui_utils.prevent_backspace = function($doc) {
+    // Prevent the backspace key from navigating back.
+    // from http://stackoverflow.com/a/2768256/676195
+    $doc.unbind('keydown').bind('keydown', function (event) {
+        var doPrevent = false;
+        if (event.keyCode === 8) {
+            var d = event.srcElement || event.target;
+            if((d.tagName.toUpperCase() === 'INPUT' &&
+                (d.type.toUpperCase() === 'TEXT' || d.type.toUpperCase() === 'PASSWORD' ||
+                 d.type.toUpperCase() === 'FILE' || d.type.toUpperCase() === 'EMAIL' )) ||
+               d.tagName.toUpperCase() === 'TEXTAREA' ||
+               d.contentEditable) {
+                doPrevent = d.readOnly || d.disabled;
+            }
+            else {
+                doPrevent = true;
+            }
+        }
+
+        if(doPrevent)
+            event.preventDefault();
+    });
 };

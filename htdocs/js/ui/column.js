@@ -1,5 +1,5 @@
 RCloud.UI.column = function(sel_column) {
-    var colwidth_ = undefined;
+    var colwidth_;
     function classes(cw) {
         return "col-md-" + cw + " col-sm-" + cw;
     }
@@ -43,11 +43,14 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         return $(sel_accordion + " > .panel > div.panel-heading");
     }
     function set_collapse(target, collapse, persist) {
+        if(target.data("would-collapse") == collapse)
+            return false;
         target.data("would-collapse", collapse);
-        if(persist && rcloud.config) {
+        if(persist && rcloud.config && target.length) {
             var opt = 'ui/' + target[0].id;
             rcloud.config.set_user_option(opt, collapse);
         }
+        return true;
     }
     function all_collapsed() {
         return $.makeArray(collapsibles()).every(function(el) {
@@ -67,7 +70,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 h = "100%";
             $(this).attr("height", h);
         });
-    };
+    }
     _.extend(result, {
         init: function() {
             var that = this;
@@ -81,7 +84,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 return false;
             });
             collapsibles().on("size-changed", function() {
-                that.resize();
+                that.resize(true);
             });
             $(sel_collapser).click(function() {
                 if (collapsed_)
@@ -90,13 +93,13 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                     that.hide(true);
             });
         },
-        load: function(promise) { // takes: promise that everything else has loaded
+        load_options: function() {
             var that = this;
             var sels = $.makeArray(collapsibles()).map(function(el) { return '#' + el.id; });
             sels.push(sel_accordion);
             var opts = sels.map(sel_to_opt);
-            Promise.all([promise, rcloud.config.get_user_option(opts)])
-                .spread(function(_, settings) {
+            return rcloud.config.get_user_option(opts)
+                .then(function(settings) {
                     var hide_column;
                     for(var k in settings) {
                         var id = opt_to_sel(k);
@@ -106,13 +109,15 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                             set_collapse($(id), settings[k], false);
                     }
                     // do the column last because it will affect all its children
-                    if(typeof hide_column === "boolean") {
-                        if(hide_column)
-                            that.hide(false);
-                        else
-                            that.show(false);
+                    var save_setting = false;  // make sure we have a setting
+                    if(hide_column === undefined) {
+                        hide_column = false;
+                        save_setting = true;
                     }
-                    else that.show(true); // make sure we have a setting
+                    if(hide_column)
+                        that.hide(save_setting);
+                    else
+                        that.show(save_setting);
                 });
         },
         collapse: function(target, whether, persist) {
@@ -128,11 +133,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 this.show(true);
                 return;
             }
-            set_collapse(target, whether, persist);
+            var change = set_collapse(target, whether, persist);
             if(all_collapsed())
-                this.hide(persist);
+                this.hide(persist, !change);
             else
-                this.show(persist);
+                this.show(persist, !change);
         },
         resize: function(skip_calc) {
             if(!skip_calc) {
@@ -157,14 +162,14 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             var total_headings = d3.sum($(sel_accordion + " .panel-heading")
                                         .map(function(_, ph) { return $(ph).outerHeight(); }));
             available -= total_headings;
-            for(id in padding)
+            for(var id in padding)
                 available -= padding[id];
-            var id, left = available, do_fit = false;
+            var left = available, do_fit = false;
             for(id in heights)
                 left -= heights[id];
             if(left>=0) {
                 // they all fit, now just give the rest to greedy one (if any)
-                if(greedy_one != null) {
+                if(greedy_one !== null) {
                     heights[greedy_one.get(0).id] += left;
                     do_fit = true;
                 }
@@ -204,6 +209,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 console.log("Error in vertical layout algo: filling " + expected + " pixels with " + got);
         },
         hide: function(persist, skip_calc) {
+            collapsibles().each(function() {
+                var heading_sel = $(this).data('heading-content-selector');
+                if(heading_sel)
+                    heading_sel.hide();
+            });
             // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
             $(sel_accordion + " > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
             $(sel_collapser + " i").removeClass("icon-minus").addClass("icon-plus");
@@ -213,6 +223,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), true);
         },
         show: function(persist, skip_calc) {
+            collapsibles().each(function() {
+                var heading_sel = $(this).data('heading-content-selector');
+                if(heading_sel)
+                    heading_sel.show();
+            });
             if(all_collapsed())
                 set_collapse($(collapsibles()[0]), false, true);
             collapsibles().each(function() {

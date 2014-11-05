@@ -7,6 +7,7 @@ lib/node_modules
 js/node_modules
 htdocs/lib/node_modules
 htdocs/js/node_modules
+htdocs/mathjax
 data
 run
 conf/rcloud.auth
@@ -15,7 +16,7 @@ conf/rcloud.conf*
 conf/selected.conf.txt
 rcloud.support_*.tar.gz
 rcloud.client_*.tar.gz
+packages/*.tar.gz
 rcloud.packages/*.tar.gz
 REVISION
 run
-services

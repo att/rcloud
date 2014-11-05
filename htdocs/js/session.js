@@ -1,21 +1,8 @@
 (function() {
 
-// FIXME this is just a proof of concept - using Rserve console OOBs
-// FIXME this should use RCloud.session_pane
-var append_session_info = function(msg) {
-    if(!$('#session-info').length)
-        return; // workaround for view mode
-    // one hacky way is to maintain a <pre> that we fill as we go
-    // note that R will happily spit out incomplete lines so it's
-    // not trivial to maintain each output in some separate structure
-    if (!document.getElementById("session-info-out"))
-        $("#session-info").append($("<pre id='session-info-out'></pre>"));
-    $("#session-info-out").append(msg);
-    RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
-    ui_utils.on_next_tick(function() {
-        ui_utils.scroll_to_after($("#session-info"));
-    });
-};
+function append_session_info(text) {
+    RCloud.UI.session_pane.append_text(text);
+}
 
 // FIXME this needs to go away as well.
 var oob_handlers = {
@@ -51,7 +38,8 @@ var oob_handlers = {
 
 var on_data = function(v) {
     v = v.value.json();
-    oob_handlers[v[0]] && oob_handlers[v[0]](v.slice(1));
+    if(oob_handlers[v[0]])
+        oob_handlers[v[0]](v.slice(1));
 };
 
 function could_not_initialize_error(err) {
@@ -104,7 +92,7 @@ function rclient_promise(allow_anonymous) {
         if (!$("#output > .response").length)
             rclient.post_response(hello);
     }).catch(function(error) { // e.g. couldn't connect with github
-        if(rclient)
+        if(window.rclient)
             rclient.close();
         if (error.message === "Authentication required") {
             RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R");
@@ -127,8 +115,9 @@ RCloud.session = {
             this.first_session_ = false;
             return RCloud.UI.with_progress(function() {});
         }
-        // if we need a third of these, probably we need callbacks
-        $("#session-info").empty();
+        // perhaps we need an event to listen on here
+        RCloud.UI.session_pane.clear();
+        $(".progress").hide();
         $("#file-upload-results").empty();
         return RCloud.UI.with_progress(function() {
             var anonymous = rclient.allow_anonymous_;
