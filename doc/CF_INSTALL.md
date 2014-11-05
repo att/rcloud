@@ -11,7 +11,8 @@ On an `Ubuntu Lucid` box (e.g. using this [Docker File](https://github.com/cloud
 
 ## Create RCloud configuration files
 
-1. Within `conf` directory, create an `rcloud.conf.dev` and `rcloud.conf.prod` for your development or production environment based on `rcloud.conf.samp`.
+1. Within the `conf/` directory, create an `rcloud.conf` based on the `rcloud.conf.samp`.
+1. Within the `conf/` directory, ensure that the `rserve.conf` is correct.
 1. Test with `./scripts/cf-run.sh`.
 
 ## Deploy to Cloud Foundry
