@@ -8,8 +8,12 @@
                                     $.el.div({id:"viewer-body", 'class': 'widget-vsize'})));
         }
     };
+    function clear_display() {
+        $('#viewer-body > table').remove();
+    }
 return {
     init: function(k) {
+        clear_display();
         RCloud.UI.panel_loader.add({
             Dataframe: {
                 side: 'right',
