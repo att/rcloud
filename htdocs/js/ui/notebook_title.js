@@ -71,7 +71,8 @@ RCloud.UI.notebook_title = (function() {
         },
         update_fork_info: function(fork_of) {
             if(fork_of) {
-                var fork_desc = fork_of.owner.login+ " / " + fork_of.description;
+                var owner = fork_of.owner ? fork_of.owner : fork_of.user;
+                var fork_desc = owner.login+ " / " + fork_of.description;
                 var url = ui_utils.url_maker(shell.is_view_mode()?'view.html':'edit.html')({notebook: fork_of.id});
                 $("#forked-from-desc").html("forked from <a href='" + url + "'>" + fork_desc + "</a>");
             }
