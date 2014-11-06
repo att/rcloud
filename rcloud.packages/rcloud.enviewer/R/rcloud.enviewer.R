@@ -4,7 +4,7 @@ rcloud.enviewer.refresh <- function()
 # could be eval but is that unsafe?
 # should this be pushed to rcloud.viewer?
 rcloud.enviewer.view.dataframe <- function(expr)
-  View(get(expr))
+  View(get(expr, .GlobalEnv))
 
 rcloud.enviewer.display.dataframe <- function(x)
   list(command="view", object=x)

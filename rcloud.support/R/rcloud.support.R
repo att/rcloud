@@ -12,21 +12,24 @@ rcloud.get.conf.value <- function(key) {
 
 # any attributes we want to add onto what github gives us
 rcloud.augment.notebook <- function(res) {
-  notebook <- res$content
-  fork.of <- rcloud.get.notebook.property(notebook$id, 'fork_of')
-  if(!is.null(fork.of))
-    res$content$fork_of <- fork.of
+  if(res$ok) {
+    notebook <- res$content
+    fork.of <- rcloud.get.notebook.property(notebook$id, 'fork_of')
+    if(!is.null(fork.of))
+      res$content$fork_of <- fork.of
 
-  hist <- res$content$history
-  versions <- lapply(hist, function(h) { h$version })
-  version2tag <- rcs.get(rcloud.support:::rcs.key('.notebook', notebook$id, 'version2tag', versions), list=TRUE)
-  names(version2tag) <- versions
-  version2tag <- Filter(Negate(is.null), version2tag)
+    hist <- res$content$history
+    versions <- lapply(hist, function(h) { h$version })
+    version2tag <- rcs.get(rcloud.support:::rcs.key('.notebook', notebook$id, 'version2tag', versions), list=TRUE)
+    names(version2tag) <- versions
+    version2tag <- Filter(Negate(is.null), version2tag)
 
-  for(i in 1:length(hist)) {
-    tag <- version2tag[[hist[[i]]$version]]
-    if(!is.null(tag))
-        res$content$history[[i]]$tag <- tag
+    if(length(hist)>0)
+      for(i in 1:length(hist)) {
+        tag <- version2tag[[hist[[i]]$version]]
+        if(!is.null(tag))
+          res$content$history[[i]]$tag <- tag
+      }
   }
   res
 }
@@ -260,7 +263,7 @@ rcloud.update.notebook <- function(id, content) {
     star.count <- rcloud.notebook.star.count(id)
     mcparallel(update.solr(res, star.count), detached=TRUE)
   }
-  res
+  rcloud.augment.notebook(res)
 }
 
 update.solr <- function(notebook, starcount){
@@ -627,6 +630,9 @@ rcloud.config.get.user.option <- function(key) {
 
 rcloud.config.set.user.option <- function(key, value)
   rcs.set(rcs.key(user=.session$username, notebook="system", "config", key), value)
+
+rcloud.config.get.alluser.option <- function(key)
+  rcs.get(rcs.key(user=".allusers", notebook="system", "config", key))
 
 ################################################################################
 # notebook cache

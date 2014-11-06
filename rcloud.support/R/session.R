@@ -165,7 +165,7 @@ rcloud.reset.session <- function() {
   ## use the global workspace as the parent to avoid long lookups across irrelevant namespaces
   .session$knitr.env <- new.env(parent=.GlobalEnv)
   ## load all-user and per-user rcloud add-ons
-  all.addons <- rcs.get(rcs.key(user=".allusers", notebook="system", "config", "addons"))
+  all.addons <- rcloud.config.get.alluser.option("addons")
   user.addons <- rcloud.config.get.user.option("addons")
   lapply(c(all.addons,user.addons), function(x) { suppressWarnings(suppressMessages(require(x, character.only=TRUE))) })
   ## FIXME: we should reset the knitr graphics state which lingers as well as the current device which is dirty at this point

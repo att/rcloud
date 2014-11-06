@@ -85,7 +85,7 @@ return {
     },
     panel_sizer: function(el) {
         var padding = RCloud.UI.collapsible_column.default_padder(el);
-        var height = 24 + $('#search-summary').height() + $('#search-results').height();
+        var height = 24 + $('#search-summary').height() + $('#search-results').height() + $('#search-results-pagination').height();
         height += 30; // there is only so deep you can dig
         return {height: height, padding: padding};
     },
