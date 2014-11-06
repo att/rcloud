@@ -54,7 +54,6 @@ rcloud.get.version.by.tag <- function(gist_id,tag) {
 }
 
 rcloud.get.tag.by.version <- function(gist_id,version) {
-  write("writing","/vagrant/work/tt.txt");
   t <- rcs.get(rcs.key(username='.notebook', gist_id, 'version2tag', version))
 }
 
