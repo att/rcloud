@@ -5,7 +5,7 @@
   gsub('jquery.js', '../disabled.js', gsub('"shared/', '"../../shared.R/', paste(textConnectionValue(textConn), collapse="\n"), fixed=TRUE), fixed=TRUE)
 }
 
-rcloud.shinyApp <- function(ui, server, options) {
+rcloud.shinyApp <- function(ui, server, options, ...) {
   require(rcloud.web)
   require(shiny)
 
@@ -47,6 +47,6 @@ rcloud.shinyApp <- function(ui, server, options) {
     server
   }
   appHandlers <- shiny:::createAppHandlers(NULL, serverFuncSource)
-  rcw.result(body = .renderPage(ui))
+  rcw.result(body = .renderPage(ui), ...)
 }
 
