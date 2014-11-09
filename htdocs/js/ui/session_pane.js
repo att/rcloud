@@ -70,8 +70,11 @@ RCloud.UI.session_pane = {
                 ui_utils.scroll_to_after($("#session-info"));
             });
         }
-        if(!logged)
+        if(!logged) {
+            if($('#loading-animation').is(":visible"))
+                $('#loading-animation').hide();
             console.log("pre-init post_error: " + msg.text());
+        }
     },
     post_rejection: function(e) { // print exception on stack and then post to UI
         var msg = "";
