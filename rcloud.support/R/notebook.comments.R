@@ -60,7 +60,6 @@ rcloud.modify.comment <- function(id, cid, content)
   solr.res$response$docs[[1]]$comments <- solr.res$response$docs[[1]]$comments[-index]
   curlTemplate <- paste0(url,"/update/json?commit=true")
   metadata <- paste0('{"id":"',id,'","comments":{"set":[\"',paste(solr.res$response$docs[[1]]$comments, collapse="\",\""),'\"]}}')
-  write(metadata, "/vagrant/work/debug/deletec")
   postForm(curlTemplate, .opts = list(
                            postfields = paste0("[",metadata,"]"),
                            httpheader = c('Content-Type' = 'application/json',Accept = 'application/json')))
