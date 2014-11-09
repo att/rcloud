@@ -53,10 +53,12 @@ RClient = {
                 debugger;
             }
             if (!clean) {
-                RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Socket was closed. Goodbye!"));
-                $('#loading-animation').hide();
-                $('#readonly-notebook').html("<font color='Red' size='3%'>Websocket Connection Failed. Try Reloading.</font>");
-                $('#readonly-notebook').show();
+                if($('#loading-animation').is(":visible")) {
+                    $('#loading-animation').hide();
+                    RCloud.UI.fatal_dialog("Websocket Connection Failed. Contact Administrator OR", "Reload", "/login.R");
+                } else {
+                    RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Socket was closed. Goodbye!"));
+                }
                 shutdown();
             }
         }
