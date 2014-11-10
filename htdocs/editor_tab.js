@@ -595,8 +595,11 @@ var editor = function () {
                     return null;
                 else if(diff < 24*60*60*1000 && d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth())
                     return format_time(d1.getHours(), d1.getMinutes());
-                else
+                else if (d1.getFullYear() === d2.getFullYear())
                     return format_date_time(d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
+                else
+                    return format_year_date_time(d1.getFullYear(), d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
+
             }
             function display_date_for_entry(i) {
                 var hist = history[i];
@@ -932,17 +935,25 @@ var editor = function () {
         return '<span>' + format_date(month, date) + ' ' + format_time(hours, minutes) + '</span>';
     }
 
+    function format_year_date_time(year, month, date, hours, minutes) {
+        return '<span>' + format_date(month, date) + '/' + year.toString().substr(2,2) + ' ' + format_time(hours, minutes) + '</span>';
+    }
+
     function display_date_html(ds) {
         if(ds==='none')
             return '';
         if(typeof ds==='string')
             return ds;
         var date = new Date(ds);
-        var diff = Date.now() - date;
+        var now =  new Date();
+        var diff = now - date;
         if(diff < 24*60*60*1000)
             return format_time(date.getHours(), date.getMinutes());
-        else
+        else if (now.getFullYear() === date.getFullYear())
             return format_date_time(date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
+        else
+            return format_year_date_time(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
+
     }
     function display_date(ds) {
         // return an element
