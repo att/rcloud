@@ -34,8 +34,8 @@ Notebook.Asset.create_html_view = function(asset_model)
                     .append_asset(old_asset_content, new_asset_name)
                     .then(function (controller) {
                         controller.select();
-                        asset_model.controller.remove(true);
                     });
+                asset_model.controller.remove(true);
             }
         });
     };
