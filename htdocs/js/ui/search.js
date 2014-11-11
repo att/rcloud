@@ -1,5 +1,9 @@
 RCloud.UI.search = (function() {
 var page_size_ = 10;
+var search_err_msg = ["<p style=\"color:black;margin:0;\">The search engine in RCloud uses Lucene for advanced search features." ,
+    "It appears you may have used one of the special characters in Lucene syntax incorrectly. " ,
+    "Please see this <a target=\"_blank\" href=\"http://lucene.apache.org/core/3_5_0/queryparsersyntax.html\">link</a> to learn about Lucene syntax. " ,
+    "</p><p style=\"color:black;margin:0;\">Or, if you mean to search for the character itself, escape it using a backslash, e.g. \"foo\\:\"</p>"];
 
 function go_to_page(page_num,incr_by){
     //get the element number where to start the slice from
@@ -111,9 +115,7 @@ return {
         }
         function create_list_of_search_results(d) {
             var i;
-            var custom_msg = "<p style=\"color:black;margin:0;\">The search engine in RCloud uses Lucene for advanced search features. It appears you may have used one of the special characters in Lucene syntax incorrectly. " +
-                "Please see the link(<a target=\"_blank\" href=\"http://lucene.apache.org/core/3_5_0/queryparsersyntax.html\">Read</a>) to learn about Lucene syntax. " +
-                "</p><p style=\"color:black;margin:0;\">Or, if you mean to search for the character itself, escape it using a backslash, e.g. \"foo\\:\"</p>";
+            var custom_msg = '';
             if(d === null || d === "null" || d === "") {
                 summary("No Results Found");
             } else if(d[0] === "error") {
@@ -121,9 +123,8 @@ return {
                 if($('#paging').html != "")
                     $('#paging').html("");
                 if(d[1].indexOf("org.apache.solr.search.SyntaxError")>-1)
-                    summary(custom_msg+"ERROR:\n" + d[1], 'darkred');
-                else
-                    summary("ERROR:\n" + d[1], 'darkred');
+                    custom_msg = search_err_msg;
+                summary(custom_msg+"ERROR:\n" + d[1], 'darkred');
             } else {
                 if(typeof (d) === "string") {
                     d = JSON.parse("[" + d + "]");
