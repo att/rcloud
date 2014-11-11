@@ -49,9 +49,9 @@ run <- function(url, query, body, headers)
   if (is.null(redirect))
     redirect <- '/edit.html'
   ## the query may also contain notebook id with/without version, we have to set the current notebook to that
-  if(length(query['notebook'])>0){
+  if(length(query['notebook'])>0) {
     redirect <- paste(redirect,"?notebook=",query['notebook'], sep='')
-    if(any(names(query)=='version')){
+    if(any(names(query)=='version')) {
       redirect <- paste(redirect,"&version=",query['version'], sep='')
     }
   }
