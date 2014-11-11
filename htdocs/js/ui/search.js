@@ -111,13 +111,19 @@ return {
         }
         function create_list_of_search_results(d) {
             var i;
+            var custom_msg = "<i style=\"color:green;\">The search engine in RCloud uses Lucene for advanced search features. It appears you may have used one of the special characters in Lucene syntax incorrectly. " +
+                "Please see this link(<b><a target=\"_blank\" href=\"http://lucene.apache.org/core/3_5_0/queryparsersyntax.html\">Read</a></b>) to learn about Lucene syntax. " +
+                "Or, if you mean to search for the character itself, escape it using a backslash, e.g. \"foo:\"</i>";
             if(d === null || d === "null" || d === "") {
                 summary("No Results Found");
             } else if(d[0] === "error") {
                 d[1] = d[1].replace(/\n/g, "<br/>");
                 if($('#paging').html != "")
                     $('#paging').html("");
-                summary("ERROR:\n" + d[1], 'darkred');
+                if(d[1].indexOf("org.apache.solr.search.SyntaxError")>-1)
+                    summary(custom_msg+"<BR>ERROR:\n" + d[1], 'darkred');
+                else
+                    summary("<BR>ERROR:\n" + d[1], 'darkred');
             } else {
                 if(typeof (d) === "string") {
                     d = JSON.parse("[" + d + "]");
