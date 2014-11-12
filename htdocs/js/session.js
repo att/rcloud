@@ -71,11 +71,16 @@ function on_connect_anonymous_disallowed(ocaps) {
 }
 
 function rclient_promise(allow_anonymous) {
+    var params = '';
+    if(location.href.indexOf("?") > 0)
+        params = location.href.substr(location.href.indexOf("?")) ;
     return new Promise(function(resolve, reject) {
         rclient = RClient.create({
             debug: false,
             host:  location.href.replace(/^http/,"ws").replace(/#.*$/,""),
-            on_connect: function (ocaps) { resolve(ocaps); },
+            on_connect: function (ocaps) {
+                resolve(ocaps);
+            },
             on_data: on_data,
             on_error: function(error) {
                 reject(error);
@@ -95,7 +100,7 @@ function rclient_promise(allow_anonymous) {
         if(window.rclient)
             rclient.close();
         if (error.message === "Authentication required") {
-            RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R");
+            RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R" + params);
         } else {
             RCloud.UI.fatal_dialog(could_not_initialize_error(error), "Logout", "/logout.R");
         }
