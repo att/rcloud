@@ -14,7 +14,8 @@ RClient = {
 
             // the rcloud ocap-0 performs the login authentication dance
             // success is indicated by the rest of the capabilities being sent
-            rserve.ocap([token, execToken], function(err, ocaps) {
+            var session_mode = (opts.mode) ? opts.mode : "IDE";
+            rserve.ocap([token, execToken], session_mode, function(err, ocaps) {
                 ocaps = Promise.promisifyAll(ocaps);
                 if(ocaps === null) {
                     on_error("Login failed. Shutting down!");
@@ -178,10 +179,12 @@ RCloud.create = function(rcloud_ocaps) {
         var paths = [
             ["version_info"],
             ["anonymous_session_init"],
+            ["anonymous_compute_init"],
             ["prefix_uuid"],
             ["get_conf_value"],
             ["get_notebook"],
             ["load_notebook"],
+            ["load_notebook_compute"],
             ["call_notebook"],
             ["install_notebook_stylesheets"],
             ["tag_notebook_version"],
@@ -226,6 +229,10 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.anonymous_session_initAsync();
         };
 
+        rcloud.anonymous_compute_init = function() {
+            return rcloud_ocaps.anonymous_compute_initAsync();
+        };
+
         rcloud.init_client_side_data = function() {
             var that = this;
             return rcloud_ocaps.prefix_uuidAsync().then(function(v) {
@@ -244,6 +251,10 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         rcloud.load_notebook = function(id, version) {
+            // FIXME: some bluebird guru, please check this
+            // The intention is to call load_notebook_compute asynchronously and not care about the result
+            rcloud_ocaps.load_notebook_computeAsync(id, version);
+
             return rcloud_github_handler(
                 "rcloud.load.notebook " + id,
                 rcloud_ocaps.load_notebookAsync(id, version));
@@ -392,6 +403,7 @@ RCloud.create = function(rcloud_ocaps) {
     function setup_authenticated_ocaps() {
         var paths = [
             ["session_init"],
+            ["compute_init"],
             ["search"],
             ["update_notebook"],
             ["create_notebook"],
@@ -443,6 +455,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.session_init = function(username, token) {
             return rcloud_ocaps.session_initAsync(username, token);
+        };
+
+        rcloud.compute_init = function(username, token) {
+            return rcloud_ocaps.compute_initAsync(username, token);
         };
 
         rcloud.update_notebook = function(id, content) {
@@ -2927,16 +2943,29 @@ function could_not_initialize_error(err) {
 }
 
 function on_connect_anonymous_allowed(ocaps) {
-    var promise;
+    var promise_c, promise_s;
     rcloud = RCloud.create(ocaps.rcloud);
+    
     if (rcloud.authenticated) {
-        promise = rcloud.session_init(rcloud.username(), rcloud.github_token());
+        promise_c = rcloud.compute_init(rcloud.username(), rcloud.github_token());
+        promise_s = rcloud.session_init(rcloud.username(), rcloud.github_token());
     } else {
-        promise = rcloud.anonymous_session_init();
+        promise_c = rcloud.anonymous_compute_init();
+        promise_s = rcloud.anonymous_session_init();
     }
-    return promise.catch(function(e) {
+
+    promise_c.catch(function(e) {
         RCloud.UI.fatal_dialog(could_not_initialize_error(e), "Logout", "/logout.R");
     });
+
+    promise_s.catch(function(e) {
+        RCloud.UI.fatal_dialog(could_not_initialize_error(e), "Logout", "/logout.R");
+    });
+
+    // returns a promise covering both - note that the side-effect is that
+    // way down the food chain there will be an array of results
+    // from both
+    return Promise.all([promise_c, promise_s]);
 }
 
 function on_connect_anonymous_disallowed(ocaps) {
@@ -2944,7 +2973,11 @@ function on_connect_anonymous_disallowed(ocaps) {
     if (!rcloud.authenticated) {
         return Promise.reject(new Error("Authentication required"));
     }
-    return rcloud.session_init(rcloud.username(), rcloud.github_token());
+
+    var res_c = rcloud.compute_init(rcloud.username(), rcloud.github_token());
+    var res_s = rcloud.session_init(rcloud.username(), rcloud.github_token());
+
+    return Promise.all([res_c, res_s]);
 }
 
 function rclient_promise(allow_anonymous) {
