@@ -78,7 +78,9 @@ function rclient_promise(allow_anonymous) {
         rclient = RClient.create({
             debug: false,
             host:  location.href.replace(/^http/,"ws").replace(/#.*$/,""),
-            on_connect: function (ocaps) { resolve(ocaps); },
+            on_connect: function (ocaps) {
+                resolve(ocaps);
+            },
             on_data: on_data,
             on_error: function(error) {
                 reject(error);
