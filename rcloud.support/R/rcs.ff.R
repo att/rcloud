@@ -1,5 +1,13 @@
 ## fallback to flat-files engine
 
+rcs.ff <- function(path, create=FALSE) {
+    if (!file.exists(path)) {
+        if (!create) stop("RCS path `", path, "' does not exist");
+        dir.create(path, FALSE, TRUE, "0777")
+    }
+    structure(list(root=path), class="RCSff")
+}
+
 # readRDS unaccountably seems to leave connections open if
 # the file does not exist.  this is a temporary workaround
 readRDS.if.exists <- function (file, refhook = NULL)
@@ -19,6 +27,8 @@ readRDS.if.exists <- function (file, refhook = NULL)
 ##   function(w) {cat("rcs.ff warning: "); print(w); cat("\n"); rv}
 
 rcs_ff_error <- rcs_ff_warning <- function(rv) function(w) rv
+
+rcs.close.RCSff <- function(engine=.session$rcs.engine) {}
 
 rcs.get.RCSff <- function(key, list=FALSE, engine=.session$rcs.engine)
    if (list || length(key) != 1L) .lnapply(key, rcs.get.RCSff, FALSE, engine) else (tryCatch(readRDS.if.exists(.ffpath(key, engine)), warning=rcs_ff_warning(NULL), error=rcs_ff_error(NULL)))

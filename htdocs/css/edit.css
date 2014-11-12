@@ -471,6 +471,7 @@ li.jqtree-selected .notebook-commands {
     height: 100px;
     max-height: 100%;
     min-height: 100%;
+    margin-bottom: -4em;
 }
 
 .search-result-item {
@@ -654,8 +655,7 @@ li.jqtree-selected .notebook-commands {
 }
 
 .comment-container {
-    margin-bottom: .8em;
-    clear: both;
+    margin-bottom: 0.5ex;
 }
 
 .comment-header {
@@ -668,19 +668,22 @@ li.jqtree-selected .notebook-commands {
     color: #000;
     display:none;
     position: absolute;
-    right: 0.75ex
+    top: 0;
+    right: 0.75ex;
 }
 .comment-header-close:hover{
     cursor: pointer;
 }
 .comment-body {
     color: #555;
+}
+
+.comment-body-wrapper {
     position: relative;
 }
 
 .comment-body-text {
     color: #555;
-    float: left;
     margin-bottom: .4em;
     max-width: 93%;
     min-width: 93%;
@@ -715,6 +718,7 @@ li.jqtree-selected .notebook-commands {
     overflow-y: auto;
     overflow-x: auto;
     padding: 5px;
+    background-color: rgb(255, 255, 248);
 }
 
 #session-info-out {

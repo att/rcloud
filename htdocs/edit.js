@@ -21,7 +21,7 @@ function main() {
                             opts.notebook = result[0];
                         });
                 }
-                var tag = getURLParameter("version");
+                var tag = getURLParameter("tag");
                 if(!opts.version && tag) {
                     promise = promise.then(function() {
                         return rcloud.get_version_by_tag(opts.notebook, tag)

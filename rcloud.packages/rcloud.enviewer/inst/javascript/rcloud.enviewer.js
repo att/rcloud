@@ -52,8 +52,11 @@
     function is_open() {
         return !$('#collapse-environment-viewer').hasClass('collapse');
     }
-    function refresh_display() {
+    function clear_display() {
         $('#enviewer-body > table').remove();
+    }
+    function refresh_display() {
+        clear_display();
         var rows = [];
         _.each(nix_r(data_), function(value, key) {
             var title = key.charAt(0).toUpperCase() + key.substring(1); // capitalize
@@ -73,11 +76,14 @@ return {
     init: function(ocaps, k) {
         ocaps_ = RCloud.promisify_paths(ocaps, [["refresh"], ["view_dataframe"]], true);
         if(window.shell) { // are we running in RCloud UI?
+            // note this wretched destruction of all previous watchers
+            // it is because we do not yet have a detach message
             shell.notebook.model.execution_watchers = [{
                 run_cell: function() {
                     ocaps_.refresh();
                 }
             }];
+            clear_display(); // also would be part of detach
             RCloud.UI.panel_loader.add({
                 Workspace: {
                     side: 'right',

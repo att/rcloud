@@ -84,7 +84,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 return false;
             });
             collapsibles().on("size-changed", function() {
-                that.resize();
+                that.resize(true);
             });
             $(sel_collapser).click(function() {
                 if (collapsed_)
