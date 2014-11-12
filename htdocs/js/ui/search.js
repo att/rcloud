@@ -113,6 +113,12 @@ return {
             $('#search-summary').css('color', color || 'black');
             $("#search-summary").show().html($("<h4/>").append(html));
         }
+        function err_msg(html, color) {
+            $('#search-summary').css("display", "none");
+            $('#search-results').css('color', color || 'black');
+            $("#search-results-row").show().animate({ scrollTop: $(document).height() }, "slow");
+            $("#search-results").show().html($("<h4/>").append(html));
+        }
         function create_list_of_search_results(d) {
             var i;
             var custom_msg = '';
@@ -123,8 +129,8 @@ return {
                 if($('#paging').html != "")
                     $('#paging').html("");
                 if(d[1].indexOf("org.apache.solr.search.SyntaxError")>-1)
-                    custom_msg = search_err_msg;
-                summary(custom_msg+"ERROR:\n" + d[1], 'darkred');
+                    custom_msg = search_err_msg.join("");
+                err_msg(custom_msg+"ERROR:\n" + d[1], 'darkred');
             } else {
                 if(typeof (d) === "string") {
                     d = JSON.parse("[" + d + "]");
@@ -226,6 +232,7 @@ return {
                 }
                 if(!pgclick) {
                     $('#paging').html("");
+                    $("#search-results-pagination").show();
                     if((parseInt(numfound) - parseInt(page_size_)) > 0) {
                         var number_of_pages = noofpages;
                         $('#current_page').val(0);
