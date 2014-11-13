@@ -95,7 +95,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         }
     });
     function execute_cell() {
-        r_result_div.html("Waiting...");
+        r_result_div.html("<p>Waiting...</p>");
         var new_content = update_model();
         result.show_result();
         var promise;
@@ -105,10 +105,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             promise = Promise.resolve(undefined);
 
         promise.then(function() {
-            RCloud.UI.run_button.enqueue(function() {
-                cell_model.controller.set_status_message("Computing...");
-                return cell_model.controller.execute();
-            });
+            RCloud.UI.run_button.enqueue(
+                function() {
+                    cell_model.controller.set_status_message("<p>Computing...</p>");
+                    return cell_model.controller.execute();
+                },
+                function() {
+                    cell_model.controller.set_status_message("<p>Cancelled!</p>");
+                });
         });
     }
     run_md_button.click(function(e) {

@@ -433,11 +433,15 @@ Notebook.create_controller = function(model)
         run_all: function() {
             this.save();
             _.each(model.cells, function(cell_model) {
-                cell_model.controller.set_status_message("Waiting...");
-                RCloud.UI.run_button.enqueue(function() {
-                    cell_model.controller.set_status_message("Computing...");
-                    return cell_model.controller.execute();
-                });
+                cell_model.controller.set_status_message("<p>Waiting...</p>");
+                RCloud.UI.run_button.enqueue(
+                    function() {
+                        cell_model.controller.set_status_message("<p>Computing...</p>");
+                        return cell_model.controller.execute();
+                    },
+                    function() {
+                        cell_model.controller.set_status_message("<p>Cancelled!</p>");
+                    });
             });
         },
 

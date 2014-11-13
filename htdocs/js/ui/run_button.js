@@ -1,35 +1,53 @@
 RCloud.UI.run_button = (function() {
     var run_button_ = $("#run-notebook"),
         running_ = false,
-        queue_ = [];
+        queue_ = [],
+        cancels_ = [];
 
-    function set_icon(icon) {
+    function display(icon, title) {
         $('i', run_button_).removeClass().addClass(icon);
+        run_button_.attr('title', title);
     }
 
     function start_queue() {
         if(queue_.length === 0) {
             running_ = false;
-            set_icon('icon-play');
+            display('icon-play', 'Run All');
             return Promise.resolve(undefined);
         }
         else {
             running_ = true;
             var first = queue_.shift();
-            set_icon('icon-stop');
-            return first().then(start_queue);
+            display('icon-stop', 'Stop');
+            return first().then(function() {
+                cancels_.shift();
+                return start_queue();
+            });
         }
     }
     return {
         init: function() {
             run_button_.click(function() {
-                shell.run_notebook();
+                if(running_)
+                    rcloud.signal_to_compute(2); // SIGINT
+                else
+                    shell.run_notebook();
             });
         },
-        enqueue: function(f) {
+        enqueue: function(f, cancel) {
             queue_.push(f);
-            if(!running_)
-                start_queue();
+            cancels_.push(cancel || function() {});
+            if(!running_) {
+                start_queue()
+                    .catch(function(xep) {
+                        console.log(xep);
+                        cancels_.forEach(function(cancel) { cancel(); });
+                        queue_ = [];
+                        cancels_ = [];
+                        running_ = false;
+                        display('icon-play', 'Stop');
+                    });
+            }
         }
     };
 })();

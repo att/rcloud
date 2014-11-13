@@ -1522,7 +1522,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         }
     });
     function execute_cell() {
-        r_result_div.html("Waiting...");
+        r_result_div.html("<p>Waiting...</p>");
         var new_content = update_model();
         result.show_result();
         var promise;
@@ -1532,10 +1532,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             promise = Promise.resolve(undefined);
 
         promise.then(function() {
-            RCloud.UI.run_button.enqueue(function() {
-                cell_model.controller.set_status_message("Computing...");
-                return cell_model.controller.execute();
-            });
+            RCloud.UI.run_button.enqueue(
+                function() {
+                    cell_model.controller.set_status_message("<p>Computing...</p>");
+                    return cell_model.controller.execute();
+                },
+                function() {
+                    cell_model.controller.set_status_message("<p>Cancelled!</p>");
+                });
         });
     }
     run_md_button.click(function(e) {
@@ -2815,11 +2819,15 @@ Notebook.create_controller = function(model)
         run_all: function() {
             this.save();
             _.each(model.cells, function(cell_model) {
-                cell_model.controller.set_status_message("Waiting...");
-                RCloud.UI.run_button.enqueue(function() {
-                    cell_model.controller.set_status_message("Computing...");
-                    return cell_model.controller.execute();
-                });
+                cell_model.controller.set_status_message("<p>Waiting...</p>");
+                RCloud.UI.run_button.enqueue(
+                    function() {
+                        cell_model.controller.set_status_message("<p>Computing...</p>");
+                        return cell_model.controller.execute();
+                    },
+                    function() {
+                        cell_model.controller.set_status_message("<p>Cancelled!</p>");
+                    });
             });
         },
 
@@ -4588,35 +4596,53 @@ RCloud.UI.right_panel =
 RCloud.UI.run_button = (function() {
     var run_button_ = $("#run-notebook"),
         running_ = false,
-        queue_ = [];
+        queue_ = [],
+        cancels_ = [];
 
-    function set_icon(icon) {
+    function display(icon, title) {
         $('i', run_button_).removeClass().addClass(icon);
+        run_button_.attr('title', title);
     }
 
     function start_queue() {
         if(queue_.length === 0) {
             running_ = false;
-            set_icon('icon-play');
+            display('icon-play', 'Run All');
             return Promise.resolve(undefined);
         }
         else {
             running_ = true;
             var first = queue_.shift();
-            set_icon('icon-stop');
-            return first().then(start_queue);
+            display('icon-stop', 'Stop');
+            return first().then(function() {
+                cancels_.shift();
+                return start_queue();
+            });
         }
     }
     return {
         init: function() {
             run_button_.click(function() {
-                shell.run_notebook();
+                if(running_)
+                    rcloud.signal_to_compute(2); // SIGINT
+                else
+                    shell.run_notebook();
             });
         },
-        enqueue: function(f) {
+        enqueue: function(f, cancel) {
             queue_.push(f);
-            if(!running_)
-                start_queue();
+            cancels_.push(cancel || function() {});
+            if(!running_) {
+                start_queue()
+                    .catch(function(xep) {
+                        console.log(xep);
+                        cancels_.forEach(function(cancel) { cancel(); });
+                        queue_ = [];
+                        cancels_ = [];
+                        running_ = false;
+                        display('icon-play', 'Stop');
+                    });
+            }
         }
     };
 })();
