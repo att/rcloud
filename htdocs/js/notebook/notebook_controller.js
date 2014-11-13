@@ -434,17 +434,10 @@ Notebook.create_controller = function(model)
             this.save();
             _.each(model.cells, function(cell_model) {
                 cell_model.controller.set_status_message("Waiting...");
-            });
-
-            // will ordering bite us in the leg here?
-            var promises = _.map(model.cells, function(cell_model) {
-                return Promise.resolve().then(function() {
+                RCloud.UI.run_button.enqueue(function() {
                     cell_model.controller.set_status_message("Computing...");
                     return cell_model.controller.execute();
                 });
-            });
-            return RCloud.UI.with_progress(function() {
-                return Promise.all(promises);
             });
         },
 

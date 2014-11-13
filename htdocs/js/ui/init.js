@@ -44,7 +44,7 @@ RCloud.UI.init = function() {
         window.location.href = '/logout.R';
     });
 
-    $("#run-notebook").click(shell.run_notebook);
+    RCloud.UI.run_button.init();
 
     //////////////////////////////////////////////////////////////////////////
     // allow reordering cells by dragging them

@@ -95,14 +95,20 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         }
     });
     function execute_cell() {
-        r_result_div.html("Computing...");
+        r_result_div.html("Waiting...");
         var new_content = update_model();
         result.show_result();
+        var promise;
         if(new_content!==null) // if any change (including removing the content)
-            cell_model.parent_model.controller.update_cell(cell_model);
+            promise = cell_model.parent_model.controller.update_cell(cell_model);
+        else
+            promise = Promise.resolve(undefined);
 
-        RCloud.UI.with_progress(function() {
-            return cell_model.controller.execute();
+        promise.then(function() {
+            RCloud.UI.run_button.enqueue(function() {
+                cell_model.controller.set_status_message("Computing...");
+                return cell_model.controller.execute();
+            });
         });
     }
     run_md_button.click(function(e) {

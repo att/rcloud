@@ -404,6 +404,7 @@ RCloud.create = function(rcloud_ocaps) {
         var paths = [
             ["session_init"],
             ["compute_init"],
+            ["signal_to_compute"],
             ["search"],
             ["update_notebook"],
             ["create_notebook"],
@@ -459,6 +460,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.compute_init = function(username, token) {
             return rcloud_ocaps.compute_initAsync(username, token);
+        };
+
+        rcloud.signal_to_compute = function(signal) {
+            return rcloud_ocaps.signal_to_computeAsync(signal);
         };
 
         rcloud.update_notebook = function(id, content) {
@@ -1517,14 +1522,20 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         }
     });
     function execute_cell() {
-        r_result_div.html("Computing...");
+        r_result_div.html("Waiting...");
         var new_content = update_model();
         result.show_result();
+        var promise;
         if(new_content!==null) // if any change (including removing the content)
-            cell_model.parent_model.controller.update_cell(cell_model);
+            promise = cell_model.parent_model.controller.update_cell(cell_model);
+        else
+            promise = Promise.resolve(undefined);
 
-        RCloud.UI.with_progress(function() {
-            return cell_model.controller.execute();
+        promise.then(function() {
+            RCloud.UI.run_button.enqueue(function() {
+                cell_model.controller.set_status_message("Computing...");
+                return cell_model.controller.execute();
+            });
         });
     }
     run_md_button.click(function(e) {
@@ -2805,17 +2816,10 @@ Notebook.create_controller = function(model)
             this.save();
             _.each(model.cells, function(cell_model) {
                 cell_model.controller.set_status_message("Waiting...");
-            });
-
-            // will ordering bite us in the leg here?
-            var promises = _.map(model.cells, function(cell_model) {
-                return Promise.resolve().then(function() {
+                RCloud.UI.run_button.enqueue(function() {
                     cell_model.controller.set_status_message("Computing...");
                     return cell_model.controller.execute();
                 });
-            });
-            return RCloud.UI.with_progress(function() {
-                return Promise.all(promises);
             });
         },
 
@@ -4073,7 +4077,7 @@ RCloud.UI.init = function() {
         window.location.href = '/logout.R';
     });
 
-    $("#run-notebook").click(shell.run_notebook);
+    RCloud.UI.run_button.init();
 
     //////////////////////////////////////////////////////////////////////////
     // allow reordering cells by dragging them
@@ -4581,6 +4585,41 @@ RCloud.UI.allow_progress_modal = function() {
 RCloud.UI.right_panel =
     RCloud.UI.collapsible_column("#right-column",
                                  "#accordion-right", "#right-pane-collapser");
+RCloud.UI.run_button = (function() {
+    var run_button_ = $("#run-notebook"),
+        running_ = false,
+        queue_ = [];
+
+    function set_icon(icon) {
+        $('i', run_button_).removeClass().addClass(icon);
+    }
+
+    function start_queue() {
+        if(queue_.length === 0) {
+            running_ = false;
+            set_icon('icon-play');
+            return Promise.resolve(undefined);
+        }
+        else {
+            running_ = true;
+            var first = queue_.shift();
+            set_icon('icon-stop');
+            return first().then(start_queue);
+        }
+    }
+    return {
+        init: function() {
+            run_button_.click(function() {
+                shell.run_notebook();
+            });
+        },
+        enqueue: function(f) {
+            queue_.push(f);
+            if(!running_)
+                start_queue();
+        }
+    };
+})();
 RCloud.UI.scratchpad = {
     session: null,
     widget: null,
