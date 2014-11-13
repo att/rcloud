@@ -198,16 +198,17 @@ return {
                             }
                         }
                         var togid = i + "more";
+                        var link = window.location.protocol + '//' + window.location.host + '/'+'edit.html?notebook=';
                         if(parts_table !== "") {
                             if(nooflines > 10) {
                                 parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div>" +
-                                    "<div style=\"position: relative;\"><a href=\"#\" id='"+togid+"' onclick=\"RCloud.UI.search.toggle("+i+",'"+togid+"');\" style=\"color:orange\">Show me more...</a></div></div>";
+                                    "<div style=\"position: relative;\"><a href=\'"+link+notebook_id+"'\" id='"+togid+"' onclick=\"RCloud.UI.search.toggle("+i+",'"+togid+"');\" style=\"color:orange\">Show me more...</a></div></div>";
                             } else {
                                 parts_table = "<div><div id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div></div>";
                             }
                         }
                         search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" +
-                            "<a id=\"open_" + i + "\" href='#' data-gistname='" + notebook_id + "' class='search-result-heading'>" +
+                            "<a id=\"open_" + i + "\" href=\'"+link+notebook_id+"'\" data-gistname='" + notebook_id + "' class='search-result-heading'>" +
                             d[i].user + " / " + d[i].notebook + "</a>" +
                             image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
                         if(parts_table !== "")
