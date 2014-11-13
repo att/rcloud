@@ -53,12 +53,7 @@ RClient = {
                 debugger;
             }
             if (!clean) {
-                if($('#loading-animation').is(":visible")) {
-                    $('#loading-animation').hide();
-                    RCloud.UI.fatal_dialog("Websocket Connection Failed. If you continue to receive this error, please contact an administrator.", "Reload", "/login.R");
-                } else {
-                    RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Socket was closed. Goodbye!"));
-                }
+                RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R");
                 shutdown();
             }
         }

@@ -54,6 +54,8 @@ RCloud.UI.session_pane = {
         });
     },
     post_error: function(msg, dest, logged) { // post error to UI
+        if($('#loading-animation').is(":visible"))
+            $('#loading-animation').hide();
         var errclass = 'session-error';
         if (typeof msg === 'string') {
             msg = ui_utils.string_error(msg);
@@ -70,11 +72,8 @@ RCloud.UI.session_pane = {
                 ui_utils.scroll_to_after($("#session-info"));
             });
         }
-        if(!logged) {
-            if($('#loading-animation').is(":visible"))
-                $('#loading-animation').hide();
-            console.log("pre-init post_error: " + msg.text());
-        }
+        if(!logged)
+            console.log("pre-init post_error 11: " + msg.text());
     },
     post_rejection: function(e) { // print exception on stack and then post to UI
         var msg = "";

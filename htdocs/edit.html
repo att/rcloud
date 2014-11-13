@@ -59,9 +59,9 @@
           <li><button id="save-notebook" title="Save" type="button" class="btn btn-link navbar-btn disabled" style="display:none;"><i class="icon-save"></i></button></li>
           <li><button id="revert-notebook" title="Revert" type="button" class="btn btn-link navbar-btn" style="display:none;"><i class="icon-undo"></i></button></li>
           <li><button id="run-notebook" title="Run All" type="button" class="btn btn-link navbar-btn"><i class="icon-play"></i></button></li>
-          <li><a href="#"><span id="notebook-author"></span><span id="author-title-dash" style="display:none;">&nbsp;&ndash;&nbsp;</span><span id="rename-notebook" title="Change Title"><span id="notebook-title">
-            <img id="loading-animation" src="/img/processing.gif" style="height: 22px;width:22px"></img></span></a></span><small id="forked-from-desc"></small></li>
+          <li><a href="#"><span id="notebook-author"></span><span id="author-title-dash" style="display:none;">&nbsp;&ndash;&nbsp;</span><span id="rename-notebook" title="Change Title"><span id="notebook-title"></span></a></span><small id="forked-from-desc"></small></li>
           <li><a href="#" id="readonly-notebook" style="display:none;">(read-only)</a></li>
+          <li><a href="#"><span id="loading"><img id="loading-animation" src="/img/processing.gif" style="height: 20px;width:20px;margin:0"></img></span></a></li>
         </ul>
         <ul class="nav navbar-nav navbar-right">
           <li class="dropdown">
@@ -118,7 +118,7 @@
             </div>
           </div>
         </form>
-        <div id="search-summary" style="margin:1px;height:8px;"></div>
+        <div id="search-summary"></div>
       </div>
       <div id="search-results-row">
         <div id="search-results-scroller">
