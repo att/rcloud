@@ -46,6 +46,11 @@ RCloud.UI.run_button = (function() {
                         cancels_ = [];
                         running_ = false;
                         display('icon-play', 'Stop');
+                        // if this was due to a SIGINT, we're done
+                        // otherwise we'll need to report this.
+                        // stop executing either way.
+                        if(!/^ERROR FROM R SERVER: 127/.test(xep))
+                            throw xep;
                     });
             }
         }
