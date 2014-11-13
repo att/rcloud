@@ -21,21 +21,25 @@ canonicalize.command <- function(command, language) {
     stop(paste("Don't know language '",  language, "' - only Markdown or R supported."))
 }
 
-rcloud.get.gist.part <- function(partname) {
-  rcloud.session.notebook()$content$files[[partname]]$content
+rcloud.get.gist.part <- function(partname, version) {
+  nb <- if(is.null(version) || (version == rcloud.session.notebook()$content$history[[1]]$version))
+    rcloud.session.notebook()
+  else
+    rcloud.get.notebook(rcloud.session.notebook.id(), version)
+  nb$content$files[[partname]]$content
 }
 
-rcloud.unauthenticated.session.cell.eval <- function(partname, language, silent) {
+rcloud.unauthenticated.session.cell.eval <- function(partname, language, version, silent) {
   notebook.id <- rcloud.session.notebook.id()
   if (rcloud.is.notebook.published(notebook.id))
-    rcloud.session.cell.eval(partname, language, silent)
+    rcloud.session.cell.eval(partname, language, version, silent)
   else
     stop("Notebook does not exist or is not published.")
 }
 
-rcloud.session.cell.eval <- function(partname, language, silent) {
+rcloud.session.cell.eval <- function(partname, language, version, silent) {
   ulog("RCloud rcloud.session.cell.eval(", partname, ",", language,")")
-  command <- rcloud.get.gist.part(partname)
+  command <- rcloud.get.gist.part(partname, version)
   if (language == "R" || language == "Markdown") {
     session.markdown.eval(command, language, silent)
   } else if (language == "Python") {
@@ -45,15 +49,7 @@ rcloud.session.cell.eval <- function(partname, language, silent) {
   }
 }
 
-rcloud.authenticated.cell.eval <- function(command, language, silent) {
-  if (language == "R" || language == "Markdown") {
-    session.markdown.eval(command, language, silent)
-  } else if (language == "Python") {
-    session.python.eval(command)
-  } else if (language == "Text") {
-    command
-  }
-}
+rcloud.authenticated.cell.eval <- rcloud.session.cell.eval
 
 rcloud.set.device.pixel.ratio <- function(ratio) {
   .session$device.pixel.ratio <- ratio

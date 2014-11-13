@@ -289,8 +289,7 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.get_usersAsync();
         };
 
-        rcloud.record_cell_execution = function(cell_model) {
-            var json_rep = JSON.stringify(cell_model.json());
+        rcloud.record_cell_execution = function(json_rep) {
             return rcloud_ocaps.log.record_cell_executionAsync(rcloud.username(), json_rep);
         };
 
@@ -354,8 +353,8 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.stars.get_multiple_notebook_star_countsAsync(id);
         };
 
-        rcloud.session_cell_eval = function(filename, language, silent) {
-            return rcloud_ocaps.session_cell_evalAsync(filename, language, silent);
+        rcloud.session_cell_eval = function(filename, language, version, silent) {
+            return rcloud_ocaps.session_cell_evalAsync(filename, language, version, silent);
         };
 
         rcloud.reset_session = function() {
@@ -514,8 +513,8 @@ RCloud.create = function(rcloud_ocaps) {
                 "rcloud.rename.notebook",
                 rcloud_ocaps.rename_notebookAsync(id, new_name));
         };
-        rcloud.authenticated_cell_eval = function(command, language, silent) {
-            return rcloud_ocaps.authenticated_cell_evalAsync(command, language, silent);
+        rcloud.authenticated_cell_eval = function(command, language, version, silent) {
+            return rcloud_ocaps.authenticated_cell_evalAsync(command, language, version, silent);
         };
         rcloud.session_markdown_eval = function(command, language, silent) {
             return rcloud_ocaps.session_markdown_evalAsync(command, language, silent);
@@ -1970,6 +1969,17 @@ Notebook.Cell.create_model = function(content, language)
                 throw new Error("can't set filename of cell");
             return Notebook.part_name(this.id(), this.language());
         },
+        get_execution_info: function() {
+            // freeze the cell as it is now, to execute it later
+            var language = this.language() || 'Text'; // null is a synonym for Text
+            return {
+                controller: this.controller,
+                json_rep: this.json(),
+                partname: Notebook.part_name(this.id(), language),
+                language: language,
+                version: this.parent_model.controller.current_gist().history[0].version
+            };
+        },
         json: function() {
             return {
                 content: content,
@@ -1996,29 +2006,6 @@ Notebook.Cell.create_model = function(content, language)
 Notebook.Cell.create_controller = function(cell_model)
 {
     var result = {
-        execute: function() {
-            var that = this;
-            var language = cell_model.language() || 'Text'; // null is a synonym for Text
-            function callback(r) {
-                that.set_status_message(r);
-                _.each(cell_model.parent_model.execution_watchers, function(ew) {
-                    ew.run_cell(cell_model);
-                });
-            }
-            var promise;
-
-            rcloud.record_cell_execution(cell_model);
-            if (rcloud.authenticated) {
-                promise = rcloud.authenticated_cell_eval(cell_model.content(), language, false);
-            } else {
-                promise = rcloud.session_cell_eval(
-                    Notebook.part_name(cell_model.id(),
-                                       cell_model.language()),
-                    cell_model.language(),
-                    false);
-            }
-            return promise.then(callback);
-        },
         set_status_message: function(msg) {
             _.each(cell_model.views, function(view) {
                 view.result_updated(msg);
@@ -2816,14 +2803,27 @@ Notebook.create_controller = function(model)
             return update_notebook(refresh_buffers())
                 .then(default_callback());
         },
+        execute_cell_version: function(info) {
+            function callback(r) {
+                info.controller.set_status_message(r);
+                _.each(model.execution_watchers, function(ew) {
+                    ew.run_cell(info.json_rep);
+                });
+            }
+            rcloud.record_cell_execution(info.json_rep);
+            var cell_eval = rcloud.authenticated ? rcloud.authenticated_cell_eval : rcloud.session_cell_eval;
+            return cell_eval(info.partname, info.language, info.version, false).then(callback);
+        },
         run_all: function() {
+            var that = this;
             this.save();
             _.each(model.cells, function(cell_model) {
                 cell_model.controller.set_status_message("<p>Waiting...</p>");
+                var eval_info = cell_model.get_execution_info();
                 RCloud.UI.run_button.enqueue(
                     function() {
                         cell_model.controller.set_status_message("<p>Computing...</p>");
-                        return cell_model.controller.execute();
+                        return that.execute_cell_version(eval_info);
                     },
                     function() {
                         cell_model.controller.set_status_message("<p>Cancelled!</p>");
@@ -4641,6 +4641,11 @@ RCloud.UI.run_button = (function() {
                         cancels_ = [];
                         running_ = false;
                         display('icon-play', 'Stop');
+                        // if this was due to a SIGINT, we're done
+                        // otherwise we'll need to report this.
+                        // stop executing either way.
+                        if(!/^ERROR FROM R SERVER: 127/.test(xep))
+                            throw xep;
                     });
             }
         }

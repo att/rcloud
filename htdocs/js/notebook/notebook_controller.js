@@ -430,14 +430,27 @@ Notebook.create_controller = function(model)
             return update_notebook(refresh_buffers())
                 .then(default_callback());
         },
+        execute_cell_version: function(info) {
+            function callback(r) {
+                info.controller.set_status_message(r);
+                _.each(model.execution_watchers, function(ew) {
+                    ew.run_cell(info.json_rep);
+                });
+            }
+            rcloud.record_cell_execution(info.json_rep);
+            var cell_eval = rcloud.authenticated ? rcloud.authenticated_cell_eval : rcloud.session_cell_eval;
+            return cell_eval(info.partname, info.language, info.version, false).then(callback);
+        },
         run_all: function() {
+            var that = this;
             this.save();
             _.each(model.cells, function(cell_model) {
                 cell_model.controller.set_status_message("<p>Waiting...</p>");
+                var exec_info = cell_model.get_execution_info();
                 RCloud.UI.run_button.enqueue(
                     function() {
                         cell_model.controller.set_status_message("<p>Computing...</p>");
-                        return cell_model.controller.execute();
+                        return that.execute_cell_version(exec_info);
                     },
                     function() {
                         cell_model.controller.set_status_message("<p>Cancelled!</p>");
