@@ -595,7 +595,7 @@ var editor = function () {
                     return null;
                 else if(diff < 24*60*60*1000 && d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear())
                     return format_time(d1.getHours(), d1.getMinutes());
-                else if (d1.getFullYear() === now.getFullYear())
+                else if(d1.getFullYear() === now.getFullYear())
                     return format_date_time(d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
                 else
                     return format_year_date_time(d1.getFullYear(), d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
