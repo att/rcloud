@@ -301,6 +301,7 @@ RCloud.create = function(rcloud_ocaps) {
         var paths = [
             ["session_init"],
             ["compute_init"],
+            ["signal_to_compute"],
             ["search"],
             ["update_notebook"],
             ["create_notebook"],
@@ -356,6 +357,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.compute_init = function(username, token) {
             return rcloud_ocaps.compute_initAsync(username, token);
+        };
+
+        rcloud.signal_to_compute = function(signal) {
+            return rcloud_ocaps.signal_to_computeAsync(signal);
         };
 
         rcloud.update_notebook = function(id, content) {
