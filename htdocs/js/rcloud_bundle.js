@@ -2819,11 +2819,11 @@ Notebook.create_controller = function(model)
             this.save();
             _.each(model.cells, function(cell_model) {
                 cell_model.controller.set_status_message("<p>Waiting...</p>");
-                var eval_info = cell_model.get_execution_info();
+                var exec_info = cell_model.get_execution_info();
                 RCloud.UI.run_button.enqueue(
                     function() {
                         cell_model.controller.set_status_message("<p>Computing...</p>");
-                        return that.execute_cell_version(eval_info);
+                        return that.execute_cell_version(exec_info);
                     },
                     function() {
                         cell_model.controller.set_status_message("<p>Cancelled!</p>");
