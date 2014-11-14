@@ -114,11 +114,6 @@ class RCloudKernel(Kernel):
         self.shell_handlers["magic_request"] = self.magic_request
 
     def magic_request(self, stream, ident, parent):
-        f = file("/tmp/magics", "a")
-        f.write("MAGIC!\n")
-        f.write(json.dumps(parent[u'content']))
-        f.write("\n")
-        f.close()
         self.shell.magic(parent[u'content'][u'magic'])
         reply_msg = self.session.send(stream, 'magic_reply',
                                       content=dict(status='ok'),
