@@ -188,8 +188,8 @@ main()""".format(RCPATH=kw["rcloud_python_lib_path"]), **kw)
             except Empty:
                 # execution state should return to idle before the queue becomes empty,
                 # if it doesn't, something bad has happened
-                logging.warn('Execution state did not return to idle')
-                raise
+                # logging.warn('Execution state did not return to idle')
+                pass # raise
 
             content = msg['content']
             msg_type = msg['msg_type']
