@@ -1521,7 +1521,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         }
     });
     function execute_cell() {
-        r_result_div.html("<p>Waiting...</p>");
         var new_content = update_model();
         result.show_result();
         var promise;
@@ -1529,16 +1528,8 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             promise = cell_model.parent_model.controller.update_cell(cell_model);
         else
             promise = Promise.resolve(undefined);
-
         promise.then(function() {
-            RCloud.UI.run_button.enqueue(
-                function() {
-                    cell_model.controller.set_status_message("<p>Computing...</p>");
-                    return cell_model.controller.execute();
-                },
-                function() {
-                    cell_model.controller.set_status_message("<p>Cancelled!</p>");
-                });
+            cell_model.controller.enqueue_execution_snapshot();
         });
     }
     run_md_button.click(function(e) {
@@ -1969,7 +1960,7 @@ Notebook.Cell.create_model = function(content, language)
                 throw new Error("can't set filename of cell");
             return Notebook.part_name(this.id(), this.language());
         },
-        get_execution_info: function() {
+        get_execution_snapshot: function() {
             // freeze the cell as it is now, to execute it later
             var language = this.language() || 'Text'; // null is a synonym for Text
             return {
@@ -2006,6 +1997,19 @@ Notebook.Cell.create_model = function(content, language)
 Notebook.Cell.create_controller = function(cell_model)
 {
     var result = {
+        enqueue_execution_snapshot: function() {
+            var that = this;
+            that.set_status_message("<p>Waiting...</p>");
+            var snapshot = cell_model.get_execution_snapshot();
+            RCloud.UI.run_button.enqueue(
+                function() {
+                    that.set_status_message("<p>Computing...</p>");
+                    return cell_model.parent_model.controller.execute_cell_version(snapshot);
+                },
+                function() {
+                    that.set_status_message("<p>Cancelled!</p>");
+                });
+        },
         set_status_message: function(msg) {
             _.each(cell_model.views, function(view) {
                 view.result_updated(msg);
@@ -2818,17 +2822,8 @@ Notebook.create_controller = function(model)
             var that = this;
             this.save();
             _.each(model.cells, function(cell_model) {
-                cell_model.controller.set_status_message("<p>Waiting...</p>");
-                var exec_info = cell_model.get_execution_info();
-                RCloud.UI.run_button.enqueue(
-                    function() {
-                        cell_model.controller.set_status_message("<p>Computing...</p>");
-                        return that.execute_cell_version(exec_info);
-                    },
-                    function() {
-                        cell_model.controller.set_status_message("<p>Cancelled!</p>");
-                    });
-            });
+                cell_model.controller.enqueue_execution_snapshot();
+             });
         },
 
         //////////////////////////////////////////////////////////////////////
