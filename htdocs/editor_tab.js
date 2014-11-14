@@ -587,17 +587,20 @@ var editor = function () {
                 if(debug_colors)
                     dat.color = color;
             }
+            
             function get_date_diff(d1,d2) {
+                var now = new Date();
                 d1 = new Date(d1);
                 d2 = new Date(d2);
                 var diff = d1 - d2;
-                if(diff <= 60*1000 && d1.getHours() === d2.getHours() && d1.getMinutes() === d2.getMinutes())
+                var min_diff = d1.getMinutes() === d2.getMinutes();
+                var hour_diff = d1.getHours() === d2.getHours();
+                var isDateSame = d1.toLocaleDateString() === d2.toLocaleDateString();
+                if(diff <= 60*1000 && hour_diff && min_diff)
                     return null;
-                else if(diff < 24*60*60*1000 && d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth())
-                    return format_time(d1.getHours(), d1.getMinutes());
-                else
-                    return format_date_time(d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
+                else return format_date_time_stamp(d1, diff, isDateSame)
             }
+           
             function display_date_for_entry(i) {
                 var hist = history[i];
                 var d;
@@ -918,18 +921,19 @@ var editor = function () {
             $tree_.tree('removeNode', n2);
         }
     }
-
-    function format_date(month, date) {
-        return (month+1) + '/' + date;
-    }
-
-    function format_time(hours, minutes) {
+    
+    function format_date_time_stamp(date, diff, isDateSame) {
         function pad(n) { return n<10 ? '0'+n : n; }
-        return '<span class="notebook-time">' + hours + ':' + pad(minutes) + '</span>';
-    }
-
-    function format_date_time(month, date, hours, minutes) {
-        return '<span>' + format_date(month, date) + ' ' + format_time(hours, minutes) + '</span>';
+        var now = new Date();
+        var time_part = '<span class="notebook-time">' + date.getHours() + ':' + pad(date.getMinutes()) + '</span>';
+        var date_part = (date.getMonth()+1) + '/' + date.getDate();
+        var year_part = date.getFullYear().toString().substr(2,2);
+        if(diff < 24*60*60*1000 && isDateSame)
+            return time_part;
+        else if(date.getFullYear() === now.getFullYear())
+            return '<span>' + date_part + ' ' + time_part + '</span>';
+        else
+            return '<span>' + date_part + '/' + year_part + ' ' + time_part + '</span>';
     }
 
     function display_date_html(ds) {
@@ -938,12 +942,11 @@ var editor = function () {
         if(typeof ds==='string')
             return ds;
         var date = new Date(ds);
-        var diff = Date.now() - date;
-        if(diff < 24*60*60*1000)
-            return format_time(date.getHours(), date.getMinutes());
-        else
-            return format_date_time(date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
+        var now = new Date();
+        var diff = now - date;
+        return format_date_time_stamp(date, diff, true) //Third parameter is true by default as the date comparison is not required here
     }
+    
     function display_date(ds) {
         // return an element
         return $(display_date_html(ds))[0];
