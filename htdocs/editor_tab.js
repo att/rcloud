@@ -1270,7 +1270,8 @@ var editor = function () {
                     if(id === current_.notebook && version === current_.version) {
                         update_url({notebook: id, version: version, tag: tag});
                     }
-                }).then(RCloud.UI.share_button.update_link())
+                    RCloud.UI.share_button.update_link();
+                });
         },
         star_notebook: function(star, opts) {
             var that = this;

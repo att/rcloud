@@ -182,6 +182,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["install_notebook_stylesheets"],
             ["tag_notebook_version"],
             ["get_version_by_tag"],
+            ["get_tag_by_version"],
             ["get_users"],
             ["log", "record_cell_execution"],
             ["setup_js_installer"],
@@ -251,6 +252,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.get_version_by_tag = function(gist_id,tag) {
             return rcloud_ocaps.get_version_by_tagAsync(gist_id,tag);
+        };
+
+        rcloud.get_tag_by_version = function(gist_id,version) {
+            return rcloud_ocaps.get_tag_by_versionAsync(gist_id,version);
         };
 
         rcloud.call_notebook = function(id, version) {
@@ -5286,9 +5291,16 @@ RCloud.UI.share_button = (function() {
             }
             link += suffix;
             var v = shell.version();
-            if(v)
-                link += (query_started?'&':'?') + 'version=' + v;
-            $("#share-link").attr("href", link);
+            if(!v)
+                $("#share-link").attr("href", link);
+            else rcloud.get_tag_by_version(shell.gistname(),shell.version())
+                .then(function(t) {
+                    if(t)
+                        link += (query_started?'&':'?') + 'tag=' + t;
+                    else if(v)
+                        link += (query_started?'&':'?') + 'version=' + v;
+                    $("#share-link").attr("href", link);
+                });
         }
     };
 })();
