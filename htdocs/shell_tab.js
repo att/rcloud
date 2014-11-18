@@ -94,21 +94,25 @@ var shell = (function() {
         new_cell: function(content, language, execute) {
             var supported = ['R', 'Markdown', 'Python'];
             if(!_.contains(supported, language)) {
+                // don't reject here because we don't actually want stack trace
                 RCloud.UI.session_pane.post_error("Sorry, " + language + " notebook cells not supported (yet!)");
-                return;
+                return Promise.resolve(undefined);
             }
-            var cell = notebook_controller_.append_cell(content, language);
             RCloud.UI.command_prompt.history.execute(content);
+            var promise = notebook_controller_.append_cell(content, language);
             if(execute) {
-                RCloud.UI.command_prompt.focus();
-                cell.execute().then(scroll_to_end);
+                promise = promise.then(function() {
+                    RCloud.UI.command_prompt.focus();
+                    var last_controller = notebook_model_.cells[notebook_model_.cells.length-1].controller;
+                    last_controller.enqueue_execution_snapshot();
+                    scroll_to_end();
+                });
             }
+            return promise;
         },
         scroll_to_end: scroll_to_end,
         insert_cell_before: function(language, index) {
-            notebook_controller_.insert_cell("", language, index);
-        }, insert_markdown_cell_before: function(index) {
-            return notebook_controller_.insert_cell("", "Markdown", index);
+            return notebook_controller_.insert_cell("", language, index);
         }, join_prior_cell: function(cell_model) {
             return notebook_controller_.join_prior_cell(cell_model);
         }, split_cell: function(cell_model, point1, point2) {
