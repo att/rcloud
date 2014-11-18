@@ -44,7 +44,8 @@ RCloud.UI.notebook_title = (function() {
         set: function (text) {
             $("#notebook-author").text(shell.notebook.model.user());
             $('#author-title-dash').show();
-
+            $('#rename-notebook').show();
+            $('#loading-animation').hide();
             var is_read_only = shell.notebook.model.read_only();
             var active_text = text;
             var ellipt_start = false, ellipt_end = false;
