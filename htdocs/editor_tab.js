@@ -587,20 +587,20 @@ var editor = function () {
                 if(debug_colors)
                     dat.color = color;
             }
-            
+
             function get_date_diff(d1,d2) {
                 var now = new Date();
                 d1 = new Date(d1);
                 d2 = new Date(d2);
                 var diff = d1 - d2;
-                var min_diff = d1.getMinutes() === d2.getMinutes();
-                var hour_diff = d1.getHours() === d2.getHours();
+                var min_same = d1.getMinutes() === d2.getMinutes();
+                var hour_same = d1.getHours() === d2.getHours();
                 var isDateSame = d1.toLocaleDateString() === d2.toLocaleDateString();
-                if(diff <= 60*1000 && hour_diff && min_diff)
+                if(diff <= 60*1000 && hour_same && min_same)
                     return null;
-                else return format_date_time_stamp(d1, diff, isDateSame)
+                else return format_date_time_stamp(d1, diff, isDateSame);
             }
-           
+
             function display_date_for_entry(i) {
                 var hist = history[i];
                 var d;
@@ -921,7 +921,7 @@ var editor = function () {
             $tree_.tree('removeNode', n2);
         }
     }
-    
+
     function format_date_time_stamp(date, diff, isDateSame) {
         function pad(n) { return n<10 ? '0'+n : n; }
         var now = new Date();
@@ -944,9 +944,9 @@ var editor = function () {
         var date = new Date(ds);
         var now = new Date();
         var diff = now - date;
-        return format_date_time_stamp(date, diff, true) //Third parameter is true by default as the date comparison is not required here
+        return format_date_time_stamp(date, diff, true); //Third parameter is true by default as the date comparison is not required here
     }
-    
+
     function display_date(ds) {
         // return an element
         return $(display_date_html(ds))[0];
