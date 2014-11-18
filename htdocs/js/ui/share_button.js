@@ -39,9 +39,16 @@ RCloud.UI.share_button = (function() {
             }
             link += suffix;
             var v = shell.version();
-            if(v)
-                link += (query_started?'&':'?') + 'version=' + v;
-            $("#share-link").attr("href", link);
+            if(!v)
+                $("#share-link").attr("href", link);
+            else rcloud.get_tag_by_version(shell.gistname(),shell.version())
+                .then(function(t) {
+                    if(t)
+                        link += (query_started?'&':'?') + 'tag=' + t;
+                    else if(v)
+                        link += (query_started?'&':'?') + 'version=' + v;
+                    $("#share-link").attr("href", link);
+                });
         }
     };
 })();
