@@ -117,7 +117,7 @@ RCloud.UI.scratchpad = {
                 alert("Asset names cannot start with 'part[0-9]', sorry!");
                 return;
             }
-            var found = shell.notebook.model.has_asset(filename);
+            var found = shell.notebook.model.get_asset(filename);
             if(found)
                 found.controller.select();
             else {

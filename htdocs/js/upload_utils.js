@@ -47,7 +47,7 @@
         react = react || {};
         options = upload_opts(options);
         function upload_asset(filename, content) {
-            var replacing = shell.notebook.model.has_asset(filename);
+            var replacing = shell.notebook.model.get_asset(filename);
             var promise_controller;
             if(replacing) {
                 if(react.replace)
