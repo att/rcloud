@@ -54,6 +54,7 @@ RCloud.UI.session_pane = {
         });
     },
     post_error: function(msg, dest, logged) { // post error to UI
+        $('#loading-animation').hide();
         var errclass = 'session-error';
         if (typeof msg === 'string') {
             msg = ui_utils.string_error(msg);

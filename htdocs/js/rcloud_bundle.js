@@ -58,7 +58,7 @@ RClient = {
                 debugger;
             }
             if (!clean) {
-                RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Socket was closed. Goodbye!"));
+                RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R");
                 shutdown();
             }
         }
@@ -189,6 +189,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["install_notebook_stylesheets"],
             ["tag_notebook_version"],
             ["get_version_by_tag"],
+            ["get_tag_by_version"],
             ["get_users"],
             ["log", "record_cell_execution"],
             ["setup_js_installer"],
@@ -266,6 +267,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.get_version_by_tag = function(gist_id,tag) {
             return rcloud_ocaps.get_version_by_tagAsync(gist_id,tag);
+        };
+
+        rcloud.get_tag_by_version = function(gist_id,version) {
+            return rcloud_ocaps.get_tag_by_versionAsync(gist_id,version);
         };
 
         rcloud.call_notebook = function(id, version) {
@@ -3964,6 +3969,7 @@ RCloud.UI.configure_readonly = function() {
 var fatal_dialog_;
 
 RCloud.UI.fatal_dialog = function(message, label, href) {
+    $('#loading-animation').hide();
     if (_.isUndefined(fatal_dialog_)) {
         var default_button = $("<button type='submit' class='btn btn-primary' style='float:right'>" + label + "</span>"),
             ignore_button = $("<span class='btn' style='float:right'>Ignore</span>"),
@@ -4230,7 +4236,8 @@ RCloud.UI.notebook_title = (function() {
         set: function (text) {
             $("#notebook-author").text(shell.notebook.model.user());
             $('#author-title-dash').show();
-
+            $('#rename-notebook').show();
+            $('#loading-animation').hide();
             var is_read_only = shell.notebook.model.read_only();
             var active_text = text;
             var ellipt_start = false, ellipt_end = false;
@@ -5225,6 +5232,7 @@ RCloud.UI.session_pane = {
         });
     },
     post_error: function(msg, dest, logged) { // post error to UI
+        $('#loading-animation').hide();
         var errclass = 'session-error';
         if (typeof msg === 'string') {
             msg = ui_utils.string_error(msg);
@@ -5402,9 +5410,16 @@ RCloud.UI.share_button = (function() {
             }
             link += suffix;
             var v = shell.version();
-            if(v)
-                link += (query_started?'&':'?') + 'version=' + v;
-            $("#share-link").attr("href", link);
+            if(!v)
+                $("#share-link").attr("href", link);
+            else rcloud.get_tag_by_version(shell.gistname(),shell.version())
+                .then(function(t) {
+                    if(t)
+                        link += (query_started?'&':'?') + 'tag=' + t;
+                    else if(v)
+                        link += (query_started?'&':'?') + 'version=' + v;
+                    $("#share-link").attr("href", link);
+                });
         }
     };
 })();

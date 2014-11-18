@@ -58,7 +58,7 @@ RClient = {
                 debugger;
             }
             if (!clean) {
-                RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Socket was closed. Goodbye!"));
+                RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R");
                 shutdown();
             }
         }
