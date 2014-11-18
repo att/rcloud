@@ -10,11 +10,10 @@ Notebook.create_controller = function(model)
     // only create the callbacks once, but delay creating them until the editor
     // is initialized
     var default_callback = function() {
-        var cb_ = null,
-            editor_callback_ = null;
+        var cb_ = null;
         return function() {
             if(!cb_) {
-                editor_callback_ = editor.load_callback({is_change: true, selroot: true});
+                var editor_callback = editor.load_callback({is_change: true, selroot: true});
                 cb_ = function(notebook) {
                     if(save_button_)
                         ui_utils.disable_bs_button(save_button_);
@@ -23,7 +22,7 @@ Notebook.create_controller = function(model)
                         window.clearTimeout(save_timer_);
                         save_timer_ = null;
                     }
-                    return editor_callback_(notebook);
+                    return editor_callback(notebook);
                 };
             }
             return cb_;
