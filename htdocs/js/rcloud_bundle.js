@@ -53,7 +53,7 @@ RClient = {
                 debugger;
             }
             if (!clean) {
-                RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Socket was closed. Goodbye!"));
+                RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R");
                 shutdown();
             }
         }
@@ -3915,6 +3915,7 @@ RCloud.UI.configure_readonly = function() {
 var fatal_dialog_;
 
 RCloud.UI.fatal_dialog = function(message, label, href) {
+    $('#loading-animation').hide();
     if (_.isUndefined(fatal_dialog_)) {
         var default_button = $("<button type='submit' class='btn btn-primary' style='float:right'>" + label + "</span>"),
             ignore_button = $("<span class='btn' style='float:right'>Ignore</span>"),
@@ -4181,7 +4182,8 @@ RCloud.UI.notebook_title = (function() {
         set: function (text) {
             $("#notebook-author").text(shell.notebook.model.user());
             $('#author-title-dash').show();
-
+            $('#rename-notebook').show();
+            $('#loading-animation').hide();
             var is_read_only = shell.notebook.model.read_only();
             var active_text = text;
             var ellipt_start = false, ellipt_end = false;
@@ -4208,7 +4210,8 @@ RCloud.UI.notebook_title = (function() {
         },
         update_fork_info: function(fork_of) {
             if(fork_of) {
-                var fork_desc = fork_of.owner.login+ " / " + fork_of.description;
+                var owner = fork_of.owner ? fork_of.owner : fork_of.user;
+                var fork_desc = owner.login+ " / " + fork_of.description;
                 var url = ui_utils.url_maker(shell.is_view_mode()?'view.html':'edit.html')({notebook: fork_of.id});
                 $("#forked-from-desc").html("forked from <a href='" + url + "'>" + fork_desc + "</a>");
             }
@@ -5117,6 +5120,7 @@ RCloud.UI.session_pane = {
         });
     },
     post_error: function(msg, dest, logged) { // post error to UI
+        $('#loading-animation').hide();
         var errclass = 'session-error';
         if (typeof msg === 'string') {
             msg = ui_utils.string_error(msg);
