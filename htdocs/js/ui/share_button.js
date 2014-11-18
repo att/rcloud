@@ -43,10 +43,7 @@ RCloud.UI.share_button = (function() {
                 $("#share-link").attr("href", link);
             else rcloud.get_tag_by_version(shell.gistname(),shell.version())
                 .then(function(t) {
-                    if(t)
-                        link += (query_started?'&':'?') + 'tag=' + t;
-                    else if(v)
-                        link += (query_started?'&':'?') + 'version=' + v;
+                    link += (query_started?'&':'?') + (t ? 'tag='+t : 'version='+v);
                     $("#share-link").attr("href", link);
                 });
         }
