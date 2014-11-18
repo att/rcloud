@@ -1279,8 +1279,8 @@ Notebook.Asset.create_html_view = function(asset_model)
             else {
                 shell.notebook.controller
                     .append_asset(old_asset_content, new_asset_name)
-                    .then(function (controller) {
-                        controller.select();
+                    .then(function() {
+                        shell.notebook.model.get_asset(new_asset_name).controller.select();
                         asset_model.controller.remove(true);
                     });
             }
@@ -1418,11 +1418,13 @@ Notebook.Asset.create_controller = function(asset_model)
             var msg = "Are you sure you want to remove the asset from the notebook?";
             if (force || confirm(msg)) {
                 asset_model.parent_model.controller.remove_asset(asset_model);
-                var assets = asset_model.parent_model.assets;
-                if (assets.length)
-                    assets[0].controller.select();
-                else {
-                    RCloud.UI.scratchpad.set_model(null);
+                if(asset_model === RCloud.UI.scratchpad.current_asset) {
+                    var assets = asset_model.parent_model.assets;
+                    if (assets.length)
+                        assets[0].controller.select();
+                    else {
+                        RCloud.UI.scratchpad.set_model(null);
+                    }
                 }
             }
         }
@@ -2629,8 +2631,7 @@ Notebook.create_controller = function(model)
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);
             return update_notebook(refresh_buffers().concat(cch.changes))
-                .then(default_callback())
-                .return(cch.controller);
+                .then(default_callback());
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
@@ -3118,7 +3119,10 @@ RCloud.session = {
             else {
                 if(react.add)
                     react.add(filename);
-                promise_controller = shell.notebook.controller.append_asset(content, filename);
+                promise_controller = shell.notebook.controller.append_asset(content, filename)
+                    .then(function() {
+                        return shell.notebook.model.get_asset(filename).controller;
+                    });
             }
             return promise_controller.then(function(controller) {
                 controller.select();
@@ -4787,10 +4791,8 @@ RCloud.UI.scratchpad = {
                 var ext = (filename.indexOf('.')!=-1?filename.match(/\.(.*)/)[1]:"");
                 shell.notebook.controller
                     .append_asset(comment_text("New file " + filename, ext), filename)
-                    .then(function(controller) {
-                        controller.select();
-                    })
                     .then(function() {
+                        shell.notebook.model.get_asset(filename).controller.select();
                         ui_utils.ace_set_pos(RCloud.UI.scratchpad.widget, 2, 1);
                     });
             }
