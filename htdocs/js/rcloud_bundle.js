@@ -1271,7 +1271,7 @@ Notebook.Asset.create_html_view = function(asset_model)
                 filename_span.text(asset_old_name);
                 return;
             }
-            var found = shell.notebook.model.has_asset(new_asset_name);
+            var found = shell.notebook.model.get_asset(new_asset_name);
             if (found) {
                 alert('An asset with the name "' + filename_span.text() + '" already exists. Please choose a different name.');
                 filename_span.text(asset_old_name);
@@ -2144,7 +2144,7 @@ Notebook.create_model = function()
             var assets_removed = this.remove_asset(null,this.assets.length);
             return cells_removed.concat(assets_removed);
         },
-        has_asset: function(filename) {
+        get_asset: function(filename) {
             return _.find(this.assets, function(asset) {
                 return asset.filename() == filename;
             });
@@ -2392,11 +2392,10 @@ Notebook.create_controller = function(model)
     // only create the callbacks once, but delay creating them until the editor
     // is initialized
     var default_callback = function() {
-        var cb_ = null,
-            editor_callback_ = null;
+        var cb_ = null;
         return function() {
             if(!cb_) {
-                editor_callback_ = editor.load_callback({is_change: true, selroot: true});
+                var editor_callback = editor.load_callback({is_change: true, selroot: true});
                 cb_ = function(notebook) {
                     if(save_button_)
                         ui_utils.disable_bs_button(save_button_);
@@ -2405,7 +2404,7 @@ Notebook.create_controller = function(model)
                         window.clearTimeout(save_timer_);
                         save_timer_ = null;
                     }
-                    return editor_callback_(notebook);
+                    return editor_callback(notebook);
                 };
             }
             return cb_;
@@ -3107,7 +3106,7 @@ RCloud.session = {
         react = react || {};
         options = upload_opts(options);
         function upload_asset(filename, content) {
-            var replacing = shell.notebook.model.has_asset(filename);
+            var replacing = shell.notebook.model.get_asset(filename);
             var promise_controller;
             if(replacing) {
                 if(react.replace)
@@ -4772,7 +4771,7 @@ RCloud.UI.scratchpad = {
                 alert("Asset names cannot start with 'part[0-9]', sorry!");
                 return;
             }
-            var found = shell.notebook.model.has_asset(filename);
+            var found = shell.notebook.model.get_asset(filename);
             if(found)
                 found.controller.select();
             else {
