@@ -59,7 +59,10 @@
             else {
                 if(react.add)
                     react.add(filename);
-                promise_controller = shell.notebook.controller.append_asset(content, filename);
+                promise_controller = shell.notebook.controller.append_asset(content, filename)
+                    .then(function() {
+                        return shell.notebook.model.get_asset(filename).controller;
+                    });
             }
             return promise_controller.then(function(controller) {
                 controller.select();

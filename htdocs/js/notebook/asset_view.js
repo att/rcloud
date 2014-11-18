@@ -32,8 +32,8 @@ Notebook.Asset.create_html_view = function(asset_model)
             else {
                 shell.notebook.controller
                     .append_asset(old_asset_content, new_asset_name)
-                    .then(function (controller) {
-                        controller.select();
+                    .then(function() {
+                        shell.notebook.model.get_asset(new_asset_name).controller.select();
                         asset_model.controller.remove(true);
                     });
             }

@@ -247,8 +247,7 @@ Notebook.create_controller = function(model)
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);
             return update_notebook(refresh_buffers().concat(cch.changes))
-                .then(default_callback())
-                .return(cch.controller);
+                .then(default_callback());
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
