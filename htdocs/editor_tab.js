@@ -31,6 +31,7 @@ var editor = function () {
         histories_ = {}, // cached notebook histories
         notebook_info_ = {}, // all notebooks we are aware of
         num_stars_ = {}, // number of stars for all known notebooks
+        starrer_list_ = {}, // list of users who starred the current notebook
         my_stars_ = {}, // set of notebooks starred by me
         my_friends_ = {}, // people whose notebooks i've starred
         featured_ = [], // featured users - samples, intros, etc
@@ -815,6 +816,19 @@ var editor = function () {
         if(gistname === current_.notebook) {
             if(!_.isUndefined(star_notebook_button_) && !_.isNull(star_notebook_button_))
                 star_notebook_button_.set_state(my_stars_[gistname]);
+            $('#curr-starrer-list').empty();
+            if(starrer_list_[gistname].length == 0)
+                $('#curr-starrer-list').prev().removeAttr('data-toggle');
+            else {
+                $('#curr-starrer-list').prev().attr('data-toggle', 'dropdown');
+                if(typeof(starrer_list_[gistname]) == 'string')
+                    $('#curr-starrer-list').append('<li><a href="#">' + starrer_list_[gistname] + '</a></li>');
+                else {
+                    $.each(starrer_list_[gistname], function (i, starrer) {
+                        $('#curr-starrer-list').append('<li><a href="#">' + starrer + '</a></li>');
+                    });
+                }
+            }
             $('#curr-star-count').text(num_stars_[gistname] || 0);
         }
         if(my_friends_[user]) {
@@ -1314,36 +1328,39 @@ var editor = function () {
             if(star) {
                 return rcloud.stars.star_notebook(gistname).then(function(count) {
                     num_stars_[gistname] = count;
-                    var entry = get_notebook_info(gistname);
-                    if(!entry.description && !opts.notebook) {
-                        console.log("attempt to star notebook we have no record of",
-                                    node_id('interests', user, gistname));
-                        throw new Error("attempt to star notebook we have no record of",
-                                        node_id('interests', user, gistname));
-                    }
-                    add_interest(user, gistname);
-                    if(my_friends_[user]===1)
-                        change_folder_friendness(user);
-
-                    if(opts.notebook) {
-                        if(opts.make_current)
-                            that.load_callback({version: opts.version,
-                                                is_change: opts.is_change || false,
-                                                selroot: 'interests'}) (opts.notebook);
-                        else
-                            update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
-                    }
-                    else {
-                        update_notebook_view(user, gistname, entry, opts.selroot);
-                    }
+                    rcloud.stars.get_notebook_starrer_list(gistname).then(function (list) {
+                        starrer_list_[gistname] = list;
+                        var entry = get_notebook_info(gistname);
+                        if(!entry.description && !opts.notebook) {
+                            console.log("attempt to star notebook we have no record of",
+                                node_id('interests', user, gistname));
+                            throw new Error("attempt to star notebook we have no record of",
+                                node_id('interests', user, gistname));
+                        }
+                        add_interest(user, gistname);
+                        if(my_friends_[user] === 1)
+                            change_folder_friendness(user);
+                        if(opts.notebook) {
+                            if(opts.make_current)
+                                that.load_callback({version: opts.version,is_change: opts.is_change || false,selroot: 'interests'})(opts.notebook);
+                            else
+                                update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
+                        }
+                        else {
+                            update_notebook_view(user, gistname, entry, opts.selroot);
+                        }
+                    });
                 });
             } else {
                 return rcloud.stars.unstar_notebook(gistname).then(function(count) {
                     num_stars_[gistname] = count;
-                    remove_interest(user, gistname);
-                    if(!my_friends_[user])
-                        change_folder_friendness(user);
-                    unstar_notebook_view(user, gistname, opts.selroot);
+                    rcloud.stars.get_notebook_starrer_list(gistname).then(function (list) {
+                        starrer_list_[gistname] = list;
+                        remove_interest(user, gistname);
+                        if(!my_friends_[user])
+                            change_folder_friendness(user);
+                        unstar_notebook_view(user, gistname, opts.selroot);
+                    });
                 });
             }
         },
@@ -1454,7 +1471,10 @@ var editor = function () {
                                : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
                                    num_stars_[result.id] = count;
                                })).then(function() {
-                                   update_notebook_from_gist(result, history, options.selroot);
+                                    rcloud.stars.get_notebook_starrer_list(result.id).then(function(list) {
+                                        starrer_list_[result.id] = list;
+                                        update_notebook_from_gist(result, history, options.selroot);
+                                    });
                                }));
 
                 promises.push(RCloud.UI.comments_frame.display_comments());

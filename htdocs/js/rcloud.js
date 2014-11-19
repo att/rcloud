@@ -95,6 +95,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["stars","unstar_notebook"],
             ["stars","is_notebook_starred"],
             ["stars","get_notebook_star_count"],
+            ["stars","get_notebook_starrer_list"],
             ["stars","get_multiple_notebook_star_counts"],
             ["stars","get_my_starred_notebooks"],
             ["session_cell_eval"],
@@ -241,6 +242,9 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.stars.get_notebook_star_count = function(id) {
             return rcloud_ocaps.stars.get_notebook_star_countAsync(id);
+        };
+        rcloud.stars.get_notebook_starrer_list = function(id) {
+            return rcloud_ocaps.stars.get_notebook_starrer_listAsync(id);
         };
         rcloud.stars.get_multiple_notebook_star_counts = function(id) {
             return rcloud_ocaps.stars.get_multiple_notebook_star_countsAsync(id);
@@ -446,6 +450,9 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.stars.get_notebook_star_count = function(id) {
             return rcloud_ocaps.stars.get_notebook_star_countAsync(id);
+        };
+        rcloud.stars.get_notebook_starrer_list = function(id) {
+            return rcloud_ocaps.stars.get_notebook_starrer_listAsync(id);
         };
         rcloud.stars.get_multiple_notebook_star_counts = function(ids) {
             return rcloud_ocaps.stars.get_multiple_notebook_star_countsAsync(ids);
