@@ -1,6 +1,13 @@
 function main() {
     function getURLParameter(name) {
-        return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+        var urlParam;
+        if(name == "notebook" && location.href.indexOf("html") == -1){
+            urlParam = location.href.split("/").pop().split("?")[0]
+        }
+        else {
+            urlParam = decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+        }
+        return urlParam;
     }
 
     function getQueryArgs() {
