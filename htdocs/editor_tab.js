@@ -349,7 +349,7 @@ var editor = function () {
         return function(datum) {
             if(datum.delay_children)
                 load_children(datum);
-            var d2 = _.pick(datum, "label", "name", "gistname", "user", "visible", "last_commit", "sort_order");
+            var d2 = _.pick(datum, "label", "name", "full_name", "gistname", "user", "visible", "last_commit", "sort_order");
             d2.id = datum.id.replace("/alls/", '/'+destroot+'/');
             d2.root = destroot;
             return d2;
