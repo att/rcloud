@@ -27,25 +27,35 @@ RCloud.UI.run_button = (function() {
     }
     return {
         init: function() {
+            var that = this;
             run_button_.click(function() {
                 if(running_)
                     rcloud.signal_to_compute(2); // SIGINT
                 else
                     shell.run_notebook();
             });
+            RCloud.session.listeners.push({
+                on_reset: function() {
+                    that.stop();
+                }
+            });
+        },
+        stop: function() {
+            cancels_.forEach(function(cancel) { cancel(); });
+            queue_ = [];
+            cancels_ = [];
+            running_ = false;
+            display('icon-play', 'Stop');
         },
         enqueue: function(f, cancel) {
+            var that = this;
             queue_.push(f);
             cancels_.push(cancel || function() {});
             if(!running_) {
                 start_queue()
                     .catch(function(xep) {
                         console.log(xep);
-                        cancels_.forEach(function(cancel) { cancel(); });
-                        queue_ = [];
-                        cancels_ = [];
-                        running_ = false;
-                        display('icon-play', 'Stop');
+                        that.stop();
                         // if this was due to a SIGINT, we're done
                         // otherwise we'll need to report this.
                         // stop executing either way.

@@ -52,7 +52,7 @@ function could_not_initialize_error(err) {
 function on_connect_anonymous_allowed(ocaps) {
     var promise_c, promise_s;
     rcloud = RCloud.create(ocaps.rcloud);
-    
+
     if (rcloud.authenticated) {
         promise_c = rcloud.compute_init(rcloud.username(), rcloud.github_token());
         promise_s = rcloud.session_init(rcloud.username(), rcloud.github_token());
@@ -131,16 +131,16 @@ function rclient_promise(allow_anonymous) {
 
 RCloud.session = {
     first_session_: true,
+    listeners: [],
     // FIXME rcloud.with_progress is part of the UI.
     reset: function() {
         if (this.first_session_) {
             this.first_session_ = false;
             return RCloud.UI.with_progress(function() {});
         }
-        // perhaps we need an event to listen on here
-        RCloud.UI.session_pane.clear();
-        $(".progress").hide();
-        $("#file-upload-results").empty();
+        this.listeners.forEach(function(listener) {
+            listener.on_reset();
+        });
         return RCloud.UI.with_progress(function() {
             var anonymous = rclient.allow_anonymous_;
             rclient.close();

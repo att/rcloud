@@ -2960,7 +2960,7 @@ function could_not_initialize_error(err) {
 function on_connect_anonymous_allowed(ocaps) {
     var promise_c, promise_s;
     rcloud = RCloud.create(ocaps.rcloud);
-    
+
     if (rcloud.authenticated) {
         promise_c = rcloud.compute_init(rcloud.username(), rcloud.github_token());
         promise_s = rcloud.session_init(rcloud.username(), rcloud.github_token());
@@ -3039,16 +3039,16 @@ function rclient_promise(allow_anonymous) {
 
 RCloud.session = {
     first_session_: true,
+    listeners: [],
     // FIXME rcloud.with_progress is part of the UI.
     reset: function() {
         if (this.first_session_) {
             this.first_session_ = false;
             return RCloud.UI.with_progress(function() {});
         }
-        // perhaps we need an event to listen on here
-        RCloud.UI.session_pane.clear();
-        $(".progress").hide();
-        $("#file-upload-results").empty();
+        this.listeners.forEach(function(listener) {
+            listener.on_reset();
+        });
         return RCloud.UI.with_progress(function() {
             var anonymous = rclient.allow_anonymous_;
             rclient.close();
@@ -4630,25 +4630,35 @@ RCloud.UI.run_button = (function() {
     }
     return {
         init: function() {
+            var that = this;
             run_button_.click(function() {
                 if(running_)
                     rcloud.signal_to_compute(2); // SIGINT
                 else
                     shell.run_notebook();
             });
+            RCloud.session.listeners.push({
+                on_reset: function() {
+                    that.stop();
+                }
+            });
+        },
+        stop: function() {
+            cancels_.forEach(function(cancel) { cancel(); });
+            queue_ = [];
+            cancels_ = [];
+            running_ = false;
+            display('icon-play', 'Stop');
         },
         enqueue: function(f, cancel) {
+            var that = this;
             queue_.push(f);
             cancels_.push(cancel || function() {});
             if(!running_) {
                 start_queue()
                     .catch(function(xep) {
                         console.log(xep);
-                        cancels_.forEach(function(cancel) { cancel(); });
-                        queue_ = [];
-                        cancels_ = [];
-                        running_ = false;
-                        display('icon-play', 'Stop');
+                        that.stop();
                         // if this was due to a SIGINT, we're done
                         // otherwise we'll need to report this.
                         // stop executing either way.
@@ -5198,6 +5208,11 @@ RCloud.UI.session_pane = {
             this.error_dest_ = $("#output");
             this.show_error_area = function() {};
         }
+        RCloud.session.listeners.push({
+            on_reset: function() {
+                that.clear();
+            }
+        });
 
         var that = this;
         //////////////////////////////////////////////////////////////////////
@@ -5205,7 +5220,6 @@ RCloud.UI.session_pane = {
         Promise.onPossiblyUnhandledRejection(function(e, promise) {
             that.post_rejection(e);
         });
-
     },
     panel_sizer: function(el) {
         var def = RCloud.UI.collapsible_column.default_sizer(el);
@@ -5575,7 +5589,12 @@ RCloud.UI.upload_frame = {
             RCloud.UI.upload_with_alerts(to_notebook)
                 .catch(function() {}); // we have special handling for upload errors
         });
-
+        RCloud.session.listeners.push({
+            on_reset: function() {
+                $(".progress").hide();
+                $("#file-upload-results").empty();
+            }
+        });
     },
     panel_sizer: function(el) {
         var padding = RCloud.UI.collapsible_column.default_padder(el);

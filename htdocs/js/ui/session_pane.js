@@ -16,6 +16,11 @@ RCloud.UI.session_pane = {
             this.error_dest_ = $("#output");
             this.show_error_area = function() {};
         }
+        RCloud.session.listeners.push({
+            on_reset: function() {
+                that.clear();
+            }
+        });
 
         var that = this;
         //////////////////////////////////////////////////////////////////////
@@ -23,7 +28,6 @@ RCloud.UI.session_pane = {
         Promise.onPossiblyUnhandledRejection(function(e, promise) {
             that.post_rejection(e);
         });
-
     },
     panel_sizer: function(el) {
         var def = RCloud.UI.collapsible_column.default_sizer(el);
