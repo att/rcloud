@@ -1,21 +1,8 @@
 (function() {
 
-// FIXME this is just a proof of concept - using Rserve console OOBs
-// FIXME this should use RCloud.session_pane
-var append_session_info = function(msg) {
-    if(!$('#session-info').length)
-        return; // workaround for view mode
-    // one hacky way is to maintain a <pre> that we fill as we go
-    // note that R will happily spit out incomplete lines so it's
-    // not trivial to maintain each output in some separate structure
-    if (!document.getElementById("session-info-out"))
-        $("#session-info").append($("<pre id='session-info-out'></pre>"));
-    $("#session-info-out").append(msg);
-    RCloud.UI.right_panel.collapse($("#collapse-session-info"), false);
-    ui_utils.on_next_tick(function() {
-        ui_utils.scroll_to_after($("#session-info"));
-    });
-};
+function append_session_info(text) {
+    RCloud.UI.session_pane.append_text(text);
+}
 
 // FIXME this needs to go away as well.
 var oob_handlers = {
@@ -84,11 +71,16 @@ function on_connect_anonymous_disallowed(ocaps) {
 }
 
 function rclient_promise(allow_anonymous) {
+    var params = '';
+    if(location.href.indexOf("?") > 0)
+        params = location.href.substr(location.href.indexOf("?")) ;
     return new Promise(function(resolve, reject) {
         rclient = RClient.create({
             debug: false,
             host:  location.href.replace(/^http/,"ws").replace(/#.*$/,""),
-            on_connect: function (ocaps) { resolve(ocaps); },
+            on_connect: function (ocaps) {
+                resolve(ocaps);
+            },
             on_data: on_data,
             on_error: function(error) {
                 reject(error);
@@ -108,7 +100,7 @@ function rclient_promise(allow_anonymous) {
         if(window.rclient)
             rclient.close();
         if (error.message === "Authentication required") {
-            RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R");
+            RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R" + params);
         } else {
             RCloud.UI.fatal_dialog(could_not_initialize_error(error), "Logout", "/logout.R");
         }
@@ -129,7 +121,7 @@ RCloud.session = {
             return RCloud.UI.with_progress(function() {});
         }
         // perhaps we need an event to listen on here
-        $("#session-info").empty();
+        RCloud.UI.session_pane.clear();
         $(".progress").hide();
         $("#file-upload-results").empty();
         return RCloud.UI.with_progress(function() {

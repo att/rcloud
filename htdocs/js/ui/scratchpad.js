@@ -59,7 +59,7 @@ RCloud.UI.scratchpad = {
                     return;
                 if (dt.types !== null &&
                     (dt.types.indexOf ?
-                     dt.types.indexOf('Files') != -1 :
+                     (dt.types.indexOf('Files') != -1 && dt.types.indexOf('text/html') == -1):
                      dt.types.contains('application/x-moz-file'))) {
                     if (!shell.notebook.model.read_only()) {
                         e.stopPropagation();
@@ -97,7 +97,7 @@ RCloud.UI.scratchpad = {
                 },
                 "dragenter dragover": function(e) {
                     var dt = e.originalEvent.dataTransfer;
-                    if(dt.items.length === 1 && !shell.notebook.model.read_only())
+                    if(!shell.notebook.model.read_only())
                         dt.dropEffect = 'copy';
                 }
             });

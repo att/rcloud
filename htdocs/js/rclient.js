@@ -16,12 +16,16 @@ RClient = {
             // success is indicated by the rest of the capabilities being sent
             rserve.ocap([token, execToken], function(err, ocaps) {
                 ocaps = Promise.promisifyAll(ocaps);
-                if (ocaps !== null) {
+                if(ocaps === null) {
+                    on_error("Login failed. Shutting down!");
+                }
+                else if(RCloud.is_exception(ocaps)) {
+                    on_error(ocaps[0]);
+                }
+                else {
                     result.running = true;
                     /*jshint -W030 */
                     opts.on_connect && opts.on_connect.call(result, ocaps);
-                } else {
-                    on_error("Login failed. Shutting down!");
                 }
             });
         }
@@ -53,7 +57,7 @@ RClient = {
                 debugger;
             }
             if (!clean) {
-                RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Socket was closed. Goodbye!"));
+                RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R");
                 shutdown();
             }
         }

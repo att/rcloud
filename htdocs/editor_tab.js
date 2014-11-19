@@ -33,6 +33,7 @@ var editor = function () {
         num_stars_ = {}, // number of stars for all known notebooks
         my_stars_ = {}, // set of notebooks starred by me
         my_friends_ = {}, // people whose notebooks i've starred
+        featured_ = [], // featured users - samples, intros, etc
         invalid_notebooks_ = {},
         current_ = null; // current notebook and version
 
@@ -344,29 +345,48 @@ var editor = function () {
         return t2;
     }
 
-    function friend_from_all(datum) {
-        if(datum.delay_children)
-            load_children(datum);
-        var d2 = _.pick(datum, "label", "name", "gistname", "user", "visible", "last_commit", "sort_order");
-        d2.id = datum.id.replace("/alls/", "/friends/");
-        d2.root = "friends";
-        return d2;
+    function transpose_notebook(destroot) {
+        return function(datum) {
+            if(datum.delay_children)
+                load_children(datum);
+            var d2 = _.pick(datum, "label", "name", "gistname", "user", "visible", "last_commit", "sort_order");
+            d2.id = datum.id.replace("/alls/", '/'+destroot+'/');
+            d2.root = destroot;
+            return d2;
+        };
+    }
+
+    function create_notebook_root(src_trees, root, title) {
+        var reroot = transpose_notebook(root);
+        var subtrees = src_trees.map(function(subtree) {
+            return duplicate_tree_data(subtree, reroot);
+        });
+        return {
+            label: title,
+            id: '/'+root,
+            children: subtrees
+        };
+    }
+
+    function alls_name(subtree) {
+        return subtree.id.replace("/alls/","");
     }
 
     function populate_friends(alls_root) {
         var friend_subtrees = alls_root.children.filter(function(subtree) {
-            return my_friends_[subtree.id.replace("/alls/","")]>0;
-        }).map(function(subtree) {
-            return duplicate_tree_data(subtree, friend_from_all);
+            return my_friends_[alls_name(subtree)]>0;
         });
-        return [
-            {
-                label: 'People I Starred',
-                id: '/friends',
-                children: friend_subtrees
-            },
-            alls_root
-        ];
+        return create_notebook_root(friend_subtrees, 'friends', 'People I Starred');
+    }
+
+    function populate_featured(alls_root) {
+        var featured_subtrees = alls_root.children.filter(function(subtree) {
+            return featured_.indexOf(alls_name(subtree))>=0;
+        });
+        featured_ = featured_subtrees.map(alls_name); // remove any we didn't find in All Notebooks
+        if(!featured_subtrees.length)
+            return null;
+        return create_notebook_root(featured_subtrees, 'featured', 'RCloud Sample Notebooks');
     }
 
     function load_tree(root_data) {
@@ -412,13 +432,22 @@ var editor = function () {
                                     rcloud.get_multiple_notebook_infos(all_notebooks)
                                     .then(function(notebook_entries) {
                                         notebook_info_ = notebook_entries;
+                                    }),
+                                    rcloud.config.get_alluser_option('featured_users')
+                                    .then(function(featured) {
+                                        featured_ = featured || [];
+                                        if(_.isString(featured_)) 
+                                            featured_ = [featured_];
                                     })])
-                    .then(populate_interests.bind(null, my_stars_array))
-                    .then(function(interests) { root_data.push(interests); })
-                    .then(populate_all_notebooks.bind(null, user_notebook_set))
-                    .then(populate_friends)
-                    .spread(function(friends, alls) { root_data.push(friends, alls); })
-                    .return(root_data);
+                    .then(function() {
+                        var alls_root = populate_all_notebooks(user_notebook_set);
+                        return [
+                            populate_featured(alls_root),
+                            populate_interests(my_stars_array),
+                            populate_friends(alls_root),
+                            alls_root
+                        ].filter(function(t) { return !!t; });
+                    });
             })
             .then(load_tree)
             .then(function() {
@@ -558,17 +587,20 @@ var editor = function () {
                 if(debug_colors)
                     dat.color = color;
             }
+
             function get_date_diff(d1,d2) {
+                var now = new Date();
                 d1 = new Date(d1);
                 d2 = new Date(d2);
                 var diff = d1 - d2;
-                if(diff <= 60*1000 && d1.getHours() === d2.getHours() && d1.getMinutes() === d2.getMinutes())
+                var min_same = d1.getMinutes() === d2.getMinutes();
+                var hour_same = d1.getHours() === d2.getHours();
+                var isDateSame = d1.toLocaleDateString() === d2.toLocaleDateString();
+                if(diff <= 60*1000 && hour_same && min_same)
                     return null;
-                else if(diff < 24*60*60*1000 && d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth())
-                    return format_time(d1.getHours(), d1.getMinutes());
-                else
-                    return format_date_time(d1.getMonth(), d1.getDate(), d1.getHours(), d1.getMinutes());
+                else return format_date_time_stamp(d1, diff, isDateSame);
             }
+
             function display_date_for_entry(i) {
                 var hist = history[i];
                 var d;
@@ -772,8 +804,9 @@ var editor = function () {
         }
         var p;
         if(selroot === true)
-            selroot = my_stars_[gistname] ? 'interests' :
-                my_friends_[user] ? 'friends' : 'alls';
+            selroot = featured_.indexOf(user) >=0 ? 'featured' :
+                my_stars_[gistname] ? 'interests' :
+                my_friends_[user] ? 'friends': 'alls';
         if(my_stars_[gistname]) {
             p = update_tree_entry('interests', user, gistname, entry, true);
             if(selroot==='interests')
@@ -787,6 +820,11 @@ var editor = function () {
         if(my_friends_[user]) {
             p = update_tree_entry('friends', user, gistname, entry, true);
             if(selroot==='friends')
+                p.then(open_and_select);
+        }
+        if(featured_.indexOf(user)>=0) {
+            p = update_tree_entry('featured', user, gistname, entry, true);
+            if(selroot==='featured')
                 p.then(open_and_select);
         }
 
@@ -863,8 +901,9 @@ var editor = function () {
             var anode = $tree_.tree('getNodeById', node_id('alls', user));
             var ftree;
             if(anode)
-                ftree = duplicate_tree_data(anode, friend_from_all);
+                ftree = duplicate_tree_data(anode, transpose_notebook('friends'));
             else {
+                debugger;
                 // note: check what this case is really for
                 var mine = user === username_; // yes it is possible I'm not my own friend
                 ftree = {
@@ -883,17 +922,18 @@ var editor = function () {
         }
     }
 
-    function format_date(month, date) {
-        return (month+1) + '/' + date;
-    }
-
-    function format_time(hours, minutes) {
+    function format_date_time_stamp(date, diff, isDateSame) {
         function pad(n) { return n<10 ? '0'+n : n; }
-        return '<span class="notebook-time">' + hours + ':' + pad(minutes) + '</span>';
-    }
-
-    function format_date_time(month, date, hours, minutes) {
-        return '<span>' + format_date(month, date) + ' ' + format_time(hours, minutes) + '</span>';
+        var now = new Date();
+        var time_part = '<span class="notebook-time">' + date.getHours() + ':' + pad(date.getMinutes()) + '</span>';
+        var date_part = (date.getMonth()+1) + '/' + date.getDate();
+        var year_part = date.getFullYear().toString().substr(2,2);
+        if(diff < 24*60*60*1000 && isDateSame)
+            return time_part;
+        else if(date.getFullYear() === now.getFullYear())
+            return '<span>' + date_part + ' ' + time_part + '</span>';
+        else
+            return '<span>' + date_part + '/' + year_part + ' ' + time_part + '</span>';
     }
 
     function display_date_html(ds) {
@@ -902,12 +942,11 @@ var editor = function () {
         if(typeof ds==='string')
             return ds;
         var date = new Date(ds);
-        var diff = Date.now() - date;
-        if(diff < 24*60*60*1000)
-            return format_time(date.getHours(), date.getMinutes());
-        else
-            return format_date_time(date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
+        var now = new Date();
+        var diff = now - date;
+        return format_date_time_stamp(date, diff, true); //Third parameter is true by default as the date comparison is not required here
     }
+
     function display_date(ds) {
         // return an element
         return $(display_date_html(ds))[0];
@@ -1077,7 +1116,10 @@ var editor = function () {
             load_children(n);
         $('#collapse-notebook-tree').trigger('size-changed');
     }
+    var NOTEBOOK_LOAD_FAILS = 5;
     function open_last_loadable() {
+        var tries_left = NOTEBOOK_LOAD_FAILS;
+        RCloud.UI.session_pane.allow_clear = false;
         return rcloud.config.get_recent_notebooks()
             .then(function(recent) {
                 var sorted = _.chain(recent)
@@ -1097,15 +1139,24 @@ var editor = function () {
                             RCloud.UI.session_pane.post_rejection(err);
                             if(/Not Found/.test(err))
                                 rcloud.config.clear_recent_notebook(last);
-                            // if loading fails for a reason that is not actually a loading problem
-                            // then don't keep trying.
-                            if(err.from_load)
+                            // if we reach the limit, stop trying.  if loading fails for a reason that
+                            // is not actually a loading problem then stop trying.
+                            if(--tries_left === 0) {
+                                var quit_err = new Error("Failed to load " + NOTEBOOK_LOAD_FAILS + " notebooks. Quitting.");
+                                RCloud.UI.session_pane.post_rejection(quit_err);
+                                return Promise.resolve(false);
+                            }
+                            else if(err.from_load)
                                 return try_last();
                             else
                                 return Promise.resolve(false);
                         });
                 }
                 return try_last();
+            })
+            .then(function(res) {
+                RCloud.UI.session_pane.allow_clear = true;
+                return res;
             });
     }
 
@@ -1119,7 +1170,7 @@ var editor = function () {
                         .catch(function(xep) {
                             var message = "Could not open notebook " + opts.notebook;
                             if(opts.version)
-                                message += "(version " + opts.version + ")";
+                                message += " (version " + opts.version + ")";
                             RCloud.UI.fatal_dialog(message, "Continue", make_edit_url());
                             throw xep;
                         });
@@ -1242,6 +1293,7 @@ var editor = function () {
                     if(id === current_.notebook && version === current_.version) {
                         update_url({notebook: id, version: version, tag: tag});
                     }
+                    RCloud.UI.share_button.update_link();
                 });
         },
         star_notebook: function(star, opts) {
@@ -1256,9 +1308,9 @@ var editor = function () {
             var user = opts.user ||
                     opts.notebook&&opts.notebook.user&&opts.notebook.user.login ||
                     notebook_info_[gistname].username;
-            // keep selected if was
-            if(gistname === current_.notebook)
-                opts.selroot = opts.selroot || true;
+            // keep selected if was (but don't try to select a removed notebook)
+            if(gistname === current_.notebook && opts.selroot === undefined)
+                opts.selroot = true;
             if(star) {
                 return rcloud.stars.star_notebook(gistname).then(function(count) {
                     num_stars_[gistname] = count;
@@ -1298,7 +1350,7 @@ var editor = function () {
         remove_notebook: function(user, gistname) {
             var that = this;
             return (!my_stars_[gistname] ? Promise.resolve() :
-                    this.star_notebook(false, {user: user, gistname: gistname}))
+                    this.star_notebook(false, {user: user, gistname: gistname, selroot: false}))
                 .then(function() {
                     remove_notebook_info(user, gistname);
                     remove_notebook_view(user, gistname);
@@ -1377,7 +1429,7 @@ var editor = function () {
                 promises.push(
                     rcloud.get_notebook_property(result.id, "view-type")
                         .then(function(type) { RCloud.UI.share_button.type(type); }));
-                RCloud.UI.share_button.update_link(result);
+                RCloud.UI.share_button.update_link();
 
                 /*
                 // disabling inter-notebook navigation for now - concurrency issues

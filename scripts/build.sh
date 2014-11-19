@@ -26,7 +26,7 @@ fi
 for dir in htdocs/js  htdocs/lib; do
     if [ -d $dir/node_modules ]; then
 	echo " - checking JS code in $dir"
-	make -C $dir || exit 1
+	(cd $dir; make --always-make) || exit 1
     else
 	echo "   no node.js modules, skipping"
     fi
