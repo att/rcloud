@@ -114,16 +114,16 @@ function rclient_promise(allow_anonymous) {
 
 RCloud.session = {
     first_session_: true,
+    listeners: [],
     // FIXME rcloud.with_progress is part of the UI.
     reset: function() {
         if (this.first_session_) {
             this.first_session_ = false;
             return RCloud.UI.with_progress(function() {});
         }
-        // perhaps we need an event to listen on here
-        RCloud.UI.session_pane.clear();
-        $(".progress").hide();
-        $("#file-upload-results").empty();
+        this.listeners.forEach(function(listener) {
+            listener.on_reset();
+        });
         return RCloud.UI.with_progress(function() {
             var anonymous = rclient.allow_anonymous_;
             rclient.close();

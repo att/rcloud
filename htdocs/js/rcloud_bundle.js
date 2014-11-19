@@ -2996,16 +2996,16 @@ function rclient_promise(allow_anonymous) {
 
 RCloud.session = {
     first_session_: true,
+    listeners: [],
     // FIXME rcloud.with_progress is part of the UI.
     reset: function() {
         if (this.first_session_) {
             this.first_session_ = false;
             return RCloud.UI.with_progress(function() {});
         }
-        // perhaps we need an event to listen on here
-        RCloud.UI.session_pane.clear();
-        $(".progress").hide();
-        $("#file-upload-results").empty();
+        this.listeners.forEach(function(listener) {
+            listener.on_reset();
+        });
         return RCloud.UI.with_progress(function() {
             var anonymous = rclient.allow_anonymous_;
             rclient.close();
@@ -5085,6 +5085,8 @@ RCloud.UI.session_pane = {
         return RCloud.UI.panel_loader.load_snippet('session-info-snippet');
     },
     init: function() {
+        var that = this;
+
         // detect where we will show errors
         this.error_dest_ = $("#session-info");
         if(this.error_dest_.length) {
@@ -5096,8 +5098,12 @@ RCloud.UI.session_pane = {
             this.error_dest_ = $("#output");
             this.show_error_area = function() {};
         }
+        RCloud.session.listeners.push({
+            on_reset: function() {
+                that.clear();
+            }
+        });
 
-        var that = this;
         //////////////////////////////////////////////////////////////////////
         // bluebird unhandled promise handler
         Promise.onPossiblyUnhandledRejection(function(e, promise) {
@@ -5465,7 +5471,6 @@ RCloud.UI.upload_frame = {
         $("#file").change(function() {
             $("#progress-bar").css("width", "0%");
         });
-
         $("#upload-submit").click(function() {
             if($("#file")[0].files.length===0)
                 return;
@@ -5473,7 +5478,12 @@ RCloud.UI.upload_frame = {
             RCloud.UI.upload_with_alerts(to_notebook)
                 .catch(function() {}); // we have special handling for upload errors
         });
-
+        RCloud.session.listeners.push({
+            on_reset: function() {
+                $(".progress").hide();
+                $("#file-upload-results").empty();
+            }
+        });
     },
     panel_sizer: function(el) {
         var padding = RCloud.UI.collapsible_column.default_padder(el);
