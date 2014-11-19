@@ -439,9 +439,10 @@ Notebook.create_controller = function(model)
         },
         run_all: function() {
             var that = this;
-            this.save();
-            _.each(model.cells, function(cell_model) {
-                cell_model.controller.enqueue_execution_snapshot();
+            return this.save().then(function() {
+                _.each(model.cells, function(cell_model) {
+                    cell_model.controller.enqueue_execution_snapshot();
+                });
             });
         },
 

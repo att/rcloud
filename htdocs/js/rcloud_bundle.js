@@ -481,7 +481,11 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.create_notebook = function(content) {
             return rcloud_github_handler(
                 "rcloud.create.notebook",
-                rcloud_ocaps.create_notebookAsync(JSON.stringify(content)));
+                rcloud_ocaps.create_notebookAsync(JSON.stringify(content)))
+            .then(function(result) {
+                rcloud_ocaps.load_notebook_computeAsync(result.id);
+                return result;
+            });
         };
         rcloud.fork_notebook = function(id) {
             return rcloud_github_handler(
@@ -2823,9 +2827,10 @@ Notebook.create_controller = function(model)
         },
         run_all: function() {
             var that = this;
-            this.save();
-            _.each(model.cells, function(cell_model) {
-                cell_model.controller.enqueue_execution_snapshot();
+            return this.save().then(function() {
+                _.each(model.cells, function(cell_model) {
+                    cell_model.controller.enqueue_execution_snapshot();
+                });
             });
         },
 
