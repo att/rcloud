@@ -201,6 +201,8 @@ rcloud.unauthenticated.call.FastRWeb.notebook <- function(id, version = NULL, ar
 }
 
 rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
+  set.seed(Sys.getpid()) # we want different seeds so we get different file names
+  .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
   result <- rcloud.call.notebook(id, version, NULL)
   if (is.function(result)) {
     require(FastRWeb)
