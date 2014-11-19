@@ -41,8 +41,6 @@ rcloud.enviewer.display.value <- function(val) {
 }
 
 rcloud.enviewer.display.function <- function(f) {
-  # todo: formal arguments
-  #"function"
   deparse(args(f))[1]
 }
 
