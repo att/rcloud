@@ -5197,6 +5197,8 @@ RCloud.UI.session_pane = {
         return RCloud.UI.panel_loader.load_snippet('session-info-snippet');
     },
     init: function() {
+        var that = this;
+
         // detect where we will show errors
         this.error_dest_ = $("#session-info");
         if(this.error_dest_.length) {
@@ -5214,7 +5216,6 @@ RCloud.UI.session_pane = {
             }
         });
 
-        var that = this;
         //////////////////////////////////////////////////////////////////////
         // bluebird unhandled promise handler
         Promise.onPossiblyUnhandledRejection(function(e, promise) {
@@ -5581,7 +5582,6 @@ RCloud.UI.upload_frame = {
         $("#file").change(function() {
             $("#progress-bar").css("width", "0%");
         });
-
         $("#upload-submit").click(function() {
             if($("#file")[0].files.length===0)
                 return;

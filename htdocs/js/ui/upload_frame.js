@@ -6,7 +6,6 @@ RCloud.UI.upload_frame = {
         $("#file").change(function() {
             $("#progress-bar").css("width", "0%");
         });
-
         $("#upload-submit").click(function() {
             if($("#file")[0].files.length===0)
                 return;
