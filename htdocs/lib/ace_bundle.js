@@ -2386,7 +2386,7 @@ var Editor = function(renderer, session) {
         }
 
         if (session.getDocument().isNewLine(text)) {
-            var lineIndent = mode.getNextLineIndent(lineState, line.slice(0, cursor.column), session.getTabString());
+            var lineIndent = mode.getNextLineIndent(lineState, line.slice(0, cursor.column), session.getTabString(), this.session.getTabSize(), cursor.row);
 
             session.insert({row: cursor.row+1, column: 0}, lineIndent);
         }
@@ -17524,7 +17524,8 @@ exports.LineWidgets = LineWidgets;
                         ace[key] = a[key];
                 });
             })();
-        /* ***** BEGIN LICENSE BLOCK *****
+        
+/* ***** BEGIN LICENSE BLOCK *****
  * Distributed under the BSD license:
  *
  * Copyright (c) 2010, Ajax.org B.V.
