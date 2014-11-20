@@ -9,8 +9,12 @@ ace_bundle.js:	\
 	js/ace/mode-r.js \
 	js/ace/rmarkdown_highlight_rules.js \
 	js/ace/rmarkdown.js \
+        js/ace/auto_brace_insert.js \
+        js/ace/r_highlight_rules.js \
+        js/ace/r_matching_brace_outdent.js \
 	js/ace/r_code_model.js \
 	js/ace/r_scope_tree.js \
+        js/ace/tex_highlight_rules.js \
 	js/ace/mode-markdown.js \
         js/ace/sweave_background_highlighter.js \
 	js/ace/ext-language_tools.js \
