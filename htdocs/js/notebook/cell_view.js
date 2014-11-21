@@ -1,18 +1,6 @@
 (function() {
 
-var languages = {
-    "R": { 'background-color': "#E8F1FA",
-           'ace_mode': "ace/mode/r" },
-    "Markdown": { 'background-color': "#F7EEE4",
-                  'ace_mode': "ace/mode/rmarkdown" },
-    "Python": { 'background-color': "#E8F1FA",
-                'ace_mode': "ace/mode/python" }
-    // ,
-    // "Bash": { 'background-color': "#00ff00" }
-};
-
-var non_language = { 'background-color': '#dddddd',
-                     'ace_mode': 'ace/mode/text' };
+var non_language = { 'ace_mode': 'ace/mode/text' };
 
 function ensure_image_has_hash(img)
 {
