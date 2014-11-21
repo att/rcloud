@@ -41,19 +41,8 @@ issues in multi-user setup for several reasons: permissions may not
 allow multiple users to read/write the same file and operations may
 not be atomic if multiple users try to modify the same file. RCloud
 provides an alternative back-end which is highly recommended over the
-default, but requires [Redis](http://redis.io/) server. To enable it,
-install Redis on the RCloud machine
-(`sudo apt-get install redis-server` in Debian/Ubuntu) and add
-
-    rcs.engine: redis
-
-to `rcloud.conf`. Finally, you have to install `rediscc` package in R:
-
-    install.packages("rediscc",,"http://rforge.net")
-
-If you are converting an existing instance, There is a migration
-script `scripts/migrate2redis.sh` which migrates from flat file RCS to
-Redis-based RCS if needed.
+default, but requires [Redis](http://redis.io/) server. Please refer to
+the installation guide for specific installation instructions.
 
 
 ## Multi-user setup

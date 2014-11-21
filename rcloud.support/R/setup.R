@@ -228,7 +228,7 @@ configure.rcloud <- function (mode=c("startup", "script")) {
 ## create rcs back-end according to teh config files
 session.init.rcs <- function() {
     if (isTRUE(getConf("rcs.engine") == "redis")) {
-        .session$rcs.engine <- rcs.redis(getConf("rcs.redis.host"))
+        .session$rcs.engine <- rcs.redis(getConf("rcs.redis.host"), getConf("rcs.redis.password"))
         if (is.null(.session$rcs.engine$handle)) stop("ERROR: cannot connect to redis host `",getConf("rcs.redis.host"),"', aborting")
     } else {
         if (nzConf("exec.auth") && identical(getConf("exec.match.user"), "login"))
