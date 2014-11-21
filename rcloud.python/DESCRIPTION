@@ -6,4 +6,4 @@ Maintainer: Carlos Scheidegger <cscheid@research.att.com>
 Description: Adds Python bindings for RCloud
 Imports: knitr, markdown
 Suggests: rpython2
-License: EPL
+License: MIT
