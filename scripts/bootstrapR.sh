@@ -111,23 +111,17 @@ RCMD
   )
   cran = available.packages(contrib.url(c('http://r.research.att.com/', 'http://rforge.net'), type = 'source'), type = 'source')
   local = available.packages(contrib.url('file://$RCREPO', type = 'source'), type = 'source')
+  repos = c('http://rforge.net', 'http://r.research.att.com', 'file://$RCREPO')
+  
+  rcloud_deps = unique(unlist(tools:::package_dependencies(pkg, local, 'all')))
+  deps_of_rcloud_deps = unique(unlist(tools:::package_dependencies(rcloud_deps, rbind(cran, local), recursive = TRUE)))
+  deps = unique(c(rcloud_deps, deps_of_rcloud_deps))
+  
+  locally_installed_packages = rownames(installed.packages(, 'high'))
+  packages_needing_installation = deps[!(deps %in% locally_installed_packages)]
+  print(packages_needing_installation)
 
-  stage1 = unique(
-    unlist(tools:::package_dependencies(pkg, local, 'all'))
-  )
-  print(stage1)
-
-  stage2 = unique(
-    c(
-      stage1,
-      unlist(tools:::package_dependencies(stage1, rbind(cran,local), , TRUE))
-    )
-  )
-  rec = rownames(installed.packages(, 'high'))
-  stage2 = stage2[!(stage2 %in% rec)]
-  print(stage2)
-
-  download.packages(stage2, '$DISTREP/src/contrib', , c('http://rforge.net', 'http://r.research.att.com', 'file://$RCREPO'), type = 'source')
+  download.packages(packages_needing_installation, '$DISTREP/src/contrib', repos = repos, type = 'source')
   tools:::write_PACKAGES('$DISTREP/src/contrib')
 RCMD
 
@@ -139,8 +133,8 @@ else
     "$RBIN" --slave --vanilla <<RCMD
   cat(sprintf("\n Using %s, installing packages...\n", R.version.string))
   url = "file://'"$DISTREP/"'"
-  a = rownames(available.packages(paste0(url, "/src/contrib")))
-  install.packages(a, , url, type = "source")
+  packages = rownames(available.packages(paste0(url, "/src/contrib")))
+  install.packages(packages, repos = url, type = "source")
 RCMD
 fi
 
