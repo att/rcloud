@@ -111,7 +111,7 @@ RCMD
   )
   cran = available.packages(contrib.url(c('http://r.research.att.com/', 'http://rforge.net'), type = 'source'), type = 'source')
   local = available.packages(contrib.url('file://$RCREPO', type = 'source'), type = 'source')
-  repos = c('http://rforge.net', 'http://r.research.att.com', 'file://$RCREPO')
+  repos = c('file://$RCREPO', 'http://rforge.net', 'http://r.research.att.com')
   
   rcloud_deps = unique(unlist(tools:::package_dependencies(pkg, local, 'all')))
   deps_of_rcloud_deps = unique(unlist(tools:::package_dependencies(rcloud_deps, rbind(cran, local), recursive = TRUE)))
