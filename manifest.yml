@@ -1,0 +1,7 @@
+---
+applications:
+- name: rcloud
+  memory: 4G
+  instances: 1
+  buildpack: https://github.com/weymanf/heroku-buildpack-r.git
+  command: ./scripts/cf-run.sh $PORT
