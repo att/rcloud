@@ -81,9 +81,14 @@ if [ ! -e "$DISTREP/src/contrib/PACKAGES" -o -n "$mkdist" ]; then
         echo " --- Installing RCloud packages and dependencies in R"
         "$RBIN" --vanilla --slave --no-save <<RCMD || exit 1
   install.packages(
-    unique(gsub('_.*','',basename(Sys.glob('$RCREPO/src/contrib/*.tar.gz')))),
-    repos=c('file://$RCREPO','http://r.research.att.com','http://rforge.net'),
-    type='source'
+    # Find all tar'ed packages and extract the package name from them
+    unique(
+      gsub(
+        '_.*', '', basename(Sys.glob('$RCREPO/src/contrib/*.tar.gz'))
+      )
+    ),
+    repos = c('file://$RCREPO', 'http://r.research.att.com', 'http://rforge.net'),
+    type = 'source'
   )
 RCMD
 
@@ -96,22 +101,33 @@ RCMD
         cp -p "$RCREPO/src/contrib/"*.tar.gz "$DISTREP/src/contrib/"
 
         "$RBIN" --vanilla --slave <<RCMD || exit 1
-  options(warn=2)
-  pkg<-unique(gsub('_.*','',basename(Sys.glob('$RCREPO/src/contrib/*.tar.gz'))))
-  cran=available.packages(
-      contrib.url(c('http://r.research.att.com/','http://rforge.net'),type='source'),type='source'
-  )
-  local=available.packages(contrib.url('file://$RCREPO',type='source'),type='source')
+  options(warn = 2)
 
-  stage1=unique(unlist(tools:::package_dependencies(pkg,local,'all')))
+  # Find all tar'ed packages and extract the package name from them
+  pkg <- unique(
+    gsub(
+      '_.*', '', basename(Sys.glob('$RCREPO/src/contrib/*.tar.gz'))
+    )
+  )
+  cran = available.packages(contrib.url(c('http://r.research.att.com/', 'http://rforge.net'), type = 'source'), type = 'source')
+  local = available.packages(contrib.url('file://$RCREPO', type = 'source'), type = 'source')
+
+  stage1 = unique(
+    unlist(tools:::package_dependencies(pkg, local, 'all'))
+  )
   print(stage1)
 
-  stage2=unique(c(stage1,unlist(tools:::package_dependencies(stage1,rbind(cran,local),,TRUE))))
-  rec=rownames(installed.packages(,'high'))
-  stage2=stage2[!(stage2 %in% rec)]
+  stage2 = unique(
+    c(
+      stage1,
+      unlist(tools:::package_dependencies(stage1, rbind(cran,local), , TRUE))
+    )
+  )
+  rec = rownames(installed.packages(, 'high'))
+  stage2 = stage2[!(stage2 %in% rec)]
   print(stage2)
 
-  download.packages(stage2,'$DISTREP/src/contrib',,c('http://rforge.net','http://r.research.att.com','file://$RCREPO'),type='source')
+  download.packages(stage2, '$DISTREP/src/contrib', , c('http://rforge.net', 'http://r.research.att.com', 'file://$RCREPO'), type = 'source')
   tools:::write_PACKAGES('$DISTREP/src/contrib')
 RCMD
 
@@ -122,9 +138,9 @@ else
     ## Installation from a distribution
     "$RBIN" --slave --vanilla <<RCMD
   cat(sprintf("\n Using %s, installing packages...\n", R.version.string))
-  url="file://'"$DISTREP/"'"
-  a=rownames(available.packages(paste0(url,"/src/contrib")))
-  install.packages(a,,url,type="source")
+  url = "file://'"$DISTREP/"'"
+  a = rownames(available.packages(paste0(url, "/src/contrib")))
+  install.packages(a, , url, type = "source")
 RCMD
 fi
 
