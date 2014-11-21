@@ -25,24 +25,17 @@ EOF
     exit 0
 fi
 
-WD=`pwd`
-
-if [ ! -e "$WD/rcloud.support/DESCRIPTION" ]; then
-    echo ' ERROR: you must run this script from the RCloud root directory!' 1>&2
-    exit 1
-fi
-
-: ${RCREPO="$WD/packages"}
-: ${DISTREP="$WD/dist-repos"}
-: ${RBIN=R}
+WD="$( cd "$( dirname $0 )/.." && pwd )"
+RCREPO=${RCREPO:-"$WD/packages"}
+DISTREP=${DISTREP:-"$WD/dist-repos"}
+RBIN=${RBIN:-"R"}
+export RCS_SILENCE_LOADCHECK=TRUE
 
 ok=`echo 'if(R.version$major>=3)cat("OK\n")' | "$RBIN" --slave --vanilla`
 if [ "x$ok" != "xOK" ]; then
     echo -e '\n ERROR: R is not available in the correct version.\n' 1>&2
     exit 1
 fi
-
-export RCS_SILENCE_LOADCHECK=TRUE
 
 mkdist=''
 if [ x"$1" = "x--mk-dist" ]; then
