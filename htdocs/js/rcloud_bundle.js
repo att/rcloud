@@ -3747,6 +3747,11 @@ RCloud.UI.command_prompt = (function() {
             var that = this;
             var prompt_div = $(RCloud.UI.panel_loader.load_snippet('command-prompt-snippet'));
             $('#rcloud-cellarea').append(prompt_div);
+            _.each(RCloud.language.available_languages(), function(lang) {
+                var s = "<option>" + lang + "</option>";
+                $("#insert-cell-language").append($(s));
+            });
+            // default gets set in restore_prompt
             $("#insert-new-cell").click(function() {
                 shell.new_cell("", language_, false);
                 var vs = shell.notebook.view.sub_views;
