@@ -698,7 +698,7 @@ rcloud.purl.source <- function(contents)
   result
 }
 
-rcloud.user.details <- function(id) {
+rcloud.user.email <- function(id) {
   url <- getConf("github.api.url")
   agent <- getConf("github.gist.useragent")
   gist.url <- paste0(url,"users/",id)

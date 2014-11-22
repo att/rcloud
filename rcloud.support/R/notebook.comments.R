@@ -82,8 +82,8 @@ rcloud.comments.email <- function(content,from,to,subject) {
   is.subscribed <- rcloud.config.get.single.user.option(to,'subscribe_to_comments')
   if(is.null(is.subscribed) | length(is.subscribed) == 0)
     is.subscribed <- FALSE
-  to <- rcloud.user.details(to)
-  from <- rcloud.user.details(from)
+  to <- rcloud.user.email(to)
+  from <- rcloud.user.email(from)
   if(is.subscribed)
     sendmail(from, to, subject,body , control=list(smtpServer=smtp))
 }
