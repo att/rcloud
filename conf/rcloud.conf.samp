@@ -7,9 +7,11 @@ github.client.secret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 github.base.url: https://github.com/
 github.api.url: https://api.github.com/
 github.gist.url: https://gist.github.com/
+github.gist.useragent: http://developer.github.com/v3
 rcs.engine: redis
 solr.host.port: 127.0.0.1:8983
 solr.collection: collection1
 solr.url: http://127.0.0.1:8983/solr/rcloudnotebooks
 solr.page.size: 5
 rcs.system.config.addons: rcloud.viewer, rcloud.enviewer
+smtp.server:xxxxxxxxxxxxx

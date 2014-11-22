@@ -3,7 +3,7 @@
 
 # FIXME what's the relationship between this and rcloud.config in conf.R?
 rcloud.get.conf.value <- function(key) {
-  Allowed <- c('host', 'github.base.url', 'github.api.url', 'github.gist.url','solr.page.size')
+  Allowed <- c('host', 'github.base.url', 'github.api.url', 'github.gist.url','solr.page.size','smtp.server','github.gist.useragent')
   if(key %in% Allowed)
     getConf(key)
   else
@@ -638,6 +638,9 @@ rcloud.config.set.user.option <- function(key, value)
 rcloud.config.get.alluser.option <- function(key)
   rcs.get(rcs.key(user=".allusers", notebook="system", "config", key))
 
+rcloud.config.get.single.user.option <- function(userid,key)
+  rcs.get(rcs.key(user=userid, notebook="system", "config", key))
+
 ################################################################################
 # notebook cache
 
@@ -693,4 +696,14 @@ rcloud.purl.source <- function(contents)
   unlink(output.file)
   unlink(input.file)
   result
+}
+
+rcloud.user.details <- function(id) {
+  url <- getConf("github.api.url")
+  agent <- getConf("github.gist.useragent")
+  gist.url <- paste0(url,"users/",id)
+  gist.res <- getURL(gist.url,useragent=agent,.encoding = 'utf-8', .mapUnicode=FALSE)
+  gist.res <- fromJSON(gist.res)
+  email <- gist.res$email
+  email
 }

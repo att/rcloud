@@ -483,3 +483,23 @@ ui_utils.prevent_backspace = function($doc) {
             event.preventDefault();
     });
 };
+
+ui_utils.email_maker = function() {
+    return function(opts) {
+        var username= opts.username;
+        var gistname= opts.gistname;
+        var comment= opts.comment;
+        var make_edit_url = ui_utils.url_maker('edit.html');
+        var url = make_edit_url({notebook: gistname});
+        var content = "<html><head><title>Comment Notification</title></head>" +
+        "<body>" +
+            "<div>" +
+            "<h3>Comment :</h3>" +
+            "<p>\""+comment+"\"</p>" +
+            "<p><a href='"+url+"' target='"+url+"'>Go To Notebook</a></p>"+
+            "</div>" +
+         "</body>" +
+        "</html>";
+        return content;
+    };
+};

@@ -403,14 +403,14 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.session_markdown_evalAsync(command, language, silent);
         };
 
-        rcloud.post_comment = function(id, content) {
+        rcloud.post_comment = function(id, content,mailcontent,from,to,subject) {
             return rcloud_github_handler(
                 "rcloud.post.comment",
-                rcloud_ocaps.comments.postAsync(id, content));
+                rcloud_ocaps.comments.postAsync(id, content,mailcontent,from,to,subject));
         };
 
-        rcloud.modify_comment = function(id, cid, content) {
-            return rcloud_ocaps.comments.modifyAsync(id, cid,content);
+        rcloud.modify_comment = function(id, cid, content,mailcontent,from,to,subject) {
+            return rcloud_ocaps.comments.modifyAsync(id, cid,content,mailcontent,from,to,subject);
         };
 
         rcloud.delete_comment = function(id, cid) {

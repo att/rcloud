@@ -25,9 +25,10 @@ rcloud.get.comments <- function(id)
                            httpheader = c('Content-Type' = 'application/json',Accept = 'application/json')))
 }
 
-rcloud.post.comment <- function(id, content)
+rcloud.post.comment <- function(id, content,mailcontent,from,to,subject)
 {
   res <- create.gist.comment(id, content, ctx = .session$gist.context)
+  rcloud.comments.email(mailcontent,from,to,subject)
   if (nzConf("solr.url")) mcparallel(.solr.post.comment(id, content, res$content$id), detached=TRUE)
   res
 }
@@ -45,9 +46,10 @@ rcloud.post.comment <- function(id, content)
                            httpheader = c('Content-Type' = 'application/json',Accept = 'application/json')))
 }
 
-rcloud.modify.comment <- function(id, cid, content)
+rcloud.modify.comment <- function(id, cid, content,mailcontent,from,to,subject)
 {
   res <- modify.gist.comment(id,cid,content, ctx = .session$gist.context)
+  rcloud.comments.email(mailcontent,from,to,subject)
   mcparallel(.solr.modify.comment(id, content, cid), detached=TRUE)
   res$ok
 }
@@ -70,4 +72,18 @@ rcloud.delete.comment <- function(id,cid)
   mcparallel(.solr.delete.comment(id, cid), detached=TRUE)
   res <- delete.gist.comment(id,cid, ctx = .session$gist.context)
   res$ok
+}
+
+rcloud.comments.email <- function(content,from,to,subject) {
+  smtp <- getConf("smtp.server")
+  msg <- mime_part(content)
+  msg[["headers"]][["Content-Type"]] <- "text/html"
+  body <- list(msg)
+  is.subscribed <- rcloud.config.get.single.user.option(to,'Subscribe to Comments')
+  if(is.null(is.subscribed) | length(is.subscribed) == 0)
+    is.subscribed <- FALSE
+  to <- rcloud.user.details(to)
+  from <- rcloud.user.details(from)
+  if(is.subscribed)
+    sendmail(from, to, subject,body , control=list(smtpServer=smtp))
 }
