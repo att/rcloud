@@ -1420,19 +1420,7 @@ Notebook.Asset.create_controller = function(asset_model)
 };
 (function() {
 
-var languages = {
-    "R": { 'background-color': "#E8F1FA",
-           'ace_mode': "ace/mode/r" },
-    "Markdown": { 'background-color': "#F7EEE4",
-                  'ace_mode': "ace/mode/rmarkdown" },
-    "Python": { 'background-color': "#E8F1FA",
-                'ace_mode': "ace/mode/python" }
-    // ,
-    // "Bash": { 'background-color': "#00ff00" }
-};
-
-var non_language = { 'background-color': '#dddddd',
-                     'ace_mode': 'ace/mode/text' };
+var non_language = { 'ace_mode': 'ace/mode/text' };
 
 function ensure_image_has_hash(img)
 {
@@ -1586,7 +1574,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     outer_ace_div.append(ace_div);
     ace.require("ace/ext/language_tools");
     var widget = ace.edit(ace_div[0]);
-    var RMode = require(RCloud.language.ace_mode(language)).Mode;
+    var RMode = ace.require(RCloud.language.ace_mode(language)).Mode;
     var session = widget.getSession();
     widget.setValue(cell_model.content());
     ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
