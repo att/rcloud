@@ -35,6 +35,7 @@ RCloud.UI.settings_frame = (function() {
                 sort: 10000,
                 default_value: false,
                 label: "",
+                id:"",
                 set: function(val) {}
             }, opts);
             return {
@@ -43,10 +44,10 @@ RCloud.UI.settings_frame = (function() {
                 create_control: function(on_change) {
                     var check = $.el.input({type: 'checkbox'});
                     $(check).prop('id',opts.id);
-                    var label = $($.el.label(check, opts.label)).attr('name',opts.name);
+                    var label = $($.el.label(check, opts.label));
                     $(check).change(function() {
                         var val = $(this).prop('checked');
-                        on_change(val,this.parentElement.innerText);
+                        on_change(val,this.id);
                         opts.set(val);
                     });
                     return label;
@@ -61,7 +62,8 @@ RCloud.UI.settings_frame = (function() {
         init: function() {
             var that = this;
             this.add({
-                'Show Command Prompt': that.checkbox({
+                'show_command_prompt': that.checkbox({
+                    id:"show_command_prompt",
                     sort: 100,
                     default_value: true,
                     label: "Show Command Prompt",
@@ -71,10 +73,11 @@ RCloud.UI.settings_frame = (function() {
                 })
             });
             this.add({
-                'Subscribe to Comments': that.checkbox({
+                'subscribe_to_comments': that.checkbox({
+                    id:"subscribe_to_comments",
                     sort: 100,
                     default_value: true,
-                    label: "Subscribe to Comments",
+                    label: "Subscribe To Comments",
                     set: function(val) {
                         RCloud.UI.command_prompt.show_prompt(val);
                     }

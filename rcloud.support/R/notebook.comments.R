@@ -79,7 +79,7 @@ rcloud.comments.email <- function(content,from,to,subject) {
   msg <- mime_part(content)
   msg[["headers"]][["Content-Type"]] <- "text/html"
   body <- list(msg)
-  is.subscribed <- rcloud.config.get.single.user.option(to,'Subscribe to Comments')
+  is.subscribed <- rcloud.config.get.single.user.option(to,'subscribe_to_comments')
   if(is.null(is.subscribed) | length(is.subscribed) == 0)
     is.subscribed <- FALSE
   to <- rcloud.user.details(to)
