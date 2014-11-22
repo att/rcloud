@@ -218,7 +218,7 @@ configure.rcloud <- function (mode=c("startup", "script")) {
 
   ## clean up to forks don't need to do gc soon
   gc()
-  
+
   if (mode == "script")
     rcloud.support:::start.rcloud.anonymously()
   else
@@ -323,10 +323,10 @@ start.rcloud.common <- function(...) {
     lang.list[[d$language]]$setup(.session)
   }
   .session$languages <- lang.list
-  
+
   ## pre-emptive GC to start clean
   gc()
-  
+
   ulog("RCloud start.rcloud.common() complete, user='", .session$username, "'")
 
   TRUE
@@ -352,7 +352,7 @@ create.gist.backend <- function(username="", token="", ...) {
     if (any(l0 & req))
       stop("Following options required by `", gb, "' are missing: ", paste(names(gbns$config.options())[l0 & req]), collapse=', ')
   }
-  
+
   l["username"]=list(username)
   l["token"]=list(token)
   if (rcloud.debug.level()) {
