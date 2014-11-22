@@ -9,6 +9,7 @@ RCloud.language = {
             Python: "ace/mode/python",
             Markdown: "ace/mode/rmarkdown",
             CSS: "ace/mode/css",
+            JavaScript: "ace/mode/javascript",
             Text: "ace/mode/text"
         };
         return modes[language] || modes.Text;
