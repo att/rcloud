@@ -100,7 +100,7 @@ var shell = (function() {
         },
         new_cell: function(content, language, execute) {
             if(!_.contains(RCloud.language.available_languages(), language)) {
-                RCloud.UI.session_pane.post_error("Sorry, " + language + " notebook cells not supported in this deployment (yet!)");
+                RCloud.UI.session_pane.post_error("Sorry, " + language + " notebook cells not supported in this deployment.");
                 return;
             }
             var cell = notebook_controller_.append_cell(content, language);
