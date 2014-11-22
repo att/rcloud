@@ -1,7 +1,5 @@
 (function() {
 
-var non_language = { 'ace_mode': 'ace/mode/text' };
-
 function ensure_image_has_hash(img)
 {
     if (img.dataset.sha256)
@@ -101,27 +99,34 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     cell_status.append(button_float);
     cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
-    var languages = {};
     var select_lang = $("<select class='form-control'></select>");
+    var lang_selectors = {};
     function add_language_selector(lang) {
-        languages[lang].element = $("<option></option>").text(lang);
-        select_lang.append(languages[lang].element);
+        var element = $("<option></option>").text(lang);
+        lang_selectors[lang] = element;
+        select_lang.append(element);
     }
-    _.each(RCloud.language.available_languages(), function(key) {
-        languages[key] = {};
-        add_language_selector(key);
-    });
-    if(!languages[language]) { // unknown language: add it
-        languages[language] = _.clone(non_language);
+    _.each(RCloud.language.available_languages(), add_language_selector);
+    if(!lang_selectors[language]) // unknown language: add it
         add_language_selector(language);
-    }
-    var lang_info = languages[language];
-    $(lang_info.element).attr('selected', true);
-    select_lang.on("change", function() {
-        var l = select_lang.find("option:selected").text();
-        cell_model.parent_model.controller.change_cell_language(cell_model, l);
+
+    select_lang.change(function() {
+        var language = select_lang.val();
+        cell_model.parent_model.controller.change_cell_language(cell_model, language);
         result.clear_result();
     });
+
+    function update_language(skip_ui) {
+        language = cell_model.language();
+        if(!lang_selectors[language])
+            throw new Error("tried to set language to unknown language " + language);
+        var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
+        ace_div.css({ 'background-color': bg_color });
+        var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
+        session.setMode(new LangMode(false, doc, session));
+        if(!skip_ui)
+            select_lang.val(language);
+    }
 
     col.append($("<div></div>").append(select_lang));
     $.each([run_md_button, source_button, result_button, gap, split_button, remove_button],
@@ -154,7 +159,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     outer_ace_div.append(ace_div);
     ace.require("ace/ext/language_tools");
     var widget = ace.edit(ace_div[0]);
-    var RMode = ace.require(RCloud.language.ace_mode(language)).Mode;
     var session = widget.getSession();
     widget.setValue(cell_model.content());
     ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
@@ -167,7 +171,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     widget.setOptions({
         enableBasicAutocompletion: true
     });
-    session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
         set_widget_height();
         widget.resize();
@@ -199,6 +202,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
     inner_div.append(r_result_div);
+    update_language(true);
 
     var current_mode;
 
@@ -220,14 +224,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             notebook_cell_div.remove();
         },
         id_updated: update_div_id,
-        language_updated: function() {
-            language = cell_model.language();
-            lang_info = languages[language];
-            if(!lang_info) throw new Error("tried to set language to unknown language " + language);
-            var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
-            ace_div.css({ 'background-color': bg_color });
-            select_lang.val(cell_model.language());
-        },
+        language_updated: update_language,
         result_updated: function(r) {
             has_result = true;
             r_result_div.hide();
