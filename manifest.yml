@@ -1,0 +1,9 @@
+---
+applications:
+- name: rcloud
+  memory: 4G
+  instances: 1
+  buildpack: https://github.com/att-bdpaas/r-buildpack.git
+  command: ROOT=`pwd` Rscript ./scripts/cfRun.R
+  services:
+  - p-redis-rcloud
