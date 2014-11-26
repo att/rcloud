@@ -1622,7 +1622,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
     inner_div.append(r_result_div);
-    update_language(true);
+    update_language(false);
 
     var current_mode;
 
