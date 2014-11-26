@@ -1536,7 +1536,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         result.clear_result();
     });
 
-    function update_language(skip_ui) {
+    function update_language() {
         language = cell_model.language();
         if(!lang_selectors[language])
             throw new Error("tried to set language to unknown language " + language);
@@ -1544,8 +1544,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         ace_div.css({ 'background-color': bg_color });
         var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
         session.setMode(new LangMode(false, doc, session));
-        if(!skip_ui)
-            select_lang.val(language);
+        select_lang.val(language);
     }
 
     col.append($("<div></div>").append(select_lang));
@@ -1622,7 +1621,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
     inner_div.append(r_result_div);
-    update_language(false);
+    update_language();
 
     var current_mode;
 
