@@ -7,7 +7,7 @@
 
     var enviewer_panel = {
         body: function() {
-            return $.el.div({id: "enviewer-body-wrapper", 'class': 'panel-body', style: 'padding: 5px 5px'},
+            return $.el.div({id: "enviewer-body-wrapper", 'class': 'panel-body tight', style: 'padding: 5px 5px'},
                            $.el.div({id: "enviewer-scroller", style: "width: 100%; height: 100%; overflow-x: auto"},
                                     $.el.div({id:"enviewer-body", 'class': 'widget-vsize'})));
         }
