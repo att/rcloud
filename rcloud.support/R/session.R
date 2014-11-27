@@ -20,14 +20,6 @@ rcloud.get.gist.part <- function(partname, version) {
   nb$content$files[[partname]]$content
 }
 
-rcloud.unauthenticated.session.cell.eval <- function(partname, language, version, silent) {
-  notebook.id <- rcloud.session.notebook.id()
-  if (rcloud.is.notebook.published(notebook.id))
-    rcloud.session.cell.eval(partname, language, version, silent)
-  else
-    stop("Notebook does not exist or is not published.")
-}
-
 rcloud.session.cell.eval <- function(partname, language, version, silent) {
   ulog("RCloud rcloud.session.cell.eval(", partname, ",", language,")")
   command <- rcloud.get.gist.part(partname, version)
@@ -38,6 +30,15 @@ rcloud.session.cell.eval <- function(partname, language, version, silent) {
   } else if (language == "Text") {
     command
   }
+  else warning("Language ", language, " is unknown; cell ", partname, " ignored.");
+}
+
+rcloud.unauthenticated.session.cell.eval <- function(partname, language, version, silent) {
+  notebook.id <- rcloud.session.notebook.id()
+  if (rcloud.is.notebook.published(notebook.id))
+    rcloud.session.cell.eval(partname, language, version, silent)
+  else
+    stop("Notebook does not exist or is not published.")
 }
 
 rcloud.authenticated.cell.eval <- rcloud.session.cell.eval
