@@ -211,7 +211,8 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "disable_warnings"],
             ["api", "set_url"],
             ["api", "get_url"],
-            ["get_notebook_by_name"]
+            ["get_notebook_by_name"],
+            ["languages", "get_list"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
@@ -401,6 +402,14 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.api.get_url = function() {
             return rcloud_ocaps.api.get_urlAsync();
+        };
+
+        //////////////////////////////////////////////////////////////////////
+        // languages
+
+        rcloud.languages = {};
+        rcloud.languages.get_list = function() {
+            return rcloud_ocaps.languages.get_listAsync();
         };
     }
 
@@ -1437,20 +1446,6 @@ Notebook.Asset.create_controller = function(asset_model)
 };
 (function() {
 
-var languages = {
-    "R": { 'background-color': "#E8F1FA",
-           'ace_mode': "ace/mode/r" },
-    "Markdown": { 'background-color': "#F7EEE4",
-                  'ace_mode': "ace/mode/rmarkdown" },
-    "Python": { 'background-color': "#E8F1FA",
-                'ace_mode': "ace/mode/python" }
-    // ,
-    // "Bash": { 'background-color': "#00ff00" }
-};
-
-var non_language = { 'background-color': '#dddddd',
-                     'ace_mode': 'ace/mode/text' };
-
 function ensure_image_has_hash(img)
 {
     if (img.dataset.sha256)
@@ -1552,24 +1547,32 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
     var select_lang = $("<select class='form-control'></select>");
+    var lang_selectors = {};
     function add_language_selector(lang) {
-        languages[lang].element = $("<option></option>").text(lang);
-        select_lang.append(languages[lang].element);
+        var element = $("<option></option>").text(lang);
+        lang_selectors[lang] = element;
+        select_lang.append(element);
     }
-    _.each(languages, function(value, key) {
-        add_language_selector(key);
-    });
-    if(!languages[language]) { // unknown language: add it
-        languages[language] = _.clone(non_language);
+    _.each(RCloud.language.available_languages(), add_language_selector);
+    if(!lang_selectors[language]) // unknown language: add it
         add_language_selector(language);
-    }
-    var lang_info = languages[language];
-    $(lang_info.element).attr('selected', true);
-    select_lang.on("change", function() {
-        var l = select_lang.find("option:selected").text();
-        cell_model.parent_model.controller.change_cell_language(cell_model, l);
+
+    select_lang.change(function() {
+        var language = select_lang.val();
+        cell_model.parent_model.controller.change_cell_language(cell_model, language);
         result.clear_result();
     });
+
+    function update_language() {
+        language = cell_model.language();
+        if(!lang_selectors[language])
+            throw new Error("tried to set language to unknown language " + language);
+        var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
+        ace_div.css({ 'background-color': bg_color });
+        var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
+        session.setMode(new LangMode(false, doc, session));
+        select_lang.val(language);
+    }
 
     col.append($("<div></div>").append(select_lang));
     $.each([run_md_button, source_button, result_button, gap, split_button, remove_button],
@@ -1595,13 +1598,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
 
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
-    ace_div.css({ 'background-color': lang_info["background-color"] });
+    var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
+    ace_div.css({ 'background-color': bg_color });
 
     inner_div.append(outer_ace_div);
     outer_ace_div.append(ace_div);
     ace.require("ace/ext/language_tools");
     var widget = ace.edit(ace_div[0]);
-    var RMode = ace.require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
     var session = widget.getSession();
     widget.setValue(cell_model.content());
     ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
@@ -1614,7 +1617,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     widget.setOptions({
         enableBasicAutocompletion: true
     });
-    session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
         set_widget_height();
         widget.resize();
@@ -1646,6 +1648,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
     inner_div.append(r_result_div);
+    update_language();
 
     var current_mode;
 
@@ -1667,13 +1670,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             notebook_cell_div.remove();
         },
         id_updated: update_div_id,
-        language_updated: function() {
-            language = cell_model.language();
-            lang_info = languages[language];
-            if(!lang_info) throw new Error("tried to set language to unknown language " + language);
-            ace_div.css({ 'background-color': lang_info["background-color"] });
-            select_lang.val(cell_model.language());
-        },
+        language_updated: update_language,
         result_updated: function(r) {
             has_result = true;
             r_result_div.hide();
@@ -1683,6 +1680,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // There's a list of things that we need to do to the output:
             var uuid = rcloud.deferred_knitr_uuid;
 
+            // FIXME None of these things should be hard-coded.
             if (cell_model.language() === 'R' && inner_div.find("pre code").length === 0) {
                 r_result_div.prepend("<pre><code class='r'>" + cell_model.content() + "</code></pre>");
             }
@@ -2649,7 +2647,7 @@ Notebook.create_controller = function(model)
         },
         remove_cell: function(cell_model) {
             var changes = refresh_buffers().concat(model.remove_cell(cell_model));
-            RCloud.UI.command_prompt.prompt.widget.focus(); // there must be a better way
+            RCloud.UI.command_prompt.focus();
             update_notebook(changes)
                 .then(default_callback());
         },
@@ -2879,23 +2877,18 @@ Notebook.part_name = function(id, language) {
     // yuk
     if(_.isString(id))
         return id;
-    var ext;
-    switch(language) {
-    case 'R':
-        ext = 'R';
-        break;
-    case 'Markdown':
-        ext = 'md';
-        break;
-    case 'Python':
-        ext = 'py';
-        break;
-    case 'Text':
-        ext = 'txt';
-        break;
-    default:
+    // the keys of the language map come from GitHub's language detection 
+    // infrastructure which we don't control. (this is likely a bad thing)
+    // The values are the extensions we use for the gists.
+    var language_map = {
+        R: 'R',
+        Markdown: 'md',
+        Python: 'py',
+		Text: 'txt'
+    };
+    var ext = language_map[language];
+    if (_.isUndefined(ext))
         throw new Error("Unknown language " + language);
-    }
     return 'part' + id + '.' + ext;
 };
 
@@ -3033,7 +3026,11 @@ function rclient_promise(allow_anonymous) {
     }).then(function() {
         rcloud.display.set_device_pixel_ratio();
         rcloud.api.set_url(window.location.href);
-        return rcloud.init_client_side_data();
+        return rcloud.languages.get_list().then(function(lang_list) {
+            RCloud.language._set_available_languages(lang_list);
+        }).then(function() { 
+            return rcloud.init_client_side_data();
+        });
     });
 }
 
@@ -3059,6 +3056,35 @@ RCloud.session = {
         return rclient_promise(allow_anonymous);
     }
 };
+
+})();
+RCloud.language = (function() {
+    var ace_modes_ = {
+        R: "ace/mode/r",
+        Python: "ace/mode/python",
+        Markdown: "ace/mode/rmarkdown",
+        CSS: "ace/mode/css",
+        JavaScript: "ace/mode/javascript",
+        Text: "ace/mode/text"
+    };
+    var langs_ = [];
+
+    return {
+        ace_mode: function(language) {
+            return ace_modes_[language] || ace_modes_.Text;
+        },
+        // don't call _set_available_languages yourself; it's called
+        // by the session initialization code.
+        _set_available_languages: function(list) {
+            if (_.isArray(list))
+                langs_ = list;
+            else
+                langs_ = [list];
+        },
+        available_languages: function() {
+            return langs_;
+        }
+    };
 
 })();
 (function() {
@@ -3551,183 +3577,75 @@ RCloud.UI.column_sizer = {
 
 RCloud.UI.command_prompt = (function() {
     var show_prompt_ = false, // start hidden so it won't flash if user has it turned off
-        readonly_ = true;
-    function show_or_hide() {
-        var prompt_div = $('#prompt-div'),
-            prompt = $('#command-prompt'),
-            controls = $('#prompt-div .cell-status .cell-controls');
-        if(readonly_)
-            prompt_div.hide();
-        else {
-            prompt_div.show();
-            if(show_prompt_) {
-                prompt.show();
-                controls.removeClass('flipped');
-            }
-            else {
-                prompt.hide();
-                controls.addClass('flipped');
+        readonly_ = true,
+        history_ = null,
+        entry_ = null,
+        language_ = null;
+
+    function setup_command_entry() {
+        var prompt_div = $("#command-prompt");
+        if (!prompt_div.length)
+            return null;
+        function set_ace_height() {
+            var EXTRA_HEIGHT = 6;
+            prompt_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
+            widget.resize();
+            shell.scroll_to_end(0);
+        }
+        prompt_div.css({'background-color': "#fff"});
+        prompt_div.addClass("r-language-pseudo");
+        ace.require("ace/ext/language_tools");
+        var widget = ace.edit(prompt_div[0]);
+        set_ace_height();
+        var RMode = ace.require("ace/mode/r").Mode;
+        var session = widget.getSession();
+        var doc = session.doc;
+        widget.setOptions({
+            enableBasicAutocompletion: true
+        });
+        session.on('change', set_ace_height);
+
+        widget.setTheme("ace/theme/chrome");
+        session.setUseWrapMode(true);
+        widget.resize();
+        var change_prompt = ui_utils.ignore_programmatic_changes(widget, history_.change.bind(history_));
+        function execute(widget, args, request) {
+            var code = session.getValue();
+            if(code.length) {
+                shell.new_cell(code, language_, true);
+                change_prompt('');
             }
         }
-    }
-    return {
-        prompt: null,
-        history: null,
-        init: function() {
-            var prompt = $(RCloud.UI.panel_loader.load_snippet('command-prompt-snippet'));
-            $('#rcloud-cellarea').append(prompt);
-            $("#insert-new-cell").click(function() {
-                var language = RCloud.UI.command_prompt.get_language();
-                shell.new_cell("", language, false);
-                var vs = shell.notebook.view.sub_views;
-                vs[vs.length-1].show_source();
-            });
-            $("#insert-cell-language").change(function() {
-                window.localStorage["last_cell_lang"] = RCloud.UI.command_prompt.get_language();
-            });
-            this.history = this.setup_prompt_history();
-            this.prompt = this.setup_command_prompt();
-        },
-        show_prompt: function(val) {
-            if(!arguments.length)
-                return show_prompt_;
-            show_prompt_ = val;
-            show_or_hide();
-            return this;
-        },
-        readonly: function(val) {
-            if(!arguments.length)
-                return readonly_;
-            readonly_ = val;
-            show_or_hide();
-            return this;
-        },
-        get_language: function() {
-            return $("#insert-cell-language option:selected").text();
-        },
-        focus: function() {
-            // surely not the right way to do this
-            if (!this.prompt)
-                return;
-            this.prompt.widget.focus();
-            this.prompt.restore();
-        },
-        setup_prompt_history: function() {
-            var entries_ = [], alt_ = [];
-            var curr_ = 0;
-            function curr_cmd() {
-                return alt_[curr_] || (curr_<entries_.length ? entries_[curr_] : "");
-            }
-            var prefix_ = null;
-            var result = {
-                init: function() {
-                    prefix_ = "rcloud.history." + shell.gistname() + ".";
-                    var i = 0;
-                    entries_ = [];
-                    alt_ = [];
-                    var last_lang = window.localStorage["last_cell_lang"] || "R";
-                    while(1) {
-                        var cmd = window.localStorage[prefix_+i],
-                            cmda = window.localStorage[prefix_+i+".alt"];
-                        if(cmda !== undefined)
-                            alt_[i] = cmda;
-                        if(cmd === undefined)
-                            break;
-                        entries_.push(cmd);
-                        ++i;
-                    }
-                    curr_ = entries_.length;
-                    return {"cmd":curr_cmd(),"lang":last_lang};
-                },
-                execute: function(cmd) {
-                    if(cmd==="") return;
-                    alt_[entries_.length] = null;
-                    entries_.push(cmd);
-                    alt_[curr_] = null;
-                    curr_ = entries_.length;
-                    window.localStorage[prefix_+(curr_-1)] = cmd;
-                },
-                has_last: function() {
-                    return curr_>0;
-                },
-                last: function() {
-                    if(curr_>0) --curr_;
-                    return curr_cmd();
-                },
-                has_next: function() {
-                    return curr_<entries_.length;
-                },
-                next: function() {
-                    if(curr_<entries_.length) ++curr_;
-                    return curr_cmd();
-                },
-                change: function(cmd) {
-                    window.localStorage[prefix_+curr_+".alt"] = alt_[curr_] = cmd;
-                }
-            };
-            return result;
-        },
 
-        setup_command_prompt: function() {
-            var that = this;
-            var prompt_div = $("#command-prompt");
-            if (!prompt_div.length)
-                return null;
-            function set_ace_height() {
-                var EXTRA_HEIGHT = 6;
-                prompt_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
-                widget.resize();
-                shell.scroll_to_end(0);
-            }
-            prompt_div.css({'background-color': "#fff"});
-            prompt_div.addClass("r-language-pseudo");
-            ace.require("ace/ext/language_tools");
-            var widget = ace.edit(prompt_div[0]);
-            set_ace_height();
-            var RMode = ace.require("ace/mode/r").Mode;
-            var session = widget.getSession();
-            var doc = session.doc;
-            widget.setOptions({
-                enableBasicAutocompletion: true
-            });
-            session.setMode(new RMode(false, doc, session));
-            session.on('change', set_ace_height);
+        function last_row(widget) {
+            var doc = widget.getSession().getDocument();
+            return doc.getLength()-1;
+        }
 
-            widget.setTheme("ace/theme/chrome");
-            session.setUseWrapMode(true);
-            widget.resize();
-            var change_prompt = ui_utils.ignore_programmatic_changes(widget, this.history.change.bind(this.history));
-            function execute(widget, args, request) {
-                var code = session.getValue();
-                if(code.length) {
-                    shell.new_cell(code, that.get_language(), true);
-                    change_prompt('');
-                }
-            }
+        function last_col(widget, row) {
+            var doc = widget.getSession().getDocument();
+            return doc.getLine(row).length;
+        }
 
-            function last_row(widget) {
-                var doc = widget.getSession().getDocument();
-                return doc.getLength()-1;
-            }
+        function restore_prompt() {
+            var prop = history_.init();
+            change_prompt(prop.cmd);
+            result.language(prop.lang);
+            var r = last_row(widget);
+            ui_utils.ace_set_pos(widget, r, last_col(widget, r));
+        }
 
-            function last_col(widget, row) {
-                var doc = widget.getSession().getDocument();
-                return doc.getLine(row).length;
-            }
+        function set_language(language) {
+            var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
+            session.setMode(new LangMode(false, session.doc, session));
+        }
 
-            function restore_prompt() {
-                var prop = that.history.init();
-                change_prompt(prop.cmd);
-                $("#insert-cell-language").val(prop.lang);
-                var r = last_row(widget);
-                ui_utils.ace_set_pos(widget, r, last_col(widget, r));
-            }
+        ui_utils.install_common_ace_key_bindings(widget, result.language.bind(result));
 
-            ui_utils.install_common_ace_key_bindings(widget, this.get_language.bind(this));
-
-            var up_handler = widget.commands.commandKeyBinding[0].up,
-                down_handler = widget.commands.commandKeyBinding[0].down;
-            widget.commands.addCommands([{
+        var up_handler = widget.commands.commandKeyBinding[0].up,
+            down_handler = widget.commands.commandKeyBinding[0].down;
+        widget.commands.addCommands([
+            {
                 name: 'execute',
                 bindKey: {
                     win: 'Return',
@@ -3751,8 +3669,8 @@ RCloud.UI.command_prompt = (function() {
                     if(pos.row > 0)
                         up_handler.exec(widget, args, request);
                     else {
-                        if(that.history.has_last()) {
-                            change_prompt(that.history.last());
+                        if(history_.has_last()) {
+                            change_prompt(history_.last());
                             var r = widget.getSession().getScreenLength();
                             ui_utils.ace_set_pos(widget, r, pos.column);
                         }
@@ -3769,8 +3687,8 @@ RCloud.UI.command_prompt = (function() {
                     if(pos.row < r-1)
                         down_handler.exec(widget, args, request);
                     else {
-                        if(that.history.has_next()) {
-                            change_prompt(that.history.next());
+                        if(history_.has_next()) {
+                            change_prompt(history_.next());
                             ui_utils.ace_set_pos(widget, 0, pos.column);
                         }
                         else {
@@ -3780,15 +3698,149 @@ RCloud.UI.command_prompt = (function() {
                     }
                 }
             }
-                                        ]);
-            ui_utils.make_prompt_chevron_gutter(widget);
+        ]);
+        ui_utils.make_prompt_chevron_gutter(widget);
 
-            return {
-                widget: widget,
-                restore: restore_prompt
-            };
+        return {
+            widget: widget,
+            restore: restore_prompt,
+            set_language: set_language
+        };
+    }
+
+    function setup_prompt_history() {
+        var entries_ = [], alt_ = [];
+        var curr_ = 0;
+        function curr_cmd() {
+            return alt_[curr_] || (curr_<entries_.length ? entries_[curr_] : "");
+        }
+        var prefix_ = null;
+        var result = {
+            init: function() {
+                prefix_ = "rcloud.history." + shell.gistname() + ".";
+                var i = 0;
+                entries_ = [];
+                alt_ = [];
+                var last_lang = window.localStorage["last_cell_lang"] || "R";
+                while(1) {
+                    var cmd = window.localStorage[prefix_+i],
+                        cmda = window.localStorage[prefix_+i+".alt"];
+                    if(cmda !== undefined)
+                        alt_[i] = cmda;
+                    if(cmd === undefined)
+                        break;
+                    entries_.push(cmd);
+                    ++i;
+                }
+                curr_ = entries_.length;
+                return {"cmd":curr_cmd(),"lang":last_lang};
+            },
+            add_entry: function(cmd) {
+                if(cmd==="") return;
+                alt_[entries_.length] = null;
+                entries_.push(cmd);
+                alt_[curr_] = null;
+                curr_ = entries_.length;
+                window.localStorage[prefix_+(curr_-1)] = cmd;
+            },
+            has_last: function() {
+                return curr_>0;
+            },
+            last: function() {
+                if(curr_>0) --curr_;
+                return curr_cmd();
+            },
+            has_next: function() {
+                return curr_<entries_.length;
+            },
+            next: function() {
+                if(curr_<entries_.length) ++curr_;
+                return curr_cmd();
+            },
+            change: function(cmd) {
+                window.localStorage[prefix_+curr_+".alt"] = alt_[curr_] = cmd;
+            }
+        };
+        return result;
+    }
+
+    function show_or_hide() {
+        var prompt_area = $('#prompt-area'),
+            prompt = $('#command-prompt'),
+            controls = $('#prompt-area .cell-status .cell-controls');
+        if(readonly_)
+            prompt_area.hide();
+        else {
+            prompt_area.show();
+            if(show_prompt_) {
+                prompt.show();
+                controls.removeClass('flipped');
+            }
+            else {
+                prompt.hide();
+                controls.addClass('flipped');
+            }
+        }
+    }
+
+    var result = {
+        init: function() {
+            var that = this;
+            var prompt_div = $(RCloud.UI.panel_loader.load_snippet('command-prompt-snippet'));
+            $('#rcloud-cellarea').append(prompt_div);
+            _.each(RCloud.language.available_languages(), function(lang) {
+                var s = "<option>" + lang + "</option>";
+                $("#insert-cell-language").append($(s));
+            });
+            // default gets set in restore_prompt
+            $("#insert-new-cell").click(function() {
+                shell.new_cell("", language_, false);
+                var vs = shell.notebook.view.sub_views;
+                vs[vs.length-1].show_source();
+            });
+            $("#insert-cell-language").change(function() {
+                var language = $("#insert-cell-language").val();
+                window.localStorage["last_cell_lang"] = language;
+                that.language(language, true);
+            });
+            history_ = setup_prompt_history();
+            entry_ = setup_command_entry();
+        },
+        history: function() {
+            return history_;
+        },
+        show_prompt: function(val) {
+            if(!arguments.length)
+                return show_prompt_;
+            show_prompt_ = val;
+            show_or_hide();
+            return this;
+        },
+        readonly: function(val) {
+            if(!arguments.length)
+                return readonly_;
+            readonly_ = val;
+            show_or_hide();
+            return this;
+        },
+        language: function(val, skip_ui) {
+            if(val === undefined)
+                return language_;
+            language_ = val;
+            if(!skip_ui)
+                $("#insert-cell-language").val(language_);
+            entry_.set_language(language_);
+            return this;
+        },
+        focus: function() {
+            // surely not the right way to do this
+            if (!entry_)
+                return;
+            entry_.widget.focus();
+            entry_.restore();
         }
     };
+    return result;
 })();
 RCloud.UI.comments_frame = (function() {
     function rebuild_comments(comments) {
@@ -4185,7 +4237,7 @@ RCloud.UI.load_options = function() {
     });
 };
 RCloud.UI.middle_column = (function() {
-    var result = RCloud.UI.column("#middle-column, #prompt-div");
+    var result = RCloud.UI.column("#middle-column");
 
     _.extend(result, {
         update: function() {
@@ -4690,7 +4742,7 @@ RCloud.UI.scratchpad = {
             inner_div.append(ace_div);
             ace.require("ace/ext/language_tools");
             var widget = ace.edit(ace_div[0]);
-            var RMode = ace.require("ace/mode/r").Mode;
+            var LangMode = ace.require("ace/mode/r").Mode;
             var session = widget.getSession();
             that.session = session;
             that.widget = widget;
@@ -4702,7 +4754,7 @@ RCloud.UI.scratchpad = {
             widget.setOptions({
                 enableBasicAutocompletion: true
             });
-            session.setMode(new RMode(false, doc, session));
+            session.setMode(new LangMode(false, doc, session));
             session.setUseWrapMode(true);
             widget.resize();
             ui_utils.on_next_tick(function() {
@@ -4869,18 +4921,9 @@ RCloud.UI.scratchpad = {
         this.widget.getSelection().setSelectionRange(range);
         return changed;
     }, language_updated: function() {
-        // github gist detected languages
-        var modes = {
-            R: "ace/mode/r",
-            Python: "ace/mode/python",
-            Markdown: "ace/mode/rmarkdown",
-            CSS: "ace/mode/css",
-            JavaScript: "ace/mode/javascript",
-            Text: "ace/mode/text"
-        };
         var lang = this.current_model.language();
-        var mode = ace.require(modes[lang] || modes.Text).Mode;
-        this.session.setMode(new mode(false, this.session.doc, this.session));
+        var LangMode = ace.require(RCloud.language.ace_mode(lang)).Mode;
+        this.session.setMode(new LangMode(false, this.session.doc, this.session));
     }, set_readonly: function(readonly) {
         if(!shell.is_view_mode()) {
             if(this.widget)

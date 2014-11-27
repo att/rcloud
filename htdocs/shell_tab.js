@@ -50,7 +50,7 @@ var shell = (function() {
         }
         else {
             window.setTimeout(function() {
-                ui_utils.scroll_to_after($("#prompt-div"));
+                ui_utils.scroll_to_after($("#prompt-area"));
             }, 100);
         }
     }
@@ -92,13 +92,11 @@ var shell = (function() {
             return view_mode_;
         },
         new_cell: function(content, language, execute) {
-            var supported = ['R', 'Markdown', 'Python'];
-            if(!_.contains(supported, language)) {
-                // don't reject here because we don't actually want stack trace
-                RCloud.UI.session_pane.post_error("Sorry, " + language + " notebook cells not supported (yet!)");
+            if(!_.contains(RCloud.language.available_languages(), language)) {
+                RCloud.UI.session_pane.post_error("Sorry, " + language + " notebook cells not supported in this deployment.");
                 return Promise.resolve(undefined);
             }
-            RCloud.UI.command_prompt.history.execute(content);
+            RCloud.UI.command_prompt.history().add_entry(content);
             var promise = notebook_controller_.append_cell(content, language);
             if(execute) {
                 promise = promise.then(function() {

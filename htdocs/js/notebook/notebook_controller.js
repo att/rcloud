@@ -261,7 +261,7 @@ Notebook.create_controller = function(model)
         },
         remove_cell: function(cell_model) {
             var changes = refresh_buffers().concat(model.remove_cell(cell_model));
-            RCloud.UI.command_prompt.prompt.widget.focus(); // there must be a better way
+            RCloud.UI.command_prompt.focus();
             update_notebook(changes)
                 .then(default_callback());
         },
