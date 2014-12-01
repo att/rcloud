@@ -44,7 +44,7 @@
     }
     fn <- gsub("//+", "/", fn)
     if (!file.exists(fn))
-        list(paste("ERROR: item '", fn, "' not found!", sep=''),"text/html", character(), 404L)
+        list("ERROR: item at the specified URL not found.", "text/html", character(), 404L)
     else {
         ## if the file is an R script, run it (via FastRWeb) instead of serving the content
         if (length(grep("\\.R$", fn))) {
