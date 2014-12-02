@@ -25,10 +25,10 @@ rcloud.get.comments <- function(id)
                            httpheader = c('Content-Type' = 'application/json',Accept = 'application/json')))
 }
 
-rcloud.post.comment <- function(id, content,mailcontent,from,to,subject)
+rcloud.post.comment <- function(id, content)
 {
   res <- create.gist.comment(id, content, ctx = .session$gist.context)
-  rcloud.comments.email(mailcontent,from,to,subject)
+  rcloud.comments.email(id,content,' posted a new')
   if (nzConf("solr.url")) mcparallel(.solr.post.comment(id, content, res$content$id), detached=TRUE)
   res
 }
@@ -46,10 +46,10 @@ rcloud.post.comment <- function(id, content,mailcontent,from,to,subject)
                            httpheader = c('Content-Type' = 'application/json',Accept = 'application/json')))
 }
 
-rcloud.modify.comment <- function(id, cid, content,mailcontent,from,to,subject)
+rcloud.modify.comment <- function(id, cid, content)
 {
   res <- modify.gist.comment(id,cid,content, ctx = .session$gist.context)
-  rcloud.comments.email(mailcontent,from,to,subject)
+  rcloud.comments.email(id,content,' modified an old')
   mcparallel(.solr.modify.comment(id, content, cid), detached=TRUE)
   res$ok
 }
@@ -74,16 +74,33 @@ rcloud.delete.comment <- function(id,cid)
   res$ok
 }
 
-rcloud.comments.email <- function(content,from,to,subject) {
+rcloud.comments.email <- function(id,content,type) {
+  to <- .session$username
+  to.email <- rcloud.get.git.user(to)$email
+  from.email <- getConf("email.from")
+  title <- rcloud.get.notebook.info(id)$description
   smtp <- getConf("smtp.server")
-  msg <- mime_part(content)
-  msg[["headers"]][["Content-Type"]] <- "text/html"
-  body <- list(msg)
-  is.subscribed <- rcloud.config.get.single.user.option(to,'subscribe_to_comments')
-  if(is.null(is.subscribed) | length(is.subscribed) == 0)
+  is.subscribed <- rcloud.config.get.single.user.option(to,'subscribe-to-comments')
+
+  if (from.email == "" || length(from.email) == 0)
+    from.email <- 'DoNotREPLY'
+
+  if(is.null(is.subscribed) | length(is.subscribed) == 0 | smtp == "" || length(smtp) == 0)
     is.subscribed <- FALSE
-  to <- rcloud.user.email(to)
-  from <- rcloud.user.email(from)
-  if(is.subscribed)
-    sendmail(from, to, subject,body , control=list(smtpServer=smtp))
+
+  if(is.subscribed) {
+    subject <- paste(.session$username,type," comment on your notebook [",title,"]",sep="");
+    cont <- rcloud.create.email(fromJSON(content[1]))
+    msg <- mime_part(cont)
+    msg[["headers"]][["Content-Type"]] <- "text/html"
+    body <- list(msg)
+    sendmail(from.email, to.email, subject,body , control=list(smtpServer=smtp))
+  }
+}
+
+rcloud.create.email <- function(content) {
+  url <- .session$url
+  email.content <- paste0('<html><head><title>Comment Notification</title></head><body><div><h3>Comment :</h3><p>"',
+    content,'"</p><p><a href=\'',url,'\' target=\'',url,'\'>Go To Notebook</a></p></div></body></html>')
+  email.content
 }

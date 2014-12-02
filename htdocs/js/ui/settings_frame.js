@@ -62,8 +62,8 @@ RCloud.UI.settings_frame = (function() {
         init: function() {
             var that = this;
             this.add({
-                'show_command_prompt': that.checkbox({
-                    id:"show_command_prompt",
+                'show-command-prompt': that.checkbox({
+                    id:"show-command-prompt",
                     sort: 100,
                     default_value: true,
                     label: "Show Command Prompt",
@@ -73,8 +73,8 @@ RCloud.UI.settings_frame = (function() {
                 })
             });
             this.add({
-                'subscribe_to_comments': that.checkbox({
-                    id:"subscribe_to_comments",
+                'subscribe-to-comments': that.checkbox({
+                    id:"subscribe-to-comments",
                     sort: 100,
                     default_value: true,
                     label: "Subscribe To Comments",

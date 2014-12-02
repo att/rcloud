@@ -116,12 +116,8 @@ RCloud.UI.comments_frame = (function() {
                 });
         },
         post_comment: function(comment) {
-            var make_email = ui_utils.email_maker();
-            var title = $('#notebook-title').text();
-            var mailcontent = make_email({username: rcloud.username(), gistname: shell.gistname(), comment: comment});
             comment = JSON.stringify({"body":comment});
-            var subject = rcloud.username()+" posted a new comment on your notebook ["+title+"]";
-            return rcloud.post_comment(shell.gistname(), comment,mailcontent,rcloud.username(),shell.notebook.model.user(),subject)
+            return rcloud.post_comment(shell.gistname(), comment)
                 .then(this.display_comments.bind(this))
                 .then(function() {
                     $('#comment-entry-body').val('');
@@ -129,14 +125,10 @@ RCloud.UI.comments_frame = (function() {
         },
         modify_comment: function (cid,comment) {
             var that = this;
-            var make_email = ui_utils.email_maker();
-            var title = $('#notebook-title').text();
-            var mailcontent = make_email({username: rcloud.username(), gistname: shell.gistname(), comment: comment});
             comment = JSON.stringify({
                 "body": comment
             });
-            var subject = rcloud.username()+" modified an old comment on your notebook ["+title+"]";
-            return rcloud.modify_comment(shell.gistname(), cid, comment,mailcontent,rcloud.username(),shell.notebook.model.user(),subject)
+            return rcloud.modify_comment(shell.gistname(), cid, comment)
                 .then(this.display_comments.bind(this));
         },
         delete_comment: function (cid) {

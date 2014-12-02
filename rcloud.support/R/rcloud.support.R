@@ -3,7 +3,7 @@
 
 # FIXME what's the relationship between this and rcloud.config in conf.R?
 rcloud.get.conf.value <- function(key) {
-  Allowed <- c('host', 'github.base.url', 'github.api.url', 'github.gist.url','solr.page.size','smtp.server','github.gist.useragent')
+  Allowed <- c('host', 'github.base.url', 'github.api.url', 'github.gist.url','solr.page.size','smtp.server','github.gist.useragent','email.from')
   if(key %in% Allowed)
     getConf(key)
   else
@@ -698,12 +698,10 @@ rcloud.purl.source <- function(contents)
   result
 }
 
-rcloud.user.email <- function(id) {
-  url <- getConf("github.api.url")
-  agent <- getConf("github.gist.useragent")
-  gist.url <- paste0(url,"users/",id)
-  gist.res <- getURL(gist.url,useragent=agent,.encoding = 'utf-8', .mapUnicode=FALSE)
-  gist.res <- fromJSON(gist.res)
-  email <- gist.res$email
-  email
+rcloud.get.git.user <- function(id) {
+  res <- get.user(id, ctx = .session$gist.context)
+  if (res$ok)
+    res$content
+  else
+    list()
 }
