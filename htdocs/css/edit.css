@@ -427,6 +427,13 @@ li.jqtree-selected .notebook-commands {
     margin: 0;
 }
 
+.no-arrow{
+    display: none !important;
+}
+
+.popover-offset{
+     left : 24.2% !important;
+ }
 /******************************************************************************/
 
 #search-wrapper {

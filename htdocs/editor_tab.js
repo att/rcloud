@@ -31,7 +31,6 @@ var editor = function () {
         histories_ = {}, // cached notebook histories
         notebook_info_ = {}, // all notebooks we are aware of
         num_stars_ = {}, // number of stars for all known notebooks
-        starrer_list_ = {}, // list of users who starred the current notebook
         my_stars_ = {}, // set of notebooks starred by me
         my_friends_ = {}, // people whose notebooks i've starred
         featured_ = [], // featured users - samples, intros, etc
@@ -816,19 +815,6 @@ var editor = function () {
         if(gistname === current_.notebook) {
             if(!_.isUndefined(star_notebook_button_) && !_.isNull(star_notebook_button_))
                 star_notebook_button_.set_state(my_stars_[gistname]);
-            $('#curr-starrer-list').empty();
-            if(starrer_list_[gistname].length == 0)
-                $('#curr-starrer-list').prev().removeAttr('data-toggle');
-            else {
-                $('#curr-starrer-list').prev().attr('data-toggle', 'dropdown');
-                if(typeof(starrer_list_[gistname]) == 'string')
-                    $('#curr-starrer-list').append('<li><a href="#">' + starrer_list_[gistname] + '</a></li>');
-                else {
-                    $.each(starrer_list_[gistname], function (i, starrer) {
-                        $('#curr-starrer-list').append('<li><a href="#">' + starrer + '</a></li>');
-                    });
-                }
-            }
             $('#curr-star-count').text(num_stars_[gistname] || 0);
         }
         if(my_friends_[user]) {
@@ -1029,6 +1015,36 @@ var editor = function () {
             // commands that appear
             var appear = $($.el.span({'class': 'notebook-commands appear'}));
             add_buttons = adder(appear);
+            //information icon
+            var info = ui_utils.fa_button('icon-info', 'info', 'info', icon_style, false);
+            var info_content = '';
+            rcloud.stars.get_notebook_starrer_list(node.gistname).then(function(list){
+                if(typeof(list) == 'string')
+                    list = [list];
+                var starrerList = '<div><b>Starred by : </b></div>';
+                $.each(list,function(i,v) {
+                    starrerList = starrerList + '<div>'+v+'</div>';
+                });
+                info_content = info_content + starrerList;
+                $(info).popover({
+                    title: node.name,
+                    html: true,
+                    content: info_content,
+                    container: 'body',
+                    placement: 'right'
+                });
+            });
+            info.click(function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                $('[data-original-title]').popover('hide');//hiding previously opened popover
+                var popover = $(this).popover();
+                popover.on("show.bs.popover", function(e) {
+                    $(popover.data()["bs.popover"].$tip[0]).addClass('popover-offset');
+                    $(popover.data()["bs.popover"].$tip[0].childNodes[0]).addClass('no-arrow');//removing default arrow in popover
+                });
+            });
+            add_buttons(info);
             if(true) { // all notebooks have history - should it always be accessible?
                 var disable = current_.notebook===node.gistname && current_.version;
                 var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style, true);
@@ -1101,7 +1117,12 @@ var editor = function () {
         }
         element.append(right);
     }
-
+    //for hiding information popover on click outside
+    $('body').on('click', function (e) {
+        if ($(e.target).data('toggle') !== 'popover' && $(e.target).parents('.popover.in').length === 0) {
+            $('[data-original-title]').popover('hide');
+        }
+    });
     var make_edit_url = ui_utils.url_maker('edit.html');
 
     function tree_click(event) {
@@ -1471,10 +1492,7 @@ var editor = function () {
                                : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
                                    num_stars_[result.id] = count;
                                })).then(function() {
-                                    rcloud.stars.get_notebook_starrer_list(result.id).then(function(list) {
-                                        starrer_list_[result.id] = list;
-                                        update_notebook_from_gist(result, history, options.selroot);
-                                    });
+                                   update_notebook_from_gist(result, history, options.selroot);
                                }));
 
                 promises.push(RCloud.UI.comments_frame.display_comments());

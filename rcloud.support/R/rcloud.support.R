@@ -533,17 +533,7 @@ star.starrerlist.key <- function(notebook)
 
 rcloud.notebook.starrer.list <- function(notebook)
 {
-  num_starrers <- length(rcs.get(star.starrerlist.key(notebook)))
-  starcount <- rcloud.notebook.star.count(notebook)
-  starrer_list_key <- star.starrerlist.key(notebook)
-  if(starcount > num_starrers) {
-    all_users <- gsub("/.*","",rcs.list(usr.key(user="*", notebook="system", "config", "current", "notebook")))
-    for(user in all_users) {
-      if(length(rcs.get(rcs.key(".notebook", notebook, "stars", user))) > 0 && !user %in% rcs.get(starrer_list_key))
-        rcs.set(starrer_list_key, c(rcs.get(starrer_list_key), user ))
-    }
-  }
-  starrerlist <- rcs.get(starrer_list_key)
+  starrerlist <- gsub(rcs.key(".notebook", notebook, "stars",''),'',rcs.list(rcs.key(".notebook", notebook, "stars", "*")))
 }
 
 rcloud.notebook.star.count <- function(notebook)
@@ -565,7 +555,6 @@ rcloud.is.notebook.starred <- function(notebook)
 rcloud.star.notebook <- function(notebook)
 {
   if(!rcloud.is.notebook.starred(notebook)) {
-    rcs.set(star.starrerlist.key(notebook), c(rcs.get(star.starrerlist.key(notebook)), .session$username ))
     rcs.set(star.key(notebook), TRUE)
     rcs.incr(star.count.key(notebook))
   }
@@ -574,8 +563,6 @@ rcloud.star.notebook <- function(notebook)
 rcloud.unstar.notebook <- function(notebook)
 {
   if(rcloud.is.notebook.starred(notebook)) {
-    starrerlist <- rcs.get(star.starrerlist.key(notebook))
-    rcs.set(star.starrerlist.key(notebook),starrerlist[which(starrerlist != .session$username)])
     rcs.rm(star.key(notebook))
     rcs.decr(star.count.key(notebook))
   }
