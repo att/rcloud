@@ -1,5 +1,9 @@
 RCloud.UI.search = (function() {
 var page_size_ = 10;
+var search_err_msg = ["<p style=\"color:black;margin:0;\">The search engine in RCloud uses Lucene for advanced search features." ,
+    "It appears you may have used one of the special characters in Lucene syntax incorrectly. " ,
+    "Please see this <a target=\"_blank\" href=\"http://lucene.apache.org/core/3_5_0/queryparsersyntax.html\">link</a> to learn about Lucene syntax. " ,
+    "</p><p style=\"color:black;margin:0;\">Or, if you mean to search for the character itself, escape it using a backslash, e.g. \"foo\\:\"</p>"];
 
 function go_to_page(page_num,incr_by){
     //get the element number where to start the slice from
@@ -109,15 +113,24 @@ return {
             $('#search-summary').css('color', color || 'black');
             $("#search-summary").show().html($("<h4/>").append(html));
         }
+        function err_msg(html, color) {
+            $('#search-summary').css("display", "none");
+            $('#search-results').css('color', color || 'black');
+            $("#search-results-row").show().animate({ scrollTop: $(document).height() }, "slow");
+            $("#search-results").show().html($("<h4/>").append(html));
+        }
         function create_list_of_search_results(d) {
             var i;
+            var custom_msg = '';
             if(d === null || d === "null" || d === "") {
                 summary("No Results Found");
             } else if(d[0] === "error") {
                 d[1] = d[1].replace(/\n/g, "<br/>");
                 if($('#paging').html != "")
                     $('#paging').html("");
-                summary("ERROR:\n" + d[1], 'darkred');
+                if(d[1].indexOf("org.apache.solr.search.SyntaxError")>-1)
+                    custom_msg = search_err_msg.join("");
+                err_msg(custom_msg+"ERROR:\n" + d[1], 'darkred');
             } else {
                 if(typeof (d) === "string") {
                     d = JSON.parse("[" + d + "]");
@@ -221,6 +234,7 @@ return {
                 }
                 if(!pgclick) {
                     $('#paging').html("");
+                    $("#search-results-pagination").show();
                     if((parseInt(numfound) - parseInt(page_size_)) > 0) {
                         var number_of_pages = noofpages;
                         $('#current_page').val(0);
