@@ -5,6 +5,8 @@ RCloud.UI.session_pane = {
         return RCloud.UI.panel_loader.load_snippet('session-info-snippet');
     },
     init: function() {
+        var that = this;
+
         // detect where we will show errors
         this.error_dest_ = $("#session-info");
         if(this.error_dest_.length) {
@@ -16,8 +18,12 @@ RCloud.UI.session_pane = {
             this.error_dest_ = $("#output");
             this.show_error_area = function() {};
         }
+        RCloud.session.listeners.push({
+            on_reset: function() {
+                that.clear();
+            }
+        });
 
-        var that = this;
         //////////////////////////////////////////////////////////////////////
         // bluebird unhandled promise handler
         Promise.onPossiblyUnhandledRejection(function(e, promise) {

@@ -108,22 +108,26 @@ function rclient_promise(allow_anonymous) {
     }).then(function() {
         rcloud.display.set_device_pixel_ratio();
         rcloud.api.set_url(window.location.href);
-        return rcloud.init_client_side_data();
+        return rcloud.languages.get_list().then(function(lang_list) {
+            RCloud.language._set_available_languages(lang_list);
+        }).then(function() { 
+            return rcloud.init_client_side_data();
+        });
     });
 }
 
 RCloud.session = {
     first_session_: true,
+    listeners: [],
     // FIXME rcloud.with_progress is part of the UI.
     reset: function() {
         if (this.first_session_) {
             this.first_session_ = false;
             return RCloud.UI.with_progress(function() {});
         }
-        // perhaps we need an event to listen on here
-        RCloud.UI.session_pane.clear();
-        $(".progress").hide();
-        $("#file-upload-results").empty();
+        this.listeners.forEach(function(listener) {
+            listener.on_reset();
+        });
         return RCloud.UI.with_progress(function() {
             var anonymous = rclient.allow_anonymous_;
             rclient.close();

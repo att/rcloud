@@ -360,6 +360,10 @@ input[type=text].form-control-ext {
     padding-left: 5px;
 }
 
+.panel-body.tight {
+    padding: 5px;
+}
+
 /******************************************************************************/
 
 ul.jqtree-tree .jqtree-toggler {
@@ -724,7 +728,6 @@ li.jqtree-selected .notebook-commands {
 #session-info-panel {
     overflow-y: auto;
     overflow-x: auto;
-    padding: 5px;
     background-color: rgb(255, 255, 248);
 }
 

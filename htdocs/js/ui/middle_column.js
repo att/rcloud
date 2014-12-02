@@ -1,5 +1,5 @@
 RCloud.UI.middle_column = (function() {
-    var result = RCloud.UI.column("#middle-column, #prompt-div");
+    var result = RCloud.UI.column("#middle-column");
 
     _.extend(result, {
         update: function() {

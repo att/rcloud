@@ -1,9 +1,11 @@
 /*
  * r_scope_tree.js
  *
- * Copyright (C) 2009-11 by RStudio, Inc.
+ * Copyright (C) 2009-12 by RStudio, Inc.
  *
- * This program is licensed to you under the terms of version 3 of the
+ * Unless you have received this program directly from RStudio pursuant
+ * to the terms of a commercial license agreement with RStudio, then
+ * this program is licensed to you under the terms of version 3 of the
  * GNU Affero General Public License. This program is distributed WITHOUT
  * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
  * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
@@ -144,6 +146,9 @@ define('ace/mode/r_scope_tree', function(require, exports, module) {
 
       // Whether this scope is
       this.scopeType = scopeType;
+      
+      // A pointer to the parent scope (if any) 
+      this.parentScope = null;
 
       this.$children = [];
    };
@@ -159,6 +164,9 @@ define('ace/mode/r_scope_tree', function(require, exports, module) {
       this.isBrace = function() { return this.scopeType == ScopeNode.TYPE_BRACE; };
       this.isChunk = function() { return this.scopeType == ScopeNode.TYPE_CHUNK; };
       this.isSection = function() { return this.scopeType == ScopeNode.TYPE_SECTION; };
+      this.isFunction = function() {
+         return this.isBrace() && !!this.label;
+      };
 
       this.addNode = function(node) {
          assert(!node.end, "New node is already closed");
@@ -193,7 +201,7 @@ define('ace/mode/r_scope_tree', function(require, exports, module) {
                node.$children = this.$children.splice(
                                              index, this.$children.length - index);
             }
-
+            node.parentScope = this;
             this.$children.push(node);
          }
       };
@@ -332,24 +340,6 @@ define('ace/mode/r_scope_tree', function(require, exports, module) {
          this.end = null;
 
          return resumePos;
-      };
-
-      this.exportFunctions = function(list)
-      {
-         if (this.label)
-         {
-            var here = {
-               label: this.label,
-               preamble: this.preamble,
-               end: this.end,
-               children: []
-            };
-            list.push(here);
-            list = here.children;
-         }
-
-         for (var i = 0; i < this.$children.length; i++)
-            this.$children[i].exportFunctions(list);
       };
 
       // Returns index of the child that contains this position, if it exists;

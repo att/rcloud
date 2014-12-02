@@ -99,6 +99,11 @@ unauthenticated.ocaps <- function()
         enable_echo = make.oc(rcloud.enable.echo),
         set_url = make.oc(rcloud.set.url),
         get_url = make.oc(rcloud.get.url)
+        ),
+
+      # multi-language support
+      languages = list(
+        get_list = make.oc(rcloud.supported.languages)
         )
       )
     )

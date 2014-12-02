@@ -2,23 +2,18 @@ Notebook.part_name = function(id, language) {
     // yuk
     if(_.isString(id))
         return id;
-    var ext;
-    switch(language) {
-    case 'R':
-        ext = 'R';
-        break;
-    case 'Markdown':
-        ext = 'md';
-        break;
-    case 'Python':
-        ext = 'py';
-        break;
-    case 'Text':
-        ext = 'txt';
-        break;
-    default:
+    // the keys of the language map come from GitHub's language detection 
+    // infrastructure which we don't control. (this is likely a bad thing)
+    // The values are the extensions we use for the gists.
+    var language_map = {
+        R: 'R',
+        Markdown: 'md',
+        Python: 'py',
+		Text: 'txt'
+    };
+    var ext = language_map[language];
+    if (_.isUndefined(ext))
         throw new Error("Unknown language " + language);
-    }
     return 'part' + id + '.' + ext;
 };
 

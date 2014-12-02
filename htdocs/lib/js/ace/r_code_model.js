@@ -1,9 +1,11 @@
 /*
  * r_code_model.js
  *
- * Copyright (C) 2009-11 by RStudio, Inc.
+ * Copyright (C) 2009-12 by RStudio, Inc.
  *
- * This program is licensed to you under the terms of version 3 of the
+ * Unless you have received this program directly from RStudio pursuant
+ * to the terms of a commercial license agreement with RStudio, then
+ * this program is licensed to you under the terms of version 3 of the
  * GNU Affero General Public License. This program is distributed WITHOUT
  * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
  * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
@@ -15,6 +17,8 @@ define("ace/mode/r_code_model", function(require, exports, module) {
 
 var Range = require("ace/range").Range;
 var TokenIterator = require("ace/token_iterator").TokenIterator;
+
+var $verticallyAlignFunctionArgs = false;
 
 function comparePoints(pos1, pos2)
 {
@@ -567,6 +571,9 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
       if (endState == "qstring" || endState == "qqstring")
          return "";
 
+      // TODO: optimize
+      var tabAsSpaces = Array(tabSize + 1).join(" ");
+
       // This lineOverrides nonsense is necessary because the line has not 
       // changed in the real document yet. We need to simulate it by replacing
       // the real line with the `line` param, and when we finish with this
@@ -587,18 +594,39 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
          var defaultIndent = lastRow < 0 ? "" 
                                          : this.$getIndent(this.$getLine(lastRow));
 
+         // jcheng 12/7/2013: It doesn't look to me like $tokenizeUpToRow can return
+         // anything but true, at least not today.
          if (!this.$tokenizeUpToRow(lastRow))
             return defaultIndent;
 
+         // If we're in an Sweave/Rmd/etc. document and this line isn't R, then
+         // don't auto-indent
          if (this.$statePattern && !this.$statePattern.test(endState))
             return defaultIndent;
 
+         // Used to add extra whitspace if the next line is a continuation of the
+         // previous line (i.e. the last significant token is a binary operator).
+         var continuationIndent = "";
+
+         // The significant token (no whitespace, comments) that most immediately
+         // precedes this line. We don't look back further than 10 rows or so for
+         // performance reasons.
          var prevToken = this.$findPreviousSignificantToken({row: lastRow, column: this.$getLine(lastRow).length},
                                                             lastRow - 10);
+
          if (prevToken
                && /\bparen\b/.test(prevToken.token.type)
                && /\)$/.test(prevToken.token.value))
          {
+            // The previous token was a close-paren ")". Check if this is an
+            // if/while/for/function without braces, in which case we need to
+            // take the indentation of the keyword and indent by one level.
+            //
+            // Example:
+            // if (identical(foo, 1) &&
+            //     isTRUE(bar) &&
+            //     (!is.null(baz) && !is.na(baz)))
+            //   |
             var openParenPos = this.$walkParensBalanced(
                   prevToken.row,
                   prevToken.row - 10,
@@ -622,18 +650,24 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
                      && prevToken.token.type === "keyword"
                      && (prevToken.token.value === "repeat" || prevToken.token.value === "else"))
          {
+            // Check if this is a "repeat" or (more commonly) "else" without
+            // braces, in which case we need to take the indent of the else/repeat
+            // and increase by one level.
             return this.$getIndent(this.$getLine(prevToken.row)) + tab;
          }
          else if (prevToken && /\boperator\b/.test(prevToken.token.type) && !/\bparen\b/.test(prevToken.token.type))
          {
-            // Is the previous line also a continuation line?
-            var prevContToken = this.$findPreviousSignificantToken({row: prevToken.row, column: 0}, 0);
-            if (!prevContToken || !/\boperator\b/.test(prevContToken.token.type) || /\bparen\b/.test(prevContToken.token.type))
-               return this.$getIndent(this.$getLine(prevToken.row)) + tab;
-            else
-               return this.$getIndent(this.$getLine(prevToken.row));
+            // Fix issue 2579: If the previous significant token is an operator
+            // (commonly, "+" when used with ggplot) then this line is a
+            // continuation of an expression that was started on a previous
+            // line. This line's indent should then be whatever would normally
+            // be used for a complete statement starting here, plus a tab.
+            continuationIndent = tab;
          }
 
+         // Walk backwards looking for an open paren, square bracket, or curly
+         // brace, *ignoring matched pairs along the way*. (That's the "balanced"
+         // in $walkParensBalanced.)
          var openBracePos = this.$walkParensBalanced(
                lastRow,
                0,
@@ -645,14 +679,47 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
 
          if (openBracePos != null)
          {
-            var nextTokenPos = this.$findNextSignificantToken({
-                  row: openBracePos.row,
-                  column: openBracePos.column + 1
-               }, lastRow);
+            // OK, we found an open brace; this just means we're not a
+            // top-level expression.
+
+            var nextTokenPos = null;
+
+            if ($verticallyAlignFunctionArgs) {
+               // If the user has selected verticallyAlignFunctionArgs mode in the
+               // prefs, for example:
+               //
+               // soDomethingAwesome(a = 1,
+               //                    b = 2,
+               //                    c = 3)
+               //
+               // Then we simply follow the example of the next significant
+               // token. BTW implies that this mode also supports this:
+               //
+               // soDomethingAwesome(
+               //   a = 1,
+               //   b = 2,
+               //   c = 3)
+               //
+               // But not this:
+               //
+               // soDomethingAwesome(a = 1,
+               //   b = 2,
+               //   c = 3)
+               nextTokenPos = this.$findNextSignificantToken(
+                     {
+                        row: openBracePos.row,
+                        column: openBracePos.column + 1
+                     }, lastRow);
+            }
 
             if (!nextTokenPos)
             {
-               return this.getIndentForOpenBrace(openBracePos) + tab;
+               // Either there wasn't a significant token between the new
+               // line and the previous open brace, or, we're not in
+               // vertical argument alignment mode. Either way, we need
+               // to just indent one level from the open brace's level.
+               return this.getIndentForOpenBrace(openBracePos) +
+                      tab + continuationIndent;
             }
             else
             {
@@ -678,15 +745,52 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
                   buffer += tab;
                for (var j = 0; j < spacesToAdd; j++)
                   buffer += " ";
-               return leadingIndent + buffer;
+               var result = leadingIndent + buffer;
+
+               // Compute the size of the indent in spaces (e.g. if a tab
+               // is 4 spaces, and result is "\t\t ", the size is 9)
+               var resultSize = result.replace("\t", tabAsSpaces).length;
+
+               // Sometimes even though verticallyAlignFunctionArgs is used,
+               // the user chooses to manually "break the rules" and use the
+               // non-aligned style, like so:
+               //
+               // plot(foo,
+               //   bar, baz,
+               //
+               // Without the below loop, hitting Enter after "baz," causes
+               // the cursor to end up aligned with foo. The loop simply
+               // replaces the indentation with the minimal indentation.
+               //
+               // TODO: Perhaps we can skip the above few lines of code if
+               // there are other lines present
+               var thisIndent;
+               for (var i = nextTokenPos.row + 1; i <= lastRow; i++) {
+                  // If a line contains only whitespace, it doesn't count
+                  if (!/[^\s]/.test(this.$getLine(i)))
+                     continue;
+                  // If this line is is a continuation of a multi-line string, 
+                  // ignore it.
+                  var rowEndState = this.$endStates[i-1];
+                  if (rowEndState === "qstring" || rowEndState === "qqstring") 
+                     continue;
+                  thisIndent = this.$getLine(i).replace(/[^\s].*$/, '');
+                  thisIndentSize = thisIndent.replace("\t", tabAsSpaces).length;
+                  if (thisIndentSize < resultSize) {
+                     result = thisIndent;
+                     resultSize = thisIndentSize;
+                  }
+               }
+
+               return result + continuationIndent;
             }
          }
 
          var firstToken = this.$findNextSignificantToken({row: 0, column: 0}, lastRow);
          if (firstToken)
-            return this.$getIndent(this.$getLine(firstToken.row));
+            return this.$getIndent(this.$getLine(firstToken.row)) + continuationIndent;
          else
-            return "";
+            return "" + continuationIndent;
       }
       finally
       {
@@ -985,7 +1089,7 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
 
       return result;
    };
-
+   
    this.$findNextSignificantToken = function(pos, lastRow)
    {
       if (this.$tokens.length == 0)
@@ -1015,6 +1119,11 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
       }
       return null;
    };
+
+   this.findNextSignificantToken = function(pos)
+   {
+	   return this.$findNextSignificantToken(pos, this.$tokens.length - 1);
+   }
    
    this.$findPreviousSignificantToken = function(pos, firstRow)
    {
@@ -1096,5 +1205,10 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
 }).call(RCodeModel.prototype);
 
 exports.RCodeModel = RCodeModel;
+
+exports.setVerticallyAlignFunctionArgs = function(verticallyAlign) {
+   $verticallyAlignFunctionArgs = verticallyAlign;
+};
+
 
 });
