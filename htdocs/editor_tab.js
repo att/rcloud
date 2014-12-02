@@ -1034,7 +1034,7 @@ var editor = function () {
                     placement: 'right'
                 });
             });
-            info.click(function(e){
+            info.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 $('[data-original-title]').popover('hide');//hiding previously opened popover
@@ -1118,8 +1118,8 @@ var editor = function () {
         element.append(right);
     }
     //for hiding information popover on click outside
-    $('body').on('click', function (e) {
-        if ($(e.target).data('toggle') !== 'popover' && $(e.target).parents('.popover.in').length === 0) {
+    $('body').on('click', function(e) {
+        if($(e.target).data('toggle') !== 'popover' && $(e.target).parents('.popover.in').length === 0) {
             $('[data-original-title]').popover('hide');
         }
     });
