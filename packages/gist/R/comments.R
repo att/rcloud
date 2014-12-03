@@ -9,3 +9,6 @@ create.gist.comment  <- function (gist.id, content, ctx = current.gist.context()
 
 get.gist.comments  <- function (id, ctx = current.gist.context())
   UseMethod("get.gist.comments", ctx)
+
+get.user  <- function (id, ctx = current.gist.context())
+  UseMethod("get.user", ctx)
