@@ -697,3 +697,11 @@ rcloud.purl.source <- function(contents)
   unlink(input.file)
   result
 }
+
+rcloud.get.git.user <- function(id) {
+  res <- get.user(id, ctx = .session$gist.context)
+  if (res$ok)
+    res$content
+  else
+    list()
+}
