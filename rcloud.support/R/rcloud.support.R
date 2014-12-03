@@ -638,9 +638,6 @@ rcloud.config.set.user.option <- function(key, value)
 rcloud.config.get.alluser.option <- function(key)
   rcs.get(rcs.key(user=".allusers", notebook="system", "config", key))
 
-rcloud.config.get.single.user.option <- function(userid,key)
-  rcs.get(rcs.key(user=userid, notebook="system", "config", key))
-
 ################################################################################
 # notebook cache
 
