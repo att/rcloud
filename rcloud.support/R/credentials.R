@@ -46,6 +46,21 @@ revoke.token <- function(token, realm="rcloud") {
   } else session.server.revoke.token(realm, token)
 }
 
+generate.token <- function() paste(c(0:9,letters)[as.integer(runif(25,0,35.999))+1L], collapse='')
+
+replace.token <- function(token, realm="rcloud") {
+  if (!nzConf("session.server")) {
+    d <- .get.token.list()
+    user <- d$token.to.user[[token]]
+    if (is.null(user)) stop("bad token")
+    new.token <- generate.token()
+    d$user.to.token[[user]] <- new.token
+    d$token.to.user[[token]] <- NULL
+    d$token.to.user[[new.token]] <- user
+    .save.token.list(d)
+  } else session.server.replace.token(realm, token)
+}
+
 check.user.token.pair <- function(user, token, valid.sources="stored", realm="rcloud")
 {
   if (is.null(token)) {
