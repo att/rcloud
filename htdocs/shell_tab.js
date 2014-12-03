@@ -227,6 +227,7 @@ var shell = (function() {
             else ponents = notebook_or_url.split('/');
             var gistname = ponents[0],
                 version = null;
+                gistname = gistname.replace(/\s+/g, ''); // trim notebook id for whitespaces
             if(ponents.length>1) {
                 version = ponents[1] || null; // don't take empty string
                 if(ponents.length>2) {
