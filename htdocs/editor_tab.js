@@ -1019,7 +1019,7 @@ var editor = function () {
             add_buttons = adder(appear);
             //information icon
             var info = ui_utils.fa_button('icon-info-sign', 'info', 'info', icon_style, false);
-            var info_content_ = ''
+            var info_content_ = '';
             $(info).popover({
                 title: node.name,
                 html: true,
@@ -1035,10 +1035,15 @@ var editor = function () {
                 $(popover.data()["bs.popover"].$tip[0].childNodes[0]).addClass('no-arrow');//removing default arrow in popover
             });
             info.click(function(e) {
+                if(info_popover_) {
+                    info_popover_ .popover('hide');
+                    info_popover_ = null;
+                }
                 e.preventDefault();
                 e.stopPropagation();
-                info_content_ = $(this).popover().data()['bs.popover'].options.content;
-                thisInfo = this;
+                thisPopover = $(this).popover().data()['bs.popover'];
+                info_content_ = thisPopover.options.content;
+                thisIcon = this;
                 if(info_content_ === '')
                     rcloud.stars.get_notebook_starrer_list(node.gistname).then(function(list) {
                         if(typeof(list) == 'string')
@@ -1048,10 +1053,11 @@ var editor = function () {
                             starrer_list_ = starrer_list_ + '<div>' + v + '</div>';
                         });
                         info_content_ = info_content_ + starrer_list_;
-                        $(thisInfo).popover().data()['bs.popover'].options.content = info_content_;
-                        $(thisInfo).popover('show');
+                        thisPopover.options.content = info_content_;
+                        $(thisIcon).popover('show');
                     });
-                info_popover_   = $(this);
+                if(thisPopover.tip().hasClass('in'))
+                    info_popover_   = $(this);
             });
             add_buttons(info);
             if(true) { // all notebooks have history - should it always be accessible?
