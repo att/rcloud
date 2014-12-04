@@ -1,19 +1,5 @@
 (function() {
 
-var languages = {
-    "R": { 'background-color': "#E8F1FA",
-           'ace_mode': "ace/mode/r" },
-    "Markdown": { 'background-color': "#F7EEE4",
-                  'ace_mode': "ace/mode/rmarkdown" },
-    "Python": { 'background-color': "#E8F1FA",
-                'ace_mode': "ace/mode/python" }
-    // ,
-    // "Bash": { 'background-color': "#00ff00" }
-};
-
-var non_language = { 'background-color': '#dddddd',
-                     'ace_mode': 'ace/mode/text' };
-
 function ensure_image_has_hash(img)
 {
     if (img.dataset.sha256)
@@ -114,24 +100,32 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     cell_status.append($("<div style='clear:both;'></div>"));
     var col = $('<table/>').append('<tr/>');
     var select_lang = $("<select class='form-control'></select>");
+    var lang_selectors = {};
     function add_language_selector(lang) {
-        languages[lang].element = $("<option></option>").text(lang);
-        select_lang.append(languages[lang].element);
+        var element = $("<option></option>").text(lang);
+        lang_selectors[lang] = element;
+        select_lang.append(element);
     }
-    _.each(languages, function(value, key) {
-        add_language_selector(key);
-    });
-    if(!languages[language]) { // unknown language: add it
-        languages[language] = _.clone(non_language);
+    _.each(RCloud.language.available_languages(), add_language_selector);
+    if(!lang_selectors[language]) // unknown language: add it
         add_language_selector(language);
-    }
-    var lang_info = languages[language];
-    $(lang_info.element).attr('selected', true);
-    select_lang.on("change", function() {
-        var l = select_lang.find("option:selected").text();
-        cell_model.parent_model.controller.change_cell_language(cell_model, l);
+
+    select_lang.change(function() {
+        var language = select_lang.val();
+        cell_model.parent_model.controller.change_cell_language(cell_model, language);
         result.clear_result();
     });
+
+    function update_language() {
+        language = cell_model.language();
+        if(!lang_selectors[language])
+            throw new Error("tried to set language to unknown language " + language);
+        var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
+        ace_div.css({ 'background-color': bg_color });
+        var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
+        session.setMode(new LangMode(false, doc, session));
+        select_lang.val(language);
+    }
 
     col.append($("<div></div>").append(select_lang));
     $.each([run_md_button, source_button, result_button, gap, split_button, remove_button],
@@ -157,13 +151,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
 
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
-    ace_div.css({ 'background-color': lang_info["background-color"] });
+    var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
+    ace_div.css({ 'background-color': bg_color });
 
     inner_div.append(outer_ace_div);
     outer_ace_div.append(ace_div);
     ace.require("ace/ext/language_tools");
     var widget = ace.edit(ace_div[0]);
-    var RMode = ace.require(language === 'R' ? "ace/mode/r" : "ace/mode/rmarkdown").Mode;
     var session = widget.getSession();
     widget.setValue(cell_model.content());
     ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
@@ -176,7 +170,6 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     widget.setOptions({
         enableBasicAutocompletion: true
     });
-    session.setMode(new RMode(false, doc, session));
     session.on('change', function() {
         set_widget_height();
         widget.resize();
@@ -208,6 +201,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
     inner_div.append(r_result_div);
+    update_language();
 
     var current_mode;
 
@@ -229,13 +223,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             notebook_cell_div.remove();
         },
         id_updated: update_div_id,
-        language_updated: function() {
-            language = cell_model.language();
-            lang_info = languages[language];
-            if(!lang_info) throw new Error("tried to set language to unknown language " + language);
-            ace_div.css({ 'background-color': lang_info["background-color"] });
-            select_lang.val(cell_model.language());
-        },
+        language_updated: update_language,
         result_updated: function(r) {
             has_result = true;
             r_result_div.hide();
@@ -245,6 +233,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // There's a list of things that we need to do to the output:
             var uuid = rcloud.deferred_knitr_uuid;
 
+            // FIXME None of these things should be hard-coded.
             if (cell_model.language() === 'R' && inner_div.find("pre code").length === 0) {
                 r_result_div.prepend("<pre><code class='r'>" + cell_model.content() + "</code></pre>");
             }

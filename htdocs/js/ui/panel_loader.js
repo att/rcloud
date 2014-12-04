@@ -121,7 +121,7 @@ RCloud.UI.panel_loader = (function() {
                     side: 'right',
                     name: 'file-upload',
                     title: 'File Upload',
-                    icon_class: 'icon-upload',
+                    icon_class: 'icon-upload-alt',
                     colwidth: 2,
                     sort: 2000,
                     panel: RCloud.UI.upload_frame

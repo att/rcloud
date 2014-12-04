@@ -360,6 +360,10 @@ input[type=text].form-control-ext {
     padding-left: 5px;
 }
 
+.panel-body.tight {
+    padding: 5px;
+}
+
 /******************************************************************************/
 
 ul.jqtree-tree .jqtree-toggler {
@@ -443,7 +447,7 @@ li.jqtree-selected .notebook-commands {
 #search-header {
     display: table-row;
     width: 100%;
-    height:50px;
+    height:10px;
 }
 
 #search-header form div.input-group {
@@ -452,6 +456,7 @@ li.jqtree-selected .notebook-commands {
 
 #search-summary {
     display: none;
+    height: 8px;
 }
 
 #search-results-row {
@@ -463,13 +468,16 @@ li.jqtree-selected .notebook-commands {
 #search-results-pagination {
     display:table-row;
     text-align:center
+    display: none;
 }
 
 #search-results-scroller {
     overflow: auto;
     width: 100%;
+    height: 100px;
     max-height: 100%;
     min-height: 100%;
+    margin-bottom: -4em;
 }
 
 .search-result-item {
@@ -653,8 +661,7 @@ li.jqtree-selected .notebook-commands {
 }
 
 .comment-container {
-    margin-bottom: .8em;
-    clear: both;
+    margin-bottom: 0.5ex;
 }
 
 .comment-header {
@@ -667,19 +674,22 @@ li.jqtree-selected .notebook-commands {
     color: #000;
     display:none;
     position: absolute;
-    right: 0.75ex
+    top: 0;
+    right: 0.75ex;
 }
 .comment-header-close:hover{
     cursor: pointer;
 }
 .comment-body {
     color: #555;
+}
+
+.comment-body-wrapper {
     position: relative;
 }
 
 .comment-body-text {
     color: #555;
-    float: left;
     margin-bottom: .4em;
     max-width: 93%;
     min-width: 93%;
@@ -713,7 +723,7 @@ li.jqtree-selected .notebook-commands {
 #session-info-panel {
     overflow-y: auto;
     overflow-x: auto;
-    padding: 5px;
+    background-color: rgb(255, 255, 248);
 }
 
 #session-info-out {

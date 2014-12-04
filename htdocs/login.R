@@ -48,6 +48,13 @@ run <- function(url, query, body, headers)
   }
   if (is.null(redirect))
     redirect <- '/edit.html'
+  ## the query may also contain notebook id with/without version, we have to set the current notebook to that
+  if(length(query['notebook'])>0) {
+    redirect <- paste(redirect,"?notebook=",query['notebook'], sep='')
+    if(any(names(query)=='version')) {
+      redirect <- paste(redirect,"&version=",query['version'], sep='')
+    }
+  }
   ctx <- create.gist.backend(as.character(cookies$user), as.character(cookies$token))
   url <- gist::auth.url(redirect, ctx=ctx)
   if (is.null(url)) {
@@ -56,7 +63,7 @@ run <- function(url, query, body, headers)
     if (!is.null(.rc.conf$exec.auth) && !isTRUE(cookies$user == usr)) {
       ## at this point it is guaranteed to be valid since it was checked above
       ## so we can generate a token
-      token <- paste(c(0:9,letters)[as.integer(runif(25,0,35.999))+1L], collapse='')
+      token <- rcloud.support:::generate.token()
       rcloud.support:::set.token(usr, token)
       extra.headers <- c(paste0("Set-Cookie: user=", usr, "; domain=", .rc.conf$cookie.domain,"; path=/;\r\nSet-Cookie: token=", token, "; domain=", .rc.conf$cookie.domain,"; path=/;"), extra.headers)
       ## re-create the back-end because the username/token have changed

@@ -2,7 +2,7 @@ requirejs_config_obj = {
     "baseUrl": "/lib/js",
     waitSeconds: 30,
     paths: {
-        "jquery": "jquery-1.10.2",
+        "jquery": "jquery-2.1.1",
         "rcloud_bundle": "../../js/rcloud_bundle",
         "ace": "../ace_bundle",
         editor_tab: "../../editor_tab",

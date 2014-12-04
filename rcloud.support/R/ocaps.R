@@ -98,6 +98,11 @@ unauthenticated.ocaps <- function()
         enable_echo = make.oc(rcloud.enable.echo),
         set_url = make.oc(rcloud.set.url),
         get_url = make.oc(rcloud.get.url)
+        ),
+
+      # multi-language support
+      languages = list(
+        get_list = make.oc(rcloud.supported.languages)
         )
       )
     )
@@ -119,7 +124,8 @@ authenticated.ocaps <- function()
       create_notebook = make.oc(rcloud.create.notebook),
       rename_notebook = make.oc(rcloud.rename.notebook),
       tag_notebook_version = make.oc(rcloud.tag.notebook.version),
-      get_version_of_tag = make.oc(rcloud.get.version.by.tag),
+      get_version_by_tag = make.oc(rcloud.get.version.by.tag),
+      get_tag_by_version = make.oc(rcloud.get.tag.by.version),
       publish_notebook = make.oc(rcloud.publish.notebook),
       unpublish_notebook = make.oc(rcloud.unpublish.notebook),
       set_notebook_visibility = make.oc(rcloud.set.notebook.visibility),
@@ -145,6 +151,9 @@ authenticated.ocaps <- function()
         ),
       notebook_upload = make.oc(rcloud.upload.to.notebook),
 
+      # security: request new token
+      replace_token = make.oc(replace.token),
+
       # commenting ocaps
       comments = list(
         post = make.oc(rcloud.post.comment),
@@ -164,7 +173,8 @@ authenticated.ocaps <- function()
         set_recent_notebook = make.oc(rcloud.config.set.recent.notebook),
         clear_recent_notebook = make.oc(rcloud.config.clear.recent.notebook),
         get_user_option = make.oc(rcloud.config.get.user.option),
-        set_user_option = make.oc(rcloud.config.set.user.option)
+        set_user_option = make.oc(rcloud.config.set.user.option),
+        get_alluser_option = make.oc(rcloud.config.get.alluser.option)
         ),
 
       get_notebook_info = make.oc(rcloud.get.notebook.info),

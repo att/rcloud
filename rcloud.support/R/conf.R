@@ -20,6 +20,7 @@ pathConf <- function(name, ..., anchor = FALSE) {
   path <- file.path(.rc.conf[[name]], ...)
   if (is.logical(anchor) && isTRUE(!anchor)) path else absPath(path, anchor)
 }
+keysConf <- function() names(as.list(rcloud.support:::.rc.conf))
 
 ## --- this one is exported for use outside of rcloud.support ---
 rcloud.config <- function(name) .rc.conf[[name]]

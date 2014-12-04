@@ -3,6 +3,7 @@
 var fatal_dialog_;
 
 RCloud.UI.fatal_dialog = function(message, label, href) {
+    $('#loading-animation').hide();
     if (_.isUndefined(fatal_dialog_)) {
         var default_button = $("<button type='submit' class='btn btn-primary' style='float:right'>" + label + "</span>"),
             ignore_button = $("<span class='btn' style='float:right'>Ignore</span>"),

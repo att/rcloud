@@ -3,13 +3,17 @@
 
     var viewer_panel = {
         body: function() {
-            return $.el.div({id: "viewer-body-wrapper", 'class': 'panel-body'},
+            return $.el.div({id: "viewer-body-wrapper", 'class': 'panel-body tight'},
                            $.el.div({id: "viewer-scroller", style: "width: 100%; height: 100%; overflow-x: auto"},
                                     $.el.div({id:"viewer-body", 'class': 'widget-vsize'})));
         }
     };
+    function clear_display() {
+        $('#viewer-body > table').remove();
+    }
 return {
     init: function(k) {
+        clear_display();
         RCloud.UI.panel_loader.add({
             Dataframe: {
                 side: 'right',

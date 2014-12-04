@@ -23,20 +23,31 @@ function main() {
             } else {
                 promise = rcloud.anonymous_session_init();
             }
-            promise.then(function(hello) {
+            promise = promise.then(function(hello) {
                 rclient.post_response(hello);
             });
 
             // resolve(rcloud.init_client_side_data()); // what was this for?!?
 
             var notebook = getURLParameter("notebook"),
-            version = getURLParameter("version");
-            rcloud.call_notebook(notebook, version).then(function(x) {
-                // FIXME: I'm not sure what's the best way to make this available
-                // in a convenient manner so that notebooks can leverage it ...
-                window.notebook_result = x;
-                if (!_.isUndefined(x.body)) $("body").append(x.body);
-                if (_.isFunction(x.run)) x.run(getQueryArgs(), function() {});
+                version = getURLParameter("version");
+            var tag = getURLParameter("tag");
+            if(!version && tag) {
+                promise = promise.then(function() {
+                    return rcloud.get_version_by_tag(notebook, tag)
+                        .then(function(v) {
+                            version = v;
+                        });
+                });
+            };
+            promise = promise.then(function() {
+                return rcloud.call_notebook(notebook, version).then(function(x) {
+                    // FIXME: I'm not sure what's the best way to make this available
+                    // in a convenient manner so that notebooks can leverage it ...
+                    window.notebook_result = x;
+                    if (!_.isUndefined(x.body)) $("body").append(x.body);
+                    if (_.isFunction(x.run)) x.run(getQueryArgs(), function() {});
+                });
             });
             return true;
         }, on_error: function(msg, status_code) {

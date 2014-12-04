@@ -44,7 +44,8 @@ RCloud.UI.notebook_title = (function() {
         set: function (text) {
             $("#notebook-author").text(shell.notebook.model.user());
             $('#author-title-dash').show();
-
+            $('#rename-notebook').show();
+            $('#loading-animation').hide();
             var is_read_only = shell.notebook.model.read_only();
             var active_text = text;
             var ellipt_start = false, ellipt_end = false;
@@ -71,7 +72,8 @@ RCloud.UI.notebook_title = (function() {
         },
         update_fork_info: function(fork_of) {
             if(fork_of) {
-                var fork_desc = fork_of.owner.login+ " / " + fork_of.description;
+                var owner = fork_of.owner ? fork_of.owner : fork_of.user;
+                var fork_desc = owner.login+ " / " + fork_of.description;
                 var url = ui_utils.url_maker(shell.is_view_mode()?'view.html':'edit.html')({notebook: fork_of.id});
                 $("#forked-from-desc").html("forked from <a href='" + url + "'>" + fork_desc + "</a>");
             }
@@ -79,15 +81,15 @@ RCloud.UI.notebook_title = (function() {
                 $("#forked-from-desc").text("");
         },
         make_editable: function(node, $li, editable) {
-            function get_title(node) {
+            function get_title(node, elem) {
                 if(!node.version) {
-                    return $('.jqtree-title:not(.history)', $li);
+                    return $('.jqtree-title:not(.history)', elem);
                 } else {
-                    return $('.jqtree-title', $li);
+                    return $('.jqtree-title', elem);
                 }
             }
             if(last_editable_ && (!node || last_editable_ !== node))
-                ui_utils.editable(get_title(last_editable_), 'destroy');
+                ui_utils.editable(get_title(last_editable_, last_editable_.element), 'destroy');
             if(node) {
                 var opts = editable_opts;
                 if(node.version) {
@@ -96,10 +98,10 @@ RCloud.UI.notebook_title = (function() {
                         validate: function(name) { return true; }
                     });
                 }
-                ui_utils.editable(get_title(node),
+                ui_utils.editable(get_title(node, $li),
                                   $.extend({allow_edit: editable,
                                             inactive_text: node.name,
-                                            active_text: node.name},
+                                            active_text: node.version ? node.name : node.full_name},
                                            opts));
             }
             last_editable_ = node;

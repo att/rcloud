@@ -19,7 +19,7 @@ RCloud.UI.scratchpad = {
             inner_div.append(ace_div);
             ace.require("ace/ext/language_tools");
             var widget = ace.edit(ace_div[0]);
-            var RMode = ace.require("ace/mode/r").Mode;
+            var LangMode = ace.require("ace/mode/r").Mode;
             var session = widget.getSession();
             that.session = session;
             that.widget = widget;
@@ -31,7 +31,7 @@ RCloud.UI.scratchpad = {
             widget.setOptions({
                 enableBasicAutocompletion: true
             });
-            session.setMode(new RMode(false, doc, session));
+            session.setMode(new LangMode(false, doc, session));
             session.setUseWrapMode(true);
             widget.resize();
             ui_utils.on_next_tick(function() {
@@ -59,7 +59,7 @@ RCloud.UI.scratchpad = {
                     return;
                 if (dt.types !== null &&
                     (dt.types.indexOf ?
-                     dt.types.indexOf('Files') != -1 :
+                     (dt.types.indexOf('Files') != -1 && dt.types.indexOf('text/html') == -1):
                      dt.types.contains('application/x-moz-file'))) {
                     if (!shell.notebook.model.read_only()) {
                         e.stopPropagation();
@@ -97,7 +97,7 @@ RCloud.UI.scratchpad = {
                 },
                 "dragenter dragover": function(e) {
                     var dt = e.originalEvent.dataTransfer;
-                    if(dt.items.length === 1 && !shell.notebook.model.read_only())
+                    if(!shell.notebook.model.read_only())
                         dt.dropEffect = 'copy';
                 }
             });
@@ -200,18 +200,9 @@ RCloud.UI.scratchpad = {
         this.widget.getSelection().setSelectionRange(range);
         return changed;
     }, language_updated: function() {
-        // github gist detected languages
-        var modes = {
-            R: "ace/mode/r",
-            Python: "ace/mode/python",
-            Markdown: "ace/mode/rmarkdown",
-            CSS: "ace/mode/css",
-            JavaScript: "ace/mode/javascript",
-            Text: "ace/mode/text"
-        };
         var lang = this.current_model.language();
-        var mode = ace.require(modes[lang] || modes.Text).Mode;
-        this.session.setMode(new mode(false, this.session.doc, this.session));
+        var LangMode = ace.require(RCloud.language.ace_mode(lang)).Mode;
+        this.session.setMode(new LangMode(false, this.session.doc, this.session));
     }, set_readonly: function(readonly) {
         if(!shell.is_view_mode()) {
             if(this.widget)
