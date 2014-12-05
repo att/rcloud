@@ -225,10 +225,10 @@ var shell = (function() {
                 }
             }
             else ponents = notebook_or_url.split('/');
-            var gistname = ponents[0],
+            var gistname = ponents[0].replace(/\s+/g, ''), // trim notebook id whitespace
                 version = null;
             if(ponents.length>1) {
-                version = ponents[1].replace(/\s+/g, ''); // trim version for whitespaces
+                version = ponents[1].replace(/\s+/g, ''); // trim version whitespace
                 if(ponents.length>2) {
                     if(ponents[2]) {
                         alert("Sorry, couldn't parse '" + notebook_or_url + "'");
@@ -236,7 +236,6 @@ var shell = (function() {
                     }
                 }
             }
-            gistname = gistname.replace(/\s+/g, ''); // trim notebook id for whitespaces
             editor.load_notebook(gistname, version).then(function(notebook) {
                 if(notebook.user.login === rcloud.username())
                     editor.set_notebook_visibility(notebook.id, true);
