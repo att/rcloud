@@ -173,9 +173,27 @@ which will re-fetch and install all packages.
 #### Redis
 
 It is strongly recommended to use Redis as the back-end for key/value
-storage in RCloud. Install Redis server (in Debian/Ubuntu
-`sudo apt-get install redis-server`) and add `rcs.engine: redis` to
-the `rcloud.conf` configuration file.
+storage in RCloud. To enable it, install Redis on the RCloud machine
+(`sudo apt-get install redis-server` in Debian/Ubuntu) and install `rediscc`
+package in R:
+
+    install.packages("rediscc",,"http://rforge.net")
+
+The `conf/rcloud.conf` file contains configuration for rcloud, including redis
+configurations. In order to enable redis as your store, you must add
+
+    rcs.engine: redis
+
+Other configurations include `rcs.redis.host` 
+for redis instances (default `127.0.0.1:6379`), and `rcs.redis.password` for
+authentication (default no authentication).
+
+    rcs.redis.host: HOST:PORT
+    rcs.redis.password: PASSWORD
+
+If you are converting an existing instance, There is a migration
+script `scripts/migrate2redis.sh` which migrates from flat file RCS to
+Redis-based RCS if needed.
 
 Note: the default up until RCloud 1.0 is file-based RCS back-end which
 is limited and deprecated and thus the default may become Redis in
