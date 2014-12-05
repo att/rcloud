@@ -80,7 +80,7 @@ rcloud.comments.email <- function(id, content, type) {
   from.email <- getConf("email.from")
   title <- rcloud.get.notebook.info(id)$description
   smtp <- getConf("smtp.server")
-  is.subscribed <- rcloud.config.get.user.option(to, 'subscribe-to-comments')
+  is.subscribed <- rcloud.config.get.user.option('subscribe-to-comments')
 
   if (from.email == "" || length(from.email) == 0)
     from.email <- 'DoNotREPLY'
