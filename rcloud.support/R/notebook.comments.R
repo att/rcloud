@@ -100,7 +100,7 @@ rcloud.comments.email <- function(id, content, type) {
 
 rcloud.create.email <- function(content) {
   url <- .session$url
-  email.content <- paste0('<html><head><title>Comment Notification</title></head><body><div><h3>Comment :</h3><p>"',
-    content,'"</p><p><a href=\'',url,'\' target=\'',url,'\'>Go To Notebook</a></p></div></body></html>')
+  email.content <- paste0('<html><head><title>Comment Notification</title></head><body><div><h3>Comment :</h3><p>"', 
+    content,'"</p><p><a href=\'', url, '\' target=\'', url, '\'>Go To Notebook</a></p></div></body></html>')
   email.content
 }
