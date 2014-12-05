@@ -43,11 +43,11 @@ RCloud.UI.settings_frame = (function() {
                 default_value: opts.default_value,
                 create_control: function(on_change) {
                     var check = $.el.input({type: 'checkbox'});
-                    $(check).prop('id',opts.id);
+                    $(check).prop('id', opts.id);
                     var label = $($.el.label(check, opts.label));
                     $(check).change(function() {
                         var val = $(this).prop('checked');
-                        on_change(val,this.id);
+                        on_change(val, this.id);
                         opts.set(val);
                     });
                     return label;

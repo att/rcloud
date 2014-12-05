@@ -28,7 +28,7 @@ rcloud.get.comments <- function(id)
 rcloud.post.comment <- function(id, content)
 {
   res <- create.gist.comment(id, content, ctx = .session$gist.context)
-  rcloud.comments.email(id,content,' posted a new')
+  rcloud.comments.email(id, content, ' posted a new')
   if (nzConf("solr.url")) mcparallel(.solr.post.comment(id, content, res$content$id), detached=TRUE)
   res
 }
@@ -49,7 +49,7 @@ rcloud.post.comment <- function(id, content)
 rcloud.modify.comment <- function(id, cid, content)
 {
   res <- modify.gist.comment(id,cid,content, ctx = .session$gist.context)
-  rcloud.comments.email(id,content,' modified an old')
+  rcloud.comments.email(id, content, ' modified an old')
   mcparallel(.solr.modify.comment(id, content, cid), detached=TRUE)
   res$ok
 }
@@ -74,13 +74,13 @@ rcloud.delete.comment <- function(id,cid)
   res$ok
 }
 
-rcloud.comments.email <- function(id,content,type) {
+rcloud.comments.email <- function(id, content, type) {
   to <- .session$username
   to.email <- rcloud.get.git.user(to)$email
   from.email <- getConf("email.from")
   title <- rcloud.get.notebook.info(id)$description
   smtp <- getConf("smtp.server")
-  is.subscribed <- rcloud.config.get.user.option(to,'subscribe-to-comments')
+  is.subscribed <- rcloud.config.get.user.option(to, 'subscribe-to-comments')
 
   if (from.email == "" || length(from.email) == 0)
     from.email <- 'DoNotREPLY'
@@ -89,12 +89,12 @@ rcloud.comments.email <- function(id,content,type) {
     is.subscribed <- FALSE
 
   if(is.subscribed) {
-    subject <- paste(.session$username,type," comment on your notebook [",title,"]",sep="");
+    subject <- paste(.session$username, type, " comment on your notebook [",title,"]",sep="");
     cont <- rcloud.create.email(fromJSON(content[1]))
     msg <- mime_part(cont)
     msg[["headers"]][["Content-Type"]] <- "text/html"
     body <- list(msg)
-    sendmail(from.email, to.email, subject,body , control=list(smtpServer=smtp))
+    sendmail(from.email, to.email, subject, body , control=list(smtpServer=smtp))
   }
 }
 
