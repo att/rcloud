@@ -76,7 +76,7 @@ RCloud.UI.settings_frame = (function() {
                 'subscribe-to-comments': that.checkbox({
                     id:"subscribe-to-comments",
                     sort: 100,
-                    default_value: true,
+                    default_value: false,
                     label: "Subscribe To Comments",
                     set: function(val) {
                         RCloud.UI.command_prompt.show_prompt(val);
