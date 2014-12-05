@@ -133,6 +133,8 @@ var shell = (function() {
         }, rename_notebook: function(desc) {
             return notebook_controller_.rename_notebook(desc);
         }, fork_notebook: function(is_mine, gistname, version) {
+            // Forcefully saving whole notebook before fork
+            shell.save_notebook();
             return do_load(function() {
                 var promise_fork;
                 if(is_mine) {
