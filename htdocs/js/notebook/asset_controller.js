@@ -13,7 +13,7 @@ Notebook.Asset.create_controller = function(asset_model)
             asset_model.active(false);
         },
         remove: function(force) {
-            var asset_name = asset_model.json().filename;
+            var asset_name = asset_model.filename();
             var msg = "Do you want to remove the asset '" +asset_name+ "' from the notebook?";
             if (force || confirm(msg)) {
                 asset_model.parent_model.controller.remove_asset(asset_model);
