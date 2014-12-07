@@ -77,10 +77,7 @@ RCloud.UI.settings_frame = (function() {
                     id:"subscribe-to-comments",
                     sort: 100,
                     default_value: false,
-                    label: "Subscribe To Comments",
-                    set: function(val) {
-                        RCloud.UI.command_prompt.show_prompt(val);
-                    }
+                    label: "Subscribe To Comments"
                 })
             });
         },
