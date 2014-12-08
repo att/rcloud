@@ -1,3 +1,37 @@
+## RCloud 1.3
+
+### Features
+
+* Automatic indentation for R code (#1110) and Python (#1105)
+
+* Option to receive email updates when your notebook is commented on (#900)
+
+
+### Improvements
+
+* Animated icon when first loading the page (#1028)
+
+* Better help given when searches fail due to syntax errors (#1061)
+
+* Year shown in version dates when notebooks are more than a year old (#986)
+
+* Ability to right click on search results to open in new tab (instead of control-clicking) (#1054)
+
+* Shareable link uses tagged version instead of version, if it exists (#1044)
+
+* Formal arguments shown for functions in Workspace (#994)
+
+### Bug fixes
+
+* Dataframe was not cleared when loading a new notebook (#1045)
+
+* Comments were not getting deleted from search (#826)
+
+* Loading notebook by ID failed when there was whitespace (#1115)
+
+* Notebook wasn't saved before forking (#1083)
+
+
 ## RCloud 1.2
 
 ### Features
