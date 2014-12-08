@@ -36,7 +36,7 @@ var editor = function () {
         featured_ = [], // featured users - samples, intros, etc
         invalid_notebooks_ = {},
         current_ = null, // current notebook and version
-        info_popover_ = null; //current opened information popover
+        info_popover_ = null; // current opened information popover
 
 
     // view
@@ -1019,11 +1019,11 @@ var editor = function () {
             add_buttons = adder(appear);
             //information icon
             var info = ui_utils.fa_button('icon-info-sign', 'info', 'info', icon_style, false);
-            var info_content_ = '';
+            var info_content = '';
             $(info).popover({
                 title: node.name,
                 html: true,
-                content: info_content_,
+                content: info_content,
                 container: 'body',
                 placement: 'right',
                 animate: false,
@@ -1032,32 +1032,32 @@ var editor = function () {
             var popover = $(info).popover();
             popover.on("show.bs.popover", function(e) {
                 $(popover.data()["bs.popover"].$tip[0]).addClass('popover-offset');
-                $(popover.data()["bs.popover"].$tip[0].childNodes[0]).addClass('no-arrow');//removing default arrow in popover
+                $(popover.data()["bs.popover"].$tip[0].childNodes[0]).addClass('no-arrow'); // removing default arrow in popover
             });
             info.click(function(e) {
                 if(info_popover_) {
-                    info_popover_ .popover('hide');
+                    info_popover_.popover('hide');
                     info_popover_ = null;
                 }
                 e.preventDefault();
                 e.stopPropagation();
-                thisPopover = $(this).popover().data()['bs.popover'];
-                info_content_ = thisPopover.options.content;
-                thisIcon = this;
-                if(info_content_ === '')
+                var thisPopover = $(this).popover().data()['bs.popover'];
+                info_content = thisPopover.options.content;
+                var thisIcon = this;
+                if(info_content === '')
                     rcloud.stars.get_notebook_starrer_list(node.gistname).then(function(list) {
-                        if(typeof(list) == 'string')
+                        if(typeof(list) === 'string')
                             list = [list];
-                        var starrer_list_ = '<div><b>Starred by : </b></div>';
+                        var starrer_list = '<div><b>Starred by : </b></div>';
                         $.each(list, function (i, v) {
-                            starrer_list_ = starrer_list_ + '<div>' + v + '</div>';
+                            starrer_list = starrer_list + '<div>' + v + '</div>';
                         });
-                        info_content_ = info_content_ + starrer_list_;
-                        thisPopover.options.content = info_content_;
+                        info_content = info_content + starrer_list;
+                        thisPopover.options.content = info_content;
                         $(thisIcon).popover('show');
                     });
                 if(thisPopover.tip().hasClass('in'))
-                    info_popover_   = $(this);
+                    info_popover_ = $(this);
             });
             add_buttons(info);
             if(true) { // all notebooks have history - should it always be accessible?

@@ -533,7 +533,8 @@ star.starrerlist.key <- function(notebook)
 
 rcloud.notebook.starrer.list <- function(notebook)
 {
-  starrerlist <- gsub(rcs.key(".notebook", notebook, "stars",''),'',rcs.list(rcs.key(".notebook", notebook, "stars", "*")))
+  starrerlist <- gsub(rcs.key(".notebook", notebook, "stars", ''), '',
+    rcs.list(rcs.key(".notebook", notebook, "stars", "*")))
 }
 
 rcloud.notebook.star.count <- function(notebook)
