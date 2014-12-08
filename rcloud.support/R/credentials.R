@@ -58,6 +58,7 @@ replace.token <- function(token, realm="rcloud") {
     d$token.to.user[[token]] <- NULL
     d$token.to.user[[new.token]] <- user
     .save.token.list(d)
+    new.token
   } else session.server.replace.token(realm, token)
 }
 

@@ -106,11 +106,24 @@ function rclient_promise(allow_anonymous) {
         }
         throw error;
     }).then(function() {
+        rcloud.get_conf_value('token.lifetime').then(function(timeout) {
+            if(timeout) {
+                timeout = (timeout-60)*1000; // replace it a minute before it expires
+                var replacer = function() {
+                    rcloud.replace_token($.cookies.get('token')).then(function(new_token) {
+                        $.cookies.set('token', new_token);
+                        setTimeout(replacer, timeout);
+                    });
+                };
+                setTimeout(replacer, timeout);
+            }
+        });
+    }).then(function() {
         rcloud.display.set_device_pixel_ratio();
         rcloud.api.set_url(window.location.href);
         return rcloud.languages.get_list().then(function(lang_list) {
             RCloud.language._set_available_languages(lang_list);
-        }).then(function() { 
+        }).then(function() {
             return rcloud.init_client_side_data();
         });
     });
