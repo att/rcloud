@@ -421,24 +421,18 @@ var editor = function () {
                 all_notebooks = all_notebooks.concat(my_stars_array);
                 all_notebooks = _.uniq(all_notebooks.sort(), true);
                 var root_data = [];
-                return Promise.all([rcloud.config.get_current_notebook()
-                                    .then(function(current) {
-                                        current_ = current;
-                                    }),
-                                    rcloud.stars.get_multiple_notebook_star_counts(all_notebooks)
-                                    .then(function(counts) {
-                                        num_stars_ = counts;
-                                    }),
-                                    rcloud.get_multiple_notebook_infos(all_notebooks)
-                                    .then(function(notebook_entries) {
-                                        notebook_info_ = notebook_entries;
-                                    }),
-                                    rcloud.config.get_alluser_option('featured_users')
-                                    .then(function(featured) {
-                                        featured_ = featured || [];
-                                        if(_.isString(featured_)) 
-                                            featured_ = [featured_];
-                                    })])
+                return Promise.all([rcloud.config.get_current_notebook(),
+                                    rcloud.stars.get_multiple_notebook_star_counts(all_notebooks),
+                                    rcloud.get_multiple_notebook_infos(all_notebooks),
+                                    rcloud.config.get_alluser_option('featured_users')])
+                    .spread(function(current, counts, notebook_entries, featured) {
+                        current_ = current;
+                        num_stars_ = counts;
+                        notebook_info_ = notebook_entries;
+                        featured_ = featured || [];
+                        if(_.isString(featured_))
+                            featured_ = [featured_];
+                    })
                     .then(function() {
                         var alls_root = populate_all_notebooks(user_notebook_set);
                         return [
