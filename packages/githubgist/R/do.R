@@ -51,4 +51,5 @@ delete.gist.comment.githubcontext <- github::delete.gist.comment
 
 modify.gist.comment.githubcontext <- github::modify.gist.comment
 
+get.user.githubcontext <- github::get.user
 
