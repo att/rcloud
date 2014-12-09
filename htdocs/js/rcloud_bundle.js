@@ -1404,7 +1404,8 @@ Notebook.Asset.create_controller = function(asset_model)
             asset_model.active(false);
         },
         remove: function(force) {
-            var msg = "Are you sure you want to remove the asset from the notebook?";
+            var asset_name = asset_model.filename();
+            var msg = "Do you want to remove the asset '" +asset_name+ "' from the notebook?";
             if (force || confirm(msg)) {
                 asset_model.parent_model.controller.remove_asset(asset_model);
                 var assets = asset_model.parent_model.assets;
@@ -5266,6 +5267,7 @@ RCloud.UI.settings_frame = (function() {
                 sort: 10000,
                 default_value: false,
                 label: "",
+                id:"",
                 set: function(val) {}
             }, opts);
             return {
@@ -5273,10 +5275,11 @@ RCloud.UI.settings_frame = (function() {
                 default_value: opts.default_value,
                 create_control: function(on_change) {
                     var check = $.el.input({type: 'checkbox'});
+                    $(check).prop('id', opts.id);
                     var label = $($.el.label(check, opts.label));
                     $(check).change(function() {
                         var val = $(this).prop('checked');
-                        on_change(val);
+                        on_change(val, this.id);
                         opts.set(val);
                     });
                     return label;
@@ -5292,6 +5295,7 @@ RCloud.UI.settings_frame = (function() {
             var that = this;
             this.add({
                 'show-command-prompt': that.checkbox({
+                    id:"show-command-prompt",
                     sort: 100,
                     default_value: true,
                     label: "Show Command Prompt",
@@ -5300,13 +5304,21 @@ RCloud.UI.settings_frame = (function() {
                     }
                 })
             });
+            this.add({
+                'subscribe-to-comments': that.checkbox({
+                    id:"subscribe-to-comments",
+                    sort: 100,
+                    default_value: false,
+                    label: "Subscribe To Comments"
+                })
+            });
         },
         load: function() {
             var that = this;
             var sort_controls = [];
             for(var name in options_) {
                 var option = options_[name];
-                controls_[name] = option.create_control(function(value) {
+                controls_[name] = option.create_control(function(value,name) {
                     if(!now_setting_[name])
                         rcloud.config.set_user_option(name, value);
                 });
