@@ -35,7 +35,8 @@ var editor = function () {
         my_friends_ = {}, // people whose notebooks i've starred
         featured_ = [], // featured users - samples, intros, etc
         invalid_notebooks_ = {},
-        current_ = null; // current notebook and version
+        current_ = null, // current notebook and version
+        show_terse_dates_ = false; // show terse date option for the user
 
     // view
     var $tree_ = null,
@@ -95,6 +96,13 @@ var editor = function () {
         return user === username_ ?
             rcloud.config.remove_notebook(gistname) :
             Promise.resolve();
+    }
+
+    function get_terse_date() {
+        return rcloud.config.get_user_option(['show-terse-dates'])
+            .then(function(value) {
+                show_terse_dates_ = value;
+            });
     }
 
     function update_notebook_model(user, gistname, description, time) {
@@ -590,9 +598,10 @@ var editor = function () {
                 var min_same = d1.getMinutes() === d2.getMinutes();
                 var hour_same = d1.getHours() === d2.getHours();
                 var isDateSame = d1.toLocaleDateString() === d2.toLocaleDateString();
-                if(diff <= 60*1000 && hour_same && min_same)
+                if(diff <= 60*1000 && hour_same && min_same && show_terse_dates_)
                     return null;
-                else return format_date_time_stamp(d1, diff, isDateSame);
+                else
+                    return format_date_time_stamp(d1, diff, isDateSame);
             }
 
             function display_date_for_entry(i) {
@@ -922,9 +931,9 @@ var editor = function () {
         var time_part = '<span class="notebook-time">' + date.getHours() + ':' + pad(date.getMinutes()) + '</span>';
         var date_part = (date.getMonth()+1) + '/' + date.getDate();
         var year_part = date.getFullYear().toString().substr(2,2);
-        if(diff < 24*60*60*1000 && isDateSame)
+        if(diff < 24*60*60*1000 && isDateSame && show_terse_dates_)
             return time_part;
-        else if(date.getFullYear() === now.getFullYear())
+        else if(date.getFullYear() === now.getFullYear() && show_terse_dates_)
             return '<span>' + date_part + ' ' + time_part + '</span>';
         else
             return '<span>' + date_part + '/' + year_part + ' ' + time_part + '</span>';
@@ -1358,6 +1367,9 @@ var editor = function () {
             var promise = set_visibility(gistname, visible);
             update_notebook_view(username_, gistname, get_notebook_info(gistname), false);
             return promise;
+        },
+        set_terse_dates: function(val) {
+            show_terse_dates_ = val;
         },
         fork_notebook: function(is_mine, gistname, version) {
             return shell.fork_notebook(is_mine, gistname, version)
