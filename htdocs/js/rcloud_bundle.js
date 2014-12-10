@@ -1431,6 +1431,14 @@ function ensure_image_has_hash(img)
 }
 
 function create_markdown_cell_html_view(language) { return function(cell_model) {
+    var ace_widget_;
+    var ace_session_;
+    var ace_document_;
+    var am_read_only_;
+    var result_div_;
+    var change_content_;
+    var current_mode_;
+
     var EXTRA_HEIGHT = 27;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
     update_div_id();
@@ -1449,13 +1457,13 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     var gap = $('<div/>').html('&nbsp;').css({'line-height': '25%'});
 
     function update_model() {
-        return cell_model.content(widget.getSession().getValue());
+        return cell_model.content(ace_session_.getValue());
     }
     function update_div_id() {
         notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
     }
     function set_widget_height() {
-        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
+        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(ace_widget_) + EXTRA_HEIGHT) + "px"});
     }
     var enable = ui_utils.enable_fa_button;
     var disable = ui_utils.disable_fa_button;
@@ -1475,11 +1483,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     });
     split_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
-            var range = widget.getSelection().getRange();
+            var range = ace_widget_.getSelection().getRange();
             var point1, point2;
-            point1 = ui_utils.character_offset_of_pos(widget, range.start);
+            point1 = ui_utils.character_offset_of_pos(ace_widget_, range.start);
             if(!range.isEmpty())
-                point2 = ui_utils.character_offset_of_pos(widget, range.end);
+                point2 = ui_utils.character_offset_of_pos(ace_widget_, range.end);
             shell.split_cell(cell_model, point1, point2);
         }
     });
@@ -1502,7 +1510,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         }
     });
     function execute_cell() {
-        r_result_div.html("Computing...");
+        result_div_.html("Computing...");
         var new_content = update_model();
         result.show_result();
         if(new_content!==null) // if any change (including removing the content)
@@ -1544,7 +1552,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
         ace_div.css({ 'background-color': bg_color });
         var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
-        session.setMode(new LangMode(false, doc, session));
+        ace_session_.setMode(new LangMode(false, ace_document_, ace_session_));
         select_lang.val(language);
     }
 
@@ -1577,54 +1585,58 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     inner_div.append(outer_ace_div);
     outer_ace_div.append(ace_div);
-    ace.require("ace/ext/language_tools");
-    var widget = ace.edit(ace_div[0]);
-    var session = widget.getSession();
-    widget.setValue(cell_model.content());
-    ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
-    // erase undo state so that undo doesn't erase all
-    ui_utils.on_next_tick(function() {
-        session.getUndoManager().reset();
-    });
-    var doc = session.doc;
-    var am_read_only = "unknown";
-    widget.setOptions({
-        enableBasicAutocompletion: true
-    });
-    session.on('change', function() {
-        set_widget_height();
-        widget.resize();
-    });
 
-    widget.setTheme("ace/theme/chrome");
-    session.setUseWrapMode(true);
-    widget.resize();
+    function create_edit_widget() {
+        if(ace_widget_) return;
 
-    ui_utils.add_ace_grab_affordance(widget.container);
+        ace.require("ace/ext/language_tools");
+        ace_widget_ = ace.edit(ace_div[0]);
+        ace_session_ = ace_widget_.getSession();
+        ace_widget_.setValue(cell_model.content());
+        ui_utils.ace_set_pos(ace_widget_, 0, 0); // setValue selects all
+        // erase undo state so that undo doesn't erase all
+        ui_utils.on_next_tick(function() {
+            ace_session_.getUndoManager().reset();
+        });
+        ace_document_ = ace_session_.getDocument();
+        am_read_only_ = "unknown";
+        ace_widget_.setOptions({
+            enableBasicAutocompletion: true
+        });
+        ace_session_.on('change', function() {
+            set_widget_height();
+            ace_widget_.resize();
+        });
 
-    ui_utils.install_common_ace_key_bindings(widget, function() {
-        return language;
-    });
-    widget.commands.addCommands([{
-        name: 'sendToR',
-        bindKey: {
-            win: 'Alt-Return',
-            mac: 'Alt-Return',
-            sender: 'editor'
-        },
-        exec: function(widget, args, request) {
-            execute_cell();
-        }
-    }]);
-    var change_content = ui_utils.ignore_programmatic_changes(widget, function() {
-        cell_model.parent_model.on_dirty();
-    });
+        ace_widget_.setTheme("ace/theme/chrome");
+        ace_session_.setUseWrapMode(true);
+        ace_widget_.resize();
 
-    var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
-    inner_div.append(r_result_div);
+        ui_utils.add_ace_grab_affordance(ace_widget_.container);
+
+        ui_utils.install_common_ace_key_bindings(ace_widget_, function() {
+            return language;
+        });
+        ace_widget_.commands.addCommands([{
+            name: 'sendToR',
+            bindKey: {
+                win: 'Alt-Return',
+                mac: 'Alt-Return',
+                sender: 'editor'
+            },
+            exec: function(ace_widget_, args, request) {
+                execute_cell();
+            }
+        }]);
+        change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
+            cell_model.parent_model.on_dirty();
+        });
+    }
+    create_edit_widget();
+
+    result_div_ = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
+    inner_div.append(result_div_);
     update_language();
-
-    var current_mode;
 
     var result = {
 
@@ -1635,9 +1647,9 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             // note: it's inconsistent, but not clearing the result for every
             // change, just particular ones, because one may want to refer to
             // the result if just typing but seems unlikely for other changes
-            var range = widget.getSelection().getRange();
-            var changed = change_content(cell_model.content());
-            widget.getSelection().setSelectionRange(range);
+            var range = ace_widget_.getSelection().getRange();
+            var changed = change_content_(cell_model.content());
+            ace_widget_.getSelection().setSelectionRange(range);
             return changed;
         },
         self_removed: function() {
@@ -1647,20 +1659,20 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         language_updated: update_language,
         result_updated: function(r) {
             has_result = true;
-            r_result_div.hide();
-            r_result_div.html(r);
-            r_result_div.slideDown(150);
+            result_div_.hide();
+            result_div_.html(r);
+            result_div_.slideDown(150);
 
             // There's a list of things that we need to do to the output:
             var uuid = rcloud.deferred_knitr_uuid;
 
             // FIXME None of these things should be hard-coded.
             if (cell_model.language() === 'R' && inner_div.find("pre code").length === 0) {
-                r_result_div.prepend("<pre><code class='r'>" + cell_model.content() + "</code></pre>");
+                result_div_.prepend("<pre><code class='r'>" + cell_model.content() + "</code></pre>");
             }
 
             // click on code to edit
-            var code_div = $("code.r,code.py", r_result_div);
+            var code_div = $("code.r,code.py", result_div_);
             code_div.off('click');
             if(!shell.is_view_mode()) {
                 // distinguish between a click and a drag
@@ -1751,7 +1763,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 Notebook.hide_r_source(inner_div);
             }
 
-            // Workaround a persistently annoying knitr bug:
+            // Work around a persistently annoying knitr bug:
             // https://github.com/att/rcloud/issues/456
 
             _($("img")).each(function(img, ix, $q) {
@@ -1773,14 +1785,14 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             this.show_source();
         },
         set_readonly: function(readonly) {
-            am_read_only = readonly;
-            ui_utils.set_ace_readonly(widget, readonly);
+            am_read_only_ = readonly;
+            ui_utils.set_ace_readonly(ace_widget_, readonly);
             if (readonly) {
                 disable(remove_button);
                 disable(insert_cell_button);
                 disable(split_button);
                 disable(join_button);
-                $(widget.container).find(".grab-affordance").hide();
+                $(ace_widget_.container).find(".grab-affordance").hide();
                 select_lang.prop("disabled", "disabled");
             } else {
                 enable(remove_button);
@@ -1803,6 +1815,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         },
 
         show_source: function() {
+            create_edit_widget();
             /*
              * Some explanation for the next poor soul
              * that might come across this great madness below:
@@ -1832,25 +1845,25 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
              */
             // do the two-change dance to make ace happy
             outer_ace_div.show();
-            widget.resize(true);
+            ace_widget_.resize(true);
             set_widget_height();
-            widget.resize(true);
+            ace_widget_.resize(true);
             disable(source_button);
             if(has_result)
                 enable(result_button);
             // enable(hide_button);
-            if (!am_read_only) {
+            if (!am_read_only_) {
                 enable(remove_button);
                 enable(split_button);
             }
             //editor_row.show();
 
             outer_ace_div.show();
-            r_result_div.hide();
-            widget.resize(); // again?!?
-            widget.focus();
+            result_div_.hide();
+            ace_widget_.resize(); // again?!?
+            ace_widget_.focus();
 
-            current_mode = "source";
+            current_mode_ = "source";
         },
         show_result: function() {
             notebook_cell_div.css({'height': ''});
@@ -1858,27 +1871,27 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             disable(result_button);
             disable(split_button);
             // enable(hide_button);
-            if (!am_read_only) {
+            if (!am_read_only_) {
                 enable(remove_button);
             }
 
             //editor_row.hide();
             outer_ace_div.hide();
-            r_result_div.slideDown(150); // show();
-            current_mode = "result";
+            result_div_.slideDown(150); // show();
+            current_mode_ = "result";
         },
         hide_all: function() {
             notebook_cell_div.css({'height': ''});
             enable(source_button);
             enable(result_button);
             // disable(hide_button);
-            if (!am_read_only) {
+            if (!am_read_only_) {
                 enable(remove_button);
             }
 
             //editor_row.hide();
-            if (current_mode === "result") {
-                r_result_div.slideUp(150); // hide();
+            if (current_mode_ === "result") {
+                result_div_.slideUp(150); // hide();
             } else {
                 outer_ace_div.slideUp(150); // hide();
             }
@@ -1890,24 +1903,24 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             return update_model();
         },
         focus: function() {
-            widget.focus();
+            ace_widget_.focus();
         },
         get_content: function() { // for debug
             return cell_model.content();
         },
         reformat: function() {
-            if(current_mode === "source") {
+            if(current_mode_ === "source") {
                 // resize once to get right height, then set height,
                 // then resize again to get ace scrollbars right (?)
-                widget.resize();
+                ace_widget_.resize();
                 set_widget_height();
-                widget.resize();
+                ace_widget_.resize();
             }
         },
         check_buttons: function() {
             if(!cell_model.parent_model.prior_cell(cell_model))
                 join_button.hide();
-            else if(!am_read_only)
+            else if(!am_read_only_)
                 join_button.show();
         }
     };
