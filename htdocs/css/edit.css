@@ -794,6 +794,10 @@ pre {
     cursor: grab;
 }
 
+.ace_gutter-layer {
+    width: 50px !important;
+}
+
 #output > .notebook-cell .grabbing {
     cursor: -moz-grabbing;
     cursor: -webkit-grabbing;
