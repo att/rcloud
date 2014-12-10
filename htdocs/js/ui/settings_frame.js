@@ -85,7 +85,7 @@ RCloud.UI.settings_frame = (function() {
                     id:"show-terse-dates",
                     sort: 100,
                     default_value: true,
-                    label: "Show Terse Dates",
+                    label: "Show Terse Version Dates",
                     set: function(val) {
                         editor.set_terse_dates(val);
                     }

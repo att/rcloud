@@ -5312,6 +5312,17 @@ RCloud.UI.settings_frame = (function() {
                     label: "Subscribe To Comments"
                 })
             });
+            this.add({
+                'show-terse-dates': that.checkbox({
+                    id:"show-terse-dates",
+                    sort: 100,
+                    default_value: true,
+                    label: "Show Terse Version Dates",
+                    set: function(val) {
+                        editor.set_terse_dates(val);
+                    }
+                })
+            });
         },
         load: function() {
             var that = this;

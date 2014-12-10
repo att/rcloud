@@ -924,9 +924,7 @@ var editor = function () {
         var time_part = '<span class="notebook-time">' + date.getHours() + ':' + pad(date.getMinutes()) + '</span>';
         var date_part = (date.getMonth()+1) + '/' + date.getDate();
         var year_part = date.getFullYear().toString().substr(2,2);
-        if(diff < 24*60*60*1000 && isDateSame && show_terse_dates_)
-            return time_part;
-        else if(date.getFullYear() === now.getFullYear() && show_terse_dates_)
+        if(date.getFullYear() === now.getFullYear())
             return '<span>' + date_part + ' ' + time_part + '</span>';
         else
             return '<span>' + date_part + '/' + year_part + ' ' + time_part + '</span>';
