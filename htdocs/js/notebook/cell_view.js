@@ -14,10 +14,11 @@ function create_cell_html_view(language, cell_model) {
     var ace_session_;
     var ace_document_;
     var am_read_only_;
+    var source_div_;
     var code_div_;
     var result_div_;
     var change_content_;
-    var current_mode_;
+    var edit_mode_; // note: neither true nor false
 
     var EXTRA_HEIGHT = 27;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
@@ -30,13 +31,14 @@ function create_cell_html_view(language, cell_model) {
     var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
     var join_button = ui_utils.fa_button("icon-link", "join cells");
     var edit_button = ui_utils.fa_button("icon-edit", "source");
-    var result_button = ui_utils.fa_button("icon-picture", "result");
     var split_button = ui_utils.fa_button("icon-unlink", "split cell");
     var remove_button = ui_utils.fa_button("icon-trash", "remove");
     var run_md_button = ui_utils.fa_button("icon-play", "run");
     var gap = $('<div/>').html('&nbsp;').css({'line-height': '25%'});
 
     function update_model() {
+        if(!ace_session_)
+            return null;
         return cell_model.content(ace_session_.getValue());
     }
     function update_div_id() {
@@ -73,12 +75,8 @@ function create_cell_html_view(language, cell_model) {
     });
     edit_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
-            result.edit_source();
+            result.edit_source(!edit_mode_);
         }
-    });
-    result_button.click(function(e) {
-        if (!$(e.currentTarget).hasClass("button-disabled"))
-            result.show_result();
     });
     remove_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
@@ -92,7 +90,7 @@ function create_cell_html_view(language, cell_model) {
     function execute_cell() {
         result_div_.html("Computing...");
         var new_content = update_model();
-        result.show_result();
+        result.edit_source(false);
         if(new_content!==null) // if any change (including removing the content)
             cell_model.parent_model.controller.update_cell(cell_model);
 
@@ -143,7 +141,7 @@ function create_cell_html_view(language, cell_model) {
     }
 
     col.append($("<div></div>").append(select_lang));
-    $.each([run_md_button, edit_button, result_button, gap, split_button, remove_button],
+    $.each([run_md_button, edit_button, gap, split_button, remove_button],
            function() {
                col.append($('<td/>').append($(this)));
            });
@@ -163,13 +161,16 @@ function create_cell_html_view(language, cell_model) {
     notebook_cell_div.append(inner_div);
     notebook_cell_div.append(clear_div);
 
+    source_div_ = $('<div class="source-div"></div>');
     code_div_ = $('<div class="code-div"></div>');
+    source_div_.append(code_div_);
+
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
     set_background_color(language);
 
-    code_div_.append(outer_ace_div);
-    inner_div.append(code_div_);
+    source_div_.append(outer_ace_div);
+    inner_div.append(source_div_);
     outer_ace_div.append(ace_div);
 
     // click on code to edit
@@ -184,7 +185,7 @@ function create_cell_html_view(language, cell_model) {
                 var p1 = { x: e.pageX, y: e.pageY },
                     d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
                 if (d < 4) {
-                    result.edit_source();
+                    result.edit_source(true);
                 }
             }
         });
@@ -252,13 +253,13 @@ function create_cell_html_view(language, cell_model) {
         });
     }
     function assign_code(code) {
-        code_div_.empty()
-            .append($('<pre></pre>').append('<code></code>').append(code));
+        find_code_elems(code_div_).remove();
+        code_div_.append($('<pre></pre>').append('<code></code>').append(code));
         highlight_code();
     }
     assign_code(cell_model.content());
 
-    result_div_ = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
+    result_div_ = $('<div class="r-result-div"><span style="opacity:0.5">No Result Yet</span></div>');
     inner_div.append(result_div_);
     update_language();
 
@@ -283,9 +284,7 @@ function create_cell_html_view(language, cell_model) {
         language_updated: update_language,
         result_updated: function(r) {
             has_result = true;
-            result_div_.hide();
             result_div_.html(r);
-            result_div_.slideDown(150);
 
             // There's a list of things that we need to do to the output:
             var uuid = rcloud.deferred_knitr_uuid;
@@ -370,11 +369,11 @@ function create_cell_html_view(language, cell_model) {
                 }
             });
 
-            this.show_result();
+            this.edit_source(false);
         },
         clear_result: function() {
             has_result = false;
-            disable(result_button);
+            result_div_.empty();
         },
         set_readonly: function(readonly) {
             am_read_only_ = readonly;
@@ -406,88 +405,64 @@ function create_cell_html_view(language, cell_model) {
             button_float.css("display", null);
             insert_button_float.show();
         },
+        edit_source: function(edit_mode) {
+            if(edit_mode === edit_mode_)
+                return;
+            if(edit_mode) {
+                code_div_.hide();
+                create_edit_widget();
+                /*
+                 * Some explanation for the next poor soul
+                 * that might come across this great madness below:
+                 *
+                 * ACE appears to have trouble computing properties such as
+                 * renderer.lineHeight. This is unfortunate, since we want
+                 * to use lineHeight to determine the size of the widget in the
+                 * first place. The only way we got ACE to work with
+                 * dynamic sizing was to set up a three-div structure, like so:
+                 *
+                 * <div id="1"><div id="2"><div id="3"></div></div></div>
+                 *
+                 * set the middle div (id 2) to have a style of "height: 100%"
+                 *
+                 * set the outer div (id 1) to have whatever height in pixels you want
+                 *
+                 * make sure the entire div structure is on the DOM and is visible
+                 *
+                 * call ace's resize function once. (This will update the
+                 * renderer.lineHeight property)
+                 *
+                 * Now set the outer div (id 1) to have the desired height as a
+                 * funtion of renderer.lineHeight, and call resize again.
+                 *
+                 * Easy!
+                 *
+                 */
+                // do the two-change dance to make ace happy
+                outer_ace_div.show();
+                ace_widget_.resize(true);
+                set_widget_height();
+                ace_widget_.resize(true);
+                disable(edit_button);
+                if (!am_read_only_) {
+                    enable(remove_button);
+                    enable(split_button);
+                }
 
-        edit_source: function() {
-            create_edit_widget();
-            /*
-             * Some explanation for the next poor soul
-             * that might come across this great madness below:
-             *
-             * ACE appears to have trouble computing properties such as
-             * renderer.lineHeight. This is unfortunate, since we want
-             * to use lineHeight to determine the size of the widget in the
-             * first place. The only way we got ACE to work with
-             * dynamic sizing was to set up a three-div structure, like so:
-             *
-             * <div id="1"><div id="2"><div id="3"></div></div></div>
-             *
-             * set the middle div (id 2) to have a style of "height: 100%"
-             *
-             * set the outer div (id 1) to have whatever height in pixels you want
-             *
-             * make sure the entire div structure is on the DOM and is visible
-             *
-             * call ace's resize function once. (This will update the
-             * renderer.lineHeight property)
-             *
-             * Now set the outer div (id 1) to have the desired height as a
-             * funtion of renderer.lineHeight, and call resize again.
-             *
-             * Easy!
-             *
-             */
-            // do the two-change dance to make ace happy
-            outer_ace_div.show();
-            ace_widget_.resize(true);
-            set_widget_height();
-            ace_widget_.resize(true);
-            disable(edit_button);
-            if(has_result)
-                enable(result_button);
-            // enable(hide_button);
-            if (!am_read_only_) {
-                enable(remove_button);
-                enable(split_button);
+                outer_ace_div.show();
+                ace_widget_.resize(); // again?!?
+                ace_widget_.focus();
             }
-            //editor_row.show();
-
-            outer_ace_div.show();
-            result_div_.hide();
-            ace_widget_.resize(); // again?!?
-            ace_widget_.focus();
-
-            current_mode_ = "source";
-        },
-        show_result: function() {
-            notebook_cell_div.css({'height': ''});
-            enable(edit_button);
-            disable(result_button);
-            disable(split_button);
-            // enable(hide_button);
-            if (!am_read_only_) {
-                enable(remove_button);
+            else {
+                notebook_cell_div.css({'height': ''});
+                disable(split_button);
+                if (!am_read_only_) {
+                    enable(remove_button);
+                }
+                code_div_.show();
+                outer_ace_div.hide();
             }
-
-            //editor_row.hide();
-            outer_ace_div.hide();
-            result_div_.slideDown(150); // show();
-            current_mode_ = "result";
-        },
-        hide_all: function() {
-            notebook_cell_div.css({'height': ''});
-            enable(edit_button);
-            enable(result_button);
-            // disable(hide_button);
-            if (!am_read_only_) {
-                enable(remove_button);
-            }
-
-            //editor_row.hide();
-            if (current_mode_ === "result") {
-                result_div_.slideUp(150); // hide();
-            } else {
-                outer_ace_div.slideUp(150); // hide();
-            }
+            edit_mode_ = edit_mode;
         },
         div: function() {
             return notebook_cell_div;
@@ -502,7 +477,7 @@ function create_cell_html_view(language, cell_model) {
             return cell_model.content();
         },
         reformat: function() {
-            if(current_mode_ === "source") {
+            if(edit_mode_) {
                 // resize once to get right height, then set height,
                 // then resize again to get ace scrollbars right (?)
                 ace_widget_.resize();
@@ -518,7 +493,7 @@ function create_cell_html_view(language, cell_model) {
         }
     };
 
-    result.show_result();
+    result.edit_source(false);
     return result;
 };
 
