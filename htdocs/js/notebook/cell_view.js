@@ -30,7 +30,7 @@ function create_cell_html_view(language, cell_model) {
 
     var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
     var join_button = ui_utils.fa_button("icon-link", "join cells");
-    var edit_button = ui_utils.fa_button("icon-edit", "source");
+    var edit_button = ui_utils.fa_button("icon-edit", "toggle edit");
     var split_button = ui_utils.fa_button("icon-unlink", "split cell");
     var remove_button = ui_utils.fa_button("icon-trash", "remove");
     var run_md_button = ui_utils.fa_button("icon-play", "run");
@@ -45,7 +45,7 @@ function create_cell_html_view(language, cell_model) {
         notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
     }
     function set_widget_height() {
-        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(ace_widget_) + EXTRA_HEIGHT) + "px"});
+        source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, 1) + EXTRA_HEIGHT) + "px");
     }
     var enable = ui_utils.enable_fa_button;
     var disable = ui_utils.disable_fa_button;
@@ -254,7 +254,7 @@ function create_cell_html_view(language, cell_model) {
     }
     function assign_code(code) {
         find_code_elems(code_div_).remove();
-        code_div_.append($('<pre></pre>').append('<code></code>').append(code));
+        code_div_.append($('<pre></pre>').append($('<code></code>').append(code)));
         highlight_code();
     }
     assign_code(cell_model.content());
@@ -291,7 +291,7 @@ function create_cell_html_view(language, cell_model) {
 
 
             // temporary (until we get rid of knitr): delete code from results
-            find_code_elems(result_div_).remove();
+            find_code_elems(result_div_).parent().remove();
 
             // we use the cached version of DPR instead of getting window.devicePixelRatio
             // because it might have changed (by moving the user agent window across monitors)
@@ -443,7 +443,6 @@ function create_cell_html_view(language, cell_model) {
                 ace_widget_.resize(true);
                 set_widget_height();
                 ace_widget_.resize(true);
-                disable(edit_button);
                 if (!am_read_only_) {
                     enable(remove_button);
                     enable(split_button);
@@ -454,7 +453,7 @@ function create_cell_html_view(language, cell_model) {
                 ace_widget_.focus();
             }
             else {
-                notebook_cell_div.css({'height': ''});
+                source_div_.css({'height': ''});
                 disable(split_button);
                 if (!am_read_only_) {
                     enable(remove_button);

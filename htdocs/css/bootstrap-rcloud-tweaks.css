@@ -15,7 +15,7 @@ pre {
 }
 
 pre code {
-    padding: 16px;
+    padding: 0px 16px;
 }
 
 code {
@@ -24,6 +24,10 @@ code {
     padding: 0;
     color: black;
     font-size: 100%;
+}
+
+.code-div pre code {
+    padding-left: 40px;
 }
 
 .response {
