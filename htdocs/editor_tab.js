@@ -98,13 +98,6 @@ var editor = function () {
             Promise.resolve();
     }
 
-    function get_terse_date() {
-        return rcloud.config.get_user_option(['show-terse-dates'])
-            .then(function(value) {
-                show_terse_dates_ = value;
-            });
-    }
-
     function update_notebook_model(user, gistname, description, time) {
         var entry = get_notebook_info(gistname);
 
