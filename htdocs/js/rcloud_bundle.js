@@ -1430,7 +1430,7 @@ function ensure_image_has_hash(img)
     return img.dataset.sha256;
 }
 
-function create_markdown_cell_html_view(language) { return function(cell_model) {
+function create_cell_html_view(language, cell_model) {
     var ace_widget_;
     var ace_session_;
     var ace_document_;
@@ -1927,11 +1927,11 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
 
     result.show_result();
     return result;
-};}
+};
 
 Notebook.Cell.create_html_view = function(cell_model)
 {
-    return create_markdown_cell_html_view(cell_model.language())(cell_model);
+    return create_cell_html_view(cell_model.language(), cell_model);
 };
 
 })();
