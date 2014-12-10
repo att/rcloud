@@ -1510,10 +1510,7 @@ function create_cell_html_view(language, cell_model) {
     });
     function execute_cell() {
         result_div_.html("Computing...");
-        var new_content = update_model();
         result.edit_source(false);
-        if(new_content!==null) // if any change (including removing the content)
-            cell_model.parent_model.controller.update_cell(cell_model);
 
         RCloud.UI.with_progress(function() {
             return cell_model.controller.execute();
@@ -1880,12 +1877,13 @@ function create_cell_html_view(language, cell_model) {
                 ace_widget_.focus();
             }
             else {
+                var new_content = update_model();
+                if(new_content!==null) // if any change (including removing the content)
+                    cell_model.parent_model.controller.update_cell(cell_model);
                 source_div_.css({'height': ''});
                 disable(split_button);
-                if (!am_read_only_) {
+                if (!am_read_only_)
                     enable(remove_button);
-
-                }
                 code_div_.show();
                 outer_ace_div.hide();
             }
