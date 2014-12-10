@@ -34,7 +34,7 @@ dependencies_bundle.js: \
 	js/dataframe.js \
 	js/dcplot.js \
 	js/hl.min.js \
-	js/jquery-1.10.2.js \
+	js/jquery-2.1.1.js \
 	js/bootstrap.js \
 	js/jquery-ui.min.js \
 	js/jquery.cookies.2.2.0.js \

@@ -508,8 +508,8 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.purl_sourceAsync(source);
         };
 
-        rcloud.get_completions = function(text, pos) {
-            return rcloud_ocaps.get_completionsAsync(text, pos)
+        rcloud.get_completions = function(language, text, pos) {
+            return rcloud_ocaps.get_completionsAsync(language, text, pos)
                 .then(function(comps) {
                     if (_.isString(comps))
                         comps = [comps]; // quirk of rserve.js scalar handling
@@ -1428,7 +1428,8 @@ Notebook.Asset.create_controller = function(asset_model)
             asset_model.active(false);
         },
         remove: function(force) {
-            var msg = "Are you sure you want to remove the asset from the notebook?";
+            var asset_name = asset_model.filename();
+            var msg = "Do you want to remove the asset '" +asset_name+ "' from the notebook?";
             if (force || confirm(msg)) {
                 asset_model.parent_model.controller.remove_asset(asset_model);
                 if(asset_model === RCloud.UI.scratchpad.current_asset) {
@@ -3172,7 +3173,7 @@ RCloud.language = (function() {
     function binary_upload(upload_ocaps, react) {
         return Promise.promisify(function(file, is_replace, callback) {
             var fr = new FileReader();
-            var chunk_size = 1024*1024;
+            var chunk_size = 1024*128;
             var f_size=file.size;
             var cur_pos=0;
             var bytes_read = 0;
@@ -4951,6 +4952,10 @@ RCloud.UI.scratchpad = {
 };
 RCloud.UI.search = (function() {
 var page_size_ = 10;
+var search_err_msg = ["<p style=\"color:black;margin:0;\">The search engine in RCloud uses Lucene for advanced search features." ,
+    "It appears you may have used one of the special characters in Lucene syntax incorrectly. " ,
+    "Please see this <a target=\"_blank\" href=\"http://lucene.apache.org/core/3_5_0/queryparsersyntax.html\">link</a> to learn about Lucene syntax. " ,
+    "</p><p style=\"color:black;margin:0;\">Or, if you mean to search for the character itself, escape it using a backslash, e.g. \"foo\\:\"</p>"];
 
 function go_to_page(page_num,incr_by){
     //get the element number where to start the slice from
@@ -5060,15 +5065,24 @@ return {
             $('#search-summary').css('color', color || 'black');
             $("#search-summary").show().html($("<h4/>").append(html));
         }
+        function err_msg(html, color) {
+            $('#search-summary').css("display", "none");
+            $('#search-results').css('color', color || 'black');
+            $("#search-results-row").show().animate({ scrollTop: $(document).height() }, "slow");
+            $("#search-results").show().html($("<h4/>").append(html));
+        }
         function create_list_of_search_results(d) {
             var i;
+            var custom_msg = '';
             if(d === null || d === "null" || d === "") {
                 summary("No Results Found");
             } else if(d[0] === "error") {
                 d[1] = d[1].replace(/\n/g, "<br/>");
                 if($('#paging').html != "")
                     $('#paging').html("");
-                summary("ERROR:\n" + d[1], 'darkred');
+                if(d[1].indexOf("org.apache.solr.search.SyntaxError")>-1)
+                    custom_msg = search_err_msg.join("");
+                err_msg(custom_msg+"ERROR:\n" + d[1], 'darkred');
             } else {
                 if(typeof (d) === "string") {
                     d = JSON.parse("[" + d + "]");
@@ -5149,6 +5163,8 @@ return {
                             }
                         }
                         var togid = i + "more";
+                        var make_edit_url = ui_utils.url_maker('edit.html');
+                        var url = make_edit_url({notebook: notebook_id});
                         if(parts_table !== "") {
                             if(nooflines > 10) {
                                 parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div>" +
@@ -5158,7 +5174,7 @@ return {
                             }
                         }
                         search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" +
-                            "<a id=\"open_" + i + "\" href='#' data-gistname='" + notebook_id + "' class='search-result-heading'>" +
+                            "<a id=\"open_" + i + "\" href=\'"+url+"'\" data-gistname='" + notebook_id + "' class='search-result-heading'>" +
                             d[i].user + " / " + d[i].notebook + "</a>" +
                             image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
                         if(parts_table !== "")
@@ -5170,6 +5186,7 @@ return {
                 }
                 if(!pgclick) {
                     $('#paging').html("");
+                    $("#search-results-pagination").show();
                     if((parseInt(numfound) - parseInt(page_size_)) > 0) {
                         var number_of_pages = noofpages;
                         $('#current_page').val(0);
@@ -5361,6 +5378,7 @@ RCloud.UI.settings_frame = (function() {
                 sort: 10000,
                 default_value: false,
                 label: "",
+                id:"",
                 set: function(val) {}
             }, opts);
             return {
@@ -5368,10 +5386,11 @@ RCloud.UI.settings_frame = (function() {
                 default_value: opts.default_value,
                 create_control: function(on_change) {
                     var check = $.el.input({type: 'checkbox'});
+                    $(check).prop('id', opts.id);
                     var label = $($.el.label(check, opts.label));
                     $(check).change(function() {
                         var val = $(this).prop('checked');
-                        on_change(val);
+                        on_change(val, this.id);
                         opts.set(val);
                     });
                     return label;
@@ -5387,11 +5406,31 @@ RCloud.UI.settings_frame = (function() {
             var that = this;
             this.add({
                 'show-command-prompt': that.checkbox({
+                    id:"show-command-prompt",
                     sort: 100,
                     default_value: true,
                     label: "Show Command Prompt",
                     set: function(val) {
                         RCloud.UI.command_prompt.show_prompt(val);
+                    }
+                })
+            });
+            this.add({
+                'subscribe-to-comments': that.checkbox({
+                    id:"subscribe-to-comments",
+                    sort: 100,
+                    default_value: false,
+                    label: "Subscribe To Comments"
+                })
+            });
+            this.add({
+                'show-terse-dates': that.checkbox({
+                    id:"show-terse-dates",
+                    sort: 100,
+                    default_value: true,
+                    label: "Show Terse Version Dates",
+                    set: function(val) {
+                        editor.set_terse_dates(val);
                     }
                 })
             });
@@ -5401,7 +5440,7 @@ RCloud.UI.settings_frame = (function() {
             var sort_controls = [];
             for(var name in options_) {
                 var option = options_[name];
-                controls_[name] = option.create_control(function(value) {
+                controls_[name] = option.create_control(function(value,name) {
                     if(!now_setting_[name])
                         rcloud.config.set_user_option(name, value);
                 });

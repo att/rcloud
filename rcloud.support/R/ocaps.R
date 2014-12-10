@@ -202,6 +202,9 @@ authenticated.ocaps <- function(mode)
         ),
       notebook_upload = make.oc(rcloud.upload.to.notebook),
 
+      # security: request new token
+      replace_token = make.oc(replace.token),
+
       # commenting ocaps
       comments = list(
         post = make.oc(rcloud.post.comment),

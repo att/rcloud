@@ -27,8 +27,18 @@ rcloud.language.support <- function()
       val
     }
   }
+  complete <- function(text, pos) {
+    # from rcompgen.completion
+    utils:::.assignLinebuffer(text)
+    utils:::.assignEnd(pos)
+    utils:::.guessTokenFromLine()
+    utils:::.completeToken()
+    utils:::.CompletionEnv[["comps"]]
+  }
+
   list(language="R",
        run.cell=ev,
+       complete=complete,
        setup=function(rcloud.session) {},
        teardown=function(rcloud.session) {})
 }
