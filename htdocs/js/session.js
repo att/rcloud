@@ -95,7 +95,7 @@ function rclient_promise(allow_anonymous) {
         return promise;
     }).then(function(hello) {
         if (!$("#output > .response").length)
-            rclient.post_response(hello);
+            rclient.set_welcome_msg(hello);
     }).catch(function(error) { // e.g. couldn't connect with github
         if(window.rclient)
             rclient.close();

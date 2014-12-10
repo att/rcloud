@@ -453,7 +453,7 @@ var editor = function () {
                     else
                         console.log("notebook metadata for " + book + " has invalid entries: " + JSON.stringify(_.pick(entry, "username","description","last_commit","visible")));
                 }
-            })
+            }).then(rclient.post_response())
             .catch(rclient.post_rejection);
     }
 
