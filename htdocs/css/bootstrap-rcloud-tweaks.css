@@ -28,6 +28,7 @@ code {
 
 .code-div pre code {
     padding-left: 40px;
+    background-color: #fff;
 }
 
 .response {

@@ -1441,7 +1441,7 @@ function create_cell_html_view(language, cell_model) {
     var change_content_;
     var edit_mode_; // note: neither true nor false
 
-    var EXTRA_HEIGHT = 27;
+    var EXTRA_HEIGHT = 0; // this seemed to be compensating for a calc(100% - 25px) in edit.css?
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
     update_div_id();
     notebook_cell_div.data('rcloud.model', cell_model);
@@ -1466,7 +1466,7 @@ function create_cell_html_view(language, cell_model) {
         notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
     }
     function set_widget_height() {
-        source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, 1) + EXTRA_HEIGHT) + "px");
+        source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, 3) + EXTRA_HEIGHT) + "px");
     }
     var enable = ui_utils.enable_fa_button;
     var disable = ui_utils.disable_fa_button;
@@ -1680,7 +1680,7 @@ function create_cell_html_view(language, cell_model) {
     }
     assign_code(cell_model.content());
 
-    result_div_ = $('<div class="r-result-div"><span style="opacity:0.5">No Result Yet</span></div>');
+    result_div_ = $('<div class="r-result-div"><pre><code> (no result) </code></pre></div>');
     inner_div.append(result_div_);
     update_language();
 
@@ -3543,7 +3543,7 @@ RCloud.UI.command_prompt = (function() {
             return null;
         function set_ace_height() {
             var EXTRA_HEIGHT = 6;
-            prompt_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
+            prompt_div.css({'height': (ui_utils.ace_editor_height(widget, 5) + EXTRA_HEIGHT) + "px"});
             widget.resize();
             shell.scroll_to_end(0);
         }
