@@ -6,6 +6,7 @@ RCloud.UI.middle_column = (function() {
             var size = 12 - RCloud.UI.left_panel.colwidth() - RCloud.UI.right_panel.colwidth();
             result.colwidth(size);
             shell.notebook.view.reformat();
+            $('#rcloud-cellarea').css('visibility', 'visible');
         }
     });
     return result;
