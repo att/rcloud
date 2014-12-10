@@ -7,11 +7,19 @@ RCloud.language = (function() {
         JavaScript: "ace/mode/javascript",
         Text: "ace/mode/text"
     };
+    var hljs_classes_ = {
+        R: "r",
+        Python: "python"
+    };
+
     var langs_ = [];
 
     return {
         ace_mode: function(language) {
             return ace_modes_[language] || ace_modes_.Text;
+        },
+        hljs_class: function(language) {
+            return hljs_classes_[language] || null;
         },
         // don't call _set_available_languages yourself; it's called
         // by the session initialization code.

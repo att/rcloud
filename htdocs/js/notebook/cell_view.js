@@ -13,14 +13,14 @@ function create_cell_html_view(language, cell_model) {
     var ace_widget_;
     var ace_session_;
     var ace_document_;
-    var am_read_only_;
+    var am_read_only_ = "unknown";
     var source_div_;
     var code_div_;
     var result_div_;
     var change_content_;
     var edit_mode_; // note: neither true nor false
 
-    var EXTRA_HEIGHT = 0; // this seemed to be compensating for a calc(100% - 25px) in edit.css?
+    var EXTRA_HEIGHT = 2;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
     update_div_id();
     notebook_cell_div.data('rcloud.model', cell_model);
@@ -132,11 +132,11 @@ function create_cell_html_view(language, cell_model) {
         language = cell_model.language();
         if(!lang_selectors[language])
             throw new Error("tried to set language to unknown language " + language);
+        select_lang.val(language);
         if(ace_widget_) {
             set_background_color(language);
             var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
             ace_session_.setMode(new LangMode(false, ace_document_, ace_session_));
-            select_lang.val(language);
         }
     }
 
@@ -191,6 +191,11 @@ function create_cell_html_view(language, cell_model) {
         });
     }
 
+    function clear_result() {
+        has_result = false;
+        result_div_.html('<pre><code> (no result) </code></pre>');
+    }
+
     function create_edit_widget() {
         if(ace_widget_) return;
 
@@ -204,7 +209,6 @@ function create_cell_html_view(language, cell_model) {
             ace_session_.getUndoManager().reset();
         });
         ace_document_ = ace_session_.getDocument();
-        am_read_only_ = "unknown";
         ace_widget_.setOptions({
             enableBasicAutocompletion: true
         });
@@ -223,7 +227,7 @@ function create_cell_html_view(language, cell_model) {
             return language;
         });
         ace_widget_.commands.addCommands([{
-            name: 'sendToR',
+            name: 'executeCell',
             bindKey: {
                 win: 'Alt-Return',
                 mac: 'Alt-Return',
@@ -252,14 +256,20 @@ function create_cell_html_view(language, cell_model) {
             hljs.highlightBlock(e);
         });
     }
-    function assign_code(code) {
+    function assign_code() {
+        var code = cell_model.content();
         find_code_elems(code_div_).remove();
-        code_div_.append($('<pre></pre>').append($('<code></code>').append(code)));
+        var elem = $('<code></code>').append(code);
+        var hljs_class = RCloud.language.hljs_class(cell_model.language());
+        if(hljs_class)
+            elem.addClass(hljs_class);
+        code_div_.append($('<pre></pre>').append(elem));
         highlight_code();
     }
-    assign_code(cell_model.content());
+    assign_code();
 
-    result_div_ = $('<div class="r-result-div"><pre><code> (no result) </code></pre></div>');
+    result_div_ = $('<div class="r-result-div"></div>');
+    clear_result();
     inner_div.append(result_div_);
     update_language();
 
@@ -269,12 +279,12 @@ function create_cell_html_view(language, cell_model) {
         // pubsub event handlers
 
         content_updated: function() {
-            // note: it's inconsistent, but not clearing the result for every
-            // change, just particular ones, because one may want to refer to
-            // the result if just typing but seems unlikely for other changes
-            var range = ace_widget_.getSelection().getRange();
-            var changed = change_content_(cell_model.content());
-            ace_widget_.getSelection().setSelectionRange(range);
+            assign_code();
+            if(ace_widget_) {
+                var range = ace_widget_.getSelection().getRange();
+                var changed = change_content_(cell_model.content());
+                ace_widget_.getSelection().setSelectionRange(range);
+            }
             return changed;
         },
         self_removed: function() {
@@ -371,10 +381,7 @@ function create_cell_html_view(language, cell_model) {
 
             this.edit_source(false);
         },
-        clear_result: function() {
-            has_result = false;
-            result_div_.empty();
-        },
+        clear_result: clear_result,
         set_readonly: function(readonly) {
             am_read_only_ = readonly;
             if(ace_widget_)
@@ -389,7 +396,6 @@ function create_cell_html_view(language, cell_model) {
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
-                enable(split_button);
                 enable(join_button);
                 select_lang.prop("disabled", false);
             }
@@ -457,6 +463,7 @@ function create_cell_html_view(language, cell_model) {
                 disable(split_button);
                 if (!am_read_only_) {
                     enable(remove_button);
+
                 }
                 code_div_.show();
                 outer_ace_div.hide();

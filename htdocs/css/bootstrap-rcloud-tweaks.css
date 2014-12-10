@@ -16,6 +16,7 @@ pre {
 
 pre code {
     padding: 0px 16px;
+    font-size: 12px;
 }
 
 code {
@@ -23,12 +24,16 @@ code {
     background-color: #fff;
     padding: 0;
     color: black;
-    font-size: 100%;
+}
+
+.code-div {
+    padding-top: 1px;
 }
 
 .code-div pre code {
-    padding-left: 40px;
+    padding-left: 45px;
     background-color: #fff;
+    line-height: normal;
 }
 
 .response {
