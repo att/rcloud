@@ -28,6 +28,7 @@ code {
 
 .code-div {
     padding-top: 1px;
+    padding-bottom: 1px;
 }
 
 .code-div pre code {

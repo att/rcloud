@@ -255,6 +255,8 @@ function create_cell_html_view(language, cell_model) {
     }
     function assign_code() {
         var code = cell_model.content();
+        if(code[code.length-1] === '\n')
+            code += '\n';
         find_code_elems(code_div_).remove();
         var elem = $('<code></code>').append(code);
         var hljs_class = RCloud.language.hljs_class(cell_model.language());
