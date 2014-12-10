@@ -36,7 +36,7 @@ define("ace/mode/r", function(require, exports, module)
    var Mode = function(suppressHighlighting, doc, session)
    {
       this.getCompletions = function(state, session, pos, prefix, callback) {
-          rcloud.get_completions(session.getValue(),
+          rcloud.get_completions('R', session.getValue(),
                                  session.getDocument().positionToIndex(pos))
               .then(function(ret) {
                   callback(null, ret);
