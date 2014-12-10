@@ -124,12 +124,16 @@ function create_cell_html_view(language, cell_model) {
         result.clear_result();
     });
 
+    function set_background_color(language) {
+        var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
+        ace_div.css({ 'background-color': bg_color });
+    }
+
     function update_language() {
         language = cell_model.language();
         if(!lang_selectors[language])
             throw new Error("tried to set language to unknown language " + language);
-        var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
-        ace_div.css({ 'background-color': bg_color });
+        set_background_color(language);
         var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
         ace_session_.setMode(new LangMode(false, ace_document_, ace_session_));
         select_lang.val(language);
@@ -159,8 +163,7 @@ function create_cell_html_view(language, cell_model) {
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
 
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
-    var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
-    ace_div.css({ 'background-color': bg_color });
+    set_background_color(language);
 
     inner_div.append(outer_ace_div);
     outer_ace_div.append(ace_div);
