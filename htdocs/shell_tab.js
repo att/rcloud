@@ -36,9 +36,6 @@ var shell = (function() {
         RCloud.UI.notebook_title.update_fork_info(notebook.fork_of);
         notebook_user_ = notebook.user.login;
         RCloud.UI.configure_readonly();
-        _.each(notebook_view_.sub_views, function(cell_view) {
-            cell_view.show_source();
-        });
         RCloud.UI.command_prompt.focus();
         return notebook;
     }

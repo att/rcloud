@@ -219,7 +219,7 @@ RCloud.UI.command_prompt = (function() {
             $("#insert-new-cell").click(function() {
                 shell.new_cell("", language_, false);
                 var vs = shell.notebook.view.sub_views;
-                vs[vs.length-1].show_source();
+                vs[vs.length-1].edit_source();
             });
             $("#insert-cell-language").change(function() {
                 var language = $("#insert-cell-language").val();

@@ -995,7 +995,7 @@ a.accordion-toggle.right > i {
     font-size: 16px;
 }
 
-.r-result-div pre code {
+.code-div pre code {
     max-width: 800px;
     margin-right: auto;
     margin-left: auto;
@@ -1003,8 +1003,8 @@ a.accordion-toggle.right > i {
     border-right: 1px solid rgba(0,0,0,0.15);
 }
 
-/* Annoying, I'll have to add new entries for every language class here. */
-.r-result-div pre code.r, .r-result-div pre code.py {
+/* what does this do exactly? */
+.code-div pre code.r, .code-div pre code.py {
     max-width: inherit;
 }
 

@@ -1435,6 +1435,7 @@ function create_cell_html_view(language, cell_model) {
     var ace_session_;
     var ace_document_;
     var am_read_only_;
+    var code_div_;
     var result_div_;
     var change_content_;
     var current_mode_;
@@ -1449,7 +1450,7 @@ function create_cell_html_view(language, cell_model) {
 
     var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
     var join_button = ui_utils.fa_button("icon-link", "join cells");
-    var source_button = ui_utils.fa_button("icon-edit", "source");
+    var edit_button = ui_utils.fa_button("icon-edit", "source");
     var result_button = ui_utils.fa_button("icon-picture", "result");
     var split_button = ui_utils.fa_button("icon-unlink", "split cell");
     var remove_button = ui_utils.fa_button("icon-trash", "remove");
@@ -1491,9 +1492,9 @@ function create_cell_html_view(language, cell_model) {
             shell.split_cell(cell_model, point1, point2);
         }
     });
-    source_button.click(function(e) {
+    edit_button.click(function(e) {
         if (!$(e.currentTarget).hasClass("button-disabled")) {
-            result.show_source();
+            result.edit_source();
         }
     });
     result_button.click(function(e) {
@@ -1545,19 +1546,25 @@ function create_cell_html_view(language, cell_model) {
         result.clear_result();
     });
 
+    function set_background_color(language) {
+        var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
+        ace_div.css({ 'background-color': bg_color });
+    }
+
     function update_language() {
         language = cell_model.language();
         if(!lang_selectors[language])
             throw new Error("tried to set language to unknown language " + language);
-        var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
-        ace_div.css({ 'background-color': bg_color });
-        var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
-        ace_session_.setMode(new LangMode(false, ace_document_, ace_session_));
-        select_lang.val(language);
+        if(ace_widget_) {
+            set_background_color(language);
+            var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
+            ace_session_.setMode(new LangMode(false, ace_document_, ace_session_));
+            select_lang.val(language);
+        }
     }
 
     col.append($("<div></div>").append(select_lang));
-    $.each([run_md_button, source_button, result_button, gap, split_button, remove_button],
+    $.each([run_md_button, edit_button, result_button, gap, split_button, remove_button],
            function() {
                col.append($('<td/>').append($(this)));
            });
@@ -1577,14 +1584,32 @@ function create_cell_html_view(language, cell_model) {
     notebook_cell_div.append(inner_div);
     notebook_cell_div.append(clear_div);
 
+    code_div_ = $('<div class="code-div"></div>');
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
-
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
-    var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
-    ace_div.css({ 'background-color': bg_color });
+    set_background_color(language);
 
-    inner_div.append(outer_ace_div);
+    code_div_.append(outer_ace_div);
+    inner_div.append(code_div_);
     outer_ace_div.append(ace_div);
+
+    // click on code to edit
+    if(!shell.is_view_mode()) {
+        // distinguish between a click and a drag
+        // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
+        code_div_.on('mousedown', function(e) {
+            $(this).data('p0', { x: e.pageX, y: e.pageY });
+        }).on('mouseup', function(e) {
+            var p0 = $(this).data('p0');
+            if(p0) {
+                var p1 = { x: e.pageX, y: e.pageY },
+                    d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
+                if (d < 4) {
+                    result.edit_source();
+                }
+            }
+        });
+    }
 
     function create_edit_widget() {
         if(ace_widget_) return;
@@ -1631,8 +1656,28 @@ function create_cell_html_view(language, cell_model) {
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
             cell_model.parent_model.on_dirty();
         });
+        update_language();
     }
-    create_edit_widget();
+    function find_code_elems(parent) {
+        return parent
+            .find("pre code")
+            .filter(function(i, e) {
+                // things which have defined classes coming from knitr and markdown
+                return e.classList.length > 0;
+            });
+    }
+    function highlight_code() {
+        // highlight R
+        find_code_elems(code_div_).each(function(i, e) {
+            hljs.highlightBlock(e);
+        });
+    }
+    function assign_code(code) {
+        code_div_.empty()
+            .append($('<pre></pre>').append('<code></code>').append(code));
+        highlight_code();
+    }
+    assign_code(cell_model.content());
 
     result_div_ = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
     inner_div.append(result_div_);
@@ -1666,30 +1711,9 @@ function create_cell_html_view(language, cell_model) {
             // There's a list of things that we need to do to the output:
             var uuid = rcloud.deferred_knitr_uuid;
 
-            // FIXME None of these things should be hard-coded.
-            if (cell_model.language() === 'R' && inner_div.find("pre code").length === 0) {
-                result_div_.prepend("<pre><code class='r'>" + cell_model.content() + "</code></pre>");
-            }
 
-            // click on code to edit
-            var code_div = $("code.r,code.py", result_div_);
-            code_div.off('click');
-            if(!shell.is_view_mode()) {
-                // distinguish between a click and a drag
-                // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
-                code_div.on('mousedown', function(e) {
-                    $(this).data('p0', { x: e.pageX, y: e.pageY });
-                }).on('mouseup', function(e) {
-                    var p0 = $(this).data('p0');
-                    if(p0) {
-                        var p1 = { x: e.pageX, y: e.pageY },
-                            d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
-                        if (d < 4) {
-                            result.show_source();
-                        }
-                    }
-                });
-            }
+            // temporary (until we get rid of knitr): delete code from results
+            find_code_elems(result_div_).remove();
 
             // we use the cached version of DPR instead of getting window.devicePixelRatio
             // because it might have changed (by moving the user agent window across monitors)
@@ -1743,16 +1767,6 @@ function create_cell_html_view(language, cell_model) {
                     //     });
                     // });
                 });
-            // highlight R
-            inner_div
-                .find("pre code")
-                .each(function(i, e) {
-                    // only highlight things which have
-                    // defined classes coming from knitr and markdown
-                    if (e.classList.length === 0)
-                        return;
-                    hljs.highlightBlock(e);
-                });
 
             // typeset the math
             if (!_.isUndefined(MathJax))
@@ -1782,11 +1796,11 @@ function create_cell_html_view(language, cell_model) {
         clear_result: function() {
             has_result = false;
             disable(result_button);
-            this.show_source();
         },
         set_readonly: function(readonly) {
             am_read_only_ = readonly;
-            ui_utils.set_ace_readonly(ace_widget_, readonly);
+            if(ace_widget_)
+                ui_utils.set_ace_readonly(ace_widget_, readonly);
             if (readonly) {
                 disable(remove_button);
                 disable(insert_cell_button);
@@ -1814,7 +1828,7 @@ function create_cell_html_view(language, cell_model) {
             insert_button_float.show();
         },
 
-        show_source: function() {
+        edit_source: function() {
             create_edit_widget();
             /*
              * Some explanation for the next poor soul
@@ -1848,7 +1862,7 @@ function create_cell_html_view(language, cell_model) {
             ace_widget_.resize(true);
             set_widget_height();
             ace_widget_.resize(true);
-            disable(source_button);
+            disable(edit_button);
             if(has_result)
                 enable(result_button);
             // enable(hide_button);
@@ -1867,7 +1881,7 @@ function create_cell_html_view(language, cell_model) {
         },
         show_result: function() {
             notebook_cell_div.css({'height': ''});
-            enable(source_button);
+            enable(edit_button);
             disable(result_button);
             disable(split_button);
             // enable(hide_button);
@@ -1882,7 +1896,7 @@ function create_cell_html_view(language, cell_model) {
         },
         hide_all: function() {
             notebook_cell_div.css({'height': ''});
-            enable(source_button);
+            enable(edit_button);
             enable(result_button);
             // disable(hide_button);
             if (!am_read_only_) {
@@ -2057,7 +2071,6 @@ Notebook.create_html_view = function(model, root_div)
             $(cell_view.div()).insertBefore(root_div.children('.notebook-cell')[cell_index]);
             this.sub_views.splice(cell_index, 0, cell_view);
             init_cell_view(cell_view);
-        cell_view.show_source();
             on_rearrange();
             return cell_view;
         },
@@ -3764,7 +3777,7 @@ RCloud.UI.command_prompt = (function() {
             $("#insert-new-cell").click(function() {
                 shell.new_cell("", language_, false);
                 var vs = shell.notebook.view.sub_views;
-                vs[vs.length-1].show_source();
+                vs[vs.length-1].edit_source();
             });
             $("#insert-cell-language").change(function() {
                 var language = $("#insert-cell-language").val();
