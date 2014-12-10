@@ -3086,7 +3086,7 @@ RCloud.session = {
     function binary_upload(upload_ocaps, react) {
         return Promise.promisify(function(file, is_replace, callback) {
             var fr = new FileReader();
-            var chunk_size = 1024*1024;
+            var chunk_size = 1024*128;
             var f_size=file.size;
             var cur_pos=0;
             var bytes_read = 0;
