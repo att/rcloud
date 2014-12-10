@@ -17720,11 +17720,20 @@ define("ace/mode/r", function(require, exports, module)
 
    var Mode = function(suppressHighlighting, doc, session)
    {
+      this.getCompletions = function(state, session, pos, prefix, callback) {
+          rcloud.get_completions(session.getValue(),
+                                 session.getDocument().positionToIndex(pos))
+              .then(function(ret) {
+                  callback(null, ret);
+              });
+      };
+      this.HighlightRules = RHighlightRules;
       if (suppressHighlighting)
          this.$tokenizer = new Tokenizer(new TextHighlightRules().getRules());
       else
          this.$tokenizer = new Tokenizer(new RHighlightRules().getRules());
 
+      this.$highlightRules = new this.HighlightRules();
       this.codeModel = new RCodeModel(doc, this.$tokenizer, null);
       this.foldingRules = this.codeModel;
    };
