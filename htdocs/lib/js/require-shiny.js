@@ -2,11 +2,11 @@ requirejs_config_obj = {
     "baseUrl": "/lib/js",
     waitSeconds: 30,
     paths: {
-        "jquery": "../../shared.R/jquery",
+        "jquery": "../../shared.R/shared/jquery",
         "rcloud_bundle": "../../js/rcloud_bundle",
         "mini": "../../mini",
-        "selectize": "../../shared.R/selectize/js/selectize.min",
-        "datatables": "../../shared.R/datatables/js/jquery.dataTables.min"
+        "selectize": "../../shared.R/shared/selectize/js/selectize.min",
+        "datatables": "../../shared.R/shared/datatables/js/jquery.dataTables.min"
     },
     "shim": {
         datatables: {

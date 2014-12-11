@@ -2,7 +2,24 @@
   textConn <- textConnection(NULL, "w")
   on.exit(close(textConn))
   shiny:::renderPage(ui, textConn, FALSE)
-  gsub('jquery.js', '../disabled.js', gsub('"shared/', '"../../shared.R/', paste(textConnectionValue(textConn), collapse="\n"), fixed=TRUE), fixed=TRUE)
+
+  replaceScript <- gsub('src="', 'src="../../shared.R/', paste(textConnectionValue(textConn), collapse="\n"), fixed=TRUE)
+  replaceLink <- gsub('href="', 'href="../../shared.R/', replaceScript, fixed=TRUE)
+
+  packageVar <- .packages()
+  remove <- c('rcloud.web','rcloud.shiny','rcloud.enviewer','rcloud.viewer','githubgist','rediscc','RCurl','bitops','httr','markdown','knitr','png','Rserve','FastRWeb','Cairo','parallel','rjson','base64enc','stats','graphics','grDevices','utils','datasets','methods','base')
+  packageVar <- packageVar [! packageVar %in% remove]
+  appendVar <- paste(packageVar, collapse = ',')
+
+  jsAppend <- paste('.js&searchPackages=', appendVar, '"', sep="")
+  replaceJs <- gsub('.js"', jsAppend, replaceLink, fixed=TRUE)
+
+  cssAppend <- paste('.css&searchPackages=', appendVar, '"', sep="")
+  replaceCss <- gsub('.css"', cssAppend, replaceJs, fixed=TRUE)
+
+  jqueryAppend <- paste('shared/jquery.js', '&searchPackages=', appendVar, sep="")
+  finalStr <- gsub(jqueryAppend, '../disabled.js', replaceCss, fixed=TRUE)
+  finalStr
 }
 
 rcloud.shinyApp <- function(ui, server, options) {

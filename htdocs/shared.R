@@ -1,11 +1,24 @@
-## FIXME: we need to make this configurable
-search.path <- c("rcloud.support", "shiny")
-
 run <- function(url, query, body, headers) {
   if (is.null(path.info)) stop("missing path in the URL")
-  pex <- strsplit(path.info, "/+")[[1]]
+  splitPath <- strsplit(path.info, "&")[[1]]
+
+  pex <- strsplit(splitPath[1], "/+")[[1]]
+
+  if(!is.na(splitPath[2])){
+    getVal <- strsplit(splitPath[2], "=")[[1]][2]
+    search.path <- strsplit(getVal, ",")[[1]]
+  }
+  else{
+    search.path <- c("rcloud.support", "shiny")
+  }
+
+  if (all(pex != "shared")) {
+      pex <- pex[2:length(pex)]
+  }
+
   if (any(pex == "..")) stop("invalid component in the path URL")
-  base <- paste(c("www", "shared", pex), collapse="/")
+  base <- paste(c("www", pex), collapse="/")
+
   for (pkg in search.path) if(nzchar(fn <- system.file(base, package=pkg))) break
   if (!nzchar(fn) || !file.exists(fn))
     return(list(paste0("ERROR: item '", path.info, "' [", base, "] not found"), "text/html", character(), 404L))
