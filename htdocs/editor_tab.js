@@ -1013,45 +1013,38 @@ var editor = function () {
             add_buttons = adder(appear);
             //information icon
             var info = ui_utils.fa_button('icon-info-sign', 'info', 'info', icon_style, false);
-            var info_content = '';
-            $(info).popover({
-                title: node.name,
-                html: true,
-                content: info_content,
-                container: 'body',
-                placement: 'right',
-                animate: false,
-                delay: {hide: 0}
-            });
-            var popover = $(info).popover();
-            popover.on("show.bs.popover", function(e) {
-                $(popover.data()["bs.popover"].$tip[0]).addClass('popover-offset');
-                $(popover.data()["bs.popover"].$tip[0].childNodes[0]).addClass('no-arrow'); // removing default arrow in popover
-            });
             info.click(function(e) {
+                var thisIcon = this;
+                var info_content = '';
                 if(info_popover_) {
-                    info_popover_.popover('hide');
+                    info_popover_.popover('destroy');
                     info_popover_ = null;
                 }
                 e.preventDefault();
                 e.stopPropagation();
-                var thisPopover = $(this).popover().data()['bs.popover'];
-                info_content = thisPopover.options.content;
-                var thisIcon = this;
-                if(info_content === '')
-                    rcloud.stars.get_notebook_starrer_list(node.gistname).then(function(list) {
-                        if(typeof(list) === 'string')
-                            list = [list];
-                        var starrer_list = '<div><b>Starred by : </b></div>';
-                        $.each(list, function (i, v) {
-                            starrer_list = starrer_list + '<div>' + v + '</div>';
-                        });
-                        info_content = info_content + starrer_list;
-                        thisPopover.options.content = info_content;
-                        $(thisIcon).popover('show');
+                rcloud.stars.get_notebook_starrer_list(node.gistname).then(function(list) {
+                    if(typeof(list) === 'string')
+                        list = [list];
+                    var starrer_list = '<div><b>Starred by : </b></div>';
+                    $.each(list, function (i, v) {
+                        starrer_list = starrer_list + '<div>' + v + '</div>';
                     });
-                if(thisPopover.tip().hasClass('in'))
-                    info_popover_ = $(this);
+                    info_content = info_content + starrer_list;
+                    $(thisIcon).popover({
+                        title: node.name,
+                        html: true,
+                        content: info_content,
+                        container: 'body',
+                        placement: 'right',
+                        animate: false,
+                        delay: {hide: 0}
+                    });
+                    $(thisIcon).popover('show');
+                    var thisPopover = $(thisIcon).popover().data()['bs.popover'].$tip[0];
+                    $(thisPopover).addClass('popover-offset');
+                    $(thisPopover.childNodes[0]).addClass('no-arrow'); // removing default arrow in popover
+                    info_popover_ = $(thisIcon);
+                });
             });
             add_buttons(info);
             if(true) { // all notebooks have history - should it always be accessible?
@@ -1129,7 +1122,7 @@ var editor = function () {
     //for hiding information popover on click outside
     $('body').on('click', function(e) {
         if($(e.target).data('toggle') !== 'popover' && $(e.target).parents('.popover.in').length === 0) {
-            info_popover_ .popover('hide');
+            info_popover_.popover('destroy');
             info_popover_ = null;
         }
     });
@@ -1371,7 +1364,7 @@ var editor = function () {
                         change_folder_friendness(user);
                     if(opts.notebook) {
                         if(opts.make_current)
-                            that.load_callback({version: opts.version,is_change: opts.is_change || false,selroot: 'interests'})(opts.notebook);
+                            that.load_callback({version: opts.version, is_change: opts.is_change || false, selroot: 'interests'})(opts.notebook);
                         else
                             update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
                     }
