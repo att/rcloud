@@ -29,19 +29,29 @@ define("ace/mode/r", function(require, exports, module)
          .TextHighlightRules;
    var RHighlightRules = require("ace/mode/r_highlight_rules").RHighlightRules;
    var RCodeModel = require("ace/mode/r_code_model").RCodeModel;
+   var FoldMode = require("./folding/cstyle").FoldMode;
    var RMatchingBraceOutdent = require("ace/mode/r_matching_brace_outdent").RMatchingBraceOutdent;
    var AutoBraceInsert = require("ace/mode/auto_brace_insert").AutoBraceInsert;
    var unicode = require("ace/unicode");
 
    var Mode = function(suppressHighlighting, doc, session)
    {
+      this.getCompletions = function(state, session, pos, prefix, callback) {
+          rcloud.get_completions('R', session.getValue(),
+                                 session.getDocument().positionToIndex(pos))
+              .then(function(ret) {
+                  callback(null, ret);
+              });
+      };
+      this.HighlightRules = RHighlightRules;
       if (suppressHighlighting)
          this.$tokenizer = new Tokenizer(new TextHighlightRules().getRules());
       else
          this.$tokenizer = new Tokenizer(new RHighlightRules().getRules());
 
+      this.$highlightRules = new this.HighlightRules();
       this.codeModel = new RCodeModel(doc, this.$tokenizer, null);
-      this.foldingRules = this.codeModel;
+      this.foldingRules = new FoldMode();
    };
    oop.inherits(Mode, TextMode);
 

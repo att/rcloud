@@ -308,3 +308,6 @@ get.gist.comments.gitgistcontext  <- function (id, ctx)
   list(ok=TRUE, content=.get.global.json(id, ".comments.json", ctx))
 
 auth.url.gitgistcontext <- function(redirect, ctx) NULL ## no auth provided
+
+get.user.githubcontext  <- function (id, ctx)
+  list(ok=TRUE, content=.get.global.json(id, ".user.json", ctx))
