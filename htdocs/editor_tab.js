@@ -401,6 +401,7 @@ var editor = function () {
         result.create_book_tree_widget(root_data);
         var interests = $tree_.tree('getNodeById', "/interests");
         $tree_.tree('openNode', interests);
+        rclient.post_response();
     }
 
     function load_children(n) {
@@ -453,7 +454,7 @@ var editor = function () {
                     else
                         console.log("notebook metadata for " + book + " has invalid entries: " + JSON.stringify(_.pick(entry, "username","description","last_commit","visible")));
                 }
-            }).then(rclient.post_response())
+            })
             .catch(rclient.post_rejection);
     }
 
