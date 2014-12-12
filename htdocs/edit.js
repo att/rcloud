@@ -27,6 +27,12 @@ function main() {
                         return rcloud.get_version_by_tag(opts.notebook, tag)
                             .then(function(version) {
                                 opts.version = version;
+                                if(version === null) {
+                                    var message = "Tag [" + tag + "] in url is incorrect or doesn't exist. Please click Continue to load the most recent version of the notebook";
+                                    var make_edit_url = ui_utils.url_maker('edit.html');
+                                    RCloud.UI.fatal_dialog(message, "Continue", make_edit_url());
+                                    return Promise.reject(new Error("attempted to load a notebook with tag which does not exist"));
+                                }
                             });
                     });
                 };
