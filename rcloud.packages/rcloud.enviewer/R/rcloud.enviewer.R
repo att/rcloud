@@ -3,6 +3,9 @@ rcloud.enviewer.refresh <- function()
 
 # could be eval but is that unsafe?
 # should this be pushed to rcloud.viewer?
+rcloud.enviewer.display.structure <- function(x)
+  list(command="str", object=x)
+
 rcloud.enviewer.view.dataframe <- function(expr)
   View(get(expr, .GlobalEnv))
 
@@ -13,31 +16,29 @@ rcloud.enviewer.display.double <- function(x)
   signif(x,3)
 
 rcloud.enviewer.display.string <- function(x)
-  paste("'", x, "'", sep="")
+  paste0("'", as.character(x), "'")
 
 rcloud.enviewer.display.value <- function(val) {
-  ## Current values are the vector types "logical", "integer", "double", "complex", "character", "raw" and "list", "NULL", "closure" (function), "special" and "builtin" (basic functions and operators), "environment", "S4" (some S4 objects) and others that are unlikely to be seen at user level ("symbol", "pairlist", "promise", "language", "char", "...", "any", "expression", "externalptr", "bytecode" and "weakref").
-  t <- typeof(val)
-  if(t == 'environment') {
-    t
+   classOfObject <- if (is.numeric(val)) {
+    typeof(val)
+  } else {
+    class(val)
   }
-  else if(t == 'logical' || t == 'integer' || t == 'double' ||
-          t == 'character' || t == 'raw' || t == 'NULL') {
-    disp <- function(t, x)
-      switch(t,
-        double = rcloud.enviewer.display.double(x),
+    disp <- function(classOfObject,x)
+      switch(classOfObject,
         character = rcloud.enviewer.display.string(x),
+        logical = rcloud.enviewer.display.string(x),
         x)
-    if(length(val) > 1) {
-      chop = if(length(val) > 10) val[1:10] else val
-      fmt = disp(t, chop)
-      print = paste(fmt, collapse=' ')
-      if(length(val) > 10) print <- paste(print, '...')
-      type <- paste(t, paste('[1:', length(val), ']', sep=''))
-      list(type=type, value=print)
+      if(length(val) >1){
+        if(is.null(dim(val))){
+          dimensionOfObject <- paste0('[1:', length(val), ']', sep='')  
+        } else {
+           dimensionOfObject <- paste0(dim(val)[1],' x ',dim(val)[2])
+        }
+
+      list(type=classOfObject, value=dimensionOfObject)
     }
-    else list(type=t, value=disp(t, val))
-  }
+    else list(type=classOfObject, value=disp(classOfObject, val))
 }
 
 rcloud.enviewer.display.function <- function(f) {
