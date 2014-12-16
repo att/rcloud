@@ -8,16 +8,14 @@
   prefixList <- shiny:::.globals$resources
 
   if(length(prefixList) > 0){
-    patternStr <- rep(NA, length(prefixList))
-    replacementStr <- rep(NA, length(prefixList))
-    for(j in 1:length(prefixList)){
-        patternVar <- paste('"', names(prefixList[j]), '/', sep="")
-        patternStr[j] <- c(patternVar)
-        splitDirPath <- strsplit(prefixList[[j]]$directoryPath, "/+")[[1]]
-        replacementVar <- paste('"../../shared.R/', splitDirPath[length(splitDirPath)-1], '/', sep="")
-        replacementStr[j] <- c(replacementVar)
-    }
-    shinyHtml <- mapply(gsub, patternStr, replacementStr, shinyHtml)
+    patternStr <- lapply(names(prefixList), function(pn) { paste('"', pn, '/', sep='') })
+    replacementStr <- lapply(prefixList, function(p) {
+        splitDirPath <- strsplit(p$directoryPath, "/+")[[1]]
+        paste('"../../shared.R/', splitDirPath[length(splitDirPath)-1], '/', sep="")
+    })
+    mapply(FUN= function(...) {
+         shinyHtml <<- gsub(...,x=shinyHtml)},
+         pattern=patternStr, replacement=replacementStr)
   }
 
   finalHtml <- gsub('shared/shiny/jquery.js', '../../disabled.js', shinyHtml, fixed=TRUE)

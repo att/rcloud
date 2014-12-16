@@ -1,6 +1,3 @@
-## FIXME: we need to make this configurable
-#search.path <- c("rcloud.support", "shiny")
-
 run <- function(url, query, body, headers) {
   if (is.null(path.info)) stop("missing path in the URL")
   pex <- strsplit(path.info, "/+")[[1]]
