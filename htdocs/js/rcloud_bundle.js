@@ -484,8 +484,8 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.purl_sourceAsync(source);
         };
 
-        rcloud.get_completions = function(text, pos) {
-            return rcloud_ocaps.get_completionsAsync(text, pos)
+        rcloud.get_completions = function(language, text, pos) {
+            return rcloud_ocaps.get_completionsAsync(language, text, pos)
                 .then(function(comps) {
                     if (_.isString(comps))
                         comps = [comps]; // quirk of rserve.js scalar handling
@@ -3142,7 +3142,7 @@ RCloud.language = (function() {
     function binary_upload(upload_ocaps, react) {
         return Promise.promisify(function(file, is_replace, callback) {
             var fr = new FileReader();
-            var chunk_size = 1024*1024;
+            var chunk_size = 1024*128;
             var f_size=file.size;
             var cur_pos=0;
             var bytes_read = 0;
@@ -5325,6 +5325,17 @@ RCloud.UI.settings_frame = (function() {
                     sort: 100,
                     default_value: false,
                     label: "Subscribe To Comments"
+                })
+            });
+            this.add({
+                'show-terse-dates': that.checkbox({
+                    id:"show-terse-dates",
+                    sort: 100,
+                    default_value: true,
+                    label: "Show Terse Version Dates",
+                    set: function(val) {
+                        editor.set_terse_dates(val);
+                    }
                 })
             });
         },

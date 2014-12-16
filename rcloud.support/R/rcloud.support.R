@@ -485,13 +485,10 @@ rcloud.setup.dirs <- function() {
              dir.create(fn, FALSE, TRUE, "0770")
 }
 
-rcloud.get.completions <- function(text, pos) {
-  # from rcompgen.completion
-  utils:::.assignLinebuffer(text)
-  utils:::.assignEnd(pos)
-  utils:::.guessTokenFromLine()
-  utils:::.completeToken()
-  utils:::.CompletionEnv[["comps"]]
+rcloud.get.completions <- function(language, text, pos) {
+  if (!is.null(.session$languages[[language]]) && !is.null(.session$languages[[language]]$complete))
+    .session$languages[[language]]$complete(text, pos)
+  else stop("don't know how to auto-complete language ", language);
 }
 
 rcloud.help <- function(topic) {
@@ -500,7 +497,7 @@ rcloud.help <- function(topic) {
     print(result)
     TRUE
   }
-  else FALSE 
+  else FALSE
 }
 
 ## FIXME: won't work - uses a global file!
