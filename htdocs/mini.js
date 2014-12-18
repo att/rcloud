@@ -32,6 +32,7 @@ function main() {
             var notebook = getURLParameter("notebook"),
                 version = getURLParameter("version");
             var tag = getURLParameter("tag");
+            var versiontotag = false;
             if(!version && tag) {
                 promise = promise.then(function() {
                     return rcloud.get_version_by_tag(notebook, tag)
@@ -39,8 +40,22 @@ function main() {
                             version = v;
                         });
                 });
+            }
+            else if(version && !tag) {
+                promise = promise.then(function () {
+                    return rcloud.get_tag_by_version(notebook, version)
+                        .then(function (t) {
+                            tag = t;
+                            if (tag)
+                                versiontotag = true;
+                        });
+                })
             };
             promise = promise.then(function() {
+                if(versiontotag) {
+                    var opts = {notebook: notebook, version: version, tag: tag};
+                    update_mini_url(opts);
+                }
                 return rcloud.call_notebook(notebook, version).then(function(x) {
                     // FIXME: I'm not sure what's the best way to make this available
                     // in a convenient manner so that notebooks can leverage it ...
@@ -63,5 +78,11 @@ function main() {
                 return false;
         }
     });
+    var make_mini_url = ui_utils.url_maker('mini.html');
+    function update_mini_url(opts) {
+        var url = make_mini_url(opts);
+        window.history.replaceState("rcloud.notebook", null, url);
+        rcloud.api.set_url(url);
+    }
 }
 
