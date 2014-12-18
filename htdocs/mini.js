@@ -32,7 +32,7 @@ function main() {
             var notebook = getURLParameter("notebook"),
                 version = getURLParameter("version");
             var tag = getURLParameter("tag");
-            var versiontotag = false;
+            var version_to_tag = false;
             if(!version && tag) {
                 promise = promise.then(function() {
                     return rcloud.get_version_by_tag(notebook, tag)
@@ -42,17 +42,17 @@ function main() {
                 });
             }
             else if(version && !tag) {
-                promise = promise.then(function () {
+                promise = promise.then(function() {
                     return rcloud.get_tag_by_version(notebook, version)
                         .then(function (t) {
                             tag = t;
-                            if (tag)
-                                versiontotag = true;
+                            if(tag)
+                                version_to_tag = true;
                         });
                 })
             };
             promise = promise.then(function() {
-                if(versiontotag) {
+                if(version_to_tag) {
                     var opts = {notebook: notebook, version: version, tag: tag};
                     update_mini_url(opts);
                 }
