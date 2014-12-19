@@ -1012,22 +1012,22 @@ var editor = function () {
             var appear = $($.el.span({'class': 'notebook-commands appear'}));
             add_buttons = adder(appear);
             //information icon
-            var info = ui_utils.fa_button('icon-info-sign', 'info', 'info', icon_style, false);
+            var info = ui_utils.fa_button('icon-info-sign', 'notebook info', 'info', icon_style, false);
             info.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 var thisIcon = this;
                 var info_content = '';
                 if(info_popover_) {
                     info_popover_.popover('destroy');
                     info_popover_ = null;
                 }
-                e.preventDefault();
-                e.stopPropagation();
                 rcloud.stars.get_notebook_starrer_list(node.gistname).then(function(list) {
                     if(typeof(list) === 'string')
                         list = [list];
-                    var starrer_list = '<div><b>Starred by : </b></div>';
-                    $.each(list, function (i, v) {
-                        starrer_list = starrer_list + '<div>' + v + '</div>';
+                    var starrer_list = '<div class="info-category"><b>Starred by:</b></div>';
+                    list.forEach(function (v) {
+                        starrer_list = starrer_list + '<div class="info-item">' + v + '</div>';
                     });
                     info_content = info_content + starrer_list;
                     $(thisIcon).popover({
@@ -1042,7 +1042,6 @@ var editor = function () {
                     $(thisIcon).popover('show');
                     var thisPopover = $(thisIcon).popover().data()['bs.popover'].$tip[0];
                     $(thisPopover).addClass('popover-offset');
-                    $(thisPopover.childNodes[0]).addClass('no-arrow'); // removing default arrow in popover
                     info_popover_ = $(thisIcon);
                 });
             });
@@ -1355,16 +1354,19 @@ var editor = function () {
                     var entry = get_notebook_info(gistname);
                     if(!entry.description && !opts.notebook) {
                         console.log("attempt to star notebook we have no record of",
-                            node_id('interests', user, gistname));
+                                    node_id('interests', user, gistname));
                         throw new Error("attempt to star notebook we have no record of",
-                            node_id('interests', user, gistname));
+                                        node_id('interests', user, gistname));
                     }
                     add_interest(user, gistname);
                     if(my_friends_[user] === 1)
                         change_folder_friendness(user);
                     if(opts.notebook) {
                         if(opts.make_current)
-                            that.load_callback({version: opts.version, is_change: opts.is_change || false, selroot: 'interests'})(opts.notebook);
+                            that.load_callback({
+                                version: opts.version,
+                                is_change: opts.is_change || false,
+                                selroot: 'interests'})(opts.notebook);
                         else
                             update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
                     }
