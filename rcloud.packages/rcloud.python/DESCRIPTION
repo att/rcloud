@@ -4,6 +4,6 @@ Version: 0.0.1
 Author: Carlos Scheidegger <cscheid@research.att.com>
 Maintainer: Carlos Scheidegger <cscheid@research.att.com>
 Description: Adds Python bindings for RCloud
-Imports: knitr, markdown
+Imports: knitr, rmarkdown
 Suggests: rpython2
 License: MIT
