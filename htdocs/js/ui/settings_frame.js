@@ -27,6 +27,11 @@ RCloud.UI.settings_frame = (function() {
                            $.el.div({id: "settings-scroller", style: "width: 100%; height: 100%; overflow-x: auto"},
                                     $.el.div({id:"settings-body", 'class': 'widget-vsize'})));
         },
+        panel_sizer: function(el) {
+            // fudge it so that it doesn't scroll 4 nothing
+            var sz = RCloud.UI.collapsible_column.default_sizer(el);
+            return {height: sz.height+5, padding: sz.padding};
+        },
         add: function(S) {
             _.extend(options_, S);
         },
