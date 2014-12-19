@@ -303,7 +303,7 @@ start.rcloud.common <- function(...) {
   lang.list <- NULL
   lang.str <- getConf("rcloud.languages")
   if (!is.character(lang.str))
-    lang.str <- ""
+    lang.str <- "rcloud.r"
   for (lang in gsub("^\\s+|\\s+$", "", strsplit(lang.str, ",")[[1]])) {
     d <- getNamespace(lang)[["rcloud.language.support"]]
     if (!is.function(d) && !is.primitive(d))

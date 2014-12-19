@@ -386,8 +386,8 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.purl_sourceAsync(source);
         };
 
-        rcloud.get_completions = function(text, pos) {
-            return rcloud_ocaps.get_completionsAsync(text, pos)
+        rcloud.get_completions = function(language, text, pos) {
+            return rcloud_ocaps.get_completionsAsync(language, text, pos)
                 .then(function(comps) {
                     if (_.isString(comps))
                         comps = [comps]; // quirk of rserve.js scalar handling
