@@ -1128,4 +1128,29 @@ pre > .vt100 {
     border-color: #ccc;
     border-radius: 3px;
 }
-
+.checkbox {
+    padding-left: 2px;
+    margin-top: 0px;
+    margin-bottom: 5px;
+}
+/* switching off default bootstrap input type checkbox*/
+input[type=checkbox] {
+    display: none;
+}
+input[type=checkbox] + span:before {
+    font-family: "FontAwesome";
+    width: 1.2em;
+    display:inline-block;
+}
+input[type=checkbox] + span:before {
+    content: "\f096"; 
+}
+input[type=checkbox]:checked + span:before {
+    content: "\f046"; 
+}
+input[type=checkbox].inverse + span:before {
+    content: "\f0c8"; 
+}
+input[type=checkbox].inverse:checked + span:before {
+    content: "\f14a"; 
+}
