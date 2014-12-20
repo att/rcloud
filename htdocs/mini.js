@@ -1,7 +1,4 @@
 function main() {
-    function getURLParameter(name) {
-        return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
-    }
 
     function getQueryArgs() {
         var r, res = {}, s = location.search;
@@ -16,6 +13,10 @@ function main() {
         debug: false,
         host: location.href.replace(/^http/,"ws").replace(/#.*$/,""),
         on_connect: function(ocaps) {
+            var notebook = ui_utils.getURLParameter("notebook"),
+                version = ui_utils.getURLParameter("version"),
+                tag = ui_utils.getURLParameter("tag");
+
             rcloud = RCloud.create(ocaps.rcloud);
             var promise;
             if (rcloud.authenticated) {
@@ -29,23 +30,9 @@ function main() {
 
             // resolve(rcloud.init_client_side_data()); // what was this for?!?
 
-            var notebook = getURLParameter("notebook"),
-                version = getURLParameter("version");
-            var tag = getURLParameter("tag");
-            if(!version && tag) {
-                promise = promise.then(function() {
-                    return rcloud.get_version_by_tag(notebook, tag)
-                        .then(function(v) {
-                            if(v === null) {
-                                var message = "Tag [" + tag + "] in url is incorrect or doesn't exist. Please click Continue to load the most recent version of the notebook";
-                                var make_edit_url = ui_utils.url_maker('edit.html');
-                                RCloud.UI.fatal_dialog(message, "Continue", make_edit_url());
-                                return Promise.reject(new Error("attempted to load a notebook with tag which does not exist"));
-                            }
-                            version = v;
-                        });
-                });
-            };
+            if(!version && tag)
+                return ui_utils.check_tag_exists('mini.html', promise);
+
             promise = promise.then(function() {
                 return rcloud.call_notebook(notebook, version).then(function(x) {
                     // FIXME: I'm not sure what's the best way to make this available
