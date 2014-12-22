@@ -288,6 +288,8 @@ start.rcloud.common <- function(...) {
   .session$result.prefix.uuid <- generate.uuid()
 
   session.init.rcs()
+  ## scrub sensitive information from the configuration
+  scrubConf(c("rcs.redis.db", "rc.redis.password"))
 
   ## last-minute updates (or custom initialization) to be loaded
   ## NB: it should be really fast since it will cause connect delay
