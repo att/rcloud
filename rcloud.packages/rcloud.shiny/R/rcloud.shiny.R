@@ -18,7 +18,7 @@
          pattern=patternStr, replacement=replacementStr)
   }
 
-  finalHtml <- gsub('shared/shiny/jquery.js', '../../disabled.js', shinyHtml, fixed=TRUE)
+  finalHtml <- gsub('shiny/shared/jquery.js', '../../disabled.js', shinyHtml, fixed=TRUE)
   finalHtml
 }
 
