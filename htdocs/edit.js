@@ -27,7 +27,7 @@ function main() {
                 }
                 if(!opts.version && tag) {
                     promise = promise.then(function() {
-                        return rcloud.get_version_by_tag(notebook, tag)
+                        return rcloud.get_version_by_tag(opts.notebook, tag)
                             .then(function(v) {
                                 if(v === null) {
                                     ui_utils.check_tag_exists('edit.html', opts.notebook);
