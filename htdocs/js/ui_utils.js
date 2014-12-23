@@ -21,9 +21,8 @@ ui_utils.getURLParameter =  function(name){
     return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
 }
 
-ui_utils.check_tag_exists = function(page) {
-    var tag = ui_utils.getURLParameter("tag"),
-        notebook = ui_utils.getURLParameter("notebook");
+ui_utils.check_tag_exists = function(page, notebook) {
+    var tag = ui_utils.getURLParameter("tag");
     var message = "Tag [" + tag + "] in url is incorrect or doesn't exist. Please click Continue to load the most recent version of the notebook";
     var make_edit_url = ui_utils.url_maker(page);
     return RCloud.UI.fatal_dialog(message, "Continue", make_edit_url({notebook: notebook}));
