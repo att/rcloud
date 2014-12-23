@@ -26,10 +26,19 @@ function main() {
                         });
                 }
                 if(!opts.version && tag) {
-                    return ui_utils.check_tag_exists('edit.html', promise);
-                } else {
-                    return promise;
-                }
+                    promise = promise.then(function() {
+                        return rcloud.get_version_by_tag(notebook, tag)
+                            .then(function(v) {
+                                if(v === null) {
+                                    ui_utils.check_tag_exists('edit.html');
+                                    return Promise.reject(new Error("Attempt to load a notebook with tag which does not exist."));
+                                } else {
+                                    opts.version = v;
+                                }
+                            });
+                    });
+                };
+                return promise;
             }
             return undefined;
         }).then(shell.init.bind(shell))
