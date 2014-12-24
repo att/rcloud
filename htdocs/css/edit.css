@@ -732,6 +732,16 @@ li.jqtree-selected .notebook-commands {
 
 /******************************************************************************/
 
+#session-info {
+    max-height : 57px;
+    overflow-y : hidden;
+}
+
+#show-details {
+    cursor: pointer;
+    display : none;
+}
+
 #session-info-panel {
     overflow-y: auto;
     overflow-x: auto;
