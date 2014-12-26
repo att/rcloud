@@ -12,6 +12,8 @@ function ensure_image_has_hash(img)
 function create_markdown_cell_html_view(language) { return function(cell_model) {
     var EXTRA_HEIGHT = 27;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
+    var cell_sequence = $("<div class='cell-sequence'></div>");
+    cell_sequence.html('#' + cell_model.id());
     update_div_id();
     notebook_cell_div.data('rcloud.model', cell_model);
 
@@ -32,6 +34,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     }
     function update_div_id() {
         notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
+        cell_sequence.html('#' + cell_model.id());
     }
     function set_widget_height() {
         notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
@@ -95,6 +98,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
         execute_cell();
     });
     var cell_status = $("<div class='cell-status'></div>");
+    cell_status.append(cell_sequence);
     var button_float = $("<div class='cell-controls'></div>");
     cell_status.append(button_float);
     cell_status.append($("<div style='clear:both;'></div>"));
