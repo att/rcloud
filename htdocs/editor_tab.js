@@ -36,9 +36,7 @@ var editor = function () {
         featured_ = [], // featured users - samples, intros, etc
         invalid_notebooks_ = {},
         current_ = null, // current notebook and version
-        show_terse_dates_ = false, // show terse date option for the user
-        info_popover_ = null; // current opened information popover
-
+        show_terse_dates_ = false; // show terse date option for the user
 
     // view
     var $tree_ = null,
@@ -800,20 +798,20 @@ var editor = function () {
             }
             select_node(node);
         }
-        var p;
+        var p, i_starred = result.i_starred(gistname);
         if(selroot === true)
             selroot = featured_.indexOf(user) >=0 ? 'featured' :
-                my_stars_[gistname] ? 'interests' :
+                i_starred ? 'interests' :
                 my_friends_[user] ? 'friends': 'alls';
-        if(my_stars_[gistname]) {
+        if(i_starred) {
             p = update_tree_entry('interests', user, gistname, entry, true);
             if(selroot==='interests')
                 p.then(open_and_select);
         }
         if(gistname === current_.notebook) {
             if(!_.isUndefined(star_notebook_button_) && !_.isNull(star_notebook_button_))
-                star_notebook_button_.set_state(my_stars_[gistname]);
-            $('#curr-star-count').text(num_stars_[gistname] || 0);
+                star_notebook_button_.set_state(i_starred);
+            $('#curr-star-count').text(result.num_stars(gistname));
         }
         if(my_friends_[user]) {
             p = update_tree_entry('friends', user, gistname, entry, true);
@@ -831,23 +829,9 @@ var editor = function () {
             p.then(open_and_select);
     }
 
-    // hack to fake a hover over a node (or the next one if it's deleted)
-    // because jqTree rebuilds DOM elements and events get lost
-    function fake_hover(node) {
-        var parent = node.parent;
-        var index = $('.notebook-commands.appear', node.element).css('display') !== 'none' ?
-                parent.children.indexOf(node) : undefined;
-        setTimeout(function() {
-            if(index>=0 && index < parent.children.length) {
-                var next = parent.children[index];
-                $(next.element).mouseover();
-            }
-        }, 0);
-    }
-
     function remove_node(node) {
         var parent = node.parent;
-        fake_hover(node);
+        ui_utils.fake_hover(node);
         $tree_.tree('removeNode', node);
         remove_empty_parents(parent);
         if(node.root === 'interests' && node.user !== username_ && parent.children.length === 0)
@@ -948,7 +932,6 @@ var editor = function () {
         return $(display_date_html(ds))[0];
     }
 
-    var icon_style = {'line-height': '90%'};
     function on_create_tree_li(node, $li) {
         $li.css("min-height","15px");
         var element = $li.find('.jqtree-element'),
@@ -966,165 +949,9 @@ var editor = function () {
         }
         if(node.user === username_ && $tree_.tree('isNodeSelected', node))
             RCloud.UI.notebook_title.make_editable(node, $li, true);
-        if(node.gistname && !node.version) {
-            var adder = function(target) {
-                var lst = [];
-                function add(items) {
-                    lst.push(document.createTextNode(String.fromCharCode(160)));
-                    lst.push.apply(lst, arguments);
-                }
-                add.commit = function() {
-                    target.append.apply(target, lst);
-                };
-                return add;
-            };
-            // commands for the right column, always shown
-            var always = $($.el.span({'class': 'notebook-commands-right'}));
-            var add_buttons = adder(always);
-            var star_style = _.extend({'font-size': '80%'}, icon_style);
-            var states = {true: {'class': 'icon-star', title: 'unstar'},
-                          false: {'class': 'icon-star-empty', title: 'star'}};
-            var state = my_stars_[node.gistname] || false;
-            var star_unstar = ui_utils.fa_button(states[state]['class'],
-                                                 function(e) { return states[state].title; },
-                                                 'star',
-                                                 star_style,
-                                                 true);
-            // sigh, ui_utils.twostate_icon should be a mixin or something
-            // ... why does this code exist?
-            star_unstar.click(function(e) {
-                e.preventDefault();
-                e.stopPropagation(); // whatever you do, don't let this event percolate
-                var new_state = !state;
-                result.star_notebook(new_state, {gistname: node.gistname, user: node.user});
-            });
-            star_unstar[0].set_state = function(val) {
-                state = !!val;
-                $(this).find('i').attr('class', states[state].class);
-            };
-            star_unstar.append($.el.sub(String(num_stars_[node.gistname] || 0)));
-            add_buttons(star_unstar);
-
-            add_buttons.commit();
-            right.append(always);
-
-            // commands that appear
-            var appear = $($.el.span({'class': 'notebook-commands appear'}));
-            add_buttons = adder(appear);
-            //information icon
-            var info = ui_utils.fa_button('icon-info-sign', 'notebook info', 'info', icon_style, false);
-            info.click(function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                var thisIcon = this;
-                var info_content = '';
-                if(info_popover_) {
-                    info_popover_.popover('destroy');
-                    info_popover_ = null;
-                }
-                rcloud.stars.get_notebook_starrer_list(node.gistname).then(function(list) {
-                    if(typeof(list) === 'string')
-                        list = [list];
-                    var starrer_list = '<div class="info-category"><b>Starred by:</b></div>';
-                    list.forEach(function (v) {
-                        starrer_list = starrer_list + '<div class="info-item">' + v + '</div>';
-                    });
-                    info_content = info_content + starrer_list;
-                    $(thisIcon).popover({
-                        title: node.name,
-                        html: true,
-                        content: info_content,
-                        container: 'body',
-                        placement: 'right',
-                        animate: false,
-                        delay: {hide: 0}
-                    });
-                    $(thisIcon).popover('show');
-                    var thisPopover = $(thisIcon).popover().data()['bs.popover'].$tip[0];
-                    $(thisPopover).addClass('popover-offset');
-                    info_popover_ = $(thisIcon);
-                });
-            });
-            add_buttons(info);
-            if(true) { // all notebooks have history - should it always be accessible?
-                var disable = current_.notebook===node.gistname && current_.version;
-                var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style, true);
-                // jqtree recreates large portions of the tree whenever anything changes
-                // so far this seems safe but might need revisiting if that improves
-                if(disable)
-                    history.addClass('button-disabled');
-                history.click(function() {
-                    fake_hover(node);
-                    if(!disable) {
-                        result.show_history(node, true);
-                    }
-                    return false;
-                });
-
-                add_buttons(history);
-            }
-            if(node.user===username_) {
-                var make_private = ui_utils.fa_button('icon-eye-close', 'make private', 'private', icon_style, true),
-                    make_public = ui_utils.fa_button('icon-eye-open', 'make public', 'public', icon_style, true);
-                if(node.visible)
-                    make_public.hide();
-                else
-                    make_private.hide();
-                make_private.click(function() {
-                    fake_hover(node);
-                    if(node.user !== username_)
-                        throw new Error("attempt to set visibility on notebook not mine");
-                    else
-                        result.set_notebook_visibility(node.gistname, false);
-                });
-                make_public.click(function() {
-                    fake_hover(node);
-                    if(node.user !== username_)
-                        throw new Error("attempt to set visibility on notebook not mine");
-                    else
-                        result.set_notebook_visibility(node.gistname, true);
-                    return false;
-                });
-                add_buttons(make_private, make_public);
-            }
-            if(node.user===username_) {
-                var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style, true);
-                remove.click(function(e) {
-                   var yn = confirm("Do you want to remove '"+node.full_name+"'?");
-                   if (yn) {
-                       e.stopPropagation();
-                       e.preventDefault();
-                       result.remove_notebook(node.user, node.gistname);
-                       return false;
-                   } else {
-                       return false;
-                   }
-                });
-                add_buttons(remove);
-            }
-            add_buttons.commit();
-            appear.hide();
-            always.append($.el.span({"class": "notebook-commands appear-wrapper"}, appear[0]));
-            $li.find('*:not(ul)').hover(
-                function() {
-                    var notebook_info = get_notebook_info(node.gistname);
-                    $('.notebook-commands.appear', this).show();
-                    $('.notebook-date', this).css('visibility', 'hidden');
-                },
-                function() {
-                    $('.notebook-commands.appear', this).hide();
-                    $('.notebook-date', this).css('visibility', 'visible');
-                });
-        }
+        RCloud.UI.notebook_commands.decorate($li, node, right);
         element.append(right);
     }
-    //for hiding information popover on click outside
-    $('body').on('click', function(e) {
-        if($(e.target).data('toggle') !== 'popover' && $(e.target).parents('.popover.in').length === 0) {
-            info_popover_.popover('destroy');
-            info_popover_ = null;
-        }
-    });
     var make_edit_url = ui_utils.url_maker('edit.html');
 
     function tree_click(event) {
@@ -1254,6 +1081,23 @@ var editor = function () {
                                        'icon-star', 'icon-star-empty');
             return promise;
         },
+        // partial access to state, for add-ons.  (should be explicit model)
+        username: function() {
+            return username_;
+        },
+        num_stars: function(gistname) {
+            return num_stars_[gistname] || 0;
+        },
+        i_starred: function(gistname) {
+            return my_stars_[gistname] || false;
+        },
+        current: function() {
+            return current_;
+        },
+        get_notebook_info: function(gistname) {
+            return get_notebook_info(gistname);
+        },
+        // missing: friends, featured, histories
         fatal_reload: function(message) {
             var url = make_edit_url({notebook: current_.notebook, version: current_.version});
             message = "<p>Sorry, RCloud's internal state has become inconsistent.  Please reload to return to a working state.</p><p>" + message + "</p>";
@@ -1386,7 +1230,7 @@ var editor = function () {
         },
         remove_notebook: function(user, gistname) {
             var that = this;
-            return (!my_stars_[gistname] ? Promise.resolve() :
+            return (!this.i_starred(gistname) ? Promise.resolve() :
                     this.star_notebook(false, {user: user, gistname: gistname, selroot: false}))
                 .then(function() {
                     remove_notebook_info(user, gistname);

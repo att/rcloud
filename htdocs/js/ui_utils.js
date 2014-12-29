@@ -435,7 +435,23 @@ ui_utils.editable = function(elem$, command) {
         });
         break;
     }
+    return elem$;
 };
+
+// hack to fake a hover over a jqTree node (or the next one if it's deleted)
+// because jqTree rebuilds DOM elements and events get lost
+ui_utils.fake_hover = function fake_hover(node) {
+    var parent = node.parent;
+    var index = $('.notebook-commands.appear', node.element).css('display') !== 'none' ?
+            parent.children.indexOf(node) : undefined;
+    ui_utils.on_next_tick(function() {
+        if(index>=0 && index < parent.children.length) {
+            var next = parent.children[index];
+                $(next.element).mouseover();
+        }
+    });
+};
+
 
 ui_utils.on_next_tick = function(f) {
     window.setTimeout(f, 0);
