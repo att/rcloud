@@ -1027,6 +1027,7 @@ var editor = function () {
     var result = {
         init: function(opts) {
             var that = this;
+            RCloud.UI.notebook_commands.load();
             username_ = rcloud.username();
             var promise = load_everything().then(function() {
                 if(opts.notebook) { // notebook specified in url
