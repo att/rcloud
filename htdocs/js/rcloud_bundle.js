@@ -5303,17 +5303,13 @@ RCloud.UI.settings_frame = (function() {
                     set: function(val) {
                         RCloud.UI.command_prompt.show_prompt(val);
                     }
-                })
-            });
-            this.add({
+                }),
                 'subscribe-to-comments': that.checkbox({
                     id:"subscribe-to-comments",
                     sort: 100,
                     default_value: false,
                     label: "Subscribe To Comments"
-                })
-            });
-            this.add({
+                }),
                 'show-terse-dates': that.checkbox({
                     id:"show-terse-dates",
                     sort: 100,
