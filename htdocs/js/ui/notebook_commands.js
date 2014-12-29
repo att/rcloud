@@ -181,13 +181,23 @@ RCloud.UI.notebook_commands = (function() {
                     }
                 }
             });
+            return this;
         },
         add: function(commands) {
             _.extend(commands_, commands);
+            return this;
+        },
+        remove: function(command_name) {
+            delete commands_[command_name];
+            return this;
         },
         load: function() {
             for(var key in commands_)
                 commands_[key] = _.extend(_.extend({}, defaults_), commands_[key]);
+            return this;
+        },
+        icon_style: function() {
+            return icon_style_;
         },
         decorate: function($li, node, right) {
             // commands for the right column, always shown
@@ -219,6 +229,7 @@ RCloud.UI.notebook_commands = (function() {
                     $('.notebook-commands.appear', this).hide();
                     $('.notebook-date', this).css('visibility', 'visible');
                 });
+            return this;
         }
     };
     return result;

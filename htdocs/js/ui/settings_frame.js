@@ -32,9 +32,6 @@ RCloud.UI.settings_frame = (function() {
             var sz = RCloud.UI.collapsible_column.default_sizer(el);
             return {height: sz.height+5, padding: sz.padding};
         },
-        add: function(S) {
-            _.extend(options_, S);
-        },
         checkbox: function(opts) {
             opts = _.extend({
                 sort: 10000,
@@ -94,6 +91,12 @@ RCloud.UI.settings_frame = (function() {
                     }
                 })
             });
+        },
+        add: function(S) {
+            _.extend(options_, S);
+        },
+        remove: function(option_name) {
+            delete options_[option_name];
         },
         load: function() {
             var that = this;
