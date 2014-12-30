@@ -134,16 +134,13 @@ RCloud.UI.notebook_commands = (function() {
             return this;
         },
         add: function(commands) {
-            _.extend(commands_, commands);
+            // extend commands_ by each command in commands, with defaults
+            for(var key in commands)
+                commands_[key] = _.extend(_.extend({}, defaults_), commands[key]);
             return this;
         },
         remove: function(command_name) {
             delete commands_[command_name];
-            return this;
-        },
-        load: function() {
-            for(var key in commands_)
-                commands_[key] = _.extend(_.extend({}, defaults_), commands_[key]);
             return this;
         },
         icon_style: function() {
