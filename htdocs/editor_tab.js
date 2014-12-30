@@ -783,7 +783,7 @@ var editor = function () {
     function update_url(opts) {
         var url = ui_utils.make_url('edit.html', opts);
         window.history.replaceState("rcloud.notebook", null, url);
-        rcloud.api.set_url(url);
+        return rcloud.api.set_url(url);
     }
 
     function update_notebook_view(user, gistname, entry, selroot) {
@@ -1160,7 +1160,7 @@ var editor = function () {
             return rcloud.tag_notebook_version(id, version, tag)
                 .then(function(ret) {
                     if(!ret)
-                        return;
+                        return Promise.resolve(undefined);
                     var history = histories_[id];
                     for(var i=0; i<history.length; ++i) {
                         if (history[i].version === version) {
@@ -1170,10 +1170,12 @@ var editor = function () {
                             history[i].tag = undefined;
                         }
                     }
+                    var promises = [];
                     if(id === current_.notebook && version === current_.version) {
-                        update_url({notebook: id, version: version, tag: tag});
+                        promises.push(update_url({notebook: id, version: version, tag: tag}));
                     }
-                    RCloud.UI.share_button.update_link();
+                    promises.push(RCloud.UI.share_button.update_link());
+                    return Promise.all(promises);
                 });
         },
         star_notebook: function(star, opts) {
@@ -1309,10 +1311,7 @@ var editor = function () {
                 rcloud.config.set_current_notebook(current_);
                 rcloud.config.set_recent_notebook(result.id, (new Date()).toString());
 
-                promises.push(
-                    rcloud.get_notebook_property(result.id, "view-type")
-                        .then(function(type) { RCloud.UI.share_button.type(type); }));
-                RCloud.UI.share_button.update_link();
+                promises.push(RCloud.UI.share_button.update_link());
 
                 /*
                 // disabling inter-notebook navigation for now - concurrency issues
@@ -1323,7 +1322,7 @@ var editor = function () {
                      window.history.replaceState)
                     .bind(window.history)
                  */
-                update_url({notebook: result.id, version: options.version, tag:tag});
+                promises.push(update_url({notebook: result.id, version: options.version, tag:tag}));
 
                 var history;
                 // when loading an old version you get truncated history
