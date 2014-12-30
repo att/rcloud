@@ -4215,7 +4215,6 @@ RCloud.UI.middle_column = (function() {
     return result;
 }());
 RCloud.UI.notebook_commands = (function() {
-    var info_popover_ = null; // current opened information popover
     var icon_style_ = {'line-height': '90%'};
     var star_style_ = _.extend({'font-size': '80%'}, icon_style_);
     var star_states_ = {true: {'class': 'icon-star', title: 'unstar'},
@@ -4244,15 +4243,6 @@ RCloud.UI.notebook_commands = (function() {
         });
     }
 
-    //for hiding information popover on click outside
-    $('body').on('click', function(e) {
-        if(info_popover_ &&
-           $(e.target).data('toggle') !== 'popover' &&
-           $(e.target).parents('.popover.in').length === 0) {
-            info_popover_.popover('destroy');
-            info_popover_ = null;
-        }
-    });
     var result = {
         init: function() {
             this.add({
@@ -4280,46 +4270,6 @@ RCloud.UI.notebook_commands = (function() {
                         };
                         star_unstar.append($.el.sub(String(editor.num_stars(node.gistname))));
                         return star_unstar;
-                    }
-                },
-                notebook_info: {
-                    section: 'appear',
-                    sort: 1000,
-                    create: function(node) {
-                        var info = ui_utils.fa_button('icon-info-sign', 'notebook info', 'info', icon_style_, false);
-                        info.click(function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            var thisIcon = this;
-                            var info_content = '';
-                            if(info_popover_) {
-                                info_popover_.popover('destroy');
-                                info_popover_ = null;
-                            }
-                            rcloud.stars.get_notebook_starrer_list(node.gistname).then(function(list) {
-                                if(typeof(list) === 'string')
-                                    list = [list];
-                                var starrer_list = '<div class="info-category"><b>Starred by:</b></div>';
-                                list.forEach(function (v) {
-                                    starrer_list = starrer_list + '<div class="info-item">' + v + '</div>';
-                                });
-                                info_content = info_content + starrer_list;
-                                $(thisIcon).popover({
-                                    title: node.name,
-                                    html: true,
-                                    content: info_content,
-                                    container: 'body',
-                                    placement: 'right',
-                                    animate: false,
-                                    delay: {hide: 0}
-                                });
-                                $(thisIcon).popover('show');
-                                var thisPopover = $(thisIcon).popover().data()['bs.popover'].$tip[0];
-                                $(thisPopover).addClass('popover-offset');
-                                info_popover_ = $(thisIcon);
-                            });
-                        });
-                        return info;
                     }
                 },
                 history: {
@@ -4397,13 +4347,23 @@ RCloud.UI.notebook_commands = (function() {
                     }
                 }
             });
+            return this;
         },
         add: function(commands) {
             _.extend(commands_, commands);
+            return this;
+        },
+        remove: function(command_name) {
+            delete commands_[command_name];
+            return this;
         },
         load: function() {
             for(var key in commands_)
                 commands_[key] = _.extend(_.extend({}, defaults_), commands_[key]);
+            return this;
+        },
+        icon_style: function() {
+            return icon_style_;
         },
         decorate: function($li, node, right) {
             // commands for the right column, always shown
@@ -4435,6 +4395,7 @@ RCloud.UI.notebook_commands = (function() {
                     $('.notebook-commands.appear', this).hide();
                     $('.notebook-date', this).css('visibility', 'visible');
                 });
+            return this;
         }
     };
     return result;
@@ -4635,9 +4596,6 @@ RCloud.UI.panel_loader = (function() {
     }
 
     return {
-        add: function(P) {
-            _.extend(panels_, P);
-        },
         init: function() {
             // built-in panels
             this.add({
@@ -4715,6 +4673,12 @@ RCloud.UI.panel_loader = (function() {
                     panel: RCloud.UI.session_pane
                 }
             });
+        },
+        add: function(P) {
+            _.extend(panels_, P);
+        },
+        remove: function(panel_name) {
+            delete panels_[panel_name];
         },
         load_snippet: function(id) {
             // embed html snippets in edit.html as "html scripts"
@@ -5500,9 +5464,6 @@ RCloud.UI.settings_frame = (function() {
             var sz = RCloud.UI.collapsible_column.default_sizer(el);
             return {height: sz.height+5, padding: sz.padding};
         },
-        add: function(S) {
-            _.extend(options_, S);
-        },
         checkbox: function(opts) {
             opts = _.extend({
                 sort: 10000,
@@ -5562,6 +5523,12 @@ RCloud.UI.settings_frame = (function() {
                     }
                 })
             });
+        },
+        add: function(S) {
+            _.extend(options_, S);
+        },
+        remove: function(option_name) {
+            delete options_[option_name];
         },
         load: function() {
             var that = this;
