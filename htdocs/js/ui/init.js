@@ -86,8 +86,13 @@ RCloud.UI.init = function() {
 
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
+
+    // these inits do default setup.  then add-ons modify that setup.
+    // then, somewhere, load gets called and they actually fire up
+    // (that last step is not so well defined so far)
     RCloud.UI.share_button.init();
     RCloud.UI.notebook_commands.init();
+    RCloud.UI.panel_loader.init();
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
