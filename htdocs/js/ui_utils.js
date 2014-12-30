@@ -6,10 +6,10 @@ ui_utils.url_maker = function(page) {
         var url = window.location.protocol + '//' + window.location.host + '/' + page;
         if(opts.notebook) {
             url += '?notebook=' + opts.notebook;
-            if(opts.version && !opts.tag)
-                url = url + '&version='+opts.version;
-            if(opts.tag && opts.version)
-                url = url + '&tag='+opts.tag;
+            if(opts.tag)
+                url += '&tag='+opts.tag;
+            else if(opts.version)
+                url += '&version='+opts.version;
         }
         else if(opts.new_notebook)
             url += '?new_notebook=true';
