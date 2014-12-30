@@ -781,7 +781,7 @@ var editor = function () {
     }
 
     function update_url(opts) {
-        var url = make_edit_url(opts);
+        var url = ui_utils.make_url('edit.html', opts);
         window.history.replaceState("rcloud.notebook", null, url);
         rcloud.api.set_url(url);
     }
@@ -952,7 +952,6 @@ var editor = function () {
         RCloud.UI.notebook_commands.decorate($li, node, right);
         element.append(right);
     }
-    var make_edit_url = ui_utils.url_maker('edit.html');
 
     function tree_click(event) {
         if(event.node.id === 'showmore')
@@ -1035,7 +1034,7 @@ var editor = function () {
                             var message = "Could not open notebook " + opts.notebook;
                             if(opts.version)
                                 message += " (version " + opts.version + ")";
-                            RCloud.UI.fatal_dialog(message, "Continue", make_edit_url());
+                            RCloud.UI.fatal_dialog(message, "Continue", ui_utils.make_url('edit.html'));
                             throw xep;
                         });
                 } else if(!opts.new_notebook && current_.notebook) {
@@ -1055,7 +1054,7 @@ var editor = function () {
                 e.preventDefault();
                 e.stopPropagation();
                 if(e.metaKey || e.ctrlKey) {
-                    var url = make_edit_url({new_notebook: true});
+                    var url = ui_utils.make_url('edit.html', {new_notebook: true});
                     window.open(url, "_blank");
                 }
                 else
@@ -1099,7 +1098,7 @@ var editor = function () {
         },
         // missing: friends, featured, histories
         fatal_reload: function(message) {
-            var url = make_edit_url({notebook: current_.notebook, version: current_.version});
+            var url = ui_utils.make_url('edit.html', {notebook: current_.notebook, version: current_.version});
             message = "<p>Sorry, RCloud's internal state has become inconsistent.  Please reload to return to a working state.</p><p>" + message + "</p>";
             RCloud.UI.fatal_dialog(message, "Reload", url);
         },
@@ -1134,7 +1133,7 @@ var editor = function () {
         open_notebook: function(gistname, version, selroot, new_window) {
             // really just load_notebook except possibly in a new window
             if(new_window) {
-                var url = make_edit_url({notebook: gistname, version: version});
+                var url = ui_utils.make_url('edit.html', {notebook: gistname, version: version});
                 window.open(url, "_blank");
             }
             else

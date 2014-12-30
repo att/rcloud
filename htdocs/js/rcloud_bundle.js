@@ -604,21 +604,28 @@ RCloud.create = function(rcloud_ocaps) {
 };
 var ui_utils = {};
 
-ui_utils.url_maker = function(page) {
-    return function(opts) {
-        opts = opts || {};
-        var url = window.location.protocol + '//' + window.location.host + '/' + page;
+ui_utils.make_url = function(page, opts) {
+    opts = opts || {};
+    var url = window.location.protocol + '//' + window.location.host + '/' + page;
+    if(opts.do_path) {
+        if(opts.notebook) {
+            url += '/' + opts.notebook;
+            // tags currently not supported for notebook.R & the like
+            url += '/' + opts.version;
+        }
+    }
+    else {
         if(opts.notebook) {
             url += '?notebook=' + opts.notebook;
-            if(opts.version && !opts.tag)
-                url = url + '&version='+opts.version;
-            if(opts.tag && opts.version)
-                url = url + '&tag='+opts.tag;
+            if(opts.tag)
+                url += '&tag=' + opts.tag;
+            else if(opts.version)
+                url += '&version=' + opts.version;
         }
         else if(opts.new_notebook)
             url += '?new_notebook=true';
-        return url;
-    };
+    }
+    return url;
 };
 
 ui_utils.disconnection_error = function(msg, label) {
@@ -4350,16 +4357,13 @@ RCloud.UI.notebook_commands = (function() {
             return this;
         },
         add: function(commands) {
-            _.extend(commands_, commands);
+            // extend commands_ by each command in commands, with defaults
+            for(var key in commands)
+                commands_[key] = _.extend(_.extend({}, defaults_), commands[key]);
             return this;
         },
         remove: function(command_name) {
             delete commands_[command_name];
-            return this;
-        },
-        load: function() {
-            for(var key in commands_)
-                commands_[key] = _.extend(_.extend({}, defaults_), commands_[key]);
             return this;
         },
         icon_style: function() {
@@ -4476,7 +4480,8 @@ RCloud.UI.notebook_title = (function() {
             if(fork_of) {
                 var owner = fork_of.owner ? fork_of.owner : fork_of.user;
                 var fork_desc = owner.login+ " / " + fork_of.description;
-                var url = ui_utils.url_maker(shell.is_view_mode()?'view.html':'edit.html')({notebook: fork_of.id});
+                var url = ui_utils.make_url(shell.is_view_mode() ? 'view.html' : 'edit.html',
+                                            {notebook: fork_of.id});
                 $("#forked-from-desc").html("forked from <a href='" + url + "'>" + fork_desc + "</a>");
             }
             else
@@ -5251,8 +5256,7 @@ return {
                             }
                         }
                         var togid = i + "more";
-                        var make_edit_url = ui_utils.url_maker('edit.html');
-                        var url = make_edit_url({notebook: notebook_id});
+                        var url = ui_utils.make_url('edit.html', {notebook: notebook_id});
                         if(parts_table !== "") {
                             if(nooflines > 10) {
                                 parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div>" +

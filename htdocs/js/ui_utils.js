@@ -1,20 +1,27 @@
 var ui_utils = {};
 
-ui_utils.url_maker = function(page) {
-    return function(opts) {
-        opts = opts || {};
-        var url = window.location.protocol + '//' + window.location.host + '/' + page;
+ui_utils.make_url = function(page, opts) {
+    opts = opts || {};
+    var url = window.location.protocol + '//' + window.location.host + '/' + page;
+    if(opts.do_path) {
+        if(opts.notebook) {
+            url += '/' + opts.notebook;
+            // tags currently not supported for notebook.R & the like
+            url += '/' + opts.version;
+        }
+    }
+    else {
         if(opts.notebook) {
             url += '?notebook=' + opts.notebook;
             if(opts.tag)
-                url += '&tag='+opts.tag;
+                url += '&tag=' + opts.tag;
             else if(opts.version)
-                url += '&version='+opts.version;
+                url += '&version=' + opts.version;
         }
         else if(opts.new_notebook)
             url += '?new_notebook=true';
-        return url;
-    };
+    }
+    return url;
 };
 
 ui_utils.disconnection_error = function(msg, label) {
