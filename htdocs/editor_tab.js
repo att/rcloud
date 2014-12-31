@@ -944,9 +944,8 @@ var editor = function () {
             title.addClass('history');
         var right = $($.el.span({'class': 'notebook-right'}));
         if(node.last_commit) {
-            right.append($.el.span({'id': 'date',
-                                            'class': 'notebook-date'},
-                                           display_date(node.last_commit)));
+            right.append($.el.span({'class': 'notebook-date'},
+                                   display_date(node.last_commit)));
         }
         if(node.user === username_ && $tree_.tree('isNodeSelected', node))
             RCloud.UI.notebook_title.make_editable(node, $li, true);

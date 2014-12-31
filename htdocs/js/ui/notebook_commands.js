@@ -5,6 +5,7 @@ RCloud.UI.notebook_commands = (function() {
                         false: {'class': 'icon-star-empty', title: 'star'}};
 
     var commands_ = {};
+    var always_commands_, appear_commands_;
     var defaults_ = {
         condition0: function(node) {
             return node.gistname && !node.version;
@@ -17,14 +18,17 @@ RCloud.UI.notebook_commands = (function() {
     function add_commands(node, span, commands) {
         commands.sort(function(a, b) { return a.sort - b.sort; });
         commands.forEach(function(command) {
-            if(!_.every(['condition0', 'condition1', 'condition2'],
-                      function(c) {
-                          return !command[c] || command[c](node);
-                      }))
-                return;
             span.append(document.createTextNode(String.fromCharCode(160)));
             span.append(command.create(node));
         });
+    }
+
+    function condition_pred(node) {
+        return function(command) {
+            return _.every(['condition0', 'condition1', 'condition2'], function(c) {
+                return !command[c] || command[c](node);
+            });
+        };
     }
 
     var result = {
@@ -137,6 +141,14 @@ RCloud.UI.notebook_commands = (function() {
             // extend commands_ by each command in commands, with defaults
             for(var key in commands)
                 commands_[key] = _.extend(_.extend({}, defaults_), commands[key]);
+
+            // update the lists of commands (will be applied lots)
+            always_commands_ = _.filter(commands_, function(command) {
+                return command.section === 'always';
+            });
+            appear_commands_ = _.filter(commands_, function(command) {
+                return command.section === 'appear';
+            });
             return this;
         },
         remove: function(command_name) {
@@ -147,34 +159,35 @@ RCloud.UI.notebook_commands = (function() {
             return icon_style_;
         },
         decorate: function($li, node, right) {
+            var predicate = condition_pred(node);
             // commands for the right column, always shown
-            var always = $($.el.span({'class': 'notebook-commands-right'}));
-            var always_commands = _.filter(commands_, function(command) {
-                return command.section === 'always';
-            });
-            add_commands(node, always, always_commands);
-            right.append(always);
+            var always_commands = always_commands_.filter(predicate);
+            if(always_commands.length) {
+                var always = $($.el.span({'class': 'notebook-commands-right'}));
+                add_commands(node, always, always_commands);
+                right.append(always);
+            }
 
             // commands that appear
-            var appear = $($.el.span({'class': 'notebook-commands appear'}));
-            var appear_commands = _.filter(commands_, function(command) {
-                return command.section === 'appear';
-            });
-            add_commands(node, appear, appear_commands);
-            right.append(appear);
-
-            appear.hide();
-            always.append($.el.span({"class": "notebook-commands appear-wrapper"}, appear[0]));
+            var appear_commands = appear_commands_.filter(predicate);
+            if(appear_commands.length) {
+                var appear = $($.el.span({'class': 'notebook-commands appear'}));
+                add_commands(node, appear, appear_commands);
+                right.append(appear);
+                right.find('.notebook-date').toggleClass('disappear', true);
+                appear.hide();
+                right.append($.el.span({"class": "notebook-commands appear-wrapper"}, appear[0]));
+            }
 
             $li.find('*:not(ul)').hover(
                 function() {
                     var notebook_info = editor.get_notebook_info(node.gistname);
                     $('.notebook-commands.appear', this).show();
-                    $('.notebook-date', this).css('visibility', 'hidden');
+                    $('.notebook-date.disappear', this).css('visibility', 'hidden');
                 },
                 function() {
                     $('.notebook-commands.appear', this).hide();
-                    $('.notebook-date', this).css('visibility', 'visible');
+                    $('.notebook-date.disappear', this).css('visibility', 'visible');
                 });
             return this;
         }
