@@ -12,23 +12,11 @@ RCloud.UI.init = function() {
         editor.revert_notebook(is_mine, gistname, version);
     });
 
-    $("#import-notebooks").click(function() {
-        shell.import_notebooks();
-    });
     var saveb = $("#save-notebook");
     saveb.click(function() {
         shell.save_notebook();
     });
     shell.notebook.controller.save_button(saveb);
-    $('#export-notebook-file').click(function() {
-        shell.export_notebook_file();
-    });
-    $('#export-notebook-as-r').click(function() {
-        shell.export_notebook_as_r_file();
-    });
-    $('#import-notebook-file').click(function() {
-        shell.import_notebook_file();
-    });
 
     $("#rcloud-logout").click(function() {
         // let the server-side script handle this so it can
@@ -87,6 +75,9 @@ RCloud.UI.init = function() {
     RCloud.UI.share_button.init();
     RCloud.UI.notebook_commands.init();
     RCloud.UI.panel_loader.init();
+
+    // adds to advanced menu
+    RCloud.UI.import_export.init();
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
