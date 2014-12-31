@@ -40,7 +40,6 @@ var editor = function () {
 
     // view
     var $tree_ = null,
-        publish_notebook_checkbox_ = null,
         star_notebook_button_ = null;
 
     // work around oddities of rserve.js
@@ -1060,19 +1059,6 @@ var editor = function () {
                 else
                     that.new_notebook();
             });
-            function publish_success(gistname, un) {
-                return function(val) {
-                    if(!val)
-                        console.log("Failed to " + (un ? "un" : "") + "publish notebook " + gistname);
-                };
-            }
-            publish_notebook_checkbox_ = ui_utils.checkbox_menu_item($("#publish-notebook"),
-               function() {
-                   rcloud.publish_notebook(current_.notebook).then(publish_success(current_.notebook, false));
-               },
-               function() {
-                   rcloud.unpublish_notebook(current_.notebook).then(publish_success(current_.notebook, true));
-               });
             var snf = result.star_notebook;
             star_notebook_button_ =
                 ui_utils.twostate_icon($("#star-notebook"),
@@ -1341,8 +1327,8 @@ var editor = function () {
 
                 promises.push(RCloud.UI.comments_frame.display_comments());
                 promises.push(rcloud.is_notebook_published(result.id).then(function(p) {
-                    publish_notebook_checkbox_.set_state(p);
-                    publish_notebook_checkbox_.enable(result.user.login === username_);
+                    RCloud.UI.advanced_menu.check('publish_notebook', p);
+                    RCloud.UI.advanced_menu.enable('publish_notebook', result.user.login === username_);
                 }));
                 return Promise.all(promises).return(result);
             };

@@ -11,14 +11,6 @@ RCloud.UI.init = function() {
         var version = shell.version();
         editor.revert_notebook(is_mine, gistname, version);
     });
-    $("#open-in-github").click(function() {
-        window.open(shell.github_url(), "_blank");
-    });
-    $("#open-from-github").click(function() {
-        var result = prompt("Enter notebook ID or github URL:");
-        if(result !== null)
-            shell.open_from_github(result);
-    });
 
     $("#import-notebooks").click(function() {
         shell.import_notebooks();
@@ -83,6 +75,8 @@ RCloud.UI.init = function() {
         shell.save_notebook();
         return true;
     });
+
+    RCloud.UI.advanced_menu.init();
 
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here

@@ -246,7 +246,7 @@ ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
     var base_enable = ret.enable;
     ret.enable = function(val) {
         // bootstrap menu items go in in an <li /> that takes the disabled class
-        $("#publish-notebook").parent().toggleClass('disabled', !val);
+        item.parent().toggleClass('disabled', !val);
         base_enable(val);
     };
     return ret;

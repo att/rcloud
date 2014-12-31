@@ -27,6 +27,7 @@ rcloud_bundle.js: \
 	language.js \
 	upload_utils.js \
 	ui/_begin.js \
+        ui/advanced_menu.js \
 	ui/column.js \
 	ui/column_sizer.js \
 	ui/command_prompt.js \
