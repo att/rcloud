@@ -1,11 +1,22 @@
 #!/bin/sh
 set +x
 
-if [ "$1" = "--all" ]; then
-    BUILD_PACKAGES=1
-    shift
-fi
+PACKAGE_DIRS="internal rcloud.packages"
+BREAK=0
 
+while [ "$1" != "" ]; do
+    if [ "$1" = "--base" ]; then
+        PACKAGE_DIRS="internal"
+    elif [ "$1" = "--core" ]; then
+        # the default
+        PACKAGE_DIRS="internal rcloud.packages"
+    elif [ "$1" = "--all" ]; then
+        PACKAGE_DIRS="internal rcloud.packages packages"
+    elif [ "$1" = "--break" ]; then
+        BREAK=1
+    fi
+    shift
+done
 
 if [ ! -e rcloud.support/DESCRIPTION ]; then
     if [ -n "$ROOT" ]; then
@@ -43,16 +54,17 @@ fi
 export RCS_SILENCE_LOADCHECK=TRUE
 
 # build internal packages (not in git) & rcloud.packages
-if [ -n "$BUILD_PACKAGES" ]; then
-    for dir in internal rcloud.packages packages; do
-        if [ -e $dir ]; then
-            for pkg in `ls $dir/*/DESCRIPTION 2>/dev/null | sed -e 's:/DESCRIPTION::'`; do
-                echo $pkg
-	        scripts/build_package.sh $pkg || (echo;echo;echo; echo package $pkg FAILED to build!;echo;echo)
-            done
-        fi
-    done
-fi
+for dir in $PACKAGE_DIRS; do
+    if [ -e $dir ]; then
+        for pkg in `ls $dir/*/DESCRIPTION 2>/dev/null | sed -e 's:/DESCRIPTION::'`; do
+            echo $pkg
+	    if ! scripts/build_package.sh $pkg; then
+                echo;echo;echo; echo package $pkg FAILED to build!;echo;echo
+                [ $BREAK == 0 ] || exit 1
+            fi
+        done
+    fi
+done
 
 scripts/build_package.sh rcloud.client || exit 1
 scripts/build_package.sh rcloud.support || exit 1
