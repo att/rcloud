@@ -593,7 +593,7 @@ var editor = function () {
                 if(diff <= 60*1000 && hour_same && min_same && show_terse_dates_)
                     return null;
                 else
-                    return format_date_time_stamp(d1, diff, isDateSame);
+                    return format_date_time_stamp(d1, diff, isDateSame, true);
             }
 
             function display_date_for_entry(i) {
@@ -903,13 +903,15 @@ var editor = function () {
         }
     }
 
-    function format_date_time_stamp(date, diff, isDateSame) {
+    function format_date_time_stamp(date, diff, isDateSame, for_version) {
         function pad(n) { return n<10 ? '0'+n : n; }
         var now = new Date();
         var time_part = '<span class="notebook-time">' + date.getHours() + ':' + pad(date.getMinutes()) + '</span>';
         var date_part = (date.getMonth()+1) + '/' + date.getDate();
         var year_part = date.getFullYear().toString().substr(2,2);
-        if(date.getFullYear() === now.getFullYear())
+        if(diff < 24*60*60*1000 && isDateSame && show_terse_dates_ && for_version)
+            return time_part;
+        else if(date.getFullYear() === now.getFullYear())
             return '<span>' + date_part + ' ' + time_part + '</span>';
         else
             return '<span>' + date_part + '/' + year_part + ' ' + time_part + '</span>';
@@ -923,7 +925,7 @@ var editor = function () {
         var date = new Date(ds);
         var now = new Date();
         var diff = now - date;
-        return format_date_time_stamp(date, diff, true); //Third parameter is true by default as the date comparison is not required here
+        return format_date_time_stamp(date, diff, true, false);
     }
 
     function display_date(ds) {
