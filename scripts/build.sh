@@ -5,16 +5,13 @@ PACKAGE_DIRS="internal rcloud.packages"
 BREAK=0
 
 while [ "$1" != "" ]; do
-    if [ "$1" = "--base" ]; then
-        PACKAGE_DIRS="internal"
-    elif [ "$1" = "--core" ]; then
-        # the default
-        PACKAGE_DIRS="internal rcloud.packages"
-    elif [ "$1" = "--all" ]; then
-        PACKAGE_DIRS="internal rcloud.packages packages"
-    elif [ "$1" = "--break" ]; then
-        BREAK=1
-    fi
+    case $1 in
+        --base) PACKAGE_DIRS="internal" ;;
+        --core) PACKAGE_DIRS="internal rcloud.packages" ;; # the default
+        --all) PACKAGE_DIRS="internal rcloud.packages packages" ;;
+        --break) BREAK=1 ;;
+        *) echo "unknown option" $1 && exit 1 ;;
+    esac
     shift
 done
 
