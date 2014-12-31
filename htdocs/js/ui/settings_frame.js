@@ -51,7 +51,7 @@ RCloud.UI.settings_frame = (function() {
                     var checkboxdiv = $($.el.div({class: 'checkbox'}, label));
                     $(check).change(function() {
                         var val = $(this).prop('checked');
-                        on_change(val, this.id);
+                        on_change(val);
                         opts.set(val);
                     });
                     return checkboxdiv;
@@ -67,7 +67,6 @@ RCloud.UI.settings_frame = (function() {
             var that = this;
             this.add({
                 'show-command-prompt': that.checkbox({
-                    id:"show-command-prompt",
                     sort: 100,
                     default_value: true,
                     label: "Show Command Prompt",
@@ -76,13 +75,11 @@ RCloud.UI.settings_frame = (function() {
                     }
                 }),
                 'subscribe-to-comments': that.checkbox({
-                    id:"subscribe-to-comments",
                     sort: 100,
                     default_value: false,
                     label: "Subscribe To Comments"
                 }),
                 'show-terse-dates': that.checkbox({
-                    id:"show-terse-dates",
                     sort: 100,
                     default_value: true,
                     label: "Show Terse Version Dates",
@@ -101,14 +98,14 @@ RCloud.UI.settings_frame = (function() {
         load: function() {
             var that = this;
             var sort_controls = [];
-            for(var name in options_) {
+            _.keys(options_).forEach(function(name) {
                 var option = options_[name];
-                controls_[name] = option.create_control(function(value,name) {
+                controls_[name] = option.create_control(function(value) {
                     if(!now_setting_[name])
                         rcloud.config.set_user_option(name, value);
                 });
                 sort_controls.push({sort: option.sort, control: controls_[name]});
-            }
+            });
             sort_controls = sort_controls.sort(function(a,b) { return a.sort - b.sort; });
             var body = $('#settings-body');
             for(var i=0; i<sort_controls.length; ++i)
