@@ -35,15 +35,15 @@
     <script type="text/javascript" data-main="/lib/js/require-edit.js" src="/lib/js/require.js"></script>
   </head>
 <body style="overflow:hidden">
-<div class="navbar navbar-inverse navbar-fixed-top">
-  <div>
+<nav class="navbar navbar-inverse navbar-fixed-top">
+  <div class="container-fluid">
     <!--div class="container"-->
-      <div class="navbar-header">
-        <a class="navbar-brand" href="#">RCloud</a>
-      </div>
-      <div class="nav-collapse">
-        <ul class="nav navbar-nav">
-          <li><span><a href="#" id="share-link" title="Shareable Link" class="btn btn-link navbar-btn" style="text-decoration:none; padding-right: 0px" target="_blank"><i class="icon-share"></i></a>
+    <div class="collapse navbar-collapse" id="navbar-title">
+      <ul class="nav navbar-nav" style="width: 85%">
+        <li>
+          <a class="navbar-brand" href="#">RCloud</a>
+        </li>
+        <li><span><a href="#" id="share-link" title="Shareable Link" class="btn btn-link navbar-btn" style="text-decoration:none; padding-right: 0px" target="_blank"><i class="icon-share"></i></a>
               <span class="dropdown" style="position:relative; margin-left: -2px; padding-right: 12px">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown" id="view-mode"><b class="caret"></b></a>
                 <ul class="dropdown-menu view-menu" id="view-type">
@@ -54,36 +54,36 @@
                 </ul>
               </span>
           </span></li> <!-- the span breaks the damn bootstrap li > a before .btn business-->
-          <li><button id="star-notebook" title="Add to Interests" type="button" class="btn btn-link navbar-btn" style="padding-left: 3px"><i class="icon-star-empty"></i><sub><span id="curr-star-count" /></sub></button></li>
-          <li><button id="fork-notebook" title="Fork" type="button" class="btn btn-link navbar-btn"><i class="icon-code-fork"></i></button></li>
-          <li><button id="save-notebook" title="Save" type="button" class="btn btn-link navbar-btn disabled" style="display:none;"><i class="icon-save"></i></button></li>
-          <li><button id="revert-notebook" title="Revert" type="button" class="btn btn-link navbar-btn" style="display:none;"><i class="icon-undo"></i></button></li>
-          <li><button id="run-notebook" title="Run All" type="button" class="btn btn-link navbar-btn"><i class="icon-play"></i></button></li>
-          <li><a href="#"><span id="notebook-author"></span><span id="author-title-dash" style="display:none;">&nbsp;&ndash;&nbsp;</span><span id="rename-notebook" title="Change Title" style="display:none">[<span id="notebook-title"></span>]</a></span><small id="forked-from-desc"></small></li>
-          <li><a href="#" id="readonly-notebook" style="display:none;">(read-only)</a></li>
-          <li><a href="#"><span id="loading"><img id="loading-animation" src="/img/processing.gif" style="height: 20px;width:20px;margin:0"></img></span></a></li>
-        </ul>
-        <ul class="nav navbar-nav navbar-right">
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Advanced <b class="caret"></b></a>
-            <ul class="dropdown-menu" id="advanced-menu">
-              <li><a href="#" id="open-in-github">Open in GitHub</a></li>
-              <li><a href="#" id="open-from-github">Load Notebook by ID</a></li>
-              <li><a href="#" id="import-notebooks">Import External Notebooks</a></li>
-              <li><a href="#" id="export-notebook-file">Export Notebook to File</a></li>
-              <li><a href="#" id="import-notebook-file">Import Notebook from File</a></li>
-              <li><a href="#" id="export-notebook-as-r">Export Notebook as R Source File</a></li>
-              <li><a href="#" id="show-source"><i class="icon-check"></i>&nbsp;Show Source</a></li>
-              <li><a href="#" id="publish-notebook"><i class="icon-check"></i>&nbsp;Publish notebook</a></li>
-            </ul>
-          </li>
-          <li class="divider-vertical"></li>
-          <li><a href="#" id="rcloud-logout">Logout</a></li>
-        </ul>
-      </div>
+        <li><button id="star-notebook" title="Add to Interests" type="button" class="btn btn-link navbar-btn" style="padding-left: 3px"><i class="icon-star-empty"></i><sub><span id="curr-star-count" /></sub></button></li>
+        <li><button id="fork-notebook" title="Fork" type="button" class="btn btn-link navbar-btn"><i class="icon-code-fork"></i></button></li>
+        <li><button id="save-notebook" title="Save" type="button" class="btn btn-link navbar-btn disabled" style="display:none;"><i class="icon-save"></i></button></li>
+        <li><button id="revert-notebook" title="Revert" type="button" class="btn btn-link navbar-btn" style="display:none;"><i class="icon-undo"></i></button></li>
+        <li><button id="run-notebook" title="Run All" type="button" class="btn btn-link navbar-btn"><i class="icon-play"></i></button></li>
+        <li style="max-width: 68%" class="notebook-title-row"><a href="#"><span id="notebook-author"></span><span id="author-title-dash" style="display:none;">&nbsp;&ndash;&nbsp;</span><span id="rename-notebook" title="Change Title" style="display:none">[<span id="notebook-title"></span>]</span></a><small id="forked-from-desc"></small></li>
+        <li><a href="#" id="readonly-notebook" style="display:none;">(read-only)</a></li>
+        <li><a href="#"><span id="loading"><img id="loading-animation" src="/img/processing.gif" style="height: 20px;width:20px;margin:0"></img></span></a></li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown">Advanced <b class="caret"></b></a>
+          <ul class="dropdown-menu" id="advanced-menu">
+            <li><a href="#" id="open-in-github">Open in GitHub</a></li>
+            <li><a href="#" id="open-from-github">Load Notebook by ID</a></li>
+            <li><a href="#" id="import-notebooks">Import External Notebooks</a></li>
+            <li><a href="#" id="export-notebook-file">Export Notebook to File</a></li>
+            <li><a href="#" id="import-notebook-file">Import Notebook from File</a></li>
+            <li><a href="#" id="export-notebook-as-r">Export Notebook as R Source File</a></li>
+            <li><a href="#" id="show-source"><i class="icon-check"></i>&nbsp;Show Source</a></li>
+            <li><a href="#" id="publish-notebook"><i class="icon-check"></i>&nbsp;Publish notebook</a></li>
+          </ul>
+        </li>
+        <li class="divider-vertical"></li>
+        <li><a href="#" id="rcloud-logout">Logout</a></li>
+      </ul>
+    </div>
     <!--/div-->
   </div>
-</div>
+</nav>
 
 <!-- snippets for panels, see load_snippet -->
 <script type="text/html" id="notebooks-snippet">
