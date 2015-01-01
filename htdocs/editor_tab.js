@@ -1120,7 +1120,7 @@ var editor = function () {
     }
     //for hiding information popover on click outside
     $('body').on('click', function(e) {
-        if($(e.target).data('toggle') !== 'popover' && $(e.target).parents('.popover.in').length === 0) {
+        if(info_popover_ && $(e.target).data('toggle') !== 'popover' && $(e.target).parents('.popover.in').length === 0) {
             info_popover_.popover('destroy');
             info_popover_ = null;
         }
