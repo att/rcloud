@@ -37,7 +37,7 @@ oc.init.authenticate <- function(v, mode="IDE") {
 oc.init <- function(...) { ## this is the payload of the OCinit message
     ## remove myself from the global env since my job is done
     if (identical(.GlobalEnv$oc.init, oc.init)) rm(oc.init, envir=.GlobalEnv)
-    
+
     ## simply send the cap that authenticates and returns supported caps
     make.oc(oc.init.authenticate)
 }
@@ -52,6 +52,7 @@ compute.ocaps <- function(mode, authenticated) {
         unauthenticated_call_fastrweb_notebook = make.oc(rcloud.unauthenticated.call.FastRWeb.notebook),
         unauthenticated_compute_init = make.oc(rcloud.anonymous.compute.init),
         reset_session = make.oc(rcloud.reset.session),
+        prefix_uuid = make.oc(rcloud.prefix.uuid),
         load_notebook = if (authenticated) make.oc(rcloud.load.notebook.compute) else make.oc(rcloud.unauthenticated.load.notebook.compute)
         )
     if (authenticated) c(caps, list(
@@ -79,7 +80,7 @@ compute.ocaps <- function(mode, authenticated) {
 unauthenticated.ocaps <- function(mode, compute)
 {
     if (missing(compute)) compute <- .setup.compute(mode, FALSE)
-    
+
     list(
     # ocaps used by rcloud.js
     rcloud=list(
@@ -88,8 +89,8 @@ unauthenticated.ocaps <- function(mode, compute)
       version_info = make.oc(rcloud.info),
       anonymous_session_init = make.oc(rcloud.anonymous.session.init),
       anonymous_compute_init = compute$unauthenticated_compute_init,
-      prefix_uuid = make.oc(rcloud.prefix.uuid),
       reset_session = compute$reset_session,
+      prefix_uuid = compute$prefix_uuid,
       get_conf_value = make.oc(rcloud.get.conf.value),
       get_notebook = make.oc(rcloud.unauthenticated.get.notebook),
       load_notebook = make.oc(rcloud.unauthenticated.load.notebook),
@@ -161,7 +162,7 @@ authenticated.ocaps <- function(mode)
 {
     compute <- .setup.compute(mode, TRUE)
     basic.ocaps <- unauthenticated.ocaps(mode, compute)
-    
+
   changes <- list(
     rcloud = list(
       authenticated = TRUE,
