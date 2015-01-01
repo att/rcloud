@@ -36,7 +36,9 @@ var editor = function () {
         featured_ = [], // featured users - samples, intros, etc
         invalid_notebooks_ = {},
         current_ = null, // current notebook and version
-        show_terse_dates_ = false; // show terse date option for the user
+        show_terse_dates_ = false, // show terse date option for the user
+        info_popover_ = null; // current opened information popover
+
 
     // view
     var $tree_ = null,
@@ -1009,6 +1011,41 @@ var editor = function () {
             // commands that appear
             var appear = $($.el.span({'class': 'notebook-commands appear'}));
             add_buttons = adder(appear);
+            //information icon
+            var info = ui_utils.fa_button('icon-info-sign', 'notebook info', 'info', icon_style, false);
+            info.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var thisIcon = this;
+                var info_content = '';
+                if(info_popover_) {
+                    info_popover_.popover('destroy');
+                    info_popover_ = null;
+                }
+                rcloud.stars.get_notebook_starrer_list(node.gistname).then(function(list) {
+                    if(typeof(list) === 'string')
+                        list = [list];
+                    var starrer_list = '<div class="info-category"><b>Starred by:</b></div>';
+                    list.forEach(function (v) {
+                        starrer_list = starrer_list + '<div class="info-item">' + v + '</div>';
+                    });
+                    info_content = info_content + starrer_list;
+                    $(thisIcon).popover({
+                        title: node.name,
+                        html: true,
+                        content: info_content,
+                        container: 'body',
+                        placement: 'right',
+                        animate: false,
+                        delay: {hide: 0}
+                    });
+                    $(thisIcon).popover('show');
+                    var thisPopover = $(thisIcon).popover().data()['bs.popover'].$tip[0];
+                    $(thisPopover).addClass('popover-offset');
+                    info_popover_ = $(thisIcon);
+                });
+            });
+            add_buttons(info);
             if(true) { // all notebooks have history - should it always be accessible?
                 var disable = current_.notebook===node.gistname && current_.version;
                 var history = ui_utils.fa_button('icon-time', 'history', 'history', icon_style, true);
@@ -1081,7 +1118,13 @@ var editor = function () {
         }
         element.append(right);
     }
-
+    //for hiding information popover on click outside
+    $('body').on('click', function(e) {
+        if($(e.target).data('toggle') !== 'popover' && $(e.target).parents('.popover.in').length === 0) {
+            info_popover_.popover('destroy');
+            info_popover_ = null;
+        }
+    });
     var make_edit_url = ui_utils.url_maker('edit.html');
 
     function tree_click(event) {
@@ -1316,14 +1359,14 @@ var editor = function () {
                                         node_id('interests', user, gistname));
                     }
                     add_interest(user, gistname);
-                    if(my_friends_[user]===1)
+                    if(my_friends_[user] === 1)
                         change_folder_friendness(user);
-
                     if(opts.notebook) {
                         if(opts.make_current)
-                            that.load_callback({version: opts.version,
-                                                is_change: opts.is_change || false,
-                                                selroot: 'interests'}) (opts.notebook);
+                            that.load_callback({
+                                version: opts.version,
+                                is_change: opts.is_change || false,
+                                selroot: 'interests'})(opts.notebook);
                         else
                             update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
                     }

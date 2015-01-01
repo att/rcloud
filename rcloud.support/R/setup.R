@@ -228,7 +228,9 @@ configure.rcloud <- function (mode=c("startup", "script")) {
 ## create rcs back-end according to teh config files
 session.init.rcs <- function() {
     if (isTRUE(getConf("rcs.engine") == "redis")) {
-        .session$rcs.engine <- rcs.redis(getConf("rcs.redis.host"))
+        db <- getConf("rcs.redis.db")
+        if (is.null(db)) db <- getOption("redis.default.db", 0L)
+        .session$rcs.engine <- rcs.redis(getConf("rcs.redis.host"), db=as.integer(db), password=getConf("rcs.redis.password"))
         if (is.null(.session$rcs.engine$handle)) stop("ERROR: cannot connect to redis host `",getConf("rcs.redis.host"),"', aborting")
     } else {
         if (nzConf("exec.auth") && identical(getConf("exec.match.user"), "login"))
@@ -286,6 +288,8 @@ start.rcloud.common <- function(...) {
   .session$result.prefix.uuid <- generate.uuid()
 
   session.init.rcs()
+  ## scrub sensitive information from the configuration
+  scrubConf(c("rcs.redis.db", "rcs.redis.password"))
 
   ## last-minute updates (or custom initialization) to be loaded
   ## NB: it should be really fast since it will cause connect delay
@@ -303,7 +307,7 @@ start.rcloud.common <- function(...) {
   lang.list <- NULL
   lang.str <- getConf("rcloud.languages")
   if (!is.character(lang.str))
-    lang.str <- ""
+    lang.str <- "rcloud.r"
   for (lang in gsub("^\\s+|\\s+$", "", strsplit(lang.str, ",")[[1]])) {
     d <- getNamespace(lang)[["rcloud.language.support"]]
     if (!is.function(d) && !is.primitive(d))
