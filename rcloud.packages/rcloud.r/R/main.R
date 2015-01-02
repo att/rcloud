@@ -40,6 +40,7 @@ rcloud.language.support <- function()
        run.cell=ev,
        complete=complete,
        ace.mode="ace/mode/r",
+       hljs.class="r",
        extension="R",
        setup=function(rcloud.session) {},
        teardown=function(rcloud.session) {})

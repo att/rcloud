@@ -109,7 +109,7 @@ function rclient_promise(allow_anonymous) {
         rcloud.display.set_device_pixel_ratio();
         rcloud.api.set_url(window.location.href);
         return rcloud.languages.get_list().then(function(lang_list) {
-            RCloud.language._set_available_languages(lang_list);
+            RCloud.language._set_available_languages(_.omit(lang_list, 'r_type', 'r_attributes'));
         }).then(function() {
             return rcloud.init_client_side_data();
         });
