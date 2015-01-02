@@ -34,7 +34,7 @@ function create_cell_html_view(language, cell_model) {
     var split_button = ui_utils.fa_button("icon-unlink", "split cell");
     var remove_button = ui_utils.fa_button("icon-trash", "remove");
     var run_md_button = ui_utils.fa_button("icon-play", "run");
-    var gap = $('<div/>').html('&nbsp;').css({'line-height': '25%'});
+    var gap = $('<span/>').html('&nbsp;').css({'line-height': '25%'});
 
     function update_model() {
         if(!ace_session_)
@@ -87,16 +87,8 @@ function create_cell_html_view(language, cell_model) {
             $(".tooltip").remove();
         }
     });
-    function execute_cell() {
-        result_div_.html("Computing...");
-        result.edit_source(false);
-
-        RCloud.UI.with_progress(function() {
-            return cell_model.controller.execute();
-        });
-    }
     run_md_button.click(function(e) {
-        execute_cell();
+        result.execute_cell();
     });
     var cell_status = $("<div class='cell-status'></div>");
     var button_float = $("<div class='cell-controls'></div>");
@@ -137,11 +129,8 @@ function create_cell_html_view(language, cell_model) {
         }
     }
 
-    col.append($("<div></div>").append(select_lang));
-    $.each([run_md_button, edit_button, gap, split_button, remove_button],
-           function() {
-               col.append($('<td/>').append($(this)));
-           });
+    col.append.apply(col, [select_lang, run_md_button, edit_button, gap, split_button, remove_button]
+                     .map(function(elem) { return $('<td></td>').append(elem); }));
 
     button_float.append(col);
     notebook_cell_div.append(cell_status);
@@ -231,7 +220,7 @@ function create_cell_html_view(language, cell_model) {
                 sender: 'editor'
             },
             exec: function(ace_widget_, args, request) {
-                execute_cell();
+                result.execute_cell();
             }
         }]);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
@@ -409,6 +398,14 @@ function create_cell_html_view(language, cell_model) {
         show_buttons: function() {
             button_float.css("display", null);
             insert_button_float.show();
+        },
+        execute_cell: function() {
+            result_div_.html("Computing...");
+            result.edit_source(false);
+
+            RCloud.UI.with_progress(function() {
+                return cell_model.controller.execute();
+            });
         },
         edit_source: function(edit_mode) {
             if(edit_mode === edit_mode_)
