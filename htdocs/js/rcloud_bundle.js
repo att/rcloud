@@ -1803,18 +1803,21 @@ function create_cell_html_view(language, cell_model) {
             if(ace_widget_)
                 ui_utils.set_ace_readonly(ace_widget_, readonly);
             if (readonly) {
-                disable(remove_button);
-                disable(insert_cell_button);
-                disable(split_button);
                 disable(join_button);
+                disable(insert_cell_button);
+                disable(edit_button);
+                disable(split_button);
+                disable(remove_button);
                 click_to_edit(false);
                 if(ace_widget_)
                     $(ace_widget_.container).find(".grab-affordance").hide();
                 select_lang.prop("disabled", "disabled");
             } else {
-                enable(remove_button);
-                enable(insert_cell_button);
                 enable(join_button);
+                enable(insert_cell_button);
+                enable(edit_button);
+                enable(split_button);
+                enable(remove_button);
                 click_to_edit(true);
                 select_lang.prop("disabled", false);
             }
