@@ -1,0 +1,8 @@
+Package: rcloud.rmarkdown
+Title: support for the RMarkdown language in RCloud
+Version: 0.0.1
+Author: Gordon Woodhull <gordon@research.att.com>
+Maintainer: Gordon Woodhull <gordon@research.att.com>
+Description: Adds RMarkdown bindings for RCloud
+Imports: knitr, rmarkdown
+License: MIT
