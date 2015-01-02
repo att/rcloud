@@ -22,5 +22,11 @@ pathConf <- function(name, ..., anchor = FALSE) {
 }
 keysConf <- function() names(as.list(rcloud.support:::.rc.conf))
 
+scrubConf <- function(keys, gc=TRUE) {
+    for (i in keys) .rc.conf[[i]] <- NULL
+    ## gc() to purge string cache
+    if (gc) gc()
+}
+
 ## --- this one is exported for use outside of rcloud.support ---
 rcloud.config <- function(name) .rc.conf[[name]]

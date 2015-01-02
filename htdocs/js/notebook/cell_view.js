@@ -367,7 +367,7 @@ function create_cell_html_view(language, cell_model) {
             // Work around a persistently annoying knitr bug:
             // https://github.com/att/rcloud/issues/456
 
-            _($("img")).each(function(img, ix, $q) {
+            _($("#rcloud-cellarea img")).each(function(img, ix, $q) {
                 ensure_image_has_hash(img);
                 if (img.getAttribute("src").substr(0,10) === "data:image" &&
                     img.getAttribute("alt") != null &&
