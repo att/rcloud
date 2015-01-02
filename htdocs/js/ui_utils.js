@@ -113,7 +113,7 @@ ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
     var lineHeight = widget.renderer.lineHeight;
     var rows = Math.max(min_rows, Math.min(max_rows, widget.getSession().getScreenLength()));
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
-    return Math.max(75, newHeight);
+    return newHeight;
 };
 
 ui_utils.ace_set_pos = function(widget, row, column) {

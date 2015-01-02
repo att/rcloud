@@ -11,7 +11,7 @@ RCloud.UI.command_prompt = (function() {
             return null;
         function set_ace_height() {
             var EXTRA_HEIGHT = 6;
-            prompt_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
+            prompt_div.css({'height': (ui_utils.ace_editor_height(widget, 5) + EXTRA_HEIGHT) + "px"});
             widget.resize();
             shell.scroll_to_end(0);
         }
@@ -219,7 +219,7 @@ RCloud.UI.command_prompt = (function() {
             $("#insert-new-cell").click(function() {
                 shell.new_cell("", language_, false);
                 var vs = shell.notebook.view.sub_views;
-                vs[vs.length-1].show_source();
+                vs[vs.length-1].edit_source();
             });
             $("#insert-cell-language").change(function() {
                 var language = $("#insert-cell-language").val();

@@ -862,7 +862,6 @@ var editor = function () {
     }
 
     function update_notebook_from_gist(result, history, selroot) {
-        document.title = result.description+" - RCloud";
         var user = result.user.login, gistname = result.id;
         // we only receive history here if we're at HEAD, so use that if we get
         // it.  otherwise use the remembered history if any.  otherwise
@@ -1300,15 +1299,7 @@ var editor = function () {
 
                 promises.push(RCloud.UI.share_button.update_link());
 
-                /*
-                // disabling inter-notebook navigation for now - concurrency issues
-                options.push_history = false;
-                if(options.push_history)
-                    (window.location.search ?
-                     window.history.pushState :
-                     window.history.replaceState)
-                    .bind(window.history)
-                 */
+                document.title = result.description + " - RCloud";
                 promises.push(update_url({notebook: result.id, version: options.version, tag:tag}));
 
                 var history;
