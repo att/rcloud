@@ -36,16 +36,6 @@ rcloud.set.device.pixel.ratio <- function(ratio) {
   .session$device.pixel.ratio <- ratio
 }
 
-rcloud.fake.markdownToHTML <- function(text, fragment=FALSE) {
-  input <- "./input.Rmd"
-  output <- "output.html"
-  output_dir <- "."
-  knitr_opts = knitr_options(opts_chunk = list(results = 'hold'))
-  cat(text, file=input)
-  rmarkdown::render(input, html_document(), output_file=output, output_dir=output_dir, output_options = output_format(knitr_opts), intermediates_dir=output_dir)
-  readChar(output, file.info(output)$size)
-}
-
 session.markdown.eval <- function(command, language, silent) {
   if (!is.null(.session$device.pixel.ratio))
     opts_chunk$set(dpi=72*.session$device.pixel.ratio)

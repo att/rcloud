@@ -101,7 +101,7 @@ configure.rcloud <- function (mode=c("startup", "script")) {
 
   ## This is jsut a friendly way to load package and report success/failure
   ## Cairo, knitr, markdown and png are mandatory, really
-  pkgs <- c("Cairo", "FastRWeb", "Rserve", "png", "knitr", "rmarkdown", "base64enc", "rjson", "httr", "RCurl", "sendmailR")
+  pkgs <- c("Cairo", "FastRWeb", "Rserve", "png", "knitr", "markdown", "base64enc", "rjson", "httr", "RCurl", "sendmailR")
   ## $CONFROOT/packages.txt can list additional packages
   if (file.exists(fn <- pathConf("configuration.root", "packages.txt")))
     pkgs <- c(pkgs, readLines(fn))

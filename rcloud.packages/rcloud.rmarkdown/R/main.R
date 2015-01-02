@@ -1,23 +1,25 @@
 rcloud.language.support <- function()
 {
+  require(rmarkdown)
+
+  rmarkdown.markdownToHTML <- function(text, fragment=FALSE) {
+    input <- "./input.Rmd"
+    output <- "output.html"
+    output_dir <- "."
+    # do we need some of the options that markdown/r set to opts_chunk?
+    knitr_opts = knitr_options(opts_chunk = list(results = 'hold'))
+    cat(text, file=input)
+    rmarkdown::render(input, output_format = html_fragment(), output_file=output, output_dir=output_dir, output_options = output_format(knitr_opts), intermediates_dir=output_dir)
+    readChar(output, file.info(output)$size)
+  }
+
   ev <- function(command, silent, rcloud.session) {
     .session <- rcloud.session
-    if (!is.null(.session$device.pixel.ratio))
-      opts_chunk$set(dpi=72*.session$device.pixel.ratio)
-    if (!is.null(.session$disable.warnings))
-      opts_chunk$set(warning=FALSE)
-    else
-      opts_chunk$set(warning=TRUE)
-    if (!is.null(.session$disable.echo))
-      opts_chunk$set(echo=FALSE)
-    else
-      opts_chunk$set(echo=TRUE)
-    # opts_chunk$set(prompt=TRUE)
-    opts_chunk$set(dev="CairoPNG", tidy=FALSE)
-
     if (command == "") command <- " "
-    command <- paste("```{r}", command, "```\n", sep='\n')
-    val <- try(markdownToHTML(text=paste(knit(text=command, envir=.GlobalEnv), collapse="\n"),
+
+    command <- paste('---', 'output: html_fragment', '---', command, sep='\n')
+
+    val <- try(rmarkdown.markdownToHTML(text=paste(knit(text=command, envir=.GlobalEnv), collapse="\n"),
                               fragment=TRUE), silent=TRUE)
     if (!inherits(val, "try-error") && !silent && rcloud.debug.level()) print(val)
     if (inherits(val, "try-error")) {
@@ -36,11 +38,9 @@ rcloud.language.support <- function()
     utils:::.CompletionEnv[["comps"]]
   }
 
-  list(language="R",
+  list(language="RMarkdown",
        run.cell=ev,
        complete=complete,
-       ace.mode="ace/mode/r",
-       extension="R",
        setup=function(rcloud.session) {},
        teardown=function(rcloud.session) {})
 }
