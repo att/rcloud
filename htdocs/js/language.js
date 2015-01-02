@@ -11,8 +11,6 @@ RCloud.language = (function() {
         Text: 'txt'
     };
     var hljs_classes_ = {
-        R: "r",
-        Python: "python"
     };
 
     var langs_ = [];
@@ -33,6 +31,7 @@ RCloud.language = (function() {
             for(var lang in langs) {
                 langs_.push(lang);
                 ace_modes_[lang] = langs[lang]['ace.mode'];
+                hljs_classes_[lang] = langs[lang]['hljs.class'];
                 extensions_[lang] = langs[lang].extension;
             }
         },
