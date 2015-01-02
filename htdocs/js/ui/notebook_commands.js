@@ -16,7 +16,6 @@ RCloud.UI.notebook_commands = (function() {
     };
 
     function add_commands(node, span, commands) {
-        commands.sort(function(a, b) { return a.sort - b.sort; });
         commands.forEach(function(command) {
             span.append(document.createTextNode(String.fromCharCode(160)));
             span.append(command.create(node));
@@ -148,6 +147,9 @@ RCloud.UI.notebook_commands = (function() {
             });
             appear_commands_ = _.filter(commands_, function(command) {
                 return command.section === 'appear';
+            });
+            [always_commands_, appear_commands_].forEach(function(set) {
+                set.sort(function(a, b) { return a.sort - b.sort; });
             });
             return this;
         },
