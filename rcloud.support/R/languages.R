@@ -1,4 +1,5 @@
 rcloud.supported.languages <- function()
 {
-  c("Markdown", names(.session$languages))
+  c(list(Markdown=list(ace.mode="ace/mode/rmarkdown", extension="md")),
+    lapply(.session$languages, function(l) l[c('ace.mode', 'extension')]))
 }
