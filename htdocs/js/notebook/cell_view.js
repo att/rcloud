@@ -18,7 +18,9 @@ function create_cell_html_view(language, cell_model) {
     var code_div_;
     var result_div_;
     var change_content_;
+    var above_between_controls_, cell_controls_;
     var edit_mode_; // note: starts neither true nor false
+    var result = {}; // "this"
 
     var EXTRA_HEIGHT = 2;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
@@ -27,14 +29,6 @@ function create_cell_html_view(language, cell_model) {
 
     //////////////////////////////////////////////////////////////////////////
     // button bar
-
-    var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
-    var join_button = ui_utils.fa_button("icon-link", "join cells");
-    var edit_button = ui_utils.fa_button("icon-edit", "toggle edit");
-    var split_button = ui_utils.fa_button("icon-unlink", "split cell");
-    var remove_button = ui_utils.fa_button("icon-trash", "remove");
-    var run_md_button = ui_utils.fa_button("icon-play", "run");
-    var gap = $('<span/>').html('&nbsp;').css({'line-height': '25%'});
 
     function update_model() {
         if(!ace_session_)
@@ -47,81 +41,26 @@ function create_cell_html_view(language, cell_model) {
     function set_widget_height() {
         source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, 3) + EXTRA_HEIGHT) + "px");
     }
-    var enable = ui_utils.enable_fa_button;
-    var disable = ui_utils.disable_fa_button;
 
     var has_result = false;
 
-    insert_cell_button.click(function(e) {
-        if (!$(e.currentTarget).hasClass("button-disabled")) {
-            shell.insert_cell_before(cell_model.language(), cell_model.id());
-        }
-    });
-    join_button.click(function(e) {
-        join_button.tooltip('destroy');
-        if (!$(e.currentTarget).hasClass("button-disabled")) {
-            shell.join_prior_cell(cell_model);
-        }
-    });
-    split_button.click(function(e) {
-        if (!$(e.currentTarget).hasClass("button-disabled")) {
-            var range = ace_widget_.getSelection().getRange();
-            var point1, point2;
-            point1 = ui_utils.character_offset_of_pos(ace_widget_, range.start);
-            if(!range.isEmpty())
-                point2 = ui_utils.character_offset_of_pos(ace_widget_, range.end);
-            shell.split_cell(cell_model, point1, point2);
-        }
-    });
-    edit_button.click(function(e) {
-        if (!$(e.currentTarget).hasClass("button-disabled")) {
-            result.edit_source(!edit_mode_);
-        }
-    });
-    remove_button.click(function(e) {
-        if (!$(e.currentTarget).hasClass("button-disabled")) {
-            cell_model.parent_model.controller.remove_cell(cell_model);
-
-            // twitter bootstrap gets confused about its tooltips if parent element
-            // is deleted while tooltip is active; let's help it
-            $(".tooltip").remove();
-        }
-    });
-    run_md_button.click(function(e) {
-        result.execute_cell();
-    });
     var cell_status = $("<div class='cell-status'></div>");
     var button_float = $("<div class='cell-controls'></div>");
     cell_status.append(button_float);
     cell_status.append($("<div style='clear:both;'></div>"));
-    var col = $('<table/>').append('<tr/>');
-    var select_lang = $("<select class='form-control'></select>");
-    var lang_selectors = {};
-    function add_language_selector(lang) {
-        var element = $("<option></option>").text(lang);
-        lang_selectors[lang] = element;
-        select_lang.append(element);
-    }
-    _.each(RCloud.language.available_languages(), add_language_selector);
-    if(!lang_selectors[language]) // unknown language: add it
-        add_language_selector(language);
 
-    select_lang.change(function() {
-        var language = select_lang.val();
-        cell_model.parent_model.controller.change_cell_language(cell_model, language);
-        result.clear_result();
-    });
+    var col = $('<table/>').append('<tr/>');
 
     function set_background_color(language) {
         var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
         ace_div.css({ 'background-color': bg_color });
     }
 
+    cell_controls_ = RCloud.UI.cell_commands.decorate_cell(col, cell_model, result);
+
     function update_language() {
         language = cell_model.language();
-        if(!lang_selectors[language])
-            throw new Error("tried to set language to unknown language " + language);
-        select_lang.val(language);
+        cell_controls_.controls['language_cell'].set(language);
         if(ace_widget_) {
             set_background_color(language);
             var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
@@ -129,15 +68,12 @@ function create_cell_html_view(language, cell_model) {
         }
     }
 
-    col.append.apply(col, [select_lang, run_md_button, edit_button, gap, split_button, remove_button]
-                     .map(function(elem) { return $('<td></td>').append(elem); }));
-
     button_float.append(col);
     notebook_cell_div.append(cell_status);
 
     var insert_button_float = $("<div class='cell-insert-control'></div>");
-    insert_button_float.append(join_button);
-    insert_button_float.append(insert_cell_button);
+
+    above_between_controls_ = RCloud.UI.cell_commands.decorate_above_between(insert_button_float, cell_model, result);
     notebook_cell_div.append(insert_button_float);
 
     //////////////////////////////////////////////////////////////////////////
@@ -263,7 +199,7 @@ function create_cell_html_view(language, cell_model) {
     inner_div.append(result_div_);
     update_language();
 
-    var result = {
+    _.extend(result, {
 
         //////////////////////////////////////////////////////////////////////
         // pubsub event handlers
@@ -279,6 +215,9 @@ function create_cell_html_view(language, cell_model) {
         },
         self_removed: function() {
             notebook_cell_div.remove();
+        },
+        ace_widget: function() {
+            return ace_widget_;
         },
         id_updated: update_div_id,
         language_updated: update_language,
@@ -376,24 +315,15 @@ function create_cell_html_view(language, cell_model) {
             am_read_only_ = readonly;
             if(ace_widget_)
                 ui_utils.set_ace_readonly(ace_widget_, readonly);
+            cell_controls_.readonly(readonly);
+            above_between_controls_.readonly(readonly);
+            click_to_edit(!readonly);
             if (readonly) {
-                disable(join_button);
-                disable(insert_cell_button);
-                disable(edit_button);
-                disable(split_button);
-                disable(remove_button);
-                click_to_edit(false);
                 if(ace_widget_)
                     $(ace_widget_.container).find(".grab-affordance").hide();
-                select_lang.prop("disabled", "disabled");
             } else {
-                enable(join_button);
-                enable(insert_cell_button);
-                enable(edit_button);
-                enable(split_button);
-                enable(remove_button);
-                click_to_edit(true);
-                select_lang.prop("disabled", false);
+                if(ace_widget_)
+                    $(ace_widget_.container).find(".grab-affordance").show();
             }
         },
 
@@ -414,6 +344,9 @@ function create_cell_html_view(language, cell_model) {
             RCloud.UI.with_progress(function() {
                 return cell_model.controller.execute();
             });
+        },
+        toggle_edit: function() {
+            return this.edit_source(!edit_mode_);
         },
         edit_source: function(edit_mode) {
             if(edit_mode === edit_mode_)
@@ -454,10 +387,9 @@ function create_cell_html_view(language, cell_model) {
                 set_widget_height();
                 ace_widget_.resize(true);
                 if (!am_read_only_) {
-                    enable(remove_button);
-                    enable(split_button);
+                    cell_controls_.controls['remove'].enable();
+                    cell_controls_.controls['split'].enable();
                 }
-
                 outer_ace_div.show();
                 ace_widget_.resize(); // again?!?
                 ace_widget_.focus();
@@ -467,9 +399,9 @@ function create_cell_html_view(language, cell_model) {
                 if(new_content!==null) // if any change (including removing the content)
                     cell_model.parent_model.controller.update_cell(cell_model);
                 source_div_.css({'height': ''});
-                disable(split_button);
                 if (!am_read_only_)
-                    enable(remove_button);
+                    cell_controls_.controls['remove'].enable();
+                cell_controls_.controls['split'].disable();
                 code_div_.show();
                 outer_ace_div.hide();
             }
@@ -497,12 +429,9 @@ function create_cell_html_view(language, cell_model) {
             }
         },
         check_buttons: function() {
-            if(!cell_model.parent_model.prior_cell(cell_model))
-                join_button.hide();
-            else if(!am_read_only_)
-                join_button.show();
+            above_between_controls_.betweenness(!!cell_model.parent_model.prior_cell(cell_model));
         }
-    };
+    });
 
     result.edit_source(false);
     return result;

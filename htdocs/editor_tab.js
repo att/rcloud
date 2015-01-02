@@ -1274,7 +1274,7 @@ var editor = function () {
                     if(histories_[node.gistname]) {
                         history_len = histories_[node.gistname].length;
                     }
-                    if(history_len==1) {
+                    if(history_len==1) { // FIXME: should be via UI.notebook_commands
                         $(".history i",$(node.element)).addClass("button-disabled");
                     }
                     $tree_.tree('openNode', node);

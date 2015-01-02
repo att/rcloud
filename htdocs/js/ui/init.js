@@ -74,6 +74,7 @@ RCloud.UI.init = function() {
     // (that last step is not so well defined so far)
     RCloud.UI.share_button.init();
     RCloud.UI.notebook_commands.init();
+    RCloud.UI.cell_commands.init();
     RCloud.UI.panel_loader.init();
 
     // adds to advanced menu
