@@ -1456,7 +1456,7 @@ function create_cell_html_view(language, cell_model) {
     var code_div_;
     var result_div_;
     var change_content_;
-    var edit_mode_; // note: neither true nor false
+    var edit_mode_; // note: starts neither true nor false
 
     var EXTRA_HEIGHT = 2;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
