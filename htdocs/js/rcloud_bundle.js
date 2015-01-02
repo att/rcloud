@@ -1472,7 +1472,7 @@ function create_cell_html_view(language, cell_model) {
     var split_button = ui_utils.fa_button("icon-unlink", "split cell");
     var remove_button = ui_utils.fa_button("icon-trash", "remove");
     var run_md_button = ui_utils.fa_button("icon-play", "run");
-    var gap = $('<div/>').html('&nbsp;').css({'line-height': '25%'});
+    var gap = $('<span/>').html('&nbsp;').css({'line-height': '25%'});
 
     function update_model() {
         if(!ace_session_)
@@ -1525,16 +1525,8 @@ function create_cell_html_view(language, cell_model) {
             $(".tooltip").remove();
         }
     });
-    function execute_cell() {
-        result_div_.html("Computing...");
-        result.edit_source(false);
-
-        RCloud.UI.with_progress(function() {
-            return cell_model.controller.execute();
-        });
-    }
     run_md_button.click(function(e) {
-        execute_cell();
+        result.execute_cell();
     });
     var cell_status = $("<div class='cell-status'></div>");
     var button_float = $("<div class='cell-controls'></div>");
@@ -1575,11 +1567,8 @@ function create_cell_html_view(language, cell_model) {
         }
     }
 
-    col.append($("<div></div>").append(select_lang));
-    $.each([run_md_button, edit_button, gap, split_button, remove_button],
-           function() {
-               col.append($('<td/>').append($(this)));
-           });
+    col.append.apply(col, [select_lang, run_md_button, edit_button, gap, split_button, remove_button]
+                     .map(function(elem) { return $('<td></td>').append(elem); }));
 
     button_float.append(col);
     notebook_cell_div.append(cell_status);
@@ -1608,22 +1597,24 @@ function create_cell_html_view(language, cell_model) {
     inner_div.append(source_div_);
     outer_ace_div.append(ace_div);
 
-    // click on code to edit
-    if(!shell.is_view_mode()) {
-        // distinguish between a click and a drag
-        // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
-        code_div_.on('mousedown', function(e) {
-            $(this).data('p0', { x: e.pageX, y: e.pageY });
-        }).on('mouseup', function(e) {
-            var p0 = $(this).data('p0');
-            if(p0) {
-                var p1 = { x: e.pageX, y: e.pageY },
-                    d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
-                if (d < 4) {
-                    result.edit_source(true);
+    function click_to_edit(whether) {
+        if(whether) {
+            // distinguish between a click and a drag
+            // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
+            code_div_.on('mousedown', function(e) {
+                $(this).data('p0', { x: e.pageX, y: e.pageY });
+            }).on('mouseup', function(e) {
+                var p0 = $(this).data('p0');
+                if(p0) {
+                    var p1 = { x: e.pageX, y: e.pageY },
+                        d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
+                    if (d < 4) {
+                        result.edit_source(true);
+                    }
                 }
-            }
-        });
+            });
+        }
+        else code_div_.off('mousedown').off('mouseup');
     }
 
     function clear_result() {
@@ -1669,7 +1660,7 @@ function create_cell_html_view(language, cell_model) {
                 sender: 'editor'
             },
             exec: function(ace_widget_, args, request) {
-                execute_cell();
+                result.execute_cell();
             }
         }]);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
@@ -1824,16 +1815,22 @@ function create_cell_html_view(language, cell_model) {
             if(ace_widget_)
                 ui_utils.set_ace_readonly(ace_widget_, readonly);
             if (readonly) {
-                disable(remove_button);
-                disable(insert_cell_button);
-                disable(split_button);
                 disable(join_button);
-                $(ace_widget_.container).find(".grab-affordance").hide();
+                disable(insert_cell_button);
+                disable(edit_button);
+                disable(split_button);
+                disable(remove_button);
+                click_to_edit(false);
+                if(ace_widget_)
+                    $(ace_widget_.container).find(".grab-affordance").hide();
                 select_lang.prop("disabled", "disabled");
             } else {
-                enable(remove_button);
-                enable(insert_cell_button);
                 enable(join_button);
+                enable(insert_cell_button);
+                enable(edit_button);
+                enable(split_button);
+                enable(remove_button);
+                click_to_edit(true);
                 select_lang.prop("disabled", false);
             }
         },
@@ -1847,6 +1844,14 @@ function create_cell_html_view(language, cell_model) {
         show_buttons: function() {
             button_float.css("display", null);
             insert_button_float.show();
+        },
+        execute_cell: function() {
+            result_div_.html("Computing...");
+            result.edit_source(false);
+
+            RCloud.UI.with_progress(function() {
+                return cell_model.controller.execute();
+            });
         },
         edit_source: function(edit_mode) {
             if(edit_mode === edit_mode_)
@@ -2038,7 +2043,7 @@ Notebook.create_html_view = function(model, root_div)
     }
 
     function init_cell_view(cell_view) {
-        cell_view.set_readonly(model.read_only()); // usu false but future-proof it
+        cell_view.set_readonly(model.read_only() || shell.is_view_mode());
     }
 
     var result = {
@@ -4604,7 +4609,6 @@ RCloud.UI.notebook_commands = (function() {
     };
 
     function add_commands(node, span, commands) {
-        commands.sort(function(a, b) { return a.sort - b.sort; });
         commands.forEach(function(command) {
             span.append(document.createTextNode(String.fromCharCode(160)));
             span.append(command.create(node));
@@ -4736,6 +4740,9 @@ RCloud.UI.notebook_commands = (function() {
             });
             appear_commands_ = _.filter(commands_, function(command) {
                 return command.section === 'appear';
+            });
+            [always_commands_, appear_commands_].forEach(function(set) {
+                set.sort(function(a, b) { return a.sort - b.sort; });
             });
             return this;
         },
