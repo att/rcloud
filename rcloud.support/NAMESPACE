@@ -23,7 +23,7 @@ S3method(rcs.list, RCSff)
 
 import(gist)
 import(knitr)
-import(rmarkdown)
+import(markdown)
 import(png)
 import(Cairo)
 import(httr)
