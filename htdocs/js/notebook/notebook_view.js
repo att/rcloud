@@ -7,7 +7,7 @@ Notebook.create_html_view = function(model, root_div)
     }
 
     function init_cell_view(cell_view) {
-        cell_view.set_readonly(model.read_only()); // usu false but future-proof it
+        cell_view.set_readonly(model.read_only() || shell.is_view_mode());
     }
 
     var result = {

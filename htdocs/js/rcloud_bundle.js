@@ -1585,22 +1585,24 @@ function create_cell_html_view(language, cell_model) {
     inner_div.append(source_div_);
     outer_ace_div.append(ace_div);
 
-    // click on code to edit
-    if(!shell.is_view_mode()) {
-        // distinguish between a click and a drag
-        // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
-        code_div_.on('mousedown', function(e) {
-            $(this).data('p0', { x: e.pageX, y: e.pageY });
-        }).on('mouseup', function(e) {
-            var p0 = $(this).data('p0');
-            if(p0) {
-                var p1 = { x: e.pageX, y: e.pageY },
-                    d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
-                if (d < 4) {
-                    result.edit_source(true);
+    function click_to_edit(whether) {
+        if(whether) {
+            // distinguish between a click and a drag
+            // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
+            code_div_.on('mousedown', function(e) {
+                $(this).data('p0', { x: e.pageX, y: e.pageY });
+            }).on('mouseup', function(e) {
+                var p0 = $(this).data('p0');
+                if(p0) {
+                    var p1 = { x: e.pageX, y: e.pageY },
+                        d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
+                    if (d < 4) {
+                        result.edit_source(true);
+                    }
                 }
-            }
-        });
+            });
+        }
+        else code_div_.off('mousedown').off('mouseup');
     }
 
     function clear_result() {
@@ -1805,12 +1807,15 @@ function create_cell_html_view(language, cell_model) {
                 disable(insert_cell_button);
                 disable(split_button);
                 disable(join_button);
-                $(ace_widget_.container).find(".grab-affordance").hide();
+                click_to_edit(false);
+                if(ace_widget_)
+                    $(ace_widget_.container).find(".grab-affordance").hide();
                 select_lang.prop("disabled", "disabled");
             } else {
                 enable(remove_button);
                 enable(insert_cell_button);
                 enable(join_button);
+                click_to_edit(true);
                 select_lang.prop("disabled", false);
             }
         },
@@ -2015,7 +2020,7 @@ Notebook.create_html_view = function(model, root_div)
     }
 
     function init_cell_view(cell_view) {
-        cell_view.set_readonly(model.read_only()); // usu false but future-proof it
+        cell_view.set_readonly(model.read_only() || shell.is_view_mode());
     }
 
     var result = {
