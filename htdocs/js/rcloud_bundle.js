@@ -1659,11 +1659,11 @@ function create_cell_html_view(language, cell_model) {
             .find("pre code")
             .filter(function(i, e) {
                 // things which have defined classes coming from knitr and markdown
+                // we might look in RCloud.language here?
                 return e.classList.length > 0;
             });
     }
     function highlight_code() {
-        // highlight R
         find_code_elems(code_div_).each(function(i, e) {
             hljs.highlightBlock(e);
         });
@@ -1672,7 +1672,7 @@ function create_cell_html_view(language, cell_model) {
         var code = cell_model.content();
         if(code[code.length-1] === '\n')
             code += '\n';
-        find_code_elems(code_div_).remove();
+        code_div_.empty();
         var elem = $('<code></code>').append(code);
         var hljs_class = RCloud.language.hljs_class(cell_model.language());
         if(hljs_class)
@@ -2977,7 +2977,7 @@ function rclient_promise(allow_anonymous) {
         rcloud.display.set_device_pixel_ratio();
         rcloud.api.set_url(window.location.href);
         return rcloud.languages.get_list().then(function(lang_list) {
-            RCloud.language._set_available_languages(lang_list);
+            RCloud.language._set_available_languages(_.omit(lang_list, 'r_type', 'r_attributes'));
         }).then(function() {
             return rcloud.init_client_side_data();
         });
@@ -3019,10 +3019,8 @@ RCloud.language = (function() {
     // The values are the extensions we use for the gists.
     var extensions_ = {
         Text: 'txt'
-    }
+    };
     var hljs_classes_ = {
-        R: "r",
-        Python: "python"
     };
 
     var langs_ = [];
@@ -3043,6 +3041,7 @@ RCloud.language = (function() {
             for(var lang in langs) {
                 langs_.push(lang);
                 ace_modes_[lang] = langs[lang]['ace.mode'];
+                hljs_classes_[lang] = langs[lang]['hljs.class'];
                 extensions_[lang] = langs[lang].extension;
             }
         },

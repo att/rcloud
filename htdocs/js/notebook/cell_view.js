@@ -244,11 +244,11 @@ function create_cell_html_view(language, cell_model) {
             .find("pre code")
             .filter(function(i, e) {
                 // things which have defined classes coming from knitr and markdown
+                // we might look in RCloud.language here?
                 return e.classList.length > 0;
             });
     }
     function highlight_code() {
-        // highlight R
         find_code_elems(code_div_).each(function(i, e) {
             hljs.highlightBlock(e);
         });
@@ -257,7 +257,7 @@ function create_cell_html_view(language, cell_model) {
         var code = cell_model.content();
         if(code[code.length-1] === '\n')
             code += '\n';
-        find_code_elems(code_div_).remove();
+        code_div_.empty();
         var elem = $('<code></code>').append(code);
         var hljs_class = RCloud.language.hljs_class(cell_model.language());
         if(hljs_class)
