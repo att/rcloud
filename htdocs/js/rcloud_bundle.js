@@ -2970,7 +2970,7 @@ function rclient_promise(allow_anonymous) {
         rcloud.display.set_device_pixel_ratio();
         rcloud.api.set_url(window.location.href);
         return rcloud.languages.get_list().then(function(lang_list) {
-            RCloud.language._set_available_languages(lang_list);
+            RCloud.language._set_available_languages(_.omit(lang_list, 'r_type', 'r_attributes'));
         }).then(function() {
             return rcloud.init_client_side_data();
         });
@@ -3013,6 +3013,9 @@ RCloud.language = (function() {
     var extensions_ = {
         Text: 'txt'
     };
+    var hljs_classes_ = {
+    };
+
     var langs_ = [];
 
     return {
@@ -3022,12 +3025,16 @@ RCloud.language = (function() {
         extension: function(language) {
             return extensions_[language];
         },
+        hljs_class: function(language) {
+            return hljs_classes_[language] || null;
+        },
         // don't call _set_available_languages yourself; it's called
         // by the session initialization code.
         _set_available_languages: function(langs) {
             for(var lang in langs) {
                 langs_.push(lang);
                 ace_modes_[lang] = langs[lang]['ace.mode'];
+                hljs_classes_[lang] = langs[lang]['hljs.class'];
                 extensions_[lang] = langs[lang].extension;
             }
         },
