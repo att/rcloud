@@ -1483,13 +1483,11 @@ function create_cell_html_view(language, cell_model) {
     var has_result = false;
 
     var cell_status = $("<div class='cell-status'></div>");
-    var button_float = $("<div class='cell-controls'></div>");
-    cell_status.append(button_float);
+    var cell_control_bar = $("<div class='cell-control-bar'></div>");
+    cell_status.append(cell_control_bar);
     cell_status.append($("<div style='clear:both;'></div>"));
 
-    var cell_commands = $('<table></table>');
-    cell_controls_ = RCloud.UI.cell_commands.decorate_cell(cell_commands, cell_model, result);
-    button_float.append(cell_commands);
+    cell_controls_ = RCloud.UI.cell_commands.decorate_cell(cell_control_bar, cell_model, result);
 
     notebook_cell_div.append(cell_status);
 
@@ -1766,11 +1764,11 @@ function create_cell_html_view(language, cell_model) {
         //////////////////////////////////////////////////////////////////////
 
         hide_buttons: function() {
-            button_float.css("display", "none");
+            cell_control_bar.css("display", "none");
             cell_commands_above.hide();
         },
         show_buttons: function() {
-            button_float.css("display", null);
+            cell_control_bar.css("display", null);
             cell_commands_above.show();
         },
         execute_cell: function() {
@@ -3279,13 +3277,13 @@ RCloud.UI.cell_commands = (function() {
     var above_between_commands_, cell_commands_, prompt_commands_;
     var defaults_ = {};
 
-    function create_command_set(area, command_set, wrap, cell_model, cell_view) {
-        wrap = wrap || function(x) { return x; };
+    function create_command_set(area, command_set, cell_model, cell_view) {
         var commands = {};
         command_set.forEach(function(cmd) {
             commands[cmd.key] = cmd.create(cell_model, cell_view);
+            commands[cmd.key].control.addClass('cell-control');
         });
-        area.append.apply(area, _.pluck(commands, 'control').map(wrap));
+        area.append.apply(area, _.pluck(commands, 'control'));
         return {
             controls: commands,
             readonly: function(readonly) {
@@ -3303,7 +3301,7 @@ RCloud.UI.cell_commands = (function() {
 
     var result = {
         create_button: function(awesome, text, action) {
-            var control =  ui_utils.fa_button(awesome, text);
+            var control = ui_utils.fa_button(awesome, text);
             control.click(function(e) {
                 control.tooltip('destroy');
                 if (!$(e.currentTarget).hasClass("button-disabled")) {
@@ -3321,7 +3319,7 @@ RCloud.UI.cell_commands = (function() {
             };
         },
         create_select: function(items, action) {
-            var control = $("<select class='form-control'></select>");
+            var control = $("<select class='form-control cell-control-select'></select>");
             control.append.apply(control,
                                  items.map(function(item) {
                                      return $("<option></option>").text(item);
@@ -3481,7 +3479,7 @@ RCloud.UI.cell_commands = (function() {
         },
         decorate_above_between: function(area, cell_model, cell_view) {
             // commands for above and between cells
-            var result = create_command_set(area, above_between_commands_, null, cell_model, cell_view);
+            var result = create_command_set(area, above_between_commands_, cell_model, cell_view);
             _.extend(result, {
                 betweenness: function(between) {
                     above_between_commands_.forEach(function(cmd) {
@@ -3497,10 +3495,7 @@ RCloud.UI.cell_commands = (function() {
             return result;
         },
         decorate_cell: function(area, cell_model, cell_view) {
-            var wrap = function(x) {
-                return $('<td></td>').append(x); // ick.
-            };
-            return create_command_set(area, cell_commands_, wrap, cell_model, cell_view);
+            return create_command_set(area, cell_commands_, cell_model, cell_view);
         }
     };
     return result;

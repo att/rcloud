@@ -45,13 +45,11 @@ function create_cell_html_view(language, cell_model) {
     var has_result = false;
 
     var cell_status = $("<div class='cell-status'></div>");
-    var button_float = $("<div class='cell-controls'></div>");
-    cell_status.append(button_float);
+    var cell_control_bar = $("<div class='cell-control-bar'></div>");
+    cell_status.append(cell_control_bar);
     cell_status.append($("<div style='clear:both;'></div>"));
 
-    var cell_commands = $('<table></table>');
-    cell_controls_ = RCloud.UI.cell_commands.decorate_cell(cell_commands, cell_model, result);
-    button_float.append(cell_commands);
+    cell_controls_ = RCloud.UI.cell_commands.decorate_cell(cell_control_bar, cell_model, result);
 
     notebook_cell_div.append(cell_status);
 
@@ -328,11 +326,11 @@ function create_cell_html_view(language, cell_model) {
         //////////////////////////////////////////////////////////////////////
 
         hide_buttons: function() {
-            button_float.css("display", "none");
+            cell_control_bar.css("display", "none");
             cell_commands_above.hide();
         },
         show_buttons: function() {
-            button_float.css("display", null);
+            cell_control_bar.css("display", null);
             cell_commands_above.show();
         },
         execute_cell: function() {

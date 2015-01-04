@@ -217,7 +217,7 @@ rect.frame {
     height: 35px;
 }
 
-.cell-status .cell-controls {
+.cell-status .cell-control-bar {
     position: absolute;
     bottom: 0;
     right: 0;
@@ -227,7 +227,19 @@ rect.frame {
     background-color: white;
 }
 
-.cell-status .cell-controls.flipped {
+.cell-control-bar .cell-control {
+    display: inline-block;
+    padding: 0;
+}
+
+.cell-control-bar select.cell-control {
+    position: relative;
+    top: -2px;
+    margin: 1px 4px 1px 2px;
+    padding: 2px;
+}
+
+.cell-status .cell-control-bar.flipped {
     top: 0;
     bottom: auto;
     border-radius: 0px 0px 4px 4px;
