@@ -178,11 +178,15 @@ rect.frame {
     position: absolute;
     bottom: 4px;
     left: 6ex;
-    width: 700;
     pointer-events: none;
     cursor: text;
-    overflow-y: hidden;
+    overflow: hidden;
     height: 1.5em;
+    max-width: 95%;
+    min-width: 95%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 #forked-from-desc a {

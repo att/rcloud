@@ -50,8 +50,9 @@ RCloud.UI.notebook_title = (function() {
             var active_text = text;
             var ellipt_start = false, ellipt_end = false;
             var title = $('#notebook-title');
+            var author_name = $('#notebook-author');
             title.text(text);
-            while(window.innerWidth - title.width() < 650) {
+            while((author_name.width() + title.width()) > (window.innerWidth*52/100)) {
                 var slash = text.search('/');
                 if(slash >= 0) {
                     ellipt_start = true;
