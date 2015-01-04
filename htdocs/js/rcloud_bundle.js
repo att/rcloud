@@ -3339,6 +3339,7 @@ RCloud.UI.cell_commands = (function() {
                 set: function(val) {
                     if(items.indexOf(val)<0)
                         throw new Error('tried to select unknown value ' + val);
+                    control.val(val);
                 }
             };
         },
