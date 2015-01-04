@@ -234,9 +234,10 @@ rect.frame {
 
 .cell-control-bar select.cell-control {
     position: relative;
-    top: -2px;
+    top: -1px;
     margin: 1px 4px 1px 2px;
-    padding: 2px;
+    padding: 1px 2px;
+    height: 17px;
 }
 
 .cell-status .cell-control-bar.flipped {
