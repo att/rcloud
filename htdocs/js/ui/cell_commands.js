@@ -3,12 +3,13 @@ RCloud.UI.cell_commands = (function() {
     var above_between_commands_, cell_commands_, prompt_commands_;
     var defaults_ = {};
 
-    function create_command_set(area, command_set, cell_model, cell_view) {
+    function create_command_set(area, command_set, wrap, cell_model, cell_view) {
+        wrap = wrap || function(x) { return x; };
         var commands = {};
         command_set.forEach(function(cmd) {
             commands[cmd.key] = cmd.create(cell_model, cell_view);
         });
-        area.append.apply(area, _.pluck(commands, 'control'));
+        area.append.apply(area, _.pluck(commands, 'control').map(wrap));
         return {
             controls: commands,
             readonly: function(readonly) {
@@ -204,7 +205,7 @@ RCloud.UI.cell_commands = (function() {
         },
         decorate_above_between: function(area, cell_model, cell_view) {
             // commands for above and between cells
-            var result = create_command_set(area, above_between_commands_, cell_model, cell_view);
+            var result = create_command_set(area, above_between_commands_, null, cell_model, cell_view);
             _.extend(result, {
                 betweenness: function(between) {
                     above_between_commands_.forEach(function(cmd) {
@@ -220,7 +221,10 @@ RCloud.UI.cell_commands = (function() {
             return result;
         },
         decorate_cell: function(area, cell_model, cell_view) {
-            return create_command_set(area, cell_commands_, cell_model, cell_view);
+            var wrap = function(x) {
+                return $('<td></td>').append(x); // ick.
+            };
+            return create_command_set(area, cell_commands_, wrap, cell_model, cell_view);
         }
     };
     return result;

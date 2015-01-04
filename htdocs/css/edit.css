@@ -233,7 +233,7 @@ rect.frame {
     border-radius: 0px 0px 4px 4px;
 }
 
-.notebook-cell .cell-insert-control {
+.notebook-cell .cell-controls-above {
     color: #555;
     position: absolute;
     right: -0.1em;

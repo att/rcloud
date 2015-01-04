@@ -49,14 +49,20 @@ function create_cell_html_view(language, cell_model) {
     cell_status.append(button_float);
     cell_status.append($("<div style='clear:both;'></div>"));
 
-    var col = $('<table/>').append('<tr/>');
+    var cell_commands = $('<table></table>');
+    cell_controls_ = RCloud.UI.cell_commands.decorate_cell(cell_commands, cell_model, result);
+    button_float.append(cell_commands);
+
+    notebook_cell_div.append(cell_status);
+
+    var cell_commands_above = $("<div class='cell-controls-above'></div>");
+    above_between_controls_ = RCloud.UI.cell_commands.decorate_above_between(cell_commands_above, cell_model, result);
+    notebook_cell_div.append(cell_commands_above);
 
     function set_background_color(language) {
         var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
         ace_div.css({ 'background-color': bg_color });
     }
-
-    cell_controls_ = RCloud.UI.cell_commands.decorate_cell(col, cell_model, result);
 
     function update_language() {
         language = cell_model.language();
@@ -67,14 +73,6 @@ function create_cell_html_view(language, cell_model) {
             ace_session_.setMode(new LangMode(false, ace_document_, ace_session_));
         }
     }
-
-    button_float.append(col);
-    notebook_cell_div.append(cell_status);
-
-    var insert_button_float = $("<div class='cell-insert-control'></div>");
-
-    above_between_controls_ = RCloud.UI.cell_commands.decorate_above_between(insert_button_float, cell_model, result);
-    notebook_cell_div.append(insert_button_float);
 
     //////////////////////////////////////////////////////////////////////////
 
@@ -331,11 +329,11 @@ function create_cell_html_view(language, cell_model) {
 
         hide_buttons: function() {
             button_float.css("display", "none");
-            insert_button_float.hide();
+            cell_commands_above.hide();
         },
         show_buttons: function() {
             button_float.css("display", null);
-            insert_button_float.show();
+            cell_commands_above.show();
         },
         execute_cell: function() {
             result_div_.html("Computing...");
