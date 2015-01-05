@@ -163,16 +163,6 @@ RCloud.UI.cell_commands = (function() {
                             cell_model.parent_model.controller.remove_cell(cell_model);
                         });
                     }
-                },
-                insert_prompt: {
-                    area: 'prompt',
-                    modifying: true,
-                    sort: 1000
-                },
-                language_prompt: {
-                    area: 'prompt',
-                    modifying: true,
-                    sort: 2000
                 }
             });
             return this;
@@ -223,6 +213,9 @@ RCloud.UI.cell_commands = (function() {
         },
         decorate_cell: function(area, cell_model, cell_view) {
             return create_command_set(area, cell_commands_, cell_model, cell_view);
+        },
+        decorate_prompt: function(area) {
+            return create_command_set(area, prompt_commands_);
         }
     };
     return result;

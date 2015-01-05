@@ -3,7 +3,8 @@ RCloud.UI.command_prompt = (function() {
         readonly_ = true,
         history_ = null,
         entry_ = null,
-        language_ = null;
+        language_ = null,
+        command_bar_ = null;
 
     function setup_command_entry() {
         var prompt_div = $("#command-prompt");
@@ -190,7 +191,7 @@ RCloud.UI.command_prompt = (function() {
     function show_or_hide() {
         var prompt_area = $('#prompt-area'),
             prompt = $('#command-prompt'),
-            controls = $('#prompt-area .cell-status .cell-controls');
+            controls = $('#prompt-area .cell-status .cell-control-bar');
         if(readonly_)
             prompt_area.hide();
         else {
@@ -209,23 +210,36 @@ RCloud.UI.command_prompt = (function() {
     var result = {
         init: function() {
             var that = this;
+
+            RCloud.UI.cell_commands.add({
+                insert_prompt: {
+                    area: 'prompt',
+                    modifying: true,
+                    sort: 1000,
+                    create: function() {
+                        return RCloud.UI.cell_commands.create_button('icon-plus', 'insert new cell', function() {
+                            shell.new_cell("", language_, false);
+                            var vs = shell.notebook.view.sub_views;
+                            vs[vs.length-1].edit_source(true);
+                        });
+                    }
+                },
+                language_prompt: {
+                    area: 'prompt',
+                    modifying: true,
+                    sort: 2000,
+                    create: function() {
+                        return RCloud.UI.cell_commands.create_select(RCloud.language.available_languages(), function(language) {
+                            window.localStorage["last_cell_lang"] = language;
+                            RCloud.UI.command_prompt.language(language, true);
+                        });
+                    }
+                }
+            });
             var prompt_div = $(RCloud.UI.panel_loader.load_snippet('command-prompt-snippet'));
             $('#rcloud-cellarea').append(prompt_div);
-            _.each(RCloud.language.available_languages(), function(lang) {
-                var s = "<option>" + lang + "</option>";
-                $("#insert-cell-language").append($(s));
-            });
-            // default gets set in restore_prompt
-            $("#insert-new-cell").click(function() {
-                shell.new_cell("", language_, false);
-                var vs = shell.notebook.view.sub_views;
-                vs[vs.length-1].edit_source();
-            });
-            $("#insert-cell-language").change(function() {
-                var language = $("#insert-cell-language").val();
-                window.localStorage["last_cell_lang"] = language;
-                that.language(language, true);
-            });
+            var prompt_command_bar = $('#prompt-area .cell-control-bar');
+            command_bar_ = RCloud.UI.cell_commands.decorate_prompt(prompt_command_bar);
             history_ = setup_prompt_history();
             entry_ = setup_command_entry();
         },
@@ -251,7 +265,7 @@ RCloud.UI.command_prompt = (function() {
                 return language_;
             language_ = val;
             if(!skip_ui)
-                $("#insert-cell-language").val(language_);
+                command_bar_.controls['language_prompt'].set(language_);
             entry_.set_language(language_);
             return this;
         },
