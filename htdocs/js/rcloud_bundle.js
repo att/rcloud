@@ -1549,9 +1549,13 @@ function create_cell_html_view(language, cell_model) {
         else code_div_.off('mousedown').off('mouseup');
     }
 
-    function clear_result() {
+    function display_status(status) {
         has_result = false;
-        result_div_.html('<pre><code> (no result) </code></pre>');
+        result_div_.html('<div class="non-result">' + status + '</div>');
+    };
+
+    function clear_result() {
+        display_status("(no result)");
     }
 
     function create_edit_widget() {
@@ -1655,6 +1659,9 @@ function create_cell_html_view(language, cell_model) {
         },
         id_updated: update_div_id,
         language_updated: update_language,
+        status_updated: function(status) {
+            display_status(status);
+        },
         result_updated: function(r) {
             has_result = true;
             result_div_.html(r);
@@ -1772,7 +1779,7 @@ function create_cell_html_view(language, cell_model) {
             cell_commands_above.show();
         },
         execute_cell: function() {
-            result_div_.html("Computing...");
+            display_status("Computing...");
             result.edit_source(false);
 
             RCloud.UI.with_progress(function() {
@@ -1928,7 +1935,7 @@ Notebook.Cell.create_controller = function(cell_model)
             var that = this;
             var language = cell_model.language() || 'Text'; // null is a synonym for Text
             function callback(r) {
-                that.set_status_message(r);
+                that.set_result(r);
                 _.each(cell_model.parent_model.execution_watchers, function(ew) {
                     ew.run_cell(cell_model);
                 });
@@ -1948,6 +1955,11 @@ Notebook.Cell.create_controller = function(cell_model)
             return promise.then(callback);
         },
         set_status_message: function(msg) {
+            _.each(cell_model.views, function(view) {
+                view.status_updated(msg);
+            });
+        },
+        set_result: function(msg) {
             _.each(cell_model.views, function(view) {
                 view.result_updated(msg);
             });
