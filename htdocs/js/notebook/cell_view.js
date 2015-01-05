@@ -261,8 +261,15 @@ function create_cell_html_view(language, cell_model) {
     }
     function assign_code() {
         var code = cell_model.content();
+        // match the number of lines ace.js is going to show
+        // 1. html would skip final blank line
         if(code[code.length-1] === '\n')
             code += '\n';
+        // 2. we have ace configured to show a minimum of 3 lines
+        var lines = (code.match(/\n/g)||[]).length;
+        if(lines<3)
+            code += new Array(4-lines).join('\n');
+
         code_div_.empty();
         var elem = $('<code></code>').append(code);
         var hljs_class = RCloud.language.hljs_class(cell_model.language());
