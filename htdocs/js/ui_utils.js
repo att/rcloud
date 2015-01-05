@@ -17,6 +17,17 @@ ui_utils.url_maker = function(page) {
     };
 };
 
+ui_utils.getURLParameter =  function(name){
+    return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+}
+
+ui_utils.check_tag_exists = function(page, notebook) {
+    var tag = ui_utils.getURLParameter("tag");
+    var message = "Tag [" + tag + "] in url is incorrect or doesn't exist. Please click Continue to load the most recent version of the notebook";
+    var make_edit_url = ui_utils.url_maker(page);
+    return RCloud.UI.fatal_dialog(message, "Continue", make_edit_url({notebook: notebook}));
+};
+
 ui_utils.disconnection_error = function(msg, label) {
     var result = $("<div class='alert alert-danger'></div>");
     result.append($("<span></span>").text(msg));

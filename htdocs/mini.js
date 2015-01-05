@@ -1,7 +1,4 @@
 function main() {
-    function getURLParameter(name) {
-        return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
-    }
 
     function getQueryArgs() {
         var r, res = {}, s = location.search;
@@ -16,6 +13,10 @@ function main() {
         debug: false,
         host: location.href.replace(/^http/,"ws").replace(/#.*$/,""),
         on_connect: function(ocaps) {
+            var notebook = ui_utils.getURLParameter("notebook"),
+                version = ui_utils.getURLParameter("version"),
+                tag = ui_utils.getURLParameter("tag");
+
             rcloud = RCloud.create(ocaps.rcloud);
             var promise;
             if (rcloud.authenticated) {
@@ -29,17 +30,20 @@ function main() {
 
             // resolve(rcloud.init_client_side_data()); // what was this for?!?
 
-            var notebook = getURLParameter("notebook"),
-                version = getURLParameter("version");
-            var tag = getURLParameter("tag");
             if(!version && tag) {
                 promise = promise.then(function() {
                     return rcloud.get_version_by_tag(notebook, tag)
                         .then(function(v) {
-                            version = v;
+                            if(v === null) {
+                                ui_utils.check_tag_exists('mini.html', notebook);
+                                return Promise.reject(new Error("Attempt to load a notebook with tag which does not exist."));
+                            } else {
+                                version = v;
+                            }
                         });
                 });
             };
+
             promise = promise.then(function() {
                 return rcloud.call_notebook(notebook, version).then(function(x) {
                     // FIXME: I'm not sure what's the best way to make this available
