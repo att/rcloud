@@ -102,6 +102,10 @@ div.panel-heading:hover {
     font-size: 12px;
 }
 
+.r-result-div pre code {
+    padding: 0;
+}
+
 .r-result-div .non-result {
     background-color: #e5e5e5;
     padding: 16px;
