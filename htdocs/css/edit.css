@@ -1006,24 +1006,10 @@ a.accordion-toggle.right > i {
     font-size: 16px;
 }
 
-.code-div pre code {
-    max-width: 800px;
-    margin-right: auto;
-    margin-left: auto;
-    border-left: 1px solid rgba(0,0,0,0.15);
-    border-right: 1px solid rgba(0,0,0,0.15);
+.r-result-div {
+    border-bottom: 1px solid #f5f5f5;
 }
 
-/* what does this do exactly? */
-.code-div pre code.r, .code-div pre code.py {
-    max-width: inherit;
-}
-
-.r-result-div p img {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-}
 .drop-asset-body {
     display: none;
     opacity:.8;
