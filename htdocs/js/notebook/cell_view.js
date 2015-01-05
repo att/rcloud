@@ -88,7 +88,7 @@ function create_cell_html_view(language, cell_model) {
         }
     });
     function execute_cell() {
-        result_div_.html("Computing...");
+        display_status("Computing...");
         result.edit_source(false);
 
         RCloud.UI.with_progress(function() {
@@ -190,9 +190,13 @@ function create_cell_html_view(language, cell_model) {
         else code_div_.off('mousedown').off('mouseup');
     }
 
-    function clear_result() {
+    function display_status(status) {
         has_result = false;
-        result_div_.html('<pre><code> (no result) </code></pre>');
+        result_div_.html('<div class="non-result">' + status + '</div>');
+    };
+
+    function clear_result() {
+        display_status("(no result)");
     }
 
     function create_edit_widget() {
@@ -293,6 +297,9 @@ function create_cell_html_view(language, cell_model) {
         },
         id_updated: update_div_id,
         language_updated: update_language,
+        status_updated: function(status) {
+            display_status(status);
+        },
         result_updated: function(r) {
             has_result = true;
             result_div_.html(r);
