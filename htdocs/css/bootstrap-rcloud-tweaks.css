@@ -76,7 +76,7 @@ div.panel-heading:hover {
     padding-bottom: 1px;
 }
 
-.code-div pre {
+.code-div pre code {
     padding: 0px 16px 0px 54px;
     background-color: #fff;
     line-height: normal;
