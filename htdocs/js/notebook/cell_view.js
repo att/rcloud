@@ -195,6 +195,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             execute_cell();
         }
     }]);
+    widget.commands.removeCommands(['find', 'replace']);
     var change_content = ui_utils.ignore_programmatic_changes(widget, function() {
         cell_model.parent_model.on_dirty();
     });
