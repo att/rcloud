@@ -11,6 +11,10 @@ RCloud.UI.find_replace = (function() {
                 .append('&nbsp;Replace with: ', replace_input_);
             find_dialog_.append('Find: ', find_input_, replace_stuff_);
             $('#middle-column').prepend(find_dialog_);
+
+            find_input_.on('input', function(val) {
+                highlight_all(find_input_.val());
+            });
         }
         if(shown_ && replace_mode_ === replace) {
             find_dialog_.hide();
@@ -18,6 +22,7 @@ RCloud.UI.find_replace = (function() {
         }
         else {
             find_dialog_.show();
+            find_input_.focus();
             if(replace)
                 replace_stuff_.show();
             else
@@ -25,6 +30,29 @@ RCloud.UI.find_replace = (function() {
             shown_ = true;
             replace_mode_ = replace;
         }
+    }
+    function escapeRegExp(string){
+        return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+    function highlight_all(term) {
+        term = escapeRegExp(term); // until we add a regex option
+        var regex = term.length ? new RegExp(term, 'g') : null;
+        shell.notebook.model.cells.forEach(function(cell) {
+            var matches = [];
+            if(regex) {
+                var content = cell.content(), match;
+                while((match = regex.exec(content))) {
+                    matches.push({
+                        begin: match.index,
+                        end: match.index+match[0].length
+                    });
+                    if(match.index === regex.lastIndex) ++regex.lastIndex;
+                }
+            }
+            cell.notify_views(function(view) {
+                view.change_highlights(matches);
+            });
+        });
     }
     var result = {
         init: function() {

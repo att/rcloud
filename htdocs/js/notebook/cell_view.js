@@ -489,6 +489,22 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 join_button.hide();
             else if(!am_read_only)
                 join_button.show();
+        },
+        change_highlights: function(ranges) {
+            if(widget) {
+                var markers = session.getMarkers();
+                for(var marker in markers) {
+                    if(markers[marker].type === 'rcloud-select')
+                        session.removeMarker(marker);
+                };
+                var Range = ace.require('ace/range').Range;
+                ranges.forEach(function(range) {
+                    var begin = ui_utils.position_of_character_offset(widget, range.begin),
+                        end = ui_utils.position_of_character_offset(widget, range.end);
+                    var ace_range = new Range(begin.row, begin.column, end.row, end.column);
+                    session.addMarker(ace_range, 'find-highlight', 'rcloud-select');
+                });
+            }
         }
     };
 

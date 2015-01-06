@@ -241,6 +241,11 @@ rect.frame {
     z-index: 5;
 }
 
+.find-highlight {
+    background-color: yellow;
+    position: absolute;
+}
+
 .fontawesome-button {
     margin: 0.25em;
     cursor: pointer;

@@ -778,6 +778,23 @@ ui_utils.character_offset_of_pos = function(widget, pos) {
     return ret;
 };
 
+ui_utils.position_of_character_offset = function(widget, offset) {
+    // based on the above; the wontfix ace issue is
+    // https://github.com/ajaxorg/ace/issues/226
+    var session = widget.getSession(), doc = session.getDocument();
+    var nlLength = doc.getNewLineCharacter().length;
+    var text = doc.getAllLines();
+    var i;
+    for(i=0; i<text.length; i++) {
+        if(offset <= text[i].length)
+            break;
+        offset -= text[i].length + nlLength;
+    }
+    if(i===text.length)
+        throw new Error("character offset off end of editor");
+    return {row: i, column: offset};
+};
+
 // bind an ace editor to a listener and return a function to change the
 // editor content without triggering that listener
 ui_utils.ignore_programmatic_changes = function(widget, listener) {
@@ -1904,6 +1921,22 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 join_button.hide();
             else if(!am_read_only)
                 join_button.show();
+        },
+        change_highlights: function(ranges) {
+            if(widget) {
+                var markers = session.getMarkers();
+                for(var marker in markers) {
+                    if(markers[marker].type === 'rcloud-select')
+                        session.removeMarker(marker);
+                };
+                var Range = ace.require('ace/range').Range;
+                ranges.forEach(function(range) {
+                    var begin = ui_utils.position_of_character_offset(widget, range.begin),
+                        end = ui_utils.position_of_character_offset(widget, range.end);
+                    var ace_range = new Range(begin.row, begin.column, end.row, end.column);
+                    session.addMarker(ace_range, 'find-highlight', 'rcloud-select');
+                });
+            }
         }
     };
 
@@ -4026,6 +4059,10 @@ RCloud.UI.find_replace = (function() {
                 .append('&nbsp;Replace with: ', replace_input_);
             find_dialog_.append('Find: ', find_input_, replace_stuff_);
             $('#middle-column').prepend(find_dialog_);
+
+            find_input_.on('input', function(val) {
+                highlight_all(find_input_.val());
+            });
         }
         if(shown_ && replace_mode_ === replace) {
             find_dialog_.hide();
@@ -4033,6 +4070,7 @@ RCloud.UI.find_replace = (function() {
         }
         else {
             find_dialog_.show();
+            find_input_.focus();
             if(replace)
                 replace_stuff_.show();
             else
@@ -4040,6 +4078,29 @@ RCloud.UI.find_replace = (function() {
             shown_ = true;
             replace_mode_ = replace;
         }
+    }
+    function escapeRegExp(string){
+        return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+    function highlight_all(term) {
+        term = escapeRegExp(term); // until we add a regex option
+        var regex = term.length ? new RegExp(term, 'g') : null;
+        shell.notebook.model.cells.forEach(function(cell) {
+            var matches = [];
+            if(regex) {
+                var content = cell.content(), match;
+                while((match = regex.exec(content))) {
+                    matches.push({
+                        begin: match.index,
+                        end: match.index+match[0].length
+                    });
+                    if(match.index === regex.lastIndex) ++regex.lastIndex;
+                }
+            }
+            cell.notify_views(function(view) {
+                view.change_highlights(matches);
+            });
+        });
     }
     var result = {
         init: function() {
