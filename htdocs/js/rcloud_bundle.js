@@ -4156,7 +4156,7 @@ RCloud.UI.find_replace = (function() {
             var content = cell.content(),
                 new_content = content.replace(regex, replace);
             if(cell.content(new_content))
-                changes.push(shell.notebook.model.update_cell(cell));
+                changes.push.apply(changes, shell.notebook.model.update_cell(cell));
         });
         shell.notebook.controller.apply_changes(changes);
     }
