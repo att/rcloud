@@ -4,8 +4,7 @@ Notebook.create_controller = function(model)
         dirty_ = false,
         save_button_ = null,
         save_timer_ = null,
-        save_timeout_ = 30000, // 30s
-        show_source_checkbox_ = null;
+        save_timeout_ = 30000; // 30s
 
     // only create the callbacks once, but delay creating them until the editor
     // is initialized
@@ -223,14 +222,6 @@ Notebook.create_controller = function(model)
         }, save_timeout_);
     }
 
-    function setup_show_source() {
-        show_source_checkbox_ = ui_utils.checkbox_menu_item($("#show-source"),
-           function() {result.show_r_source();},
-           function() {result.hide_r_source();});
-        show_source_checkbox_.set_state(true);
-    }
-
-    setup_show_source();
     model.dishers.push({on_dirty: on_dirty});
 
     var result = {
@@ -458,12 +449,12 @@ Notebook.create_controller = function(model)
 
         hide_r_source: function() {
             this._r_source_visible = false;
-            show_source_checkbox_.set_state(this._r_source_visible);
+            RCloud.UI.advanced_menu.check('show_source', false);
             Notebook.hide_r_source();
         },
         show_r_source: function() {
             this._r_source_visible = true;
-            show_source_checkbox_.set_state(this._r_source_visible);
+            RCloud.UI.advanced_menu.check('show_source', true);
             Notebook.show_r_source();
         }
     };

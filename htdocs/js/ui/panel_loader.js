@@ -65,9 +65,6 @@ RCloud.UI.panel_loader = (function() {
     }
 
     return {
-        add: function(P) {
-            _.extend(panels_, P);
-        },
         init: function() {
             // built-in panels
             this.add({
@@ -145,6 +142,12 @@ RCloud.UI.panel_loader = (function() {
                     panel: RCloud.UI.session_pane
                 }
             });
+        },
+        add: function(P) {
+            _.extend(panels_, P);
+        },
+        remove: function(panel_name) {
+            delete panels_[panel_name];
         },
         load_snippet: function(id) {
             // embed html snippets in edit.html as "html scripts"

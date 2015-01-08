@@ -1,20 +1,27 @@
 var ui_utils = {};
 
-ui_utils.url_maker = function(page) {
-    return function(opts) {
-        opts = opts || {};
-        var url = window.location.protocol + '//' + window.location.host + '/' + page;
+ui_utils.make_url = function(page, opts) {
+    opts = opts || {};
+    var url = window.location.protocol + '//' + window.location.host + '/' + page;
+    if(opts.do_path) {
+        if(opts.notebook) {
+            url += '/' + opts.notebook;
+            // tags currently not supported for notebook.R & the like
+            url += '/' + opts.version;
+        }
+    }
+    else {
         if(opts.notebook) {
             url += '?notebook=' + opts.notebook;
-            if(opts.version && !opts.tag)
-                url = url + '&version='+opts.version;
-            if(opts.tag && opts.version)
-                url = url + '&tag='+opts.tag;
+            if(opts.tag)
+                url += '&tag=' + opts.tag;
+            else if(opts.version)
+                url += '&version=' + opts.version;
         }
         else if(opts.new_notebook)
             url += '?new_notebook=true';
-        return url;
-    };
+    }
+    return url;
 };
 
 ui_utils.disconnection_error = function(msg, label) {
@@ -106,7 +113,7 @@ ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
     var lineHeight = widget.renderer.lineHeight;
     var rows = Math.max(min_rows, Math.min(max_rows, widget.getSession().getScreenLength()));
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
-    return Math.max(75, newHeight);
+    return newHeight;
 };
 
 ui_utils.ace_set_pos = function(widget, row, column) {
@@ -239,7 +246,7 @@ ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
     var base_enable = ret.enable;
     ret.enable = function(val) {
         // bootstrap menu items go in in an <li /> that takes the disabled class
-        $("#publish-notebook").parent().toggleClass('disabled', !val);
+        item.parent().toggleClass('disabled', !val);
         base_enable(val);
     };
     return ret;
@@ -435,7 +442,23 @@ ui_utils.editable = function(elem$, command) {
         });
         break;
     }
+    return elem$;
 };
+
+// hack to fake a hover over a jqTree node (or the next one if it's deleted)
+// because jqTree rebuilds DOM elements and events get lost
+ui_utils.fake_hover = function fake_hover(node) {
+    var parent = node.parent;
+    var index = $('.notebook-commands.appear', node.element).css('display') !== 'none' ?
+            parent.children.indexOf(node) : undefined;
+    ui_utils.on_next_tick(function() {
+        if(index>=0 && index < parent.children.length) {
+            var next = parent.children[index];
+                $(next.element).mouseover();
+        }
+    });
+};
+
 
 ui_utils.on_next_tick = function(f) {
     window.setTimeout(f, 0);

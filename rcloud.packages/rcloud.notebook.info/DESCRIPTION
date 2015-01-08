@@ -1,0 +1,9 @@
+Package: rcloud.notebook.info
+Title: Notebook Info add-on for RCloud
+Version: 0.1
+Author: Gordon Woodhull <gordon@research.att.com>
+Maintainer: Gordon Woodhull <gordon@research.att.com>
+Description: rcloud.notebook.info adds a Notebook Info command to each notebook in the notebook tree
+Depends: rcloud.support
+NOTE: --- packages that are not on CRAN/RForge.net *must* be in Suggests! ---
+License: MIT
