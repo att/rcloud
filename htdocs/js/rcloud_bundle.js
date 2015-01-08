@@ -6134,11 +6134,12 @@ RCloud.UI.settings_frame = (function() {
 
 RCloud.UI.share_button = (function() {
     var view_types_ = {};
-    var default_page_ = null;
+    var default_item_ = null;
     function set_page(title) {
-        var page = (title && view_types_[title]) ? view_types_[title].page : default_page_;
-        if(!page)
+        title = (title && view_types_[title]) ? title : default_item_;
+        if(!title)
             return Promise.reject(new Error('share button view types set up wrong'));
+        var page = view_types_[title].page;
         $("#view-type li a").css("font-weight", function() {
             return $(this).text() === title ? "bold" : "normal";
         });
@@ -6192,7 +6193,7 @@ RCloud.UI.share_button = (function() {
         load: function() {
             var that = this;
             var items = _.values(view_types_).sort(function(a, b) { return a.sort - b.sort; });
-            default_page_ = items.length ? items[0].page : null;
+            default_item_ = items.length ? items[0].title : null;
             $('#view-type').append($(items.map(function(item) {
                 var a = $.el.a({href: '#'}, item.title);
                 $(a).click(function() {
