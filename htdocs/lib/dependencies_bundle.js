@@ -31342,13 +31342,74 @@ function read(m)
     return that;
 }
 
+var incomplete_ = [], incomplete_header_ = null, msg_bytes_ = 0, remaining_ = 0;
+function clear_incomplete() {
+    incomplete_ = [];
+    incomplete_header_ = null;
+    remaining_ = 0;
+    msg_bytes_ = 0;
+}
+
 function parse(msg)
 {
     var result = {};
+    if(incomplete_.length) {
+        result.header = incomplete_header_;
+        incomplete_.push(msg);
+        remaining_ -= msg.byteLength;
+        if(remaining_ < 0) {
+            result.ok = false;
+            result.message = "Messages add up to more than expected length: got " +
+                            (msg_bytes_-remaining_) + ", expected " + msg_bytes_;
+            clear_incomplete();
+            return result;
+        }
+        else if(remaining_ === 0) {
+            var complete_msg = new ArrayBuffer(msg_bytes_),
+                array = new Uint8Array(complete_msg),
+                offset = 0;
+            incomplete_.forEach(function(frame, i) {
+                array.set(new Uint8Array(frame), offset);
+                offset += frame.byteLength;
+            });
+            if(offset !== msg_bytes_) {
+                result.ok = false;
+                result.message = "Internal error - frames added up to " + offset + " not " + msg_bytes_;
+                clear_incomplete();
+                return result;
+            }
+            clear_incomplete();
+            msg = complete_msg;
+        }
+        else {
+            result.ok = true;
+            result.incomplete = true;
+            return result;
+        }
+    }
+
     var header = new Int32Array(msg, 0, 4);
     var resp = header[0] & 16777215, status_code = header[0] >> 24;
+    var length = header[1], length_high = header[3];
     var msg_id = header[2];
     result.header = [resp, status_code, msg_id];
+
+    if(length_high) {
+        result.ok = false;
+        result.message = "rserve.js cannot handle messages larger than 4GB";
+        return result;
+    }
+
+    if(length > msg.byteLength) {
+        incomplete_.push(msg);
+        incomplete_header_ = header;
+        msg_bytes_ = length + 16; // header length + data length
+        remaining_ = msg_bytes_ - msg.byteLength;
+        result.header = header;
+        result.ok = true;
+        result.incomplete = true;
+        return result;
+    }
 
     if (resp === Rserve.Rsrv.RESP_ERR) {
         result.ok = false;
@@ -31387,6 +31448,7 @@ function parse_payload(msg)
     var d = reader.read_int();
     var _ = Rserve.Rsrv.par_parse(d);
     var t = _[0], l = _[1];
+
     if (Rserve.Rsrv.IS_LARGE(t)) {
         var more_length = reader.read_int();
         l += more_length * Math.pow(2, 24);
@@ -31519,15 +31581,17 @@ Rserve.parse_payload = parse_payload;
                     this.buffer, this.offset + offset, this.buffer.byteLength);
             },
             view: function(new_offset, new_length) {
-                // FIXME Needs bounds checking
+                var ofs = this.offset + new_offset;
+                if(ofs + new_length > this.buffer.byteLength)
+                    throw new Error("Rserve.my_ArrayBufferView.view: bounds error: size: " +
+                                    this.buffer.byteLength + " offset: " + ofs + " length: " + new_length);
                 return Rserve.my_ArrayBufferView(
-                    this.buffer, this.offset + new_offset, new_length);
+                    this.buffer, ofs, new_length);
             }
         };
     };
 
 })(this);
-
 (function() {
 
 function _encode_command(command, buffer, msg_id) {
@@ -31689,6 +31753,8 @@ Rserve.create = function(opts) {
             return;
         }
         var v = Rserve.parse_websocket_frame(msg.data);
+        if(v.incomplete)
+            return;
         var msg_id = v.header[2], cmd = v.header[0] & 0xffffff;
         var queue = _.find(queues, function(queue) { return queue.msg_id == msg_id; });
         // console.log("onmessage, queue=" + (queue ? queue.name : "<unknown>") + ", ok= " + v.ok+ ", cmd=" + cmd +", msg_id="+ msg_id);

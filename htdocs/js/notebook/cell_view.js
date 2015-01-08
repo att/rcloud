@@ -284,7 +284,7 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
                 }).parent().parent()
                 .each(function() {
                     var that = this;
-                    var uuids = this.childNodes[0].childNodes[0].data.substr(8,65).split("|");
+                    var uuids = this.childNodes[0].childNodes[0].data.substr(8,66).split("|");
                     // FIXME monstrous hack: we rebuild the ocap from the string to
                     // call it via rserve-js
                     var ocap = [uuids[1]];
