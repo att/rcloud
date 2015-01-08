@@ -86,6 +86,8 @@ div.panel-heading:hover {
     margin-left: auto;
     border-left: 1px solid rgba(0,0,0,0.15);
     border-right: 1px solid rgba(0,0,0,0.15);
+    white-space: pre-wrap;
+    word-break: normal;
 }
 
 /* what does this do exactly? */
