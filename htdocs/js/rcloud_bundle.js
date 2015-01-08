@@ -2786,7 +2786,7 @@ Notebook.create_controller = function(model)
         },
         execute_cell_version: function(info) {
             function callback(r) {
-                info.controller.set_status_message(r);
+                info.controller.set_result(r);
                 _.each(model.execution_watchers, function(ew) {
                     ew.run_cell(info.json_rep);
                 });
