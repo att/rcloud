@@ -9,6 +9,9 @@ function ensure_image_has_hash(img)
     return img.dataset.sha256;
 }
 
+var MIN_LINES = 2;
+var EXTRA_HEIGHT = 2;
+
 function create_cell_html_view(language, cell_model) {
     var ace_widget_;
     var ace_session_;
@@ -22,7 +25,6 @@ function create_cell_html_view(language, cell_model) {
     var edit_mode_; // note: starts neither true nor false
     var result = {}; // "this"
 
-    var EXTRA_HEIGHT = 2;
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
     update_div_id();
     notebook_cell_div.data('rcloud.model', cell_model);
@@ -39,7 +41,7 @@ function create_cell_html_view(language, cell_model) {
         notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
     }
     function set_widget_height() {
-        source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, 3) + EXTRA_HEIGHT) + "px");
+        source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) + EXTRA_HEIGHT) + "px");
     }
 
     var has_result = false;
@@ -186,10 +188,10 @@ function create_cell_html_view(language, cell_model) {
         // 1. html would skip final blank line
         if(code[code.length-1] === '\n')
             code += '\n';
-        // 2. we have ace configured to show a minimum of 3 lines
+        // 2. we have ace configured to show a minimum of MIN_LINES lines
         var lines = (code.match(/\n/g)||[]).length;
-        if(lines<3)
-            code += new Array(4-lines).join('\n');
+        if(lines<MIN_LINES)
+            code += new Array(MIN_LINES+1-lines).join('\n');
 
         code_div_.empty();
         var elem = $('<code></code>').append(code);
