@@ -27,6 +27,8 @@ rcloud_bundle.js: \
 	language.js \
 	upload_utils.js \
 	ui/_begin.js \
+        ui/advanced_menu.js \
+        ui/cell_commands.js \
 	ui/column.js \
 	ui/column_sizer.js \
 	ui/command_prompt.js \
@@ -34,10 +36,12 @@ rcloud_bundle.js: \
 	ui/configure_readonly.js \
 	ui/fatal_dialog.js \
 	ui/help_frame.js \
+        ui/import_export.js \
 	ui/init.js \
 	ui/left_panel.js \
 	ui/load_options.js \
 	ui/middle_column.js \
+        ui/notebook_commands.js \
 	ui/notebook_title.js \
 	ui/notebooks_frame.js \
 	ui/panel_loader.js \

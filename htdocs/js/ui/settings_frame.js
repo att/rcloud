@@ -32,9 +32,6 @@ RCloud.UI.settings_frame = (function() {
             var sz = RCloud.UI.collapsible_column.default_sizer(el);
             return {height: sz.height+5, padding: sz.padding};
         },
-        add: function(S) {
-            _.extend(options_, S);
-        },
         checkbox: function(opts) {
             opts = _.extend({
                 sort: 10000,
@@ -54,7 +51,7 @@ RCloud.UI.settings_frame = (function() {
                     var checkboxdiv = $($.el.div({class: 'checkbox'}, label));
                     $(check).change(function() {
                         var val = $(this).prop('checked');
-                        on_change(val, this.id);
+                        on_change(val);
                         opts.set(val);
                     });
                     return checkboxdiv;
@@ -70,26 +67,19 @@ RCloud.UI.settings_frame = (function() {
             var that = this;
             this.add({
                 'show-command-prompt': that.checkbox({
-                    id:"show-command-prompt",
                     sort: 100,
                     default_value: true,
                     label: "Show Command Prompt",
                     set: function(val) {
                         RCloud.UI.command_prompt.show_prompt(val);
                     }
-                })
-            });
-            this.add({
+                }),
                 'subscribe-to-comments': that.checkbox({
-                    id:"subscribe-to-comments",
                     sort: 100,
                     default_value: false,
                     label: "Subscribe To Comments"
-                })
-            });
-            this.add({
+                }),
                 'show-terse-dates': that.checkbox({
-                    id:"show-terse-dates",
                     sort: 100,
                     default_value: true,
                     label: "Show Terse Version Dates",
@@ -99,17 +89,23 @@ RCloud.UI.settings_frame = (function() {
                 })
             });
         },
+        add: function(S) {
+            _.extend(options_, S);
+        },
+        remove: function(option_name) {
+            delete options_[option_name];
+        },
         load: function() {
             var that = this;
             var sort_controls = [];
-            for(var name in options_) {
+            _.keys(options_).forEach(function(name) {
                 var option = options_[name];
-                controls_[name] = option.create_control(function(value,name) {
+                controls_[name] = option.create_control(function(value) {
                     if(!now_setting_[name])
                         rcloud.config.set_user_option(name, value);
                 });
                 sort_controls.push({sort: option.sort, control: controls_[name]});
-            }
+            });
             sort_controls = sort_controls.sort(function(a,b) { return a.sort - b.sort; });
             var body = $('#settings-body');
             for(var i=0; i<sort_controls.length; ++i)

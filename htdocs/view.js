@@ -8,6 +8,7 @@ function main() {
     RCloud.UI.init();
     RCloud.session.init(true).then(function() {
         shell.init();
+        RCloud.UI.advanced_menu.load();
         var notebook = getURLParameter("notebook"),
             version = getURLParameter("version"),
             quiet = getURLParameter("quiet");
