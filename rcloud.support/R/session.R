@@ -64,8 +64,6 @@ session.markdown.eval <- function(command, language, silent) {
 
 ## WS init
 rcloud.session.init <- function(...) {
-  set.seed(Sys.getpid()) # we want different seeds so we get different file names
-  .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
   start.rcloud(...)
   rcloud.reset.session()
 
