@@ -4939,6 +4939,7 @@ RCloud.UI.notebook_commands = (function() {
         decorate: function($li, node, right) {
             var done;
 
+            // decorate the notebook commands lazily, on hover
             function execute() {
                 var predicate = condition_pred(node);
                 // commands for the right column, always shown
@@ -4961,7 +4962,6 @@ RCloud.UI.notebook_commands = (function() {
                 }
                 done = true;
             }
-            execute();
 
             $li.find('*:not(ul)').hover(
                 function() {
