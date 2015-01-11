@@ -2386,7 +2386,7 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(version, notebook) {
-        var is_read_only = version !== null || notebook.user.login !== rcloud.username();
+        var is_read_only = version !== null || notebook.user.login !== rcloud.username() || shell.is_view_mode();
         current_gist_ = notebook;
         model.read_only(is_read_only);
         if (!_.isUndefined(notebook.files)) {

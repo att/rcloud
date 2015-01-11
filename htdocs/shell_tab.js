@@ -8,7 +8,7 @@ var shell = (function() {
         notebook_model_ = Notebook.create_model(),
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
         notebook_controller_ = Notebook.create_controller(notebook_model_),
-        view_mode_ = window.location.href.match("/view.html");
+        view_mode_ = !!window.location.href.match("/view.html");
 
     function on_new(notebook) {
         gistname_ = notebook.id;
