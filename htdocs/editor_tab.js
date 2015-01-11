@@ -1091,6 +1091,7 @@ var editor = function () {
         create_book_tree_widget: function(data) {
             var that = this;
 
+            var myTime = window.performance.now();
             $tree_ = $("#editor-book-tree");
             $tree_.tree({
                 data: data,
@@ -1100,6 +1101,7 @@ var editor = function () {
             });
             $tree_.bind('tree.click', tree_click);
             $tree_.bind('tree.open', tree_open);
+            console.log('load tree took ' + (window.performance.now() - myTime));
         },
         find_next_copy_name: function(name) {
             return find_next_copy_name(username_, name);
