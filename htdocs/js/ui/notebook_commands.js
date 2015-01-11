@@ -165,13 +165,14 @@ RCloud.UI.notebook_commands = (function() {
 
             // decorate the notebook commands lazily, on hover
             function execute() {
+                var $right = $(right);
                 var predicate = condition_pred(node);
                 // commands for the right column, always shown
                 var always_commands = always_commands_.filter(predicate);
                 if(always_commands.length) {
                     var always = $($.el.span({'class': 'notebook-commands-right'}));
                     add_commands(node, always, always_commands);
-                    right.append(always);
+                    $right.append(always);
                 }
 
                 // commands that appear
@@ -179,10 +180,10 @@ RCloud.UI.notebook_commands = (function() {
                 if(appear_commands.length) {
                     var appear = $($.el.span({'class': 'notebook-commands appear'}));
                     add_commands(node, appear, appear_commands);
-                    right.append(appear);
-                    right.find('.notebook-date').toggleClass('disappear', true);
+                    $right.append(appear);
+                    $right.find('.notebook-date').toggleClass('disappear', true);
                     appear.hide();
-                    right.append($.el.span({"class": "notebook-commands appear-wrapper"}, appear[0]));
+                    $right.append($.el.span({"class": "notebook-commands appear-wrapper"}, appear[0]));
                 }
                 done = true;
             }

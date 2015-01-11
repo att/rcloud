@@ -941,11 +941,12 @@ var editor = function () {
             title.addClass('private');
         if(node.version || node.id === 'showmore')
             title.addClass('history');
-        var right = $($.el.span({'class': 'notebook-right'}));
+        var date;
         if(node.last_commit) {
-            right.append($.el.span({'class': 'notebook-date'},
-                                   display_date(node.last_commit)));
+            date = $.el.span({'class': 'notebook-date'},
+                                   display_date(node.last_commit));
         }
+        var right = $.el.span({'class': 'notebook-right'}, date);
         if(node.user === username_ && $tree_.tree('isNodeSelected', node))
             RCloud.UI.notebook_title.make_editable(node, $li, true);
         RCloud.UI.notebook_commands.decorate($li, node, right);
