@@ -134,7 +134,7 @@ var shell = (function() {
                                            description: notebook.description,
                                            id: notebook.id
                                           };
-                            notebook = sanitize_notebook(notebook);
+                            notebook = Notebook.sanitize(notebook);
                             notebook.description = editor.find_next_copy_name(notebook.description);
                             return notebook_controller_.create_notebook(notebook)
                                 .then(function(result) {

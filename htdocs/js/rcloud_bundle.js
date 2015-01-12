@@ -2831,6 +2831,16 @@ Notebook.empty_for_github = function(text) {
 Notebook.is_part_name = function(filename) {
     return filename.match(/^part\d+\./);
 };
+
+Notebook.sanitize = function(notebook) {
+    notebook = _.pick(notebook, 'description', 'files');
+    var files = notebook.files;
+    delete files.r_attributes;
+    delete files.r_type;
+    for(var fn in files)
+        files[fn] = _.pick(files[fn], 'content');
+    return notebook;
+};
 (function() {
 
 function append_session_info(text) {
@@ -4383,16 +4393,6 @@ RCloud.UI.help_frame = {
     }
 };
 RCloud.UI.import_export = (function() {
-    function sanitize_notebook(notebook) {
-        notebook = _.pick(notebook, 'description', 'files');
-        var files = notebook.files;
-        delete files.r_attributes;
-        delete files.r_type;
-        for(var fn in files)
-            files[fn] = _.pick(files[fn], 'content');
-        return notebook;
-    }
-
     function download_as_file(filename, content, mimetype) {
         var file = new Blob([content], {type: mimetype});
         saveAs(file, filename); // FileSaver.js
@@ -4477,7 +4477,7 @@ RCloud.UI.import_export = (function() {
                     modes: ['edit'],
                     action: function() {
                         return rcloud.get_notebook(shell.gistname(), shell.version()).then(function(notebook) {
-                            notebook = sanitize_notebook(notebook);
+                            notebook = Notebook.sanitize(notebook);
                             var gisttext = JSON.stringify(notebook);
                             download_as_file(notebook.description + ".gist", gisttext, 'text/json');
                             return notebook;
@@ -4521,7 +4521,7 @@ RCloud.UI.import_export = (function() {
                                     notebook_status.text('');
                                     notebook_desc_content.val(notebook.description);
                                     notebook_desc.show();
-                                    notebook = sanitize_notebook(notebook);
+                                    notebook = Notebook.sanitize(notebook);
                                     ui_utils.enable_bs_button(import_button);
                                 };
                                 fr.readAsText(file);
