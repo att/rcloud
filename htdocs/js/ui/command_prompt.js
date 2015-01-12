@@ -218,9 +218,8 @@ RCloud.UI.command_prompt = (function() {
                     sort: 1000,
                     create: function() {
                         return RCloud.UI.cell_commands.create_button('icon-plus', 'insert new cell', function() {
-                            shell.new_cell("", language_, false);
-                            var vs = shell.notebook.view.sub_views;
-                            vs[vs.length-1].edit_source(true);
+                            shell.new_cell("", language_, false)
+                                .edit_source(true);
                         });
                     }
                 },

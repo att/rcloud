@@ -84,7 +84,8 @@ RCloud.UI.cell_commands = (function() {
                     modifying: true,
                     create: function(cell_model) {
                         return that.create_button("icon-plus-sign", "insert cell", function() {
-                            shell.insert_cell_before(cell_model.language(), cell_model.id());
+                            shell.insert_cell_before("", cell_model.language(), cell_model.id())
+                                .edit_source(true);
                         });
                     }
                 },
@@ -190,9 +191,6 @@ RCloud.UI.cell_commands = (function() {
         remove: function(command_name) {
             delete commands_[command_name];
             return this;
-        },
-        icon_style: function() {
-            return icon_style_;
         },
         decorate_above_between: function(area, cell_model, cell_view) {
             // commands for above and between cells

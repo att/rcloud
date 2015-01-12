@@ -25,13 +25,18 @@ Notebook.Cell.create_controller = function(cell_model)
             return promise.then(callback);
         },
         set_status_message: function(msg) {
-            _.each(cell_model.views, function(view) {
+            cell_model.notify_views(function(view) {
                 view.status_updated(msg);
             });
         },
         set_result: function(msg) {
-            _.each(cell_model.views, function(view) {
+            cell_model.notify_views(function(view) {
                 view.result_updated(msg);
+            });
+        },
+        edit_source: function(whether) {
+            cell_model.notify_views(function(view) {
+                view.edit_source(whether);
             });
         },
         change_language: function(language) {

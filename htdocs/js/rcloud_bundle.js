@@ -1964,13 +1964,18 @@ Notebook.Cell.create_controller = function(cell_model)
             return promise.then(callback);
         },
         set_status_message: function(msg) {
-            _.each(cell_model.views, function(view) {
+            cell_model.notify_views(function(view) {
                 view.status_updated(msg);
             });
         },
         set_result: function(msg) {
-            _.each(cell_model.views, function(view) {
+            cell_model.notify_views(function(view) {
                 view.result_updated(msg);
+            });
+        },
+        edit_source: function(whether) {
+            cell_model.notify_views(function(view) {
+                view.edit_source(whether);
             });
         },
         change_language: function(language) {
@@ -3379,7 +3384,8 @@ RCloud.UI.cell_commands = (function() {
                     modifying: true,
                     create: function(cell_model) {
                         return that.create_button("icon-plus-sign", "insert cell", function() {
-                            shell.insert_cell_before(cell_model.language(), cell_model.id());
+                            shell.insert_cell_before("", cell_model.language(), cell_model.id())
+                                .edit_source(true);
                         });
                     }
                 },
@@ -3485,9 +3491,6 @@ RCloud.UI.cell_commands = (function() {
         remove: function(command_name) {
             delete commands_[command_name];
             return this;
-        },
-        icon_style: function() {
-            return icon_style_;
         },
         decorate_above_between: function(area, cell_model, cell_view) {
             // commands for above and between cells
@@ -4061,9 +4064,8 @@ RCloud.UI.command_prompt = (function() {
                     sort: 1000,
                     create: function() {
                         return RCloud.UI.cell_commands.create_button('icon-plus', 'insert new cell', function() {
-                            shell.new_cell("", language_, false);
-                            var vs = shell.notebook.view.sub_views;
-                            vs[vs.length-1].edit_source(true);
+                            shell.new_cell("", language_, false)
+                                .edit_source(true);
                         });
                     }
                 },

@@ -54,6 +54,14 @@ var shell = (function() {
         });
     }
 
+    function check_cell_language(language) {
+        if(!_.contains(RCloud.language.available_languages(), language)) {
+            RCloud.UI.session_pane.post_error(
+                "Sorry, " + language + " notebook cells not supported in this deployment.");
+            return;
+        }
+    }
+
     var result = {
         notebook: {
             model: notebook_model_,
@@ -73,23 +81,21 @@ var shell = (function() {
         is_view_mode: function() {
             return view_mode_;
         },
+        scroll_to_end: scroll_to_end,
         new_cell: function(content, language, execute) {
-            if(!_.contains(RCloud.language.available_languages(), language)) {
-                RCloud.UI.session_pane.post_error("Sorry, " + language + " notebook cells not supported in this deployment.");
-                return;
-            }
-            var cell = notebook_controller_.append_cell(content, language);
+            check_cell_language(language);
+            var controller = notebook_controller_.append_cell(content, language);
             RCloud.UI.command_prompt.history().add_entry(content);
             if(execute) {
                 RCloud.UI.command_prompt.focus();
-                cell.execute().then(scroll_to_end);
+                controller.execute().then(scroll_to_end);
             }
+            return controller;
         },
-        scroll_to_end: scroll_to_end,
-        insert_cell_before: function(language, index) {
-            notebook_controller_.insert_cell("", language, index);
-        }, insert_markdown_cell_before: function(index) {
-            return notebook_controller_.insert_cell("", "Markdown", index);
+        insert_cell_before: function(content, language, index) {
+            check_cell_language(language);
+            var controller = notebook_controller_.insert_cell("", language, index);
+            return controller;
         }, join_prior_cell: function(cell_model) {
             return notebook_controller_.join_prior_cell(cell_model);
         }, split_cell: function(cell_model, point1, point2) {
