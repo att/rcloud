@@ -29,9 +29,11 @@ RCloud.UI.cell_commands = (function() {
         create_button: function(awesome, text, action) {
             var control = ui_utils.fa_button(awesome, text);
             control.click(function(e) {
-                control.tooltip('destroy');
+                // this is a blunt instrument.  seems the tooltips don't go away
+                // when they are set to container = body
+                $(".tooltip").remove();
                 if (!$(e.currentTarget).hasClass("button-disabled")) {
-                    action();
+                    action(control);
                 }
             });
             return {
