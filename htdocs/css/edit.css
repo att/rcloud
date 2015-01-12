@@ -256,6 +256,9 @@ rect.frame {
 
 .find-highlight {
     background-color: yellow;
+}
+
+.ace_content .find-highlight {
     position: absolute;
 }
 

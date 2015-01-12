@@ -62,11 +62,13 @@ RCloud.UI.find_replace = (function() {
                 replace_stuff_.show();
             else
                 replace_stuff_.hide();
+            highlight_all(find_input_.val());
             shown_ = true;
             replace_mode_ = replace;
         }
     }
     function hide_dialog() {
+        highlight_all(null);
         find_dialog_.hide();
         shown_ = false;
     }
