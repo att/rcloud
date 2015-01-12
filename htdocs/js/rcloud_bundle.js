@@ -3013,6 +3013,7 @@ RCloud.language = (function() {
         // don't call _set_available_languages yourself; it's called
         // by the session initialization code.
         _set_available_languages: function(langs) {
+            langs_ = [];
             for(var lang in langs) {
                 langs_.push(lang);
                 ace_modes_[lang] = langs[lang]['ace.mode'];
