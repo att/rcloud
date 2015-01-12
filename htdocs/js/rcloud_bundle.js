@@ -2880,6 +2880,11 @@ function append_session_info(text) {
     RCloud.UI.session_pane.append_text(text);
 }
 
+function handle_img(v) {
+    var url = v[0], dims = v[1], page = v[2];
+    RCloud.UI.session_pane.append_text("<img width="+dims[0]+" height="+dims[1]+" src='"+url+"' />\n")
+}
+
 // FIXME this needs to go away as well.
 var oob_handlers = {
     "browsePath": function(v) {
@@ -2907,6 +2912,9 @@ var oob_handlers = {
     "console.out": append_session_info,
     "console.msg": append_session_info,
     "console.err": append_session_info,
+    "img.url.update": handle_img,
+    "img.url.final": handle_img,
+    // "dev.close": , // sent when device closes - we don't really care in the UI I guess ...,
     "stdout": append_session_info,
     "stderr": append_session_info
     // NOTE: "idle": ... can be used to handle idle pings from Rserve if we care ..
@@ -2914,6 +2922,9 @@ var oob_handlers = {
 
 var on_data = function(v) {
     v = v.value.json();
+    // FIXME: this is a temporary debugging to see all OOB calls irrespective of handlers
+    console.log("OOB arrived: ['"+v[0]+"']");
+
     if(oob_handlers[v[0]])
         oob_handlers[v[0]](v.slice(1));
 };
