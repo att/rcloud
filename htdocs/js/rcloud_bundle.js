@@ -2591,23 +2591,23 @@ Notebook.create_controller = function(model)
         remove_cell: function(cell_model) {
             var changes = refresh_buffers().concat(model.remove_cell(cell_model));
             RCloud.UI.command_prompt.focus();
-            update_notebook(changes)
+            return update_notebook(changes)
                 .then(default_callback());
         },
         remove_asset: function(asset_model) {
             var changes = refresh_buffers().concat(model.remove_asset(asset_model));
-            update_notebook(changes)
+            return update_notebook(changes)
                 .then(default_callback());
         },
         move_cell: function(cell_model, before) {
             var changes = refresh_buffers().concat(model.move_cell(cell_model, before ? before.id() : -1));
-            update_notebook(changes)
+            return update_notebook(changes)
                 .then(default_callback());
         },
         join_prior_cell: function(cell_model) {
             var prior = model.prior_cell(cell_model);
             if(!prior)
-                return;
+                return Promise.resolve(undefined);
 
             function opt_cr(text) {
                 if(text.length && text[text.length-1] != '\n')
@@ -2651,7 +2651,7 @@ Notebook.create_controller = function(model)
                 }
             }
             _.each(prior.views, function(v) { v.clear_result(); });
-            update_notebook(changes.concat(model.remove_cell(cell_model)))
+            return update_notebook(changes.concat(model.remove_cell(cell_model)))
                 .then(default_callback());
         },
         split_cell: function(cell_model, point1, point2) {
@@ -2678,7 +2678,7 @@ Notebook.create_controller = function(model)
             }
             // don't do anything if there is no real split point
             if(point1 === undefined)
-                return;
+                return Promise.resolve(undefined);
             var parts = [content.substring(0, point1)],
                 id = cell_model.id(), language = cell_model.language();
             if(point2 === undefined)
@@ -2693,12 +2693,12 @@ Notebook.create_controller = function(model)
             // not great to do multiple inserts here - but not quite important enough to enable insert-n
             for(var i=1; i<parts.length; ++i)
                 changes = changes.concat(insert_cell_helper(parts[i], language, id+i).changes);
-            update_notebook(changes)
+            return update_notebook(changes)
                 .then(default_callback());
         },
         change_cell_language: function(cell_model, language) {
             var changes = refresh_buffers().concat(model.change_cell_language(cell_model, language));
-            update_notebook(changes)
+            return update_notebook(changes)
                 .then(default_callback());
         },
         clear: function() {
