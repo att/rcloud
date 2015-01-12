@@ -120,6 +120,7 @@ RCloud.UI.notebook_commands = (function() {
                     create: function(node) {
                         var remove = ui_utils.fa_button('icon-remove', 'remove', 'remove', icon_style_, true);
                         remove.click(function(e) {
+                            $('div.popover').remove(); // UGH
                             var yn = confirm("Do you want to remove '"+node.full_name+"'?");
                             if (yn) {
                                 e.stopPropagation();
