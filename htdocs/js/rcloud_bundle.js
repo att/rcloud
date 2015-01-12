@@ -1557,7 +1557,7 @@ function create_cell_html_view(language, cell_model) {
     };
 
     function clear_result() {
-        display_status("(no result)");
+        display_status("(uncomputed)");
     }
 
     function create_edit_widget() {
