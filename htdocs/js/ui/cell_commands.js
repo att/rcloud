@@ -148,12 +148,14 @@ RCloud.UI.cell_commands = (function() {
                     create: function(cell_model, cell_view) {
                         return that.create_button("icon-unlink", "split cell", function() {
                             var ace_widget = cell_view.ace_widget();
-                            var range = ace_widget.getSelection().getRange();
-                            var point1, point2;
-                            point1 = ui_utils.character_offset_of_pos(ace_widget, range.start);
-                            if(!range.isEmpty())
-                                point2 = ui_utils.character_offset_of_pos(ace_widget, range.end);
-                            shell.split_cell(cell_model, point1, point2);
+                            if(ace_widget) {
+                                var range = ace_widget.getSelection().getRange();
+                                var point1, point2;
+                                point1 = ui_utils.character_offset_of_pos(ace_widget, range.start);
+                                if(!range.isEmpty())
+                                    point2 = ui_utils.character_offset_of_pos(ace_widget, range.end);
+                                shell.split_cell(cell_model, point1, point2);
+                            }
                         });
                     }
                 },
