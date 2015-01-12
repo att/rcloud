@@ -57,7 +57,9 @@ for dir in $PACKAGE_DIRS; do
             echo $pkg
 	    if ! scripts/build_package.sh $pkg; then
                 echo;echo;echo; echo package $pkg FAILED to build!;echo;echo
-                [ $BREAK == 0 ] || exit 1
+                if [ $BREAK -gt 0 ]; then
+                    exit 1
+                fi
             fi
         done
     fi

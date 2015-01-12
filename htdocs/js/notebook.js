@@ -15,3 +15,13 @@ Notebook.empty_for_github = function(text) {
 Notebook.is_part_name = function(filename) {
     return filename.match(/^part\d+\./);
 };
+
+Notebook.sanitize = function(notebook) {
+    notebook = _.pick(notebook, 'description', 'files');
+    var files = notebook.files;
+    delete files.r_attributes;
+    delete files.r_type;
+    for(var fn in files)
+        files[fn] = _.pick(files[fn], 'content');
+    return notebook;
+};
