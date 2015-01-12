@@ -3,7 +3,7 @@ RCloud.UI.find_replace = (function() {
         find_input_, replace_desc_, replace_input_, replace_stuff_,
         find_next_, replace_all_,
         shown_ = false, replace_mode_ = false,
-        nextReplace_ = null, nextFind_ = null,
+        find_cycle_ = null, replace_cycle_ = null,
         matches_ = {}, currentCell_, currentMatch_;
     function toggle_find_replace(replace) {
         if(!find_dialog_) {
@@ -24,22 +24,19 @@ RCloud.UI.find_replace = (function() {
                 currentCell_ = currentMatch_ = undefined;
                 highlight_all(find_input_.val());
             });
+
+            find_next_.click(function() {
+                alert('find next!');
+                return false;
+            });
+
             replace_all_.click(function() {
                 replace_all(find_input_.val(), replace_input_.val());
                 return false;
             });
 
-            nextFind_ = {
-                'find-input': find_next_,
-                'find-next': find_input_
-            };
-
-            nextReplace_ = {
-                'find-input': replace_input_,
-                'replace-input': find_next_,
-                'find-next': replace_all_,
-                'replace-all': find_input_
-            };
+            find_cycle_ = ['find-input', 'find-next'];
+            replace_cycle_ = ['find-input', 'replace-input', 'find-next', 'replace-all'];
 
             var click_find_next = function(e) {
                 if(e.keyCode===13) {
@@ -54,9 +51,11 @@ RCloud.UI.find_replace = (function() {
             find_form.keydown(function(e) {
                 switch(e.keyCode) {
                 case 9: // tab
-                    (replace_mode_ ? nextReplace_ : nextFind_)[e.target.id].focus();
-                    return false;
-                case 13: // cr: don't do default anything
+                    var cycle = replace_mode_ ? replace_cycle_ : find_cycle_;
+                    var i = cycle.indexOf(e.target.id) + cycle.length;
+                    if(e.shiftKey) --i; else ++i;
+                    i = i % cycle.length;
+                    $('#' + cycle[i]).focus();
                     return false;
                 case 27: // esc
                     hide_dialog();
