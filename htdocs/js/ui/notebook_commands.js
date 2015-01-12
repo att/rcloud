@@ -161,12 +161,11 @@ RCloud.UI.notebook_commands = (function() {
             return icon_style_;
         },
         decorate: function($li, node, right) {
-            var done;
+            var appeared;
+            var $right = $(right);
+            var predicate = condition_pred(node);
 
-            // decorate the notebook commands lazily, on hover
-            function execute() {
-                var $right = $(right);
-                var predicate = condition_pred(node);
+            function do_always() {
                 // commands for the right column, always shown
                 var always_commands = always_commands_.filter(predicate);
                 if(always_commands.length) {
@@ -174,6 +173,10 @@ RCloud.UI.notebook_commands = (function() {
                     add_commands(node, always, always_commands);
                     $right.append(always);
                 }
+            }
+
+            // decorate the notebook commands lazily, on hover
+            function do_appear() {
 
                 // commands that appear
                 var appear_commands = appear_commands_.filter(predicate);
@@ -185,13 +188,14 @@ RCloud.UI.notebook_commands = (function() {
                     appear.hide();
                     $right.append($.el.span({"class": "notebook-commands appear-wrapper"}, appear[0]));
                 }
-                done = true;
+                appeared = true;
             }
 
+            do_always();
             $li.find('*:not(ul)').hover(
                 function() {
-                    if(!done)
-                        execute();
+                    if(!appeared)
+                        do_appear();
                     var notebook_info = editor.get_notebook_info(node.gistname);
                     $('.notebook-commands.appear', this).show();
                     $('.notebook-date.disappear', this).css('visibility', 'hidden');
