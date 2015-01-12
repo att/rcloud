@@ -124,6 +124,9 @@ rcloud.language.support <- function()
 {
   list(language="Python",
        run.cell=.eval.python,
+       ace.mode="ace/mode/python",
+       hljs.class="py",
+       extension="py",
        setup=function(rcloud.session) {},
        teardown=function(rcloud.session) {})
 }

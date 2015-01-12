@@ -11,32 +11,12 @@ RCloud.UI.init = function() {
         var version = shell.version();
         editor.revert_notebook(is_mine, gistname, version);
     });
-    $("#open-in-github").click(function() {
-        window.open(shell.github_url(), "_blank");
-    });
-    $("#open-from-github").click(function() {
-        var result = prompt("Enter notebook ID or github URL:");
-        if(result !== null)
-            shell.open_from_github(result);
-    });
 
-    $("#import-notebooks").click(function() {
-        shell.import_notebooks();
-    });
     var saveb = $("#save-notebook");
     saveb.click(function() {
         shell.save_notebook();
     });
     shell.notebook.controller.save_button(saveb);
-    $('#export-notebook-file').click(function() {
-        shell.export_notebook_file();
-    });
-    $('#export-notebook-as-r').click(function() {
-        shell.export_notebook_as_r_file();
-    });
-    $('#import-notebook-file').click(function() {
-        shell.import_notebook_file();
-    });
 
     $("#rcloud-logout").click(function() {
         // let the server-side script handle this so it can
@@ -84,9 +64,21 @@ RCloud.UI.init = function() {
         return true;
     });
 
+    RCloud.UI.advanced_menu.init();
+
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
+
+    // these inits do default setup.  then add-ons modify that setup.
+    // then, somewhere, load gets called and they actually fire up
+    // (that last step is not so well defined so far)
     RCloud.UI.share_button.init();
+    RCloud.UI.notebook_commands.init();
+    RCloud.UI.cell_commands.init();
+    RCloud.UI.panel_loader.init();
+
+    // adds to advanced menu
+    RCloud.UI.import_export.init();
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things

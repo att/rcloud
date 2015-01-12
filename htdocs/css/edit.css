@@ -202,7 +202,7 @@ rect.frame {
 .notebook-cell .outer-ace-div {
     position: relative;
     width: 100%;
-    height: calc(100% - 25px);
+    height: 100%;
     border: 1px solid #fff;
 }
 
@@ -217,7 +217,7 @@ rect.frame {
     height: 35px;
 }
 
-.cell-status .cell-controls {
+.cell-status .cell-control-bar {
     position: absolute;
     bottom: 0;
     right: 0;
@@ -227,13 +227,26 @@ rect.frame {
     background-color: white;
 }
 
-.cell-status .cell-controls.flipped {
+.cell-control-bar .cell-control {
+    display: inline-block;
+    padding: 0;
+}
+
+.cell-control-bar select.cell-control {
+    position: relative;
+    top: -1px;
+    margin: 1px 4px 1px 2px;
+    padding: 1px 2px;
+    height: 17px;
+}
+
+.cell-status .cell-control-bar.flipped {
     top: 0;
     bottom: auto;
     border-radius: 0px 0px 4px 4px;
 }
 
-.notebook-cell .cell-insert-control {
+.notebook-cell .cell-controls-above {
     color: #555;
     position: absolute;
     right: -0.1em;
@@ -431,6 +444,13 @@ li.jqtree-selected .notebook-commands {
     margin: 0;
 }
 
+.no-arrow{
+    display: none !important;
+}
+
+.popover-offset{
+     left : 24.2% !important;
+ }
 /******************************************************************************/
 
 #search-wrapper {
@@ -794,6 +814,10 @@ pre {
     cursor: grab;
 }
 
+.ace_gutter-layer {
+    width: 50px !important;
+}
+
 #output > .notebook-cell .grabbing {
     cursor: -moz-grabbing;
     cursor: -webkit-grabbing;
@@ -995,24 +1019,10 @@ a.accordion-toggle.right > i {
     font-size: 16px;
 }
 
-.r-result-div pre code {
-    max-width: 800px;
-    margin-right: auto;
-    margin-left: auto;
-    border-left: 1px solid rgba(0,0,0,0.15);
-    border-right: 1px solid rgba(0,0,0,0.15);
+.r-result-div {
+    border-bottom: 1px solid #f5f5f5;
 }
 
-/* Annoying, I'll have to add new entries for every language class here. */
-.r-result-div pre code.r, .r-result-div pre code.py {
-    max-width: inherit;
-}
-
-.r-result-div p img {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-}
 .drop-asset-body {
     display: none;
     opacity:.8;
@@ -1121,4 +1131,29 @@ pre > .vt100 {
     border-color: #ccc;
     border-radius: 3px;
 }
-
+.checkbox {
+    padding-left: 2px;
+    margin-top: 0px;
+    margin-bottom: 5px;
+}
+/* switching off default bootstrap input type checkbox*/
+input[type=checkbox] {
+    display: none;
+}
+input[type=checkbox] + span:before {
+    font-family: "FontAwesome";
+    width: 1.2em;
+    display:inline-block;
+}
+input[type=checkbox] + span:before {
+    content: "\f096"; 
+}
+input[type=checkbox]:checked + span:before {
+    content: "\f046"; 
+}
+input[type=checkbox].inverse + span:before {
+    content: "\f0c8"; 
+}
+input[type=checkbox].inverse:checked + span:before {
+    content: "\f14a"; 
+}
