@@ -4,22 +4,23 @@ RCloud.UI.cell_commands = (function() {
     var defaults_ = {};
 
     function create_command_set(area, command_set, cell_model, cell_view) {
-        var commands = {};
+        var commands_ = {};
+        var flags_ = {};
         command_set.forEach(function(cmd) {
-            commands[cmd.key] = cmd.create(cell_model, cell_view);
-            commands[cmd.key].control.addClass('cell-control');
+            commands_[cmd.key] = cmd.create(cell_model, cell_view);
+            commands_[cmd.key].control.addClass('cell-control');
         });
-        area.append.apply(area, _.pluck(commands, 'control'));
+        area.append.apply(area, _.pluck(commands_, 'control'));
         return {
-            controls: commands,
-            readonly: function(readonly) {
+            controls: commands_,
+            set_flag: function(flag, value) {
+                // a command will be enabled iff all of its flags are enabled
+                flags_[flag] = value;
                 command_set.forEach(function(cmd) {
-                    if(cmd.modifying) {
-                        if(readonly)
-                            commands[cmd.key].disable();
-                        else
-                            commands[cmd.key].enable();
-                    }
+                    if(!_.every(cmd.flags, function(f) { return flags_[f]; }))
+                        commands_[cmd.key].disable();
+                    else
+                        commands_[cmd.key].enable();
                 });
             }
         };
@@ -29,9 +30,11 @@ RCloud.UI.cell_commands = (function() {
         create_button: function(awesome, text, action) {
             var control = ui_utils.fa_button(awesome, text);
             control.click(function(e) {
-                control.tooltip('destroy');
+                // this is a blunt instrument.  seems the tooltips don't go away
+                // when they are set to container = body
+                $(".tooltip").remove();
                 if (!$(e.currentTarget).hasClass("button-disabled")) {
-                    action();
+                    action(control);
                 }
             });
             return {
@@ -72,7 +75,9 @@ RCloud.UI.cell_commands = (function() {
         create_gap: function() {
             var gap = $('<span/>').html('&nbsp;').css({'line-height': '25%'});
             return {
-                control: gap
+                control: gap,
+                enable: function() {},
+                disable: function() {}
             };
         },
         init: function() {
@@ -81,17 +86,18 @@ RCloud.UI.cell_commands = (function() {
                 insert: {
                     area: 'above',
                     sort: 1000,
-                    modifying: true,
+                    flags: ['modify'],
                     create: function(cell_model) {
                         return that.create_button("icon-plus-sign", "insert cell", function() {
-                            shell.insert_cell_before(cell_model.language(), cell_model.id());
+                            shell.insert_cell_before("", cell_model.language(), cell_model.id())
+                                .edit_source(true);
                         });
                     }
                 },
                 join: {
                     area: 'between',
                     sort: 2000,
-                    modifying: true,
+                    flags: ['modify'],
                     create: function(cell_model) {
                         return that.create_button("icon-link", "join cells", function() {
                             shell.join_prior_cell(cell_model);
@@ -101,7 +107,7 @@ RCloud.UI.cell_commands = (function() {
                 language_cell: {
                     area: 'cell',
                     sort: 1000,
-                    modifying: true,
+                    flags: ['modify'],
                     create: function(cell_model, cell_view) {
                         var languages = RCloud.language.available_languages();
                         if(languages.indexOf(cell_model.language())<0)
@@ -124,7 +130,7 @@ RCloud.UI.cell_commands = (function() {
                 edit: {
                     area: 'cell',
                     sort: 3000,
-                    modifying: true,
+                    flags: ['modify'],
                     create: function(cell_model, cell_view) {
                         return that.create_button("icon-edit", "toggle edit", function() {
                             cell_view.toggle_edit();
@@ -141,23 +147,25 @@ RCloud.UI.cell_commands = (function() {
                 split: {
                     area: 'cell',
                     sort: 4000,
-                    modifying: true,
+                    flags: ['modify', 'edit'],
                     create: function(cell_model, cell_view) {
                         return that.create_button("icon-unlink", "split cell", function() {
                             var ace_widget = cell_view.ace_widget();
-                            var range = ace_widget.getSelection().getRange();
-                            var point1, point2;
-                            point1 = ui_utils.character_offset_of_pos(ace_widget, range.start);
-                            if(!range.isEmpty())
-                                point2 = ui_utils.character_offset_of_pos(ace_widget, range.end);
-                            shell.split_cell(cell_model, point1, point2);
+                            if(ace_widget) {
+                                var range = ace_widget.getSelection().getRange();
+                                var point1, point2;
+                                point1 = ui_utils.character_offset_of_pos(ace_widget, range.start);
+                                if(!range.isEmpty())
+                                    point2 = ui_utils.character_offset_of_pos(ace_widget, range.end);
+                                shell.split_cell(cell_model, point1, point2);
+                            }
                         });
                     }
                 },
                 remove: {
                     area: 'cell',
                     sort: 5000,
-                    modifying: true,
+                    flags: ['modify'],
                     create: function(cell_model) {
                         return that.create_button("icon-trash", "remove", function() {
                             cell_model.parent_model.controller.remove_cell(cell_model);
@@ -190,9 +198,6 @@ RCloud.UI.cell_commands = (function() {
         remove: function(command_name) {
             delete commands_[command_name];
             return this;
-        },
-        icon_style: function() {
-            return icon_style_;
         },
         decorate_above_between: function(area, cell_model, cell_view) {
             // commands for above and between cells

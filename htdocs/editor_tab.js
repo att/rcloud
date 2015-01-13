@@ -941,11 +941,12 @@ var editor = function () {
             title.addClass('private');
         if(node.version || node.id === 'showmore')
             title.addClass('history');
-        var right = $($.el.span({'class': 'notebook-right'}));
+        var date;
         if(node.last_commit) {
-            right.append($.el.span({'class': 'notebook-date'},
-                                   display_date(node.last_commit)));
+            date = $.el.span({'class': 'notebook-date'},
+                                   display_date(node.last_commit));
         }
+        var right = $.el.span({'class': 'notebook-right'}, date);
         if(node.user === username_ && $tree_.tree('isNodeSelected', node))
             RCloud.UI.notebook_title.make_editable(node, $li, true);
         RCloud.UI.notebook_commands.decorate($li, node, right);
@@ -1091,6 +1092,7 @@ var editor = function () {
         create_book_tree_widget: function(data) {
             var that = this;
 
+            var myTime = window.performance.now();
             $tree_ = $("#editor-book-tree");
             $tree_.tree({
                 data: data,
@@ -1100,6 +1102,7 @@ var editor = function () {
             });
             $tree_.bind('tree.click', tree_click);
             $tree_.bind('tree.open', tree_open);
+            console.log('load tree took ' + (window.performance.now() - myTime));
         },
         find_next_copy_name: function(name) {
             return find_next_copy_name(username_, name);

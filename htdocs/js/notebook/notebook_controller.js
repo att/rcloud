@@ -51,7 +51,7 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(version, notebook) {
-        var is_read_only = version !== null || notebook.user.login !== rcloud.username();
+        var is_read_only = version !== null || notebook.user.login !== rcloud.username() || shell.is_view_mode();
         current_gist_ = notebook;
         model.read_only(is_read_only);
         if (!_.isUndefined(notebook.files)) {
@@ -253,17 +253,17 @@ Notebook.create_controller = function(model)
         remove_cell: function(cell_model) {
             var changes = refresh_buffers().concat(model.remove_cell(cell_model));
             RCloud.UI.command_prompt.focus();
-            update_notebook(changes)
+            return update_notebook(changes)
                 .then(default_callback());
         },
         remove_asset: function(asset_model) {
             var changes = refresh_buffers().concat(model.remove_asset(asset_model));
-            update_notebook(changes)
+            return update_notebook(changes)
                 .then(default_callback());
         },
         move_cell: function(cell_model, before) {
             var changes = refresh_buffers().concat(model.move_cell(cell_model, before ? before.id() : -1));
-            update_notebook(changes)
+            return update_notebook(changes)
                 .then(default_callback());
         },
         join_prior_cell: function(cell_model) {

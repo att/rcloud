@@ -119,7 +119,7 @@ function create_cell_html_view(language, cell_model) {
     };
 
     function clear_result() {
-        display_status("(no result)");
+        display_status("(uncomputed)");
     }
 
     function create_edit_widget() {
@@ -327,8 +327,8 @@ function create_cell_html_view(language, cell_model) {
             am_read_only_ = readonly;
             if(ace_widget_)
                 ui_utils.set_ace_readonly(ace_widget_, readonly);
-            cell_controls_.readonly(readonly);
-            above_between_controls_.readonly(readonly);
+            cell_controls_.set_flag('modify', !readonly);
+            above_between_controls_.set_flag('modify', !readonly);
             click_to_edit(!readonly);
             if (readonly) {
                 if(ace_widget_)
@@ -404,10 +404,7 @@ function create_cell_html_view(language, cell_model) {
                 ace_widget_.resize(true);
                 set_widget_height();
                 ace_widget_.resize(true);
-                if (!am_read_only_) {
-                    cell_controls_.controls['remove'].enable();
-                    cell_controls_.controls['split'].enable();
-                }
+                cell_controls_.set_flag('edit', true);
                 outer_ace_div.show();
                 ace_widget_.resize(); // again?!?
                 ace_widget_.focus();
@@ -417,9 +414,7 @@ function create_cell_html_view(language, cell_model) {
                 if(new_content!==null) // if any change (including removing the content)
                     cell_model.parent_model.controller.update_cell(cell_model);
                 source_div_.css({'height': ''});
-                if (!am_read_only_)
-                    cell_controls_.controls['remove'].enable();
-                cell_controls_.controls['split'].disable();
+                cell_controls_.set_flag('edit', false);
                 code_div_.show();
                 outer_ace_div.hide();
             }

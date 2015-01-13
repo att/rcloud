@@ -8,7 +8,7 @@ var shell = (function() {
         notebook_model_ = Notebook.create_model(),
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
         notebook_controller_ = Notebook.create_controller(notebook_model_),
-        view_mode_ = window.location.href.match("/view.html");
+        view_mode_ = !!window.location.href.match("/view.html");
 
     function on_new(notebook) {
         gistname_ = notebook.id;
@@ -54,6 +54,14 @@ var shell = (function() {
         });
     }
 
+    function check_cell_language(language) {
+        if(!_.contains(RCloud.language.available_languages(), language)) {
+            RCloud.UI.session_pane.post_error(
+                "Sorry, " + language + " notebook cells not supported in this deployment.");
+            return;
+        }
+    }
+
     var result = {
         notebook: {
             model: notebook_model_,
@@ -73,26 +81,14 @@ var shell = (function() {
         is_view_mode: function() {
             return view_mode_;
         },
-        new_cell: function(content, language, execute) {
-            if(!_.contains(RCloud.language.available_languages(), language)) {
-                RCloud.UI.session_pane.post_error("Sorry, " + language + " notebook cells not supported in this deployment.");
-                return Promise.resolve(undefined);
-            }
-            RCloud.UI.command_prompt.history().add_entry(content);
-            var promise = notebook_controller_.append_cell(content, language);
-            if(execute) {
-                promise = promise.then(function() {
-                    RCloud.UI.command_prompt.focus();
-                    var last_controller = notebook_model_.cells[notebook_model_.cells.length-1].controller;
-                    last_controller.enqueue_execution_snapshot();
-                    scroll_to_end();
-                });
-            }
-            return promise;
-        },
         scroll_to_end: scroll_to_end,
-        insert_cell_before: function(language, index) {
-            return notebook_controller_.insert_cell("", language, index);
+        new_cell: function(content, language, execute) {
+            check_cell_language(language);
+            return notebook_controller_.append_cell(content, language);
+        },
+        insert_cell_before: function(content, language, index) {
+            check_cell_language(language);
+            return notebook_controller_.insert_cell(content, language, index);
         }, join_prior_cell: function(cell_model) {
             return notebook_controller_.join_prior_cell(cell_model);
         }, split_cell: function(cell_model, point1, point2) {
@@ -131,7 +127,7 @@ var shell = (function() {
                                            description: notebook.description,
                                            id: notebook.id
                                           };
-                            notebook = sanitize_notebook(notebook);
+                            notebook = Notebook.sanitize(notebook);
                             notebook.description = editor.find_next_copy_name(notebook.description);
                             return notebook_controller_.create_notebook(notebook)
                                 .then(function(result) {

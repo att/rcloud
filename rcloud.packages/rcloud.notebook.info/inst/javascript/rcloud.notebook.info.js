@@ -1,12 +1,18 @@
 ((function() {
     var info_popover_ = null; // current opened information popover
+
+    function remove_all_popovers() {
+        // nicer methods don't work,
+        // because the parent gets recreated every time the notebook
+        // tree refreshes
+        $('div.popover.notebook-info').remove();
+    }
+
     //for hiding information popover on click outside
     $('body').on('click', function(e) {
-        if(info_popover_ &&
-           $(e.target).data('toggle') !== 'popover' &&
+        if($(e.target).data('toggle') !== 'popover' &&
            $(e.target).parents('.popover.in').length === 0) {
-            info_popover_.popover('destroy');
-            info_popover_ = null;
+            remove_all_popovers();
         }
     });
     return {
@@ -46,7 +52,7 @@
                                 });
                                 $(thisIcon).popover('show');
                                 var thisPopover = $(thisIcon).popover().data()['bs.popover'].$tip[0];
-                                $(thisPopover).addClass('popover-offset');
+                                $(thisPopover).addClass('popover-offset notebook-info');
                                 info_popover_ = $(thisIcon);
                             });
                         });
