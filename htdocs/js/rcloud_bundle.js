@@ -764,7 +764,9 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                     widget.navigateDown(1);
                     widget.navigateLineEnd();
                 }
-                shell.new_cell(code, get_language(), true);
+                RCloud.UI.command_prompt.history().add_entry(code);
+                shell.new_cell(code, get_language())
+                    .execute().then(shell.scroll_to_end);
             }
         }
     ]);
@@ -3895,7 +3897,9 @@ RCloud.UI.command_prompt = (function() {
         function execute(widget, args, request) {
             var code = session.getValue();
             if(code.length) {
-                shell.new_cell(code, language_, true);
+                RCloud.UI.command_prompt.history().add_entry(code);
+                shell.new_cell(code, language_)
+                    .execute().then(shell.scroll_to_end);
                 change_prompt('');
             }
         }
@@ -4077,7 +4081,7 @@ RCloud.UI.command_prompt = (function() {
                     sort: 1000,
                     create: function() {
                         return RCloud.UI.cell_commands.create_button('icon-plus', 'insert new cell', function() {
-                            shell.new_cell("", language_, false)
+                            shell.new_cell("", language_)
                                 .edit_source(true);
                         });
                     }
