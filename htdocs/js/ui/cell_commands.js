@@ -90,7 +90,9 @@ RCloud.UI.cell_commands = (function() {
                     create: function(cell_model) {
                         return that.create_button("icon-plus-sign", "insert cell", function() {
                             shell.insert_cell_before("", cell_model.language(), cell_model.id())
-                                .edit_source(true);
+                                .spread(function(_, controller) {
+                                    controller.edit_source(true);
+                                });
                         });
                     }
                 },

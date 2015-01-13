@@ -38,7 +38,10 @@ RCloud.UI.command_prompt = (function() {
             if(code.length) {
                 RCloud.UI.command_prompt.history().add_entry(code);
                 shell.new_cell(code, language_)
-                    .execute().then(shell.scroll_to_end);
+                    .spread(function(_, controller) {
+                        controller.enqueue_execution_snapshot();
+                        shell.scroll_to_end();
+                    });
                 change_prompt('');
             }
         }
@@ -221,7 +224,9 @@ RCloud.UI.command_prompt = (function() {
                     create: function() {
                         return RCloud.UI.cell_commands.create_button('icon-plus', 'insert new cell', function() {
                             shell.new_cell("", language_)
-                                .edit_source(true);
+                                .spread(function(_, controller) {
+                                    controller.edit_source(true);
+                                });
                         });
                     }
                 },
