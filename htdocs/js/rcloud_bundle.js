@@ -1459,6 +1459,7 @@ function create_cell_html_view(language, cell_model) {
     var am_read_only_ = "unknown";
     var source_div_;
     var code_div_;
+    var result_text_;
     var result_div_;
     var change_content_;
     var above_between_controls_, cell_controls_;
@@ -1483,8 +1484,6 @@ function create_cell_html_view(language, cell_model) {
     function set_widget_height() {
         source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) + EXTRA_HEIGHT) + "px");
     }
-
-    var has_result = false;
 
     var cell_status = $("<div class='cell-status'></div>");
     var cell_control_bar = $("<div class='cell-control-bar'></div>");
@@ -1554,12 +1553,12 @@ function create_cell_html_view(language, cell_model) {
     }
 
     function display_status(status) {
-        has_result = false;
         result_div_.html('<div class="non-result">' + status + '</div>');
     };
 
     function clear_result() {
         display_status("(uncomputed)");
+        result_text_ = "";
     }
 
     function create_edit_widget() {
@@ -1648,6 +1647,10 @@ function create_cell_html_view(language, cell_model) {
     inner_div.append(result_div_);
     update_language();
 
+    var deferred_result_uuid_ = rcloud.deferred_knitr_uuid;
+    var deferred_regexp_ = new RegExp(deferred_result_uuid_ + '\\|[@a-zA-Z_0-9.]*', 'g'),
+        deferred_replacement_ = '<span class="deferred-result">$&</span>';
+
     _.extend(result, {
 
         //////////////////////////////////////////////////////////////////////
@@ -1674,15 +1677,13 @@ function create_cell_html_view(language, cell_model) {
             display_status(status);
         },
         result_updated: function(r) {
-            has_result = true;
-            result_div_.html(r);
+            // quote deferred results in spans so they are easy to replace
+            r = r.replace(deferred_regexp_, deferred_replacement_);
+
+            result_div_.html('<pre><code>' + r + '</code></pre>');
+            result_text_ = r;
 
             // There's a list of things that we need to do to the output:
-            var uuid = rcloud.deferred_knitr_uuid;
-
-
-            // temporary (until we get rid of knitr): delete code from results
-            find_code_elems(result_div_).parent().remove();
 
             // we use the cached version of DPR instead of getting window.devicePixelRatio
             // because it might have changed (by moving the user agent window across monitors)
@@ -1701,15 +1702,10 @@ function create_cell_html_view(language, cell_model) {
                     }
                 });
 
-            // capture deferred knitr results
-            inner_div.find("pre code")
-                .contents()
-                .filter(function() {
-                    return this.nodeValue ? this.nodeValue.indexOf(uuid) !== -1 : false;
-                }).parent().parent()
+            inner_div.find("span.deferred-result")
                 .each(function() {
                     var that = this;
-                    var uuids = this.childNodes[0].childNodes[0].data.substr(8,65).split("|");
+                    var uuids = this.textContent.split("|");
                     // FIXME monstrous hack: we rebuild the ocap from the string to
                     // call it via rserve-js
                     var ocap = [uuids[1]];
@@ -1746,21 +1742,10 @@ function create_cell_html_view(language, cell_model) {
                 Notebook.hide_r_source(inner_div);
             }
 
-            // Work around a persistently annoying knitr bug:
-            // https://github.com/att/rcloud/issues/456
-
-            _($("#rcloud-cellarea img")).each(function(img, ix, $q) {
-                ensure_image_has_hash(img);
-                if (img.getAttribute("src").substr(0,10) === "data:image" &&
-                    img.getAttribute("alt") != null &&
-                    img.getAttribute("alt").substr(0,13) === "plot of chunk" &&
-                    ix > 0 &&
-                    img.dataset.sha256 === $q[ix-1].dataset.sha256) {
-                    $(img).css("display", "none");
-                }
-            });
-
             this.edit_source(false);
+        },
+        add_result: function(r) {
+            this.result_updated(result_text_+r);
         },
         clear_result: clear_result,
         set_readonly: function(readonly) {
@@ -1940,19 +1925,23 @@ Notebook.Cell.create_controller = function(cell_model)
         execute: function() {
             var that = this;
             var language = cell_model.language() || 'Text'; // null is a synonym for Text
-            function callback(r) {
-                that.set_result(r);
+            function callback() {
+                // note: no result!
                 _.each(cell_model.parent_model.execution_watchers, function(ew) {
                     ew.run_cell(cell_model);
                 });
             }
-            var promise;
-
             rcloud.record_cell_execution(cell_model);
+
+            var resulter = this.append_result.bind(this),
+                context = {start: this.clear_result.bind(this), out: resulter, err: resulter, msg: resulter},
+                context_id = RCloud.register_output_context(context);
+
+            var promise;
             if (rcloud.authenticated) {
-                promise = rcloud.authenticated_cell_eval(cell_model.content(), language, false);
+                promise = rcloud.authenticated_cell_eval(context_id, cell_model.content(), language, false);
             } else {
-                promise = rcloud.session_cell_eval(
+                promise = rcloud.session_cell_eval(context_id,
                     Notebook.part_name(cell_model.id(),
                                        cell_model.language()),
                     cell_model.language(),
@@ -1965,9 +1954,14 @@ Notebook.Cell.create_controller = function(cell_model)
                 view.status_updated(msg);
             });
         },
-        set_result: function(msg) {
+        clear_result: function() {
             cell_model.notify_views(function(view) {
-                view.result_updated(msg);
+                view.clear_result();
+            });
+        },
+        append_result: function(msg) {
+            cell_model.notify_views(function(view) {
+                view.add_result(msg);
             });
         },
         edit_source: function(whether) {
@@ -2851,7 +2845,32 @@ function append_session_info(text) {
 
 function handle_img(v) {
     var url = v[0], dims = v[1], page = v[2];
-    RCloud.UI.session_pane.append_text("<img width="+dims[0]+" height="+dims[1]+" src='"+url+"' />\n")
+    var img = "<img width="+dims[0]+" height="+dims[1]+" src='"+url+"' />\n";
+    if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_].out)
+        output_contexts_[curr_context_id_].out(img);
+    else
+        append_session_info(img);
+}
+
+var output_contexts_ = {};
+var curr_context_id_ = null, next_context_id_ = 17;
+
+RCloud.register_output_context = function(callbacks) {
+    output_contexts_[next_context_id_] = callbacks;
+    return next_context_id_++;
+};
+
+RCloud.unregister_output_context = function(context_id) {
+    delete output_contexts_[context_id];
+};
+
+function outputter(type) {
+    return function(v) {
+        if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_][type])
+            output_contexts_[curr_context_id_][type](v);
+        else
+            append_session_info(v);
+    };
 }
 
 // FIXME this needs to go away as well.
@@ -2878,15 +2897,26 @@ var oob_handlers = {
         // show the content ...
         append_session_info("what: "+ what + "\ncontents:" + content + "\nname: "+name+"\n");
     },
-    "console.out": append_session_info,
-    "console.msg": append_session_info,
-    "console.err": append_session_info,
+    "console.out": outputter('out'),
+    "console.msg": outputter('msg'),
+    "console.err": outputter('err'),
     "img.url.update": handle_img,
-    "img.url.final": handle_img,
+    "img.url.final": function() {},
     // "dev.close": , // sent when device closes - we don't really care in the UI I guess ...,
     "stdout": append_session_info,
-    "stderr": append_session_info
+    "stderr": append_session_info,
     // NOTE: "idle": ... can be used to handle idle pings from Rserve if we care ..
+    "start.cell.output": function(context) {
+        curr_context_id_ = context;
+        if(output_contexts_[context] && output_contexts_[context].start)
+            output_contexts_[context].start();
+    },
+    "end.cell.output": function(context) {
+        if(context != curr_context_id_)
+            console.log("unmatched context id: curr " + curr_context_id_ + ", end.cell.output " + context);
+        RCloud.unregister_output_context(context);
+        curr_context_id_ = null;
+    }
 };
 
 var on_data = function(v) {

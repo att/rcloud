@@ -6,7 +6,32 @@ function append_session_info(text) {
 
 function handle_img(v) {
     var url = v[0], dims = v[1], page = v[2];
-    RCloud.UI.session_pane.append_text("<img width="+dims[0]+" height="+dims[1]+" src='"+url+"' />\n")
+    var img = "<img width="+dims[0]+" height="+dims[1]+" src='"+url+"' />\n";
+    if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_].out)
+        output_contexts_[curr_context_id_].out(img);
+    else
+        append_session_info(img);
+}
+
+var output_contexts_ = {};
+var curr_context_id_ = null, next_context_id_ = 17;
+
+RCloud.register_output_context = function(callbacks) {
+    output_contexts_[next_context_id_] = callbacks;
+    return next_context_id_++;
+};
+
+RCloud.unregister_output_context = function(context_id) {
+    delete output_contexts_[context_id];
+};
+
+function outputter(type) {
+    return function(v) {
+        if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_][type])
+            output_contexts_[curr_context_id_][type](v);
+        else
+            append_session_info(v);
+    };
 }
 
 // FIXME this needs to go away as well.
@@ -33,15 +58,26 @@ var oob_handlers = {
         // show the content ...
         append_session_info("what: "+ what + "\ncontents:" + content + "\nname: "+name+"\n");
     },
-    "console.out": append_session_info,
-    "console.msg": append_session_info,
-    "console.err": append_session_info,
+    "console.out": outputter('out'),
+    "console.msg": outputter('msg'),
+    "console.err": outputter('err'),
     "img.url.update": handle_img,
-    "img.url.final": handle_img,
+    "img.url.final": function() {},
     // "dev.close": , // sent when device closes - we don't really care in the UI I guess ...,
     "stdout": append_session_info,
-    "stderr": append_session_info
+    "stderr": append_session_info,
     // NOTE: "idle": ... can be used to handle idle pings from Rserve if we care ..
+    "start.cell.output": function(context) {
+        curr_context_id_ = context;
+        if(output_contexts_[context] && output_contexts_[context].start)
+            output_contexts_[context].start();
+    },
+    "end.cell.output": function(context) {
+        if(context != curr_context_id_)
+            console.log("unmatched context id: curr " + curr_context_id_ + ", end.cell.output " + context);
+        RCloud.unregister_output_context(context);
+        curr_context_id_ = null;
+    }
 };
 
 var on_data = function(v) {

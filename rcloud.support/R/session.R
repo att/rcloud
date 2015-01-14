@@ -8,21 +8,22 @@ rcloud.get.gist.part <- function(partname) {
   .session$current.notebook$content$files[[partname]]$content
 }
 
-rcloud.unauthenticated.session.cell.eval <- function(partname, language, silent) {
+rcloud.unauthenticated.session.cell.eval <- function(context.id, partname, language, silent) {
   notebook.id <- .session$current.notebook$content$id
   if (rcloud.is.notebook.published(notebook.id))
-    rcloud.session.cell.eval(partname, language, silent)
+    rcloud.session.cell.eval(context.id, partname, language, silent)
   else
     stop("Notebook does not exist or is not published.")
 }
 
-rcloud.session.cell.eval <- function(partname, language, silent) {
+rcloud.session.cell.eval <- function(context.id, partname, language, silent) {
   ulog("RCloud rcloud.session.cell.eval(", partname, ",", language,")")
   command <- rcloud.get.gist.part(partname)
-  rcloud.authenticated.cell.eval(command, language, silent)
+  rcloud.authenticated.cell.eval(context.id, command, language, silent)
 }
 
-rcloud.authenticated.cell.eval <- function(command, language, silent) {
+rcloud.authenticated.cell.eval <- function(context.id, command, language, silent) {
+  self.oobSend(list("start.cell.output", context.id))
   if (!is.null(.session$languages[[language]]))
     .session$languages[[language]]$run.cell(command, silent, .session)
   else if (language == "Markdown") {
@@ -30,6 +31,7 @@ rcloud.authenticated.cell.eval <- function(command, language, silent) {
   } else if (language == "Text") {
     command
   }
+  self.oobSend(list("end.cell.output", context.id))
 }
 
 rcloud.set.device.pixel.ratio <- function(ratio) {

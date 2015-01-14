@@ -19,6 +19,7 @@ function create_cell_html_view(language, cell_model) {
     var am_read_only_ = "unknown";
     var source_div_;
     var code_div_;
+    var result_text_;
     var result_div_;
     var change_content_;
     var above_between_controls_, cell_controls_;
@@ -43,8 +44,6 @@ function create_cell_html_view(language, cell_model) {
     function set_widget_height() {
         source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) + EXTRA_HEIGHT) + "px");
     }
-
-    var has_result = false;
 
     var cell_status = $("<div class='cell-status'></div>");
     var cell_control_bar = $("<div class='cell-control-bar'></div>");
@@ -114,12 +113,12 @@ function create_cell_html_view(language, cell_model) {
     }
 
     function display_status(status) {
-        has_result = false;
         result_div_.html('<div class="non-result">' + status + '</div>');
     };
 
     function clear_result() {
         display_status("(uncomputed)");
+        result_text_ = "";
     }
 
     function create_edit_widget() {
@@ -208,6 +207,10 @@ function create_cell_html_view(language, cell_model) {
     inner_div.append(result_div_);
     update_language();
 
+    var deferred_result_uuid_ = rcloud.deferred_knitr_uuid;
+    var deferred_regexp_ = new RegExp(deferred_result_uuid_ + '\\|[@a-zA-Z_0-9.]*', 'g'),
+        deferred_replacement_ = '<span class="deferred-result">$&</span>';
+
     _.extend(result, {
 
         //////////////////////////////////////////////////////////////////////
@@ -234,15 +237,13 @@ function create_cell_html_view(language, cell_model) {
             display_status(status);
         },
         result_updated: function(r) {
-            has_result = true;
-            result_div_.html(r);
+            // quote deferred results in spans so they are easy to replace
+            r = r.replace(deferred_regexp_, deferred_replacement_);
+
+            result_div_.html('<pre><code>' + r + '</code></pre>');
+            result_text_ = r;
 
             // There's a list of things that we need to do to the output:
-            var uuid = rcloud.deferred_knitr_uuid;
-
-
-            // temporary (until we get rid of knitr): delete code from results
-            find_code_elems(result_div_).parent().remove();
 
             // we use the cached version of DPR instead of getting window.devicePixelRatio
             // because it might have changed (by moving the user agent window across monitors)
@@ -261,15 +262,10 @@ function create_cell_html_view(language, cell_model) {
                     }
                 });
 
-            // capture deferred knitr results
-            inner_div.find("pre code")
-                .contents()
-                .filter(function() {
-                    return this.nodeValue ? this.nodeValue.indexOf(uuid) !== -1 : false;
-                }).parent().parent()
+            inner_div.find("span.deferred-result")
                 .each(function() {
                     var that = this;
-                    var uuids = this.childNodes[0].childNodes[0].data.substr(8,65).split("|");
+                    var uuids = this.textContent.split("|");
                     // FIXME monstrous hack: we rebuild the ocap from the string to
                     // call it via rserve-js
                     var ocap = [uuids[1]];
@@ -306,21 +302,10 @@ function create_cell_html_view(language, cell_model) {
                 Notebook.hide_r_source(inner_div);
             }
 
-            // Work around a persistently annoying knitr bug:
-            // https://github.com/att/rcloud/issues/456
-
-            _($("#rcloud-cellarea img")).each(function(img, ix, $q) {
-                ensure_image_has_hash(img);
-                if (img.getAttribute("src").substr(0,10) === "data:image" &&
-                    img.getAttribute("alt") != null &&
-                    img.getAttribute("alt").substr(0,13) === "plot of chunk" &&
-                    ix > 0 &&
-                    img.dataset.sha256 === $q[ix-1].dataset.sha256) {
-                    $(img).css("display", "none");
-                }
-            });
-
             this.edit_source(false);
+        },
+        add_result: function(r) {
+            this.result_updated(result_text_+r);
         },
         clear_result: clear_result,
         set_readonly: function(readonly) {

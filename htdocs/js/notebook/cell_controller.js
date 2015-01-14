@@ -4,19 +4,23 @@ Notebook.Cell.create_controller = function(cell_model)
         execute: function() {
             var that = this;
             var language = cell_model.language() || 'Text'; // null is a synonym for Text
-            function callback(r) {
-                that.set_result(r);
+            function callback() {
+                // note: no result!
                 _.each(cell_model.parent_model.execution_watchers, function(ew) {
                     ew.run_cell(cell_model);
                 });
             }
-            var promise;
-
             rcloud.record_cell_execution(cell_model);
+
+            var resulter = this.append_result.bind(this),
+                context = {start: this.clear_result.bind(this), out: resulter, err: resulter, msg: resulter},
+                context_id = RCloud.register_output_context(context);
+
+            var promise;
             if (rcloud.authenticated) {
-                promise = rcloud.authenticated_cell_eval(cell_model.content(), language, false);
+                promise = rcloud.authenticated_cell_eval(context_id, cell_model.content(), language, false);
             } else {
-                promise = rcloud.session_cell_eval(
+                promise = rcloud.session_cell_eval(context_id,
                     Notebook.part_name(cell_model.id(),
                                        cell_model.language()),
                     cell_model.language(),
@@ -29,9 +33,14 @@ Notebook.Cell.create_controller = function(cell_model)
                 view.status_updated(msg);
             });
         },
-        set_result: function(msg) {
+        clear_result: function() {
             cell_model.notify_views(function(view) {
-                view.result_updated(msg);
+                view.clear_result();
+            });
+        },
+        append_result: function(msg) {
+            cell_model.notify_views(function(view) {
+                view.add_result(msg);
             });
         },
         edit_source: function(whether) {
