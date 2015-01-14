@@ -2907,15 +2907,20 @@ var oob_handlers = {
     "stderr": append_session_info,
     // NOTE: "idle": ... can be used to handle idle pings from Rserve if we care ..
     "start.cell.output": function(context) {
+        if(_.isArray(context)) context = context[0];
         curr_context_id_ = context;
         if(output_contexts_[context] && output_contexts_[context].start)
             output_contexts_[context].start();
     },
     "end.cell.output": function(context) {
+        if(_.isArray(context)) context = context[0];
         if(context != curr_context_id_)
             console.log("unmatched context id: curr " + curr_context_id_ + ", end.cell.output " + context);
         RCloud.unregister_output_context(context);
         curr_context_id_ = null;
+    },
+    "html.output": function(v) {
+        oob_handlers['console.out'](v);
     }
 };
 

@@ -27,7 +27,7 @@ rcloud.authenticated.cell.eval <- function(context.id, command, language, silent
   if (!is.null(.session$languages[[language]]))
     .session$languages[[language]]$run.cell(command, silent, .session)
   else if (language == "Markdown") {
-    session.markdown.eval(command, language, silent)
+    self.oobSend(list("html.output", session.markdown.eval(command, language, FALSE)))
   } else if (language == "Text") {
     command
   }
