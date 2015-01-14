@@ -237,10 +237,7 @@ function create_cell_html_view(language, cell_model) {
             display_status(status);
         },
         result_updated: function(r) {
-            // quote deferred results in spans so they are easy to replace
-            r = r.replace(deferred_regexp_, deferred_replacement_);
-
-            result_div_.html('<pre><code>' + r + '</code></pre>');
+            result_div_.html(r);
             result_text_ = r;
 
             // There's a list of things that we need to do to the output:
@@ -304,7 +301,19 @@ function create_cell_html_view(language, cell_model) {
 
             this.edit_source(false);
         },
-        add_result: function(r) {
+        add_result: function(type, r) {
+            // quote deferred results in spans so they are easy to replace
+            r = r.replace(deferred_regexp_, deferred_replacement_);
+
+            switch(type) {
+            case 'code':
+                r = '<pre><code>' + r + '</code></pre>';
+                break;
+            case 'html':
+                break;
+            default:
+                throw new Error('unknown result type ' + type);
+            }
             this.result_updated(result_text_+r);
         },
         clear_result: clear_result,

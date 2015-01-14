@@ -12,8 +12,10 @@ Notebook.Cell.create_controller = function(cell_model)
             }
             rcloud.record_cell_execution(cell_model);
 
-            var resulter = this.append_result.bind(this),
-                context = {start: this.clear_result.bind(this), out: resulter, err: resulter, msg: resulter},
+            var resulter = this.append_result.bind(this, 'code'),
+                context = {start: this.clear_result.bind(this),
+                           out: resulter, err: resulter, msg: resulter,
+                           html_out: this.append_result.bind(this, 'html')},
                 context_id = RCloud.register_output_context(context);
 
             var promise;
@@ -38,9 +40,9 @@ Notebook.Cell.create_controller = function(cell_model)
                 view.clear_result();
             });
         },
-        append_result: function(msg) {
+        append_result: function(type, msg) {
             cell_model.notify_views(function(view) {
-                view.add_result(msg);
+                view.add_result(type, msg);
             });
         },
         edit_source: function(whether) {

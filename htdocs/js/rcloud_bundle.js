@@ -1677,10 +1677,7 @@ function create_cell_html_view(language, cell_model) {
             display_status(status);
         },
         result_updated: function(r) {
-            // quote deferred results in spans so they are easy to replace
-            r = r.replace(deferred_regexp_, deferred_replacement_);
-
-            result_div_.html('<pre><code>' + r + '</code></pre>');
+            result_div_.html(r);
             result_text_ = r;
 
             // There's a list of things that we need to do to the output:
@@ -1744,7 +1741,19 @@ function create_cell_html_view(language, cell_model) {
 
             this.edit_source(false);
         },
-        add_result: function(r) {
+        add_result: function(type, r) {
+            // quote deferred results in spans so they are easy to replace
+            r = r.replace(deferred_regexp_, deferred_replacement_);
+
+            switch(type) {
+            case 'code':
+                r = '<pre><code>' + r + '</code></pre>';
+                break;
+            case 'html':
+                break;
+            default:
+                throw new Error('unknown result type ' + type);
+            }
             this.result_updated(result_text_+r);
         },
         clear_result: clear_result,
@@ -1933,8 +1942,10 @@ Notebook.Cell.create_controller = function(cell_model)
             }
             rcloud.record_cell_execution(cell_model);
 
-            var resulter = this.append_result.bind(this),
-                context = {start: this.clear_result.bind(this), out: resulter, err: resulter, msg: resulter},
+            var resulter = this.append_result.bind(this, 'code'),
+                context = {start: this.clear_result.bind(this),
+                           out: resulter, err: resulter, msg: resulter,
+                           html_out: this.append_result.bind(this, 'html')},
                 context_id = RCloud.register_output_context(context);
 
             var promise;
@@ -1959,9 +1970,9 @@ Notebook.Cell.create_controller = function(cell_model)
                 view.clear_result();
             });
         },
-        append_result: function(msg) {
+        append_result: function(type, msg) {
             cell_model.notify_views(function(view) {
-                view.add_result(msg);
+                view.add_result(type, msg);
             });
         },
         edit_source: function(whether) {
@@ -2867,7 +2878,7 @@ RCloud.unregister_output_context = function(context_id) {
 function outputter(type) {
     return function(v) {
         if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_][type])
-            output_contexts_[curr_context_id_][type](v);
+            output_contexts_[curr_context_id_][type](v[0]);
         else
             append_session_info(v);
     };
@@ -2919,9 +2930,7 @@ var oob_handlers = {
         RCloud.unregister_output_context(context);
         curr_context_id_ = null;
     },
-    "html.output": function(v) {
-        oob_handlers['console.out'](v);
-    }
+    "html.output": outputter('html_out')
 };
 
 var on_data = function(v) {

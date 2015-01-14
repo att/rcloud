@@ -28,7 +28,7 @@ RCloud.unregister_output_context = function(context_id) {
 function outputter(type) {
     return function(v) {
         if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_][type])
-            output_contexts_[curr_context_id_][type](v);
+            output_contexts_[curr_context_id_][type](v[0]);
         else
             append_session_info(v);
     };
@@ -80,9 +80,7 @@ var oob_handlers = {
         RCloud.unregister_output_context(context);
         curr_context_id_ = null;
     },
-    "html.output": function(v) {
-        oob_handlers['console.out'](v);
-    }
+    "html.output": outputter('html_out')
 };
 
 var on_data = function(v) {
