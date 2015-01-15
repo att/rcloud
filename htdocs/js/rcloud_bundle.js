@@ -3266,12 +3266,12 @@ RCloud.UI.advanced_menu = (function() {
                 throw new Error('advanced menu disable fail on ' + menu_item);
             menu_items_[menu_item].$li.toggleClass('disabled', !enable);
         },
-        load: function() {
+        load: function(mode) {
             var that = this;
             // copy in, because we need extra fields
             for(var key in menu_items_)
                 menu_items_[key] = _.extend({id: key}, menu_items_[key]);
-            var mode = shell.is_view_mode() ? 'view' : 'edit';
+            mode = mode || (shell.is_view_mode() ? 'view' : 'edit');
             var items = _.filter(menu_items_, function(item) { return item.modes.indexOf(mode)>=0; });
             items.sort(function(a, b) { return a.sort - b.sort; });
             // this is a mess. but it's a contained mess, right? (right?)
