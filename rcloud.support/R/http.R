@@ -63,10 +63,19 @@
           ## source the script - in here so all of the above is available
           source(fn, TRUE)
           ## run the run() function but like .httpd
-          return(run(url, query, body, headers))
+          res <- run(url, query, body, headers)
+          if (is.list(res)) { ## there is a special case of character vectors that are errors that we don't want to use
+              ## if there is no cache-control, add it since Chrome tends to be very aggressive with caching (serving stale content) otherwise
+              if (length(res) < 3) res[[3]] <- "Cache-control: nocache" else {
+                  if (!length(grep("cache-control", res[[3]], TRUE)))
+                      res[[3]] <- paste0(paste(res[[3]], collapse="\r\n"), "\r\nCache-control: no-cache")
+              }
+          }
+          return (res)
       }
 
-        s <- file.info(fn)$size
+        finfo <- file.info(fn)
+        s <- finfo$size
         f <- file(fn, "rb")
         r <- readBin(f, raw(), s)
         close(f)
@@ -83,6 +92,6 @@
                 ct <- names(ctl)[i]
                 break
             }
-        list(r, ct)
+        list(r, ct, paste0("Cache-control: no-cache\r\nLast-Modified: ", strftime(finfo$mtime, format="%a, %d %b %Y %T GMT", tz="GMT")))
     }
 }
