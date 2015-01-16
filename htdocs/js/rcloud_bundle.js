@@ -1146,6 +1146,9 @@ RCloud.extension = (function() {
                     recompute_sections();
                     return this;
                 },
+                get: function(name) {
+                    return entries_[name];
+                },
                 entries: function(name) {
                     return sections_[name].entries;
                 },
