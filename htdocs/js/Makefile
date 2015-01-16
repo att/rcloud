@@ -6,6 +6,7 @@ rcloud_bundle.js: \
 	rclient.js \
 	rcloud.js \
 	ui_utils.js \
+        extension.js \
 	bootstrap_utils.js \
 	notebook/_notebook_begin.js \
 	notebook/_buffer_begin.js \

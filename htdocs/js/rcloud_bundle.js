@@ -353,8 +353,8 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.stars.get_multiple_notebook_star_countsAsync(id);
         };
 
-        rcloud.session_cell_eval = function(filename, language, silent) {
-            return rcloud_ocaps.session_cell_evalAsync(filename, language, silent);
+        rcloud.session_cell_eval = function(context_id, filename, language, silent) {
+            return rcloud_ocaps.session_cell_evalAsync(context_id, filename, language, silent);
         };
 
         rcloud.reset_session = function() {
@@ -511,11 +511,8 @@ RCloud.create = function(rcloud_ocaps) {
                 "rcloud.rename.notebook",
                 rcloud_ocaps.rename_notebookAsync(id, new_name));
         };
-        rcloud.authenticated_cell_eval = function(command, language, silent) {
-            return rcloud_ocaps.authenticated_cell_evalAsync(command, language, silent);
-        };
-        rcloud.session_markdown_eval = function(command, language, silent) {
-            return rcloud_ocaps.session_markdown_evalAsync(command, language, silent);
+        rcloud.authenticated_cell_eval = function(context_id, command, language, silent) {
+            return rcloud_ocaps.authenticated_cell_evalAsync(context_id, command, language, silent);
         };
 
         rcloud.post_comment = function(id, content) {
@@ -1112,6 +1109,52 @@ ui_utils.prevent_backspace = function($doc) {
             event.preventDefault();
     });
 };
+RCloud.extension = (function() {
+    return {
+        create: function(options) {
+            options = options || {};
+            var entries_ = {};
+            var sections_ = {};
+            var defaults_ = options.defaults ? options.defaults : {};
+            var true_ = function() { return true; };
+
+            if(options.sections) {
+                for(var key in options.sections)
+                    sections_[key] = {filter: options.sections[key].filter};
+            }
+            else sections_.all = {};
+
+            function recompute_sections() {
+                for(key in sections_) {
+                    sections_[key].entries = _.filter(entries_, sections_[key].filter || true_);
+                    sections_[key].entries.sort(function(a, b) { return a.sort - b.sort; });
+                }
+            }
+
+            return {
+                add: function(entries) {
+                    for(var key in entries)
+                        entries_[key] = _.extend(_.extend({key: key}, defaults_), entries[key]);
+                    recompute_sections();
+                    return this;
+                },
+                remove: function(name) {
+                    delete entries_[name];
+                    recompute_sections();
+                    return this;
+                },
+                get: function(name) {
+                    return entries_[name];
+                },
+                entries: function(name) {
+                    return sections_[name].entries;
+                },
+                sections: sections_
+            };
+        }
+    };
+})();
+
 var bootstrap_utils = {};
 
 bootstrap_utils.alert = function(opts)
@@ -1528,9 +1571,9 @@ function create_cell_html_view(language, cell_model) {
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
     set_background_color(language);
 
+    outer_ace_div.append(ace_div);
     source_div_.append(outer_ace_div);
     inner_div.append(source_div_);
-    outer_ace_div.append(ace_div);
 
     function click_to_edit(whether) {
         if(whether) {
@@ -1647,10 +1690,6 @@ function create_cell_html_view(language, cell_model) {
     inner_div.append(result_div_);
     update_language();
 
-    var deferred_result_uuid_ = rcloud.deferred_knitr_uuid;
-    var deferred_regexp_ = new RegExp(deferred_result_uuid_ + '\\|[@a-zA-Z_0-9.]*', 'g'),
-        deferred_replacement_ = '<span class="deferred-result">$&</span>';
-
     _.extend(result, {
 
         //////////////////////////////////////////////////////////////////////
@@ -1677,74 +1716,20 @@ function create_cell_html_view(language, cell_model) {
             display_status(status);
         },
         result_updated: function(r) {
+            Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
+                r = pre.process(r);
+            });
+            has_result = true;
             result_div_.html(r);
             result_text_ = r;
 
-            // There's a list of things that we need to do to the output:
-
-            // we use the cached version of DPR instead of getting window.devicePixelRatio
-            // because it might have changed (by moving the user agent window across monitors)
-            // this might cause images that are higher-res than necessary or blurry.
-            // Since using window.devicePixelRatio might cause images
-            // that are too large or too small, the tradeoff is worth it.
-            var dpr = rcloud.display.get_device_pixel_ratio();
-            // fix image width so that retina displays are set correctly
-            inner_div.find("img")
-                .each(function(i, img) {
-                    function update() { img.style.width = img.width / dpr; }
-                    if (img.width === 0) {
-                        $(img).on("load", update);
-                    } else {
-                        update();
-                    }
-                });
-
-            inner_div.find("span.deferred-result")
-                .each(function() {
-                    var that = this;
-                    var uuids = this.textContent.split("|");
-                    // FIXME monstrous hack: we rebuild the ocap from the string to
-                    // call it via rserve-js
-                    var ocap = [uuids[1]];
-                    ocap.r_attributes = { "class": "OCref" };
-                    var f = rclient._rserve.wrap_ocap(ocap);
-
-                    f(function(err, future) {
-                        var data;
-                        if (RCloud.is_exception(future)) {
-                            data = RCloud.exception_message(future);
-                            $(that).replaceWith(function() {
-                                return ui_utils.string_error(data);
-                            });
-                        } else {
-                            data = future();
-                            $(that).replaceWith(function() {
-                                return data;
-                            });
-                        }
-                    });
-                    // rcloud.resolve_deferred_result(uuids[1], function(data) {
-                    //     $(that).replaceWith(function() {
-                    //         return shell.handle(data[0], data);
-                    //     });
-                    // });
-                });
-
-            // typeset the math
-            if (!_.isUndefined(MathJax))
-                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
-
-            // this is kinda bad
-            if (!shell.notebook.controller._r_source_visible) {
-                Notebook.hide_r_source(inner_div);
-            }
+            Notebook.Cell.postprocessors.entries('all').forEach(function(post) {
+                post.process(result_div_);
+            });
 
             this.edit_source(false);
         },
         add_result: function(type, r) {
-            // quote deferred results in spans so they are easy to replace
-            r = r.replace(deferred_regexp_, deferred_replacement_);
-
             switch(type) {
             case 'code':
                 r = '<pre><code>' + r + '</code></pre>';
@@ -1754,13 +1739,13 @@ function create_cell_html_view(language, cell_model) {
             default:
                 throw new Error('unknown result type ' + type);
             }
-            this.result_updated(result_text_+r);
+            this.result_updated(result_text_+ r);
         },
         clear_result: clear_result,
         set_readonly: function(readonly) {
             am_read_only_ = readonly;
             if(ace_widget_)
-                ui_utils.set_ace_readonly(ace_widget_, readonly);
+                ui_utils.set_ace_readonly(ace_widget_, readonly );
             cell_controls_.set_flag('modify', !readonly);
             above_between_controls_.set_flag('modify', !readonly);
             click_to_edit(!readonly);
@@ -1882,6 +1867,99 @@ Notebook.Cell.create_html_view = function(cell_model)
 {
     return create_cell_html_view(cell_model.language(), cell_model);
 };
+
+Notebook.Cell.preprocessors = RCloud.extension.create();
+Notebook.Cell.postprocessors = RCloud.extension.create();
+
+Notebook.Cell.postprocessors.add({
+    device_pixel_ratio: {
+        sort: 1000,
+        process: function(div) {
+            // we use the cached version of DPR instead of getting window.devicePixelRatio
+            // because it might have changed (by moving the user agent window across monitors)
+            // this might cause images that are higher-res than necessary or blurry.
+            // Since using window.devicePixelRatio might cause images
+            // that are too large or too small, the tradeoff is worth it.
+            var dpr = rcloud.display.get_device_pixel_ratio();
+            // fix image width so that retina displays are set correctly
+            div.find("img")
+                .each(function(i, img) {
+                    function update() { img.style.width = img.width / dpr; }
+                    if (img.width === 0) {
+                        $(img).on("load", update);
+                    } else {
+                        update();
+                    }
+                });
+        }
+    },
+    deferred_results: {
+        sort: 2000,
+        process: function(div) {
+            var uuid = rcloud.deferred_knitr_uuid;
+            div.find("span.deferred-result")
+                .each(function() {
+                    var that = this;
+                    var uuids = this.textContent.split("|");
+                    // FIXME monstrous hack: we rebuild the ocap from the string to
+                    // call it via rserve-js
+                    var ocap = [uuids[1]];
+                    ocap.r_attributes = { "class": "OCref" };
+                    var f = rclient._rserve.wrap_ocap(ocap);
+
+                    f(function(err, future) {
+                        var data;
+                        if (RCloud.is_exception(future)) {
+                            data = RCloud.exception_message(future);
+                            $(that).replaceWith(function() {
+                                return ui_utils.string_error(data);
+                            });
+                        } else {
+                            data = future();
+                            $(that).replaceWith(function() {
+                                return data;
+                            });
+                        }
+                    });
+                });
+        }
+    },
+    mathjax: {
+        sort: 3000,
+        process: function(div) {
+            // typeset the math
+
+            // why does passing the div as last arg not work, as documented here?
+            // http://docs.mathjax.org/en/latest/typeset.html
+            if (!_.isUndefined(MathJax))
+                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+        }
+    },
+    hide_source: {
+        sort: 4000,
+        process: function(div) {
+            // this is kinda bad
+            if (!shell.notebook.controller._r_source_visible) {
+                Notebook.hide_r_source(div);
+            }
+        }
+    }
+});
+
+Notebook.Cell.preprocessors.add({
+    quote_deferred_results: {
+        sort: 1000,
+        process: function(r) {
+            var deferred_result_uuid_, deferred_regexp_, deferred_replacement_;
+            if(!deferred_regexp_) {
+                deferred_result_uuid_ = rcloud.deferred_knitr_uuid;
+                deferred_regexp_ = new RegExp(deferred_result_uuid_ + '\\|[@a-zA-Z_0-9.]*', 'g');
+                deferred_replacement_ = '<span class="deferred-result">$&</span>';
+            }
+            return r.replace(deferred_regexp_, deferred_replacement_);
+        }
+    }
+});
 
 })();
 Notebook.Cell.create_model = function(content, language)
@@ -3321,12 +3399,12 @@ RCloud.UI.advanced_menu = (function() {
                 throw new Error('advanced menu disable fail on ' + menu_item);
             menu_items_[menu_item].$li.toggleClass('disabled', !enable);
         },
-        load: function() {
+        load: function(mode) {
             var that = this;
             // copy in, because we need extra fields
             for(var key in menu_items_)
                 menu_items_[key] = _.extend({id: key}, menu_items_[key]);
-            var mode = shell.is_view_mode() ? 'view' : 'edit';
+            mode = mode || (shell.is_view_mode() ? 'view' : 'edit');
             var items = _.filter(menu_items_, function(item) { return item.modes.indexOf(mode)>=0; });
             items.sort(function(a, b) { return a.sort - b.sort; });
             // this is a mess. but it's a contained mess, right? (right?)
@@ -3362,9 +3440,7 @@ RCloud.UI.advanced_menu = (function() {
     };
 })();
 RCloud.UI.cell_commands = (function() {
-    var commands_ = {};
-    var above_between_commands_, cell_commands_, prompt_commands_;
-    var defaults_ = {};
+    var extension_;
 
     function create_command_set(area, command_set, cell_model, cell_view) {
         var commands_ = {};
@@ -3444,6 +3520,27 @@ RCloud.UI.cell_commands = (function() {
             };
         },
         init: function() {
+            extension_ = RCloud.extension.create({
+                defaults: {},
+                sections: {
+                    above_between: {
+                        filter: function(command) {
+                            return command.area === 'above' || command.area === 'between';
+                        }
+                    },
+                    cell: {
+                        filter: function(command) {
+                            return command.area === 'cell';
+                        }
+                    },
+                    prompt: {
+                        filter: function(command) {
+                            return command.area === 'prompt';
+                        }
+                    }
+                }
+            });
+
             var that = this;
             this.add({
                 insert: {
@@ -3539,35 +3636,19 @@ RCloud.UI.cell_commands = (function() {
             return this;
         },
         add: function(commands) {
-            // extend commands_ by each command in commands, with defaults
-            for(var key in commands)
-                commands_[key] = _.extend(_.extend({key: key}, defaults_), commands[key]);
-
-            // update the lists of commands (for quick access)
-            above_between_commands_ = _.filter(commands_, function(command) {
-                return command.area === 'above' || command.area === 'between';
-            });
-            cell_commands_ = _.filter(commands_, function(command) {
-                return command.area === 'cell';
-            });
-            prompt_commands_ = _.filter(commands_, function(command) {
-                return command.area === 'prompt';
-            });
-            [above_between_commands_, cell_commands_, prompt_commands_].forEach(function(set) {
-                set.sort(function(a, b) { return a.sort - b.sort; });
-            });
+            extension_.add(commands);
             return this;
         },
         remove: function(command_name) {
-            delete commands_[command_name];
+            extension_.remove(command_name);
             return this;
         },
         decorate_above_between: function(area, cell_model, cell_view) {
             // commands for above and between cells
-            var result = create_command_set(area, above_between_commands_, cell_model, cell_view);
+            var result = create_command_set(area, extension_.entries('above_between'), cell_model, cell_view);
             _.extend(result, {
                 betweenness: function(between) {
-                    above_between_commands_.forEach(function(cmd) {
+                    extension_.entries('above_between').forEach(function(cmd) {
                         if(cmd.area === 'between') {
                             if(between)
                                 result.controls[cmd.key].control.show();
@@ -3580,10 +3661,10 @@ RCloud.UI.cell_commands = (function() {
             return result;
         },
         decorate_cell: function(area, cell_model, cell_view) {
-            return create_command_set(area, cell_commands_, cell_model, cell_view);
+            return create_command_set(area, extension_.entries('cell'), cell_model, cell_view);
         },
         decorate_prompt: function(area) {
-            return create_command_set(area, prompt_commands_);
+            return create_command_set(area, extension_.entries('prompt'));
         }
     };
     return result;
