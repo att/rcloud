@@ -27,7 +27,7 @@ rcloud.authenticated.cell.eval <- function(context.id, command, language, silent
   if (!is.null(.session$languages[[language]]))
     .session$languages[[language]]$run.cell(command, silent, .session)
   else if (language == "Markdown") {
-    self.oobSend(list("html.output", session.markdown.eval(command, language, FALSE)))
+    session.markdown.eval(command, language, FALSE)
   } else if (language == "Text") {
     command
   }
@@ -55,13 +55,11 @@ session.markdown.eval <- function(command, language, silent) {
   if (command == "") command <- " "
   val <- try(markdownToHTML(text=paste(knit(text=command, envir=.GlobalEnv), collapse="\n"),
                             fragment=TRUE), silent=TRUE)
-  if (!inherits(val, "try-error") && !silent && rcloud.debug.level()) print(val)
   if (inherits(val, "try-error")) {
     # FIXME better error handling
-    paste("<pre>", val[1], "</pre>", sep="")
-  } else {
-    val
+    val <- paste("<pre>", val[1], "</pre>", sep="")
   }
+  self.oobSend(list("html.output", val))
 }
 
 ## WS init
