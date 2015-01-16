@@ -89,9 +89,9 @@ function create_cell_html_view(language, cell_model) {
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
     set_background_color(language);
 
+    outer_ace_div.append(ace_div);
     source_div_.append(outer_ace_div);
     inner_div.append(source_div_);
-    outer_ace_div.append(ace_div);
 
     function click_to_edit(whether) {
         if(whether) {
@@ -234,90 +234,17 @@ function create_cell_html_view(language, cell_model) {
             display_status(status);
         },
         result_updated: function(r) {
+            Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
+                r = pre.process(r);
+            });
             has_result = true;
             result_div_.html(r);
-
-            // There's a list of things that we need to do to the output:
-            var uuid = rcloud.deferred_knitr_uuid;
-
 
             // temporary (until we get rid of knitr): delete code from results
             find_code_elems(result_div_).parent().remove();
 
-            // we use the cached version of DPR instead of getting window.devicePixelRatio
-            // because it might have changed (by moving the user agent window across monitors)
-            // this might cause images that are higher-res than necessary or blurry.
-            // Since using window.devicePixelRatio might cause images
-            // that are too large or too small, the tradeoff is worth it.
-            var dpr = rcloud.display.get_device_pixel_ratio();
-            // fix image width so that retina displays are set correctly
-            inner_div.find("img")
-                .each(function(i, img) {
-                    function update() { img.style.width = img.width / dpr; }
-                    if (img.width === 0) {
-                        $(img).on("load", update);
-                    } else {
-                        update();
-                    }
-                });
-
-            // capture deferred knitr results
-            inner_div.find("pre code")
-                .contents()
-                .filter(function() {
-                    return this.nodeValue ? this.nodeValue.indexOf(uuid) !== -1 : false;
-                }).parent().parent()
-                .each(function() {
-                    var that = this;
-                    var uuids = this.childNodes[0].childNodes[0].data.substr(8,65).split("|");
-                    // FIXME monstrous hack: we rebuild the ocap from the string to
-                    // call it via rserve-js
-                    var ocap = [uuids[1]];
-                    ocap.r_attributes = { "class": "OCref" };
-                    var f = rclient._rserve.wrap_ocap(ocap);
-
-                    f(function(err, future) {
-                        var data;
-                        if (RCloud.is_exception(future)) {
-                            data = RCloud.exception_message(future);
-                            $(that).replaceWith(function() {
-                                return ui_utils.string_error(data);
-                            });
-                        } else {
-                            data = future();
-                            $(that).replaceWith(function() {
-                                return data;
-                            });
-                        }
-                    });
-                    // rcloud.resolve_deferred_result(uuids[1], function(data) {
-                    //     $(that).replaceWith(function() {
-                    //         return shell.handle(data[0], data);
-                    //     });
-                    // });
-                });
-
-            // typeset the math
-            if (!_.isUndefined(MathJax))
-                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
-
-            // this is kinda bad
-            if (!shell.notebook.controller._r_source_visible) {
-                Notebook.hide_r_source(inner_div);
-            }
-
-            // Work around a persistently annoying knitr bug:
-            // https://github.com/att/rcloud/issues/456
-
-            _($("#rcloud-cellarea img")).each(function(img, ix, $q) {
-                ensure_image_has_hash(img);
-                if (img.getAttribute("src").substr(0,10) === "data:image" &&
-                    img.getAttribute("alt") != null &&
-                    img.getAttribute("alt").substr(0,13) === "plot of chunk" &&
-                    ix > 0 &&
-                    img.dataset.sha256 === $q[ix-1].dataset.sha256) {
-                    $(img).css("display", "none");
-                }
+            Notebook.Cell.postprocessors.entries('all').forEach(function(post) {
+                post.process(result_div_);
             });
 
             this.edit_source(false);
@@ -326,7 +253,7 @@ function create_cell_html_view(language, cell_model) {
         set_readonly: function(readonly) {
             am_read_only_ = readonly;
             if(ace_widget_)
-                ui_utils.set_ace_readonly(ace_widget_, readonly);
+                ui_utils.set_ace_readonly(ace_widget_, readonly );
             cell_controls_.set_flag('modify', !readonly);
             above_between_controls_.set_flag('modify', !readonly);
             click_to_edit(!readonly);
@@ -448,5 +375,113 @@ Notebook.Cell.create_html_view = function(cell_model)
 {
     return create_cell_html_view(cell_model.language(), cell_model);
 };
+
+Notebook.Cell.preprocessors = RCloud.extension.create();
+Notebook.Cell.postprocessors = RCloud.extension.create();
+
+Notebook.Cell.postprocessors.add({
+    device_pixel_ratio: {
+        sort: 1000,
+        process: function(div) {
+            // we use the cached version of DPR instead of getting window.devicePixelRatio
+            // because it might have changed (by moving the user agent window across monitors)
+            // this might cause images that are higher-res than necessary or blurry.
+            // Since using window.devicePixelRatio might cause images
+            // that are too large or too small, the tradeoff is worth it.
+            var dpr = rcloud.display.get_device_pixel_ratio();
+            // fix image width so that retina displays are set correctly
+            div.find("img")
+                .each(function(i, img) {
+                    function update() { img.style.width = img.width / dpr; }
+                    if (img.width === 0) {
+                        $(img).on("load", update);
+                    } else {
+                        update();
+                    }
+                });
+        }
+    },
+    deferred_results: {
+        sort: 2000,
+        process: function(div) {
+            var uuid = rcloud.deferred_knitr_uuid;
+            // capture deferred knitr results
+            div.find("pre code")
+                .contents()
+                .filter(function() {
+                    return this.nodeValue ? this.nodeValue.indexOf(uuid) !== -1 : false;
+                }).parent().parent()
+                .each(function() {
+                    var that = this;
+                    var uuids = this.childNodes[0].childNodes[0].data.substr(8,65).split("|");
+                    // FIXME monstrous hack: we rebuild the ocap from the string to
+                    // call it via rserve-js
+                    var ocap = [uuids[1]];
+                    ocap.r_attributes = { "class": "OCref" };
+                    var f = rclient._rserve.wrap_ocap(ocap);
+
+                    f(function(err, future) {
+                        var data;
+                        if (RCloud.is_exception(future)) {
+                            data = RCloud.exception_message(future);
+                            $(that).replaceWith(function() {
+                                return ui_utils.string_error(data);
+                            });
+                        } else {
+                            data = future();
+                            $(that).replaceWith(function() {
+                                return data;
+                            });
+                        }
+                    });
+                    // rcloud.resolve_deferred_result(uuids[1], function(data) {
+                    //     $(that).replaceWith(function() {
+                    //         return shell.handle(data[0], data);
+                    //     });
+                    // });
+                });
+        }
+    },
+    mathjax: {
+        sort: 3000,
+        process: function(div) {
+            // typeset the math
+
+            // why does passing the div as last arg not work, as documented here?
+            // http://docs.mathjax.org/en/latest/typeset.html
+            if (!_.isUndefined(MathJax))
+                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+        }
+    },
+    hide_source: {
+        sort: 4000,
+        process: function(div) {
+            // this is kinda bad
+            if (!shell.notebook.controller._r_source_visible) {
+                Notebook.hide_r_source(div);
+            }
+        }
+    },
+    remove_excess_knitr_plots: {
+        sort: 5000,
+        process: function(div) {
+            // Work around a persistently annoying knitr bug:
+            // https://github.com/att/rcloud/issues/456
+
+            _($("#rcloud-cellarea img")).each(function(img, ix, $q) {
+                ensure_image_has_hash(img);
+                if (img.getAttribute("src").substr(0,10) === "data:image" &&
+                    img.getAttribute("alt") != null &&
+                    img.getAttribute("alt").substr(0,13) === "plot of chunk" &&
+                    ix > 0 &&
+                    img.dataset.sha256 === $q[ix-1].dataset.sha256) {
+                    $(img).css("display", "none");
+                }
+            });
+        }
+    }
+});
+
+Notebook.Cell.preprocessors.add({});
 
 })();

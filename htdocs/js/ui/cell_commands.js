@@ -1,7 +1,5 @@
 RCloud.UI.cell_commands = (function() {
-    var commands_ = {};
-    var above_between_commands_, cell_commands_, prompt_commands_;
-    var defaults_ = {};
+    var extension_;
 
     function create_command_set(area, command_set, cell_model, cell_view) {
         var commands_ = {};
@@ -81,6 +79,27 @@ RCloud.UI.cell_commands = (function() {
             };
         },
         init: function() {
+            extension_ = RCloud.extension.create({
+                defaults: {},
+                sections: {
+                    above_between: {
+                        filter: function(command) {
+                            return command.area === 'above' || command.area === 'between';
+                        }
+                    },
+                    cell: {
+                        filter: function(command) {
+                            return command.area === 'cell';
+                        }
+                    },
+                    prompt: {
+                        filter: function(command) {
+                            return command.area === 'prompt';
+                        }
+                    }
+                }
+            });
+
             var that = this;
             this.add({
                 insert: {
@@ -176,35 +195,19 @@ RCloud.UI.cell_commands = (function() {
             return this;
         },
         add: function(commands) {
-            // extend commands_ by each command in commands, with defaults
-            for(var key in commands)
-                commands_[key] = _.extend(_.extend({key: key}, defaults_), commands[key]);
-
-            // update the lists of commands (for quick access)
-            above_between_commands_ = _.filter(commands_, function(command) {
-                return command.area === 'above' || command.area === 'between';
-            });
-            cell_commands_ = _.filter(commands_, function(command) {
-                return command.area === 'cell';
-            });
-            prompt_commands_ = _.filter(commands_, function(command) {
-                return command.area === 'prompt';
-            });
-            [above_between_commands_, cell_commands_, prompt_commands_].forEach(function(set) {
-                set.sort(function(a, b) { return a.sort - b.sort; });
-            });
+            extension_.add(commands);
             return this;
         },
         remove: function(command_name) {
-            delete commands_[command_name];
+            extension_.remove(command_name);
             return this;
         },
         decorate_above_between: function(area, cell_model, cell_view) {
             // commands for above and between cells
-            var result = create_command_set(area, above_between_commands_, cell_model, cell_view);
+            var result = create_command_set(area, extension_.entries('above_between'), cell_model, cell_view);
             _.extend(result, {
                 betweenness: function(between) {
-                    above_between_commands_.forEach(function(cmd) {
+                    extension_.entries('above_between').forEach(function(cmd) {
                         if(cmd.area === 'between') {
                             if(between)
                                 result.controls[cmd.key].control.show();
@@ -217,10 +220,10 @@ RCloud.UI.cell_commands = (function() {
             return result;
         },
         decorate_cell: function(area, cell_model, cell_view) {
-            return create_command_set(area, cell_commands_, cell_model, cell_view);
+            return create_command_set(area, extension_.entries('cell'), cell_model, cell_view);
         },
         decorate_prompt: function(area) {
-            return create_command_set(area, prompt_commands_);
+            return create_command_set(area, extension_.entries('prompt'));
         }
     };
     return result;
