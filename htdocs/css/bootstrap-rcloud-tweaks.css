@@ -93,7 +93,7 @@ div.panel-heading:hover {
     max-width: inherit;
 }
 
-.r-result-div {
+.r-result-div, .r-result-div pre {
     background-color: #fff;
     padding: 0;
 }

@@ -883,6 +883,10 @@ a.footer-dropdown-toggle {
     color: #999;
 }
 
+.r-result-div {
+    border-bottom: 2px solid #d5d5d5;
+}
+
 /******************************************************************************/
 /* Fix some of the ugliness caused by the interaction between Bootstrap and
    Rmarkdown */
@@ -1117,10 +1121,6 @@ a.accordion-toggle.right > i {
 .form-control.big {
     height: 20px;
     font-size: 16px;
-}
-
-.r-result-div {
-    border-bottom: 2px solid #d5d5d5;
 }
 
 .drop-asset-body {
