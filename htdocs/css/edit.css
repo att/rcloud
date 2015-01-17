@@ -210,7 +210,7 @@ rect.frame {
     position: relative;
     width: 100%;
     height: 25px;
-    background-color: #e5e5e5;
+    background-color: #f5f5f5;
 }
 
 .cell-status.big {
@@ -222,9 +222,6 @@ rect.frame {
     bottom: 0;
     right: 0;
     padding: 2 2 2 2px;
-    border-top-left-radius: 4px;
-    border-top-right-radius: 4px;
-    background-color: white;
 }
 
 .cell-control-bar .cell-control {
@@ -238,6 +235,109 @@ rect.frame {
     margin: 1px 4px 1px 2px;
     padding: 1px 2px;
     height: 17px;
+
+}
+
+.text-result-table-same-loc:hover {
+    text-decoration: underline;
+    cursor: pointer;
+    color: blue;
+}
+
+.notebook-cell {
+    position:relative;
+    width:100%;
+    min-height: 25px;
+}
+
+.notebook-cell .outer-ace-div {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border: 1px solid #fff;
+}
+
+.cell-status {
+    position: relative;
+    width: 100%;
+    height: 25px;
+    background-color: #f5f5f5;
+}
+
+.cell-status.big {
+    height: 35px;
+}
+
+.cell-status .cell-control-bar {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    padding: 2 2 2 2px;
+}
+
+.cell-control-bar .cell-control {
+    display: inline-block;
+    padding: 0;
+}
+
+.cell-control-bar select.cell-control {
+    position: relative;
+    top: -1px;
+    margin: 1px 4px 1px 2px;
+    padding: 1px 2px;
+    height: 17px;
+
+}
+
+.text-result-table-same-loc:hover {
+    text-decoration: underline;
+    cursor: pointer;
+    color: blue;
+}
+
+.notebook-cell {
+    position:relative;
+    width:100%;
+    min-height: 25px;
+}
+
+.notebook-cell .outer-ace-div {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border: 1px solid #fff;
+}
+
+.cell-status {
+    position: relative;
+    width: 100%;
+    height: 25px;
+    background-color: #f5f5f5;
+}
+
+.cell-status.big {
+    height: 35px;
+}
+
+.cell-status .cell-control-bar {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    padding: 2 2 2 2px;
+}
+
+.cell-control-bar .cell-control {
+    display: inline-block;
+    padding: 0;
+}
+
+.cell-control-bar select.cell-control {
+    position: relative;
+    top: -1px;
+    margin: 1px 4px 1px 2px;
+    padding: 1px 2px;
+    height: 17px;
+    background-color: white;
 }
 
 .cell-status .cell-control-bar.flipped {
@@ -1020,7 +1120,7 @@ a.accordion-toggle.right > i {
 }
 
 .r-result-div {
-    border-bottom: 1px solid #f5f5f5;
+    border-bottom: 2px solid #d5d5d5;
 }
 
 .drop-asset-body {
