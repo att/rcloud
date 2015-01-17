@@ -59,7 +59,7 @@ session.markdown.eval <- function(command, language, silent) {
     # FIXME better error handling
     val <- paste("<pre>", val[1], "</pre>", sep="")
   }
-  self.oobSend(list("html.output", val))
+  self.oobSend(list("html.out", val))
 }
 
 ## WS init

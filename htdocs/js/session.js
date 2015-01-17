@@ -80,7 +80,7 @@ var oob_handlers = {
         RCloud.unregister_output_context(context);
         curr_context_id_ = null;
     },
-    "html.output": outputter('html_out')
+    "html.out": outputter('html_out')
 };
 
 var on_data = function(v) {
