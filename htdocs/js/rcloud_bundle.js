@@ -1533,17 +1533,23 @@ function create_cell_html_view(language, cell_model) {
     var has_result = false;
 
     var cell_status = $("<div class='cell-status'></div>");
+    var cell_status_left = $("<div class='cell-status-left'></div>");
+    cell_status.append(cell_status_left);
+
     var cell_control_bar = $("<div class='cell-control-bar'></div>");
     cell_status.append(cell_control_bar);
+    RCloud.UI.cell_commands.decorate('left', cell_status_left, cell_model, result);
+
     cell_status.append($("<div style='clear:both;'></div>"));
 
-    cell_controls_ = RCloud.UI.cell_commands.decorate_cell(cell_control_bar, cell_model, result);
+    cell_controls_ = RCloud.UI.cell_commands.decorate('cell', cell_control_bar, cell_model, result);
 
     notebook_cell_div.append(cell_status);
 
     var cell_commands_above = $("<div class='cell-controls-above'></div>");
-    above_between_controls_ = RCloud.UI.cell_commands.decorate_above_between(cell_commands_above, cell_model, result);
+    above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
     notebook_cell_div.append(cell_commands_above);
+
 
     function set_background_color(language) {
         var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
@@ -1571,6 +1577,11 @@ function create_cell_html_view(language, cell_model) {
     code_div_ = $('<div class="code-div"></div>');
     source_div_.append(code_div_);
 
+    code_div_.find('*').hover(function() {
+        code_div_.css('background-color', '#F4EDEB');
+    }, function() {
+        code_div_.css('background-color', null);
+    });
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
     set_background_color(language);
@@ -1632,8 +1643,6 @@ function create_cell_html_view(language, cell_model) {
         ace_widget_.setTheme("ace/theme/chrome");
         ace_session_.setUseWrapMode(true);
         ace_widget_.resize();
-
-        ui_utils.add_ace_grab_affordance(ace_widget_.container);
 
         ui_utils.install_common_ace_key_bindings(ace_widget_, function() {
             return language;
@@ -1743,13 +1752,6 @@ function create_cell_html_view(language, cell_model) {
             cell_controls_.set_flag('modify', !readonly);
             above_between_controls_.set_flag('modify', !readonly);
             click_to_edit(!readonly);
-            if (readonly) {
-                if(ace_widget_)
-                    $(ace_widget_.container).find(".grab-affordance").hide();
-            } else {
-                if(ace_widget_)
-                    $(ace_widget_.container).find(".grab-affordance").show();
-            }
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -3459,8 +3461,8 @@ RCloud.UI.cell_commands = (function() {
                 }
             };
         },
-        create_gap: function() {
-            var gap = $('<span/>').html('&nbsp;').css({'line-height': '25%'});
+        create_static: function(html) {
+            var gap = $('<span/>').html(html).css({'line-height': '25%'});
             return {
                 control: gap,
                 enable: function() {},
@@ -3484,6 +3486,11 @@ RCloud.UI.cell_commands = (function() {
                     prompt: {
                         filter: function(command) {
                             return command.area === 'prompt';
+                        }
+                    },
+                    left: {
+                        filter: function(command) {
+                            return command.area === 'left';
                         }
                     }
                 }
@@ -3549,7 +3556,7 @@ RCloud.UI.cell_commands = (function() {
                     area: 'cell',
                     sort: 3500,
                     create: function(cell_model) {
-                        return that.create_gap();
+                        return that.create_static('&nbsp;');
                     }
                 },
                 split: {
@@ -3579,6 +3586,13 @@ RCloud.UI.cell_commands = (function() {
                             cell_model.parent_model.controller.remove_cell(cell_model);
                         });
                     }
+                },
+                grab_affordance: {
+                    area: 'left',
+                    sort: 1000,
+                    create: function(cell_model) {
+                        return that.create_static("<div class='grab-affordance'><object data='/img/grab_affordance.svg' type='image/svg+xml'></object></div>");
+                    }
                 }
             });
             return this;
@@ -3591,28 +3605,26 @@ RCloud.UI.cell_commands = (function() {
             extension_.remove(command_name);
             return this;
         },
-        decorate_above_between: function(area, cell_model, cell_view) {
-            // commands for above and between cells
-            var result = create_command_set(area, extension_.entries('above_between'), cell_model, cell_view);
-            _.extend(result, {
-                betweenness: function(between) {
-                    extension_.entries('above_between').forEach(function(cmd) {
-                        if(cmd.area === 'between') {
-                            if(between)
-                                result.controls[cmd.key].control.show();
-                            else
-                                result.controls[cmd.key].control.hide();
-                        }
-                    });
-                }
-            });
+        decorate: function(area, div, cell_model, cell_view) {
+            var result = create_command_set(div, extension_.entries(area), cell_model, cell_view);
+            switch(area) {
+            case 'above_between':
+                _.extend(result, {
+                    betweenness: function(between) {
+                        extension_.entries('above_between').forEach(function(cmd) {
+                            if(cmd.area === 'between') {
+                                if(between)
+                                    result.controls[cmd.key].control.show();
+                                else
+                                    result.controls[cmd.key].control.hide();
+                            }
+                        });
+                    }
+                });
+                break;
+            default:
+            }
             return result;
-        },
-        decorate_cell: function(area, cell_model, cell_view) {
-            return create_command_set(area, extension_.entries('cell'), cell_model, cell_view);
-        },
-        decorate_prompt: function(area) {
-            return create_command_set(area, extension_.entries('prompt'));
         }
     };
     return result;
@@ -4185,7 +4197,7 @@ RCloud.UI.command_prompt = (function() {
             var prompt_div = $(RCloud.UI.panel_loader.load_snippet('command-prompt-snippet'));
             $('#rcloud-cellarea').append(prompt_div);
             var prompt_command_bar = $('#prompt-area .cell-control-bar');
-            command_bar_ = RCloud.UI.cell_commands.decorate_prompt(prompt_command_bar);
+            command_bar_ = RCloud.UI.cell_commands.decorate('prompt', prompt_command_bar);
             history_ = setup_prompt_history();
             entry_ = setup_command_entry();
         },
@@ -4772,7 +4784,7 @@ RCloud.UI.init = function() {
                     next = info.item.next().data('rcloud.model');
                 shell.notebook.controller.move_cell(model, next);
             },
-            handle: " .ace_gutter-layer",
+            handle: " .cell-status",
             scroll: true,
             scrollSensitivity: 40,
             forcePlaceholderSize: true

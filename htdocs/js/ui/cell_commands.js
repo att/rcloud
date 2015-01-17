@@ -70,8 +70,8 @@ RCloud.UI.cell_commands = (function() {
                 }
             };
         },
-        create_gap: function() {
-            var gap = $('<span/>').html('&nbsp;').css({'line-height': '25%'});
+        create_static: function(html) {
+            var gap = $('<span/>').html(html).css({'line-height': '25%'});
             return {
                 control: gap,
                 enable: function() {},
@@ -95,6 +95,11 @@ RCloud.UI.cell_commands = (function() {
                     prompt: {
                         filter: function(command) {
                             return command.area === 'prompt';
+                        }
+                    },
+                    left: {
+                        filter: function(command) {
+                            return command.area === 'left';
                         }
                     }
                 }
@@ -160,7 +165,7 @@ RCloud.UI.cell_commands = (function() {
                     area: 'cell',
                     sort: 3500,
                     create: function(cell_model) {
-                        return that.create_gap();
+                        return that.create_static('&nbsp;');
                     }
                 },
                 split: {
@@ -190,6 +195,13 @@ RCloud.UI.cell_commands = (function() {
                             cell_model.parent_model.controller.remove_cell(cell_model);
                         });
                     }
+                },
+                grab_affordance: {
+                    area: 'left',
+                    sort: 1000,
+                    create: function(cell_model) {
+                        return that.create_static("<div class='grab-affordance'><object data='/img/grab_affordance.svg' type='image/svg+xml'></object></div>");
+                    }
                 }
             });
             return this;
@@ -202,28 +214,26 @@ RCloud.UI.cell_commands = (function() {
             extension_.remove(command_name);
             return this;
         },
-        decorate_above_between: function(area, cell_model, cell_view) {
-            // commands for above and between cells
-            var result = create_command_set(area, extension_.entries('above_between'), cell_model, cell_view);
-            _.extend(result, {
-                betweenness: function(between) {
-                    extension_.entries('above_between').forEach(function(cmd) {
-                        if(cmd.area === 'between') {
-                            if(between)
-                                result.controls[cmd.key].control.show();
-                            else
-                                result.controls[cmd.key].control.hide();
-                        }
-                    });
-                }
-            });
+        decorate: function(area, div, cell_model, cell_view) {
+            var result = create_command_set(div, extension_.entries(area), cell_model, cell_view);
+            switch(area) {
+            case 'above_between':
+                _.extend(result, {
+                    betweenness: function(between) {
+                        extension_.entries('above_between').forEach(function(cmd) {
+                            if(cmd.area === 'between') {
+                                if(between)
+                                    result.controls[cmd.key].control.show();
+                                else
+                                    result.controls[cmd.key].control.hide();
+                            }
+                        });
+                    }
+                });
+                break;
+            default:
+            }
             return result;
-        },
-        decorate_cell: function(area, cell_model, cell_view) {
-            return create_command_set(area, extension_.entries('cell'), cell_model, cell_view);
-        },
-        decorate_prompt: function(area) {
-            return create_command_set(area, extension_.entries('prompt'));
         }
     };
     return result;

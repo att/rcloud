@@ -203,7 +203,6 @@ rect.frame {
     position: relative;
     width: 100%;
     height: 100%;
-    border: 1px solid #fff;
 }
 
 .cell-status {
@@ -808,10 +807,15 @@ pre {
 }
 
 /* some visual affordance for ace-gutter sortable handles */
-#output:not(.ui-sortable-disabled) > .notebook-cell .ace_gutter-layer {
+#output:not(.ui-sortable-disabled) > .notebook-cell .ace_gutter-layer, .cell-status-left {
     cursor: -moz-grab;
     cursor: -webkit-grab;
     cursor: grab;
+}
+
+.cell-status-left {
+    position: absolute;
+    bottom: 5px;
 }
 
 .ace_gutter-layer {
