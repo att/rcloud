@@ -70,12 +70,14 @@ RCloud.UI.cell_commands = (function() {
                 }
             };
         },
-        create_static: function(html) {
-            var gap = $('<span/>').html(html).css({'line-height': '25%'});
+        create_static: function(html, wrap) {
+            var content = $('<span><span/>').html(html);
+            var span = wrap ? wrap(content) : content;
             return {
-                control: gap,
+                control: span,
                 enable: function() {},
-                disable: function() {}
+                disable: function() {},
+                set: function(html) { content.html(html); }
             };
         },
         init: function() {
@@ -200,7 +202,19 @@ RCloud.UI.cell_commands = (function() {
                     area: 'left',
                     sort: 1000,
                     create: function(cell_model) {
-                        return that.create_static("<div class='grab-affordance'><object data='/img/grab_affordance.svg' type='image/svg+xml'></object></div>");
+                        var svg = "<object data='/img/grab_affordance.svg' type='image/svg+xml'></object>";
+                        return that.create_static(svg, function(x) {
+                            return $("<span class='grab-affordance'>").append(x);
+                        });
+                    }
+                },
+                cell_number: {
+                    area: 'left',
+                    sort: 2000,
+                    create: function(cell_model) {
+                        return that.create_static(cell_model.id(), function(x) {
+                            return $("<span class='cell-number'>").append(x);
+                        });
                     }
                 }
             });

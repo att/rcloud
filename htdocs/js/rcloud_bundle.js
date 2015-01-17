@@ -1507,12 +1507,11 @@ function create_cell_html_view(language, cell_model) {
     var code_div_;
     var result_div_;
     var change_content_;
-    var above_between_controls_, cell_controls_;
+    var above_between_controls_, cell_controls_, left_controls_;
     var edit_mode_; // note: starts neither true nor false
     var result = {}; // "this"
 
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
-    update_div_id();
     notebook_cell_div.data('rcloud.model', cell_model);
 
     //////////////////////////////////////////////////////////////////////////
@@ -1525,6 +1524,7 @@ function create_cell_html_view(language, cell_model) {
     }
     function update_div_id() {
         notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
+        left_controls_.controls['cell_number'].set(cell_model.id());
     }
     function set_widget_height() {
         source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) + EXTRA_HEIGHT) + "px");
@@ -1538,7 +1538,7 @@ function create_cell_html_view(language, cell_model) {
 
     var cell_control_bar = $("<div class='cell-control-bar'></div>");
     cell_status.append(cell_control_bar);
-    RCloud.UI.cell_commands.decorate('left', cell_status_left, cell_model, result);
+    left_controls_ = RCloud.UI.cell_commands.decorate('left', cell_status_left, cell_model, result);
 
     cell_status.append($("<div style='clear:both;'></div>"));
 
@@ -1585,6 +1585,8 @@ function create_cell_html_view(language, cell_model) {
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
     set_background_color(language);
+
+    update_div_id();
 
     outer_ace_div.append(ace_div);
     source_div_.append(outer_ace_div);
@@ -3461,12 +3463,14 @@ RCloud.UI.cell_commands = (function() {
                 }
             };
         },
-        create_static: function(html) {
-            var gap = $('<span/>').html(html).css({'line-height': '25%'});
+        create_static: function(html, wrap) {
+            var content = $('<span><span/>').html(html);
+            var span = wrap ? wrap(content) : content;
             return {
-                control: gap,
+                control: span,
                 enable: function() {},
-                disable: function() {}
+                disable: function() {},
+                set: function(html) { content.html(html); }
             };
         },
         init: function() {
@@ -3591,7 +3595,19 @@ RCloud.UI.cell_commands = (function() {
                     area: 'left',
                     sort: 1000,
                     create: function(cell_model) {
-                        return that.create_static("<div class='grab-affordance'><object data='/img/grab_affordance.svg' type='image/svg+xml'></object></div>");
+                        var svg = "<object data='/img/grab_affordance.svg' type='image/svg+xml'></object>";
+                        return that.create_static(svg, function(x) {
+                            return $("<span class='grab-affordance'>").append(x);
+                        });
+                    }
+                },
+                cell_number: {
+                    area: 'left',
+                    sort: 2000,
+                    create: function(cell_model) {
+                        return that.create_static(cell_model.id(), function(x) {
+                            return $("<span class='cell-number'>").append(x);
+                        });
                     }
                 }
             });

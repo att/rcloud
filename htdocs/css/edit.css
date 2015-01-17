@@ -807,7 +807,7 @@ pre {
 }
 
 /* some visual affordance for ace-gutter sortable handles */
-#output:not(.ui-sortable-disabled) > .notebook-cell .ace_gutter-layer, .cell-status-left {
+#output:not(.ui-sortable-disabled) > .notebook-cell .ace_gutter-layer, .cell-status {
     cursor: -moz-grab;
     cursor: -webkit-grab;
     cursor: grab;
@@ -815,7 +815,16 @@ pre {
 
 .cell-status-left {
     position: absolute;
-    bottom: 5px;
+    top: 0px;
+}
+
+.grab-affordance {
+    position: relative;
+    top: 4px;
+}
+
+.cell-number {
+    padding-left: 4px;
 }
 
 .ace_gutter-layer {

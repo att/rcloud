@@ -21,12 +21,11 @@ function create_cell_html_view(language, cell_model) {
     var code_div_;
     var result_div_;
     var change_content_;
-    var above_between_controls_, cell_controls_;
+    var above_between_controls_, cell_controls_, left_controls_;
     var edit_mode_; // note: starts neither true nor false
     var result = {}; // "this"
 
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
-    update_div_id();
     notebook_cell_div.data('rcloud.model', cell_model);
 
     //////////////////////////////////////////////////////////////////////////
@@ -39,6 +38,7 @@ function create_cell_html_view(language, cell_model) {
     }
     function update_div_id() {
         notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
+        left_controls_.controls['cell_number'].set(cell_model.id());
     }
     function set_widget_height() {
         source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) + EXTRA_HEIGHT) + "px");
@@ -52,7 +52,7 @@ function create_cell_html_view(language, cell_model) {
 
     var cell_control_bar = $("<div class='cell-control-bar'></div>");
     cell_status.append(cell_control_bar);
-    RCloud.UI.cell_commands.decorate('left', cell_status_left, cell_model, result);
+    left_controls_ = RCloud.UI.cell_commands.decorate('left', cell_status_left, cell_model, result);
 
     cell_status.append($("<div style='clear:both;'></div>"));
 
@@ -99,6 +99,8 @@ function create_cell_html_view(language, cell_model) {
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
     set_background_color(language);
+
+    update_div_id();
 
     outer_ace_div.append(ace_div);
     source_div_.append(outer_ace_div);
