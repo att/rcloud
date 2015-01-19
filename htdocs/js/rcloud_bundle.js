@@ -3606,7 +3606,7 @@ RCloud.UI.cell_commands = (function() {
                     sort: 2000,
                     create: function(cell_model) {
                         return that.create_static(cell_model.id(), function(x) {
-                            return $("<span class='cell-number'>").append(x);
+                            return $("<span class='cell-number'>").append('cell ', x);
                         });
                     }
                 }
