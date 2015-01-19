@@ -1609,7 +1609,7 @@ function create_cell_html_view(language, cell_model) {
                                    EXTRA_HEIGHT_SOURCE) + "px");
     }
 
-    cell_status_ = $("<div class='cell-status'></div>");
+    cell_status_ = $("<div class='cell-status nonselectable'></div>");
 
     var cell_status_left = $("<div class='cell-status-left'></div>");
     cell_status_.append(cell_status_left);
