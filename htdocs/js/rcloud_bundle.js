@@ -1503,8 +1503,8 @@ function create_cell_html_view(language, cell_model) {
     var am_read_only_ = "unknown";
     var source_div_;
     var code_div_;
-    var result_text_;
     var result_div_;
+    var current_result_; // text is aggregated
     var change_content_;
     var above_between_controls_, cell_controls_;
     var edit_mode_; // note: starts neither true nor false
@@ -1602,9 +1602,16 @@ function create_cell_html_view(language, cell_model) {
         result_div_.html('<div class="non-result">' + status + '</div>');
     };
 
+    function result_updated() {
+        Notebook.Cell.postprocessors.entries('all').forEach(function(post) {
+            post.process(result_div_);
+        });
+
+        result.edit_source(false);
+    }
+
     function clear_result() {
         display_status("(uncomputed)");
-        result_text_ = "";
     }
 
     // start trying to refactor out this repetitive nonsense
@@ -1753,31 +1760,36 @@ function create_cell_html_view(language, cell_model) {
         status_updated: function(status) {
             display_status(status);
         },
-        result_updated: function(r) {
+        start_output: function() {
+            result_div_.empty();
+        },
+        add_result: function(type, r) {
             Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
                 r = pre.process(r);
             });
-            has_result = true;
-            result_div_.html(r);
-            result_text_ = r;
 
-            Notebook.Cell.postprocessors.entries('all').forEach(function(post) {
-                post.process(result_div_);
-            });
-
-            this.edit_source(false);
-        },
-        add_result: function(type, r) {
+            if(type!='code')
+                current_result_ = null;
             switch(type) {
             case 'code':
-                r = '<pre><code>' + r + '</code></pre>';
+                if(!current_result_) {
+                    var pre = $('<pre></pre>');
+                    current_result_ = $('<code></code>');
+                    pre.append(current_result_);
+                    result_div_.append(pre);
+                }
+                current_result_.append(r);
                 break;
             case 'html':
+                result_div_.append(r);
                 break;
             default:
                 throw new Error('unknown result type ' + type);
             }
-            this.result_updated(result_text_+ r);
+            result_updated();
+        },
+        end_output: function() {
+            current_result_ = null;
         },
         clear_result: clear_result,
         set_readonly: function(readonly) {
@@ -2072,7 +2084,8 @@ Notebook.Cell.create_controller = function(cell_model)
 
             if(!execution_context_) {
                 var resulter = this.append_result.bind(this, 'code');
-                execution_context_ = {start: this.clear_result.bind(this),
+                execution_context_ = {start: this.start_output.bind(this),
+                                      end: this.end_output.bind(this),
                                       // these should convey the meaning e.g. through color:
                                       out: resulter, err: resulter, msg: resulter,
                                       html_out: this.append_result.bind(this, 'html'),
@@ -2103,9 +2116,19 @@ Notebook.Cell.create_controller = function(cell_model)
                 view.clear_result();
             });
         },
+        start_output: function() {
+            cell_model.notify_views(function(view) {
+                view.start_output();
+            });
+        },
         append_result: function(type, msg) {
             cell_model.notify_views(function(view) {
                 view.add_result(type, msg);
+            });
+        },
+        end_output: function() {
+            cell_model.notify_views(function(view) {
+                view.end_output();
             });
         },
         get_input: function(type, prompt, k) {
@@ -2997,8 +3020,8 @@ function append_session_info(text) {
 
 function handle_img(url, dims, page) {
     var img = "<img width="+dims[0]+" height="+dims[1]+" src='"+url+"' />\n";
-    if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_].out)
-        output_contexts_[curr_context_id_].out(img);
+    if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_].html_out)
+        output_contexts_[curr_context_id_].html_out(img);
     else
         append_session_info(img);
 }
@@ -3067,6 +3090,8 @@ var oob_sends = {
     "end.cell.output": function(context) {
         if(context != curr_context_id_)
             console.log("unmatched context id: curr " + curr_context_id_ + ", end.cell.output " + context);
+        if(output_contexts_[context] && output_contexts_[context].end)
+            output_contexts_[context].end();
         RCloud.unregister_output_context(context);
         curr_context_id_ = null;
     },

@@ -15,7 +15,8 @@ Notebook.Cell.create_controller = function(cell_model)
 
             if(!execution_context_) {
                 var resulter = this.append_result.bind(this, 'code');
-                execution_context_ = {start: this.clear_result.bind(this),
+                execution_context_ = {start: this.start_output.bind(this),
+                                      end: this.end_output.bind(this),
                                       // these should convey the meaning e.g. through color:
                                       out: resulter, err: resulter, msg: resulter,
                                       html_out: this.append_result.bind(this, 'html'),
@@ -46,9 +47,19 @@ Notebook.Cell.create_controller = function(cell_model)
                 view.clear_result();
             });
         },
+        start_output: function() {
+            cell_model.notify_views(function(view) {
+                view.start_output();
+            });
+        },
         append_result: function(type, msg) {
             cell_model.notify_views(function(view) {
                 view.add_result(type, msg);
+            });
+        },
+        end_output: function() {
+            cell_model.notify_views(function(view) {
+                view.end_output();
             });
         },
         get_input: function(type, prompt, k) {

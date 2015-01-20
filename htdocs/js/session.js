@@ -6,8 +6,8 @@ function append_session_info(text) {
 
 function handle_img(url, dims, page) {
     var img = "<img width="+dims[0]+" height="+dims[1]+" src='"+url+"' />\n";
-    if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_].out)
-        output_contexts_[curr_context_id_].out(img);
+    if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_].html_out)
+        output_contexts_[curr_context_id_].html_out(img);
     else
         append_session_info(img);
 }
@@ -76,6 +76,8 @@ var oob_sends = {
     "end.cell.output": function(context) {
         if(context != curr_context_id_)
             console.log("unmatched context id: curr " + curr_context_id_ + ", end.cell.output " + context);
+        if(output_contexts_[context] && output_contexts_[context].end)
+            output_contexts_[context].end();
         RCloud.unregister_output_context(context);
         curr_context_id_ = null;
     },
