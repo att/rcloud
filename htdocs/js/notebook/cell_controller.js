@@ -1,5 +1,6 @@
 Notebook.Cell.create_controller = function(cell_model)
 {
+    var execution_context_ = null;
     var result = {
         execute: function() {
             var that = this;
@@ -12,13 +13,16 @@ Notebook.Cell.create_controller = function(cell_model)
             }
             rcloud.record_cell_execution(cell_model);
 
-            var resulter = this.append_result.bind(this, 'code'),
-                context = {start: this.clear_result.bind(this),
-                           out: resulter, err: resulter, msg: resulter, // losing "error-ness" here
-                           html_out: this.append_result.bind(this, 'html'),
-                           in: this.get_input.bind(this, 'in')
-                          },
-                context_id = RCloud.register_output_context(context);
+            if(!execution_context_) {
+                var resulter = this.append_result.bind(this, 'code');
+                execution_context_ = {start: this.clear_result.bind(this),
+                                      // these should convey the meaning e.g. through color:
+                                      out: resulter, err: resulter, msg: resulter,
+                                      html_out: this.append_result.bind(this, 'html'),
+                                      in: this.get_input.bind(this, 'in')
+                                     };
+            }
+            var context_id = RCloud.register_output_context(execution_context_);
 
             var promise;
             if (rcloud.authenticated) {

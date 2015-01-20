@@ -4,8 +4,7 @@ function append_session_info(text) {
     RCloud.UI.session_pane.append_text(text);
 }
 
-function handle_img(v) {
-    var url = v[0], dims = v[1], page = v[2];
+function handle_img(url, dims, page) {
     var img = "<img width="+dims[0]+" height="+dims[1]+" src='"+url+"' />\n";
     if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_].out)
         output_contexts_[curr_context_id_].out(img);
@@ -44,8 +43,7 @@ var oob_sends = {
         var url=" "+ window.location.protocol + "//" + window.location.host + v+" ";
         RCloud.UI.help_frame.display_href(url);
     },
-    "pager": function(v) {
-        var files = v[0], header = v[1], title = v[2];
+    "pager": function(files, header, title) {
         var html = "<h2>" + title + "</h2>\n";
         for(var i=0; i<files.length; ++i) {
             if(_.isArray(header) && header[i])
@@ -54,11 +52,10 @@ var oob_sends = {
         }
         RCloud.UI.help_frame.display_content(html);
     },
-    "editor": function(v) {
+    "editor": function(what, content, name) {
         // what is an object to edit, content is file content to edit
-        var what = v[0], content = v[1], name = v[2];
         // FIXME: do somethign with it - eventually this
-        // should be a modal thing - for now we shoudl at least
+        // should be a modal thing - for now we should at least
         // show the content ...
         append_session_info("what: "+ what + "\ncontents:" + content + "\nname: "+name+"\n");
     },
@@ -72,13 +69,11 @@ var oob_sends = {
     "stderr": append_session_info,
     // NOTE: "idle": ... can be used to handle idle pings from Rserve if we care ..
     "start.cell.output": function(context) {
-        if(_.isArray(context)) context = context[0];
         curr_context_id_ = context;
         if(output_contexts_[context] && output_contexts_[context].start)
             output_contexts_[context].start();
     },
     "end.cell.output": function(context) {
-        if(_.isArray(context)) context = context[0];
         if(context != curr_context_id_)
             console.log("unmatched context id: curr " + curr_context_id_ + ", end.cell.output " + context);
         RCloud.unregister_output_context(context);

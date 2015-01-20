@@ -2057,6 +2057,7 @@ Notebook.Cell.create_model = function(content, language)
 };
 Notebook.Cell.create_controller = function(cell_model)
 {
+    var execution_context_ = null;
     var result = {
         execute: function() {
             var that = this;
@@ -2069,27 +2070,16 @@ Notebook.Cell.create_controller = function(cell_model)
             }
             rcloud.record_cell_execution(cell_model);
 
-/*
-            // maybe session.js should do this instead
-            // might use unpromisify.js: https://gist.github.com/squaremo/6343228
-            var depromisify_input = function(type) {
-                return function(prompt, k) {
-                    that.get_input(type, prompt)
-                        .then(function(ret) {
-                            k(null, ret);
-                        }).catch(function(error) {
-                            k(error.message || error, null);
-                        });
-                };
-            };
-*/
-            var resulter = this.append_result.bind(this, 'code'),
-                context = {start: this.clear_result.bind(this),
-                           out: resulter, err: resulter, msg: resulter, // losing "error-ness" here
-                           html_out: this.append_result.bind(this, 'html'),
-                           in: this.get_input.bind(this, 'in') // depromisify_input('in')
-                          },
-                context_id = RCloud.register_output_context(context);
+            if(!execution_context_) {
+                var resulter = this.append_result.bind(this, 'code');
+                execution_context_ = {start: this.clear_result.bind(this),
+                                      // these should convey the meaning e.g. through color:
+                                      out: resulter, err: resulter, msg: resulter,
+                                      html_out: this.append_result.bind(this, 'html'),
+                                      in: this.get_input.bind(this, 'in')
+                                     };
+            }
+            var context_id = RCloud.register_output_context(execution_context_);
 
             var promise;
             if (rcloud.authenticated) {
@@ -2122,7 +2112,7 @@ Notebook.Cell.create_controller = function(cell_model)
             // assume only one view has get_input
             var view = _.find(cell_model.views, function(v) { return v.get_input; });
             if(!view)
-                k("cell view does not support input", null); // return Promise.reject(new Error("cell view does not support input"));
+                k("cell view does not support input", null);
             else
                 view.get_input(type, prompt, k);
         },
@@ -3005,8 +2995,7 @@ function append_session_info(text) {
     RCloud.UI.session_pane.append_text(text);
 }
 
-function handle_img(v) {
-    var url = v[0], dims = v[1], page = v[2];
+function handle_img(url, dims, page) {
     var img = "<img width="+dims[0]+" height="+dims[1]+" src='"+url+"' />\n";
     if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_].out)
         output_contexts_[curr_context_id_].out(img);
@@ -3045,8 +3034,7 @@ var oob_sends = {
         var url=" "+ window.location.protocol + "//" + window.location.host + v+" ";
         RCloud.UI.help_frame.display_href(url);
     },
-    "pager": function(v) {
-        var files = v[0], header = v[1], title = v[2];
+    "pager": function(files, header, title) {
         var html = "<h2>" + title + "</h2>\n";
         for(var i=0; i<files.length; ++i) {
             if(_.isArray(header) && header[i])
@@ -3055,11 +3043,10 @@ var oob_sends = {
         }
         RCloud.UI.help_frame.display_content(html);
     },
-    "editor": function(v) {
+    "editor": function(what, content, name) {
         // what is an object to edit, content is file content to edit
-        var what = v[0], content = v[1], name = v[2];
         // FIXME: do somethign with it - eventually this
-        // should be a modal thing - for now we shoudl at least
+        // should be a modal thing - for now we should at least
         // show the content ...
         append_session_info("what: "+ what + "\ncontents:" + content + "\nname: "+name+"\n");
     },
@@ -3073,13 +3060,11 @@ var oob_sends = {
     "stderr": append_session_info,
     // NOTE: "idle": ... can be used to handle idle pings from Rserve if we care ..
     "start.cell.output": function(context) {
-        if(_.isArray(context)) context = context[0];
         curr_context_id_ = context;
         if(output_contexts_[context] && output_contexts_[context].start)
             output_contexts_[context].start();
     },
     "end.cell.output": function(context) {
-        if(_.isArray(context)) context = context[0];
         if(context != curr_context_id_)
             console.log("unmatched context id: curr " + curr_context_id_ + ", end.cell.output " + context);
         RCloud.unregister_output_context(context);
