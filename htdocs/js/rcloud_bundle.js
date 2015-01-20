@@ -1494,7 +1494,7 @@ function ensure_image_has_hash(img)
 }
 
 var MIN_LINES = 2;
-var EXTRA_HEIGHT = 2;
+var EXTRA_HEIGHT_SOURCE = 2, EXTRA_HEIGHT_INPUT = 20; // fudge to prevent unnecessary scrolling
 
 function create_cell_html_view(language, cell_model) {
     var ace_widget_;
@@ -1508,6 +1508,7 @@ function create_cell_html_view(language, cell_model) {
     var change_content_;
     var above_between_controls_, cell_controls_;
     var edit_mode_; // note: starts neither true nor false
+    var input_div_, input_ace_div_, input_widget_, input_kont_;
     var result = {}; // "this"
 
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
@@ -1526,7 +1527,8 @@ function create_cell_html_view(language, cell_model) {
         notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
     }
     function set_widget_height() {
-        source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) + EXTRA_HEIGHT) + "px");
+        source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +
+                                   EXTRA_HEIGHT_SOURCE) + "px");
     }
 
     var cell_status = $("<div class='cell-status'></div>");
@@ -1605,29 +1607,43 @@ function create_cell_html_view(language, cell_model) {
         result_text_ = "";
     }
 
+    // start trying to refactor out this repetitive nonsense
+    function ace_stuff(div, content) {
+        ace.require("ace/ext/language_tools");
+        var widget = ace.edit(div);
+        var session = widget.getSession();
+        widget.setValue(content);
+        ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
+        // erase undo state so that undo doesn't erase all
+        ui_utils.on_next_tick(function() {
+            session.getUndoManager().reset();
+        });
+        var document = session.getDocument();
+        widget.setOptions({
+            enableBasicAutocompletion: true
+        });
+        widget.setTheme("ace/theme/chrome");
+        session.setUseWrapMode(true);
+        return {
+            widget: widget,
+            session: session,
+            document: document
+        };
+    }
+
     function create_edit_widget() {
         if(ace_widget_) return;
 
-        ace.require("ace/ext/language_tools");
-        ace_widget_ = ace.edit(ace_div[0]);
-        ace_session_ = ace_widget_.getSession();
-        ace_widget_.setValue(cell_model.content());
-        ui_utils.ace_set_pos(ace_widget_, 0, 0); // setValue selects all
-        // erase undo state so that undo doesn't erase all
-        ui_utils.on_next_tick(function() {
-            ace_session_.getUndoManager().reset();
-        });
-        ace_document_ = ace_session_.getDocument();
-        ace_widget_.setOptions({
-            enableBasicAutocompletion: true
-        });
+        var aaa = ace_stuff(ace_div[0], cell_model.content());
+        ace_widget_ = aaa.widget;
+        ace_session_ = aaa.session;
+        ace_document_ = aaa.document;
+
         ace_session_.on('change', function() {
             set_widget_height();
             ace_widget_.resize();
         });
 
-        ace_widget_.setTheme("ace/theme/chrome");
-        ace_session_.setUseWrapMode(true);
         ace_widget_.resize();
 
         ui_utils.add_ace_grab_affordance(ace_widget_.container);
@@ -1650,6 +1666,23 @@ function create_cell_html_view(language, cell_model) {
             cell_model.parent_model.on_dirty();
         });
         update_language();
+    }
+    function create_input_widget() {
+        if(input_widget_) return;
+
+        var aaa = ace_stuff(input_ace_div_[0], '');
+        input_widget_ = aaa.widget;
+
+        input_widget_.commands.addCommands([{
+            name: 'enter',
+            bindKey: 'Return',
+            exec: function(ace_widget, args, request) {
+                if(input_kont_)
+                    input_kont_(null, ace_widget.getValue());
+                input_div_.hide();
+            }
+        }]);
+        RCloud.UI.prevent_progress_modal();
     }
     function find_code_elems(parent) {
         return parent
@@ -1686,9 +1719,13 @@ function create_cell_html_view(language, cell_model) {
     }
     assign_code();
 
-    result_div_ = $('<div class="r-result-div"></div>');
-    clear_result();
+    result_div_ = $('<div class="r-result-div"></div>');    clear_result();
     inner_div.append(result_div_);
+    input_div_ = $('<div class="input-div"></div>');
+    input_ace_div_ = $('<div style="height: 100%"></div>');
+    input_div_.hide().append(input_ace_div_);
+    inner_div.append(input_div_);
+
     update_language();
 
     _.extend(result, {
@@ -1833,6 +1870,17 @@ function create_cell_html_view(language, cell_model) {
                 outer_ace_div.hide();
             }
             edit_mode_ = edit_mode;
+        },
+        get_input: function(type, prompt, k) {
+            create_input_widget();
+            input_widget_.setValue('');
+            //for(var i =0; i<3; ++i) {
+                input_div_.show();
+                input_div_.css('height', (ui_utils.ace_editor_height(input_widget_, 1) + EXTRA_HEIGHT_INPUT) + "px");
+                input_widget_.resize(true);
+            //}
+            input_widget_.focus();
+            input_kont_ = k;
         },
         div: function() {
             return notebook_cell_div;
@@ -2021,10 +2069,26 @@ Notebook.Cell.create_controller = function(cell_model)
             }
             rcloud.record_cell_execution(cell_model);
 
+/*
+            // maybe session.js should do this instead
+            // might use unpromisify.js: https://gist.github.com/squaremo/6343228
+            var depromisify_input = function(type) {
+                return function(prompt, k) {
+                    that.get_input(type, prompt)
+                        .then(function(ret) {
+                            k(null, ret);
+                        }).catch(function(error) {
+                            k(error.message || error, null);
+                        });
+                };
+            };
+*/
             var resulter = this.append_result.bind(this, 'code'),
                 context = {start: this.clear_result.bind(this),
-                           out: resulter, err: resulter, msg: resulter,
-                           html_out: this.append_result.bind(this, 'html')},
+                           out: resulter, err: resulter, msg: resulter, // losing "error-ness" here
+                           html_out: this.append_result.bind(this, 'html'),
+                           in: this.get_input.bind(this, 'in') // depromisify_input('in')
+                          },
                 context_id = RCloud.register_output_context(context);
 
             var promise;
@@ -2053,6 +2117,14 @@ Notebook.Cell.create_controller = function(cell_model)
             cell_model.notify_views(function(view) {
                 view.add_result(type, msg);
             });
+        },
+        get_input: function(type, prompt, k) {
+            // assume only one view has get_input
+            var view = _.find(cell_model.views, function(v) { return v.get_input; });
+            if(!view)
+                k("cell view does not support input", null); // return Promise.reject(new Error("cell view does not support input"));
+            else
+                view.get_input(type, prompt, k);
         },
         edit_source: function(whether) {
             cell_model.notify_views(function(view) {
@@ -2954,12 +3026,16 @@ RCloud.unregister_output_context = function(context_id) {
     delete output_contexts_[context_id];
 };
 
-function outputter(type) {
-    return function(v) {
-        if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_][type])
-            output_contexts_[curr_context_id_][type](v[0]);
-        else
-            append_session_info(v);
+function forward_to_context(type, has_continuation) {
+    return function() {
+        var context = output_contexts_[curr_context_id_];
+        if(curr_context_id_ && context && context[type])
+            context[type].apply(context, arguments);
+        else {
+            append_session_info.apply(null, arguments);
+            if(has_continuation)
+                arguments[arguments.length-1]("context does not support input", null);
+        }
     };
 }
 
@@ -2987,9 +3063,9 @@ var oob_sends = {
         // show the content ...
         append_session_info("what: "+ what + "\ncontents:" + content + "\nname: "+name+"\n");
     },
-    "console.out": outputter('out'),
-    "console.msg": outputter('msg'),
-    "console.err": outputter('err'),
+    "console.out": forward_to_context('out'),
+    "console.msg": forward_to_context('msg'),
+    "console.err": forward_to_context('err'),
     "img.url.update": handle_img,
     "img.url.final": function() {},
     // "dev.close": , // sent when device closes - we don't really care in the UI I guess ...,
@@ -3009,7 +3085,7 @@ var oob_sends = {
         RCloud.unregister_output_context(context);
         curr_context_id_ = null;
     },
-    "html.out": outputter('html_out')
+    "html.out": forward_to_context('html_out')
 };
 
 var on_data = function(v) {
@@ -3018,17 +3094,20 @@ var on_data = function(v) {
     console.log("OOB send arrived: ['"+v[0]+"']" + (oob_sends[v[0]]?'':' (unhandled)'));
 
     if(oob_sends[v[0]])
-        oob_sends[v[0]](v.slice(1));
+        oob_sends[v[0]].apply(null, v.slice(1));
 };
 
 var oob_messages = {
+    "console.in": forward_to_context('in', true)
 };
 
 var on_message = function(v, k) {
     v = v.value.json();
     console.log("OOB message arrived: ['"+v[0]+"']" + (oob_messages[v[0]]?'':' (unhandled)'));
-    if(oob_messages[v[0]])
-        oob_messages[v[0]](v.slice(1), k);
+    if(oob_messages[v[0]]) {
+        v.push(k);
+        oob_messages[v[0]].apply(null, v.slice(1));
+    }
     else
         k('unhandled', null);
 };

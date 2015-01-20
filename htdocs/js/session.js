@@ -25,12 +25,16 @@ RCloud.unregister_output_context = function(context_id) {
     delete output_contexts_[context_id];
 };
 
-function outputter(type) {
-    return function(v) {
-        if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_][type])
-            output_contexts_[curr_context_id_][type](v[0]);
-        else
-            append_session_info(v);
+function forward_to_context(type, has_continuation) {
+    return function() {
+        var context = output_contexts_[curr_context_id_];
+        if(curr_context_id_ && context && context[type])
+            context[type].apply(context, arguments);
+        else {
+            append_session_info.apply(null, arguments);
+            if(has_continuation)
+                arguments[arguments.length-1]("context does not support input", null);
+        }
     };
 }
 
@@ -58,9 +62,9 @@ var oob_sends = {
         // show the content ...
         append_session_info("what: "+ what + "\ncontents:" + content + "\nname: "+name+"\n");
     },
-    "console.out": outputter('out'),
-    "console.msg": outputter('msg'),
-    "console.err": outputter('err'),
+    "console.out": forward_to_context('out'),
+    "console.msg": forward_to_context('msg'),
+    "console.err": forward_to_context('err'),
     "img.url.update": handle_img,
     "img.url.final": function() {},
     // "dev.close": , // sent when device closes - we don't really care in the UI I guess ...,
@@ -80,7 +84,7 @@ var oob_sends = {
         RCloud.unregister_output_context(context);
         curr_context_id_ = null;
     },
-    "html.out": outputter('html_out')
+    "html.out": forward_to_context('html_out')
 };
 
 var on_data = function(v) {
@@ -89,17 +93,20 @@ var on_data = function(v) {
     console.log("OOB send arrived: ['"+v[0]+"']" + (oob_sends[v[0]]?'':' (unhandled)'));
 
     if(oob_sends[v[0]])
-        oob_sends[v[0]](v.slice(1));
+        oob_sends[v[0]].apply(null, v.slice(1));
 };
 
 var oob_messages = {
+    "console.in": forward_to_context('in', true)
 };
 
 var on_message = function(v, k) {
     v = v.value.json();
     console.log("OOB message arrived: ['"+v[0]+"']" + (oob_messages[v[0]]?'':' (unhandled)'));
-    if(oob_messages[v[0]])
-        oob_messages[v[0]](v.slice(1), k);
+    if(oob_messages[v[0]]) {
+        v.push(k);
+        oob_messages[v[0]].apply(null, v.slice(1));
+    }
     else
         k('unhandled', null);
 };

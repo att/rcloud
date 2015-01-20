@@ -12,10 +12,26 @@ Notebook.Cell.create_controller = function(cell_model)
             }
             rcloud.record_cell_execution(cell_model);
 
+/*
+            // maybe session.js should do this instead
+            // might use unpromisify.js: https://gist.github.com/squaremo/6343228
+            var depromisify_input = function(type) {
+                return function(prompt, k) {
+                    that.get_input(type, prompt)
+                        .then(function(ret) {
+                            k(null, ret);
+                        }).catch(function(error) {
+                            k(error.message || error, null);
+                        });
+                };
+            };
+*/
             var resulter = this.append_result.bind(this, 'code'),
                 context = {start: this.clear_result.bind(this),
-                           out: resulter, err: resulter, msg: resulter,
-                           html_out: this.append_result.bind(this, 'html')},
+                           out: resulter, err: resulter, msg: resulter, // losing "error-ness" here
+                           html_out: this.append_result.bind(this, 'html'),
+                           in: this.get_input.bind(this, 'in') // depromisify_input('in')
+                          },
                 context_id = RCloud.register_output_context(context);
 
             var promise;
@@ -44,6 +60,14 @@ Notebook.Cell.create_controller = function(cell_model)
             cell_model.notify_views(function(view) {
                 view.add_result(type, msg);
             });
+        },
+        get_input: function(type, prompt, k) {
+            // assume only one view has get_input
+            var view = _.find(cell_model.views, function(v) { return v.get_input; });
+            if(!view)
+                k("cell view does not support input", null); // return Promise.reject(new Error("cell view does not support input"));
+            else
+                view.get_input(type, prompt, k);
         },
         edit_source: function(whether) {
             cell_model.notify_views(function(view) {
