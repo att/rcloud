@@ -1989,11 +1989,13 @@ Notebook.Cell.postprocessors.add({
         sort: 3000,
         process: function(div) {
             // typeset the math
-
-            // why does passing the div as last arg not work, as documented here?
-            // http://docs.mathjax.org/en/latest/typeset.html
-            if (!_.isUndefined(MathJax))
-                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+            // MathJax is slow, so only do this when we have a break
+            _.debounce(function() {
+                // why does passing the div as last arg not work, as documented here?
+                // http://docs.mathjax.org/en/latest/typeset.html
+                if (!_.isUndefined(MathJax))
+                    MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+            }, 100);
         }
     },
     hide_source: {
