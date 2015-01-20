@@ -31342,74 +31342,13 @@ function read(m)
     return that;
 }
 
-var incomplete_ = [], incomplete_header_ = null, msg_bytes_ = 0, remaining_ = 0;
-function clear_incomplete() {
-    incomplete_ = [];
-    incomplete_header_ = null;
-    remaining_ = 0;
-    msg_bytes_ = 0;
-}
-
 function parse(msg)
 {
     var result = {};
-    if(incomplete_.length) {
-        result.header = incomplete_header_;
-        incomplete_.push(msg);
-        remaining_ -= msg.byteLength;
-        if(remaining_ < 0) {
-            result.ok = false;
-            result.message = "Messages add up to more than expected length: got " +
-                            (msg_bytes_-remaining_) + ", expected " + msg_bytes_;
-            clear_incomplete();
-            return result;
-        }
-        else if(remaining_ === 0) {
-            var complete_msg = new ArrayBuffer(msg_bytes_),
-                array = new Uint8Array(complete_msg),
-                offset = 0;
-            incomplete_.forEach(function(frame, i) {
-                array.set(new Uint8Array(frame), offset);
-                offset += frame.byteLength;
-            });
-            if(offset !== msg_bytes_) {
-                result.ok = false;
-                result.message = "Internal error - frames added up to " + offset + " not " + msg_bytes_;
-                clear_incomplete();
-                return result;
-            }
-            clear_incomplete();
-            msg = complete_msg;
-        }
-        else {
-            result.ok = true;
-            result.incomplete = true;
-            return result;
-        }
-    }
-
     var header = new Int32Array(msg, 0, 4);
     var resp = header[0] & 16777215, status_code = header[0] >> 24;
-    var length = header[1], length_high = header[3];
     var msg_id = header[2];
     result.header = [resp, status_code, msg_id];
-
-    if(length_high) {
-        result.ok = false;
-        result.message = "rserve.js cannot handle messages larger than 4GB";
-        return result;
-    }
-
-    if(length > msg.byteLength) {
-        incomplete_.push(msg);
-        incomplete_header_ = header;
-        msg_bytes_ = length + 16; // header length + data length
-        remaining_ = msg_bytes_ - msg.byteLength;
-        result.header = header;
-        result.ok = true;
-        result.incomplete = true;
-        return result;
-    }
 
     if (resp === Rserve.Rsrv.RESP_ERR) {
         result.ok = false;
@@ -31448,7 +31387,6 @@ function parse_payload(msg)
     var d = reader.read_int();
     var _ = Rserve.Rsrv.par_parse(d);
     var t = _[0], l = _[1];
-
     if (Rserve.Rsrv.IS_LARGE(t)) {
         var more_length = reader.read_int();
         l += more_length * Math.pow(2, 24);
@@ -31753,8 +31691,6 @@ Rserve.create = function(opts) {
             return;
         }
         var v = Rserve.parse_websocket_frame(msg.data);
-        if(v.incomplete)
-            return;
         var msg_id = v.header[2], cmd = v.header[0] & 0xffffff;
         var queue = _.find(queues, function(queue) { return queue.msg_id == msg_id; });
         // console.log("onmessage, queue=" + (queue ? queue.name : "<unknown>") + ", ok= " + v.ok+ ", cmd=" + cmd +", msg_id="+ msg_id);
@@ -31778,47 +31714,59 @@ Rserve.create = function(opts) {
             //        the msg_id), but curretnly it's not mandated.
             queue = (Rserve.Rsrv.OOB_USR_CODE(cmd) > 255) ? compute_queue : ctrl_queue;
             // console.log("OOB MSG result on queue "+ queue.name);
-            if (result.ocap_mode) {
-                var p;
-                try {
-                    p = Rserve.wrap_all_ocaps(result, v.payload); // .value.json(result.resolve_hash);
-                } catch (e) {
-                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | cmd,
-                                  _encode_string(String(e)), msg_id);
-                    return;
-                }
-                if (!_.isFunction(p[0])) {
-                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | cmd,
-                                  _encode_string("OOB Messages on ocap-mode must be javascript function calls"), msg_id);
-                    return;
-                }
-                var captured_function = p[0], params = p.slice(1);
-                params.push(function(err, result) {
-                    if (err) {
-                        _send_cmd_now(Rserve.Rsrv.RESP_ERR | cmd, _encode_value(err), msg_id);
-                    } else {
-                        _send_cmd_now(cmd, _encode_value(result), msg_id);
-                    }
-                });
-                captured_function.apply(undefined, params);
-            } else {
+            var p;
+            try {
+                p = Rserve.wrap_all_ocaps(result, v.payload); // .value.json(result.resolve_hash);
+            } catch (e) {
+                _send_cmd_now(Rserve.Rsrv.RESP_ERR | cmd,
+                              _encode_string(String(e)), msg_id);
+                return;
+            }
+            if(_.isString(p[0])) {
                 if (_.isUndefined(opts.on_oob_message)) {
-                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | cmd, 
+                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | cmd,
                                   _encode_string("No handler installed"), msg_id);
                 } else {
                     queue.in_oob_message = true;
-                    opts.on_oob_message(v.payload, function(message, error) {
+                    // breaking changes here: it appears that the callback had its arguments
+                    // reversed from the standard (error, message), and was passing the message
+                    // even on error
+                    opts.on_oob_message(v.payload, function(error, result) {
                         if (!queue.in_oob_message) {
                             handle_error("Don't call oob_message_handler more than once.");
                             return;
                         }
                         queue.in_oob_message = false;
-                        var header = cmd |
-                            (error ? Rserve.Rsrv.RESP_ERR : Rserve.Rsrv.RESP_OK);
-                        _send_cmd_now(header, _encode_string(message), msg_id);
+                        if(error) {
+                            _send_cmd_now(cmd | Rserve.Rsrv.RESP_ERR, _encode_string(error), msg_id);
+                        }
+                        else {
+                            _send_cmd_now(cmd | Rserve.Rsrv.RESP_OK, _encode_string(result), msg_id);
+                        }
                         bump_queues();
                     });
                 }
+            }
+            else if(_.isFunction(p[0])) {
+                if(!result.ocap_mode) {
+                    _send_cmd_now(Rserve.Rsrv.RESP_ERROR | cmd,
+                                  _encode_string("JavaScript function calls only allowed in ocap mode"), msg_id);
+                }
+                else {
+                    var captured_function = p[0], params = p.slice(1);
+                    params.push(function(err, result) {
+                        if (err) {
+                            _send_cmd_now(Rserve.Rsrv.RESP_ERR | cmd, _encode_value(err), msg_id);
+                        } else {
+                            _send_cmd_now(cmd, _encode_value(result), msg_id);
+                        }
+                    });
+                    captured_function.apply(undefined, params);
+                }
+            }
+            else {
+                _send_cmd_now(Rserve.Rsrv.RESP_ERROR | cmd,
+                              _encode_string("Unknown oob message type: " + typeof(p[0])));
             }
         } else {
             handle_error("Internal Error, parse returned unexpected type " + v.header[0], -1);

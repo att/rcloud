@@ -69,7 +69,8 @@ RClient = {
             on_connect: on_connect,
             on_error: on_error,
             on_close: on_close,
-            on_data: opts.on_data
+            on_data: opts.on_data,
+            on_oob_message: opts.on_oob_message
         });
 
         var result;
@@ -2963,7 +2964,7 @@ function outputter(type) {
 }
 
 // FIXME this needs to go away as well.
-var oob_handlers = {
+var oob_sends = {
     "browsePath": function(v) {
         var url=" "+ window.location.protocol + "//" + window.location.host + v+" ";
         RCloud.UI.help_frame.display_href(url);
@@ -3014,10 +3015,22 @@ var oob_handlers = {
 var on_data = function(v) {
     v = v.value.json();
     // FIXME: this is a temporary debugging to see all OOB calls irrespective of handlers
-    console.log("OOB arrived: ['"+v[0]+"']");
+    console.log("OOB send arrived: ['"+v[0]+"']" + (oob_sends[v[0]]?'':' (unhandled)'));
 
-    if(oob_handlers[v[0]])
-        oob_handlers[v[0]](v.slice(1));
+    if(oob_sends[v[0]])
+        oob_sends[v[0]](v.slice(1));
+};
+
+var oob_messages = {
+};
+
+var on_message = function(v, k) {
+    v = v.value.json();
+    console.log("OOB message arrived: ['"+v[0]+"']" + (oob_messages[v[0]]?'':' (unhandled)'));
+    if(oob_messages[v[0]])
+        oob_messages[v[0]](v.slice(1), k);
+    else
+        k('unhandled', null);
 };
 
 function could_not_initialize_error(err) {
@@ -3060,6 +3073,7 @@ function rclient_promise(allow_anonymous) {
                 resolve(ocaps);
             },
             on_data: on_data,
+            on_oob_message: on_message,
             on_error: function(error) {
                 reject(error);
                 return false;
