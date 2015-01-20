@@ -24,7 +24,11 @@ function create_cell_html_view(language, cell_model) {
     var change_content_;
     var above_between_controls_, cell_controls_;
     var edit_mode_; // note: starts neither true nor false
+
+    // input
+    var prompt_text_;
     var input_div_, input_ace_div_, input_widget_, input_kont_;
+
     var result = {}; // "this"
 
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
@@ -200,8 +204,10 @@ function create_cell_html_view(language, cell_model) {
             name: 'enter',
             bindKey: 'Return',
             exec: function(ace_widget, args, request) {
+                var input = ace_widget.getValue();
+                result.add_result('code', prompt_text_ + input + '\n');
                 if(input_kont_)
-                    input_kont_(null, ace_widget.getValue());
+                    input_kont_(null, input);
                 input_div_.hide();
             }
         }]);
@@ -400,13 +406,12 @@ function create_cell_html_view(language, cell_model) {
             edit_mode_ = edit_mode;
         },
         get_input: function(type, prompt, k) {
+            prompt_text_ = prompt;
             create_input_widget();
             input_widget_.setValue('');
-            //for(var i =0; i<3; ++i) {
-                input_div_.show();
-                input_div_.css('height', (ui_utils.ace_editor_height(input_widget_, 1) + EXTRA_HEIGHT_INPUT) + "px");
-                input_widget_.resize(true);
-            //}
+            input_div_.show();
+            input_div_.css('height', (ui_utils.ace_editor_height(input_widget_, 1) + EXTRA_HEIGHT_INPUT) + "px");
+            input_widget_.resize(true);
             input_widget_.focus();
             input_kont_ = k;
         },
