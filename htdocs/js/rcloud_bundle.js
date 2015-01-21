@@ -1606,16 +1606,12 @@ function create_cell_html_view(language, cell_model) {
         result_div_.html('<div class="non-result">' + status + '</div>');
     };
 
-    function call_postprocessors() {
+    // postprocessing the dom is slow, so only do this when we have a break
+    var result_updated = _.debounce(function() {
         Notebook.Cell.postprocessors.entries('all').forEach(function(post) {
             post.process(result_div_);
         });
-    }
-
-    function result_updated() {
-        // postprocessing the dom is slow, so only do this when we have a break
-        _.debounce(call_postprocessors, 100);
-    }
+    }, 100);
 
     function clear_result() {
         display_status("(uncomputed)");
@@ -2145,15 +2141,19 @@ Notebook.Cell.postprocessors.add({
 Notebook.Cell.preprocessors.add({
     quote_deferred_results: {
         sort: 1000,
-        process: function(r) {
+        process: (function() {
             var deferred_result_uuid_, deferred_regexp_, deferred_replacement_;
-            if(!deferred_regexp_) {
+            function make_deferred_regexp() {
                 deferred_result_uuid_ = rcloud.deferred_knitr_uuid;
                 deferred_regexp_ = new RegExp(deferred_result_uuid_ + '\\|[@a-zA-Z_0-9.]*', 'g');
                 deferred_replacement_ = '<span class="deferred-result">$&</span>';
             }
-            return r.replace(deferred_regexp_, deferred_replacement_);
-        }
+            return function(r) {
+                if(!deferred_regexp_)
+                    make_deferred_regexp();
+                return r.replace(deferred_regexp_, deferred_replacement_);
+            };
+        })()
     }
 });
 

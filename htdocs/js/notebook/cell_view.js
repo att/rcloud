@@ -122,16 +122,12 @@ function create_cell_html_view(language, cell_model) {
         result_div_.html('<div class="non-result">' + status + '</div>');
     };
 
-    function call_postprocessors() {
+    // postprocessing the dom is slow, so only do this when we have a break
+    var result_updated = _.debounce(function() {
         Notebook.Cell.postprocessors.entries('all').forEach(function(post) {
             post.process(result_div_);
         });
-    }
-
-    function result_updated() {
-        // postprocessing the dom is slow, so only do this when we have a break
-        _.debounce(call_postprocessors, 100);
-    }
+    }, 100);
 
     function clear_result() {
         display_status("(uncomputed)");
