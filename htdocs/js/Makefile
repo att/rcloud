@@ -19,6 +19,7 @@ rcloud_bundle.js: \
 	notebook/cell_view.js \
 	notebook/cell_model.js \
 	notebook/cell_controller.js \
+        notebook/cell_processors.js \
 	notebook/notebook_view.js \
 	notebook/notebook_model.js \
 	notebook/notebook_controller.js \
