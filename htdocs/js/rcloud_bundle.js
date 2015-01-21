@@ -3025,7 +3025,14 @@ function append_session_info(text) {
 }
 
 function handle_img(url, dims, page) {
-    var img = "<img width="+dims[0]+" height="+dims[1]+" src='"+url+"' />\n";
+    var width_height = '';
+    if(dims) {
+        if(dims[0])
+            width_height = "width=" + dims[0];
+        if(dims[1])
+            width_height += " height=" + dims[1];
+    }
+    var img = "<img " + width_height + " src='" + url + "' />\n";
     if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_].html_out)
         output_contexts_[curr_context_id_].html_out(img);
     else
