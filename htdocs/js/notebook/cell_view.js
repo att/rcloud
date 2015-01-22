@@ -71,7 +71,7 @@ function create_cell_html_view(language, cell_model) {
 
 
     function set_background_color(language) {
-        var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
+        var bg_color = RCloud.language.is_a_markdown(language) ? "#F7EEE4" : "#E8F1FA";
         ace_div.css({ 'background-color': bg_color });
     }
 

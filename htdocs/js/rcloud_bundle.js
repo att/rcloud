@@ -1555,7 +1555,7 @@ function create_cell_html_view(language, cell_model) {
 
 
     function set_background_color(language) {
-        var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
+        var bg_color = RCloud.language.is_a_markdown(language) ? "#F7EEE4" : "#E8F1FA";
         ace_div.css({ 'background-color': bg_color });
     }
 
@@ -3250,31 +3250,35 @@ RCloud.session = {
 
 })();
 RCloud.language = (function() {
-    var ace_modes_ = {
-        CSS: "ace/mode/css",
-        JavaScript: "ace/mode/javascript",
-        Text: "ace/mode/text"
-    };
     // the keys of the language map come from GitHub's language detection
     // infrastructure which we don't control. (this is likely a bad thing)
-    // The values are the extensions we use for the gists.
-    var extensions_ = {
-        Text: 'txt'
-    };
-    var hljs_classes_ = {
+    var languages_ = {
+        CSS: {
+            ace_mode: "ace/mode/css"
+        },
+        JavaScript: {
+            ace_mode: "ace/mode/javascript"
+        },
+        Text: {
+            ace_mode: "ace/mode/text",
+            extension: 'txt'
+        }
     };
 
     var langs_ = [];
 
     return {
+        is_a_markdown: function(language) {
+            return languages_[language].is_a_markdown;
+        },
         ace_mode: function(language) {
-            return ace_modes_[language] || ace_modes_.Text;
+            return languages_[language].ace_mode || languages_.Text.ace_mode;
         },
         extension: function(language) {
-            return extensions_[language];
+            return languages_[language].extension;
         },
         hljs_class: function(language) {
-            return hljs_classes_[language] || null;
+            return languages_[language].hljs_class || null;
         },
         // don't call _set_available_languages yourself; it's called
         // by the session initialization code.
@@ -3282,9 +3286,11 @@ RCloud.language = (function() {
             langs_ = [];
             for(var lang in langs) {
                 langs_.push(lang);
-                ace_modes_[lang] = langs[lang]['ace.mode'];
-                hljs_classes_[lang] = langs[lang]['hljs.class'];
-                extensions_[lang] = langs[lang].extension;
+                languages_[lang] = languages_[lang] || {};
+                languages_[lang].is_a_markdown = langs[lang]['is.a.markdown'];
+                languages_[lang].ace_mode = langs[lang]['ace.mode'];
+                languages_[lang].hljs_class = langs[lang]['hljs.class'];
+                languages_[lang].extension = langs[lang].extension;
             }
         },
         available_languages: function() {

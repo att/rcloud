@@ -42,6 +42,7 @@ rcloud.language.support <- function()
   list(language="RMarkdown",
        run.cell=ev,
        complete=complete,
+       is.a.markdown=TRUE,
        ace.mode="ace/mode/rmarkdown",
        extension="Rmd",
        setup=function(rcloud.session) {},
