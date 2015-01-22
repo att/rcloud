@@ -3062,15 +3062,24 @@ function append_session_info(text) {
     RCloud.UI.session_pane.append_text(text);
 }
 
-function handle_img(url, dims, page) {
-    var width_height = '';
+function handle_img(msg, url, dims, device, page) {
+    console.log("handle_img ", msg, " device ", device, " page ", page, " url ", url);
+    if(!url)
+        return;
+    var attrs = [];
+    var id = device + "-" + page;
+    attrs.push("id='" + id + "'");
+
+    // probably the wrong place for this - someone should be managing all these images
+    $('#' + id).remove();
     if(dims) {
         if(dims[0])
-            width_height = "width=" + dims[0];
+            attrs.push("width=" + dims[0]);
         if(dims[1])
-            width_height += " height=" + dims[1];
+            attrs.push("height=" + dims[1]);
     }
-    var img = "<img " + width_height + " src='" + url + "' />\n";
+    attrs.push("src='" + url + "'");
+    var img = "<img " + attrs.join(' ') + ">\n";
     if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_].html_out)
         output_contexts_[curr_context_id_].html_out(img);
     else
@@ -3127,8 +3136,8 @@ var oob_sends = {
     "console.out": forward_to_context('out'),
     "console.msg": forward_to_context('msg'),
     "console.err": forward_to_context('err'),
-    "img.url.update": handle_img,
-    "img.url.final": function() {},
+    "img.url.update": handle_img.bind(null, 'img.url.update'),
+    "img.url.final": handle_img.bind(null, 'img.url.final'),
     // "dev.close": , // sent when device closes - we don't really care in the UI I guess ...,
     "stdout": append_session_info,
     "stderr": append_session_info,
