@@ -8,28 +8,30 @@ rcloud.get.gist.part <- function(partname) {
   .session$current.notebook$content$files[[partname]]$content
 }
 
-rcloud.unauthenticated.session.cell.eval <- function(partname, language, silent) {
+rcloud.unauthenticated.session.cell.eval <- function(context.id, partname, language, silent) {
   notebook.id <- .session$current.notebook$content$id
   if (rcloud.is.notebook.published(notebook.id))
-    rcloud.session.cell.eval(partname, language, silent)
+    rcloud.session.cell.eval(context.id, partname, language, silent)
   else
     stop("Notebook does not exist or is not published.")
 }
 
-rcloud.session.cell.eval <- function(partname, language, silent) {
+rcloud.session.cell.eval <- function(context.id, partname, language, silent) {
   ulog("RCloud rcloud.session.cell.eval(", partname, ",", language,")")
   command <- rcloud.get.gist.part(partname)
-  rcloud.authenticated.cell.eval(command, language, silent)
+  rcloud.authenticated.cell.eval(context.id, command, language, silent)
 }
 
-rcloud.authenticated.cell.eval <- function(command, language, silent) {
+rcloud.authenticated.cell.eval <- function(context.id, command, language, silent) {
+  self.oobSend(list("start.cell.output", context.id))
   if (!is.null(.session$languages[[language]]))
     .session$languages[[language]]$run.cell(command, silent, .session)
   else if (language == "Markdown") {
-    session.markdown.eval(command, language, silent)
+    session.markdown.eval(command, language, FALSE)
   } else if (language == "Text") {
     command
   }
+  self.oobSend(list("end.cell.output", context.id))
 }
 
 rcloud.set.device.pixel.ratio <- function(ratio) {
@@ -53,13 +55,11 @@ session.markdown.eval <- function(command, language, silent) {
   if (command == "") command <- " "
   val <- try(markdownToHTML(text=paste(knit(text=command, envir=.GlobalEnv), collapse="\n"),
                             fragment=TRUE), silent=TRUE)
-  if (!inherits(val, "try-error") && !silent && rcloud.debug.level()) print(val)
   if (inherits(val, "try-error")) {
     # FIXME better error handling
-    paste("<pre>", val[1], "</pre>", sep="")
-  } else {
-    val
+    val <- paste("<pre>", val[1], "</pre>", sep="")
   }
+  self.oobSend(list("html.out", val))
 }
 
 ## WS init
@@ -94,6 +94,12 @@ rcloud.reset.session <- function() {
   all.addons <- rcloud.config.get.alluser.option("addons")
   user.addons <- rcloud.config.get.user.option("addons")
   lapply(c(all.addons,user.addons), function(x) { suppressWarnings(suppressMessages(require(x, character.only=TRUE))) })
-  ## FIXME: we should reset the knitr graphics state which lingers as well as the current device which is dirty at this point
+
+  ## close all devices
+  while (dev.cur() > 1L) dev.off()
+
+  ## make sure teh default device is back to the RCloudDevice
+  options(device="RCloudDevice")
+  
   NULL
 }

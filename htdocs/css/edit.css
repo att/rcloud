@@ -203,14 +203,18 @@ rect.frame {
     position: relative;
     width: 100%;
     height: 100%;
-    border: 1px solid #fff;
+    background: #f5f5f5;
 }
 
 .cell-status {
     position: relative;
     width: 100%;
     height: 25px;
-    background-color: #e5e5e5;
+    background-color: #f5f5f5;
+}
+
+.ace-chrome .ace_gutter {
+    background-color: #f5f5f5;
 }
 
 .cell-status.big {
@@ -222,14 +226,6 @@ rect.frame {
     bottom: 0;
     right: 0;
     padding: 2 2 2 2px;
-    border-top-left-radius: 4px;
-    border-top-right-radius: 4px;
-    background-color: white;
-}
-
-.cell-control-bar .cell-control {
-    display: inline-block;
-    padding: 0;
 }
 
 .cell-control-bar select.cell-control {
@@ -238,6 +234,12 @@ rect.frame {
     margin: 1px 4px 1px 2px;
     padding: 1px 2px;
     height: 17px;
+    background-color: white;
+}
+
+.cell-control-bar .cell-control {
+    display: inline-block;
+    padding: 0;
 }
 
 .cell-status .cell-control-bar.flipped {
@@ -807,11 +809,24 @@ pre {
     max-width: 100%;
 }
 
-/* some visual affordance for ace-gutter sortable handles */
-#output:not(.ui-sortable-disabled) > .notebook-cell .ace_gutter-layer {
+.cell-status {
     cursor: -moz-grab;
     cursor: -webkit-grab;
     cursor: grab;
+}
+
+.cell-status-left {
+    position: absolute;
+    top: 0px;
+}
+
+.grab-affordance {
+    position: relative;
+    top: 5px;
+}
+
+.cell-number {
+    padding-left: 4px;
 }
 
 .ace_gutter-layer {
@@ -1017,10 +1032,6 @@ a.accordion-toggle.right > i {
 .form-control.big {
     height: 20px;
     font-size: 16px;
-}
-
-.r-result-div {
-    border-bottom: 1px solid #f5f5f5;
 }
 
 .drop-asset-body {
