@@ -2139,6 +2139,17 @@ Notebook.Cell.postprocessors.add({
                 Notebook.hide_r_source(div);
             }
         }
+    },
+    shade_pre_r: {
+        sort: 5000,
+        process: function(div) {
+            div.find("pre code")
+                .filter(function(i, e) {
+                    // things which have defined classes coming from knitr and markdown
+                    // we might look in RCloud.language here?
+                    return e.classList.length > 0;
+                }).parent().toggleClass('r', true);
+        }
     }
 });
 
