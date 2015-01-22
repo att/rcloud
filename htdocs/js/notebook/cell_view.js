@@ -22,7 +22,7 @@ function create_cell_html_view(language, cell_model) {
     var result_div_;
     var current_result_; // text is aggregated
     var change_content_;
-    var above_between_controls_, cell_controls_;
+    var above_between_controls_, cell_controls_, left_controls_;
     var edit_mode_; // note: starts neither true nor false
 
     // input
@@ -32,7 +32,6 @@ function create_cell_html_view(language, cell_model) {
     var result = {}; // "this"
 
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
-    update_div_id();
     notebook_cell_div.data('rcloud.model', cell_model);
 
     //////////////////////////////////////////////////////////////////////////
@@ -45,6 +44,7 @@ function create_cell_html_view(language, cell_model) {
     }
     function update_div_id() {
         notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
+        left_controls_.controls['cell_number'].set(cell_model.id());
     }
     function set_widget_height() {
         source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +
@@ -52,17 +52,23 @@ function create_cell_html_view(language, cell_model) {
     }
 
     var cell_status = $("<div class='cell-status'></div>");
+    var cell_status_left = $("<div class='cell-status-left'></div>");
+    cell_status.append(cell_status_left);
+
     var cell_control_bar = $("<div class='cell-control-bar'></div>");
     cell_status.append(cell_control_bar);
+    left_controls_ = RCloud.UI.cell_commands.decorate('left', cell_status_left, cell_model, result);
+
     cell_status.append($("<div style='clear:both;'></div>"));
 
-    cell_controls_ = RCloud.UI.cell_commands.decorate_cell(cell_control_bar, cell_model, result);
+    cell_controls_ = RCloud.UI.cell_commands.decorate('cell', cell_control_bar, cell_model, result);
 
     notebook_cell_div.append(cell_status);
 
     var cell_commands_above = $("<div class='cell-controls-above'></div>");
-    above_between_controls_ = RCloud.UI.cell_commands.decorate_above_between(cell_commands_above, cell_model, result);
+    above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
     notebook_cell_div.append(cell_commands_above);
+
 
     function set_background_color(language) {
         var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
@@ -90,9 +96,16 @@ function create_cell_html_view(language, cell_model) {
     code_div_ = $('<div class="code-div"></div>');
     source_div_.append(code_div_);
 
+    code_div_.find('*').hover(function() {
+        code_div_.css('background-color', '#F4EDEB');
+    }, function() {
+        code_div_.css('background-color', null);
+    });
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
     set_background_color(language);
+
+    update_div_id();
 
     outer_ace_div.append(ace_div);
     source_div_.append(outer_ace_div);
@@ -171,8 +184,6 @@ function create_cell_html_view(language, cell_model) {
         });
 
         ace_widget_.resize();
-
-        ui_utils.add_ace_grab_affordance(ace_widget_.container);
 
         ui_utils.install_common_ace_key_bindings(ace_widget_, function() {
             return language;
@@ -320,13 +331,6 @@ function create_cell_html_view(language, cell_model) {
             cell_controls_.set_flag('modify', !readonly);
             above_between_controls_.set_flag('modify', !readonly);
             click_to_edit(!readonly);
-            if (readonly) {
-                if(ace_widget_)
-                    $(ace_widget_.container).find(".grab-affordance").hide();
-            } else {
-                if(ace_widget_)
-                    $(ace_widget_.container).find(".grab-affordance").show();
-            }
         },
 
         //////////////////////////////////////////////////////////////////////

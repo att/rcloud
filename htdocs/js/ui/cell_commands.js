@@ -70,12 +70,14 @@ RCloud.UI.cell_commands = (function() {
                 }
             };
         },
-        create_gap: function() {
-            var gap = $('<span/>').html('&nbsp;').css({'line-height': '25%'});
+        create_static: function(html, wrap) {
+            var content = $('<span><span/>').html(html);
+            var span = wrap ? wrap(content) : content;
             return {
-                control: gap,
+                control: span,
                 enable: function() {},
-                disable: function() {}
+                disable: function() {},
+                set: function(html) { content.html(html); }
             };
         },
         init: function() {
@@ -95,6 +97,11 @@ RCloud.UI.cell_commands = (function() {
                     prompt: {
                         filter: function(command) {
                             return command.area === 'prompt';
+                        }
+                    },
+                    left: {
+                        filter: function(command) {
+                            return command.area === 'left';
                         }
                     }
                 }
@@ -160,7 +167,7 @@ RCloud.UI.cell_commands = (function() {
                     area: 'cell',
                     sort: 3500,
                     create: function(cell_model) {
-                        return that.create_gap();
+                        return that.create_static('&nbsp;');
                     }
                 },
                 split: {
@@ -190,6 +197,25 @@ RCloud.UI.cell_commands = (function() {
                             cell_model.parent_model.controller.remove_cell(cell_model);
                         });
                     }
+                },
+                grab_affordance: {
+                    area: 'left',
+                    sort: 1000,
+                    create: function(cell_model) {
+                        var svg = "<object data='/img/grab_affordance.svg' type='image/svg+xml'></object>";
+                        return that.create_static(svg, function(x) {
+                            return $("<span class='grab-affordance'>").append(x);
+                        });
+                    }
+                },
+                cell_number: {
+                    area: 'left',
+                    sort: 2000,
+                    create: function(cell_model) {
+                        return that.create_static(cell_model.id(), function(x) {
+                            return $("<span class='cell-number'>").append('cell ', x);
+                        });
+                    }
                 }
             });
             return this;
@@ -202,28 +228,26 @@ RCloud.UI.cell_commands = (function() {
             extension_.remove(command_name);
             return this;
         },
-        decorate_above_between: function(area, cell_model, cell_view) {
-            // commands for above and between cells
-            var result = create_command_set(area, extension_.entries('above_between'), cell_model, cell_view);
-            _.extend(result, {
-                betweenness: function(between) {
-                    extension_.entries('above_between').forEach(function(cmd) {
-                        if(cmd.area === 'between') {
-                            if(between)
-                                result.controls[cmd.key].control.show();
-                            else
-                                result.controls[cmd.key].control.hide();
-                        }
-                    });
-                }
-            });
+        decorate: function(area, div, cell_model, cell_view) {
+            var result = create_command_set(div, extension_.entries(area), cell_model, cell_view);
+            switch(area) {
+            case 'above_between':
+                _.extend(result, {
+                    betweenness: function(between) {
+                        extension_.entries('above_between').forEach(function(cmd) {
+                            if(cmd.area === 'between') {
+                                if(between)
+                                    result.controls[cmd.key].control.show();
+                                else
+                                    result.controls[cmd.key].control.hide();
+                            }
+                        });
+                    }
+                });
+                break;
+            default:
+            }
             return result;
-        },
-        decorate_cell: function(area, cell_model, cell_view) {
-            return create_command_set(area, extension_.entries('cell'), cell_model, cell_view);
-        },
-        decorate_prompt: function(area) {
-            return create_command_set(area, extension_.entries('prompt'));
         }
     };
     return result;

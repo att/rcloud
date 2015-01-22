@@ -9,14 +9,12 @@ body {
 pre {
     border-radius: 0;
     border: 0;
-    background-color: #e5e5e5;
     margin-bottom: 0;
     padding: 0;
 }
 
 code {
     border-radius: 0;
-    background-color: #fff;
     padding: 0;
     color: black;
 }
@@ -71,21 +69,19 @@ div.panel-heading:hover {
     border: 0;
 }
 
-.code-div {
+.code-div, .code-div code {
     padding-top: 1px;
     padding-bottom: 1px;
+    background-color: #f5f5f5;
 }
 
 .code-div pre code {
     padding: 0px 16px 0px 54px;
-    background-color: #fff;
     line-height: normal;
     font-size: 12px;
     max-width: 800px;
     margin-right: auto;
     margin-left: auto;
-    border-left: 1px solid rgba(0,0,0,0.15);
-    border-right: 1px solid rgba(0,0,0,0.15);
     white-space: pre-wrap;
     word-break: normal;
 }
@@ -95,7 +91,8 @@ div.panel-heading:hover {
     max-width: inherit;
 }
 
-.r-result-div {
+.r-result-div, .r-result-div pre {
+    background-color: #fff;
     padding: 0;
 }
 
@@ -109,7 +106,6 @@ div.panel-heading:hover {
 }
 
 .r-result-div .non-result {
-    background-color: #e5e5e5;
     padding: 16px;
     font-style: italic;
 }
