@@ -19,7 +19,7 @@ function create_cell_html_view(language, cell_model) {
     var am_read_only_ = "unknown";
     var source_div_;
     var code_div_;
-    var result_div_;
+    var result_div_, has_result_;
     var current_result_; // text is aggregated
     var change_content_;
     var above_between_controls_, cell_controls_, left_controls_;
@@ -111,11 +111,11 @@ function create_cell_html_view(language, cell_model) {
     source_div_.append(outer_ace_div);
     inner_div.append(source_div_);
 
-    function click_to_edit(whether) {
+    function click_to_edit(div, whether) {
         if(whether) {
             // distinguish between a click and a drag
             // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
-            code_div_.on('mousedown', function(e) {
+            div.on('mousedown', function(e) {
                 $(this).data('p0', { x: e.pageX, y: e.pageY });
             }).on('mouseup', function(e) {
                 var p0 = $(this).data('p0');
@@ -128,7 +128,7 @@ function create_cell_html_view(language, cell_model) {
                 }
             });
         }
-        else code_div_.off('mousedown').off('mouseup');
+        else div.off('mousedown').off('mouseup');
     }
 
     function display_status(status) {
@@ -138,12 +138,14 @@ function create_cell_html_view(language, cell_model) {
     // postprocessing the dom is slow, so only do this when we have a break
     var result_updated = _.debounce(function() {
         Notebook.Cell.postprocessors.entries('all').forEach(function(post) {
-            post.process(result_div_);
+            post.process(result_div_, result);
         });
+        has_result_ = true;
     }, 100);
 
     function clear_result() {
         display_status("(uncomputed)");
+        has_result_ = false;
     }
 
     // start trying to refactor out this repetitive nonsense
@@ -258,7 +260,8 @@ function create_cell_html_view(language, cell_model) {
     }
     assign_code();
 
-    result_div_ = $('<div class="r-result-div"></div>');    clear_result();
+    result_div_ = $('<div class="r-result-div"></div>');
+    clear_result();
     inner_div.append(result_div_);
     input_div_ = $('<div class="input-div"></div>');
     input_ace_div_ = $('<div style="height: 100%"></div>');
@@ -330,8 +333,9 @@ function create_cell_html_view(language, cell_model) {
                 ui_utils.set_ace_readonly(ace_widget_, readonly );
             cell_controls_.set_flag('modify', !readonly);
             above_between_controls_.set_flag('modify', !readonly);
-            click_to_edit(!readonly);
+            click_to_edit(code_div_, !readonly);
         },
+        click_to_edit: click_to_edit,
 
         //////////////////////////////////////////////////////////////////////
 
@@ -344,6 +348,9 @@ function create_cell_html_view(language, cell_model) {
             cell_commands_above.show();
         },
         execute_cell: function() {
+            if(RCloud.language.is_a_markdown(language))
+                this.hide_source(true);
+
             display_status("Computing...");
             result.edit_source(false);
 
@@ -358,6 +365,8 @@ function create_cell_html_view(language, cell_model) {
             if(edit_mode === edit_mode_)
                 return;
             if(edit_mode) {
+                if(RCloud.language.is_a_markdown(language))
+                    this.hide_source(false);
                 code_div_.hide();
                 create_edit_widget();
                 /*
@@ -398,6 +407,8 @@ function create_cell_html_view(language, cell_model) {
                 ace_widget_.focus();
             }
             else {
+                if(RCloud.language.is_a_markdown(language) && has_result_)
+                    this.hide_source(true);
                 var new_content = update_model();
                 if(new_content!==null) // if any change (including removing the content)
                     cell_model.parent_model.controller.update_cell(cell_model);
@@ -407,6 +418,12 @@ function create_cell_html_view(language, cell_model) {
                 outer_ace_div.hide();
             }
             edit_mode_ = edit_mode;
+        },
+        hide_source: function(whether) {
+            if(whether)
+                source_div_.hide();
+            else
+                source_div_.show();
         },
         get_input: function(type, prompt, k) {
             prompt_text_ = prompt;

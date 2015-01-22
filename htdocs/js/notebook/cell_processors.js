@@ -83,6 +83,12 @@ Notebook.Cell.postprocessors.add({
                     return e.classList.length > 0;
                 }).parent().toggleClass('r', true);
         }
+    },
+    click_markdown_code: {
+        sort: 6000,
+        process: function(div, view) {
+            view.click_to_edit(div.find('pre.r'), true);
+        }
     }
 });
 
