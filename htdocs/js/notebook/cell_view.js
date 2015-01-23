@@ -368,8 +368,11 @@ function create_cell_html_view(language, cell_model) {
             return this.edit_source(!edit_mode_);
         },
         edit_source: function(edit_mode) {
-            if(edit_mode === edit_mode_)
+            if(edit_mode === edit_mode_) {
+                if(edit_mode)
+                    ace_widget_.focus();
                 return;
+            }
             if(edit_mode) {
                 if(RCloud.language.is_a_markdown(language))
                     this.hide_source(false);
