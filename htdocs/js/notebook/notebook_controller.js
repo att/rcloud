@@ -435,6 +435,7 @@ Notebook.create_controller = function(model)
             var promises = _.map(model.cells, function(cell_model) {
                 return Promise.resolve().then(function() {
                     cell_model.controller.set_status_message("Computing...");
+                    cell_model.controller.edit_source(false);
                     return cell_model.controller.execute();
                 });
             });

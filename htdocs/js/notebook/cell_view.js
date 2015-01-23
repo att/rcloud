@@ -123,10 +123,13 @@ function create_cell_html_view(language, cell_model) {
                         d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
                     if (d < 4) {
                         result.edit_source(true);
+                        div.mouseleave();
                     }
                 }
             });
             div.hover(function() {
+                if(edit_mode_) // don't highlight if it won't do anything
+                    return;
                 var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
                 var avg_color = d3.interpolateHsl('#f5f5f5', edit_color)(0.5);
                 $(this).css('background-color', avg_color);
@@ -139,6 +142,7 @@ function create_cell_html_view(language, cell_model) {
 
     function display_status(status) {
         result_div_.html('<div class="non-result">' + status + '</div>');
+        has_result_ = false;
     };
 
     // postprocessing the dom is slow, so only do this when we have a break
@@ -146,12 +150,10 @@ function create_cell_html_view(language, cell_model) {
         Notebook.Cell.postprocessors.entries('all').forEach(function(post) {
             post.process(result_div_, result);
         });
-        has_result_ = true;
     }, 100);
 
     function clear_result() {
         display_status("(uncomputed)");
-        has_result_ = false;
     }
 
     // start trying to refactor out this repetitive nonsense
@@ -303,9 +305,15 @@ function create_cell_html_view(language, cell_model) {
             display_status(status);
         },
         start_output: function() {
-            result_div_.empty();
+            display_status('Receiving...');
         },
         add_result: function(type, r) {
+            if(!has_result_) {
+                result_div_.empty(); // clear status
+                if(RCloud.language.is_a_markdown(language))
+                    result.hide_source(true);
+                has_result_ = true;
+            }
             Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
                 r = pre.process(r);
             });
@@ -414,8 +422,6 @@ function create_cell_html_view(language, cell_model) {
                 ace_widget_.focus();
             }
             else {
-                if(RCloud.language.is_a_markdown(language) && has_result_)
-                    this.hide_source(true);
                 var new_content = update_model();
                 if(new_content!==null) // if any change (including removing the content)
                     cell_model.parent_model.controller.update_cell(cell_model);
