@@ -1610,6 +1610,13 @@ function create_cell_html_view(language, cell_model) {
                     }
                 }
             });
+            div.hover(function() {
+                var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
+                var avg_color = d3.interpolateHsl('#f5f5f5', edit_color)(0.5);
+                $(this).css('background-color', avg_color);
+            }, function() {
+                $(this).css('background-color', '');
+            });
         }
         else div.off('mousedown').off('mouseup');
     }
@@ -1740,15 +1747,6 @@ function create_cell_html_view(language, cell_model) {
             elem.addClass(hljs_class);
         code_div_.append($('<pre></pre>').append(elem));
         highlight_code();
-        code_div_.find('pre').hover(function() {
-            var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
-            var avg_color = d3.interpolateHsl('#f5f5f5', edit_color)(0.5);
-
-            $(this).css('background-color', avg_color);
-        }, function() {
-            $(this).css('background-color', '');
-        });
-
     }
     assign_code();
 
@@ -1825,7 +1823,7 @@ function create_cell_html_view(language, cell_model) {
                 ui_utils.set_ace_readonly(ace_widget_, readonly );
             cell_controls_.set_flag('modify', !readonly);
             above_between_controls_.set_flag('modify', !readonly);
-            click_to_edit(code_div_, !readonly);
+            click_to_edit(code_div_.find('pre'), !readonly);
         },
         click_to_edit: click_to_edit,
 
