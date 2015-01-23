@@ -1553,10 +1553,14 @@ function create_cell_html_view(language, cell_model) {
     above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
     notebook_cell_div.append(cell_commands_above);
 
+    var edit_colors_ = {
+        markdown: "#F7EEE4",
+        code: "#E8F1FA"
+    };
 
     function set_background_color(language) {
-        var bg_color = RCloud.language.is_a_markdown(language) ? "#F7EEE4" : "#E8F1FA";
-        ace_div.css({ 'background-color': bg_color });
+        var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
+        ace_div.css({ 'background-color': edit_color });
     }
 
     function update_language() {
@@ -1580,11 +1584,6 @@ function create_cell_html_view(language, cell_model) {
     code_div_ = $('<div class="code-div"></div>');
     source_div_.append(code_div_);
 
-    code_div_.find('*').hover(function() {
-        code_div_.css('background-color', '#F4EDEB');
-    }, function() {
-        code_div_.css('background-color', null);
-    });
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
     set_background_color(language);
@@ -1741,6 +1740,15 @@ function create_cell_html_view(language, cell_model) {
             elem.addClass(hljs_class);
         code_div_.append($('<pre></pre>').append(elem));
         highlight_code();
+        code_div_.find('pre').hover(function() {
+            var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
+            var avg_color = d3.interpolateHsl('#f5f5f5', edit_color)(0.5);
+
+            $(this).css('background-color', avg_color);
+        }, function() {
+            $(this).css('background-color', '');
+        });
+
     }
     assign_code();
 
