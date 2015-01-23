@@ -1150,6 +1150,14 @@ RCloud.extension = (function() {
                 entries: function(name) {
                     return sections_[name].entries;
                 },
+                create: function(name, _) {
+                    var ret = {};
+                    var args = Array.prototype.slice.call(arguments, 1);
+                    this.entries(name).forEach(function(entry) {
+                        ret[entry.key] = entry.create.apply(entry, args);
+                    });
+                    return ret;
+                },
                 sections: sections_
             };
         }
@@ -2933,6 +2941,10 @@ Notebook.create_controller = function(model)
         },
         load_notebook: function(gistname, version) {
             return rcloud.load_notebook(gistname, version || null)
+                .catch(function(xep) {
+                    xep.from_load = true;
+                    throw xep;
+                })
                 .then(_.bind(on_load, this, version));
         },
         create_notebook: function(content) {
@@ -3620,20 +3632,19 @@ RCloud.UI.advanced_menu = (function() {
 RCloud.UI.cell_commands = (function() {
     var extension_;
 
-    function create_command_set(area, command_set, cell_model, cell_view) {
-        var commands_ = {};
-        var flags_ = {};
-        command_set.forEach(function(cmd) {
-            commands_[cmd.key] = cmd.create(cell_model, cell_view);
-            commands_[cmd.key].control.addClass('cell-control');
+    function create_command_set(area, div, cell_model, cell_view) {
+        var commands_ = extension_.create(area, cell_model, cell_view);
+        _.each(commands_, function(command) {
+            command.control.addClass('cell-control');
         });
-        area.append.apply(area, _.pluck(commands_, 'control'));
+        var flags_ = {};
+        div.append.apply(div, _.pluck(commands_, 'control'));
         return {
             controls: commands_,
             set_flag: function(flag, value) {
                 // a command will be enabled iff all of its flags are enabled
                 flags_[flag] = value;
-                command_set.forEach(function(cmd) {
+                extension_.entries(area).forEach(function(cmd) {
                     if(!_.every(cmd.flags, function(f) { return flags_[f]; }))
                         commands_[cmd.key].disable();
                     else
@@ -3848,7 +3859,7 @@ RCloud.UI.cell_commands = (function() {
             return this;
         },
         decorate: function(area, div, cell_model, cell_view) {
-            var result = create_command_set(div, extension_.entries(area), cell_model, cell_view);
+            var result = create_command_set(area, div, cell_model, cell_view);
             switch(area) {
             case 'above_between':
                 _.extend(result, {
@@ -6432,7 +6443,7 @@ RCloud.UI.settings_frame = (function() {
             var that = this;
             this.add({
                 'show-command-prompt': that.checkbox({
-                    sort: 100,
+                    sort: 1000,
                     default_value: true,
                     label: "Show Command Prompt",
                     set: function(val) {
@@ -6440,12 +6451,12 @@ RCloud.UI.settings_frame = (function() {
                     }
                 }),
                 'subscribe-to-comments': that.checkbox({
-                    sort: 100,
+                    sort: 3000,
                     default_value: false,
                     label: "Subscribe To Comments"
                 }),
                 'show-terse-dates': that.checkbox({
-                    sort: 100,
+                    sort: 2000,
                     default_value: true,
                     label: "Show Terse Version Dates",
                     set: function(val) {

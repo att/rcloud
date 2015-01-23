@@ -1,20 +1,19 @@
 RCloud.UI.cell_commands = (function() {
     var extension_;
 
-    function create_command_set(area, command_set, cell_model, cell_view) {
-        var commands_ = {};
-        var flags_ = {};
-        command_set.forEach(function(cmd) {
-            commands_[cmd.key] = cmd.create(cell_model, cell_view);
-            commands_[cmd.key].control.addClass('cell-control');
+    function create_command_set(area, div, cell_model, cell_view) {
+        var commands_ = extension_.create(area, cell_model, cell_view);
+        _.each(commands_, function(command) {
+            command.control.addClass('cell-control');
         });
-        area.append.apply(area, _.pluck(commands_, 'control'));
+        var flags_ = {};
+        div.append.apply(div, _.pluck(commands_, 'control'));
         return {
             controls: commands_,
             set_flag: function(flag, value) {
                 // a command will be enabled iff all of its flags are enabled
                 flags_[flag] = value;
-                command_set.forEach(function(cmd) {
+                extension_.entries(area).forEach(function(cmd) {
                     if(!_.every(cmd.flags, function(f) { return flags_[f]; }))
                         commands_[cmd.key].disable();
                     else
@@ -229,7 +228,7 @@ RCloud.UI.cell_commands = (function() {
             return this;
         },
         decorate: function(area, div, cell_model, cell_view) {
-            var result = create_command_set(div, extension_.entries(area), cell_model, cell_view);
+            var result = create_command_set(area, div, cell_model, cell_view);
             switch(area) {
             case 'above_between':
                 _.extend(result, {
