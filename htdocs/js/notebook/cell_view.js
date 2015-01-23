@@ -157,7 +157,7 @@ function create_cell_html_view(language, cell_model) {
     // start trying to refactor out this repetitive nonsense
     function ace_stuff(div, content) {
         ace.require("ace/ext/language_tools");
-        var widget = ace.edit(div);
+        var widget = ace.edit(div[0]);
         var session = widget.getSession();
         widget.setValue(content);
         ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
@@ -171,6 +171,7 @@ function create_cell_html_view(language, cell_model) {
         });
         widget.setTheme("ace/theme/chrome");
         session.setUseWrapMode(true);
+        div.find('.ace_gutter').css('background-color', '#f5f5f5');
         return {
             widget: widget,
             session: session,
@@ -181,7 +182,7 @@ function create_cell_html_view(language, cell_model) {
     function create_edit_widget() {
         if(ace_widget_) return;
 
-        var aaa = ace_stuff(ace_div[0], cell_model.content());
+        var aaa = ace_stuff(ace_div, cell_model.content());
         ace_widget_ = aaa.widget;
         ace_session_ = aaa.session;
         ace_document_ = aaa.document;
@@ -215,7 +216,7 @@ function create_cell_html_view(language, cell_model) {
     function create_input_widget() {
         if(input_widget_) return;
 
-        var aaa = ace_stuff(input_ace_div_[0], '');
+        var aaa = ace_stuff(input_ace_div_, '');
         input_widget_ = aaa.widget;
 
         input_widget_.commands.addCommands([{
@@ -354,9 +355,6 @@ function create_cell_html_view(language, cell_model) {
             cell_commands_above.show();
         },
         execute_cell: function() {
-            if(RCloud.language.is_a_markdown(language))
-                this.hide_source(true);
-
             display_status("Computing...");
             result.edit_source(false);
 

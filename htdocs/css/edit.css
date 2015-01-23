@@ -213,10 +213,6 @@ rect.frame {
     background-color: #f5f5f5;
 }
 
-.ace-chrome .ace_gutter {
-    background-color: #f5f5f5;
-}
-
 .cell-status.big {
     height: 35px;
 }
