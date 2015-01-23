@@ -375,6 +375,10 @@ Notebook.create_controller = function(model)
         },
         load_notebook: function(gistname, version) {
             return rcloud.load_notebook(gistname, version || null)
+                .catch(function(xep) {
+                    xep.from_load = true;
+                    throw xep;
+                })
                 .then(_.bind(on_load, this, version));
         },
         create_notebook: function(content) {
