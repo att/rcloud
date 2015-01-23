@@ -153,7 +153,8 @@ function create_cell_html_view(language, cell_model) {
     }, 100);
 
     function clear_result() {
-        display_status("(uncomputed)");
+        result_div_.empty();
+        has_result_ = false;
     }
 
     // start trying to refactor out this repetitive nonsense
