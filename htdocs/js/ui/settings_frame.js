@@ -74,17 +74,25 @@ RCloud.UI.settings_frame = (function() {
                         RCloud.UI.command_prompt.show_prompt(val);
                     }
                 }),
-                'subscribe-to-comments': that.checkbox({
-                    sort: 3000,
-                    default_value: false,
-                    label: "Subscribe To Comments"
-                }),
                 'show-terse-dates': that.checkbox({
                     sort: 2000,
                     default_value: true,
                     label: "Show Terse Version Dates",
                     set: function(val) {
                         editor.set_terse_dates(val);
+                    }
+                }),
+                'subscribe-to-comments': that.checkbox({
+                    sort: 3000,
+                    default_value: false,
+                    label: "Subscribe to Comments"
+                }),
+                'auto-hide-cell-commands': that.checkbox({
+                    sort: 4000,
+                    default_value: false,
+                    label: "Auto-Hide Cell Commands",
+                    set: function(val) {
+                        RCloud.UI.cell_commands.auto_hide(val);
                     }
                 })
             });

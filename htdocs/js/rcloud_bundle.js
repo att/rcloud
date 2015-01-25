@@ -1561,6 +1561,20 @@ function create_cell_html_view(language, cell_model) {
     above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
     notebook_cell_div.append(cell_commands_above);
 
+    if(RCloud.UI.cell_commands.auto_hide()) {
+        cell_control_bar.css('visibility', 'hidden');
+        cell_commands_above.css('visibility', 'hidden');
+        cell_status.add(cell_commands_above).hover(
+            function() {
+                cell_control_bar.css('visibility', 'visible');
+                cell_commands_above.css('visibility', 'visible');
+            },
+            function() {
+                cell_control_bar.css('visibility', 'hidden');
+                cell_commands_above.css('visibility', 'hidden');
+            });
+    }
+
     var edit_colors_ = {
         markdown: "#F7EEE4",
         code: "#E8F1FA"
@@ -1914,16 +1928,14 @@ function create_cell_html_view(language, cell_model) {
                 ace_widget_.resize(); // again?!?
                 ace_widget_.focus();
                 if(event) {
-//                    window.setTimeout(function() {
-                        var screenPos = ace_widget_.renderer.pixelToScreenCoordinates(event.pageX, event.pageY);
-                        var docPos = ace_session_.screenToDocumentPosition(Math.abs(screenPos.row), Math.abs(screenPos.column));
+                    var screenPos = ace_widget_.renderer.pixelToScreenCoordinates(event.pageX, event.pageY);
+                    var docPos = ace_session_.screenToDocumentPosition(Math.abs(screenPos.row), Math.abs(screenPos.column));
 
 
-                        var Range = ace.require('ace/range').Range;
-                        var row = Math.abs(docPos.row), column = Math.abs(docPos.column);
-                        var range = new Range(row, column, row, column);
-                        ace_widget_.getSelection().setSelectionRange(range);
-//                    }, 100);
+                    var Range = ace.require('ace/range').Range;
+                    var row = Math.abs(docPos.row), column = Math.abs(docPos.column);
+                    var range = new Range(row, column, row, column);
+                    ace_widget_.getSelection().setSelectionRange(range);
                 }
             }
             else {
@@ -3649,6 +3661,7 @@ RCloud.UI.advanced_menu = (function() {
 })();
 RCloud.UI.cell_commands = (function() {
     var extension_;
+    var auto_hide_ = false;
 
     function create_command_set(area, div, cell_model, cell_view) {
         var commands_ = extension_.create(area, cell_model, cell_view);
@@ -3896,6 +3909,13 @@ RCloud.UI.cell_commands = (function() {
             default:
             }
             return result;
+        },
+        auto_hide: function(val) {
+            if(arguments.length) {
+                auto_hide_ = val;
+                return this;
+            }
+            else return auto_hide_;
         }
     };
     return result;
@@ -6482,17 +6502,25 @@ RCloud.UI.settings_frame = (function() {
                         RCloud.UI.command_prompt.show_prompt(val);
                     }
                 }),
-                'subscribe-to-comments': that.checkbox({
-                    sort: 3000,
-                    default_value: false,
-                    label: "Subscribe To Comments"
-                }),
                 'show-terse-dates': that.checkbox({
                     sort: 2000,
                     default_value: true,
                     label: "Show Terse Version Dates",
                     set: function(val) {
                         editor.set_terse_dates(val);
+                    }
+                }),
+                'subscribe-to-comments': that.checkbox({
+                    sort: 3000,
+                    default_value: false,
+                    label: "Subscribe to Comments"
+                }),
+                'auto-hide-cell-commands': that.checkbox({
+                    sort: 4000,
+                    default_value: false,
+                    label: "Auto-Hide Cell Commands",
+                    set: function(val) {
+                        RCloud.UI.cell_commands.auto_hide(val);
                     }
                 })
             });

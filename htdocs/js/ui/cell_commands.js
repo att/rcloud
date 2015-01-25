@@ -1,5 +1,6 @@
 RCloud.UI.cell_commands = (function() {
     var extension_;
+    var auto_hide_ = false;
 
     function create_command_set(area, div, cell_model, cell_view) {
         var commands_ = extension_.create(area, cell_model, cell_view);
@@ -247,6 +248,13 @@ RCloud.UI.cell_commands = (function() {
             default:
             }
             return result;
+        },
+        auto_hide: function(val) {
+            if(arguments.length) {
+                auto_hide_ = val;
+                return this;
+            }
+            else return auto_hide_;
         }
     };
     return result;

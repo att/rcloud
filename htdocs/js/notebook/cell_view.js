@@ -69,6 +69,20 @@ function create_cell_html_view(language, cell_model) {
     above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
     notebook_cell_div.append(cell_commands_above);
 
+    if(RCloud.UI.cell_commands.auto_hide()) {
+        cell_control_bar.css('visibility', 'hidden');
+        cell_commands_above.css('visibility', 'hidden');
+        cell_status.add(cell_commands_above).hover(
+            function() {
+                cell_control_bar.css('visibility', 'visible');
+                cell_commands_above.css('visibility', 'visible');
+            },
+            function() {
+                cell_control_bar.css('visibility', 'hidden');
+                cell_commands_above.css('visibility', 'hidden');
+            });
+    }
+
     var edit_colors_ = {
         markdown: "#F7EEE4",
         code: "#E8F1FA"
