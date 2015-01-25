@@ -8,16 +8,14 @@ function handle_img(msg, url, dims, device, page) {
     console.log("handle_img ", msg, " device ", device, " page ", page, " url ", url);
     if(!url)
         return;
-    var k;
+    // note: we implement "plot stealing", where the last cell to modify a plot takes
+    // the image from whatever cell it was in, simply by wrapping the plot in
+    // a jquery object, and jquery selection.append removes it from previous parent
+    var image = RCloud.UI.image_manager.update(url, dims, device, page);
     if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_].html_out)
-        k = function(img) {
-            output_contexts_[curr_context_id_].selection_out(img);
-        };
+        output_contexts_[curr_context_id_].selection_out(image.div());
     else
-        k = function(img) {
-            append_session_info(img);
-        };
-    RCloud.UI.image_manager.update(url, dims, device, page, k);
+        append_session_info(image.div());
 }
 
 var output_contexts_ = {};

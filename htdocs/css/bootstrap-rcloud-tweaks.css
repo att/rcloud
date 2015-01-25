@@ -126,10 +126,19 @@ div.panel-heading:hover {
 
 .notebook-cell {
     border-width: 0px;
-    /* border-left: 1px solid #f5f5f5; */
-    /* border-right: 1px solid #f5f5f5; */
     padding: 0px;
     margin-top: 0em;
+}
+
+.live-plot {
+    display: inline-block;
+    position: relative;
+}
+
+.live-plot-commands {
+    position: absolute;
+    right: 0;
+    top: 0;
 }
 
 .alert {
