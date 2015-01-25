@@ -1614,7 +1614,7 @@ function create_cell_html_view(language, cell_model) {
                     var p1 = { x: e.pageX, y: e.pageY },
                         d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
                     if (d < 4) {
-                        result.edit_source(true);
+                        result.edit_source(true, e);
                         div.mouseleave();
                     }
                 }
@@ -1866,7 +1866,7 @@ function create_cell_html_view(language, cell_model) {
         toggle_edit: function() {
             return this.edit_source(!edit_mode_);
         },
-        edit_source: function(edit_mode) {
+        edit_source: function(edit_mode, event) {
             if(edit_mode === edit_mode_) {
                 if(edit_mode)
                     ace_widget_.focus();
@@ -1913,6 +1913,18 @@ function create_cell_html_view(language, cell_model) {
                 outer_ace_div.show();
                 ace_widget_.resize(); // again?!?
                 ace_widget_.focus();
+                if(event) {
+//                    window.setTimeout(function() {
+                        var screenPos = ace_widget_.renderer.pixelToScreenCoordinates(event.pageX, event.pageY);
+                        var docPos = ace_session_.screenToDocumentPosition(Math.abs(screenPos.row), Math.abs(screenPos.column));
+
+
+                        var Range = ace.require('ace/range').Range;
+                        var row = Math.abs(docPos.row), column = Math.abs(docPos.column);
+                        var range = new Range(row, column, row, column);
+                        ace_widget_.getSelection().setSelectionRange(range);
+//                    }, 100);
+                }
             }
             else {
                 var new_content = update_model();
