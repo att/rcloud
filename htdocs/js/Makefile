@@ -38,6 +38,7 @@ rcloud_bundle.js: \
 	ui/configure_readonly.js \
 	ui/fatal_dialog.js \
 	ui/help_frame.js \
+        ui/image_manager.js \
         ui/import_export.js \
 	ui/init.js \
 	ui/left_panel.js \

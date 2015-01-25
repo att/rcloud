@@ -1807,9 +1807,11 @@ function create_cell_html_view(language, cell_model) {
                     result.hide_source(true);
                 has_result_ = true;
             }
-            Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
-                r = pre.process(r);
-            });
+            if(type!='selection') {
+                Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
+                    r = pre.process(r);
+                });
+            }
 
             if(type!='code')
                 current_result_ = null;
@@ -1823,6 +1825,7 @@ function create_cell_html_view(language, cell_model) {
                 }
                 current_result_.append(r);
                 break;
+            case 'selection':
             case 'html':
                 result_div_.append(r);
                 break;
@@ -1914,16 +1917,14 @@ function create_cell_html_view(language, cell_model) {
                 ace_widget_.resize(); // again?!?
                 ace_widget_.focus();
                 if(event) {
-//                    window.setTimeout(function() {
-                        var screenPos = ace_widget_.renderer.pixelToScreenCoordinates(event.pageX, event.pageY);
-                        var docPos = ace_session_.screenToDocumentPosition(Math.abs(screenPos.row), Math.abs(screenPos.column));
+                    var screenPos = ace_widget_.renderer.pixelToScreenCoordinates(event.pageX, event.pageY);
+                    var docPos = ace_session_.screenToDocumentPosition(Math.abs(screenPos.row), Math.abs(screenPos.column));
 
 
-                        var Range = ace.require('ace/range').Range;
-                        var row = Math.abs(docPos.row), column = Math.abs(docPos.column);
-                        var range = new Range(row, column, row, column);
-                        ace_widget_.getSelection().setSelectionRange(range);
-//                    }, 100);
+                    var Range = ace.require('ace/range').Range;
+                    var row = Math.abs(docPos.row), column = Math.abs(docPos.column);
+                    var range = new Range(row, column, row, column);
+                    ace_widget_.getSelection().setSelectionRange(range);
                 }
             }
             else {
@@ -2054,6 +2055,7 @@ Notebook.Cell.create_controller = function(cell_model)
                                       // these should convey the meaning e.g. through color:
                                       out: resulter, err: resulter, msg: resulter,
                                       html_out: this.append_result.bind(this, 'html'),
+                                      selection_out: this.append_result.bind(this, 'selection'),
                                       in: this.get_input.bind(this, 'in')
                                      };
             }
@@ -3105,24 +3107,16 @@ function handle_img(msg, url, dims, device, page) {
     console.log("handle_img ", msg, " device ", device, " page ", page, " url ", url);
     if(!url)
         return;
-    var attrs = [];
-    var id = device + "-" + page;
-    attrs.push("id='" + id + "'");
-
-    // probably the wrong place for this - someone should be managing all these images
-    $('#' + id).remove();
-    if(dims) {
-        if(dims[0])
-            attrs.push("width=" + dims[0]);
-        if(dims[1])
-            attrs.push("height=" + dims[1]);
-    }
-    attrs.push("src='" + url + "'");
-    var img = "<img " + attrs.join(' ') + ">\n";
+    var k;
     if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_].html_out)
-        output_contexts_[curr_context_id_].html_out(img);
+        k = function(img) {
+            output_contexts_[curr_context_id_].selection_out(img);
+        };
     else
-        append_session_info(img);
+        k = function(img) {
+            append_session_info(img);
+        };
+    RCloud.UI.image_manager.update(url, dims, device, page, k);
 }
 
 var output_contexts_ = {};
@@ -4764,6 +4758,26 @@ RCloud.UI.help_frame = {
         this.show();
     }
 };
+RCloud.UI.image_manager = (function() {
+    var result = {
+        update: function(url, dims, device, page, k) {
+            var attrs = [];
+            var id = device + "-" + page;
+            attrs.push("id='" + id + "'");
+
+            $('#' + id).remove(); // still wrong
+            if(dims) {
+                if(dims[0])
+                    attrs.push("width=" + dims[0]);
+                if(dims[1])
+                    attrs.push("height=" + dims[1]);
+            }
+            attrs.push("src='" + url + "'");
+            k($("<img " + attrs.join(' ') + ">\n"));
+        }
+    };
+    return result;
+})();
 RCloud.UI.import_export = (function() {
     function download_as_file(filename, content, mimetype) {
         var file = new Blob([content], {type: mimetype});

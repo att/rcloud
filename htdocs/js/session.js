@@ -8,24 +8,16 @@ function handle_img(msg, url, dims, device, page) {
     console.log("handle_img ", msg, " device ", device, " page ", page, " url ", url);
     if(!url)
         return;
-    var attrs = [];
-    var id = device + "-" + page;
-    attrs.push("id='" + id + "'");
-
-    // probably the wrong place for this - someone should be managing all these images
-    $('#' + id).remove();
-    if(dims) {
-        if(dims[0])
-            attrs.push("width=" + dims[0]);
-        if(dims[1])
-            attrs.push("height=" + dims[1]);
-    }
-    attrs.push("src='" + url + "'");
-    var img = "<img " + attrs.join(' ') + ">\n";
+    var k;
     if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_].html_out)
-        output_contexts_[curr_context_id_].html_out(img);
+        k = function(img) {
+            output_contexts_[curr_context_id_].selection_out(img);
+        };
     else
-        append_session_info(img);
+        k = function(img) {
+            append_session_info(img);
+        };
+    RCloud.UI.image_manager.update(url, dims, device, page, k);
 }
 
 var output_contexts_ = {};
