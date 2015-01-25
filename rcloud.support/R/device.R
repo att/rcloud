@@ -69,6 +69,10 @@ RCloudDevice <- function(width, height, dpi=100, ..., type='inline') {
     list(url=dataURI(bin, mime))
 }
 
+# ocapable version of .render.plot
+rcloud.render.plot <- function(device.id, page, options)
+  do.call(.render.plot, c(list(device.id=device.id, page=page), options))
+
 ## this function needs to be called after eval() to check if the device is dirty
 .post.eval <- function() {
     ## check if the device is dirty such that we need to post an update
