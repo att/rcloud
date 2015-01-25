@@ -78,6 +78,7 @@ div.panel-heading:hover {
 .code-div pre {
     padding-bottom: 2px;
     background-color: #f5f5f5;
+    cursor: text;
 }
 
 .code-div pre code {
@@ -103,6 +104,7 @@ div.panel-heading:hover {
 .r-result-div pre {
     padding: 16px;
     font-size: 12px;
+    cursor: text;
 }
 
 .r-result-div pre code {
