@@ -35,23 +35,6 @@ function dataURLToBlob(dataURL) {
 RCloud.UI.image_manager = (function() {
     var images_ = {};
     var formats_ = RCloud.extension.create();
-    formats_.add({
-        PNG: {
-            sort: 1000
-        },
-        SVG: {
-            sort: 2000
-        },
-        JPEG: {
-            sort: 3000
-        },
-        TIFF: {
-            sort: 4000
-        },
-        PDF: {
-            sort: 5000
-        }
-    });
     function create_image(id, url, dims, device, page) {
         var div_, img_;
         function img_tag() {

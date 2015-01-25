@@ -109,7 +109,8 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "get_url"],
             ["get_notebook_by_name"],
             ["languages", "get_list"],
-            ["plots", "render"]
+            ["plots", "render"],
+            ["plots", "get_formats"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
@@ -310,6 +311,9 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.plots = {};
         rcloud.plots.render = function(device, page, options) {
             return rcloud_ocaps.plots.renderAsync(device, page, options);
+        };
+        rcloud.plots.get_formats = function() {
+            return rcloud_ocaps.plots.get_formatsAsync();
         };
     }
 

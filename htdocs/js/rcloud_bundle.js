@@ -212,7 +212,8 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "get_url"],
             ["get_notebook_by_name"],
             ["languages", "get_list"],
-            ["plots", "render"]
+            ["plots", "render"],
+            ["plots", "get_formats"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
@@ -413,6 +414,9 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.plots = {};
         rcloud.plots.render = function(device, page, options) {
             return rcloud_ocaps.plots.renderAsync(device, page, options);
+        };
+        rcloud.plots.get_formats = function() {
+            return rcloud_ocaps.plots.get_formatsAsync();
         };
     }
 
@@ -3290,6 +3294,15 @@ function rclient_promise(allow_anonymous) {
         rcloud.api.set_url(window.location.href);
         return rcloud.languages.get_list().then(function(lang_list) {
             RCloud.language._set_available_languages(_.omit(lang_list, 'r_type', 'r_attributes'));
+        }).then(rcloud.plots.get_formats).then(function(formats) {
+            formats = _.without(formats, 'r_attributes', 'r_type');
+            var i = 1000;
+            var im_formats = {};
+            formats.forEach(function(format) {
+                im_formats[format] = { sort: i };
+                i += 1000;
+            });
+            RCloud.UI.image_manager.formats.add(im_formats);
         }).then(function() {
             return rcloud.init_client_side_data();
         });
@@ -4801,23 +4814,6 @@ function dataURLToBlob(dataURL) {
 RCloud.UI.image_manager = (function() {
     var images_ = {};
     var formats_ = RCloud.extension.create();
-    formats_.add({
-        PNG: {
-            sort: 1000
-        },
-        SVG: {
-            sort: 2000
-        },
-        JPEG: {
-            sort: 3000
-        },
-        TIFF: {
-            sort: 4000
-        },
-        PDF: {
-            sort: 5000
-        }
-    });
     function create_image(id, url, dims, device, page) {
         var div_, img_;
         function img_tag() {

@@ -107,7 +107,8 @@ unauthenticated.ocaps <- function()
         ),
 
       plots = list(
-        render = make.oc(rcloud.render.plot)
+        render = make.oc(rcloud.render.plot),
+        get_formats = make.oc(rcloud.available.render.formats)
         )
       )
     )
