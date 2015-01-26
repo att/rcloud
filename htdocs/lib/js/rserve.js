@@ -660,7 +660,6 @@ function parse_payload(msg)
     var d = reader.read_int();
     var _ = Rserve.Rsrv.par_parse(d);
     var t = _[0], l = _[1];
-
     if (Rserve.Rsrv.IS_LARGE(t)) {
         var more_length = reader.read_int();
         l += more_length * Math.pow(2, 24);
@@ -990,47 +989,59 @@ Rserve.create = function(opts) {
             //        the msg_id), but curretnly it's not mandated.
             queue = (Rserve.Rsrv.OOB_USR_CODE(cmd) > 255) ? compute_queue : ctrl_queue;
             // console.log("OOB MSG result on queue "+ queue.name);
-            if (result.ocap_mode) {
-                var p;
-                try {
-                    p = Rserve.wrap_all_ocaps(result, v.payload); // .value.json(result.resolve_hash);
-                } catch (e) {
-                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | cmd,
-                                  _encode_string(String(e)), msg_id);
-                    return;
-                }
-                if (!_.isFunction(p[0])) {
-                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | cmd,
-                                  _encode_string("OOB Messages on ocap-mode must be javascript function calls"), msg_id);
-                    return;
-                }
-                var captured_function = p[0], params = p.slice(1);
-                params.push(function(err, result) {
-                    if (err) {
-                        _send_cmd_now(Rserve.Rsrv.RESP_ERR | cmd, _encode_value(err), msg_id);
-                    } else {
-                        _send_cmd_now(cmd, _encode_value(result), msg_id);
-                    }
-                });
-                captured_function.apply(undefined, params);
-            } else {
+            var p;
+            try {
+                p = Rserve.wrap_all_ocaps(result, v.payload); // .value.json(result.resolve_hash);
+            } catch (e) {
+                _send_cmd_now(Rserve.Rsrv.RESP_ERR | cmd,
+                              _encode_string(String(e)), msg_id);
+                return;
+            }
+            if(_.isString(p[0])) {
                 if (_.isUndefined(opts.on_oob_message)) {
-                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | cmd, 
+                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | cmd,
                                   _encode_string("No handler installed"), msg_id);
                 } else {
                     queue.in_oob_message = true;
-                    opts.on_oob_message(v.payload, function(message, error) {
+                    // breaking changes here: it appears that the callback had its arguments
+                    // reversed from the standard (error, message), and was passing the message
+                    // even on error
+                    opts.on_oob_message(v.payload, function(error, result) {
                         if (!queue.in_oob_message) {
                             handle_error("Don't call oob_message_handler more than once.");
                             return;
                         }
                         queue.in_oob_message = false;
-                        var header = cmd |
-                            (error ? Rserve.Rsrv.RESP_ERR : Rserve.Rsrv.RESP_OK);
-                        _send_cmd_now(header, _encode_string(message), msg_id);
+                        if(error) {
+                            _send_cmd_now(cmd | Rserve.Rsrv.RESP_ERR, _encode_string(error), msg_id);
+                        }
+                        else {
+                            _send_cmd_now(cmd | Rserve.Rsrv.RESP_OK, _encode_string(result), msg_id);
+                        }
                         bump_queues();
                     });
                 }
+            }
+            else if(_.isFunction(p[0])) {
+                if(!result.ocap_mode) {
+                    _send_cmd_now(Rserve.Rsrv.RESP_ERROR | cmd,
+                                  _encode_string("JavaScript function calls only allowed in ocap mode"), msg_id);
+                }
+                else {
+                    var captured_function = p[0], params = p.slice(1);
+                    params.push(function(err, result) {
+                        if (err) {
+                            _send_cmd_now(Rserve.Rsrv.RESP_ERR | cmd, _encode_value(err), msg_id);
+                        } else {
+                            _send_cmd_now(cmd, _encode_value(result), msg_id);
+                        }
+                    });
+                    captured_function.apply(undefined, params);
+                }
+            }
+            else {
+                _send_cmd_now(Rserve.Rsrv.RESP_ERROR | cmd,
+                              _encode_string("Unknown oob message type: " + typeof(p[0])));
             }
         } else {
             handle_error("Internal Error, parse returned unexpected type " + v.header[0], -1);

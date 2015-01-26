@@ -110,7 +110,9 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "set_url"],
             ["api", "get_url"],
             ["get_notebook_by_name"],
-            ["languages", "get_list"]
+            ["languages", "get_list"],
+            ["plots", "render"],
+            ["plots", "get_formats"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
@@ -260,8 +262,8 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.stars.get_multiple_notebook_star_countsAsync(id);
         };
 
-        rcloud.session_cell_eval = function(filename, language, version, silent) {
-            return rcloud_ocaps.session_cell_evalAsync(filename, language, version, silent);
+        rcloud.session_cell_eval = function(context_id, filename, language, version, silent) {
+            return rcloud_ocaps.session_cell_evalAsync(context_id, filename, language, version, silent);
         };
 
         rcloud.reset_session = function() {
@@ -311,6 +313,16 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.languages = {};
         rcloud.languages.get_list = function() {
             return rcloud_ocaps.languages.get_listAsync();
+        };
+
+        //////////////////////////////////////////////////////////////////////
+        // plots
+        rcloud.plots = {};
+        rcloud.plots.render = function(device, page, options) {
+            return rcloud_ocaps.plots.renderAsync(device, page, options);
+        };
+        rcloud.plots.get_formats = function() {
+            return rcloud_ocaps.plots.get_formatsAsync();
         };
     }
 
@@ -432,11 +444,8 @@ RCloud.create = function(rcloud_ocaps) {
                 "rcloud.rename.notebook",
                 rcloud_ocaps.rename_notebookAsync(id, new_name));
         };
-        rcloud.authenticated_cell_eval = function(command, language, version, silent) {
-            return rcloud_ocaps.authenticated_cell_evalAsync(command, language, version, silent);
-        };
-        rcloud.session_markdown_eval = function(command, language, silent) {
-            return rcloud_ocaps.session_markdown_evalAsync(command, language, silent);
+        rcloud.authenticated_cell_eval = function(context_id, filename, language, version, silent) {
+            return rcloud_ocaps.authenticated_cell_evalAsync(context_id, filename, language, version, silent);
         };
 
         rcloud.post_comment = function(id, content) {

@@ -46,7 +46,7 @@ RCloud.UI.init = function() {
                     next = info.item.next().data('rcloud.model');
                 shell.notebook.controller.move_cell(model, next);
             },
-            handle: " .ace_gutter-layer",
+            handle: " .cell-status",
             scroll: true,
             scrollSensitivity: 40,
             forcePlaceholderSize: true
@@ -68,6 +68,7 @@ RCloud.UI.init = function() {
 
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
+    RCloud.UI.find_replace.init();
 
     // these inits do default setup.  then add-ons modify that setup.
     // then, somewhere, load gets called and they actually fire up
@@ -103,7 +104,7 @@ RCloud.UI.init = function() {
     // ctrl/cmd+s and save notebook
     if(saveb.size()) {
         document.addEventListener("keydown", function(e) {
-            if (e.keyCode == 83 && (e.ctrlKey || e.metaKey)) {
+            if (e.keyCode == 83 && (e.ctrlKey || e.metaKey)) { // ctrl/cmd-S
                 e.preventDefault();
                 shell.save_notebook();
             }

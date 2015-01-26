@@ -128,6 +128,7 @@ RCloud.UI.command_prompt = (function() {
                 }
             }
         ]);
+        widget.commands.removeCommands(['find', 'replace']);
         ui_utils.make_prompt_chevron_gutter(widget);
 
         return {
@@ -245,7 +246,7 @@ RCloud.UI.command_prompt = (function() {
             var prompt_div = $(RCloud.UI.panel_loader.load_snippet('command-prompt-snippet'));
             $('#rcloud-cellarea').append(prompt_div);
             var prompt_command_bar = $('#prompt-area .cell-control-bar');
-            command_bar_ = RCloud.UI.cell_commands.decorate_prompt(prompt_command_bar);
+            command_bar_ = RCloud.UI.cell_commands.decorate('prompt', prompt_command_bar);
             history_ = setup_prompt_history();
             entry_ = setup_command_entry();
         },

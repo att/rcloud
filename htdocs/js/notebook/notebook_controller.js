@@ -380,6 +380,10 @@ Notebook.create_controller = function(model)
         },
         load_notebook: function(gistname, version) {
             return rcloud.load_notebook(gistname, version || null)
+                .catch(function(xep) {
+                    xep.from_load = true;
+                    throw xep;
+                })
                 .then(_.bind(on_load, this, version));
         },
         create_notebook: function(content) {
@@ -420,22 +424,24 @@ Notebook.create_controller = function(model)
             return update_notebook(refresh_buffers(), null, {description: desc})
                 .then(default_callback());
         },
+        apply_changes: function(changes) {
+            return update_notebook(changes).then(default_callback());
+        },
         save: function() {
             if(!dirty_)
                 return Promise.resolve(undefined);
             return update_notebook(refresh_buffers())
                 .then(default_callback());
         },
-        execute_cell_version: function(info) {
+        execute_cell_version: function(context_id, info) {
             function callback(r) {
-                info.controller.set_result(r);
                 _.each(model.execution_watchers, function(ew) {
                     ew.run_cell(info.json_rep);
                 });
             }
             rcloud.record_cell_execution(info.json_rep);
             var cell_eval = rcloud.authenticated ? rcloud.authenticated_cell_eval : rcloud.session_cell_eval;
-            return cell_eval(info.partname, info.language, info.version, false).then(callback);
+            return cell_eval(context_id, info.partname, info.language, info.version, false).then(callback);
         },
         run_all: function() {
             var that = this;

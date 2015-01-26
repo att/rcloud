@@ -2,14 +2,14 @@
 set +x
 
 PACKAGE_DIRS="internal rcloud.packages"
-BREAK=0
+BREAK=1
 
 while [ "$1" != "" ]; do
     case $1 in
         --base) PACKAGE_DIRS="internal" ;;
         --core) PACKAGE_DIRS="internal rcloud.packages" ;; # the default
         --all) PACKAGE_DIRS="internal rcloud.packages packages" ;;
-        --break) BREAK=1 ;;
+        --cont) BREAK=0 ;;
         *) echo "unknown option" $1 && exit 1 ;;
     esac
     shift
