@@ -5,7 +5,6 @@ RCloud.extension = (function() {
             var entries_ = {};
             var sections_ = {};
             var defaults_ = options.defaults ? options.defaults : {};
-            var true_ = function() { return true; };
 
             if(options.sections) {
                 for(var key in options.sections)
@@ -15,7 +14,11 @@ RCloud.extension = (function() {
 
             function recompute_sections() {
                 for(key in sections_) {
-                    sections_[key].entries = _.filter(entries_, sections_[key].filter || true_);
+                    sections_[key].entries = _.filter(entries_, function(entry) {
+                        if(entry.disable)
+                            return false;
+                        return sections_[key].filter ? sections_[key].filter(entry) : true;
+                    });
                     sections_[key].entries.sort(function(a, b) { return a.sort - b.sort; });
                 }
             }
@@ -30,6 +33,13 @@ RCloud.extension = (function() {
                 remove: function(name) {
                     delete entries_[name];
                     recompute_sections();
+                    return this;
+                },
+                disable: function(name, disable) {
+                    if(entries_[name]) {
+                        entries_[name].disable = disable;
+                        recompute_sections();
+                    }
                     return this;
                 },
                 get: function(name) {

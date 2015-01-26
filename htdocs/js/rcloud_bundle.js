@@ -1129,7 +1129,6 @@ RCloud.extension = (function() {
             var entries_ = {};
             var sections_ = {};
             var defaults_ = options.defaults ? options.defaults : {};
-            var true_ = function() { return true; };
 
             if(options.sections) {
                 for(var key in options.sections)
@@ -1139,7 +1138,11 @@ RCloud.extension = (function() {
 
             function recompute_sections() {
                 for(key in sections_) {
-                    sections_[key].entries = _.filter(entries_, sections_[key].filter || true_);
+                    sections_[key].entries = _.filter(entries_, function(entry) {
+                        if(entry.disable)
+                            return false;
+                        return sections_[key].filter ? sections_[key].filter(entry) : true;
+                    });
                     sections_[key].entries.sort(function(a, b) { return a.sort - b.sort; });
                 }
             }
@@ -1154,6 +1157,13 @@ RCloud.extension = (function() {
                 remove: function(name) {
                     delete entries_[name];
                     recompute_sections();
+                    return this;
+                },
+                disable: function(name, disable) {
+                    if(entries_[name]) {
+                        entries_[name].disable = disable;
+                        recompute_sections();
+                    }
                     return this;
                 },
                 get: function(name) {
@@ -2136,6 +2146,7 @@ Notebook.Cell.postprocessors = RCloud.extension.create();
 Notebook.Cell.postprocessors.add({
     device_pixel_ratio: {
         sort: 1000,
+        disable: true, // needs to move into RCloud.UI.image_manager
         process: function(div) {
             // we use the cached version of DPR instead of getting window.devicePixelRatio
             // because it might have changed (by moving the user agent window across monitors)
@@ -4820,12 +4831,6 @@ RCloud.UI.image_manager = (function() {
             var attrs = [];
             attrs.push("id='" + id + "'");
 
-            if(dims) {
-            if(dims[0])
-                attrs.push("width=" + dims[0]);
-            if(dims[1])
-                attrs.push("height=" + dims[1]);
-            }
             attrs.push("src='" + url + "'");
             return $("<img " + attrs.join(' ') + ">\n");
         }
@@ -4862,6 +4867,19 @@ RCloud.UI.image_manager = (function() {
                 image_commands.hide();
             });
             div.append(image_commands);
+            if(dims) {
+                if(dims[0])
+                    div.css('width', dims[0]);
+                if(dims[1])
+                    div.css('height', dims[1]);
+                $image.css({width: '100%', height: '100%'});
+            }
+
+
+            div.resizable({
+                autoHide: true,
+                aspectRatio: true
+            });
             return div;
         }
         img_ = img_tag();
