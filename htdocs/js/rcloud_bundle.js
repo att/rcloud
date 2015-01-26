@@ -4826,7 +4826,7 @@ RCloud.UI.image_manager = (function() {
     var images_ = {};
     var formats_ = RCloud.extension.create();
     function create_image(id, url, dims, device, page) {
-        var div_, img_;
+        var div_, img_, dims_;
         function img_tag() {
             var attrs = [];
             attrs.push("id='" + id + "'");
@@ -4835,13 +4835,17 @@ RCloud.UI.image_manager = (function() {
             return $("<img " + attrs.join(' ') + ">\n");
         }
         function save_as(fmt) {
-            rcloud.plots.render(device, page, {type: fmt})
+            var options = {type: fmt};
+            if(dims_)
+                options.dim = dims_;
+            rcloud.plots.render(device, page, options)
                 .then(function(data) {
                     saveAs(dataURLToBlob(data.url), id + '.' + fmt);
                 });
         }
         function resize_stop(event, ui) {
-            rcloud.plots.render(device, page, {dims: [ui.size.width, ui.size.height]})
+            dims_ = [ui.size.width, ui.size.height];
+            rcloud.plots.render(device, page, {dim: dims_})
                 .then(function(data) {
                     result.update(data.url);
                 });
@@ -4889,6 +4893,7 @@ RCloud.UI.image_manager = (function() {
                 if(dims[1])
                     div.css('height', dims[1]);
                 $image.css({width: '100%', height: '100%'});
+                dims_ = dims;
             }
 
 
