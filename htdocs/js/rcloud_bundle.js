@@ -4912,10 +4912,10 @@ RCloud.UI.image_manager = (function() {
                 return div_;
             },
             update: function(url) {
-                img_.attr('url', url);
+                img_.attr('src', url);
             }
         };
-                    return result;
+        return result;
     }
     var result = {
         update: function(url, dims, device, page) {
