@@ -41,12 +41,6 @@ RCloud.UI.image_manager = (function() {
             var attrs = [];
             attrs.push("id='" + id + "'");
 
-            if(dims) {
-            if(dims[0])
-                attrs.push("width=" + dims[0]);
-            if(dims[1])
-                attrs.push("height=" + dims[1]);
-            }
             attrs.push("src='" + url + "'");
             return $("<img " + attrs.join(' ') + ">\n");
         }
@@ -56,10 +50,13 @@ RCloud.UI.image_manager = (function() {
                     saveAs(dataURLToBlob(data.url), id + '.' + fmt);
                 });
         }
-        function add_controls($image) {
-            var div = $('<div class="live-plot"></div>');
-            div.append($image);
-            var image_commands = $('<div class="live-plot-commands"></div>');
+        function resize_stop(event, ui) {
+            rcloud.plots.render(device, page, {dims: [ui.size.width, ui.size.height]})
+                .then(function(data) {
+                    result.update(data.url);
+                });
+        }
+        function save_button() {
             var save_dropdown = $('<div class="dropdown"></div>');
             // i couldn't figure out how to get fa_button('icon-save', 'save image', 'btn dropdown-toggle')
             // to open a dropdown
@@ -74,8 +71,21 @@ RCloud.UI.image_manager = (function() {
                 var li = $('<li role="presentation"></li>').append(link);
                 save_menu.append(li);
             });
+            var opts = {
+                title: 'save image',
+                delay: { show: 250, hide: 0 }
+            };
+            opts.container = 'body';
+            save_button.tooltip(opts);
             save_dropdown.append(save_button, save_menu);
-            image_commands.append(save_dropdown);
+            return save_dropdown;
+        }
+
+        function add_controls($image) {
+            var div = $('<div class="live-plot"></div>');
+            div.append($image);
+            var image_commands = $('<div class="live-plot-commands"></div>');
+            image_commands.append(save_button());
             image_commands.hide();
             $image.add(image_commands).hover(function() {
                 image_commands.show();
@@ -83,12 +93,26 @@ RCloud.UI.image_manager = (function() {
                 image_commands.hide();
             });
             div.append(image_commands);
+            if(dims) {
+                if(dims[0])
+                    div.css('width', dims[0]);
+                if(dims[1])
+                    div.css('height', dims[1]);
+                $image.css({width: '100%', height: '100%'});
+            }
+
+
+            div.resizable({
+                autoHide: true,
+                aspectRatio: true,
+                stop: resize_stop
+            });
             return div;
         }
         img_ = img_tag();
         div_ = add_controls(img_);
 
-        return {
+        var result = {
             div: function() {
                 return div_;
             },
@@ -96,6 +120,7 @@ RCloud.UI.image_manager = (function() {
                 img_.attr('url', url);
             }
         };
+                    return result;
     }
     var result = {
         update: function(url, dims, device, page) {
