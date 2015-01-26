@@ -67,7 +67,7 @@ RCloud.UI.settings_frame = (function() {
             var that = this;
             this.add({
                 'show-command-prompt': that.checkbox({
-                    sort: 100,
+                    sort: 1000,
                     default_value: true,
                     label: "Show Command Prompt",
                     set: function(val) {
@@ -75,12 +75,12 @@ RCloud.UI.settings_frame = (function() {
                     }
                 }),
                 'subscribe-to-comments': that.checkbox({
-                    sort: 100,
+                    sort: 3000,
                     default_value: false,
                     label: "Subscribe To Comments"
                 }),
                 'show-terse-dates': that.checkbox({
-                    sort: 100,
+                    sort: 2000,
                     default_value: true,
                     label: "Show Terse Version Dates",
                     set: function(val) {

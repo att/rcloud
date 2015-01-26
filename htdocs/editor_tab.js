@@ -1111,10 +1111,6 @@ var editor = function () {
             var that = this;
             selroot = selroot || true;
             return shell.load_notebook(gistname, version)
-                .catch(function(xep) {
-                    xep.from_load = true;
-                    throw xep;
-                })
                 .then(this.load_callback({version: version,
                                           selroot: selroot,
                                           push_history: push_history}));

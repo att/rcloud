@@ -114,7 +114,7 @@ configure.rcloud <- function (mode=c("startup", "script")) {
   }
 
   ## we actually need knitr ...
-  opts_knit$set(global.device=TRUE, tidy=FALSE, dev=CairoPNG, progress=FALSE)
+  opts_knit$set(tidy=FALSE, dev=CairoPNG, progress=FALSE)
   ## the dev above doesn't work ... it's still using png()
   ## so make sure it uses the cairo back-end ..
   if (capabilities()['cairo']) options(bitmapType='cairo')

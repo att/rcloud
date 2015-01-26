@@ -46,7 +46,7 @@ RCloud.UI.init = function() {
                     next = info.item.next().data('rcloud.model');
                 shell.notebook.controller.move_cell(model, next);
             },
-            handle: " .ace_gutter-layer",
+            handle: " .cell-status",
             scroll: true,
             scrollSensitivity: 40,
             forcePlaceholderSize: true

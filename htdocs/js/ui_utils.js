@@ -160,7 +160,9 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                     widget.navigateDown(1);
                     widget.navigateLineEnd();
                 }
-                shell.new_cell(code, get_language(), true);
+                RCloud.UI.command_prompt.history().add_entry(code);
+                shell.new_cell(code, get_language())
+                    .execute().then(shell.scroll_to_end);
             }
         }
     ]);

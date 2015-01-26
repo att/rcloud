@@ -84,18 +84,11 @@ var shell = (function() {
         scroll_to_end: scroll_to_end,
         new_cell: function(content, language, execute) {
             check_cell_language(language);
-            var controller = notebook_controller_.append_cell(content, language);
-            RCloud.UI.command_prompt.history().add_entry(content);
-            if(execute) {
-                RCloud.UI.command_prompt.focus();
-                controller.execute().then(scroll_to_end);
-            }
-            return controller;
+            return notebook_controller_.append_cell(content, language);
         },
         insert_cell_before: function(content, language, index) {
             check_cell_language(language);
-            var controller = notebook_controller_.insert_cell("", language, index);
-            return controller;
+            return notebook_controller_.insert_cell(content, language, index);
         }, join_prior_cell: function(cell_model) {
             return notebook_controller_.join_prior_cell(cell_model);
         }, split_cell: function(cell_model, point1, point2) {

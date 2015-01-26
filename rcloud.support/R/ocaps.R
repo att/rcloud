@@ -104,6 +104,11 @@ unauthenticated.ocaps <- function()
       # multi-language support
       languages = list(
         get_list = make.oc(rcloud.supported.languages)
+        ),
+
+      plots = list(
+        render = make.oc(rcloud.render.plot),
+        get_formats = make.oc(rcloud.available.render.formats)
         )
       )
     )

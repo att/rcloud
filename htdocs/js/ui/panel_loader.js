@@ -1,4 +1,5 @@
 RCloud.UI.panel_loader = (function() {
+    var extension_;
     var panels_ = {};
 
     function collapse_name(name) {
@@ -66,6 +67,20 @@ RCloud.UI.panel_loader = (function() {
 
     return {
         init: function() {
+            extension_ = RCloud.extension.create({
+                sections: {
+                    left: {
+                        filter: function(panel) {
+                            return panel.side === 'left';
+                        }
+                    },
+                    right: {
+                        filter: function(panel) {
+                            return panel.side === 'right';
+                        }
+                    }
+                }
+            });
             // built-in panels
             this.add({
                 Notebooks: {
@@ -144,10 +159,10 @@ RCloud.UI.panel_loader = (function() {
             });
         },
         add: function(P) {
-            _.extend(panels_, P);
+            extension_.add(P);
         },
         remove: function(panel_name) {
-            delete panels_[panel_name];
+            extension_.remove(panel_name);
         },
         load_snippet: function(id) {
             // embed html snippets in edit.html as "html scripts"
@@ -171,8 +186,7 @@ RCloud.UI.panel_loader = (function() {
                     if(p.panel.heading_content_selector)
                         $('#' + collapse_name(p.name)).data("heading-content-selector", p.panel.heading_content_selector());
                 }
-                var chosen = _.filter(panels, function(p) { return p.side === side; });
-                chosen.sort(function(a, b) { return a.sort - b.sort; });
+                var chosen = extension_.entries(side);
                 chosen.forEach(do_panel);
                 add_filler_panel(side);
             }
