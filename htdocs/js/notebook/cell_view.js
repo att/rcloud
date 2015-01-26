@@ -315,9 +315,11 @@ function create_cell_html_view(language, cell_model) {
                     result.hide_source(true);
                 has_result_ = true;
             }
-            Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
-                r = pre.process(r);
-            });
+            if(type!='selection') {
+                Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
+                    r = pre.process(r);
+                });
+            }
 
             if(type!='code')
                 current_result_ = null;
@@ -331,6 +333,7 @@ function create_cell_html_view(language, cell_model) {
                 }
                 current_result_.append(r);
                 break;
+            case 'selection':
             case 'html':
                 result_div_.append(r);
                 break;

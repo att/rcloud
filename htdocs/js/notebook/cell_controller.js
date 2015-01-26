@@ -20,6 +20,7 @@ Notebook.Cell.create_controller = function(cell_model)
                                       // these should convey the meaning e.g. through color:
                                       out: resulter, err: resulter, msg: resulter,
                                       html_out: this.append_result.bind(this, 'html'),
+                                      selection_out: this.append_result.bind(this, 'selection'),
                                       in: this.get_input.bind(this, 'in')
                                      };
             }

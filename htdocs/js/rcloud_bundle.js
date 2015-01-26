@@ -211,7 +211,9 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "set_url"],
             ["api", "get_url"],
             ["get_notebook_by_name"],
-            ["languages", "get_list"]
+            ["languages", "get_list"],
+            ["plots", "render"],
+            ["plots", "get_formats"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
@@ -405,6 +407,16 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.languages = {};
         rcloud.languages.get_list = function() {
             return rcloud_ocaps.languages.get_listAsync();
+        };
+
+        //////////////////////////////////////////////////////////////////////
+        // plots
+        rcloud.plots = {};
+        rcloud.plots.render = function(device, page, options) {
+            return rcloud_ocaps.plots.renderAsync(device, page, options);
+        };
+        rcloud.plots.get_formats = function() {
+            return rcloud_ocaps.plots.get_formatsAsync();
         };
     }
 
@@ -1117,7 +1129,6 @@ RCloud.extension = (function() {
             var entries_ = {};
             var sections_ = {};
             var defaults_ = options.defaults ? options.defaults : {};
-            var true_ = function() { return true; };
 
             if(options.sections) {
                 for(var key in options.sections)
@@ -1127,7 +1138,11 @@ RCloud.extension = (function() {
 
             function recompute_sections() {
                 for(key in sections_) {
-                    sections_[key].entries = _.filter(entries_, sections_[key].filter || true_);
+                    sections_[key].entries = _.filter(entries_, function(entry) {
+                        if(entry.disable)
+                            return false;
+                        return sections_[key].filter ? sections_[key].filter(entry) : true;
+                    });
                     sections_[key].entries.sort(function(a, b) { return a.sort - b.sort; });
                 }
             }
@@ -1142,6 +1157,13 @@ RCloud.extension = (function() {
                 remove: function(name) {
                     delete entries_[name];
                     recompute_sections();
+                    return this;
+                },
+                disable: function(name, disable) {
+                    if(entries_[name]) {
+                        entries_[name].disable = disable;
+                        recompute_sections();
+                    }
                     return this;
                 },
                 get: function(name) {
@@ -1807,9 +1829,11 @@ function create_cell_html_view(language, cell_model) {
                     result.hide_source(true);
                 has_result_ = true;
             }
-            Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
-                r = pre.process(r);
-            });
+            if(type!='selection') {
+                Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
+                    r = pre.process(r);
+                });
+            }
 
             if(type!='code')
                 current_result_ = null;
@@ -1823,6 +1847,7 @@ function create_cell_html_view(language, cell_model) {
                 }
                 current_result_.append(r);
                 break;
+            case 'selection':
             case 'html':
                 result_div_.append(r);
                 break;
@@ -1914,16 +1939,14 @@ function create_cell_html_view(language, cell_model) {
                 ace_widget_.resize(); // again?!?
                 ace_widget_.focus();
                 if(event) {
-//                    window.setTimeout(function() {
-                        var screenPos = ace_widget_.renderer.pixelToScreenCoordinates(event.pageX, event.pageY);
-                        var docPos = ace_session_.screenToDocumentPosition(Math.abs(screenPos.row), Math.abs(screenPos.column));
+                    var screenPos = ace_widget_.renderer.pixelToScreenCoordinates(event.pageX, event.pageY);
+                    var docPos = ace_session_.screenToDocumentPosition(Math.abs(screenPos.row), Math.abs(screenPos.column));
 
 
-                        var Range = ace.require('ace/range').Range;
-                        var row = Math.abs(docPos.row), column = Math.abs(docPos.column);
-                        var range = new Range(row, column, row, column);
-                        ace_widget_.getSelection().setSelectionRange(range);
-//                    }, 100);
+                    var Range = ace.require('ace/range').Range;
+                    var row = Math.abs(docPos.row), column = Math.abs(docPos.column);
+                    var range = new Range(row, column, row, column);
+                    ace_widget_.getSelection().setSelectionRange(range);
                 }
             }
             else {
@@ -2054,6 +2077,7 @@ Notebook.Cell.create_controller = function(cell_model)
                                       // these should convey the meaning e.g. through color:
                                       out: resulter, err: resulter, msg: resulter,
                                       html_out: this.append_result.bind(this, 'html'),
+                                      selection_out: this.append_result.bind(this, 'selection'),
                                       in: this.get_input.bind(this, 'in')
                                      };
             }
@@ -2122,6 +2146,7 @@ Notebook.Cell.postprocessors = RCloud.extension.create();
 Notebook.Cell.postprocessors.add({
     device_pixel_ratio: {
         sort: 1000,
+        disable: true, // needs to move into RCloud.UI.image_manager
         process: function(div) {
             // we use the cached version of DPR instead of getting window.devicePixelRatio
             // because it might have changed (by moving the user agent window across monitors)
@@ -3105,24 +3130,14 @@ function handle_img(msg, url, dims, device, page) {
     console.log("handle_img ", msg, " device ", device, " page ", page, " url ", url);
     if(!url)
         return;
-    var attrs = [];
-    var id = device + "-" + page;
-    attrs.push("id='" + id + "'");
-
-    // probably the wrong place for this - someone should be managing all these images
-    $('#' + id).remove();
-    if(dims) {
-        if(dims[0])
-            attrs.push("width=" + dims[0]);
-        if(dims[1])
-            attrs.push("height=" + dims[1]);
-    }
-    attrs.push("src='" + url + "'");
-    var img = "<img " + attrs.join(' ') + ">\n";
+    // note: we implement "plot stealing", where the last cell to modify a plot takes
+    // the image from whatever cell it was in, simply by wrapping the plot in
+    // a jquery object, and jquery selection.append removes it from previous parent
+    var image = RCloud.UI.image_manager.update(url, dims, device, page);
     if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_].html_out)
-        output_contexts_[curr_context_id_].html_out(img);
+        output_contexts_[curr_context_id_].selection_out(image.div());
     else
-        append_session_info(img);
+        append_session_info(image.div());
 }
 
 var output_contexts_ = {};
@@ -3290,6 +3305,15 @@ function rclient_promise(allow_anonymous) {
         rcloud.api.set_url(window.location.href);
         return rcloud.languages.get_list().then(function(lang_list) {
             RCloud.language._set_available_languages(_.omit(lang_list, 'r_type', 'r_attributes'));
+        }).then(rcloud.plots.get_formats).then(function(formats) {
+            formats = _.without(formats, 'r_attributes', 'r_type');
+            var i = 1000;
+            var im_formats = {};
+            formats.forEach(function(format) {
+                im_formats[format] = { sort: i };
+                i += 1000;
+            });
+            RCloud.UI.image_manager.formats.add(im_formats);
         }).then(function() {
             return rcloud.init_client_side_data();
         });
@@ -4764,6 +4788,150 @@ RCloud.UI.help_frame = {
         this.show();
     }
 };
+(function() {
+
+// from https://github.com/ebidel/filer.js/blob/master/src/filer.js
+/**
+ * Creates and returns a blob from a data URL (either base64 encoded or not).
+ *
+ * @param {string} dataURL The data URL to convert.
+ * @return {Blob} A blob representing the array buffer data.
+ */
+function dataURLToBlob(dataURL) {
+    var BASE64_MARKER = ';base64,';
+    var parts, contentType, raw;
+    if (dataURL.indexOf(BASE64_MARKER) == -1) {
+        parts = dataURL.split(',');
+        contentType = parts[0].split(':')[1];
+        raw = decodeURIComponent(parts[1]);
+
+        return new Blob([raw], {type: contentType});
+    }
+
+    parts = dataURL.split(BASE64_MARKER);
+    contentType = parts[0].split(':')[1];
+    raw = window.atob(parts[1]);
+    var rawLength = raw.length;
+
+    var uInt8Array = new Uint8Array(rawLength);
+
+    for (var i = 0; i < rawLength; ++i) {
+        uInt8Array[i] = raw.charCodeAt(i);
+    }
+
+    return new Blob([uInt8Array], {type: contentType});
+}
+
+RCloud.UI.image_manager = (function() {
+    var images_ = {};
+    var formats_ = RCloud.extension.create();
+    function create_image(id, url, dims, device, page) {
+        var div_, img_;
+        function img_tag() {
+            var attrs = [];
+            attrs.push("id='" + id + "'");
+
+            attrs.push("src='" + url + "'");
+            return $("<img " + attrs.join(' ') + ">\n");
+        }
+        function save_as(fmt) {
+            rcloud.plots.render(device, page, {type: fmt})
+                .then(function(data) {
+                    saveAs(dataURLToBlob(data.url), id + '.' + fmt);
+                });
+        }
+        function resize_stop(event, ui) {
+            rcloud.plots.render(device, page, {dims: [ui.size.width, ui.size.height]})
+                .then(function(data) {
+                    result.update(data.url);
+                });
+        }
+        function save_button() {
+            var save_dropdown = $('<div class="dropdown"></div>');
+            // i couldn't figure out how to get fa_button('icon-save', 'save image', 'btn dropdown-toggle')
+            // to open a dropdown
+            var save_button = $('<span class="dropdown-toggle fontawesome-button" type="button" data-toggle="dropdown" aria-expanded="true"></span>');
+            save_button.append($('<i class="icon-save"></i>'));
+            var save_menu = $('<ul role="menu" class="dropdown-menu plot-save-formats"></ul>');
+            _.pluck(formats_.entries('all'), 'key').forEach(function(fmt) {
+                var link = $('<a role="menuitem" href="#">' + fmt + '</a>');
+                link.click(function() {
+                    save_as(fmt);
+                });
+                var li = $('<li role="presentation"></li>').append(link);
+                save_menu.append(li);
+            });
+            var opts = {
+                title: 'save image',
+                delay: { show: 250, hide: 0 }
+            };
+            opts.container = 'body';
+            save_button.tooltip(opts);
+            save_dropdown.append(save_button, save_menu);
+            return save_dropdown;
+        }
+
+        function add_controls($image) {
+            var div = $('<div class="live-plot"></div>');
+            div.append($image);
+            var image_commands = $('<div class="live-plot-commands"></div>');
+            image_commands.append(save_button());
+            image_commands.hide();
+            $image.add(image_commands).hover(function() {
+                image_commands.show();
+            }, function() {
+                image_commands.hide();
+            });
+            div.append(image_commands);
+            if(dims) {
+                if(dims[0])
+                    div.css('width', dims[0]);
+                if(dims[1])
+                    div.css('height', dims[1]);
+                $image.css({width: '100%', height: '100%'});
+            }
+
+
+            div.resizable({
+                autoHide: true,
+                aspectRatio: true,
+                stop: resize_stop
+            });
+            return div;
+        }
+        img_ = img_tag();
+        div_ = add_controls(img_);
+
+        var result = {
+            div: function() {
+                return div_;
+            },
+            update: function(url) {
+                img_.attr('url', url);
+            }
+        };
+                    return result;
+    }
+    var result = {
+        update: function(url, dims, device, page) {
+            var id = device + "-" + page;
+            var image;
+            if(images_[id]) {
+                image = images_[id];
+                image.update(url);
+            }
+            else {
+                image = create_image(id, url, dims, device, page);
+                images_[id] = image;
+            }
+            return image;
+        },
+        formats: formats_
+    };
+    return result;
+})();
+
+})();
 RCloud.UI.import_export = (function() {
     function download_as_file(filename, content, mimetype) {
         var file = new Blob([content], {type: mimetype});

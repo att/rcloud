@@ -4,6 +4,7 @@ Notebook.Cell.postprocessors = RCloud.extension.create();
 Notebook.Cell.postprocessors.add({
     device_pixel_ratio: {
         sort: 1000,
+        disable: true, // needs to move into RCloud.UI.image_manager
         process: function(div) {
             // we use the cached version of DPR instead of getting window.devicePixelRatio
             // because it might have changed (by moving the user agent window across monitors)
