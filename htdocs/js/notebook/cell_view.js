@@ -24,6 +24,7 @@ function create_cell_html_view(language, cell_model) {
     var change_content_;
     var above_between_controls_, cell_controls_, left_controls_;
     var edit_mode_; // note: starts neither true nor false
+    var highlights_;
 
     // input
     var prompt_text_;
@@ -211,6 +212,7 @@ function create_cell_html_view(language, cell_model) {
                 result.execute_cell();
             }
         }]);
+        ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
             cell_model.parent_model.on_dirty();
         });
@@ -249,8 +251,8 @@ function create_cell_html_view(language, cell_model) {
             hljs.highlightBlock(e);
         });
     }
-    function assign_code() {
-        var code = cell_model.content();
+    function assign_code(code) {
+        code = code || cell_model.content();
         // match the number of lines ace.js is going to show
         // 1. html would skip final blank line
         if(code[code.length-1] === '\n')
@@ -445,6 +447,7 @@ function create_cell_html_view(language, cell_model) {
                 outer_ace_div.hide();
             }
             edit_mode_ = edit_mode;
+            this.change_highlights(highlights_); // restore highlights
         },
         hide_source: function(whether) {
             if(whether)
@@ -485,6 +488,36 @@ function create_cell_html_view(language, cell_model) {
         },
         check_buttons: function() {
             above_between_controls_.betweenness(!!cell_model.parent_model.prior_cell(cell_model));
+        },
+        change_highlights: function(ranges) {
+            if(edit_mode_) {
+                var markers = ace_session_.getMarkers();
+                for(var marker in markers) {
+                    if(markers[marker].type === 'rcloud-select')
+                        ace_session_.removeMarker(marker);
+                }
+                var Range = ace.require('ace/range').Range;
+                if(ranges)
+                    ranges.forEach(function(range) {
+                        var begin = ui_utils.position_of_character_offset(ace_widget_, range.begin),
+                            end = ui_utils.position_of_character_offset(ace_widget_, range.end);
+                        var ace_range = new Range(begin.row, begin.column, end.row, end.column);
+                        ace_session_.addMarker(ace_range, 'find-highlight', 'rcloud-select');
+                    });
+            }
+            else {
+                var content = cell_model.content();
+                var last = 0, text = '';
+                if(ranges)
+                    ranges.forEach(function(range) {
+                        text += content.substring(last, range.begin);
+                        text += '<span class="find-highlight">' + content.substring(range.begin, range.end) + '</span>';
+                        last = range.end;
+                    });
+                text += content.substring(last);
+                assign_code(text);
+            }
+            highlights_ = ranges;
         }
     });
 

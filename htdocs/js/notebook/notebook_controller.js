@@ -419,6 +419,9 @@ Notebook.create_controller = function(model)
             return update_notebook(refresh_buffers(), null, {description: desc})
                 .then(default_callback());
         },
+        apply_changes: function(changes) {
+            return update_notebook(changes).then(default_callback());
+        },
         save: function() {
             if(!dirty_)
                 return Promise.resolve(undefined);

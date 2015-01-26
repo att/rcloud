@@ -183,6 +183,23 @@ ui_utils.character_offset_of_pos = function(widget, pos) {
     return ret;
 };
 
+ui_utils.position_of_character_offset = function(widget, offset) {
+    // based on the above; the wontfix ace issue is
+    // https://github.com/ajaxorg/ace/issues/226
+    var session = widget.getSession(), doc = session.getDocument();
+    var nlLength = doc.getNewLineCharacter().length;
+    var text = doc.getAllLines();
+    var i;
+    for(i=0; i<text.length; i++) {
+        if(offset <= text[i].length)
+            break;
+        offset -= text[i].length + nlLength;
+    }
+    if(i===text.length)
+        throw new Error("character offset off end of editor");
+    return {row: i, column: offset};
+};
+
 // bind an ace editor to a listener and return a function to change the
 // editor content without triggering that listener
 ui_utils.ignore_programmatic_changes = function(widget, listener) {

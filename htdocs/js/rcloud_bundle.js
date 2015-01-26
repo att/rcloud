@@ -797,6 +797,23 @@ ui_utils.character_offset_of_pos = function(widget, pos) {
     return ret;
 };
 
+ui_utils.position_of_character_offset = function(widget, offset) {
+    // based on the above; the wontfix ace issue is
+    // https://github.com/ajaxorg/ace/issues/226
+    var session = widget.getSession(), doc = session.getDocument();
+    var nlLength = doc.getNewLineCharacter().length;
+    var text = doc.getAllLines();
+    var i;
+    for(i=0; i<text.length; i++) {
+        if(offset <= text[i].length)
+            break;
+        offset -= text[i].length + nlLength;
+    }
+    if(i===text.length)
+        throw new Error("character offset off end of editor");
+    return {row: i, column: offset};
+};
+
 // bind an ace editor to a listener and return a function to change the
 // editor content without triggering that listener
 ui_utils.ignore_programmatic_changes = function(widget, listener) {
@@ -1538,6 +1555,7 @@ function create_cell_html_view(language, cell_model) {
     var change_content_;
     var above_between_controls_, cell_controls_, left_controls_;
     var edit_mode_; // note: starts neither true nor false
+    var highlights_;
 
     // input
     var prompt_text_;
@@ -1725,6 +1743,7 @@ function create_cell_html_view(language, cell_model) {
                 result.execute_cell();
             }
         }]);
+        ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
             cell_model.parent_model.on_dirty();
         });
@@ -1763,8 +1782,8 @@ function create_cell_html_view(language, cell_model) {
             hljs.highlightBlock(e);
         });
     }
-    function assign_code() {
-        var code = cell_model.content();
+    function assign_code(code) {
+        code = code || cell_model.content();
         // match the number of lines ace.js is going to show
         // 1. html would skip final blank line
         if(code[code.length-1] === '\n')
@@ -1959,6 +1978,7 @@ function create_cell_html_view(language, cell_model) {
                 outer_ace_div.hide();
             }
             edit_mode_ = edit_mode;
+            this.change_highlights(highlights_); // restore highlights
         },
         hide_source: function(whether) {
             if(whether)
@@ -1999,6 +2019,36 @@ function create_cell_html_view(language, cell_model) {
         },
         check_buttons: function() {
             above_between_controls_.betweenness(!!cell_model.parent_model.prior_cell(cell_model));
+        },
+        change_highlights: function(ranges) {
+            if(edit_mode_) {
+                var markers = ace_session_.getMarkers();
+                for(var marker in markers) {
+                    if(markers[marker].type === 'rcloud-select')
+                        ace_session_.removeMarker(marker);
+                }
+                var Range = ace.require('ace/range').Range;
+                if(ranges)
+                    ranges.forEach(function(range) {
+                        var begin = ui_utils.position_of_character_offset(ace_widget_, range.begin),
+                            end = ui_utils.position_of_character_offset(ace_widget_, range.end);
+                        var ace_range = new Range(begin.row, begin.column, end.row, end.column);
+                        ace_session_.addMarker(ace_range, 'find-highlight', 'rcloud-select');
+                    });
+            }
+            else {
+                var content = cell_model.content();
+                var last = 0, text = '';
+                if(ranges)
+                    ranges.forEach(function(range) {
+                        text += content.substring(last, range.begin);
+                        text += '<span class="find-highlight">' + content.substring(range.begin, range.end) + '</span>';
+                        last = range.end;
+                    });
+                text += content.substring(last);
+                assign_code(text);
+            }
+            highlights_ = ranges;
         }
     });
 
@@ -3026,6 +3076,9 @@ Notebook.create_controller = function(model)
         rename_notebook: function(desc) {
             return update_notebook(refresh_buffers(), null, {description: desc})
                 .then(default_callback());
+        },
+        apply_changes: function(changes) {
+            return update_notebook(changes).then(default_callback());
         },
         save: function() {
             if(!dirty_)
@@ -4377,6 +4430,7 @@ RCloud.UI.command_prompt = (function() {
                 }
             }
         ]);
+        widget.commands.removeCommands(['find', 'replace']);
         ui_utils.make_prompt_chevron_gutter(widget);
 
         return {
@@ -4746,6 +4800,155 @@ RCloud.UI.fatal_dialog = function(message, label, href) {
     fatal_dialog_.modal({keyboard: false});
 };
 
+})();
+RCloud.UI.find_replace = (function() {
+    var find_dialog_ = null,
+        find_desc_, find_input_, replace_desc_, replace_input_, replace_stuff_,
+        find_next_, find_last_, replace_all_,
+        shown_ = false, replace_mode_ = false,
+        find_cycle_ = null, replace_cycle_ = null,
+        matches_ = {}, currentCell_, currentMatch_;
+    function toggle_find_replace(replace) {
+        if(!find_dialog_) {
+            find_dialog_ = $('<div id="find-dialog"></div>');
+            var find_form = $('<form id="find-form"></form>');
+            find_desc_ = $('<label id="find-label" for="find-input"><span>Find</span></label>');
+            find_input_ = $('<input id="find-input" class="form-control-ext"></input>');
+            replace_desc_ = $('<label id="replace-label" for="replace-input"><span>Replace with</span></label>');
+            replace_input_ = $('<input id="replace-input" class="form-control-ext"></input>');
+            find_next_ = $('<button id="find-next" class="btn btn-primary">Next</button>');
+            find_last_ = $('<button id="find-last" class="btn btn-primary">Last</button>');
+            replace_all_ = $('<button id="replace-all" class="btn">Replace All</button>');
+            replace_stuff_ = replace_desc_.add(replace_input_).add(replace_all_);
+            var close = $('<span id="find-close"><i class="icon-remove"></i></span>');
+            find_form.append(find_desc_.append(find_input_), replace_desc_.append(replace_input_), find_next_, find_last_, replace_all_, close);
+            find_dialog_.append(find_form);
+            $('#middle-column').prepend(find_dialog_);
+
+            find_input_.on('input', function(val) {
+                currentCell_ = currentMatch_ = undefined;
+                highlight_all(find_input_.val());
+            });
+
+            find_next_.click(function() {
+                alert('find next!');
+                return false;
+            });
+
+            replace_all_.click(function() {
+                replace_all(find_input_.val(), replace_input_.val());
+                return false;
+            });
+
+            find_cycle_ = ['find-input', 'find-next', 'find-last'];
+            replace_cycle_ = ['find-input', 'replace-input', 'find-next', 'find-last', 'replace-all'];
+
+            var click_find_next = function(e) {
+                if(e.keyCode===13) {
+                    find_next_.click();
+                    return false;
+                }
+                return undefined;
+            };
+            find_input_.keydown(click_find_next);
+            replace_input_.keydown(click_find_next);
+
+            find_form.keydown(function(e) {
+                switch(e.keyCode) {
+                case 9: // tab
+                    var cycle = replace_mode_ ? replace_cycle_ : find_cycle_;
+                    var i = cycle.indexOf(e.target.id) + cycle.length;
+                    if(e.shiftKey) --i; else ++i;
+                    i = i % cycle.length;
+                    $('#' + cycle[i]).focus();
+                    return false;
+                case 27: // esc
+                    hide_dialog();
+                    return false;
+                }
+                return undefined;
+            });
+
+            find_form.find('input').focus(function() {
+                window.setTimeout(function() {
+                    this.select();
+                }.bind(this), 0);
+            });
+
+            close.click(function() {
+                hide_dialog();
+            });
+        }
+
+        find_dialog_.show();
+        find_input_.focus();
+        if(replace)
+            replace_stuff_.show();
+        else
+            replace_stuff_.hide();
+        highlight_all(find_input_.val());
+        shown_ = true;
+        replace_mode_ = replace;
+    }
+    function hide_dialog() {
+        highlight_all(null);
+        find_dialog_.hide();
+        shown_ = false;
+    }
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
+    function escapeRegExp(string) {
+        // regex option will skip this
+        return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+    function highlight_all(find) {
+        var regex = find && find.length ? new RegExp(escapeRegExp(find), 'g') : null;
+        shell.notebook.model.cells.forEach(function(cell) {
+            var matches = [];
+            if(regex) {
+                var content = cell.content(), match;
+                while((match = regex.exec(content))) {
+                    matches.push({
+                        begin: match.index,
+                        end: match.index+match[0].length
+                    });
+                    if(match.index === regex.lastIndex) ++regex.lastIndex;
+                }
+            }
+            cell.notify_views(function(view) {
+                view.change_highlights(matches);
+            });
+            matches_[cell.filename()] = matches;
+        });
+    }
+    function replace_all(find, replace) {
+        highlight_all(null);
+        if(!find || !find.length)
+            return;
+        find = escapeRegExp(find);
+        var regex = new RegExp(find, 'g');
+        var changes = shell.notebook.model.reread_buffers();
+        shell.notebook.model.cells.forEach(function(cell) {
+            var content = cell.content(),
+                new_content = content.replace(regex, replace);
+            if(cell.content(new_content))
+                changes.push.apply(changes, shell.notebook.model.update_cell(cell));
+        });
+        shell.notebook.controller.apply_changes(changes);
+    }
+
+    var result = {
+        init: function() {
+            document.addEventListener("keydown", function(e) {
+                if (e.keyCode == 70 && (e.ctrlKey || e.metaKey)) { // ctrl/cmd-F
+                    if(e.shiftKey)
+                        return; // don't capture Full Screen
+                    e.preventDefault();
+                    toggle_find_replace(e.altKey);
+                }
+            });
+        }
+    };
+    return result;
 })();
 RCloud.UI.help_frame = {
     body: function() {
@@ -5250,6 +5453,7 @@ RCloud.UI.init = function() {
 
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
+    RCloud.UI.find_replace.init();
 
     // these inits do default setup.  then add-ons modify that setup.
     // then, somewhere, load gets called and they actually fire up
@@ -5285,7 +5489,7 @@ RCloud.UI.init = function() {
     // ctrl/cmd+s and save notebook
     if(saveb.size()) {
         document.addEventListener("keydown", function(e) {
-            if (e.keyCode == 83 && (e.ctrlKey || e.metaKey)) {
+            if (e.keyCode == 83 && (e.ctrlKey || e.metaKey)) { // ctrl/cmd-S
                 e.preventDefault();
                 shell.save_notebook();
             }
