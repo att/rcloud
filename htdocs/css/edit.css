@@ -253,6 +253,29 @@ rect.frame {
     z-index: 5;
 }
 
+#find-dialog .btn {
+    margin-left: 7px;
+    padding: 3px 12px;
+}
+
+#find-dialog label span {
+    margin-left: 7px;
+    margin-right: 5px;
+}
+
+#find-dialog form {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+#find-close {
+    float: right;
+    cursor: pointer;
+    position: relative;
+    top: 7;
+    right: 5;
+}
+
 .find-highlight {
     background-color: yellow;
 }
@@ -866,7 +889,6 @@ pre {
 }
 
 .btn {
-    border-radius: 0;
     font-size: inherit;
 }
 
@@ -1166,14 +1188,14 @@ input[type=checkbox] + span:before {
     display:inline-block;
 }
 input[type=checkbox] + span:before {
-    content: "\f096"; 
+    content: "\f096";
 }
 input[type=checkbox]:checked + span:before {
-    content: "\f046"; 
+    content: "\f046";
 }
 input[type=checkbox].inverse + span:before {
-    content: "\f0c8"; 
+    content: "\f0c8";
 }
 input[type=checkbox].inverse:checked + span:before {
-    content: "\f14a"; 
+    content: "\f14a";
 }

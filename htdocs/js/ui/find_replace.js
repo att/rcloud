@@ -1,6 +1,6 @@
 RCloud.UI.find_replace = (function() {
     var find_dialog_ = null,
-        find_input_, replace_desc_, replace_input_, replace_stuff_,
+        find_desc_, find_input_, replace_desc_, replace_input_, replace_stuff_,
         find_next_, find_last_, replace_all_,
         shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
@@ -8,16 +8,17 @@ RCloud.UI.find_replace = (function() {
     function toggle_find_replace(replace) {
         if(!find_dialog_) {
             find_dialog_ = $('<div id="find-dialog"></div>');
-            var find_form = $('<form></form>');
+            var find_form = $('<form id="find-form"></form>');
+            find_desc_ = $('<label id="find-label" for="find-input"><span>Find</span></label>');
             find_input_ = $('<input id="find-input" class="form-control-ext"></input>');
-            replace_desc_ = $('<span id="replace">&nbsp;Replace with: </span>');
+            replace_desc_ = $('<label id="replace-label" for="replace-input"><span>Replace with</span></label>');
             replace_input_ = $('<input id="replace-input" class="form-control-ext"></input>');
             find_next_ = $('<button id="find-next" class="btn btn-primary">Next</button>');
             find_last_ = $('<button id="find-last" class="btn btn-primary">Last</button>');
             replace_all_ = $('<button id="replace-all" class="btn">Replace All</button>');
             replace_stuff_ = replace_desc_.add(replace_input_).add(replace_all_);
-            var close = $('<span id="close" style="float: right; cursor: pointer"><i class="icon-remove"></i></span>');
-            find_form.append('Find: ', find_input_, replace_desc_, replace_input_, find_next_, find_last_, replace_all_, close);
+            var close = $('<span id="find-close"><i class="icon-remove"></i></span>');
+            find_form.append(find_desc_.append(find_input_), replace_desc_.append(replace_input_), find_next_, find_last_, replace_all_, close);
             find_dialog_.append(find_form);
             $('#middle-column').prepend(find_dialog_);
 
