@@ -53,7 +53,9 @@ compute.ocaps <- function(mode, authenticated) {
         unauthenticated_compute_init = make.oc(rcloud.anonymous.compute.init),
         reset_session = make.oc(rcloud.reset.session),
         prefix_uuid = make.oc(rcloud.prefix.uuid),
-        load_notebook = if (authenticated) make.oc(rcloud.load.notebook.compute) else make.oc(rcloud.unauthenticated.load.notebook.compute)
+        load_notebook = if (authenticated) make.oc(rcloud.load.notebook.compute) else make.oc(rcloud.unauthenticated.load.notebook.compute),
+        render_plot = make.oc(rcloud.render.plot),
+        render_formats = make.oc(rcloud.available.render.formats)
         )
     if (authenticated) c(caps, list(
         compute_init = make.oc(rcloud.compute.init),
@@ -156,8 +158,8 @@ unauthenticated.ocaps <- function(mode, compute)
         ),
 
       plots = list(
-        render = make.oc(rcloud.render.plot),
-        get_formats = make.oc(rcloud.available.render.formats)
+        render = compute$render_plot,
+        get_formats = compute$render_formats
         )
       )
     )
