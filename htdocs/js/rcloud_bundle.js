@@ -257,13 +257,14 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         rcloud.load_notebook = function(id, version) {
-            // FIXME: some bluebird guru, please check this
-            // The intention is to call load_notebook_compute asynchronously and not care about the result
-            rcloud_ocaps.load_notebook_computeAsync(id, version);
-
-            return rcloud_github_handler(
-                "rcloud.load.notebook " + id,
-                rcloud_ocaps.load_notebookAsync(id, version));
+            return Promise.all([
+                rcloud_github_handler("rcloud.load.notebook.compute " + id,
+                                      rcloud_ocaps.load_notebook_computeAsync(id, version)),
+                rcloud_github_handler("rcloud.load.notebook " + id,
+                                      rcloud_ocaps.load_notebookAsync(id, version))])
+                .spread(function(_, notebook) {
+                    return notebook;
+                });
         };
 
         rcloud.tag_notebook_version = function(gist_id,version,tag_name) {
