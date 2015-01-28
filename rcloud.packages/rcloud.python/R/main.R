@@ -115,9 +115,9 @@ rcloud.exec.python <- function(cmd, rcloud.session)
     best_repr
   }
   # SSI -- Suggest dropping Markdown for formatting Python code -- considering Pygments is used for many languages!
-  md <- paste("```py",command,"```\n",paste(lapply(result, to.chunk), collapse='\n'), sep='\n')
+  md <- paste(paste(lapply(result, to.chunk), collapse='\n'), sep='\n')
   val <- if (nzchar(md)) markdownToHTML(text=md, fragment=TRUE) else ""
-  val
+  self.oobSend(list("html.out", val))
 }
 
 rcloud.language.support <- function()
