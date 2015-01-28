@@ -10,7 +10,7 @@ function ensure_image_has_hash(img)
 }
 
 var MIN_LINES = 2;
-var EXTRA_HEIGHT_SOURCE = 2, EXTRA_HEIGHT_INPUT = 20; // fudge to prevent unnecessary scrolling
+var EXTRA_HEIGHT_SOURCE = 2, EXTRA_HEIGHT_INPUT = 10;
 
 function create_cell_html_view(language, cell_model) {
     var ace_widget_;
@@ -26,7 +26,7 @@ function create_cell_html_view(language, cell_model) {
     var edit_mode_; // note: starts neither true nor false
     var highlights_;
 
-    // input
+    // input1
     var prompt_text_;
     var input_div_, input_ace_div_, input_widget_, input_kont_;
 
@@ -132,7 +132,7 @@ function create_cell_html_view(language, cell_model) {
                 if(edit_mode_) // don't highlight if it won't do anything
                     return;
                 var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
-                var avg_color = d3.interpolateHsl('#f5f5f5', edit_color)(0.5);
+                var avg_color = d3.interpolateHsl('#f5f5f5', edit_color)(0.75);
                 $(this).css('background-color', avg_color);
             }, function() {
                 $(this).css('background-color', '');
@@ -463,8 +463,8 @@ function create_cell_html_view(language, cell_model) {
             create_input_widget();
             input_widget_.setValue('');
             input_div_.show();
-            input_div_.css('height', (ui_utils.ace_editor_height(input_widget_, 1) + EXTRA_HEIGHT_INPUT) + "px");
-            input_widget_.resize(true);
+            input_div_.css('height', "32px"); // can't get ui_utils.ace_editor_height to work
+            input_widget_.resize();
             input_widget_.focus();
             input_kont_ = k;
         },
