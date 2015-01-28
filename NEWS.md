@@ -14,7 +14,8 @@
 * Direct output and input.  Instead of printing a single result for each cell, the
   output is handled asynchronously, so it shows as it is available.  The code can
   also request lines of input, so e.g. `readline` now works - as do `browser` for
-  debugging!
+  debugging!  Ordinary code cells do not use knitr/markdown for output, but send
+  images, preformatted, and html output separately.
 
 * Ability to save plots in other formats.  Hover the mouse over the plot for the
   disk icon to appear in the upper right corner, which contains a list of available
@@ -27,6 +28,10 @@
 
   Next and Last are not yet implemented, but will be for release 1.3.  Ditto
   for replace some but not all. (#1202)
+
+* New simplified look.  Cells do not activate the editor until they are clicked on,
+  so they use much less resources and notebooks with a large number of cells
+  load quickly.
 
 * Automatic indentation for R code (#1110) and Python (#1105)
 
@@ -66,11 +71,18 @@
 
 * Year is shown if notebook is more than a year old (#986)
 
-* Cell number is shown (#1126)
+* Cell number is shown above each cell in its status area (#1126)
 
-* `shared.R` can be used to serve static content out of of the `www/` folder of any installed R package. (#1147)
+* `shared.R` can be used to serve static content out of of the `www/` folder of
+  any installed R package. (#1147)
 
 * redis database number and password can be set
+
+* Can grab the status area above cell as well as the gutter area in order to reorder cells.
+  Allows moving cells when not editing them.
+
+* Clicking to edit cell sets the cursor position based on the click location.
+
 
 
 
@@ -85,6 +97,14 @@
 * Notebook wasn't saved before forking (#1083)
 
 * Importing a notebook would cause the browser title to change (#1168)
+
+* Messages from the server could get fragmented and produce "Invalid typed array
+  length" error or silent failures (#1135)
+
+* Issues with knitr creating duplicate plots fixed (#1046)
+
+* (Mis)feature where a prior notebook is loaded if the current notebook can't be
+
 
 
 ## RCloud 1.2
