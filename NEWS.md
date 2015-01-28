@@ -1,19 +1,6 @@
 ## RCloud 1.3
 
 ### Features
-
-* Many ways to write extensions to add to the RCloud user interface.
-  [Documentation](https://github.com/att/rcloud/wiki/RCloud-UI-Extensions).
-
-* It is possible to add cell languages - the Python, RMarkdown, and
-  (bizarrely) R evaluation is performed by language add-ons.
-
-* Search and replace across all cells in a notebook.  Ctrl/Cmd-F opens the
-  find bar at the top of the notebook.  Type to search incrementally. Ctrl-Alt-F
-  (should be Ctrl-H #1212) / Cmd-Option-F opens the replace bar.
-
-  Next and Last are not yet implemented, but will be for release 1.3.  (#1202)
-
 * Simultaneously view code and output.  Instead of switching back and forth
   between code and output, most cells always show both the code and the output.
   Output is shown when the cell is run.  Click on the code to activate the cell's
@@ -24,12 +11,32 @@
   on any code within the markdown output, or click on the cell's edit mode button to
   activate it.
 
+* Direct output and input.  Instead of printing a single result for each cell, the
+  output is handled asynchronously, so it shows as it is available.  The code can
+  also request lines of input, so e.g. `readline` now works - as do `browser` for
+  debugging!
+
+* Search and replace across all cells in a notebook.  Ctrl/Cmd-F opens the
+  find bar at the top of the notebook.  Type to search incrementally.
+
+  Ctrl-Alt-F (should be Ctrl-H #1212) / Cmd-Option-F opens the replace bar.
+
+  Next and Last are not yet implemented, but will be for release 1.3.  Ditto
+  for replace some but not all. (#1202)
+
+* Automatic indentation for R code (#1110) and Python (#1105)
+
+* Many ways to write extensions to add to the RCloud user interface.
+  [Documentation](https://github.com/att/rcloud/wiki/RCloud-UI-Extensions).
+
+* It is possible to add cell languages - the Python, RMarkdown, and
+  (bizarrely) R evaluation is performed by language add-ons.
+  https://github.com/att/rcloud/wiki/RCloud-Language-extensions
+
 * Experimental support for RMarkdown cells.  The old Markdown cells use the
   [markdown](http://cran.r-project.org/web/packages/markdown/index.html)
   and [knitr](http://yihui.name/knitr/) packages directly for output;
   RMarkdown cell use [rmarkdown](http://rmarkdown.rstudio.com/) (a.k.a. R Markdown v2).
-
-* Automatic indentation for R code (#1110) and Python (#1105)
 
 * Option to receive email updates when your notebook is commented on (#900)
 
@@ -56,6 +63,8 @@
 * Year is shown if notebook is more than a year old (#986)
 
 * Cell number is shown (#1126)
+
+* `shared.R` can be used to serve static content out of of the `inst/www` folder of any installed R package. (#1147)
 
 
 
