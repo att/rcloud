@@ -16,7 +16,9 @@
   also request lines of input, so e.g. `readline` now works - as do `browser` for
   debugging!
 
-* Ability to save plots in other formats.  Hover the mouse for menu and resizer.
+* Ability to save plots in other formats.  Hover the mouse over the plot for the
+  disk icon to appear in the upper right corner, which contains a list of available
+  image formats.  A widget at the lower-right corner can be used to resize the image.
 
 * Search and replace across all cells in a notebook.  Ctrl/Cmd-F opens the
   find bar at the top of the notebook.  Type to search incrementally.
@@ -66,7 +68,9 @@
 
 * Cell number is shown (#1126)
 
-* `shared.R` can be used to serve static content out of of the `inst/www` folder of any installed R package. (#1147)
+* `shared.R` can be used to serve static content out of of the `www/` folder of any installed R package. (#1147)
+
+* redis database number and password can be set
 
 
 
@@ -79,6 +83,8 @@
 * Loading notebook by ID failed when there was whitespace (#1115)
 
 * Notebook wasn't saved before forking (#1083)
+
+* Importing a notebook would cause the browser title to change (#1168)
 
 
 ## RCloud 1.2
