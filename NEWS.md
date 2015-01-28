@@ -16,6 +16,8 @@
   also request lines of input, so e.g. `readline` now works - as do `browser` for
   debugging!
 
+* Ability to save plots in other formats.  Hover the mouse for menu and resizer.
+
 * Search and replace across all cells in a notebook.  Ctrl/Cmd-F opens the
   find bar at the top of the notebook.  Type to search incrementally.
 
