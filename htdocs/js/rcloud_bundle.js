@@ -1663,7 +1663,7 @@ function create_cell_html_view(language, cell_model) {
                 if(edit_mode_) // don't highlight if it won't do anything
                     return;
                 var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
-                var avg_color = d3.interpolateHsl('#f5f5f5', edit_color)(0.5);
+                var avg_color = d3.interpolateHsl('#f5f5f5', edit_color)(0.75);
                 $(this).css('background-color', avg_color);
             }, function() {
                 $(this).css('background-color', '');
