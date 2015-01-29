@@ -18,16 +18,16 @@ RCloud.language = (function() {
 
     return {
         is_a_markdown: function(language) {
-            return languages_[language].is_a_markdown;
+            return languages_[language] ? languages_[language].is_a_markdown : false;
         },
         ace_mode: function(language) {
-            return languages_[language].ace_mode || languages_.Text.ace_mode;
+            return (languages_[language] && languages_[language].ace_mode) || languages_.Text.ace_mode;
         },
         extension: function(language) {
-            return languages_[language].extension;
+            return (languages_[language] && languages_[language].extension) || '';
         },
         hljs_class: function(language) {
-            return languages_[language].hljs_class || null;
+            return (languages_[language] && languages_[language].hljs_class) || null;
         },
         // don't call _set_available_languages yourself; it's called
         // by the session initialization code.
