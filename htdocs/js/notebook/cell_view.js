@@ -315,7 +315,6 @@ function create_cell_html_view(language, cell_model) {
             display_status(status);
         },
         start_output: function() {
-            display_status('Receiving...');
         },
         add_result: function(type, r) {
             if(!has_result_) {
@@ -352,6 +351,11 @@ function create_cell_html_view(language, cell_model) {
             result_updated();
         },
         end_output: function() {
+            if(!has_result_) {
+                // the no-output case
+                result_div_.empty();
+                has_result_ = true;
+            }
             current_result_ = null;
         },
         clear_result: clear_result,
@@ -463,6 +467,10 @@ function create_cell_html_view(language, cell_model) {
                 source_div_.show();
         },
         get_input: function(type, prompt, k) {
+            if(!has_result_) {
+                result_div_.empty();
+                has_result_ = true;
+            }
             prompt_text_ = prompt;
             create_input_widget();
             input_widget_.setValue('');
