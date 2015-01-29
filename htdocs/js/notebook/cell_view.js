@@ -56,12 +56,13 @@ function create_cell_html_view(language, cell_model) {
     var cell_status_left = $("<div class='cell-status-left'></div>");
     cell_status.append(cell_status_left);
 
-    var cell_control_bar = $("<div class='cell-control-bar'></div>");
-    cell_status.append(cell_control_bar);
     left_controls_ = RCloud.UI.cell_commands.decorate('left', cell_status_left, cell_model, result);
 
     cell_status.append($("<div style='clear:both;'></div>"));
 
+    var cell_control_bar = $("<div class='cell-control-bar'></div>");
+    cell_status.append(cell_control_bar);
+    cell_control_bar.mousedown(function() { return false; }); // not sortable here
     cell_controls_ = RCloud.UI.cell_commands.decorate('cell', cell_control_bar, cell_model, result);
 
     notebook_cell_div.append(cell_status);

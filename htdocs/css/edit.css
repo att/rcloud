@@ -223,6 +223,7 @@ rect.frame {
     bottom: 0;
     right: 0;
     padding: 2 2 2 2px;
+    cursor: default; /* override status area */
 }
 
 .cell-control-bar select.cell-control {
