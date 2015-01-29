@@ -10,6 +10,18 @@ while [ "$1" != "" ]; do
         --core) PACKAGE_DIRS="internal rcloud.packages" ;; # the default
         --all) PACKAGE_DIRS="internal rcloud.packages packages" ;;
         --cont) BREAK=0 ;;
+        --help) cat <<EOF
+
+ Usage: $0 [{--base | --core | --all}] [--cont]
+
+ Base is the smallest set, 'core' (the default) includes
+ rcloud.packages and 'all' includes all other packages.
+
+ The default is to stop if any package fails to build,
+ --cont can be used to ignore failures and continue.
+
+EOF
+        exit 0 ;;
         *) echo "unknown option" $1 && exit 1 ;;
     esac
     shift
