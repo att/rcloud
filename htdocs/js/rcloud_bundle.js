@@ -1646,30 +1646,34 @@ function create_cell_html_view(language, cell_model) {
         if(whether) {
             // distinguish between a click and a drag
             // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
-            div.on('mousedown', function(e) {
-                $(this).data('p0', { x: e.pageX, y: e.pageY });
-            }).on('mouseup', function(e) {
-                var p0 = $(this).data('p0');
-                if(p0) {
-                    var p1 = { x: e.pageX, y: e.pageY },
-                        d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
-                    if (d < 4) {
-                        result.edit_source(true, e);
-                        div.mouseleave();
+            div.on({
+                'mousedown.rcloud-cell': function(e) {
+                    $(this).data('p0', { x: e.pageX, y: e.pageY });
+                },
+                'mouseup.rcloud-cell': function(e) {
+                    var p0 = $(this).data('p0');
+                    if(p0) {
+                        var p1 = { x: e.pageX, y: e.pageY },
+                            d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
+                        if (d < 4) {
+                            result.edit_source(true, e);
+                            div.mouseleave();
+                        }
                     }
+                },
+                'mouseenter.rcloud-cell': function() {
+                    if(edit_mode_) // don't highlight if it won't do anything
+                        return;
+                    var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
+                    var avg_color = d3.interpolateHsl('#f5f5f5', edit_color)(0.75);
+                    $(this).css('background-color', avg_color);
+                },
+                'mouseleave.rcloud-cell': function() {
+                    $(this).css('background-color', '');
                 }
             });
-            div.hover(function() {
-                if(edit_mode_) // don't highlight if it won't do anything
-                    return;
-                var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
-                var avg_color = d3.interpolateHsl('#f5f5f5', edit_color)(0.75);
-                $(this).css('background-color', avg_color);
-            }, function() {
-                $(this).css('background-color', '');
-            });
         }
-        else div.off('mousedown').off('mouseup');
+        else div.off('mousedown.rcloud-cell mouseup.rcloud-cell mouseenter.rcloud-cell mouseleave.rcloud-cell');
     }
 
     function display_status(status) {
@@ -1722,7 +1726,7 @@ function create_cell_html_view(language, cell_model) {
         ace_session_ = aaa.session;
         ace_document_ = aaa.document;
 
-        ace_session_.on('change', function() {
+        ace_session_.on('change.rcloud-cell', function() {
             set_widget_height();
             ace_widget_.resize();
         });
@@ -1800,6 +1804,8 @@ function create_cell_html_view(language, cell_model) {
             elem.addClass(hljs_class);
         code_div_.append($('<pre></pre>').append(elem));
         highlight_code();
+        if(am_read_only_ !== 'unknown')
+            click_to_edit(code_div_.find('pre'), !am_read_only_);
     }
     assign_code();
 
