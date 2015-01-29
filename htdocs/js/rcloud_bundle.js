@@ -1617,12 +1617,13 @@ function create_cell_html_view(language, cell_model) {
     var cell_status_left = $("<div class='cell-status-left'></div>");
     cell_status.append(cell_status_left);
 
-    var cell_control_bar = $("<div class='cell-control-bar'></div>");
-    cell_status.append(cell_control_bar);
     left_controls_ = RCloud.UI.cell_commands.decorate('left', cell_status_left, cell_model, result);
 
     cell_status.append($("<div style='clear:both;'></div>"));
 
+    var cell_control_bar = $("<div class='cell-control-bar'></div>");
+    cell_status.append(cell_control_bar);
+    cell_control_bar.mousedown(function() { return false; }); // not sortable here
     cell_controls_ = RCloud.UI.cell_commands.decorate('cell', cell_control_bar, cell_model, result);
 
     notebook_cell_div.append(cell_status);
@@ -1676,30 +1677,34 @@ function create_cell_html_view(language, cell_model) {
         if(whether) {
             // distinguish between a click and a drag
             // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
-            div.on('mousedown', function(e) {
-                $(this).data('p0', { x: e.pageX, y: e.pageY });
-            }).on('mouseup', function(e) {
-                var p0 = $(this).data('p0');
-                if(p0) {
-                    var p1 = { x: e.pageX, y: e.pageY },
-                        d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
-                    if (d < 4) {
-                        result.edit_source(true, e);
-                        div.mouseleave();
+            div.on({
+                'mousedown.rcloud-cell': function(e) {
+                    $(this).data('p0', { x: e.pageX, y: e.pageY });
+                },
+                'mouseup.rcloud-cell': function(e) {
+                    var p0 = $(this).data('p0');
+                    if(p0) {
+                        var p1 = { x: e.pageX, y: e.pageY },
+                            d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
+                        if (d < 4) {
+                            result.edit_source(true, e);
+                            div.mouseleave();
+                        }
                     }
+                },
+                'mouseenter.rcloud-cell': function() {
+                    if(edit_mode_) // don't highlight if it won't do anything
+                        return;
+                    var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
+                    var avg_color = d3.interpolateHsl('#f5f5f5', edit_color)(0.75);
+                    $(this).css('background-color', avg_color);
+                },
+                'mouseleave.rcloud-cell': function() {
+                    $(this).css('background-color', '');
                 }
             });
-            div.hover(function() {
-                if(edit_mode_) // don't highlight if it won't do anything
-                    return;
-                var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
-                var avg_color = d3.interpolateHsl('#f5f5f5', edit_color)(0.75);
-                $(this).css('background-color', avg_color);
-            }, function() {
-                $(this).css('background-color', '');
-            });
         }
-        else div.off('mousedown').off('mouseup');
+        else div.off('mousedown.rcloud-cell mouseup.rcloud-cell mouseenter.rcloud-cell mouseleave.rcloud-cell');
     }
 
     function display_status(status) {
@@ -1752,7 +1757,7 @@ function create_cell_html_view(language, cell_model) {
         ace_session_ = aaa.session;
         ace_document_ = aaa.document;
 
-        ace_session_.on('change', function() {
+        ace_session_.on('change.rcloud-cell', function() {
             set_widget_height();
             ace_widget_.resize();
         });
@@ -1830,6 +1835,8 @@ function create_cell_html_view(language, cell_model) {
             elem.addClass(hljs_class);
         code_div_.append($('<pre></pre>').append(elem));
         highlight_code();
+        if(am_read_only_ !== 'unknown')
+            click_to_edit(code_div_.find('pre'), !am_read_only_);
     }
     assign_code();
 
@@ -1869,7 +1876,6 @@ function create_cell_html_view(language, cell_model) {
             display_status(status);
         },
         start_output: function() {
-            display_status('Receiving...');
         },
         add_result: function(type, r) {
             if(!has_result_) {
@@ -1906,6 +1912,11 @@ function create_cell_html_view(language, cell_model) {
             result_updated();
         },
         end_output: function() {
+            if(!has_result_) {
+                // the no-output case
+                result_div_.empty();
+                has_result_ = true;
+            }
             current_result_ = null;
         },
         clear_result: clear_result,
@@ -2020,6 +2031,10 @@ function create_cell_html_view(language, cell_model) {
                 source_div_.show();
         },
         get_input: function(type, prompt, k) {
+            if(!has_result_) {
+                result_div_.empty();
+                has_result_ = true;
+            }
             prompt_text_ = prompt;
             create_input_widget();
             input_widget_.setValue('');
@@ -3473,16 +3488,16 @@ RCloud.language = (function() {
 
     return {
         is_a_markdown: function(language) {
-            return languages_[language].is_a_markdown;
+            return languages_[language] ? languages_[language].is_a_markdown : false;
         },
         ace_mode: function(language) {
-            return languages_[language].ace_mode || languages_.Text.ace_mode;
+            return (languages_[language] && languages_[language].ace_mode) || languages_.Text.ace_mode;
         },
         extension: function(language) {
-            return languages_[language].extension;
+            return (languages_[language] && languages_[language].extension) || '';
         },
         hljs_class: function(language) {
-            return languages_[language].hljs_class || null;
+            return (languages_[language] && languages_[language].hljs_class) || null;
         },
         // don't call _set_available_languages yourself; it's called
         // by the session initialization code.
