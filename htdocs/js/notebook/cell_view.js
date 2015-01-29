@@ -62,7 +62,10 @@ function create_cell_html_view(language, cell_model) {
 
     var cell_control_bar = $("<div class='cell-control-bar'></div>");
     cell_status.append(cell_control_bar);
-    cell_control_bar.mousedown(function() { return false; }); // not sortable here
+    // disable sort action on the control bar area
+    cell_control_bar.mousedown(function(e) {
+        e.stopPropagation();
+    });
     cell_controls_ = RCloud.UI.cell_commands.decorate('cell', cell_control_bar, cell_model, result);
 
     notebook_cell_div.append(cell_status);
