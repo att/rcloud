@@ -547,6 +547,23 @@ function create_cell_html_view(language, cell_model) {
                 assign_code(text);
             }
             highlights_ = ranges;
+        },
+        change_active_highlight: function(range) {
+            if(!range)
+                code_div_.find('.find-highlight.active').toggleClass('active', false);
+            else {
+                // http://stackoverflow.com/questions/7969031/indexof-element-in-js-array-using-a-truth-function-using-underscore-or-jquery
+                function find(collection, filter) {
+                    for (var i = 0; i < collection.length; i++) {
+                        if(filter(collection[i], i, collection)) return i;
+                    }
+                    return -1;
+                }
+                var i = find(highlights_, function(r) { return r.begin === range.begin && r.end === range.end; });
+                if(i<0)
+                    throw new Error('unknown find result ' + JSON.stringify(range));
+                code_div_.find('.find-highlight').eq(i).toggleClass('active', true);
+            }
         }
     });
 

@@ -279,6 +279,10 @@ rect.frame {
     background-color: yellow;
 }
 
+.find-highlight.active {
+    background-color: orange;
+}
+
 .find-highlight.current {
     background-color: orange;
 }

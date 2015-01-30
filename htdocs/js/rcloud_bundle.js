@@ -2102,6 +2102,23 @@ function create_cell_html_view(language, cell_model) {
                 assign_code(text);
             }
             highlights_ = ranges;
+        },
+        change_active_highlight: function(range) {
+            if(!range)
+                code_div_.find('.find-highlight.active').toggleClass('active', false);
+            else {
+                // http://stackoverflow.com/questions/7969031/indexof-element-in-js-array-using-a-truth-function-using-underscore-or-jquery
+                function find(collection, filter) {
+                    for (var i = 0; i < collection.length; i++) {
+                        if(filter(collection[i], i, collection)) return i;
+                    }
+                    return -1;
+                }
+                var i = find(highlights_, function(r) { return r.begin === range.begin && r.end === range.end; });
+                if(i<0)
+                    throw new Error('unknown find result ' + JSON.stringify(range));
+                code_div_.find('.find-highlight').eq(i).toggleClass('active', true);
+            }
         }
     });
 
@@ -4910,36 +4927,87 @@ RCloud.UI.fatal_dialog = function(message, label, href) {
 
 })();
 RCloud.UI.find_replace = (function() {
-    var find_dialog_ = null,
+    var find_dialog_ = null, regex_,
         find_desc_, find_input_, replace_desc_, replace_input_, replace_stuff_,
-        find_next_, find_last_, replace_all_,
+        find_next_, find_last_, replace_next_, replace_all_,
         shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
-        matches_ = {}, currentCell_, currentMatch_;
+        matches_ = [], active_match_;
     function toggle_find_replace(replace) {
         if(!find_dialog_) {
             find_dialog_ = $('<div id="find-dialog"></div>');
             var find_form = $('<form id="find-form"></form>');
             find_desc_ = $('<label id="find-label" for="find-input"><span>Find</span></label>');
-            find_input_ = $('<input id="find-input" class="form-control-ext"></input>');
+            find_input_ = $('<input type=text id="find-input" class="form-control-ext"></input>');
             replace_desc_ = $('<label id="replace-label" for="replace-input"><span>Replace with</span></label>');
-            replace_input_ = $('<input id="replace-input" class="form-control-ext"></input>');
+            replace_input_ = $('<input type=text id="replace-input" class="form-control-ext"></input>');
             find_next_ = $('<button id="find-next" class="btn btn-primary">Next</button>');
-            find_last_ = $('<button id="find-last" class="btn btn-primary">Last</button>');
+            find_last_ = $('<button id="find-last" class="btn">Last</button>');
+            replace_next_ = $('<button id="replace" class="btn">Replace</button>');
             replace_all_ = $('<button id="replace-all" class="btn">Replace All</button>');
-            replace_stuff_ = replace_desc_.add(replace_input_).add(replace_all_);
+            replace_stuff_ = replace_desc_.add(replace_input_).add(replace_next_).add(replace_all_);
             var close = $('<span id="find-close"><i class="icon-remove"></i></span>');
-            find_form.append(find_desc_.append(find_input_), replace_desc_.append(replace_input_), find_next_, find_last_, replace_all_, close);
+            find_form.append(find_desc_.append(find_input_), replace_desc_.append(replace_input_), find_next_, find_last_, replace_next_, replace_all_, close);
             find_dialog_.append(find_form);
             $('#middle-column').prepend(find_dialog_);
 
             find_input_.on('input', function(val) {
-                currentCell_ = currentMatch_ = undefined;
-                highlight_all(find_input_.val());
+                active_match_ = undefined;
+                build_regex(find_input_.val());
+                highlight_all();
             });
 
-            find_next_.click(function() {
-                alert('find next!');
+            function deactivate_match() {
+                var match;
+                if(active_match_ !== undefined) {
+                    match = matches_[active_match_];
+                    shell.notebook.model.cells[match.index].notify_views(function(view) {
+                        view.change_active_highlight(null);
+                    });
+                }
+            }
+            function activate_match() {
+                var match = matches_[active_match_];
+                shell.notebook.model.cells[match.index].notify_views(function(view) {
+                    view.change_active_highlight(match);
+                });
+            }
+
+            function find_next() {
+                deactivate_match();
+                if(active_match_ !== undefined)
+                    active_match_ = (active_match_ + 1) % matches_.length;
+                else
+                    active_match_ = 0;
+                activate_match();
+                return false;
+            }
+            find_next_.click(find_next);
+
+            find_last_.click(function() {
+                deactivate_match();
+                if(active_match_ !== undefined)
+                    active_match_ = (active_match_ + matches_.length - 1) % matches_.length;
+                else
+                    active_match_ = 0;
+                activate_match();
+                return false;
+            });
+
+            replace_next_.click(function() {
+                var match = matches_[active_match_];
+                if(active_match_ !== undefined) {
+                    var cell = shell.notebook.model.cells[match.index];
+                    var content = cell.content();
+                    var before = content.substring(0, match.begin),
+                        after = content.substring(match.end);
+                    cell.content(before + replace_input_.val() + after);
+                    cell.notify_views(function(view) {
+                        view.content_updated();
+                    });
+                    update_cell_highlights(cell);
+                }
+                find_next();
                 return false;
             });
 
@@ -4951,7 +5019,7 @@ RCloud.UI.find_replace = (function() {
             find_cycle_ = ['find-input', 'find-next', 'find-last'];
             replace_cycle_ = ['find-input', 'replace-input', 'find-next', 'find-last', 'replace-all'];
 
-            var click_find_next = function(e) {
+            function click_find_next(e) {
                 if(e.keyCode===13) {
                     find_next_.click();
                     return false;
@@ -4994,12 +5062,14 @@ RCloud.UI.find_replace = (function() {
             replace_stuff_.show();
         else
             replace_stuff_.hide();
-        highlight_all(find_input_.val());
+        build_regex(find_input_.val());
+        highlight_all();
         shown_ = true;
         replace_mode_ = replace;
     }
     function hide_dialog() {
-        highlight_all(null);
+        build_regex(null);
+        highlight_all();
         find_dialog_.hide();
         shown_ = false;
     }
@@ -5008,24 +5078,38 @@ RCloud.UI.find_replace = (function() {
         // regex option will skip this
         return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     }
-    function highlight_all(find) {
-        var regex = find && find.length ? new RegExp(escapeRegExp(find), 'g') : null;
-        shell.notebook.model.cells.forEach(function(cell) {
-            var matches = [];
-            if(regex) {
-                var content = cell.content(), match;
-                while((match = regex.exec(content))) {
-                    matches.push({
-                        begin: match.index,
-                        end: match.index+match[0].length
-                    });
-                    if(match.index === regex.lastIndex) ++regex.lastIndex;
-                }
+    function build_regex(find) {
+        regex_ = find && find.length ? new RegExp(escapeRegExp(find), 'g') : null;
+    }
+    function highlight_cell(cell) {
+        var matches = [];
+        if(regex_) {
+            var content = cell.content(), match;
+            while((match = regex_.exec(content))) {
+                matches.push({
+                    begin: match.index,
+                    end: match.index+match[0].length
+                });
+                if(match.index === regex_.lastIndex) ++regex_.lastIndex;
             }
-            cell.notify_views(function(view) {
-                view.change_highlights(matches);
-            });
-            matches_[cell.filename()] = matches;
+        }
+        cell.notify_views(function(view) {
+            view.change_highlights(matches);
+        });
+        return matches;
+    }
+    function update_cell_highlights(cell) {
+        // inefficient: really want splice range
+        matches_ = _.filter(matches_, function(m) { return m.filename != cell.filename(); })
+            .concat(highlight_cell(cell)).sort(function(a,b) { return a.index-b.index; });
+    }
+    function highlight_all() {
+        matches_ = [];
+        shell.notebook.model.cells.forEach(function(cell, n) {
+            var matches = highlight_cell(cell);
+            matches_.push.apply(matches_, matches.map(function(match) {
+                return _.extend({index: n, filename: cell.filename()}, match);
+            }));
         });
     }
     function replace_all(find, replace) {
