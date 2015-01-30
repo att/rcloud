@@ -302,10 +302,22 @@ rect.frame {
     overflow-y: auto;
 }
 
+/* this is really just the "new notebook" button, but part of it
+   may apply to other buttons */
 .header-button {
-    float: right;
     font-size: 120%;
     color: #f1f1e5;
+    position: absolute;
+    width: 32;
+    height: 34;
+    top: -10px;
+    right: -12px;
+}
+
+.header-button span {
+    position: relative;
+    left: 10px;
+    top: 10px;
 }
 
 /* Ace sets its z-index to something obscene,
