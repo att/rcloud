@@ -99,6 +99,7 @@ div.panel-heading:hover {
 
 .r-result-div, .r-result-div pre {
     padding: 0;
+    background-color: white
 }
 
 .r-result-div pre {
@@ -145,6 +146,23 @@ div.panel-heading:hover {
     border-radius: 0;
     border: 0;
 }
+
+.cell-status {
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+    cursor: grab;
+    position: relative;
+    width: 100%;
+    height: 25px;
+    background-color: #f5f5f5;
+}
+
+.cell-status-left {
+    position: absolute;
+    top: 0px;
+}
+
+
 
 .cell-controls {
     z-index: 5; /* in order to beat the default */
