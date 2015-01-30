@@ -69,8 +69,6 @@
 
 * Option to turn off terse dates (#1040)
 
-* Year is shown if notebook is more than a year old (#986)
-
 * Cell number is shown above each cell in its status area (#1126)
 
 * `shared.R` can be used to serve static content out of of the `www/` folder of
