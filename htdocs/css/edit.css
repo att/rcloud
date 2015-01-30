@@ -206,6 +206,12 @@ rect.frame {
     background: #f5f5f5;
 }
 
+.cell-status {
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+    cursor: grab;
+}
+
 .cell-status.big {
     height: 35px;
 }
