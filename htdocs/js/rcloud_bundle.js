@@ -1576,7 +1576,8 @@ function create_cell_html_view(language, cell_model) {
     }
     function update_div_id() {
         notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
-        left_controls_.controls['cell_number'].set(cell_model.id());
+        if(left_controls_)
+            left_controls_.controls['cell_number'].set(cell_model.id());
     }
     function set_widget_height() {
         source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +
@@ -1584,26 +1585,25 @@ function create_cell_html_view(language, cell_model) {
     }
 
     var cell_status = $("<div class='cell-status'></div>");
+
     var cell_status_left = $("<div class='cell-status-left'></div>");
     cell_status.append(cell_status_left);
-
     left_controls_ = RCloud.UI.cell_commands.decorate('left', cell_status_left, cell_model, result);
 
-    cell_status.append($("<div style='clear:both;'></div>"));
+    if(!shell.is_view_mode()) {
+        var cell_control_bar = $("<div class='cell-control-bar'></div>");
+        cell_status.append(cell_control_bar);
+        // disable sort action on the control bar area
+        cell_control_bar.mousedown(function(e) {
+            e.stopPropagation();
+        });
+        cell_controls_ = RCloud.UI.cell_commands.decorate('cell', cell_control_bar, cell_model, result);
 
-    var cell_control_bar = $("<div class='cell-control-bar'></div>");
-    cell_status.append(cell_control_bar);
-    // disable sort action on the control bar area
-    cell_control_bar.mousedown(function(e) {
-        e.stopPropagation();
-    });
-    cell_controls_ = RCloud.UI.cell_commands.decorate('cell', cell_control_bar, cell_model, result);
-
+        var cell_commands_above = $("<div class='cell-controls-above'></div>");
+        above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
+        notebook_cell_div.append(cell_commands_above);
+    }
     notebook_cell_div.append(cell_status);
-
-    var cell_commands_above = $("<div class='cell-controls-above'></div>");
-    above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
-    notebook_cell_div.append(cell_commands_above);
 
     var edit_colors_ = {
         markdown: "#F7EEE4",
@@ -1617,7 +1617,8 @@ function create_cell_html_view(language, cell_model) {
 
     function update_language() {
         language = cell_model.language();
-        cell_controls_.controls['language_cell'].set(language);
+        if(cell_controls_)
+            cell_controls_.controls['language_cell'].set(language);
         if(ace_widget_) {
             set_background_color(language);
             var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
@@ -1897,8 +1898,10 @@ function create_cell_html_view(language, cell_model) {
             am_read_only_ = readonly;
             if(ace_widget_)
                 ui_utils.set_ace_readonly(ace_widget_, readonly );
-            cell_controls_.set_flag('modify', !readonly);
-            above_between_controls_.set_flag('modify', !readonly);
+            [cell_controls_, above_between_controls_, left_controls_].forEach(function(controls) {
+                if(controls)
+                    controls.set_flag('modify', !readonly);
+            });
             click_to_edit(code_div_.find('pre'), !readonly);
         },
         click_to_edit: click_to_edit,
@@ -1967,7 +1970,8 @@ function create_cell_html_view(language, cell_model) {
                 ace_widget_.resize(true);
                 set_widget_height();
                 ace_widget_.resize(true);
-                cell_controls_.set_flag('edit', true);
+                if(cell_controls_)
+                    cell_controls_.set_flag('edit', true);
                 outer_ace_div.show();
                 ace_widget_.resize(); // again?!?
                 ace_widget_.focus();
@@ -1987,7 +1991,8 @@ function create_cell_html_view(language, cell_model) {
                 if(new_content!==null) // if any change (including removing the content)
                     cell_model.parent_model.controller.update_cell(cell_model);
                 source_div_.css({'height': ''});
-                cell_controls_.set_flag('edit', false);
+                if(cell_controls_)
+                    cell_controls_.set_flag('edit', false);
                 code_div_.show();
                 outer_ace_div.hide();
             }
@@ -2036,7 +2041,8 @@ function create_cell_html_view(language, cell_model) {
             }
         },
         check_buttons: function() {
-            above_between_controls_.betweenness(!!cell_model.parent_model.prior_cell(cell_model));
+            if(above_between_controls_)
+                above_between_controls_.betweenness(!!cell_model.parent_model.prior_cell(cell_model));
         },
         change_highlights: function(ranges) {
             if(edit_mode_) {
