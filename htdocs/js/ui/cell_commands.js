@@ -11,13 +11,26 @@ RCloud.UI.cell_commands = (function() {
         return {
             controls: commands_,
             set_flag: function(flag, value) {
-                // a command will be enabled iff all of its flags are enabled
+                var checkf = function(f) {
+                    var reverse;
+                    if(f.substr(0,1)=='!') {
+                        reverse = true;
+                        f = f.substr(1);
+                    }
+                    return reverse^flags_[f];
+                };
+                // a command will be enabled iff all of its enable_flags are true
+                // a command will be shown iff all of its display_flags are true
                 flags_[flag] = value;
                 extension_.entries(area).forEach(function(cmd) {
-                    if(!_.every(cmd.flags, function(f) { return flags_[f]; }))
+                    if(!_.every(cmd.enable_flags, checkf))
                         commands_[cmd.key].disable();
                     else
                         commands_[cmd.key].enable();
+                    if(!_.every(cmd.display_flags, checkf))
+                        commands_[cmd.key].control.hide();
+                    else
+                        commands_[cmd.key].control.show();
                 });
             }
         };
@@ -111,7 +124,7 @@ RCloud.UI.cell_commands = (function() {
                 insert: {
                     area: 'above',
                     sort: 1000,
-                    flags: ['modify'],
+                    enable_flags: ['modify'],
                     create: function(cell_model) {
                         return that.create_button("icon-plus-sign", "insert cell", function() {
                             shell.insert_cell_before("", cell_model.language(), cell_model.id())
@@ -122,7 +135,7 @@ RCloud.UI.cell_commands = (function() {
                 join: {
                     area: 'between',
                     sort: 2000,
-                    flags: ['modify'],
+                    enable_flags: ['modify'],
                     create: function(cell_model) {
                         return that.create_button("icon-link", "join cells", function() {
                             shell.join_prior_cell(cell_model);
@@ -132,7 +145,7 @@ RCloud.UI.cell_commands = (function() {
                 language_cell: {
                     area: 'cell',
                     sort: 1000,
-                    flags: ['modify'],
+                    enable_flags: ['modify'],
                     create: function(cell_model, cell_view) {
                         var languages = RCloud.language.available_languages();
                         if(languages.indexOf(cell_model.language())<0)
@@ -155,14 +168,14 @@ RCloud.UI.cell_commands = (function() {
                 edit: {
                     area: 'cell',
                     sort: 3000,
-                    flags: ['modify'],
+                    enable_flags: ['modify'],
                     create: function(cell_model, cell_view) {
                         return that.create_button("icon-edit", "toggle edit", function() {
                             cell_view.toggle_edit();
                         });
                     }
                 },
-                gap: {
+                command_gap: {
                     area: 'cell',
                     sort: 3500,
                     create: function(cell_model) {
@@ -172,7 +185,7 @@ RCloud.UI.cell_commands = (function() {
                 split: {
                     area: 'cell',
                     sort: 4000,
-                    flags: ['modify', 'edit'],
+                    enable_flags: ['modify', 'edit'],
                     create: function(cell_model, cell_view) {
                         return that.create_button("icon-unlink", "split cell", function() {
                             var ace_widget = cell_view.ace_widget();
@@ -190,7 +203,7 @@ RCloud.UI.cell_commands = (function() {
                 remove: {
                     area: 'cell',
                     sort: 5000,
-                    flags: ['modify'],
+                    enable_flags: ['modify'],
                     create: function(cell_model) {
                         return that.create_button("icon-trash", "remove", function() {
                             cell_model.parent_model.controller.remove_cell(cell_model);
@@ -200,11 +213,20 @@ RCloud.UI.cell_commands = (function() {
                 grab_affordance: {
                     area: 'left',
                     sort: 1000,
+                    display_flags: ['modify'],
                     create: function(cell_model) {
-                        var svg = "<object data='/img/grab_affordance.svg' type='image/svg+xml'></object>";
+                        var svg = "<img src='/img/grab_affordance.svg' type='image/svg+xml'></img>";
                         return that.create_static(svg, function(x) {
                             return $("<span class='grab-affordance'>").append(x);
                         });
+                    }
+                },
+                left_gap: {
+                    area: 'left',
+                    sort: 1500,
+                    display_flags: ['!modify'],
+                    create: function(cell_model) {
+                        return that.create_static('&nbsp;');
                     }
                 },
                 cell_number: {

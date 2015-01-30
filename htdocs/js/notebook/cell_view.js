@@ -22,6 +22,7 @@ function create_cell_html_view(language, cell_model) {
     var result_div_, has_result_;
     var current_result_; // text is aggregated
     var change_content_;
+    var cell_status_;
     var above_between_controls_, cell_controls_, left_controls_;
     var edit_mode_; // note: starts neither true nor false
     var highlights_;
@@ -53,15 +54,15 @@ function create_cell_html_view(language, cell_model) {
                                    EXTRA_HEIGHT_SOURCE) + "px");
     }
 
-    var cell_status = $("<div class='cell-status'></div>");
+    cell_status_ = $("<div class='cell-status'></div>");
 
     var cell_status_left = $("<div class='cell-status-left'></div>");
-    cell_status.append(cell_status_left);
+    cell_status_.append(cell_status_left);
     left_controls_ = RCloud.UI.cell_commands.decorate('left', cell_status_left, cell_model, result);
 
     if(!shell.is_view_mode()) {
         var cell_control_bar = $("<div class='cell-control-bar'></div>");
-        cell_status.append(cell_control_bar);
+        cell_status_.append(cell_control_bar);
         // disable sort action on the control bar area
         cell_control_bar.mousedown(function(e) {
             e.stopPropagation();
@@ -72,7 +73,7 @@ function create_cell_html_view(language, cell_model) {
         above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
         notebook_cell_div.append(cell_commands_above);
     }
-    notebook_cell_div.append(cell_status);
+    notebook_cell_div.append(cell_status_);
 
     var edit_colors_ = {
         markdown: "#F7EEE4",
@@ -372,6 +373,7 @@ function create_cell_html_view(language, cell_model) {
                     controls.set_flag('modify', !readonly);
             });
             click_to_edit(code_div_.find('pre'), !readonly);
+            cell_status_.toggleClass('readonly', readonly);
         },
         click_to_edit: click_to_edit,
 

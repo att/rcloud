@@ -206,7 +206,7 @@ rect.frame {
     background: #f5f5f5;
 }
 
-.cell-status {
+.cell-status:not(.readonly) {
     cursor: -moz-grab;
     cursor: -webkit-grab;
     cursor: grab;
@@ -850,11 +850,6 @@ div.r-result-div p {
 
 pre {
     max-width: 100%;
-}
-
-.grab-affordance {
-    position: relative;
-    top: 5px;
 }
 
 .cell-number {
