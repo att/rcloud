@@ -486,12 +486,6 @@ ui_utils.on_next_tick = function(f) {
     window.setTimeout(f, 0);
 };
 
-ui_utils.add_ace_grab_affordance = function(element) {
-    var sel = $(element).children().filter(".ace_gutter");
-    var div = $("<div class='grab-affordance' style='position:absolute;top:0px'><object data='/img/grab_affordance.svg' type='image/svg+xml'></object></div>");
-    sel.append(div);
-};
-
 ui_utils.scroll_to_after = function($sel, duration) {
     // no idea why the plugin doesn't take current scroll into account when using
     // the element parameter version

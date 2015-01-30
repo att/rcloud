@@ -1125,12 +1125,6 @@ ui_utils.on_next_tick = function(f) {
     window.setTimeout(f, 0);
 };
 
-ui_utils.add_ace_grab_affordance = function(element) {
-    var sel = $(element).children().filter(".ace_gutter");
-    var div = $("<div class='grab-affordance' style='position:absolute;top:0px'><object data='/img/grab_affordance.svg' type='image/svg+xml'></object></div>");
-    sel.append(div);
-};
-
 ui_utils.scroll_to_after = function($sel, duration) {
     // no idea why the plugin doesn't take current scroll into account when using
     // the element parameter version
@@ -1583,6 +1577,7 @@ function create_cell_html_view(language, cell_model) {
     var result_div_, has_result_;
     var current_result_; // text is aggregated
     var change_content_;
+    var cell_status_;
     var above_between_controls_, cell_controls_, left_controls_;
     var edit_mode_; // note: starts neither true nor false
     var highlights_;
@@ -1606,31 +1601,34 @@ function create_cell_html_view(language, cell_model) {
     }
     function update_div_id() {
         notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
-        left_controls_.controls['cell_number'].set(cell_model.id());
+        if(left_controls_)
+            left_controls_.controls['cell_number'].set(cell_model.id());
     }
     function set_widget_height() {
         source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +
                                    EXTRA_HEIGHT_SOURCE) + "px");
     }
 
-    var cell_status = $("<div class='cell-status'></div>");
-    var cell_status_left = $("<div class='cell-status-left'></div>");
-    cell_status.append(cell_status_left);
+    cell_status_ = $("<div class='cell-status'></div>");
 
+    var cell_status_left = $("<div class='cell-status-left'></div>");
+    cell_status_.append(cell_status_left);
     left_controls_ = RCloud.UI.cell_commands.decorate('left', cell_status_left, cell_model, result);
 
-    cell_status.append($("<div style='clear:both;'></div>"));
+    if(!shell.is_view_mode()) {
+        var cell_control_bar = $("<div class='cell-control-bar'></div>");
+        cell_status_.append(cell_control_bar);
+        // disable sort action on the control bar area
+        cell_control_bar.mousedown(function(e) {
+            e.stopPropagation();
+        });
+        cell_controls_ = RCloud.UI.cell_commands.decorate('cell', cell_control_bar, cell_model, result);
 
-    var cell_control_bar = $("<div class='cell-control-bar'></div>");
-    cell_status.append(cell_control_bar);
-    cell_control_bar.mousedown(function() { return false; }); // not sortable here
-    cell_controls_ = RCloud.UI.cell_commands.decorate('cell', cell_control_bar, cell_model, result);
-
-    notebook_cell_div.append(cell_status);
-
-    var cell_commands_above = $("<div class='cell-controls-above'></div>");
-    above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
-    notebook_cell_div.append(cell_commands_above);
+        var cell_commands_above = $("<div class='cell-controls-above'></div>");
+        above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
+        notebook_cell_div.append(cell_commands_above);
+    }
+    notebook_cell_div.append(cell_status_);
 
     var edit_colors_ = {
         markdown: "#F7EEE4",
@@ -1644,7 +1642,8 @@ function create_cell_html_view(language, cell_model) {
 
     function update_language() {
         language = cell_model.language();
-        cell_controls_.controls['language_cell'].set(language);
+        if(cell_controls_)
+            cell_controls_.controls['language_cell'].set(language);
         if(ace_widget_) {
             set_background_color(language);
             var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
@@ -1924,9 +1923,12 @@ function create_cell_html_view(language, cell_model) {
             am_read_only_ = readonly;
             if(ace_widget_)
                 ui_utils.set_ace_readonly(ace_widget_, readonly );
-            cell_controls_.set_flag('modify', !readonly);
-            above_between_controls_.set_flag('modify', !readonly);
+            [cell_controls_, above_between_controls_, left_controls_].forEach(function(controls) {
+                if(controls)
+                    controls.set_flag('modify', !readonly);
+            });
             click_to_edit(code_div_.find('pre'), !readonly);
+            cell_status_.toggleClass('readonly', readonly);
         },
         click_to_edit: click_to_edit,
 
@@ -1997,7 +1999,8 @@ function create_cell_html_view(language, cell_model) {
                 ace_widget_.resize(true);
                 set_widget_height();
                 ace_widget_.resize(true);
-                cell_controls_.set_flag('edit', true);
+                if(cell_controls_)
+                    cell_controls_.set_flag('edit', true);
                 outer_ace_div.show();
                 ace_widget_.resize(); // again?!?
                 ace_widget_.focus();
@@ -2017,7 +2020,8 @@ function create_cell_html_view(language, cell_model) {
                 if(new_content!==null) // if any change (including removing the content)
                     cell_model.parent_model.controller.update_cell(cell_model);
                 source_div_.css({'height': ''});
-                cell_controls_.set_flag('edit', false);
+                if(cell_controls_)
+                    cell_controls_.set_flag('edit', false);
                 code_div_.show();
                 outer_ace_div.hide();
             }
@@ -2066,7 +2070,8 @@ function create_cell_html_view(language, cell_model) {
             }
         },
         check_buttons: function() {
-            above_between_controls_.betweenness(!!cell_model.parent_model.prior_cell(cell_model));
+            if(above_between_controls_)
+                above_between_controls_.betweenness(!!cell_model.parent_model.prior_cell(cell_model));
         },
         change_highlights: function(ranges) {
             if(edit_mode_) {
@@ -3811,13 +3816,26 @@ RCloud.UI.cell_commands = (function() {
         return {
             controls: commands_,
             set_flag: function(flag, value) {
-                // a command will be enabled iff all of its flags are enabled
+                var checkf = function(f) {
+                    var reverse;
+                    if(f.substr(0,1)=='!') {
+                        reverse = true;
+                        f = f.substr(1);
+                    }
+                    return reverse^flags_[f];
+                };
+                // a command will be enabled iff all of its enable_flags are true
+                // a command will be shown iff all of its display_flags are true
                 flags_[flag] = value;
                 extension_.entries(area).forEach(function(cmd) {
-                    if(!_.every(cmd.flags, function(f) { return flags_[f]; }))
+                    if(!_.every(cmd.enable_flags, checkf))
                         commands_[cmd.key].disable();
                     else
                         commands_[cmd.key].enable();
+                    if(!_.every(cmd.display_flags, checkf))
+                        commands_[cmd.key].control.hide();
+                    else
+                        commands_[cmd.key].control.show();
                 });
             }
         };
@@ -3911,7 +3929,7 @@ RCloud.UI.cell_commands = (function() {
                 insert: {
                     area: 'above',
                     sort: 1000,
-                    flags: ['modify'],
+                    enable_flags: ['modify'],
                     create: function(cell_model) {
                         return that.create_button("icon-plus-sign", "insert cell", function() {
                             shell.insert_cell_before("", cell_model.language(), cell_model.id())
@@ -3924,7 +3942,7 @@ RCloud.UI.cell_commands = (function() {
                 join: {
                     area: 'between',
                     sort: 2000,
-                    flags: ['modify'],
+                    enable_flags: ['modify'],
                     create: function(cell_model) {
                         return that.create_button("icon-link", "join cells", function() {
                             shell.join_prior_cell(cell_model);
@@ -3934,7 +3952,7 @@ RCloud.UI.cell_commands = (function() {
                 language_cell: {
                     area: 'cell',
                     sort: 1000,
-                    flags: ['modify'],
+                    enable_flags: ['modify'],
                     create: function(cell_model, cell_view) {
                         var languages = RCloud.language.available_languages();
                         if(languages.indexOf(cell_model.language())<0)
@@ -3957,14 +3975,14 @@ RCloud.UI.cell_commands = (function() {
                 edit: {
                     area: 'cell',
                     sort: 3000,
-                    flags: ['modify'],
+                    enable_flags: ['modify'],
                     create: function(cell_model, cell_view) {
                         return that.create_button("icon-edit", "toggle edit", function() {
                             cell_view.toggle_edit();
                         });
                     }
                 },
-                gap: {
+                command_gap: {
                     area: 'cell',
                     sort: 3500,
                     create: function(cell_model) {
@@ -3974,7 +3992,7 @@ RCloud.UI.cell_commands = (function() {
                 split: {
                     area: 'cell',
                     sort: 4000,
-                    flags: ['modify', 'edit'],
+                    enable_flags: ['modify', 'edit'],
                     create: function(cell_model, cell_view) {
                         return that.create_button("icon-unlink", "split cell", function() {
                             var ace_widget = cell_view.ace_widget();
@@ -3992,7 +4010,7 @@ RCloud.UI.cell_commands = (function() {
                 remove: {
                     area: 'cell',
                     sort: 5000,
-                    flags: ['modify'],
+                    enable_flags: ['modify'],
                     create: function(cell_model) {
                         return that.create_button("icon-trash", "remove", function() {
                             cell_model.parent_model.controller.remove_cell(cell_model);
@@ -4002,11 +4020,20 @@ RCloud.UI.cell_commands = (function() {
                 grab_affordance: {
                     area: 'left',
                     sort: 1000,
+                    display_flags: ['modify'],
                     create: function(cell_model) {
-                        var svg = "<object data='/img/grab_affordance.svg' type='image/svg+xml'></object>";
+                        var svg = "<img src='/img/grab_affordance.svg' type='image/svg+xml'></img>";
                         return that.create_static(svg, function(x) {
                             return $("<span class='grab-affordance'>").append(x);
                         });
+                    }
+                },
+                left_gap: {
+                    area: 'left',
+                    sort: 1500,
+                    display_flags: ['!modify'],
+                    create: function(cell_model) {
+                        return that.create_static('&nbsp;');
                     }
                 },
                 cell_number: {
@@ -5939,11 +5966,12 @@ RCloud.UI.notebooks_frame = {
         return RCloud.UI.panel_loader.load_snippet('notebooks-snippet');
     },
     heading_content: function() {
-        var new_notebook_button = $.el.a({'class':'header-button',
-                                          'href': '#',
-                                          'id': 'new-notebook',
-                                          'style': 'display:none'},
-                                         $.el.i({'class': 'icon-plus'}));
+        var new_notebook_button = $.el.span({style: 'float: right; position: relative'},
+                                            $.el.a({'class':'header-button',
+                                                    'id': 'new-notebook',
+                                                    'href': '#',
+                                                    'style': 'display:none'},
+                                                   $.el.span($.el.i({'class': 'icon-plus'}))));
         return new_notebook_button;
     },
     heading_content_selector: function() {

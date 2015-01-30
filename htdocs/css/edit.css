@@ -197,7 +197,6 @@ rect.frame {
     position:relative;
     width:100%;
     min-height: 25px;
-    background-color: rgba(255, 255, 255, 0.6);
 }
 
 .notebook-cell .outer-ace-div {
@@ -207,11 +206,10 @@ rect.frame {
     background: #f5f5f5;
 }
 
-.cell-status {
-    position: relative;
-    width: 100%;
-    height: 25px;
-    background-color: #f5f5f5;
+.cell-status:not(.readonly) {
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+    cursor: grab;
 }
 
 .cell-status.big {
@@ -302,10 +300,22 @@ rect.frame {
     overflow-y: auto;
 }
 
+/* this is really just the "new notebook" button, but part of it
+   may apply to other buttons */
 .header-button {
-    float: right;
     font-size: 120%;
     color: #f1f1e5;
+    position: absolute;
+    width: 32;
+    height: 34;
+    top: -10px;
+    right: -12px;
+}
+
+.header-button span {
+    position: relative;
+    left: 10px;
+    top: 10px;
 }
 
 /* Ace sets its z-index to something obscene,
@@ -840,22 +850,6 @@ div.r-result-div p {
 
 pre {
     max-width: 100%;
-}
-
-.cell-status {
-    cursor: -moz-grab;
-    cursor: -webkit-grab;
-    cursor: grab;
-}
-
-.cell-status-left {
-    position: absolute;
-    top: 0px;
-}
-
-.grab-affordance {
-    position: relative;
-    top: 5px;
 }
 
 .cell-number {
