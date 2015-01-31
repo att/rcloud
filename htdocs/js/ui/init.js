@@ -89,6 +89,16 @@ RCloud.UI.init = function() {
 
     ui_utils.prevent_backspace($(document));
 
+    $(document).on('copy', function() {
+        var sel = window.getSelection();
+        var div = $('<div class="offscreen"></div>');
+        $('body').append(div);
+        var range = sel.getRangeAt(0);
+        div.append(range.cloneContents());
+        div.find('.nonselectable').remove();
+        sel.selectAllChildren(div[0]);
+    });
+
     // prevent unwanted document scrolling e.g. by dragging
     $(document).on('scroll', function() {
         $(this).scrollLeft(0);

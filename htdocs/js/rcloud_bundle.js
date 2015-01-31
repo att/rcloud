@@ -1624,7 +1624,7 @@ function create_cell_html_view(language, cell_model) {
         });
         cell_controls_ = RCloud.UI.cell_commands.decorate('cell', cell_control_bar, cell_model, result);
 
-        var cell_commands_above = $("<div class='cell-controls-above'></div>");
+        var cell_commands_above = $("<div class='cell-controls-above nonselectable'></div>");
         above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
         notebook_cell_div.append(cell_commands_above);
     }
@@ -5665,6 +5665,16 @@ RCloud.UI.init = function() {
     });
 
     ui_utils.prevent_backspace($(document));
+
+    $(document).on('copy', function() {
+        var sel = window.getSelection();
+        var div = $('<div class="offscreen"></div>');
+        $('body').append(div);
+        var range = sel.getRangeAt(0);
+        div.append(range.cloneContents());
+        div.find('.nonselectable').remove();
+        sel.selectAllChildren(div[0]);
+    });
 
     // prevent unwanted document scrolling e.g. by dragging
     $(document).on('scroll', function() {

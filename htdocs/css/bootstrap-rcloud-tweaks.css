@@ -141,6 +141,11 @@ div.panel-heading:hover {
     top: 0;
 }
 
+div.offscreen {
+    position: absolute;
+    right: -100000;
+}
+
 .alert {
     border-radius: 0;
     border: 0;
