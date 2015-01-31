@@ -485,10 +485,6 @@ ul.jqtree-tree .jqtree-title.private {
     float: right;
 }
 
-li.jqtree-selected .notebook-commands {
-    bottom: -1px;
-}
-
 .notebook-commands .fontawesome-button {
     margin: 0;
 }
