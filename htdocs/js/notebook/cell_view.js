@@ -273,10 +273,15 @@ function create_cell_html_view(language, cell_model) {
 
         code_div_.empty();
         var elem = $('<code></code>').append(code);
+        var gutter = $('<div class="rcloud-gutter"></div>');
+        if(lines < 1) lines = 1;
+        for(var i = 0; i<lines; ++i) {
+            gutter.append($('<div class="rcloud-gutter-cell">' + (i+1) + '</div>'));
+        }
         var hljs_class = RCloud.language.hljs_class(cell_model.language());
         if(hljs_class)
             elem.addClass(hljs_class);
-        code_div_.append($('<pre></pre>').append(elem));
+        code_div_.append(gutter, $('<pre></pre>').append(elem));
         highlight_code();
         if(am_read_only_ !== 'unknown')
             click_to_edit(code_div_.find('pre'), !am_read_only_);

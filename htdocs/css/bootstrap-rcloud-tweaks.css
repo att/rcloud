@@ -75,6 +75,10 @@ div.panel-heading:hover {
     border: 0;
 }
 
+.code-div {
+    position: relative;
+}
+
 .code-div pre {
     padding-bottom: 2px;
     background-color: #f5f5f5;
@@ -82,7 +86,8 @@ div.panel-heading:hover {
 }
 
 .code-div pre code {
-    padding: 0px 16px 0px 54px;
+    padding: 0px;
+    padding-left: 54px;
     line-height: normal;
     font-size: 12px;
     max-width: 800px;
@@ -90,6 +95,22 @@ div.panel-heading:hover {
     margin-left: auto;
     white-space: pre-wrap;
     word-break: normal;
+}
+
+.code-div .rcloud-gutter {
+    position: absolute;
+    width: 48px;
+    height: 100%;
+    background-color: #f5f5f5;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+    font-size: 12px;
+    text-align: right;
+    top: -1px;
+}
+
+.rcloud-gutter-cell {
+    padding: 0px 11px 0px 19px;
+    height: 16px;
 }
 
 /* what does this do exactly? */
