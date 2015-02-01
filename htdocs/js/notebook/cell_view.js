@@ -539,6 +539,7 @@ function create_cell_html_view(language, cell_model) {
                 return;
             }
             if(edit_mode) {
+                cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', true);
                 if(RCloud.language.is_a_markdown(language))
                     this.hide_source(false);
                 code_div_.hide();
@@ -593,6 +594,7 @@ function create_cell_html_view(language, cell_model) {
                 }
             }
             else {
+                cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', false);
                 var new_content = update_model();
                 if(new_content!==null) // if any change (including removing the content)
                     cell_model.parent_model.controller.update_cell(cell_model);
