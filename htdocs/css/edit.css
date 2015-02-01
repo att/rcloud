@@ -856,6 +856,10 @@ pre {
     padding-left: 4px;
 }
 
+.ace_gutter {
+    background: #f5f5f5 !important;
+}
+
 .ace_gutter-layer {
     width: 50px !important;
 }

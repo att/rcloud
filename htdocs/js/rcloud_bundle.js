@@ -1740,7 +1740,6 @@ function create_cell_html_view(language, cell_model) {
         });
         widget.setTheme("ace/theme/chrome");
         session.setUseWrapMode(true);
-        div.find('.ace_gutter').css('background-color', '#f5f5f5');
         return {
             widget: widget,
             session: session,
