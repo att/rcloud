@@ -4995,24 +4995,25 @@ RCloud.UI.find_replace = (function() {
             });
 
             replace_next_.click(function() {
-                var match = matches_[active_match_];
                 if(active_match_ !== undefined) {
-                    var cell = shell.notebook.model.cells[match.index];
-                    var content = cell.content();
-                    var before = content.substring(0, match.begin),
-                        after = content.substring(match.end);
-                    cell.content(before + replace_input_.val() + after);
-                    cell.notify_views(function(view) {
-                        view.content_updated();
-                    });
-                    update_cell_highlights(cell);
+                    if(replace_current()) {
+                        shell.notebook.controller.update_cell(cell)
+                            .then(function() {
+                                update_cell_highlights(cell, match.index);
+                                find_next();
+                            });
+                    }
                 }
-                find_next();
+                else
+                    find_next();
                 return false;
             });
 
             replace_all_.click(function() {
-                replace_all(find_input_.val(), replace_input_.val());
+                if(active_match_ !== undefined)
+                    replace_rest();
+                else
+                    replace_all(find_input_.val(), replace_input_.val());
                 return false;
             });
 
@@ -5025,7 +5026,8 @@ RCloud.UI.find_replace = (function() {
                     return false;
                 }
                 return undefined;
-            };
+            }
+
             find_input_.keydown(click_find_next);
             replace_input_.keydown(click_find_next);
 
@@ -5098,19 +5100,30 @@ RCloud.UI.find_replace = (function() {
         });
         return matches;
     }
-    function update_cell_highlights(cell) {
+    function annotate_matches(matches, cell, n) {
+        return matches.map(function(match) {
+            return _.extend({index: n, filename: cell.filename()}, match);
+        });
+    }
+    function update_cell_highlights(cell, n) {
         // inefficient: really want splice range
         matches_ = _.filter(matches_, function(m) { return m.filename != cell.filename(); })
-            .concat(highlight_cell(cell)).sort(function(a,b) { return a.index-b.index; });
+            .concat(annotate_matches(highlight_cell(cell), cell, n)).sort(function(a,b) { return a.index-b.index; });
     }
     function highlight_all() {
         matches_ = [];
         shell.notebook.model.cells.forEach(function(cell, n) {
             var matches = highlight_cell(cell);
-            matches_.push.apply(matches_, matches.map(function(match) {
-                return _.extend({index: n, filename: cell.filename()}, match);
-            }));
+            matches_.push.apply(matches_, annotate_matches(matches, cell, n));
         });
+    }
+    function replace_current() {
+        var match = matches_[active_match_];
+        var cell = shell.notebook.model.cells[match.index];
+        var content = cell.content();
+        var before = content.substring(0, match.begin),
+            after = content.substring(match.end);
+        return cell.content(before + replace_input_.val() + after) ? cell : null;
     }
     function replace_all(find, replace) {
         highlight_all(null);
@@ -5127,7 +5140,18 @@ RCloud.UI.find_replace = (function() {
         });
         shell.notebook.controller.apply_changes(changes);
     }
-
+    function replace_rest() {
+        if(active_match_ === undefined)
+            active_match_ = 0;
+        var changes = shell.notebook.model.reread_buffers();
+        while(active_match_ < matches_.length) {
+            var cell = replace_current();
+            if(cell)
+                changes.push.apply(changes, shell.notebook.model.update_cell(cell));
+            ++active_match_;
+        }
+        shell.notebook.controller.apply_changes(changes);
+    }
     var result = {
         init: function() {
             document.addEventListener("keydown", function(e) {
