@@ -1,3 +1,16 @@
+## RCloud 1.2.1
+
+### Bug Fixes
+
+* Smaller file upload packet size to avoid Rserve disconnection bug
+
+* Do not check python idle state
+
+* Workaround for varying `fork_of` github interface
+
+* Error when deleting currently-loaded notebook (#1049)
+
+
 ## RCloud 1.2
 
 ### Features
@@ -24,9 +37,9 @@
 
 * The notebook store is now abstrated through the `gist` package,
   allowing arbitrary back-ends. The traditional GitHub Gist backend is
-  now handled by the `githubhist` package. Alternative back-end based
+  now handled by the `githubgist` package. Alternative back-end based
   on local git repositories is implemented in `gitgist`. The back-end
-  is selected by the `gist.backend` configuration option. It curretnly
+  is selected by the `gist.backend` configuration option. It currently
   defaults to `githubgist` but it will eventually become a mandatory
   option.
 
