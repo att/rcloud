@@ -201,7 +201,7 @@ function create_cell_html_view(language, cell_model) {
         ace_session_ = aaa.session;
         ace_document_ = aaa.document;
 
-        ace_session_.on('change.rcloud-cell', function() {
+        ace_session_.on('change', function() {
             set_widget_height();
             ace_widget_.resize();
         });

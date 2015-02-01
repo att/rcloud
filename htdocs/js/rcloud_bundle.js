@@ -1756,7 +1756,7 @@ function create_cell_html_view(language, cell_model) {
         ace_session_ = aaa.session;
         ace_document_ = aaa.document;
 
-        ace_session_.on('change.rcloud-cell', function() {
+        ace_session_.on('change', function() {
             set_widget_height();
             ace_widget_.resize();
         });
@@ -4996,10 +4996,11 @@ RCloud.UI.find_replace = (function() {
 
             replace_next_.click(function() {
                 if(active_match_ !== undefined) {
-                    if(replace_current()) {
+                    var cell = replace_current();
+                    if(cell) {
                         shell.notebook.controller.update_cell(cell)
                             .then(function() {
-                                update_cell_highlights(cell, match.index);
+                                update_cell_highlights(cell, matches_[active_match_].index);
                                 find_next();
                             });
                     }
