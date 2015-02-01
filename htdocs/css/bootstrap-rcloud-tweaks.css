@@ -86,8 +86,7 @@ div.panel-heading:hover {
 }
 
 .code-div pre code {
-    padding: 0px;
-    padding-left: 54px;
+    padding: 0px 6px 0px 54px;
     line-height: normal;
     font-size: 12px;
     max-width: 800px;
