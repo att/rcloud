@@ -1817,33 +1817,34 @@ function create_cell_html_view(language, cell_model) {
     }
     function assign_code(code) {
         code = code || cell_model.content();
+
         // match the number of lines ace.js is going to show
         // 1. html would skip final blank line
         if(code[code.length-1] === '\n')
             code += '\n';
+
+        // add line number spans
+        var line = 1;
+        code = code.replace(/^/gm, function() {
+            return '<span class="rcloud-line-number-position"><span class="rcloud-line-number">' + line++ + '</span></span>';
+        });
+
         // 2. we have ace configured to show a minimum of MIN_LINES lines
         var lines = (code.match(/\n/g)||[]).length;
         if(lines<MIN_LINES)
             code += new Array(MIN_LINES+1-lines).join('\n');
-        var line = 1;
-        code = code.replace(/^/gm, function() {
-            return '<span class="rcloud-line-number">' + line++ + '</span>';
-        });
 
         code_div_.empty();
         var elem = $('<code></code>').append(code);
         var gutter = $('<div class="rcloud-gutter"></div>');
-            /*
-        if(lines < 1) lines = 1;
-        for(var i = 0; i<lines; ++i) {
-            gutter.append($('<div class="rcloud-gutter-cell">' + (i+1) + '</div>'));
-        }
-             */
+
         var hljs_class = RCloud.language.hljs_class(cell_model.language());
         if(hljs_class)
             elem.addClass(hljs_class);
         code_div_.append(gutter, $('<pre></pre>').append(elem));
         highlight_code();
+        // yuk
+        code_div_.find('.rcloud-line-number .hljs-number').css('color', 'black');
         if(am_read_only_ !== 'unknown')
             click_to_edit(code_div_.find('pre'), !am_read_only_);
     }

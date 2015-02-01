@@ -98,19 +98,24 @@ div.panel-heading:hover {
 }
 
 .code-div .rcloud-gutter {
+    background-color: #f5f5f5;
     position: absolute;
     width: 48px;
     height: 100%;
-    background-color: #f5f5f5;
+}
+
+.rcloud-line-number-position {
+    height: 0;
+    width:0;
+    position: relative;
+}
+
+.rcloud-line-number {
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
     font-size: 12px;
     text-align: right;
-    top: -1px;
-}
-
-.rcloud-gutter-cell {
-    padding: 0px 11px 0px 19px;
-    height: 16px;
+    right: 17px;
+    position: absolute;
 }
 
 /* what does this do exactly? */
