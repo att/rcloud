@@ -864,6 +864,10 @@ pre {
     width: 50px !important;
 }
 
+.input-div {
+    border: 2px solid #ffffff;
+}
+
 .input-div .ace_gutter-layer {
     width: inherit !important;
 }

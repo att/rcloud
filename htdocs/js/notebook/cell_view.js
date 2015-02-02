@@ -29,7 +29,7 @@ function create_cell_html_view(language, cell_model) {
 
     // input1
     var prompt_text_;
-    var input_div_, input_ace_div_, input_widget_, input_kont_;
+    var input_div_, input_ace_div_, input_widget_, input_kont_, input_anim_;
 
     var result = {}; // "this"
 
@@ -245,6 +245,8 @@ function create_cell_html_view(language, cell_model) {
                 if(input_kont_)
                     input_kont_(null, input);
                 input_div_.hide();
+                window.clearInterval(input_anim_);
+                input_anim_ = null;
             }
         }]);
         RCloud.UI.prevent_progress_modal();
@@ -503,12 +505,23 @@ function create_cell_html_view(language, cell_model) {
             create_input_widget();
             input_widget_.setValue('');
             input_div_.show();
-            input_div_.css('height', "32px"); // can't get ui_utils.ace_editor_height to work
+            input_div_.css('height', "36px"); // can't get ui_utils.ace_editor_height to work
             // recalculate gutter width:
             input_widget_.renderer.$gutterLayer.gutterWidth = 0;
             input_widget_.renderer.$changes |= input_widget_.renderer.__proto__.CHANGE_FULL;
             input_widget_.resize(true);
             input_widget_.focus();
+            input_div_.css('border-color', '#eeeeee');
+            var dir = true;
+            var switch_color = function() {
+                input_div_.animate({borderColor: dir ? '#ff8c00' : '#E34234'},
+                                   {duration: 2000,
+                                    easing: 'easeInOutCubic',
+                                    queue: false});
+                dir = !dir;
+            };
+            switch_color();
+            input_anim_ = window.setInterval(switch_color, 2000);
             input_kont_ = k;
         },
         div: function() {
