@@ -864,6 +864,15 @@ pre {
     width: 50px !important;
 }
 
+.input-div .ace_gutter-layer {
+    width: inherit !important;
+}
+
+.input-div .ace_gutter-cell {
+    padding-left: 2px;
+    padding-right: 0px !important;
+}
+
 #output > .notebook-cell .grabbing {
     cursor: -moz-grabbing;
     cursor: -webkit-grabbing;

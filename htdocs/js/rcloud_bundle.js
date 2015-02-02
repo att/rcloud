@@ -914,9 +914,11 @@ ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
 };
 
 // this is a hack, but it'll help giving people the right impression.
-// I'm happy to replace it witht the Right Way to do it when we learn
+// I'm happy to replace it with the Right Way to do it when we learn
 // how to do it.
-ui_utils.make_prompt_chevron_gutter = function(widget)
+// still a hack, generalizing it a little bit.
+
+ui_utils.customize_ace_gutter = function(widget, line_text_function)
 {
     var dom = ace.require("ace/lib/dom");
     widget.renderer.$gutterLayer.update = function(config) {
@@ -931,11 +933,13 @@ ui_utils.make_prompt_chevron_gutter = function(widget)
         var decorations = this.session.$decorations;
         var firstLineNumber = this.session.$firstLineNumber;
         var lastLineNumber = 0;
-        html.push(
-            "<div class='ace_gutter-cell ",
-            "' style='height:", this.session.getRowLength(0) * config.lineHeight, "px;'>",
-            "&gt;", "</div>"
-        );
+        for(; i <= lastRow; ++i)
+            html.push(
+                "<div class='ace_gutter-cell ",
+                "' style='height:", this.session.getRowLength(0) * config.lineHeight, "px;'>",
+                line_text_function(i),
+                "</div>"
+            );
 
         this.element = dom.setInnerHtml(this.element, html.join(""));
         this.element.style.height = config.minHeight + "px";
@@ -1788,6 +1792,9 @@ function create_cell_html_view(language, cell_model) {
         var aaa = ace_stuff(input_ace_div_, '');
         input_widget_ = aaa.widget;
 
+        ui_utils.customize_ace_gutter(input_widget_, function(i) {
+            return i===0 ? prompt_text_ : '';
+        });
         input_widget_.commands.addCommands([{
             name: 'enter',
             bindKey: 'Return',
@@ -2056,7 +2063,10 @@ function create_cell_html_view(language, cell_model) {
             input_widget_.setValue('');
             input_div_.show();
             input_div_.css('height', "32px"); // can't get ui_utils.ace_editor_height to work
-            input_widget_.resize();
+            // recalculate gutter width:
+            input_widget_.renderer.$gutterLayer.gutterWidth = 0;
+            input_widget_.renderer.$changes |= input_widget_.renderer.__proto__.CHANGE_FULL;
+            input_widget_.resize(true);
             input_widget_.focus();
             input_kont_ = k;
         },
@@ -4566,7 +4576,9 @@ RCloud.UI.command_prompt = (function() {
             }
         ]);
         widget.commands.removeCommands(['find', 'replace']);
-        ui_utils.make_prompt_chevron_gutter(widget);
+        ui_utils.customize_ace_gutter(widget, function(i) {
+            return i===0 ? '&gt;' : '';
+        });
 
         return {
             widget: widget,

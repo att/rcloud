@@ -129,7 +129,9 @@ RCloud.UI.command_prompt = (function() {
             }
         ]);
         widget.commands.removeCommands(['find', 'replace']);
-        ui_utils.make_prompt_chevron_gutter(widget);
+        ui_utils.customize_ace_gutter(widget, function(i) {
+            return i===0 ? '&gt;' : '';
+        });
 
         return {
             widget: widget,

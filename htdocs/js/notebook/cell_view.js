@@ -233,6 +233,9 @@ function create_cell_html_view(language, cell_model) {
         var aaa = ace_stuff(input_ace_div_, '');
         input_widget_ = aaa.widget;
 
+        ui_utils.customize_ace_gutter(input_widget_, function(i) {
+            return i===0 ? prompt_text_ : '';
+        });
         input_widget_.commands.addCommands([{
             name: 'enter',
             bindKey: 'Return',
@@ -501,7 +504,10 @@ function create_cell_html_view(language, cell_model) {
             input_widget_.setValue('');
             input_div_.show();
             input_div_.css('height', "32px"); // can't get ui_utils.ace_editor_height to work
-            input_widget_.resize();
+            // recalculate gutter width:
+            input_widget_.renderer.$gutterLayer.gutterWidth = 0;
+            input_widget_.renderer.$changes |= input_widget_.renderer.__proto__.CHANGE_FULL;
+            input_widget_.resize(true);
             input_widget_.focus();
             input_kont_ = k;
         },

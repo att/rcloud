@@ -275,9 +275,11 @@ ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
 };
 
 // this is a hack, but it'll help giving people the right impression.
-// I'm happy to replace it witht the Right Way to do it when we learn
+// I'm happy to replace it with the Right Way to do it when we learn
 // how to do it.
-ui_utils.make_prompt_chevron_gutter = function(widget)
+// still a hack, generalizing it a little bit.
+
+ui_utils.customize_ace_gutter = function(widget, line_text_function)
 {
     var dom = ace.require("ace/lib/dom");
     widget.renderer.$gutterLayer.update = function(config) {
@@ -292,11 +294,13 @@ ui_utils.make_prompt_chevron_gutter = function(widget)
         var decorations = this.session.$decorations;
         var firstLineNumber = this.session.$firstLineNumber;
         var lastLineNumber = 0;
-        html.push(
-            "<div class='ace_gutter-cell ",
-            "' style='height:", this.session.getRowLength(0) * config.lineHeight, "px;'>",
-            "&gt;", "</div>"
-        );
+        for(; i <= lastRow; ++i)
+            html.push(
+                "<div class='ace_gutter-cell ",
+                "' style='height:", this.session.getRowLength(0) * config.lineHeight, "px;'>",
+                line_text_function(i),
+                "</div>"
+            );
 
         this.element = dom.setInnerHtml(this.element, html.join(""));
         this.element.style.height = config.minHeight + "px";
