@@ -1165,8 +1165,27 @@ ui_utils.prevent_backspace = function($doc) {
             event.preventDefault();
     });
 };
+/*
+ RCloud.extension is the root of all extension mechanisms in RCloud.
+
+ It is designed to be used by containment: an extendable feature class
+ will privately keep an RCloud.extension instance, and then implement
+ init(), add(), and remove(), forwarding part of their implementation to
+ RCloud.extension.
+
+ Note: this functionality is still evolving.  More common functionality
+ will get moved here over time as patterns emerge, and some extensible
+ features do not use RCloud.extension yet.  These are accidents of
+ history and do not read anything into them.
+*/
+
 RCloud.extension = (function() {
     return {
+        filter_field: function(field, value) {
+            return function(entry) {
+                return entry[field] === value;
+            };
+        },
         create: function(options) {
             options = options || {};
             var entries_ = {};
