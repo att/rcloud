@@ -103,18 +103,20 @@ div.panel-heading:hover {
     height: 100%;
 }
 
+
 .rcloud-line-number-position {
-    height: 0;
-    width:0;
     position: relative;
+    top: 0;
+    height: 0;
+    width: 0;
 }
 
 .rcloud-line-number {
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
-    font-size: 12px;
+    position: absolute;
     text-align: right;
     right: 17px;
-    position: absolute;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+    font-size: 12px;
 }
 
 /* what does this do exactly? */
