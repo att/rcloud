@@ -52,13 +52,8 @@ for dir in htdocs/js  htdocs/lib; do
     fi
 done
 
-# Create a local copy of mathjax library in htdocs
-MATHJAX_INSTALL_DIR=mathjax
-if [ ! -e "htdocs/$MATHJAX_INSTALL_DIR" ]; then
-    mkdir -p "htdocs/$MATHJAX_INSTALL_DIR"
-    echo 'Downloading MathJax'
-    curl -L https://codeload.github.com/mathjax/MathJax/legacy.tar.gz/master | tar -xz -C "htdocs/$MATHJAX_INSTALL_DIR" --strip-components=1
-fi
+# check if we need to worry about mathjax
+sh scripts/fetch-mathjax.sh
 
 export RCS_SILENCE_LOADCHECK=TRUE
 
