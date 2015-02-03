@@ -639,20 +639,21 @@ rcloud.config.get.alluser.option <- function(key)
 ################################################################################
 # notebook cache
 
-rcloud.get.notebook.info <- function(id) {
+# single just changes the format for querying a single notebook (essentially acting as [[1]])
+rcloud.get.notebook.info <- function(id, single=TRUE) {
   base <- usr.key(user=".notebook", notebook=id)
   fields <- c("username", "description", "last_commit", "visible")
-  keys <- rcs.key(base, fields)
+  keys <- rcs.key(rep(base, each=length(fields)), fields)
   results <- rcs.get(keys, list=TRUE)
-  names(results) <- fields
-  results
+  if (length(id) == 1L && single) {
+      names(results) <- fields
+      results
+  } else
+     lapply(split(results, rep(id, each=length(fields))), function(o) { names(o) = fields; o })
 }
 
-rcloud.get.multiple.notebook.infos <- function(ids) {
-  result <- lapply(ids, rcloud.get.notebook.info)
-  names(result) <- ids
-  result
-}
+rcloud.get.multiple.notebook.infos <- function(ids)
+    rcloud.get.notebook.info(ids, FALSE)
 
 rcloud.set.notebook.info <- function(id, info) {
   base <- usr.key(user=".notebook", notebook=id)
