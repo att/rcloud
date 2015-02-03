@@ -524,13 +524,15 @@ star.count.key <- function(notebook)
 
 rcloud.notebook.star.count <- function(notebook)
 {
-  result <- rcs.get(star.count.key(notebook))
-  if (is.null(result)) 0 else result
+    result <- rcs.get(star.count.key(notebook))
+    if (is.null(result)) 0 else as.integer(result)
 }
 
-rcloud.multiple.notebook.star.counts <- function(notebooks)
-{
-  Map(rcloud.notebook.star.count, notebooks)
+rcloud.multiple.notebook.star.counts <- function(notebooks) {
+    counts <- lapply(rcs.get(star.count.key(notebooks), list=TRUE),
+                     function(o) if(is.null(o)) 0L else as.integer(o))
+    names(counts) <- notebooks
+    counts
 }
 
 rcloud.is.notebook.starred <- function(notebook)
