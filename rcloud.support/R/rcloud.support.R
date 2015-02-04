@@ -11,6 +11,7 @@ rcloud.get.conf.value <- function(key) {
 }
 
 # any attributes we want to add onto what github gives us
+# and re-code payload where needed
 rcloud.augment.notebook <- function(res) {
   if(res$ok) {
     notebook <- res$content
@@ -18,6 +19,19 @@ rcloud.augment.notebook <- function(res) {
     if(!is.null(fork.of))
       res$content$fork_of <- fork.of
 
+    ## convert any binary contents stored in .b64 files
+    fn <- names(res$content$files)
+    bin <- grep("\\.b64$", fn)
+    if (length(bin)) {
+        nf <- res$content$files[-bin]
+        for (i in bin) {
+            nn <- gsub("\\.b64$", "", fn[i])
+            ## only use binary if there is no text version
+            if (is.null(nf[[nn]])) nf[[nn]] <- base64decode(res$content$files[[i]])
+        }
+        res$content$files <- nf
+    }
+    
     hist <- res$content$history
     versions <- lapply(hist, function(h) { h$version })
     version2tag <- rcs.get(rcloud.support:::rcs.key('.notebook', notebook$id, 'version2tag', versions), list=TRUE)
@@ -251,13 +265,30 @@ rcloud.unauthenticated.notebook.by.name <- function(name, user=.session$username
   if (vec) candidates[pub] else candidates[pub,,drop=FALSE]
 }
 
+
 rcloud.upload.to.notebook <- function(file, name) {
   if (is.null(rcloud.session.notebook()))
     stop("Notebook must be loaded")
   id <- rcloud.session.notebook.id()
   ulog("RCloud rcloud.upload.to.notebook(id=", id, ", name=", name, ")")
+  
   files <- list()
-  files[[name]] <- list(content=rawToChar(file))
+  content <- if (length(grep("\\.b64$", name))) { # forced b64
+      ## in this case we have to make sure we delete any TXT version
+      files <- list(x=NULL)
+      names(files) <- gsub("\\.b64$", "", name)
+      base64encode(file)
+  } else if (checkUTF8(file, quiet=TRUE, min.char=7L)) { # is it ok to strore as UTF8?
+      rawToChar(file)
+  } else { # auto-convert to .b64
+      ## in this case we have to make sure we delete any TXT version
+      files <- list(x=NULL)
+      names(files) <- name
+      name <- paste0(name, ".b64")
+      base64encode(file)
+  }
+      
+  files[[name]] <- list(content=content)
   content <- list(files = files)
   res <- rcloud.update.notebook(id, content)
   .session$current.notebook <- res
@@ -265,13 +296,24 @@ rcloud.upload.to.notebook <- function(file, name) {
 }
 
 rcloud.update.notebook <- function(id, content) {
-  res <- modify.gist(id, content, ctx = .session$gist.context)
-  .session$current.notebook <- res
-  if (nzConf("solr.url")) {
-    star.count <- rcloud.notebook.star.count(id)
-    mcparallel(update.solr(res, star.count), detached=TRUE)
-  }
-  rcloud.augment.notebook(res)
+    ## convert any binary assets into .b64 files
+    if (length(content$files) && any(bin <- sapply(content$files, is.raw))) {
+        bin <- content$files[bin]
+        txt <- content$files[!bin]
+        for (i in seq.int(length(bin))) {
+            name <- names(bin)[i]
+            if (!length(grep("\\.b64$", name))) name <- paste0(name, ".b64")
+            txt[[name]] <- base64encode(bin[[i]])
+        }
+        content$files <- txt
+    }
+    res <- modify.gist(id, content, ctx = .session$gist.context)
+    .session$current.notebook <- res
+    if (nzConf("solr.url")) {
+        star.count <- rcloud.notebook.star.count(id)
+        mcparallel(update.solr(res, star.count), detached=TRUE)
+    }
+    rcloud.augment.notebook(res)
 }
 
 update.solr <- function(notebook, starcount){
