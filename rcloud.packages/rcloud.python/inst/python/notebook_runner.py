@@ -23,7 +23,7 @@ import re
 import tempfile
 debugFD, debugFile = "", ""
 
-_debugging = True
+_debugging = False
 if _debugging:
     debugFD, debugFile = tempfile.mkstemp(suffix=".log", prefix="ipy_log")
     logging.basicConfig(filename=debugFile, level=logging.DEBUG)
