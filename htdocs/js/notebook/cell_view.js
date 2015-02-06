@@ -60,8 +60,10 @@ function create_cell_html_view(language, cell_model) {
     cell_status_.append(cell_status_left);
     left_controls_ = RCloud.UI.cell_commands.decorate('left', cell_status_left, cell_model, result);
 
+    var cell_control_bar = $("<div class='cell-control-bar'></div>");
+    var cell_commands_above = $("<div class='cell-controls-above nonselectable'></div>");
+
     if(!shell.is_view_mode()) {
-        var cell_control_bar = $("<div class='cell-control-bar'></div>");
         cell_status_.append(cell_control_bar);
         // disable sort action on the control bar area
         cell_control_bar.mousedown(function(e) {
@@ -69,7 +71,6 @@ function create_cell_html_view(language, cell_model) {
         });
         cell_controls_ = RCloud.UI.cell_commands.decorate('cell', cell_control_bar, cell_model, result);
 
-        var cell_commands_above = $("<div class='cell-controls-above nonselectable'></div>");
         above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
         notebook_cell_div.append(cell_commands_above);
     }
