@@ -105,13 +105,13 @@ RClient = {
 RCloud = {};
 
 RCloud.is_exception = function(v) {
-    return _.isArray(v) && v.r_attributes && v.r_attributes['class'] === 'try-error';
+    return _.isArray(v) && v.r_attributes && (v.r_attributes['class'] === 'Rserve-eval-error' || v.r_attributes['class'] === 'parse-error');
 };
 
 RCloud.exception_message = function(v) {
     if (!RCloud.is_exception(v))
         throw new Error("Not an R exception value");
-    return v[0];
+    return v['error'];
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -121,7 +121,9 @@ RCloud.promisify_paths = (function() {
     function rcloud_handler(command, promise_fn) {
         function success(result) {
             if(result && RCloud.is_exception(result)) {
-                throw new Error(command + ": " + result[0].replace('\n', ' '));
+                var tb = result['traceback'] ? result['traceback'] : "";
+                if (tb.join) tb = tb.join(" <- ");
+                throw new Error(command + ": " + result['error'].replace('\n', ' ') + "  " + tb);
             }
             return result;
         }
@@ -3198,14 +3200,26 @@ Notebook.create_controller = function(model)
                 .then(default_callback());
         },
         execute_cell_version: function(context_id, info) {
-            function callback(r) {
+            function execute_cell_callback(r) {
+                if (r.r_attributes) {
+                    // FIXME: this is just a demo of what's available on different error conditions
+                    if (r.r_attributes['class'] === 'parse-error') {
+                        // available: error=message
+                        throw new Error("Parse error: " + r['error'].replace('\n', ' '));
+                    } else if (r.r_attributes['class'] === 'Rserve-eval-error') {
+                        // available: error=message, traceback=vector of calls, expression=index of the expression that failed
+                        var tb = r['traceback'];
+                        if (tb.join) tb = tb.join(" <- ");
+                        throw new Error(r['error'].replace('\n', ' ') + '  trace:' + tb.replace('\n', ' '));
+                    }
+                }
                 _.each(model.execution_watchers, function(ew) {
                     ew.run_cell(info.json_rep);
                 });
             }
             rcloud.record_cell_execution(info.json_rep);
             var cell_eval = rcloud.authenticated ? rcloud.authenticated_cell_eval : rcloud.session_cell_eval;
-            return cell_eval(context_id, info.partname, info.language, info.version, false).then(callback);
+            return cell_eval(context_id, info.partname, info.language, info.version, false).then(execute_cell_callback);
         },
         run_all: function() {
             var that = this;
