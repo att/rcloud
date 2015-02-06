@@ -7,7 +7,7 @@ rcloud.language.support <- function()
     .session <- rcloud.session
     # .session$device.pixel.ratio
     exp <- tryCatch(parse(text=command), error=function(o) structure(list(error=o$message), class="parse-error"))
-    ulog(".EXP: ", paste(capture.output(str(exp)), collapse='\n'))
+    # ulog(".EXP: ", paste(capture.output(str(exp)), collapse='\n'))
     res <- if (!inherits(exp, "parse-error")) .eval(exp, FALSE) else exp
     ## FIXME: in principle this should move from rcloud.support to rcloud.R
     rcloud.support:::.post.eval()

@@ -1,6 +1,6 @@
 .eval <- function(o, result=TRUE, where=parent.frame()) {
     o <- Rserve.eval(o, where, last.value=result)
-    ulog(".EVAL: ", paste(capture.output({ cat(".eval result:\n"); str(o) }), collapse='\n'))
+    # ulog(".EVAL: ", paste(capture.output({ cat(".eval result:\n"); str(o) }), collapse='\n'))
     if (inherits(o, "Rserve-eval-error")) {
         o$traceback <- unlist(o$traceback)
         o
