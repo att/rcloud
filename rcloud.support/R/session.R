@@ -24,7 +24,7 @@ rcloud.session.cell.eval <- function(context.id, partname, language, version, si
   ulog("RCloud rcloud.session.cell.eval(", partname, ",", language,")")
   self.oobSend(list("start.cell.output", context.id))
   command <- rcloud.get.gist.part(partname, version)
-  if (!is.null(.session$languages[[language]]))
+  res <- if (!is.null(.session$languages[[language]]))
     .session$languages[[language]]$run.cell(command, silent, .session)
   else if (language == "Markdown") {
     session.markdown.eval(command, language, FALSE)
@@ -33,6 +33,7 @@ rcloud.session.cell.eval <- function(context.id, partname, language, version, si
   }
   else warning("Language ", language, " is unknown; cell ", partname, " ignored.");
   self.oobSend(list("end.cell.output", context.id))
+  res
 }
 
 rcloud.unauthenticated.session.cell.eval <- function(context.id, partname, language, version, silent) {
