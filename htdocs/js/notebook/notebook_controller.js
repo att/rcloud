@@ -442,7 +442,7 @@ Notebook.create_controller = function(model)
                         throw new Error("Parse error: " + r['error'].replace('\n', ' '));
                     } else if (r.r_attributes['class'] === 'Rserve-eval-error') {
                         // available: error=message, traceback=vector of calls, expression=index of the expression that failed
-                        var tb = r['traceback'];
+                        var tb = r['traceback'] || '';
                         if (tb.join) tb = tb.join(" <- ");
                         throw new Error(r['error'].replace('\n', ' ') + '  trace:' + tb.replace('\n', ' '));
                     }
