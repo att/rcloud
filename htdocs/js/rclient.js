@@ -16,17 +16,21 @@ RClient = {
             // success is indicated by the rest of the capabilities being sent
             var session_mode = (opts.mode) ? opts.mode : "IDE";
             rserve.ocap([token, execToken], session_mode, function(err, ocaps) {
-                ocaps = Promise.promisifyAll(ocaps);
-                if(ocaps === null) {
-                    on_error("Login failed. Shutting down!");
-                }
-                else if(RCloud.is_exception(ocaps)) {
-                    on_error(ocaps[0]);
-                }
+                if(err)
+                    on_error(err[0], err[1]);
                 else {
-                    result.running = true;
-                    /*jshint -W030 */
-                    opts.on_connect && opts.on_connect.call(result, ocaps);
+                    ocaps = Promise.promisifyAll(ocaps);
+                    if(ocaps === null) {
+                        on_error("Login failed. Shutting down!");
+                    }
+                    else if(RCloud.is_exception(ocaps)) {
+                        on_error(ocaps[0]);
+                    }
+                    else {
+                        result.running = true;
+                        /*jshint -W030 */
+                        opts.on_connect && opts.on_connect.call(result, ocaps);
+                    }
                 }
             });
         }
