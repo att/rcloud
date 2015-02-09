@@ -92,7 +92,6 @@ rcloud.compute.init <- function(...) {
 rcloud.anonymous.compute.init <- function(...) {
     if (!is.null(.session$compute.init.result)) return(.session$compute.init.result)
     set.seed(Sys.getpid()) # we want different seeds so we get different file names
-    .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
     start.rcloud.anonymously(...)
     rcloud.reset.session()
     .session$compute.init.result <- paste(R.version.string, " --- welcome, anonymous user", sep='')
