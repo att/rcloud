@@ -1834,6 +1834,9 @@ function create_cell_html_view(language, cell_model) {
     function assign_code(code) {
         code = code || cell_model.content();
 
+        // escape any html
+        code = _.escape(code);
+
         // add abso-relative line number spans at the beginning of each line
         var line = 1;
         code = code.replace(/^/gm, function() {
