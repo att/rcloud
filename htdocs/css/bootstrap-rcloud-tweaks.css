@@ -155,6 +155,7 @@ div.panel-heading:hover {
     border-width: 0px;
     padding: 0px;
     margin-top: 0em;
+    background-color: white;
 }
 
 .live-plot {
