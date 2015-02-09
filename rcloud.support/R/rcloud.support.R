@@ -20,17 +20,7 @@ rcloud.augment.notebook <- function(res) {
       res$content$fork_of <- fork.of
 
     ## convert any binary contents stored in .b64 files
-    fn <- names(res$content$files)
-    bin <- grep("\\.b64$", fn)
-    if (length(bin)) {
-        nf <- res$content$files[-bin]
-        for (i in bin) {
-            nn <- gsub("\\.b64$", "", fn[i])
-            ## only use binary if there is no text version
-            if (is.null(nf[[nn]])) nf[[nn]] <- base64decode(res$content$files[[i]])
-        }
-        res$content$files <- nf
-    }
+    res$content <- .gist.binary.process.incoming(res$content)
     
     hist <- res$content$history
     versions <- lapply(hist, function(h) { h$version })
@@ -267,29 +257,44 @@ rcloud.unauthenticated.notebook.by.name <- function(name, user=.session$username
   if (vec) candidates[pub] else candidates[pub,,drop=FALSE]
 }
 
-
-rcloud.upload.to.notebook <- function(file, name) {
+## encrypt is optional and can be a function raw->raw which will be called
+## on the raw contents before it is saved. If used, it should
+## also create a "metadata" attribute such that the contents
+## can be later decrypted according to the metadata.
+rcloud.upload.to.notebook <- function(file, name, encrypt) {
   if (is.null(rcloud.session.notebook()))
     stop("Notebook must be loaded")
   id <- rcloud.session.notebook.id()
   ulog("RCloud rcloud.upload.to.notebook(id=", id, ", name=", name, ")")
-  
+
+  if (is.character(file)) {
+      sz <- file.info(file)$size
+      if (is.null(sz) || any(is.na(sz))) stop("cannot find `", file, "'")
+      file <- readBin(file, raw(), sz)
+  }
+
+  if (!missing(encrypt)) {
+      if (!is.function(encrypt)) stop("encrypt must be a function")
+      file <- encrypt(file)
+  }
+
   files <- list()
   content <- if (length(grep("\\.b64$", name))) { # forced b64
       ## in this case we have to make sure we delete any TXT version
       files <- list(x=NULL)
       names(files) <- gsub("\\.b64$", "", name)
-      base64encode(file)
-  } else if (checkUTF8(file, quiet=TRUE, min.char=7L)) { # is it ok to strore as UTF8?
+      .binary.to.b64(file)
+  } else if (is.null(attr(file, "metadata")) && ## the contents may not have metadata for text storage
+             checkUTF8(file, quiet=TRUE, min.char=7L)) { ## and has to be valid UTF-8, otherwise we use b64
       rawToChar(file)
   } else { # auto-convert to .b64
       ## in this case we have to make sure we delete any TXT version
       files <- list(x=NULL)
       names(files) <- name
       name <- paste0(name, ".b64")
-      base64encode(file)
+      .binary.to.b64(file)
   }
-      
+
   files[[name]] <- list(content=content)
   content <- list(files = files)
   res <- rcloud.update.notebook(id, content)
@@ -298,17 +303,8 @@ rcloud.upload.to.notebook <- function(file, name) {
 }
 
 rcloud.update.notebook <- function(id, content) {
-    ## convert any binary assets into .b64 files
-    if (length(content$files) && any(bin <- sapply(content$files, is.raw))) {
-        bin <- content$files[bin]
-        txt <- content$files[!bin]
-        for (i in seq.int(length(bin))) {
-            name <- names(bin)[i]
-            if (!length(grep("\\.b64$", name))) name <- paste0(name, ".b64")
-            txt[[name]] <- base64encode(bin[[i]])
-        }
-        content$files <- txt
-    }
+    content <- .gist.binary.process.outgoing(content)
+
     res <- modify.gist(id, content, ctx = .session$gist.context)
     .session$current.notebook <- res
     if (nzConf("solr.url")) {
