@@ -1,5 +1,14 @@
+.eval <- function(o, result=TRUE, where=parent.frame()) {
+    o <- Rserve.eval(o, where, last.value=result)
+    # ulog(".EVAL: ", paste(capture.output({ cat(".eval result:\n"); str(o) }), collapse='\n'))
+    if (inherits(o, "Rserve-eval-error")) {
+        o$traceback <- unlist(o$traceback)
+        o
+    } else o
+}
+
 make.oc <- function(fun, name=deparse(substitute(fun))) {
-  f <- function(...) try(fun(...), silent=TRUE)
+  f <- function(...) .eval(quote(fun(...)))
   Rserve:::ocap(f, name)
 }
 
@@ -69,7 +78,8 @@ compute.ocaps <- function(mode, authenticated) {
 
 ## forks a compute process (if needed) and calls compute.ocaps()
 .setup.compute <- function(mode, authenticated) {
-    if (identical(mode, "IDE")) { ## use fork only in IDE mode
+    cs.modes <- if (nzConf("compute.separation.modes")) strsplit(getConf("compute.separation.modes"), "[, ]+")[[1]] else character()
+    if (mode %in% cs.modes) { ## use fork only in modes that require it
         .session$separate.compute <- TRUE
         .Call(Rserve:::Rserve_fork_compute, bquote(rcloud.support:::compute.ocaps(.(mode), .(authenticated))))
     } else {

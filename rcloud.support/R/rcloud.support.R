@@ -64,7 +64,9 @@ rcloud.load.notebook <- function(id, version = NULL) {
 }
 
 ## same as control, just don't return anything (and don't do anything if there is no separation)
-rcloud.load.notebook.compute <- function(...) { if (identical(.session$separate.compute, TRUE)) rcloud.load.notebook(...) }
+## FIXME: since this is handled by githubHandler in JS, we have to pretend to have a valid result even
+##        if it is later discarded
+rcloud.load.notebook.compute <- function(...) { if (identical(.session$separate.compute, TRUE)) rcloud.load.notebook(...) else list(ok=TRUE) }
 rcloud.unauthenticated.load.notebook.compute <- function(...) { if (identical(.session$separate.compute, TRUE)) rcloud.unauthenticated.load.notebook(...) }
 
 rcloud.get.version.by.tag <- function(gist_id,tag) {
@@ -533,7 +535,7 @@ rcloud.setup.dirs <- function() {
 
 rcloud.get.completions <- function(language, text, pos) {
   if (!is.null(.session$languages[[language]]) && !is.null(.session$languages[[language]]$complete))
-    .session$languages[[language]]$complete(text, pos)
+    .session$languages[[language]]$complete(text, pos, .session)
   else stop("don't know how to auto-complete language ", language);
 }
 

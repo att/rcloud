@@ -24,7 +24,7 @@ rcloud.session.cell.eval <- function(context.id, partname, language, version, si
   ulog("RCloud rcloud.session.cell.eval(", partname, ",", language,")")
   self.oobSend(list("start.cell.output", context.id))
   command <- rcloud.get.gist.part(partname, version)
-  if (!is.null(.session$languages[[language]]))
+  res <- if (!is.null(.session$languages[[language]]))
     .session$languages[[language]]$run.cell(command, silent, .session)
   else if (language == "Markdown") {
     session.markdown.eval(command, language, FALSE)
@@ -33,6 +33,7 @@ rcloud.session.cell.eval <- function(context.id, partname, language, version, si
   }
   else warning("Language ", language, " is unknown; cell ", partname, " ignored.");
   self.oobSend(list("end.cell.output", context.id))
+  res
 }
 
 rcloud.unauthenticated.session.cell.eval <- function(context.id, partname, language, version, silent) {
@@ -81,7 +82,7 @@ rcloud.compute.init <- function(...) {
     ## set default mirror if not specified to avoid interactive selection
     if (isTRUE("@CRAN@" %in% getOption("repos")))
         options(repos=c(CRAN = if(nzConf("cran.mirror")) getConf("cran.mirror") else "http://cran.r-project.org"))
-    
+
     ver <- paste0('RCloud ', rcloud.info("version.string"), ' ')
     if (nzchar(rcloud.info("revision"))) ver <- paste0(ver, "(", rcloud.info("branch"), "/", rcloud.info("revision"), "), ")
     .session$compute.init.result <- paste0(ver, R.version.string, "<br>Welcome, ", .session$username)
@@ -91,7 +92,6 @@ rcloud.compute.init <- function(...) {
 rcloud.anonymous.compute.init <- function(...) {
     if (!is.null(.session$compute.init.result)) return(.session$compute.init.result)
     set.seed(Sys.getpid()) # we want different seeds so we get different file names
-    .GlobalEnv$tmpfile <- paste('tmp-',paste(sprintf('%x',as.integer(runif(4)*65536)),collapse=''),'.tmp',sep='')
     start.rcloud.anonymously(...)
     rcloud.reset.session()
     .session$compute.init.result <- paste(R.version.string, " --- welcome, anonymous user", sep='')
@@ -126,8 +126,8 @@ rcloud.reset.session <- function() {
   ## close all devices
   while (dev.cur() > 1L) dev.off()
 
-  ## make sure teh default device is back to the RCloudDevice
+  ## make sure the default device is back to the RCloudDevice
   options(device="RCloudDevice")
-  
+
   NULL
 }
