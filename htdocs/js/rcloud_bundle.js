@@ -6313,7 +6313,9 @@ RCloud.UI.panel_loader = (function() {
             });
         },
         add: function(P) {
-            extension_.add(P);
+            // if we have not been initialized, that means there is no GUI
+            if(extension_)
+                extension_.add(P);
         },
         remove: function(panel_name) {
             extension_.remove(panel_name);
