@@ -82,7 +82,7 @@ rcloud.compute.init <- function(...) {
     ## set default mirror if not specified to avoid interactive selection
     if (isTRUE("@CRAN@" %in% getOption("repos")))
         options(repos=c(CRAN = if(nzConf("cran.mirror")) getConf("cran.mirror") else "http://cran.r-project.org"))
-    
+
     ver <- paste0('RCloud ', rcloud.info("version.string"), ' ')
     if (nzchar(rcloud.info("revision"))) ver <- paste0(ver, "(", rcloud.info("branch"), "/", rcloud.info("revision"), "), ")
     .session$compute.init.result <- paste0(ver, R.version.string, "<br>Welcome, ", .session$username)
@@ -126,8 +126,8 @@ rcloud.reset.session <- function() {
   ## close all devices
   while (dev.cur() > 1L) dev.off()
 
-  ## make sure teh default device is back to the RCloudDevice
+  ## make sure the default device is back to the RCloudDevice
   options(device="RCloudDevice")
-  
+
   NULL
 }
