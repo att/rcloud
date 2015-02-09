@@ -6,7 +6,7 @@ var Rserve = {};
 
 function make_basic(type, proto) {
     proto = proto || {
-        json: function() { 
+        json: function() {
             throw "json() unsupported for type " + this.type;
         }
     };
@@ -35,8 +35,8 @@ function make_basic(type, proto) {
 
 Rserve.Robj = {
     "null": function(attributes) {
-        return { 
-            type: "null", 
+        return {
+            type: "null",
             value: null,
             attributes: attributes,
             json: function() { return null; }
@@ -76,7 +76,7 @@ Rserve.Robj = {
             }
         }
     }),
-    symbol: make_basic("symbol", { 
+    symbol: make_basic("symbol", {
         json: function() {
             return this.value;
         }
@@ -119,7 +119,7 @@ Rserve.Robj = {
             case "plain_list":
                 return _.map(list, function(elt) { return elt.value.json(resolver); });
             case "plain_object":
-                return _.object(_.map(list, function(elt) { 
+                return _.object(_.map(list, function(elt) {
                     return [elt.name, elt.value.json(resolver)];
                 }));
             case "mixed_list":
@@ -138,7 +138,7 @@ Rserve.Robj = {
     vector_exp: make_basic("vector_exp"),
     int_array: make_basic("int_array", {
         json: function() {
-            if(this.attributes && this.attributes.type==='tagged_list' 
+            if(this.attributes && this.attributes.type==='tagged_list'
                && this.attributes.value[0].name==='levels'
                && this.attributes.value[0].value.type==='string_array') {
                 var levels = this.attributes.value[0].value.value;
@@ -204,11 +204,11 @@ Rserve.Robj = {
 
 Rserve.Rsrv = {
     PAR_TYPE: function(x) { return x & 255; },
-    PAR_LEN: function(x) { return x >> 8; },
-    PAR_LENGTH: function(x) { return x >> 8; },
+    PAR_LEN: function(x) { return x >>> 8; },
+    PAR_LENGTH: function(x) { return x >>> 8; },
     par_parse: function(x) { return [Rserve.Rsrv.PAR_TYPE(x), Rserve.Rsrv.PAR_LEN(x)]; },
     SET_PAR: function(ty, len) { return ((len & 0xffffff) << 8 | (ty & 255)); },
-    CMD_STAT: function(x) { return (x >> 24) & 127; },
+    CMD_STAT: function(x) { return (x >>> 24) & 127; },
     SET_STAT: function(x, s) { return x | ((s & 127) << 24); },
 
     IS_OOB_SEND: function(x) { return (x & 0xffff000) === Rserve.Rsrv.OOB_SEND; },
@@ -419,9 +419,9 @@ function read(m)
 
         read_null: lift(function(a, l) { return Rserve.Robj.null(a); }),
 
-        read_unknown: lift(function(a, l) { 
+        read_unknown: lift(function(a, l) {
             this.offset += l;
-            return Rserve.Robj.null(a); 
+            return Rserve.Robj.null(a);
         }),
 
         read_string_array: function(attributes, length) {
@@ -481,10 +481,10 @@ function read(m)
         }
     };
 
-    that.read_clos = bind(that.read_sexp, function(formals) { 
-              return bind(that.read_sexp, function(body)    { 
+    that.read_clos = bind(that.read_sexp, function(formals) {
+              return bind(that.read_sexp, function(body)    {
               return lift(function(a, l) {
-              return Rserve.Robj.clos(formals, body, a); 
+              return Rserve.Robj.clos(formals, body, a);
               }, 0);
               } );
     });
@@ -518,8 +518,8 @@ function read(m)
         }, 0);
     });
 
-    function xf(f, g) { return bind(f, function(t) { 
-        return lift(function(a, l) { return g(t, a); }, 0); 
+    function xf(f, g) { return bind(f, function(t) {
+        return lift(function(a, l) { return g(t, a); }, 0);
     }); }
     that.read_vector       = xf(that.read_list, Rserve.Robj.vector);
     that.read_list_no_tag  = xf(that.read_list, Rserve.Robj.list);
@@ -601,7 +601,7 @@ function parse(msg)
     }
 
     var header = new Int32Array(msg, 0, 4);
-    var resp = header[0] & 16777215, status_code = header[0] >> 24;
+    var resp = header[0] & 16777215, status_code = header[0] >>> 24;
     var length = header[1], length_high = header[3];
     var msg_id = header[2];
     result.header = [resp, status_code, msg_id];
@@ -626,7 +626,7 @@ function parse(msg)
     if (resp === Rserve.Rsrv.RESP_ERR) {
         result.ok = false;
         result.status_code = status_code;
-        result.message = "ERROR FROM R SERVER: " + (Rserve.Rsrv.status_codes[status_code] || 
+        result.message = "ERROR FROM R SERVER: " + (Rserve.Rsrv.status_codes[status_code] ||
                                          status_code)
                + " " + result.header[0] + " " + result.header[1]
                + " " + msg.byteLength
@@ -710,7 +710,7 @@ Rserve.parse_payload = parse_payload;
     })();
 
     Rserve.EndianAwareDataView = (function() {
-        
+
         var proto = {
             'setInt8': function(i, v) { return this.view.setInt8(i, v); },
             'setUint8': function(i, v) { return this.view.setUint8(i, v); },
@@ -765,10 +765,10 @@ Rserve.parse_payload = parse_payload;
             offset: o,
             length: l,
             data_view: function() {
-                return new Rserve.EndianAwareDataView(this.buffer, this.offset, 
+                return new Rserve.EndianAwareDataView(this.buffer, this.offset,
                                                       this.buffer.byteLength - this.offset);
             },
-            make: function(ctor, new_offset, new_length) { 
+            make: function(ctor, new_offset, new_length) {
                 new_offset = _.isUndefined(new_offset) ? 0 : new_offset;
                 new_length = _.isUndefined(new_length) ? this.length : new_length;
                 var element_size = ctor.BYTES_PER_ELEMENT || 1;
@@ -782,8 +782,8 @@ Rserve.parse_payload = parse_payload;
                     }
                     return new ctor(output_buffer);
                 } else {
-                    return new ctor(this.buffer, 
-                                    this.offset + new_offset, 
+                    return new ctor(this.buffer,
+                                    this.offset + new_offset,
                                     n_els);
                 }
             },
@@ -809,7 +809,7 @@ function _encode_command(command, buffer, msg_id) {
     if (!_.isArray(buffer))
         buffer = [buffer];
     if (!msg_id) msg_id = 0;
-    var length = _.reduce(buffer, 
+    var length = _.reduce(buffer,
                           function(memo, val) {
                               return memo + val.byteLength;
                           }, 0),
@@ -878,7 +878,7 @@ Rserve.create = function(opts) {
             throw new Error("Bad rng, no cookie");
         return k;
     };
-    
+
     function convert_to_hash(value) {
         var hash = fresh_hash();
         captured_functions[hash] = value;
@@ -895,7 +895,7 @@ Rserve.create = function(opts) {
             // can't left shift value here because value will have bit 32 set and become signed..
             view.data_view().setInt32(0, Rserve.Rsrv.DT_SEXP + ((sz & 16777215) * Math.pow(2, 8)) + Rserve.Rsrv.DT_LARGE);
             // but *can* right shift because we assume sz is less than 2^31 or so to begin with
-            view.data_view().setInt32(4, sz >> 24);
+            view.data_view().setInt32(4, sz >>> 24);
             Rserve.write_into_view(value, view.skip(8), forced_type, convert_to_hash);
             return buffer;
         } else {
@@ -906,7 +906,7 @@ Rserve.create = function(opts) {
             return buffer;
         }
     }
-    
+
     function hand_shake(msg)
     {
         msg = msg.data;
@@ -926,9 +926,9 @@ Rserve.create = function(opts) {
             }
         } else {
             var view = new DataView(msg);
-            var header = String.fromCharCode(view.getUint8(0)) + 
-                String.fromCharCode(view.getUint8(1)) + 
-                String.fromCharCode(view.getUint8(2)) + 
+            var header = String.fromCharCode(view.getUint8(0)) +
+                String.fromCharCode(view.getUint8(1)) +
+                String.fromCharCode(view.getUint8(2)) +
                 String.fromCharCode(view.getUint8(3));
 
             if (header === 'RsOC') {
@@ -958,7 +958,7 @@ Rserve.create = function(opts) {
         if (!received_handshake) {
             hand_shake(msg);
             return;
-        } 
+        }
         if (typeof msg.data === 'string') {
             opts.on_raw_string && opts.on_raw_string(msg.data);
             return;
@@ -1145,7 +1145,7 @@ Rserve.create = function(opts) {
         },
         set: function(key, value, k) {
             _cmd(Rserve.Rsrv.CMD_setSEXP, [_encode_string(key), _encode_value(value)], k, "");
-        }, 
+        },
 
         //////////////////////////////////////////////////////////////////////
         // ocap mode
@@ -1222,7 +1222,7 @@ Rserve.wrap_ocap = function(s, ocap) {
         var k = values.pop();
         s.OCcall(ocap, values, function(err, v) {
             if (!_.isUndefined(v))
-                v = Rserve.wrap_all_ocaps(s, v); 
+                v = Rserve.wrap_all_ocaps(s, v);
             k(err, v);
         });
     };
@@ -1353,7 +1353,7 @@ Rserve.determine_size = function(value, forced_type)
             + header_size // XT_LIST_TAG (attribute)
               + header_size + "class".length + 3 // length of 'class' + padding (tag as XT_SYMNAME)
               + Rserve.determine_size(["javascript_function"]); // length of class name
-        
+
     default:
         throw new Rserve.RserveError("Internal error, can't handle type " + t);
     }
@@ -1374,8 +1374,8 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type, convert
     if (is_large) {
         payload_start = 8;
         write_view.setInt32(0, t + ((size - 8) << 8));
-        write_view.setInt32(4, (size - 8) >> 24);
-    } else { 
+        write_view.setInt32(4, (size - 8) >>> 24);
+    } else {
         payload_start = 4;
         write_view.setInt32(0, t + ((size - 4) << 8));
     }
