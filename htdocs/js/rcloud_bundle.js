@@ -652,7 +652,8 @@ ui_utils.make_url = function(page, opts) {
         if(opts.notebook) {
             url += '/' + opts.notebook;
             // tags currently not supported for notebook.R & the like
-            url += '/' + opts.version;
+            if(opts.version)
+                url += '/' + opts.version;
         }
     }
     else {
@@ -3205,7 +3206,7 @@ Notebook.create_controller = function(model)
         },
         execute_cell_version: function(context_id, info) {
             function execute_cell_callback(r) {
-                if (r.r_attributes) {
+                if (r && r.r_attributes) {
                     // FIXME: this is just a demo of what's available on different error conditions
                     if (r.r_attributes['class'] === 'parse-error') {
                         // available: error=message

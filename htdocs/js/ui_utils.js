@@ -7,7 +7,8 @@ ui_utils.make_url = function(page, opts) {
         if(opts.notebook) {
             url += '/' + opts.notebook;
             // tags currently not supported for notebook.R & the like
-            url += '/' + opts.version;
+            if(opts.version)
+                url += '/' + opts.version;
         }
     }
     else {
