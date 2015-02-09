@@ -1965,14 +1965,6 @@ function create_cell_html_view(language, cell_model) {
 
         //////////////////////////////////////////////////////////////////////
 
-        hide_buttons: function() {
-            cell_control_bar.css("display", "none");
-            cell_commands_above.hide();
-        },
-        show_buttons: function() {
-            cell_control_bar.css("display", null);
-            cell_commands_above.show();
-        },
         execute_cell: function() {
             var new_content = update_model();
             var promise;

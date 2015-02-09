@@ -51,9 +51,6 @@ function main() {
                 shell.notebook.controller.run_all().then(function() {
                     shell.notebook.controller.hide_r_source();
                 });
-                _.each(shell.notebook.view.sub_views, function(cell_view) {
-                    cell_view.hide_buttons();
-                });
             });
         });
         return promise;
