@@ -14,7 +14,7 @@ rcloud.language.support <- function()
     res
   }
 
-  complete <- function(text, pos) {
+  complete <- function(text, pos, rcloud.session) {
     # from rcompgen.completion
     utils:::.assignLinebuffer(text)
     utils:::.assignEnd(pos)
