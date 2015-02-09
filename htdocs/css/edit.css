@@ -206,7 +206,7 @@ rect.frame {
     background: #f5f5f5;
 }
 
-.cell-status:not(.readonly) {
+.cell-status:not(.readonly):not(.prompt) {
     cursor: -moz-grab;
     cursor: -webkit-grab;
     cursor: grab;
