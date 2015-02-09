@@ -493,7 +493,7 @@ rcloud.setup.dirs <- function() {
 
 rcloud.get.completions <- function(language, text, pos) {
   if (!is.null(.session$languages[[language]]) && !is.null(.session$languages[[language]]$complete))
-    .session$languages[[language]]$complete(text, pos)
+    .session$languages[[language]]$complete(text, pos, .session)
   else stop("don't know how to auto-complete language ", language);
 }
 
