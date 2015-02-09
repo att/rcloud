@@ -435,7 +435,7 @@ Notebook.create_controller = function(model)
         },
         execute_cell_version: function(context_id, info) {
             function execute_cell_callback(r) {
-                if (r.r_attributes) {
+                if (r && r.r_attributes) {
                     // FIXME: this is just a demo of what's available on different error conditions
                     if (r.r_attributes['class'] === 'parse-error') {
                         // available: error=message
