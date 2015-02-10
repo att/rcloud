@@ -241,8 +241,8 @@ RCloud.create = function(rcloud_ocaps) {
         });
 
         // security: request new token
-        rcloud.replace_token = function(old_token) {
-            return rcloud_ocaps.replace_tokenAsync(old_token);
+        rcloud.replace_token = function(old_token, realm) {
+            return rcloud_ocaps.replace_tokenAsync(old_token, realm);
         };
 
         // notebook.comments.R

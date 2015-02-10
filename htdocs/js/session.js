@@ -200,9 +200,8 @@ function rclient_promise(allow_anonymous) {
             if(timeout) {
                 timeout = timeout * 1000; // from sec to ms
                 var replacer = function() {
-                    rcloud.replace_token($.cookies.get('execToken')).then(function(new_token) {
+                    rcloud.replace_token($.cookies.get('execToken'), 'rcloud.exec').then(function(new_token) {
                         $.cookies.set('execToken', new_token);
-                        console.log("exec token traded");
                         setTimeout(replacer, timeout);
                     });
                 };
