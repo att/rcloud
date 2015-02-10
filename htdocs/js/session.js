@@ -196,9 +196,9 @@ function rclient_promise(allow_anonymous) {
         }
         throw error;
     }).then(function() {
-        rcloud.get_conf_value('token.lifetime').then(function(timeout) {
+        rcloud.get_conf_value('exec.token.renewal.time').then(function(timeout) {
             if(timeout) {
-                timeout = (timeout-60)*1000; // replace it a minute before it expires
+                timeout = timeout * 1000; // from sec to ms
                 var replacer = function() {
                     rcloud.replace_token($.cookies.get('execToken')).then(function(new_token) {
                         $.cookies.set('execToken', new_token);
