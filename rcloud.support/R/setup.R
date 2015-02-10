@@ -328,6 +328,10 @@ start.rcloud.common <- function(...) {
   }
   .session$languages <- lang.list
 
+  ## any last-minute overrides akin to Rprofile
+  if (validFileConf("configuration.root", "rcloud.profile"))
+      source(pathConf("configuration.root", "rcloud.profile"))
+
   ## pre-emptive GC to start clean
   gc()
 
