@@ -196,6 +196,20 @@ function rclient_promise(allow_anonymous) {
         }
         throw error;
     }).then(function() {
+        rcloud.get_conf_value('exec.token.renewal.time').then(function(timeout) {
+            if(timeout) {
+                timeout = timeout * 1000; // from sec to ms
+                var replacer = function() {
+                    rcloud.replace_token($.cookies.get('execToken')).then(function(new_token) {
+                        $.cookies.set('execToken', new_token);
+                        console.log("exec token traded");
+                        setTimeout(replacer, timeout);
+                    });
+                };
+                setTimeout(replacer, timeout);
+            }
+        });
+    }).then(function() {
         rcloud.display.set_device_pixel_ratio();
         rcloud.api.set_url(window.location.href);
         return rcloud.languages.get_list().then(function(lang_list) {
