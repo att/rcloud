@@ -36,12 +36,14 @@ RC.authenticate <- function(v, check.only=FALSE)
     exec.usr <- check.token(v[[2]], getConf("exec.auth"), "rcloud.exec")
     if (exec.usr == FALSE) return(FALSE)
     if (identical(getConf("exec.match.user"), "login") && !check.only) .setup.su(exec.usr)
+    .session$exec.usr <- exec.usr
   }
 
   ## if not, just check the first token.
   user <- check.token(v[[1]])
   if (user == FALSE) return(FALSE)
   ## but if we have a github user whitelist, check against that as well.
+  .session$user <- user
   if (!hasConf("github.user.whitelist")) return(TRUE)
   userlist <- gsub("^\\s+","",gsub("\\s+$","",unlist(strsplit(getConf("github.user.whitelist"), ','))))
   user %in% userlist
@@ -64,6 +66,7 @@ RC.auth.anonymous <- function(v=NULL, check.only=FALSE) {
     } else FALSE ## if there is no exec.anon.user then we fail since we cannot allow anonymous as root
   } else { ## valid execution token - switch users if needed
     if (identical(getConf("exec.match.user"), "login") && !check.only) .setup.su(exec.usr)
+    .session$exec.usr <- exec.usr
     TRUE
   }
 }

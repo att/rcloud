@@ -6,7 +6,7 @@ var Rserve = {};
 
 function make_basic(type, proto) {
     proto = proto || {
-        json: function() { 
+        json: function() {
             throw "json() unsupported for type " + this.type;
         }
     };
@@ -35,8 +35,8 @@ function make_basic(type, proto) {
 
 Rserve.Robj = {
     "null": function(attributes) {
-        return { 
-            type: "null", 
+        return {
+            type: "null",
             value: null,
             attributes: attributes,
             json: function() { return null; }
@@ -76,7 +76,7 @@ Rserve.Robj = {
             }
         }
     }),
-    symbol: make_basic("symbol", { 
+    symbol: make_basic("symbol", {
         json: function() {
             return this.value;
         }
@@ -119,7 +119,7 @@ Rserve.Robj = {
             case "plain_list":
                 return _.map(list, function(elt) { return elt.value.json(resolver); });
             case "plain_object":
-                return _.object(_.map(list, function(elt) { 
+                return _.object(_.map(list, function(elt) {
                     return [elt.name, elt.value.json(resolver)];
                 }));
             case "mixed_list":
@@ -138,7 +138,7 @@ Rserve.Robj = {
     vector_exp: make_basic("vector_exp"),
     int_array: make_basic("int_array", {
         json: function() {
-            if(this.attributes && this.attributes.type==='tagged_list' 
+            if(this.attributes && this.attributes.type==='tagged_list'
                && this.attributes.value[0].name==='levels'
                && this.attributes.value[0].value.type==='string_array') {
                 var levels = this.attributes.value[0].value.value;
@@ -204,12 +204,16 @@ Rserve.Robj = {
 
 Rserve.Rsrv = {
     PAR_TYPE: function(x) { return x & 255; },
-    PAR_LEN: function(x) { return x >> 8; },
-    PAR_LENGTH: function(x) { return x >> 8; },
+    PAR_LEN: function(x) { return x >>> 8; },
+    PAR_LENGTH: function(x) { return x >>> 8; },
     par_parse: function(x) { return [Rserve.Rsrv.PAR_TYPE(x), Rserve.Rsrv.PAR_LEN(x)]; },
     SET_PAR: function(ty, len) { return ((len & 0xffffff) << 8 | (ty & 255)); },
-    CMD_STAT: function(x) { return (x >> 24) & 127; },
+    CMD_STAT: function(x) { return (x >>> 24) & 127; },
     SET_STAT: function(x, s) { return x | ((s & 127) << 24); },
+
+    IS_OOB_SEND: function(x) { return (x & 0xffff000) === Rserve.Rsrv.OOB_SEND; },
+    IS_OOB_MSG: function(x) { return (x & 0xffff000) === Rserve.Rsrv.OOB_MSG; },
+    OOB_USR_CODE: function(x) { return x & 0xfff; },
 
     CMD_RESP           : 0x10000,
     RESP_OK            : 0x10000 | 0x0001,
@@ -415,9 +419,9 @@ function read(m)
 
         read_null: lift(function(a, l) { return Rserve.Robj.null(a); }),
 
-        read_unknown: lift(function(a, l) { 
+        read_unknown: lift(function(a, l) {
             this.offset += l;
-            return Rserve.Robj.null(a); 
+            return Rserve.Robj.null(a);
         }),
 
         read_string_array: function(attributes, length) {
@@ -426,7 +430,7 @@ function read(m)
             var current_str = "";
             for (var i=0; i<a.length; ++i)
                 if (a[i] === 0) {
-		    current_str = decodeURIComponent(escape(current_str));
+                    current_str = decodeURIComponent(escape(current_str));
                     result.push(current_str);
                     current_str = "";
                 } else {
@@ -477,10 +481,10 @@ function read(m)
         }
     };
 
-    that.read_clos = bind(that.read_sexp, function(formals) { 
-              return bind(that.read_sexp, function(body)    { 
+    that.read_clos = bind(that.read_sexp, function(formals) {
+              return bind(that.read_sexp, function(body)    {
               return lift(function(a, l) {
-              return Rserve.Robj.clos(formals, body, a); 
+              return Rserve.Robj.clos(formals, body, a);
               }, 0);
               } );
     });
@@ -514,8 +518,8 @@ function read(m)
         }, 0);
     });
 
-    function xf(f, g) { return bind(f, function(t) { 
-        return lift(function(a, l) { return g(t, a); }, 0); 
+    function xf(f, g) { return bind(f, function(t) {
+        return lift(function(a, l) { return g(t, a); }, 0);
     }); }
     that.read_vector       = xf(that.read_list, Rserve.Robj.vector);
     that.read_list_no_tag  = xf(that.read_list, Rserve.Robj.list);
@@ -550,17 +554,79 @@ function read(m)
     return that;
 }
 
+var incomplete_ = [], incomplete_header_ = null, msg_bytes_ = 0, remaining_ = 0;
+function clear_incomplete() {
+    incomplete_ = [];
+    incomplete_header_ = null;
+    remaining_ = 0;
+    msg_bytes_ = 0;
+}
+
 function parse(msg)
 {
     var result = {};
-    var header = new Int32Array(msg, 0, 4);
-    var resp = header[0] & 16777215, status_code = header[0] >> 24;
-    result.header = [resp, status_code];
+    if(incomplete_.length) {
+        result.header = incomplete_header_;
+        incomplete_.push(msg);
+        remaining_ -= msg.byteLength;
+        if(remaining_ < 0) {
+            result.ok = false;
+            result.message = "Messages add up to more than expected length: got " +
+                            (msg_bytes_-remaining_) + ", expected " + msg_bytes_;
+            clear_incomplete();
+            return result;
+        }
+        else if(remaining_ === 0) {
+            var complete_msg = new ArrayBuffer(msg_bytes_),
+                array = new Uint8Array(complete_msg),
+                offset = 0;
+            incomplete_.forEach(function(frame, i) {
+                array.set(new Uint8Array(frame), offset);
+                offset += frame.byteLength;
+            });
+            if(offset !== msg_bytes_) {
+                result.ok = false;
+                result.message = "Internal error - frames added up to " + offset + " not " + msg_bytes_;
+                clear_incomplete();
+                return result;
+            }
+            clear_incomplete();
+            msg = complete_msg;
+        }
+        else {
+            result.ok = true;
+            result.incomplete = true;
+            return result;
+        }
+    }
 
-    if (result.header[0] === Rserve.Rsrv.RESP_ERR) {
+    var header = new Int32Array(msg, 0, 4);
+    var resp = header[0] & 16777215, status_code = header[0] >>> 24;
+    var length = header[1], length_high = header[3];
+    var msg_id = header[2];
+    result.header = [resp, status_code, msg_id];
+
+    if(length_high) {
+        result.ok = false;
+        result.message = "rserve.js cannot handle messages larger than 4GB";
+        return result;
+    }
+
+    if(length > msg.byteLength) {
+        incomplete_.push(msg);
+        incomplete_header_ = header;
+        msg_bytes_ = length + 16; // header length + data length
+        remaining_ = msg_bytes_ - msg.byteLength;
+        result.header = header;
+        result.ok = true;
+        result.incomplete = true;
+        return result;
+    }
+
+    if (resp === Rserve.Rsrv.RESP_ERR) {
         result.ok = false;
         result.status_code = status_code;
-        result.message = "ERROR FROM R SERVER: " + (Rserve.Rsrv.status_codes[status_code] || 
+        result.message = "ERROR FROM R SERVER: " + (Rserve.Rsrv.status_codes[status_code] ||
                                          status_code)
                + " " + result.header[0] + " " + result.header[1]
                + " " + msg.byteLength
@@ -568,9 +634,9 @@ function parse(msg)
         return result;
     }
 
-    if (!_.contains([Rserve.Rsrv.RESP_OK, Rserve.Rsrv.OOB_SEND, Rserve.Rsrv.OOB_MSG], result.header[0])) {
+    if (!( resp === Rserve.Rsrv.RESP_OK || Rserve.Rsrv.IS_OOB_SEND(resp) || Rserve.Rsrv.IS_OOB_MSG(resp))) {
         result.ok = false;
-        result.message = "Unexpected response from RServe: " + result.header[0] + " status: " + Rserve.Rsrv.status_codes[status_code];
+        result.message = "Unexpected response from Rserve: " + resp + " status: " + Rserve.Rsrv.status_codes[status_code];
         return result;
     }
     try {
@@ -644,7 +710,7 @@ Rserve.parse_payload = parse_payload;
     })();
 
     Rserve.EndianAwareDataView = (function() {
-        
+
         var proto = {
             'setInt8': function(i, v) { return this.view.setInt8(i, v); },
             'setUint8': function(i, v) { return this.view.setUint8(i, v); },
@@ -699,10 +765,10 @@ Rserve.parse_payload = parse_payload;
             offset: o,
             length: l,
             data_view: function() {
-                return new Rserve.EndianAwareDataView(this.buffer, this.offset, 
+                return new Rserve.EndianAwareDataView(this.buffer, this.offset,
                                                       this.buffer.byteLength - this.offset);
             },
-            make: function(ctor, new_offset, new_length) { 
+            make: function(ctor, new_offset, new_length) {
                 new_offset = _.isUndefined(new_offset) ? 0 : new_offset;
                 new_length = _.isUndefined(new_length) ? this.length : new_length;
                 var element_size = ctor.BYTES_PER_ELEMENT || 1;
@@ -716,8 +782,8 @@ Rserve.parse_payload = parse_payload;
                     }
                     return new ctor(output_buffer);
                 } else {
-                    return new ctor(this.buffer, 
-                                    this.offset + new_offset, 
+                    return new ctor(this.buffer,
+                                    this.offset + new_offset,
                                     n_els);
                 }
             },
@@ -726,21 +792,24 @@ Rserve.parse_payload = parse_payload;
                     this.buffer, this.offset + offset, this.buffer.byteLength);
             },
             view: function(new_offset, new_length) {
-                // FIXME Needs bounds checking
+                var ofs = this.offset + new_offset;
+                if(ofs + new_length > this.buffer.byteLength)
+                    throw new Error("Rserve.my_ArrayBufferView.view: bounds error: size: " +
+                                    this.buffer.byteLength + " offset: " + ofs + " length: " + new_length);
                 return Rserve.my_ArrayBufferView(
-                    this.buffer, this.offset + new_offset, new_length);
+                    this.buffer, ofs, new_length);
             }
         };
     };
 
 })(this);
-
 (function() {
 
-function _encode_command(command, buffer) {
+function _encode_command(command, buffer, msg_id) {
     if (!_.isArray(buffer))
         buffer = [buffer];
-    var length = _.reduce(buffer, 
+    if (!msg_id) msg_id = 0;
+    var length = _.reduce(buffer,
                           function(memo, val) {
                               return memo + val.byteLength;
                           }, 0),
@@ -748,7 +817,7 @@ function _encode_command(command, buffer) {
         view = new Rserve.EndianAwareDataView(big_buffer);
     view.setInt32(0, command);
     view.setInt32(4, length);
-    view.setInt32(8, 0);
+    view.setInt32(8, msg_id);
     view.setInt32(12, 0);
     var offset = 16;
     _.each(buffer, function(b) {
@@ -809,7 +878,7 @@ Rserve.create = function(opts) {
             throw new Error("Bad rng, no cookie");
         return k;
     };
-    
+
     function convert_to_hash(value) {
         var hash = fresh_hash();
         captured_functions[hash] = value;
@@ -826,7 +895,7 @@ Rserve.create = function(opts) {
             // can't left shift value here because value will have bit 32 set and become signed..
             view.data_view().setInt32(0, Rserve.Rsrv.DT_SEXP + ((sz & 16777215) * Math.pow(2, 8)) + Rserve.Rsrv.DT_LARGE);
             // but *can* right shift because we assume sz is less than 2^31 or so to begin with
-            view.data_view().setInt32(4, sz >> 24);
+            view.data_view().setInt32(4, sz >>> 24);
             Rserve.write_into_view(value, view.skip(8), forced_type, convert_to_hash);
             return buffer;
         } else {
@@ -837,7 +906,7 @@ Rserve.create = function(opts) {
             return buffer;
         }
     }
-    
+
     function hand_shake(msg)
     {
         msg = msg.data;
@@ -857,9 +926,9 @@ Rserve.create = function(opts) {
             }
         } else {
             var view = new DataView(msg);
-            var header = String.fromCharCode(view.getUint8(0)) + 
-                String.fromCharCode(view.getUint8(1)) + 
-                String.fromCharCode(view.getUint8(2)) + 
+            var header = String.fromCharCode(view.getUint8(0)) +
+                String.fromCharCode(view.getUint8(1)) +
+                String.fromCharCode(view.getUint8(2)) +
                 String.fromCharCode(view.getUint8(3));
 
             if (header === 'RsOC') {
@@ -889,104 +958,163 @@ Rserve.create = function(opts) {
         if (!received_handshake) {
             hand_shake(msg);
             return;
-        } 
+        }
         if (typeof msg.data === 'string') {
             opts.on_raw_string && opts.on_raw_string(msg.data);
             return;
         }
         var v = Rserve.parse_websocket_frame(msg.data);
+        if(v.incomplete)
+            return;
+        var msg_id = v.header[2], cmd = v.header[0] & 0xffffff;
+        var queue = _.find(queues, function(queue) { return queue.msg_id == msg_id; });
+        // console.log("onmessage, queue=" + (queue ? queue.name : "<unknown>") + ", ok= " + v.ok+ ", cmd=" + cmd +", msg_id="+ msg_id);
+        // FIXME: in theory we should not need a fallback, but in case we miss some
+        // odd edge case, we revert to the old behavior.
+        // The way things work, the queue will be undefined only for OOB messages:
+        // SEND doesn't need reply, so it's irrelevant, MSG is handled separately below and
+        // enforces the right queue.
+        if (!queue) queue = queues[0];
         if (!v.ok) {
-            result_callback([v.message, v.status_code], undefined);
+            queue.result_callback([v.message, v.status_code], undefined);
             // handle_error(v.message, v.status_code);
-        } else if (v.header[0] === Rserve.Rsrv.RESP_OK) {
-            result_callback(null, v.payload);
-        } else if (v.header[0] === Rserve.Rsrv.OOB_SEND) {
+        } else if (cmd === Rserve.Rsrv.RESP_OK) {
+            queue.result_callback(null, v.payload);
+        } else if (Rserve.Rsrv.IS_OOB_SEND(cmd)) {
             opts.on_data && opts.on_data(v.payload);
-        } else if (v.header[0] === Rserve.Rsrv.OOB_MSG) {
-            if (result.ocap_mode) {
-                var p;
-                try {
-                    p = Rserve.wrap_all_ocaps(result, v.payload); // .value.json(result.resolve_hash);
-                } catch (e) {
-                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | Rserve.Rsrv.OOB_MSG, 
-                                  _encode_string(String(e)));
-                    return;
-                }
-                if (!_.isFunction(p[0])) {
-                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | Rserve.Rsrv.OOB_MSG, 
-                                  _encode_string("OOB Messages on ocap-mode must be javascript function calls"));
-                    return;
-                }
-                var captured_function = p[0], params = p.slice(1);
-                params.push(function(err, result) {
-                    if (err) {
-                        _send_cmd_now(Rserve.Rsrv.RESP_ERR | Rserve.Rsrv.OOB_MSG, _encode_value(err));
-                    } else {
-                        _send_cmd_now(Rserve.Rsrv.OOB_MSG, _encode_value(result));
-                    }
-                });
-                captured_function.apply(undefined, params);
-            } else {
+        } else if (Rserve.Rsrv.IS_OOB_MSG(cmd)) {
+            // OOB MSG may use random msg_id, so we have to use the USR_CODE to detect the right queue
+            // FIXME: we may want to consider adjusting the protocol specs to require msg_id
+            //        to be retained by OOB based on the outer OCcall message (thus inheriting
+            //        the msg_id), but curretnly it's not mandated.
+            queue = (Rserve.Rsrv.OOB_USR_CODE(cmd) > 255) ? compute_queue : ctrl_queue;
+            // console.log("OOB MSG result on queue "+ queue.name);
+            var p;
+            try {
+                p = Rserve.wrap_all_ocaps(result, v.payload); // .value.json(result.resolve_hash);
+            } catch (e) {
+                _send_cmd_now(Rserve.Rsrv.RESP_ERR | cmd,
+                              _encode_string(String(e)), msg_id);
+                return;
+            }
+            if(_.isString(p[0])) {
                 if (_.isUndefined(opts.on_oob_message)) {
-                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | Rserve.Rsrv.OOB_MSG, 
-                                  _encode_string("No handler installed"));
+                    _send_cmd_now(Rserve.Rsrv.RESP_ERR | cmd,
+                                  _encode_string("No handler installed"), msg_id);
                 } else {
-                    in_oob_message = true;
-                    opts.on_oob_message(v.payload, function(message, error) {
-                        if (!in_oob_message) {
+                    queue.in_oob_message = true;
+                    // breaking changes here: it appears that the callback had its arguments
+                    // reversed from the standard (error, message), and was passing the message
+                    // even on error
+                    opts.on_oob_message(v.payload, function(error, result) {
+                        if (!queue.in_oob_message) {
                             handle_error("Don't call oob_message_handler more than once.");
                             return;
                         }
-                        in_oob_message = false;
-                        var header = Rserve.Rsrv.OOB_MSG | 
-                            (error ? Rserve.Rsrv.RESP_ERR : Rserve.Rsrv.RESP_OK);
-                        _send_cmd_now(header, _encode_string(message));
-                        bump_queue();
+                        queue.in_oob_message = false;
+                        if(error) {
+                            _send_cmd_now(cmd | Rserve.Rsrv.RESP_ERR, _encode_string(error), msg_id);
+                        }
+                        else {
+                            _send_cmd_now(cmd | Rserve.Rsrv.RESP_OK, _encode_string(result), msg_id);
+                        }
+                        bump_queues();
                     });
                 }
+            }
+            else if(_.isFunction(p[0])) {
+                if(!result.ocap_mode) {
+                    _send_cmd_now(Rserve.Rsrv.RESP_ERROR | cmd,
+                                  _encode_string("JavaScript function calls only allowed in ocap mode"), msg_id);
+                }
+                else {
+                    var captured_function = p[0], params = p.slice(1);
+                    params.push(function(err, result) {
+                        if (err) {
+                            _send_cmd_now(Rserve.Rsrv.RESP_ERR | cmd, _encode_value(err), msg_id);
+                        } else {
+                            _send_cmd_now(cmd, _encode_value(result), msg_id);
+                        }
+                    });
+                    captured_function.apply(undefined, params);
+                }
+            }
+            else {
+                _send_cmd_now(Rserve.Rsrv.RESP_ERROR | cmd,
+                              _encode_string("Unknown oob message type: " + typeof(p[0])));
             }
         } else {
             handle_error("Internal Error, parse returned unexpected type " + v.header[0], -1);
         }
     };
 
-    function _send_cmd_now(command, buffer) {
-        var big_buffer = _encode_command(command, buffer);
+    function _send_cmd_now(command, buffer, msg_id) {
+        var big_buffer = _encode_command(command, buffer, msg_id);
         if (opts.debug)
             opts.debug.message_out && opts.debug.message_out(big_buffer[0], command);
         socket.send(big_buffer);
         return big_buffer;
     };
 
-    var queue = [];
-    var in_oob_message = false;
-    var awaiting_result = false;
-    var result_callback;
-    function bump_queue() {
-        if (result.closed && queue.length) {
-            handle_error("Cannot send messages on a closed socket!", -1);
-        } else if (!awaiting_result && !in_oob_message && queue.length) {
-            var lst = queue.shift();
-            result_callback = lst[1];
-            awaiting_result = true;
-            if (opts.debug)
-                opts.debug.message_out && opts.debug.message_out(lst[0], lst[2]);
-            socket.send(lst[0]);
-        }
-    }
-    function enqueue(buffer, k, command) {
-        queue.push([buffer, function(error, result) {
-            awaiting_result = false;
-            bump_queue();
-            k(error, result);
-        }, command]);
-        bump_queue();
+    var ctrl_queue = {
+        queue: [],
+        in_oob_message: false,
+        awaiting_result: false,
+        msg_id: 0,
+        name: "control"
     };
 
-    function _cmd(command, buffer, k, string) {
+    var compute_queue = {
+        queue: [],
+        in_oob_message: false,
+        awaiting_result: false,
+        msg_id: 1,
+        name: "compute"
+    };
+
+    // the order matters - the first queue is used if the association cannot be determined from the msg_id/cmd
+    var queues = [ ctrl_queue, compute_queue ];
+
+    function queue_can_send(queue) { return !queue.in_oob_message && !queue.awaiting_result && queue.queue.length; }
+
+    function bump_queues() {
+        var available = _.filter(queues, queue_can_send);
+        // nothing in the queues (or all busy)? get out
+        if (!available.length) return;
+        if (result.closed) {
+            handle_error("Cannot send messages on a closed socket!", -1);
+        } else {
+            var queue = _.sortBy(available, function(queue) { return queue.queue[0].timestamp; })[0];
+            var lst = queue.queue.shift();
+            queue.result_callback = lst.callback;
+            queue.awaiting_result = true;
+            if (opts.debug)
+                opts.debug.message_out && opts.debug.message_out(lst.buffer, lst.command);
+            socket.send(lst.buffer);
+        }
+    }
+
+    function enqueue(buffer, k, command, queue) {
+        queue.queue.push({
+            buffer: buffer,
+          callback: function(error, result) {
+              queue.awaiting_result = false;
+              bump_queues();
+              k(error, result);
+          },
+            command: command,
+            timestamp: Date.now()
+        });
+        bump_queues();
+    };
+
+    function _cmd(command, buffer, k, string, queue) {
+        // default to the first queue - only used in non-OCAP mode which doesn't support multiple queues
+        if (!queue) queue = queues[0];
+
         k = k || function() {};
-        var big_buffer = _encode_command(command, buffer);
-        return enqueue(big_buffer, k, string);
+        var big_buffer = _encode_command(command, buffer, queue.msg_id);
+        return enqueue(big_buffer, k, string, queue);
     };
 
     result = {
@@ -1017,7 +1145,7 @@ Rserve.create = function(opts) {
         },
         set: function(key, value, k) {
             _cmd(Rserve.Rsrv.CMD_setSEXP, [_encode_string(key), _encode_value(value)], k, "");
-        }, 
+        },
 
         //////////////////////////////////////////////////////////////////////
         // ocap mode
@@ -1040,9 +1168,10 @@ Rserve.create = function(opts) {
             }
             var params = [str];
             params.push.apply(params, values);
+            // determine the proper queue from the OCAP prefix
+            var queue = (str.charCodeAt(0) == 64) ? compute_queue : ctrl_queue;
             _cmd(Rserve.Rsrv.CMD_OCcall, _encode_value(params, Rserve.Rsrv.XT_LANG_NOTAG),
-                 k,
-                 "");
+                 k, "", queue);
         },
 
         wrap_ocap: function(ocap) {
@@ -1093,7 +1222,7 @@ Rserve.wrap_ocap = function(s, ocap) {
         var k = values.pop();
         s.OCcall(ocap, values, function(err, v) {
             if (!_.isUndefined(v))
-                v = Rserve.wrap_all_ocaps(s, v); 
+                v = Rserve.wrap_all_ocaps(s, v);
             k(err, v);
         });
     };
@@ -1224,7 +1353,7 @@ Rserve.determine_size = function(value, forced_type)
             + header_size // XT_LIST_TAG (attribute)
               + header_size + "class".length + 3 // length of 'class' + padding (tag as XT_SYMNAME)
               + Rserve.determine_size(["javascript_function"]); // length of class name
-        
+
     default:
         throw new Rserve.RserveError("Internal error, can't handle type " + t);
     }
@@ -1245,8 +1374,8 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type, convert
     if (is_large) {
         payload_start = 8;
         write_view.setInt32(0, t + ((size - 8) << 8));
-        write_view.setInt32(4, (size - 8) >> 24);
-    } else { 
+        write_view.setInt32(4, (size - 8) >>> 24);
+    } else {
         payload_start = 4;
         write_view.setInt32(0, t + ((size - 4) << 8));
     }

@@ -1,4 +1,4 @@
-rcs.redis <- function(host=NULL) {
+rcs.redis <- function(host=NULL, db=getOption("redis.default.db", 0L), password=NULL) {
   require(rediscc)
   if (!is.null(host)) {
     hp <- strsplit(as.character(host), ':', TRUE)[[1]]
@@ -8,7 +8,7 @@ rcs.redis <- function(host=NULL) {
     host <- "localhost"
     port <- 6379L
   }
-  structure(list(host=host, port=port, handle=redis.connect(host, port, 3, TRUE, TRUE)), class="RCSredis")
+  structure(list(host=host, port=port, handle=redis.connect(host, port, 3, TRUE, TRUE, db=db, password=password)), class="RCSredis")
 }
 
 rcs.close.RCSredis <- function(engine=.session$rcs.engine)

@@ -1,10 +1,56 @@
 ## RCloud 1.3
 
 ### Features
+* Simultaneously view code and output.  Instead of switching back and forth
+  between code and output, most cells always show both the code and the output.
+  Output is shown when the cell is run.  Click on the code to activate the cell's
+  edit mode.
+
+  Markdown cells behave slightly differently - since the markdown output already
+  contains the code, the code editor is hidden when the markdown is run.  Click
+  on any code within the markdown output, or click on the cell's edit mode button to
+  activate it.
+
+* Direct output and input.  Instead of printing a single result for each cell, the
+  output is handled asynchronously, so it shows as it is available.  The code can
+  also request lines of input, so e.g. `readline` now works - as do `browser` for
+  debugging!  Ordinary code cells do not use knitr/markdown for output, but send
+  images, preformatted, and html output separately.
+
+* Ability to save plots in other formats.  Hover the mouse over the plot for the
+  disk icon to appear in the upper right corner, which contains a list of available
+  image formats.  A widget at the lower-right corner can be used to resize the image.
+
+* Search and replace across all cells in a notebook.  Ctrl/Cmd-F opens the
+  find bar at the top of the notebook.  Type to search incrementally.
+
+  Ctrl-Alt-F (should be Ctrl-H #1212) / Cmd-Option-F opens the replace bar.
+
+  Next and Last are not yet implemented, but will be for release 1.3.  Ditto
+  for replace some but not all. (#1202)
+
+* New simplified look.  Cells do not activate the editor until they are clicked on,
+  so they use much less resources and notebooks with a large number of cells
+  load quickly.
 
 * Automatic indentation for R code (#1110) and Python (#1105)
 
+* Many ways to write extensions to add to the RCloud user interface.
+  [Documentation](https://github.com/att/rcloud/wiki/RCloud-UI-Extensions).
+
+* It is possible to add cell languages - the Python, RMarkdown, and
+  (bizarrely) R evaluation is performed by language add-ons.
+  https://github.com/att/rcloud/wiki/RCloud-Language-extensions
+
+* Experimental support for RMarkdown cells.  The old Markdown cells use the
+  [markdown](http://cran.r-project.org/web/packages/markdown/index.html)
+  and [knitr](http://yihui.name/knitr/) packages directly for output;
+  RMarkdown cell use [rmarkdown](http://rmarkdown.rstudio.com/) (a.k.a. R Markdown v2).
+
 * Option to receive email updates when your notebook is commented on (#900)
+
+* Notebook Information pop-up shows the people who have starred a notebook (#935)
+
 
 
 ### Improvements
@@ -21,6 +67,25 @@
 
 * Formal arguments shown for functions in Workspace (#994)
 
+* Option to turn off terse dates (#1040)
+
+* Year is shown if notebook is more than a year old (#986)
+
+* Cell number is shown above each cell in its status area (#1126)
+
+* `shared.R` can be used to serve static content out of of the `www/` folder of
+  any installed R package. (#1147)
+
+* redis database number and password can be set
+
+* Can grab the status area above cell as well as the gutter area in order to reorder cells.
+  Allows moving cells when not editing them.
+
+* Clicking to edit cell sets the cursor position based on the click location.
+
+
+
+
 ### Bug fixes
 
 * Dataframe was not cleared when loading a new notebook (#1045)
@@ -30,6 +95,28 @@
 * Loading notebook by ID failed when there was whitespace (#1115)
 
 * Notebook wasn't saved before forking (#1083)
+
+* Importing a notebook would cause the browser title to change (#1168)
+
+* Messages from the server could get fragmented and produce "Invalid typed array
+  length" error or silent failures (#1135)
+
+* Issues with knitr creating duplicate plots fixed (#1046)
+
+* (Mis)feature where a prior notebook is loaded if the current notebook can't be
+
+
+## RCloud 1.2.1
+
+### Bug Fixes
+
+* Smaller file upload packet size to avoid Rserve disconnection bug
+
+* Do not check python idle state
+
+* Workaround for varying `fork_of` github interface
+
+* Error when deleting currently-loaded notebook (#1049)
 
 
 ## RCloud 1.2
@@ -58,9 +145,9 @@
 
 * The notebook store is now abstrated through the `gist` package,
   allowing arbitrary back-ends. The traditional GitHub Gist backend is
-  now handled by the `githubhist` package. Alternative back-end based
+  now handled by the `githubgist` package. Alternative back-end based
   on local git repositories is implemented in `gitgist`. The back-end
-  is selected by the `gist.backend` configuration option. It curretnly
+  is selected by the `gist.backend` configuration option. It currently
   defaults to `githubgist` but it will eventually become a mandatory
   option.
 

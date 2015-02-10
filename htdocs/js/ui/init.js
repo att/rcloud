@@ -11,32 +11,12 @@ RCloud.UI.init = function() {
         var version = shell.version();
         editor.revert_notebook(is_mine, gistname, version);
     });
-    $("#open-in-github").click(function() {
-        window.open(shell.github_url(), "_blank");
-    });
-    $("#open-from-github").click(function() {
-        var result = prompt("Enter notebook ID or github URL:");
-        if(result !== null)
-            shell.open_from_github(result);
-    });
 
-    $("#import-notebooks").click(function() {
-        shell.import_notebooks();
-    });
     var saveb = $("#save-notebook");
     saveb.click(function() {
         shell.save_notebook();
     });
     shell.notebook.controller.save_button(saveb);
-    $('#export-notebook-file').click(function() {
-        shell.export_notebook_file();
-    });
-    $('#export-notebook-as-r').click(function() {
-        shell.export_notebook_as_r_file();
-    });
-    $('#import-notebook-file').click(function() {
-        shell.import_notebook_file();
-    });
 
     $("#rcloud-logout").click(function() {
         // let the server-side script handle this so it can
@@ -44,7 +24,7 @@ RCloud.UI.init = function() {
         window.location.href = '/logout.R';
     });
 
-    $("#run-notebook").click(shell.run_notebook);
+    RCloud.UI.run_button.init();
 
     //////////////////////////////////////////////////////////////////////////
     // allow reordering cells by dragging them
@@ -66,7 +46,7 @@ RCloud.UI.init = function() {
                     next = info.item.next().data('rcloud.model');
                 shell.notebook.controller.move_cell(model, next);
             },
-            handle: " .ace_gutter-layer",
+            handle: " .cell-status",
             scroll: true,
             scrollSensitivity: 40,
             forcePlaceholderSize: true
@@ -84,9 +64,22 @@ RCloud.UI.init = function() {
         return true;
     });
 
+    RCloud.UI.advanced_menu.init();
+
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
+    RCloud.UI.find_replace.init();
+
+    // these inits do default setup.  then add-ons modify that setup.
+    // then, somewhere, load gets called and they actually fire up
+    // (that last step is not so well defined so far)
     RCloud.UI.share_button.init();
+    RCloud.UI.notebook_commands.init();
+    RCloud.UI.cell_commands.init();
+    RCloud.UI.panel_loader.init();
+
+    // adds to advanced menu
+    RCloud.UI.import_export.init();
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
@@ -95,6 +88,16 @@ RCloud.UI.init = function() {
     });
 
     ui_utils.prevent_backspace($(document));
+
+    $(document).on('copy', function() {
+        var sel = window.getSelection();
+        var div = $('<div class="offscreen"></div>');
+        $('body').append(div);
+        var range = sel.getRangeAt(0);
+        div.append(range.cloneContents());
+        div.find('.nonselectable').remove();
+        sel.selectAllChildren(div[0]);
+    });
 
     // prevent unwanted document scrolling e.g. by dragging
     $(document).on('scroll', function() {
@@ -111,7 +114,7 @@ RCloud.UI.init = function() {
     // ctrl/cmd+s and save notebook
     if(saveb.size()) {
         document.addEventListener("keydown", function(e) {
-            if (e.keyCode == 83 && (e.ctrlKey || e.metaKey)) {
+            if (e.keyCode == 83 && (e.ctrlKey || e.metaKey)) { // ctrl/cmd-S
                 e.preventDefault();
                 shell.save_notebook();
             }

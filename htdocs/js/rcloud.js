@@ -1,13 +1,13 @@
 RCloud = {};
 
 RCloud.is_exception = function(v) {
-    return _.isArray(v) && v.r_attributes && v.r_attributes['class'] === 'try-error';
+    return _.isArray(v) && v.r_attributes && (v.r_attributes['class'] === 'Rserve-eval-error' || v.r_attributes['class'] === 'parse-error');
 };
 
 RCloud.exception_message = function(v) {
     if (!RCloud.is_exception(v))
         throw new Error("Not an R exception value");
-    return v[0];
+    return v['error'];
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -17,7 +17,9 @@ RCloud.promisify_paths = (function() {
     function rcloud_handler(command, promise_fn) {
         function success(result) {
             if(result && RCloud.is_exception(result)) {
-                throw new Error(command + ": " + result[0].replace('\n', ' '));
+                var tb = result['traceback'] ? result['traceback'] : "";
+                if (tb.join) tb = tb.join(" <- ");
+                throw new Error(command + ": " + result['error'].replace('\n', ' ') + "  " + tb);
             }
             return result;
         }
@@ -76,10 +78,12 @@ RCloud.create = function(rcloud_ocaps) {
         var paths = [
             ["version_info"],
             ["anonymous_session_init"],
+            ["anonymous_compute_init"],
             ["prefix_uuid"],
             ["get_conf_value"],
             ["get_notebook"],
             ["load_notebook"],
+            ["load_notebook_compute"],
             ["call_notebook"],
             ["install_notebook_stylesheets"],
             ["tag_notebook_version"],
@@ -96,6 +100,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["stars","unstar_notebook"],
             ["stars","is_notebook_starred"],
             ["stars","get_notebook_star_count"],
+            ["stars","get_notebook_starrer_list"],
             ["stars","get_multiple_notebook_star_counts"],
             ["stars","get_my_starred_notebooks"],
             ["session_cell_eval"],
@@ -108,7 +113,9 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "set_url"],
             ["api", "get_url"],
             ["get_notebook_by_name"],
-            ["languages", "get_list"]
+            ["languages", "get_list"],
+            ["plots", "render"],
+            ["plots", "get_formats"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
@@ -125,6 +132,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.anonymous_session_init = function() {
             return rcloud_ocaps.anonymous_session_initAsync();
+        };
+
+        rcloud.anonymous_compute_init = function() {
+            return rcloud_ocaps.anonymous_compute_initAsync();
         };
 
         rcloud.init_client_side_data = function() {
@@ -145,9 +156,14 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         rcloud.load_notebook = function(id, version) {
-            return rcloud_github_handler(
-                "rcloud.load.notebook " + id,
-                rcloud_ocaps.load_notebookAsync(id, version));
+            return Promise.all([
+                rcloud_github_handler("rcloud.load.notebook.compute " + id,
+                                      rcloud_ocaps.load_notebook_computeAsync(id, version)),
+                rcloud_github_handler("rcloud.load.notebook " + id,
+                                      rcloud_ocaps.load_notebookAsync(id, version))])
+                .spread(function(_, notebook) {
+                    return notebook;
+                });
         };
 
         rcloud.tag_notebook_version = function(gist_id,version,tag_name) {
@@ -183,8 +199,7 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.get_usersAsync();
         };
 
-        rcloud.record_cell_execution = function(cell_model) {
-            var json_rep = JSON.stringify(cell_model.json());
+        rcloud.record_cell_execution = function(json_rep) {
             return rcloud_ocaps.log.record_cell_executionAsync(rcloud.username(), json_rep);
         };
 
@@ -249,12 +264,15 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.stars.get_notebook_star_count = function(id) {
             return rcloud_ocaps.stars.get_notebook_star_countAsync(id);
         };
+        rcloud.stars.get_notebook_starrer_list = function(id) {
+            return rcloud_ocaps.stars.get_notebook_starrer_listAsync(id);
+        };
         rcloud.stars.get_multiple_notebook_star_counts = function(id) {
             return rcloud_ocaps.stars.get_multiple_notebook_star_countsAsync(id);
         };
 
-        rcloud.session_cell_eval = function(filename, language, silent) {
-            return rcloud_ocaps.session_cell_evalAsync(filename, language, silent);
+        rcloud.session_cell_eval = function(context_id, filename, language, version, silent) {
+            return rcloud_ocaps.session_cell_evalAsync(context_id, filename, language, version, silent);
         };
 
         rcloud.reset_session = function() {
@@ -305,11 +323,23 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.languages.get_list = function() {
             return rcloud_ocaps.languages.get_listAsync();
         };
+
+        //////////////////////////////////////////////////////////////////////
+        // plots
+        rcloud.plots = {};
+        rcloud.plots.render = function(device, page, options) {
+            return rcloud_ocaps.plots.renderAsync(device, page, options);
+        };
+        rcloud.plots.get_formats = function() {
+            return rcloud_ocaps.plots.get_formatsAsync();
+        };
     }
 
     function setup_authenticated_ocaps() {
         var paths = [
             ["session_init"],
+            ["compute_init"],
+            ["signal_to_compute"],
             ["search"],
             ["update_notebook"],
             ["create_notebook"],
@@ -363,6 +393,14 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.session_initAsync(username, token);
         };
 
+        rcloud.compute_init = function(username, token) {
+            return rcloud_ocaps.compute_initAsync(username, token);
+        };
+
+        rcloud.signal_to_compute = function(signal) {
+            return rcloud_ocaps.signal_to_computeAsync(signal);
+        };
+
         rcloud.update_notebook = function(id, content) {
             return rcloud_github_handler(
                 "rcloud.update.notebook",
@@ -374,7 +412,11 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.create_notebook = function(content) {
             return rcloud_github_handler(
                 "rcloud.create.notebook",
-                rcloud_ocaps.create_notebookAsync(JSON.stringify(content)));
+                rcloud_ocaps.create_notebookAsync(JSON.stringify(content)))
+            .then(function(result) {
+                rcloud_ocaps.load_notebook_computeAsync(result.id);
+                return result;
+            });
         };
         rcloud.fork_notebook = function(id) {
             return rcloud_github_handler(
@@ -388,8 +430,8 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.purl_sourceAsync(source);
         };
 
-        rcloud.get_completions = function(text, pos) {
-            return rcloud_ocaps.get_completionsAsync(text, pos)
+        rcloud.get_completions = function(language, text, pos) {
+            return rcloud_ocaps.get_completionsAsync(language, text, pos)
                 .then(function(comps) {
                     if (_.isString(comps))
                         comps = [comps]; // quirk of rserve.js scalar handling
@@ -411,11 +453,8 @@ RCloud.create = function(rcloud_ocaps) {
                 "rcloud.rename.notebook",
                 rcloud_ocaps.rename_notebookAsync(id, new_name));
         };
-        rcloud.authenticated_cell_eval = function(command, language, silent) {
-            return rcloud_ocaps.authenticated_cell_evalAsync(command, language, silent);
-        };
-        rcloud.session_markdown_eval = function(command, language, silent) {
-            return rcloud_ocaps.session_markdown_evalAsync(command, language, silent);
+        rcloud.authenticated_cell_eval = function(context_id, filename, language, version, silent) {
+            return rcloud_ocaps.authenticated_cell_evalAsync(context_id, filename, language, version, silent);
         };
 
         rcloud.post_comment = function(id, content) {
@@ -449,21 +488,11 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         // stars
-        rcloud.stars = {};
         rcloud.stars.star_notebook = function(id) {
             return rcloud_ocaps.stars.star_notebookAsync(id);
         };
         rcloud.stars.unstar_notebook = function(id) {
             return rcloud_ocaps.stars.unstar_notebookAsync(id);
-        };
-        rcloud.stars.is_notebook_starred = function(id) {
-            return rcloud_ocaps.stars.is_notebook_starredAsync(id);
-        };
-        rcloud.stars.get_notebook_star_count = function(id) {
-            return rcloud_ocaps.stars.get_notebook_star_countAsync(id);
-        };
-        rcloud.stars.get_multiple_notebook_star_counts = function(ids) {
-            return rcloud_ocaps.stars.get_multiple_notebook_star_countsAsync(ids);
         };
         rcloud.stars.get_my_starred_notebooks = function() {
             return rcloud_ocaps.stars.get_my_starred_notebooksAsync();

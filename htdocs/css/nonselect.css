@@ -1,0 +1,32 @@
+/*
+ * http://evanhahn.com/how-to-disable-copy-paste-on-your-website/
+
+ * Make elements nonselectable.
+ * by Evan Hahn
+ * licensed under the Unlicense
+ *
+ * Usage:
+ * <div class="nonselectable">
+ *    This is nonselectable, <span class="selectable">but this part is</span>.
+ * </div>
+ *
+ */
+
+.nonselectable {
+  -webkit-user-select: none;
+  -khtml-user-drag: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -moz-user-select: -moz-none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.selectable {
+  -webkit-user-select: auto;
+  -khtml-user-drag: auto;
+  -khtml-user-select: auto;
+  -moz-user-select: auto;
+  -ms-user-select: auto;
+  user-select: auto;
+}

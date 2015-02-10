@@ -1,20 +1,28 @@
 var ui_utils = {};
 
-ui_utils.url_maker = function(page) {
-    return function(opts) {
-        opts = opts || {};
-        var url = window.location.protocol + '//' + window.location.host + '/' + page;
+ui_utils.make_url = function(page, opts) {
+    opts = opts || {};
+    var url = window.location.protocol + '//' + window.location.host + '/' + page;
+    if(opts.do_path) {
+        if(opts.notebook) {
+            url += '/' + opts.notebook;
+            // tags currently not supported for notebook.R & the like
+            if(opts.version)
+                url += '/' + opts.version;
+        }
+    }
+    else {
         if(opts.notebook) {
             url += '?notebook=' + opts.notebook;
-            if(opts.version && !opts.tag)
-                url = url + '&version='+opts.version;
-            if(opts.tag && opts.version)
-                url = url + '&tag='+opts.tag;
+            if(opts.tag)
+                url += '&tag=' + opts.tag;
+            else if(opts.version)
+                url += '&version=' + opts.version;
         }
         else if(opts.new_notebook)
             url += '?new_notebook=true';
-        return url;
-    };
+    }
+    return url;
 };
 
 ui_utils.disconnection_error = function(msg, label) {
@@ -106,7 +114,7 @@ ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
     var lineHeight = widget.renderer.lineHeight;
     var rows = Math.max(min_rows, Math.min(max_rows, widget.getSession().getScreenLength()));
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
-    return Math.max(75, newHeight);
+    return newHeight;
 };
 
 ui_utils.ace_set_pos = function(widget, row, column) {
@@ -153,7 +161,12 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                     widget.navigateDown(1);
                     widget.navigateLineEnd();
                 }
-                shell.new_cell(code, get_language(), true);
+                RCloud.UI.command_prompt.history().add_entry(code);
+                shell.new_cell(code, get_language())
+                    .spread(function(_, controller) {
+                        controller.enqueue_execution_snapshot();
+                        shell.scroll_to_end();
+                    });
             }
         }
     ]);
@@ -172,6 +185,23 @@ ui_utils.character_offset_of_pos = function(widget, pos) {
         ret += text[i].length + nlLength;
     ret += pos.column;
     return ret;
+};
+
+ui_utils.position_of_character_offset = function(widget, offset) {
+    // based on the above; the wontfix ace issue is
+    // https://github.com/ajaxorg/ace/issues/226
+    var session = widget.getSession(), doc = session.getDocument();
+    var nlLength = doc.getNewLineCharacter().length;
+    var text = doc.getAllLines();
+    var i;
+    for(i=0; i<text.length; i++) {
+        if(offset <= text[i].length)
+            break;
+        offset -= text[i].length + nlLength;
+    }
+    if(i===text.length)
+        throw new Error("character offset off end of editor");
+    return {row: i, column: offset};
 };
 
 // bind an ace editor to a listener and return a function to change the
@@ -239,16 +269,18 @@ ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
     var base_enable = ret.enable;
     ret.enable = function(val) {
         // bootstrap menu items go in in an <li /> that takes the disabled class
-        $("#publish-notebook").parent().toggleClass('disabled', !val);
+        item.parent().toggleClass('disabled', !val);
         base_enable(val);
     };
     return ret;
 };
 
 // this is a hack, but it'll help giving people the right impression.
-// I'm happy to replace it witht the Right Way to do it when we learn
+// I'm happy to replace it with the Right Way to do it when we learn
 // how to do it.
-ui_utils.make_prompt_chevron_gutter = function(widget)
+// still a hack, generalizing it a little bit.
+
+ui_utils.customize_ace_gutter = function(widget, line_text_function)
 {
     var dom = ace.require("ace/lib/dom");
     widget.renderer.$gutterLayer.update = function(config) {
@@ -263,11 +295,13 @@ ui_utils.make_prompt_chevron_gutter = function(widget)
         var decorations = this.session.$decorations;
         var firstLineNumber = this.session.$firstLineNumber;
         var lastLineNumber = 0;
-        html.push(
-            "<div class='ace_gutter-cell ",
-            "' style='height:", this.session.getRowLength(0) * config.lineHeight, "px;'>",
-            "&gt;", "</div>"
-        );
+        for(; i <= lastRow; ++i)
+            html.push(
+                "<div class='ace_gutter-cell ",
+                "' style='height:", this.session.getRowLength(0) * config.lineHeight, "px;'>",
+                line_text_function(i),
+                "</div>"
+            );
 
         this.element = dom.setInnerHtml(this.element, html.join(""));
         this.element.style.height = config.minHeight + "px";
@@ -435,16 +469,26 @@ ui_utils.editable = function(elem$, command) {
         });
         break;
     }
+    return elem$;
 };
+
+// hack to fake a hover over a jqTree node (or the next one if it's deleted)
+// because jqTree rebuilds DOM elements and events get lost
+ui_utils.fake_hover = function fake_hover(node) {
+    var parent = node.parent;
+    var index = $('.notebook-commands.appear', node.element).css('display') !== 'none' ?
+            parent.children.indexOf(node) : undefined;
+    ui_utils.on_next_tick(function() {
+        if(index>=0 && index < parent.children.length) {
+            var next = parent.children[index];
+                $(next.element).mouseover();
+        }
+    });
+};
+
 
 ui_utils.on_next_tick = function(f) {
     window.setTimeout(f, 0);
-};
-
-ui_utils.add_ace_grab_affordance = function(element) {
-    var sel = $(element).children().filter(".ace_gutter");
-    var div = $("<div class='grab-affordance' style='position:absolute;top:0px'><object data='/img/grab_affordance.svg' type='image/svg+xml'></object></div>");
-    sel.append(div);
 };
 
 ui_utils.scroll_to_after = function($sel, duration) {

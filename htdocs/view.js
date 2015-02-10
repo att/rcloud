@@ -8,6 +8,7 @@ function main() {
     RCloud.UI.init();
     RCloud.session.init(true).then(function() {
         shell.init();
+        RCloud.UI.advanced_menu.load();
         var notebook = getURLParameter("notebook"),
             version = getURLParameter("version"),
             quiet = getURLParameter("quiet");
@@ -49,9 +50,6 @@ function main() {
             rcloud.install_notebook_stylesheets().then(function() {
                 shell.notebook.controller.run_all().then(function() {
                     shell.notebook.controller.hide_r_source();
-                });
-                _.each(shell.notebook.view.sub_views, function(cell_view) {
-                    cell_view.hide_buttons();
                 });
             });
         });

@@ -1,25 +1,46 @@
 RCloud.language = (function() {
-    var ace_modes_ = {
-        R: "ace/mode/r",
-        Python: "ace/mode/python",
-        Markdown: "ace/mode/rmarkdown",
-        CSS: "ace/mode/css",
-        JavaScript: "ace/mode/javascript",
-        Text: "ace/mode/text"
+    // the keys of the language map come from GitHub's language detection
+    // infrastructure which we don't control. (this is likely a bad thing)
+    var languages_ = {
+        CSS: {
+            ace_mode: "ace/mode/css"
+        },
+        JavaScript: {
+            ace_mode: "ace/mode/javascript"
+        },
+        Text: {
+            ace_mode: "ace/mode/text",
+            extension: 'txt'
+        }
     };
+
     var langs_ = [];
 
     return {
+        is_a_markdown: function(language) {
+            return languages_[language] ? languages_[language].is_a_markdown : false;
+        },
         ace_mode: function(language) {
-            return ace_modes_[language] || ace_modes_.Text;
+            return (languages_[language] && languages_[language].ace_mode) || languages_.Text.ace_mode;
+        },
+        extension: function(language) {
+            return (languages_[language] && languages_[language].extension) || '';
+        },
+        hljs_class: function(language) {
+            return (languages_[language] && languages_[language].hljs_class) || null;
         },
         // don't call _set_available_languages yourself; it's called
         // by the session initialization code.
-        _set_available_languages: function(list) {
-            if (_.isArray(list))
-                langs_ = list;
-            else
-                langs_ = [list];
+        _set_available_languages: function(langs) {
+            langs_ = [];
+            for(var lang in langs) {
+                langs_.push(lang);
+                languages_[lang] = languages_[lang] || {};
+                languages_[lang].is_a_markdown = langs[lang]['is.a.markdown'];
+                languages_[lang].ace_mode = langs[lang]['ace.mode'];
+                languages_[lang].hljs_class = langs[lang]['hljs.class'];
+                languages_[lang].extension = langs[lang].extension;
+            }
         },
         available_languages: function() {
             return langs_;

@@ -13,7 +13,7 @@ stash.key <- function(stash, notebook, version, type="gist")
 ## Note: HEAD tag is used at retrieval time to get the version if version=NULL so it
 ## should be set if you want this stash to be the default version (unless changed
 ## this will happen for NULL and "all" versions).
-rcloud.stash.notebook <- function(stash, id = .session$current.notebook$content$id, version = NULL, tag = if (is.null(version)) "HEAD" else NULL) {
+rcloud.stash.notebook <- function(stash, id = rcloud.session.notebook.id(), version = NULL, tag = if (is.null(version)) "HEAD" else NULL) {
   get.all <- isTRUE(version == "all")
   if (get.all) version <- NULL
   res <- rcloud.get.notebook(id, version)

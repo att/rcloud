@@ -29,7 +29,6 @@ RCloud.UI.session_pane = {
         Promise.onPossiblyUnhandledRejection(function(e, promise) {
             that.post_rejection(e);
         });
-
     },
     panel_sizer: function(el) {
         var def = RCloud.UI.collapsible_column.default_sizer(el);
