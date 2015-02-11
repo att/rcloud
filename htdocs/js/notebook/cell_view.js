@@ -26,6 +26,7 @@ function create_cell_html_view(language, cell_model) {
     var above_between_controls_, cell_controls_, left_controls_;
     var edit_mode_; // note: starts neither true nor false
     var highlights_;
+    var code_preprocessors_ = []; // will be an extension point, someday
 
     // input1
     var prompt_text_;
@@ -265,28 +266,53 @@ function create_cell_html_view(language, cell_model) {
             hljs.highlightBlock(e);
         });
     }
+
+    // should be a code preprocessor extension, but i've run out of time
+    code_preprocessors_.push(
+        function(code) {
+            return _.escape(code);
+        },
+        function(code) {
+            var yuk = _.identity;
+            // add search highlights
+            var last = 0, text = '';
+            if(highlights_)
+                highlights_.forEach(function(range) {
+                    text += yuk(code.substring(last, range.begin));
+                    text += '<span class="find-highlight">' + yuk(code.substring(range.begin, range.end)) + '</span>';
+                    last = range.end;
+                });
+            text += yuk(code.substring(last));
+            return text;
+        },
+        function(code) {
+            // add abso-relative line number spans at the beginning of each line
+            var line = 1;
+            code = code.replace(/^/gm, function() {
+                return '<span class="rcloud-line-number-position nonselectable"><span class="rcloud-line-number">' + line++ + '</span></span>';
+            });
+            code += '&nbsp;'; // make sure last line is shown even if it is just a tag
+            return code;
+        },
+        function(code) {
+            // match the number of lines ace.js is going to show
+            // 1. html would skip final blank line
+            if(code[code.length-1] === '\n')
+                code += '\n';
+
+            // 2. we have ace configured to show a minimum of MIN_LINES lines
+            var lines = (code.match(/\n/g)||[]).length;
+            if(lines<MIN_LINES)
+                code += new Array(MIN_LINES+1-lines).join('\n');
+            return code;
+        });
+
     function assign_code(code) {
         code = code || cell_model.content();
 
-        // escape any html
-        code = _.escape(code);
-
-        // add abso-relative line number spans at the beginning of each line
-        var line = 1;
-        code = code.replace(/^/gm, function() {
-            return '<span class="rcloud-line-number-position nonselectable"><span class="rcloud-line-number">' + line++ + '</span></span>';
-        });
-        code += '&nbsp;'; // make sure last line is shown even if it is just a tag
-
-        // match the number of lines ace.js is going to show
-        // 1. html would skip final blank line
-        if(code[code.length-1] === '\n')
-            code += '\n';
-
-        // 2. we have ace configured to show a minimum of MIN_LINES lines
-        var lines = (code.match(/\n/g)||[]).length;
-        if(lines<MIN_LINES)
-            code += new Array(MIN_LINES+1-lines).join('\n');
+        code = code_preprocessors_.reduce(function(code, f) {
+            return f(code);
+        }, code);
 
         code_div_.empty();
         var elem = $('<code></code>').append(code);
@@ -545,6 +571,7 @@ function create_cell_html_view(language, cell_model) {
                 above_between_controls_.betweenness(!!cell_model.parent_model.prior_cell(cell_model));
         },
         change_highlights: function(ranges) {
+            highlights_ = ranges;
             if(edit_mode_) {
                 var markers = ace_session_.getMarkers();
                 for(var marker in markers) {
@@ -561,18 +588,8 @@ function create_cell_html_view(language, cell_model) {
                     });
             }
             else {
-                var content = cell_model.content();
-                var last = 0, text = '';
-                if(ranges)
-                    ranges.forEach(function(range) {
-                        text += content.substring(last, range.begin);
-                        text += '<span class="find-highlight">' + content.substring(range.begin, range.end) + '</span>';
-                        last = range.end;
-                    });
-                text += content.substring(last);
-                assign_code(text);
+                assign_code();
             }
-            highlights_ = ranges;
         },
         change_active_highlight: function(range) {
             if(!range)
