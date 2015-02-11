@@ -9,6 +9,8 @@ rcloud.language.support <- function()
     exp <- tryCatch(parse(text=command), error=function(o) structure(list(error=o$message), class="parse-error"))
     # ulog(".EXP: ", paste(capture.output(str(exp)), collapse='\n'))
     res <- if (!inherits(exp, "parse-error")) .eval(exp, FALSE, .GlobalEnv) else exp
+    ## R hides PrintWarnings() so this is the only way to get them out
+    .Internal(printDeferredWarnings())
     ## FIXME: in principle this should move from rcloud.support to rcloud.R
     rcloud.support:::.post.eval()
     res
