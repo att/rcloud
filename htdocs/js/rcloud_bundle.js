@@ -5082,28 +5082,6 @@ RCloud.UI.find_replace = (function() {
                 highlight_all();
             });
 
-            function update_match_cell(match) {
-                var matches = matches_.filter(function(m) { return m.filename === match.filename; });
-                shell.notebook.model.cells[match.index].notify_views(function(view) {
-                    view.change_highlights(matches);
-                });
-            }
-            function active_transition(transition) {
-                if(active_match_ !== undefined) {
-                    var match = matches_[active_match_];
-                    switch(transition) {
-                    case 'replace': match.kind = 'replaced';
-                        break;
-                    case 'activate': match.kind = match.kind === 'replaced' ? 'activereplaced' : 'active';
-                        break;
-                    case 'deactivate': match.kind = match.kind === 'activereplaced' ? 'replaced' : 'normal';
-                        break;
-                    }
-                    update_match_cell(match);
-                }
-            }
-
-
             function find_next(reason) {
                 active_transition(reason || 'deactivate');
                 if(active_match_ !== undefined)
@@ -5151,8 +5129,10 @@ RCloud.UI.find_replace = (function() {
             replace_all_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                if(active_match_ !== undefined)
+                if(active_match_ !== undefined) {
+                    active_transition('deactivate');
                     replace_rest();
+                }
                 else
                     replace_all(find_input_.val(), replace_input_.val());
                 return false;
@@ -5217,6 +5197,7 @@ RCloud.UI.find_replace = (function() {
         replace_mode_ = replace;
     }
     function hide_dialog() {
+        active_match_ = undefined;
         build_regex(null);
         highlight_all();
         find_dialog_.hide();
@@ -5229,6 +5210,26 @@ RCloud.UI.find_replace = (function() {
     }
     function build_regex(find) {
         regex_ = find && find.length ? new RegExp(escapeRegExp(find), 'g') : null;
+    }
+    function update_match_cell(match) {
+        var matches = matches_.filter(function(m) { return m.filename === match.filename; });
+        shell.notebook.model.cells[match.index].notify_views(function(view) {
+            view.change_highlights(matches);
+        });
+    }
+    function active_transition(transition) {
+        if(active_match_ !== undefined) {
+            var match = matches_[active_match_];
+            switch(transition) {
+            case 'replace': match.kind = 'replaced';
+                break;
+            case 'activate': match.kind = match.kind === 'replaced' ? 'activereplaced' : 'active';
+                break;
+            case 'deactivate': match.kind = match.kind === 'activereplaced' ? 'replaced' : 'normal';
+                break;
+            }
+            update_match_cell(match);
+        }
     }
     function highlight_cell(cell) {
         var matches = [];
@@ -5297,15 +5298,15 @@ RCloud.UI.find_replace = (function() {
         shell.notebook.controller.apply_changes(changes);
     }
     function replace_rest() {
-        if(active_match_ === undefined)
-            active_match_ = 0;
         var changes = shell.notebook.model.reread_buffers();
         while(active_match_ < matches_.length) {
             var cell = replace_current();
+            active_transition('replace');
             if(cell)
                 changes.push.apply(changes, shell.notebook.model.update_cell(cell));
             ++active_match_;
         }
+        active_match_ = undefined;
         shell.notebook.controller.apply_changes(changes);
     }
     var result = {
