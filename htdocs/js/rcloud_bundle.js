@@ -1842,10 +1842,7 @@ function create_cell_html_view(language, cell_model) {
     // should be a code preprocessor extension, but i've run out of time
     code_preprocessors_.push(
         function(code) {
-            return _.escape(code);
-        },
-        function(code) {
-            var yuk = _.identity;
+            var yuk = _.escape;
             // add search highlights
             var last = 0, text = '';
             if(highlights_)
