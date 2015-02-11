@@ -78,7 +78,11 @@ var shell = (function() {
             rcloud.get_conf_value("github.base.url").then(function(url) { github_url_ = url; });
             rcloud.get_conf_value("github.gist.url").then(function(url) { gist_url_ = url; });
         },
-        is_view_mode: function() {
+        is_view_mode: function(val) {
+            if(val !== undefined) {
+                view_mode_ = !!val;
+                return this;
+            }
             return view_mode_;
         },
         scroll_to_end: scroll_to_end,
