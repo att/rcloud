@@ -204,6 +204,13 @@ ui_utils.position_of_character_offset = function(widget, offset) {
     return {row: i, column: offset};
 };
 
+ui_utils.ace_range_of_character_range = function(widget, cbegin, cend) {
+    var Range = ace.require('ace/range').Range;
+    var begin = ui_utils.position_of_character_offset(widget, cbegin),
+        end = ui_utils.position_of_character_offset(widget, cend);
+    return new Range(begin.row, begin.column, end.row, end.column);
+};
+
 // bind an ace editor to a listener and return a function to change the
 // editor content without triggering that listener
 ui_utils.ignore_programmatic_changes = function(widget, listener) {

@@ -296,7 +296,7 @@ rect.frame {
     background-color: orange;
 }
 
-.ace_content .find-highlight {
+.ace_start.find-highlight {
     position: absolute;
 }
 
