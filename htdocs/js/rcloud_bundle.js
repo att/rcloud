@@ -2126,7 +2126,7 @@ function create_cell_html_view(language, cell_model) {
             input_widget_.resize(true);
             input_widget_.focus();
             input_div_.css('border-color', '#eeeeee');
-            var dir = true;
+            var dir = false;
             var switch_color = function() {
                 input_div_.animate({borderColor: dir ? '#ffac88' : '#E34234'},
                                    {duration: 1000,
