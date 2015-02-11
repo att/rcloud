@@ -666,8 +666,10 @@ rcloud.get.notebook.info <- function(id, single=TRUE) {
   if (length(id) == 1L && single) {
       names(results) <- fields
       results
-  } else
-     lapply(split(results, rep(id, each=length(fields))), function(o) { names(o) = fields; o })
+  } else {
+      if (!length(id)) lapply(fields, function(o) character()) else
+      lapply(split(results, rep(id, each=length(fields))), function(o) { names(o) = fields; o })
+  }
 }
 
 rcloud.get.multiple.notebook.infos <- function(ids)
