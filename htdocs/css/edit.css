@@ -275,6 +275,15 @@ rect.frame {
     right: 5;
 }
 
+#replace-label span, #find-label span {
+    display: inline-block;
+    width: 50px;
+}
+
+#find-dialog input {
+    width: 160px
+}
+
 .find-highlight {
     background-color: yellow;
 }
