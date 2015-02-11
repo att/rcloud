@@ -537,14 +537,14 @@ function create_cell_html_view(language, cell_model) {
             input_div_.css('border-color', '#eeeeee');
             var dir = true;
             var switch_color = function() {
-                input_div_.animate({borderColor: dir ? '#ff8c00' : '#E34234'},
-                                   {duration: 2000,
+                input_div_.animate({borderColor: dir ? '#ffac88' : '#E34234'},
+                                   {duration: 1000,
                                     easing: 'easeInOutCubic',
                                     queue: false});
                 dir = !dir;
             };
             switch_color();
-            input_anim_ = window.setInterval(switch_color, 2000);
+            input_anim_ = window.setInterval(switch_color, 1000);
             input_kont_ = k;
         },
         div: function() {
