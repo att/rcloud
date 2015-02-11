@@ -1185,6 +1185,18 @@ ui_utils.prevent_backspace = function($doc) {
             event.preventDefault();
     });
 };
+
+
+ui_utils.is_a_mac = function() {
+    // http://stackoverflow.com/questions/7044944/jquery-javascript-to-detect-os-without-a-plugin
+    var PLAT = navigator.platform.toUpperCase();
+    return function() {
+        var isMac = PLAT.indexOf('MAC')!==-1;
+        // var isWindows = PLAT.indexOf('WIN')!==-1;
+        // var isLinux = PLAT.indexOf('LINUX')!==-1;
+        return isMac;
+    };
+}();
 RCloud.extension = (function() {
     return {
         create: function(options) {
@@ -5312,11 +5324,19 @@ RCloud.UI.find_replace = (function() {
     var result = {
         init: function() {
             document.addEventListener("keydown", function(e) {
-                if (e.keyCode == 70 && (e.ctrlKey || e.metaKey)) { // ctrl/cmd-F
+                var action;
+                if (ui_utils.is_a_mac() && e.keyCode == 70 && e.metaKey) { // cmd-F
                     if(e.shiftKey)
                         return; // don't capture Full Screen
+                    action = e.altKey ? 'replace' : 'find';
+                }
+                else if(!ui_utils.is_a_mac() && e.keyCode == 70 && e.ctrlKey)
+                    action = 'find';
+                else if(!ui_utils.is_a_mac() && e.keyCode == 72 && e.ctrlKey)
+                    action = 'replace';
+                if(action) {
                     e.preventDefault();
-                    toggle_find_replace(e.altKey);
+                    toggle_find_replace(action === 'replace');
                 }
             });
         }

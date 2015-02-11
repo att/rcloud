@@ -534,3 +534,15 @@ ui_utils.prevent_backspace = function($doc) {
             event.preventDefault();
     });
 };
+
+
+ui_utils.is_a_mac = function() {
+    // http://stackoverflow.com/questions/7044944/jquery-javascript-to-detect-os-without-a-plugin
+    var PLAT = navigator.platform.toUpperCase();
+    return function() {
+        var isMac = PLAT.indexOf('MAC')!==-1;
+        // var isWindows = PLAT.indexOf('WIN')!==-1;
+        // var isLinux = PLAT.indexOf('LINUX')!==-1;
+        return isMac;
+    };
+}();
