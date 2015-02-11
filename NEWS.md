@@ -106,6 +106,18 @@
 * (Mis)feature where a prior notebook is loaded if the current notebook can't be
 
 
+## RCloud 1.2-patched
+
+### Bug Fixes
+
+* Encoding of some characters was failing in the login script, leading to
+  authentication failures with valid passwords
+
+### Improvements
+
+* Retrieval of multi-user information from RCS was vectorized, dramatically
+  reducing the number of round-trips to RCS store and associated latency.
+
 ## RCloud 1.2.1
 
 ### Bug Fixes
