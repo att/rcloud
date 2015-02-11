@@ -292,8 +292,11 @@ rect.frame {
     background-color: orange;
 }
 
-.find-highlight.current {
-    background-color: orange;
+.find-highlight.replaced {
+    background-color: lightgreen;
+}
+.find-highlight.activereplaced {
+    background-color: peru;
 }
 
 .ace_start.find-highlight {

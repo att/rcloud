@@ -266,21 +266,25 @@ function create_cell_html_view(language, cell_model) {
             hljs.highlightBlock(e);
         });
     }
+    function highlight_classes(kind) {
+        return 'find-highlight' + ' ' + kind;
+    }
 
     // should be a code preprocessor extension, but i've run out of time
     code_preprocessors_.push(
         function(code) {
             var yuk = _.escape;
             // add search highlights
-            var last = 0, text = '';
+            var last = 0, text = [];
             if(highlights_)
                 highlights_.forEach(function(range) {
-                    text += yuk(code.substring(last, range.begin));
-                    text += '<span class="find-highlight">' + yuk(code.substring(range.begin, range.end)) + '</span>';
+                    text.push(yuk(code.substring(last, range.begin)));
+                    text.push('<span class="', highlight_classes(range.kind), '">',
+                              yuk(code.substring(range.begin, range.end)), '</span>');
                     last = range.end;
                 });
-            text += yuk(code.substring(last));
-            return text;
+            text.push(yuk(code.substring(last)));
+            return text.join('');
         },
         function(code) {
             // add abso-relative line number spans at the beginning of each line
@@ -582,10 +586,7 @@ function create_cell_html_view(language, cell_model) {
                 if(ranges)
                     ranges.forEach(function(range) {
                         var ace_range = ui_utils.ace_range_of_character_range(ace_widget_, range.begin, range.end);
-                        var clazz = 'find-highlight';
-                        if(range.kind === 'active')
-                            clazz += ' active';
-                        ace_session_.addMarker(ace_range, clazz, 'rcloud-select');
+                        ace_session_.addMarker(ace_range, highlight_classes(range.kind), 'rcloud-select');
                     });
             }
             else {
