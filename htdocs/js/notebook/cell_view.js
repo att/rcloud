@@ -25,7 +25,7 @@ function create_cell_html_view(language, cell_model) {
     var cell_status_;
     var above_between_controls_, cell_controls_, left_controls_;
     var edit_mode_; // note: starts neither true nor false
-    var highlights_, active_highlight_;
+    var highlights_, active_highlight_ = null;
     var code_preprocessors_ = []; // will be an extension point, someday
 
     // input1
@@ -582,7 +582,10 @@ function create_cell_html_view(language, cell_model) {
                 if(ranges)
                     ranges.forEach(function(range) {
                         var ace_range = ui_utils.ace_range_of_character_range(ace_widget_, range.begin, range.end);
-                        ace_session_.addMarker(ace_range, 'find-highlight', 'rcloud-select');
+                        var clazz = 'find-highlight';
+                        if(range.kind === 'active')
+                            clazz += ' active';
+                        ace_session_.addMarker(ace_range, clazz, 'rcloud-select');
                     });
             }
             else {

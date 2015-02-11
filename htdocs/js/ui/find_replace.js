@@ -74,7 +74,6 @@ RCloud.UI.find_replace = (function() {
                     if(cell) {
                         shell.notebook.controller.update_cell(cell)
                             .then(function() {
-                                update_cell_highlights(cell, matches_[active_match_].index);
                                 find_next();
                             });
                     }
@@ -165,7 +164,8 @@ RCloud.UI.find_replace = (function() {
             while((match = regex_.exec(content))) {
                 matches.push({
                     begin: match.index,
-                    end: match.index+match[0].length
+                    end: match.index+match[0].length,
+                    kind: matches.length === active_match_ ? 'active' : 'normal'
                 });
                 if(match.index === regex_.lastIndex) ++regex_.lastIndex;
             }
@@ -180,11 +180,6 @@ RCloud.UI.find_replace = (function() {
             return _.extend({index: n, filename: cell.filename()}, match);
         });
     }
-    function update_cell_highlights(cell, n) {
-        // inefficient: really want splice range
-        matches_ = _.filter(matches_, function(m) { return m.filename != cell.filename(); })
-            .concat(annotate_matches(highlight_cell(cell), cell, n)).sort(function(a,b) { return a.index-b.index; });
-    }
     function highlight_all() {
         matches_ = [];
         shell.notebook.model.cells.forEach(function(cell, n) {
@@ -193,12 +188,25 @@ RCloud.UI.find_replace = (function() {
         });
     }
     function replace_current() {
+        function findIndex(a, f, i) {
+            if(i===undefined) i = 0;
+            for(; i < a.length && !f(a[i]); ++i);
+            return i === a.length ? -1 : i;
+        }
         var match = matches_[active_match_];
         var cell = shell.notebook.model.cells[match.index];
         var content = cell.content();
         var before = content.substring(0, match.begin),
             after = content.substring(match.end);
-        return cell.content(before + replace_input_.val() + after) ? cell : null;
+        var replacement =  replace_input_.val();
+        var dlen = replacement.length + match.begin - match.end;
+        match.begin = before.length();
+        match.end = before.length + replacement.length;
+        for(var i = active_match_+1; i < matches_.length && matches_[i].filename === match.filename; ++i) {
+            matches_[i].begin += dlen;
+            matches_[i].end += dlen;
+        }
+        return cell.content(before + replacement + after) ? cell : null;
     }
     function replace_all(find, replace) {
         highlight_all(null);

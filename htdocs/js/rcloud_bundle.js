@@ -855,6 +855,13 @@ ui_utils.position_of_character_offset = function(widget, offset) {
     return {row: i, column: offset};
 };
 
+ui_utils.ace_range_of_character_range = function(widget, cbegin, cend) {
+    var Range = ace.require('ace/range').Range;
+    var begin = ui_utils.position_of_character_offset(widget, cbegin),
+        end = ui_utils.position_of_character_offset(widget, cend);
+    return new Range(begin.row, begin.column, end.row, end.column);
+};
+
 // bind an ace editor to a listener and return a function to change the
 // editor content without triggering that listener
 ui_utils.ignore_programmatic_changes = function(widget, listener) {
@@ -1597,7 +1604,7 @@ function create_cell_html_view(language, cell_model) {
     var cell_status_;
     var above_between_controls_, cell_controls_, left_controls_;
     var edit_mode_; // note: starts neither true nor false
-    var highlights_;
+    var highlights_, active_highlight_;
     var code_preprocessors_ = []; // will be an extension point, someday
 
     // input1
@@ -2078,7 +2085,8 @@ function create_cell_html_view(language, cell_model) {
                 outer_ace_div.hide();
             }
             edit_mode_ = edit_mode;
-            this.change_highlights(highlights_); // restore highlights
+            this.change_highlights(highlights_)
+                .change_active_highlight(active_highlight_); // restore highlights
         },
         hide_source: function(whether) {
             if(whether)
@@ -2122,6 +2130,7 @@ function create_cell_html_view(language, cell_model) {
         },
         focus: function() {
             ace_widget_.focus();
+            return this;
         },
         get_content: function() { // for debug
             return cell_model.content();
@@ -2134,10 +2143,12 @@ function create_cell_html_view(language, cell_model) {
                 set_widget_height();
                 ace_widget_.resize();
             }
+            return this;
         },
         check_buttons: function() {
             if(above_between_controls_)
                 above_between_controls_.betweenness(!!cell_model.parent_model.prior_cell(cell_model));
+            return this;
         },
         change_highlights: function(ranges) {
             highlights_ = ranges;
@@ -2147,35 +2158,57 @@ function create_cell_html_view(language, cell_model) {
                     if(markers[marker].type === 'rcloud-select')
                         ace_session_.removeMarker(marker);
                 }
-                var Range = ace.require('ace/range').Range;
                 if(ranges)
                     ranges.forEach(function(range) {
-                        var begin = ui_utils.position_of_character_offset(ace_widget_, range.begin),
-                            end = ui_utils.position_of_character_offset(ace_widget_, range.end);
-                        var ace_range = new Range(begin.row, begin.column, end.row, end.column);
+                        var ace_range = ui_utils.ace_range_of_character_range(ace_widget_, range.begin, range.end);
                         ace_session_.addMarker(ace_range, 'find-highlight', 'rcloud-select');
                     });
             }
             else {
                 assign_code();
             }
+            return this;
         },
         change_active_highlight: function(range) {
-            if(!range)
-                code_div_.find('.find-highlight.active').toggleClass('active', false);
-            else {
-                // http://stackoverflow.com/questions/7969031/indexof-element-in-js-array-using-a-truth-function-using-underscore-or-jquery
-                function find(collection, filter) {
-                    for (var i = 0; i < collection.length; i++) {
-                        if(filter(collection[i], i, collection)) return i;
-                    }
-                    return -1;
+            active_highlight_ = range;
+            if(edit_mode_) {
+                var markers = ace_session_.getMarkers();
+                var id, ace_range;
+                if(range) {
+                    ace_range = ui_utils.ace_range_of_character_range(ace_widget_, range.begin, range.end);
+                    for(id in markers)
+                        if(markers[id].type === 'rcloud-select' &&
+                           markers[id].range.isEqual(ace_range)) {
+                            markers[id].clazz = 'find-highlight active';
+                            ace_session_._signal("changeBackMarker");
+                        }
                 }
-                var i = find(highlights_, function(r) { return r.begin === range.begin && r.end === range.end; });
-                if(i<0)
-                    throw new Error('unknown find result ' + JSON.stringify(range));
-                code_div_.find('.find-highlight').eq(i).toggleClass('active', true);
+                else for(id in markers) {
+                    if(markers[id].type === 'rcloud-select' &&
+                       markers[id].clazz.split(' ').indexOf('active') >= 0) {
+                        markers[id].clazz = 'find-highlight';
+                        ace_session_._signal("changeBackMarker");
+                    }
+                }
             }
+            else {
+                if(!range)
+                    code_div_.find('.find-highlight.active').toggleClass('active', false);
+                else {
+                    // http://stackoverflow.com/questions/7969031/indexof-element-in-js-array-using-a-truth-function-using-underscore-or-jquery
+                    function find(collection, filter) {
+                        for (var i = 0; i < collection.length; i++) {
+                            if(filter(collection[i], i, collection)) return i;
+                        }
+                        return -1;
+                    }
+                    var i = find(highlights_, function(r) { return r.begin === range.begin && r.end === range.end; });
+                    if(i<0)
+                        throw new Error('unknown find result ' + JSON.stringify(range));
+                    code_div_.find('.find-highlight').eq(i).toggleClass('active', true);
+                }
+            }
+            return this;
         }
     });
 
@@ -5086,7 +5119,6 @@ RCloud.UI.find_replace = (function() {
                     if(cell) {
                         shell.notebook.controller.update_cell(cell)
                             .then(function() {
-                                update_cell_highlights(cell, matches_[active_match_].index);
                                 find_next();
                             });
                     }
@@ -5192,11 +5224,6 @@ RCloud.UI.find_replace = (function() {
             return _.extend({index: n, filename: cell.filename()}, match);
         });
     }
-    function update_cell_highlights(cell, n) {
-        // inefficient: really want splice range
-        matches_ = _.filter(matches_, function(m) { return m.filename != cell.filename(); })
-            .concat(annotate_matches(highlight_cell(cell), cell, n)).sort(function(a,b) { return a.index-b.index; });
-    }
     function highlight_all() {
         matches_ = [];
         shell.notebook.model.cells.forEach(function(cell, n) {
@@ -5205,12 +5232,23 @@ RCloud.UI.find_replace = (function() {
         });
     }
     function replace_current() {
+        function findIndex(a, f, i) {
+            if(i===undefined) i = 0;
+            for(; i < a.length && !f(a[i]); ++i);
+            return i === a.length ? -1 : i;
+        }
         var match = matches_[active_match_];
         var cell = shell.notebook.model.cells[match.index];
         var content = cell.content();
         var before = content.substring(0, match.begin),
             after = content.substring(match.end);
-        return cell.content(before + replace_input_.val() + after) ? cell : null;
+        var replacement =  replace_input_.val();
+        var dlen = replacement.length + match.begin - match.end;
+        for(var i = active_match_+1; i < matches_.length && matches_[i].filename === match.filename; ++i) {
+            matches_[i].begin += dlen;
+            matches_[i].end += dlen;
+        }
+        return cell.content(before + replacement + after) ? cell : null;
     }
     function replace_all(find, replace) {
         highlight_all(null);
