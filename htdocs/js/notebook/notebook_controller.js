@@ -444,7 +444,8 @@ Notebook.create_controller = function(model)
                         // available: error=message, traceback=vector of calls, expression=index of the expression that failed
                         var tb = r['traceback'] || '';
                         if (tb.join) tb = tb.join(" <- ");
-                        RCloud.end_cell_output(context_id, r.error.replace('\n', ' ') + '  trace:' + tb.replace('\n', ' '));
+                        var trace = tb ? 'trace: '+tb.replace('\n', ' ') : '';
+                        RCloud.end_cell_output(context_id, trace);
                         throw 'stop';
                     }
                     else RCloud.end_cell_output(context_id, null);

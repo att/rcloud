@@ -1631,6 +1631,7 @@ function create_cell_html_view(language, cell_model) {
     var code_div_;
     var result_div_, has_result_;
     var current_result_; // text is aggregated
+    var current_error_; // text is aggregated
     var change_content_;
     var cell_status_;
     var above_between_controls_, cell_controls_, left_controls_;
@@ -1995,6 +1996,8 @@ function create_cell_html_view(language, cell_model) {
 
             if(type!='code')
                 current_result_ = null;
+            if(type!='error')
+                current_error_ = null;
             var pre;
             switch(type) {
             case 'code':
@@ -2004,10 +2007,17 @@ function create_cell_html_view(language, cell_model) {
                     pre.append(current_result_);
                     result_div_.append(pre);
                 }
-                current_result_.append(r);
+                current_result_.append(_.escape(r));
                 break;
             case 'error':
-                result_div_.append($('<pre><code style="color: red">' + _.escape(r) + '</code></pre>'));
+                // sorry about this!
+                if(!current_error_) {
+                    pre = $('<pre></pre>');
+                    current_error_ = $('<code style="color: crimson"></code>');
+                    pre.append(current_error_);
+                    result_div_.append(pre);
+                }
+                current_error_.append(_.escape(r));
                 break;
             case 'selection':
             case 'html':
@@ -2324,13 +2334,16 @@ Notebook.Cell.create_controller = function(cell_model)
         enqueue_execution_snapshot: function() {
             var that = this;
             if(!execution_context_) {
-                var resulter = this.append_result.bind(this, 'code');
+                function appender(type) {
+                    return that.append_result.bind(this, type);
+                }
+                var resulter = appender('code');
                 execution_context_ = {start: this.start_output.bind(this),
                                       end: this.end_output.bind(this),
                                       // these should convey the meaning e.g. through color:
-                                      out: resulter, err: resulter, msg: resulter,
-                                      html_out: this.append_result.bind(this, 'html'),
-                                      selection_out: this.append_result.bind(this, 'selection'),
+                                      out: resulter, err: appender('error'), msg: resulter,
+                                      html_out: appender('html'),
+                                      selection_out: appender('selection'),
                                       in: this.get_input.bind(this, 'in')
                                      };
             }
@@ -3306,7 +3319,8 @@ Notebook.create_controller = function(model)
                         // available: error=message, traceback=vector of calls, expression=index of the expression that failed
                         var tb = r['traceback'] || '';
                         if (tb.join) tb = tb.join(" <- ");
-                        RCloud.end_cell_output(context_id, r.error.replace('\n', ' ') + '  trace:' + tb.replace('\n', ' '));
+                        var trace = tb ? 'trace: '+tb.replace('\n', ' ') : '';
+                        RCloud.end_cell_output(context_id, trace);
                         throw 'stop';
                     }
                     else RCloud.end_cell_output(context_id, null);

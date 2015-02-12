@@ -5,13 +5,16 @@ Notebook.Cell.create_controller = function(cell_model)
         enqueue_execution_snapshot: function() {
             var that = this;
             if(!execution_context_) {
-                var resulter = this.append_result.bind(this, 'code');
+                function appender(type) {
+                    return that.append_result.bind(this, type);
+                }
+                var resulter = appender('code');
                 execution_context_ = {start: this.start_output.bind(this),
                                       end: this.end_output.bind(this),
                                       // these should convey the meaning e.g. through color:
-                                      out: resulter, err: resulter, msg: resulter,
-                                      html_out: this.append_result.bind(this, 'html'),
-                                      selection_out: this.append_result.bind(this, 'selection'),
+                                      out: resulter, err: appender('error'), msg: resulter,
+                                      html_out: appender('html'),
+                                      selection_out: appender('selection'),
                                       in: this.get_input.bind(this, 'in')
                                      };
             }
