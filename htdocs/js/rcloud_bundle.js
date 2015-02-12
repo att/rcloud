@@ -1679,6 +1679,8 @@ function create_cell_html_view(language, cell_model) {
 
     function update_language() {
         language = cell_model.language();
+        if(!RCloud.language.is_a_markdown(language))
+            result.hide_source && result.hide_source(false);
         if(cell_controls_)
             cell_controls_.controls['language_cell'].set(language);
         if(ace_widget_) {
