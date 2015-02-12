@@ -57,13 +57,19 @@ RCloud.UI.run_button = (function() {
             if(!running_) {
                 start_queue()
                     .catch(function(xep) {
-                        console.log(xep);
-                        that.on_stopped();
-                        // if this was due to a SIGINT, we're done
-                        // otherwise we'll need to report this.
-                        // stop executing either way.
-                        if(!/^ERROR FROM R SERVER: 127/.test(xep))
-                            throw xep;
+                        if(xep === 'stop') {
+                            cancels_.shift(); // this one was not a cancel
+                            that.on_stopped();
+                        }
+                        else {
+                            console.log(xep);
+                            that.on_stopped();
+                            // if this was due to a SIGINT, we're done
+                            // otherwise we'll need to report this.
+                            // stop executing either way.
+                            if(!/^ERROR FROM R SERVER: 127/.test(xep))
+                                throw xep;
+                        }
                     });
             }
         }

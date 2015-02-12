@@ -3279,12 +3279,14 @@ Notebook.create_controller = function(model)
                 if (r && r.r_attributes) {
                     if (r.r_attributes['class'] === 'parse-error') {
                         // available: error=message
-                        RCloud.end_cell_output(context_id, "Parse error: " + r['error'].replace('\n', ' '));
+                        RCloud.end_cell_output(context_id, "Parse error: " + r.error.replace('\n', ' '));
+                        throw 'stop';
                     } else if (r.r_attributes['class'] === 'Rserve-eval-error') {
                         // available: error=message, traceback=vector of calls, expression=index of the expression that failed
                         var tb = r['traceback'] || '';
                         if (tb.join) tb = tb.join(" <- ");
-                        RCloud.end_cell_output(context_id, r['error'].replace('\n', ' ') + '  trace:' + tb.replace('\n', ' '));
+                        RCloud.end_cell_output(context_id, r.error.replace('\n', ' ') + '  trace:' + tb.replace('\n', ' '));
+                        throw 'stop';
                     }
                     else RCloud.end_cell_output(context_id, null);
                 }
@@ -6635,13 +6637,19 @@ RCloud.UI.run_button = (function() {
             if(!running_) {
                 start_queue()
                     .catch(function(xep) {
-                        console.log(xep);
-                        that.on_stopped();
-                        // if this was due to a SIGINT, we're done
-                        // otherwise we'll need to report this.
-                        // stop executing either way.
-                        if(!/^ERROR FROM R SERVER: 127/.test(xep))
-                            throw xep;
+                        if(xep === 'stop') {
+                            cancels_.shift(); // this one was not a cancel
+                            that.on_stopped();
+                        }
+                        else {
+                            console.log(xep);
+                            that.on_stopped();
+                            // if this was due to a SIGINT, we're done
+                            // otherwise we'll need to report this.
+                            // stop executing either way.
+                            if(!/^ERROR FROM R SERVER: 127/.test(xep))
+                                throw xep;
+                        }
                     });
             }
         }
