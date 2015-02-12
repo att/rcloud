@@ -5,6 +5,8 @@ rcloud.language.support <- function()
 
   ev <- function(command, silent, rcloud.session) {
     .session <- rcloud.session
+    # make sure the last expression is always terminated
+    command <- paste0(command, "\n")
     # .session$device.pixel.ratio
     exp <- tryCatch(parse(text=command), error=function(o) structure(list(error=o$message), class="parse-error"))
     # ulog(".EXP: ", paste(capture.output(str(exp)), collapse='\n'))
