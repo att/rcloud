@@ -3387,18 +3387,6 @@ Notebook.hide_r_source = function(selection)
         selection = $(selection).find(".r");
     else
         selection = $(".r");
-/*
-    var source;
-    if (selection)
-        source = $(selection).find("pre.r");
-    else
-        source = $("pre.r");
-    source.hide();
-    if (selection)
-        source = $(selection).find("code.r");
-    else
-        source = $("code.r");
-*/
     selection.hide();
 };
 
@@ -5144,7 +5132,7 @@ RCloud.UI.find_replace = (function() {
             find_desc_ = $('<label id="find-label" for="find-input"><span>Find</span></label>');
             find_input_ = $('<input type=text id="find-input" class="form-control-ext"></input>');
             find_next_ = $('<button id="find-next" class="btn btn-primary">Next</button>');
-            find_last_ = $('<button id="find-last" class="btn">Last</button>');
+            find_last_ = $('<button id="find-last" class="btn">Previous</button>');
             var replace_break = $('<br/>');
             replace_desc_ = $('<label id="replace-label" for="replace-input"><span>Replace</span></label>');
             replace_input_ = $('<input type=text id="replace-input" class="form-control-ext"></input>');
