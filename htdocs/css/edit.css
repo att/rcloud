@@ -956,11 +956,11 @@ a.accordion-toggle.right > i {
 }
 
 .notebook-sizer.left {
-    left:-.25em;
+    left: -3px;
 }
 
 .notebook-sizer.right {
-    right:0em;
+    right: 2px;
 }
 
 .notebook-sizer > i {
@@ -969,7 +969,7 @@ a.accordion-toggle.right > i {
 
 .notebook-sizer > .bar {
     height: 1000px;
-    width: 0.25em;
+    width: 5px;
     background-color: #333;
     position: absolute;
     bottom: 0;
