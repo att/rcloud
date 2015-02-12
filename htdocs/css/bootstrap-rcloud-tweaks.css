@@ -47,6 +47,13 @@ code {
     padding-right: 0;
 }
 
+/* do not use max width from bootstrap */
+@media all {
+    .container {
+        max-width: none;
+    }
+}
+
 .no-padding {
     padding-left: 0;
     padding-right: 0;
