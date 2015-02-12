@@ -128,12 +128,26 @@ ui_utils.ace_set_pos = function(widget, row, column) {
 ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
     var Autocomplete = ace.require("ace/autocomplete").Autocomplete;
     var session = widget.getSession();
+    var tab_handler = widget.commands.commandKeyBinding[0].tab;
 
     widget.commands.addCommands([
         {
             name: 'another autocomplete key',
             bindKey: 'Ctrl-.',
             exec: Autocomplete.startCommand.exec
+        },
+        {
+            name: 'the autocomplete key people want',
+            bindKey: 'Tab',
+            exec: function(widget, args, request) {
+                //determine if there is anything but whitespace on line
+                var range = widget.getSelection().getRange();
+                var line = widget.getSession().getLine(range.start.row);
+                var before = line.substring(0, range.start.column);
+                if(before.match(/\S/))
+                    Autocomplete.startCommand.exec(widget, args, request);
+                else tab_handler.exec(widget, args, request);
+            }
         },
         {
             name: 'disable gotoline',
