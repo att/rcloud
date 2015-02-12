@@ -128,12 +128,26 @@ ui_utils.ace_set_pos = function(widget, row, column) {
 ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
     var Autocomplete = ace.require("ace/autocomplete").Autocomplete;
     var session = widget.getSession();
+    var tab_handler = widget.commands.commandKeyBinding[0].tab;
 
     widget.commands.addCommands([
         {
             name: 'another autocomplete key',
             bindKey: 'Ctrl-.',
             exec: Autocomplete.startCommand.exec
+        },
+        {
+            name: 'the autocomplete key people want',
+            bindKey: 'Tab',
+            exec: function(widget, args, request) {
+                //determine if there is anything but whitespace on line
+                var range = widget.getSelection().getRange();
+                var line = widget.getSession().getLine(range.start.row);
+                var before = line.substring(0, range.start.column);
+                if(before.match(/\S/))
+                    Autocomplete.startCommand.exec(widget, args, request);
+                else tab_handler.exec(widget, args, request);
+            }
         },
         {
             name: 'disable gotoline',
@@ -202,6 +216,13 @@ ui_utils.position_of_character_offset = function(widget, offset) {
     if(i===text.length)
         throw new Error("character offset off end of editor");
     return {row: i, column: offset};
+};
+
+ui_utils.ace_range_of_character_range = function(widget, cbegin, cend) {
+    var Range = ace.require('ace/range').Range;
+    var begin = ui_utils.position_of_character_offset(widget, cbegin),
+        end = ui_utils.position_of_character_offset(widget, cend);
+    return new Range(begin.row, begin.column, end.row, end.column);
 };
 
 // bind an ace editor to a listener and return a function to change the
@@ -527,3 +548,15 @@ ui_utils.prevent_backspace = function($doc) {
             event.preventDefault();
     });
 };
+
+
+ui_utils.is_a_mac = function() {
+    // http://stackoverflow.com/questions/7044944/jquery-javascript-to-detect-os-without-a-plugin
+    var PLAT = navigator.platform.toUpperCase();
+    return function() {
+        var isMac = PLAT.indexOf('MAC')!==-1;
+        // var isWindows = PLAT.indexOf('WIN')!==-1;
+        // var isLinux = PLAT.indexOf('LINUX')!==-1;
+        return isMac;
+    };
+}();

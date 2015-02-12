@@ -10,7 +10,7 @@ setConf <- function(name, value) {
   value
 }
 hasConf <- function(name) !is.null(.rc.conf[[name]])
-validFileConf <- function(name) nzConf(name) && file.exists(getConf(name))
+validFileConf <- function(name, ...) nzConf(name) && file.exists(file.path(getConf(name), ...))
 absPath <- function(path, anchor = getConf("root")) {
   if (!is.character(anchor)) anchor <- getwd()
   ## FIXME: this ignores Windows x:/ notation !

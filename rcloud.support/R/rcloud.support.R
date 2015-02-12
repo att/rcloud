@@ -3,7 +3,7 @@
 
 # FIXME what's the relationship between this and rcloud.config in conf.R?
 rcloud.get.conf.value <- function(key) {
-  Allowed <- c('host', 'github.base.url', 'github.api.url', 'github.gist.url', 'solr.page.size', 'smtp.server', 'email.from')
+  Allowed <- c('host', 'exec.token.renewal.time', 'github.base.url', 'github.api.url', 'github.gist.url', 'solr.page.size', 'smtp.server', 'email.from', 'rcloud.deployment')
   if(key %in% Allowed)
     getConf(key)
   else
@@ -585,6 +585,7 @@ rcloud.notebook.star.count <- function(notebook)
 }
 
 rcloud.multiple.notebook.star.counts <- function(notebooks) {
+    if (!length(notebooks)) return(list())
     counts <- lapply(rcs.get(star.count.key(notebooks), list=TRUE),
                      function(o) if(is.null(o)) 0L else as.integer(o))
     names(counts) <- notebooks
@@ -704,8 +705,10 @@ rcloud.get.notebook.info <- function(id, single=TRUE) {
   if (length(id) == 1L && single) {
       names(results) <- fields
       results
-  } else
-     lapply(split(results, rep(id, each=length(fields))), function(o) { names(o) = fields; o })
+  } else {
+      if (!length(id)) lapply(fields, function(o) character()) else
+      lapply(split(results, rep(id, each=length(fields))), function(o) { names(o) = fields; o })
+  }
 }
 
 rcloud.get.multiple.notebook.infos <- function(ids)

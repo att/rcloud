@@ -2,8 +2,7 @@ RCloud.UI.run_button = (function() {
     var run_button_ = $("#run-notebook"),
         running_ = false,
         queue_ = [],
-        cancels_ = [],
-        stop_interval_ = null;
+        cancels_ = [];
 
     function display(icon, title) {
         $('i', run_button_).removeClass().addClass(icon);
@@ -42,13 +41,7 @@ RCloud.UI.run_button = (function() {
             });
         },
         stop: function() {
-            rcloud.signal_to_compute(2) // SIGINT
-                .then(function() {
-                    stop_interval_ = window.setInterval(function() {
-                        run_button_.animate({opacity: 0.5}, 250, "easeOutCirc")
-                            .animate({opacity: 1.0}, 250, "easeOutCirc");
-                    }, 1000);
-                });
+            rcloud.signal_to_compute(2); // SIGINT
         },
         on_stopped: function() {
             cancels_.forEach(function(cancel) { cancel(); });
@@ -64,17 +57,19 @@ RCloud.UI.run_button = (function() {
             if(!running_) {
                 start_queue()
                     .catch(function(xep) {
-                        if(stop_interval_) {
-                            window.clearInterval(stop_interval_);
-                            stop_interval_ = null;
+                        if(xep === 'stop') {
+                            cancels_.shift(); // this one was not a cancel
+                            that.on_stopped();
                         }
-                        console.log(xep);
-                        that.on_stopped();
-                        // if this was due to a SIGINT, we're done
-                        // otherwise we'll need to report this.
-                        // stop executing either way.
-                        if(!/^ERROR FROM R SERVER: 127/.test(xep))
-                            throw xep;
+                        else {
+                            console.log(xep);
+                            that.on_stopped();
+                            // if this was due to a SIGINT, we're done
+                            // otherwise we'll need to report this.
+                            // stop executing either way.
+                            if(!/^ERROR FROM R SERVER: 127/.test(xep))
+                                throw xep;
+                        }
                     });
             }
         }

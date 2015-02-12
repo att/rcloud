@@ -200,6 +200,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["get_users"],
             ["log", "record_cell_execution"],
             ["setup_js_installer"],
+            ["replace_token"],
             ["comments","get_all"],
             ["help"],
             ["debug","raise"],
@@ -346,6 +347,11 @@ RCloud.create = function(rcloud_ocaps) {
                 k(null, null);
             }
         });
+
+        // security: request new token
+        rcloud.replace_token = function(old_token, realm) {
+            return rcloud_ocaps.replace_tokenAsync(old_token, realm);
+        };
 
         // notebook.comments.R
         rcloud.get_all_comments = function(id) {
@@ -773,12 +779,26 @@ ui_utils.ace_set_pos = function(widget, row, column) {
 ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
     var Autocomplete = ace.require("ace/autocomplete").Autocomplete;
     var session = widget.getSession();
+    var tab_handler = widget.commands.commandKeyBinding[0].tab;
 
     widget.commands.addCommands([
         {
             name: 'another autocomplete key',
             bindKey: 'Ctrl-.',
             exec: Autocomplete.startCommand.exec
+        },
+        {
+            name: 'the autocomplete key people want',
+            bindKey: 'Tab',
+            exec: function(widget, args, request) {
+                //determine if there is anything but whitespace on line
+                var range = widget.getSelection().getRange();
+                var line = widget.getSession().getLine(range.start.row);
+                var before = line.substring(0, range.start.column);
+                if(before.match(/\S/))
+                    Autocomplete.startCommand.exec(widget, args, request);
+                else tab_handler.exec(widget, args, request);
+            }
         },
         {
             name: 'disable gotoline',
@@ -847,6 +867,13 @@ ui_utils.position_of_character_offset = function(widget, offset) {
     if(i===text.length)
         throw new Error("character offset off end of editor");
     return {row: i, column: offset};
+};
+
+ui_utils.ace_range_of_character_range = function(widget, cbegin, cend) {
+    var Range = ace.require('ace/range').Range;
+    var begin = ui_utils.position_of_character_offset(widget, cbegin),
+        end = ui_utils.position_of_character_offset(widget, cend);
+    return new Range(begin.row, begin.column, end.row, end.column);
 };
 
 // bind an ace editor to a listener and return a function to change the
@@ -1172,8 +1199,39 @@ ui_utils.prevent_backspace = function($doc) {
             event.preventDefault();
     });
 };
+
+
+ui_utils.is_a_mac = function() {
+    // http://stackoverflow.com/questions/7044944/jquery-javascript-to-detect-os-without-a-plugin
+    var PLAT = navigator.platform.toUpperCase();
+    return function() {
+        var isMac = PLAT.indexOf('MAC')!==-1;
+        // var isWindows = PLAT.indexOf('WIN')!==-1;
+        // var isLinux = PLAT.indexOf('LINUX')!==-1;
+        return isMac;
+    };
+}();
+/*
+ RCloud.extension is the root of all extension mechanisms in RCloud.
+
+ It is designed to be used by containment: an extendable feature class
+ will privately keep an RCloud.extension instance, and then implement
+ init(), add(), and remove(), forwarding part of their implementation to
+ RCloud.extension.
+
+ Note: this functionality is still evolving.  More common functionality
+ will get moved here over time as patterns emerge, and some extensible
+ features do not use RCloud.extension yet.  These are accidents of
+ history and do not read anything into them.
+*/
+
 RCloud.extension = (function() {
     return {
+        filter_field: function(field, value) {
+            return function(entry) {
+                return entry[field] === value;
+            };
+        },
         create: function(options) {
             options = options || {};
             var entries_ = {};
@@ -1587,11 +1645,13 @@ function create_cell_html_view(language, cell_model) {
     var code_div_;
     var result_div_, has_result_;
     var current_result_; // text is aggregated
+    var current_error_; // text is aggregated
     var change_content_;
     var cell_status_;
     var above_between_controls_, cell_controls_, left_controls_;
     var edit_mode_; // note: starts neither true nor false
-    var highlights_;
+    var highlights_, active_highlight_ = null;
+    var code_preprocessors_ = []; // will be an extension point, someday
 
     // input1
     var prompt_text_;
@@ -1653,6 +1713,8 @@ function create_cell_html_view(language, cell_model) {
 
     function update_language() {
         language = cell_model.language();
+        if(!RCloud.language.is_a_markdown(language))
+            result.hide_source && result.hide_source(false);
         if(cell_controls_)
             cell_controls_.controls['language_cell'].set(language);
         if(ace_widget_) {
@@ -1684,6 +1746,7 @@ function create_cell_html_view(language, cell_model) {
     inner_div.append(source_div_);
 
     function click_to_edit(div, whether) {
+        whether &= !am_read_only_;
         if(whether) {
             // distinguish between a click and a drag
             // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
@@ -1831,25 +1894,54 @@ function create_cell_html_view(language, cell_model) {
             hljs.highlightBlock(e);
         });
     }
+    function highlight_classes(kind) {
+        return 'find-highlight' + ' ' + kind;
+    }
+
+    // should be a code preprocessor extension, but i've run out of time
+    code_preprocessors_.push(
+        function(code) {
+            var yuk = _.escape;
+            // add search highlights
+            var last = 0, text = [];
+            if(highlights_)
+                highlights_.forEach(function(range) {
+                    text.push(yuk(code.substring(last, range.begin)));
+                    text.push('<span class="', highlight_classes(range.kind), '">',
+                              yuk(code.substring(range.begin, range.end)), '</span>');
+                    last = range.end;
+                });
+            text.push(yuk(code.substring(last)));
+            return text.join('');
+        },
+        function(code) {
+            // add abso-relative line number spans at the beginning of each line
+            var line = 1;
+            code = code.replace(/^/gm, function() {
+                return '<span class="rcloud-line-number-position nonselectable"><span class="rcloud-line-number">' + line++ + '</span></span>';
+            });
+            code += '&nbsp;'; // make sure last line is shown even if it is just a tag
+            return code;
+        },
+        function(code) {
+            // match the number of lines ace.js is going to show
+            // 1. html would skip final blank line
+            if(code[code.length-1] === '\n')
+                code += '\n';
+
+            // 2. we have ace configured to show a minimum of MIN_LINES lines
+            var lines = (code.match(/\n/g)||[]).length;
+            if(lines<MIN_LINES)
+                code += new Array(MIN_LINES+1-lines).join('\n');
+            return code;
+        });
+
     function assign_code(code) {
         code = code || cell_model.content();
 
-        // add abso-relative line number spans at the beginning of each line
-        var line = 1;
-        code = code.replace(/^/gm, function() {
-            return '<span class="rcloud-line-number-position"><span class="rcloud-line-number">' + line++ + '</span></span>';
-        });
-        code += '&nbsp;'; // make sure last line is shown even if it is just a tag
-
-        // match the number of lines ace.js is going to show
-        // 1. html would skip final blank line
-        if(code[code.length-1] === '\n')
-            code += '\n';
-
-        // 2. we have ace configured to show a minimum of MIN_LINES lines
-        var lines = (code.match(/\n/g)||[]).length;
-        if(lines<MIN_LINES)
-            code += new Array(MIN_LINES+1-lines).join('\n');
+        code = code_preprocessors_.reduce(function(code, f) {
+            return f(code);
+        }, code);
 
         code_div_.empty();
         var elem = $('<code></code>').append(code);
@@ -1919,15 +2011,28 @@ function create_cell_html_view(language, cell_model) {
 
             if(type!='code')
                 current_result_ = null;
+            if(type!='error')
+                current_error_ = null;
+            var pre;
             switch(type) {
             case 'code':
                 if(!current_result_) {
-                    var pre = $('<pre></pre>');
+                    pre = $('<pre></pre>');
                     current_result_ = $('<code></code>');
                     pre.append(current_result_);
                     result_div_.append(pre);
                 }
-                current_result_.append(r);
+                current_result_.append(_.escape(r));
+                break;
+            case 'error':
+                // sorry about this!
+                if(!current_error_) {
+                    pre = $('<pre></pre>');
+                    current_error_ = $('<code style="color: crimson"></code>');
+                    pre.append(current_error_);
+                    result_div_.append(pre);
+                }
+                current_error_.append(_.escape(r));
                 break;
             case 'selection':
             case 'html':
@@ -1944,7 +2049,7 @@ function create_cell_html_view(language, cell_model) {
                 result_div_.empty();
                 has_result_ = true;
             }
-            current_result_ = null;
+            current_result_ = current_error_ = null;
         },
         clear_result: clear_result,
         set_readonly: function(readonly) {
@@ -1962,14 +2067,6 @@ function create_cell_html_view(language, cell_model) {
 
         //////////////////////////////////////////////////////////////////////
 
-        hide_buttons: function() {
-            cell_control_bar.css("display", "none");
-            cell_commands_above.hide();
-        },
-        show_buttons: function() {
-            cell_control_bar.css("display", null);
-            cell_commands_above.show();
-        },
         execute_cell: function() {
             var new_content = update_model();
             var promise;
@@ -2054,7 +2151,8 @@ function create_cell_html_view(language, cell_model) {
                 outer_ace_div.hide();
             }
             edit_mode_ = edit_mode;
-            this.change_highlights(highlights_); // restore highlights
+            this.change_highlights(highlights_)
+                .change_active_highlight(active_highlight_); // restore highlights
         },
         hide_source: function(whether) {
             if(whether)
@@ -2078,16 +2176,16 @@ function create_cell_html_view(language, cell_model) {
             input_widget_.resize(true);
             input_widget_.focus();
             input_div_.css('border-color', '#eeeeee');
-            var dir = true;
+            var dir = false;
             var switch_color = function() {
-                input_div_.animate({borderColor: dir ? '#ff8c00' : '#E34234'},
-                                   {duration: 2000,
+                input_div_.animate({borderColor: dir ? '#ffac88' : '#E34234'},
+                                   {duration: 1000,
                                     easing: 'easeInOutCubic',
                                     queue: false});
                 dir = !dir;
             };
             switch_color();
-            input_anim_ = window.setInterval(switch_color, 2000);
+            input_anim_ = window.setInterval(switch_color, 1000);
             input_kont_ = k;
         },
         div: function() {
@@ -2098,6 +2196,7 @@ function create_cell_html_view(language, cell_model) {
         },
         focus: function() {
             ace_widget_.focus();
+            return this;
         },
         get_content: function() { // for debug
             return cell_model.content();
@@ -2110,57 +2209,72 @@ function create_cell_html_view(language, cell_model) {
                 set_widget_height();
                 ace_widget_.resize();
             }
+            return this;
         },
         check_buttons: function() {
             if(above_between_controls_)
                 above_between_controls_.betweenness(!!cell_model.parent_model.prior_cell(cell_model));
+            return this;
         },
         change_highlights: function(ranges) {
+            highlights_ = ranges;
             if(edit_mode_) {
                 var markers = ace_session_.getMarkers();
                 for(var marker in markers) {
                     if(markers[marker].type === 'rcloud-select')
                         ace_session_.removeMarker(marker);
                 }
-                var Range = ace.require('ace/range').Range;
                 if(ranges)
                     ranges.forEach(function(range) {
-                        var begin = ui_utils.position_of_character_offset(ace_widget_, range.begin),
-                            end = ui_utils.position_of_character_offset(ace_widget_, range.end);
-                        var ace_range = new Range(begin.row, begin.column, end.row, end.column);
-                        ace_session_.addMarker(ace_range, 'find-highlight', 'rcloud-select');
+                        var ace_range = ui_utils.ace_range_of_character_range(ace_widget_, range.begin, range.end);
+                        ace_session_.addMarker(ace_range, highlight_classes(range.kind), 'rcloud-select');
                     });
             }
             else {
-                var content = cell_model.content();
-                var last = 0, text = '';
-                if(ranges)
-                    ranges.forEach(function(range) {
-                        text += content.substring(last, range.begin);
-                        text += '<span class="find-highlight">' + content.substring(range.begin, range.end) + '</span>';
-                        last = range.end;
-                    });
-                text += content.substring(last);
-                assign_code(text);
+                assign_code();
             }
-            highlights_ = ranges;
+            return this;
         },
         change_active_highlight: function(range) {
-            if(!range)
-                code_div_.find('.find-highlight.active').toggleClass('active', false);
-            else {
-                // http://stackoverflow.com/questions/7969031/indexof-element-in-js-array-using-a-truth-function-using-underscore-or-jquery
-                function find(collection, filter) {
-                    for (var i = 0; i < collection.length; i++) {
-                        if(filter(collection[i], i, collection)) return i;
-                    }
-                    return -1;
+            active_highlight_ = range;
+            if(edit_mode_) {
+                var markers = ace_session_.getMarkers();
+                var id, ace_range;
+                if(range) {
+                    ace_range = ui_utils.ace_range_of_character_range(ace_widget_, range.begin, range.end);
+                    for(id in markers)
+                        if(markers[id].type === 'rcloud-select' &&
+                           markers[id].range.isEqual(ace_range)) {
+                            markers[id].clazz = 'find-highlight active';
+                            ace_session_._signal("changeBackMarker");
+                        }
                 }
-                var i = find(highlights_, function(r) { return r.begin === range.begin && r.end === range.end; });
-                if(i<0)
-                    throw new Error('unknown find result ' + JSON.stringify(range));
-                code_div_.find('.find-highlight').eq(i).toggleClass('active', true);
+                else for(id in markers) {
+                    if(markers[id].type === 'rcloud-select' &&
+                       markers[id].clazz.split(' ').indexOf('active') >= 0) {
+                        markers[id].clazz = 'find-highlight';
+                        ace_session_._signal("changeBackMarker");
+                    }
+                }
             }
+            else {
+                if(!range)
+                    code_div_.find('.find-highlight.active').toggleClass('active', false);
+                else {
+                    // http://stackoverflow.com/questions/7969031/indexof-element-in-js-array-using-a-truth-function-using-underscore-or-jquery
+                    function find(collection, filter) {
+                        for (var i = 0; i < collection.length; i++) {
+                            if(filter(collection[i], i, collection)) return i;
+                        }
+                        return -1;
+                    }
+                    var i = find(highlights_, function(r) { return r.begin === range.begin && r.end === range.end; });
+                    if(i<0)
+                        throw new Error('unknown find result ' + JSON.stringify(range));
+                    code_div_.find('.find-highlight').eq(i).toggleClass('active', true);
+                }
+            }
+            return this;
         }
     });
 
@@ -2235,13 +2349,16 @@ Notebook.Cell.create_controller = function(cell_model)
         enqueue_execution_snapshot: function() {
             var that = this;
             if(!execution_context_) {
-                var resulter = this.append_result.bind(this, 'code');
+                function appender(type) {
+                    return that.append_result.bind(this, type);
+                }
+                var resulter = appender('code');
                 execution_context_ = {start: this.start_output.bind(this),
                                       end: this.end_output.bind(this),
                                       // these should convey the meaning e.g. through color:
-                                      out: resulter, err: resulter, msg: resulter,
-                                      html_out: this.append_result.bind(this, 'html'),
-                                      selection_out: this.append_result.bind(this, 'selection'),
+                                      out: resulter, err: appender('error'), msg: resulter,
+                                      html_out: appender('html'),
+                                      selection_out: appender('selection'),
                                       in: this.get_input.bind(this, 'in')
                                      };
             }
@@ -2278,8 +2395,10 @@ Notebook.Cell.create_controller = function(cell_model)
                 view.add_result(type, msg);
             });
         },
-        end_output: function() {
+        end_output: function(error) {
             cell_model.notify_views(function(view) {
+                if(error)
+                    view.add_result('error', error);
                 view.end_output();
             });
         },
@@ -2370,17 +2489,8 @@ Notebook.Cell.postprocessors.add({
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
         }
     },
-    hide_source: {
-        sort: 4000,
-        process: function(div) {
-            // this is kinda bad
-            if (!shell.notebook.controller._r_source_visible) {
-                Notebook.hide_r_source(div);
-            }
-        }
-    },
     shade_pre_r: {
-        sort: 5000,
+        sort: 4000,
         process: function(div) {
             div.find("pre code")
                 .filter(function(i, e) {
@@ -2388,6 +2498,15 @@ Notebook.Cell.postprocessors.add({
                     // we might look in RCloud.language here?
                     return e.classList.length > 0;
                 }).parent().toggleClass('r', true);
+        }
+    },
+    hide_source: {
+        sort: 5000,
+        process: function(div) {
+            // this is kinda bad
+            if (!shell.notebook.controller._r_source_visible) {
+                Notebook.hide_r_source(div);
+            }
         }
     },
     click_markdown_code: {
@@ -3207,17 +3326,21 @@ Notebook.create_controller = function(model)
         execute_cell_version: function(context_id, info) {
             function execute_cell_callback(r) {
                 if (r && r.r_attributes) {
-                    // FIXME: this is just a demo of what's available on different error conditions
                     if (r.r_attributes['class'] === 'parse-error') {
                         // available: error=message
-                        throw new Error("Parse error: " + r['error'].replace('\n', ' '));
+                        RCloud.end_cell_output(context_id, "Parse error: " + r.error);
+                        throw 'stop';
                     } else if (r.r_attributes['class'] === 'Rserve-eval-error') {
                         // available: error=message, traceback=vector of calls, expression=index of the expression that failed
                         var tb = r['traceback'] || '';
                         if (tb.join) tb = tb.join(" <- ");
-                        throw new Error(r['error'].replace('\n', ' ') + '  trace:' + tb.replace('\n', ' '));
+                        var trace = tb ? 'trace: '+tb.replace('\n', ' ') : '';
+                        RCloud.end_cell_output(context_id, trace);
+                        throw 'stop';
                     }
+                    else RCloud.end_cell_output(context_id, null);
                 }
+                else RCloud.end_cell_output(context_id, null);
                 _.each(model.execution_watchers, function(ew) {
                     ew.run_cell(info.json_rep);
                 });
@@ -3265,7 +3388,7 @@ Notebook.hide_r_source = function(selection)
         selection = $(selection).find(".r");
     else
         selection = $(".r");
-    selection.parent().hide();
+    selection.hide();
 };
 
 Notebook.show_r_source = function(selection)
@@ -3274,7 +3397,7 @@ Notebook.show_r_source = function(selection)
         selection = $(selection).find(".r");
     else
         selection = $(".r");
-    selection.parent().show();
+    selection.show();
 };
 Notebook.part_name = function(id, language) {
     // yuk
@@ -3335,6 +3458,15 @@ RCloud.unregister_output_context = function(context_id) {
     delete output_contexts_[context_id];
 };
 
+RCloud.end_cell_output = function(context_id, error) {
+    if(context_id != curr_context_id_)
+        console.log("unmatched context_id id: curr " + curr_context_id_ + ", end.cell.output " + context_id);
+    if(output_contexts_[context_id] && output_contexts_[context_id].end)
+        output_contexts_[context_id].end(error);
+    RCloud.unregister_output_context(context_id);
+    curr_context_id_ = null;
+};
+
 function forward_to_context(type, has_continuation) {
     return function() {
         var context = output_contexts_[curr_context_id_];
@@ -3383,14 +3515,6 @@ var oob_sends = {
         curr_context_id_ = context;
         if(output_contexts_[context] && output_contexts_[context].start)
             output_contexts_[context].start();
-    },
-    "end.cell.output": function(context) {
-        if(context != curr_context_id_)
-            console.log("unmatched context id: curr " + curr_context_id_ + ", end.cell.output " + context);
-        if(output_contexts_[context] && output_contexts_[context].end)
-            output_contexts_[context].end();
-        RCloud.unregister_output_context(context);
-        curr_context_id_ = null;
     },
     "html.out": forward_to_context('html_out')
 };
@@ -3500,6 +3624,19 @@ function rclient_promise(allow_anonymous) {
             RCloud.UI.fatal_dialog(could_not_initialize_error(error), "Logout", "/logout.R");
         }
         throw error;
+    }).then(function() {
+        rcloud.get_conf_value('exec.token.renewal.time').then(function(timeout) {
+            if(timeout) {
+                timeout = timeout * 1000; // from sec to ms
+                var replacer = function() {
+                    rcloud.replace_token($.cookies.get('execToken'), 'rcloud.exec').then(function(new_token) {
+                        $.cookies.set('execToken', new_token);
+                        setTimeout(replacer, timeout);
+                    });
+                };
+                setTimeout(replacer, timeout);
+            }
+        });
     }).then(function() {
         rcloud.display.set_device_pixel_ratio();
         rcloud.api.set_url(window.location.href);
@@ -4465,7 +4602,7 @@ RCloud.UI.column_sizer = {
                 }
                 else throw new Error('unexpected shadow drag with classes ' + $(this).attr('class'));
                 // revert to absolute position
-                $(this).css({left: "", top: ""});
+                $(this).css({left: "", right: "", top: ""});
             }
         });
 
@@ -4995,69 +5132,64 @@ RCloud.UI.find_replace = (function() {
             var find_form = $('<form id="find-form"></form>');
             find_desc_ = $('<label id="find-label" for="find-input"><span>Find</span></label>');
             find_input_ = $('<input type=text id="find-input" class="form-control-ext"></input>');
-            replace_desc_ = $('<label id="replace-label" for="replace-input"><span>Replace with</span></label>');
-            replace_input_ = $('<input type=text id="replace-input" class="form-control-ext"></input>');
             find_next_ = $('<button id="find-next" class="btn btn-primary">Next</button>');
-            find_last_ = $('<button id="find-last" class="btn">Last</button>');
+            find_last_ = $('<button id="find-last" class="btn">Previous</button>');
+            var replace_break = $('<br/>');
+            replace_desc_ = $('<label id="replace-label" for="replace-input"><span>Replace</span></label>');
+            replace_input_ = $('<input type=text id="replace-input" class="form-control-ext"></input>');
             replace_next_ = $('<button id="replace" class="btn">Replace</button>');
             replace_all_ = $('<button id="replace-all" class="btn">Replace All</button>');
-            replace_stuff_ = replace_desc_.add(replace_input_).add(replace_next_).add(replace_all_);
+            replace_stuff_ = replace_break.add(replace_desc_).add(replace_input_).add(replace_next_).add(replace_all_);
             var close = $('<span id="find-close"><i class="icon-remove"></i></span>');
-            find_form.append(find_desc_.append(find_input_), replace_desc_.append(replace_input_), find_next_, find_last_, replace_next_, replace_all_, close);
+            find_form.append(find_desc_.append(find_input_), find_next_, find_last_, close, replace_break,
+                             replace_desc_.append(replace_input_), replace_next_, replace_all_);
             find_dialog_.append(find_form);
             $('#middle-column').prepend(find_dialog_);
 
-            find_input_.on('input', function(val) {
+            find_input_.on('input', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 active_match_ = undefined;
                 build_regex(find_input_.val());
                 highlight_all();
             });
 
-            function deactivate_match() {
-                var match;
-                if(active_match_ !== undefined) {
-                    match = matches_[active_match_];
-                    shell.notebook.model.cells[match.index].notify_views(function(view) {
-                        view.change_active_highlight(null);
-                    });
-                }
-            }
-            function activate_match() {
-                var match = matches_[active_match_];
-                shell.notebook.model.cells[match.index].notify_views(function(view) {
-                    view.change_active_highlight(match);
-                });
-            }
-
-            function find_next() {
-                deactivate_match();
+            function find_next(reason) {
+                active_transition(reason || 'deactivate');
                 if(active_match_ !== undefined)
                     active_match_ = (active_match_ + 1) % matches_.length;
                 else
                     active_match_ = 0;
-                activate_match();
-                return false;
+                active_transition('activate');
             }
-            find_next_.click(find_next);
+            find_next_.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                find_next();
+                return false;
+            });
 
-            find_last_.click(function() {
-                deactivate_match();
+            find_last_.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                active_transition('deactivate');
                 if(active_match_ !== undefined)
                     active_match_ = (active_match_ + matches_.length - 1) % matches_.length;
                 else
                     active_match_ = 0;
-                activate_match();
+                active_transition('activate');
                 return false;
             });
 
-            replace_next_.click(function() {
+            replace_next_.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 if(active_match_ !== undefined) {
                     var cell = replace_current();
                     if(cell) {
                         shell.notebook.controller.update_cell(cell)
                             .then(function() {
-                                update_cell_highlights(cell, matches_[active_match_].index);
-                                find_next();
+                                find_next('replace');
                             });
                     }
                 }
@@ -5066,9 +5198,13 @@ RCloud.UI.find_replace = (function() {
                 return false;
             });
 
-            replace_all_.click(function() {
-                if(active_match_ !== undefined)
+            replace_all_.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if(active_match_ !== undefined) {
+                    active_transition('deactivate');
                     replace_rest();
+                }
                 else
                     replace_all(find_input_.val(), replace_input_.val());
                 return false;
@@ -5079,6 +5215,8 @@ RCloud.UI.find_replace = (function() {
 
             function click_find_next(e) {
                 if(e.keyCode===13) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     find_next_.click();
                     return false;
                 }
@@ -5091,6 +5229,8 @@ RCloud.UI.find_replace = (function() {
             find_form.keydown(function(e) {
                 switch(e.keyCode) {
                 case 9: // tab
+                    e.preventDefault();
+                    e.stopPropagation();
                     var cycle = replace_mode_ ? replace_cycle_ : find_cycle_;
                     var i = cycle.indexOf(e.target.id) + cycle.length;
                     if(e.shiftKey) --i; else ++i;
@@ -5098,6 +5238,8 @@ RCloud.UI.find_replace = (function() {
                     $('#' + cycle[i]).focus();
                     return false;
                 case 27: // esc
+                    e.preventDefault();
+                    e.stopPropagation();
                     hide_dialog();
                     return false;
                 }
@@ -5127,6 +5269,7 @@ RCloud.UI.find_replace = (function() {
         replace_mode_ = replace;
     }
     function hide_dialog() {
+        active_match_ = undefined;
         build_regex(null);
         highlight_all();
         find_dialog_.hide();
@@ -5140,6 +5283,26 @@ RCloud.UI.find_replace = (function() {
     function build_regex(find) {
         regex_ = find && find.length ? new RegExp(escapeRegExp(find), 'g') : null;
     }
+    function update_match_cell(match) {
+        var matches = matches_.filter(function(m) { return m.filename === match.filename; });
+        shell.notebook.model.cells[match.index].notify_views(function(view) {
+            view.change_highlights(matches);
+        });
+    }
+    function active_transition(transition) {
+        if(active_match_ !== undefined) {
+            var match = matches_[active_match_];
+            switch(transition) {
+            case 'replace': match.kind = 'replaced';
+                break;
+            case 'activate': match.kind = match.kind === 'replaced' ? 'activereplaced' : 'active';
+                break;
+            case 'deactivate': match.kind = match.kind === 'activereplaced' ? 'replaced' : 'normal';
+                break;
+            }
+            update_match_cell(match);
+        }
+    }
     function highlight_cell(cell) {
         var matches = [];
         if(regex_) {
@@ -5147,7 +5310,8 @@ RCloud.UI.find_replace = (function() {
             while((match = regex_.exec(content))) {
                 matches.push({
                     begin: match.index,
-                    end: match.index+match[0].length
+                    end: match.index+match[0].length,
+                    kind: matches.length === active_match_ ? 'active' : 'normal'
                 });
                 if(match.index === regex_.lastIndex) ++regex_.lastIndex;
             }
@@ -5162,11 +5326,6 @@ RCloud.UI.find_replace = (function() {
             return _.extend({index: n, filename: cell.filename()}, match);
         });
     }
-    function update_cell_highlights(cell, n) {
-        // inefficient: really want splice range
-        matches_ = _.filter(matches_, function(m) { return m.filename != cell.filename(); })
-            .concat(annotate_matches(highlight_cell(cell), cell, n)).sort(function(a,b) { return a.index-b.index; });
-    }
     function highlight_all() {
         matches_ = [];
         shell.notebook.model.cells.forEach(function(cell, n) {
@@ -5175,12 +5334,25 @@ RCloud.UI.find_replace = (function() {
         });
     }
     function replace_current() {
+        function findIndex(a, f, i) {
+            if(i===undefined) i = 0;
+            for(; i < a.length && !f(a[i]); ++i);
+            return i === a.length ? -1 : i;
+        }
         var match = matches_[active_match_];
         var cell = shell.notebook.model.cells[match.index];
         var content = cell.content();
         var before = content.substring(0, match.begin),
             after = content.substring(match.end);
-        return cell.content(before + replace_input_.val() + after) ? cell : null;
+        var replacement =  replace_input_.val();
+        var dlen = replacement.length + match.begin - match.end;
+        match.begin = before.length;
+        match.end = before.length + replacement.length;
+        for(var i = active_match_+1; i < matches_.length && matches_[i].filename === match.filename; ++i) {
+            matches_[i].begin += dlen;
+            matches_[i].end += dlen;
+        }
+        return cell.content(before + replacement + after) ? cell : null;
     }
     function replace_all(find, replace) {
         highlight_all(null);
@@ -5198,25 +5370,36 @@ RCloud.UI.find_replace = (function() {
         shell.notebook.controller.apply_changes(changes);
     }
     function replace_rest() {
-        if(active_match_ === undefined)
-            active_match_ = 0;
         var changes = shell.notebook.model.reread_buffers();
         while(active_match_ < matches_.length) {
             var cell = replace_current();
+            active_transition('replace');
             if(cell)
                 changes.push.apply(changes, shell.notebook.model.update_cell(cell));
             ++active_match_;
         }
+        active_match_ = undefined;
         shell.notebook.controller.apply_changes(changes);
     }
     var result = {
         init: function() {
             document.addEventListener("keydown", function(e) {
-                if (e.keyCode == 70 && (e.ctrlKey || e.metaKey)) { // ctrl/cmd-F
+                var action;
+                if (ui_utils.is_a_mac() && e.keyCode == 70 && e.metaKey) { // cmd-F
                     if(e.shiftKey)
                         return; // don't capture Full Screen
+                    action = e.altKey ? 'replace' : 'find';
+                }
+                else if(!ui_utils.is_a_mac() && e.keyCode == 70 && e.ctrlKey)
+                    action = 'find';
+                else if(!ui_utils.is_a_mac() && e.keyCode == 72 && e.ctrlKey)
+                    action = 'replace';
+                if(action) {
+                    // do not allow replace in view mode or read-only
+                    if(shell.notebook.model.read_only())
+                        action = 'find';
                     e.preventDefault();
-                    toggle_find_replace(e.altKey);
+                    toggle_find_replace(action === 'replace');
                 }
             });
         }
@@ -5723,6 +5906,7 @@ RCloud.UI.init = function() {
     });
 
     RCloud.UI.advanced_menu.init();
+    RCloud.UI.navbar.init();
 
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
@@ -5747,7 +5931,11 @@ RCloud.UI.init = function() {
 
     ui_utils.prevent_backspace($(document));
 
-    $(document).on('copy', function() {
+    $(document).on('copy', function(e) {
+        // only capture for cells and not ace elements
+        if($(arguments[0].target).hasClass('ace_text-input') ||
+           !$(arguments[0].target).closest($("#output")).size())
+            return;
         var sel = window.getSelection();
         var div = $('<div class="offscreen"></div>');
         $('body').append(div);
@@ -5792,7 +5980,8 @@ RCloud.UI.load_options = function() {
 
         $(".panel-collapse").collapse({toggle: false});
 
-        return Promise.all([RCloud.UI.advanced_menu.load(),
+        return Promise.all([RCloud.UI.navbar.load(),
+                            RCloud.UI.advanced_menu.load(),
                             RCloud.UI.share_button.load(),
                             RCloud.UI.left_panel.load_options(),
                             RCloud.UI.right_panel.load_options()]);
@@ -5810,6 +5999,46 @@ RCloud.UI.middle_column = (function() {
     });
     return result;
 }());
+RCloud.UI.navbar = (function() {
+    var extension_;
+    var result = {
+        init: function() {
+            extension_ = RCloud.extension.create({
+                sections: {
+                    header: {
+                        filter: RCloud.extension.filter_field('area', 'header')
+                    },
+                    main: {
+                        filter: RCloud.extension.filter_field('area', 'main')
+                    }
+                }
+            });
+            this.add({
+                rcloud: {
+                    area: 'header',
+                    sort: 1000,
+                    create: function() {
+                        return '<a class="navbar-brand" href="#">RCloud</a>';
+                    }
+                }
+            });
+        },
+        add: function(commands) {
+            extension_.add(commands);
+            return this;
+        },
+        remove: function(command_name) {
+            extension_.remove(command_name);
+            return this;
+        },
+        load: function() {
+            var items = extension_.create('header');
+            var header = $('#rcloud-navbar-header');
+            header.append.apply(header, _.values(items));
+        }
+    };
+    return result;
+})();
 RCloud.UI.notebook_commands = (function() {
     var icon_style_ = {'line-height': '90%'};
     var star_style_ = _.extend({'font-size': '80%'}, icon_style_);
@@ -6452,8 +6681,7 @@ RCloud.UI.run_button = (function() {
     var run_button_ = $("#run-notebook"),
         running_ = false,
         queue_ = [],
-        cancels_ = [],
-        stop_interval_ = null;
+        cancels_ = [];
 
     function display(icon, title) {
         $('i', run_button_).removeClass().addClass(icon);
@@ -6492,13 +6720,7 @@ RCloud.UI.run_button = (function() {
             });
         },
         stop: function() {
-            rcloud.signal_to_compute(2) // SIGINT
-                .then(function() {
-                    stop_interval_ = window.setInterval(function() {
-                        run_button_.animate({opacity: 0.5}, 250, "easeOutCirc")
-                            .animate({opacity: 1.0}, 250, "easeOutCirc");
-                    }, 1000);
-                });
+            rcloud.signal_to_compute(2); // SIGINT
         },
         on_stopped: function() {
             cancels_.forEach(function(cancel) { cancel(); });
@@ -6514,17 +6736,19 @@ RCloud.UI.run_button = (function() {
             if(!running_) {
                 start_queue()
                     .catch(function(xep) {
-                        if(stop_interval_) {
-                            window.clearInterval(stop_interval_);
-                            stop_interval_ = null;
+                        if(xep === 'stop') {
+                            cancels_.shift(); // this one was not a cancel
+                            that.on_stopped();
                         }
-                        console.log(xep);
-                        that.on_stopped();
-                        // if this was due to a SIGINT, we're done
-                        // otherwise we'll need to report this.
-                        // stop executing either way.
-                        if(!/^ERROR FROM R SERVER: 127/.test(xep))
-                            throw xep;
+                        else {
+                            console.log(xep);
+                            that.on_stopped();
+                            // if this was due to a SIGINT, we're done
+                            // otherwise we'll need to report this.
+                            // stop executing either way.
+                            if(!/^ERROR FROM R SERVER: 127/.test(xep))
+                                throw xep;
+                        }
                     });
             }
         }

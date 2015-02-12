@@ -4,7 +4,7 @@ Notebook.hide_r_source = function(selection)
         selection = $(selection).find(".r");
     else
         selection = $(".r");
-    selection.parent().hide();
+    selection.hide();
 };
 
 Notebook.show_r_source = function(selection)
@@ -13,5 +13,5 @@ Notebook.show_r_source = function(selection)
         selection = $(selection).find(".r");
     else
         selection = $(".r");
-    selection.parent().show();
+    selection.show();
 };

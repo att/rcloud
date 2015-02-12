@@ -32,7 +32,6 @@ rcloud.session.cell.eval <- function(context.id, partname, language, version, si
     command
   }
   else warning("Language ", language, " is unknown; cell ", partname, " ignored.");
-  self.oobSend(list("end.cell.output", context.id))
   res
 }
 
@@ -85,7 +84,9 @@ rcloud.compute.init <- function(...) {
 
     ver <- paste0('RCloud ', rcloud.info("version.string"), ' ')
     if (nzchar(rcloud.info("revision"))) ver <- paste0(ver, "(", rcloud.info("branch"), "/", rcloud.info("revision"), "), ")
-    .session$compute.init.result <- paste0(ver, R.version.string, "<br>Welcome, ", .session$username)
+    ## FIXME: we cannot actually store the welcome message because it would appear twice
+    .session$compute.init.result <- ""
+    paste0(ver, R.version.string, "<br>Welcome, ", .session$username)
 }
 
 ## WS init
@@ -94,7 +95,9 @@ rcloud.anonymous.compute.init <- function(...) {
     set.seed(Sys.getpid()) # we want different seeds so we get different file names
     start.rcloud.anonymously(...)
     rcloud.reset.session()
-    .session$compute.init.result <- paste(R.version.string, " --- welcome, anonymous user", sep='')
+    ## FIXME: we cannot actually store the welcome message because it would appear twice
+    .session$compute.init.result <- ""
+    paste(R.version.string, " --- welcome, anonymous user", sep='')
 }
 
 rcloud.session.init <- function(...) {

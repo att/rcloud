@@ -5,6 +5,7 @@ function main() {
         return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
     }
 
+    shell.is_view_mode(true);
     RCloud.UI.init();
     RCloud.session.init(true).then(function() {
         shell.init();
@@ -50,9 +51,6 @@ function main() {
             rcloud.install_notebook_stylesheets().then(function() {
                 shell.notebook.controller.run_all().then(function() {
                     shell.notebook.controller.hide_r_source();
-                });
-                _.each(shell.notebook.view.sub_views, function(cell_view) {
-                    cell_view.hide_buttons();
                 });
             });
         });

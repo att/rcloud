@@ -26,7 +26,7 @@ if [ ! -e rcloud.support/DESCRIPTION ]; then
 fi
 
 if [ -z "$NOBUILD" ]; then
-    sh scripts/build.sh || exit 1
+    sh scripts/build.sh $1 || exit 1
 fi
 
 sudo_cmd=''

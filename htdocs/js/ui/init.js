@@ -65,6 +65,7 @@ RCloud.UI.init = function() {
     });
 
     RCloud.UI.advanced_menu.init();
+    RCloud.UI.navbar.init();
 
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
@@ -89,7 +90,11 @@ RCloud.UI.init = function() {
 
     ui_utils.prevent_backspace($(document));
 
-    $(document).on('copy', function() {
+    $(document).on('copy', function(e) {
+        // only capture for cells and not ace elements
+        if($(arguments[0].target).hasClass('ace_text-input') ||
+           !$(arguments[0].target).closest($("#output")).size())
+            return;
         var sel = window.getSelection();
         var div = $('<div class="offscreen"></div>');
         $('body').append(div);

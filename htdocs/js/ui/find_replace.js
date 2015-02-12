@@ -11,69 +11,64 @@ RCloud.UI.find_replace = (function() {
             var find_form = $('<form id="find-form"></form>');
             find_desc_ = $('<label id="find-label" for="find-input"><span>Find</span></label>');
             find_input_ = $('<input type=text id="find-input" class="form-control-ext"></input>');
-            replace_desc_ = $('<label id="replace-label" for="replace-input"><span>Replace with</span></label>');
-            replace_input_ = $('<input type=text id="replace-input" class="form-control-ext"></input>');
             find_next_ = $('<button id="find-next" class="btn btn-primary">Next</button>');
-            find_last_ = $('<button id="find-last" class="btn">Last</button>');
+            find_last_ = $('<button id="find-last" class="btn">Previous</button>');
+            var replace_break = $('<br/>');
+            replace_desc_ = $('<label id="replace-label" for="replace-input"><span>Replace</span></label>');
+            replace_input_ = $('<input type=text id="replace-input" class="form-control-ext"></input>');
             replace_next_ = $('<button id="replace" class="btn">Replace</button>');
             replace_all_ = $('<button id="replace-all" class="btn">Replace All</button>');
-            replace_stuff_ = replace_desc_.add(replace_input_).add(replace_next_).add(replace_all_);
+            replace_stuff_ = replace_break.add(replace_desc_).add(replace_input_).add(replace_next_).add(replace_all_);
             var close = $('<span id="find-close"><i class="icon-remove"></i></span>');
-            find_form.append(find_desc_.append(find_input_), replace_desc_.append(replace_input_), find_next_, find_last_, replace_next_, replace_all_, close);
+            find_form.append(find_desc_.append(find_input_), find_next_, find_last_, close, replace_break,
+                             replace_desc_.append(replace_input_), replace_next_, replace_all_);
             find_dialog_.append(find_form);
             $('#middle-column').prepend(find_dialog_);
 
-            find_input_.on('input', function(val) {
+            find_input_.on('input', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 active_match_ = undefined;
                 build_regex(find_input_.val());
                 highlight_all();
             });
 
-            function deactivate_match() {
-                var match;
-                if(active_match_ !== undefined) {
-                    match = matches_[active_match_];
-                    shell.notebook.model.cells[match.index].notify_views(function(view) {
-                        view.change_active_highlight(null);
-                    });
-                }
-            }
-            function activate_match() {
-                var match = matches_[active_match_];
-                shell.notebook.model.cells[match.index].notify_views(function(view) {
-                    view.change_active_highlight(match);
-                });
-            }
-
-            function find_next() {
-                deactivate_match();
+            function find_next(reason) {
+                active_transition(reason || 'deactivate');
                 if(active_match_ !== undefined)
                     active_match_ = (active_match_ + 1) % matches_.length;
                 else
                     active_match_ = 0;
-                activate_match();
-                return false;
+                active_transition('activate');
             }
-            find_next_.click(find_next);
+            find_next_.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                find_next();
+                return false;
+            });
 
-            find_last_.click(function() {
-                deactivate_match();
+            find_last_.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                active_transition('deactivate');
                 if(active_match_ !== undefined)
                     active_match_ = (active_match_ + matches_.length - 1) % matches_.length;
                 else
                     active_match_ = 0;
-                activate_match();
+                active_transition('activate');
                 return false;
             });
 
-            replace_next_.click(function() {
+            replace_next_.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 if(active_match_ !== undefined) {
                     var cell = replace_current();
                     if(cell) {
                         shell.notebook.controller.update_cell(cell)
                             .then(function() {
-                                update_cell_highlights(cell, matches_[active_match_].index);
-                                find_next();
+                                find_next('replace');
                             });
                     }
                 }
@@ -82,9 +77,13 @@ RCloud.UI.find_replace = (function() {
                 return false;
             });
 
-            replace_all_.click(function() {
-                if(active_match_ !== undefined)
+            replace_all_.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if(active_match_ !== undefined) {
+                    active_transition('deactivate');
                     replace_rest();
+                }
                 else
                     replace_all(find_input_.val(), replace_input_.val());
                 return false;
@@ -95,6 +94,8 @@ RCloud.UI.find_replace = (function() {
 
             function click_find_next(e) {
                 if(e.keyCode===13) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     find_next_.click();
                     return false;
                 }
@@ -107,6 +108,8 @@ RCloud.UI.find_replace = (function() {
             find_form.keydown(function(e) {
                 switch(e.keyCode) {
                 case 9: // tab
+                    e.preventDefault();
+                    e.stopPropagation();
                     var cycle = replace_mode_ ? replace_cycle_ : find_cycle_;
                     var i = cycle.indexOf(e.target.id) + cycle.length;
                     if(e.shiftKey) --i; else ++i;
@@ -114,6 +117,8 @@ RCloud.UI.find_replace = (function() {
                     $('#' + cycle[i]).focus();
                     return false;
                 case 27: // esc
+                    e.preventDefault();
+                    e.stopPropagation();
                     hide_dialog();
                     return false;
                 }
@@ -143,6 +148,7 @@ RCloud.UI.find_replace = (function() {
         replace_mode_ = replace;
     }
     function hide_dialog() {
+        active_match_ = undefined;
         build_regex(null);
         highlight_all();
         find_dialog_.hide();
@@ -156,6 +162,26 @@ RCloud.UI.find_replace = (function() {
     function build_regex(find) {
         regex_ = find && find.length ? new RegExp(escapeRegExp(find), 'g') : null;
     }
+    function update_match_cell(match) {
+        var matches = matches_.filter(function(m) { return m.filename === match.filename; });
+        shell.notebook.model.cells[match.index].notify_views(function(view) {
+            view.change_highlights(matches);
+        });
+    }
+    function active_transition(transition) {
+        if(active_match_ !== undefined) {
+            var match = matches_[active_match_];
+            switch(transition) {
+            case 'replace': match.kind = 'replaced';
+                break;
+            case 'activate': match.kind = match.kind === 'replaced' ? 'activereplaced' : 'active';
+                break;
+            case 'deactivate': match.kind = match.kind === 'activereplaced' ? 'replaced' : 'normal';
+                break;
+            }
+            update_match_cell(match);
+        }
+    }
     function highlight_cell(cell) {
         var matches = [];
         if(regex_) {
@@ -163,7 +189,8 @@ RCloud.UI.find_replace = (function() {
             while((match = regex_.exec(content))) {
                 matches.push({
                     begin: match.index,
-                    end: match.index+match[0].length
+                    end: match.index+match[0].length,
+                    kind: matches.length === active_match_ ? 'active' : 'normal'
                 });
                 if(match.index === regex_.lastIndex) ++regex_.lastIndex;
             }
@@ -178,11 +205,6 @@ RCloud.UI.find_replace = (function() {
             return _.extend({index: n, filename: cell.filename()}, match);
         });
     }
-    function update_cell_highlights(cell, n) {
-        // inefficient: really want splice range
-        matches_ = _.filter(matches_, function(m) { return m.filename != cell.filename(); })
-            .concat(annotate_matches(highlight_cell(cell), cell, n)).sort(function(a,b) { return a.index-b.index; });
-    }
     function highlight_all() {
         matches_ = [];
         shell.notebook.model.cells.forEach(function(cell, n) {
@@ -191,12 +213,25 @@ RCloud.UI.find_replace = (function() {
         });
     }
     function replace_current() {
+        function findIndex(a, f, i) {
+            if(i===undefined) i = 0;
+            for(; i < a.length && !f(a[i]); ++i);
+            return i === a.length ? -1 : i;
+        }
         var match = matches_[active_match_];
         var cell = shell.notebook.model.cells[match.index];
         var content = cell.content();
         var before = content.substring(0, match.begin),
             after = content.substring(match.end);
-        return cell.content(before + replace_input_.val() + after) ? cell : null;
+        var replacement =  replace_input_.val();
+        var dlen = replacement.length + match.begin - match.end;
+        match.begin = before.length;
+        match.end = before.length + replacement.length;
+        for(var i = active_match_+1; i < matches_.length && matches_[i].filename === match.filename; ++i) {
+            matches_[i].begin += dlen;
+            matches_[i].end += dlen;
+        }
+        return cell.content(before + replacement + after) ? cell : null;
     }
     function replace_all(find, replace) {
         highlight_all(null);
@@ -214,25 +249,36 @@ RCloud.UI.find_replace = (function() {
         shell.notebook.controller.apply_changes(changes);
     }
     function replace_rest() {
-        if(active_match_ === undefined)
-            active_match_ = 0;
         var changes = shell.notebook.model.reread_buffers();
         while(active_match_ < matches_.length) {
             var cell = replace_current();
+            active_transition('replace');
             if(cell)
                 changes.push.apply(changes, shell.notebook.model.update_cell(cell));
             ++active_match_;
         }
+        active_match_ = undefined;
         shell.notebook.controller.apply_changes(changes);
     }
     var result = {
         init: function() {
             document.addEventListener("keydown", function(e) {
-                if (e.keyCode == 70 && (e.ctrlKey || e.metaKey)) { // ctrl/cmd-F
+                var action;
+                if (ui_utils.is_a_mac() && e.keyCode == 70 && e.metaKey) { // cmd-F
                     if(e.shiftKey)
                         return; // don't capture Full Screen
+                    action = e.altKey ? 'replace' : 'find';
+                }
+                else if(!ui_utils.is_a_mac() && e.keyCode == 70 && e.ctrlKey)
+                    action = 'find';
+                else if(!ui_utils.is_a_mac() && e.keyCode == 72 && e.ctrlKey)
+                    action = 'replace';
+                if(action) {
+                    // do not allow replace in view mode or read-only
+                    if(shell.notebook.model.read_only())
+                        action = 'find';
                     e.preventDefault();
-                    toggle_find_replace(e.altKey);
+                    toggle_find_replace(action === 'replace');
                 }
             });
         }

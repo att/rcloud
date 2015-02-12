@@ -8,7 +8,7 @@ var shell = (function() {
         notebook_model_ = Notebook.create_model(),
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
         notebook_controller_ = Notebook.create_controller(notebook_model_),
-        view_mode_ = !!window.location.href.match("/view.html");
+        view_mode_ = false;
 
     function on_new(notebook) {
         gistname_ = notebook.id;
@@ -78,7 +78,11 @@ var shell = (function() {
             rcloud.get_conf_value("github.base.url").then(function(url) { github_url_ = url; });
             rcloud.get_conf_value("github.gist.url").then(function(url) { gist_url_ = url; });
         },
-        is_view_mode: function() {
+        is_view_mode: function(val) {
+            if(val !== undefined) {
+                view_mode_ = !!val;
+                return this;
+            }
             return view_mode_;
         },
         scroll_to_end: scroll_to_end,

@@ -65,17 +65,8 @@ Notebook.Cell.postprocessors.add({
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
         }
     },
-    hide_source: {
-        sort: 4000,
-        process: function(div) {
-            // this is kinda bad
-            if (!shell.notebook.controller._r_source_visible) {
-                Notebook.hide_r_source(div);
-            }
-        }
-    },
     shade_pre_r: {
-        sort: 5000,
+        sort: 4000,
         process: function(div) {
             div.find("pre code")
                 .filter(function(i, e) {
@@ -83,6 +74,15 @@ Notebook.Cell.postprocessors.add({
                     // we might look in RCloud.language here?
                     return e.classList.length > 0;
                 }).parent().toggleClass('r', true);
+        }
+    },
+    hide_source: {
+        sort: 5000,
+        process: function(div) {
+            // this is kinda bad
+            if (!shell.notebook.controller._r_source_visible) {
+                Notebook.hide_r_source(div);
+            }
         }
     },
     click_markdown_code: {
