@@ -436,17 +436,18 @@ Notebook.create_controller = function(model)
         execute_cell_version: function(context_id, info) {
             function execute_cell_callback(r) {
                 if (r && r.r_attributes) {
-                    // FIXME: this is just a demo of what's available on different error conditions
                     if (r.r_attributes['class'] === 'parse-error') {
                         // available: error=message
-                        throw new Error("Parse error: " + r['error'].replace('\n', ' '));
+                        RCloud.end_cell_output(context_id, "Parse error: " + r['error'].replace('\n', ' '));
                     } else if (r.r_attributes['class'] === 'Rserve-eval-error') {
                         // available: error=message, traceback=vector of calls, expression=index of the expression that failed
                         var tb = r['traceback'] || '';
                         if (tb.join) tb = tb.join(" <- ");
-                        throw new Error(r['error'].replace('\n', ' ') + '  trace:' + tb.replace('\n', ' '));
+                        RCloud.end_cell_output(context_id, r['error'].replace('\n', ' ') + '  trace:' + tb.replace('\n', ' '));
                     }
+                    else RCloud.end_cell_output(context_id, null);
                 }
+                else RCloud.end_cell_output(context_id, null);
                 _.each(model.execution_watchers, function(ew) {
                     ew.run_cell(info.json_rep);
                 });

@@ -1974,15 +1974,19 @@ function create_cell_html_view(language, cell_model) {
 
             if(type!='code')
                 current_result_ = null;
+            var pre;
             switch(type) {
             case 'code':
                 if(!current_result_) {
-                    var pre = $('<pre></pre>');
+                    pre = $('<pre></pre>');
                     current_result_ = $('<code></code>');
                     pre.append(current_result_);
                     result_div_.append(pre);
                 }
                 current_result_.append(r);
+                break;
+            case 'error':
+                result_div_.append($('<pre><code style="color: red">' + _.escape(r) + '</code></pre>'));
                 break;
             case 'selection':
             case 'html':
@@ -2342,8 +2346,10 @@ Notebook.Cell.create_controller = function(cell_model)
                 view.add_result(type, msg);
             });
         },
-        end_output: function() {
+        end_output: function(error) {
             cell_model.notify_views(function(view) {
+                if(error)
+                    view.add_result('error', error);
                 view.end_output();
             });
         },
@@ -3271,17 +3277,18 @@ Notebook.create_controller = function(model)
         execute_cell_version: function(context_id, info) {
             function execute_cell_callback(r) {
                 if (r && r.r_attributes) {
-                    // FIXME: this is just a demo of what's available on different error conditions
                     if (r.r_attributes['class'] === 'parse-error') {
                         // available: error=message
-                        throw new Error("Parse error: " + r['error'].replace('\n', ' '));
+                        RCloud.end_cell_output(context_id, "Parse error: " + r['error'].replace('\n', ' '));
                     } else if (r.r_attributes['class'] === 'Rserve-eval-error') {
                         // available: error=message, traceback=vector of calls, expression=index of the expression that failed
                         var tb = r['traceback'] || '';
                         if (tb.join) tb = tb.join(" <- ");
-                        throw new Error(r['error'].replace('\n', ' ') + '  trace:' + tb.replace('\n', ' '));
+                        RCloud.end_cell_output(context_id, r['error'].replace('\n', ' ') + '  trace:' + tb.replace('\n', ' '));
                     }
+                    else RCloud.end_cell_output(context_id, null);
                 }
+                else RCloud.end_cell_output(context_id, null);
                 _.each(model.execution_watchers, function(ew) {
                     ew.run_cell(info.json_rep);
                 });
@@ -3399,6 +3406,15 @@ RCloud.unregister_output_context = function(context_id) {
     delete output_contexts_[context_id];
 };
 
+RCloud.end_cell_output = function(context_id, error) {
+    if(context_id != curr_context_id_)
+        console.log("unmatched context_id id: curr " + curr_context_id_ + ", end.cell.output " + context_id);
+    if(output_contexts_[context_id] && output_contexts_[context_id].end)
+        output_contexts_[context_id].end(error);
+    RCloud.unregister_output_context(context_id);
+    curr_context_id_ = null;
+};
+
 function forward_to_context(type, has_continuation) {
     return function() {
         var context = output_contexts_[curr_context_id_];
@@ -3447,14 +3463,6 @@ var oob_sends = {
         curr_context_id_ = context;
         if(output_contexts_[context] && output_contexts_[context].start)
             output_contexts_[context].start();
-    },
-    "end.cell.output": function(context) {
-        if(context != curr_context_id_)
-            console.log("unmatched context id: curr " + curr_context_id_ + ", end.cell.output " + context);
-        if(output_contexts_[context] && output_contexts_[context].end)
-            output_contexts_[context].end();
-        RCloud.unregister_output_context(context);
-        curr_context_id_ = null;
     },
     "html.out": forward_to_context('html_out')
 };

@@ -32,7 +32,6 @@ rcloud.session.cell.eval <- function(context.id, partname, language, version, si
     command
   }
   else warning("Language ", language, " is unknown; cell ", partname, " ignored.");
-  self.oobSend(list("end.cell.output", context.id))
   res
 }
 

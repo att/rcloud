@@ -383,15 +383,19 @@ function create_cell_html_view(language, cell_model) {
 
             if(type!='code')
                 current_result_ = null;
+            var pre;
             switch(type) {
             case 'code':
                 if(!current_result_) {
-                    var pre = $('<pre></pre>');
+                    pre = $('<pre></pre>');
                     current_result_ = $('<code></code>');
                     pre.append(current_result_);
                     result_div_.append(pre);
                 }
                 current_result_.append(r);
+                break;
+            case 'error':
+                result_div_.append($('<pre><code style="color: red">' + _.escape(r) + '</code></pre>'));
                 break;
             case 'selection':
             case 'html':

@@ -30,6 +30,15 @@ RCloud.unregister_output_context = function(context_id) {
     delete output_contexts_[context_id];
 };
 
+RCloud.end_cell_output = function(context_id, error) {
+    if(context_id != curr_context_id_)
+        console.log("unmatched context_id id: curr " + curr_context_id_ + ", end.cell.output " + context_id);
+    if(output_contexts_[context_id] && output_contexts_[context_id].end)
+        output_contexts_[context_id].end(error);
+    RCloud.unregister_output_context(context_id);
+    curr_context_id_ = null;
+};
+
 function forward_to_context(type, has_continuation) {
     return function() {
         var context = output_contexts_[curr_context_id_];
@@ -78,14 +87,6 @@ var oob_sends = {
         curr_context_id_ = context;
         if(output_contexts_[context] && output_contexts_[context].start)
             output_contexts_[context].start();
-    },
-    "end.cell.output": function(context) {
-        if(context != curr_context_id_)
-            console.log("unmatched context id: curr " + curr_context_id_ + ", end.cell.output " + context);
-        if(output_contexts_[context] && output_contexts_[context].end)
-            output_contexts_[context].end();
-        RCloud.unregister_output_context(context);
-        curr_context_id_ = null;
     },
     "html.out": forward_to_context('html_out')
 };
