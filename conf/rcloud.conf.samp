@@ -5,19 +5,19 @@
 ##: Host: 			[Optional] Only set Host: if it doesn't match the canonical name of your machine
 ##:					E.g. Host: 127.0.0.1
 ##: Cookie.Domain:  Proxy Hostname being used for accessing RCloud. Required if Nginx and RCloud 
-##:				   are not on the same host.
-##:				   cookie domain defaults to the hostname if not otherwise specified
-##:				E.g. Cookie.Domain: myproxy.noip.com
+##:				    are not on the same host.
+##:				    cookie domain defaults to the hostname if not otherwise specified
+##:					E.g. Cookie.Domain: myproxy.noip.com
 ##: cran.mirror:	[Optional] If set all install.package requests within rcloud are routed to 
-##:				this mirror else cran is used if not set
-##:				E.g. cran.mirror: r.research.att.com
+##:					this mirror else cran is used if not set
+##:					E.g. cran.mirror: r.research.att.com
 ##: rcs.system.config.addons: RCloud config modules
 ##: rcloud.languages: RCloud languages modules for introducing new languages
-##: smtp.server: SMTP capable server for sending out notifications when notebooks are commented on
-##: email.from: Email address to be used in the from field when sending out notification
-##: HTTP.user: 	Service or user account which is required to serve the web content
-##:				E.g. HTTP.user: www-data
-##: CURL.CAinfo : Certificate root for curl
+##: smtp.server: 	SMTP capable server for sending out notifications when notebooks are commented on
+##: email.from: 	Email address to be used in the from field when sending out notification
+##: HTTP.user: 		Service or user account which is required to serve the web content
+##:					E.g. HTTP.user: www-data
+##: CURL.CAinfo : 	Certificate root for curl
 ##:----------------------------------------------------------------------
 ##Host: 127.0.0.1
 rcs.system.config.addons: rcloud.viewer, rcloud.enviewer, rcloud.notebook.info
@@ -30,15 +30,14 @@ email.from:donotreply
 ##: github.client.id: Client ID of the GitHub OAuth APP
 ##: github.client.secret: Client Secret of the GitHub OAuth APP
 ##: github.base.url:	Base URL of the github server being used. If using a
-##: 					enterprise deployment please change from the public
-##:					default
+##: 					enterprise deployment please change from the public default
 ##: github.api.url: 	API Endpoint of the github deployment
 ##: github.gist.url:	URL for Github Gist
-##: gist.backend: 	[Optional] The gist backend to use exampe file based git
-##:					E.g. gist.backend: gitgist
-##: gist.git.root: 	[Optional] Required if gist.backend is gitgist
-##:					Directory to create the git repositories for notebooks
-##:					E.g. gist.git.root: /data/rcloud/data/gists
+##: gist.backend: 		[Optional] The gist backend to use exampe file based git
+##:						E.g. gist.backend: gitgist
+##: gist.git.root: 		[Optional] Required if gist.backend is gitgist
+##:						Directory to create the git repositories for notebooks
+##:						E.g. gist.git.root: /data/rcloud/data/gists
 ##:----------------------------------------------------------------------
 github.client.id: xxxxxxxxxxx
 github.client.secret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -47,26 +46,26 @@ github.api.url: https://api.github.com/
 github.gist.url: https://gist.github.com/
 ##:----------------------------------------------------------------------
 ##: Redis Details
-##: rcs.engine: The RCS backend to be used for RCloud. RCloud uses Redis
+##: rcs.engine: 	The RCS backend to be used for RCloud. RCloud uses Redis
 ##: rcs.redis.host: IP or FQDN ov the host running redis followed by the port
-##: rcs.redis.db: [Optional] Redis keyspace number between 0 to 16 Default 0
+##: rcs.redis.db: 	[Optional] Redis keyspace number between 0 to 16 Default 0
 ##: rcs.redis.password: [Optional] Value of 'requirepass' if set in redis.conf
 ##:----------------------------------------------------------------------
 rcs.engine: redis
 rcs.redis.host: 127.0.0.1:6379
 ##:----------------------------------------------------------------------
 ##: Solr Details
-##: solr.url: The end to end SOLR Endpoint for the collection to be used
-##:			 E.g: <HTTP/HTTPS>://<FQDN/IP>:<SOLR PORT>/<REST END POINT>/<COLLECTION NAME>
+##: solr.url: 		The end to end SOLR Endpoint for the collection to be used
+##:			 		E.g: <HTTP/HTTPS>://<FQDN/IP>:<SOLR PORT>/<REST END POINT>/<COLLECTION NAME>
 ##:----------------------------------------------------------------------
 ##:solr.url: http://127.0.0.1:8983/solr/rcloudnotebooks
 solr.page.size: 5
 ##:----------------------------------------------------------------------
-##: Python Details
-##: rcloud.python.path:[Optional] Path to the alternative python install
-##:					  E.g. rcloud.python.path: /etc/alternatives/python2.7
-##: python.exta.libs: [Optional] Path to virtual envs or extra site-packages
-##:					  E.g. python.extra.libs: /opt/extra/site-packages
+##: Python Details [Optional]
+##: rcloud.python.path:	[Optional] Path to the alternative python install
+##:					  	E.g. rcloud.python.path: /etc/alternatives/python2.7
+##: python.exta.libs: 	[Optional] Path to virtual envs or extra site-packages
+##:					  	E.g. python.extra.libs: /opt/extra/site-packages
 ##:----------------------------------------------------------------------
 ##: RCloud Multi-User Details:
 ##: Exec.auth: 			Defines the authentication method for the execution environment. The currently 
