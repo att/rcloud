@@ -16,7 +16,7 @@ RCloud.UI.navbar = (function() {
                 rcloud: {
                     area: 'header',
                     sort: 1000,
-                    content: function() {
+                    create: function() {
                         return '<a class="navbar-brand" href="#">RCloud</a>';
                     }
                 }
@@ -29,6 +29,11 @@ RCloud.UI.navbar = (function() {
         remove: function(command_name) {
             extension_.remove(command_name);
             return this;
+        },
+        load: function() {
+            var items = extension_.create('header');
+            var header = $('#rcloud-navbar-header');
+            header.append.apply(header, _.values(items));
         }
     };
     return result;
