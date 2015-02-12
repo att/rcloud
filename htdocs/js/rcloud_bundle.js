@@ -3313,7 +3313,7 @@ Notebook.create_controller = function(model)
                 if (r && r.r_attributes) {
                     if (r.r_attributes['class'] === 'parse-error') {
                         // available: error=message
-                        RCloud.end_cell_output(context_id, "Parse error: " + r.error.replace('\n', ' '));
+                        RCloud.end_cell_output(context_id, "Parse error: " + r.error);
                         throw 'stop';
                     } else if (r.r_attributes['class'] === 'Rserve-eval-error') {
                         // available: error=message, traceback=vector of calls, expression=index of the expression that failed
