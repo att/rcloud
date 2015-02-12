@@ -424,7 +424,7 @@ function create_cell_html_view(language, cell_model) {
                 result_div_.empty();
                 has_result_ = true;
             }
-            current_result_ = null;
+            current_result_ = current_error_ = null;
         },
         clear_result: clear_result,
         set_readonly: function(readonly) {
