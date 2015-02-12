@@ -9,7 +9,7 @@ session.server.revoke.token <- function(realm, token)
     .session.server.request(paste0("/revoke?token=", URLencode(token), "&realm=", URLencode(realm)))
 
 session.server.replace.token <- function(realm, token)
-    .session.server.request(paste0("/replace?token=", URLencode(token), "&realm=", URLencode(realm)))
+    strsplit(.session.server.request(paste0("/replace?token=", URLencode(token), "&realm=", URLencode(realm))), "\n")[[1]]
 
 ## result c(<result>, <user>, <source>); <result>=YES|SUPERCEDED|NO
 session.server.get.token <- function(realm, token)

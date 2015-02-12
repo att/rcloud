@@ -155,6 +155,7 @@ div.panel-heading:hover {
     border-width: 0px;
     padding: 0px;
     margin-top: 0em;
+    background-color: white;
 }
 
 .live-plot {
@@ -220,4 +221,55 @@ td {
 
 .popover-content .info-item {
     padding-left: 1ex;
+}
+
+#find-dialog .btn {
+    margin-left: 7px;
+    padding: 3px 12px;
+}
+
+#find-dialog label span {
+    margin-left: 7px;
+    margin-right: 5px;
+}
+
+#find-dialog form {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+#find-close {
+    float: right;
+    cursor: pointer;
+    position: relative;
+    top: 7;
+    right: 5;
+}
+
+#replace-label span, #find-label span {
+    display: inline-block;
+    width: 50px;
+}
+
+#find-dialog input {
+    width: 160px
+}
+
+.find-highlight {
+    background-color: yellow;
+}
+
+.find-highlight.active {
+    background-color: orange;
+}
+
+.find-highlight.replaced {
+    background-color: lightgreen;
+}
+.find-highlight.activereplaced {
+    background-color: peru;
+}
+
+.ace_start.find-highlight {
+    position: absolute;
 }

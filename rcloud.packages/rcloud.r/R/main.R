@@ -1,15 +1,22 @@
 rcloud.language.support <- function()
 {
+  ## a bit ugly, but just to keep the formatting in one place
+  .eval <- rcloud.support:::.eval
+
   ev <- function(command, silent, rcloud.session) {
     .session <- rcloud.session
     # .session$device.pixel.ratio
-    res <- withVisible(eval(parse(text=command, keep.source=TRUE), .GlobalEnv))
-    if (res$visible) print(res$value)
+    exp <- tryCatch(parse(text=command), error=function(o) structure(list(error=o$message), class="parse-error"))
+    # ulog(".EXP: ", paste(capture.output(str(exp)), collapse='\n'))
+    res <- if (!inherits(exp, "parse-error")) .eval(exp, FALSE, .GlobalEnv) else exp
+    ## R hides PrintWarnings() so this is the only way to get them out
+    .Internal(printDeferredWarnings())
     ## FIXME: in principle this should move from rcloud.support to rcloud.R
     rcloud.support:::.post.eval()
-    NULL
+    res
   }
-  complete <- function(text, pos) {
+
+  complete <- function(text, pos, rcloud.session) {
     # from rcompgen.completion
     utils:::.assignLinebuffer(text)
     utils:::.assignEnd(pos)

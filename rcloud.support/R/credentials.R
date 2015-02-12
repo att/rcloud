@@ -58,7 +58,12 @@ replace.token <- function(token, realm="rcloud") {
     d$token.to.user[[token]] <- NULL
     d$token.to.user[[new.token]] <- user
     .save.token.list(d)
-  } else session.server.replace.token(realm, token)
+    new.token
+  } else {
+      res <- session.server.replace.token(realm, token)
+      if (length(res) < 3) stop("invalid token")
+      res[1]
+  }
 }
 
 check.user.token.pair <- function(user, token, valid.sources="stored", realm="rcloud")

@@ -7,7 +7,8 @@ ui_utils.make_url = function(page, opts) {
         if(opts.notebook) {
             url += '/' + opts.notebook;
             // tags currently not supported for notebook.R & the like
-            url += '/' + opts.version;
+            if(opts.version)
+                url += '/' + opts.version;
         }
     }
     else {
@@ -201,6 +202,13 @@ ui_utils.position_of_character_offset = function(widget, offset) {
     if(i===text.length)
         throw new Error("character offset off end of editor");
     return {row: i, column: offset};
+};
+
+ui_utils.ace_range_of_character_range = function(widget, cbegin, cend) {
+    var Range = ace.require('ace/range').Range;
+    var begin = ui_utils.position_of_character_offset(widget, cbegin),
+        end = ui_utils.position_of_character_offset(widget, cend);
+    return new Range(begin.row, begin.column, end.row, end.column);
 };
 
 // bind an ace editor to a listener and return a function to change the
@@ -526,3 +534,15 @@ ui_utils.prevent_backspace = function($doc) {
             event.preventDefault();
     });
 };
+
+
+ui_utils.is_a_mac = function() {
+    // http://stackoverflow.com/questions/7044944/jquery-javascript-to-detect-os-without-a-plugin
+    var PLAT = navigator.platform.toUpperCase();
+    return function() {
+        var isMac = PLAT.indexOf('MAC')!==-1;
+        // var isWindows = PLAT.indexOf('WIN')!==-1;
+        // var isLinux = PLAT.indexOf('LINUX')!==-1;
+        return isMac;
+    };
+}();

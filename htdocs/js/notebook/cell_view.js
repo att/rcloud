@@ -25,7 +25,8 @@ function create_cell_html_view(language, cell_model) {
     var cell_status_;
     var above_between_controls_, cell_controls_, left_controls_;
     var edit_mode_; // note: starts neither true nor false
-    var highlights_;
+    var highlights_, active_highlight_ = null;
+    var code_preprocessors_ = []; // will be an extension point, someday
 
     // input1
     var prompt_text_;
@@ -87,6 +88,8 @@ function create_cell_html_view(language, cell_model) {
 
     function update_language() {
         language = cell_model.language();
+        if(!RCloud.language.is_a_markdown(language))
+            result.hide_source && result.hide_source(false);
         if(cell_controls_)
             cell_controls_.controls['language_cell'].set(language);
         if(ace_widget_) {
@@ -265,25 +268,54 @@ function create_cell_html_view(language, cell_model) {
             hljs.highlightBlock(e);
         });
     }
+    function highlight_classes(kind) {
+        return 'find-highlight' + ' ' + kind;
+    }
+
+    // should be a code preprocessor extension, but i've run out of time
+    code_preprocessors_.push(
+        function(code) {
+            var yuk = _.escape;
+            // add search highlights
+            var last = 0, text = [];
+            if(highlights_)
+                highlights_.forEach(function(range) {
+                    text.push(yuk(code.substring(last, range.begin)));
+                    text.push('<span class="', highlight_classes(range.kind), '">',
+                              yuk(code.substring(range.begin, range.end)), '</span>');
+                    last = range.end;
+                });
+            text.push(yuk(code.substring(last)));
+            return text.join('');
+        },
+        function(code) {
+            // add abso-relative line number spans at the beginning of each line
+            var line = 1;
+            code = code.replace(/^/gm, function() {
+                return '<span class="rcloud-line-number-position nonselectable"><span class="rcloud-line-number">' + line++ + '</span></span>';
+            });
+            code += '&nbsp;'; // make sure last line is shown even if it is just a tag
+            return code;
+        },
+        function(code) {
+            // match the number of lines ace.js is going to show
+            // 1. html would skip final blank line
+            if(code[code.length-1] === '\n')
+                code += '\n';
+
+            // 2. we have ace configured to show a minimum of MIN_LINES lines
+            var lines = (code.match(/\n/g)||[]).length;
+            if(lines<MIN_LINES)
+                code += new Array(MIN_LINES+1-lines).join('\n');
+            return code;
+        });
+
     function assign_code(code) {
         code = code || cell_model.content();
 
-        // add abso-relative line number spans at the beginning of each line
-        var line = 1;
-        code = code.replace(/^/gm, function() {
-            return '<span class="rcloud-line-number-position"><span class="rcloud-line-number">' + line++ + '</span></span>';
-        });
-        code += '&nbsp;'; // make sure last line is shown even if it is just a tag
-
-        // match the number of lines ace.js is going to show
-        // 1. html would skip final blank line
-        if(code[code.length-1] === '\n')
-            code += '\n';
-
-        // 2. we have ace configured to show a minimum of MIN_LINES lines
-        var lines = (code.match(/\n/g)||[]).length;
-        if(lines<MIN_LINES)
-            code += new Array(MIN_LINES+1-lines).join('\n');
+        code = code_preprocessors_.reduce(function(code, f) {
+            return f(code);
+        }, code);
 
         code_div_.empty();
         var elem = $('<code></code>').append(code);
@@ -353,15 +385,19 @@ function create_cell_html_view(language, cell_model) {
 
             if(type!='code')
                 current_result_ = null;
+            var pre;
             switch(type) {
             case 'code':
                 if(!current_result_) {
-                    var pre = $('<pre></pre>');
+                    pre = $('<pre></pre>');
                     current_result_ = $('<code></code>');
                     pre.append(current_result_);
                     result_div_.append(pre);
                 }
                 current_result_.append(r);
+                break;
+            case 'error':
+                result_div_.append($('<pre><code style="color: red">' + _.escape(r) + '</code></pre>'));
                 break;
             case 'selection':
             case 'html':
@@ -396,14 +432,6 @@ function create_cell_html_view(language, cell_model) {
 
         //////////////////////////////////////////////////////////////////////
 
-        hide_buttons: function() {
-            cell_control_bar.css("display", "none");
-            cell_commands_above.hide();
-        },
-        show_buttons: function() {
-            cell_control_bar.css("display", null);
-            cell_commands_above.show();
-        },
         execute_cell: function() {
             var new_content = update_model();
             var promise;
@@ -488,7 +516,8 @@ function create_cell_html_view(language, cell_model) {
                 outer_ace_div.hide();
             }
             edit_mode_ = edit_mode;
-            this.change_highlights(highlights_); // restore highlights
+            this.change_highlights(highlights_)
+                .change_active_highlight(active_highlight_); // restore highlights
         },
         hide_source: function(whether) {
             if(whether)
@@ -512,16 +541,16 @@ function create_cell_html_view(language, cell_model) {
             input_widget_.resize(true);
             input_widget_.focus();
             input_div_.css('border-color', '#eeeeee');
-            var dir = true;
+            var dir = false;
             var switch_color = function() {
-                input_div_.animate({borderColor: dir ? '#ff8c00' : '#E34234'},
-                                   {duration: 2000,
+                input_div_.animate({borderColor: dir ? '#ffac88' : '#E34234'},
+                                   {duration: 1000,
                                     easing: 'easeInOutCubic',
                                     queue: false});
                 dir = !dir;
             };
             switch_color();
-            input_anim_ = window.setInterval(switch_color, 2000);
+            input_anim_ = window.setInterval(switch_color, 1000);
             input_kont_ = k;
         },
         div: function() {
@@ -532,6 +561,7 @@ function create_cell_html_view(language, cell_model) {
         },
         focus: function() {
             ace_widget_.focus();
+            return this;
         },
         get_content: function() { // for debug
             return cell_model.content();
@@ -544,57 +574,72 @@ function create_cell_html_view(language, cell_model) {
                 set_widget_height();
                 ace_widget_.resize();
             }
+            return this;
         },
         check_buttons: function() {
             if(above_between_controls_)
                 above_between_controls_.betweenness(!!cell_model.parent_model.prior_cell(cell_model));
+            return this;
         },
         change_highlights: function(ranges) {
+            highlights_ = ranges;
             if(edit_mode_) {
                 var markers = ace_session_.getMarkers();
                 for(var marker in markers) {
                     if(markers[marker].type === 'rcloud-select')
                         ace_session_.removeMarker(marker);
                 }
-                var Range = ace.require('ace/range').Range;
                 if(ranges)
                     ranges.forEach(function(range) {
-                        var begin = ui_utils.position_of_character_offset(ace_widget_, range.begin),
-                            end = ui_utils.position_of_character_offset(ace_widget_, range.end);
-                        var ace_range = new Range(begin.row, begin.column, end.row, end.column);
-                        ace_session_.addMarker(ace_range, 'find-highlight', 'rcloud-select');
+                        var ace_range = ui_utils.ace_range_of_character_range(ace_widget_, range.begin, range.end);
+                        ace_session_.addMarker(ace_range, highlight_classes(range.kind), 'rcloud-select');
                     });
             }
             else {
-                var content = cell_model.content();
-                var last = 0, text = '';
-                if(ranges)
-                    ranges.forEach(function(range) {
-                        text += content.substring(last, range.begin);
-                        text += '<span class="find-highlight">' + content.substring(range.begin, range.end) + '</span>';
-                        last = range.end;
-                    });
-                text += content.substring(last);
-                assign_code(text);
+                assign_code();
             }
-            highlights_ = ranges;
+            return this;
         },
         change_active_highlight: function(range) {
-            if(!range)
-                code_div_.find('.find-highlight.active').toggleClass('active', false);
-            else {
-                // http://stackoverflow.com/questions/7969031/indexof-element-in-js-array-using-a-truth-function-using-underscore-or-jquery
-                function find(collection, filter) {
-                    for (var i = 0; i < collection.length; i++) {
-                        if(filter(collection[i], i, collection)) return i;
-                    }
-                    return -1;
+            active_highlight_ = range;
+            if(edit_mode_) {
+                var markers = ace_session_.getMarkers();
+                var id, ace_range;
+                if(range) {
+                    ace_range = ui_utils.ace_range_of_character_range(ace_widget_, range.begin, range.end);
+                    for(id in markers)
+                        if(markers[id].type === 'rcloud-select' &&
+                           markers[id].range.isEqual(ace_range)) {
+                            markers[id].clazz = 'find-highlight active';
+                            ace_session_._signal("changeBackMarker");
+                        }
                 }
-                var i = find(highlights_, function(r) { return r.begin === range.begin && r.end === range.end; });
-                if(i<0)
-                    throw new Error('unknown find result ' + JSON.stringify(range));
-                code_div_.find('.find-highlight').eq(i).toggleClass('active', true);
+                else for(id in markers) {
+                    if(markers[id].type === 'rcloud-select' &&
+                       markers[id].clazz.split(' ').indexOf('active') >= 0) {
+                        markers[id].clazz = 'find-highlight';
+                        ace_session_._signal("changeBackMarker");
+                    }
+                }
             }
+            else {
+                if(!range)
+                    code_div_.find('.find-highlight.active').toggleClass('active', false);
+                else {
+                    // http://stackoverflow.com/questions/7969031/indexof-element-in-js-array-using-a-truth-function-using-underscore-or-jquery
+                    function find(collection, filter) {
+                        for (var i = 0; i < collection.length; i++) {
+                            if(filter(collection[i], i, collection)) return i;
+                        }
+                        return -1;
+                    }
+                    var i = find(highlights_, function(r) { return r.begin === range.begin && r.end === range.end; });
+                    if(i<0)
+                        throw new Error('unknown find result ' + JSON.stringify(range));
+                    code_div_.find('.find-highlight').eq(i).toggleClass('active', true);
+                }
+            }
+            return this;
         }
     });
 

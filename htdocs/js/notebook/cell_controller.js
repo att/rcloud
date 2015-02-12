@@ -48,8 +48,10 @@ Notebook.Cell.create_controller = function(cell_model)
                 view.add_result(type, msg);
             });
         },
-        end_output: function() {
+        end_output: function(error) {
             cell_model.notify_views(function(view) {
+                if(error)
+                    view.add_result('error', error);
                 view.end_output();
             });
         },

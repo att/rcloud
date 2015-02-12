@@ -1,13 +1,13 @@
 RCloud = {};
 
 RCloud.is_exception = function(v) {
-    return _.isArray(v) && v.r_attributes && v.r_attributes['class'] === 'try-error';
+    return _.isArray(v) && v.r_attributes && (v.r_attributes['class'] === 'Rserve-eval-error' || v.r_attributes['class'] === 'parse-error');
 };
 
 RCloud.exception_message = function(v) {
     if (!RCloud.is_exception(v))
         throw new Error("Not an R exception value");
-    return v[0];
+    return v['error'];
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -17,7 +17,9 @@ RCloud.promisify_paths = (function() {
     function rcloud_handler(command, promise_fn) {
         function success(result) {
             if(result && RCloud.is_exception(result)) {
-                throw new Error(command + ": " + result[0].replace('\n', ' '));
+                var tb = result['traceback'] ? result['traceback'] : "";
+                if (tb.join) tb = tb.join(" <- ");
+                throw new Error(command + ": " + result['error'].replace('\n', ' ') + "  " + tb);
             }
             return result;
         }
@@ -90,6 +92,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["get_users"],
             ["log", "record_cell_execution"],
             ["setup_js_installer"],
+            ["replace_token"],
             ["comments","get_all"],
             ["help"],
             ["debug","raise"],
@@ -236,6 +239,11 @@ RCloud.create = function(rcloud_ocaps) {
                 k(null, null);
             }
         });
+
+        // security: request new token
+        rcloud.replace_token = function(old_token, realm) {
+            return rcloud_ocaps.replace_tokenAsync(old_token, realm);
+        };
 
         // notebook.comments.R
         rcloud.get_all_comments = function(id) {

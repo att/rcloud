@@ -1,82 +1,47 @@
 # Setting up RCloud
 
-## Installing from a distribution tar ball
+## Prerequisites
 
-This is a quick-start guide for installing RCloud from a distribution
-tar ball. For full instructions using the repository, read from next
-section on.
+RCloud requires R 3.1.0 or higher and several R packages. If you want to compile R and all necessary packages from sources these are the necessary dependnecies:
 
-Make sure R 3.1.0 or higher is installed. Download the distribution tar
-ball, change to the directory where you want to install it,
-e.g. `/data` and run
+    ## Ubuntu 14.04
+    sudo apt-get install gcc g++ gfortran libcairo-dev libreadline-dev libxt-dev libjpeg-dev \
+    libicu-dev libssl-dev libcurl4-openssl-dev subversion git automake make libtool \
+    libtiff-dev gettext redis-server rsync
+    
+    ## RedHat/CentOS 6+
+    yum install gcc-gfortran gcc-c++ cairo-devel readline-devel libXt-devel libjpeg-devel \
+    libicu-devel boost-devel openssl-devel libcurl-devel subversion git automake redis
 
-    $ tar fxz rcloud-1.0.tar.gz
-    $ cd rcloud
-    $ sh scripts/bootstrapR.sh
+If you have already R installed you may need only a subset of the above.
 
-It will install the packages included in the release tar ball. Copy
-`conf/rcloud.conf.samp` to `conf/rcloud.conf` and edit it to match
-your GitHub setup. Then start RCloud via
+## Installing from GitHub
 
-    $ sh scripts/fresh_start.sh
+Check out the RCloud repository to a place that will be your RCloud root directory. For illustration purposes we will use `/data/rcloud` as the root, but it can be any other directory.
 
-The same script can be used to re-start RCloud later.
+    cd /data
+    
+    ## check out RCloud from GitHub
+    git clone https://github.com/att/rcloud.git
+    cd rcloud
+    
+    ## install all dependent R packages
+    sh scripts/bootstrapR.sh
 
+Now is the time to edit the configuration
 
-## Installing RCloud from GitHub
+    ## copy configuration template and edit it
+    cp conf/rcloud.conf.samp conf/rcloud.conf
+    vi conf/rcloud.conf
 
-### Checking out the code
+You probably want to set the `Host:` configuration option and Github authentication - see the next section for details. Once you have done that, you can start RCloud
 
-You will need to do
+    sh scripts/fresh_start.sh
 
-    $ git clone https://github.com/att/rcloud.git
+You can use the above also for re-starts. If you didn't touch any code and want to restart, you can add `--no-build` for a quick re-start without re-building any packages.
 
-to get RCloud
+Once it is running, you can go to `http://your-host:8080/login.R` to login to your RCloud instance. We don't supply `index.html` as part fo the sources so you can customize the user experience on your own.
 
-### Upgrading to RCloud 1.0
-
-If you are moving from RCloud 0.9 to 1.0, you'll need to run the upgrade script to move your
-RCS data (notebook lists and configuration data).  In your RCloud root, run:
-
-    $ ROOT=`pwd` R -f scripts/upgradeRCS1_0.R
-
-This script is designed to run incrementally, so you can run both RCloud 0.9 and RCloud 1.0
-on the same RCS back-end, and run this script repeatedly to keep updating the 1.0 installation
-from the 0.9 installation.
-
-## Installation requirements
-
-Please use R 3.0.0 or later. Search functionality requires R 3.1.0 or later.
-
-You will need several headers and libraries to compile dependent
-R packages (as well as R) -- on Debian/Ubuntu, you can use
-
-    $ sudo apt-get install libxt-dev libcurl4-openssl-dev libcairo2-dev libreadline-dev git
-
-to install the dependencies.
-If you are using other Linux systems, the names may vary.
-On Mac OS X all packages should be available in binary form so no dependencies should be needed
-(other than Xcode Command Line tools).
-
-### Packages
-
-RCloud provides the `rcloud.support` package which contains supporting
-code but also automated installation.  In R type:
-
-    install.packages("rcloud.support", repos=c("http://RForge.net",
-                     "http://R.research.att.com"), type="source")
-
-From there on you can safely use the `rcloud.support` package in RCloud
-sources, but the above makes the bootstraping of dependencies
-easier. All remaining dependencies will be installed during the first
-start of RCloud. You can also install them by hand by running
-
-     rcloud.support:::check.installation()
-
-Add `force.all=TRUE` argument to reinstall all packages - always try
-that when you encounter issues. It is useful for keeping up with the
-development on the `develop` branch as we don't always bump the
-versions.
 
 ### Github authentication
 
@@ -107,7 +72,7 @@ If you're using github.com, then your file will look like this:
 The last three lines are the base URL of the github website,
 the entry point for the github API and the entry point for gists.
 
-#### Enterprise Github deployment
+### Enterprise Github deployment
 
 If you have an enterprise github deployment where the gists URL
 ends with `/gist` instead of beginning with `gist.`, you
@@ -118,7 +83,7 @@ your RCloud deployment, you can add a whitelist to your configuration:
 
     github.user.whitelist: user1,user2,user3,etc
 
-#### hostnames
+### Hostnames
 
 If your computer doesn't resolve its hostname to what you will be using,
 (let's say `127.0.0.1`) you may also want to add:
@@ -128,7 +93,28 @@ If your computer doesn't resolve its hostname to what you will be using,
 Then go to `http://127.0.0.1:8080/login.html`, click login, and authorize
 access to your account through github.
 
-### Will you be hacking on the code? Read on
+
+## Installing from a distribution tar ball
+
+If you don't have internat access on the target machine, it is possible to install RCloud from a distribution
+tar ball which has all dependent packages included. The process is essentially identical to the above, only that you don't use `git` to check out the sources, but unpack the tar ball instead. 
+
+Make sure R 3.1.0 or higher is installed. Download the distribution tar
+ball, change to the directory where you want to install it,
+e.g. `/data` and run
+
+    $ tar fxz rcloud-1.3.tar.gz
+    $ cd rcloud
+    $ sh scripts/bootstrapR.sh
+
+It will install the packages included in the release tar ball. Copy
+`conf/rcloud.conf.samp` to `conf/rcloud.conf` and edit it to match
+your GitHub setup. Then start RCloud via
+
+    $ sh scripts/fresh_start.sh
+
+
+## Will you be hacking on the code? Read on
 
 If you're just running RCloud, skip this session. If you're going to
 be hacking the code, you'll need to install a recent version of
@@ -162,11 +148,12 @@ of the above is not true, then create `conf/rcloud.conf` file with
 Alternatively, you can set `Host:` instead with the same effect
 (Host is used in other places not just the cookie domain).
 
-Also if things are failing, try to run
+Also if things are failing, make sure you have the latest R packages installed. You can use `update.packages` including both CRAN and `http://rforge.net` as the repository. Also you can run
 
-    rcloud.support:::check.installation(force.all=TRUE)
+    sh scripts/build.sh --all
 
-which will re-fetch and install all packages.
+to re-build all packages in RCloud.
+
 
 ### Optional functionality
 
