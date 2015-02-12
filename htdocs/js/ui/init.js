@@ -65,6 +65,7 @@ RCloud.UI.init = function() {
     });
 
     RCloud.UI.advanced_menu.init();
+    RCloud.UI.navbar.init();
 
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here

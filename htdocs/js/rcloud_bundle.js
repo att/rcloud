@@ -1197,8 +1197,27 @@ ui_utils.is_a_mac = function() {
         return isMac;
     };
 }();
+/*
+ RCloud.extension is the root of all extension mechanisms in RCloud.
+
+ It is designed to be used by containment: an extendable feature class
+ will privately keep an RCloud.extension instance, and then implement
+ init(), add(), and remove(), forwarding part of their implementation to
+ RCloud.extension.
+
+ Note: this functionality is still evolving.  More common functionality
+ will get moved here over time as patterns emerge, and some extensible
+ features do not use RCloud.extension yet.  These are accidents of
+ history and do not read anything into them.
+*/
+
 RCloud.extension = (function() {
     return {
+        filter_field: function(field, value) {
+            return function(entry) {
+                return entry[field] === value;
+            };
+        },
         create: function(options) {
             options = options || {};
             var entries_ = {};
@@ -5858,6 +5877,7 @@ RCloud.UI.init = function() {
     });
 
     RCloud.UI.advanced_menu.init();
+    RCloud.UI.navbar.init();
 
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
@@ -5931,7 +5951,8 @@ RCloud.UI.load_options = function() {
 
         $(".panel-collapse").collapse({toggle: false});
 
-        return Promise.all([RCloud.UI.advanced_menu.load(),
+        return Promise.all([RCloud.UI.navbar.load(),
+                            RCloud.UI.advanced_menu.load(),
                             RCloud.UI.share_button.load(),
                             RCloud.UI.left_panel.load_options(),
                             RCloud.UI.right_panel.load_options()]);
@@ -5949,6 +5970,46 @@ RCloud.UI.middle_column = (function() {
     });
     return result;
 }());
+RCloud.UI.navbar = (function() {
+    var extension_;
+    var result = {
+        init: function() {
+            extension_ = RCloud.extension.create({
+                sections: {
+                    header: {
+                        filter: RCloud.extension.filter_field('area', 'header')
+                    },
+                    main: {
+                        filter: RCloud.extension.filter_field('area', 'main')
+                    }
+                }
+            });
+            this.add({
+                rcloud: {
+                    area: 'header',
+                    sort: 1000,
+                    create: function() {
+                        return '<a class="navbar-brand" href="#">RCloud</a>';
+                    }
+                }
+            });
+        },
+        add: function(commands) {
+            extension_.add(commands);
+            return this;
+        },
+        remove: function(command_name) {
+            extension_.remove(command_name);
+            return this;
+        },
+        load: function() {
+            var items = extension_.create('header');
+            var header = $('#rcloud-navbar-header');
+            header.append.apply(header, _.values(items));
+        }
+    };
+    return result;
+})();
 RCloud.UI.notebook_commands = (function() {
     var icon_style_ = {'line-height': '90%'};
     var star_style_ = _.extend({'font-size': '80%'}, icon_style_);
