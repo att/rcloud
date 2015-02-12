@@ -10,11 +10,10 @@ cookies <- function(headers) {
   } else list()
 }
 
-## + is not reserved, but some servers interpret it as ' ' so we have to encode it explicitly
-encode <- function(x) gsub("+", "%2b", URLencode(as.character(x), TRUE), fixed=TRUE)
 
 run <- function(url, query, body, headers)
 {
+  encode <- rcloud.support:::URIencode
   cookies <- cookies(headers)
   extra.headers <- character(0)
 

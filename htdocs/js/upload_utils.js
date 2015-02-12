@@ -47,7 +47,7 @@
         react = react || {};
         options = upload_opts(options);
         function upload_asset(filename, content) {
-            var replacing = shell.notebook.model.has_asset(filename);
+            var replacing = shell.notebook.model.get_asset(filename);
             var promise_controller;
             if(replacing) {
                 if(react.replace)
@@ -59,7 +59,10 @@
             else {
                 if(react.add)
                     react.add(filename);
-                promise_controller = shell.notebook.controller.append_asset(content, filename);
+                promise_controller = shell.notebook.controller.append_asset(content, filename)
+                    .then(function() {
+                        return shell.notebook.model.get_asset(filename).controller;
+                    });
             }
             return promise_controller.then(function(controller) {
                 controller.select();

@@ -43,14 +43,6 @@ pre code {
    display: block; padding: 0.5em;
 }
 
-code.r {
-   background-color: #fff;
-}
-
-code.py {
-   background-color: #fff;
-}
-
 table, td, th {
   border: none;
 }

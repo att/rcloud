@@ -3,7 +3,7 @@
 
 # FIXME what's the relationship between this and rcloud.config in conf.R?
 rcloud.get.conf.value <- function(key) {
-  Allowed <- c('host', 'github.base.url', 'github.api.url', 'github.gist.url', 'solr.page.size', 'smtp.server', 'email.from')
+  Allowed <- c('host', 'exec.token.renewal.time', 'github.base.url', 'github.api.url', 'github.gist.url', 'solr.page.size', 'smtp.server', 'email.from', 'rcloud.deployment')
   if(key %in% Allowed)
     getConf(key)
   else
@@ -49,6 +49,12 @@ rcloud.load.notebook <- function(id, version = NULL) {
   res
 }
 
+## same as control, just don't return anything (and don't do anything if there is no separation)
+## FIXME: since this is handled by githubHandler in JS, we have to pretend to have a valid result even
+##        if it is later discarded
+rcloud.load.notebook.compute <- function(...) { if (identical(.session$separate.compute, TRUE)) rcloud.load.notebook(...) else list(ok=TRUE) }
+rcloud.unauthenticated.load.notebook.compute <- function(...) { if (identical(.session$separate.compute, TRUE)) rcloud.unauthenticated.load.notebook(...) }
+
 rcloud.get.version.by.tag <- function(gist_id,tag) {
   v <- rcs.get(rcs.key(username='.notebook', gist_id, 'tag2version', tag))
 }
@@ -81,7 +87,7 @@ rcloud.tag.notebook.version <- function(gist_id, version, tag_name) {
 }
 
 rcloud.install.notebook.stylesheets <- function() {
-  n <- .session$current.notebook$content
+  n <- rcloud.session.notebook()$content
   urls <- sapply(grep('^rcloud-.*\\.css$', names(n$files)), function(v) {
     n$files[[v]]$raw_url
   })
@@ -135,7 +141,7 @@ rcloud.unauthenticated.call.notebook <- function(id, version = NULL, args = NULL
 rcloud.notebook.cells <- function(id, version = NULL) {
   res <- rcloud.get.notebook(id, version)
   if (res$ok) {
-    if (is.null(.session$current.notebook)) ## no top level? set us as the session notebook so that get.asset et al work
+    if (is.null(rcloud.session.notebook())) ## no top level? set us as the session notebook so that get.asset et al work
       .session$current.notebook <- res
 
     ## get all files
@@ -158,7 +164,7 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE
 
   res <- rcloud.get.notebook(id, version)
   if (res$ok) {
-    if (is.null(.session$current.notebook)) ## no top level? set us as the session notebook so that get.asset et al work
+    if (is.null(rcloud.session.notebook())) ## no top level? set us as the session notebook so that get.asset et al work
       .session$current.notebook <- res
 
     args <- as.list(args)
@@ -248,9 +254,9 @@ rcloud.unauthenticated.notebook.by.name <- function(name, user=.session$username
 }
 
 rcloud.upload.to.notebook <- function(file, name) {
-  if (is.null(.session$current.notebook))
+  if (is.null(rcloud.session.notebook()))
     stop("Notebook must be loaded")
-  id <- .session$current.notebook$content$id
+  id <- rcloud.session.notebook.id()
   ulog("RCloud rcloud.upload.to.notebook(id=", id, ", name=", name, ")")
   files <- list()
   files[[name]] <- list(content=rawToChar(file))
@@ -487,7 +493,7 @@ rcloud.setup.dirs <- function() {
 
 rcloud.get.completions <- function(language, text, pos) {
   if (!is.null(.session$languages[[language]]) && !is.null(.session$languages[[language]]$complete))
-    .session$languages[[language]]$complete(text, pos)
+    .session$languages[[language]]$complete(text, pos, .session)
   else stop("don't know how to auto-complete language ", language);
 }
 
@@ -523,15 +529,29 @@ star.count.key <- function(notebook)
   rcs.key(".notebook", notebook, "starcount")
 }
 
-rcloud.notebook.star.count <- function(notebook)
+star.starrerlist.key <- function(notebook)
 {
-  result <- rcs.get(star.count.key(notebook))
-  if (is.null(result)) 0 else result
+  rcs.key(".notebook", notebook, "starrerlist")
 }
 
-rcloud.multiple.notebook.star.counts <- function(notebooks)
+rcloud.notebook.starrer.list <- function(notebook)
 {
-  Map(rcloud.notebook.star.count, notebooks)
+  starrerlist <- gsub(rcs.key(".notebook", notebook, "stars", ''), '',
+    rcs.list(rcs.key(".notebook", notebook, "stars", "*")))
+}
+
+rcloud.notebook.star.count <- function(notebook)
+{
+    result <- rcs.get(star.count.key(notebook))
+    if (is.null(result)) 0 else as.integer(result)
+}
+
+rcloud.multiple.notebook.star.counts <- function(notebooks) {
+    if (!length(notebooks)) return(list())
+    counts <- lapply(rcs.get(star.count.key(notebooks), list=TRUE),
+                     function(o) if(is.null(o)) 0L else as.integer(o))
+    names(counts) <- notebooks
+    counts
 }
 
 rcloud.is.notebook.starred <- function(notebook)
@@ -541,7 +561,7 @@ rcloud.is.notebook.starred <- function(notebook)
 
 rcloud.star.notebook <- function(notebook)
 {
-  if (!rcloud.is.notebook.starred(notebook)) {
+  if(!rcloud.is.notebook.starred(notebook)) {
     rcs.set(star.key(notebook), TRUE)
     rcs.incr(star.count.key(notebook))
   }
@@ -549,7 +569,7 @@ rcloud.star.notebook <- function(notebook)
 
 rcloud.unstar.notebook <- function(notebook)
 {
-  if (rcloud.is.notebook.starred(notebook)) {
+  if(rcloud.is.notebook.starred(notebook)) {
     rcs.rm(star.key(notebook))
     rcs.decr(star.count.key(notebook))
   }
@@ -638,20 +658,23 @@ rcloud.config.get.alluser.option <- function(key)
 ################################################################################
 # notebook cache
 
-rcloud.get.notebook.info <- function(id) {
+# single just changes the format for querying a single notebook (essentially acting as [[1]])
+rcloud.get.notebook.info <- function(id, single=TRUE) {
   base <- usr.key(user=".notebook", notebook=id)
   fields <- c("username", "description", "last_commit", "visible")
-  keys <- rcs.key(base, fields)
+  keys <- rcs.key(rep(base, each=length(fields)), fields)
   results <- rcs.get(keys, list=TRUE)
-  names(results) <- fields
-  results
+  if (length(id) == 1L && single) {
+      names(results) <- fields
+      results
+  } else {
+      if (!length(id)) lapply(fields, function(o) character()) else
+      lapply(split(results, rep(id, each=length(fields))), function(o) { names(o) = fields; o })
+  }
 }
 
-rcloud.get.multiple.notebook.infos <- function(ids) {
-  result <- lapply(ids, rcloud.get.notebook.info)
-  names(result) <- ids
-  result
-}
+rcloud.get.multiple.notebook.infos <- function(ids)
+    rcloud.get.notebook.info(ids, FALSE)
 
 rcloud.set.notebook.info <- function(id, info) {
   base <- usr.key(user=".notebook", notebook=id)

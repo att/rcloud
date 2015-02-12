@@ -3,9 +3,7 @@
 var Lux;
 var Shade;
 
-debugger;
 require(["lux"], function(lux) {
-    debugger;
     Lux = lux;
     Shade = Lux.Shade;
 });

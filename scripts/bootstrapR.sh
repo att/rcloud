@@ -42,6 +42,9 @@ if [ "x$ok" != "xOK" ]; then
     exit 1
 fi
 
+## check if we need to pull mathjax
+sh scripts/fetch-mathjax.sh
+
 export RCS_SILENCE_LOADCHECK=TRUE
 
 mkdist=''
@@ -69,6 +72,11 @@ if [ ! -e "$DISTREP/src/contrib/PACKAGES" -o -n "$mkdist" ]; then
 
     if [ -z "$mkdist" ]; then
         ## regular boostrap from clean sources - install deps
+	if [ x`uname 2>/dev/null` = xDarwin ]; then
+	    ## On OS X we use binareis where we can to simplify things
+	    echo " --- OS X - installing available binary dependencies ---"
+	    echo "pkg<-unique(gsub('_.*','',basename(Sys.glob('$RCREPO/src/contrib/*.tar.gz'))));cran=available.packages(contrib.url(c('http://r.research.att.com/','http://rforge.net'),type='source'),type='source');local=available.packages(contrib.url('file://$RCREPO',type='source'),type='source');stage1=unique(unlist(tools:::package_dependencies(pkg,local,'all')));print(stage1);stage2=unique(c(stage1,unlist(tools:::package_dependencies(stage1,rbind(cran,local),,TRUE))));rec=rownames(installed.packages(,'high'));stage2=stage2[!(stage2 %in% c(rec,rownames(installed.packages())))];install.packages(stage2,repos=c('http://r.research.att.com','http://rforge.net'))" | "$RBIN" --vanilla --slave
+	fi
         echo " --- Installing RCloud packages and dependencies in R"
         echo "install.packages(unique(gsub('_.*','',basename(Sys.glob('$RCREPO/src/contrib/*.tar.gz')))),repos=c('file://$RCREPO','http://r.research.att.com','http://rforge.net'),type='source')" | "$RBIN" --vanilla --slave --no-save || exit 1
     else

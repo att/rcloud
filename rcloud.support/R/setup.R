@@ -114,7 +114,7 @@ configure.rcloud <- function (mode=c("startup", "script")) {
   }
 
   ## we actually need knitr ...
-  opts_knit$set(global.device=TRUE, tidy=FALSE, dev=CairoPNG, progress=FALSE)
+  opts_knit$set(tidy=FALSE, dev=CairoPNG, progress=FALSE)
   ## the dev above doesn't work ... it's still using png()
   ## so make sure it uses the cairo back-end ..
   if (capabilities()['cairo']) options(bitmapType='cairo')
@@ -228,7 +228,9 @@ configure.rcloud <- function (mode=c("startup", "script")) {
 ## create rcs back-end according to teh config files
 session.init.rcs <- function() {
     if (isTRUE(getConf("rcs.engine") == "redis")) {
-        .session$rcs.engine <- rcs.redis(getConf("rcs.redis.host"))
+        db <- getConf("rcs.redis.db")
+        if (is.null(db)) db <- getOption("redis.default.db", 0L)
+        .session$rcs.engine <- rcs.redis(getConf("rcs.redis.host"), db=as.integer(db), password=getConf("rcs.redis.password"))
         if (is.null(.session$rcs.engine$handle)) stop("ERROR: cannot connect to redis host `",getConf("rcs.redis.host"),"', aborting")
     } else {
         if (nzConf("exec.auth") && identical(getConf("exec.match.user"), "login"))
@@ -286,6 +288,8 @@ start.rcloud.common <- function(...) {
   .session$result.prefix.uuid <- generate.uuid()
 
   session.init.rcs()
+  ## scrub sensitive information from the configuration
+  scrubConf(c("rcs.redis.db", "rcs.redis.password"))
 
   ## last-minute updates (or custom initialization) to be loaded
   ## NB: it should be really fast since it will cause connect delay
@@ -303,7 +307,7 @@ start.rcloud.common <- function(...) {
   lang.list <- NULL
   lang.str <- getConf("rcloud.languages")
   if (!is.character(lang.str))
-    lang.str <- ""
+    lang.str <- "rcloud.r"
   for (lang in gsub("^\\s+|\\s+$", "", strsplit(lang.str, ",")[[1]])) {
     d <- getNamespace(lang)[["rcloud.language.support"]]
     if (!is.function(d) && !is.primitive(d))
@@ -323,6 +327,10 @@ start.rcloud.common <- function(...) {
     lang.list[[d$language]]$setup(.session)
   }
   .session$languages <- lang.list
+
+  ## any last-minute overrides akin to Rprofile
+  if (validFileConf("configuration.root", "rcloud.profile"))
+      source(pathConf("configuration.root", "rcloud.profile"))
 
   ## pre-emptive GC to start clean
   gc()

@@ -117,7 +117,7 @@ RCloud.UI.scratchpad = {
                 alert("Asset names cannot start with 'part[0-9]', sorry!");
                 return;
             }
-            var found = shell.notebook.model.has_asset(filename);
+            var found = shell.notebook.model.get_asset(filename);
             if(found)
                 found.controller.select();
             else {
@@ -133,10 +133,8 @@ RCloud.UI.scratchpad = {
                 var ext = (filename.indexOf('.')!=-1?filename.match(/\.(.*)/)[1]:"");
                 shell.notebook.controller
                     .append_asset(comment_text("New file " + filename, ext), filename)
-                    .then(function(controller) {
+                    .spread(function(_, controller) {
                         controller.select();
-                    })
-                    .then(function() {
                         ui_utils.ace_set_pos(RCloud.UI.scratchpad.widget, 2, 1);
                     });
             }

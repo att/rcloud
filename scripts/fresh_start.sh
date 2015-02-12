@@ -1,5 +1,15 @@
 #!/bin/sh
 
+if [ "x$1" = "x--no-build" ]; then
+    NOBUILD=1
+else
+    if [ `id -u` = 0 ]; then
+        echo "WARNING: running as root, skipping build step!"
+        echo ''
+        NOBUILD=1
+    fi
+fi
+
 if [ ! -e rcloud.support/DESCRIPTION ]; then
     if [ -n "$ROOT" ]; then
         echo "NOTE: changing to '$ROOT' according to ROOT"
@@ -15,11 +25,8 @@ if [ ! -e rcloud.support/DESCRIPTION ]; then
     exit 1
 fi
 
-if [ `id -u` = 0 ]; then
-    echo "WARNING: running as root, skipping build step!"
-    echo ''
-else
-    sh scripts/build.sh || exit 1
+if [ -z "$NOBUILD" ]; then
+    sh scripts/build.sh $1 || exit 1
 fi
 
 sudo_cmd=''

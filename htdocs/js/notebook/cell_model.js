@@ -19,6 +19,17 @@ Notebook.Cell.create_model = function(content, language)
                 throw new Error("can't set filename of cell");
             return Notebook.part_name(this.id(), this.language());
         },
+        get_execution_snapshot: function() {
+            // freeze the cell as it is now, to execute it later
+            var language = this.language() || 'Text'; // null is a synonym for Text
+            return {
+                controller: this.controller,
+                json_rep: this.json(),
+                partname: Notebook.part_name(this.id(), language),
+                language: language,
+                version: this.parent_model.controller.current_gist().history[0].version
+            };
+        },
         json: function() {
             return {
                 content: content,

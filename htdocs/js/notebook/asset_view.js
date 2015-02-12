@@ -24,7 +24,7 @@ Notebook.Asset.create_html_view = function(asset_model)
                 filename_span.text(asset_old_name);
                 return;
             }
-            var found = shell.notebook.model.has_asset(new_asset_name);
+            var found = shell.notebook.model.get_asset(new_asset_name);
             if (found) {
                 alert('An asset with the name "' + filename_span.text() + '" already exists. Please choose a different name.');
                 filename_span.text(asset_old_name);
@@ -32,8 +32,8 @@ Notebook.Asset.create_html_view = function(asset_model)
             else {
                 shell.notebook.controller
                     .append_asset(old_asset_content, new_asset_name)
-                    .then(function (controller) {
-                        controller.select();
+                    .spread(function(_, new_controller) {
+                        new_controller.select();
                         asset_model.controller.remove(true);
                     });
             }

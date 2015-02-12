@@ -211,8 +211,7 @@ return {
                             }
                         }
                         var togid = i + "more";
-                        var make_edit_url = ui_utils.url_maker('edit.html');
-                        var url = make_edit_url({notebook: notebook_id});
+                        var url = ui_utils.make_url('edit.html', {notebook: notebook_id});
                         if(parts_table !== "") {
                             if(nooflines > 10) {
                                 parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div>" +

@@ -1,7 +1,9 @@
+useDynLib(rcloud.support, uri_encode)
 exportPattern("^rcloud.*") ## rcloud API
 exportPattern("^w.*")      ## wplot, wdc, wgeo...
 export(rcs.get, rcs.set, rcs.rm, rcs.incr, rcs.decr, rcs.list, usr.key)  ## RCS
 export(deferred.rcloud.result)
+export(RCloudDevice)
 
 ## other user-visible functions
 export(password, select, check.installation, show.iframe)
@@ -28,3 +30,4 @@ import(png)
 import(Cairo)
 import(httr)
 import(mime)
+import(Rserve)

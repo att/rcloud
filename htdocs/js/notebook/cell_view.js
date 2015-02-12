@@ -9,137 +9,96 @@ function ensure_image_has_hash(img)
     return img.dataset.sha256;
 }
 
-function create_markdown_cell_html_view(language) { return function(cell_model) {
-    var EXTRA_HEIGHT = 27;
+var MIN_LINES = 2;
+var EXTRA_HEIGHT_SOURCE = 2, EXTRA_HEIGHT_INPUT = 10;
+
+function create_cell_html_view(language, cell_model) {
+    var ace_widget_;
+    var ace_session_;
+    var ace_document_;
+    var am_read_only_ = "unknown";
+    var source_div_;
+    var code_div_;
+    var result_div_, has_result_;
+    var current_result_; // text is aggregated
+    var current_error_; // text is aggregated
+    var change_content_;
+    var cell_status_;
+    var above_between_controls_, cell_controls_, left_controls_;
+    var edit_mode_; // note: starts neither true nor false
+    var highlights_, active_highlight_ = null;
+    var code_preprocessors_ = []; // will be an extension point, someday
+
+    // input1
+    var prompt_text_;
+    var input_div_, input_ace_div_, input_widget_, input_kont_, input_anim_;
+
+    var result = {}; // "this"
+
     var notebook_cell_div  = $("<div class='notebook-cell'></div>");
-    update_div_id();
     notebook_cell_div.data('rcloud.model', cell_model);
 
     //////////////////////////////////////////////////////////////////////////
     // button bar
 
-    var insert_cell_button = ui_utils.fa_button("icon-plus-sign", "insert cell");
-    var join_button = ui_utils.fa_button("icon-link", "join cells");
-    var source_button = ui_utils.fa_button("icon-edit", "source");
-    var result_button = ui_utils.fa_button("icon-picture", "result");
-    var split_button = ui_utils.fa_button("icon-unlink", "split cell");
-    var remove_button = ui_utils.fa_button("icon-trash", "remove");
-    var run_md_button = ui_utils.fa_button("icon-play", "run");
-    var gap = $('<div/>').html('&nbsp;').css({'line-height': '25%'});
-
     function update_model() {
-        return cell_model.content(widget.getSession().getValue());
+        if(!ace_session_)
+            return null;
+        return cell_model.content(ace_session_.getValue());
     }
     function update_div_id() {
         notebook_cell_div.attr('id', Notebook.part_name(cell_model.id(), cell_model.language()));
+        if(left_controls_)
+            left_controls_.controls['cell_number'].set(cell_model.id());
     }
     function set_widget_height() {
-        notebook_cell_div.css({'height': (ui_utils.ace_editor_height(widget) + EXTRA_HEIGHT) + "px"});
+        source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +
+                                   EXTRA_HEIGHT_SOURCE) + "px");
     }
-    var enable = ui_utils.enable_fa_button;
-    var disable = ui_utils.disable_fa_button;
 
-    var has_result = false;
+    cell_status_ = $("<div class='cell-status nonselectable'></div>");
 
-    insert_cell_button.click(function(e) {
-        if (!$(e.currentTarget).hasClass("button-disabled")) {
-            shell.insert_cell_before(cell_model.language(), cell_model.id());
-        }
-    });
-    join_button.click(function(e) {
-        join_button.tooltip('destroy');
-        if (!$(e.currentTarget).hasClass("button-disabled")) {
-            shell.join_prior_cell(cell_model);
-        }
-    });
-    split_button.click(function(e) {
-        if (!$(e.currentTarget).hasClass("button-disabled")) {
-            var range = widget.getSelection().getRange();
-            var point1, point2;
-            point1 = ui_utils.character_offset_of_pos(widget, range.start);
-            if(!range.isEmpty())
-                point2 = ui_utils.character_offset_of_pos(widget, range.end);
-            shell.split_cell(cell_model, point1, point2);
-        }
-    });
-    source_button.click(function(e) {
-        if (!$(e.currentTarget).hasClass("button-disabled")) {
-            result.show_source();
-        }
-    });
-    result_button.click(function(e) {
-        if (!$(e.currentTarget).hasClass("button-disabled"))
-            result.show_result();
-    });
-    remove_button.click(function(e) {
-        if (!$(e.currentTarget).hasClass("button-disabled")) {
-            cell_model.parent_model.controller.remove_cell(cell_model);
+    var cell_status_left = $("<div class='cell-status-left'></div>");
+    cell_status_.append(cell_status_left);
+    left_controls_ = RCloud.UI.cell_commands.decorate('left', cell_status_left, cell_model, result);
 
-            // twitter bootstrap gets confused about its tooltips if parent element
-            // is deleted while tooltip is active; let's help it
-            $(".tooltip").remove();
-        }
-    });
-    function execute_cell() {
-        r_result_div.html("Computing...");
-        var new_content = update_model();
-        result.show_result();
-        if(new_content!==null) // if any change (including removing the content)
-            cell_model.parent_model.controller.update_cell(cell_model);
-
-        RCloud.UI.with_progress(function() {
-            return cell_model.controller.execute();
+    if(!shell.is_view_mode()) {
+        var cell_control_bar = $("<div class='cell-control-bar'></div>");
+        cell_status_.append(cell_control_bar);
+        // disable sort action on the control bar area
+        cell_control_bar.mousedown(function(e) {
+            e.stopPropagation();
         });
-    }
-    run_md_button.click(function(e) {
-        execute_cell();
-    });
-    var cell_status = $("<div class='cell-status'></div>");
-    var button_float = $("<div class='cell-controls'></div>");
-    cell_status.append(button_float);
-    cell_status.append($("<div style='clear:both;'></div>"));
-    var col = $('<table/>').append('<tr/>');
-    var select_lang = $("<select class='form-control'></select>");
-    var lang_selectors = {};
-    function add_language_selector(lang) {
-        var element = $("<option></option>").text(lang);
-        lang_selectors[lang] = element;
-        select_lang.append(element);
-    }
-    _.each(RCloud.language.available_languages(), add_language_selector);
-    if(!lang_selectors[language]) // unknown language: add it
-        add_language_selector(language);
+        cell_controls_ = RCloud.UI.cell_commands.decorate('cell', cell_control_bar, cell_model, result);
 
-    select_lang.change(function() {
-        var language = select_lang.val();
-        cell_model.parent_model.controller.change_cell_language(cell_model, language);
-        result.clear_result();
-    });
+        var cell_commands_above = $("<div class='cell-controls-above nonselectable'></div>");
+        above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
+        notebook_cell_div.append(cell_commands_above);
+    }
+    notebook_cell_div.append(cell_status_);
+
+    var edit_colors_ = {
+        markdown: "#F7EEE4",
+        code: "#E8F1FA"
+    };
+
+    function set_background_color(language) {
+        var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
+        ace_div.css({ 'background-color': edit_color });
+    }
 
     function update_language() {
         language = cell_model.language();
-        if(!lang_selectors[language])
-            throw new Error("tried to set language to unknown language " + language);
-        var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
-        ace_div.css({ 'background-color': bg_color });
-        var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
-        session.setMode(new LangMode(false, doc, session));
-        select_lang.val(language);
+        if(!RCloud.language.is_a_markdown(language))
+            result.hide_source && result.hide_source(false);
+        if(cell_controls_)
+            cell_controls_.controls['language_cell'].set(language);
+        if(ace_widget_) {
+            set_background_color(language);
+            var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
+            ace_session_.setMode(new LangMode(false, ace_document_, ace_session_));
+        }
     }
-
-    col.append($("<div></div>").append(select_lang));
-    $.each([run_md_button, source_button, result_button, gap, split_button, remove_button],
-           function() {
-               col.append($('<td/>').append($(this)));
-           });
-
-    button_float.append(col);
-    notebook_cell_div.append(cell_status);
-
-    var insert_button_float = $("<div class='cell-insert-control'></div>");
-    insert_button_float.append(join_button);
-    insert_button_float.append(insert_cell_button);
-    notebook_cell_div.append(insert_button_float);
 
     //////////////////////////////////////////////////////////////////////////
 
@@ -148,319 +107,461 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
     notebook_cell_div.append(inner_div);
     notebook_cell_div.append(clear_div);
 
+    source_div_ = $('<div class="source-div"></div>');
+    code_div_ = $('<div class="code-div"></div>');
+    source_div_.append(code_div_);
+
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
-
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
-    var bg_color = language === 'Markdown' ? "#F7EEE4" : "#E8F1FA";
-    ace_div.css({ 'background-color': bg_color });
+    set_background_color(language);
 
-    inner_div.append(outer_ace_div);
+    update_div_id();
+
     outer_ace_div.append(ace_div);
-    ace.require("ace/ext/language_tools");
-    var widget = ace.edit(ace_div[0]);
-    var session = widget.getSession();
-    widget.setValue(cell_model.content());
-    ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
-    // erase undo state so that undo doesn't erase all
-    ui_utils.on_next_tick(function() {
-        session.getUndoManager().reset();
-    });
-    var doc = session.doc;
-    var am_read_only = "unknown";
-    widget.setOptions({
-        enableBasicAutocompletion: true
-    });
-    session.on('change', function() {
-        set_widget_height();
-        widget.resize();
-    });
+    source_div_.append(outer_ace_div);
+    inner_div.append(source_div_);
 
-    widget.setTheme("ace/theme/chrome");
-    session.setUseWrapMode(true);
-    widget.resize();
-
-    ui_utils.add_ace_grab_affordance(widget.container);
-
-    ui_utils.install_common_ace_key_bindings(widget, function() {
-        return language;
-    });
-    widget.commands.addCommands([{
-        name: 'sendToR',
-        bindKey: {
-            win: 'Alt-Return',
-            mac: 'Alt-Return',
-            sender: 'editor'
-        },
-        exec: function(widget, args, request) {
-            execute_cell();
-        }
-    }]);
-    var change_content = ui_utils.ignore_programmatic_changes(widget, function() {
-        cell_model.parent_model.on_dirty();
-    });
-
-    var r_result_div = $('<div class="r-result-div"><span style="opacity:0.5">Computing ...</span></div>');
-    inner_div.append(r_result_div);
-    update_language();
-
-    var current_mode;
-
-    var result = {
-
-        //////////////////////////////////////////////////////////////////////
-        // pubsub event handlers
-
-        content_updated: function() {
-            // note: it's inconsistent, but not clearing the result for every
-            // change, just particular ones, because one may want to refer to
-            // the result if just typing but seems unlikely for other changes
-            var range = widget.getSelection().getRange();
-            var changed = change_content(cell_model.content());
-            widget.getSelection().setSelectionRange(range);
-            return changed;
-        },
-        self_removed: function() {
-            notebook_cell_div.remove();
-        },
-        id_updated: update_div_id,
-        language_updated: update_language,
-        result_updated: function(r) {
-            has_result = true;
-            r_result_div.hide();
-            r_result_div.html(r);
-            r_result_div.slideDown(150);
-
-            // There's a list of things that we need to do to the output:
-            var uuid = rcloud.deferred_knitr_uuid;
-
-            // FIXME None of these things should be hard-coded.
-            if (cell_model.language() === 'R' && inner_div.find("pre code").length === 0) {
-                r_result_div.prepend("<pre><code class='r'>" + cell_model.content() + "</code></pre>");
-            }
-
-            // click on code to edit
-            var code_div = $("code.r,code.py", r_result_div);
-            code_div.off('click');
-            if(!shell.is_view_mode()) {
-                // distinguish between a click and a drag
-                // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
-                code_div.on('mousedown', function(e) {
+    function click_to_edit(div, whether) {
+        if(whether) {
+            // distinguish between a click and a drag
+            // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
+            div.on({
+                'mousedown.rcloud-cell': function(e) {
                     $(this).data('p0', { x: e.pageX, y: e.pageY });
-                }).on('mouseup', function(e) {
+                },
+                'mouseup.rcloud-cell': function(e) {
                     var p0 = $(this).data('p0');
                     if(p0) {
                         var p1 = { x: e.pageX, y: e.pageY },
                             d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
                         if (d < 4) {
-                            result.show_source();
+                            result.edit_source(true, e);
+                            div.mouseleave();
                         }
                     }
-                });
-            }
-
-            // we use the cached version of DPR instead of getting window.devicePixelRatio
-            // because it might have changed (by moving the user agent window across monitors)
-            // this might cause images that are higher-res than necessary or blurry.
-            // Since using window.devicePixelRatio might cause images
-            // that are too large or too small, the tradeoff is worth it.
-            var dpr = rcloud.display.get_device_pixel_ratio();
-            // fix image width so that retina displays are set correctly
-            inner_div.find("img")
-                .each(function(i, img) {
-                    function update() { img.style.width = img.width / dpr; }
-                    if (img.width === 0) {
-                        $(img).on("load", update);
-                    } else {
-                        update();
-                    }
-                });
-
-            // capture deferred knitr results
-            inner_div.find("pre code")
-                .contents()
-                .filter(function() {
-                    return this.nodeValue ? this.nodeValue.indexOf(uuid) !== -1 : false;
-                }).parent().parent()
-                .each(function() {
-                    var that = this;
-                    var uuids = this.childNodes[0].childNodes[0].data.substr(8,65).split("|");
-                    // FIXME monstrous hack: we rebuild the ocap from the string to
-                    // call it via rserve-js
-                    var ocap = [uuids[1]];
-                    ocap.r_attributes = { "class": "OCref" };
-                    var f = rclient._rserve.wrap_ocap(ocap);
-
-                    f(function(err, future) {
-                        var data;
-                        if (RCloud.is_exception(future)) {
-                            data = RCloud.exception_message(future);
-                            $(that).replaceWith(function() {
-                                return ui_utils.string_error(data);
-                            });
-                        } else {
-                            data = future();
-                            $(that).replaceWith(function() {
-                                return data;
-                            });
-                        }
-                    });
-                    // rcloud.resolve_deferred_result(uuids[1], function(data) {
-                    //     $(that).replaceWith(function() {
-                    //         return shell.handle(data[0], data);
-                    //     });
-                    // });
-                });
-            // highlight R
-            inner_div
-                .find("pre code")
-                .each(function(i, e) {
-                    // only highlight things which have
-                    // defined classes coming from knitr and markdown
-                    if (e.classList.length === 0)
+                },
+                'mouseenter.rcloud-cell': function() {
+                    if(edit_mode_) // don't highlight if it won't do anything
                         return;
-                    hljs.highlightBlock(e);
-                });
-
-            // typeset the math
-            if (!_.isUndefined(MathJax))
-                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
-
-            // this is kinda bad
-            if (!shell.notebook.controller._r_source_visible) {
-                Notebook.hide_r_source(inner_div);
-            }
-
-            // Workaround a persistently annoying knitr bug:
-            // https://github.com/att/rcloud/issues/456
-
-            _($("img")).each(function(img, ix, $q) {
-                ensure_image_has_hash(img);
-                if (img.getAttribute("src").substr(0,10) === "data:image" &&
-                    img.getAttribute("alt") != null &&
-                    img.getAttribute("alt").substr(0,13) === "plot of chunk" &&
-                    ix > 0 &&
-                    img.dataset.sha256 === $q[ix-1].dataset.sha256) {
-                    $(img).css("display", "none");
+                    var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
+                    var avg_color = d3.interpolateHsl('#f5f5f5', edit_color)(0.75);
+                    $(this).css('background-color', avg_color);
+                },
+                'mouseleave.rcloud-cell': function() {
+                    $(this).css('background-color', '');
                 }
             });
+        }
+        else div.off('mousedown.rcloud-cell mouseup.rcloud-cell mouseenter.rcloud-cell mouseleave.rcloud-cell');
+    }
 
-            this.show_result();
-        },
-        clear_result: function() {
-            has_result = false;
-            disable(result_button);
-            this.show_source();
-        },
-        set_readonly: function(readonly) {
-            am_read_only = readonly;
-            ui_utils.set_ace_readonly(widget, readonly);
-            if (readonly) {
-                disable(remove_button);
-                disable(insert_cell_button);
-                disable(split_button);
-                disable(join_button);
-                $(widget.container).find(".grab-affordance").hide();
-                select_lang.prop("disabled", "disabled");
-            } else {
-                enable(remove_button);
-                enable(insert_cell_button);
-                enable(split_button);
-                enable(join_button);
-                select_lang.prop("disabled", false);
+    function display_status(status) {
+        result_div_.html('<div class="non-result">' + status + '</div>');
+        has_result_ = false;
+    };
+
+    // postprocessing the dom is slow, so only do this when we have a break
+    var result_updated = _.debounce(function() {
+        Notebook.Cell.postprocessors.entries('all').forEach(function(post) {
+            post.process(result_div_, result);
+        });
+    }, 100);
+
+    function clear_result() {
+        result_div_.empty();
+        has_result_ = false;
+    }
+
+    // start trying to refactor out this repetitive nonsense
+    function ace_stuff(div, content) {
+        ace.require("ace/ext/language_tools");
+        var widget = ace.edit(div[0]);
+        var session = widget.getSession();
+        widget.setValue(content);
+        ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
+        // erase undo state so that undo doesn't erase all
+        ui_utils.on_next_tick(function() {
+            session.getUndoManager().reset();
+        });
+        var document = session.getDocument();
+        widget.setOptions({
+            enableBasicAutocompletion: true
+        });
+        widget.setTheme("ace/theme/chrome");
+        session.setUseWrapMode(true);
+        return {
+            widget: widget,
+            session: session,
+            document: document
+        };
+    }
+
+    function create_edit_widget() {
+        if(ace_widget_) return;
+
+        var aaa = ace_stuff(ace_div, cell_model.content());
+        ace_widget_ = aaa.widget;
+        ace_session_ = aaa.session;
+        ace_document_ = aaa.document;
+
+        ace_session_.on('change', function() {
+            set_widget_height();
+            ace_widget_.resize();
+        });
+
+        ace_widget_.resize();
+
+        ui_utils.install_common_ace_key_bindings(ace_widget_, function() {
+            return language;
+        });
+        ace_widget_.commands.addCommands([{
+            name: 'executeCell',
+            bindKey: {
+                win: 'Alt-Return',
+                mac: 'Alt-Return',
+                sender: 'editor'
+            },
+            exec: function(ace_widget_, args, request) {
+                result.execute_cell();
             }
+        }]);
+        ace_widget_.commands.removeCommands(['find', 'replace']);
+        change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
+            cell_model.parent_model.on_dirty();
+        });
+        update_language();
+    }
+    function create_input_widget() {
+        if(input_widget_) return;
+
+        var aaa = ace_stuff(input_ace_div_, '');
+        input_widget_ = aaa.widget;
+
+        ui_utils.customize_ace_gutter(input_widget_, function(i) {
+            return i===0 ? prompt_text_ : '';
+        });
+        input_widget_.commands.addCommands([{
+            name: 'enter',
+            bindKey: 'Return',
+            exec: function(ace_widget, args, request) {
+                var input = ace_widget.getValue();
+                result.add_result('code', prompt_text_ + input + '\n');
+                if(input_kont_)
+                    input_kont_(null, input);
+                input_div_.hide();
+                window.clearInterval(input_anim_);
+                input_anim_ = null;
+            }
+        }]);
+        RCloud.UI.prevent_progress_modal();
+    }
+    function find_code_elems(parent) {
+        return parent
+            .find("pre code")
+            .filter(function(i, e) {
+                // things which have defined classes coming from knitr and markdown
+                // we might look in RCloud.language here?
+                return e.classList.length > 0;
+            });
+    }
+    function highlight_code() {
+        find_code_elems(code_div_).each(function(i, e) {
+            hljs.highlightBlock(e);
+        });
+    }
+    function highlight_classes(kind) {
+        return 'find-highlight' + ' ' + kind;
+    }
+
+    // should be a code preprocessor extension, but i've run out of time
+    code_preprocessors_.push(
+        function(code) {
+            var yuk = _.escape;
+            // add search highlights
+            var last = 0, text = [];
+            if(highlights_)
+                highlights_.forEach(function(range) {
+                    text.push(yuk(code.substring(last, range.begin)));
+                    text.push('<span class="', highlight_classes(range.kind), '">',
+                              yuk(code.substring(range.begin, range.end)), '</span>');
+                    last = range.end;
+                });
+            text.push(yuk(code.substring(last)));
+            return text.join('');
         },
+        function(code) {
+            // add abso-relative line number spans at the beginning of each line
+            var line = 1;
+            code = code.replace(/^/gm, function() {
+                return '<span class="rcloud-line-number-position nonselectable"><span class="rcloud-line-number">' + line++ + '</span></span>';
+            });
+            code += '&nbsp;'; // make sure last line is shown even if it is just a tag
+            return code;
+        },
+        function(code) {
+            // match the number of lines ace.js is going to show
+            // 1. html would skip final blank line
+            if(code[code.length-1] === '\n')
+                code += '\n';
+
+            // 2. we have ace configured to show a minimum of MIN_LINES lines
+            var lines = (code.match(/\n/g)||[]).length;
+            if(lines<MIN_LINES)
+                code += new Array(MIN_LINES+1-lines).join('\n');
+            return code;
+        });
+
+    function assign_code(code) {
+        code = code || cell_model.content();
+
+        code = code_preprocessors_.reduce(function(code, f) {
+            return f(code);
+        }, code);
+
+        code_div_.empty();
+        var elem = $('<code></code>').append(code);
+        var gutter = $('<div class="rcloud-gutter"></div>');
+
+        var hljs_class = RCloud.language.hljs_class(cell_model.language());
+        if(hljs_class)
+            elem.addClass(hljs_class);
+        code_div_.append(gutter, $('<pre></pre>').append(elem));
+        highlight_code();
+        // yuk
+        code_div_.find('.rcloud-line-number .hljs-number').css('color', 'black');
+        if(am_read_only_ !== 'unknown')
+            click_to_edit(code_div_.find('pre'), !am_read_only_);
+    }
+    assign_code();
+
+    result_div_ = $('<div class="r-result-div"></div>');
+    clear_result();
+    inner_div.append(result_div_);
+    input_div_ = $('<div class="input-div"></div>');
+    input_ace_div_ = $('<div style="height: 100%"></div>');
+    input_div_.hide().append(input_ace_div_);
+    inner_div.append(input_div_);
+
+    update_language();
+
+    _.extend(result, {
+
+        //////////////////////////////////////////////////////////////////////
+        // pubsub event handlers
+
+        content_updated: function() {
+            assign_code();
+            if(ace_widget_) {
+                var range = ace_widget_.getSelection().getRange();
+                var changed = change_content_(cell_model.content());
+                ace_widget_.getSelection().setSelectionRange(range);
+            }
+            return changed;
+        },
+        self_removed: function() {
+            notebook_cell_div.remove();
+        },
+        ace_widget: function() {
+            return ace_widget_;
+        },
+        id_updated: update_div_id,
+        language_updated: update_language,
+        status_updated: function(status) {
+            display_status(status);
+        },
+        start_output: function() {
+        },
+        add_result: function(type, r) {
+            if(!has_result_) {
+                result_div_.empty(); // clear status
+                if(RCloud.language.is_a_markdown(language))
+                    result.hide_source(true);
+                has_result_ = true;
+            }
+            if(type!='selection') {
+                Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
+                    r = pre.process(r);
+                });
+            }
+
+            if(type!='code')
+                current_result_ = null;
+            if(type!='error')
+                current_error_ = null;
+            var pre;
+            switch(type) {
+            case 'code':
+                if(!current_result_) {
+                    pre = $('<pre></pre>');
+                    current_result_ = $('<code></code>');
+                    pre.append(current_result_);
+                    result_div_.append(pre);
+                }
+                current_result_.append(_.escape(r));
+                break;
+            case 'error':
+                // sorry about this!
+                if(!current_error_) {
+                    pre = $('<pre></pre>');
+                    current_error_ = $('<code style="color: crimson"></code>');
+                    pre.append(current_error_);
+                    result_div_.append(pre);
+                }
+                current_error_.append(_.escape(r));
+                break;
+            case 'selection':
+            case 'html':
+                result_div_.append(r);
+                break;
+            default:
+                throw new Error('unknown result type ' + type);
+            }
+            result_updated();
+        },
+        end_output: function() {
+            if(!has_result_) {
+                // the no-output case
+                result_div_.empty();
+                has_result_ = true;
+            }
+            current_result_ = null;
+        },
+        clear_result: clear_result,
+        set_readonly: function(readonly) {
+            am_read_only_ = readonly;
+            if(ace_widget_)
+                ui_utils.set_ace_readonly(ace_widget_, readonly );
+            [cell_controls_, above_between_controls_, left_controls_].forEach(function(controls) {
+                if(controls)
+                    controls.set_flag('modify', !readonly);
+            });
+            click_to_edit(code_div_.find('pre'), !readonly);
+            cell_status_.toggleClass('readonly', readonly);
+        },
+        click_to_edit: click_to_edit,
 
         //////////////////////////////////////////////////////////////////////
 
-        hide_buttons: function() {
-            button_float.css("display", "none");
-            insert_button_float.hide();
+        execute_cell: function() {
+            var new_content = update_model();
+            var promise;
+            if(new_content!==null) // if any change (including removing the content)
+                promise = cell_model.parent_model.controller.update_cell(cell_model);
+            else
+                promise = Promise.resolve(undefined);
+            promise.then(function() {
+                cell_model.controller.enqueue_execution_snapshot();
+            });
         },
-        show_buttons: function() {
-            button_float.css("display", null);
-            insert_button_float.show();
+        toggle_edit: function() {
+            return this.edit_source(!edit_mode_);
         },
-
-        show_source: function() {
-            /*
-             * Some explanation for the next poor soul
-             * that might come across this great madness below:
-             *
-             * ACE appears to have trouble computing properties such as
-             * renderer.lineHeight. This is unfortunate, since we want
-             * to use lineHeight to determine the size of the widget in the
-             * first place. The only way we got ACE to work with
-             * dynamic sizing was to set up a three-div structure, like so:
-             *
-             * <div id="1"><div id="2"><div id="3"></div></div></div>
-             *
-             * set the middle div (id 2) to have a style of "height: 100%"
-             *
-             * set the outer div (id 1) to have whatever height in pixels you want
-             *
-             * make sure the entire div structure is on the DOM and is visible
-             *
-             * call ace's resize function once. (This will update the
-             * renderer.lineHeight property)
-             *
-             * Now set the outer div (id 1) to have the desired height as a
-             * funtion of renderer.lineHeight, and call resize again.
-             *
-             * Easy!
-             *
-             */
-            // do the two-change dance to make ace happy
-            outer_ace_div.show();
-            widget.resize(true);
-            set_widget_height();
-            widget.resize(true);
-            disable(source_button);
-            if(has_result)
-                enable(result_button);
-            // enable(hide_button);
-            if (!am_read_only) {
-                enable(remove_button);
-                enable(split_button);
+        edit_source: function(edit_mode, event) {
+            if(edit_mode === edit_mode_) {
+                if(edit_mode)
+                    ace_widget_.focus();
+                return;
             }
-            //editor_row.show();
+            if(edit_mode) {
+                if(RCloud.language.is_a_markdown(language))
+                    this.hide_source(false);
+                code_div_.hide();
+                create_edit_widget();
+                /*
+                 * Some explanation for the next poor soul
+                 * that might come across this great madness below:
+                 *
+                 * ACE appears to have trouble computing properties such as
+                 * renderer.lineHeight. This is unfortunate, since we want
+                 * to use lineHeight to determine the size of the widget in the
+                 * first place. The only way we got ACE to work with
+                 * dynamic sizing was to set up a three-div structure, like so:
+                 *
+                 * <div id="1"><div id="2"><div id="3"></div></div></div>
+                 *
+                 * set the middle div (id 2) to have a style of "height: 100%"
+                 *
+                 * set the outer div (id 1) to have whatever height in pixels you want
+                 *
+                 * make sure the entire div structure is on the DOM and is visible
+                 *
+                 * call ace's resize function once. (This will update the
+                 * renderer.lineHeight property)
+                 *
+                 * Now set the outer div (id 1) to have the desired height as a
+                 * funtion of renderer.lineHeight, and call resize again.
+                 *
+                 * Easy!
+                 *
+                 */
+                // do the two-change dance to make ace happy
+                outer_ace_div.show();
+                ace_widget_.resize(true);
+                set_widget_height();
+                ace_widget_.resize(true);
+                if(cell_controls_)
+                    cell_controls_.set_flag('edit', true);
+                outer_ace_div.show();
+                ace_widget_.resize(); // again?!?
+                ace_widget_.focus();
+                if(event) {
+                    var screenPos = ace_widget_.renderer.pixelToScreenCoordinates(event.pageX, event.pageY);
+                    var docPos = ace_session_.screenToDocumentPosition(Math.abs(screenPos.row), Math.abs(screenPos.column));
 
-            outer_ace_div.show();
-            r_result_div.hide();
-            widget.resize(); // again?!?
-            widget.focus();
 
-            current_mode = "source";
+                    var Range = ace.require('ace/range').Range;
+                    var row = Math.abs(docPos.row), column = Math.abs(docPos.column);
+                    var range = new Range(row, column, row, column);
+                    ace_widget_.getSelection().setSelectionRange(range);
+                }
+            }
+            else {
+                var new_content = update_model();
+                if(new_content!==null) // if any change (including removing the content)
+                    cell_model.parent_model.controller.update_cell(cell_model);
+                source_div_.css({'height': ''});
+                if(cell_controls_)
+                    cell_controls_.set_flag('edit', false);
+                code_div_.show();
+                outer_ace_div.hide();
+            }
+            edit_mode_ = edit_mode;
+            this.change_highlights(highlights_)
+                .change_active_highlight(active_highlight_); // restore highlights
         },
-        show_result: function() {
-            notebook_cell_div.css({'height': ''});
-            enable(source_button);
-            disable(result_button);
-            disable(split_button);
-            // enable(hide_button);
-            if (!am_read_only) {
-                enable(remove_button);
-            }
-
-            //editor_row.hide();
-            outer_ace_div.hide();
-            r_result_div.slideDown(150); // show();
-            current_mode = "result";
+        hide_source: function(whether) {
+            if(whether)
+                source_div_.hide();
+            else
+                source_div_.show();
         },
-        hide_all: function() {
-            notebook_cell_div.css({'height': ''});
-            enable(source_button);
-            enable(result_button);
-            // disable(hide_button);
-            if (!am_read_only) {
-                enable(remove_button);
+        get_input: function(type, prompt, k) {
+            if(!has_result_) {
+                result_div_.empty();
+                has_result_ = true;
             }
-
-            //editor_row.hide();
-            if (current_mode === "result") {
-                r_result_div.slideUp(150); // hide();
-            } else {
-                outer_ace_div.slideUp(150); // hide();
-            }
+            prompt_text_ = prompt;
+            create_input_widget();
+            input_widget_.setValue('');
+            input_div_.show();
+            input_div_.css('height', "36px"); // can't get ui_utils.ace_editor_height to work
+            // recalculate gutter width:
+            input_widget_.renderer.$gutterLayer.gutterWidth = 0;
+            input_widget_.renderer.$changes |= input_widget_.renderer.__proto__.CHANGE_FULL;
+            input_widget_.resize(true);
+            input_widget_.focus();
+            input_div_.css('border-color', '#eeeeee');
+            var dir = false;
+            var switch_color = function() {
+                input_div_.animate({borderColor: dir ? '#ffac88' : '#E34234'},
+                                   {duration: 1000,
+                                    easing: 'easeInOutCubic',
+                                    queue: false});
+                dir = !dir;
+            };
+            switch_color();
+            input_anim_ = window.setInterval(switch_color, 1000);
+            input_kont_ = k;
         },
         div: function() {
             return notebook_cell_div;
@@ -469,35 +570,95 @@ function create_markdown_cell_html_view(language) { return function(cell_model) 
             return update_model();
         },
         focus: function() {
-            widget.focus();
+            ace_widget_.focus();
+            return this;
         },
         get_content: function() { // for debug
             return cell_model.content();
         },
         reformat: function() {
-            if(current_mode === "source") {
+            if(edit_mode_) {
                 // resize once to get right height, then set height,
                 // then resize again to get ace scrollbars right (?)
-                widget.resize();
+                ace_widget_.resize();
                 set_widget_height();
-                widget.resize();
+                ace_widget_.resize();
             }
+            return this;
         },
         check_buttons: function() {
-            if(!cell_model.parent_model.prior_cell(cell_model))
-                join_button.hide();
-            else if(!am_read_only)
-                join_button.show();
+            if(above_between_controls_)
+                above_between_controls_.betweenness(!!cell_model.parent_model.prior_cell(cell_model));
+            return this;
+        },
+        change_highlights: function(ranges) {
+            highlights_ = ranges;
+            if(edit_mode_) {
+                var markers = ace_session_.getMarkers();
+                for(var marker in markers) {
+                    if(markers[marker].type === 'rcloud-select')
+                        ace_session_.removeMarker(marker);
+                }
+                if(ranges)
+                    ranges.forEach(function(range) {
+                        var ace_range = ui_utils.ace_range_of_character_range(ace_widget_, range.begin, range.end);
+                        ace_session_.addMarker(ace_range, highlight_classes(range.kind), 'rcloud-select');
+                    });
+            }
+            else {
+                assign_code();
+            }
+            return this;
+        },
+        change_active_highlight: function(range) {
+            active_highlight_ = range;
+            if(edit_mode_) {
+                var markers = ace_session_.getMarkers();
+                var id, ace_range;
+                if(range) {
+                    ace_range = ui_utils.ace_range_of_character_range(ace_widget_, range.begin, range.end);
+                    for(id in markers)
+                        if(markers[id].type === 'rcloud-select' &&
+                           markers[id].range.isEqual(ace_range)) {
+                            markers[id].clazz = 'find-highlight active';
+                            ace_session_._signal("changeBackMarker");
+                        }
+                }
+                else for(id in markers) {
+                    if(markers[id].type === 'rcloud-select' &&
+                       markers[id].clazz.split(' ').indexOf('active') >= 0) {
+                        markers[id].clazz = 'find-highlight';
+                        ace_session_._signal("changeBackMarker");
+                    }
+                }
+            }
+            else {
+                if(!range)
+                    code_div_.find('.find-highlight.active').toggleClass('active', false);
+                else {
+                    // http://stackoverflow.com/questions/7969031/indexof-element-in-js-array-using-a-truth-function-using-underscore-or-jquery
+                    function find(collection, filter) {
+                        for (var i = 0; i < collection.length; i++) {
+                            if(filter(collection[i], i, collection)) return i;
+                        }
+                        return -1;
+                    }
+                    var i = find(highlights_, function(r) { return r.begin === range.begin && r.end === range.end; });
+                    if(i<0)
+                        throw new Error('unknown find result ' + JSON.stringify(range));
+                    code_div_.find('.find-highlight').eq(i).toggleClass('active', true);
+                }
+            }
+            return this;
         }
-    };
+    });
 
-    result.show_result();
+    result.edit_source(false);
     return result;
-};}
+};
 
 Notebook.Cell.create_html_view = function(cell_model)
 {
-    return create_markdown_cell_html_view(cell_model.language())(cell_model);
+    return create_cell_html_view(cell_model.language(), cell_model);
 };
-
 })();
