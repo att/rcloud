@@ -5,9 +5,9 @@ function main() {
         return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
     }
 
+    shell.is_view_mode(true);
     RCloud.UI.init();
     RCloud.session.init(true).then(function() {
-        shell.is_view_mode(true);
         shell.init();
         RCloud.UI.advanced_menu.load();
         var notebook = getURLParameter("notebook"),

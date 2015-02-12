@@ -5345,6 +5345,9 @@ RCloud.UI.find_replace = (function() {
                 else if(!ui_utils.is_a_mac() && e.keyCode == 72 && e.ctrlKey)
                     action = 'replace';
                 if(action) {
+                    // do not allow replace in view mode or read-only
+                    if(shell.notebook.model.read_only())
+                        action = 'find';
                     e.preventDefault();
                     toggle_find_replace(action === 'replace');
                 }
