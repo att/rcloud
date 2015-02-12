@@ -547,6 +547,7 @@ rcloud.notebook.star.count <- function(notebook)
 }
 
 rcloud.multiple.notebook.star.counts <- function(notebooks) {
+    if (!length(notebooks)) return(list())
     counts <- lapply(rcs.get(star.count.key(notebooks), list=TRUE),
                      function(o) if(is.null(o)) 0L else as.integer(o))
     names(counts) <- notebooks
