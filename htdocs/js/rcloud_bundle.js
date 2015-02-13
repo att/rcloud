@@ -89,8 +89,6 @@ RClient = {
             post_response: function (msg) {
                 var d = $("<pre class='response'></pre>").html(msg);
                 $("#output").append(d);
-                // not sure what this was for
-                //window.scrollTo(0, document.body.scrollHeight);
             },
 
             post_rejection: function(e) {
@@ -109,7 +107,7 @@ RClient = {
 RCloud = {};
 
 RCloud.is_exception = function(v) {
-    return _.isArray(v) && v.r_attributes && (v.r_attributes['class'] === 'Rserve-eval-error' || v.r_attributes['class'] === 'parse-error');
+    return _.isObject(v) && v.r_attributes && (v.r_attributes['class'] === 'Rserve-eval-error' || v.r_attributes['class'] === 'parse-error');
 };
 
 RCloud.exception_message = function(v) {

@@ -1,7 +1,7 @@
 RCloud = {};
 
 RCloud.is_exception = function(v) {
-    return _.isArray(v) && v.r_attributes && (v.r_attributes['class'] === 'Rserve-eval-error' || v.r_attributes['class'] === 'parse-error');
+    return _.isObject(v) && v.r_attributes && (v.r_attributes['class'] === 'Rserve-eval-error' || v.r_attributes['class'] === 'parse-error');
 };
 
 RCloud.exception_message = function(v) {
