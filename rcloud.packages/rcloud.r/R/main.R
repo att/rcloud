@@ -1,8 +1,16 @@
+.eval <- function(o, result=TRUE, where=parent.frame()) {
+    o <- Rserve.eval(o, where, last.value=result)
+    # ulog("CELL EVAL: ", paste(capture.output(str(o)), collapse='\n'))
+    if (inherits(o, "Rserve-eval-error")) {
+        class(o) <- "cell-eval-error"
+        o$traceback <- unlist(o$traceback)
+        ulog("CELL-EVAL-ERROR: ", paste(capture.output(str(o)), collapse='\n'))
+        o
+    } else o
+}
+
 rcloud.language.support <- function()
 {
-  ## a bit ugly, but just to keep the formatting in one place
-  .eval <- rcloud.support:::.eval
-
   ev <- function(command, silent, rcloud.session) {
     .session <- rcloud.session
     # make sure the last expression is always terminated

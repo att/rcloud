@@ -440,7 +440,7 @@ Notebook.create_controller = function(model)
                         // available: error=message
                         RCloud.end_cell_output(context_id, "Parse error: " + r.error);
                         throw 'stop';
-                    } else if (r.r_attributes['class'] === 'Rserve-eval-error') {
+                    } else if (r.r_attributes['class'] === 'cell-eval-error') {
                         // available: error=message, traceback=vector of calls, expression=index of the expression that failed
                         var tb = r['traceback'] || '';
                         if (tb.join) tb = tb.join(" <- ");

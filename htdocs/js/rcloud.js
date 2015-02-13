@@ -1,7 +1,14 @@
 RCloud = {};
 
+// FIXME: what is considered an execption - and API error or also cell eval error? We can tell them apart now ...
 RCloud.is_exception = function(v) {
-    return _.isObject(v) && v.r_attributes && (v.r_attributes['class'] === 'Rserve-eval-error' || v.r_attributes['class'] === 'parse-error');
+    // consider only OCAP errors an exception -- eventually both should use the exception mechanism, though
+    return _.isObject(v) && v.r_attributes && v.r_attributes['class'] === 'OCAP-eval-error';
+
+    // once we get there, the following catches all of them
+    // FIXME: it would be nice to support inherits() [i.e., look at the class structure not just the last subclass]
+    // such that we don't need to hard-code all classes ...
+    // return _.isObject(v) && v.r_attributes && (v.r_attributes['class'] === 'OCAP-eval-error' || v.r_attributes['class'] === 'cell-eval-error'|| v.r_attributes['class'] === 'parse-error');
 };
 
 RCloud.exception_message = function(v) {
