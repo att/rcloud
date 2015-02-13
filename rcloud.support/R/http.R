@@ -60,10 +60,16 @@
           if (is.null(host)) host <- "localhost"
           hosturl <- paste("http://", host, port, sep='')
 
-          ## source the script - in here so all of the above is available
-          source(fn, TRUE)
+          ## create an env to eval in
+          ## FIXME: we use our NS because historically scripts have been using
+          ##        undocumented calls, but we should ween them off that
+          env <- new.env(parent=environment(.http.request))
+          env$path.info <- path.info
+          ## source the script in env
+          source(fn, env)
+          if (!is.function(env[["run"]])) stop("script does not contain a run() function")
           ## run the run() function but like .httpd
-          return(run(url, query, body, headers))
+          return(env[["run"]](url, query, body, headers))
       }
 
         s <- file.info(fn)$size
