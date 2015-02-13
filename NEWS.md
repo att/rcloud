@@ -79,9 +79,12 @@
 * redis database number and password can be set
 
 * Can grab the status area above cell as well as the gutter area in order to reorder cells.
-  Allows moving cells when not editing them.
+  Allows moving cells when not editing them
 
-* Clicking to edit cell sets the cursor position based on the click location.
+* Clicking to edit cell sets the cursor position based on the click location
+
+* Supports PAM and JAAS supported Authentication modules like Kerberos, LDAP, etc
+  Refer: https://github.com/s-u/SessionKeyServer/blob/master/README.md
 
 
 
