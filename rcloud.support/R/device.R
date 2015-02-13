@@ -27,7 +27,7 @@ RCloudDevice <- function(width, height, dpi=100, ..., type='inline') {
         .session$RCloudDevice[[dev]]$page <- page
     self.oobSend(list(cmd, payload, dim(img), did, page))
     if (!is.null(payload))
-        .session$RCloudDevice[[dev]]$pages[[page]] <- recordPlot()
+        .session$RCloudDevice[[dev]]$pages[[page]] <- Cairo.snapshot(dev, NA)
     if (dev != dev.cur()) {
         self.oobSend(list("dev.close", did))
         .session$RCloudDevice[[dev]]$serial <- NULL
