@@ -18,6 +18,10 @@ setDiv: function(div, content, k) {
   $(div).empty(content);
   $(div).append(content);
   k(true);
+},
+registerRCWResult: function(content, k) {
+  window.notebook_result = content;
+  k(true);
 }
 })")
   }, error=function(...) warning("NOTE: rcloud.web can only be used in an RCloud session!"))
