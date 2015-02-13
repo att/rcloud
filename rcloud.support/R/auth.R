@@ -33,7 +33,7 @@ RC.authenticate <- function(v, check.only=FALSE)
   if (nzConf("exec.auth")) {
     ## FIXME: should we allow anonymous execution and logged-in github? We don't support that now...
     if (length(v) < 2 || is.null(v[[2]])) return(FALSE)
-    exec.usr <- check.token(v[[2]], getConf("exec.auth"), "rcloud.exec")
+    exec.usr <- check.token(v[[2]], paste0("auth/",getConf("exec.auth")), "rcloud.exec")
     if (exec.usr == FALSE) return(FALSE)
     if (identical(getConf("exec.match.user"), "login") && !check.only) .setup.su(exec.usr)
     .session$exec.usr <- exec.usr
@@ -58,7 +58,7 @@ RC.auth.anonymous <- function(v=NULL, check.only=FALSE) {
   v <- as.list(v)
   exec.token <- if (length(v) > 1L) v[[2]] else if (length(v) == 1L) v[[1]] else NULL
   exec.usr <- if (!is.null(exec.token)) ## if there is an exec token, check it
-    check.token(exec.token, getConf("exec.auth"), "rcloud.exec") else FALSE
+    check.token(exec.token, paste0("auth/",getConf("exec.auth")), "rcloud.exec") else FALSE
   if (exec.usr == FALSE) { ## truly anonymous execution
     if (nzConf("exec.anon.user")) { ## anonymous user specified, so we allow access as we switch
       if (!check.only) .setup.su(getConf("exec.anon.user"))
