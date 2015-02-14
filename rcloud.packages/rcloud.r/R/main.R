@@ -4,7 +4,7 @@
     if (inherits(o, "Rserve-eval-error")) {
         class(o) <- "cell-eval-error"
         o$traceback <- unlist(o$traceback)
-        ulog("CELL-EVAL-ERROR: ", paste(capture.output(str(o)), collapse='\n'))
+        ## ulog("CELL-EVAL-ERROR: ", paste(capture.output(str(o)), collapse='\n'))
         o
     } else o
 }
