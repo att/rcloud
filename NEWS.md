@@ -51,6 +51,8 @@
 
 * Notebook Information pop-up shows the people who have starred a notebook (#935)
 
+* Select the entire notebook with ctrl/cmd-A (#1321)
+
 
 
 ### Improvements
@@ -59,7 +61,7 @@
 
 * Better help given when searches fail due to syntax errors (#1061)
 
-* Year shown in version dates when notebooks are more than a year old (#986)
+* Year shown in version and notebook dates when the year is not this one (#986)
 
 * Ability to right click on search results to open in new tab (instead of control-clicking) (#1054)
 
@@ -68,8 +70,6 @@
 * Formal arguments shown for functions in Workspace (#994)
 
 * Option to turn off terse dates (#1040)
-
-* Year is shown if notebook is more than a year old (#986)
 
 * Cell number is shown above each cell in its status area (#1126)
 
@@ -88,6 +88,9 @@
 
 * Custom R code akin to the ubiquitous `Rprofile` can now be run at the end of session
   initialization as the script `conf/Rcloud.profile`
+
+* Selection of the cells and results will not select the ui elements, so it's possible to
+  copy and paste whole sections of the notebook and results. (#1221)
 
 
 
