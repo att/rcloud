@@ -209,6 +209,14 @@ static SEXP parse(const char **c, const char *e)
         SEXPTYPE common_type = VECSXP;
 	const char *p = *c;
 	p++;
+        skip_ws(p, e);
+        if (p < e && *p == ']') {
+            p++;
+            skip_ws(p, e);
+            *c = p;
+            UNPROTECT(1);
+            return allocVector(VECSXP, 0);
+        }
 	while (p < e) {
 	    SEXP elt = parse(&p, e);
             if (n == 0)
@@ -259,6 +267,14 @@ static SEXP parse(const char **c, const char *e)
         unsigned long n = 0, i;
         const char *p = *c;
         p++;
+        skip_ws(p, e);
+        if (p < e && *p == '}') {
+            p++;
+            skip_ws(p, e);
+            *c = p;
+            UNPROTECT(1);
+            return allocVector(VECSXP, 0);
+        }
         while (p < e) {
             SEXP name = PROTECT(parse(&p, e)), elt;
             if (TYPEOF(name) != CHARSXP)
