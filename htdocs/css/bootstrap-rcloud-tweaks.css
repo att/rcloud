@@ -114,8 +114,6 @@ div.panel-heading:hover {
 .rcloud-line-number-position {
     position: relative;
     bottom: 0;
-    height: 0;
-    width: 0;
 }
 
 .rcloud-line-number {
