@@ -36,7 +36,7 @@
 }
 
 .gist.binary.process.incoming <- function(content) {
-    ulog(".gist.binary.process.incoming: ", paste(capture.output(str(content)),collapse='\n'))
+    # ulog(".gist.binary.process.incoming: ", paste(capture.output(str(content)),collapse='\n'))
     if (!length(content$files)) return(content)
 
     ## convert any binary contents stored in .b64 files
