@@ -7269,7 +7269,7 @@ return {
                     summary(search_summary, 'darkgreen');
                 }
                 $("#search-results-row").css('display', 'table-row');
-                $("#search-results-row").animate({ scrollTop: $(document).height() }, "slow");
+                $("#search-results-scroller").scrollTop(0);
                 $('#search-results').html(search_results);
                 $("#search-results .search-result-heading").click(function(e) {
                     e.preventDefault();
