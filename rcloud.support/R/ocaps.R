@@ -1,8 +1,10 @@
 .eval <- function(o, result=TRUE, where=parent.frame()) {
     o <- Rserve.eval(o, where, last.value=result)
-    # ulog(".EVAL: ", paste(capture.output({ cat(".eval result:\n"); str(o) }), collapse='\n'))
+    ## ulog("OCAP-EVAL: ", paste(capture.output(str(o)), collapse='\n'))
     if (inherits(o, "Rserve-eval-error")) {
+        class(o) <- "OCAP-eval-error"
         o$traceback <- unlist(o$traceback)
+        ## ulog("OCAP-EVAL-ERROR: ", paste(capture.output(str(o)), collapse='\n'))
         o
     } else o
 }

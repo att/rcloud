@@ -60,10 +60,28 @@
           if (is.null(host)) host <- "localhost"
           hosturl <- paste("http://", host, port, sep='')
 
-          ## source the script - in here so all of the above is available
-          source(fn, TRUE)
+          ## create an env to eval in
+          ## FIXME: we use our NS because historically scripts have been using
+          ##        undocumented calls, but we should ween them off that
+          env <- new.env(parent=environment(.http.request))
+          env$path.info <- path.info
+          ## source the script in env
+          source(fn, env)
+          if (!is.function(env[["run"]])) stop("script does not contain a run() function")
           ## run the run() function but like .httpd
-          return(run(url, query, body, headers))
+          res <- env[["run"]](url, query, body, headers)
+          tryCatch({ ## if anything goes wrong, just leave the result alone ...
+              if (is.list(res) && length(res) > 0) {
+                  if (length(res) > 2 && length(res[[3]])) { ## has headers
+                      ## only mess with them if there is no Cache-control in sight ...
+                      if (!length(grep("cache-control:", as.character(res[[3]]), TRUE)))
+                          res[[3]] <- paste0(paste(res[[3]], collapse="\r\n"), "\r\nCache-control: no-cache")
+                  } else { ## append our only header
+                      res[[3]] <- "Cache-control: no-cache"
+                  }
+              }
+          }, error=function(e) NULL)
+          return(res)
       }
 
         s <- file.info(fn)$size
@@ -83,6 +101,6 @@
                 ct <- names(ctl)[i]
                 break
             }
-        list(r, ct)
+        list(r, ct, "Cache-control: no-cache")
     }
 }

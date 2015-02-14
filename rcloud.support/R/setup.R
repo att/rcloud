@@ -332,6 +332,9 @@ start.rcloud.common <- function(...) {
   if (validFileConf("configuration.root", "rcloud.profile"))
       source(pathConf("configuration.root", "rcloud.profile"))
 
+  ## wipe sensitive configuration options
+  .wipe.secrets()
+
   ## pre-emptive GC to start clean
   gc()
 
@@ -397,3 +400,12 @@ start.rcloud <- function(username="", token="", ...) {
 
 start.rcloud.anonymously <- function(...)
   start.rcloud.gist("", "", ...)
+
+## perform whatever is needed to wipe traces of
+## anything sensitive before the user gets control
+##
+.wipe.secrets <- function() {
+    ## Redis is already dealt with since we scrub it right when we use it,
+    ## but gist back-ends are separate
+    scrubConf(c("github.client.secret", "github.client.id"))
+}

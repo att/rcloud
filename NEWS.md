@@ -79,14 +79,21 @@
 * redis database number and password can be set
 
 * Can grab the status area above cell as well as the gutter area in order to reorder cells.
-  Allows moving cells when not editing them.
+  Allows moving cells when not editing them
 
-* Clicking to edit cell sets the cursor position based on the click location.
+* Clicking to edit cell sets the cursor position based on the click location
 
+* Supports PAM and JAAS supported Authentication modules like Kerberos, LDAP, etc.
+  Refer: https://github.com/s-u/SessionKeyServer/blob/master/README.md
+
+* Custom R code akin to the ubiquitous `Rprofile` can now be run at the end of session
+  initialization as the script `conf/Rcloud.profile`
 
 
 
 ### Bug fixes
+
+* Changing the working directory is now persistent across R cells (#833)
 
 * Dataframe was not cleared when loading a new notebook (#1045)
 
