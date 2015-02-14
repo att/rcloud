@@ -1,8 +1,9 @@
 .b64.to.binary <- function(text) {
    # has header?
    attr <- NULL
+   if (length(text) == 1L) text <- strsplit(text, "\n", TRUE)[[1]]
    if (length(text) && substr(text,1,3) == "## ") {
-      q <- strsplit(text[1L], "[ \t]*,[ \t]*")[[1]]
+      q <- strsplit(gsub("^##[ \t]+","",text[1L]), "[ \t]*,[ \t]*")[[1]]
       valid <- grep(":", q, TRUE)
       if (length(valid)) {
 	 val <- gsub("^[^:]*:[ \t]*", "", q)

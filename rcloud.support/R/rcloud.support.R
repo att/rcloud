@@ -104,16 +104,16 @@ rcloud.unauthenticated.get.notebook <- function(id, version = NULL) {
   rcloud.get.notebook(id, version)
 }
 
-rcloud.get.notebook <- function(id, version = NULL) {
+rcloud.get.notebook <- function(id, version = NULL) .rcloud.get.notebook(id, version)
+
+.rcloud.get.notebook <- function(id, version = NULL, raw=FALSE) {
   res <- if (!is.null(stash <- .session$deployment.stash)) {
     if (is.null(version))
       version <- rcs.get(stash.key(stash, id, "HEAD", type="tag"))
     res <- rcs.get(stash.key(stash, id, version))
     if (is.null(res$ok)) res <- list(ok=FALSE)
     res
-  } else suppressWarnings(get.gist(id, version, ctx = .session$gist.context))
-  ## FIXME: suppressWarnings is a hack to get rid of the stupid "Duplicated curl options"
-  ##        which seem to be a httr bug
+  } else get.gist(id, version, ctx = .session$gist.context)
   if (rcloud.debug.level() > 1L) {
     if(res$ok) {
       cat("==== GOT GIST ====\n")
@@ -125,7 +125,7 @@ rcloud.get.notebook <- function(id, version = NULL) {
       print(res)
     }
   }
-  rcloud.augment.notebook(res)
+  if (raw) res else rcloud.augment.notebook(res)
 }
 
 ## this evaluates a notebook for its result
