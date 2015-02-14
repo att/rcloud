@@ -2533,7 +2533,7 @@ Notebook.Cell.preprocessors.add({
                 deferred_replacement_ = '<span class="deferred-result">$&</span>';
             }
             return function(r) {
-                if(!deferred_regexp_)
+                if(!deferred_result_uuid_ != rcloud.deferred_knitr_uuid)
                     make_deferred_regexp();
                 return r.replace(deferred_regexp_, deferred_replacement_);
             };
