@@ -81,5 +81,6 @@ RCloudDevice <- function(width, height, dpi=100, ..., type='inline') {
             .onSave(dev, NA, "img.url.update")
         }
     }
+    flush.console()
 }
 
