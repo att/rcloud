@@ -400,6 +400,7 @@ var editor = function () {
         result.create_book_tree_widget(root_data);
         var interests = $tree_.tree('getNodeById', "/interests");
         $tree_.tree('openNode', interests);
+        rclient.post_response();
     }
 
     function load_children(n) {

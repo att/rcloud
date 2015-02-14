@@ -2,6 +2,7 @@
 
 RClient = {
     create: function(opts) {
+        var welcome_msg;
         opts = _.defaults(opts, {
             debug: false
         });
@@ -86,8 +87,12 @@ RClient = {
             host: opts.host,
             running: false,
 
-            post_response: function (msg) {
-                var d = $("<pre class='response'></pre>").html(msg);
+            set_welcome_msg: function(msg) {
+                welcome_msg = msg;
+            },
+
+            post_response: function() {
+                var d = $("<pre class='response'></pre>").html(welcome_msg);
                 $("#output").append(d);
             },
 
