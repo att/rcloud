@@ -25,7 +25,7 @@ RCloudDevice <- function(width, height, dpi=100, ..., type='inline') {
         page <- .session$RCloudDevice[[dev]]$page + 1L
     else ## last known page - record it
         .session$RCloudDevice[[dev]]$page <- page
-    self.oobSend(list(cmd, payload, dim(img), did, page))
+    self.oobSend(list(cmd, payload, rev(dim(img)), did, page))
     if (!is.null(payload))
         .session$RCloudDevice[[dev]]$pages[[page]] <- Cairo.snapshot(dev, NA)
     if (dev != dev.cur()) {
