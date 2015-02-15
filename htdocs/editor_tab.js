@@ -729,18 +729,12 @@ var editor = function () {
     }
 
     function scroll_into_view(node) {
-        var height = $tree_.parent().css("height").replace("px","");
         var p = node.parent;
         while(p.sort_order===ordering.NOTEBOOK) {
             $tree_.tree('openNode', p);
             p = p.parent;
         }
-        if($(node.element).position().top > height)
-            $tree_.parent().scrollTo(null, $tree_.parent().scrollTop() +
-                                     $(node.element).position().top - height + 50);
-        else if($(node.element).position().top < 0)
-            $tree_.parent().scrollTo(null, $tree_.parent().scrollTop() +
-                                     $(node.element).position().top - 100);
+        ui_utils.scroll_into_view($tree_.parent(), $(node.element), 50, 100);
     }
 
     function select_node(node) {

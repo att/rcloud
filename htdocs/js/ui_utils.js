@@ -533,6 +533,16 @@ ui_utils.scroll_to_after = function($sel, duration) {
     $parent.scrollTo(null, y, opts);
 };
 
+ui_utils.scroll_into_view = function($scroller, $elem, top_buffer, bottom_buffer) {
+    var height = $scroller.css("height").replace("px","");
+    var scrolltop = $scroller.scrollTop(),
+        elemtop = $elem.position().top;
+    if(elemtop > height)
+        $scroller.scrollTo(null, scrolltop + elemtop - height + top_buffer);
+    else if(elemtop < 0)
+        $scroller.scrollTo(null, scrolltop + elemtop - bottom_buffer);
+};
+
 ui_utils.prevent_backspace = function($doc) {
     // Prevent the backspace key from navigating back.
     // from http://stackoverflow.com/a/2768256/676195
