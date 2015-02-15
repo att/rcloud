@@ -18,6 +18,9 @@ session.server.get.token <- function(realm, token)
 session.server.auth <- function(realm,user,pwd,module)
 	strsplit(.session.server.request(paste0("/auth_token?realm=",URIencode(realm),"&user=",URIencode(user),"&pwd=",URIencode(pwd),"&module=",getConf("exec.auth"))),"\n")
 
+session.server.version <- function()
+    strsplit(.session.server.request("/version"), "\n", TRUE)[[1]]
+
 ## FIXME: better error handling (server down etc.)
 ## simple GET requests at this point
 .session.server.request <- function(request)

@@ -7,6 +7,10 @@
 # mode = "startup" is assuming regular startup via Rserve
 # mode = "script"  will attempt to login anonymously, intended to be
 #                  used in scripts
+
+## which minimal version of SessionKeyServer do we require?
+.SKS.version.required <- 1.3
+
 configure.rcloud <- function (mode=c("startup", "script")) {
   mode <- match.arg(mode)
 
@@ -121,7 +125,8 @@ configure.rcloud <- function (mode=c("startup", "script")) {
 
   ## fix font mappings in Cairo -- some machines require this
   if (exists("CairoFonts"))
-    CairoFonts("Arial:style=Regular","Arial:style=Bold","Arial:style=Italic","Helvetica","Symbol")
+    tryCatch(CairoFonts("Arial:style=Regular","Arial:style=Bold","Arial:style=Italic","Helvetica","Symbol"),
+             error=function(e) warning("*** Cannot set Cairo fonts", e$message, "\n*** maybe your system doesn't have basic fonts?"))
 
   ## Load any data you want
   if (nzConf("preload.data")) {
@@ -144,6 +149,15 @@ configure.rcloud <- function (mode=c("startup", "script")) {
       setConf("debug", as.integer(getConf("debug")))
       if (any(is.na(getConf("debug")))) setConf("debug", 1L) ## if the content is not an integer, use 1
     }
+  }
+
+  ## check whether SKS is running and has the right version (if configured)
+  if (nzConf("session.server")) {
+      sks.ver <- session.server.version()
+      if (!is.character(sks.ver) || !nzchar(sks.ver) || is.na(sks.ver <- as.numeric(sks.ver)))
+          stop("*** ERROR: session key server is configured, but either not working or outdated!")
+      if (sks.ver < .SKS.version.required)
+          stop("*** ERROR: more recent version of session key server is required (", .SKS.version.required, ", have ", sks.ver, ")")
   }
 
   if (!nzConf("cookie.domain")) setConf("cookie.domain", getConf("host"))
