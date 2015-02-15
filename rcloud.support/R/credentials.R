@@ -104,3 +104,23 @@ check.token <- function(token, valid.sources="stored", realm="rcloud")
     if ((length(res) > 1) && isTRUE(res[1] == "YES") && isTRUE(res[3] %in% valid.sources)) res[2] else FALSE
   }
 }
+
+get.user.key <- function(token=.session$token, realm="rcloud", generate=FALSE, required=FALSE) {
+    if (!nzConf("session.server")) stop("secure key storage requires SessionKeyServer, see session.server configuration in rcloud.conf")
+    key <- session.server.get.key(realm, token)
+    if (length(key) && nzchar(key)) return(.Call(hex2raw,key))
+    if (!generate) {
+        if (required) Rf_error("user key is required, but no key is present")
+        return(NULL)
+    }
+    key <- session.server.generate.key(realm, token)
+    if (length(key) && nzchar(key)) return(.Call(hex2raw,key))
+    if (required) Rf_error("user key is required, but it could not be retrieved")
+    NULL
+}
+
+new.user.key <- function(token=.session$token, realm="rcloud") {
+    if (!nzConf("session.server")) stop("secure key storage requires SessionKeyServer, see session.server configuration in rcloud.conf")
+    key <- session.server.generate.key(realm, token)
+    if (length(key) && nzchar(key)) .Call(hex2raw,key) else stop("failed to obtain a new key")
+}

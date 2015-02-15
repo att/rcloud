@@ -9,14 +9,21 @@ session.server.revoke.token <- function(realm, token)
     .session.server.request(paste0("/revoke?token=", URIencode(token), "&realm=", URIencode(realm)))
 
 session.server.replace.token <- function(realm, token)
-    strsplit(.session.server.request(paste0("/replace?token=", URIencode(token), "&realm=", URIencode(realm))), "\n")[[1]]
+    strsplit(.session.server.request(paste0("/replace?token=", URIencode(token), "&realm=", URIencode(realm))), "\n", TRUE)[[1]]
 
 ## result c(<result>, <user>, <source>); <result>=YES|SUPERCEDED|NO
 session.server.get.token <- function(realm, token)
-    strsplit(.session.server.request(paste0("/valid?token=", URIencode(token), "&realm=", URIencode(realm))), "\n")[[1]]
+    strsplit(.session.server.request(paste0("/valid?token=", URIencode(token), "&realm=", URIencode(realm))), "\n", TRUE)[[1]]
 
-session.server.auth <- function(realm,user,pwd,module)
-	strsplit(.session.server.request(paste0("/auth_token?realm=",URIencode(realm),"&user=",URIencode(user),"&pwd=",URIencode(pwd),"&module=",getConf("exec.auth"))),"\n")
+session.server.auth <- function(realm, user, pwd, module=getConf("exec.auth"))
+    strsplit(.session.server.request(paste0("/auth_token?realm=", URIencode(realm), "&user=", URIencode(user), "&pwd=", URIencode(pwd),
+                                            if (is.null(module)) "" else paste0("&module=", URIencode(module)))), "\n", TRUE)[[1]]
+
+session.server.get.key <- function(realm, token)
+    strsplit(.session.server.request(paste0("/get_key?token=", URIencode(token), "&realm=", URIencode(realm))), "\n", TRUE)[[1]]
+
+session.server.generate.key <- function(realm, token)
+    strsplit(.session.server.request(paste0("/gen_key?token=", URIencode(token), "&realm=", URIencode(realm))), "\n", TRUE)[[1]]
 
 session.server.version <- function()
     strsplit(.session.server.request("/version"), "\n", TRUE)[[1]]
