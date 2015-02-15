@@ -1189,10 +1189,14 @@ ui_utils.scroll_to_after = function($sel, duration) {
     $parent.scrollTo(null, y, opts);
 };
 
-ui_utils.scroll_into_view = function($scroller, $elem, top_buffer, bottom_buffer) {
-    var height = $scroller.css("height").replace("px","");
+ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, _) {
+    if(_ === undefined)
+        return;
+    var height = +$scroller.css("height").replace("px","");
     var scrolltop = $scroller.scrollTop(),
-        elemtop = $elem.position().top;
+        elemtop = 0;
+    for(var i = 3; i<arguments.length; ++i)
+        elemtop += arguments[i].position().top;
     if(elemtop > height)
         $scroller.scrollTo(null, scrolltop + elemtop - height + top_buffer);
     else if(elemtop < 0)
@@ -2257,10 +2261,22 @@ function create_cell_html_view(language, cell_model) {
                     ranges.forEach(function(range) {
                         var ace_range = ui_utils.ace_range_of_character_range(ace_widget_, range.begin, range.end);
                         ace_session_.addMarker(ace_range, highlight_classes(range.kind), 'rcloud-select');
+                        if(/active/.test(range.kind)) {
+                            ace_widget_.scrollToLine(ace_range.start.row);
+                            window.setTimeout(function() {
+                                var hl = ace_div.find('.find-highlight.' + range.kind);
+                                if(hl.size())
+                                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, notebook_cell_div, ace_div, hl);
+                            }, 0);
+                        }
                     });
             }
             else {
                 assign_code();
+                var $active = code_div_.find('.find-highlight.active, .find-highlight.activereplaced');
+                if($active.size())
+                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, notebook_cell_div, code_div_, $active);
+
             }
             return this;
         }

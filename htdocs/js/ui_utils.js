@@ -533,10 +533,14 @@ ui_utils.scroll_to_after = function($sel, duration) {
     $parent.scrollTo(null, y, opts);
 };
 
-ui_utils.scroll_into_view = function($scroller, $elem, top_buffer, bottom_buffer) {
-    var height = $scroller.css("height").replace("px","");
+ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, _) {
+    if(_ === undefined)
+        return;
+    var height = +$scroller.css("height").replace("px","");
     var scrolltop = $scroller.scrollTop(),
-        elemtop = $elem.position().top;
+        elemtop = 0;
+    for(var i = 3; i<arguments.length; ++i)
+        elemtop += arguments[i].position().top;
     if(elemtop > height)
         $scroller.scrollTo(null, scrolltop + elemtop - height + top_buffer);
     else if(elemtop < 0)

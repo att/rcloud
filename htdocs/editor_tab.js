@@ -734,7 +734,7 @@ var editor = function () {
             $tree_.tree('openNode', p);
             p = p.parent;
         }
-        ui_utils.scroll_into_view($tree_.parent(), $(node.element), 50, 100);
+        ui_utils.scroll_into_view($tree_.parent(), 50, 100, $(node.element));
     }
 
     function select_node(node) {
