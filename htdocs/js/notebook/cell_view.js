@@ -379,7 +379,11 @@ function create_cell_html_view(language, cell_model) {
                     result.hide_source(true);
                 has_result_ = true;
             }
-            if(type!='selection') {
+            switch(type) {
+            case 'selection':
+            case 'deferred_result':
+                break;
+            default:
                 Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
                     r = pre.process(r);
                 });
@@ -413,6 +417,9 @@ function create_cell_html_view(language, cell_model) {
             case 'selection':
             case 'html':
                 result_div_.append(r);
+                break;
+            case 'deferred_result':
+                result_div_.append('<span class="deferred-result">' + r + '</span>');
                 break;
             default:
                 throw new Error('unknown result type ' + type);

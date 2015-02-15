@@ -2008,7 +2008,11 @@ function create_cell_html_view(language, cell_model) {
                     result.hide_source(true);
                 has_result_ = true;
             }
-            if(type!='selection') {
+            switch(type) {
+            case 'selection':
+            case 'deferred_result':
+                break;
+            default:
                 Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
                     r = pre.process(r);
                 });
@@ -2042,6 +2046,9 @@ function create_cell_html_view(language, cell_model) {
             case 'selection':
             case 'html':
                 result_div_.append(r);
+                break;
+            case 'deferred_result':
+                result_div_.append('<span class="deferred-result">' + r + '</span>');
                 break;
             default:
                 throw new Error('unknown result type ' + type);
@@ -2363,6 +2370,7 @@ Notebook.Cell.create_controller = function(cell_model)
                                       // these should convey the meaning e.g. through color:
                                       out: resulter, err: appender('error'), msg: resulter,
                                       html_out: appender('html'),
+                                      deferred_result: appender('deferred_result'),
                                       selection_out: appender('selection'),
                                       in: this.get_input.bind(this, 'in')
                                      };
@@ -3521,7 +3529,8 @@ var oob_sends = {
         if(output_contexts_[context] && output_contexts_[context].start)
             output_contexts_[context].start();
     },
-    "html.out": forward_to_context('html_out')
+    "html.out": forward_to_context('html_out'),
+    "deferred.result": forward_to_context('deferred_result')
 };
 
 var on_data = function(v) {

@@ -88,7 +88,8 @@ var oob_sends = {
         if(output_contexts_[context] && output_contexts_[context].start)
             output_contexts_[context].start();
     },
-    "html.out": forward_to_context('html_out')
+    "html.out": forward_to_context('html_out'),
+    "deferred.result": forward_to_context('deferred_result')
 };
 
 var on_data = function(v) {
