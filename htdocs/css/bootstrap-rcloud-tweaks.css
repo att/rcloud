@@ -129,12 +129,15 @@ div.panel-heading:hover {
     max-width: inherit;
 }
 
-.r-result-div, .r-result-div pre {
+.r-result-div {
+    padding: 16px;
+}
+
+.r-result-div:empty {
     padding: 0;
 }
 
 .r-result-div pre {
-    padding: 16px;
     font-size: 12px;
     cursor: text;
 }
@@ -144,7 +147,6 @@ div.panel-heading:hover {
 }
 
 .r-result-div .non-result {
-    padding: 16px;
     font-style: italic;
 }
 
