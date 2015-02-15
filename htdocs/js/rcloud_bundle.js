@@ -5565,7 +5565,6 @@ RCloud.UI.image_manager = (function() {
 
             div.resizable({
                 autoHide: true,
-                aspectRatio: true,
                 stop: resize_stop
             });
             return div;
