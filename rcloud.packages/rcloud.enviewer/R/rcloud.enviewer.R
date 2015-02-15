@@ -12,9 +12,6 @@ rcloud.enviewer.view.dataframe <- function(expr)
 rcloud.enviewer.display.dataframe <- function(x)
   list(command="view", object=x)
 
-rcloud.enviewer.display.double <- function(x)
-  signif(x,3)
-
 rcloud.enviewer.display.string <- function(x)
   paste0("'", as.character(x), "'")
 
@@ -31,12 +28,12 @@ rcloud.enviewer.display.value <- function(val) {
         x)
       if(length(val) >1){
         if(is.null(dim(val))){
-          dimensionOfObject <- paste0('[1:', length(val), ']', sep='')  
+           dimensionOfObject <- paste0('[1:', length(val), ']' , sep='') 
         } else {
-           dimensionOfObject <- paste0(dim(val)[1],' x ',dim(val)[2])
+           dimensionOfObject <- paste0('[',dim(val)[1],' x ',dim(val)[2],']')
         }
 
-      list(type=classOfObject, value=dimensionOfObject)
+      list(type=paste0(classOfObject,dimensionOfObject), value= paste(head(val,5),collapse=',') )
     }
     else list(type=classOfObject, value=disp(classOfObject, val))
 }
