@@ -488,6 +488,12 @@ ui_utils.editable = function(elem$, command) {
                     elem$.blur(); // and cancel
                 }
                 return true;
+            },
+            'input.editable': function(e) {
+                if(elem$.text().length===0)
+                    elem$.css('padding-right', '1px');
+                else
+                    elem$.css('padding-right', '');
             }
         });
         break;
