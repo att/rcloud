@@ -58,7 +58,9 @@ RCloud.UI.run_button = (function() {
             queue_ = [];
             cancels_ = [];
             running_ = false;
-            display('icon-play', 'Stop');
+            if(rcloud.has_compute_separation)
+                display('icon-play', 'Stop');
+            highlight(false);
         },
         enqueue: function(f, cancel) {
             var that = this;
