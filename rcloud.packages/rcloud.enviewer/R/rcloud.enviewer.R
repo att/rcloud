@@ -19,7 +19,7 @@ rcloud.enviewer.display.value <- function(val) {
    classOfObject <- if (is.numeric(val)) {
     typeof(val)
   } else {
-    class(val)
+    paste0(class(val),collapse=', ')
   }
     disp <- function(classOfObject,x)
       switch(classOfObject,
@@ -28,12 +28,15 @@ rcloud.enviewer.display.value <- function(val) {
         x)
       if(length(val) >1){
         if(is.null(dim(val))){
-           dimensionOfObject <- paste0('[1:', length(val), ']' , sep='') 
+           dimensionOfObject <- paste0(' [1:', length(val), ']' , sep='') 
+           sampleval <- tryCatch({head(val,5)},error=function(err){}) 
         } else {
-           dimensionOfObject <- paste0('[',dim(val)[1],' x ',dim(val)[2],']')
+           dimensionOfObject <- paste0(' [',dim(val)[1],' x ',dim(val)[2],']')
+           sampleval <- tryCatch({head(val,1)},error=function(err){}) 
         }
+        
 
-      list(type=paste0(classOfObject,dimensionOfObject), value= paste(head(val,5),collapse=', ') )
+      list(type=paste0(classOfObject,dimensionOfObject), value= paste(sampleval,collapse=', '))
     }
     else list(type=classOfObject, value=disp(classOfObject, val))
 }
