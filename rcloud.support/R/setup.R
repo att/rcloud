@@ -152,7 +152,10 @@ configure.rcloud <- function (mode=c("startup", "script")) {
   }
 
   ## check whether SKS is running and has the right version (if configured)
-  if (nzConf("session.server")) {
+  ##
+  ## WARNING: cURL gets into some odd state on RedHat when forked,
+  ##          so do NOT issue any requests before forking, so we don't use this test for now ...
+  if (FALSE && nzConf("session.server")) {
       sks.ver <- session.server.version()
       if (!is.character(sks.ver) || !nzchar(sks.ver) || is.na(sks.ver <- as.numeric(sks.ver)))
           stop("*** ERROR: session key server is configured, but either not working or outdated!")
