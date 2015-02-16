@@ -72,7 +72,7 @@
           res <- env[["run"]](url, query, body, headers)
           tryCatch({ ## if anything goes wrong, just leave the result alone ...
               if (is.list(res) && length(res) > 0) {
-                  if (length(res) > 2 && length(res[[3]])) { ## has headers
+                  if (length(res) > 2 && length(res[[3]]) && !identical(res[[3]], "")) { ## has headers
                       ## only mess with them if there is no Cache-control in sight ...
                       if (!length(grep("cache-control:", as.character(res[[3]]), TRUE)))
                           res[[3]] <- paste0(paste(res[[3]], collapse="\r\n"), "\r\nCache-control: no-cache")

@@ -14,6 +14,7 @@ Notebook.Cell.create_controller = function(cell_model)
                                       // these should convey the meaning e.g. through color:
                                       out: resulter, err: appender('error'), msg: resulter,
                                       html_out: appender('html'),
+                                      deferred_result: appender('deferred_result'),
                                       selection_out: appender('selection'),
                                       in: this.get_input.bind(this, 'in')
                                      };

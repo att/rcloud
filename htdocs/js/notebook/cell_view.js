@@ -26,7 +26,7 @@ function create_cell_html_view(language, cell_model) {
     var cell_status_;
     var above_between_controls_, cell_controls_, left_controls_;
     var edit_mode_; // note: starts neither true nor false
-    var highlights_, active_highlight_ = null;
+    var highlights_;
     var code_preprocessors_ = []; // will be an extension point, someday
 
     // input1
@@ -294,7 +294,7 @@ function create_cell_html_view(language, cell_model) {
             // add abso-relative line number spans at the beginning of each line
             var line = 1;
             code = code.replace(/^/gm, function() {
-                return '<span class="rcloud-line-number-position nonselectable"><span class="rcloud-line-number">' + line++ + '</span></span>';
+                return '<span class="rcloud-line-number-position nonselectable">&#x200b;<span class="rcloud-line-number">' + line++ + '</span></span>';
             });
             code += '&nbsp;'; // make sure last line is shown even if it is just a tag
             return code;
@@ -379,7 +379,11 @@ function create_cell_html_view(language, cell_model) {
                     result.hide_source(true);
                 has_result_ = true;
             }
-            if(type!='selection') {
+            switch(type) {
+            case 'selection':
+            case 'deferred_result':
+                break;
+            default:
                 Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
                     r = pre.process(r);
                 });
@@ -413,6 +417,9 @@ function create_cell_html_view(language, cell_model) {
             case 'selection':
             case 'html':
                 result_div_.append(r);
+                break;
+            case 'deferred_result':
+                result_div_.append('<span class="deferred-result">' + r + '</span>');
                 break;
             default:
                 throw new Error('unknown result type ' + type);
@@ -527,8 +534,7 @@ function create_cell_html_view(language, cell_model) {
                 outer_ace_div.hide();
             }
             edit_mode_ = edit_mode;
-            this.change_highlights(highlights_)
-                .change_active_highlight(active_highlight_); // restore highlights
+            this.change_highlights(highlights_); // restore highlights
         },
         hide_source: function(whether) {
             if(whether)
@@ -562,6 +568,7 @@ function create_cell_html_view(language, cell_model) {
             };
             switch_color();
             input_anim_ = window.setInterval(switch_color, 1000);
+            ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, notebook_cell_div, input_div_);
             input_kont_ = k;
         },
         div: function() {
@@ -604,51 +611,22 @@ function create_cell_html_view(language, cell_model) {
                     ranges.forEach(function(range) {
                         var ace_range = ui_utils.ace_range_of_character_range(ace_widget_, range.begin, range.end);
                         ace_session_.addMarker(ace_range, highlight_classes(range.kind), 'rcloud-select');
+                        if(/active/.test(range.kind)) {
+                            ace_widget_.scrollToLine(ace_range.start.row);
+                            window.setTimeout(function() {
+                                var hl = ace_div.find('.find-highlight.' + range.kind);
+                                if(hl.size())
+                                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, notebook_cell_div, ace_div, hl);
+                            }, 0);
+                        }
                     });
             }
             else {
                 assign_code();
-            }
-            return this;
-        },
-        change_active_highlight: function(range) {
-            active_highlight_ = range;
-            if(edit_mode_) {
-                var markers = ace_session_.getMarkers();
-                var id, ace_range;
-                if(range) {
-                    ace_range = ui_utils.ace_range_of_character_range(ace_widget_, range.begin, range.end);
-                    for(id in markers)
-                        if(markers[id].type === 'rcloud-select' &&
-                           markers[id].range.isEqual(ace_range)) {
-                            markers[id].clazz = 'find-highlight active';
-                            ace_session_._signal("changeBackMarker");
-                        }
-                }
-                else for(id in markers) {
-                    if(markers[id].type === 'rcloud-select' &&
-                       markers[id].clazz.split(' ').indexOf('active') >= 0) {
-                        markers[id].clazz = 'find-highlight';
-                        ace_session_._signal("changeBackMarker");
-                    }
-                }
-            }
-            else {
-                if(!range)
-                    code_div_.find('.find-highlight.active').toggleClass('active', false);
-                else {
-                    // http://stackoverflow.com/questions/7969031/indexof-element-in-js-array-using-a-truth-function-using-underscore-or-jquery
-                    function find(collection, filter) {
-                        for (var i = 0; i < collection.length; i++) {
-                            if(filter(collection[i], i, collection)) return i;
-                        }
-                        return -1;
-                    }
-                    var i = find(highlights_, function(r) { return r.begin === range.begin && r.end === range.end; });
-                    if(i<0)
-                        throw new Error('unknown find result ' + JSON.stringify(range));
-                    code_div_.find('.find-highlight').eq(i).toggleClass('active', true);
-                }
+                var $active = code_div_.find('.find-highlight.active, .find-highlight.activereplaced');
+                if($active.size())
+                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, notebook_cell_div, code_div_, $active);
+
             }
             return this;
         }

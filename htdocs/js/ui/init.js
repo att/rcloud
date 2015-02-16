@@ -18,12 +18,6 @@ RCloud.UI.init = function() {
     });
     shell.notebook.controller.save_button(saveb);
 
-    $("#rcloud-logout").click(function() {
-        // let the server-side script handle this so it can
-        // also revoke all tokens
-        window.location.href = '/logout.R';
-    });
-
     RCloud.UI.run_button.init();
 
     //////////////////////////////////////////////////////////////////////////
@@ -115,14 +109,25 @@ RCloud.UI.init = function() {
         $(this).scrollLeft(0);
     });
 
-    // if we have a save button (e.g. not view mode), prevent browser's default
-    // ctrl/cmd+s and save notebook
-    if(saveb.size()) {
-        document.addEventListener("keydown", function(e) {
+    // key handlers
+    document.addEventListener("keydown", function(e) {
+        // if we have a save button (e.g. not view mode), prevent browser's default
+        // ctrl/cmd+s and save notebook
+        if(saveb.size()) {
             if (e.keyCode == 83 && (e.ctrlKey || e.metaKey)) { // ctrl/cmd-S
                 e.preventDefault();
                 shell.save_notebook();
             }
-        });
-    }
+        }
+        // select all ctrl/cmd-a
+        if(e.keyCode == 65 && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            var selection = window.getSelection();
+            selection.removeAllRanges();
+            var range = new Range();
+            range.selectNode(document.getElementById('output'));
+            range.setStartAfter($('.response')[0]);
+            selection.addRange(range);
+        }
+    });
 };

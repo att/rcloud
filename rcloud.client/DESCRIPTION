@@ -1,10 +1,10 @@
 Package: rcloud.client
 Title: R client for RCloud communication
-Version: 0.1
+Version: 0.2
 Author: Carlos Scheidegger <cscheid@research.att.com>
 Maintainer: Carlos Scheidegger <cscheid@research.att.com>
 Description: rcloud.client provides an R interface for communicating
   with an RCloud instance. It's used internally by some of the RCloud
   http entry points but might be more generally useful.
-Depends: RSclient
+Depends: RSclient, FastRWeb
 License: MIT

@@ -36073,8 +36073,7 @@ $.widget("ui.resizable", $.ui.mouse, {
 		data = trigger.apply(this, [ event, dx, dy ]);
 
 		this._updateVirtualBoundaries(event.shiftKey);
-            // gw: http://stackoverflow.com/questions/4775969/reverse-jquery-resize-shift-functionality
-		if (this._aspectRatio && !event.shiftKey) {
+		if (this._aspectRatio || event.shiftKey) {
 			data = this._updateRatio(data, event);
 		}
 
@@ -45339,8 +45338,7 @@ var tooltip = $.widget( "ui.tooltip", {
 
 
 
-}));
-/**
+}));/**
  * Copyright (c) 2005 - 2010, James Auldridge
  * All rights reserved.
  *

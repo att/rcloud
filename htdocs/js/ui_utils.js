@@ -443,50 +443,58 @@ ui_utils.editable = function(elem$, command) {
         break;
     case 'melt':
         elem$.attr('contenteditable', 'true');
-        elem$.on('focus.editable', function() {
-            if(!options().__active) {
-                options().__active = true;
-                set_content_type(command.allow_multiline,encode(options().active_text));
-                window.setTimeout(function() {
-                    selectRange(options().select(elem$[0]));
-                    elem$.off('blur.editable');
-                    elem$.on('blur.editable', function() {
-                        set_content_type(command.allow_multiline,encode(options().inactive_text));
-                        options().__active = false;
-                    }); // click-off cancels
-                }, 10);
-            }
-        });
-        elem$.on('click.editable', function(e) {
-            e.stopPropagation();
-            // allow default action but don't bubble (causing eroneous reselection in notebook tree)
-        });
-        elem$.on('keydown.editable', function(e) {
-            if(e.keyCode === 13) {
-                var txt = decode(elem$.text());
-                function execute_if_valid_else_ignore(f) {
-                    if(options().validate(txt)) {
-                        options().__active = false;
-                        elem$.off('blur.editable'); // don't cancel!
-                        elem$.blur();
-                        f(txt);
-                        return true;
-                    } else {
-                        return false; // don't let CR through!
+        elem$.on({
+            'focus.editable': function() {
+                if(!options().__active) {
+                    options().__active = true;
+                    set_content_type(command.allow_multiline,encode(options().active_text));
+                    window.setTimeout(function() {
+                        selectRange(options().select(elem$[0]));
+                        elem$.off('blur.editable');
+                        elem$.on('blur.editable', function() {
+                            set_content_type(command.allow_multiline,encode(options().inactive_text));
+                            options().__active = false;
+                        }); // click-off cancels
+                    }, 10);
+                }
+            },
+            'click.editable': function(e) {
+                e.stopPropagation();
+                // allow default action but don't bubble (causing eroneous reselection in notebook tree)
+            },
+            'keydown.editable': function(e) {
+                if(e.keyCode === 13) {
+                    var txt = decode(elem$.text());
+                    function execute_if_valid_else_ignore(f) {
+                        if(options().validate(txt)) {
+                            options().__active = false;
+                            elem$.off('blur.editable'); // don't cancel!
+                            elem$.blur();
+                            f(txt);
+                            return true;
+                        } else {
+                            return false; // don't let CR through!
+                        }
                     }
+                    if (options().ctrl_cmd && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        return execute_if_valid_else_ignore(options().ctrl_cmd);
+                    }
+                    else if(!command.allow_multiline || (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        return execute_if_valid_else_ignore(options().change);
+                    }
+                } else if(e.keyCode === 27) {
+                    elem$.blur(); // and cancel
                 }
-                if (options().ctrl_cmd && (e.ctrlKey || e.metaKey)) {
-                    e.preventDefault();
-                    return execute_if_valid_else_ignore(options().ctrl_cmd);
-                }
-                else if(!command.allow_multiline || (e.ctrlKey || e.metaKey)) {
-                    e.preventDefault();
-                    return execute_if_valid_else_ignore(options().change);
-                }
-            } else if(e.keyCode === 27) {
-                elem$.blur(); // and cancel
+                return true;
+            },
+            'input.editable': function(e) {
+                if(elem$.text().length===0)
+                    elem$.css('padding-right', '1px');
+                else
+                    elem$.css('padding-right', '');
             }
-            return true;
         });
         break;
     }
@@ -523,6 +531,20 @@ ui_utils.scroll_to_after = function($sel, duration) {
     var $parent = $sel.parent();
     var y = $parent.scrollTop() + $sel.position().top +  $sel.outerHeight();
     $parent.scrollTo(null, y, opts);
+};
+
+ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, _) {
+    if(_ === undefined)
+        return;
+    var height = +$scroller.css("height").replace("px","");
+    var scrolltop = $scroller.scrollTop(),
+        elemtop = 0;
+    for(var i = 3; i<arguments.length; ++i)
+        elemtop += arguments[i].position().top;
+    if(elemtop > height)
+        $scroller.scrollTo(null, scrolltop + elemtop - height + top_buffer);
+    else if(elemtop < 0)
+        $scroller.scrollTo(null, scrolltop + elemtop - bottom_buffer);
 };
 
 ui_utils.prevent_backspace = function($doc) {

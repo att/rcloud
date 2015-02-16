@@ -25,6 +25,9 @@ session.server.get.key <- function(realm, token)
 session.server.generate.key <- function(realm, token)
     strsplit(.session.server.request(paste0("/gen_key?token=", URIencode(token), "&realm=", URIencode(realm))), "\n", TRUE)[[1]]
 
+session.server.version <- function()
+    strsplit(.session.server.request("/version"), "\n", TRUE)[[1]]
+
 ## FIXME: better error handling (server down etc.)
 ## simple GET requests at this point
 .session.server.request <- function(request)
