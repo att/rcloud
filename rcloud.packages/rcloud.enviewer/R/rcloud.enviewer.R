@@ -19,7 +19,7 @@ rcloud.enviewer.display.value <- function(val) {
    classOfObject <- if (is.numeric(val)) {
     typeof(val)
   } else {
-    class(val)
+    paste0(class(val),collapse=', ')
   }
     disp <- function(classOfObject,x)
       switch(classOfObject,
