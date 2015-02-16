@@ -33,7 +33,7 @@ rcloud.enviewer.display.value <- function(val) {
            dimensionOfObject <- paste0('[',dim(val)[1],' x ',dim(val)[2],']')
         }
 
-      list(type=paste0(classOfObject,dimensionOfObject), value= paste(head(val,5),collapse=', ') )
+      list(type=classOfObject, value=dimensionOfObject)
     }
     else list(type=classOfObject, value=disp(classOfObject, val))
 }
