@@ -192,6 +192,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["version_info"],
             ["anonymous_session_init"],
             ["anonymous_compute_init"],
+            ["has_compute_separation"],
             ["prefix_uuid"],
             ["get_conf_value"],
             ["get_notebook"],
@@ -255,6 +256,8 @@ RCloud.create = function(rcloud_ocaps) {
             var that = this;
             return rcloud_ocaps.prefix_uuidAsync().then(function(v) {
                 that.deferred_knitr_uuid = v;
+            }).then(rcloud_ocaps.has_compute_separationAsync()).then(function(v) {
+                that.has_compute_separation = v;
             });
         };
 
@@ -5865,12 +5868,6 @@ RCloud.UI.init = function() {
     });
     shell.notebook.controller.save_button(saveb);
 
-    $("#rcloud-logout").click(function() {
-        // let the server-side script handle this so it can
-        // also revoke all tokens
-        window.location.href = '/logout.R';
-    });
-
     RCloud.UI.run_button.init();
 
     //////////////////////////////////////////////////////////////////////////
@@ -6704,17 +6701,24 @@ RCloud.UI.run_button = (function() {
         $('i', run_button_).removeClass().addClass(icon);
         run_button_.attr('title', title);
     }
+    function highlight(whether) {
+        run_button_.parent().find('.button-highlight').animate({opacity: whether ? 1 : 0}, 250);
+    }
 
     function start_queue() {
         if(queue_.length === 0) {
             running_ = false;
-            display('icon-play', 'Run All');
+            if(rcloud.has_compute_separation)
+                display('icon-play', 'Run All');
+            highlight(false);
             return Promise.resolve(undefined);
         }
         else {
             running_ = true;
             var first = queue_.shift();
-            display('icon-stop', 'Stop');
+            if(rcloud.has_compute_separation)
+                display('icon-stop', 'Stop');
+            highlight(true);
             return first().then(function() {
                 cancels_.shift();
                 return start_queue();
@@ -6725,11 +6729,14 @@ RCloud.UI.run_button = (function() {
         init: function() {
             var that = this;
             run_button_.click(function() {
-                if(running_)
-                    that.stop();
+                if(running_) {
+                    if(rcloud.has_compute_separation)
+                        that.stop();
+                }
                 else
                     shell.run_notebook();
             });
+
             RCloud.session.listeners.push({
                 on_reset: function() {
                     that.on_stopped();

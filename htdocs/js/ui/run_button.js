@@ -8,17 +8,24 @@ RCloud.UI.run_button = (function() {
         $('i', run_button_).removeClass().addClass(icon);
         run_button_.attr('title', title);
     }
+    function highlight(whether) {
+        run_button_.parent().find('.button-highlight').animate({opacity: whether ? 1 : 0}, 250);
+    }
 
     function start_queue() {
         if(queue_.length === 0) {
             running_ = false;
-            display('icon-play', 'Run All');
+            if(rcloud.has_compute_separation)
+                display('icon-play', 'Run All');
+            highlight(false);
             return Promise.resolve(undefined);
         }
         else {
             running_ = true;
             var first = queue_.shift();
-            display('icon-stop', 'Stop');
+            if(rcloud.has_compute_separation)
+                display('icon-stop', 'Stop');
+            highlight(true);
             return first().then(function() {
                 cancels_.shift();
                 return start_queue();
@@ -29,11 +36,14 @@ RCloud.UI.run_button = (function() {
         init: function() {
             var that = this;
             run_button_.click(function() {
-                if(running_)
-                    that.stop();
+                if(running_) {
+                    if(rcloud.has_compute_separation)
+                        that.stop();
+                }
                 else
                     shell.run_notebook();
             });
+
             RCloud.session.listeners.push({
                 on_reset: function() {
                     that.on_stopped();
