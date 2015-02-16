@@ -105,7 +105,7 @@ check.token <- function(token, valid.sources="stored", realm="rcloud")
   }
 }
 
-get.user.key <- function(token=.session$token, realm="rcloud", generate=FALSE, required=FALSE) {
+get.user.key <- function(token=.session$token, realm="rcloud", generate=TRUE, required=FALSE) {
     if (!nzConf("session.server")) stop("secure key storage requires SessionKeyServer, see session.server configuration in rcloud.conf")
     key <- session.server.get.key(realm, token)
     if (length(key) && nzchar(key)) return(.Call(hex2raw,key))
