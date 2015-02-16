@@ -86,6 +86,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["version_info"],
             ["anonymous_session_init"],
             ["anonymous_compute_init"],
+            ["has_compute_separation"],
             ["prefix_uuid"],
             ["get_conf_value"],
             ["get_notebook"],
@@ -149,6 +150,8 @@ RCloud.create = function(rcloud_ocaps) {
             var that = this;
             return rcloud_ocaps.prefix_uuidAsync().then(function(v) {
                 that.deferred_knitr_uuid = v;
+            }).then(rcloud_ocaps.has_compute_separationAsync()).then(function(v) {
+                that.has_compute_separation = v;
             });
         };
 

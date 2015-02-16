@@ -104,6 +104,7 @@ unauthenticated.ocaps <- function(mode, compute)
       anonymous_session_init = make.oc(rcloud.anonymous.session.init),
       anonymous_compute_init = compute$unauthenticated_compute_init,
       reset_session = compute$reset_session,
+      has_compute_separation = make.oc(rcloud.has.compute.separation),
       prefix_uuid = compute$prefix_uuid,
       get_conf_value = make.oc(rcloud.get.conf.value),
       get_notebook = make.oc(rcloud.unauthenticated.get.notebook),
