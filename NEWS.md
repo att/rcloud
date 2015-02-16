@@ -13,8 +13,8 @@
 
 * Direct output and input.  Instead of printing a single result for each cell, the
   output is handled asynchronously, so it shows as it is available.  The code can
-  also request lines of input, so e.g. `readline` now works - as do `browser` for
-  debugging!  Ordinary code cells do not use knitr/markdown for output, but send
+  also request lines of input, so e.g. `readline` now works - as do `browser` and
+  'debug' for debugging!  Ordinary code cells do not use knitr/markdown for output, but send
   images, preformatted, and html output separately.
 
 * Ability to save plots in other formats.  Hover the mouse over the plot for the
@@ -24,13 +24,12 @@
 * Search and replace across all cells in a notebook.  Ctrl/Cmd-F opens the
   find bar at the top of the notebook.  Type to search incrementally.
 
-  Ctrl-Alt-F (should be Ctrl-H #1212) / Cmd-Option-F opens the replace bar.
+  Ctrl-H (Windows/Linux) / Cmd-Option-F (OSX) opens the replace bar.
 
-  Next and Last are not yet implemented, but will be for release 1.3.  Ditto
-  for replace some but not all. (#1202)
+  Search in results not currently supported.
 
 * New simplified look.  Cells do not activate the editor until they are clicked on,
-  so they use much less resources and notebooks with a large number of cells
+  so they use much less resources, and notebooks with a large number of cells
   load quickly.
 
 * Automatic indentation for R code (#1110) and Python (#1105)
@@ -38,8 +37,8 @@
 * Many ways to write extensions to add to the RCloud user interface.
   [Documentation](https://github.com/att/rcloud/wiki/RCloud-UI-Extensions).
 
-* It is possible to add cell languages - the Python, RMarkdown, and
-  (bizarrely) R evaluation is performed by language add-ons.
+* It is possible to add cell languages - Python, RMarkdown, and
+  even R evaluation are performed by language add-ons.
   https://github.com/att/rcloud/wiki/RCloud-Language-extensions
 
 * Experimental support for RMarkdown cells.  The old Markdown cells use the
@@ -113,7 +112,8 @@
 
 * Issues with knitr creating duplicate plots fixed (#1046)
 
-* (Mis)feature where a prior notebook is loaded if the current notebook can't be
+* (Mis)feature where a prior notebook is loaded if the current notebook can't be,
+  restricted to problems with loading the notebook.
 
 
 ## RCloud 1.2-patched
