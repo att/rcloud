@@ -33,7 +33,10 @@ rcloud.decrypt(x, key = get.user.key(), cipher = attr(x, "metadata")$cipher)
   For available ciphers see \code{\link{PKI.encrypt}}, but the most
   commonly used are \code{"AES-128"} and \code{"AES-256"}. Note that the
   key must be of sufficient length for the cipher, i.e., AES-128
-  requires at least 16 bytes and AES-256 32 bytes.
+  requires at least 16 bytes and AES-256 32 bytes. If simple passwords
+  are considered as keys then \code{\link{PKI.digest}} can be useful, in
+  particular \code{PKI.digest(text, "SHA256")} produces 256-bit hash
+  that can be used with AES-256.
 
   The object created by \code{rcloud.encrypt} also contains the SHA1
   checksum of the raw vector before encryption as well as the cipher, so
