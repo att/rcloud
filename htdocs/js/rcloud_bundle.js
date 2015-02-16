@@ -5865,12 +5865,6 @@ RCloud.UI.init = function() {
     });
     shell.notebook.controller.save_button(saveb);
 
-    $("#rcloud-logout").click(function() {
-        // let the server-side script handle this so it can
-        // also revoke all tokens
-        window.location.href = '/logout.R';
-    });
-
     RCloud.UI.run_button.init();
 
     //////////////////////////////////////////////////////////////////////////
