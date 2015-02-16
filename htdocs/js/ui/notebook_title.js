@@ -44,7 +44,8 @@ RCloud.UI.notebook_title = (function() {
         set: function (text) {
             $("#notebook-author").text(shell.notebook.model.user());
             $('#author-title-dash').show();
-
+            $('#rename-notebook').show();
+            $('#loading-animation').hide();
             var is_read_only = shell.notebook.model.read_only();
             var active_text = text;
             var ellipt_start = false, ellipt_end = false;
@@ -73,7 +74,8 @@ RCloud.UI.notebook_title = (function() {
             if(fork_of) {
                 var owner = fork_of.owner ? fork_of.owner : fork_of.user;
                 var fork_desc = owner.login+ " / " + fork_of.description;
-                var url = ui_utils.url_maker(shell.is_view_mode()?'view.html':'edit.html')({notebook: fork_of.id});
+                var url = ui_utils.make_url(shell.is_view_mode() ? 'view.html' : 'edit.html',
+                                            {notebook: fork_of.id});
                 $("#forked-from-desc").html("forked from <a href='" + url + "'>" + fork_desc + "</a>");
             }
             else

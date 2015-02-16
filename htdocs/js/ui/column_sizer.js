@@ -40,7 +40,7 @@ RCloud.UI.column_sizer = {
                 }
                 else throw new Error('unexpected shadow drag with classes ' + $(this).attr('class'));
                 // revert to absolute position
-                $(this).css({left: "", top: ""});
+                $(this).css({left: "", right: "", top: ""});
             }
         });
 

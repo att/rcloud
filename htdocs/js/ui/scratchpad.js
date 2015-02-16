@@ -19,7 +19,7 @@ RCloud.UI.scratchpad = {
             inner_div.append(ace_div);
             ace.require("ace/ext/language_tools");
             var widget = ace.edit(ace_div[0]);
-            var RMode = ace.require("ace/mode/r").Mode;
+            var LangMode = ace.require("ace/mode/r").Mode;
             var session = widget.getSession();
             that.session = session;
             that.widget = widget;
@@ -31,7 +31,7 @@ RCloud.UI.scratchpad = {
             widget.setOptions({
                 enableBasicAutocompletion: true
             });
-            session.setMode(new RMode(false, doc, session));
+            session.setMode(new LangMode(false, doc, session));
             session.setUseWrapMode(true);
             widget.resize();
             ui_utils.on_next_tick(function() {
@@ -117,7 +117,7 @@ RCloud.UI.scratchpad = {
                 alert("Asset names cannot start with 'part[0-9]', sorry!");
                 return;
             }
-            var found = shell.notebook.model.has_asset(filename);
+            var found = shell.notebook.model.get_asset(filename);
             if(found)
                 found.controller.select();
             else {
@@ -133,10 +133,8 @@ RCloud.UI.scratchpad = {
                 var ext = (filename.indexOf('.')!=-1?filename.match(/\.(.*)/)[1]:"");
                 shell.notebook.controller
                     .append_asset(comment_text("New file " + filename, ext), filename)
-                    .then(function(controller) {
+                    .spread(function(_, controller) {
                         controller.select();
-                    })
-                    .then(function() {
                         ui_utils.ace_set_pos(RCloud.UI.scratchpad.widget, 2, 1);
                     });
             }
@@ -200,18 +198,9 @@ RCloud.UI.scratchpad = {
         this.widget.getSelection().setSelectionRange(range);
         return changed;
     }, language_updated: function() {
-        // github gist detected languages
-        var modes = {
-            R: "ace/mode/r",
-            Python: "ace/mode/python",
-            Markdown: "ace/mode/rmarkdown",
-            CSS: "ace/mode/css",
-            JavaScript: "ace/mode/javascript",
-            Text: "ace/mode/text"
-        };
         var lang = this.current_model.language();
-        var mode = ace.require(modes[lang] || modes.Text).Mode;
-        this.session.setMode(new mode(false, this.session.doc, this.session));
+        var LangMode = ace.require(RCloud.language.ace_mode(lang)).Mode;
+        this.session.setMode(new LangMode(false, this.session.doc, this.session));
     }, set_readonly: function(readonly) {
         if(!shell.is_view_mode()) {
             if(this.widget)

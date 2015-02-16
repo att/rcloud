@@ -3,7 +3,7 @@
 
 # FIXME what's the relationship between this and rcloud.config in conf.R?
 rcloud.get.conf.value <- function(key) {
-  Allowed <- c('host', 'github.base.url', 'github.api.url', 'github.gist.url','solr.page.size')
+  Allowed <- c('host', 'exec.token.renewal.time', 'github.base.url', 'github.api.url', 'github.gist.url', 'solr.page.size', 'smtp.server', 'email.from', 'rcloud.deployment')
   if(key %in% Allowed)
     getConf(key)
   else
@@ -49,8 +49,18 @@ rcloud.load.notebook <- function(id, version = NULL) {
   res
 }
 
+## same as control, just don't return anything (and don't do anything if there is no separation)
+## FIXME: since this is handled by githubHandler in JS, we have to pretend to have a valid result even
+##        if it is later discarded
+rcloud.load.notebook.compute <- function(...) { if (identical(.session$separate.compute, TRUE)) rcloud.load.notebook(...) else list(ok=TRUE) }
+rcloud.unauthenticated.load.notebook.compute <- function(...) { if (identical(.session$separate.compute, TRUE)) rcloud.unauthenticated.load.notebook(...) }
+
 rcloud.get.version.by.tag <- function(gist_id,tag) {
   v <- rcs.get(rcs.key(username='.notebook', gist_id, 'tag2version', tag))
+}
+
+rcloud.get.tag.by.version <- function(gist_id,version) {
+  t <- rcs.get(rcs.key(username='.notebook', gist_id, 'version2tag', version))
 }
 
 rcloud.tag.notebook.version <- function(gist_id, version, tag_name) {
@@ -77,7 +87,7 @@ rcloud.tag.notebook.version <- function(gist_id, version, tag_name) {
 }
 
 rcloud.install.notebook.stylesheets <- function() {
-  n <- .session$current.notebook$content
+  n <- rcloud.session.notebook()$content
   urls <- sapply(grep('^rcloud-.*\\.css$', names(n$files)), function(v) {
     n$files[[v]]$raw_url
   })
@@ -131,7 +141,7 @@ rcloud.unauthenticated.call.notebook <- function(id, version = NULL, args = NULL
 rcloud.notebook.cells <- function(id, version = NULL) {
   res <- rcloud.get.notebook(id, version)
   if (res$ok) {
-    if (is.null(.session$current.notebook)) ## no top level? set us as the session notebook so that get.asset et al work
+    if (is.null(rcloud.session.notebook())) ## no top level? set us as the session notebook so that get.asset et al work
       .session$current.notebook <- res
 
     ## get all files
@@ -154,7 +164,7 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE
 
   res <- rcloud.get.notebook(id, version)
   if (res$ok) {
-    if (is.null(.session$current.notebook)) ## no top level? set us as the session notebook so that get.asset et al work
+    if (is.null(rcloud.session.notebook())) ## no top level? set us as the session notebook so that get.asset et al work
       .session$current.notebook <- res
 
     args <- as.list(args)
@@ -244,9 +254,9 @@ rcloud.unauthenticated.notebook.by.name <- function(name, user=.session$username
 }
 
 rcloud.upload.to.notebook <- function(file, name) {
-  if (is.null(.session$current.notebook))
+  if (is.null(rcloud.session.notebook()))
     stop("Notebook must be loaded")
-  id <- .session$current.notebook$content$id
+  id <- rcloud.session.notebook.id()
   ulog("RCloud rcloud.upload.to.notebook(id=", id, ", name=", name, ")")
   files <- list()
   files[[name]] <- list(content=rawToChar(file))
@@ -481,13 +491,10 @@ rcloud.setup.dirs <- function() {
              dir.create(fn, FALSE, TRUE, "0770")
 }
 
-rcloud.get.completions <- function(text, pos) {
-  # from rcompgen.completion
-  utils:::.assignLinebuffer(text)
-  utils:::.assignEnd(pos)
-  utils:::.guessTokenFromLine()
-  utils:::.completeToken()
-  utils:::.CompletionEnv[["comps"]]
+rcloud.get.completions <- function(language, text, pos) {
+  if (!is.null(.session$languages[[language]]) && !is.null(.session$languages[[language]]$complete))
+    .session$languages[[language]]$complete(text, pos, .session)
+  else stop("don't know how to auto-complete language ", language);
 }
 
 rcloud.help <- function(topic) {
@@ -496,7 +503,7 @@ rcloud.help <- function(topic) {
     print(result)
     TRUE
   }
-  else FALSE 
+  else FALSE
 }
 
 ## FIXME: won't work - uses a global file!
@@ -522,6 +529,17 @@ star.count.key <- function(notebook)
   rcs.key(".notebook", notebook, "starcount")
 }
 
+star.starrerlist.key <- function(notebook)
+{
+  rcs.key(".notebook", notebook, "starrerlist")
+}
+
+rcloud.notebook.starrer.list <- function(notebook)
+{
+  starrerlist <- gsub(rcs.key(".notebook", notebook, "stars", ''), '',
+    rcs.list(rcs.key(".notebook", notebook, "stars", "*")))
+}
+
 rcloud.notebook.star.count <- function(notebook)
 {
     result <- rcs.get(star.count.key(notebook))
@@ -529,6 +547,7 @@ rcloud.notebook.star.count <- function(notebook)
 }
 
 rcloud.multiple.notebook.star.counts <- function(notebooks) {
+    if (!length(notebooks)) return(list())
     counts <- lapply(rcs.get(star.count.key(notebooks), list=TRUE),
                      function(o) if(is.null(o)) 0L else as.integer(o))
     names(counts) <- notebooks
@@ -542,7 +561,7 @@ rcloud.is.notebook.starred <- function(notebook)
 
 rcloud.star.notebook <- function(notebook)
 {
-  if (!rcloud.is.notebook.starred(notebook)) {
+  if(!rcloud.is.notebook.starred(notebook)) {
     rcs.set(star.key(notebook), TRUE)
     rcs.incr(star.count.key(notebook))
   }
@@ -550,7 +569,7 @@ rcloud.star.notebook <- function(notebook)
 
 rcloud.unstar.notebook <- function(notebook)
 {
-  if (rcloud.is.notebook.starred(notebook)) {
+  if(rcloud.is.notebook.starred(notebook)) {
     rcs.rm(star.key(notebook))
     rcs.decr(star.count.key(notebook))
   }
@@ -648,8 +667,10 @@ rcloud.get.notebook.info <- function(id, single=TRUE) {
   if (length(id) == 1L && single) {
       names(results) <- fields
       results
-  } else
-     lapply(split(results, rep(id, each=length(fields))), function(o) { names(o) = fields; o })
+  } else {
+      if (!length(id)) lapply(fields, function(o) character()) else
+      lapply(split(results, rep(id, each=length(fields))), function(o) { names(o) = fields; o })
+  }
 }
 
 rcloud.get.multiple.notebook.infos <- function(ids)
@@ -692,4 +713,12 @@ rcloud.purl.source <- function(contents)
   unlink(output.file)
   unlink(input.file)
   result
+}
+
+rcloud.get.git.user <- function(id) {
+  res <- get.user(id, ctx = .session$gist.context)
+  if (res$ok)
+    res$content
+  else
+    list()
 }

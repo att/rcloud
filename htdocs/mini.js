@@ -14,6 +14,7 @@ function main() {
 
     rclient = RClient.create({
         debug: false,
+        mode: "client", // "IDE" = edit (separated), "call" = API (one process), "client" = JS (currently one process but may change)
         host: location.href.replace(/^http/,"ws").replace(/#.*$/,""),
         on_connect: function(ocaps) {
             rcloud = RCloud.create(ocaps.rcloud);

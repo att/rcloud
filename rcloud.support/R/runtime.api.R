@@ -52,7 +52,9 @@
 # Returns an asset from the notebook (simply one of the files in the
 # gist) This is useful for getting to files that have been uploaded to
 # the notebook without needing to go through the GitHub URL.
-rcloud.get.notebook.asset <- function(asset.name, notebook = NULL, version = NULL)
+rcloud.get.notebook.asset <- function(...) stop("defunct - please use rcloud.get.asset()")
+
+.defunct.rcloud.get.notebook.asset <- function(asset.name, notebook = NULL, version = NULL)
 {
   if (is.null(notebook)) {
     notebook <- .session$current.notebook

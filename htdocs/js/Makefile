@@ -6,6 +6,7 @@ rcloud_bundle.js: \
 	rclient.js \
 	rcloud.js \
 	ui_utils.js \
+        extension.js \
 	bootstrap_utils.js \
 	notebook/_notebook_begin.js \
 	notebook/_buffer_begin.js \
@@ -18,30 +19,40 @@ rcloud_bundle.js: \
 	notebook/cell_view.js \
 	notebook/cell_model.js \
 	notebook/cell_controller.js \
+        notebook/cell_processors.js \
 	notebook/notebook_view.js \
 	notebook/notebook_model.js \
 	notebook/notebook_controller.js \
 	notebook/util.js \
 	notebook.js \
 	session.js \
+	language.js \
 	upload_utils.js \
 	ui/_begin.js \
+        ui/advanced_menu.js \
+        ui/cell_commands.js \
 	ui/column.js \
 	ui/column_sizer.js \
 	ui/command_prompt.js \
 	ui/comments_frame.js \
 	ui/configure_readonly.js \
 	ui/fatal_dialog.js \
+        ui/find_replace.js \
 	ui/help_frame.js \
+        ui/image_manager.js \
+        ui/import_export.js \
 	ui/init.js \
 	ui/left_panel.js \
 	ui/load_options.js \
 	ui/middle_column.js \
+        ui/navbar.js \
+        ui/notebook_commands.js \
 	ui/notebook_title.js \
 	ui/notebooks_frame.js \
 	ui/panel_loader.js \
 	ui/progress.js \
 	ui/right_panel.js \
+        ui/run_button.js \
 	ui/scratchpad.js \
 	ui/search.js \
 	ui/session_pane.js \

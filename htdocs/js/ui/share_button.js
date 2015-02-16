@@ -1,47 +1,78 @@
 RCloud.UI.share_button = (function() {
-    var type_;
+    var view_types_ = {};
+    var default_item_ = null;
+    function set_page(title) {
+        title = (title && view_types_[title]) ? title : default_item_;
+        if(!title)
+            return Promise.reject(new Error('share button view types set up wrong'));
+        var page = view_types_[title].page;
+        $("#view-type li a").css("font-weight", function() {
+            return $(this).text() === title ? "bold" : "normal";
+        });
+        var opts = {notebook: shell.gistname(),
+                    do_path: view_types_[title].do_path,
+                    version: shell.version()};
+        if(!opts.version) {
+            $("#share-link").attr("href", ui_utils.make_url(page, opts));
+            return Promise.resolve(undefined);
+        }
+        else return rcloud.get_tag_by_version(shell.gistname(), opts.version)
+            .then(function(t) {
+                if(t)
+                    opts.tag = t;
+                $("#share-link").attr("href", ui_utils.make_url(page, opts));
+            });
+    }
 
     return {
         init: function() {
-            var that = this;
-            $('.view-menu li a').click(function() {
-                type_ = $(this).text();
-                rcloud.set_notebook_property(shell.gistname(), "view-type", type_);
-                that.type(type_);
+            this.add({
+                'view.html': {
+                    sort: 1000,
+                    page: 'view.html'
+                },
+                'notebook.R': {
+                    sort: 2000,
+                    page: 'notebook.R',
+                    do_path: true
+                },
+                'mini.html': {
+                    sort: 3000,
+                    page: 'mini.html'
+                },
+                'shiny.html': {
+                    sort: 4000,
+                    page: 'shiny.html'
+                }
             });
+            return this;
         },
-        type: function(val) {
-            if(!arguments.length) return type_;
-            type_ = val || "view.html";
-            $("#view-type li a").css("font-weight", function() {
-                return $(this).text() === type_ ? "bold" : "normal";
-            });
-            this.update_link();
+        add: function(view_types) {
+            for(var vt in view_types) {
+                view_types_[vt] = _.extend({title: vt}, view_types[vt]);
+            }
+            return this;
+        },
+        remove: function(view_type) {
+            delete view_types_[view_type];
+        },
+        load: function() {
+            var that = this;
+            var items = _.values(view_types_).sort(function(a, b) { return a.sort - b.sort; });
+            default_item_ = items.length ? items[0].title : null;
+            $('#view-type').append($(items.map(function(item) {
+                var a = $.el.a({href: '#'}, item.title);
+                $(a).click(function() {
+                    rcloud.set_notebook_property(shell.gistname(), "view-type", item.title);
+                    set_page(item.title);
+                });
+                return $.el.li(a);
+            })));
             return this;
         },
         update_link: function() {
-            var link = window.location.protocol + '//' + window.location.host + '/';
-            var suffix, query_started = true;
-            switch(type_) {
-            case 'notebook.R':
-                suffix = type_ + '/' + shell.gistname();
-                query_started = false;
-                break;
-            case 'mini.html':
-                suffix = type_ + '?notebook=' + shell.gistname();
-                break;
-            case 'shiny.html':
-                suffix = type_ + '?notebook=' + shell.gistname();
-                break;
-            case 'view.html':
-            default:
-                suffix = 'view.html?notebook=' + shell.gistname();
-            }
-            link += suffix;
-            var v = shell.version();
-            if(v)
-                link += (query_started?'&':'?') + 'version=' + v;
-            $("#share-link").attr("href", link);
+            return rcloud.get_notebook_property(shell.gistname(), "view-type")
+                .then(set_page);
         }
     };
 })();

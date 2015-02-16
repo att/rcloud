@@ -27,14 +27,17 @@ RCloud.UI.settings_frame = (function() {
                            $.el.div({id: "settings-scroller", style: "width: 100%; height: 100%; overflow-x: auto"},
                                     $.el.div({id:"settings-body", 'class': 'widget-vsize'})));
         },
-        add: function(S) {
-            _.extend(options_, S);
+        panel_sizer: function(el) {
+            // fudge it so that it doesn't scroll 4 nothing
+            var sz = RCloud.UI.collapsible_column.default_sizer(el);
+            return {height: sz.height+5, padding: sz.padding};
         },
         checkbox: function(opts) {
             opts = _.extend({
                 sort: 10000,
                 default_value: false,
                 label: "",
+                id:"",
                 set: function(val) {}
             }, opts);
             return {
@@ -42,13 +45,16 @@ RCloud.UI.settings_frame = (function() {
                 default_value: opts.default_value,
                 create_control: function(on_change) {
                     var check = $.el.input({type: 'checkbox'});
-                    var label = $($.el.label(check, opts.label));
+                    $(check).prop('id', opts.id);
+                    var span = $.el.span(opts.label);
+                    var label = $.el.label(check, span);
+                    var checkboxdiv = $($.el.div({class: 'checkbox'}, label));
                     $(check).change(function() {
                         var val = $(this).prop('checked');
                         on_change(val);
                         opts.set(val);
                     });
-                    return label;
+                    return checkboxdiv;
                 },
                 set: function(val, control) {
                     val = !!val;
@@ -61,26 +67,45 @@ RCloud.UI.settings_frame = (function() {
             var that = this;
             this.add({
                 'show-command-prompt': that.checkbox({
-                    sort: 100,
+                    sort: 1000,
                     default_value: true,
                     label: "Show Command Prompt",
                     set: function(val) {
                         RCloud.UI.command_prompt.show_prompt(val);
                     }
+                }),
+                'subscribe-to-comments': that.checkbox({
+                    sort: 3000,
+                    default_value: false,
+                    label: "Subscribe To Comments"
+                }),
+                'show-terse-dates': that.checkbox({
+                    sort: 2000,
+                    default_value: true,
+                    label: "Show Terse Version Dates",
+                    set: function(val) {
+                        editor.set_terse_dates(val);
+                    }
                 })
             });
+        },
+        add: function(S) {
+            _.extend(options_, S);
+        },
+        remove: function(option_name) {
+            delete options_[option_name];
         },
         load: function() {
             var that = this;
             var sort_controls = [];
-            for(var name in options_) {
+            _.keys(options_).forEach(function(name) {
                 var option = options_[name];
                 controls_[name] = option.create_control(function(value) {
                     if(!now_setting_[name])
                         rcloud.config.set_user_option(name, value);
                 });
                 sort_controls.push({sort: option.sort, control: controls_[name]});
-            }
+            });
             sort_controls = sort_controls.sort(function(a,b) { return a.sort - b.sort; });
             var body = $('#settings-body');
             for(var i=0; i<sort_controls.length; ++i)

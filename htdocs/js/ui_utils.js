@@ -1,20 +1,28 @@
 var ui_utils = {};
 
-ui_utils.url_maker = function(page) {
-    return function(opts) {
-        opts = opts || {};
-        var url = window.location.protocol + '//' + window.location.host + '/' + page;
+ui_utils.make_url = function(page, opts) {
+    opts = opts || {};
+    var url = window.location.protocol + '//' + window.location.host + '/' + page;
+    if(opts.do_path) {
+        if(opts.notebook) {
+            url += '/' + opts.notebook;
+            // tags currently not supported for notebook.R & the like
+            if(opts.version)
+                url += '/' + opts.version;
+        }
+    }
+    else {
         if(opts.notebook) {
             url += '?notebook=' + opts.notebook;
-            if(opts.version && !opts.tag)
-                url = url + '&version='+opts.version;
-            if(opts.tag && opts.version)
-                url = url + '&tag='+opts.tag;
+            if(opts.tag)
+                url += '&tag=' + opts.tag;
+            else if(opts.version)
+                url += '&version=' + opts.version;
         }
         else if(opts.new_notebook)
             url += '?new_notebook=true';
-        return url;
-    };
+    }
+    return url;
 };
 
 ui_utils.disconnection_error = function(msg, label) {
@@ -106,7 +114,7 @@ ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
     var lineHeight = widget.renderer.lineHeight;
     var rows = Math.max(min_rows, Math.min(max_rows, widget.getSession().getScreenLength()));
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
-    return Math.max(75, newHeight);
+    return newHeight;
 };
 
 ui_utils.ace_set_pos = function(widget, row, column) {
@@ -120,12 +128,26 @@ ui_utils.ace_set_pos = function(widget, row, column) {
 ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
     var Autocomplete = ace.require("ace/autocomplete").Autocomplete;
     var session = widget.getSession();
+    var tab_handler = widget.commands.commandKeyBinding[0].tab;
 
     widget.commands.addCommands([
         {
             name: 'another autocomplete key',
             bindKey: 'Ctrl-.',
             exec: Autocomplete.startCommand.exec
+        },
+        {
+            name: 'the autocomplete key people want',
+            bindKey: 'Tab',
+            exec: function(widget, args, request) {
+                //determine if there is anything but whitespace on line
+                var range = widget.getSelection().getRange();
+                var line = widget.getSession().getLine(range.start.row);
+                var before = line.substring(0, range.start.column);
+                if(before.match(/\S/))
+                    Autocomplete.startCommand.exec(widget, args, request);
+                else tab_handler.exec(widget, args, request);
+            }
         },
         {
             name: 'disable gotoline',
@@ -153,7 +175,12 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                     widget.navigateDown(1);
                     widget.navigateLineEnd();
                 }
-                shell.new_cell(code, get_language(), true);
+                RCloud.UI.command_prompt.history().add_entry(code);
+                shell.new_cell(code, get_language())
+                    .spread(function(_, controller) {
+                        controller.enqueue_execution_snapshot();
+                        shell.scroll_to_end();
+                    });
             }
         }
     ]);
@@ -172,6 +199,30 @@ ui_utils.character_offset_of_pos = function(widget, pos) {
         ret += text[i].length + nlLength;
     ret += pos.column;
     return ret;
+};
+
+ui_utils.position_of_character_offset = function(widget, offset) {
+    // based on the above; the wontfix ace issue is
+    // https://github.com/ajaxorg/ace/issues/226
+    var session = widget.getSession(), doc = session.getDocument();
+    var nlLength = doc.getNewLineCharacter().length;
+    var text = doc.getAllLines();
+    var i;
+    for(i=0; i<text.length; i++) {
+        if(offset <= text[i].length)
+            break;
+        offset -= text[i].length + nlLength;
+    }
+    if(i===text.length)
+        throw new Error("character offset off end of editor");
+    return {row: i, column: offset};
+};
+
+ui_utils.ace_range_of_character_range = function(widget, cbegin, cend) {
+    var Range = ace.require('ace/range').Range;
+    var begin = ui_utils.position_of_character_offset(widget, cbegin),
+        end = ui_utils.position_of_character_offset(widget, cend);
+    return new Range(begin.row, begin.column, end.row, end.column);
 };
 
 // bind an ace editor to a listener and return a function to change the
@@ -239,16 +290,18 @@ ui_utils.checkbox_menu_item = function(item, on_check, on_uncheck) {
     var base_enable = ret.enable;
     ret.enable = function(val) {
         // bootstrap menu items go in in an <li /> that takes the disabled class
-        $("#publish-notebook").parent().toggleClass('disabled', !val);
+        item.parent().toggleClass('disabled', !val);
         base_enable(val);
     };
     return ret;
 };
 
 // this is a hack, but it'll help giving people the right impression.
-// I'm happy to replace it witht the Right Way to do it when we learn
+// I'm happy to replace it with the Right Way to do it when we learn
 // how to do it.
-ui_utils.make_prompt_chevron_gutter = function(widget)
+// still a hack, generalizing it a little bit.
+
+ui_utils.customize_ace_gutter = function(widget, line_text_function)
 {
     var dom = ace.require("ace/lib/dom");
     widget.renderer.$gutterLayer.update = function(config) {
@@ -263,11 +316,13 @@ ui_utils.make_prompt_chevron_gutter = function(widget)
         var decorations = this.session.$decorations;
         var firstLineNumber = this.session.$firstLineNumber;
         var lastLineNumber = 0;
-        html.push(
-            "<div class='ace_gutter-cell ",
-            "' style='height:", this.session.getRowLength(0) * config.lineHeight, "px;'>",
-            "&gt;", "</div>"
-        );
+        for(; i <= lastRow; ++i)
+            html.push(
+                "<div class='ace_gutter-cell ",
+                "' style='height:", this.session.getRowLength(0) * config.lineHeight, "px;'>",
+                line_text_function(i),
+                "</div>"
+            );
 
         this.element = dom.setInnerHtml(this.element, html.join(""));
         this.element.style.height = config.minHeight + "px";
@@ -388,63 +443,81 @@ ui_utils.editable = function(elem$, command) {
         break;
     case 'melt':
         elem$.attr('contenteditable', 'true');
-        elem$.on('focus.editable', function() {
-            if(!options().__active) {
-                options().__active = true;
-                set_content_type(command.allow_multiline,encode(options().active_text));
-                window.setTimeout(function() {
-                    selectRange(options().select(elem$[0]));
-                    elem$.off('blur.editable');
-                    elem$.on('blur.editable', function() {
-                        set_content_type(command.allow_multiline,encode(options().inactive_text));
-                        options().__active = false;
-                    }); // click-off cancels
-                }, 10);
-            }
-        });
-        elem$.on('click.editable', function(e) {
-            e.stopPropagation();
-            // allow default action but don't bubble (causing eroneous reselection in notebook tree)
-        });
-        elem$.on('keydown.editable', function(e) {
-            if(e.keyCode === 13) {
-                var txt = decode(elem$.text());
-                function execute_if_valid_else_ignore(f) {
-                    if(options().validate(txt)) {
-                        options().__active = false;
-                        elem$.off('blur.editable'); // don't cancel!
-                        elem$.blur();
-                        f(txt);
-                        return true;
-                    } else {
-                        return false; // don't let CR through!
+        elem$.on({
+            'focus.editable': function() {
+                if(!options().__active) {
+                    options().__active = true;
+                    set_content_type(command.allow_multiline,encode(options().active_text));
+                    window.setTimeout(function() {
+                        selectRange(options().select(elem$[0]));
+                        elem$.off('blur.editable');
+                        elem$.on('blur.editable', function() {
+                            set_content_type(command.allow_multiline,encode(options().inactive_text));
+                            options().__active = false;
+                        }); // click-off cancels
+                    }, 10);
+                }
+            },
+            'click.editable': function(e) {
+                e.stopPropagation();
+                // allow default action but don't bubble (causing eroneous reselection in notebook tree)
+            },
+            'keydown.editable': function(e) {
+                if(e.keyCode === 13) {
+                    var txt = decode(elem$.text());
+                    function execute_if_valid_else_ignore(f) {
+                        if(options().validate(txt)) {
+                            options().__active = false;
+                            elem$.off('blur.editable'); // don't cancel!
+                            elem$.blur();
+                            f(txt);
+                            return true;
+                        } else {
+                            return false; // don't let CR through!
+                        }
                     }
+                    if (options().ctrl_cmd && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        return execute_if_valid_else_ignore(options().ctrl_cmd);
+                    }
+                    else if(!command.allow_multiline || (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        return execute_if_valid_else_ignore(options().change);
+                    }
+                } else if(e.keyCode === 27) {
+                    elem$.blur(); // and cancel
                 }
-                if (options().ctrl_cmd && (e.ctrlKey || e.metaKey)) {
-                    e.preventDefault();
-                    return execute_if_valid_else_ignore(options().ctrl_cmd);
-                }
-                else if(!command.allow_multiline || (e.ctrlKey || e.metaKey)) {
-                    e.preventDefault();
-                    return execute_if_valid_else_ignore(options().change);
-                }
-            } else if(e.keyCode === 27) {
-                elem$.blur(); // and cancel
+                return true;
+            },
+            'input.editable': function(e) {
+                if(elem$.text().length===0)
+                    elem$.css('padding-right', '1px');
+                else
+                    elem$.css('padding-right', '');
             }
-            return true;
         });
         break;
     }
+    return elem$;
 };
+
+// hack to fake a hover over a jqTree node (or the next one if it's deleted)
+// because jqTree rebuilds DOM elements and events get lost
+ui_utils.fake_hover = function fake_hover(node) {
+    var parent = node.parent;
+    var index = $('.notebook-commands.appear', node.element).css('display') !== 'none' ?
+            parent.children.indexOf(node) : undefined;
+    ui_utils.on_next_tick(function() {
+        if(index>=0 && index < parent.children.length) {
+            var next = parent.children[index];
+                $(next.element).mouseover();
+        }
+    });
+};
+
 
 ui_utils.on_next_tick = function(f) {
     window.setTimeout(f, 0);
-};
-
-ui_utils.add_ace_grab_affordance = function(element) {
-    var sel = $(element).children().filter(".ace_gutter");
-    var div = $("<div class='grab-affordance' style='position:absolute;top:0px'><object data='/img/grab_affordance.svg' type='image/svg+xml'></object></div>");
-    sel.append(div);
 };
 
 ui_utils.scroll_to_after = function($sel, duration) {
@@ -458,6 +531,20 @@ ui_utils.scroll_to_after = function($sel, duration) {
     var $parent = $sel.parent();
     var y = $parent.scrollTop() + $sel.position().top +  $sel.outerHeight();
     $parent.scrollTo(null, y, opts);
+};
+
+ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, _) {
+    if(_ === undefined)
+        return;
+    var height = +$scroller.css("height").replace("px","");
+    var scrolltop = $scroller.scrollTop(),
+        elemtop = 0;
+    for(var i = 3; i<arguments.length; ++i)
+        elemtop += arguments[i].position().top;
+    if(elemtop > height)
+        $scroller.scrollTo(null, scrolltop + elemtop - height + top_buffer);
+    else if(elemtop < 0)
+        $scroller.scrollTo(null, scrolltop + elemtop - bottom_buffer);
 };
 
 ui_utils.prevent_backspace = function($doc) {
@@ -483,3 +570,15 @@ ui_utils.prevent_backspace = function($doc) {
             event.preventDefault();
     });
 };
+
+
+ui_utils.is_a_mac = function() {
+    // http://stackoverflow.com/questions/7044944/jquery-javascript-to-detect-os-without-a-plugin
+    var PLAT = navigator.platform.toUpperCase();
+    return function() {
+        var isMac = PLAT.indexOf('MAC')!==-1;
+        // var isWindows = PLAT.indexOf('WIN')!==-1;
+        // var isLinux = PLAT.indexOf('LINUX')!==-1;
+        return isMac;
+    };
+}();

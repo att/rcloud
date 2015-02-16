@@ -2386,7 +2386,7 @@ var Editor = function(renderer, session) {
         }
 
         if (session.getDocument().isNewLine(text)) {
-            var lineIndent = mode.getNextLineIndent(lineState, line.slice(0, cursor.column), session.getTabString());
+            var lineIndent = mode.getNextLineIndent(lineState, line.slice(0, cursor.column), session.getTabString(), this.session.getTabSize(), cursor.row);
 
             session.insert({row: cursor.row+1, column: 0}, lineIndent);
         }
@@ -17524,7 +17524,8 @@ exports.LineWidgets = LineWidgets;
                         ace[key] = a[key];
                 });
             })();
-        /* ***** BEGIN LICENSE BLOCK *****
+        
+/* ***** BEGIN LICENSE BLOCK *****
  * Distributed under the BSD license:
  *
  * Copyright (c) 2010, Ajax.org B.V.
@@ -17685,346 +17686,123 @@ dom.importCssString(exports.cssText, exports.cssClass);
 /*
  * r.js
  *
- * Copyright (C) 2009-11 by RStudio, Inc.
+ * Copyright (C) 2009-12 by RStudio, Inc.
  *
  * The Initial Developer of the Original Code is
  * Ajax.org B.V.
  * Portions created by the Initial Developer are Copyright (C) 2010
  * the Initial Developer. All Rights Reserved.
  *
- * Distributed under the BSD license:
- *
- * Copyright (c) 2010, Ajax.org B.V.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Ajax.org B.V. nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL AJAX.ORG B.V. BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * Unless you have received this program directly from RStudio pursuant
+ * to the terms of a commercial license agreement with RStudio, then
+ * this program is licensed to you under the terms of version 3 of the
+ * GNU Affero General Public License. This program is distributed WITHOUT
+ * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+ * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
  *
  */
-define('ace/mode/r', ['require', 'exports', 'module' , 'ace/range', 'ace/lib/oop', 'ace/mode/text', 'ace/tokenizer', 'ace/mode/text_highlight_rules', 'ace/mode/r_highlight_rules', 'ace/mode/matching_brace_outdent', 'ace/unicode'], function(require, exports, module) {
-   
+define("ace/mode/r", function(require, exports, module)
+{
+   var Editor = require("ace/editor").Editor;
+   var EditSession = require("ace/edit_session").EditSession;
+   var Range = require("ace/range").Range;
+   var oop = require("ace/lib/oop");
+   var TextMode = require("ace/mode/text").Mode;
+   var Tokenizer = require("ace/tokenizer").Tokenizer;
+   var TextHighlightRules = require("ace/mode/text_highlight_rules")
+         .TextHighlightRules;
+   var RHighlightRules = require("ace/mode/r_highlight_rules").RHighlightRules;
+   var RCodeModel = require("ace/mode/r_code_model").RCodeModel;
+   var FoldMode = require("./folding/cstyle").FoldMode;
+   var RMatchingBraceOutdent = require("ace/mode/r_matching_brace_outdent").RMatchingBraceOutdent;
+   var AutoBraceInsert = require("ace/mode/auto_brace_insert").AutoBraceInsert;
+   var unicode = require("ace/unicode");
 
-   var Range = require("../range").Range;
-   var oop = require("../lib/oop");
-   var TextMode = require("./text").Mode;
-   var Tokenizer = require("../tokenizer").Tokenizer;
-   var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
-   var RHighlightRules = require("./r_highlight_rules").RHighlightRules;
-   var MatchingBraceOutdent = require("./matching_brace_outdent").MatchingBraceOutdent;
-   var unicode = require("../unicode");
-
-   var Mode = function()
+   var Mode = function(suppressHighlighting, doc, session)
    {
-      this.HighlightRules = RHighlightRules;
-      this.$outdent = new MatchingBraceOutdent();
       this.getCompletions = function(state, session, pos, prefix, callback) {
-          rcloud.get_completions(session.getValue(),
+          rcloud.get_completions('R', session.getValue(),
                                  session.getDocument().positionToIndex(pos))
               .then(function(ret) {
                   callback(null, ret);
               });
       };
+      this.HighlightRules = RHighlightRules;
+      if (suppressHighlighting)
+         this.$tokenizer = new Tokenizer(new TextHighlightRules().getRules());
+      else
+         this.$tokenizer = new Tokenizer(new RHighlightRules().getRules());
+
+      this.$highlightRules = new this.HighlightRules();
+      this.codeModel = new RCodeModel(doc, this.$tokenizer, null);
+      this.foldingRules = new FoldMode();
    };
    oop.inherits(Mode, TextMode);
 
    (function()
    {
-      this.lineCommentStart = "#";
-       this.$id = "ace/mode/r";
-   }).call(Mode.prototype);
-   exports.Mode = Mode;
-});
-define('ace/mode/r_highlight_rules', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/lib/lang', 'ace/mode/text_highlight_rules', 'ace/mode/tex_highlight_rules'], function(require, exports, module) {
+      oop.implement(this, RMatchingBraceOutdent);
 
-   var oop = require("../lib/oop");
-   var lang = require("../lib/lang");
-   var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
-   var TexHighlightRules = require("./tex_highlight_rules").TexHighlightRules;
+      this.tokenRe = new RegExp("^["
+          + unicode.packages.L
+          + unicode.packages.Mn + unicode.packages.Mc
+          + unicode.packages.Nd
+          + unicode.packages.Pc + "._]+", "g"
+      );
 
-   var RHighlightRules = function()
-   {
+      this.nonTokenRe = new RegExp("^(?:[^"
+          + unicode.packages.L
+          + unicode.packages.Mn + unicode.packages.Mc
+          + unicode.packages.Nd
+          + unicode.packages.Pc + "._]|\s])+", "g"
+      );
 
-      var keywords = lang.arrayToMap(
-            ("function|if|in|break|next|repeat|else|for|return|switch|while|try|tryCatch|stop|warning|require|library|attach|detach|source|setMethod|setGeneric|setGroupGeneric|setClass")
-                  .split("|")
-            );
+      this.$complements = {
+               "(": ")",
+               "[": "]",
+               '"': '"',
+               "'": "'",
+               "{": "}"
+            };
+      this.$reOpen = /^[(["'{]$/;
+      this.$reClose = /^[)\]"'}]$/;
 
-      var buildinConstants = lang.arrayToMap(
-            ("NULL|NA|TRUE|FALSE|T|F|Inf|NaN|NA_integer_|NA_real_|NA_character_|" +
-             "NA_complex_").split("|")
-            );
-
-      this.$rules = {
-         "start" : [
-            {
-               token : "comment.sectionhead",
-               regex : "#+(?!').*(?:----|====|####)\\s*$"
-            },
-            {
-               token : "comment",
-               regex : "#+'",
-               next : "rd-start"
-            },
-            {
-               token : "comment",
-               regex : "#.*$"
-            },
-            {
-               token : "string", // multi line string start
-               regex : '["]',
-               next : "qqstring"
-            },
-            {
-               token : "string", // multi line string start
-               regex : "[']",
-               next : "qstring"
-            },
-            {
-               token : "constant.numeric", // hex
-               regex : "0[xX][0-9a-fA-F]+[Li]?\\b"
-            },
-            {
-               token : "constant.numeric", // explicit integer
-               regex : "\\d+L\\b"
-            },
-            {
-               token : "constant.numeric", // number
-               regex : "\\d+(?:\\.\\d*)?(?:[eE][+\\-]?\\d*)?i?\\b"
-            },
-            {
-               token : "constant.numeric", // number with leading decimal
-               regex : "\\.\\d+(?:[eE][+\\-]?\\d*)?i?\\b"
-            },
-            {
-               token : "constant.language.boolean",
-               regex : "(?:TRUE|FALSE|T|F)\\b"
-            },
-            {
-               token : "identifier",
-               regex : "`.*?`"
-            },
-            {
-               onMatch : function(value) {
-                  if (keywords[value])
-                     return "keyword";
-                  else if (buildinConstants[value])
-                     return "constant.language";
-                  else if (value == '...' || value.match(/^\.\.\d+$/))
-                     return "variable.language";
-                  else
-                     return "identifier";
-               },
-               regex : "[a-zA-Z.][a-zA-Z0-9._]*\\b"
-            },
-            {
-               token : "keyword.operator",
-               regex : "%%|>=|<=|==|!=|\\->|<\\-|\\|\\||&&|=|\\+|\\-|\\*|/|\\^|>|<|!|&|\\||~|\\$|:"
-            },
-            {
-               token : "keyword.operator", // infix operators
-               regex : "%.*?%"
-            },
-            {
-               token : "paren.keyword.operator",
-               regex : "[[({]"
-            },
-            {
-               token : "paren.keyword.operator",
-               regex : "[\\])}]"
-            },
-            {
-               token : "text",
-               regex : "\\s+"
-            }
-         ],
-         "qqstring" : [
-            {
-               token : "string",
-               regex : '(?:(?:\\\\.)|(?:[^"\\\\]))*?"',
-               next : "start"
-            },
-            {
-               token : "string",
-               regex : '.+'
-            }
-         ],
-         "qstring" : [
-            {
-               token : "string",
-               regex : "(?:(?:\\\\.)|(?:[^'\\\\]))*?'",
-               next : "start"
-            },
-            {
-               token : "string",
-               regex : '.+'
-            }
-         ]
+      this.getNextLineIndent = function(state, line, tab, tabSize, row)
+      {
+         return this.codeModel.getNextLineIndent(row, line, state, tab, tabSize);
       };
 
-      var rdRules = new TexHighlightRules("comment").getRules();
-      for (var i = 0; i < rdRules["start"].length; i++) {
-         rdRules["start"][i].token += ".virtual-comment";
-      }
+      this.allowAutoInsert = this.smartAllowAutoInsert;
 
-      this.addRules(rdRules, "rd-");
-      this.$rules["rd-start"].unshift({
-          token: "text",
-          regex: "^",
-          next: "start"
-      });
-      this.$rules["rd-start"].unshift({
-         token : "keyword",
-         regex : "@(?!@)[^ ]*"
-      });
-      this.$rules["rd-start"].unshift({
-         token : "comment",
-         regex : "@@"
-      });
-      this.$rules["rd-start"].push({
-         token : "comment",
-         regex : "[^%\\\\[({\\])}]+"
-      });
-   };
+      this.getIndentForOpenBrace = function(openBracePos)
+      {
+         return this.codeModel.getIndentForOpenBrace(openBracePos);
+      };
 
-   oop.inherits(RHighlightRules, TextHighlightRules);
+      this.$getIndent = function(line) {
+         var match = line.match(/^(\s+)/);
+         if (match) {
+            return match[1];
+         }
 
-   exports.RHighlightRules = RHighlightRules;
-});
-define('ace/mode/tex_highlight_rules', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/lib/lang', 'ace/mode/text_highlight_rules'], function(require, exports, module) {
+         return "";
+      };
 
+      this.transformAction = function(state, action, editor, session, text) {
+         if (action === 'insertion' && text === "\n") {
 
-var oop = require("../lib/oop");
-var lang = require("../lib/lang");
-var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
-
-var TexHighlightRules = function(textClass) {
-
-    if (!textClass)
-        textClass = "text";
-
-    this.$rules = {
-        "start" : [
-	        {
-	            token : "comment",
-	            regex : "%.*$"
-	        }, {
-	            token : textClass, // non-command
-	            regex : "\\\\[$&%#\\{\\}]"
-	        }, {
-	            token : "keyword", // command
-	            regex : "\\\\(?:documentclass|usepackage|newcounter|setcounter|addtocounter|value|arabic|stepcounter|newenvironment|renewenvironment|ref|vref|eqref|pageref|label|cite[a-zA-Z]*|tag|begin|end|bibitem)\\b",
-               next : "nospell"
-	        }, {
-	            token : "keyword", // command
-	            regex : "\\\\(?:[a-zA-z0-9]+|[^a-zA-z0-9])"
-	        }, {
-               token : "paren.keyword.operator",
-	            regex : "[[({]"
-	        }, {
-               token : "paren.keyword.operator",
-	            regex : "[\\])}]"
-	        }, {
-	            token : textClass,
-	            regex : "\\s+"
-	        }
-        ],
-        "nospell" : [
-           {
-               token : "comment",
-               regex : "%.*$",
-               next : "start"
-           }, {
-               token : "nospell." + textClass, // non-command
-               regex : "\\\\[$&%#\\{\\}]"
-           }, {
-               token : "keyword", // command
-               regex : "\\\\(?:documentclass|usepackage|newcounter|setcounter|addtocounter|value|arabic|stepcounter|newenvironment|renewenvironment|ref|vref|eqref|pageref|label|cite[a-zA-Z]*|tag|begin|end|bibitem)\\b"
-           }, {
-               token : "keyword", // command
-               regex : "\\\\(?:[a-zA-z0-9]+|[^a-zA-z0-9])",
-               next : "start"
-           }, {
-               token : "paren.keyword.operator",
-               regex : "[[({]"
-           }, {
-               token : "paren.keyword.operator",
-               regex : "[\\])]"
-           }, {
-               token : "paren.keyword.operator",
-               regex : "}",
-               next : "start"
-           }, {
-               token : "nospell." + textClass,
-               regex : "\\s+"
-           }, {
-               token : "nospell." + textClass,
-               regex : "\\w+"
-           }
-        ]
-    };
-};
-
-oop.inherits(TexHighlightRules, TextHighlightRules);
-
-exports.TexHighlightRules = TexHighlightRules;
-});
-
-define('ace/mode/matching_brace_outdent', ['require', 'exports', 'module' , 'ace/range'], function(require, exports, module) {
-
-
-var Range = require("../range").Range;
-
-var MatchingBraceOutdent = function() {};
-
-(function() {
-
-    this.checkOutdent = function(line, input) {
-        if (! /^\s+$/.test(line))
-            return false;
-
-        return /^\s*\}/.test(input);
-    };
-
-    this.autoOutdent = function(doc, row) {
-        var line = doc.getLine(row);
-        var match = line.match(/^(\s*\})/);
-
-        if (!match) return 0;
-
-        var column = match[1].length;
-        var openBracePos = doc.findMatchingBracket({row: row, column: column});
-
-        if (!openBracePos || openBracePos.row == row) return 0;
-
-        var indent = this.$getIndent(doc.getLine(openBracePos.row));
-        doc.replace(new Range(row, 0, row, column-1), indent);
-    };
-
-    this.$getIndent = function(line) {
-        return line.match(/^\s*/)[0];
-    };
-
-}).call(MatchingBraceOutdent.prototype);
-
-exports.MatchingBraceOutdent = MatchingBraceOutdent;
+            // If newline in a doxygen comment, continue the comment
+            var pos = editor.getSelectionRange().start;
+            var match = /^((\s*#+')\s*)/.exec(session.doc.getLine(pos.row));
+            if (match && editor.getSelectionRange().start.column >= match[2].length) {
+               return {text: "\n" + match[1]};
+            }
+         }
+         return false;
+      };
+   }).call(Mode.prototype);
+   exports.Mode = Mode;
 });
 /*
  * markdown_highlight_rules.js
@@ -18131,11 +17909,482 @@ oop.inherits(Mode, MarkdownMode);
 exports.Mode = Mode;
 });
 /*
+ * auto_brace_insert.js
+ *
+ * Copyright (C) 2009-12 by RStudio, Inc.
+ *
+ * The Initial Developer of the Original Code is
+ * Ajax.org B.V.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Unless you have received this program directly from RStudio pursuant
+ * to the terms of a commercial license agreement with RStudio, then
+ * this program is licensed to you under the terms of version 3 of the
+ * GNU Affero General Public License. This program is distributed WITHOUT
+ * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+ * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+ *
+ */
+define("ace/mode/auto_brace_insert", function(require, exports, module)
+{
+   var Range = require("ace/range").Range;
+   var TextMode = require("ace/mode/text").Mode;
+
+   (function()
+   {
+      this.$complements = {
+         "(": ")",
+         "[": "]",
+         '"': '"',
+         "{": "}"
+      };
+      this.$reOpen = /^[(["{]$/;
+      this.$reClose = /^[)\]"}]$/;
+
+      // reStop is the set of characters before which we allow ourselves to
+      // automatically insert a closing paren. If any other character
+      // immediately follows the cursor we will NOT do the insert.
+      this.$reStop = /^[;,\s)\]}]$/;
+
+      this.wrapInsert = function(session, __insert, position, text)
+      {
+         if (!this.insertMatching)
+            return __insert.call(session, position, text);
+
+         var cursor = session.selection.getCursor();
+         var typing = session.selection.isEmpty() &&
+                      position.row == cursor.row &&
+                      position.column == cursor.column;
+
+         if (typing) {
+            var postRng = Range.fromPoints(position, {
+               row: position.row,
+               column: position.column + 1});
+            var postChar = session.doc.getTextRange(postRng);
+            if (this.$reClose.test(postChar) && postChar == text) {
+               session.selection.moveCursorTo(postRng.end.row,
+                                              postRng.end.column,
+                                              false);
+               return;
+            }
+         }
+
+         var prevChar = null;
+         if (typing)
+         {
+            var rangeBegin = this.$moveLeft(session.doc, position);
+            prevChar = session.doc.getTextRange(Range.fromPoints(rangeBegin,
+                                                                 position));
+         }
+
+         var endPos = __insert.call(session, position, text);
+         // Is this an open paren?
+         if (typing && this.$reOpen.test(text)) {
+            // Is the next char not a character or number?
+            var nextCharRng = Range.fromPoints(endPos, {
+               row: endPos.row,
+               column: endPos.column + 1
+            });
+            var nextChar = session.doc.getTextRange(nextCharRng);
+            if (this.$reStop.test(nextChar) || nextChar.length == 0) {
+               if (this.allowAutoInsert(session, endPos, this.$complements[text])) {
+                  session.doc.insert(endPos, this.$complements[text]);
+                  session.selection.moveCursorTo(endPos.row, endPos.column, false);
+               }
+            }
+         }
+         else if (typing && text === "\n") {
+            var rangeEnd = this.$moveRight(session.doc, endPos);
+            if (prevChar == "{" && "}" == session.doc.getTextRange(Range.fromPoints(endPos, rangeEnd)))
+            {
+               var indent;
+               if (this.getIndentForOpenBrace)
+                  indent = this.getIndentForOpenBrace(this.$moveLeft(session.doc, position));
+               else
+                  indent = this.$getIndent(session.doc.getLine(endPos.row - 1));
+               session.doc.insert(endPos, "\n" + indent);
+               session.selection.moveCursorTo(endPos.row, endPos.column, false);
+            }
+         }
+         return endPos;
+      };
+
+      this.allowAutoInsert = function(session, pos, text)
+      {
+         return true;
+      };
+
+      // To enable this, call "this.allowAutoInsert = this.smartAllowAutoInsert"
+      // in the mode subclass
+      this.smartAllowAutoInsert = function(session, pos, text)
+      {
+         if (text !== "'" && text !== '"')
+            return true;
+
+         // Only allow auto-insertion of a quote char if the actual character
+         // that was typed, was the start of a new string token
+
+         if (pos.column == 0)
+            return true;
+
+         var token = this.codeModel.getTokenForPos(pos, false, true);
+         return token &&
+                token.type === 'string' &&
+                token.column === pos.column-1;
+      };
+
+      this.wrapRemove = function(editor, __remove, dir)
+      {
+         var cursor = editor.selection.getCursor();
+         var doc = editor.session.getDocument();
+
+         // Here are some easy-to-spot reasons why it might be impossible for us
+         // to need our special deletion logic.
+         if (!this.insertMatching ||
+             dir != "left" ||
+             !editor.selection.isEmpty() ||
+             editor.$readOnly ||
+             cursor.column == 0 ||     // hitting backspace at the start of line
+             doc.getLine(cursor.row).length <= cursor.column) {
+
+            return __remove.call(editor, dir);
+         }
+
+         var leftRange = Range.fromPoints(this.$moveLeft(doc, cursor), cursor);
+         var rightRange = Range.fromPoints(cursor, this.$moveRight(doc, cursor));
+         var leftText = doc.getTextRange(leftRange);
+
+         var deleteRight = this.$reOpen.test(leftText) &&
+                           this.$complements[leftText] == doc.getTextRange(rightRange);
+
+         __remove.call(editor, dir);
+         if (deleteRight)
+            __remove.call(editor, 'right');
+      };
+
+      this.$moveLeft = function(doc, pos)
+      {
+         if (pos.row == 0 && pos.column == 0)
+            return pos;
+
+         var row = pos.row;
+         var col = pos.column;
+
+         if (col)
+            col--;
+         else
+         {
+            row--;
+            col = doc.getLine(row).length;
+         }
+         return {row: row, column: col};
+      };
+
+      this.$moveRight = function(doc, pos)
+      {
+         var row = pos.row;
+         var col = pos.column;
+
+         if (doc.getLine(row).length != col)
+            col++;
+         else
+         {
+            row++;
+            col = 0;
+         }
+
+         if (row >= doc.getLength())
+            return pos;
+         else
+            return {row: row, column: col};
+      };
+   }).call(TextMode.prototype);
+
+   exports.setInsertMatching = function(insertMatching) {
+      TextMode.prototype.insertMatching = insertMatching;
+   };
+
+});
+/*
+ * r_highlight_rules.js
+ *
+ * Copyright (C) 2009-12 by RStudio, Inc.
+ *
+ * The Initial Developer of the Original Code is
+ * Ajax.org B.V.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Unless you have received this program directly from RStudio pursuant
+ * to the terms of a commercial license agreement with RStudio, then
+ * this program is licensed to you under the terms of version 3 of the
+ * GNU Affero General Public License. This program is distributed WITHOUT
+ * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+ * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+ *
+ */
+define("ace/mode/r_highlight_rules", function(require, exports, module)
+{
+
+   var oop = require("ace/lib/oop");
+   var lang = require("ace/lib/lang");
+   var TextHighlightRules = require("ace/mode/text_highlight_rules")
+         .TextHighlightRules;
+   var TexHighlightRules = require("ace/mode/tex_highlight_rules").TexHighlightRules;
+
+   var RHighlightRules = function()
+   {
+
+      var keywords = lang.arrayToMap(
+            ("function|if|in|break|next|repeat|else|for|return|switch|while|try|tryCatch|stop|warning|require|library|attach|detach|source|setMethod|setGeneric|setGroupGeneric|setClass|setRefClass")
+                  .split("|")
+            );
+
+      var buildinConstants = lang.arrayToMap(
+            ("NULL|NA|TRUE|FALSE|T|F|Inf|NaN|NA_integer_|NA_real_|NA_character_|" +
+             "NA_complex_").split("|")
+            );
+
+      // regexp must not have capturing parentheses. Use (?:) instead.
+      // regexps are ordered -> the first match is used
+
+      this.$rules = {
+         "start" : [
+            {
+               // Roxygen
+               token : "comment.sectionhead",
+               regex : "#+(?!').*(?:----|====|####)\\s*$"
+            },
+            {
+               // Roxygen
+               token : "comment",
+               regex : "#+'",
+               next : "rd-start"
+            },
+            {
+               token : "comment",
+               regex : "#.*$"
+            },
+            {
+               token : "string", // multi line string start
+               regex : '["]',
+               next : "qqstring"
+            },
+            {
+               token : "string", // multi line string start
+               regex : "[']",
+               next : "qstring"
+            },
+            {
+               token : "constant.numeric", // hex
+               regex : "0[xX][0-9a-fA-F]+[Li]?\\b"
+            },
+            {
+               token : "constant.numeric", // number + integer
+               regex : "\\d+(?:\\.\\d*)?(?:[eE][+\\-]?\\d*)?[iL]?\\b"
+            },
+            {
+               token : "constant.numeric", // number + integer with leading decimal
+               regex : "\\.\\d+(?:[eE][+\\-]?\\d*)?[iL]?\\b"
+            },
+            {
+               token : "constant.language.boolean",
+               regex : "(?:TRUE|FALSE|T|F)\\b"
+            },
+            {
+               token : "identifier",
+               regex : "`.*?`"
+            },
+            {
+               token : function(value)
+               {
+                  if (keywords[value])
+                     return "keyword";
+                  else if (buildinConstants[value])
+                     return "constant.language";
+                  else if (value == '...' || value.match(/^\.\.\d+$/))
+                     return "variable.language";
+                  else
+                     return "identifier";
+               },
+               regex : "[a-zA-Z.][a-zA-Z0-9._]*\\b"
+            },
+            {
+               token : "keyword.operator",
+               regex : "%%|>=|<=|==|!=|\\->|<\\-|\\|\\||&&|=|\\+|\\-|\\*|/|\\^|>|<|!|&|\\||~|\\$|:"
+            },
+            {
+               token : "keyword.operator", // infix operators
+               regex : "%.*?%"
+            },
+            {
+               // Obviously these are neither keywords nor operators, but
+               // labelling them as such was the easiest way to get them
+               // to be colored distinctly from regular text
+               token : "paren.keyword.operator",
+               regex : "[[({]"
+            },
+            {
+               // Obviously these are neither keywords nor operators, but
+               // labelling them as such was the easiest way to get them
+               // to be colored distinctly from regular text
+               token : "paren.keyword.operator",
+               regex : "[\\])}]"
+            },
+            {
+               token : "text",
+               regex : "\\s+"
+            }
+         ],
+         "qqstring" : [
+            {
+               token : "string",
+               regex : '(?:(?:\\\\.)|(?:[^"\\\\]))*?"',
+               next : "start"
+            },
+            {
+               token : "string",
+               regex : '.+'
+            }
+         ],
+         "qstring" : [
+            {
+               token : "string",
+               regex : "(?:(?:\\\\.)|(?:[^'\\\\]))*?'",
+               next : "start"
+            },
+            {
+               token : "string",
+               regex : '.+'
+            }
+         ]
+      };
+
+      var rdRules = new TexHighlightRules("comment").getRules();
+
+      // Make all embedded TeX virtual-comment so they don't interfere with
+      // auto-indent.
+      for (var i = 0; i < rdRules["start"].length; i++) {
+         rdRules["start"][i].token += ".virtual-comment";
+      }
+
+      this.addRules(rdRules, "rd-");
+      this.$rules["rd-start"].unshift({
+          token: "text",
+          regex: "^",
+          next: "start"
+      });
+      this.$rules["rd-start"].unshift({
+         token : "keyword",
+         regex : "@(?!@)[^ ]*"
+      });
+      this.$rules["rd-start"].unshift({
+         token : "comment",
+         regex : "@@"
+      });
+      this.$rules["rd-start"].push({
+         token : "comment",
+         regex : "[^%\\\\[({\\])}]+"
+      });
+   };
+
+   oop.inherits(RHighlightRules, TextHighlightRules);
+
+   exports.RHighlightRules = RHighlightRules;
+});
+/*
+ * r_matching_brace_outdent.js
+ *
+ * Copyright (C) 2009-12 by RStudio, Inc.
+ *
+ * The Initial Developer of the Original Code is
+ * Ajax.org B.V.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Unless you have received this program directly from RStudio pursuant
+ * to the terms of a commercial license agreement with RStudio, then
+ * this program is licensed to you under the terms of version 3 of the
+ * GNU Affero General Public License. This program is distributed WITHOUT
+ * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+ * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+ *
+ */
+define("ace/mode/r_matching_brace_outdent", function(require, exports, module)
+{
+   var Range = require("ace/range").Range;
+
+   // This is a mixin that enables proper brace outdent behavior for R code.
+
+   var RMatchingBraceOutdent = {};
+
+   (function()
+   {
+      this.checkOutdent = function(state, line, input) {
+         if (/^\s+$/.test(line) && /^\s*[\{\}\)]/.test(input))
+            return true;
+
+         // This is the case of a newline being inserted on a line that only
+         // contains }
+         if (/^\s*}\s*$/.test(line) && input == "\n")
+            return true;
+
+         // This is the case of a newline being inserted on a line that contains
+         // a bunch of stuff including }, and the user hits Enter. The input
+         // is not necessarily "\n" because we may auto-insert some padding
+         // as well.
+         //
+         // We don't always want to autoindent in this case; ideally we would
+         // only autoindent if Enter was being hit right before }. But at this
+         // time we don't have that information. So we let the autoOutdent logic
+         // run and trust it to only outdent if appropriate.
+         if (/}\s*$/.test(line) && /\n/.test(input))
+            return true;
+
+         return false;
+      };
+
+      this.autoOutdent = function(state, session, row) {
+         if (row == 0)
+            return 0;
+
+         var line = session.getLine(row);
+
+         var match = line.match(/^(\s*[\}\)])/);
+         if (match)
+         {
+            var column = match[1].length;
+            var openBracePos = session.findMatchingBracket({row: row, column: column});
+
+            if (!openBracePos || openBracePos.row == row) return 0;
+
+            var indent = this.codeModel.getIndentForOpenBrace(openBracePos);
+            session.replace(new Range(row, 0, row, column-1), indent);
+         }
+
+         match = line.match(/^(\s*\{)/);
+         if (match)
+         {
+            var column = match[1].length;
+            var indent = this.codeModel.getBraceIndent(row-1);
+            session.replace(new Range(row, 0, row, column-1), indent);
+         }
+      };
+   }).call(RMatchingBraceOutdent);
+   exports.RMatchingBraceOutdent = RMatchingBraceOutdent;
+});
+/*
  * r_code_model.js
  *
- * Copyright (C) 2009-11 by RStudio, Inc.
+ * Copyright (C) 2009-12 by RStudio, Inc.
  *
- * This program is licensed to you under the terms of version 3 of the
+ * Unless you have received this program directly from RStudio pursuant
+ * to the terms of a commercial license agreement with RStudio, then
+ * this program is licensed to you under the terms of version 3 of the
  * GNU Affero General Public License. This program is distributed WITHOUT
  * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
  * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
@@ -18147,6 +18396,8 @@ define("ace/mode/r_code_model", function(require, exports, module) {
 
 var Range = require("ace/range").Range;
 var TokenIterator = require("ace/token_iterator").TokenIterator;
+
+var $verticallyAlignFunctionArgs = false;
 
 function comparePoints(pos1, pos2)
 {
@@ -18699,6 +18950,9 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
       if (endState == "qstring" || endState == "qqstring")
          return "";
 
+      // TODO: optimize
+      var tabAsSpaces = Array(tabSize + 1).join(" ");
+
       // This lineOverrides nonsense is necessary because the line has not 
       // changed in the real document yet. We need to simulate it by replacing
       // the real line with the `line` param, and when we finish with this
@@ -18719,18 +18973,39 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
          var defaultIndent = lastRow < 0 ? "" 
                                          : this.$getIndent(this.$getLine(lastRow));
 
+         // jcheng 12/7/2013: It doesn't look to me like $tokenizeUpToRow can return
+         // anything but true, at least not today.
          if (!this.$tokenizeUpToRow(lastRow))
             return defaultIndent;
 
+         // If we're in an Sweave/Rmd/etc. document and this line isn't R, then
+         // don't auto-indent
          if (this.$statePattern && !this.$statePattern.test(endState))
             return defaultIndent;
 
+         // Used to add extra whitspace if the next line is a continuation of the
+         // previous line (i.e. the last significant token is a binary operator).
+         var continuationIndent = "";
+
+         // The significant token (no whitespace, comments) that most immediately
+         // precedes this line. We don't look back further than 10 rows or so for
+         // performance reasons.
          var prevToken = this.$findPreviousSignificantToken({row: lastRow, column: this.$getLine(lastRow).length},
                                                             lastRow - 10);
+
          if (prevToken
                && /\bparen\b/.test(prevToken.token.type)
                && /\)$/.test(prevToken.token.value))
          {
+            // The previous token was a close-paren ")". Check if this is an
+            // if/while/for/function without braces, in which case we need to
+            // take the indentation of the keyword and indent by one level.
+            //
+            // Example:
+            // if (identical(foo, 1) &&
+            //     isTRUE(bar) &&
+            //     (!is.null(baz) && !is.na(baz)))
+            //   |
             var openParenPos = this.$walkParensBalanced(
                   prevToken.row,
                   prevToken.row - 10,
@@ -18754,18 +19029,24 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
                      && prevToken.token.type === "keyword"
                      && (prevToken.token.value === "repeat" || prevToken.token.value === "else"))
          {
+            // Check if this is a "repeat" or (more commonly) "else" without
+            // braces, in which case we need to take the indent of the else/repeat
+            // and increase by one level.
             return this.$getIndent(this.$getLine(prevToken.row)) + tab;
          }
          else if (prevToken && /\boperator\b/.test(prevToken.token.type) && !/\bparen\b/.test(prevToken.token.type))
          {
-            // Is the previous line also a continuation line?
-            var prevContToken = this.$findPreviousSignificantToken({row: prevToken.row, column: 0}, 0);
-            if (!prevContToken || !/\boperator\b/.test(prevContToken.token.type) || /\bparen\b/.test(prevContToken.token.type))
-               return this.$getIndent(this.$getLine(prevToken.row)) + tab;
-            else
-               return this.$getIndent(this.$getLine(prevToken.row));
+            // Fix issue 2579: If the previous significant token is an operator
+            // (commonly, "+" when used with ggplot) then this line is a
+            // continuation of an expression that was started on a previous
+            // line. This line's indent should then be whatever would normally
+            // be used for a complete statement starting here, plus a tab.
+            continuationIndent = tab;
          }
 
+         // Walk backwards looking for an open paren, square bracket, or curly
+         // brace, *ignoring matched pairs along the way*. (That's the "balanced"
+         // in $walkParensBalanced.)
          var openBracePos = this.$walkParensBalanced(
                lastRow,
                0,
@@ -18777,14 +19058,47 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
 
          if (openBracePos != null)
          {
-            var nextTokenPos = this.$findNextSignificantToken({
-                  row: openBracePos.row,
-                  column: openBracePos.column + 1
-               }, lastRow);
+            // OK, we found an open brace; this just means we're not a
+            // top-level expression.
+
+            var nextTokenPos = null;
+
+            if ($verticallyAlignFunctionArgs) {
+               // If the user has selected verticallyAlignFunctionArgs mode in the
+               // prefs, for example:
+               //
+               // soDomethingAwesome(a = 1,
+               //                    b = 2,
+               //                    c = 3)
+               //
+               // Then we simply follow the example of the next significant
+               // token. BTW implies that this mode also supports this:
+               //
+               // soDomethingAwesome(
+               //   a = 1,
+               //   b = 2,
+               //   c = 3)
+               //
+               // But not this:
+               //
+               // soDomethingAwesome(a = 1,
+               //   b = 2,
+               //   c = 3)
+               nextTokenPos = this.$findNextSignificantToken(
+                     {
+                        row: openBracePos.row,
+                        column: openBracePos.column + 1
+                     }, lastRow);
+            }
 
             if (!nextTokenPos)
             {
-               return this.getIndentForOpenBrace(openBracePos) + tab;
+               // Either there wasn't a significant token between the new
+               // line and the previous open brace, or, we're not in
+               // vertical argument alignment mode. Either way, we need
+               // to just indent one level from the open brace's level.
+               return this.getIndentForOpenBrace(openBracePos) +
+                      tab + continuationIndent;
             }
             else
             {
@@ -18810,15 +19124,52 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
                   buffer += tab;
                for (var j = 0; j < spacesToAdd; j++)
                   buffer += " ";
-               return leadingIndent + buffer;
+               var result = leadingIndent + buffer;
+
+               // Compute the size of the indent in spaces (e.g. if a tab
+               // is 4 spaces, and result is "\t\t ", the size is 9)
+               var resultSize = result.replace("\t", tabAsSpaces).length;
+
+               // Sometimes even though verticallyAlignFunctionArgs is used,
+               // the user chooses to manually "break the rules" and use the
+               // non-aligned style, like so:
+               //
+               // plot(foo,
+               //   bar, baz,
+               //
+               // Without the below loop, hitting Enter after "baz," causes
+               // the cursor to end up aligned with foo. The loop simply
+               // replaces the indentation with the minimal indentation.
+               //
+               // TODO: Perhaps we can skip the above few lines of code if
+               // there are other lines present
+               var thisIndent;
+               for (var i = nextTokenPos.row + 1; i <= lastRow; i++) {
+                  // If a line contains only whitespace, it doesn't count
+                  if (!/[^\s]/.test(this.$getLine(i)))
+                     continue;
+                  // If this line is is a continuation of a multi-line string, 
+                  // ignore it.
+                  var rowEndState = this.$endStates[i-1];
+                  if (rowEndState === "qstring" || rowEndState === "qqstring") 
+                     continue;
+                  thisIndent = this.$getLine(i).replace(/[^\s].*$/, '');
+                  thisIndentSize = thisIndent.replace("\t", tabAsSpaces).length;
+                  if (thisIndentSize < resultSize) {
+                     result = thisIndent;
+                     resultSize = thisIndentSize;
+                  }
+               }
+
+               return result + continuationIndent;
             }
          }
 
          var firstToken = this.$findNextSignificantToken({row: 0, column: 0}, lastRow);
          if (firstToken)
-            return this.$getIndent(this.$getLine(firstToken.row));
+            return this.$getIndent(this.$getLine(firstToken.row)) + continuationIndent;
          else
-            return "";
+            return "" + continuationIndent;
       }
       finally
       {
@@ -19117,7 +19468,7 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
 
       return result;
    };
-
+   
    this.$findNextSignificantToken = function(pos, lastRow)
    {
       if (this.$tokens.length == 0)
@@ -19147,6 +19498,11 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
       }
       return null;
    };
+
+   this.findNextSignificantToken = function(pos)
+   {
+	   return this.$findNextSignificantToken(pos, this.$tokens.length - 1);
+   }
    
    this.$findPreviousSignificantToken = function(pos, firstRow)
    {
@@ -19229,13 +19585,20 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
 
 exports.RCodeModel = RCodeModel;
 
+exports.setVerticallyAlignFunctionArgs = function(verticallyAlign) {
+   $verticallyAlignFunctionArgs = verticallyAlign;
+};
+
+
 });
 /*
  * r_scope_tree.js
  *
- * Copyright (C) 2009-11 by RStudio, Inc.
+ * Copyright (C) 2009-12 by RStudio, Inc.
  *
- * This program is licensed to you under the terms of version 3 of the
+ * Unless you have received this program directly from RStudio pursuant
+ * to the terms of a commercial license agreement with RStudio, then
+ * this program is licensed to you under the terms of version 3 of the
  * GNU Affero General Public License. This program is distributed WITHOUT
  * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
  * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
@@ -19376,6 +19739,9 @@ define('ace/mode/r_scope_tree', function(require, exports, module) {
 
       // Whether this scope is
       this.scopeType = scopeType;
+      
+      // A pointer to the parent scope (if any) 
+      this.parentScope = null;
 
       this.$children = [];
    };
@@ -19391,6 +19757,9 @@ define('ace/mode/r_scope_tree', function(require, exports, module) {
       this.isBrace = function() { return this.scopeType == ScopeNode.TYPE_BRACE; };
       this.isChunk = function() { return this.scopeType == ScopeNode.TYPE_CHUNK; };
       this.isSection = function() { return this.scopeType == ScopeNode.TYPE_SECTION; };
+      this.isFunction = function() {
+         return this.isBrace() && !!this.label;
+      };
 
       this.addNode = function(node) {
          assert(!node.end, "New node is already closed");
@@ -19425,7 +19794,7 @@ define('ace/mode/r_scope_tree', function(require, exports, module) {
                node.$children = this.$children.splice(
                                              index, this.$children.length - index);
             }
-
+            node.parentScope = this;
             this.$children.push(node);
          }
       };
@@ -19566,24 +19935,6 @@ define('ace/mode/r_scope_tree', function(require, exports, module) {
          return resumePos;
       };
 
-      this.exportFunctions = function(list)
-      {
-         if (this.label)
-         {
-            var here = {
-               label: this.label,
-               preamble: this.preamble,
-               end: this.end,
-               children: []
-            };
-            list.push(here);
-            list = here.children;
-         }
-
-         for (var i = 0; i < this.$children.length; i++)
-            this.$children[i].exportFunctions(list);
-      };
-
       // Returns index of the child that contains this position, if it exists;
       // otherwise, -(index + 1) where index is where such a child would be.
       this.$binarySearch = function(pos, start /*optional*/, end /*optional*/) {
@@ -19634,6 +19985,114 @@ define('ace/mode/r_scope_tree', function(require, exports, module) {
 
    exports.ScopeManager = ScopeManager;
 
+});
+/*
+ * tex_highlight_rules.js
+ *
+ * Copyright (C) 2009-12 by RStudio, Inc.
+ *
+ * The Initial Developer of the Original Code is
+ * Ajax.org B.V.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Unless you have received this program directly from RStudio pursuant
+ * to the terms of a commercial license agreement with RStudio, then
+ * this program is licensed to you under the terms of version 3 of the
+ * GNU Affero General Public License. This program is distributed WITHOUT
+ * ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+ * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+ *
+ */
+define("ace/mode/tex_highlight_rules", function(require, exports, module) {
+
+var oop = require("ace/lib/oop");
+var lang = require("ace/lib/lang");
+var TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules;
+
+var TexHighlightRules = function(textClass) {
+
+    if (!textClass)
+        textClass = "text";
+
+    // regexp must not have capturing parentheses. Use (?:) instead.
+    // regexps are ordered -> the first match is used
+
+    this.$rules = {
+        "start" : [
+	        {
+	            token : "comment",
+	            regex : "%.*$"
+	        }, {
+	            token : textClass, // non-command
+	            regex : "\\\\[$&%#\\{\\}]"
+	        }, {
+	            token : "keyword", // command
+	            regex : "\\\\(?:documentclass|usepackage|newcounter|setcounter|addtocounter|value|arabic|stepcounter|newenvironment|renewenvironment|ref|vref|eqref|pageref|label|cite[a-zA-Z]*|tag|begin|end|bibitem)\\b",
+               next : "nospell"
+	        }, {
+	            token : "keyword", // command
+	            regex : "\\\\(?:[a-zA-z0-9]+|[^a-zA-z0-9])"
+	        }, {
+               // Obviously these are neither keywords nor operators, but
+               // labelling them as such was the easiest way to get them
+               // to be colored distinctly from regular text
+               token : "paren.keyword.operator",
+	            regex : "[[({]"
+	        }, {
+               // Obviously these are neither keywords nor operators, but
+               // labelling them as such was the easiest way to get them
+               // to be colored distinctly from regular text
+               token : "paren.keyword.operator",
+	            regex : "[\\])}]"
+	        }, {
+	            token : textClass,
+	            regex : "\\s+"
+	        }
+        ],
+        // This mode is necessary to prevent spell checking, but to keep the
+        // same syntax highlighting behavior. The list of commands comes from
+        // Texlipse.
+        "nospell" : [
+           {
+               token : "comment",
+               regex : "%.*$",
+               next : "start"
+           }, {
+               token : "nospell." + textClass, // non-command
+               regex : "\\\\[$&%#\\{\\}]"
+           }, {
+               token : "keyword", // command
+               regex : "\\\\(?:documentclass|usepackage|newcounter|setcounter|addtocounter|value|arabic|stepcounter|newenvironment|renewenvironment|ref|vref|eqref|pageref|label|cite[a-zA-Z]*|tag|begin|end|bibitem)\\b"
+           }, {
+               token : "keyword", // command
+               regex : "\\\\(?:[a-zA-z0-9]+|[^a-zA-z0-9])",
+               next : "start"
+           }, {
+               token : "paren.keyword.operator",
+               regex : "[[({]"
+           }, {
+               token : "paren.keyword.operator",
+               regex : "[\\])]"
+           }, {
+               token : "paren.keyword.operator",
+               regex : "}",
+               next : "start"
+           }, {
+               token : "nospell." + textClass,
+               regex : "\\s+"
+           }, {
+               token : "nospell." + textClass,
+               regex : "\\w+"
+           }
+        ]
+    };
+};
+
+oop.inherits(TexHighlightRules, TextHighlightRules);
+
+exports.TexHighlightRules = TexHighlightRules;
 });
 /* ***** BEGIN LICENSE BLOCK *****
  * Distributed under the BSD license:
@@ -25664,6 +26123,13 @@ var Range = require("../range").Range;
 var Mode = function() {
     this.HighlightRules = PythonHighlightRules;
     this.foldingRules = new PythonFoldMode("\\:");
+    this.getCompletions = function(state, session, pos, prefix, callback) {
+        rcloud.get_completions('Python', session.getValue(),
+                               session.getDocument().positionToIndex(pos))
+            .then(function(ret) {
+                callback(null, ret);
+            });
+    };
 };
 oop.inherits(Mode, TextMode);
 

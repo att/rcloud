@@ -1,4 +1,4 @@
-rcs.redis <- function(host=NULL) {
+rcs.redis <- function(host=NULL, db=getOption("redis.default.db", 0L), password=NULL) {
   require(rediscc)
   if (!is.null(host)) {
     hp <- strsplit(as.character(host), ':', TRUE)[[1]]
@@ -8,18 +8,11 @@ rcs.redis <- function(host=NULL) {
     host <- "localhost"
     port <- 6379L
   }
-  structure(list(host=host, port=port, handle=redis.connect(host, port, 3, TRUE, TRUE)), class="RCSredis")
+  structure(list(host=host, port=port, handle=redis.connect(host, port, 3, TRUE, TRUE, db=db, password=password)), class="RCSredis")
 }
 
-rcs.open.RCSredis <- function()
-    if (isTRUE(getConf("rcs.engine") == "redis")) {
-      .session$rcs.engine <- rcs.redis(getConf("rcs.redis.host"))
-      if (is.null(.session$rcs.engine$handle)) stop("ERROR: cannot connect to redis host `",getConf("rcs.redis.host"),"', aborting")
-      .session$rcs.engine
-    } else NULL
-
-rcs.close.RCSredis <- function()
-    rediscc::redis.close(.session$rcs.engine$handle)
+rcs.close.RCSredis <- function(engine=.session$rcs.engine)
+    redis.close(engine$handle)
 
 rcs.get.RCSredis <- function(key, list=FALSE, engine=.session$rcs.engine) redis.get(engine$handle, key, list)
 

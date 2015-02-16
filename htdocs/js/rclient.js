@@ -14,14 +14,23 @@ RClient = {
 
             // the rcloud ocap-0 performs the login authentication dance
             // success is indicated by the rest of the capabilities being sent
-            rserve.ocap([token, execToken], function(err, ocaps) {
-                ocaps = Promise.promisifyAll(ocaps);
-                if (ocaps !== null) {
-                    result.running = true;
-                    /*jshint -W030 */
-                    opts.on_connect && opts.on_connect.call(result, ocaps);
-                } else {
-                    on_error("Login failed. Shutting down!");
+            var session_mode = (opts.mode) ? opts.mode : "IDE";
+            rserve.ocap([token, execToken], session_mode, function(err, ocaps) {
+                if(err)
+                    on_error(err[0], err[1]);
+                else {
+                    ocaps = Promise.promisifyAll(ocaps);
+                    if(ocaps === null) {
+                        on_error("Login failed. Shutting down!");
+                    }
+                    else if(RCloud.is_exception(ocaps)) {
+                        on_error(ocaps[0]);
+                    }
+                    else {
+                        result.running = true;
+                        /*jshint -W030 */
+                        opts.on_connect && opts.on_connect.call(result, ocaps);
+                    }
                 }
             });
         }
@@ -53,7 +62,7 @@ RClient = {
                 debugger;
             }
             if (!clean) {
-                RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Socket was closed. Goodbye!"));
+                RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R");
                 shutdown();
             }
         }
@@ -65,7 +74,8 @@ RClient = {
             on_connect: on_connect,
             on_error: on_error,
             on_close: on_close,
-            on_data: opts.on_data
+            on_data: opts.on_data,
+            on_oob_message: opts.on_oob_message
         });
 
         var result;
@@ -79,8 +89,6 @@ RClient = {
             post_response: function (msg) {
                 var d = $("<pre class='response'></pre>").html(msg);
                 $("#output").append(d);
-                // not sure what this was for
-                //window.scrollTo(0, document.body.scrollHeight);
             },
 
             post_rejection: function(e) {

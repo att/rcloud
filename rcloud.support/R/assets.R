@@ -1,5 +1,5 @@
 # FIXME Overlaps with rcloud.get.notebook.asset
-rcloud.get.asset <- function(name, notebook=.session$current.notebook, version=NULL,
+rcloud.get.asset <- function(name, notebook=rcloud.session.notebook(), version=NULL,
                              cached=TRUE, quiet=FALSE, as.file=FALSE) {
   if (!cached && is.list(notebook))
     notebook <- notebook$content$id
@@ -37,7 +37,7 @@ rcloud.get.asset <- function(name, notebook=.session$current.notebook, version=N
 
 # FIXME semantics are entirely different depending on the file extension
 # this is a terrible idea.
-rcloud.execute.asset <- function(name, ..., notebook=.session$current.notebook, version=NULL,
+rcloud.execute.asset <- function(name, ..., notebook=rcloud.session.notebook(), version=NULL,
                                  cached=TRUE, wait=TRUE) {
   asset <- rcloud.get.asset(name, notebook, version, cached, as.file=TRUE)
   ext <- if(length(grep(".", name, fixed=TRUE))) gsub(".*\\.","",name) else ""

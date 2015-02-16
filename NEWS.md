@@ -1,3 +1,133 @@
+## RCloud 1.3
+
+### Features
+* Simultaneously view code and output.  Instead of switching back and forth
+  between code and output, most cells always show both the code and the output.
+  Output is shown when the cell is run.  Click on the code to activate the cell's
+  edit mode.
+
+  Markdown cells behave slightly differently - since the markdown output already
+  contains the code, the code editor is hidden when the markdown is run.  Click
+  on any code within the markdown output, or click on the cell's edit mode button to
+  activate it.
+
+* Direct output and input.  Instead of printing a single result for each cell, the
+  output is handled asynchronously, so it shows as it is available.  The code can
+  also request lines of input, so e.g. `readline` now works - as do `browser` and
+  'debug' for debugging!  Ordinary code cells do not use knitr/markdown for output, but send
+  images, preformatted, and html output separately.
+
+* Ability to save plots in other formats.  Hover the mouse over the plot for the
+  disk icon to appear in the upper right corner, which contains a list of available
+  image formats.  A widget at the lower-right corner can be used to resize the image.
+
+* Search and replace across all cells in a notebook.  Ctrl/Cmd-F opens the
+  find bar at the top of the notebook.  Type to search incrementally.
+
+  Ctrl-H (Windows/Linux) / Cmd-Option-F (OSX) opens the replace bar.
+
+  Search in results not currently supported.
+
+* New simplified look.  Cells do not activate the editor until they are clicked on,
+  so they use much less resources, and notebooks with a large number of cells
+  load quickly.
+
+* Automatic indentation for R code (#1110) and Python (#1105)
+
+* Many ways to write extensions to add to the RCloud user interface.
+  [Documentation](https://github.com/att/rcloud/wiki/RCloud-UI-Extensions).
+
+* It is possible to add cell languages - Python, RMarkdown, and
+  even R evaluation are performed by language add-ons.
+  https://github.com/att/rcloud/wiki/RCloud-Language-extensions
+
+* Experimental support for RMarkdown cells.  The old Markdown cells use the
+  [markdown](http://cran.r-project.org/web/packages/markdown/index.html)
+  and [knitr](http://yihui.name/knitr/) packages directly for output;
+  RMarkdown cell use [rmarkdown](http://rmarkdown.rstudio.com/) (a.k.a. R Markdown v2).
+
+* Option to receive email updates when your notebook is commented on (#900)
+
+* Notebook Information pop-up shows the people who have starred a notebook (#935)
+
+* Select the entire notebook with ctrl/cmd-A (#1321)
+
+
+
+### Improvements
+
+* Animated icon when first loading the page (#1028)
+
+* Better help given when searches fail due to syntax errors (#1061)
+
+* Year shown in version and notebook dates when the year is not this one (#986)
+
+* Ability to right click on search results to open in new tab (instead of control-clicking) (#1054)
+
+* Shareable link uses tagged version instead of version, if it exists (#1044)
+
+* Formal arguments shown for functions in Workspace (#994)
+
+* Option to turn off terse dates (#1040)
+
+* Cell number is shown above each cell in its status area (#1126)
+
+* `shared.R` can be used to serve static content out of of the `www/` folder of
+  any installed R package. (#1147)
+
+* redis database number and password can be set
+
+* Can grab the status area above cell as well as the gutter area in order to reorder cells.
+  Allows moving cells when not editing them
+
+* Clicking to edit cell sets the cursor position based on the click location
+
+* Supports PAM and JAAS supported Authentication modules like Kerberos, LDAP, etc.
+  Refer: https://github.com/s-u/SessionKeyServer/blob/master/README.md
+
+* Custom R code akin to the ubiquitous `Rprofile` can now be run at the end of session
+  initialization as the script `conf/Rcloud.profile`
+
+* Selection of the cells and results will not select the ui elements, so it's possible to
+  copy and paste whole sections of the notebook and results. (#1221)
+
+
+
+### Bug fixes
+
+* Changing the working directory is now persistent across R cells (#833)
+
+* Dataframe was not cleared when loading a new notebook (#1045)
+
+* Comments were not getting deleted from search (#826)
+
+* Loading notebook by ID failed when there was whitespace (#1115)
+
+* Notebook wasn't saved before forking (#1083)
+
+* Importing a notebook would cause the browser title to change (#1168)
+
+* Messages from the server could get fragmented and produce "Invalid typed array
+  length" error or silent failures (#1135)
+
+* Issues with knitr creating duplicate plots fixed (#1046)
+
+* (Mis)feature where a prior notebook is loaded if the current notebook can't be,
+  restricted to problems with loading the notebook.
+
+
+## RCloud 1.2-patched
+
+### Bug Fixes
+
+* Encoding of some characters was failing in the login script, leading to
+  authentication failures with valid passwords
+
+### Improvements
+
+* Retrieval of multi-user information from RCS was vectorized, dramatically
+  reducing the number of round-trips to RCS store and associated latency.
+
 ## RCloud 1.2.1
 
 ### Bug Fixes

@@ -28,7 +28,7 @@ Notebook.create_model = function()
             var assets_removed = this.remove_asset(null,this.assets.length);
             return cells_removed.concat(assets_removed);
         },
-        has_asset: function(filename) {
+        get_asset: function(filename) {
             return _.find(this.assets, function(asset) {
                 return asset.filename() == filename;
             });

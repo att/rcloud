@@ -2,7 +2,24 @@
   textConn <- textConnection(NULL, "w")
   on.exit(close(textConn))
   shiny:::renderPage(ui, textConn, FALSE)
-  gsub('jquery.js', '../disabled.js', gsub('"shared/', '"../../shared.R/', paste(textConnectionValue(textConn), collapse="\n"), fixed=TRUE), fixed=TRUE)
+
+  shinyHtml <- gsub('"shared/', '"../../shared.R/shiny/shared/', paste(textConnectionValue(textConn), collapse="\n"), fixed=TRUE)
+
+  prefixList <- shiny:::.globals$resources
+
+  if(length(prefixList) > 0){
+    patternStr <- lapply(names(prefixList), function(pn) { paste('"', pn, '/', sep='') })
+    replacementStr <- lapply(prefixList, function(p) {
+        splitDirPath <- strsplit(p$directoryPath, "/+")[[1]]
+        paste('"../../shared.R/', splitDirPath[length(splitDirPath)-1], '/', sep="")
+    })
+    mapply(FUN= function(...) {
+         shinyHtml <<- gsub(...,x=shinyHtml)},
+         pattern=patternStr, replacement=replacementStr)
+  }
+
+  finalHtml <- gsub('shiny/shared/jquery.js', '../../disabled.js', shinyHtml, fixed=TRUE)
+  finalHtml
 }
 
 rcloud.shinyApp <- function(ui, server, options) {

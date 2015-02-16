@@ -28,6 +28,7 @@ rcloud.get.comments <- function(id)
 rcloud.post.comment <- function(id, content)
 {
   res <- create.gist.comment(id, content, ctx = .session$gist.context)
+  rcloud.comments.email(id, content, ' posted a new')
   if (nzConf("solr.url")) mcparallel(.solr.post.comment(id, content, res$content$id), detached=TRUE)
   res
 }
@@ -48,6 +49,7 @@ rcloud.post.comment <- function(id, content)
 rcloud.modify.comment <- function(id, cid, content)
 {
   res <- modify.gist.comment(id,cid,content, ctx = .session$gist.context)
+  rcloud.comments.email(id, content, ' modified an old')
   mcparallel(.solr.modify.comment(id, content, cid), detached=TRUE)
   res$ok
 }
@@ -60,7 +62,6 @@ rcloud.modify.comment <- function(id, cid, content)
   solr.res$response$docs[[1]]$comments <- solr.res$response$docs[[1]]$comments[-index]
   curlTemplate <- paste0(url,"/update/json?commit=true")
   metadata <- paste0('{"id":"',id,'","comments":{"set":[\"',paste(solr.res$response$docs[[1]]$comments, collapse="\",\""),'\"]}}')
-  write(metadata, "/vagrant/work/debug/deletec")
   postForm(curlTemplate, .opts = list(
                            postfields = paste0("[",metadata,"]"),
                            httpheader = c('Content-Type' = 'application/json',Accept = 'application/json')))
@@ -71,4 +72,35 @@ rcloud.delete.comment <- function(id,cid)
   mcparallel(.solr.delete.comment(id, cid), detached=TRUE)
   res <- delete.gist.comment(id,cid, ctx = .session$gist.context)
   res$ok
+}
+
+rcloud.comments.email <- function(id, content, type) {
+  to <- .session$username
+  to.email <- rcloud.get.git.user(to)$email
+  from.email <- getConf("email.from")
+  title <- rcloud.get.notebook.info(id)$description
+  smtp <- getConf("smtp.server")
+  is.subscribed <- rcloud.config.get.user.option('subscribe-to-comments')
+
+  if (from.email == "" || length(from.email) == 0)
+    from.email <- 'DoNotREPLY'
+
+  if(is.null(is.subscribed) | length(is.subscribed) == 0 | smtp == "" || length(smtp) == 0)
+    is.subscribed <- FALSE
+
+  if(is.subscribed) {
+    subject <- paste(.session$username, type, " comment on your notebook [",title,"]",sep="");
+    cont <- rcloud.create.email(fromJSON(content[1]))
+    msg <- mime_part(cont)
+    msg[["headers"]][["Content-Type"]] <- "text/html"
+    body <- list(msg)
+    sendmail(from.email, to.email, subject, body , control=list(smtpServer=smtp))
+  }
+}
+
+rcloud.create.email <- function(content) {
+  url <- .session$url
+  email.content <- paste0('<html><head><title>Comment Notification</title></head><body><div><h3>Comment :</h3><p>"', 
+    content,'"</p><p><a href=\'', url, '\' target=\'', url, '\'>Go To Notebook</a></p></div></body></html>')
+  email.content
 }

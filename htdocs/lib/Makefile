@@ -9,8 +9,12 @@ ace_bundle.js:	\
 	js/ace/mode-r.js \
 	js/ace/rmarkdown_highlight_rules.js \
 	js/ace/rmarkdown.js \
+        js/ace/auto_brace_insert.js \
+        js/ace/r_highlight_rules.js \
+        js/ace/r_matching_brace_outdent.js \
 	js/ace/r_code_model.js \
 	js/ace/r_scope_tree.js \
+        js/ace/tex_highlight_rules.js \
 	js/ace/mode-markdown.js \
         js/ace/sweave_background_highlighter.js \
 	js/ace/ext-language_tools.js \
@@ -30,9 +34,9 @@ dependencies_bundle.js: \
 	js/dataframe.js \
 	js/dcplot.js \
 	js/hl.min.js \
-	js/jquery-1.10.2.js \
+	js/jquery-2.1.1.js \
 	js/bootstrap.js \
-	js/jquery-ui.min.js \
+	js/jquery-ui.js \
 	js/jquery.cookies.2.2.0.js \
 	js/jquery.scrollto.js \
 	js/laconic.js \

@@ -6,7 +6,6 @@ RCloud.UI.upload_frame = {
         $("#file").change(function() {
             $("#progress-bar").css("width", "0%");
         });
-
         $("#upload-submit").click(function() {
             if($("#file")[0].files.length===0)
                 return;
@@ -14,7 +13,12 @@ RCloud.UI.upload_frame = {
             RCloud.UI.upload_with_alerts(to_notebook)
                 .catch(function() {}); // we have special handling for upload errors
         });
-
+        RCloud.session.listeners.push({
+            on_reset: function() {
+                $(".progress").hide();
+                $("#file-upload-results").empty();
+            }
+        });
     },
     panel_sizer: function(el) {
         var padding = RCloud.UI.collapsible_column.default_padder(el);

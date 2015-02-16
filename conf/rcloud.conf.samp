@@ -8,8 +8,12 @@ github.base.url: https://github.com/
 github.api.url: https://api.github.com/
 github.gist.url: https://gist.github.com/
 rcs.engine: redis
+rcs.redis.host: 127.0.0.1:6379
 solr.host.port: 127.0.0.1:8983
 solr.collection: collection1
 solr.url: http://127.0.0.1:8983/solr/rcloudnotebooks
 solr.page.size: 5
-rcs.system.config.addons: rcloud.viewer, rcloud.enviewer
+rcs.system.config.addons: rcloud.viewer, rcloud.enviewer, rcloud.notebook.info
+rcloud.languages: rcloud.r, rcloud.python, rcloud.rmarkdown
+smtp.server:xxxxxxxxxxxxx
+email.from:donotreply

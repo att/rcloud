@@ -4,17 +4,15 @@ Notebook.create_controller = function(model)
         dirty_ = false,
         save_button_ = null,
         save_timer_ = null,
-        save_timeout_ = 30000, // 30s
-        show_source_checkbox_ = null;
+        save_timeout_ = 30000; // 30s
 
     // only create the callbacks once, but delay creating them until the editor
     // is initialized
     var default_callback = function() {
-        var cb_ = null,
-            editor_callback_ = null;
+        var cb_ = null;
         return function() {
             if(!cb_) {
-                editor_callback_ = editor.load_callback({is_change: true, selroot: true});
+                var editor_callback = editor.load_callback({is_change: true, selroot: true});
                 cb_ = function(notebook) {
                     if(save_button_)
                         ui_utils.disable_bs_button(save_button_);
@@ -23,7 +21,7 @@ Notebook.create_controller = function(model)
                         window.clearTimeout(save_timer_);
                         save_timer_ = null;
                     }
-                    return editor_callback_(notebook);
+                    return editor_callback(notebook);
                 };
             }
             return cb_;
@@ -53,7 +51,7 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(version, notebook) {
-        var is_read_only = version !== null || notebook.user.login !== rcloud.username();
+        var is_read_only = version !== null || notebook.user.login !== rcloud.username() || shell.is_view_mode();
         current_gist_ = notebook;
         model.read_only(is_read_only);
         if (!_.isUndefined(notebook.files)) {
@@ -224,14 +222,6 @@ Notebook.create_controller = function(model)
         }, save_timeout_);
     }
 
-    function setup_show_source() {
-        show_source_checkbox_ = ui_utils.checkbox_menu_item($("#show-source"),
-           function() {result.show_r_source();},
-           function() {result.hide_r_source();});
-        show_source_checkbox_.set_state(true);
-    }
-
-    setup_show_source();
     model.dishers.push({on_dirty: on_dirty});
 
     var result = {
@@ -249,40 +239,46 @@ Notebook.create_controller = function(model)
             var cch = append_asset_helper(content, filename);
             return update_notebook(refresh_buffers().concat(cch.changes))
                 .then(default_callback())
-                .return(cch.controller);
+                .then(function(notebook) {
+                    return [notebook, cch.controller];
+                });
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
-            update_notebook(refresh_buffers().concat(cch.changes))
-                .then(default_callback());
-            return cch.controller;
+            return update_notebook(refresh_buffers().concat(cch.changes))
+                .then(default_callback())
+                .then(function(notebook) {
+                    return [notebook, cch.controller];
+                });
         },
         insert_cell: function(content, type, id) {
             var cch = insert_cell_helper(content, type, id);
-            update_notebook(refresh_buffers().concat(cch.changes))
-                .then(default_callback());
-            return cch.controller;
+            return update_notebook(refresh_buffers().concat(cch.changes))
+                .then(default_callback())
+                .then(function(notebook) {
+                    return [notebook, cch.controller];
+                });
         },
         remove_cell: function(cell_model) {
             var changes = refresh_buffers().concat(model.remove_cell(cell_model));
-            RCloud.UI.command_prompt.prompt.widget.focus(); // there must be a better way
-            update_notebook(changes)
+            RCloud.UI.command_prompt.focus();
+            return update_notebook(changes)
                 .then(default_callback());
         },
         remove_asset: function(asset_model) {
             var changes = refresh_buffers().concat(model.remove_asset(asset_model));
-            update_notebook(changes)
+            return update_notebook(changes)
                 .then(default_callback());
         },
         move_cell: function(cell_model, before) {
             var changes = refresh_buffers().concat(model.move_cell(cell_model, before ? before.id() : -1));
-            update_notebook(changes)
+            return update_notebook(changes)
                 .then(default_callback());
         },
         join_prior_cell: function(cell_model) {
             var prior = model.prior_cell(cell_model);
             if(!prior)
-                return;
+                return Promise.resolve(undefined);
 
             function opt_cr(text) {
                 if(text.length && text[text.length-1] != '\n')
@@ -326,7 +322,7 @@ Notebook.create_controller = function(model)
                 }
             }
             _.each(prior.views, function(v) { v.clear_result(); });
-            update_notebook(changes.concat(model.remove_cell(cell_model)))
+            return update_notebook(changes.concat(model.remove_cell(cell_model)))
                 .then(default_callback());
         },
         split_cell: function(cell_model, point1, point2) {
@@ -353,7 +349,7 @@ Notebook.create_controller = function(model)
             }
             // don't do anything if there is no real split point
             if(point1 === undefined)
-                return;
+                return Promise.resolve(undefined);
             var parts = [content.substring(0, point1)],
                 id = cell_model.id(), language = cell_model.language();
             if(point2 === undefined)
@@ -368,12 +364,12 @@ Notebook.create_controller = function(model)
             // not great to do multiple inserts here - but not quite important enough to enable insert-n
             for(var i=1; i<parts.length; ++i)
                 changes = changes.concat(insert_cell_helper(parts[i], language, id+i).changes);
-            update_notebook(changes)
+            return update_notebook(changes)
                 .then(default_callback());
         },
         change_cell_language: function(cell_model, language) {
             var changes = refresh_buffers().concat(model.change_cell_language(cell_model, language));
-            update_notebook(changes)
+            return update_notebook(changes)
                 .then(default_callback());
         },
         clear: function() {
@@ -384,6 +380,10 @@ Notebook.create_controller = function(model)
         },
         load_notebook: function(gistname, version) {
             return rcloud.load_notebook(gistname, version || null)
+                .catch(function(xep) {
+                    xep.from_load = true;
+                    throw xep;
+                })
                 .then(_.bind(on_load, this, version));
         },
         create_notebook: function(content) {
@@ -424,27 +424,47 @@ Notebook.create_controller = function(model)
             return update_notebook(refresh_buffers(), null, {description: desc})
                 .then(default_callback());
         },
+        apply_changes: function(changes) {
+            return update_notebook(changes).then(default_callback());
+        },
         save: function() {
             if(!dirty_)
                 return Promise.resolve(undefined);
             return update_notebook(refresh_buffers())
                 .then(default_callback());
         },
-        run_all: function() {
-            this.save();
-            _.each(model.cells, function(cell_model) {
-                cell_model.controller.set_status_message("Waiting...");
-            });
-
-            // will ordering bite us in the leg here?
-            var promises = _.map(model.cells, function(cell_model) {
-                return Promise.resolve().then(function() {
-                    cell_model.controller.set_status_message("Computing...");
-                    return cell_model.controller.execute();
+        execute_cell_version: function(context_id, info) {
+            function execute_cell_callback(r) {
+                if (r && r.r_attributes) {
+                    if (r.r_attributes['class'] === 'parse-error') {
+                        // available: error=message
+                        RCloud.end_cell_output(context_id, "Parse error: " + r.error);
+                        throw 'stop';
+                    } else if (r.r_attributes['class'] === 'cell-eval-error') {
+                        // available: error=message, traceback=vector of calls, expression=index of the expression that failed
+                        var tb = r['traceback'] || '';
+                        if (tb.join) tb = tb.join(" <- ");
+                        var trace = tb ? 'trace: '+tb.replace('\n', ' ') : '';
+                        RCloud.end_cell_output(context_id, trace);
+                        throw 'stop';
+                    }
+                    else RCloud.end_cell_output(context_id, null);
+                }
+                else RCloud.end_cell_output(context_id, null);
+                _.each(model.execution_watchers, function(ew) {
+                    ew.run_cell(info.json_rep);
                 });
-            });
-            return RCloud.UI.with_progress(function() {
-                return Promise.all(promises);
+            }
+            rcloud.record_cell_execution(info.json_rep);
+            var cell_eval = rcloud.authenticated ? rcloud.authenticated_cell_eval : rcloud.session_cell_eval;
+            return cell_eval(context_id, info.partname, info.language, info.version, false).then(execute_cell_callback);
+        },
+        run_all: function() {
+            var that = this;
+            return this.save().then(function() {
+                _.each(model.cells, function(cell_model) {
+                    cell_model.controller.enqueue_execution_snapshot();
+                });
             });
         },
 
@@ -460,12 +480,12 @@ Notebook.create_controller = function(model)
 
         hide_r_source: function() {
             this._r_source_visible = false;
-            show_source_checkbox_.set_state(this._r_source_visible);
+            RCloud.UI.advanced_menu.check('show_source', false);
             Notebook.hide_r_source();
         },
         show_r_source: function() {
             this._r_source_visible = true;
-            show_source_checkbox_.set_state(this._r_source_visible);
+            RCloud.UI.advanced_menu.check('show_source', true);
             Notebook.show_r_source();
         }
     };

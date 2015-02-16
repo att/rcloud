@@ -202,44 +202,56 @@ rect.frame {
 .notebook-cell .outer-ace-div {
     position: relative;
     width: 100%;
-    height: calc(100% - 25px);
-    border: 1px solid #fff;
+    height: 100%;
+    background: #f5f5f5;
 }
 
-.cell-status {
-    position: relative;
-    width: 100%;
-    height: 25px;
-    background-color: #e5e5e5;
+.cell-status:not(.readonly):not(.prompt) {
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+    cursor: grab;
 }
 
 .cell-status.big {
     height: 35px;
 }
 
-.cell-status .cell-controls {
+.cell-status .cell-control-bar {
     position: absolute;
     bottom: 0;
     right: 0;
     padding: 2 2 2 2px;
-    border-top-left-radius: 4px;
-    border-top-right-radius: 4px;
-    background-color: white;
+    cursor: default; /* override status area */
 }
 
-.cell-status .cell-controls.flipped {
+.cell-control-bar select.cell-control {
+    position: relative;
+    top: -1px;
+    margin: 1px 4px 1px 2px;
+    padding: 1px 2px;
+    height: 17px;
+    background-color: #f9f9f9;
+}
+
+.cell-control-bar .cell-control {
+    display: inline-block;
+    padding: 0;
+}
+
+.cell-status .cell-control-bar.flipped {
     top: 0;
     bottom: auto;
     border-radius: 0px 0px 4px 4px;
 }
 
-.notebook-cell .cell-insert-control {
+.notebook-cell .cell-controls-above {
     color: #555;
     position: absolute;
     right: -0.1em;
     top: -0.5em;
     z-index: 5;
 }
+
 
 .fontawesome-button {
     margin: 0.25em;
@@ -254,10 +266,22 @@ rect.frame {
     overflow-y: auto;
 }
 
+/* this is really just the "new notebook" button, but part of it
+   may apply to other buttons */
 .header-button {
-    float: right;
     font-size: 120%;
     color: #f1f1e5;
+    position: absolute;
+    width: 32;
+    height: 34;
+    top: -10px;
+    right: -12px;
+}
+
+.header-button span {
+    position: relative;
+    left: 10px;
+    top: 10px;
 }
 
 /* Ace sets its z-index to something obscene,
@@ -360,6 +384,10 @@ input[type=text].form-control-ext {
     padding-left: 5px;
 }
 
+.panel-body.tight {
+    padding: 5px;
+}
+
 /******************************************************************************/
 
 ul.jqtree-tree .jqtree-toggler {
@@ -419,14 +447,17 @@ ul.jqtree-tree .jqtree-title.private {
     float: right;
 }
 
-li.jqtree-selected .notebook-commands {
-    bottom: -1px;
-}
-
 .notebook-commands .fontawesome-button {
     margin: 0;
 }
 
+.no-arrow{
+    display: none !important;
+}
+
+.popover-offset{
+     left : 24.2% !important;
+ }
 /******************************************************************************/
 
 #search-wrapper {
@@ -443,7 +474,7 @@ li.jqtree-selected .notebook-commands {
 #search-header {
     display: table-row;
     width: 100%;
-    height:50px;
+    height:10px;
 }
 
 #search-header form div.input-group {
@@ -452,6 +483,8 @@ li.jqtree-selected .notebook-commands {
 
 #search-summary {
     display: none;
+    height: 8px;
+    margin-bottom: 8px;
 }
 
 #search-results-row {
@@ -463,6 +496,7 @@ li.jqtree-selected .notebook-commands {
 #search-results-pagination {
     display:table-row;
     text-align:center
+    display: none;
 }
 
 #search-results-scroller {
@@ -629,8 +663,12 @@ li.jqtree-selected .notebook-commands {
 }
 
 #file-upload-results-scroller {
-    height: 100%;
-    overflow-y: auto;
+    overflow: auto;
+    width: 100%;
+    height: 60px;
+    max-height: 100%;
+    min-height: 100%;
+    margin-bottom: -4em;
 }
 
 #file-upload-results > .alert {
@@ -717,7 +755,6 @@ li.jqtree-selected .notebook-commands {
 #session-info-panel {
     overflow-y: auto;
     overflow-x: auto;
-    padding: 5px;
     background-color: rgb(255, 255, 248);
 }
 
@@ -777,11 +814,29 @@ pre {
     max-width: 100%;
 }
 
-/* some visual affordance for ace-gutter sortable handles */
-#output:not(.ui-sortable-disabled) > .notebook-cell .ace_gutter-layer {
-    cursor: -moz-grab;
-    cursor: -webkit-grab;
-    cursor: grab;
+.cell-number {
+    padding-left: 4px;
+}
+
+.ace_gutter {
+    background: #f5f5f5 !important;
+}
+
+.ace_gutter-layer {
+    width: 50px !important;
+}
+
+.input-div {
+    border: 2px solid #ffffff;
+}
+
+.input-div .ace_gutter-layer {
+    width: inherit !important;
+}
+
+.input-div .ace_gutter-cell {
+    padding-left: 2px;
+    padding-right: 0px !important;
 }
 
 #output > .notebook-cell .grabbing {
@@ -808,7 +863,6 @@ pre {
 }
 
 .btn {
-    border-radius: 0;
     font-size: inherit;
 }
 
@@ -902,11 +956,11 @@ a.accordion-toggle.right > i {
 }
 
 .notebook-sizer.left {
-    left:-.25em;
+    left: -3px;
 }
 
 .notebook-sizer.right {
-    right:0em;
+    right: 2px;
 }
 
 .notebook-sizer > i {
@@ -915,7 +969,7 @@ a.accordion-toggle.right > i {
 
 .notebook-sizer > .bar {
     height: 1000px;
-    width: 0.25em;
+    width: 5px;
     background-color: #333;
     position: absolute;
     bottom: 0;
@@ -985,24 +1039,6 @@ a.accordion-toggle.right > i {
     font-size: 16px;
 }
 
-.r-result-div pre code {
-    max-width: 800px;
-    margin-right: auto;
-    margin-left: auto;
-    border-left: 1px solid rgba(0,0,0,0.15);
-    border-right: 1px solid rgba(0,0,0,0.15);
-}
-
-/* Annoying, I'll have to add new entries for every language class here. */
-.r-result-div pre code.r, .r-result-div pre code.py {
-    max-width: inherit;
-}
-
-.r-result-div p img {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-}
 .drop-asset-body {
     display: none;
     opacity:.8;
@@ -1111,4 +1147,29 @@ pre > .vt100 {
     border-color: #ccc;
     border-radius: 3px;
 }
-
+.checkbox {
+    padding-left: 2px;
+    margin-top: 0px;
+    margin-bottom: 5px;
+}
+/* switching off default bootstrap input type checkbox*/
+input[type=checkbox] {
+    display: none;
+}
+input[type=checkbox] + span:before {
+    font-family: "FontAwesome";
+    width: 1.2em;
+    display:inline-block;
+}
+input[type=checkbox] + span:before {
+    content: "\f096";
+}
+input[type=checkbox]:checked + span:before {
+    content: "\f046";
+}
+input[type=checkbox].inverse + span:before {
+    content: "\f0c8";
+}
+input[type=checkbox].inverse:checked + span:before {
+    content: "\f14a";
+}
