@@ -53,7 +53,7 @@ rcloud.load.notebook <- function(id, version = NULL) {
 ## FIXME: since this is handled by githubHandler in JS, we have to pretend to have a valid result even
 ##        if it is later discarded
 rcloud.load.notebook.compute <- function(...) { if (identical(.session$separate.compute, TRUE)) rcloud.load.notebook(...) else list(ok=TRUE) }
-rcloud.unauthenticated.load.notebook.compute <- function(...) { if (identical(.session$separate.compute, TRUE)) rcloud.unauthenticated.load.notebook(...) }
+rcloud.unauthenticated.load.notebook.compute <- function(...) { if (identical(.session$separate.compute, TRUE)) rcloud.unauthenticated.load.notebook(...) else list(ok=TRUE) }
 
 rcloud.get.version.by.tag <- function(gist_id,tag) {
   v <- rcs.get(rcs.key(username='.notebook', gist_id, 'tag2version', tag))
