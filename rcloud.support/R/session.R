@@ -9,6 +9,10 @@ rcloud.session.notebook <- function() {
     .session$current.notebook
 }
 
+rcloud.has.compute.separation <- function() {
+  .session$separate.compute
+}
+
 ################################################################################
 ## evaluation of R code
 
