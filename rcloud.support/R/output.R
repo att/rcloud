@@ -14,6 +14,6 @@ rcloud.out <- function(expr, terminate="\n") {
 
 rcloud.html.out <- function(..., sep="") {
     flush.console()
-    self.oobSend(list("html.out", x <- paste(..., sep=sep)))
+    self.oobSend(list("html.out", x <- paste(..., sep=sep, collapse="\n")))
     invisible(x)
 }
