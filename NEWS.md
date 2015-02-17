@@ -14,7 +14,7 @@
 * Direct output and input.  Instead of printing a single result for each cell, the
   output is handled asynchronously, so it shows as it is available.  The code can
   also request lines of input, so e.g. `readline` now works - as do `browser` and
-  'debug' for debugging!  Ordinary code cells do not use knitr/markdown for output, but send
+  `debug` for debugging!  Ordinary code cells do not use knitr/markdown for output, but send
   images, preformatted, and html output separately.
 
 * Ability to save plots in other formats.  Hover the mouse over the plot for the
