@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/att/rcloud.svg?branch=develop)](https://travis-ci.org/att/rcloud)
 
-RCloud is an environment for collaboratively creating and sharing data
+<a href="http://att.github.io/rcloud">RCloud</a> is an environment for collaboratively creating and sharing data
 analysis scripts. RCloud lets you mix analysis code in R, HTML5, Markdown, Python, and others.
 Much like [Sage](http://www.sagemath.org/),
 [iPython notebooks](http://ipython.org/ipython-doc/stable/interactive/notebook.html)
