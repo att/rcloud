@@ -1,5 +1,5 @@
 RCloud.UI.load_options = function() {
-    rcloud.get_conf_value('smtp.server').then(function(has_mail) {
+    return rcloud.get_conf_value('smtp.server').then(function(has_mail) {
         // this extra round trip is not ideal.  the load order still needs
         // refinement.
         if(has_mail)

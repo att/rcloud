@@ -5985,7 +5985,7 @@ RCloud.UI.left_panel =
     RCloud.UI.collapsible_column("#left-column",
                                  "#accordion-left", "#left-pane-collapser");
 RCloud.UI.load_options = function() {
-    rcloud.get_conf_value('smtp.server').then(function(has_mail) {
+    return rcloud.get_conf_value('smtp.server').then(function(has_mail) {
         // this extra round trip is not ideal.  the load order still needs
         // refinement.
         if(has_mail)
@@ -6352,7 +6352,8 @@ RCloud.UI.notebook_title = (function() {
                                               editable_opts));
         },
         update_fork_info: function(fork_of) {
-            if(fork_of) {
+            // fork_of can be an empty array so make sure description is there
+            if(fork_of && fork_of.description) {
                 var owner = fork_of.owner ? fork_of.owner : fork_of.user;
                 var fork_desc = owner.login+ " / " + fork_of.description;
                 var url = ui_utils.make_url(shell.is_view_mode() ? 'view.html' : 'edit.html',
