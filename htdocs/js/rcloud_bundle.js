@@ -5985,20 +5985,34 @@ RCloud.UI.left_panel =
     RCloud.UI.collapsible_column("#left-column",
                                  "#accordion-left", "#left-pane-collapser");
 RCloud.UI.load_options = function() {
-    return RCloud.UI.panel_loader.load().then(function() {
-        RCloud.UI.left_panel.init();
-        RCloud.UI.middle_column.init();
-        RCloud.UI.right_panel.init();
+    rcloud.get_conf_value('smtp.server').then(function(has_mail) {
+        // this extra round trip is not ideal.  the load order still needs
+        // refinement.
+        if(has_mail)
+            RCloud.UI.settings_frame.add({
+                'subscribe-to-comments': RCloud.UI.settings_frame.checkbox({
+                    sort: 3000,
+                    default_value: false,
+                    label: "Subscribe To Comments",
+                    condition: function() {
+                    }
+                })
+            });
+        return RCloud.UI.panel_loader.load().then(function() {
+            RCloud.UI.left_panel.init();
+            RCloud.UI.middle_column.init();
+            RCloud.UI.right_panel.init();
 
-        RCloud.UI.command_prompt.init();
+            RCloud.UI.command_prompt.init();
 
-        $(".panel-collapse").collapse({toggle: false});
+            $(".panel-collapse").collapse({toggle: false});
 
-        return Promise.all([RCloud.UI.navbar.load(),
-                            RCloud.UI.advanced_menu.load(),
-                            RCloud.UI.share_button.load(),
-                            RCloud.UI.left_panel.load_options(),
-                            RCloud.UI.right_panel.load_options()]);
+            return Promise.all([RCloud.UI.navbar.load(),
+                                RCloud.UI.advanced_menu.load(),
+                                RCloud.UI.share_button.load(),
+                                RCloud.UI.left_panel.load_options(),
+                                RCloud.UI.right_panel.load_options()]);
+        });
     });
 };
 RCloud.UI.middle_column = (function() {
@@ -6573,10 +6587,8 @@ RCloud.UI.panel_loader = (function() {
             function do_side(panels, side) {
                 function do_panel(p) {
                     add_panel(p);
-                    // conceivably panels could be added to the DOM and initialized
-                    // before we have a session, and then loaded once we have it.
-                    // that's not currently how it works and i'm not sure if this
-                    // init/load distinction makes sense or is consistent
+                    // note: panels are not accessible to extensions for pre-load
+                    // customization
                     if(p.panel.init)
                         p.panel.init();
                     if(p.panel.load)
@@ -7473,11 +7485,6 @@ RCloud.UI.settings_frame = (function() {
                     set: function(val) {
                         RCloud.UI.command_prompt.show_prompt(val);
                     }
-                }),
-                'subscribe-to-comments': that.checkbox({
-                    sort: 3000,
-                    default_value: false,
-                    label: "Subscribe To Comments"
                 }),
                 'show-terse-dates': that.checkbox({
                     sort: 2000,

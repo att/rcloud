@@ -74,11 +74,6 @@ RCloud.UI.settings_frame = (function() {
                         RCloud.UI.command_prompt.show_prompt(val);
                     }
                 }),
-                'subscribe-to-comments': that.checkbox({
-                    sort: 3000,
-                    default_value: false,
-                    label: "Subscribe To Comments"
-                }),
                 'show-terse-dates': that.checkbox({
                     sort: 2000,
                     default_value: true,
