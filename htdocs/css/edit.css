@@ -1147,10 +1147,27 @@ pre > .vt100 {
     border-color: #ccc;
     border-radius: 3px;
 }
+
+.text label {
+    font-weight: normal;
+}
+
+.text input {
+    width: 180px;
+    height: 20px;
+}
+
+.text label span {
+    display: inline-block;
+    width: 120px;
+    padding-right: 5px;
+    vertical-align: middle;
+}
+
 .checkbox {
     padding-left: 2px;
     margin-top: 0px;
-    margin-bottom: 5px;
+    margin-bottom: 2px;
 }
 /* switching off default bootstrap input type checkbox*/
 input[type=checkbox] {

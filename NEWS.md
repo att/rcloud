@@ -1,3 +1,11 @@
+## RCloud 1.3.1
+
+### Features
+* Options to enable and disable extensions per user. The Settings pane
+  has "Enable Extension" and "Disable Extensions", which set the user
+  options `addons` and `skip-addons`, respectively. On starting the session,
+  any extensions listed in `skip-addons` are not loaded. (#1346)
+
 ## RCloud 1.3
 
 ### Features

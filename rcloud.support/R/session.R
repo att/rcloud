@@ -128,7 +128,9 @@ rcloud.reset.session <- function() {
   ## load all-user and per-user rcloud add-ons
   all.addons <- rcloud.config.get.alluser.option("addons")
   user.addons <- rcloud.config.get.user.option("addons")
-  lapply(c(all.addons,user.addons), function(x) { suppressWarnings(suppressMessages(require(x, character.only=TRUE))) })
+  user.skip.addons <- rcloud.config.get.user.option("skip-addons");
+  addons <- setdiff(c(all.addons, user.addons), user.skip.addons)
+  lapply(addons, function(x) { suppressWarnings(suppressMessages(require(x, character.only=TRUE))) })
 
   ## close all devices
   while (dev.cur() > 1L) dev.off()

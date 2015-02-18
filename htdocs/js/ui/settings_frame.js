@@ -63,6 +63,68 @@ RCloud.UI.settings_frame = (function() {
                 }
             };
         },
+        text_input: function(opts) {
+            opts = _.extend({
+                sort: 10000,
+                default_value: "",
+                label: "",
+                id:"",
+                parse: function(val) { return val; },
+                format: function(val) { return val; },
+                set: function(val) {}
+            }, opts);
+            return {
+                sort: opts.sort,
+                default_value: opts.default_value,
+                create_control: function(on_change) {
+                    var input = $.el.input({type: 'text', class: 'form-control-ext'});
+                    $(input).prop('id', opts.id);
+                    var span = $.el.span(opts.label);
+                    var label = $.el.label(span, input);
+                    var div = $($.el.div({class: 'text'}, label));
+                    function commit() {
+                        var val = $(input).val();
+                        val = opts.parse(val);
+                        on_change(val);
+                        opts.set(val);
+                        val = opts.format(val);
+                        $(input).val(val);
+                        div.data('original-value', val);
+                    }
+                    function cancel() {
+                        $(input).val(div.data('original-value'));
+                    }
+                    $(input).keydown(function(e) {
+                        if(e.keyCode === $.ui.keyCode.ENTER)
+                            commit();
+                        else if(e.keyCode === $.ui.keyCode.ESCAPE)
+                            cancel();
+                    });
+                    $(input).blur(function() {
+                        cancel();
+                    });
+                    return div;
+                },
+                set: function(val, control) {
+                    opts.set(val);
+                    val = opts.format(val);
+                    control.find('input').val(val);
+                    control.data('original-value', val);
+                }
+            };
+        },
+        text_input_vector: function(opts) {
+            opts = _.extend({
+                parse: function(val) {
+                    return val.split(/, */);
+                },
+                format: function(val) {
+                    // might be devectorized by rserve.js
+                    return val.join ? val.join(', ') : val;
+                }
+            }, opts);
+            return this.text_input(opts);
+        },
         init: function() {
             var that = this;
             this.add({
@@ -81,6 +143,14 @@ RCloud.UI.settings_frame = (function() {
                     set: function(val) {
                         editor.set_terse_dates(val);
                     }
+                }),
+                'addons': that.text_input_vector({
+                    sort: 10000,
+                    label: "Enable Extensions"
+                }),
+                'skip-addons': that.text_input_vector({
+                    sort: 11000,
+                    label: "Disable Extensions"
                 })
             });
         },
