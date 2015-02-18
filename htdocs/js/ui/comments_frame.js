@@ -88,7 +88,7 @@ RCloud.UI.comments_frame = (function() {
             });
 
             comment.keydown(function (e) {
-                if (e.keyCode == 13 && (e.ctrlKey || e.metaKey)) {
+                if (e.keyCode == $.ui.keyCode.ENTER && (e.ctrlKey || e.metaKey)) {
                     if(!Notebook.empty_for_github(comment.val())) {
                         that.post_comment(_.escape(comment.val()));
                         comment.height("41px");

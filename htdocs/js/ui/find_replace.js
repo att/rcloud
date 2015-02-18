@@ -93,7 +93,7 @@ RCloud.UI.find_replace = (function() {
             replace_cycle_ = ['find-input', 'replace-input', 'find-next', 'find-last', 'replace-all'];
 
             function click_find_next(e) {
-                if(e.keyCode===13) {
+                if(e.keyCode===$.ui.keyCode.ENTER) {
                     e.preventDefault();
                     e.stopPropagation();
                     find_next_.click();
@@ -107,7 +107,7 @@ RCloud.UI.find_replace = (function() {
 
             find_form.keydown(function(e) {
                 switch(e.keyCode) {
-                case 9: // tab
+                case $.ui.keyCode.TAB:
                     e.preventDefault();
                     e.stopPropagation();
                     var cycle = replace_mode_ ? replace_cycle_ : find_cycle_;
@@ -116,7 +116,7 @@ RCloud.UI.find_replace = (function() {
                     i = i % cycle.length;
                     $('#' + cycle[i]).focus();
                     return false;
-                case 27: // esc
+                case $.ui.keyCode.ESCAPE:
                     e.preventDefault();
                     e.stopPropagation();
                     hide_dialog();
