@@ -1122,7 +1122,7 @@ ui_utils.editable = function(elem$, command) {
                 // allow default action but don't bubble (causing eroneous reselection in notebook tree)
             },
             'keydown.editable': function(e) {
-                if(e.keyCode === 13) {
+                if(e.keyCode === $.ui.keyCode.ENTER) {
                     var txt = decode(elem$.text());
                     function execute_if_valid_else_ignore(f) {
                         if(options().validate(txt)) {
@@ -1143,7 +1143,7 @@ ui_utils.editable = function(elem$, command) {
                         e.preventDefault();
                         return execute_if_valid_else_ignore(options().change);
                     }
-                } else if(e.keyCode === 27) {
+                } else if(e.keyCode === $.ui.keyCode.ESCAPE) {
                     elem$.blur(); // and cancel
                 }
                 return true;
@@ -1211,13 +1211,13 @@ ui_utils.prevent_backspace = function($doc) {
     // from http://stackoverflow.com/a/2768256/676195
     $doc.unbind('keydown').bind('keydown', function (event) {
         var doPrevent = false;
-        if (event.keyCode === 8) {
+        if (event.keyCode === $.ui.keyCode.BACKSPACE) {
             var d = event.srcElement || event.target;
             if((d.tagName.toUpperCase() === 'INPUT' &&
                 (d.type.toUpperCase() === 'TEXT' || d.type.toUpperCase() === 'PASSWORD' ||
                  d.type.toUpperCase() === 'FILE' || d.type.toUpperCase() === 'EMAIL' )) ||
                d.tagName.toUpperCase() === 'TEXTAREA' ||
-               d.contentEditable) {
+               d.isContentEditable) {
                 doPrevent = d.readOnly || d.disabled;
             }
             else {
@@ -5004,7 +5004,7 @@ RCloud.UI.comments_frame = (function() {
             });
 
             comment.keydown(function (e) {
-                if (e.keyCode == 13 && (e.ctrlKey || e.metaKey)) {
+                if (e.keyCode == $.ui.keyCode.ENTER && (e.ctrlKey || e.metaKey)) {
                     if(!Notebook.empty_for_github(comment.val())) {
                         that.post_comment(_.escape(comment.val()));
                         comment.height("41px");
@@ -5224,7 +5224,7 @@ RCloud.UI.find_replace = (function() {
             replace_cycle_ = ['find-input', 'replace-input', 'find-next', 'find-last', 'replace-all'];
 
             function click_find_next(e) {
-                if(e.keyCode===13) {
+                if(e.keyCode===$.ui.keyCode.ENTER) {
                     e.preventDefault();
                     e.stopPropagation();
                     find_next_.click();
@@ -5238,7 +5238,7 @@ RCloud.UI.find_replace = (function() {
 
             find_form.keydown(function(e) {
                 switch(e.keyCode) {
-                case 9: // tab
+                case $.ui.keyCode.TAB:
                     e.preventDefault();
                     e.stopPropagation();
                     var cycle = replace_mode_ ? replace_cycle_ : find_cycle_;
@@ -5247,7 +5247,7 @@ RCloud.UI.find_replace = (function() {
                     i = i % cycle.length;
                     $('#' + cycle[i]).focus();
                     return false;
-                case 27: // esc
+                case $.ui.keyCode.ESCAPE:
                     e.preventDefault();
                     e.stopPropagation();
                     hide_dialog();
@@ -5759,7 +5759,7 @@ RCloud.UI.import_export = (function() {
                             var notebook_desc = $('<span>Notebook description: </span>');
                             notebook_desc_content = $('<input type="text" class="form-control-ext" size="50"></input>')
                                 .keypress(function(e) {
-                                    if (e.which === 13) {
+                                    if (e.which === $.ui.keyCode.ENTER) {
                                         do_import();
                                         return false;
                                     }

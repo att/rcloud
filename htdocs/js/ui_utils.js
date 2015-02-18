@@ -558,7 +558,7 @@ ui_utils.prevent_backspace = function($doc) {
                 (d.type.toUpperCase() === 'TEXT' || d.type.toUpperCase() === 'PASSWORD' ||
                  d.type.toUpperCase() === 'FILE' || d.type.toUpperCase() === 'EMAIL' )) ||
                d.tagName.toUpperCase() === 'TEXTAREA' ||
-               d.contentEditable) {
+               d.isContentEditable) {
                 doPrevent = d.readOnly || d.disabled;
             }
             else {
