@@ -116,7 +116,7 @@ RCloud.UI.settings_frame = (function() {
         text_input_vector: function(opts) {
             opts = _.extend({
                 parse: function(val) {
-                    return val.split(/, */);
+                    return val.split(/, */).filter(function(x) { return !!x; });
                 },
                 format: function(val) {
                     // might be devectorized by rserve.js
