@@ -6,6 +6,11 @@
   options `addons` and `skip-addons`, respectively. On starting the session,
   any extensions listed in `skip-addons` are not loaded. (#1346)
 
+### Improvements
+* "Subscribe to Comments" option is not shown if this feature is not
+  configured on the server. (#1347)
+
+
 ## RCloud 1.3
 
 ### Features
