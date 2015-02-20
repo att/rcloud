@@ -10,6 +10,7 @@ rcloud.enviewer.display.dataframe <- function(x)
   structure(list(command="view", object=x), class="data")
 
 rcloud.enviewer.display.value <- function(val) {
+    type <- class(val)
     str <- capture.output(str(val))
     if (length(str) > 1) {
         if (length(str) > 3) { ## try something smaller ... if possible
@@ -23,7 +24,7 @@ rcloud.enviewer.display.value <- function(val) {
     if (any(too.long <- (nchar(str) > 100)))
         str[too.long] <- paste(substr(str[too.long], 1, 100), "...")
     if (length(str) > 1L) str <- paste(str, collapse='\n')
-    structure(list(type=NULL, value=str), class="values")
+    structure(list(type=type, value=str), class="values")
 }
 
 rcloud.enviewer.display.function <- function(f)
