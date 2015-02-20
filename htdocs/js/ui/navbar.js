@@ -23,17 +23,21 @@ RCloud.UI.navbar = (function() {
             });
         },
         add: function(commands) {
-            extension_.add(commands);
+            if(extension_)
+                extension_.add(commands);
             return this;
         },
         remove: function(command_name) {
-            extension_.remove(command_name);
+            if(extension_)
+                extension_.remove(command_name);
             return this;
         },
         load: function() {
-            var items = extension_.create('header');
-            var header = $('#rcloud-navbar-header');
-            header.append.apply(header, _.values(items));
+            if(extension_) {
+                var items = extension_.create('header');
+                var header = $('#rcloud-navbar-header');
+                header.append.apply(header, _.values(items));
+            }
         }
     };
     return result;
