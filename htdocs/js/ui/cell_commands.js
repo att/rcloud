@@ -244,11 +244,13 @@ RCloud.UI.cell_commands = (function() {
             return this;
         },
         add: function(commands) {
-            extension_.add(commands);
+            if(extension_)
+                extension_.add(commands);
             return this;
         },
         remove: function(command_name) {
-            extension_.remove(command_name);
+            if(extension_)
+                extension_.remove(command_name);
             return this;
         },
         decorate: function(area, div, cell_model, cell_view) {
