@@ -742,6 +742,8 @@ var editor = function () {
         scroll_into_view(node);
         if(node.user === username_)
             RCloud.UI.notebook_title.make_editable(node, node.element, true);
+        else
+            RCloud.UI.notebook_title.make_editable(null);
     }
 
     function update_tree_entry(root, user, gistname, entry, create) {
