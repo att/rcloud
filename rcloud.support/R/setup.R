@@ -95,8 +95,12 @@ configure.rcloud <- function (mode=c("startup", "script")) {
   }
 
   ## use public github by default (FIXME: this should go away when set in the githubgist package)
+  if(nzConf('gist.backend') && getConf('gist.backend')=='gitgist'){
+    if(!nzConf('gist.git.root')) setConf("gist.git.root","${ROOT}/data/gists")
+  } else {
   if (!nzConf("github.base.url")) setConf("github.base.url", "https://github.com/")
   if (!nzConf("github.api.url")) setConf("github.api.url", "https://api.github.com/")
+}
 
   ## set locale - default is UTF-8
   locale <- getConf("locale")

@@ -17,3 +17,5 @@ rcs.system.config.addons: rcloud.viewer, rcloud.enviewer, rcloud.notebook.info
 rcloud.languages: rcloud.r, rcloud.python, rcloud.rmarkdown
 smtp.server:xxxxxxxxxxxxx
 email.from:donotreply
+#gist.backend: gitgist
+#gist.git.root: ${ROOT}/data/gists
