@@ -1882,6 +1882,7 @@ function create_cell_html_view(language, cell_model) {
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
+            result.status_updated('ready');
             cell_model.parent_model.on_dirty();
         });
         update_language();
@@ -2022,7 +2023,28 @@ function create_cell_html_view(language, cell_model) {
         id_updated: update_div_id,
         language_updated: update_language,
         status_updated: function(status) {
-            display_status(status);
+            var control = left_controls_.controls['cell_status'];
+            switch(status) {
+            case 'ready':
+                control.icon('icon-circle-blank').color('midnightblue');
+                break;
+            case 'waiting':
+                control.icon('icon-ellipsis-horizontal').color('midnightblue');
+                break;
+            case 'cancelled':
+                control.icon('icon-asterisk').color('darkorange');
+                break;
+            case 'running':
+                control.icon('icon-spinner icon-spin').color('blue');
+                has_result_ = false;
+                break;
+            case 'complete':
+                control.icon('icon-circle').color('green');
+                break;
+            case 'error':
+                control.icon('icon-exclamation').color('crimson');
+                break;
+            }
         },
         start_output: function() {
         },
@@ -2080,12 +2102,13 @@ function create_cell_html_view(language, cell_model) {
             }
             result_updated();
         },
-        end_output: function() {
+        end_output: function(error) {
             if(!has_result_) {
                 // the no-output case
                 result_div_.empty();
                 has_result_ = true;
             }
+            this.status_updated(error ? 'error' : 'complete');
             current_result_ = current_error_ = null;
         },
         clear_result: clear_result,
@@ -2372,19 +2395,19 @@ Notebook.Cell.create_controller = function(cell_model)
                                      };
             }
             var context_id = RCloud.register_output_context(execution_context_);
-            that.set_status_message("Waiting...");
+            that.set_status("waiting");
             that.edit_source(false);
             var snapshot = cell_model.get_execution_snapshot();
             RCloud.UI.run_button.enqueue(
                 function() {
-                    that.set_status_message("Computing...");
+                    that.set_status("running");
                     return cell_model.parent_model.controller.execute_cell_version(context_id, snapshot);
                 },
                 function() {
-                    that.set_status_message("Cancelled!");
+                    that.set_status("cancelled");
                 });
         },
-        set_status_message: function(msg) {
+        set_status: function(msg) {
             cell_model.notify_views(function(view) {
                 view.status_updated(msg);
             });
@@ -2408,7 +2431,7 @@ Notebook.Cell.create_controller = function(cell_model)
             cell_model.notify_views(function(view) {
                 if(error)
                     view.add_result('error', error);
-                view.end_output();
+                view.end_output(error);
             });
         },
         get_input: function(type, prompt, k) {
@@ -4112,8 +4135,30 @@ RCloud.UI.cell_commands = (function() {
                 control: span,
                 enable: function() {},
                 disable: function() {},
-                set: function(html) { content.html(html); }
+                set: function(html) {
+                    content.html(html);
+                    return this;
+                },
+                get: function() {
+                    return content;
+                }
             };
+        },
+        create_icon: function(icon, color, wrap) {
+            var result = this.create_static("<i></i>");
+            result = _.extend(result, {
+                icon: function(icon) {
+                    result.get().find('i').attr('class', icon);
+                    return this;
+                },
+                color: function(color) {
+                    result.get().find('i').css('color', color);
+                    return this;
+                }
+            });
+            result.get().attr('class', 'status-light left-indicator');
+            result.icon(icon).color(color);
+            return result;
         },
         init: function() {
             extension_ = RCloud.extension.create({
@@ -4254,12 +4299,19 @@ RCloud.UI.cell_commands = (function() {
                         return that.create_static('&nbsp;');
                     }
                 },
-                cell_number: {
+                cell_status: {
                     area: 'left',
                     sort: 2000,
                     create: function(cell_model) {
+                        return that.create_icon('icon-circle-blank', 'blue');
+                    }
+                },
+                cell_number: {
+                    area: 'left',
+                    sort: 3000,
+                    create: function(cell_model) {
                         return that.create_static(cell_model.id(), function(x) {
-                            return $("<span class='cell-number'>").append('cell ', x);
+                            return $("<span class='left-indicator'></span>").append('cell ', x);
                         });
                     }
                 }

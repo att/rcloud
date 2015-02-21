@@ -228,6 +228,7 @@ function create_cell_html_view(language, cell_model) {
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
+            result.status_updated('ready');
             cell_model.parent_model.on_dirty();
         });
         update_language();
@@ -368,7 +369,28 @@ function create_cell_html_view(language, cell_model) {
         id_updated: update_div_id,
         language_updated: update_language,
         status_updated: function(status) {
-            display_status(status);
+            var control = left_controls_.controls['cell_status'];
+            switch(status) {
+            case 'ready':
+                control.icon('icon-circle-blank').color('midnightblue');
+                break;
+            case 'waiting':
+                control.icon('icon-ellipsis-horizontal').color('midnightblue');
+                break;
+            case 'cancelled':
+                control.icon('icon-asterisk').color('darkorange');
+                break;
+            case 'running':
+                control.icon('icon-spinner icon-spin').color('blue');
+                has_result_ = false;
+                break;
+            case 'complete':
+                control.icon('icon-circle').color('green');
+                break;
+            case 'error':
+                control.icon('icon-exclamation').color('crimson');
+                break;
+            }
         },
         start_output: function() {
         },
@@ -426,12 +448,13 @@ function create_cell_html_view(language, cell_model) {
             }
             result_updated();
         },
-        end_output: function() {
+        end_output: function(error) {
             if(!has_result_) {
                 // the no-output case
                 result_div_.empty();
                 has_result_ = true;
             }
+            this.status_updated(error ? 'error' : 'complete');
             current_result_ = current_error_ = null;
         },
         clear_result: clear_result,

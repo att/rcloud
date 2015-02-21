@@ -89,8 +89,30 @@ RCloud.UI.cell_commands = (function() {
                 control: span,
                 enable: function() {},
                 disable: function() {},
-                set: function(html) { content.html(html); }
+                set: function(html) {
+                    content.html(html);
+                    return this;
+                },
+                get: function() {
+                    return content;
+                }
             };
+        },
+        create_icon: function(icon, color, wrap) {
+            var result = this.create_static("<i></i>");
+            result = _.extend(result, {
+                icon: function(icon) {
+                    result.get().find('i').attr('class', icon);
+                    return this;
+                },
+                color: function(color) {
+                    result.get().find('i').css('color', color);
+                    return this;
+                }
+            });
+            result.get().attr('class', 'status-light left-indicator');
+            result.icon(icon).color(color);
+            return result;
         },
         init: function() {
             extension_ = RCloud.extension.create({
@@ -231,12 +253,19 @@ RCloud.UI.cell_commands = (function() {
                         return that.create_static('&nbsp;');
                     }
                 },
-                cell_number: {
+                cell_status: {
                     area: 'left',
                     sort: 2000,
                     create: function(cell_model) {
+                        return that.create_icon('icon-circle-blank', 'blue');
+                    }
+                },
+                cell_number: {
+                    area: 'left',
+                    sort: 3000,
+                    create: function(cell_model) {
                         return that.create_static(cell_model.id(), function(x) {
-                            return $("<span class='cell-number'>").append('cell ', x);
+                            return $("<span class='left-indicator'></span>").append('cell ', x);
                         });
                     }
                 }

@@ -245,7 +245,7 @@ rect.frame {
 }
 
 .notebook-cell .cell-controls-above {
-    color: #555;
+    color: #777;
     position: absolute;
     right: -0.1em;
     top: -0.5em;
@@ -812,10 +812,6 @@ div.r-result-div p {
 
 pre {
     max-width: 100%;
-}
-
-.cell-number {
-    padding-left: 4px;
 }
 
 .ace_gutter {

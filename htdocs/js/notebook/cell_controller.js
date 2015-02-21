@@ -20,19 +20,19 @@ Notebook.Cell.create_controller = function(cell_model)
                                      };
             }
             var context_id = RCloud.register_output_context(execution_context_);
-            that.set_status_message("Waiting...");
+            that.set_status("waiting");
             that.edit_source(false);
             var snapshot = cell_model.get_execution_snapshot();
             RCloud.UI.run_button.enqueue(
                 function() {
-                    that.set_status_message("Computing...");
+                    that.set_status("running");
                     return cell_model.parent_model.controller.execute_cell_version(context_id, snapshot);
                 },
                 function() {
-                    that.set_status_message("Cancelled!");
+                    that.set_status("cancelled");
                 });
         },
-        set_status_message: function(msg) {
+        set_status: function(msg) {
             cell_model.notify_views(function(view) {
                 view.status_updated(msg);
             });
@@ -56,7 +56,7 @@ Notebook.Cell.create_controller = function(cell_model)
             cell_model.notify_views(function(view) {
                 if(error)
                     view.add_result('error', error);
-                view.end_output();
+                view.end_output(error);
             });
         },
         get_input: function(type, prompt, k) {
