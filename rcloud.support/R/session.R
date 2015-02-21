@@ -76,8 +76,9 @@ session.markdown.eval <- function(command, language, silent) {
 }
 
 ## WS init
-rcloud.compute.init <- function(...) {
+rcloud.compute.init <- function(session.type, ...) {
     if (!is.null(.session$compute.init.result)) return(.session$compute.init.result)
+    .session$session.type <- session.type
     set.seed(Sys.getpid()) # we want different seeds so we get different file names
     start.rcloud(...)
     rcloud.reset.session()
@@ -94,8 +95,9 @@ rcloud.compute.init <- function(...) {
 }
 
 ## WS init
-rcloud.anonymous.compute.init <- function(...) {
+rcloud.anonymous.compute.init <- function(session.type, ...) {
     if (!is.null(.session$compute.init.result)) return(.session$compute.init.result)
+    .session$session.type <- session.type
     set.seed(Sys.getpid()) # we want different seeds so we get different file names
     start.rcloud.anonymously(...)
     rcloud.reset.session()
@@ -104,9 +106,9 @@ rcloud.anonymous.compute.init <- function(...) {
     paste(R.version.string, " --- welcome, anonymous user", sep='')
 }
 
-rcloud.session.init <- function(...) {
+rcloud.session.init <- function(session.type, ...) {
     if (identical(.session$separate.compute, FALSE))
-        rcloud.compute.init(...)
+        rcloud.compute.init(session.type, ...)
     else {
         start.rcloud(...)
         "" ## return "" since the result is a dual promise for both resulting in an array
@@ -122,15 +124,33 @@ rcloud.anonymous.session.init <- function(...) {
     }
 }
 
-rcloud.reset.session <- function() {
-  ## use the global workspace as the parent to avoid long lookups across irrelevant namespaces
-  .session$knitr.env <- new.env(parent=.GlobalEnv)
+rcloud.active.extensions <- function() {
+  session.type <- .session$session.type
+  if(missing(session.type)) session.type <- c()
   ## load all-user and per-user rcloud add-ons
   all.addons <- rcloud.config.get.alluser.option("addons")
   user.addons <- rcloud.config.get.user.option("addons")
   user.skip.addons <- rcloud.config.get.user.option("skip-addons");
-  addons <- setdiff(c(all.addons, user.addons), user.skip.addons)
-  lapply(addons, function(x) { suppressWarnings(suppressMessages(require(x, character.only=TRUE))) })
+  extensions <- setdiff(c(all.addons, user.addons), user.skip.addons)
+  Filter(function(x) {
+    exttype <- packageDescription(x, fields='RCloud-Extension')
+    if(is.null(exttype) || is.na(exttype))
+      FALSE
+    else {
+      exttype <- tolower(strsplit(exttype, ' *, *')[[1]])
+      length(intersect(session.type, exttype)) > 0
+    }
+  }, extensions)
+}
+
+rcloud.reset.session <- function(session.type) {
+  ## use the global workspace as the parent to avoid long lookups across irrelevant namespaces
+  .session$knitr.env <- new.env(parent=.GlobalEnv)
+
+  lapply(rcloud.active.extensions(),
+         function(x) {
+           suppressWarnings(suppressMessages(require(x, character.only=TRUE)))
+         })
 
   ## close all devices
   while (dev.cur() > 1L) dev.off()

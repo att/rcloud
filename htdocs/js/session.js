@@ -123,16 +123,16 @@ function could_not_initialize_error(err) {
     return msg;
 }
 
-function on_connect_anonymous_allowed(ocaps) {
+function on_connect_anonymous_allowed(ocaps, session_type) {
     var promise_c, promise_s;
     rcloud = RCloud.create(ocaps.rcloud);
 
     if (rcloud.authenticated) {
-        promise_c = rcloud.compute_init(rcloud.username(), rcloud.github_token());
-        promise_s = rcloud.session_init(rcloud.username(), rcloud.github_token());
+        promise_c = rcloud.compute_init(session_type, rcloud.username(), rcloud.github_token());
+        promise_s = rcloud.session_init(session_type, rcloud.username(), rcloud.github_token());
     } else {
-        promise_c = rcloud.anonymous_compute_init();
-        promise_s = rcloud.anonymous_session_init();
+        promise_c = rcloud.anonymous_compute_init(session_type);
+        promise_s = rcloud.anonymous_session_init(session_type);
     }
 
     promise_c.catch(function(e) {
@@ -149,19 +149,19 @@ function on_connect_anonymous_allowed(ocaps) {
     return Promise.all([promise_c, promise_s]);
 }
 
-function on_connect_anonymous_disallowed(ocaps) {
+function on_connect_anonymous_disallowed(ocaps, session_type) {
     rcloud = RCloud.create(ocaps.rcloud);
     if (!rcloud.authenticated) {
         return Promise.reject(new Error("Authentication required"));
     }
 
-    var res_c = rcloud.compute_init(rcloud.username(), rcloud.github_token());
-    var res_s = rcloud.session_init(rcloud.username(), rcloud.github_token());
+    var res_c = rcloud.compute_init(session_type, rcloud.username(), rcloud.github_token());
+    var res_s = rcloud.session_init(session_type, rcloud.username(), rcloud.github_token());
 
     return Promise.all([res_c, res_s]);
 }
 
-function rclient_promise(allow_anonymous) {
+function rclient_promise(allow_anonymous, session_type) {
     var params = '';
     if(location.href.indexOf("?") > 0)
         params = location.href.substr(location.href.indexOf("?")) ;
@@ -182,8 +182,8 @@ function rclient_promise(allow_anonymous) {
         rclient.allow_anonymous_ = allow_anonymous;
     }).then(function(ocaps) {
         var promise = allow_anonymous ?
-            on_connect_anonymous_allowed(ocaps) :
-            on_connect_anonymous_disallowed(ocaps);
+            on_connect_anonymous_allowed(ocaps, session_type) :
+            on_connect_anonymous_disallowed(ocaps, session_type);
         return promise;
     }).then(function(hello) {
         if (!$("#output > .response").length)
@@ -247,9 +247,9 @@ RCloud.session = {
             rclient.close();
             return rclient_promise(anonymous);
         });
-    }, init: function(allow_anonymous) {
+    }, init: function(allow_anonymous, session_type) {
         this.first_session_ = true;
-        return rclient_promise(allow_anonymous);
+        return rclient_promise(allow_anonymous, session_type);
     }
 };
 

@@ -7,7 +7,7 @@ function main() {
 
     shell.is_view_mode(true);
     RCloud.UI.init();
-    RCloud.session.init(true).then(function() {
+    RCloud.session.init(true, ['gui']).then(function() {
         shell.init();
         RCloud.UI.advanced_menu.load();
         var notebook = getURLParameter("notebook"),

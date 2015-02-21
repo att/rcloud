@@ -7,3 +7,4 @@ Description: rcloud.notebook.info adds a Notebook Info command to each notebook 
 Depends: rcloud.support
 NOTE: --- packages that are not on CRAN/RForge.net *must* be in Suggests! ---
 License: MIT
+RCloud-Extension: edit

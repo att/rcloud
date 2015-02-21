@@ -20,9 +20,9 @@ function main() {
             rcloud = RCloud.create(ocaps.rcloud);
             var promise;
             if (rcloud.authenticated) {
-                promise = rcloud.session_init(rcloud.username(), rcloud.github_token());
+                promise = rcloud.session_init([], rcloud.username(), rcloud.github_token());
             } else {
-                promise = rcloud.anonymous_session_init();
+                promise = rcloud.anonymous_session_init([]);
             }
             promise = promise.then(function(hello) {
                 rclient.post_response(hello);
