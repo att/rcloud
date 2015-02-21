@@ -117,7 +117,7 @@ rcloud.session.init <- function(session.type, ...) {
 
 rcloud.anonymous.session.init <- function(...) {
     if (identical(.session$separate.compute, FALSE))
-        rcloud.compute.init(...)
+        rcloud.anonymous.compute.init(...)
     else {
         start.rcloud.anonymously(...)
         ""
