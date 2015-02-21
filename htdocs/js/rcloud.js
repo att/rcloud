@@ -25,8 +25,8 @@ RCloud.promisify_paths = (function() {
         function success(result) {
             if(result && RCloud.is_exception(result)) {
                 var tb = result['traceback'] ? result['traceback'] : "";
-                if (tb.join) tb = tb.join(" <- ");
-                throw new Error(command + ": " + result['error'].replace('\n', ' ') + "  " + tb);
+                if (tb.join) tb = tb.join("\n");
+                throw new Error(command + ": " + result.error + tb);
             }
             return result;
         }
