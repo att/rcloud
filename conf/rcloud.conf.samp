@@ -2,18 +2,18 @@
 ##: GitHub info below must be modified in order for RCloud to work!
 ## Only set Host: if it doesn't match the canonical name of your machine
 ##Host: 127.0.0.1
+#--: gist back-end, pick either githubgist (default) or gitgist
 github.client.id: xxxxxxxxxxx
 github.client.secret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 github.base.url: https://github.com/
 github.api.url: https://api.github.com/
 github.gist.url: https://gist.github.com/
+#gist.backend: gitgist
+#gist.git.root: ${ROOT}/data/gists
 rcs.engine: redis
-rcs.redis.host: 127.0.0.1:6379
-solr.host.port: 127.0.0.1:8983
-solr.collection: collection1
 solr.url: http://127.0.0.1:8983/solr/rcloudnotebooks
-solr.page.size: 5
 rcs.system.config.addons: rcloud.viewer, rcloud.enviewer, rcloud.notebook.info
 rcloud.languages: rcloud.r, rcloud.python, rcloud.rmarkdown
-smtp.server:xxxxxxxxxxxxx
-email.from:donotreply
+#--optional: set to enable for sending comment notificaion e-mails if desired
+#smtp.server:xxxxxxxxxxxxx
+#email.from:donotreply
