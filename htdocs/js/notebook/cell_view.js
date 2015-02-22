@@ -99,6 +99,7 @@ function create_cell_html_view(language, cell_model) {
             result.hide_source && result.hide_source(false);
         if(cell_controls_)
             cell_controls_.controls['language_cell'].set(language);
+        set_background_class(code_div_.find('pre'));
         if(ace_widget_) {
             ace_div.toggleClass('active', true);
             set_background_class(ace_div);
@@ -131,8 +132,8 @@ function create_cell_html_view(language, cell_model) {
     function click_to_edit(div, whether) {
         whether &= !am_read_only_;
         if(whether) {
+            set_background_class(code_div_.find('pre'));
             div.toggleClass('inactive', true);
-            set_background_class(div);
             // distinguish between a click and a drag
             // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
             div.on({
@@ -164,7 +165,7 @@ function create_cell_html_view(language, cell_model) {
 */
             });
         }
-        else div.off('mousedown.rcloud-cell mouseup.rcloud-cell mouseenter.rcloud-cell mouseleave.rcloud-cell');
+        else div.off('mousedown.rcloud-cell mouseup.rcloud-cell');
     }
 
     function display_status(status) {
@@ -344,6 +345,7 @@ function create_cell_html_view(language, cell_model) {
         code_div_.find('.rcloud-line-number .hljs-number').css('color', 'black');
         if(am_read_only_ !== 'unknown')
             click_to_edit(code_div_.find('pre'), !am_read_only_);
+        set_background_class(code_div_.find('pre'));
     }
     assign_code();
 
