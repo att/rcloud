@@ -1,6 +1,7 @@
 RCloud.UI.settings_frame = (function() {
     // options to fetch from server, with callbacks for what to do once we get them
     var options_ = {};
+    var body_;
     // the controls, once they are created
     var controls_ = {};
     // are we currently setting option x?
@@ -23,19 +24,27 @@ RCloud.UI.settings_frame = (function() {
     }
     var result = {
         body: function() {
-            return $.el.div({id: "settings-body-wrapper", 'class': 'panel-body'},
-                           $.el.div({id: "settings-scroller", style: "width: 100%; height: 100%; overflow-x: auto"},
-                                    $.el.div({id:"settings-body", 'class': 'widget-vsize'})));
+            return body_ = $.el.div({id: "settings-body-wrapper", 'class': 'panel-body'},
+                            $.el.div({id: "settings-scroller", style: "width: 100%; height: 100%; overflow-x: auto"},
+                                    $.el.div({id:"settings-body", 'class': 'widget-vsize'})),
+                            $.el.span({class: "settings-reload-msg", style: "display: none"}, "Reload to see changes"));
         },
         panel_sizer: function(el) {
             // fudge it so that it doesn't scroll 4 nothing
             var sz = RCloud.UI.collapsible_column.default_sizer(el);
             return {height: sz.height+5, padding: sz.padding};
         },
+        show_reload_msg: function(val) {
+            if(val)
+                $(body_).find('.settings-reload-msg').show();
+            else
+                $(body_).find('.settings-reload-msg').hide();
+        },
         checkbox: function(opts) {
             opts = _.extend({
                 sort: 10000,
                 default_value: false,
+                needs_reload: false,
                 label: "",
                 id:"",
                 set: function(val) {}
@@ -52,6 +61,8 @@ RCloud.UI.settings_frame = (function() {
                     $(check).change(function() {
                         var val = $(this).prop('checked');
                         on_change(val);
+                        if(opts.needs_reload)
+                            result.show_reload_msg(true);
                         opts.set(val);
                     });
                     return checkboxdiv;
@@ -67,6 +78,7 @@ RCloud.UI.settings_frame = (function() {
             opts = _.extend({
                 sort: 10000,
                 default_value: "",
+                needs_reload: false,
                 label: "",
                 id:"",
                 parse: function(val) { return val; },
@@ -86,6 +98,8 @@ RCloud.UI.settings_frame = (function() {
                         var val = $(input).val();
                         val = opts.parse(val);
                         on_change(val);
+                        if(opts.needs_reload)
+                            result.show_reload_msg(true);
                         opts.set(val);
                         val = opts.format(val);
                         $(input).val(val);
@@ -139,6 +153,7 @@ RCloud.UI.settings_frame = (function() {
                 'show-terse-dates': that.checkbox({
                     sort: 2000,
                     default_value: true,
+                    needs_reload: true,
                     label: "Show Terse Version Dates",
                     set: function(val) {
                         editor.set_terse_dates(val);
@@ -146,10 +161,14 @@ RCloud.UI.settings_frame = (function() {
                 }),
                 'addons': that.text_input_vector({
                     sort: 10000,
+                    needs_reload: true,
+                    needs_reload: true,
                     label: "Enable Extensions"
                 }),
                 'skip-addons': that.text_input_vector({
                     sort: 11000,
+                    needs_reload: true,
+                    needs_reload: true,
                     label: "Disable Extensions"
                 })
             });

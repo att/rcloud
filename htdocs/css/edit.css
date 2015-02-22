@@ -1144,6 +1144,10 @@ pre > .vt100 {
     border-radius: 3px;
 }
 
+#settings-body-wrapper {
+    position: relative;
+}
+
 .settings-input label {
     font-weight: normal;
 }
@@ -1158,6 +1162,13 @@ pre > .vt100 {
     width: 120px;
     padding-right: 5px;
     vertical-align: middle;
+}
+
+.settings-reload-msg {
+    position: absolute;
+    right: 5px;
+    bottom: 3px;
+    color: vermillion;
 }
 
 .checkbox {
