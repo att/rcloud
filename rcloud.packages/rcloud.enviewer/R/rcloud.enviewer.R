@@ -12,14 +12,10 @@ rcloud.enviewer.display.dataframe <- function(x)
 rcloud.enviewer.display.value <- function(val) {
     type <- class(val)
     str <- capture.output(str(val))
-    if (length(str) > 1) {
-        if (length(str) > 3) { ## try something smaller ... if possible
-            if (is.list(val) && !is.null(names(val))) {
-                str <- paste0("List with names ", paste(capture.output(str(names(val))), collapse=' '))
-            } else ## truncate
-                str <- c(str[1:3], "...")
-        }
-    }
+    if (is.list(val) && !is.null(names(val)))
+      str[1] <- paste0("List with names ", paste(capture.output(str(names(val))), collapse=' '))
+    if (length(str) > 3)
+      str <- c(str[1:3], "...")
     ## also limit the length since deparsing langs can be reaaaaaly long
     if (any(too.long <- (nchar(str) > 100)))
         str[too.long] <- paste(substr(str[too.long], 1, 100), "...")

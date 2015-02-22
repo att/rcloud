@@ -23,7 +23,7 @@
     function add_section(title, section, rows) {
         // styling the table will go better with CSS
         var header_style = 'border: 0; background-color: #dedede; font-family: sans-serif; font-size: 13px';
-        var datum_style = 'border-style: solid; border-width: thin 0; border-color: #ccc';
+        var datum_style = 'border-style: solid; border-width: thin 0; border-color: #ccc; white-space: pre-wrap';
         var header = $.el.tr($.el.th({colspan: 3, scope: 'col', style: header_style}, title));
         rows.push(header);
         _.keys(section).sort().forEach(function(key) {
