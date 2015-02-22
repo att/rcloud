@@ -261,11 +261,11 @@ rect.frame {
 }
 
 .inactive.edit-markdown {
-    background-color: #f6f0e9
+    background-color: #f5f1ec;
 }
 
 .inactive.edit-code {
-    background-color: #ecf2f8;
+    background-color: #eef3f7;
 }
 
 .fontawesome-button {
