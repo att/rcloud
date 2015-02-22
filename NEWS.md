@@ -1,6 +1,23 @@
 ## RCloud 1.3.1
 
 ### Features
+* Cell Run State Indicator.  Status messages such as "Cancelled!" and "Waiting"
+  are no longer displayed in the result area.  Instead, an indicator resides in
+  the bar above each cell:
+
+  * Open circle means the cell has not been run.
+  * Blue arrow means the cell is enqueued to run
+  * Blue spinner means the cell is running
+  * Green light means the cell ran and succeeded.
+  * Red explamation point means the cell had an error
+  * Orange splat means the cell run was cancelled
+
+  This also helps with confusion with whether a cell has run when it doesn't
+  produce output. (#1207, #1264)
+
+* Non-preemptive stop. Although you still can't cancel a long-running cell,
+  you can stop any later cells from running, by pressing the Stop button.
+
 * Options to enable and disable extensions per user. The Settings pane
   has "Enable Extension" and "Disable Extensions", which set the user
   options `addons` and `skip-addons`, respectively. On starting the session,
@@ -9,6 +26,37 @@
 ### Improvements
 * "Subscribe to Comments" option is not shown if this feature is not
   configured on the server. (#1347)
+
+* Editable cells are always (lightly) colored (#1322)
+
+* Simplified, more correct workspace value printing
+
+* When plots are too wide for the middle column, they scroll horizontally. (#1239)
+
+* Settings that require a page reload tell you so when you make the change.
+
+* Customizable logo for view.html
+
+* Use line breaks when printing R stack traces (#1360)
+
+* Controls in status area slightly greyer to distract from code less.
+
+### Bug Fixes
+
+* Patch to fix unauthenticated logins with view.html, shiny.html, notebook.R
+
+* Patch for missing fork_of
+
+* Hide subscribe to comments option if server not configured (#1347)
+
+* Fix a case where backspace still would go back a page with some elements focused
+
+* Fix a case where clicking on the last non-readonly notebook would edit the title (#1357)
+
+* Fix bug where cell would overlap next cell or command prompt would appear on top
+  of cell (#1352, #1354)
+
+* Fix cases where extensions could cause non-GUI applictions to break
 
 
 ## RCloud 1.3
