@@ -86,6 +86,7 @@ RCloud.UI.image_manager = (function() {
         }
 
         function add_controls($image) {
+            var scroller = $('<div class="live-plot-scroller">');
             var div = $('<div class="live-plot"></div>');
             div.append($image);
             var image_commands = $('<div class="live-plot-commands"></div>');
@@ -111,7 +112,7 @@ RCloud.UI.image_manager = (function() {
                 autoHide: true,
                 stop: resize_stop
             });
-            return div;
+            return scroller.append(div);
         }
         img_ = img_tag();
         div_ = add_controls(img_);
