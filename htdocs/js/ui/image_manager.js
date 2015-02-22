@@ -36,7 +36,7 @@ RCloud.UI.image_manager = (function() {
     var images_ = {};
     var formats_ = RCloud.extension.create();
     function create_image(id, url, dims, device, page) {
-        var div_, img_, dims_;
+        var div_, img_, image_div_, scroller_div_, dims_;
         function img_tag() {
             var attrs = [];
             attrs.push("id='" + id + "'");
@@ -54,10 +54,10 @@ RCloud.UI.image_manager = (function() {
                 });
         }
         function resize_stop(event, ui) {
-            dims_ = [ui.size.width, ui.size.height];
-            rcloud.plots.render(device, page, {dim: dims_})
+            var dims = [ui.size.width, ui.size.height];
+            rcloud.plots.render(device, page, {dim: dims})
                 .then(function(data) {
-                    result.update(data.url);
+                    result.update(data.url, dims);
                 });
         }
         function save_button() {
@@ -85,11 +85,25 @@ RCloud.UI.image_manager = (function() {
             return save_dropdown;
         }
 
+        function update_dims(dims) {
+            if(dims) {
+                if(dims[0])
+                    image_div_.css('width', dims[0]);
+                if(dims[1]) {
+                    image_div_.css('height', dims[1]);
+                }
+                dims_ = dims;
+            }
+        }
+
         function add_controls($image) {
-            var scroller = $('<div class="live-plot-scroller">');
-            var div = $('<div class="live-plot"></div>');
-            div.append($image);
-            var image_commands = $('<div class="live-plot-commands"></div>');
+            var container = $('<div class="live-plot"></div>');
+            scroller_div_ = $('<div class="live-plot-scroller"></div>');
+            image_div_ =  $('<div></div>');
+            container.append(scroller_div_);
+            scroller_div_.append(image_div_, $('<br/>'));
+            image_div_.append($image);
+            var image_commands = $('<span class="live-plot-commands"></div>');
             image_commands.append(save_button());
             image_commands.hide();
             $image.add(image_commands).hover(function() {
@@ -97,22 +111,15 @@ RCloud.UI.image_manager = (function() {
             }, function() {
                 image_commands.hide();
             });
-            div.append(image_commands);
-            if(dims) {
-                if(dims[0])
-                    div.css('width', dims[0]);
-                if(dims[1])
-                    div.css('height', dims[1]);
-                $image.css({width: '100%', height: '100%'});
-                dims_ = dims;
-            }
+            image_div_.append(image_commands);
+            $image.css({width: '100%', height: '100%'});
+            update_dims(dims);
 
-
-            div.resizable({
+            image_div_.resizable({
                 autoHide: true,
                 stop: resize_stop
             });
-            return scroller.append(div);
+            return container;
         }
         img_ = img_tag();
         div_ = add_controls(img_);
@@ -121,8 +128,9 @@ RCloud.UI.image_manager = (function() {
             div: function() {
                 return div_;
             },
-            update: function(url) {
+            update: function(url, dims) {
                 img_.attr('src', url);
+                update_dims(dims);
             }
         };
         return result;
@@ -133,7 +141,7 @@ RCloud.UI.image_manager = (function() {
             var image;
             if(images_[id]) {
                 image = images_[id];
-                image.update(url);
+                image.update(url, dims);
             }
             else {
                 image = create_image(id, url, dims, device, page);

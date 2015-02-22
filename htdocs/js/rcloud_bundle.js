@@ -1754,6 +1754,7 @@ function create_cell_html_view(language, cell_model) {
             result.hide_source && result.hide_source(false);
         if(cell_controls_)
             cell_controls_.controls['language_cell'].set(language);
+        set_background_class(code_div_.find('pre'));
         if(ace_widget_) {
             ace_div.toggleClass('active', true);
             set_background_class(ace_div);
@@ -1786,8 +1787,8 @@ function create_cell_html_view(language, cell_model) {
     function click_to_edit(div, whether) {
         whether &= !am_read_only_;
         if(whether) {
+            set_background_class(code_div_.find('pre'));
             div.toggleClass('inactive', true);
-            set_background_class(div);
             // distinguish between a click and a drag
             // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
             div.on({
@@ -1819,7 +1820,7 @@ function create_cell_html_view(language, cell_model) {
 */
             });
         }
-        else div.off('mousedown.rcloud-cell mouseup.rcloud-cell mouseenter.rcloud-cell mouseleave.rcloud-cell');
+        else div.off('mousedown.rcloud-cell mouseup.rcloud-cell');
     }
 
     function display_status(status) {
@@ -1999,6 +2000,7 @@ function create_cell_html_view(language, cell_model) {
         code_div_.find('.rcloud-line-number .hljs-number').css('color', 'black');
         if(am_read_only_ !== 'unknown')
             click_to_edit(code_div_.find('pre'), !am_read_only_);
+        set_background_class(code_div_.find('pre'));
     }
     assign_code();
 
@@ -2042,7 +2044,7 @@ function create_cell_html_view(language, cell_model) {
                     control.icon('icon-circle-blank').color('#777');
                 break;
             case 'waiting':
-                control.icon('icon-long-arrow-right').color('blue');
+                control.icon('icon-arrow-right').color('blue');
                 break;
             case 'cancelled':
                 control.icon('icon-asterisk').color('#e06a06');
@@ -5566,7 +5568,7 @@ RCloud.UI.image_manager = (function() {
     var images_ = {};
     var formats_ = RCloud.extension.create();
     function create_image(id, url, dims, device, page) {
-        var div_, img_, dims_;
+        var div_, img_, image_div_, scroller_div_, dims_;
         function img_tag() {
             var attrs = [];
             attrs.push("id='" + id + "'");
@@ -5584,10 +5586,10 @@ RCloud.UI.image_manager = (function() {
                 });
         }
         function resize_stop(event, ui) {
-            dims_ = [ui.size.width, ui.size.height];
-            rcloud.plots.render(device, page, {dim: dims_})
+            var dims = [ui.size.width, ui.size.height];
+            rcloud.plots.render(device, page, {dim: dims})
                 .then(function(data) {
-                    result.update(data.url);
+                    result.update(data.url, dims);
                 });
         }
         function save_button() {
@@ -5615,10 +5617,26 @@ RCloud.UI.image_manager = (function() {
             return save_dropdown;
         }
 
+        function update_dims(dims) {
+            if(dims) {
+                if(dims[0])
+                    image_div_.css('width', dims[0]);
+                if(dims[1]) {
+                    image_div_.css('height', dims[1]);
+                    //scroller_div_.css('height', dims[1]+20);
+                }
+                dims_ = dims;
+            }
+        }
+
         function add_controls($image) {
-            var div = $('<div class="live-plot"></div>');
-            div.append($image);
-            var image_commands = $('<div class="live-plot-commands"></div>');
+            var container = $('<div class="live-plot"></div>');
+            scroller_div_ = $('<div class="live-plot-scroller"></div>');
+            image_div_ =  $('<div></div>');
+            container.append(scroller_div_);
+            scroller_div_.append(image_div_, $('<br/>'));
+            image_div_.append($image);
+            var image_commands = $('<span class="live-plot-commands"></div>');
             image_commands.append(save_button());
             image_commands.hide();
             $image.add(image_commands).hover(function() {
@@ -5626,22 +5644,15 @@ RCloud.UI.image_manager = (function() {
             }, function() {
                 image_commands.hide();
             });
-            div.append(image_commands);
-            if(dims) {
-                if(dims[0])
-                    div.css('width', dims[0]);
-                if(dims[1])
-                    div.css('height', dims[1]);
-                $image.css({width: '100%', height: '100%'});
-                dims_ = dims;
-            }
+            image_div_.append(image_commands);
+            $image.css({width: '100%', height: '100%'});
+            update_dims(dims);
 
-
-            div.resizable({
+            image_div_.resizable({
                 autoHide: true,
                 stop: resize_stop
             });
-            return div;
+            return container;
         }
         img_ = img_tag();
         div_ = add_controls(img_);
@@ -5650,8 +5661,9 @@ RCloud.UI.image_manager = (function() {
             div: function() {
                 return div_;
             },
-            update: function(url) {
+            update: function(url, dims) {
                 img_.attr('src', url);
+                update_dims(dims);
             }
         };
         return result;
@@ -5662,7 +5674,7 @@ RCloud.UI.image_manager = (function() {
             var image;
             if(images_[id]) {
                 image = images_[id];
-                image.update(url);
+                image.update(url, dims);
             }
             else {
                 image = create_image(id, url, dims, device, page);

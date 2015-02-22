@@ -167,12 +167,7 @@ div.panel-heading:hover {
 
 .live-plot-scroller {
     width: 100%;
-    overflow: auto;
-}
-
-.live-plot {
-    display: inline-block;
-    position: relative;
+    overflow-x: auto;
 }
 
 .live-plot-commands {
