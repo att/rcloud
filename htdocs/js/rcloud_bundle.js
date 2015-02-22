@@ -7556,7 +7556,7 @@ RCloud.UI.settings_frame = (function() {
                     $(input).prop('id', opts.id);
                     var span = $.el.span(opts.label);
                     var label = $.el.label(span, input);
-                    var div = $($.el.div({class: 'text'}, label));
+                    var div = $($.el.div({class: 'settings-input'}, label));
                     function commit() {
                         var val = $(input).val();
                         val = opts.parse(val);
