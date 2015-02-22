@@ -8,6 +8,8 @@ function main() {
     shell.is_view_mode(true);
     RCloud.UI.init();
     RCloud.session.init(true).then(function() {
+        return RCloud.UI.navbar.load();
+    }).then(function() {
         shell.init();
         RCloud.UI.advanced_menu.load();
         var notebook = getURLParameter("notebook"),
