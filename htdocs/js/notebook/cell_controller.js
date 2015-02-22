@@ -9,15 +9,17 @@ Notebook.Cell.create_controller = function(cell_model)
                     return that.append_result.bind(this, type);
                 }
                 var resulter = appender('code');
-                execution_context_ = {start: this.start_output.bind(this),
-                                      end: this.end_output.bind(this),
-                                      // these should convey the meaning e.g. through color:
-                                      out: resulter, err: appender('error'), msg: resulter,
-                                      html_out: appender('html'),
-                                      deferred_result: appender('deferred_result'),
-                                      selection_out: appender('selection'),
-                                      in: this.get_input.bind(this, 'in')
-                                     };
+                execution_context_ =
+                    {
+                        start: this.start_output.bind(this),
+                        end: this.end_output.bind(this),
+                        // these should convey the meaning e.g. through color:
+                        out: resulter, err: appender('error'), msg: resulter,
+                        html_out: appender('html'),
+                        deferred_result: appender('deferred_result'),
+                        selection_out: appender('selection'),
+                            in: this.get_input.bind(this, 'in')
+                    };
             }
             var context_id = RCloud.register_output_context(execution_context_);
             that.set_run_state("waiting");
