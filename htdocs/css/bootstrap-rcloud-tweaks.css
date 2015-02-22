@@ -84,6 +84,7 @@ div.panel-heading:hover {
 
 .code-div {
     position: relative;
+    tab-size: 4;
 }
 
 .code-div pre {
