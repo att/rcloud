@@ -26,7 +26,7 @@ RCloud.promisify_paths = (function() {
             if(result && RCloud.is_exception(result)) {
                 var tb = result['traceback'] ? result['traceback'] : "";
                 if (tb.join) tb = tb.join("\n");
-                throw new Error(command + ": " + result.error + tb);
+                throw new Error(command + ": " + result.error + "R trace:\n" + tb);
             }
             return result;
         }
