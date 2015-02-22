@@ -28,6 +28,7 @@ function create_cell_html_view(language, cell_model) {
     var edit_mode_; // note: starts neither true nor false
     var highlights_;
     var code_preprocessors_ = []; // will be an extension point, someday
+    var running_state_;  // running state
 
     // input1
     var prompt_text_;
@@ -228,7 +229,7 @@ function create_cell_html_view(language, cell_model) {
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
-            result.status_updated('ready');
+            result.state_changed('ready');
             cell_model.parent_model.on_dirty();
         });
         update_language();
@@ -368,14 +369,15 @@ function create_cell_html_view(language, cell_model) {
         },
         id_updated: update_div_id,
         language_updated: update_language,
-        status_updated: function(status) {
-            var control = left_controls_.controls['cell_status'];
-            switch(status) {
+        state_changed: function(state) {
+            var control = left_controls_.controls['run_state'];
+            switch(state) {
             case 'ready':
-                control.icon('icon-circle-blank').color('midnightblue');
+                if(running_state_ != 'waiting')
+                    control.icon('icon-circle-blank').color('#777');
                 break;
             case 'waiting':
-                control.icon('icon-ellipsis-horizontal').color('midnightblue');
+                control.icon('icon-long-arrow-right').color('blue');
                 break;
             case 'cancelled':
                 control.icon('icon-asterisk').color('darkorange');
@@ -385,18 +387,20 @@ function create_cell_html_view(language, cell_model) {
                 has_result_ = false;
                 break;
             case 'complete':
-                control.icon('icon-circle').color('green');
+                control.icon('icon-circle').color('olivedrab');
                 break;
             case 'error':
                 control.icon('icon-exclamation').color('crimson');
                 break;
             }
+            running_state_ = state;
+            return this;
         },
         start_output: function() {
         },
         add_result: function(type, r) {
             if(!has_result_) {
-                result_div_.empty(); // clear status
+                result_div_.empty(); // clear previous output
                 if(RCloud.language.is_a_markdown(language))
                     result.hide_source(true);
                 has_result_ = true;
@@ -454,7 +458,7 @@ function create_cell_html_view(language, cell_model) {
                 result_div_.empty();
                 has_result_ = true;
             }
-            this.status_updated(error ? 'error' : 'complete');
+            this.state_changed(error ? 'error' : 'complete');
             current_result_ = current_error_ = null;
         },
         clear_result: clear_result,

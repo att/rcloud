@@ -1682,6 +1682,7 @@ function create_cell_html_view(language, cell_model) {
     var edit_mode_; // note: starts neither true nor false
     var highlights_;
     var code_preprocessors_ = []; // will be an extension point, someday
+    var running_state_;  // running state
 
     // input1
     var prompt_text_;
@@ -1882,7 +1883,7 @@ function create_cell_html_view(language, cell_model) {
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
-            result.status_updated('ready');
+            result.state_changed('ready');
             cell_model.parent_model.on_dirty();
         });
         update_language();
@@ -2022,14 +2023,15 @@ function create_cell_html_view(language, cell_model) {
         },
         id_updated: update_div_id,
         language_updated: update_language,
-        status_updated: function(status) {
-            var control = left_controls_.controls['cell_status'];
-            switch(status) {
+        state_changed: function(state) {
+            var control = left_controls_.controls['run_state'];
+            switch(state) {
             case 'ready':
-                control.icon('icon-circle-blank').color('midnightblue');
+                if(running_state_ != 'waiting')
+                    control.icon('icon-circle-blank').color('#777');
                 break;
             case 'waiting':
-                control.icon('icon-ellipsis-horizontal').color('midnightblue');
+                control.icon('icon-long-arrow-right').color('blue');
                 break;
             case 'cancelled':
                 control.icon('icon-asterisk').color('darkorange');
@@ -2039,18 +2041,20 @@ function create_cell_html_view(language, cell_model) {
                 has_result_ = false;
                 break;
             case 'complete':
-                control.icon('icon-circle').color('green');
+                control.icon('icon-circle').color('olivedrab');
                 break;
             case 'error':
                 control.icon('icon-exclamation').color('crimson');
                 break;
             }
+            running_state_ = state;
+            return this;
         },
         start_output: function() {
         },
         add_result: function(type, r) {
             if(!has_result_) {
-                result_div_.empty(); // clear status
+                result_div_.empty(); // clear previous output
                 if(RCloud.language.is_a_markdown(language))
                     result.hide_source(true);
                 has_result_ = true;
@@ -2108,7 +2112,7 @@ function create_cell_html_view(language, cell_model) {
                 result_div_.empty();
                 has_result_ = true;
             }
-            this.status_updated(error ? 'error' : 'complete');
+            this.state_changed(error ? 'error' : 'complete');
             current_result_ = current_error_ = null;
         },
         clear_result: clear_result,
@@ -2395,21 +2399,21 @@ Notebook.Cell.create_controller = function(cell_model)
                                      };
             }
             var context_id = RCloud.register_output_context(execution_context_);
-            that.set_status("waiting");
+            that.set_run_state("waiting");
             that.edit_source(false);
             var snapshot = cell_model.get_execution_snapshot();
             RCloud.UI.run_button.enqueue(
                 function() {
-                    that.set_status("running");
+                    that.set_run_state("running");
                     return cell_model.parent_model.controller.execute_cell_version(context_id, snapshot);
                 },
                 function() {
-                    that.set_status("cancelled");
+                    that.set_run_state("cancelled");
                 });
         },
-        set_status: function(msg) {
+        set_run_state: function(msg) {
             cell_model.notify_views(function(view) {
-                view.status_updated(msg);
+                view.state_changed(msg);
             });
         },
         clear_result: function() {
@@ -4156,7 +4160,7 @@ RCloud.UI.cell_commands = (function() {
                     return this;
                 }
             });
-            result.get().attr('class', 'status-light left-indicator');
+            result.get().attr('class', 'state-icon left-indicator');
             result.icon(icon).color(color);
             return result;
         },
@@ -4299,11 +4303,11 @@ RCloud.UI.cell_commands = (function() {
                         return that.create_static('&nbsp;');
                     }
                 },
-                cell_status: {
+                run_state: {
                     area: 'left',
                     sort: 2000,
                     create: function(cell_model) {
-                        return that.create_icon('icon-circle-blank', 'blue');
+                        return that.create_icon('icon-circle-blank', '#777');
                     }
                 },
                 cell_number: {

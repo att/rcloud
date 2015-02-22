@@ -110,7 +110,7 @@ RCloud.UI.cell_commands = (function() {
                     return this;
                 }
             });
-            result.get().attr('class', 'status-light left-indicator');
+            result.get().attr('class', 'state-icon left-indicator');
             result.icon(icon).color(color);
             return result;
         },
@@ -253,11 +253,11 @@ RCloud.UI.cell_commands = (function() {
                         return that.create_static('&nbsp;');
                     }
                 },
-                cell_status: {
+                run_state: {
                     area: 'left',
                     sort: 2000,
                     create: function(cell_model) {
-                        return that.create_icon('icon-circle-blank', 'blue');
+                        return that.create_icon('icon-circle-blank', '#777');
                     }
                 },
                 cell_number: {
