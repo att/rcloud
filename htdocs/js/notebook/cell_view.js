@@ -387,7 +387,7 @@ function create_cell_html_view(language, cell_model) {
                     control.icon('icon-circle-blank').color('#777');
                 break;
             case 'waiting':
-                control.icon('icon-long-arrow-right').color('blue');
+                control.icon('icon-arrow-right').color('blue');
                 break;
             case 'cancelled':
                 control.icon('icon-asterisk').color('#e06a06');
