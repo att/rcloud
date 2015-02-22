@@ -1640,7 +1640,7 @@ Notebook.Asset.create_controller = function(asset_model)
             var msg = "Do you want to remove the asset '" +asset_name+ "' from the notebook?";
             if (force || confirm(msg)) {
                 asset_model.parent_model.controller.remove_asset(asset_model);
-                if(asset_model === RCloud.UI.scratchpad.current_asset) {
+                if(asset_model === RCloud.UI.scratchpad.current_model) {
                     var assets = asset_model.parent_model.assets;
                     if (assets.length)
                         assets[0].controller.select();

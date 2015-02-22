@@ -59,6 +59,8 @@
 
 * Fix cases where extensions could cause non-GUI applictions to break
 
+* Fix bug where asset would still be shown if current asset is deleted (#1343)
+
 
 ## RCloud 1.3
 
