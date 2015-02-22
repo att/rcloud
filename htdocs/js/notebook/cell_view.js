@@ -485,6 +485,9 @@ function create_cell_html_view(language, cell_model) {
             click_to_edit(code_div_.find('pre'), !readonly);
             cell_status_.toggleClass('readonly', readonly);
         },
+        set_show_cell_numbers: function(whether) {
+            left_controls_.set_flag('cell-numbers', whether);
+        },
         click_to_edit: click_to_edit,
 
         //////////////////////////////////////////////////////////////////////

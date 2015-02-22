@@ -159,6 +159,14 @@ RCloud.UI.settings_frame = (function() {
                         editor.set_terse_dates(val);
                     }
                 }),
+                'show-cell-numbers': that.checkbox({
+                    sort: 3000,
+                    default_value: true,
+                    label: "Show Cell Numbers",
+                    set: function(val) {
+                        shell.notebook.controller.show_cell_numbers(val);
+                    }
+                }),
                 'addons': that.text_input_vector({
                     sort: 10000,
                     needs_reload: true,

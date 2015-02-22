@@ -5,7 +5,7 @@ RCloud.UI.load_options = function() {
         if(has_mail)
             RCloud.UI.settings_frame.add({
                 'subscribe-to-comments': RCloud.UI.settings_frame.checkbox({
-                    sort: 3000,
+                    sort: 5000,
                     default_value: false,
                     label: "Subscribe To Comments",
                     condition: function() {

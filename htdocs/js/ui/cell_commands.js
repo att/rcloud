@@ -263,6 +263,7 @@ RCloud.UI.cell_commands = (function() {
                 cell_number: {
                     area: 'left',
                     sort: 3000,
+                    display_flags: ['cell-numbers'],
                     create: function(cell_model) {
                         return that.create_static(cell_model.id(), function(x) {
                             return $("<span class='left-indicator'></span>").append('cell ', x);

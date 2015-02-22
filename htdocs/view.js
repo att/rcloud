@@ -8,8 +8,13 @@ function main() {
     shell.is_view_mode(true);
     RCloud.UI.init();
     RCloud.session.init(true).then(function() {
-        return RCloud.UI.navbar.load();
-    }).then(function() {
+            return Promise.all([
+                RCloud.UI.navbar.load(),
+                rcloud.config.get_user_option('show-cell-numbers').then(function(whether) {
+                    shell.notebook.controller.show_cell_numbers(whether);
+                })
+            ]);
+        }).then(function() {
         shell.init();
         RCloud.UI.advanced_menu.load();
         var notebook = getURLParameter("notebook"),

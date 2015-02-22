@@ -467,6 +467,12 @@ Notebook.create_controller = function(model)
                 });
             });
         },
+        show_cell_numbers: function(whether) {
+            _.each(model.views, function(view) {
+                view.set_show_cell_numbers(whether);
+            });
+            return this;
+        },
 
         //////////////////////////////////////////////////////////////////////
 

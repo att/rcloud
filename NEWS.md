@@ -41,8 +41,9 @@
 
 * Controls in status area slightly greyer to distract from code less.
 
-### Bug Fixes
+* Option to turn cell numbering off (#1213)
 
+### Bug Fixes
 * Patch to fix unauthenticated logins with view.html, shiny.html, notebook.R
 
 * Patch for missing fork_of

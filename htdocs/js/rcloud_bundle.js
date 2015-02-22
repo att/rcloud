@@ -2140,6 +2140,9 @@ function create_cell_html_view(language, cell_model) {
             click_to_edit(code_div_.find('pre'), !readonly);
             cell_status_.toggleClass('readonly', readonly);
         },
+        set_show_cell_numbers: function(whether) {
+            left_controls_.set_flag('cell-numbers', whether);
+        },
         click_to_edit: click_to_edit,
 
         //////////////////////////////////////////////////////////////////////
@@ -2589,6 +2592,7 @@ Notebook.Cell.preprocessors.add({
 
 Notebook.create_html_view = function(model, root_div)
 {
+    var show_cell_numbers_;
     function on_rearrange() {
         _.each(result.sub_views, function(view) {
             view.check_buttons();
@@ -2597,6 +2601,7 @@ Notebook.create_html_view = function(model, root_div)
 
     function init_cell_view(cell_view) {
         cell_view.set_readonly(model.read_only() || shell.is_view_mode());
+        cell_view.set_show_cell_numbers(show_cell_numbers_);
     }
 
     var result = {
@@ -2654,6 +2659,12 @@ Notebook.create_html_view = function(model, root_div)
             });
             _.each(this.asset_sub_views, function(view) {
                 view.set_readonly(readonly);
+            });
+        },
+        set_show_cell_numbers: function(whether) {
+            show_cell_numbers_ = whether;
+            _.each(this.sub_views, function(view) {
+                view.set_show_cell_numbers(whether);
             });
         },
         update_urls: function() {
@@ -3407,6 +3418,12 @@ Notebook.create_controller = function(model)
                     cell_model.controller.enqueue_execution_snapshot();
                 });
             });
+        },
+        show_cell_numbers: function(whether) {
+            _.each(model.views, function(view) {
+                view.set_show_cell_numbers(whether);
+            });
+            return this;
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -4328,6 +4345,7 @@ RCloud.UI.cell_commands = (function() {
                 cell_number: {
                     area: 'left',
                     sort: 3000,
+                    display_flags: ['cell-numbers'],
                     create: function(cell_model) {
                         return that.create_static(cell_model.id(), function(x) {
                             return $("<span class='left-indicator'></span>").append('cell ', x);
@@ -5623,7 +5641,6 @@ RCloud.UI.image_manager = (function() {
                     image_div_.css('width', dims[0]);
                 if(dims[1]) {
                     image_div_.css('height', dims[1]);
-                    //scroller_div_.css('height', dims[1]+20);
                 }
                 dims_ = dims;
             }
@@ -6074,7 +6091,7 @@ RCloud.UI.load_options = function() {
         if(has_mail)
             RCloud.UI.settings_frame.add({
                 'subscribe-to-comments': RCloud.UI.settings_frame.checkbox({
-                    sort: 3000,
+                    sort: 5000,
                     default_value: false,
                     label: "Subscribe To Comments",
                     condition: function() {
@@ -7662,6 +7679,14 @@ RCloud.UI.settings_frame = (function() {
                     label: "Show Terse Version Dates",
                     set: function(val) {
                         editor.set_terse_dates(val);
+                    }
+                }),
+                'show-cell-numbers': that.checkbox({
+                    sort: 3000,
+                    default_value: true,
+                    label: "Show Cell Numbers",
+                    set: function(val) {
+                        shell.notebook.controller.show_cell_numbers(val);
                     }
                 }),
                 'addons': that.text_input_vector({
