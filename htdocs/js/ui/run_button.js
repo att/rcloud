@@ -1,6 +1,7 @@
 RCloud.UI.run_button = (function() {
     var run_button_ = $("#run-notebook"),
         running_ = false,
+        stopping_ = false,
         queue_ = [],
         cancels_ = [];
 
@@ -14,19 +15,22 @@ RCloud.UI.run_button = (function() {
 
     function start_queue() {
         if(queue_.length === 0) {
+            stopping_ = false;
             running_ = false;
-            if(rcloud.has_compute_separation)
-                display('icon-play', 'Run All');
+            display('icon-play', 'Run All');
             highlight(false);
             return Promise.resolve(undefined);
         }
         else {
             running_ = true;
             var first = queue_.shift();
-            if(rcloud.has_compute_separation)
-                display('icon-stop', 'Stop');
+            display('icon-stop', 'Stop');
             highlight(true);
             return first().then(function() {
+                if(stopping_) {
+                    stopping_ = false;
+                    throw 'stop';
+                }
                 cancels_.shift();
                 return start_queue();
             });
@@ -37,8 +41,7 @@ RCloud.UI.run_button = (function() {
             var that = this;
             run_button_.click(function() {
                 if(running_) {
-                    if(rcloud.has_compute_separation)
-                        that.stop();
+                    that.stop();
                 }
                 else
                     shell.run_notebook();
@@ -51,15 +54,17 @@ RCloud.UI.run_button = (function() {
             });
         },
         stop: function() {
-            rcloud.signal_to_compute(2); // SIGINT
+            if(rcloud.has_compute_separation)
+                rcloud.signal_to_compute(2); // SIGINT
+            else
+                stopping_ = true;
         },
         on_stopped: function() {
             cancels_.forEach(function(cancel) { cancel(); });
             queue_ = [];
             cancels_ = [];
             running_ = false;
-            if(rcloud.has_compute_separation)
-                display('icon-play', 'Stop');
+            display('icon-play', 'Run All');
             highlight(false);
         },
         enqueue: function(f, cancel) {

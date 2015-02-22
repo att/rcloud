@@ -131,8 +131,8 @@ RCloud.promisify_paths = (function() {
         function success(result) {
             if(result && RCloud.is_exception(result)) {
                 var tb = result['traceback'] ? result['traceback'] : "";
-                if (tb.join) tb = tb.join(" <- ");
-                throw new Error(command + ": " + result['error'].replace('\n', ' ') + "  " + tb);
+                if (tb.join) tb = tb.join("\n");
+                throw new Error(command + ": " + result.error + "R trace:\n" + tb);
             }
             return result;
         }
@@ -254,11 +254,12 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.init_client_side_data = function() {
             var that = this;
-            return rcloud_ocaps.prefix_uuidAsync().then(function(v) {
-                that.deferred_knitr_uuid = v;
-            }).then(rcloud_ocaps.has_compute_separationAsync()).then(function(v) {
-                that.has_compute_separation = v;
-            });
+            return Promise.all([rcloud_ocaps.prefix_uuidAsync(),
+                                rcloud_ocaps.has_compute_separationAsync()])
+                .spread(function(uuid, has_compute) {
+                    that.deferred_knitr_uuid = uuid;
+                    that.has_compute_separation = has_compute;
+                });
         };
 
         rcloud.get_conf_value = function(key) {
@@ -2388,15 +2389,17 @@ Notebook.Cell.create_controller = function(cell_model)
                     return that.append_result.bind(this, type);
                 }
                 var resulter = appender('code');
-                execution_context_ = {start: this.start_output.bind(this),
-                                      end: this.end_output.bind(this),
-                                      // these should convey the meaning e.g. through color:
-                                      out: resulter, err: appender('error'), msg: resulter,
-                                      html_out: appender('html'),
-                                      deferred_result: appender('deferred_result'),
-                                      selection_out: appender('selection'),
-                                      in: this.get_input.bind(this, 'in')
-                                     };
+                execution_context_ =
+                    {
+                        start: this.start_output.bind(this),
+                        end: this.end_output.bind(this),
+                        // these should convey the meaning e.g. through color:
+                        out: resulter, err: appender('error'), msg: resulter,
+                        html_out: appender('html'),
+                        deferred_result: appender('deferred_result'),
+                        selection_out: appender('selection'),
+                            in: this.get_input.bind(this, 'in')
+                    };
             }
             var context_id = RCloud.register_output_context(execution_context_);
             that.set_run_state("waiting");
@@ -3369,8 +3372,8 @@ Notebook.create_controller = function(model)
                     } else if (r.r_attributes['class'] === 'cell-eval-error') {
                         // available: error=message, traceback=vector of calls, expression=index of the expression that failed
                         var tb = r['traceback'] || '';
-                        if (tb.join) tb = tb.join(" <- ");
-                        var trace = tb ? 'trace: '+tb.replace('\n', ' ') : '';
+                        if (tb.join) tb = tb.join("\n");
+                        var trace = tb ? 'trace:\n'+tb : true;
                         RCloud.end_cell_output(context_id, trace);
                         throw 'stop';
                     }
@@ -6769,6 +6772,7 @@ RCloud.UI.right_panel =
 RCloud.UI.run_button = (function() {
     var run_button_ = $("#run-notebook"),
         running_ = false,
+        stopping_ = false,
         queue_ = [],
         cancels_ = [];
 
@@ -6782,19 +6786,22 @@ RCloud.UI.run_button = (function() {
 
     function start_queue() {
         if(queue_.length === 0) {
+            stopping_ = false;
             running_ = false;
-            if(rcloud.has_compute_separation)
-                display('icon-play', 'Run All');
+            display('icon-play', 'Run All');
             highlight(false);
             return Promise.resolve(undefined);
         }
         else {
             running_ = true;
             var first = queue_.shift();
-            if(rcloud.has_compute_separation)
-                display('icon-stop', 'Stop');
+            display('icon-stop', 'Stop');
             highlight(true);
             return first().then(function() {
+                if(stopping_) {
+                    stopping_ = false;
+                    throw 'stop';
+                }
                 cancels_.shift();
                 return start_queue();
             });
@@ -6805,8 +6812,7 @@ RCloud.UI.run_button = (function() {
             var that = this;
             run_button_.click(function() {
                 if(running_) {
-                    if(rcloud.has_compute_separation)
-                        that.stop();
+                    that.stop();
                 }
                 else
                     shell.run_notebook();
@@ -6819,15 +6825,17 @@ RCloud.UI.run_button = (function() {
             });
         },
         stop: function() {
-            rcloud.signal_to_compute(2); // SIGINT
+            if(rcloud.has_compute_separation)
+                rcloud.signal_to_compute(2); // SIGINT
+            else
+                stopping_ = true;
         },
         on_stopped: function() {
             cancels_.forEach(function(cancel) { cancel(); });
             queue_ = [];
             cancels_ = [];
             running_ = false;
-            if(rcloud.has_compute_separation)
-                display('icon-play', 'Stop');
+            display('icon-play', 'Run All');
             highlight(false);
         },
         enqueue: function(f, cancel) {
@@ -7476,6 +7484,7 @@ RCloud.UI.session_pane = {
 RCloud.UI.settings_frame = (function() {
     // options to fetch from server, with callbacks for what to do once we get them
     var options_ = {};
+    var body_;
     // the controls, once they are created
     var controls_ = {};
     // are we currently setting option x?
@@ -7498,19 +7507,27 @@ RCloud.UI.settings_frame = (function() {
     }
     var result = {
         body: function() {
-            return $.el.div({id: "settings-body-wrapper", 'class': 'panel-body'},
-                           $.el.div({id: "settings-scroller", style: "width: 100%; height: 100%; overflow-x: auto"},
-                                    $.el.div({id:"settings-body", 'class': 'widget-vsize'})));
+            return body_ = $.el.div({id: "settings-body-wrapper", 'class': 'panel-body'},
+                            $.el.div({id: "settings-scroller", style: "width: 100%; height: 100%; overflow-x: auto"},
+                                    $.el.div({id:"settings-body", 'class': 'widget-vsize'})),
+                            $.el.span({class: "settings-reload-msg", style: "display: none"}, "Reload to see changes"));
         },
         panel_sizer: function(el) {
             // fudge it so that it doesn't scroll 4 nothing
             var sz = RCloud.UI.collapsible_column.default_sizer(el);
             return {height: sz.height+5, padding: sz.padding};
         },
+        show_reload_msg: function(val) {
+            if(val)
+                $(body_).find('.settings-reload-msg').show();
+            else
+                $(body_).find('.settings-reload-msg').hide();
+        },
         checkbox: function(opts) {
             opts = _.extend({
                 sort: 10000,
                 default_value: false,
+                needs_reload: false,
                 label: "",
                 id:"",
                 set: function(val) {}
@@ -7527,6 +7544,8 @@ RCloud.UI.settings_frame = (function() {
                     $(check).change(function() {
                         var val = $(this).prop('checked');
                         on_change(val);
+                        if(opts.needs_reload)
+                            result.show_reload_msg(true);
                         opts.set(val);
                     });
                     return checkboxdiv;
@@ -7542,6 +7561,7 @@ RCloud.UI.settings_frame = (function() {
             opts = _.extend({
                 sort: 10000,
                 default_value: "",
+                needs_reload: false,
                 label: "",
                 id:"",
                 parse: function(val) { return val; },
@@ -7561,6 +7581,8 @@ RCloud.UI.settings_frame = (function() {
                         var val = $(input).val();
                         val = opts.parse(val);
                         on_change(val);
+                        if(opts.needs_reload)
+                            result.show_reload_msg(true);
                         opts.set(val);
                         val = opts.format(val);
                         $(input).val(val);
@@ -7614,6 +7636,7 @@ RCloud.UI.settings_frame = (function() {
                 'show-terse-dates': that.checkbox({
                     sort: 2000,
                     default_value: true,
+                    needs_reload: true,
                     label: "Show Terse Version Dates",
                     set: function(val) {
                         editor.set_terse_dates(val);
@@ -7621,10 +7644,14 @@ RCloud.UI.settings_frame = (function() {
                 }),
                 'addons': that.text_input_vector({
                     sort: 10000,
+                    needs_reload: true,
+                    needs_reload: true,
                     label: "Enable Extensions"
                 }),
                 'skip-addons': that.text_input_vector({
                     sort: 11000,
+                    needs_reload: true,
+                    needs_reload: true,
                     label: "Disable Extensions"
                 })
             });
