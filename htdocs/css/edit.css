@@ -252,6 +252,21 @@ rect.frame {
     z-index: 5;
 }
 
+.active.edit-markdown {
+    background-color: #F7EEE4;
+}
+
+.active.edit-code {
+    background-color: #E8F1FA;
+}
+
+.inactive.edit-markdown:hover {
+    background-color: #f6f0e9
+}
+
+.inactive.edit-code:hover {
+    background-color: #ecf2f8;
+}
 
 .fontawesome-button {
     margin: 0.25em;

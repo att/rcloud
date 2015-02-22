@@ -1738,9 +1738,14 @@ function create_cell_html_view(language, cell_model) {
         code: "#E8F1FA"
     };
 
-    function set_background_color(language) {
+    function set_background_class(div) {
+        /*
         var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
         ace_div.css({ 'background-color': edit_color });
+         */
+        var md = RCloud.language.is_a_markdown(language);
+        div.toggleClass(md ? 'edit-markdown' : 'edit-code', true);
+        div.toggleClass(md ? 'edit-code' : 'edit-markdown', false);
     }
 
     function update_language() {
@@ -1750,7 +1755,8 @@ function create_cell_html_view(language, cell_model) {
         if(cell_controls_)
             cell_controls_.controls['language_cell'].set(language);
         if(ace_widget_) {
-            set_background_color(language);
+            ace_div.toggleClass('active', true);
+            set_background_class(ace_div);
             var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
             ace_session_.setMode(new LangMode(false, ace_document_, ace_session_));
         }
@@ -1769,7 +1775,7 @@ function create_cell_html_view(language, cell_model) {
 
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
-    set_background_color(language);
+    set_background_class(ace_div);
 
     update_div_id();
 
@@ -1780,6 +1786,8 @@ function create_cell_html_view(language, cell_model) {
     function click_to_edit(div, whether) {
         whether &= !am_read_only_;
         if(whether) {
+            div.toggleClass('inactive', true);
+            set_background_class(div);
             // distinguish between a click and a drag
             // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
             div.on({
@@ -1796,7 +1804,8 @@ function create_cell_html_view(language, cell_model) {
                             div.mouseleave();
                         }
                     }
-                },
+                }
+/*
                 'mouseenter.rcloud-cell': function() {
                     if(edit_mode_) // don't highlight if it won't do anything
                         return;
@@ -1807,6 +1816,7 @@ function create_cell_html_view(language, cell_model) {
                 'mouseleave.rcloud-cell': function() {
                     $(this).css('background-color', '');
                 }
+*/
             });
         }
         else div.off('mousedown.rcloud-cell mouseup.rcloud-cell mouseenter.rcloud-cell mouseleave.rcloud-cell');
