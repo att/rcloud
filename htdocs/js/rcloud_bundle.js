@@ -5166,7 +5166,7 @@ RCloud.UI.fatal_dialog = function(message, label, href) {
             ignore_button = $("<span class='btn' style='float:right'>Ignore</span>"),
             body = $('<div />')
                 .append('<h1>Aw, shucks</h1>',
-                        '<p>' + message + '</p>',
+                        '<p style="white-space: pre-wrap">' + message + '</p>',
                         default_button, ignore_button,
                         '<div style="clear: both;"></div>');
         default_button.click(function(e) {
