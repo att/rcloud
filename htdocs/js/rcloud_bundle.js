@@ -2035,7 +2035,7 @@ function create_cell_html_view(language, cell_model) {
                 control.icon('icon-long-arrow-right').color('blue');
                 break;
             case 'cancelled':
-                control.icon('icon-asterisk').color('darkorange');
+                control.icon('icon-asterisk').color('#e06a06');
                 break;
             case 'running':
                 control.icon('icon-spinner icon-spin').color('blue');
