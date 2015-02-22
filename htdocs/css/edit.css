@@ -260,11 +260,11 @@ rect.frame {
     background-color: #E8F1FA;
 }
 
-.inactive.edit-markdown:hover {
+.inactive.edit-markdown {
     background-color: #f6f0e9
 }
 
-.inactive.edit-code:hover {
+.inactive.edit-code {
     background-color: #ecf2f8;
 }
 
