@@ -61,6 +61,9 @@
 
 * Fix bug where asset would still be shown if current asset is deleted (#1343)
 
+* Restore previous size and do not report (harmless) error when plot is resized too
+  small (#1337)
+
 
 ## RCloud 1.3
 

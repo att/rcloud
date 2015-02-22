@@ -5608,6 +5608,10 @@ RCloud.UI.image_manager = (function() {
             rcloud.plots.render(device, page, {dim: dims})
                 .then(function(data) {
                     result.update(data.url, dims);
+                })
+                .catch(function(err) {
+                    if(!/Error in replayPlot/.test(err.message))
+                        throw err;
                 });
         }
         function save_button() {
