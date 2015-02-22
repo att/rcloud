@@ -399,7 +399,7 @@ function create_cell_html_view(language, cell_model) {
                 has_result_ = false;
                 break;
             case 'complete':
-                control.icon('icon-circle').color('olivedrab');
+                control.icon('icon-circle').color('#72B668');
                 break;
             case 'error':
                 control.icon('icon-exclamation').color('crimson');
