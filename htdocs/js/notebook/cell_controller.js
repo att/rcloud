@@ -56,7 +56,7 @@ Notebook.Cell.create_controller = function(cell_model)
         },
         end_output: function(error) {
             cell_model.notify_views(function(view) {
-                if(error)
+                if(error && error !== true)
                     view.add_result('error', error);
                 view.end_output(error);
             });
