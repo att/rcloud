@@ -13,7 +13,7 @@ function main() {
                 (rcloud.config ?
                     rcloud.config.get_user_option('show-cell-numbers') :
                     Promise.resolve(true)).then(function(whether) {
-                        shell.notebook.controller.show_cell_numbers(whether);
+                        return shell.notebook.controller.show_cell_numbers(whether);
                     })
             ]);
         }).then(function() {
