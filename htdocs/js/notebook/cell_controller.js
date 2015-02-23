@@ -9,32 +9,34 @@ Notebook.Cell.create_controller = function(cell_model)
                     return that.append_result.bind(this, type);
                 }
                 var resulter = appender('code');
-                execution_context_ = {start: this.start_output.bind(this),
-                                      end: this.end_output.bind(this),
-                                      // these should convey the meaning e.g. through color:
-                                      out: resulter, err: appender('error'), msg: resulter,
-                                      html_out: appender('html'),
-                                      deferred_result: appender('deferred_result'),
-                                      selection_out: appender('selection'),
-                                      in: this.get_input.bind(this, 'in')
-                                     };
+                execution_context_ =
+                    {
+                        start: this.start_output.bind(this),
+                        end: this.end_output.bind(this),
+                        // these should convey the meaning e.g. through color:
+                        out: resulter, err: appender('error'), msg: resulter,
+                        html_out: appender('html'),
+                        deferred_result: appender('deferred_result'),
+                        selection_out: appender('selection'),
+                            in: this.get_input.bind(this, 'in')
+                    };
             }
             var context_id = RCloud.register_output_context(execution_context_);
-            that.set_status_message("Waiting...");
+            that.set_run_state("waiting");
             that.edit_source(false);
             var snapshot = cell_model.get_execution_snapshot();
             RCloud.UI.run_button.enqueue(
                 function() {
-                    that.set_status_message("Computing...");
+                    that.set_run_state("running");
                     return cell_model.parent_model.controller.execute_cell_version(context_id, snapshot);
                 },
                 function() {
-                    that.set_status_message("Cancelled!");
+                    that.set_run_state("cancelled");
                 });
         },
-        set_status_message: function(msg) {
+        set_run_state: function(msg) {
             cell_model.notify_views(function(view) {
-                view.status_updated(msg);
+                view.state_changed(msg);
             });
         },
         clear_result: function() {
@@ -54,9 +56,9 @@ Notebook.Cell.create_controller = function(cell_model)
         },
         end_output: function(error) {
             cell_model.notify_views(function(view) {
-                if(error)
+                if(error && error !== true)
                     view.add_result('error', error);
-                view.end_output();
+                view.end_output(error);
             });
         },
         get_input: function(type, prompt, k) {

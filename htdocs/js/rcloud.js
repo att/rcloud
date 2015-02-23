@@ -25,8 +25,8 @@ RCloud.promisify_paths = (function() {
         function success(result) {
             if(result && RCloud.is_exception(result)) {
                 var tb = result['traceback'] ? result['traceback'] : "";
-                if (tb.join) tb = tb.join(" <- ");
-                throw new Error(command + ": " + result['error'].replace('\n', ' ') + "  " + tb);
+                if (tb.join) tb = tb.join("\n");
+                throw new Error(command + ": " + result.error + "R trace:\n" + tb);
             }
             return result;
         }
@@ -148,11 +148,12 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.init_client_side_data = function() {
             var that = this;
-            return rcloud_ocaps.prefix_uuidAsync().then(function(v) {
-                that.deferred_knitr_uuid = v;
-            }).then(rcloud_ocaps.has_compute_separationAsync()).then(function(v) {
-                that.has_compute_separation = v;
-            });
+            return Promise.all([rcloud_ocaps.prefix_uuidAsync(),
+                                rcloud_ocaps.has_compute_separationAsync()])
+                .spread(function(uuid, has_compute) {
+                    that.deferred_knitr_uuid = uuid;
+                    that.has_compute_separation = has_compute;
+                });
         };
 
         rcloud.get_conf_value = function(key) {

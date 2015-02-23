@@ -28,6 +28,7 @@ function create_cell_html_view(language, cell_model) {
     var edit_mode_; // note: starts neither true nor false
     var highlights_;
     var code_preprocessors_ = []; // will be an extension point, someday
+    var running_state_;  // running state
 
     // input1
     var prompt_text_;
@@ -52,7 +53,7 @@ function create_cell_html_view(language, cell_model) {
             left_controls_.controls['cell_number'].set(cell_model.id());
     }
     function set_widget_height() {
-        source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +
+        outer_ace_div.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +
                                    EXTRA_HEIGHT_SOURCE) + "px");
     }
 
@@ -82,9 +83,14 @@ function create_cell_html_view(language, cell_model) {
         code: "#E8F1FA"
     };
 
-    function set_background_color(language) {
+    function set_background_class(div) {
+        /*
         var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
         ace_div.css({ 'background-color': edit_color });
+         */
+        var md = RCloud.language.is_a_markdown(language);
+        div.toggleClass(md ? 'edit-markdown' : 'edit-code', true);
+        div.toggleClass(md ? 'edit-code' : 'edit-markdown', false);
     }
 
     function update_language() {
@@ -93,8 +99,10 @@ function create_cell_html_view(language, cell_model) {
             result.hide_source && result.hide_source(false);
         if(cell_controls_)
             cell_controls_.controls['language_cell'].set(language);
+        set_background_class(code_div_.find('pre'));
         if(ace_widget_) {
-            set_background_color(language);
+            ace_div.toggleClass('active', true);
+            set_background_class(ace_div);
             var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
             ace_session_.setMode(new LangMode(false, ace_document_, ace_session_));
         }
@@ -113,7 +121,7 @@ function create_cell_html_view(language, cell_model) {
 
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
-    set_background_color(language);
+    set_background_class(ace_div);
 
     update_div_id();
 
@@ -124,6 +132,8 @@ function create_cell_html_view(language, cell_model) {
     function click_to_edit(div, whether) {
         whether &= !am_read_only_;
         if(whether) {
+            set_background_class(code_div_.find('pre'));
+            div.toggleClass('inactive', true);
             // distinguish between a click and a drag
             // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
             div.on({
@@ -140,7 +150,8 @@ function create_cell_html_view(language, cell_model) {
                             div.mouseleave();
                         }
                     }
-                },
+                }
+/*
                 'mouseenter.rcloud-cell': function() {
                     if(edit_mode_) // don't highlight if it won't do anything
                         return;
@@ -151,9 +162,10 @@ function create_cell_html_view(language, cell_model) {
                 'mouseleave.rcloud-cell': function() {
                     $(this).css('background-color', '');
                 }
+*/
             });
         }
-        else div.off('mousedown.rcloud-cell mouseup.rcloud-cell mouseenter.rcloud-cell mouseleave.rcloud-cell');
+        else div.off('mousedown.rcloud-cell mouseup.rcloud-cell');
     }
 
     function display_status(status) {
@@ -228,6 +240,7 @@ function create_cell_html_view(language, cell_model) {
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
+            result.state_changed('ready');
             cell_model.parent_model.on_dirty();
         });
         update_language();
@@ -332,6 +345,7 @@ function create_cell_html_view(language, cell_model) {
         code_div_.find('.rcloud-line-number .hljs-number').css('color', 'black');
         if(am_read_only_ !== 'unknown')
             click_to_edit(code_div_.find('pre'), !am_read_only_);
+        set_background_class(code_div_.find('pre'));
     }
     assign_code();
 
@@ -367,14 +381,38 @@ function create_cell_html_view(language, cell_model) {
         },
         id_updated: update_div_id,
         language_updated: update_language,
-        status_updated: function(status) {
-            display_status(status);
+        state_changed: function(state) {
+            var control = left_controls_.controls['run_state'];
+            switch(state) {
+            case 'ready':
+                if(running_state_ != 'waiting')
+                    control.icon('icon-circle-blank').color('#777');
+                break;
+            case 'waiting':
+                control.icon('icon-arrow-right').color('blue');
+                break;
+            case 'cancelled':
+                control.icon('icon-asterisk').color('#e06a06');
+                break;
+            case 'running':
+                control.icon('icon-spinner icon-spin').color('blue');
+                has_result_ = false;
+                break;
+            case 'complete':
+                control.icon('icon-circle').color('#72B668');
+                break;
+            case 'error':
+                control.icon('icon-exclamation').color('crimson');
+                break;
+            }
+            running_state_ = state;
+            return this;
         },
         start_output: function() {
         },
         add_result: function(type, r) {
             if(!has_result_) {
-                result_div_.empty(); // clear status
+                result_div_.empty(); // clear previous output
                 if(RCloud.language.is_a_markdown(language))
                     result.hide_source(true);
                 has_result_ = true;
@@ -426,12 +464,13 @@ function create_cell_html_view(language, cell_model) {
             }
             result_updated();
         },
-        end_output: function() {
+        end_output: function(error) {
             if(!has_result_) {
                 // the no-output case
                 result_div_.empty();
                 has_result_ = true;
             }
+            this.state_changed(error ? 'error' : 'complete');
             current_result_ = current_error_ = null;
         },
         clear_result: clear_result,
@@ -445,6 +484,9 @@ function create_cell_html_view(language, cell_model) {
             });
             click_to_edit(code_div_.find('pre'), !readonly);
             cell_status_.toggleClass('readonly', readonly);
+        },
+        set_show_cell_numbers: function(whether) {
+            left_controls_.set_flag('cell-numbers', whether);
         },
         click_to_edit: click_to_edit,
 

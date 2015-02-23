@@ -11,7 +11,7 @@
         function create_password_dialog() {
             var password = $('<input id="password-input" type="password"></input>').
                     keypress(function(e) {
-                        if (e.which === 13) {
+                        if (e.which === $.ui.keyCode.ENTER) {
                             done();
                             return false;
                         }
