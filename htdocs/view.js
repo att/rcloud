@@ -10,9 +10,9 @@ function main() {
     RCloud.session.init(true).then(function() {
             return Promise.all([
                 RCloud.UI.navbar.load(),
-                rcloud.config ?
+                (rcloud.config ?
                     rcloud.config.get_user_option('show-cell-numbers') :
-                    Promise.resolve(true).then(function(whether) {
+                    Promise.resolve(true)).then(function(whether) {
                         shell.notebook.controller.show_cell_numbers(whether);
                     })
             ]);
