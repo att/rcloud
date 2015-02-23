@@ -1,7 +1,7 @@
 Package: rcloud.support
 Title: Support Package for the RCloud environment
 Version: 1.3-0
-Author: Simon Urbanek <urbanek@research.att.com>, Gordon Woodhull <gordon@research.att.com>, Carlos Scheidegger <cscheid@research.att.com>
+Author: Simon Urbanek <urbanek@research.att.com>, Gordon Woodhull <gordon@research.att.com>, Carlos Scheidegger <cscheid@cscheid.net>
 Maintainer: Simon Urbanek <urbanek@research.att.com>
 Description: It's used by RCloud internally.
 Depends: base64enc, rjson, parallel

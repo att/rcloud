@@ -131,8 +131,8 @@ RCloud.promisify_paths = (function() {
         function success(result) {
             if(result && RCloud.is_exception(result)) {
                 var tb = result['traceback'] ? result['traceback'] : "";
-                if (tb.join) tb = tb.join(" <- ");
-                throw new Error(command + ": " + result['error'].replace('\n', ' ') + "  " + tb);
+                if (tb.join) tb = tb.join("\n");
+                throw new Error(command + ": " + result.error + "R trace:\n" + tb);
             }
             return result;
         }
@@ -254,11 +254,12 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.init_client_side_data = function() {
             var that = this;
-            return rcloud_ocaps.prefix_uuidAsync().then(function(v) {
-                that.deferred_knitr_uuid = v;
-            }).then(rcloud_ocaps.has_compute_separationAsync()).then(function(v) {
-                that.has_compute_separation = v;
-            });
+            return Promise.all([rcloud_ocaps.prefix_uuidAsync(),
+                                rcloud_ocaps.has_compute_separationAsync()])
+                .spread(function(uuid, has_compute) {
+                    that.deferred_knitr_uuid = uuid;
+                    that.has_compute_separation = has_compute;
+                });
         };
 
         rcloud.get_conf_value = function(key) {
@@ -1122,7 +1123,7 @@ ui_utils.editable = function(elem$, command) {
                 // allow default action but don't bubble (causing eroneous reselection in notebook tree)
             },
             'keydown.editable': function(e) {
-                if(e.keyCode === 13) {
+                if(e.keyCode === $.ui.keyCode.ENTER) {
                     var txt = decode(elem$.text());
                     function execute_if_valid_else_ignore(f) {
                         if(options().validate(txt)) {
@@ -1143,7 +1144,7 @@ ui_utils.editable = function(elem$, command) {
                         e.preventDefault();
                         return execute_if_valid_else_ignore(options().change);
                     }
-                } else if(e.keyCode === 27) {
+                } else if(e.keyCode === $.ui.keyCode.ESCAPE) {
                     elem$.blur(); // and cancel
                 }
                 return true;
@@ -1211,13 +1212,13 @@ ui_utils.prevent_backspace = function($doc) {
     // from http://stackoverflow.com/a/2768256/676195
     $doc.unbind('keydown').bind('keydown', function (event) {
         var doPrevent = false;
-        if (event.keyCode === 8) {
+        if (event.keyCode === $.ui.keyCode.BACKSPACE) {
             var d = event.srcElement || event.target;
             if((d.tagName.toUpperCase() === 'INPUT' &&
                 (d.type.toUpperCase() === 'TEXT' || d.type.toUpperCase() === 'PASSWORD' ||
                  d.type.toUpperCase() === 'FILE' || d.type.toUpperCase() === 'EMAIL' )) ||
                d.tagName.toUpperCase() === 'TEXTAREA' ||
-               d.contentEditable) {
+               d.isContentEditable) {
                 doPrevent = d.readOnly || d.disabled;
             }
             else {
@@ -1639,7 +1640,7 @@ Notebook.Asset.create_controller = function(asset_model)
             var msg = "Do you want to remove the asset '" +asset_name+ "' from the notebook?";
             if (force || confirm(msg)) {
                 asset_model.parent_model.controller.remove_asset(asset_model);
-                if(asset_model === RCloud.UI.scratchpad.current_asset) {
+                if(asset_model === RCloud.UI.scratchpad.current_model) {
                     var assets = asset_model.parent_model.assets;
                     if (assets.length)
                         assets[0].controller.select();
@@ -1682,6 +1683,7 @@ function create_cell_html_view(language, cell_model) {
     var edit_mode_; // note: starts neither true nor false
     var highlights_;
     var code_preprocessors_ = []; // will be an extension point, someday
+    var running_state_;  // running state
 
     // input1
     var prompt_text_;
@@ -1706,7 +1708,7 @@ function create_cell_html_view(language, cell_model) {
             left_controls_.controls['cell_number'].set(cell_model.id());
     }
     function set_widget_height() {
-        source_div_.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +
+        outer_ace_div.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +
                                    EXTRA_HEIGHT_SOURCE) + "px");
     }
 
@@ -1736,9 +1738,14 @@ function create_cell_html_view(language, cell_model) {
         code: "#E8F1FA"
     };
 
-    function set_background_color(language) {
+    function set_background_class(div) {
+        /*
         var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
         ace_div.css({ 'background-color': edit_color });
+         */
+        var md = RCloud.language.is_a_markdown(language);
+        div.toggleClass(md ? 'edit-markdown' : 'edit-code', true);
+        div.toggleClass(md ? 'edit-code' : 'edit-markdown', false);
     }
 
     function update_language() {
@@ -1747,8 +1754,10 @@ function create_cell_html_view(language, cell_model) {
             result.hide_source && result.hide_source(false);
         if(cell_controls_)
             cell_controls_.controls['language_cell'].set(language);
+        set_background_class(code_div_.find('pre'));
         if(ace_widget_) {
-            set_background_color(language);
+            ace_div.toggleClass('active', true);
+            set_background_class(ace_div);
             var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
             ace_session_.setMode(new LangMode(false, ace_document_, ace_session_));
         }
@@ -1767,7 +1776,7 @@ function create_cell_html_view(language, cell_model) {
 
     var outer_ace_div = $('<div class="outer-ace-div"></div>');
     var ace_div = $('<div style="width:100%; height:100%;"></div>');
-    set_background_color(language);
+    set_background_class(ace_div);
 
     update_div_id();
 
@@ -1778,6 +1787,8 @@ function create_cell_html_view(language, cell_model) {
     function click_to_edit(div, whether) {
         whether &= !am_read_only_;
         if(whether) {
+            set_background_class(code_div_.find('pre'));
+            div.toggleClass('inactive', true);
             // distinguish between a click and a drag
             // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
             div.on({
@@ -1794,7 +1805,8 @@ function create_cell_html_view(language, cell_model) {
                             div.mouseleave();
                         }
                     }
-                },
+                }
+/*
                 'mouseenter.rcloud-cell': function() {
                     if(edit_mode_) // don't highlight if it won't do anything
                         return;
@@ -1805,9 +1817,10 @@ function create_cell_html_view(language, cell_model) {
                 'mouseleave.rcloud-cell': function() {
                     $(this).css('background-color', '');
                 }
+*/
             });
         }
-        else div.off('mousedown.rcloud-cell mouseup.rcloud-cell mouseenter.rcloud-cell mouseleave.rcloud-cell');
+        else div.off('mousedown.rcloud-cell mouseup.rcloud-cell');
     }
 
     function display_status(status) {
@@ -1882,6 +1895,7 @@ function create_cell_html_view(language, cell_model) {
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
+            result.state_changed('ready');
             cell_model.parent_model.on_dirty();
         });
         update_language();
@@ -1986,6 +2000,7 @@ function create_cell_html_view(language, cell_model) {
         code_div_.find('.rcloud-line-number .hljs-number').css('color', 'black');
         if(am_read_only_ !== 'unknown')
             click_to_edit(code_div_.find('pre'), !am_read_only_);
+        set_background_class(code_div_.find('pre'));
     }
     assign_code();
 
@@ -2021,14 +2036,38 @@ function create_cell_html_view(language, cell_model) {
         },
         id_updated: update_div_id,
         language_updated: update_language,
-        status_updated: function(status) {
-            display_status(status);
+        state_changed: function(state) {
+            var control = left_controls_.controls['run_state'];
+            switch(state) {
+            case 'ready':
+                if(running_state_ != 'waiting')
+                    control.icon('icon-circle-blank').color('#777');
+                break;
+            case 'waiting':
+                control.icon('icon-arrow-right').color('blue');
+                break;
+            case 'cancelled':
+                control.icon('icon-asterisk').color('#e06a06');
+                break;
+            case 'running':
+                control.icon('icon-spinner icon-spin').color('blue');
+                has_result_ = false;
+                break;
+            case 'complete':
+                control.icon('icon-circle').color('#72B668');
+                break;
+            case 'error':
+                control.icon('icon-exclamation').color('crimson');
+                break;
+            }
+            running_state_ = state;
+            return this;
         },
         start_output: function() {
         },
         add_result: function(type, r) {
             if(!has_result_) {
-                result_div_.empty(); // clear status
+                result_div_.empty(); // clear previous output
                 if(RCloud.language.is_a_markdown(language))
                     result.hide_source(true);
                 has_result_ = true;
@@ -2080,12 +2119,13 @@ function create_cell_html_view(language, cell_model) {
             }
             result_updated();
         },
-        end_output: function() {
+        end_output: function(error) {
             if(!has_result_) {
                 // the no-output case
                 result_div_.empty();
                 has_result_ = true;
             }
+            this.state_changed(error ? 'error' : 'complete');
             current_result_ = current_error_ = null;
         },
         clear_result: clear_result,
@@ -2099,6 +2139,9 @@ function create_cell_html_view(language, cell_model) {
             });
             click_to_edit(code_div_.find('pre'), !readonly);
             cell_status_.toggleClass('readonly', readonly);
+        },
+        set_show_cell_numbers: function(whether) {
+            left_controls_.set_flag('cell-numbers', whether);
         },
         click_to_edit: click_to_edit,
 
@@ -2361,32 +2404,34 @@ Notebook.Cell.create_controller = function(cell_model)
                     return that.append_result.bind(this, type);
                 }
                 var resulter = appender('code');
-                execution_context_ = {start: this.start_output.bind(this),
-                                      end: this.end_output.bind(this),
-                                      // these should convey the meaning e.g. through color:
-                                      out: resulter, err: appender('error'), msg: resulter,
-                                      html_out: appender('html'),
-                                      deferred_result: appender('deferred_result'),
-                                      selection_out: appender('selection'),
-                                      in: this.get_input.bind(this, 'in')
-                                     };
+                execution_context_ =
+                    {
+                        start: this.start_output.bind(this),
+                        end: this.end_output.bind(this),
+                        // these should convey the meaning e.g. through color:
+                        out: resulter, err: appender('error'), msg: resulter,
+                        html_out: appender('html'),
+                        deferred_result: appender('deferred_result'),
+                        selection_out: appender('selection'),
+                            in: this.get_input.bind(this, 'in')
+                    };
             }
             var context_id = RCloud.register_output_context(execution_context_);
-            that.set_status_message("Waiting...");
+            that.set_run_state("waiting");
             that.edit_source(false);
             var snapshot = cell_model.get_execution_snapshot();
             RCloud.UI.run_button.enqueue(
                 function() {
-                    that.set_status_message("Computing...");
+                    that.set_run_state("running");
                     return cell_model.parent_model.controller.execute_cell_version(context_id, snapshot);
                 },
                 function() {
-                    that.set_status_message("Cancelled!");
+                    that.set_run_state("cancelled");
                 });
         },
-        set_status_message: function(msg) {
+        set_run_state: function(msg) {
             cell_model.notify_views(function(view) {
-                view.status_updated(msg);
+                view.state_changed(msg);
             });
         },
         clear_result: function() {
@@ -2406,9 +2451,9 @@ Notebook.Cell.create_controller = function(cell_model)
         },
         end_output: function(error) {
             cell_model.notify_views(function(view) {
-                if(error)
+                if(error && error !== true)
                     view.add_result('error', error);
-                view.end_output();
+                view.end_output(error);
             });
         },
         get_input: function(type, prompt, k) {
@@ -2547,6 +2592,7 @@ Notebook.Cell.preprocessors.add({
 
 Notebook.create_html_view = function(model, root_div)
 {
+    var show_cell_numbers_;
     function on_rearrange() {
         _.each(result.sub_views, function(view) {
             view.check_buttons();
@@ -2555,6 +2601,7 @@ Notebook.create_html_view = function(model, root_div)
 
     function init_cell_view(cell_view) {
         cell_view.set_readonly(model.read_only() || shell.is_view_mode());
+        cell_view.set_show_cell_numbers(show_cell_numbers_);
     }
 
     var result = {
@@ -2612,6 +2659,12 @@ Notebook.create_html_view = function(model, root_div)
             });
             _.each(this.asset_sub_views, function(view) {
                 view.set_readonly(readonly);
+            });
+        },
+        set_show_cell_numbers: function(whether) {
+            show_cell_numbers_ = whether;
+            _.each(this.sub_views, function(view) {
+                view.set_show_cell_numbers(whether);
             });
         },
         update_urls: function() {
@@ -3342,8 +3395,8 @@ Notebook.create_controller = function(model)
                     } else if (r.r_attributes['class'] === 'cell-eval-error') {
                         // available: error=message, traceback=vector of calls, expression=index of the expression that failed
                         var tb = r['traceback'] || '';
-                        if (tb.join) tb = tb.join(" <- ");
-                        var trace = tb ? 'trace: '+tb.replace('\n', ' ') : '';
+                        if (tb.join) tb = tb.join("\n");
+                        var trace = tb ? 'trace:\n'+tb : true;
                         RCloud.end_cell_output(context_id, trace);
                         throw 'stop';
                     }
@@ -3365,6 +3418,12 @@ Notebook.create_controller = function(model)
                     cell_model.controller.enqueue_execution_snapshot();
                 });
             });
+        },
+        show_cell_numbers: function(whether) {
+            _.each(model.views, function(view) {
+                view.set_show_cell_numbers(whether);
+            });
+            return this;
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -4112,8 +4171,30 @@ RCloud.UI.cell_commands = (function() {
                 control: span,
                 enable: function() {},
                 disable: function() {},
-                set: function(html) { content.html(html); }
+                set: function(html) {
+                    content.html(html);
+                    return this;
+                },
+                get: function() {
+                    return content;
+                }
             };
+        },
+        create_icon: function(icon, color, wrap) {
+            var result = this.create_static("<i></i>");
+            result = _.extend(result, {
+                icon: function(icon) {
+                    result.get().find('i').attr('class', icon);
+                    return this;
+                },
+                color: function(color) {
+                    result.get().find('i').css('color', color);
+                    return this;
+                }
+            });
+            result.get().attr('class', 'state-icon left-indicator');
+            result.icon(icon).color(color);
+            return result;
         },
         init: function() {
             extension_ = RCloud.extension.create({
@@ -4254,12 +4335,20 @@ RCloud.UI.cell_commands = (function() {
                         return that.create_static('&nbsp;');
                     }
                 },
-                cell_number: {
+                run_state: {
                     area: 'left',
                     sort: 2000,
                     create: function(cell_model) {
+                        return that.create_icon('icon-circle-blank', '#777');
+                    }
+                },
+                cell_number: {
+                    area: 'left',
+                    sort: 3000,
+                    display_flags: ['cell-numbers'],
+                    create: function(cell_model) {
                         return that.create_static(cell_model.id(), function(x) {
-                            return $("<span class='cell-number'>").append('cell ', x);
+                            return $("<span class='left-indicator'></span>").append('cell ', x);
                         });
                     }
                 }
@@ -4267,11 +4356,13 @@ RCloud.UI.cell_commands = (function() {
             return this;
         },
         add: function(commands) {
-            extension_.add(commands);
+            if(extension_)
+                extension_.add(commands);
             return this;
         },
         remove: function(command_name) {
-            extension_.remove(command_name);
+            if(extension_)
+                extension_.remove(command_name);
             return this;
         },
         decorate: function(area, div, cell_model, cell_view) {
@@ -5004,7 +5095,7 @@ RCloud.UI.comments_frame = (function() {
             });
 
             comment.keydown(function (e) {
-                if (e.keyCode == 13 && (e.ctrlKey || e.metaKey)) {
+                if (e.keyCode == $.ui.keyCode.ENTER && (e.ctrlKey || e.metaKey)) {
                     if(!Notebook.empty_for_github(comment.val())) {
                         that.post_comment(_.escape(comment.val()));
                         comment.height("41px");
@@ -5105,7 +5196,7 @@ RCloud.UI.fatal_dialog = function(message, label, href) {
             ignore_button = $("<span class='btn' style='float:right'>Ignore</span>"),
             body = $('<div />')
                 .append('<h1>Aw, shucks</h1>',
-                        '<p>' + message + '</p>',
+                        '<p style="white-space: pre-wrap">' + message + '</p>',
                         default_button, ignore_button,
                         '<div style="clear: both;"></div>');
         default_button.click(function(e) {
@@ -5224,7 +5315,7 @@ RCloud.UI.find_replace = (function() {
             replace_cycle_ = ['find-input', 'replace-input', 'find-next', 'find-last', 'replace-all'];
 
             function click_find_next(e) {
-                if(e.keyCode===13) {
+                if(e.keyCode===$.ui.keyCode.ENTER) {
                     e.preventDefault();
                     e.stopPropagation();
                     find_next_.click();
@@ -5238,7 +5329,7 @@ RCloud.UI.find_replace = (function() {
 
             find_form.keydown(function(e) {
                 switch(e.keyCode) {
-                case 9: // tab
+                case $.ui.keyCode.TAB:
                     e.preventDefault();
                     e.stopPropagation();
                     var cycle = replace_mode_ ? replace_cycle_ : find_cycle_;
@@ -5247,7 +5338,7 @@ RCloud.UI.find_replace = (function() {
                     i = i % cycle.length;
                     $('#' + cycle[i]).focus();
                     return false;
-                case 27: // esc
+                case $.ui.keyCode.ESCAPE:
                     e.preventDefault();
                     e.stopPropagation();
                     hide_dialog();
@@ -5495,7 +5586,7 @@ RCloud.UI.image_manager = (function() {
     var images_ = {};
     var formats_ = RCloud.extension.create();
     function create_image(id, url, dims, device, page) {
-        var div_, img_, dims_;
+        var div_, img_, image_div_, scroller_div_, dims_;
         function img_tag() {
             var attrs = [];
             attrs.push("id='" + id + "'");
@@ -5513,10 +5604,14 @@ RCloud.UI.image_manager = (function() {
                 });
         }
         function resize_stop(event, ui) {
-            dims_ = [ui.size.width, ui.size.height];
-            rcloud.plots.render(device, page, {dim: dims_})
+            var dims = [ui.size.width, ui.size.height];
+            rcloud.plots.render(device, page, {dim: dims})
                 .then(function(data) {
-                    result.update(data.url);
+                    result.update(data.url, dims);
+                })
+                .catch(function(err) {
+                    if(!/Error in replayPlot/.test(err.message))
+                        throw err;
                 });
         }
         function save_button() {
@@ -5544,10 +5639,25 @@ RCloud.UI.image_manager = (function() {
             return save_dropdown;
         }
 
+        function update_dims(dims) {
+            if(dims) {
+                if(dims[0])
+                    image_div_.css('width', dims[0]);
+                if(dims[1]) {
+                    image_div_.css('height', dims[1]);
+                }
+                dims_ = dims;
+            }
+        }
+
         function add_controls($image) {
-            var div = $('<div class="live-plot"></div>');
-            div.append($image);
-            var image_commands = $('<div class="live-plot-commands"></div>');
+            var container = $('<div class="live-plot"></div>');
+            scroller_div_ = $('<div class="live-plot-scroller"></div>');
+            image_div_ =  $('<div></div>');
+            container.append(scroller_div_);
+            scroller_div_.append(image_div_, $('<br/>'));
+            image_div_.append($image);
+            var image_commands = $('<span class="live-plot-commands"></div>');
             image_commands.append(save_button());
             image_commands.hide();
             $image.add(image_commands).hover(function() {
@@ -5555,22 +5665,15 @@ RCloud.UI.image_manager = (function() {
             }, function() {
                 image_commands.hide();
             });
-            div.append(image_commands);
-            if(dims) {
-                if(dims[0])
-                    div.css('width', dims[0]);
-                if(dims[1])
-                    div.css('height', dims[1]);
-                $image.css({width: '100%', height: '100%'});
-                dims_ = dims;
-            }
+            image_div_.append(image_commands);
+            $image.css({width: '100%', height: '100%'});
+            update_dims(dims);
 
-
-            div.resizable({
+            image_div_.resizable({
                 autoHide: true,
                 stop: resize_stop
             });
-            return div;
+            return container;
         }
         img_ = img_tag();
         div_ = add_controls(img_);
@@ -5579,8 +5682,9 @@ RCloud.UI.image_manager = (function() {
             div: function() {
                 return div_;
             },
-            update: function(url) {
+            update: function(url, dims) {
                 img_.attr('src', url);
+                update_dims(dims);
             }
         };
         return result;
@@ -5591,7 +5695,7 @@ RCloud.UI.image_manager = (function() {
             var image;
             if(images_[id]) {
                 image = images_[id];
-                image.update(url);
+                image.update(url, dims);
             }
             else {
                 image = create_image(id, url, dims, device, page);
@@ -5759,7 +5863,7 @@ RCloud.UI.import_export = (function() {
                             var notebook_desc = $('<span>Notebook description: </span>');
                             notebook_desc_content = $('<input type="text" class="form-control-ext" size="50"></input>')
                                 .keypress(function(e) {
-                                    if (e.which === 13) {
+                                    if (e.which === $.ui.keyCode.ENTER) {
                                         do_import();
                                         return false;
                                     }
@@ -5985,20 +6089,34 @@ RCloud.UI.left_panel =
     RCloud.UI.collapsible_column("#left-column",
                                  "#accordion-left", "#left-pane-collapser");
 RCloud.UI.load_options = function() {
-    return RCloud.UI.panel_loader.load().then(function() {
-        RCloud.UI.left_panel.init();
-        RCloud.UI.middle_column.init();
-        RCloud.UI.right_panel.init();
+    return rcloud.get_conf_value('smtp.server').then(function(has_mail) {
+        // this extra round trip is not ideal.  the load order still needs
+        // refinement.
+        if(has_mail)
+            RCloud.UI.settings_frame.add({
+                'subscribe-to-comments': RCloud.UI.settings_frame.checkbox({
+                    sort: 5000,
+                    default_value: false,
+                    label: "Subscribe To Comments",
+                    condition: function() {
+                    }
+                })
+            });
+        return RCloud.UI.panel_loader.load().then(function() {
+            RCloud.UI.left_panel.init();
+            RCloud.UI.middle_column.init();
+            RCloud.UI.right_panel.init();
 
-        RCloud.UI.command_prompt.init();
+            RCloud.UI.command_prompt.init();
 
-        $(".panel-collapse").collapse({toggle: false});
+            $(".panel-collapse").collapse({toggle: false});
 
-        return Promise.all([RCloud.UI.navbar.load(),
-                            RCloud.UI.advanced_menu.load(),
-                            RCloud.UI.share_button.load(),
-                            RCloud.UI.left_panel.load_options(),
-                            RCloud.UI.right_panel.load_options()]);
+            return Promise.all([RCloud.UI.navbar.load(),
+                                RCloud.UI.advanced_menu.load(),
+                                RCloud.UI.share_button.load(),
+                                RCloud.UI.left_panel.load_options(),
+                                RCloud.UI.right_panel.load_options()]);
+        });
     });
 };
 RCloud.UI.middle_column = (function() {
@@ -6038,17 +6156,21 @@ RCloud.UI.navbar = (function() {
             });
         },
         add: function(commands) {
-            extension_.add(commands);
+            if(extension_)
+                extension_.add(commands);
             return this;
         },
         remove: function(command_name) {
-            extension_.remove(command_name);
+            if(extension_)
+                extension_.remove(command_name);
             return this;
         },
         load: function() {
-            var items = extension_.create('header');
-            var header = $('#rcloud-navbar-header');
-            header.append.apply(header, _.values(items));
+            if(extension_) {
+                var items = extension_.create('header');
+                var header = $('#rcloud-navbar-header');
+                header.append.apply(header, _.values(items));
+            }
         }
     };
     return result;
@@ -6338,7 +6460,8 @@ RCloud.UI.notebook_title = (function() {
                                               editable_opts));
         },
         update_fork_info: function(fork_of) {
-            if(fork_of) {
+            // fork_of can be an empty array so make sure description is there
+            if(fork_of && fork_of.description) {
                 var owner = fork_of.owner ? fork_of.owner : fork_of.user;
                 var fork_desc = owner.login+ " / " + fork_of.description;
                 var url = ui_utils.make_url(shell.is_view_mode() ? 'view.html' : 'edit.html',
@@ -6573,10 +6696,8 @@ RCloud.UI.panel_loader = (function() {
             function do_side(panels, side) {
                 function do_panel(p) {
                     add_panel(p);
-                    // conceivably panels could be added to the DOM and initialized
-                    // before we have a session, and then loaded once we have it.
-                    // that's not currently how it works and i'm not sure if this
-                    // init/load distinction makes sense or is consistent
+                    // note: panels are not accessible to extensions for pre-load
+                    // customization
                     if(p.panel.init)
                         p.panel.init();
                     if(p.panel.load)
@@ -6694,6 +6815,7 @@ RCloud.UI.right_panel =
 RCloud.UI.run_button = (function() {
     var run_button_ = $("#run-notebook"),
         running_ = false,
+        stopping_ = false,
         queue_ = [],
         cancels_ = [];
 
@@ -6707,19 +6829,22 @@ RCloud.UI.run_button = (function() {
 
     function start_queue() {
         if(queue_.length === 0) {
+            stopping_ = false;
             running_ = false;
-            if(rcloud.has_compute_separation)
-                display('icon-play', 'Run All');
+            display('icon-play', 'Run All');
             highlight(false);
             return Promise.resolve(undefined);
         }
         else {
             running_ = true;
             var first = queue_.shift();
-            if(rcloud.has_compute_separation)
-                display('icon-stop', 'Stop');
+            display('icon-stop', 'Stop');
             highlight(true);
             return first().then(function() {
+                if(stopping_) {
+                    stopping_ = false;
+                    throw 'stop';
+                }
                 cancels_.shift();
                 return start_queue();
             });
@@ -6730,8 +6855,7 @@ RCloud.UI.run_button = (function() {
             var that = this;
             run_button_.click(function() {
                 if(running_) {
-                    if(rcloud.has_compute_separation)
-                        that.stop();
+                    that.stop();
                 }
                 else
                     shell.run_notebook();
@@ -6744,15 +6868,17 @@ RCloud.UI.run_button = (function() {
             });
         },
         stop: function() {
-            rcloud.signal_to_compute(2); // SIGINT
+            if(rcloud.has_compute_separation)
+                rcloud.signal_to_compute(2); // SIGINT
+            else
+                stopping_ = true;
         },
         on_stopped: function() {
             cancels_.forEach(function(cancel) { cancel(); });
             queue_ = [];
             cancels_ = [];
             running_ = false;
-            if(rcloud.has_compute_separation)
-                display('icon-play', 'Stop');
+            display('icon-play', 'Run All');
             highlight(false);
         },
         enqueue: function(f, cancel) {
@@ -7401,6 +7527,7 @@ RCloud.UI.session_pane = {
 RCloud.UI.settings_frame = (function() {
     // options to fetch from server, with callbacks for what to do once we get them
     var options_ = {};
+    var body_;
     // the controls, once they are created
     var controls_ = {};
     // are we currently setting option x?
@@ -7423,19 +7550,27 @@ RCloud.UI.settings_frame = (function() {
     }
     var result = {
         body: function() {
-            return $.el.div({id: "settings-body-wrapper", 'class': 'panel-body'},
-                           $.el.div({id: "settings-scroller", style: "width: 100%; height: 100%; overflow-x: auto"},
-                                    $.el.div({id:"settings-body", 'class': 'widget-vsize'})));
+            return body_ = $.el.div({id: "settings-body-wrapper", 'class': 'panel-body'},
+                            $.el.div({id: "settings-scroller", style: "width: 100%; height: 100%; overflow-x: auto"},
+                                    $.el.div({id:"settings-body", 'class': 'widget-vsize'})),
+                            $.el.span({class: "settings-reload-msg", style: "display: none"}, "Reload to see changes"));
         },
         panel_sizer: function(el) {
             // fudge it so that it doesn't scroll 4 nothing
             var sz = RCloud.UI.collapsible_column.default_sizer(el);
             return {height: sz.height+5, padding: sz.padding};
         },
+        show_reload_msg: function(val) {
+            if(val)
+                $(body_).find('.settings-reload-msg').show();
+            else
+                $(body_).find('.settings-reload-msg').hide();
+        },
         checkbox: function(opts) {
             opts = _.extend({
                 sort: 10000,
                 default_value: false,
+                needs_reload: false,
                 label: "",
                 id:"",
                 set: function(val) {}
@@ -7452,6 +7587,8 @@ RCloud.UI.settings_frame = (function() {
                     $(check).change(function() {
                         var val = $(this).prop('checked');
                         on_change(val);
+                        if(opts.needs_reload)
+                            result.show_reload_msg(true);
                         opts.set(val);
                     });
                     return checkboxdiv;
@@ -7462,6 +7599,71 @@ RCloud.UI.settings_frame = (function() {
                     opts.set(val);
                 }
             };
+        },
+        text_input: function(opts) {
+            opts = _.extend({
+                sort: 10000,
+                default_value: "",
+                needs_reload: false,
+                label: "",
+                id:"",
+                parse: function(val) { return val; },
+                format: function(val) { return val; },
+                set: function(val) {}
+            }, opts);
+            return {
+                sort: opts.sort,
+                default_value: opts.default_value,
+                create_control: function(on_change) {
+                    var input = $.el.input({type: 'text', class: 'form-control-ext'});
+                    $(input).prop('id', opts.id);
+                    var span = $.el.span(opts.label);
+                    var label = $.el.label(span, input);
+                    var div = $($.el.div({class: 'settings-input'}, label));
+                    function commit() {
+                        var val = $(input).val();
+                        val = opts.parse(val);
+                        on_change(val);
+                        if(opts.needs_reload)
+                            result.show_reload_msg(true);
+                        opts.set(val);
+                        val = opts.format(val);
+                        $(input).val(val);
+                        div.data('original-value', val);
+                    }
+                    function cancel() {
+                        $(input).val(div.data('original-value'));
+                    }
+                    $(input).keydown(function(e) {
+                        if(e.keyCode === $.ui.keyCode.ENTER)
+                            commit();
+                        else if(e.keyCode === $.ui.keyCode.ESCAPE)
+                            cancel();
+                    });
+                    $(input).blur(function() {
+                        cancel();
+                    });
+                    return div;
+                },
+                set: function(val, control) {
+                    opts.set(val);
+                    val = opts.format(val);
+                    control.find('input').val(val);
+                    control.data('original-value', val);
+                }
+            };
+        },
+        text_input_vector: function(opts) {
+            opts = _.extend({
+                parse: function(val) {
+                    return val.split(/, */).filter(function(x) { return !!x; });
+                },
+                format: function(val) {
+                    // might be devectorized by rserve.js
+                    return val.join ? val.join(', ') : val;
+                }
+            }, opts);
+            return this.text_input(opts);
         },
         init: function() {
             var that = this;
@@ -7474,18 +7676,34 @@ RCloud.UI.settings_frame = (function() {
                         RCloud.UI.command_prompt.show_prompt(val);
                     }
                 }),
-                'subscribe-to-comments': that.checkbox({
-                    sort: 3000,
-                    default_value: false,
-                    label: "Subscribe To Comments"
-                }),
                 'show-terse-dates': that.checkbox({
                     sort: 2000,
                     default_value: true,
+                    needs_reload: true,
                     label: "Show Terse Version Dates",
                     set: function(val) {
                         editor.set_terse_dates(val);
                     }
+                }),
+                'show-cell-numbers': that.checkbox({
+                    sort: 3000,
+                    default_value: true,
+                    label: "Show Cell Numbers",
+                    set: function(val) {
+                        shell.notebook.controller.show_cell_numbers(val);
+                    }
+                }),
+                'addons': that.text_input_vector({
+                    sort: 10000,
+                    needs_reload: true,
+                    needs_reload: true,
+                    label: "Enable Extensions"
+                }),
+                'skip-addons': that.text_input_vector({
+                    sort: 11000,
+                    needs_reload: true,
+                    needs_reload: true,
+                    label: "Disable Extensions"
                 })
             });
         },

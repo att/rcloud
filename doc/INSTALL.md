@@ -40,7 +40,7 @@ You probably want to set the `Host:` configuration option and Github authenticat
 
 You can use the above also for re-starts. If you didn't touch any code and want to restart, you can add `--no-build` for a quick re-start without re-building any packages.
 
-Once it is running, you can go to `http://your-host:8080/login.R` to login to your RCloud instance. We don't supply `index.html` as part fo the sources so you can customize the user experience on your own.
+Once it is running, you can go to `http://your-host:8080/login.R` to login to your RCloud instance. We don't supply `index.html` as part of the sources so you can customize the user experience on your own.
 
 
 ### Github authentication

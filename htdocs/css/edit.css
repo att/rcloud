@@ -245,13 +245,28 @@ rect.frame {
 }
 
 .notebook-cell .cell-controls-above {
-    color: #555;
+    color: #777;
     position: absolute;
     right: -0.1em;
     top: -0.5em;
     z-index: 5;
 }
 
+.active.edit-markdown {
+    background-color: #F7EEE4;
+}
+
+.active.edit-code {
+    background-color: #E8F1FA;
+}
+
+.inactive.edit-markdown {
+    background-color: #f5f1ec;
+}
+
+.inactive.edit-code {
+    background-color: #eef3f7;
+}
 
 .fontawesome-button {
     margin: 0.25em;
@@ -814,10 +829,6 @@ pre {
     max-width: 100%;
 }
 
-.cell-number {
-    padding-left: 4px;
-}
-
 .ace_gutter {
     background: #f5f5f5 !important;
 }
@@ -1147,10 +1158,38 @@ pre > .vt100 {
     border-color: #ccc;
     border-radius: 3px;
 }
+
+#settings-body-wrapper {
+    position: relative;
+}
+
+.settings-input label {
+    font-weight: normal;
+}
+
+.settings-input input {
+    width: 180px;
+    height: 20px;
+}
+
+.settings-input label span {
+    display: inline-block;
+    width: 120px;
+    padding-right: 5px;
+    vertical-align: middle;
+}
+
+.settings-reload-msg {
+    position: absolute;
+    right: 5px;
+    bottom: 3px;
+    color: #d33224;
+}
+
 .checkbox {
     padding-left: 2px;
     margin-top: 0px;
-    margin-bottom: 5px;
+    margin-bottom: 2px;
 }
 /* switching off default bootstrap input type checkbox*/
 input[type=checkbox] {

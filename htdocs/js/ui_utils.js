@@ -463,7 +463,7 @@ ui_utils.editable = function(elem$, command) {
                 // allow default action but don't bubble (causing eroneous reselection in notebook tree)
             },
             'keydown.editable': function(e) {
-                if(e.keyCode === 13) {
+                if(e.keyCode === $.ui.keyCode.ENTER) {
                     var txt = decode(elem$.text());
                     function execute_if_valid_else_ignore(f) {
                         if(options().validate(txt)) {
@@ -484,7 +484,7 @@ ui_utils.editable = function(elem$, command) {
                         e.preventDefault();
                         return execute_if_valid_else_ignore(options().change);
                     }
-                } else if(e.keyCode === 27) {
+                } else if(e.keyCode === $.ui.keyCode.ESCAPE) {
                     elem$.blur(); // and cancel
                 }
                 return true;
@@ -552,13 +552,13 @@ ui_utils.prevent_backspace = function($doc) {
     // from http://stackoverflow.com/a/2768256/676195
     $doc.unbind('keydown').bind('keydown', function (event) {
         var doPrevent = false;
-        if (event.keyCode === 8) {
+        if (event.keyCode === $.ui.keyCode.BACKSPACE) {
             var d = event.srcElement || event.target;
             if((d.tagName.toUpperCase() === 'INPUT' &&
                 (d.type.toUpperCase() === 'TEXT' || d.type.toUpperCase() === 'PASSWORD' ||
                  d.type.toUpperCase() === 'FILE' || d.type.toUpperCase() === 'EMAIL' )) ||
                d.tagName.toUpperCase() === 'TEXTAREA' ||
-               d.contentEditable) {
+               d.isContentEditable) {
                 doPrevent = d.readOnly || d.disabled;
             }
             else {
