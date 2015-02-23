@@ -60,7 +60,7 @@ to match the application URL, and the path must be `login_successful.R`).
 Then, you need to create a file under your configuration root
 (typically that's `/conf`) called `rcloud.conf` (see `rcloud.conf.samp`
 in the distribution of an example starting point and
-[the rcloud.conf WiKi page for full details](https://github.com/cscheid/rcloud/wiki/rcloud.conf)).
+[the rcloud.conf WiKi page for full details](https://github.com/att/rcloud/wiki/rcloud.conf)).
 If you're using github.com, then your file will look like this:
 
     github.client.id: your.20.character.client.id
