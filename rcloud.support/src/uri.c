@@ -2,8 +2,11 @@
 #include <Rinternals.h>
 
 #include <string.h>
+#include <ctype.h>
 
-static const char *encoded_set = ":/?#[]@!$&'()*+,;=%";
+// https://tools.ietf.org/html/rfc3986#section-2.3
+// unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
+#define unreserved(c) (isalnum(c) || c == '-' || c == '.' || c == '_' || c == '~')
 static const char *hex = "0123456789ABCDEF";
 
 static char buf[1024];
@@ -16,7 +19,7 @@ static const char *encode1(const char *c) {
         char *d = buf;
         while (c < e) {
             int ci = (int) *((unsigned char*)c);
-            if (ci > 127 || ci < 32 || strchr(encoded_set, ci)) {
+            if (!unreserved(ci)) {
                 *(d++) = '%';
                 *(d++) = hex[(ci >> 4)];
                 *(d++) = hex[ci & 15];
@@ -33,7 +36,7 @@ static const char *encode1(const char *c) {
 
         while (c < e) {
             int ci = (int) *((unsigned char*)c);
-            if (ci > 127 || ci < 32 || strchr(encoded_set, ci))
+            if (!unreserved(ci))
                 extra++;
             c++;
         }
@@ -43,7 +46,7 @@ static const char *encode1(const char *c) {
         dst = d = R_alloc(extra * 2 + len + 1, 1);
         while (c < e) {
             int ci = (int) *((unsigned char*)c);
-            if (ci > 127 || ci < 32 || strchr(encoded_set, ci)) {
+            if (!unreserved(ci)) {
                 *(d++) = '%';
                 *(d++) = hex[(ci >> 4)];
                 *(d++) = hex[ci & 15];
