@@ -19,6 +19,7 @@
   }
 
   finalHtml <- gsub('shiny/shared/jquery.js', '../../disabled.js', shinyHtml, fixed=TRUE)
+  finalHtml <- gsub('shiny/shared/jquery.min.js', '../../disabled.js', shinyHtml, fixed=TRUE)
   finalHtml
 }
 

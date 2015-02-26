@@ -1,13 +1,5 @@
 ((function() {
 
-// FIXME: since shiny HTML generation injects shiny.js
-//        directly we can't use require for this (AFAICT) [SU]
-requirejs.config({
-    paths: {
-        "shiny": "../../shared.R/shiny/shared/shiny"
-    }
-});
-
 var sockets_ = [];
 var ocaps_ = null;
 
@@ -43,6 +35,7 @@ return {
     },
     on_message: function(id, msg, k) {
         console.log("Shiny to client: ", msg);
+        msg = msg.replace(/shared/g,'shared.R/shiny/shared/');
         sockets_[0].onmessage({data:msg});
         k();
     }
