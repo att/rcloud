@@ -35,7 +35,7 @@ return {
     },
     on_message: function(id, msg, k) {
         console.log("Shiny to client: ", msg);
-        msg = msg.replace(/shared/g,'shared.R/shiny/shared/');
+        msg = msg.replace(/shared\//g,'shared.R/shiny/shared/');
         sockets_[0].onmessage({data:msg});
         k();
     }
