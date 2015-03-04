@@ -55,8 +55,20 @@
           <li><button id="revert-notebook" title="Revert" type="button" class="btn btn-link navbar-btn" style="display:none;"><i class="icon-undo"></i></button></li>
           <li>
             <span class="button-highlight"></span>
+            <button id="toggle-view" title="Web View" type="button" class="btn btn-link navbar-btn">
+              <i class="icon-html5"></i>
+            </button>
+          </li>
+          <li>
+            <span class="button-highlight"></span>
             <button id="run-notebook" title="Run All" type="button" class="btn btn-link navbar-btn">
               <i class="icon-play"></i>
+            </button>
+          </li>
+          <li>
+            <span class="button-highlight"></span>
+            <button id="new-tab" title="Show in new tab" type="button" class="btn btn-link navbar-btn" style="display:none">
+              <a target="_blank"><i class="icon-eye-open"></i></a>
             </button>
           </li>
           <li><a href="#"><span id="notebook-author"></span><span id="author-title-dash" style="display:none;">&nbsp;&ndash;&nbsp;</span><span id="rename-notebook" title="Change Title" style="display:none">[<span id="notebook-title"></span>]</a></span><small id="forked-from-desc"></small></li>
@@ -264,6 +276,12 @@
           <span class="bar"></span>
         </span>
 
+        <div id = "external-link" style="width:100%;display:none">
+          <a>Show in new tab</a>
+        </div>
+        <div style="position:relative">
+          <iframe id="iframe" class="tab-div" style="height:100%;width:100%;display:none" src="fiddle_default.html"></iframe>
+        </div>
         <div id="output" class="tab-div">
         </div>
 

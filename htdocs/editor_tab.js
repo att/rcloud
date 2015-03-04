@@ -776,7 +776,7 @@ var editor = function () {
     }
 
     function update_url(opts) {
-        var url = ui_utils.make_url('edit.html', opts);
+        var url = ui_utils.make_url(window.location.pathname.substr(1), opts);
         window.history.replaceState("rcloud.notebook", null, url);
         return rcloud.api.set_url(url);
     }
@@ -953,16 +953,22 @@ var editor = function () {
         if(event.node.id === 'showmore')
             result.show_history(event.node.parent, false);
         else if(event.node.gistname) {
-            if(event.click_event.metaKey || event.click_event.ctrlKey)
+            if(event.click_event.metaKey || event.click_event.ctrlKey) {
+                RCloud.UI.toggle_button.init();
+                $('#iframe').attr('src','fiddle_default.html');
                 result.open_notebook(event.node.gistname, event.node.version, true, true);
+            }
             else {
                 // it's weird that a notebook exists in two trees but only one is selected (#220)
                 // just select - and this enables editability
                 if(event.node.gistname === current_.notebook &&
                     event.node.version == current_.version && event.node.version === null) // nulliness ok here
                     select_node(event.node);
-                else
+                else {
+                    RCloud.UI.toggle_button.init();
+                    $('#iframe').attr('src','fiddle_default.html');
                     result.open_notebook(event.node.gistname, event.node.version || null, event.node.root, false);
+                }
             }
         }
         else
@@ -1030,7 +1036,7 @@ var editor = function () {
                             var message = "Could not open notebook " + opts.notebook;
                             if(opts.version)
                                 message += " (version " + opts.version + ")";
-                            RCloud.UI.fatal_dialog(message, "Continue", ui_utils.make_url('edit.html'));
+                            RCloud.UI.fatal_dialog(message, "Continue", ui_utils.make_url(window.location.pathname.substr(1)));
                             throw xep;
                         });
                 } else if(!opts.new_notebook && current_.notebook) {
@@ -1050,7 +1056,7 @@ var editor = function () {
                 e.preventDefault();
                 e.stopPropagation();
                 if(e.metaKey || e.ctrlKey) {
-                    var url = ui_utils.make_url('edit.html', {new_notebook: true});
+                    var url = ui_utils.make_url(window.location.pathname.substr(1), {new_notebook: true});
                     window.open(url, "_blank");
                 }
                 else
@@ -1081,7 +1087,7 @@ var editor = function () {
         },
         // missing: friends, featured, histories
         fatal_reload: function(message) {
-            var url = ui_utils.make_url('edit.html', {notebook: current_.notebook, version: current_.version});
+            var url = ui_utils.make_url(window.location.pathname.substr(1), {notebook: current_.notebook, version: current_.version});
             message = "<p>Sorry, RCloud's internal state has become inconsistent.  Please reload to return to a working state.</p><p>" + message + "</p>";
             RCloud.UI.fatal_dialog(message, "Reload", url);
         },
@@ -1115,7 +1121,7 @@ var editor = function () {
         open_notebook: function(gistname, version, selroot, new_window) {
             // really just load_notebook except possibly in a new window
             if(new_window) {
-                var url = ui_utils.make_url('edit.html', {notebook: gistname, version: version});
+                var url = ui_utils.make_url(window.location.pathname.substr(1), {notebook: gistname, version: version});
                 window.open(url, "_blank");
             }
             else

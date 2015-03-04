@@ -39,9 +39,15 @@ RCloud.UI.run_button = (function() {
     return {
         init: function() {
             var that = this;
+
             run_button_.click(function() {
                 if(running_) {
                     that.stop();
+                }
+                else if ($('#iframe').css('display')!=='none') {
+                    shell.save_notebook();
+                    var target_url = window.location.origin+'/notebook.R/'+shell.gistname()+'/index.html';
+                    $('#iframe').attr('src',target_url);
                 }
                 else
                     shell.run_notebook();
