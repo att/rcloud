@@ -19,6 +19,7 @@ RCloud.UI.init = function() {
     shell.notebook.controller.save_button(saveb);
 
     RCloud.UI.run_button.init();
+    RCloud.UI.toggle_button.init();
 
     //////////////////////////////////////////////////////////////////////////
     // allow reordering cells by dragging them

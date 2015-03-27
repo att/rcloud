@@ -53,6 +53,7 @@ rcloud_bundle.js: \
 	ui/progress.js \
 	ui/right_panel.js \
         ui/run_button.js \
+        ui/toggle_button.js \
 	ui/scratchpad.js \
 	ui/search.js \
 	ui/session_pane.js \
