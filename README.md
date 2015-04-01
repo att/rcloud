@@ -1,6 +1,7 @@
 ---
 title: Document Center
 ---
+
 # RCloud, an HTML5 frontend for collaborative data analysis in R
 
 RCloud is an environment for collaboratively creating and sharing data
