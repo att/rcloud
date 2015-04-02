@@ -9,7 +9,7 @@
   function in order to be used as in RCloudWeb, typically by
   \code{mini.html} or similar page using an RCloud session.
 
-  \code{rce.inline} can be used to display the result from
+  \code{rcw.inline} can be used to display the result from
   \code{rcw.result} inline inside a cell in RCloud (as opposed to an
   independent page). It performs the same actions as \code{mini.html}.
 }
