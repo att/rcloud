@@ -59,11 +59,49 @@ static const char *encode1(const char *c) {
     }
 }
 
+static const char *decode1(const char *c) {
+    int len = strlen(c);
+    char *d, *e;
+    /* shortcut - if there is no % -> nothing encoded */
+    if (!memchr(c, '%', len)) return c;
+    e = d = (len >= sizeof(buf)) ? R_alloc(len + 1, 1) : buf;
+    while (*c)
+        if (*c == '%') {
+            unsigned int a = 0;
+            c++;
+            if (*c >= '0' && *c <= '9') a = *c - '0';
+            else if (*c >= 'a' && *c <= 'f') a = *c - 'a' + 10;
+            else if (*c >= 'A' && *c <= 'F') a = *c - 'A' + 10;
+            else if (*c == '%') { *(d++) = *(c++); continue; }
+            else { *(d++) = c[-1]; continue; } /* ignore escape */
+            a <<= 4;
+            c++;
+            if (*c >= '0' && *c <= '9') a |= *c - '0';
+            else if (*c >= 'a' && *c <= 'f') a |= *c - 'a' + 10;
+            else if (*c >= 'A' && *c <= 'F') a |= *c - 'A' + 10;
+            else { *(d++) = c[-2]; *(d++) = c[-1]; continue; } /* ignore escape */
+            *(d++) = a;
+            c++;
+        } else
+            *(d++) = *(c++);
+    *d = 0;
+    return e;
+}
+
 SEXP uri_encode(SEXP sWhat) {
     int i, n = LENGTH(sWhat);
     SEXP res = PROTECT(allocVector(STRSXP, n));
     for (i = 0; i < n; i++)
         SET_STRING_ELT(res, i, (STRING_ELT(sWhat, i) == NA_STRING) ? NA_STRING : mkChar(encode1(CHAR(STRING_ELT(sWhat, i)))));
+    UNPROTECT(1);
+    return res;
+}
+
+SEXP uri_decode(SEXP sWhat) {
+    int i, n = LENGTH(sWhat);
+    SEXP res = PROTECT(allocVector(STRSXP, n));
+    for (i = 0; i < n; i++)
+        SET_STRING_ELT(res, i, (STRING_ELT(sWhat, i) == NA_STRING) ? NA_STRING : mkChar(decode1(CHAR(STRING_ELT(sWhat, i)))));
     UNPROTECT(1);
     return res;
 }
