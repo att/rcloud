@@ -1,3 +1,10 @@
+## RCloud 1.3.3 (not released yet)
+* Do not load rcloud language and ui extensions when doing a notebook.R call.
+
+## RCloud 1.3.2
+* Some reserved characters were not getting uri-encoded, resulting in passwords
+  failing.
+
 ## RCloud 1.3.1
 
 ### Features
