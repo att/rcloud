@@ -25,7 +25,7 @@ rcw.inline(result, ...)
     passed to the JavaScript side, can also contain functions which become
     JavaScript functions on the other side.
     
-    for \code{rcw.inline} any additional arguments taht will be passed
+    for \code{rcw.inline} any additional arguments that will be passed
     to the \code{run} function of the result (instead of the parsed query
     string)}
   \item{result}{result from \code{rcw.result} that is to be displayed}
