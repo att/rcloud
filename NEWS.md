@@ -1,6 +1,12 @@
 ## RCloud 1.3.3 (not released yet)
 * Do not load rcloud language and ui extensions when doing a notebook.R call.
 
+* Added `http.static.nocache` configuration entry governing the use of no-cache
+  headers for statically served content. The default is now `no`, which means
+  the browser is allowed to cache static content.  RCloud 1.3 through 1.3.2 used
+  `yes` which can cause unnecessary load on the servers if there are no changes
+  to the static content.
+
 ## RCloud 1.3.2
 * Some reserved characters were not getting uri-encoded, resulting in passwords
   failing.
