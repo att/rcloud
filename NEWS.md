@@ -1,4 +1,4 @@
-## RCloud 1.3.3 (not released yet)
+## RCloud 1.3.3
 * Do not load rcloud language and ui extensions when doing a notebook.R call.
 
 * Added `http.static.nocache` configuration entry governing the use of no-cache
