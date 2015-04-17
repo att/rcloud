@@ -7,6 +7,12 @@
   `yes` which can cause unnecessary load on the servers if there are no changes
   to the static content.
 
+* Fixes a bug where line breaks were missing from content copied from inactive
+  cells (#1389)
+
+* Fixes a bug where only the first line is copied when copying cells in Firefox
+  (#1413)
+
 ## RCloud 1.3.2
 * Some reserved characters were not getting uri-encoded, resulting in passwords
   failing.
