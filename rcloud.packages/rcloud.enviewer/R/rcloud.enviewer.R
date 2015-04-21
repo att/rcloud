@@ -11,7 +11,8 @@ rcloud.enviewer.display.dataframe <- function(x)
 
 rcloud.enviewer.display.value <- function(val) {
     type <- class(val)
-    str <- capture.output(str(val))
+    ## there are broken packages like XML that can error out on str() so just display the class in that case
+    str <- tryCatch(capture.output(str(val)), error=function(e) paste(class(val), collapse='/'))
     if (is.list(val) && !is.null(names(val)))
       str[1] <- paste0("List with names ", paste(capture.output(str(names(val))), collapse=' '))
     if (length(str) > 3)
