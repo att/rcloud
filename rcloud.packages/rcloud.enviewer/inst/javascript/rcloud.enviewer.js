@@ -13,8 +13,8 @@
         }
     };
 
-    function dataframe_link(key) {
-        return $('<a/>', {href: '#'}).text('dataframe')
+    function dataframe_link(key, value) {
+        return $('<a/>', {href: '#'}).text(('text' in value) ? value.text : 'data.frame')
             .click(function() {
                 ocaps_.view_dataframe(key);
             })[0];
@@ -38,7 +38,7 @@
                 if('command' in section[key])
                     switch(section[key].command) {
                     case 'view':
-                        items.push(td(dataframe_link(key)));
+                        items.push(td(dataframe_link(key, section[key])));
                         break;
                     default:
                         throw new Error('unknown rcloud.enviewer command ' + key);

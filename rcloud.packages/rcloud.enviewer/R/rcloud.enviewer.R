@@ -6,8 +6,8 @@ rcloud.enviewer.view.dataframe <- function(expr)
   View(get(expr, .GlobalEnv))
 
 ## -- how to handle each group --
-rcloud.enviewer.display.dataframe <- function(x)
-  structure(list(command="view", object=x), class="data")
+rcloud.enviewer.display.dataframe <- function(x, val)
+  structure(list(command="view", object=x, text=paste0("data.frame [",paste(dim(val), collapse=', '),"]")), class="data")
 
 rcloud.enviewer.display.value <- function(val) {
     type <- class(val)
@@ -32,7 +32,7 @@ rcloud.enviewer.build <- function(vars, env) {
     ret <- lapply(vars, function(x) {
         val <- get(x, envir=env)
         if (is.data.frame(val)) {
-            rcloud.enviewer.display.dataframe(x)
+            rcloud.enviewer.display.dataframe(x, val)
         } else if (is.function(val)) {
             rcloud.enviewer.display.function(val)
         } else
