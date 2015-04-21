@@ -25,7 +25,7 @@ rcloud.enviewer.display.value <- function(val) {
 }
 
 rcloud.enviewer.display.function <- function(f)
-    structure(list(type="function", value=deparse(args(f))[1]), class="functions")
+    structure(list(type="function", value=gsub("^function ","",deparse(args(f))[1])), class="functions")
 
 ## retrieve objects and format them
 rcloud.enviewer.build <- function(vars, env) {
