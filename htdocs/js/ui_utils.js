@@ -186,7 +186,7 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
         },
 
         {
-            name: 'execute-cursor-at-beginning',
+            name: 'cursor at beginning of line',
             bindKey: {
           
                 mac: 'Ctrl-A',
@@ -204,7 +204,7 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
             }
         } ,
         {
-            name: 'execute-cursor-at-end',
+            name: 'cursor at end of line',
             bindKey: {
        
                 mac: 'Ctrl-E',
