@@ -214,12 +214,18 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                 //row of the cursor on current line
                 var row = widget.getCursorPosition().row;
                 //last column of the cursor on current line
-                var lastCol = widget.getSession().getValue().length;
+                var lastCol = ui_utils.last_col(widget, row);
                 //move to the end of that line
                 widget.navigateTo(row, lastCol);
             }
         }
     ]);
+};
+
+
+ui_utils.last_col = function(widget, row) {
+    var doc = widget.getSession().getDocument();
+    return doc.getLine(row).length;
 };
 
 ui_utils.character_offset_of_pos = function(widget, pos) {
