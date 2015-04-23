@@ -156,7 +156,8 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                 mac: "Command-L"
             },
             exec: function() { return false; }
-        }, {
+        }, 
+        {
             name: 'execute-selection-or-line',
             bindKey: {
                 win: 'Ctrl-Return',
@@ -181,6 +182,41 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                         controller.enqueue_execution_snapshot();
                         shell.scroll_to_end();
                     });
+            }
+        },
+
+        {
+            name: 'execute-cursor-at-beginning',
+            bindKey: {
+          
+                mac: 'Ctrl-A',
+                sender: 'editor'
+            },
+            exec: function(widget, args, request) {
+                if (widget.getOption("readOnly"))
+                    return;
+                //row of the cursor on current line
+                var row = widget.getCursorPosition().row;
+                //move to the beginning of that line
+                widget.navigateTo(row, 0);
+                //make sure it appears at beginning of text
+                widget.navigateLineStart();
+            }
+        } ,
+        {
+            name: 'execute-cursor-at-end',
+            bindKey: {
+       
+                mac: 'Ctrl-E',
+                sender: 'editor'
+            },
+            exec: function(widget, args, request) {
+                //row of the cursor on current line
+                var row = widget.getCursorPosition().row;
+                //last column of the cursor on current line
+                var lastCol = widget.getSession().getValue().length;
+                //move to the end of that line
+                widget.navigateTo(row, lastCol);
             }
         }
     ]);
