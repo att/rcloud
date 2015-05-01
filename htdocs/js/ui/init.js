@@ -58,6 +58,7 @@ RCloud.UI.init = function() {
         return true;
     });
 
+    RCloud.UI.menus.init();
     RCloud.UI.advanced_menu.init();
     RCloud.UI.navbar.init();
 
