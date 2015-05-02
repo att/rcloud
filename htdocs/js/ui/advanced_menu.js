@@ -8,8 +8,10 @@ RCloud.UI.advanced_menu = (function() {
             d3.rebind(result, menu_, 'add', 'remove', 'check', 'uncheck', 'enable', 'create');
             RCloud.UI.menus.add({
                 advanced_menu: {
-                    sort: 1000,
+                    sort: 5000,
+                    type: 'menu',
                     title: 'Advanced',
+                    modes: ['view', 'edit'],
                     menu: menu_
                 }
             });
