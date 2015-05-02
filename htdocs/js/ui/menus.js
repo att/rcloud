@@ -143,7 +143,9 @@ RCloud.UI.menus = (function() {
             return ret;
         },
         create_link: function(item) {
-            var ret = $.el.li($.el.a({href: item.href}, item.text));
+            var attrs = {href: item.href};
+            if(item.target) attrs.target = item.target;
+            var ret = $.el.li($.el.a(attrs, item.text));
             return ret;
         },
         create_divider: function(item) {
@@ -152,16 +154,48 @@ RCloud.UI.menus = (function() {
         load: function(mode) {
             var that = this;
             var where = $('#rcloud-navbar-menu');
-            var entries = extension_.entries(RCloud.UI.menu.ui_mode());
-            var items = $(entries.map(function(item) {
-                switch(item.type) {
-                case 'divider': return that.create_divider();
-                case 'menu': return that.create_menu(item);
-                case 'link': return that.create_link(item);
-                default: throw new Error('unknown navbar menu entry type ' + item.type);
+            rcloud.get_conf_values('^rcloud\\.menu\\..*').then(function(menus) {
+                // fun option-parsing crap
+                menus = _.omit(menus, 'r_type', 'r_attributes');
+                var add = {};
+                for(var key in menus) {
+                    var values = menus[key].split(/ *, */);
+                    var skey = key.split('.');
+                    if(skey.length != 3)
+                        throw new Error('submenus not supported yet - invalid menu key '+key);
+                    var sort = +values[0],
+                        modes = values[1].split(/ *\| */),
+                        type = values[2],
+                        title = values[3],
+                        href = values[4],
+                        target = values[5] || '_blank';
+                    if(isNaN(sort))
+                        throw new Error('bad sort value ' + values[0] + ' in menu key '+key);
+                    var value;
+                    switch(type) {
+                    case 'link':
+                        value = {sort: sort, modes: modes, type: type, text: title, href: href, target: target};
+                        break;
+                    case 'divider':
+                        value = {sort: sort, modes: modes, type: type};
+                        break;
+                    default:
+                        throw new Error('invalid menu type ' + type + ' in menu key '+key);
+                    }
+                    add[skey[2]] = value;
                 }
-            }));
-            where.append(items);
+                that.add(add);
+                var entries = extension_.entries(RCloud.UI.menu.ui_mode());
+                var items = $(entries.map(function(item) {
+                    switch(item.type) {
+                    case 'divider': return that.create_divider();
+                    case 'menu': return that.create_menu(item);
+                    case 'link': return that.create_link(item);
+                    default: throw new Error('unknown navbar menu entry type ' + item.type);
+                    }
+                }));
+                where.append(items);
+            });
             return this;
         }
     };
