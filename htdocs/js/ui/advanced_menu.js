@@ -4,7 +4,7 @@ RCloud.UI.advanced_menu = (function() {
         init: function() {
             menu_ = RCloud.UI.menu.create();
             menu_.init();
-            // not fishy at all
+            // we want the object to derive from RCloud.UI.menu directly but alphabetical order blocks it
             d3.rebind(result, menu_, 'add', 'remove', 'check', 'uncheck', 'enable', 'create');
             RCloud.UI.menus.add({
                 advanced_menu: {
