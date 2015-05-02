@@ -89,6 +89,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["has_compute_separation"],
             ["prefix_uuid"],
             ["get_conf_value"],
+            ["get_conf_values"],
             ["get_notebook"],
             ["load_notebook"],
             ["load_notebook_compute"],
@@ -158,6 +159,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.get_conf_value = function(key) {
             return rcloud_ocaps.get_conf_valueAsync(key);
+        };
+
+        rcloud.get_conf_values = function(key) {
+            return rcloud_ocaps.get_conf_valuesAsync(key);
         };
 
         rcloud.get_notebook = function(id, version) {
