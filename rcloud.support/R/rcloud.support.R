@@ -10,6 +10,14 @@ rcloud.get.conf.value <- function(key) {
     NULL
 }
 
+# note: this does not have the ineffective security check of the above
+rcloud.get.conf.values <- function(pattern) {
+  conf.keys <- keysConf()
+  matched <- conf.keys[grep(pattern, conf.keys)]
+  names(matched) <- matched
+  lapply(matched, getConf)
+}
+
 # any attributes we want to add onto what github gives us
 rcloud.augment.notebook <- function(res) {
   if(res$ok) {

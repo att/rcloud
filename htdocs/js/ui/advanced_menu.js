@@ -1,8 +1,21 @@
 RCloud.UI.advanced_menu = (function() {
-    var menu_items_ = {};
-    return {
+    var menu_;
+    var result = {
         init: function() {
-            this.add({
+            menu_ = RCloud.UI.menu.create();
+            menu_.init();
+            // we want the object to derive from RCloud.UI.menu directly but alphabetical order blocks it
+            d3.rebind(result, menu_, 'add', 'remove', 'check', 'uncheck', 'enable', 'create');
+            RCloud.UI.menus.add({
+                advanced_menu: {
+                    sort: 5000,
+                    type: 'menu',
+                    title: 'Advanced',
+                    modes: ['view', 'edit'],
+                    menu: menu_
+                }
+            });
+            menu_.add({
                 open_in_github: {
                     sort: 1000,
                     text: "Open in GitHub",
@@ -57,62 +70,8 @@ RCloud.UI.advanced_menu = (function() {
                     }
                 }
             });
-            return this;
-        },
-        add: function(menu_items) {
-            _.extend(menu_items_, menu_items);
-            return this;
-        },
-        remove: function(menu_item) {
-            delete menu_items_[menu_item];
-        },
-        check: function(menu_item, check) {
-            if(!menu_items_[menu_item] || !menu_items_[menu_item].checkbox || !menu_items_[menu_item].checkbox_widget)
-                throw new Error('advanced menu check fail on ' + menu_item);
-            menu_items_[menu_item].checkbox_widget.set_state(check);
-        },
-        enable: function(menu_item, enable) {
-            if(!menu_items_[menu_item] || !menu_items_[menu_item].$li)
-                throw new Error('advanced menu disable fail on ' + menu_item);
-            menu_items_[menu_item].$li.toggleClass('disabled', !enable);
-        },
-        load: function(mode) {
-            var that = this;
-            // copy in, because we need extra fields
-            for(var key in menu_items_)
-                menu_items_[key] = _.extend({id: key}, menu_items_[key]);
-            mode = mode || (shell.is_view_mode() ? 'view' : 'edit');
-            var items = _.filter(menu_items_, function(item) { return item.modes.indexOf(mode)>=0; });
-            items.sort(function(a, b) { return a.sort - b.sort; });
-            // this is a mess. but it's a contained mess, right? (right?)
-            $('#advanced-menu').append($(items.map(function(item) {
-                var ret, $ret;
-                if(item.checkbox) {
-                    $ret = $(ret = $.el.li($.el.a({href: '#', id: item.id}, $.el.i({class: 'icon-check'}), '\xa0', item.text)));
-                    item.checkbox_widget = ui_utils.checkbox_menu_item($ret, function() {
-                        item.action(true);
-                    }, function() {
-                        item.action(false);
-                    });
-                    if(item.value)
-                        item.checkbox_widget.set_state(item.value);
-                }
-                else $ret = $(ret = $.el.li($.el.a({href: '#', id: item.id}, item.text)));
-                item.$li = $ret;
-                return ret;
-            })));
-            $('#advanced-menu li a').click(function() {
-                var item = menu_items_[this.id];
-                if(!item)
-                    throw new Error('bad id in advanced menu');
-                if(!item.checkbox)
-                    item.action();
-            });
-            return this;
-        },
-        update_link: function() {
-            return rcloud.get_notebook_property(shell.gistname(), "view-type")
-                .then(set_page);
         }
     };
+    return result;
 })();
+

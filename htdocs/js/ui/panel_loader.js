@@ -165,6 +165,7 @@ RCloud.UI.panel_loader = (function() {
         },
         remove: function(panel_name) {
             extension_.remove(panel_name);
+            return this;
         },
         load_snippet: function(id) {
             // embed html snippets in edit.html as "html scripts"
