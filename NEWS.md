@@ -1,3 +1,8 @@
+## RCloud 1.4
+
+### Features
+* Navbar menus are customizable (#1313)
+
 ## RCloud 1.3.3
 * Do not load rcloud language and ui extensions when doing a notebook.R call.
 
