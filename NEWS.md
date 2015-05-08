@@ -1,4 +1,12 @@
-## RCloud 1.3.4
+## RCloud 1.4 (under development)
+### Plugins
+#### Workspace viewer
+* the dimensions of data frames are now shown in the overview
+* functions arguments are shown without the preceding function keyword to save space
+
+## RCloud 1.3.4 (under development)
+* Catches errors in Workspace viewer when an object errors in str()
+
 * Fixed an error when Cairo device is used outside of the RCloudDevice context.
   (#1427)
 
