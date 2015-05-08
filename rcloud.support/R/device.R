@@ -76,11 +76,12 @@ RCloudDevice <- function(width, height, dpi=100, ..., type='inline') {
     if (.Device == "Cairo") {
         dev <- dev.cur()
         sn <- Cairo.serial()
-        if (sn != .session$RCloudDevice[[dev]]$serial) {
+        ## NOTE: if Cairo was used outside of RCloud (and thus this is not aan RCloudDevice) then
+        ## RCloudDevice[[dev]] won't have serial so ignore
+        if (isTRUE(sn != .session$RCloudDevice[[dev]]$serial)) {
             .session$RCloudDevice[[dev]]$serial <- sn
             .onSave(dev, NA, "img.url.update")
         }
     }
     flush.console()
 }
-

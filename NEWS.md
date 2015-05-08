@@ -1,3 +1,7 @@
+## RCloud 1.3.4
+* Fixed an error when Cairo device is used outside of the RCloudDevice context.
+  (#1427)
+
 ## RCloud 1.3.3
 * Do not load rcloud language and ui extensions when doing a notebook.R call.
 
