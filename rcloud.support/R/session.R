@@ -17,11 +17,10 @@ rcloud.has.compute.separation <- function() {
 ## evaluation of R code
 
 rcloud.get.gist.part <- function(partname, version) {
-  nb <- if(is.null(version) || (version == rcloud.session.notebook()$content$history[[1]]$version))
-    rcloud.session.notebook()
-  else
-    rcloud.get.notebook(rcloud.session.notebook.id(), version)
-  nb$content$files[[partname]]$content
+    nb <- rcloud.session.notebook()
+    if (!is.null(version) && !isTRUE(version == nb$content$history[[1]]$version))
+        nb <- rcloud.get.notebook(rcloud.session.notebook.id(), version)
+    nb$content$files[[partname]]$content
 }
 
 rcloud.session.cell.eval <- function(context.id, partname, language, version, silent) {
