@@ -24,6 +24,15 @@ rcloud.augment.notebook <- function(res) {
     names(version2tag) <- versions
     version2tag <- Filter(Negate(is.null), version2tag)
 
+    if(length(res$content$files))
+      res$content$files <- lapply(res$content$files, function(o) {
+        file.ext <- tail(strsplit(o$filename, '\\.')[[1]], n=1)
+        if (file.ext %in% names(.session$file.extensions))
+          o$language <- .session$file.extensions[[file.ext]]
+        o
+      })
+
+
     if(length(hist)>0)
       for(i in 1:length(hist)) {
         tag <- version2tag[[hist[[i]]$version]]
