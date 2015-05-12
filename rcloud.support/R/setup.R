@@ -321,6 +321,7 @@ start.rcloud.common <- function(...) {
 
   ## set up the languages which will be supported by this session
   lang.list <- NULL
+  file.ext.list <- NULL
   if (!identical(.session$mode, "call")) {
     lang.str <- getConf("rcloud.languages")
     if (!is.character(lang.str))
@@ -342,9 +343,11 @@ start.rcloud.common <- function(...) {
         stop(paste("'teardown' field of list returned by rcloud.language.support for package '", lang, "' must be either a function or a primitive", sep=''))
       lang.list[[d$language]] <- d
       lang.list[[d$language]]$setup(.session)
+      file.ext.list[d$extension] <- d$language
     }
   }
   .session$languages <- lang.list
+  .session$file.extensions <- file.ext.list
 
   ## any last-minute overrides akin to Rprofile
   if (validFileConf("configuration.root", "rcloud.profile"))
