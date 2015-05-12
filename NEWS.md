@@ -9,6 +9,8 @@
 
 * Fixed an error when Cairo device is used outside of the RCloudDevice context.
   (#1427)
+* Prefer the file extensions defined in RCloud language extensions over what
+  GitHub infers, because sometimes it gets the language wrong. (#1412)
 
 ## RCloud 1.3.3
 * Do not load rcloud language and ui extensions when doing a notebook.R call.
