@@ -1,72 +1,50 @@
 rcloud.enviewer.refresh <- function()
   rcloud.enviewer.on.change(.GlobalEnv)
 
-# could be eval but is that unsafe?
-# should this be pushed to rcloud.viewer?
-rcloud.enviewer.display.structure <- function(x)
-  list(command="str", object=x)
-
+## OCAP
 rcloud.enviewer.view.dataframe <- function(expr)
   View(get(expr, .GlobalEnv))
 
-rcloud.enviewer.display.dataframe <- function(x)
-  list(command="view", object=x)
-
-rcloud.enviewer.display.string <- function(x)
-  paste0("'", as.character(x), "'")
+## -- how to handle each group --
+rcloud.enviewer.display.dataframe <- function(x, val)
+  structure(list(command="view", object=x, text=paste0("data.frame [",paste(dim(val), collapse=', '),"]")), class="data")
 
 rcloud.enviewer.display.value <- function(val) {
-   classOfObject <- if (is.numeric(val)) {
-    typeof(val)
-  } else {
-    class(val)
-  }
-    disp <- function(classOfObject,x)
-      switch(classOfObject,
-        character = rcloud.enviewer.display.string(x),
-        logical = rcloud.enviewer.display.string(x),
-        x)
-      if(length(val) >1){
-        if(is.null(dim(val))){
-           dimensionOfObject <- paste0('[1:', length(val), ']' , sep='') 
-        } else {
-           dimensionOfObject <- paste0('[',dim(val)[1],' x ',dim(val)[2],']')
-        }
-
-      list(type=paste0(classOfObject,dimensionOfObject), value= paste(head(val,5),collapse=', ') )
-    }
-    else list(type=classOfObject, value=disp(classOfObject, val))
+    type <- class(val)
+    ## there are broken packages like XML that can error out on str() so just display the class in that case
+    str <- tryCatch(capture.output(str(val)), error=function(e) paste(class(val), collapse='/'))
+    if (is.list(val) && !is.null(names(val)))
+      str[1] <- paste0("List with names ", paste(capture.output(str(names(val))), collapse=' '))
+    if (length(str) > 3)
+      str <- c(str[1:3], "...")
+    ## also limit the length since deparsing langs can be reaaaaaly long
+    if (any(too.long <- (nchar(str) > 100)))
+        str[too.long] <- paste(substr(str[too.long], 1, 100), "...")
+    if (length(str) > 1L) str <- paste(str, collapse='\n')
+    structure(list(type=type, value=str), class="values")
 }
 
-rcloud.enviewer.display.function <- function(f) {
-  deparse(args(f))[1]
-}
+rcloud.enviewer.display.function <- function(f)
+    structure(list(type="function", value=gsub("^function ","",deparse(args(f))[1])), class="functions")
 
+## retrieve objects and format them
 rcloud.enviewer.build <- function(vars, env) {
-  ret <- list(data = list(), values = list(), functions = list())
-  lapply(vars, function(x) {
-    val <- get(x, envir=env)
-    if(is.data.frame(val)) {
-      l <- list()
-      l[[x]] <- rcloud.enviewer.display.dataframe(x)
-      ret$data <<- c(ret$data, l)
-    }
-    else if(typeof(val) == "closure") {
-      l <- list()
-      l[[x]] <- rcloud.enviewer.display.function(val)
-      ret$functions <<- c(ret$functions, l)
-    }
-    else {
-      l <- list()
-      l[[x]] <- rcloud.enviewer.display.value(val)
-      ret$values <<- c(ret$values, l)
-    }
-  })
-  ret
+    ret <- lapply(vars, function(x) {
+        val <- get(x, envir=env)
+        if (is.data.frame(val)) {
+            rcloud.enviewer.display.dataframe(x, val)
+        } else if (is.function(val)) {
+            rcloud.enviewer.display.function(val)
+        } else
+            rcloud.enviewer.display.value(val)
+    })
+    names(ret) <- vars
+    ## re format to what the UI expects and split by group
+    split(ret, factor(sapply(ret, class), levels=c("data", "functions", "values")))
 }
 
 rcloud.enviewer.on.change <- function(env)
 {
-  ret <- rcloud.enviewer.build(ls(envir=env), env)
-  rcloud.enviewer.caps$display(ret)
+    ret <- rcloud.enviewer.build(ls(envir=env), env)
+    rcloud.enviewer.caps$display(ret)
 }

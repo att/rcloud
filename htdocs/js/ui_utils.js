@@ -156,7 +156,8 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                 mac: "Command-L"
             },
             exec: function() { return false; }
-        }, {
+        }, 
+        {
             name: 'execute-selection-or-line',
             bindKey: {
                 win: 'Ctrl-Return',
@@ -182,8 +183,49 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                         shell.scroll_to_end();
                     });
             }
+        },
+
+        {
+            name: 'cursor at beginning of line',
+            bindKey: {
+          
+                mac: 'Ctrl-A',
+                sender: 'editor'
+            },
+            exec: function(widget, args, request) {
+                if (widget.getOption("readOnly"))
+                    return;
+                //row of the cursor on current line
+                var row = widget.getCursorPosition().row;
+                //move to the beginning of that line
+                widget.navigateTo(row, 0);
+                //make sure it appears at beginning of text
+                widget.navigateLineStart();
+            }
+        } ,
+        {
+            name: 'cursor at end of line',
+            bindKey: {
+       
+                mac: 'Ctrl-E',
+                sender: 'editor'
+            },
+            exec: function(widget, args, request) {
+                //row of the cursor on current line
+                var row = widget.getCursorPosition().row;
+                //last column of the cursor on current line
+                var lastCol = ui_utils.last_col(widget, row);
+                //move to the end of that line
+                widget.navigateTo(row, lastCol);
+            }
         }
     ]);
+};
+
+
+ui_utils.last_col = function(widget, row) {
+    var doc = widget.getSession().getDocument();
+    return doc.getLine(row).length;
 };
 
 ui_utils.character_offset_of_pos = function(widget, pos) {
@@ -463,7 +505,7 @@ ui_utils.editable = function(elem$, command) {
                 // allow default action but don't bubble (causing eroneous reselection in notebook tree)
             },
             'keydown.editable': function(e) {
-                if(e.keyCode === 13) {
+                if(e.keyCode === $.ui.keyCode.ENTER) {
                     var txt = decode(elem$.text());
                     function execute_if_valid_else_ignore(f) {
                         if(options().validate(txt)) {
@@ -484,7 +526,7 @@ ui_utils.editable = function(elem$, command) {
                         e.preventDefault();
                         return execute_if_valid_else_ignore(options().change);
                     }
-                } else if(e.keyCode === 27) {
+                } else if(e.keyCode === $.ui.keyCode.ESCAPE) {
                     elem$.blur(); // and cancel
                 }
                 return true;
@@ -552,13 +594,13 @@ ui_utils.prevent_backspace = function($doc) {
     // from http://stackoverflow.com/a/2768256/676195
     $doc.unbind('keydown').bind('keydown', function (event) {
         var doPrevent = false;
-        if (event.keyCode === 8) {
+        if (event.keyCode === $.ui.keyCode.BACKSPACE) {
             var d = event.srcElement || event.target;
             if((d.tagName.toUpperCase() === 'INPUT' &&
                 (d.type.toUpperCase() === 'TEXT' || d.type.toUpperCase() === 'PASSWORD' ||
                  d.type.toUpperCase() === 'FILE' || d.type.toUpperCase() === 'EMAIL' )) ||
                d.tagName.toUpperCase() === 'TEXTAREA' ||
-               d.contentEditable) {
+               d.isContentEditable) {
                 doPrevent = d.readOnly || d.disabled;
             }
             else {

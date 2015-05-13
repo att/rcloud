@@ -58,6 +58,9 @@ var oob_sends = {
         var url=" "+ window.location.protocol + "//" + window.location.host + v+" ";
         RCloud.UI.help_frame.display_href(url);
     },
+    "browseURL": function(v) {
+        window.open(v, "_blank");
+    },
     "pager": function(files, header, title) {
         var html = "<h2>" + title + "</h2>\n";
         for(var i=0; i<files.length; ++i) {

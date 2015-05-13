@@ -1,3 +1,103 @@
+## RCloud 1.4 (under development)
+### Plugins
+#### Workspace viewer
+* the dimensions of data frames are now shown in the overview
+* functions arguments are shown without the preceding function keyword to save space
+
+## RCloud 1.3.4 (under development)
+* Catches errors in Workspace viewer when an object errors in str()
+
+* Fixed an error when Cairo device is used outside of the RCloudDevice context.
+  (#1427)
+* Prefer the file extensions defined in RCloud language extensions over what
+  GitHub infers, because sometimes it gets the language wrong. (#1412)
+
+## RCloud 1.3.3
+* Do not load rcloud language and ui extensions when doing a notebook.R call.
+
+* Added `http.static.nocache` configuration entry governing the use of no-cache
+  headers for statically served content. The default is now `no`, which means
+  the browser is allowed to cache static content.  RCloud 1.3 through 1.3.2 used
+  `yes` which can cause unnecessary load on the servers if there are no changes
+  to the static content.
+
+* Fixes a bug where line breaks were missing from content copied from inactive
+  cells (#1389)
+
+* Fixes a bug where only the first line is copied when copying cells in Firefox
+  (#1413)
+
+## RCloud 1.3.2
+* Some reserved characters were not getting uri-encoded, resulting in passwords
+  failing.
+
+## RCloud 1.3.1
+
+### Features
+* Cell Run State Indicator.  Status messages such as "Cancelled!" and "Waiting"
+  are no longer displayed in the result area.  Instead, an indicator resides in
+  the bar above each cell:
+
+  * Open circle means the cell has not been run.
+  * Blue arrow means the cell is enqueued to run
+  * Blue spinner means the cell is running
+  * Green light means the cell ran and succeeded.
+  * Red explamation point means the cell had an error
+  * Orange splat means the cell run was cancelled
+
+  This also helps with confusion with whether a cell has run when it doesn't
+  produce output. (#1207, #1264)
+
+* Non-preemptive stop. Although you still can't cancel a long-running cell,
+  you can stop any later cells from running, by pressing the Stop button.
+
+* Options to enable and disable extensions per user. The Settings pane
+  has "Enable Extension" and "Disable Extensions", which set the user
+  options `addons` and `skip-addons`, respectively. On starting the session,
+  any extensions listed in `skip-addons` are not loaded. (#1346)
+
+### Improvements
+* "Subscribe to Comments" option is not shown if this feature is not
+  configured on the server. (#1347)
+
+* Editable cells are always (lightly) colored (#1322)
+
+* Simplified, more correct workspace value printing
+
+* When plots are too wide for the middle column, they scroll horizontally. (#1239)
+
+* Settings that require a page reload tell you so when you make the change.
+
+* Customizable logo for view.html
+
+* Use line breaks when printing R stack traces (#1360)
+
+* Controls in status area slightly greyer to distract from code less.
+
+* Option to turn cell numbering off (#1213)
+
+### Bug Fixes
+* Patch to fix unauthenticated logins with view.html, shiny.html, notebook.R
+
+* Patch for missing fork_of
+
+* Hide subscribe to comments option if server not configured (#1347)
+
+* Fix a case where backspace still would go back a page with some elements focused
+
+* Fix a case where clicking on the last non-readonly notebook would edit the title (#1357)
+
+* Fix bug where cell would overlap next cell or command prompt would appear on top
+  of cell (#1352, #1354)
+
+* Fix cases where extensions could cause non-GUI applictions to break
+
+* Fix bug where asset would still be shown if current asset is deleted (#1343)
+
+* Restore previous size and do not report (harmless) error when plot is resized too
+  small (#1337)
+
+
 ## RCloud 1.3
 
 ### Features
@@ -13,8 +113,8 @@
 
 * Direct output and input.  Instead of printing a single result for each cell, the
   output is handled asynchronously, so it shows as it is available.  The code can
-  also request lines of input, so e.g. `readline` now works - as do `browser` for
-  debugging!  Ordinary code cells do not use knitr/markdown for output, but send
+  also request lines of input, so e.g. `readline` now works - as do `browser` and
+  `debug` for debugging!  Ordinary code cells do not use knitr/markdown for output, but send
   images, preformatted, and html output separately.
 
 * Ability to save plots in other formats.  Hover the mouse over the plot for the
@@ -24,13 +124,12 @@
 * Search and replace across all cells in a notebook.  Ctrl/Cmd-F opens the
   find bar at the top of the notebook.  Type to search incrementally.
 
-  Ctrl-Alt-F (should be Ctrl-H #1212) / Cmd-Option-F opens the replace bar.
+  Ctrl-H (Windows/Linux) / Cmd-Option-F (OSX) opens the replace bar.
 
-  Next and Last are not yet implemented, but will be for release 1.3.  Ditto
-  for replace some but not all. (#1202)
+  Search in results not currently supported.
 
 * New simplified look.  Cells do not activate the editor until they are clicked on,
-  so they use much less resources and notebooks with a large number of cells
+  so they use much less resources, and notebooks with a large number of cells
   load quickly.
 
 * Automatic indentation for R code (#1110) and Python (#1105)
@@ -38,8 +137,8 @@
 * Many ways to write extensions to add to the RCloud user interface.
   [Documentation](https://github.com/att/rcloud/wiki/RCloud-UI-Extensions).
 
-* It is possible to add cell languages - the Python, RMarkdown, and
-  (bizarrely) R evaluation is performed by language add-ons.
+* It is possible to add cell languages - Python, RMarkdown, and
+  even R evaluation are performed by language add-ons.
   https://github.com/att/rcloud/wiki/RCloud-Language-extensions
 
 * Experimental support for RMarkdown cells.  The old Markdown cells use the
@@ -113,7 +212,8 @@
 
 * Issues with knitr creating duplicate plots fixed (#1046)
 
-* (Mis)feature where a prior notebook is loaded if the current notebook can't be
+* (Mis)feature where a prior notebook is loaded if the current notebook can't be,
+  restricted to problems with loading the notebook.
 
 
 ## RCloud 1.2-patched

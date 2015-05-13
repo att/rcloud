@@ -152,7 +152,7 @@ RCloud.UI.import_export = (function() {
                             var notebook_desc = $('<span>Notebook description: </span>');
                             notebook_desc_content = $('<input type="text" class="form-control-ext" size="50"></input>')
                                 .keypress(function(e) {
-                                    if (e.which === 13) {
+                                    if (e.which === $.ui.keyCode.ENTER) {
                                         do_import();
                                         return false;
                                     }

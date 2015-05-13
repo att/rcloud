@@ -25,8 +25,8 @@ RCloud.promisify_paths = (function() {
         function success(result) {
             if(result && RCloud.is_exception(result)) {
                 var tb = result['traceback'] ? result['traceback'] : "";
-                if (tb.join) tb = tb.join(" <- ");
-                throw new Error(command + ": " + result['error'].replace('\n', ' ') + "  " + tb);
+                if (tb.join) tb = tb.join("\n");
+                throw new Error(command + ": " + result.error + "R trace:\n" + tb);
             }
             return result;
         }
@@ -86,8 +86,10 @@ RCloud.create = function(rcloud_ocaps) {
             ["version_info"],
             ["anonymous_session_init"],
             ["anonymous_compute_init"],
+            ["has_compute_separation"],
             ["prefix_uuid"],
             ["get_conf_value"],
+            ["get_conf_values"],
             ["get_notebook"],
             ["load_notebook"],
             ["load_notebook_compute"],
@@ -147,13 +149,20 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.init_client_side_data = function() {
             var that = this;
-            return rcloud_ocaps.prefix_uuidAsync().then(function(v) {
-                that.deferred_knitr_uuid = v;
-            });
+            return Promise.all([rcloud_ocaps.prefix_uuidAsync(),
+                                rcloud_ocaps.has_compute_separationAsync()])
+                .spread(function(uuid, has_compute) {
+                    that.deferred_knitr_uuid = uuid;
+                    that.has_compute_separation = has_compute;
+                });
         };
 
         rcloud.get_conf_value = function(key) {
             return rcloud_ocaps.get_conf_valueAsync(key);
+        };
+
+        rcloud.get_conf_values = function(key) {
+            return rcloud_ocaps.get_conf_valuesAsync(key);
         };
 
         rcloud.get_notebook = function(id, version) {
@@ -411,7 +420,7 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.update_notebook = function(id, content) {
             return rcloud_github_handler(
                 "rcloud.update.notebook",
-                rcloud_ocaps.update_notebookAsync(id, JSON.stringify(content)));
+                rcloud_ocaps.update_notebookAsync(id, content));
         };
 
         rcloud.search = rcloud_ocaps.searchAsync; // may be null
@@ -419,7 +428,7 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.create_notebook = function(content) {
             return rcloud_github_handler(
                 "rcloud.create.notebook",
-                rcloud_ocaps.create_notebookAsync(JSON.stringify(content)))
+                rcloud_ocaps.create_notebookAsync(content))
             .then(function(result) {
                 rcloud_ocaps.load_notebook_computeAsync(result.id);
                 return result;

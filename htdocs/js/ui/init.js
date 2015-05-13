@@ -58,6 +58,7 @@ RCloud.UI.init = function() {
         return true;
     });
 
+    RCloud.UI.menus.init();
     RCloud.UI.advanced_menu.init();
     RCloud.UI.navbar.init();
 
@@ -90,10 +91,12 @@ RCloud.UI.init = function() {
            !$(arguments[0].target).closest($("#output")).size())
             return;
         var sel = window.getSelection();
-        var div = $('<div class="offscreen"></div>');
+        var div = $('<pre class="offscreen"></pre>');
         $('body').append(div);
-        var range = sel.getRangeAt(0);
-        div.append(range.cloneContents());
+        for(var i=0; i < sel.rangeCount; ++i) {
+            var range = sel.getRangeAt(i);
+            div.append(range.cloneContents());
+        }
         div.find('.nonselectable').remove();
         sel.selectAllChildren(div[0]);
     });

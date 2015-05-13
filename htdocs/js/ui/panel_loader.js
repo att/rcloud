@@ -165,6 +165,7 @@ RCloud.UI.panel_loader = (function() {
         },
         remove: function(panel_name) {
             extension_.remove(panel_name);
+            return this;
         },
         load_snippet: function(id) {
             // embed html snippets in edit.html as "html scripts"
@@ -175,10 +176,8 @@ RCloud.UI.panel_loader = (function() {
             function do_side(panels, side) {
                 function do_panel(p) {
                     add_panel(p);
-                    // conceivably panels could be added to the DOM and initialized
-                    // before we have a session, and then loaded once we have it.
-                    // that's not currently how it works and i'm not sure if this
-                    // init/load distinction makes sense or is consistent
+                    // note: panels are not accessible to extensions for pre-load
+                    // customization
                     if(p.panel.init)
                         p.panel.init();
                     if(p.panel.load)

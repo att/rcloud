@@ -53,19 +53,17 @@
           <li><button id="fork-notebook" title="Fork" type="button" class="btn btn-link navbar-btn"><i class="icon-code-fork"></i></button></li>
           <li><button id="save-notebook" title="Save" type="button" class="btn btn-link navbar-btn disabled" style="display:none;"><i class="icon-save"></i></button></li>
           <li><button id="revert-notebook" title="Revert" type="button" class="btn btn-link navbar-btn" style="display:none;"><i class="icon-undo"></i></button></li>
-          <li><button id="run-notebook" title="Run All" type="button" class="btn btn-link navbar-btn"><i class="icon-play"></i></button></li>
+          <li>
+            <span class="button-highlight"></span>
+            <button id="run-notebook" title="Run All" type="button" class="btn btn-link navbar-btn">
+              <i class="icon-play"></i>
+            </button>
+          </li>
           <li><a href="#"><span id="notebook-author"></span><span id="author-title-dash" style="display:none;">&nbsp;&ndash;&nbsp;</span><span id="rename-notebook" title="Change Title" style="display:none">[<span id="notebook-title"></span>]</a></span><small id="forked-from-desc"></small></li>
           <li><a href="#" id="readonly-notebook" style="display:none;">(read-only)</a></li>
           <li><a href="#"><span id="loading"><img id="loading-animation" src="/img/processing.gif" style="height: 20px;width:20px;margin:0"></img></span></a></li>
         </ul>
-        <ul class="nav navbar-nav navbar-right">
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Advanced <b class="caret"></b></a>
-            <ul class="dropdown-menu" id="advanced-menu"></ul>
-          </li>
-          <li class="divider-vertical"></li>
-          <li><a href="/logout.R" id="rcloud-logout">Logout</a></li>
-        </ul>
+        <ul id="rcloud-navbar-menu" class="nav navbar-nav navbar-right"></ul>
       </div>
     <!--/div-->
   </div>

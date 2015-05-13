@@ -2,8 +2,11 @@
 #include <Rinternals.h>
 
 #include <string.h>
+#include <ctype.h>
 
-static const char *encoded_set = ":/?#[]@!$&'()*+,;=%";
+// https://tools.ietf.org/html/rfc3986#section-2.3
+// unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
+#define unreserved(c) (isalnum(c) || c == '-' || c == '.' || c == '_' || c == '~')
 static const char *hex = "0123456789ABCDEF";
 
 static char buf[1024];
@@ -16,7 +19,7 @@ static const char *encode1(const char *c) {
         char *d = buf;
         while (c < e) {
             int ci = (int) *((unsigned char*)c);
-            if (ci > 127 || ci < 32 || strchr(encoded_set, ci)) {
+            if (!unreserved(ci)) {
                 *(d++) = '%';
                 *(d++) = hex[(ci >> 4)];
                 *(d++) = hex[ci & 15];
@@ -33,7 +36,7 @@ static const char *encode1(const char *c) {
 
         while (c < e) {
             int ci = (int) *((unsigned char*)c);
-            if (ci > 127 || ci < 32 || strchr(encoded_set, ci))
+            if (!unreserved(ci))
                 extra++;
             c++;
         }
@@ -43,7 +46,7 @@ static const char *encode1(const char *c) {
         dst = d = R_alloc(extra * 2 + len + 1, 1);
         while (c < e) {
             int ci = (int) *((unsigned char*)c);
-            if (ci > 127 || ci < 32 || strchr(encoded_set, ci)) {
+            if (!unreserved(ci)) {
                 *(d++) = '%';
                 *(d++) = hex[(ci >> 4)];
                 *(d++) = hex[ci & 15];
@@ -56,11 +59,49 @@ static const char *encode1(const char *c) {
     }
 }
 
+static const char *decode1(const char *c) {
+    int len = strlen(c);
+    char *d, *e;
+    /* shortcut - if there is no % -> nothing encoded */
+    if (!memchr(c, '%', len)) return c;
+    e = d = (len >= sizeof(buf)) ? R_alloc(len + 1, 1) : buf;
+    while (*c)
+        if (*c == '%') {
+            unsigned int a = 0;
+            c++;
+            if (*c >= '0' && *c <= '9') a = *c - '0';
+            else if (*c >= 'a' && *c <= 'f') a = *c - 'a' + 10;
+            else if (*c >= 'A' && *c <= 'F') a = *c - 'A' + 10;
+            else if (*c == '%') { *(d++) = *(c++); continue; }
+            else { *(d++) = c[-1]; continue; } /* ignore escape */
+            a <<= 4;
+            c++;
+            if (*c >= '0' && *c <= '9') a |= *c - '0';
+            else if (*c >= 'a' && *c <= 'f') a |= *c - 'a' + 10;
+            else if (*c >= 'A' && *c <= 'F') a |= *c - 'A' + 10;
+            else { *(d++) = c[-2]; *(d++) = c[-1]; continue; } /* ignore escape */
+            *(d++) = a;
+            c++;
+        } else
+            *(d++) = *(c++);
+    *d = 0;
+    return e;
+}
+
 SEXP uri_encode(SEXP sWhat) {
     int i, n = LENGTH(sWhat);
     SEXP res = PROTECT(allocVector(STRSXP, n));
     for (i = 0; i < n; i++)
         SET_STRING_ELT(res, i, (STRING_ELT(sWhat, i) == NA_STRING) ? NA_STRING : mkChar(encode1(CHAR(STRING_ELT(sWhat, i)))));
+    UNPROTECT(1);
+    return res;
+}
+
+SEXP uri_decode(SEXP sWhat) {
+    int i, n = LENGTH(sWhat);
+    SEXP res = PROTECT(allocVector(STRSXP, n));
+    for (i = 0; i < n; i++)
+        SET_STRING_ELT(res, i, (STRING_ELT(sWhat, i) == NA_STRING) ? NA_STRING : mkChar(decode1(CHAR(STRING_ELT(sWhat, i)))));
     UNPROTECT(1);
     return res;
 }

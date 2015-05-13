@@ -1,6 +1,7 @@
 RCloud.UI.run_button = (function() {
     var run_button_ = $("#run-notebook"),
         running_ = false,
+        stopping_ = false,
         queue_ = [],
         cancels_ = [];
 
@@ -8,18 +9,28 @@ RCloud.UI.run_button = (function() {
         $('i', run_button_).removeClass().addClass(icon);
         run_button_.attr('title', title);
     }
+    function highlight(whether) {
+        run_button_.parent().find('.button-highlight').animate({opacity: whether ? 1 : 0}, 250);
+    }
 
     function start_queue() {
         if(queue_.length === 0) {
+            stopping_ = false;
             running_ = false;
             display('icon-play', 'Run All');
+            highlight(false);
             return Promise.resolve(undefined);
         }
         else {
             running_ = true;
             var first = queue_.shift();
             display('icon-stop', 'Stop');
+            highlight(true);
             return first().then(function() {
+                if(stopping_) {
+                    stopping_ = false;
+                    throw 'stop';
+                }
                 cancels_.shift();
                 return start_queue();
             });
@@ -29,11 +40,13 @@ RCloud.UI.run_button = (function() {
         init: function() {
             var that = this;
             run_button_.click(function() {
-                if(running_)
+                if(running_) {
                     that.stop();
+                }
                 else
                     shell.run_notebook();
             });
+
             RCloud.session.listeners.push({
                 on_reset: function() {
                     that.on_stopped();
@@ -41,14 +54,18 @@ RCloud.UI.run_button = (function() {
             });
         },
         stop: function() {
-            rcloud.signal_to_compute(2); // SIGINT
+            if(rcloud.has_compute_separation)
+                rcloud.signal_to_compute(2); // SIGINT
+            else
+                stopping_ = true;
         },
         on_stopped: function() {
             cancels_.forEach(function(cancel) { cancel(); });
             queue_ = [];
             cancels_ = [];
             running_ = false;
-            display('icon-play', 'Stop');
+            display('icon-play', 'Run All');
+            highlight(false);
         },
         enqueue: function(f, cancel) {
             var that = this;

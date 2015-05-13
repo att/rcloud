@@ -9,15 +9,18 @@ rcloud.session.notebook <- function() {
     .session$current.notebook
 }
 
+rcloud.has.compute.separation <- function() {
+  .session$separate.compute
+}
+
 ################################################################################
 ## evaluation of R code
 
 rcloud.get.gist.part <- function(partname, version) {
-  nb <- if(is.null(version) || (version == rcloud.session.notebook()$content$history[[1]]$version))
-    rcloud.session.notebook()
-  else
-    rcloud.get.notebook(rcloud.session.notebook.id(), version)
-  nb$content$files[[partname]]$content
+    nb <- rcloud.session.notebook()
+    if (!is.null(version) && !isTRUE(version == nb$content$history[[1]]$version))
+        nb <- rcloud.get.notebook(rcloud.session.notebook.id(), version)
+    nb$content$files[[partname]]$content
 }
 
 rcloud.session.cell.eval <- function(context.id, partname, language, version, silent) {
@@ -111,7 +114,7 @@ rcloud.session.init <- function(...) {
 
 rcloud.anonymous.session.init <- function(...) {
     if (identical(.session$separate.compute, FALSE))
-        rcloud.compute.init(...)
+        rcloud.anonymous.compute.init(...)
     else {
         start.rcloud.anonymously(...)
         ""
@@ -122,9 +125,13 @@ rcloud.reset.session <- function() {
   ## use the global workspace as the parent to avoid long lookups across irrelevant namespaces
   .session$knitr.env <- new.env(parent=.GlobalEnv)
   ## load all-user and per-user rcloud add-ons
-  all.addons <- rcloud.config.get.alluser.option("addons")
-  user.addons <- rcloud.config.get.user.option("addons")
-  lapply(c(all.addons,user.addons), function(x) { suppressWarnings(suppressMessages(require(x, character.only=TRUE))) })
+  if (!identical(.session$mode, "call")) {
+    all.addons <- rcloud.config.get.alluser.option("addons")
+    user.addons <- rcloud.config.get.user.option("addons")
+    user.skip.addons <- rcloud.config.get.user.option("skip-addons");
+    addons <- setdiff(c(all.addons, user.addons), user.skip.addons)
+    for (x in addons) suppressWarnings(suppressMessages(require(x, character.only=TRUE)))
+  }
 
   ## close all devices
   while (dev.cur() > 1L) dev.off()

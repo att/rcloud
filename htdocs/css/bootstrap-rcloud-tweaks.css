@@ -84,6 +84,7 @@ div.panel-heading:hover {
 
 .code-div {
     position: relative;
+    tab-size: 4;
 }
 
 .code-div pre {
@@ -98,7 +99,7 @@ div.panel-heading:hover {
     font-size: 12px;
     max-width: 800px;
     margin-right: auto;
-    margin-left: auto;
+    margin-left: 0;
     white-space: pre-wrap;
     word-break: normal;
 }
@@ -165,9 +166,9 @@ div.panel-heading:hover {
     background-color: white;
 }
 
-.live-plot {
-    display: inline-block;
-    position: relative;
+.live-plot-scroller {
+    width: 100%;
+    overflow-x: auto;
 }
 
 .live-plot-commands {
@@ -186,16 +187,41 @@ div.offscreen {
     border: 0;
 }
 
+.button-highlight {
+  background-image: -o-radial-gradient(circle, #6af, rgba(0,0,0,0) 60%);
+  background-image: -moz-radial-gradient(circle, #6af, rgba(0,0,0,0) 60%);
+  background-image: -webkit-radial-gradient(circle, #6af, rgba(0,0,0,0) 60%);
+  display: inline-block;
+  position: absolute;
+  left: 0; top: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
 .cell-status {
     position: relative;
     width: 100%;
     height: 25px;
     background-color: #f5f5f5;
+    color: #777;
 }
 
 .cell-status-left {
     position: absolute;
     bottom: 2px;
+}
+
+.left-indicator {
+    padding-left: 4px;
+}
+
+.state-icon {
+    display: inline-block;
+    width: 15px;
+    text-align: center;
 }
 
 .cell-controls {

@@ -13,8 +13,8 @@
         }
     };
 
-    function dataframe_link(key) {
-        return $('<a/>', {href: '#'}).text('dataframe')
+    function dataframe_link(key, value) {
+        return $('<a/>', {href: '#'}).text(('text' in value) ? value.text : 'data.frame')
             .click(function() {
                 ocaps_.view_dataframe(key);
             })[0];
@@ -23,7 +23,7 @@
     function add_section(title, section, rows) {
         // styling the table will go better with CSS
         var header_style = 'border: 0; background-color: #dedede; font-family: sans-serif; font-size: 13px';
-        var datum_style = 'border-style: solid; border-width: thin 0; border-color: #ccc';
+        var datum_style = 'border-style: solid; border-width: thin 0; border-color: #ccc; white-space: pre-wrap';
         var header = $.el.tr($.el.th({colspan: 3, scope: 'col', style: header_style}, title));
         rows.push(header);
         _.keys(section).sort().forEach(function(key) {
@@ -38,7 +38,7 @@
                 if('command' in section[key])
                     switch(section[key].command) {
                     case 'view':
-                        items.push(td(dataframe_link(key)));
+                        items.push(td(dataframe_link(key, section[key])));
                         break;
                     default:
                         throw new Error('unknown rcloud.enviewer command ' + key);

@@ -1,6 +1,6 @@
 /*
  * Lux: An EDSL for WebGL graphics
- * By Carlos Scheidegger, cscheid@research.att.com
+ * By Carlos Scheidegger, cscheid@cscheid.net
  * 
  * Copyright (c) 2011-2013 AT&T Intellectual Property
  * 

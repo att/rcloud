@@ -3,11 +3,19 @@
 
 # FIXME what's the relationship between this and rcloud.config in conf.R?
 rcloud.get.conf.value <- function(key) {
-  Allowed <- c('host', 'exec.token.renewal.time', 'github.base.url', 'github.api.url', 'github.gist.url', 'solr.page.size', 'smtp.server', 'email.from', 'rcloud.deployment')
+  Allowed <- c('host', 'exec.token.renewal.time', 'github.base.url', 'github.api.url', 'github.gist.url', 'solr.page.size', 'smtp.server', 'email.from')
   if(key %in% Allowed)
     getConf(key)
   else
     NULL
+}
+
+# note: this does not have the ineffective security check of the above
+rcloud.get.conf.values <- function(pattern) {
+  conf.keys <- keysConf()
+  matched <- conf.keys[grep(pattern, conf.keys)]
+  names(matched) <- matched
+  lapply(matched, getConf)
 }
 
 # any attributes we want to add onto what github gives us
@@ -27,6 +35,15 @@ rcloud.augment.notebook <- function(res) {
     version2tag <- rcs.get(rcloud.support:::rcs.key('.notebook', notebook$id, 'version2tag', versions), list=TRUE)
     names(version2tag) <- versions
     version2tag <- Filter(Negate(is.null), version2tag)
+
+    if(length(res$content$files))
+      res$content$files <- lapply(res$content$files, function(o) {
+        file.ext <- tail(strsplit(o$filename, '\\.')[[1]], n=1)
+        if (file.ext %in% names(.session$file.extensions))
+          o$language <- .session$file.extensions[[file.ext]]
+        o
+      })
+
 
     if(length(hist)>0)
       for(i in 1:length(hist)) {
@@ -57,7 +74,7 @@ rcloud.load.notebook <- function(id, version = NULL) {
 ## FIXME: since this is handled by githubHandler in JS, we have to pretend to have a valid result even
 ##        if it is later discarded
 rcloud.load.notebook.compute <- function(...) { if (identical(.session$separate.compute, TRUE)) rcloud.load.notebook(...) else list(ok=TRUE) }
-rcloud.unauthenticated.load.notebook.compute <- function(...) { if (identical(.session$separate.compute, TRUE)) rcloud.unauthenticated.load.notebook(...) }
+rcloud.unauthenticated.load.notebook.compute <- function(...) { if (identical(.session$separate.compute, TRUE)) rcloud.unauthenticated.load.notebook(...) else list(ok=TRUE) }
 
 rcloud.get.version.by.tag <- function(gist_id,tag) {
   v <- rcs.get(rcs.key(username='.notebook', gist_id, 'tag2version', tag))

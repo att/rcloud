@@ -71,7 +71,8 @@ RCloud.UI.notebook_title = (function() {
                                               editable_opts));
         },
         update_fork_info: function(fork_of) {
-            if(fork_of) {
+            // fork_of can be an empty array so make sure description is there
+            if(fork_of && fork_of.description) {
                 var owner = fork_of.owner ? fork_of.owner : fork_of.user;
                 var fork_desc = owner.login+ " / " + fork_of.description;
                 var url = ui_utils.make_url(shell.is_view_mode() ? 'view.html' : 'edit.html',
