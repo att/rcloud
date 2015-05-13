@@ -11,6 +11,9 @@ RCloud.language = (function() {
         Text: {
             ace_mode: "ace/mode/text",
             extension: 'txt'
+        }, 
+        HTML: {
+            ace_mode: "ace/mode/html"
         }
     };
 
