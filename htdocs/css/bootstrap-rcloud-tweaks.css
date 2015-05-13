@@ -99,7 +99,7 @@ div.panel-heading:hover {
     font-size: 12px;
     max-width: 800px;
     margin-right: auto;
-    margin-left: auto;
+    margin-left: 0;
     white-space: pre-wrap;
     word-break: normal;
 }
