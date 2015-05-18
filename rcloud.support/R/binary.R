@@ -55,9 +55,8 @@
 }
 
 .gist.binary.process.outgoing <- function(content) {
-    via.json <- is.character(content)
-    if (via.json) return(content) ## disable processing of JSON content for now
-    if (via.json) content <- .Call(parseJSON, content)
+    # ulog(".gist.binary.process.outgoing: ", paste(capture.output(str(content)),collapse='\n'))
+
     ## convert any binary assets into .b64 files
     if (length(content$files) && any(bin <- sapply(content$files, function(o) is.list(o) && is.raw(o$content)))) {
         bin.f <- content$files[bin]
@@ -69,5 +68,5 @@
         }
         content$files <- txt.f
     }
-    if (via.json) rjson::toJSON(content) else content
+    content
 }

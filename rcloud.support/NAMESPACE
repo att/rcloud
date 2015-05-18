@@ -1,4 +1,4 @@
-useDynLib(rcloud.support, uri_encode, hex2raw, parseJSON)
+useDynLib(rcloud.support, uri_encode, hex2raw)
 exportPattern("^rcloud.*") ## rcloud API
 exportPattern("^w.*")      ## wplot, wdc, wgeo...
 export(rcs.get, rcs.set, rcs.rm, rcs.incr, rcs.decr, rcs.list, usr.key)  ## RCS
