@@ -2979,7 +2979,7 @@ Notebook.create_model = function()
             for(var i = 0; i<this.assets.length; ++i) {
                 var ghfile = files[this.assets[i].filename()];
                 // note this is where to get the asset raw_url if we need it again
-                this.assets[i].language(ghfile.language);
+                if (ghfile) this.assets[i].language(ghfile.language);
             }
             _.each(this.views, function(view) {
                 view.update_urls();
