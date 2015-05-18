@@ -19,6 +19,7 @@ rcloud.get.conf.values <- function(pattern) {
 }
 
 # any attributes we want to add onto what github gives us
+# and re-code payload where needed
 rcloud.augment.notebook <- function(res) {
   if(res$ok) {
     notebook <- res$content
@@ -26,6 +27,9 @@ rcloud.augment.notebook <- function(res) {
     if(!is.null(fork.of))
       res$content$fork_of <- fork.of
 
+    ## convert any binary contents stored in .b64 files
+    res$content <- .gist.binary.process.incoming(res$content)
+    
     hist <- res$content$history
     versions <- lapply(hist, function(h) { h$version })
     version2tag <- rcs.get(rcloud.support:::rcs.key('.notebook', notebook$id, 'version2tag', versions), list=TRUE)
@@ -117,16 +121,16 @@ rcloud.unauthenticated.get.notebook <- function(id, version = NULL) {
   rcloud.get.notebook(id, version)
 }
 
-rcloud.get.notebook <- function(id, version = NULL) {
+rcloud.get.notebook <- function(id, version = NULL) .rcloud.get.notebook(id, version)
+
+.rcloud.get.notebook <- function(id, version = NULL, raw=FALSE) {
   res <- if (!is.null(stash <- .session$deployment.stash)) {
     if (is.null(version))
       version <- rcs.get(stash.key(stash, id, "HEAD", type="tag"))
     res <- rcs.get(stash.key(stash, id, version))
     if (is.null(res$ok)) res <- list(ok=FALSE)
     res
-  } else suppressWarnings(get.gist(id, version, ctx = .session$gist.context))
-  ## FIXME: suppressWarnings is a hack to get rid of the stupid "Duplicated curl options"
-  ##        which seem to be a httr bug
+  } else get.gist(id, version, ctx = .session$gist.context)
   if (rcloud.debug.level() > 1L) {
     if(res$ok) {
       cat("==== GOT GIST ====\n")
@@ -138,7 +142,7 @@ rcloud.get.notebook <- function(id, version = NULL) {
       print(res)
     }
   }
-  rcloud.augment.notebook(res)
+  if (raw) res else rcloud.augment.notebook(res)
 }
 
 ## this evaluates a notebook for its result
@@ -270,13 +274,45 @@ rcloud.unauthenticated.notebook.by.name <- function(name, user=.session$username
   if (vec) candidates[pub] else candidates[pub,,drop=FALSE]
 }
 
-rcloud.upload.to.notebook <- function(file, name) {
+## encrypt is optional and can be a function raw->raw which will be called
+## on the raw contents before it is saved. If used, it should
+## also create a "metadata" attribute such that the contents
+## can be later decrypted according to the metadata.
+rcloud.upload.to.notebook <- function(file, name, encrypt) {
   if (is.null(rcloud.session.notebook()))
     stop("Notebook must be loaded")
   id <- rcloud.session.notebook.id()
   ulog("RCloud rcloud.upload.to.notebook(id=", id, ", name=", name, ")")
+
+  if (is.character(file)) {
+      sz <- file.info(file)$size
+      if (is.null(sz) || any(is.na(sz))) stop("cannot find `", file, "'")
+      file <- readBin(file, raw(), sz)
+  }
+
+  if (!missing(encrypt)) {
+      if (!is.function(encrypt)) stop("encrypt must be a function")
+      file <- encrypt(file)
+  }
+
   files <- list()
-  files[[name]] <- list(content=rawToChar(file))
+  content <- if (length(grep("\\.b64$", name))) { # forced b64
+      ## in this case we have to make sure we delete any TXT version
+      files <- list(x=NULL)
+      names(files) <- gsub("\\.b64$", "", name)
+      .binary.to.b64(file)
+  } else if (is.null(attr(file, "metadata")) && ## the contents may not have metadata for text storage
+             checkUTF8(file, quiet=TRUE, min.char=7L)) { ## and has to be valid UTF-8, otherwise we use b64
+      rawToChar(file)
+  } else { # auto-convert to .b64
+      ## in this case we have to make sure we delete any TXT version
+      files <- list(x=NULL)
+      names(files) <- name
+      name <- paste0(name, ".b64")
+      .binary.to.b64(file)
+  }
+
+  files[[name]] <- list(content=content)
   content <- list(files = files)
   res <- rcloud.update.notebook(id, content)
   .session$current.notebook <- res
@@ -284,13 +320,15 @@ rcloud.upload.to.notebook <- function(file, name) {
 }
 
 rcloud.update.notebook <- function(id, content) {
-  res <- modify.gist(id, content, ctx = .session$gist.context)
-  .session$current.notebook <- res
-  if (nzConf("solr.url")) {
-    star.count <- rcloud.notebook.star.count(id)
-    mcparallel(update.solr(res, star.count), detached=TRUE)
-  }
-  rcloud.augment.notebook(res)
+    content <- .gist.binary.process.outgoing(content)
+
+    res <- modify.gist(id, content, ctx = .session$gist.context)
+    .session$current.notebook <- res
+    if (nzConf("solr.url")) {
+        star.count <- rcloud.notebook.star.count(id)
+        mcparallel(update.solr(res, star.count), detached=TRUE)
+    }
+    rcloud.augment.notebook(res)
 }
 
 update.solr <- function(notebook, starcount){
