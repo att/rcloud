@@ -123,7 +123,6 @@ return {
         k();
     },
     display: function(data, k) {
-        console.log('workspace display');
         refresh_display(data);
         k();
     }
