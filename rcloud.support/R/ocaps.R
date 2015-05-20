@@ -1,5 +1,5 @@
-.eval <- function(o, result=TRUE, where=parent.frame()) {
-    o <- Rserve.eval(o, where, last.value=result)
+.eval <- function(o, result=TRUE, where=parent.frame(), context="OCAP-call") {
+    o <- Rserve.eval(o, where, last.value=result, context=context)
     ## ulog("OCAP-EVAL: ", paste(capture.output(str(o)), collapse='\n'))
     if (inherits(o, "Rserve-eval-error")) {
         class(o) <- "OCAP-eval-error"
