@@ -1,22 +1,42 @@
 ((function() {
-    var ocaps_, data_;
-
     function nix_r(list) {
         return (_.isArray(list) ? _.without : _.omit)(list, 'r_attributes', 'r_type');
     }
+    function enviewer_state() {
+        return $("#collapse-environment-viewer").data("enviewer-state");
+    }
 
-    var enviewer_panel = {
-        body: function() {
-            return $.el.div({id: "enviewer-body-wrapper", 'class': 'panel-body tight', style: 'padding: 5px 5px'},
-                           $.el.div({id: "enviewer-scroller", style: "width: 100%; height: 100%; overflow-x: auto"},
-                                    $.el.div({id:"enviewer-body", 'class': 'widget-vsize'})));
-        }
-    };
+    function enviewer_panel(ocaps) {
+        return {
+            body: function() {
+                return $.el.div({id: "enviewer-body-wrapper", 'class': 'panel-body tight', style: 'padding: 5px 5px'},
+                                $.el.div({id: "enviewer-scroller", style: "width: 100%; height: 100%; overflow-x: auto"},
+                                         $.el.div({id:"enviewer-body", 'class': 'widget-vsize'})));
+            },
+            load: function() {
+                // we need to store our data on the DOM because the elements will outlive
+                // this javascript, which gets loaded with every sesssion
+                $("#collapse-environment-viewer").data("enviewer-state", {
+                    ocaps: ocaps,
+                    do_refresh: false
+                });
+                $("#collapse-environment-viewer").on("shown.bs.collapse", function() {
+                    var state = enviewer_state();
+                    state.do_refresh = true;
+                    state.ocaps.refresh();
+                });
+                $("#collapse-environment-viewer").on("hidden.bs.collapse", function() {
+                    var state = enviewer_state();
+                    state.do_refresh = false;
+                });
+            }
+        };
+    }
 
     function dataframe_link(key, value) {
         return $('<a/>', {href: '#'}).text(('text' in value) ? value.text : 'data.frame')
             .click(function() {
-                ocaps_.view_dataframe(key);
+                enviewer_state().ocaps.view_dataframe(key);
             })[0];
     }
 
@@ -55,10 +75,10 @@
     function clear_display() {
         $('#enviewer-body > table').remove();
     }
-    function refresh_display() {
+    function refresh_display(data) {
         clear_display();
         var rows = [];
-        _.each(nix_r(data_), function(value, key) {
+        _.each(nix_r(data), function(value, key) {
             var title = key.charAt(0).toUpperCase() + key.substring(1); // capitalize
             var section = nix_r(value);
             if(_.size(section))
@@ -74,16 +94,20 @@
     }
 return {
     init: function(ocaps, k) {
-        ocaps_ = RCloud.promisify_paths(ocaps, [["refresh"], ["view_dataframe"]], true);
+        ocaps = RCloud.promisify_paths(ocaps, [["refresh"], ["view_dataframe"]], true);
         if(window.shell) { // are we running in RCloud UI?
-            // note this wretched destruction of all previous watchers
-            // it is because we do not yet have a detach message
-            shell.notebook.model.execution_watchers = [{
-                run_cell: function() {
-                    ocaps_.refresh();
-                }
-            }];
-            clear_display(); // also would be part of detach
+            var state = enviewer_state();
+            if(state) {// update with new connection
+                state.ocaps = ocaps;
+                clear_display(); // also would be part of detach
+            } else // this listener will outlast the js that loaded it
+                shell.notebook.model.execution_watchers.push({
+                    run_cell: function() {
+                        var state = enviewer_state();
+                        if(state.do_refresh)
+                            state.ocaps.refresh();
+                    }
+                });
             RCloud.UI.panel_loader.add({
                 Workspace: {
                     side: 'right',
@@ -92,15 +116,15 @@ return {
                     icon_class: 'icon-sun',
                     colwidth: 3,
                     sort: 2500,
-                    panel: enviewer_panel
+                    panel: enviewer_panel(ocaps)
                 }
             });
         }
         k();
     },
     display: function(data, k) {
-        data_ = data;
-        refresh_display();
+        console.log('workspace display');
+        refresh_display(data);
         k();
     }
 };

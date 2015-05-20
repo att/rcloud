@@ -526,7 +526,7 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.update_notebook = function(id, content) {
             return rcloud_github_handler(
                 "rcloud.update.notebook",
-                rcloud_ocaps.update_notebookAsync(id, JSON.stringify(content)));
+                rcloud_ocaps.update_notebookAsync(id, content));
         };
 
         rcloud.search = rcloud_ocaps.searchAsync; // may be null
@@ -534,7 +534,7 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.create_notebook = function(content) {
             return rcloud_github_handler(
                 "rcloud.create.notebook",
-                rcloud_ocaps.create_notebookAsync(JSON.stringify(content)))
+                rcloud_ocaps.create_notebookAsync(content))
             .then(function(result) {
                 rcloud_ocaps.load_notebook_computeAsync(result.id);
                 return result;
@@ -2979,7 +2979,7 @@ Notebook.create_model = function()
             for(var i = 0; i<this.assets.length; ++i) {
                 var ghfile = files[this.assets[i].filename()];
                 // note this is where to get the asset raw_url if we need it again
-                this.assets[i].language(ghfile.language);
+                if (ghfile) this.assets[i].language(ghfile.language);
             }
             _.each(this.views, function(view) {
                 view.update_urls();
@@ -3826,7 +3826,9 @@ RCloud.language = (function() {
             return (languages_[language] && languages_[language].ace_mode) || languages_.Text.ace_mode;
         },
         extension: function(language) {
-            return (languages_[language] && languages_[language].extension) || '';
+            var ext = (languages_[language] && languages_[language].extension) || '';
+            if(_.isArray(ext)) ext = ext[0];
+            return ext;
         },
         hljs_class: function(language) {
             return (languages_[language] && languages_[language].hljs_class) || null;
