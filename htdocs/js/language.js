@@ -11,6 +11,9 @@ RCloud.language = (function() {
         Text: {
             ace_mode: "ace/mode/text",
             extension: 'txt'
+        }, 
+        HTML: {
+            ace_mode: "ace/mode/html"
         }
     };
 
@@ -24,7 +27,9 @@ RCloud.language = (function() {
             return (languages_[language] && languages_[language].ace_mode) || languages_.Text.ace_mode;
         },
         extension: function(language) {
-            return (languages_[language] && languages_[language].extension) || '';
+            var ext = (languages_[language] && languages_[language].extension) || '';
+            if(_.isArray(ext)) ext = ext[0];
+            return ext;
         },
         hljs_class: function(language) {
             return (languages_[language] && languages_[language].hljs_class) || null;
