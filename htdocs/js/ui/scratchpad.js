@@ -1,4 +1,10 @@
-RCloud.UI.scratchpad = {
+RCloud.UI.scratchpad = (function() {
+    // this function probably belongs elsewhere
+    function make_asset_url(model) {
+        return window.location.protocol + '//' + window.location.host + '/notebook.R/' +
+            model.parent_model.controller.current_gist().id + '/' + model.filename();
+    }
+    return {
     session: null,
     widget: null,
     exists: false,
@@ -167,11 +173,22 @@ RCloud.UI.scratchpad = {
             $('#asset-link').hide();
             return;
         }
-        that.widget.setReadOnly(false);
-        $('#scratchpad-editor > *').show();
-        this.change_content(this.current_model.content());
         this.update_asset_url();
         $('#asset-link').show();
+        var content = this.current_model.content();
+        // ArrayBuffer -> binary content
+        if (!_.isUndefined(content.byteLength) && !_.isUndefined(content.slice)) {
+            $('#scratchpad-editor').hide();
+            $('#scratchpad-binary')
+                .attr('data', make_asset_url(this.current_model))
+                .show();
+            return;
+        }
+
+        that.widget.setReadOnly(false);
+        $('#scratchpad-editor').show();
+        $('#scratchpad-editor > *').show();
+        this.change_content(content);
         // restore cursor
         var model_cursor = asset_model.cursor_position();
         if (model_cursor) {
@@ -211,11 +228,6 @@ RCloud.UI.scratchpad = {
                 $('#new-asset').show();
         }
     }, update_asset_url: function() {
-        // this function probably belongs elsewhere
-        function make_asset_url(model) {
-            return window.location.protocol + '//' + window.location.host + '/notebook.R/' +
-                    model.parent_model.controller.current_gist().id + '/' + model.filename();
-        }
         if(this.current_model)
             $('#asset-link').attr('href', make_asset_url(this.current_model));
     }, clear: function() {
@@ -226,3 +238,4 @@ RCloud.UI.scratchpad = {
         this.widget.resize();
     }
 };
+    })();

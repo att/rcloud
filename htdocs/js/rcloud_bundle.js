@@ -3870,16 +3870,19 @@ RCloud.language = (function() {
         return opts;
     }
 
-    function text_reader() {
+    function text_or_binary_reader() {
         return Promise.promisify(function(file, callback) {
             var fr = new FileReader();
+            var bytes_read = 0;
+
             fr.onload = function(e) {
+                // send across as ArrayBuffer/raw vector. server will decide if it's string or binary content
                 callback(null, fr.result);
             };
             fr.onerror = function(e) {
                 callback(fr.error, null);
             };
-            fr.readAsText(file);
+            fr.readAsArrayBuffer(file.slice(0, file.size));
         });
     }
 
@@ -3929,9 +3932,11 @@ RCloud.language = (function() {
         return promise_sequence(
             options.files,
             function(file) {
-                return text_reader()(file) // (we don't know how to deal with binary anyway)
+                if(file.size > 750000)
+                    throw new Error('Maximum asset size is 750KB');
+                return text_or_binary_reader()(file)
                     .then(function(content) {
-                        if(Notebook.empty_for_github(content))
+                        if(_.isString(content) && Notebook.empty_for_github(content))
                             throw new Error("empty");
                         return upload_asset(file.name, content);
                     });
@@ -7129,7 +7134,13 @@ RCloud.UI.run_button = (function() {
         }
     };
 })();
-RCloud.UI.scratchpad = {
+RCloud.UI.scratchpad = (function() {
+    // this function probably belongs elsewhere
+    function make_asset_url(model) {
+        return window.location.protocol + '//' + window.location.host + '/notebook.R/' +
+            model.parent_model.controller.current_gist().id + '/' + model.filename();
+    }
+    return {
     session: null,
     widget: null,
     exists: false,
@@ -7298,11 +7309,22 @@ RCloud.UI.scratchpad = {
             $('#asset-link').hide();
             return;
         }
-        that.widget.setReadOnly(false);
-        $('#scratchpad-editor > *').show();
-        this.change_content(this.current_model.content());
         this.update_asset_url();
         $('#asset-link').show();
+        var content = this.current_model.content();
+        // ArrayBuffer -> binary content
+        if (!_.isUndefined(content.byteLength) && !_.isUndefined(content.slice)) {
+            $('#scratchpad-editor').hide();
+            $('#scratchpad-binary')
+                .attr('data', make_asset_url(this.current_model))
+                .show();
+            return;
+        }
+
+        that.widget.setReadOnly(false);
+        $('#scratchpad-editor').show();
+        $('#scratchpad-editor > *').show();
+        this.change_content(content);
         // restore cursor
         var model_cursor = asset_model.cursor_position();
         if (model_cursor) {
@@ -7342,11 +7364,6 @@ RCloud.UI.scratchpad = {
                 $('#new-asset').show();
         }
     }, update_asset_url: function() {
-        // this function probably belongs elsewhere
-        function make_asset_url(model) {
-            return window.location.protocol + '//' + window.location.host + '/notebook.R/' +
-                    model.parent_model.controller.current_gist().id + '/' + model.filename();
-        }
         if(this.current_model)
             $('#asset-link').attr('href', make_asset_url(this.current_model));
     }, clear: function() {
@@ -7357,6 +7374,7 @@ RCloud.UI.scratchpad = {
         this.widget.resize();
     }
 };
+    })();
 RCloud.UI.search = (function() {
 var page_size_ = 10;
 var search_err_msg = ["<p style=\"color:black;margin:0;\">The search engine in RCloud uses Lucene for advanced search features." ,
