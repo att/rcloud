@@ -176,32 +176,33 @@ RCloud.UI.scratchpad = (function() {
         this.update_asset_url();
         $('#asset-link').show();
         var content = this.current_model.content();
-        // ArrayBuffer -> binary content
         if (!_.isUndefined(content.byteLength) && !_.isUndefined(content.slice)) {
+            // ArrayBuffer, binary content: display object
             $('#scratchpad-editor').hide();
             $('#scratchpad-binary')
                 .attr('data', make_asset_url(this.current_model))
                 .show();
-            return;
         }
-
-        that.widget.setReadOnly(false);
-        $('#scratchpad-editor').show();
-        $('#scratchpad-editor > *').show();
-        this.change_content(content);
-        // restore cursor
-        var model_cursor = asset_model.cursor_position();
-        if (model_cursor) {
-            ui_utils.ace_set_pos(this.widget, model_cursor);
-        } else {
-            ui_utils.ace_set_pos(this.widget, 0, 0);
+        else {
+            // text content: show editor
+            that.widget.setReadOnly(false);
+            $('#scratchpad-editor').show();
+            $('#scratchpad-editor > *').show();
+            this.change_content(content);
+            // restore cursor
+            var model_cursor = asset_model.cursor_position();
+            if (model_cursor) {
+                ui_utils.ace_set_pos(this.widget, model_cursor);
+            } else {
+                ui_utils.ace_set_pos(this.widget, 0, 0);
+            }
+            ui_utils.on_next_tick(function() {
+                that.session.getUndoManager().reset();
+            });
+            that.language_updated();
+            that.widget.resize();
+            that.widget.focus();
         }
-        ui_utils.on_next_tick(function() {
-            that.session.getUndoManager().reset();
-        });
-        that.language_updated();
-        that.widget.resize();
-        that.widget.focus();
     },
     // this behaves like cell_view's update_model
     update_model: function() {
