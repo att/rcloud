@@ -1663,6 +1663,9 @@ Notebook.Asset.create_model = function(content, filename)
         change_object: function(obj) {
             obj = obj || {};
             obj.filename = obj.filename || this.filename();
+            // ugly hack because server doesn't understand if you send content=null for binary asset
+            if(obj.erase && !_.isUndefined(content.byteLength) && !_.isUndefined(content.slice))
+                obj.filename += '.b64';
             return base_change_object.call(this, obj);
         }
     });
@@ -2856,6 +2859,8 @@ Notebook.create_model = function()
                 asset_index = 0;
                 filename = this.assets[asset_index].filename();
             }
+            // the n > 1 case is stupid: it's only for clearing the
+            // whole notebook (and no changes need to be recorded for that)
             n = n || 1;
             var x = asset_index;
             var changes = [];
@@ -7303,6 +7308,8 @@ RCloud.UI.scratchpad = (function() {
             }
             this.current_model = asset_model;
             if (!this.current_model) {
+                $('#scratchpad-binary').hide();
+                $('#scratchpad-editor').show();
                 that.change_content("");
                 that.widget.resize();
                 that.widget.setReadOnly(true);

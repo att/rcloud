@@ -167,6 +167,8 @@ RCloud.UI.scratchpad = (function() {
             }
             this.current_model = asset_model;
             if (!this.current_model) {
+                $('#scratchpad-binary').hide();
+                $('#scratchpad-editor').show();
                 that.change_content("");
                 that.widget.resize();
                 that.widget.setReadOnly(true);
