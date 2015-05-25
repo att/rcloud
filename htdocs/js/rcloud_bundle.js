@@ -7135,6 +7135,7 @@ RCloud.UI.run_button = (function() {
     };
 })();
 RCloud.UI.scratchpad = (function() {
+    var binary_mode_; // not editing
     // this function probably belongs elsewhere
     function make_asset_url(model) {
         return window.location.protocol + '//' + window.location.host + '/notebook.R/' +
@@ -7293,7 +7294,7 @@ RCloud.UI.scratchpad = (function() {
             var that = this;
             if(!this.exists)
                 return;
-            if (this.current_model) {
+            if (this.current_model && !binary_mode_) {
                 this.current_model.cursor_position(this.widget.getCursorPosition());
                 // if this isn't a code smell I don't know what is.
                 if (this.current_model.content(this.widget.getValue())) {
@@ -7313,6 +7314,7 @@ RCloud.UI.scratchpad = (function() {
             $('#asset-link').show();
             var content = this.current_model.content();
             if (!_.isUndefined(content.byteLength) && !_.isUndefined(content.slice)) {
+                binary_mode_ = true;
                 // ArrayBuffer, binary content: display object
                 $('#scratchpad-editor').hide();
                 $('#scratchpad-binary')
@@ -7321,7 +7323,9 @@ RCloud.UI.scratchpad = (function() {
             }
             else {
                 // text content: show editor
+                binary_mode_ = false;
                 that.widget.setReadOnly(false);
+                $('#scratchpad-binary').hide();
                 $('#scratchpad-editor').show();
                 $('#scratchpad-editor > *').show();
                 this.change_content(content);
@@ -7342,22 +7346,27 @@ RCloud.UI.scratchpad = (function() {
         },
         // this behaves like cell_view's update_model
         update_model: function() {
-            return this.current_model ?
+            return (this.current_model && !binary_mode_) ?
                 this.current_model.content(this.widget.getSession().getValue()) :
                 null;
         }, content_updated: function() {
-            var range = this.widget.getSelection().getRange();
-            var changed = this.current_model.content();
-            this.change_content(changed);
-            this.widget.getSelection().setSelectionRange(range);
+            var changed = false;
+            if(!binary_mode_) {
+                var range = this.widget.getSelection().getRange();
+                changed = this.current_model.content();
+                this.change_content(changed);
+                this.widget.getSelection().setSelectionRange(range);
+            }
             return changed;
         }, language_updated: function() {
-            var lang = this.current_model.language();
-            var LangMode = ace.require(RCloud.language.ace_mode(lang)).Mode;
-            this.session.setMode(new LangMode(false, this.session.doc, this.session));
+            if(!binary_mode_) {
+                var lang = this.current_model.language();
+                var LangMode = ace.require(RCloud.language.ace_mode(lang)).Mode;
+                this.session.setMode(new LangMode(false, this.session.doc, this.session));
+            }
         }, set_readonly: function(readonly) {
             if(!shell.is_view_mode()) {
-                if(this.widget)
+                if(this.widget && !binary_mode_)
                     ui_utils.set_ace_readonly(this.widget, readonly);
                 if(readonly)
                     $('#new-asset').hide();
