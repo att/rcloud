@@ -179,7 +179,7 @@ RCloud.UI.scratchpad = (function() {
             this.update_asset_url();
             $('#asset-link').show();
             var content = this.current_model.content();
-            if (!_.isUndefined(content.byteLength) && !_.isUndefined(content.slice)) {
+            if (Notebook.is_binary_content(content)) {
                 binary_mode_ = true;
                 // ArrayBuffer, binary content: display object
                 $('#scratchpad-editor').hide();
