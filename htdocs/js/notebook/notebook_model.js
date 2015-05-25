@@ -122,6 +122,8 @@ Notebook.create_model = function()
                 asset_index = 0;
                 filename = this.assets[asset_index].filename();
             }
+            // the n > 1 case is stupid: it's only for clearing the
+            // whole notebook (and no changes need to be recorded for that)
             n = n || 1;
             var x = asset_index;
             var changes = [];

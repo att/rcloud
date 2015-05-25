@@ -1203,6 +1203,8 @@ Rserve.wrap_all_ocaps = function(s, v) {
             return obj;
         } else if (_.isFunction(obj)) {
             return obj;
+        } else if (obj && !_.isUndefined(obj.byteLength) && !_.isUndefined(obj.slice)) { // ArrayBuffer
+            return obj;
         } else if (_.isObject(obj)) {
             result = _.object(_.map(obj, function(v, k) {
                 return [k, replace(v)];

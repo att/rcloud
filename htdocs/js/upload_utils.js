@@ -12,16 +12,19 @@
         return opts;
     }
 
-    function text_reader() {
+    function text_or_binary_reader() {
         return Promise.promisify(function(file, callback) {
             var fr = new FileReader();
+            var bytes_read = 0;
+
             fr.onload = function(e) {
+                // send across as ArrayBuffer/raw vector. server will decide if it's string or binary content
                 callback(null, fr.result);
             };
             fr.onerror = function(e) {
                 callback(fr.error, null);
             };
-            fr.readAsText(file);
+            fr.readAsArrayBuffer(file.slice(0, file.size));
         });
     }
 
@@ -71,9 +74,11 @@
         return promise_sequence(
             options.files,
             function(file) {
-                return text_reader()(file) // (we don't know how to deal with binary anyway)
+                if(file.size > 750000)
+                    throw new Error('Maximum asset size is 750KB');
+                return text_or_binary_reader()(file)
                     .then(function(content) {
-                        if(Notebook.empty_for_github(content))
+                        if(_.isString(content) && Notebook.empty_for_github(content))
                             throw new Error("empty");
                         return upload_asset(file.name, content);
                     });
