@@ -473,6 +473,12 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.authenticated_cell_evalAsync(context_id, filename, language, version, silent);
         };
 
+        rcloud.notebook_upload = function(file, name) {
+            return rcloud_github_handler(
+                "rcloud.upload.to.notebook",
+                rcloud_ocaps.notebook_uploadAsync(file, name));
+        };
+
         rcloud.post_comment = function(id, content) {
             return rcloud_github_handler(
                 "rcloud.post.comment",
