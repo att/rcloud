@@ -579,6 +579,12 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.authenticated_cell_evalAsync(context_id, filename, language, version, silent);
         };
 
+        rcloud.notebook_upload = function(file, name) {
+            return rcloud_github_handler(
+                "rcloud.upload.to.notebook",
+                rcloud_ocaps.notebook_uploadAsync(file, name));
+        };
+
         rcloud.post_comment = function(id, content) {
             return rcloud_github_handler(
                 "rcloud.post.comment",
@@ -1664,7 +1670,7 @@ Notebook.Asset.create_model = function(content, filename)
             obj = obj || {};
             obj.filename = obj.filename || this.filename();
             // ugly hack because server doesn't understand if you send content=null for binary asset
-            if(obj.erase && !_.isUndefined(content.byteLength) && !_.isUndefined(content.slice))
+            if(obj.erase && Notebook.is_binary_content(this.content()))
                 obj.filename += '.b64';
             return base_change_object.call(this, obj);
         }
@@ -3045,7 +3051,8 @@ Notebook.create_controller = function(model)
         var asset_controller = Notebook.Asset.create_controller(asset_model);
         asset_model.controller = asset_controller;
         return {controller: asset_controller,
-                changes: model.append_asset(asset_model, filename)};
+                changes: model.append_asset(asset_model, filename),
+                model: asset_model};
     }
 
     function insert_cell_helper(content, type, id) {
@@ -3142,6 +3149,21 @@ Notebook.create_controller = function(model)
         return changes;
     }
 
+    function after_update(promise) {
+        return promise.then(function(notebook) {
+            if('error' in notebook)
+                throw notebook;
+            current_gist_ = notebook;
+            model.update_files(notebook.files);
+            return notebook;
+        })
+            .catch(function(e) {
+                // this should not ever happen but there is no choice but to reload if it does
+                if(/non-existent/.test(e.message))
+                    editor.fatal_reload(e.message);
+                throw e;
+            });
+    }
     function update_notebook(changes, gistname, more) {
         function add_more_changes(gist) {
             if (_.isUndefined(more))
@@ -3184,20 +3206,7 @@ Notebook.create_controller = function(model)
             return {files: files};
         }
         var gist = add_more_changes(changes_to_gist(changes));
-        return rcloud.update_notebook(gistname, gist)
-            .then(function(notebook) {
-                if('error' in notebook)
-                    throw notebook;
-                current_gist_ = notebook;
-                model.update_files(notebook.files);
-                return notebook;
-            })
-            .catch(function(e) {
-                // this should not ever happen but there is no choice but to reload if it does
-                if(/non-existent/.test(e.message))
-                    editor.fatal_reload(e.message);
-                throw e;
-            });
+        return after_update(rcloud.update_notebook(gistname, gist));
     }
 
     function apply_changes_and_load(changes, gistname) {
@@ -3242,11 +3251,23 @@ Notebook.create_controller = function(model)
         },
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);
-            return update_notebook(refresh_buffers().concat(cch.changes))
-                .then(default_callback())
-                .then(function(notebook) {
-                    return [notebook, cch.controller];
+            if(Notebook.is_binary_content(content)) {
+                return this.save().then(function() {
+                    return after_update(rcloud.notebook_upload(content, filename))
+                        .then(default_callback())
+                        .then(function(notebook) {
+                            // set content again because server may have determined it's text
+                            cch.model.content(notebook.files[filename].content);
+                            return [notebook, cch.controller];
+                        });
                 });
+            } else {
+                return update_notebook(refresh_buffers().concat(cch.changes))
+                    .then(default_callback())
+                    .then(function(notebook) {
+                        return [notebook, cch.controller];
+                    });
+            }
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
@@ -3422,8 +3443,14 @@ Notebook.create_controller = function(model)
                 .then(default_callback());
         },
         update_asset: function(asset_model) {
-            return update_notebook(refresh_buffers().concat(model.update_asset(asset_model)))
-                .then(default_callback());
+            if(Notebook.is_binary_content(asset_model.content())) {
+                return this.save().then(default_callback()).then(function() {
+                    return rcloud.notebook_upload(asset_model.content(), asset_model.filename());
+                });
+            } else {
+                return update_notebook(refresh_buffers().concat(model.update_asset(asset_model)))
+                    .then(default_callback());
+            }
         },
         rename_notebook: function(desc) {
             return update_notebook(refresh_buffers(), null, {description: desc})
@@ -3447,7 +3474,7 @@ Notebook.create_controller = function(model)
                         throw 'stop';
                     } else if (r.r_attributes['class'] === 'cell-eval-error') {
                         // available: error=message, traceback=vector of calls, expression=index of the expression that failed
-                        var tb = r['traceback'] || '';
+                        var tb = r.traceback || '';
                         if (tb.join) tb = tb.join("\n");
                         var trace = tb ? 'trace:\n'+tb : true;
                         RCloud.end_cell_output(context_id, trace);
@@ -3519,6 +3546,10 @@ Notebook.show_r_source = function(selection)
     else
         selection = $(".r");
     selection.show();
+};
+
+Notebook.is_binary_content = function(content) {
+    return !_.isUndefined(content.byteLength) && !_.isUndefined(content.slice);
 };
 Notebook.part_name = function(id, language) {
     // yuk
@@ -7320,7 +7351,7 @@ RCloud.UI.scratchpad = (function() {
             this.update_asset_url();
             $('#asset-link').show();
             var content = this.current_model.content();
-            if (!_.isUndefined(content.byteLength) && !_.isUndefined(content.slice)) {
+            if (Notebook.is_binary_content(content)) {
                 binary_mode_ = true;
                 // ArrayBuffer, binary content: display object
                 $('#scratchpad-editor').hide();
