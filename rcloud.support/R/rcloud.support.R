@@ -500,6 +500,7 @@ rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abus
   gsub("/.*","",rcs.list(usr.key(user="*", notebook="system", "config", "current", "notebook")))
 
 # sloooow, but we don't have any other way of verifying the owner
+# we could use RCS cache first and then fall back on github?
 notebook.is.mine <- function(id) {
   nb <- rcloud.get.notebook(id)
   nb$content$user$login == .session$username
