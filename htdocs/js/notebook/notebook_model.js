@@ -122,6 +122,8 @@ Notebook.create_model = function()
                 asset_index = 0;
                 filename = this.assets[asset_index].filename();
             }
+            // the n > 1 case is stupid: it's only for clearing the
+            // whole notebook (and no changes need to be recorded for that)
             n = n || 1;
             var x = asset_index;
             var changes = [];
@@ -246,7 +248,7 @@ Notebook.create_model = function()
             for(var i = 0; i<this.assets.length; ++i) {
                 var ghfile = files[this.assets[i].filename()];
                 // note this is where to get the asset raw_url if we need it again
-                this.assets[i].language(ghfile.language);
+                if (ghfile) this.assets[i].language(ghfile.language);
             }
             _.each(this.views, function(view) {
                 view.update_urls();

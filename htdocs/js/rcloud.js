@@ -420,7 +420,7 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.update_notebook = function(id, content) {
             return rcloud_github_handler(
                 "rcloud.update.notebook",
-                rcloud_ocaps.update_notebookAsync(id, JSON.stringify(content)));
+                rcloud_ocaps.update_notebookAsync(id, content));
         };
 
         rcloud.search = rcloud_ocaps.searchAsync; // may be null
@@ -428,7 +428,7 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.create_notebook = function(content) {
             return rcloud_github_handler(
                 "rcloud.create.notebook",
-                rcloud_ocaps.create_notebookAsync(JSON.stringify(content)))
+                rcloud_ocaps.create_notebookAsync(content))
             .then(function(result) {
                 rcloud_ocaps.load_notebook_computeAsync(result.id);
                 return result;
@@ -471,6 +471,12 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.authenticated_cell_eval = function(context_id, filename, language, version, silent) {
             return rcloud_ocaps.authenticated_cell_evalAsync(context_id, filename, language, version, silent);
+        };
+
+        rcloud.notebook_upload = function(file, name) {
+            return rcloud_github_handler(
+                "rcloud.upload.to.notebook",
+                rcloud_ocaps.notebook_uploadAsync(file, name));
         };
 
         rcloud.post_comment = function(id, content) {
