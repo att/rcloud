@@ -75,7 +75,7 @@ rcloud.delete.cryptgroup <- function(groupid) {
   if(!is.cryptgroup.admin(groupid, .session$username))
     stop(paste0("user ", .session$username, " is not an admin for group ", groupid));
   users <- rcloud.get.cryptgroup.users(groupid)
-  # could be more efficient
+  # could be more efficient - rechecking current user is admin, removing keys from group
   lapply(names(users), function(user) rcloud.remove.cryptgroup.user(groupid, user));
   rcs.rm(rcs.key('.cryptgroup', groupid, 'name'))
 }

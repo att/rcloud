@@ -112,6 +112,15 @@ RCloud.create = function(rcloud_ocaps) {
             ["stars","get_notebook_starrer_list"],
             ["stars","get_multiple_notebook_star_counts"],
             ["stars","get_my_starred_notebooks"],
+            ["protection", "get_notebook_cryptgroup"],
+            ["protection", "set_notebook_cryptgroup"],
+            ["protection", "get_cryptgroup_users"],
+            ["protection", "get_user_cryptgroups"],
+            ["protection", "create_cryptgroup"],
+            ["protection", "set_cryptgroup_name"],
+            ["protection", "add_cryptgroup_user"],
+            ["protection", "remove_cryptgroup_user"],
+            ["protection", "delete_cryptgroup"],
             ["session_cell_eval"],
             ["reset_session"],
             ["set_device_pixel_ratio"],
@@ -289,6 +298,36 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.session_cell_eval = function(context_id, filename, language, version, silent) {
             return rcloud_ocaps.session_cell_evalAsync(context_id, filename, language, version, silent);
+        };
+
+        // protection
+        rcloud.protection = {};
+        rcloud.protection.get_notebook_cryptgroup = function(notebookid) {
+            return rcloud_ocaps.protection.get_notebook_cryptgroupAsync(notebookid);
+        };
+        rcloud.protection.set_notebook_cryptgroup = function(notebookid, groupid) {
+            return rcloud_ocaps.protection.set_notebook_cryptgroupAsync(notebookid, groupid);
+        };
+        rcloud.protection.get_cryptgroup_users = function(groupid) {
+            return rcloud_ocaps.protection.get_cryptgroup_usersAsync(groupid);
+        };
+        rcloud.protection.get_user_cryptgroups = function(user) {
+            return rcloud_ocaps.protection.get_user_cryptgroupsAsync(user);
+        };
+        rcloud.protection.create_cryptgroup = function(groupname) {
+            return rcloud_ocaps.protection.create_cryptgroupAsync(groupname);
+        };
+        rcloud.protection.set_cryptgroup_name = function(groupid, groupname) {
+            return rcloud_ocaps.protection.set_cryptgroup_nameAsync(groupid, groupname);
+        };
+        rcloud.protection.add_cryptgroup_user = function(groupid, user, is_admin) {
+            return rcloud_ocaps.protection.add_cryptgroup_userAsync(groupid, user, is_admin);
+        };
+        rcloud.protection.remove_cryptgroup_user = function(groupid, user) {
+            return rcloud_ocaps.protection.remove_cryptgroup_userAsync(groupid, user);
+        };
+        rcloud.protection.delete_cryptgroup = function(groupid) {
+            return rcloud_ocaps.protection.delete_cryptgroupAsync(groupid);
         };
 
         rcloud.reset_session = function() {
