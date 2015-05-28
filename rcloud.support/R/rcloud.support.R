@@ -275,50 +275,8 @@ rcloud.unauthenticated.notebook.by.name <- function(name, user=.session$username
   if (vec) candidates[pub] else candidates[pub,,drop=FALSE]
 }
 
-## encrypt is optional and can be a function raw->raw which will be called
-## on the raw contents before it is saved. If used, it should
-## also create a "metadata" attribute such that the contents
-## can be later decrypted according to the metadata.
-rcloud.upload.to.notebook <- function(file, name, encrypt) {
-  if (is.null(rcloud.session.notebook()))
-    stop("Notebook must be loaded")
-  id <- rcloud.session.notebook.id()
-  ulog("RCloud rcloud.upload.to.notebook(id=", id, ", name=", name, ")")
-
-  if (is.character(file)) {
-      sz <- file.info(file)$size
-      if (is.null(sz) || any(is.na(sz))) stop("cannot find `", file, "'")
-      file <- readBin(file, raw(), sz)
-  }
-
-  if (!missing(encrypt)) {
-      if (!is.function(encrypt)) stop("encrypt must be a function")
-      file <- encrypt(file)
-  }
-
-  files <- list()
-  content <- if (length(grep("\\.b64$", name))) { # forced b64
-      ## in this case we have to make sure we delete any TXT version
-      files <- list(x=NULL)
-      names(files) <- gsub("\\.b64$", "", name)
-      .binary.to.b64(file)
-  } else if (is.null(attr(file, "metadata")) && ## the contents may not have metadata for text storage
-             checkUTF8(file, quiet=TRUE, min.char=7L)) { ## and has to be valid UTF-8, otherwise we use b64
-      rawToChar(file)
-  } else { # auto-convert to .b64
-      ## in this case we have to make sure we delete any TXT version
-      files <- list(x=NULL)
-      names(files) <- name
-      name <- paste0(name, ".b64")
-      .binary.to.b64(file)
-  }
-
-  files[[name]] <- list(content=content)
-  content <- list(files = files)
-  res <- rcloud.update.notebook(id, content)
-  .session$current.notebook <- res
-  res
-}
+## this should go away antirely *and* be removed from OCAPs
+rcloud.upload.to.notebook <- function(file, name) rcloud.upload.asset(name, file=file)
 
 rcloud.update.notebook <- function(id, content) {
     content <- .gist.binary.process.outgoing(id, content)
