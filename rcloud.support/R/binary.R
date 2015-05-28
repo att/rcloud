@@ -69,7 +69,7 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
 
     ## convert any binary assets into .b64 files
     if (length(content$files)) {
-        ulog("UPDATE: ",paste(names(content$files),"->",c("MOD","DEL")[1L+as.integer(sapply(content$files, function(o) is.null(o$content)))],"/",c("TXT","BIN")[1L+sapply(content$files, function(o) is.list(o) && is.raw(o$content))], collapse=", "))
+        # ulog("UPDATE: ",paste(names(content$files),"->",c("MOD","DEL")[1L+as.integer(sapply(content$files, function(o) is.null(o$content)))],"/",c("TXT","BIN")[1L+sapply(content$files, function(o) is.list(o) && is.raw(o$content))], collapse=", "))
         nb <- NULL
 
         bin <- sapply(content$files, function(o) is.list(o) && is.raw(o$content))
@@ -91,7 +91,7 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
                 notebook <- notebook$content$id
             nb <- .rcloud.get.notebook(notebook, raw=TRUE)
             if (!isTRUE(nb$ok)) nb <- NULL
-            ulog(" -- existing: ", paste(names(nb$content$files), collapse=", "))
+            # ulog(" -- existing: ", paste(names(nb$content$files), collapse=", "))
             bin.f <- content$files[bin]
             txt.f <- content$files[!bin]
             more <- list()
@@ -114,7 +114,7 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
             if (is.null(nb)) { ## don't re-fetch it if we already did so above
                 nb <- .rcloud.get.notebook(notebook, raw=TRUE)
                 if (!isTRUE(nb$ok)) nb <- NULL
-                ulog(" -- existing: ", paste(names(nb$content$files), collapse=", "))
+                # ulog(" -- existing: ", paste(names(nb$content$files), collapse=", "))
             }
             dn <- names(content$files)[del]
             has.txt <- dn %in% names(nb$content$files)
@@ -132,7 +132,7 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
                 content$files <- c(content$files, .zlist(both))
             }
         }
-        ulog("FINAL: ",paste(names(content$files),"->",c("MOD","DEL")[1L+as.integer(sapply(content$files, function(o) is.null(o$content)))],"/",c("TXT","BIN")[1L+sapply(content$files, function(o) is.list(o) && is.raw(o$content))], collapse=", "))
+        # ulog("FINAL: ",paste(names(content$files),"->",c("MOD","DEL")[1L+as.integer(sapply(content$files, function(o) is.null(o$content)))],"/",c("TXT","BIN")[1L+sapply(content$files, function(o) is.list(o) && is.raw(o$content))], collapse=", "))
     }
     content
 }
