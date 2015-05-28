@@ -58,14 +58,29 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
 }
 
 ## called before issuing a modification request on a gist
-.gist.binary.process.outgoing <- function(notebook, content) {
+.gist.binary.process.outgoing <- function(notebook, content, autoconvert=TRUE) {
     # ulog(".gist.binary.process.outgoing: ", paste(capture.output(str(content)),collapse='\n'))
 
     ## convert any binary assets into .b64 files
     if (length(content$files)) {
         ulog("UPDATE: ",paste(names(content$files),"->",c("MOD","DEL")[1L+as.integer(sapply(content$files, is.null))],"/",c("TXT","BIN")[1L+sapply(content$files, function(o) is.list(o) && is.raw(o$content))], collapse=", "))
         nb <- NULL
-        if (any(bin <- sapply(content$files, function(o) is.list(o) && is.raw(o$content)))) {
+
+        bin <- sapply(content$files, function(o) is.list(o) && is.raw(o$content))
+        if (any(bin) && autoconvert) {
+            ## First, see if any of them can be interpreted as plain text
+            conv <- sapply(content$files[bin], function(o) checkUTF8(o$content, quiet=TRUE, min.char=7L))
+            if (any(conv)) { ## yes? Then convert
+                ci <- which(bin)[conv]
+                content$files[ci] <- lapply(content$files[ci],
+                                            function(o) { o$content <- rawToChar(o$content); Encoding(o$content) <- "UTF-8"; o })
+                ## adjust the list of binary
+                bin <- bin[-which(conv)]
+            }
+        }
+
+        ## still anything binary left after conversion?
+        if (any(bin)) {
             if (is.list(notebook))
                 notebook <- notebook$content$id
             nb <- .rcloud.get.notebook(notebook, raw=TRUE)
