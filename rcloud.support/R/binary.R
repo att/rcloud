@@ -57,13 +57,19 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
     content
 }
 
+.zlist <- function(names) {
+    l <- rep(list(list(content=NULL)), length(names))
+    names(l) <- names
+    l
+}
+
 ## called before issuing a modification request on a gist
 .gist.binary.process.outgoing <- function(notebook, content, autoconvert=TRUE) {
     # ulog(".gist.binary.process.outgoing: ", paste(capture.output(str(content)),collapse='\n'))
 
     ## convert any binary assets into .b64 files
     if (length(content$files)) {
-        ulog("UPDATE: ",paste(names(content$files),"->",c("MOD","DEL")[1L+as.integer(sapply(content$files, is.null))],"/",c("TXT","BIN")[1L+sapply(content$files, function(o) is.list(o) && is.raw(o$content))], collapse=", "))
+        ulog("UPDATE: ",paste(names(content$files),"->",c("MOD","DEL")[1L+as.integer(sapply(content$files, function(o) is.null(o$content)))],"/",c("TXT","BIN")[1L+sapply(content$files, function(o) is.list(o) && is.raw(o$content))], collapse=", "))
         nb <- NULL
 
         bin <- sapply(content$files, function(o) is.list(o) && is.raw(o$content))
@@ -97,12 +103,12 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
                 if (!is.null(nb$content$files[[txt.name <- gsub(".b64$","",name)]]))
                     more[[txt.name]] <- TRUE
             }
-            if (length(more)) txt.f <- c(txt.f, lapply(more, function(o) NULL))
+            if (length(more)) txt.f <- c(txt.f, .zlist(names(more)))
             content$files <- txt.f
         }
         ## if there is a request for deletion, we have to check if that actually
         ## requests deletion of the .b64 variant
-        if (any(del <- sapply(content$files, function(o) is.null(o)))) {
+        if (any(del <- sapply(content$files, function(o) is.null(o$content)))) {
             if (is.list(notebook))
                 notebook <- notebook$content$id
             if (is.null(nb)) { ## don't re-fetch it if we already did so above
@@ -110,7 +116,7 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
                 if (!isTRUE(nb$ok)) nb <- NULL
                 ulog(" -- existing: ", paste(names(nb$content$files), collapse=", "))
             }
-            dn <- names(content$files[del])
+            dn <- names(content$files)[del]
             has.txt <- dn %in% names(nb$content$files)
             has.b64 <- paste0(dn, ".b64") %in% names(nb$content$files)
             if (!all(has.txt | has.b64))
@@ -118,15 +124,15 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
             ## if any of the removed are .b64, we have to re-name the elements accordingly
             if (any(has.b64)) {
                 dn[has.b64] <- paste0(dn[has.b64], ".b64")
-                names(content$files[del]) <- dn
+                names(content$files)[del] <- dn
             }
             ## if there happen to be both versions, remove both, i.e. add deletion of the text ones as well
             if (any(has.b64 & has.txt)) {
                 both <- gsub(".b64$", "", dn[has.b64 & has.txt])
-                content$files <- c(content$files, lapply(both, function(o) NULL))
+                content$files <- c(content$files, .zlist(both))
             }
         }
-        ulog("FINAL: ",paste(names(content$files),"->",c("MOD","DEL")[1L+as.integer(sapply(content$files, is.null))],"/",c("TXT","BIN")[1L+sapply(content$files, function(o) is.list(o) && is.raw(o$content))], collapse=", "))
+        ulog("FINAL: ",paste(names(content$files),"->",c("MOD","DEL")[1L+as.integer(sapply(content$files, function(o) is.null(o$content)))],"/",c("TXT","BIN")[1L+sapply(content$files, function(o) is.list(o) && is.raw(o$content))], collapse=", "))
     }
     content
 }
