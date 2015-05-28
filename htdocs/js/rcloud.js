@@ -426,10 +426,12 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.signal_to_computeAsync(signal);
         };
 
-        rcloud.update_notebook = function(id, content) {
+        rcloud.update_notebook = function(id, content, is_current) {
+            if(is_current === undefined)
+                is_current = true;
             return rcloud_github_handler(
                 "rcloud.update.notebook",
-                rcloud_ocaps.update_notebookAsync(id, content));
+                rcloud_ocaps.update_notebookAsync(id, content, is_current));
         };
 
         rcloud.search = rcloud_ocaps.searchAsync; // may be null
