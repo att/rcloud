@@ -13,7 +13,7 @@ rcloud.language.support <- function()
     else
       format = "all"
 
-    rmarkdown::render(input.rmd, format, quiet = TRUE)
+    rmarkdown::render(input.rmd, html_fragment(pandoc_args = "--mathjax"), quiet = TRUE)
 
     readChar(output.html, file.info(output.html)$size)
   }

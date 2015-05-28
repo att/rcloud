@@ -228,6 +228,19 @@ authenticated.ocaps <- function(mode)
       # security: request new token
       replace_token = make.oc(replace.token),
 
+      # notebook protection
+      protection = list(
+        get_notebook_cryptgroup = make.oc(rcloud.get.notebook.cryptgroup),
+        set_notebook_cryptgroup = make.oc(rcloud.set.notebook.cryptgroup),
+        get_cryptgroup_users = make.oc(rcloud.get.cryptgroup.users),
+        get_user_cryptgroups = make.oc(rcloud.get.user.cryptgroups),
+        create_cryptgroup = make.oc(rcloud.create.cryptgroup),
+        set_cryptgroup_name = make.oc(rcloud.set.cryptgroup.name),
+        add_cryptgroup_user = make.oc(rcloud.add.cryptgroup.user),
+        remove_cryptgroup_user = make.oc(rcloud.remove.cryptgroup.user),
+        delete_cryptgroup = make.oc(rcloud.delete.cryptgroup)
+        ),
+
       # commenting ocaps
       comments = list(
         post = make.oc(rcloud.post.comment),
