@@ -276,7 +276,7 @@ rcloud.unauthenticated.notebook.by.name <- function(name, user=.session$username
 }
 
 ## this should go away antirely *and* be removed from OCAPs
-rcloud.upload.to.notebook <- function(file, name) rcloud.upload.asset(name, file=file)
+rcloud.upload.to.notebook <- function(file, name) if (is.raw(file)) rcloud.upload.asset(name, file) else rcloud.upload.asset(name, file=file)
 
 rcloud.update.notebook <- function(id, content) {
     content <- .gist.binary.process.outgoing(id, content)
