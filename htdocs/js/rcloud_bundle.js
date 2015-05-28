@@ -6604,6 +6604,23 @@ RCloud.UI.notebook_commands = (function() {
                         });
                         return remove;
                     }
+                },
+                fork_folder: {
+                    section: 'appear',
+                    sort: 1000,
+                    condition0: function(node) {
+                        return node.full_name && !node.gistname;
+                    },
+                    create: function(node) {
+                        var fork = ui_utils.fa_button('icon-code-fork', 'fork', 'fork', icon_style_, true);
+                        var is_mine = node.user === editor.username();
+                        fork.click(function(e) {
+                            editor.for_each_notebook(node, null, function(node) {
+                                editor.fork_notebook(is_mine, node.gistname, null);
+                            });
+                        });
+                        return fork;
+                    }
                 }
             });
             return this;
@@ -6699,24 +6716,18 @@ RCloud.UI.notebook_title = (function() {
     }
     function rename_notebook_folder(node) {
         return function(name) {
-            function rename_or_recurse(prefix, node) {
-                if(node.children && node.children.length) {
-                    node.children.forEach(function(child) {
-                        rename_or_recurse(prefix + '/' + child.name, child);
-                    });
-                }
+            editor.for_each_notebook(node, name, function(node, name) {
+                if(node.gistname === shell.gistname())
+                    shell.rename_notebook(name);
                 else {
-                    if(node.gistname === shell.gistname())
-                        shell.rename_notebook(prefix);
-                    else {
-                        rcloud.update_notebook(node.gistname, {description: prefix}, false)
-                            .then(function(notebook) {
-                                editor.update_notebook_from_gist(notebook);
-                            });
-                    }
+                    rcloud.update_notebook(node.gistname, {description: name}, false)
+                        .then(function(notebook) {
+                            editor.update_notebook_from_gist(notebook);
+                        });
                 }
-            }
-            rename_or_recurse(name, node);
+            }, function(child, name) {
+                return name + '/' + child.name;
+            });
         };
     }
     // always select all text after last slash, or all text

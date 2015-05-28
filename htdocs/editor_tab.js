@@ -1186,6 +1186,17 @@ var editor = function () {
         update_notebook_from_gist: function(notebook) {
             update_notebook_from_gist(notebook, notebook.history, false);
         },
+        for_each_notebook: function(node, data, leaff, combinef) {
+            var that = this;
+            if(node.children && node.children.length) {
+                node.children.forEach(function(child) {
+                    that.for_each_notebook(child, combinef ? combinef(child, data) : undefined);
+                });
+            }
+            else {
+                leaff(node, data);
+            }
+        },
         star_notebook: function(star, opts) {
             var that = this;
             // if opts has user and gistname use those
