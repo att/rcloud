@@ -207,6 +207,7 @@ var editor = function () {
             return {
                 label: k,
                 full_name: full_name,
+                user: v[0].user,
                 sort_order: ordering.NOTEBOOK,
                 id: id,
                 children: as_folder_hierarchy(children, id, full_name)
@@ -750,7 +751,8 @@ var editor = function () {
     }
 
     function update_tree_entry(root, user, gistname, entry, create) {
-        var data = {label: entry.description,
+        var data = {user: user,
+                    label: entry.description,
                     last_commit: new Date(entry.last_commit),
                     sort_order: ordering.NOTEBOOK,
                     visible: entry.visible};
@@ -946,7 +948,9 @@ var editor = function () {
                                    display_date(node.last_commit));
         }
         var right = $.el.span({'class': 'notebook-right'}, date);
-        if(node.user === username_ && $tree_.tree('isNodeSelected', node))
+        // if it was editable before, we need to restore that - either selected or open folder tree node
+        if(node.user === username_ && ($tree_.tree('isNodeSelected', node) ||
+                                       !node.gistname && node.full_name && node.is_open))
             RCloud.UI.notebook_title.make_editable(node, $li, true);
         RCloud.UI.notebook_commands.decorate($li, node, right);
         element.append(right);
@@ -968,15 +972,23 @@ var editor = function () {
                     result.open_notebook(event.node.gistname, event.node.version || null, event.node.root, false);
             }
         }
-        else
-            $tree_.tree('toggle', event.node);
+        else {
+            if(!event.node.is_open)
+                $tree_.tree('openNode', event.node);
+        }
         return false;
     }
     function tree_open(event) {
         var n = event.node;
         if(n.delay_children)
             load_children(n);
+        if(event.node.full_name && event.node.user === username_)
+            RCloud.UI.notebook_title.make_editable(event.node, event.node.element, true);
         $('#collapse-notebook-tree').trigger('size-changed');
+    }
+    function tree_close(event) {
+        if(event.node.full_name)
+            RCloud.UI.notebook_title.make_editable(event.node, event.node.element, false);
     }
     var NOTEBOOK_LOAD_FAILS = 5;
     function open_last_loadable() {
@@ -1101,6 +1113,7 @@ var editor = function () {
             });
             $tree_.bind('tree.click', tree_click);
             $tree_.bind('tree.open', tree_open);
+            $tree_.bind('tree.close', tree_close);
             if(start_widget_time)
                 console.log('load tree took ' + (window.performance.now() - start_widget_time));
         },
@@ -1169,6 +1182,9 @@ var editor = function () {
                     promises.push(RCloud.UI.share_button.update_link());
                     return Promise.all(promises);
                 });
+        },
+        update_notebook_from_gist: function(notebook) {
+            update_notebook_from_gist(notebook, notebook.history, false);
         },
         star_notebook: function(star, opts) {
             var that = this;

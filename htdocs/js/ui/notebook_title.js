@@ -14,6 +14,28 @@ RCloud.UI.notebook_title = (function() {
                 result.set(name);
             });
     }
+    function rename_notebook_folder(node) {
+        return function(name) {
+            function rename_or_recurse(prefix, node) {
+                if(node.children && node.children.length) {
+                    node.children.forEach(function(child) {
+                        rename_or_recurse(prefix + '/' + child.name, child);
+                    });
+                }
+                else {
+                    if(node.gistname === shell.gistname())
+                        shell.rename_notebook(prefix);
+                    else {
+                        rcloud.update_notebook(node.gistname, {description: prefix}, false)
+                            .then(function(notebook) {
+                                editor.update_notebook_from_gist(notebook);
+                            });
+                    }
+                }
+            }
+            rename_or_recurse(name, node);
+        };
+    }
     // always select all text after last slash, or all text
     function select(el) {
         if(el.childNodes.length !== 1 || el.firstChild.nodeType != el.TEXT_NODE)
@@ -84,13 +106,9 @@ RCloud.UI.notebook_title = (function() {
         },
         make_editable: function(node, $li, editable) {
             function get_title(node, elem) {
-                if(!node.version) {
-                    return $('.jqtree-title:not(.history)', elem);
-                } else {
-                    return $('.jqtree-title', elem);
-                }
+                return $('> div > .jqtree-title', elem);
             }
-            if(last_editable_ && (!node || last_editable_ !== node))
+            if(node.gistname && last_editable_ && (!node || last_editable_ !== node))
                 ui_utils.editable(get_title(last_editable_, last_editable_.element), 'destroy');
             if(node) {
                 var opts = editable_opts;
@@ -100,13 +118,20 @@ RCloud.UI.notebook_title = (function() {
                         validate: function(name) { return true; }
                     });
                 }
+                else if(!node.gistname) {
+                    opts = $.extend({}, editable_opts, {
+                        change: rename_notebook_folder(node),
+                        validate: function(name) { return true; }
+                    });
+                }
                 ui_utils.editable(get_title(node, $li),
                                   $.extend({allow_edit: editable,
                                             inactive_text: node.name,
                                             active_text: node.version ? node.name : node.full_name},
                                            opts));
             }
-            last_editable_ = node;
+            if(node.gistname)
+                last_editable_ = node;
         }
     };
     return result;
