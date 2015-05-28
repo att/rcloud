@@ -51,6 +51,7 @@ rcloud.augment.notebook <- function(res) {
         if(!is.null(tag))
           res$content$history[[i]]$tag <- tag
       }
+    res$augmented <- TRUE
   }
   res
 }
@@ -320,7 +321,7 @@ rcloud.upload.to.notebook <- function(file, name, encrypt) {
 }
 
 rcloud.update.notebook <- function(id, content) {
-    content <- .gist.binary.process.outgoing(content)
+    content <- .gist.binary.process.outgoing(id, content)
 
     res <- modify.gist(id, content, ctx = .session$gist.context)
     .session$current.notebook <- res

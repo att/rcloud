@@ -1,8 +1,11 @@
-.b64.to.binary <- function(text) {
+## decode b64 format to raw object possibly with attributes
+## we may want to expose this as user API as well
+decode.b64 <- function(text) {
    # has header?
    attr <- NULL
-   if (length(text) == 1L) text <- strsplit(text, "\n", TRUE)[[1]]
-   if (length(text) && substr(text,1,3) == "## ") {
+   if (length(text) == 1L && length(grep("\n", text, fixed=TRUE)))
+       text <- strsplit(text, "\n", TRUE)[[1]]
+   if (length(text) && length(grep("^## ", text[1L]))) {
       q <- strsplit(gsub("^##[ \t]+","",text[1L]), "[ \t]*,[ \t]*")[[1]]
       valid <- grep(":", q, TRUE)
       if (length(valid)) {
@@ -19,12 +22,12 @@
 }
 
 .b64.to.binary.file <- function(fspec) {
-    if (!is.null(fspec$content)) fspec$content <- .b64.to.binary(fspec$content)
+    if (!is.null(fspec$content)) fspec$content <- decode.b64(fspec$content)
     if (!is.null(fspec$filename)) fspec$filename <- gsub("\\.b64$", "", fspec$filename)
     fspec
 }
 
-.binary.to.b64 <- function(what, meta=attr(what, "metadata")) {
+encode.b64 <- function(what, meta=attr(what, "metadata")) {
    mstr <- character(0)
    if (!is.null(meta) && !is.null(names(meta))) {
       .san <- function(x) gsub("%", "%25", gsub(":", "%3a", gsub(",", "%2c", x)))
@@ -54,19 +57,61 @@
     content
 }
 
-.gist.binary.process.outgoing <- function(content) {
+## called before issuing a modification request on a gist
+.gist.binary.process.outgoing <- function(notebook, content) {
     # ulog(".gist.binary.process.outgoing: ", paste(capture.output(str(content)),collapse='\n'))
 
     ## convert any binary assets into .b64 files
-    if (length(content$files) && any(bin <- sapply(content$files, function(o) is.list(o) && is.raw(o$content)))) {
-        bin.f <- content$files[bin]
-        txt.f <- content$files[!bin]
-        for (i in seq.int(length(bin.f))) {
-            name <- names(bin.f)[i]
-            if (!length(grep("\\.b64$", name))) name <- paste0(name, ".b64")
-            txt.f[[name]] <- list(content=.binary.to.b64(bin.f[[i]]$content))
+    if (length(content$files)) {
+        ulog("UPDATE: ",paste(names(content$files),"->",c("MOD","DEL")[1L+as.integer(sapply(content$files, is.null))],"/",c("TXT","BIN")[1L+sapply(content$files, function(o) is.list(o) && is.raw(o$content))], collapse=", "))
+        nb <- NULL
+        if (any(bin <- sapply(content$files, function(o) is.list(o) && is.raw(o$content)))) {
+            if (is.list(notebook))
+                notebook <- notebook$content$id
+            nb <- .rcloud.get.notebook(notebook, raw=TRUE)
+            if (!isTRUE(nb$ok)) nb <- NULL
+            ulog(" -- existing: ", paste(names(nb$content$files), collapse=", "))
+            bin.f <- content$files[bin]
+            txt.f <- content$files[!bin]
+            more <- list()
+            for (i in seq.int(length(bin.f))) {
+                name <- names(bin.f)[i]
+                if (!length(grep("\\.b64$", name))) name <- paste0(name, ".b64")
+                txt.f[[name]] <- list(content=encode.b64(bin.f[[i]]$content))
+                ## let's see if we also have to delete the text version
+                if (!is.null(nb$content$files[[txt.name <- gsub(".b64$","",name)]]))
+                    more[[txt.name]] <- TRUE
+            }
+            if (length(more)) txt.f <- c(txt.f, lapply(more, function(o) NULL))
+            content$files <- txt.f
         }
-        content$files <- txt.f
+        ## if there is a request for deletion, we have to check if that actually
+        ## requests deletion of the .b64 variant
+        if (any(del <- sapply(content$files, function(o) is.null(o)))) {
+            if (is.list(notebook))
+                notebook <- notebook$content$id
+            if (is.null(nb)) { ## don't re-fetch it if we already did so above
+                nb <- .rcloud.get.notebook(notebook, raw=TRUE)
+                if (!isTRUE(nb$ok)) nb <- NULL
+                ulog(" -- existing: ", paste(names(nb$content$files), collapse=", "))
+            }
+            dn <- names(content$files[del])
+            has.txt <- dn %in% names(nb$content$files)
+            has.b64 <- paste0(dn, ".b64") %in% names(nb$content$files)
+            if (!all(has.txt | has.b64))
+                stop("attempt to remove non-existing cell/asset: ", paste(dn[!(has.txt | has.b64)], collapse=", "))
+            ## if any of the removed are .b64, we have to re-name the elements accordingly
+            if (any(has.b64)) {
+                dn[has.b64] <- paste0(dn[has.b64], ".b64")
+                names(content$files[del]) <- dn
+            }
+            ## if there happen to be both versions, remove both, i.e. add deletion of the text ones as well
+            if (any(has.b64 & has.txt)) {
+                both <- gsub(".b64$", "", dn[has.b64 & has.txt])
+                content$files <- c(content$files, lapply(both, function(o) NULL))
+            }
+        }
+        ulog("FINAL: ",paste(names(content$files),"->",c("MOD","DEL")[1L+as.integer(sapply(content$files, is.null))],"/",c("TXT","BIN")[1L+sapply(content$files, function(o) is.list(o) && is.raw(o$content))], collapse=", "))
     }
     content
 }
