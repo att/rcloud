@@ -60,7 +60,8 @@ rcloud_bundle.js: \
 	ui/settings_frame.js \
 	ui/share_button.js \
 	ui/upload.js \
-	ui/upload_frame.js
+	ui/upload_frame.js \
+	ui/notebook_protection.js
 
 rcloud_bundle.min.js: rcloud_bundle.js Makefile
 	@rm -f $@

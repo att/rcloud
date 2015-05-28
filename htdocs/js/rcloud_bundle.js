@@ -484,6 +484,15 @@ RCloud.create = function(rcloud_ocaps) {
             ["publish_notebook"],
             ["unpublish_notebook"],
             ["set_notebook_visibility"],
+            ["protection", "get_notebook_cryptgroup"],
+            ["protection", "set_notebook_cryptgroup"],
+            ["protection", "get_cryptgroup_users"],
+            ["protection", "get_user_cryptgroups"],
+            ["protection", "create_cryptgroup"],
+            ["protection", "set_cryptgroup_name"],
+            ["protection", "add_cryptgroup_user"],
+            ["protection", "remove_cryptgroup_user"],
+            ["protection", "delete_cryptgroup"],
             ["api","disable_warnings"],
             ["api","enable_echo"],
             ["api","disable_warnings"],
@@ -613,6 +622,36 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.set_notebook_visibility = function(id, value) {
             return rcloud_ocaps.set_notebook_visibilityAsync(id, value);
+        };
+
+        // protection
+        rcloud.protection = {};
+        rcloud.protection.get_notebook_cryptgroup = function(notebookid) {
+            return rcloud_ocaps.protection.get_notebook_cryptgroupAsync(notebookid);
+        };
+        rcloud.protection.set_notebook_cryptgroup = function(notebookid, groupid) {
+            return rcloud_ocaps.protection.set_notebook_cryptgroupAsync(notebookid, groupid);
+        };
+        rcloud.protection.get_cryptgroup_users = function(groupid) {
+            return rcloud_ocaps.protection.get_cryptgroup_usersAsync(groupid);
+        };
+        rcloud.protection.get_user_cryptgroups = function(user) {
+            return rcloud_ocaps.protection.get_user_cryptgroupsAsync(user);
+        };
+        rcloud.protection.create_cryptgroup = function(groupname) {
+            return rcloud_ocaps.protection.create_cryptgroupAsync(groupname);
+        };
+        rcloud.protection.set_cryptgroup_name = function(groupid, groupname) {
+            return rcloud_ocaps.protection.set_cryptgroup_nameAsync(groupid, groupname);
+        };
+        rcloud.protection.add_cryptgroup_user = function(groupid, user, is_admin) {
+            return rcloud_ocaps.protection.add_cryptgroup_userAsync(groupid, user, is_admin);
+        };
+        rcloud.protection.remove_cryptgroup_user = function(groupid, user) {
+            return rcloud_ocaps.protection.remove_cryptgroup_userAsync(groupid, user);
+        };
+        rcloud.protection.delete_cryptgroup = function(groupid) {
+            return rcloud_ocaps.protection.delete_cryptgroupAsync(groupid);
         };
 
         // stars
@@ -8279,3 +8318,231 @@ RCloud.UI.upload_frame = {
     }
 };
 
+RCloud.UI.notebook_protection = (function() {
+
+
+    return {
+
+
+
+        show: function(node) {
+
+            var that = this;
+
+            require(['angular'], function(angular){
+                'use strict';
+
+                //after you are done defining / augmenting 'MyApp' run this:
+                that.buildDom();
+
+                //angular.element(document).ready(function() {
+                    //angular.resumeBootstrap([app['name']]);
+                    //angular.resumeBootstrap();
+
+                    var app = angular.module('demo', []);
+
+                    app.service('GroupsService', function() {
+
+                        this.getNotebookGroup = function(id) {
+                             return rcloud.protection.get_notebook_cryptgroup(id)   
+                        };
+
+                        this.setNotebookGroup = function(notebookid, groupid){
+                            return rcloud.protection.set_notebook_cryptgroup(notebookid, groupid);
+                        }
+
+                        this.createGroup = function(groupName){
+
+                            return rcloud.protection.create_cryptgroup(groupName)
+                        }
+                         
+                        this.set_notebook_cryptgroup = function(id) {
+                            return rcloud.protection.get_notebook_cryptgroup(id)  
+                        };
+
+                        this.addGroupUser = function(groupid, user, is_admin){
+                            return rcloud.protection.add_cryptgroup_user(groupid, user, is_admin);
+                        }
+                         
+                    });
+                    
+
+
+                    app.controller('WelcomeController', function($scope, GroupsService) {
+                          $scope.greeting = 'Welcome!';
+
+
+                          $scope.currentNode = node;
+                          $scope.notebookId = node.gistname;
+
+
+                          $scope.currentGroup = 'none';
+
+                          $scope.myGroups = null;
+
+
+
+                          $scope.newGroupName = 'create new';
+
+
+
+                          $scope.createGroup = function(){
+                            $scope.createNewGroup( $scope.newGroupName);
+                          }
+
+
+                          GroupsService.getNotebookGroup($scope.notebookId)
+                          .then(function(data){
+                            if(data[0] && data[1]){
+
+                                $scope.$apply(function(){
+                                    $scope.currentGroup = data[1];
+                                });
+                                
+                            }
+
+                          });
+
+                          $scope.createNewGroupAndAddNotebook = function(groupName, notebookId){
+
+                          }
+
+                          $scope.createNewGroup = function(groupName){
+                            var groupId;
+
+                            GroupsService.createGroup(groupName)
+                            .then(function(data){
+                                groupId = data;
+
+                                console.log('group created '+data);
+                                alert('group created');
+
+                                return GroupsService.setNotebookGroup($scope.notebookId, groupId)
+                                .then(function(data){
+
+                                    var a = 'aa';
+                                    alert('group created and this notebook added to group');
+                                })
+
+
+
+                            })
+                            .catch(function(e){
+                                alert(e);
+                            })
+                            // .then(function(){
+
+                            //     //update your current group 
+                               
+
+
+                            //     //update all the groups you belong to
+
+                            //     //alert("hahahahah");
+                            // })
+
+
+
+                          }
+                          //GroupsService.createGroup('anatoliy');
+                          
+
+                          //console.log("notbook's group is "+$scope.notebook_group);
+
+
+
+                          $scope.doEdit = function(){
+                            alert("it works");
+                          }
+                    });
+
+                    angular.bootstrap(document, ['demo']);
+
+
+
+                    
+                    //setTimeout(angular.resumeBootstrap, 0);
+                //});
+            })
+
+            return this;
+        },
+
+        buildDom: function(){
+
+            var body = $('<div class="container"></div>');
+            body.append(RCloud.UI.panel_loader.load_snippet('notebook-protection-modal'));
+
+            var cancel = $('<span class="btn btn-cancel">Cancel</span>')
+                .on('click', function() { $(dialog).modal('hide'); });
+          
+            var footer = $('<div class="modal-footer"></div>')
+                    .append(cancel);
+            var header = $(['<div class="modal-header">',
+                            '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>',
+                            '<h3>Set Notebook Permissions</h3>',
+                            '</div>'].join(''));
+            var dialog = $('<div id="import-notebook-file-dialog" class="modal fade"></div>')
+                    .append($('<div class="modal-dialog"></div>')
+                            .append($('<div class="modal-content"></div>')
+                                    .append(header).append(body).append(footer)));
+            $("body").append(dialog);
+            dialog.modal({keyboard: true});
+            
+        }
+    };
+
+
+        // /* create angular app here */
+        // angular.element(document).ready(function () {
+        //     angular.resumeBootstrap();
+        //     console.log("resuming bootstrap");
+
+        // });
+
+        // return {
+        //     show: function() {
+
+        //         console.log('show protection modal');
+
+
+        //         var body = $('<div class="container"></div>');
+        //         body.append(RCloud.UI.panel_loader.load_snippet('notebook-protection-modal'));
+
+        //         var cancel = $('<span class="btn btn-cancel">Cancel</span>')
+        //             .on('click', function() { $(dialog).modal('hide'); });
+              
+
+        //         var footer = $('<div class="modal-footer"></div>')
+        //                 .append(cancel);
+        //         var header = $(['<div class="modal-header">',
+        //                         '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>',
+        //                         '<h3>Set Notebook Permissions</h3>',
+        //                         '</div>'].join(''));
+        //         var dialog = $('<div id="import-notebook-file-dialog" class="modal fade"></div>')
+        //                 .append($('<div class="modal-dialog"></div>')
+        //                         .append($('<div class="modal-content"></div>')
+        //                                 .append(header).append(body).append(footer)));
+        //         $("body").append(dialog);
+
+        //         dialog.modal({keyboard: true});
+
+
+
+        //         return this;
+        //     }
+        // };
+    
+
+
+
+
+
+    // require(['sadasdas'], function(Angular){
+
+
+
+    // })
+
+    
+})();

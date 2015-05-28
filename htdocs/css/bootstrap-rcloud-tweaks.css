@@ -306,3 +306,41 @@ td {
 .ace_start.find-highlight {
     position: absolute;
 }
+
+
+
+
+
+
+
+
+
+.inner-tab{
+      padding: 30px;
+}
+
+.sec{
+    margin-bottom: 20px;
+}
+
+
+
+.pill-holder{
+    width: 100%;
+    min-height: 30px;
+    border: 1px solid gray;
+    padding: 10px;
+}
+
+.pill-item{
+
+    background-color: rgb(221, 221, 221);
+    max-width: 100px;
+    display: inline-block;
+    border-radius: 5px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+

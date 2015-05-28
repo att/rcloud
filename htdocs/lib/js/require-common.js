@@ -2,6 +2,7 @@ requirejs_config_obj = {
     "baseUrl": "/lib/js",
     waitSeconds: 30,
     paths: {
+        "angular": "angular",
         "jquery": "jquery-2.1.1",
         "rcloud_bundle": "../../js/rcloud_bundle",
         "ace": "../ace_bundle",
@@ -9,6 +10,9 @@ requirejs_config_obj = {
         shell_tab: "../../shell_tab"
     },
     "shim": {
+        'angular': {
+            exports: 'angular'
+        },
         "tree.jquery": ["jquery"],
         "jquery-ui": ["jquery"],
         laconic: ["jquery"],
@@ -39,6 +43,11 @@ var common_deps = [
 ];
 
 function start_require(deps) {
+
+    // defer angular initialization
+    window.name = "NG_DEFER_BOOTSTRAP!";
+
+    deps: ['./bootstrap'];
     require(deps,
             function(Promise, _, d3, sha256) {
                 window.Promise = Promise;
@@ -46,5 +55,6 @@ function start_require(deps) {
                 window.d3 = d3;
                 window.sha256 = sha256;
                 main();
+
             });
 }

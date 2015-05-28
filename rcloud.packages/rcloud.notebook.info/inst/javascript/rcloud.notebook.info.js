@@ -33,14 +33,30 @@
                                 info_popover_.popover('destroy');
                                 info_popover_ = null;
                             }
-                            rcloud.stars.get_notebook_starrer_list(node.gistname).then(function(list) {
+
+
+                            Promise.all( [rcloud.protection.get_notebook_cryptgroup(node.gistname), 
+                                        rcloud.stars.get_notebook_starrer_list(node.gistname)])
+                            .spread(function(cryptogroup, list) {
+
                                 if(typeof(list) === 'string')
                                     list = [list];
+
+                                var group_message;
+                                if(!cryptogroup[0] && !cryptogroup[1]){
+                                    group_message = '<div class="group-link">no group</div>'
+                                }
+                                else{
+                                    group_message = '<div class="group-link">'+cryptogroup[1]+'</div>'
+                                }
+ 
+                                    
+
                                 var starrer_list = '<div class="info-category"><b>Starred by:</b></div>';
                                 list.forEach(function (v) {
                                     starrer_list = starrer_list + '<div class="info-item">' + v + '</div>';
                                 });
-                                info_content = info_content + starrer_list;
+                                info_content = group_message + info_content + starrer_list;
                                 $(thisIcon).popover({
                                     title: node.name,
                                     html: true,
@@ -54,6 +70,12 @@
                                 var thisPopover = $(thisIcon).popover().data()['bs.popover'].$tip[0];
                                 $(thisPopover).addClass('popover-offset notebook-info');
                                 info_popover_ = $(thisIcon);
+
+
+                                $('.group-link').click(function(){
+                                    RCloud.UI.notebook_protection.show(node);
+                                });
+
                             });
                         });
                         return info;
