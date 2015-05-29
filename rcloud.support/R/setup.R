@@ -89,8 +89,18 @@ configure.rcloud <- function (mode=c("startup", "script")) {
   ## ideally, all of the above should be superceded by the configuration file
   rc.cf <- pathConf("configuration.root", "rcloud.conf")
   if (isTRUE(file.exists(rc.cf))) {
+    .dcf.sections.with <- function(d, sec) {
+      if (!sec %in% colnames(d)) return(list())
+      w <- which(!is.na(d[,sec]))
+      l <- lapply(w, function(o) { e <- d[o,]; e <- e[!is.na(e)]; names(e) <- gsub("[ \t]", ".", tolower(names(e))); e })
+      names(l) <- d[w,sec]
+      l
+    }
     cat("Loading RCloud configuration file...\n")
-    rc.c <- read.dcf(rc.cf)[1,]
+    rc.all <- read.dcf(rc.cf)
+    rc.c <- rc.all[1,]
+    rc.c <- rc.c[!is.na(rc.c)]
+    rc.gsrc <- .dcf.sections.with(rc.all, "gist.source")
     for (n in names(rc.c)) setConf(gsub("[ \t]", ".", tolower(n)), as.vector(rc.c[n]))
   }
 
