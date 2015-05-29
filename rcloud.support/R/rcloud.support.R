@@ -55,14 +55,14 @@ rcloud.augment.notebook <- function(res) {
   }
   res
 }
-rcloud.unauthenticated.load.notebook <- function(id, version = NULL) {
+rcloud.unauthenticated.load.notebook <- function(id, version = NULL, source = NULL) {
   if (!rcloud.is.notebook.published(id))
     stop("Notebook does not exist or has not been published")
-  rcloud.load.notebook(id, version)
+  rcloud.load.notebook(id, version, source)
 }
 
-rcloud.load.notebook <- function(id, version = NULL) {
-  res <- rcloud.get.notebook(id, version)
+rcloud.load.notebook <- function(id, version = NULL, source = NULL) {
+  res <- rcloud.get.notebook(id, version, source)
   ulog("RCloud rcloud.load.notebook(",id,",",version,", user=", .session$username,"): ", if(res$ok) "OK" else "FAILED")
   if (res$ok) {
     .session$current.notebook <- res
@@ -122,16 +122,20 @@ rcloud.unauthenticated.get.notebook <- function(id, version = NULL) {
   rcloud.get.notebook(id, version)
 }
 
-rcloud.get.notebook <- function(id, version = NULL) .rcloud.get.notebook(id, version)
+rcloud.get.notebook.source <- function(id)
+  rcloud.get.notebook.property(id, "source")
 
-.rcloud.get.notebook <- function(id, version = NULL, raw=FALSE) {
-  res <- if (!is.null(stash <- .session$deployment.stash)) {
-    if (is.null(version))
-      version <- rcs.get(stash.key(stash, id, "HEAD", type="tag"))
-    res <- rcs.get(stash.key(stash, id, version))
-    if (is.null(res$ok)) res <- list(ok=FALSE)
-    res
-  } else get.gist(id, version, ctx = .session$gist.context)
+rcloud.get.notebook <- function(id, version = NULL, source = NULL) .rcloud.get.notebook(id, version)
+
+.rcloud.get.notebook <- function(id, version = NULL, source = NULL, raw=FALSE) {
+  if (is.null(source)) source <- rcloud.get.notebook.source(id)
+  ## FIXME: eventually .session$gist.context should be superseded by one of the entries in the context list so we don't have a duplicate
+  ctx <- if (is.null(source)) .session$gist.context else {
+    if (is.null(.session$gist.contexts[[source]]))
+      stop("notebook source `", source, "' is not configured in this instance")
+    .session$gist.contexts[[source]]
+  }
+  res <- get.gist(id, version, ctx = .session$gist.context)
   if (rcloud.debug.level() > 1L) {
     if(res$ok) {
       cat("==== GOT GIST ====\n")
@@ -452,7 +456,10 @@ rcloud.rename.notebook <- function(id, new.name) {
               ctx = .session$gist.context)
 }
 
-rcloud.fork.notebook <- function(id) fork.gist(id, ctx = .session$gist.context)
+rcloud.fork.notebook <- function(id, source = NULL) {
+  ## FIXME: is source is not the main gist backend, it's a cross-source fork -> copy?
+  fork.gist(id, ctx = .session$gist.context)
+}
 
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
   ## also note that we are looking deep in the config space - this shold be really much easier ...
