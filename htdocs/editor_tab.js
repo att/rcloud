@@ -36,7 +36,8 @@ var editor = function () {
         featured_ = [], // featured users - samples, intros, etc
         invalid_notebooks_ = {},
         current_ = null, // current notebook and version
-        show_terse_dates_ = false; // show terse date option for the user
+        show_terse_dates_ = false, // show terse date option for the user
+        new_notebook_prefix_ = "Notebook";
 
     // view
     var $tree_ = null,
@@ -1121,9 +1122,16 @@ var editor = function () {
             else
                 this.load_notebook(gistname, version, selroot);
         },
+        new_notebook_prefix: function(_) {
+            if(arguments.length) {
+                new_notebook_prefix_ = _.replace(/ *$/, '');
+                return this;
+            }
+            else return new_notebook_prefix_;
+        },
         new_notebook: function() {
             var that = this;
-            return Promise.cast(find_next_copy_name(username_,"Notebook 1"))
+            return Promise.cast(find_next_copy_name(username_, new_notebook_prefix_ + " 1"))
                 .then(shell.new_notebook.bind(shell))
                 .then(function(notebook) {
                     set_visibility(notebook.id, true);
