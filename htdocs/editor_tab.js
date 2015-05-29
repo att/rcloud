@@ -152,12 +152,14 @@ var editor = function () {
     // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
     function find_next_copy_name(username, description) {
         var pid = node_id("alls", username);
+        if(description.indexOf('/')!==-1)
+            pid += '/' + description.replace(/\/[^\/]*$/,'');
         var parent = $tree_.tree('getNodeById', pid);
         if(parent === undefined)
             return description;
         if(parent.delay_children)
             load_children(parent);
-        var map = _.object(_.map(parent.children, function(c) { return [c.name, true]; }));
+        var map = _.object(_.map(parent.children, function(c) { return [c.full_name, true]; }));
         if(!map[description])
             return description;
         var match, base, n;
