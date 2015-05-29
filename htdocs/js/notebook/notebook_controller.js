@@ -40,7 +40,8 @@ Notebook.create_controller = function(model)
         var asset_controller = Notebook.Asset.create_controller(asset_model);
         asset_model.controller = asset_controller;
         return {controller: asset_controller,
-                changes: model.append_asset(asset_model, filename)};
+                changes: model.append_asset(asset_model, filename),
+                model: asset_model};
     }
 
     function insert_cell_helper(content, type, id) {
@@ -240,6 +241,8 @@ Notebook.create_controller = function(model)
             return update_notebook(refresh_buffers().concat(cch.changes))
                 .then(default_callback())
                 .then(function(notebook) {
+                    // set content again because server may have determined it's text
+                    cch.model.content(notebook.files[filename].content);
                     return [notebook, cch.controller];
                 });
         },
@@ -418,6 +421,11 @@ Notebook.create_controller = function(model)
         },
         update_asset: function(asset_model) {
             return update_notebook(refresh_buffers().concat(model.update_asset(asset_model)))
+                .then(function(notebook) {
+                    // set content again because server may have determined it's text
+                    asset_model.content(notebook.files[asset_model.filename()].content);
+                    return notebook;
+                })
                 .then(default_callback());
         },
         rename_notebook: function(desc) {

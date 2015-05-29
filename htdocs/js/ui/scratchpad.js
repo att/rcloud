@@ -217,9 +217,10 @@ RCloud.UI.scratchpad = (function() {
                 null;
         }, content_updated: function() {
             var changed = false;
-            if(!binary_mode_) {
+            changed = this.current_model.content();
+            binary_mode_ = Notebook.is_binary_content(changed);
+            if(changed && !binary_mode_) {
                 var range = this.widget.getSelection().getRange();
-                changed = this.current_model.content();
                 this.change_content(changed);
                 this.widget.getSelection().setSelectionRange(range);
             }
