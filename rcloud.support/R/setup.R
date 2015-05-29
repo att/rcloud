@@ -105,6 +105,7 @@ configure.rcloud <- function (mode=c("startup", "script")) {
     for (n in names(rc.c)) setConf(gsub("[ \t]", ".", tolower(n)), as.vector(rc.c[n]))
   }
   .session$gist.sources.conf <- rc.gsrc
+  ulog(paste(capture.output(str(rc.gsrc)), collapse='\n'))
 
   ## use public github by default (FIXME: this should go away when set in the githubgist package)
   if (!nzConf("github.base.url")) setConf("github.base.url", "https://github.com/")
@@ -376,7 +377,7 @@ start.rcloud.common <- function(...) {
 create.gist.backend <- function(username="", token="", source=NULL, ...) {
   ## to simplify things we just pick the config from the source
   getConf <- if (is.null(source)) getConf else {
-    my.conf <- .session$gist.sources[[source]]
+    my.conf <- .session$gist.sources.conf[[source]]
     if (is.null(my.conf)) stop("gist source `", source, "' is not configured in this instance")
     function(o) { if (o %in% names(my.conf)) my.conf[[o]] else NULL }
   }
@@ -393,7 +394,7 @@ create.gist.backend <- function(username="", token="", source=NULL, ...) {
   l <- list()
   if (is.function(gbns$config.options)) {
     ## this is a bit ugly - we do ${ROOT} substitution regardless of the scope and we don't substitute anything else ...
-    l <- lapply(names(gbns$config.options()), function(o) { x <- getConf(o); if (!is.null(x)) gsub("${ROOT}", getConf("root"), x, fixed=TRUE) else x })
+    l <- lapply(names(gbns$config.options()), function(o) { x <- getConf(o); if (!is.null(x)) gsub("${ROOT}", rcloud.support:::getConf("root"), x, fixed=TRUE) else x })
     names(l) <- names(gbns$config.options())
     l0 <- sapply(l, is.null)
     req <- sapply(gbns$config.options(), isTRUE)
@@ -407,6 +408,7 @@ create.gist.backend <- function(username="", token="", source=NULL, ...) {
     cat("create.gist.ctx call:\n")
     str(l)
   }
+  ulog("INFO: create gist context for source `", source, "' with ", paste0(names(l), "=", as.character(l), collapse=', '))
   gist::set.gist.context(do.call(gbns$create.gist.context, l))
 }
 
@@ -426,8 +428,8 @@ start.rcloud.gist <- function(username="", token="", ...) {
   .session$gist.contexts <- list(default=.session$gist.context)
   ## FIXME: what about backend-specific tokens?
   ## create any additional sources defined in the config
-  if (length(.session$gist.sources))
-    for (src in names(.session$gist.sources))
+  if (length(.session$gist.sources.conf))
+    for (src in names(.session$gist.sources.conf))
       .session$gist.contexts[[src]] <- create.gist.backend(username=username, token=token, source=src, ...)
 
   if (is.function(getOption("RCloud.session.auth")))
