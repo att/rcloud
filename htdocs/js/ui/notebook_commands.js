@@ -145,7 +145,10 @@ RCloud.UI.notebook_commands = (function() {
                         var is_mine = node.user === editor.username();
                         fork.click(function(e) {
                             editor.for_each_notebook(node, null, function(node) {
-                                editor.fork_notebook(is_mine, node.gistname, null);
+                                rcloud.fork_notebook(node.gistname)
+                                    .then(function(notebook) {
+                                        editor.update_notebook_from_gist(notebook);
+                                    });
                             });
                         });
                         return fork;

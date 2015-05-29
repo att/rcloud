@@ -1190,7 +1190,8 @@ var editor = function () {
             var that = this;
             if(node.children && node.children.length) {
                 node.children.forEach(function(child) {
-                    that.for_each_notebook(child, combinef ? combinef(child, data) : undefined);
+                    that.for_each_notebook(child, combinef ? combinef(child, data) : undefined,
+                                           leaff, combinef);
                 });
             }
             else {
