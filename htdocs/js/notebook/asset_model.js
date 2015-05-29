@@ -48,9 +48,6 @@ Notebook.Asset.create_model = function(content, filename)
         change_object: function(obj) {
             obj = obj || {};
             obj.filename = obj.filename || this.filename();
-            // ugly hack because server doesn't understand if you send content=null for binary asset
-            if(obj.erase && Notebook.is_binary_content(this.content()))
-                obj.filename += '.b64';
             return base_change_object.call(this, obj);
         }
     });
