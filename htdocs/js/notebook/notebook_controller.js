@@ -442,7 +442,7 @@ Notebook.create_controller = function(model)
                         throw 'stop';
                     } else if (r.r_attributes['class'] === 'cell-eval-error') {
                         // available: error=message, traceback=vector of calls, expression=index of the expression that failed
-                        var tb = r['traceback'] || '';
+                        var tb = r.traceback || '';
                         if (tb.join) tb = tb.join("\n");
                         var trace = tb ? 'trace:\n'+tb : true;
                         RCloud.end_cell_output(context_id, trace);
