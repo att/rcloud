@@ -25,6 +25,13 @@ ui_utils.make_url = function(page, opts) {
     return url;
 };
 
+ui_utils.relogin_uri = function() {
+    return window.location.protocol +
+        '//' + window.location.host +
+        '/login.R?redirect=' +
+        encodeURIComponent(window.location.pathname + window.location.search);
+};
+
 ui_utils.disconnection_error = function(msg, label) {
     var result = $("<div class='alert alert-danger'></div>");
     result.append($("<span></span>").text(msg));
@@ -32,11 +39,7 @@ ui_utils.disconnection_error = function(msg, label) {
     var button = $("<button type='button' class='close'>" + label + "</button>");
     result.append(button);
     button.click(function() {
-        window.location =
-            (window.location.protocol +
-            '//' + window.location.host +
-            '/login.R?redirect=' +
-            encodeURIComponent(window.location.pathname + window.location.search));
+        window.location = ui_utils.relogin_uri();
     });
     return result;
 };
