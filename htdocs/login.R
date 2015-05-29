@@ -48,11 +48,6 @@ run <- function(url, query, body, headers)
   }
   if (is.null(redirect))
     redirect <- '/edit.html'
-  ## the query may also contain notebook id with/without version, we have to set the current notebook to that
-  if('notebook' %in% names(query)) {
-      redirect <- paste0(redirect, "?notebook=", query['notebook'])
-      if('version' %in% names(query)) redirect <- paste0(redirect, "&version=", query['version'])
-  }
   ctx <- create.gist.backend(as.character(cookies$user), as.character(cookies$token))
   url <- gist::auth.url(redirect, ctx=ctx)
   if (is.null(url)) {
