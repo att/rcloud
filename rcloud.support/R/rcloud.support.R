@@ -122,20 +122,11 @@ rcloud.unauthenticated.get.notebook <- function(id, version = NULL) {
   rcloud.get.notebook(id, version)
 }
 
-rcloud.get.notebook.source <- function(id)
-  rcloud.get.notebook.property(id, "source")
-
-rcloud.get.notebook <- function(id, version = NULL, source = NULL) .rcloud.get.notebook(id, version)
+rcloud.get.notebook <- function(id, version = NULL, source = NULL) .rcloud.get.notebook(id, version, source = source)
 
 .rcloud.get.notebook <- function(id, version = NULL, source = NULL, raw=FALSE) {
   if (is.null(source)) source <- rcloud.get.notebook.source(id)
-  ## FIXME: eventually .session$gist.context should be superseded by one of the entries in the context list so we don't have a duplicate
-  ctx <- if (is.null(source)) .session$gist.context else {
-    if (is.null(.session$gist.contexts[[source]]))
-      stop("notebook source `", source, "' is not configured in this instance")
-    .session$gist.contexts[[source]]
-  }
-  res <- get.gist(id, version, ctx = ctx)
+  res <- get.gist(id, version, ctx = .rcloud.get.gist.context(source))
   if (rcloud.debug.level() > 1L) {
     if(res$ok) {
       cat("==== GOT GIST ====\n")
@@ -285,7 +276,7 @@ rcloud.upload.to.notebook <- function(file, name) if (is.raw(file)) rcloud.uploa
 rcloud.update.notebook <- function(id, content) {
     content <- .gist.binary.process.outgoing(id, content)
 
-    res <- modify.gist(id, content, ctx = .session$gist.context)
+    res <- modify.gist(id, content, ctx = .rcloud.get.gist.context())
     .session$current.notebook <- res
     if (nzConf("solr.url")) {
         star.count <- rcloud.notebook.star.count(id)
@@ -441,7 +432,7 @@ stitch.search.result <- function(splitted, type,k) {
 }
 
 rcloud.create.notebook <- function(content) {
-  res <- create.gist(content, ctx = .session$gist.context)
+  res <- create.gist(content, ctx = .rcloud.get.gist.context())
   if (res$ok) {
     .session$current.notebook <- res
     rcloud.reset.session()
@@ -453,12 +444,26 @@ rcloud.rename.notebook <- function(id, new.name) {
   ulog("RCloud rcloud.rename.notebook(", id, ", ", toJSON(new.name), ")")
   modify.gist(id,
               list(description=new.name),
-              ctx = .session$gist.context)
+              ctx = .rcloud.get.gist.context())
 }
 
 rcloud.fork.notebook <- function(id, source = NULL) {
-  ## FIXME: is source is not the main gist backend, it's a cross-source fork -> copy?
-  fork.gist(id, ctx = .session$gist.context)
+    if (is.null(source)) source <- rcloud.get.notebook.source(id)
+    src.ctx <- .rcloud.get.gist.context(source)
+    dst.ctx <- .rcloud.get.gist.context()
+    if (!identical(src.ctx, dst.ctx)) { ## is this a cross-source fork?
+        src.nb <- rcloud.get.notebook(id, source = source)
+        if (!isTRUE(src.nb$ok)) stop("failed to retrieve source notebook")
+        new.nb <- rcloud.create.notebook(src.nb$content)
+        if (!isTRUE(new.nb$ok)) stop("failed to create new notebook")
+        rcloud.set.notebook.property(new.nb$content$id, "fork_of",
+                                     new.nb$fork_of <-
+                                     list(owner=src.nb$content$owner,
+                                          description=src.nb$content$description,
+                                          id=src.nb.new$content$id))
+        new.nb
+    } else ## src=dst, regular fork
+        fork.gist(id, ctx = src.ctx)
 }
 
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
@@ -737,10 +742,11 @@ rcloud.purl.source <- function(contents)
   result
 }
 
-rcloud.get.git.user <- function(id) {
-  res <- get.user(id, ctx = .session$gist.context)
-  if (res$ok)
-    res$content
-  else
-    list()
+rcloud.get.git.user <- function(id, source = NULL) {
+    if (is.null(source)) source <- rcloud.get.notebook.source(id)
+    res <- get.user(id, ctx = .rcloud.get.gist.context())
+    if (res$ok)
+        res$content
+    else
+        list()
 }
