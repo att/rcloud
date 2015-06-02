@@ -135,7 +135,7 @@ rcloud.get.notebook <- function(id, version = NULL, source = NULL) .rcloud.get.n
       stop("notebook source `", source, "' is not configured in this instance")
     .session$gist.contexts[[source]]
   }
-  res <- get.gist(id, version, ctx = .session$gist.context)
+  res <- get.gist(id, version, ctx = ctx)
   if (rcloud.debug.level() > 1L) {
     if(res$ok) {
       cat("==== GOT GIST ====\n")
