@@ -16,7 +16,7 @@
   
   ## create user-specific library so users can install private packages if they so desire ...
   dir.create(rc.user.lib <- file.path(rc.user.home, "library"), FALSE, TRUE, "0700")
-  .libPaths(rc.user.lib)
+  .libPaths(c(rc.user.lib, .libPaths()))
   
   if (rcloud.debug.level()) cat(" - setuid/gid, now running as", exec.usr, "\n")
 }

@@ -40,6 +40,7 @@ fi
 
 ## those that choose to use the RCloud Rlib shall be supported ...
 : ${R_LIBS="$ROOT/Rlib"}
+export R_LIBS
 
 ## create run directory for the PID file if it doesn't exist
 if [ ! -d "$ROOT/run" ]; then
