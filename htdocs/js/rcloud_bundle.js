@@ -1990,7 +1990,7 @@ function create_cell_html_view(language, cell_model) {
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
-            result.state_changed('ready');
+            result.state_changed(running_state_ === 'waiting' ? 'unknown' : 'ready');
             cell_model.parent_model.on_dirty();
         });
         update_language();
@@ -2135,24 +2135,26 @@ function create_cell_html_view(language, cell_model) {
             var control = left_controls_.controls['run_state'];
             switch(state) {
             case 'ready':
-                if(running_state_ != 'waiting')
-                    control.icon('icon-circle-blank').color('#777');
+                control.icon('icon-circle-blank').color('#777').title('content has not been run');
                 break;
             case 'waiting':
-                control.icon('icon-arrow-right').color('blue');
+                control.icon('icon-arrow-right').color('blue').title('cell is enqueued and waiting to run');
                 break;
             case 'cancelled':
-                control.icon('icon-asterisk').color('#e06a06');
+                control.icon('icon-asterisk').color('#e06a06').title('execution was cancelled before this cell could run');
                 break;
             case 'running':
-                control.icon('icon-spinner icon-spin').color('blue');
+                control.icon('icon-spinner icon-spin').color('blue').title('cell is currently running');
                 has_result_ = false;
                 break;
             case 'complete':
-                control.icon('icon-circle').color('#72B668');
+                control.icon('icon-circle').color('#72B668').title('cell successfully ran');
                 break;
             case 'error':
-                control.icon('icon-exclamation').color('crimson');
+                control.icon('icon-exclamation').color('crimson').title('cell ran but had an error');
+                break;
+            case 'unknown':
+                control.icon('icon-question').color('purple').title('output may or may not reflect current content');
                 break;
             }
             running_state_ = state;
@@ -4268,6 +4270,10 @@ RCloud.UI.cell_commands = (function() {
                 },
                 color: function(color) {
                     result.get().find('i').css('color', color);
+                    return this;
+                },
+                title: function(title) {
+                    result.get().find('i').attr('title', title);
                     return this;
                 }
             });

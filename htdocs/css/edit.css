@@ -238,6 +238,10 @@ rect.frame {
     padding: 0;
 }
 
+.state-icon {
+    cursor: default; /* override status area */
+}
+
 .cell-status .cell-control-bar.flipped {
     top: 0;
     bottom: auto;
