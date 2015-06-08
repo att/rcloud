@@ -15,10 +15,8 @@ RCloud.UI.notebook_protection = (function() {
             //this.passedData = data;
 
             require([
-                'angular',
                 './../../js/NotebookProtectionApp',
-                'selectize'
-              ], function(angular, app, selectize) {
+              ], function( app) {
                   'use strict';
                   //var $html = angular.element(document.getElementsByTagName('html')[0]);  
                   angular.element(document).ready(function() {   

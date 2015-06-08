@@ -1,5 +1,3 @@
-
-
 /**
  * Angular Selectize2
  * https://github.com/machineboy2045/angular-selectize
@@ -128,7 +126,3 @@ angular.module('selectize', []).value('selectizeConfig', {}).directive("selectiz
     }
   };
 }]);
-
-
-
-
