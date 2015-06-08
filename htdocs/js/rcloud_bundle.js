@@ -8320,9 +8320,45 @@ RCloud.UI.upload_frame = {
 
 RCloud.UI.notebook_protection = (function() {
 
+    this.passedData = null;
+    this.appInited = false;
+    this.theApp = null;
 
     return {
 
+        initWithData: function(data){
+
+          if(!this.appInited){
+
+            this.appInited = true;
+            this.buildDom();
+            //this.passedData = data;
+
+            require([
+                'angular',
+                './../../js/NotebookProtectionApp',
+                'angular-selectize'
+              ], function(angular, app) {
+                  'use strict';
+                  //var $html = angular.element(document.getElementsByTagName('html')[0]);  
+                  angular.element(document).ready(function() {   
+
+                      setTimeout(function(){
+
+                        angular.bootstrap($('#protection-app')[0], ['NotebookProtectionApp']);
+                        angular.resumeBootstrap();
+
+                      }, 100);             
+                      
+                  });
+            });
+
+          }
+          else{
+            return;
+          }
+
+        },
 
 
         show: function(node) {
@@ -8379,10 +8415,26 @@ RCloud.UI.notebook_protection = (function() {
                           $scope.currentGroup = 'none';
 
                           $scope.myGroups = null;
-
-
-
                           $scope.newGroupName = 'create new';
+
+
+
+
+                          $scope.selectizeConfig = { openOnFocus: false }
+
+                          $scope.allUsers = ['anatoliy', 'gordon', 'simon', 'jim', 'eliot', 'lidiya', 'peter', 'nikita', 'arseni', 'tawan', 'vlad', 'joel', 'wally', 'petey'];
+                          $scope.finalAdmins = [];
+                          $scope.finalMembers = []; 
+
+
+
+
+                          rcloud.get_users()
+                          .then(function(data){
+
+                            console.log('-----------');  
+                            console.dir(data);
+                          })
 
 
 
@@ -8391,17 +8443,17 @@ RCloud.UI.notebook_protection = (function() {
                           }
 
 
-                          GroupsService.getNotebookGroup($scope.notebookId)
-                          .then(function(data){
-                            if(data[0] && data[1]){
+                          // GroupsService.getNotebookGroup($scope.notebookId)
+                          // .then(function(data){
+                          //   if(data[0] && data[1]){
 
-                                $scope.$apply(function(){
-                                    $scope.currentGroup = data[1];
-                                });
+                          //       $scope.$apply(function(){
+                          //           $scope.currentGroup = data[1];
+                          //       });
                                 
-                            }
+                          //   }
 
-                          });
+                          // });
 
                           $scope.createNewGroupAndAddNotebook = function(groupName, notebookId){
 
@@ -8451,12 +8503,15 @@ RCloud.UI.notebook_protection = (function() {
 
 
 
-                          $scope.doEdit = function(){
-                            alert("it works");
-                          }
                     });
 
-                    angular.bootstrap(document, ['demo']);
+                    angular.element(document).ready(function() {
+                        //angular.bootstrap(document, ["demo"]);
+                        angular.resumeBootstrap(document, ["demo"]);
+                        console.log('bootstrapped inside angular');
+                    });
+                    //angular.bootstrap(document, ['demo']);
+                    console.log('bootstrapping angular');
 
 
 

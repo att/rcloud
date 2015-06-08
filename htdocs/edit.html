@@ -32,8 +32,14 @@
 
     -->
 
+
+
+
     <script src="/lib/js/require-common.js"></script>
     <script type="text/javascript" data-main="/lib/js/require-edit.js" src="/lib/js/require.js"></script>
+    <script type="text/javascript" src='lib/js/selectize.js'></script>
+    <script type="text/javascript" src='lib/js/angular.js'></script>
+    <script type="text/javascript" src='lib/js/angular-selectize.js'></script>
   </head>
 <body style="overflow:hidden">
 <div class="navbar navbar-inverse navbar-fixed-top">
@@ -215,8 +221,8 @@
     </div>
 
     <div id="command-prompt" style="float: left; width:100%;
-                                    height: 50px; background:#FFFFFF; border:1px solid
-                                    #DDDDDD"></div>
+            height: 50px; background:#FFFFFF; border:1px solid
+            #DDDDDD"></div>
   </div>
 </script>
 
@@ -240,104 +246,128 @@
 
 
 
+
 <script type="text/html" id="notebook-protection-modal">
-  <div class="modal-body" >
-    <div role="tabpanel" ng-controller="WelcomeController">
-      <!-- Nav tabs -->
+
+  <div class="modal-body" id='protection-app'ng-controller='NotebookProtectionController'>
+        <div>
+            <!-- Nav tabs -->
+            <ul class="nav nav-tabs">
+                <li class="active">
+                    <a data-toggle="tab" href="#notebook-tab">Notebook</a>
+                </li>
+                <li>
+                    <a data-toggle="tab" href="#group-tab">Group</a>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <div class="tab-pane active inner-tab" id="notebook-tab">
+
+                    /*notebook name*/
+                    <div class="row sec">
+                        Notebook: {{welcomeMessage}}
+                    </div>
+
+     
+                    <div class="row sec">
+                        <form>
+                            <label>
+                              <input type="radio" ng-model="color.name" value="red">
+                              Public
+                            </label>
+
+                            <label>
+                              <input type="radio" ng-model="color.name" ng-value="specialValue">
+                              Private
+                            </label>
+                        </form>
+                    </div>
 
 
 
-      <ul class="nav nav-tabs" role="tablist">
-         <li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">Notebook Info</a></li>
-         <li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Group Settings</a></li>
-      </ul>
-      <!-- Tab panes -->
-      <div class="tab-content">
-
-
-         <div role="tabpanel" class="tab-pane active inner-tab" id="home">
-
-
-            <div class="row sec">
-               Notebook Name: 545345345  
-               <span class="label label-info">Edit</span> 
-            </div>
-
-            <div class="row sec">
-               Group Name: {{currentGroup}}  
-               <span class="label label-info">Edit</span> 
-            </div>
-
-
-            <span>create new group</span><input type="text" ng-model="newGroupName" >
-            <button ng-click='createGroup()'>create group</button>
-
-
-            <div class="row sec">
-               or add it to your other groups
-               <select>
-                  <option value="Group 1">Group 1</option>
-                  <option value="Group 2">Group 2</option>
-                  <option value="Group 3">Group 3</option>
-                  <option value="Group 4">Group 4</option>
-               </select>
-            </div>
-
-
-            <div class="row sec">
-               <span>Status</span>
-               <form role="form">
-                  <label class="radio-inline"><input checked type="radio" name="optradio">Private</label>
-                  <label class="radio-inline"><input type="radio" name="optradio">Public</label>
-               </form>
-            </div>
             
-         </div>
-         <div role="tabpanel" class="tab-pane inner-tab" id="profile">
-            <div class="row sec">
-               Group Name: Group 1
-               <span class="label label-info">Edit</span>
-            </div>
 
-            <div class="row sec">
-               Group
-               <select>
-                  <option value="Group 1">Group 1</option>
-                  <option value="Group 2">Group 2</option>
-                  <option value="Group 3">Group 3</option>
-                  <option value="Group 4">Group 4</option>
-               </select>
-            </div>
+                    <div class="row sec">
 
+                      <span>Assign to Group</span>
+                      
+                      <select>
+                          <option value="Group 1">
+                              Group 1
+                          </option>
 
-            <div class="row sec">
-               <div class="form-group">
-                  <label for="comment">Admins:</label>
-                  <span class="label label-info">Edit</span>
-                  <!-- <textarea class="form-control" rows="5" id="comment"></textarea> -->
-                  <div class='pill-holder'>
-                     <pill ng-repeat='member in membersArray'>
-                     </pill>
+                          <option value="Group 2">
+                              Group 2
+                          </option>
+
+                          <option value="Group 3">
+                              Group 3
+                          </option>
+
+                          <option value="Group 4">
+                              Group 4
+                          </option>
+                      </select>
                   </div>
-               </div>
+
+                    
+                </div> 
+
+                <div class="tab-pane inner-tab" id="group-tab">
+                    <div class="row sec">
+                        Group Name: Group 1 <span class=
+                        "label label-info">Edit</span>
+                    </div>
+
+                    <div class="row sec">
+                        Group <select>
+                            <option value="Group 1">
+                                Group 1
+                            </option>
+
+                            <option value="Group 2">
+                                Group 2
+                            </option>
+
+                            <option value="Group 3">
+                                Group 3
+                            </option>
+
+                            <option value="Group 4">
+                                Group 4
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="row sec">
+                        <div class="form-group">
+                            <label for="comment">Admins:</label> <span class=
+                            "label label-info">Edit</span> 
+                           
+                            <selectize options='myOptions' config="myConfig" ng-model="myModel"></selectize>
+
+
+                            <button ng-click='getFinalModel()'>get model data</button>
+
+                            <div class='pill-holder'></div>
+                        </div>
+                    </div>
+
+                    <div class="row sec">
+                        <div class="form-group">
+                            <label for="comment">Members:</label> <span class=
+                            "label label-info">Edit</span>
+
+                            <div class='pill-holder'></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="row sec">
-               <div class="form-group">
-                  <label for="comment">Members:</label>
-                  <span class="label label-info">Edit</span>
-                  <div class='pill-holder'>
-                     <pill ng-repeat='member in membersArray'>
-                     </pill>
-                  </div>
-               </div>
-            </div>
-         </div>
-      </div>
+        </div>
     </div>
-  </div>
+
 </script>
-
-
 
 
 
@@ -369,7 +399,7 @@
       </div>
     </div>
     <div class="col-md-1 col-sm-1 no-padding" style="height:100%; min-height: 0" id="right-column">
-      <div id="right-tabs">
+      <div id="right-tabs">         
         <div class="tab-div">
           <div class="panel-group" id="accordion-right">
             <!-- filled in by RCloud.UI.load_panels -->
@@ -395,6 +425,7 @@
 <script type="text/javascript"
         src="/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
+
 
 <script type="text/javascript">MathJax && MathJax.Hub.Config({tex2jax: {processEscapes: true,
   processEnvironments: false, inlineMath: [ ['\\(','\\)'] ],

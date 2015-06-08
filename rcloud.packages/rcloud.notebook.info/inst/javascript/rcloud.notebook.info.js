@@ -73,7 +73,10 @@
 
 
                                 $('.group-link').click(function(){
-                                    RCloud.UI.notebook_protection.show(node);
+                                    RCloud.UI.notebook_protection.initWithData(node);
+                                    //RCloud.UI.notebook_protection.showOverlay();
+
+                            
                                 });
 
                             });
