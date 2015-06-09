@@ -117,29 +117,32 @@ var shell = (function() {
             });
         }, rename_notebook: function(desc) {
             return notebook_controller_.rename_notebook(desc);
+        }, fork_my_notebook: function(gistname, version, transform_description) {
+            // hack: copy without history as a first pass, because github forbids forking oneself
+            return rcloud.get_notebook(gistname, version)
+                .then(function(notebook) {
+                    // this smells
+                    var fork_of = {owner: {login: notebook.user.login},
+                                   description: notebook.description,
+                                   id: notebook.id
+                                  };
+                    notebook = Notebook.sanitize(notebook);
+                    notebook.description = transform_description(notebook.description);
+                    return notebook_controller_.create_notebook(notebook)
+                        .then(function(result) {
+                            result.fork_of = fork_of;
+                            return rcloud.set_notebook_property(result.id, 'fork_of', fork_of)
+                                .return(result);
+                        });
+                });
         }, fork_notebook: function(is_mine, gistname, version) {
+            var that = this;
             // Forcefully saving whole notebook before fork
             shell.save_notebook();
             return do_load(function() {
                 var promise_fork;
                 if(is_mine) {
-                    // hack: copy without history as a first pass, because github forbids forking oneself
-                    promise_fork = rcloud.get_notebook(gistname, version)
-                        .then(function(notebook) {
-                            // this smells
-                            var fork_of = {owner: {login: notebook.user.login},
-                                           description: notebook.description,
-                                           id: notebook.id
-                                          };
-                            notebook = Notebook.sanitize(notebook);
-                            notebook.description = editor.find_next_copy_name(notebook.description);
-                            return notebook_controller_.create_notebook(notebook)
-                                .then(function(result) {
-                                    result.fork_of = fork_of;
-                                    return rcloud.set_notebook_property(result.id, 'fork_of', fork_of)
-                                        .return(result);
-                                });
-                        });
+                    promise_fork = that.fork_my_notebook(gistname, version, editor.find_next_copy_name);
                 }
                 else promise_fork = notebook_controller_
                     .fork_notebook(gistname, version)
