@@ -147,7 +147,7 @@ RCloud.UI.notebook_commands = (function() {
                             editor.for_each_notebook(node, null, function(node) {
                                 rcloud.fork_notebook(node.gistname)
                                     .then(function(notebook) {
-                                        editor.update_notebook_from_gist(notebook);
+                                        return editor.star_and_public(notebook, false, false);
                                     });
                             });
                         });
@@ -215,6 +215,8 @@ RCloud.UI.notebook_commands = (function() {
             do_always();
             $li.find('*:not(ul)').hover(
                 function() {
+                    if(node.children && node.children.length && !node.is_open)
+                        return; // only appear on open folders
                     if(!appeared)
                         do_appear();
                     var notebook_info = editor.get_notebook_info(node.gistname);

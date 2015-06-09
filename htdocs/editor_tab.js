@@ -1268,17 +1268,22 @@ var editor = function () {
         set_terse_dates: function(val) {
             show_terse_dates_ = val;
         },
+        star_and_public: function(notebook, make_current, is_change) {
+            return this.star_notebook(true, {notebook: notebook,
+                                             make_current: make_current,
+                                             is_change: is_change,
+                                             version: null})
+                .return(notebook.id)
+                .bind(this)
+                .then(function(gistname) {
+                    return this.set_notebook_visibility(gistname, true);
+                });
+        },
         fork_notebook: function(is_mine, gistname, version) {
             return shell.fork_notebook(is_mine, gistname, version)
                 .bind(this)
                 .then(function(notebook) {
-                    return this.star_notebook(true, {notebook: notebook,
-                                                     make_current: true,
-                                                     is_change: !!version,
-                                                     version: null})
-                        .return(notebook.id);
-                }).then(function(gistname) {
-                    return this.set_notebook_visibility(gistname, true);
+                    return this.star_and_public(notebook, true, !!version);
                 });
         },
         revert_notebook: function(is_mine, gistname, version) {
