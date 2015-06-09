@@ -971,8 +971,10 @@ var editor = function () {
             }
         }
         else {
-            if(!event.node.is_open)
+            if(!event.node.is_open) {
                 $tree_.tree('openNode', event.node);
+                ui_utils.fake_hover(event.node);
+            }
         }
         return false;
     }
