@@ -273,11 +273,12 @@ rcloud.unauthenticated.notebook.by.name <- function(name, user=.session$username
 ## this should go away antirely *and* be removed from OCAPs
 rcloud.upload.to.notebook <- function(file, name) if (is.raw(file)) rcloud.upload.asset(name, file) else rcloud.upload.asset(name, file=file)
 
-rcloud.update.notebook <- function(id, content) {
+rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     content <- .gist.binary.process.outgoing(id, content)
 
     res <- modify.gist(id, content, ctx = .rcloud.get.gist.context())
-    .session$current.notebook <- res
+    if(is.current)
+      .session$current.notebook <- res
     if (nzConf("solr.url")) {
         star.count <- rcloud.notebook.star.count(id)
         mcparallel(update.solr(res, star.count), detached=TRUE)
@@ -431,9 +432,9 @@ stitch.search.result <- function(splitted, type,k) {
          default = paste0(k,'line_no',splitted[k],sep='|-|'))
 }
 
-rcloud.create.notebook <- function(content) {
+rcloud.create.notebook <- function(content, is.current = TRUE) {
   res <- create.gist(content, ctx = .rcloud.get.gist.context())
-  if (res$ok) {
+  if (res$ok && is.current) {
     .session$current.notebook <- res
     rcloud.reset.session()
   }

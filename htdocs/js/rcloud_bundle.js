@@ -532,18 +532,22 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.signal_to_computeAsync(signal);
         };
 
-        rcloud.update_notebook = function(id, content) {
+        rcloud.update_notebook = function(id, content, is_current) {
+            if(is_current === undefined)
+                is_current = true;
             return rcloud_github_handler(
                 "rcloud.update.notebook",
-                rcloud_ocaps.update_notebookAsync(id, content));
+                rcloud_ocaps.update_notebookAsync(id, content, is_current));
         };
 
         rcloud.search = rcloud_ocaps.searchAsync; // may be null
 
-        rcloud.create_notebook = function(content) {
+        rcloud.create_notebook = function(content, is_current) {
+            if(is_current === undefined)
+                is_current = true;
             return rcloud_github_handler(
                 "rcloud.create.notebook",
-                rcloud_ocaps.create_notebookAsync(content))
+                rcloud_ocaps.create_notebookAsync(content, is_current))
             .then(function(result) {
                 rcloud_ocaps.load_notebook_computeAsync(result.id);
                 return result;
@@ -6602,6 +6606,34 @@ RCloud.UI.notebook_commands = (function() {
                         });
                         return remove;
                     }
+                },
+                fork_folder: {
+                    section: 'appear',
+                    sort: 1000,
+                    condition0: function(node) {
+                        return node.full_name && !node.gistname;
+                    },
+                    create: function(node) {
+                        var fork = ui_utils.fa_button('icon-code-fork', 'fork', 'fork', icon_style_, true);
+                        var is_mine = node.user === editor.username();
+                        var orig_name = node.full_name, folder_name = editor.find_next_copy_name(orig_name);
+                        var orig_name_regex = new RegExp('^' + orig_name);
+                        fork.click(function(e) {
+                            editor.for_each_notebook(node, null, function(node) {
+                                var promise_fork;
+                                if(is_mine)
+                                    promise_fork = shell.fork_my_notebook(node.gistname, null, false, function(desc) {
+                                        return desc.replace(orig_name_regex, folder_name);
+                                    });
+                                else
+                                    promise_fork = rcloud.fork_notebook(node.gistname);
+                                return promise_fork.then(function(notebook) {
+                                    return editor.star_and_public(notebook, false, false);
+                                });
+                            });
+                        });
+                        return fork;
+                    }
                 }
             });
             return this;
@@ -6664,6 +6696,8 @@ RCloud.UI.notebook_commands = (function() {
             do_always();
             $li.find('*:not(ul)').hover(
                 function() {
+                    if(node.children && node.children.length && !node.is_open)
+                        return; // only appear on open folders
                     if(!appeared)
                         do_appear();
                     var notebook_info = editor.get_notebook_info(node.gistname);
@@ -6694,6 +6728,22 @@ RCloud.UI.notebook_title = (function() {
             .then(function() {
                 result.set(name);
             });
+    }
+    function rename_notebook_folder(node) {
+        return function(name) {
+            editor.for_each_notebook(node, name, function(node, name) {
+                if(node.gistname === shell.gistname())
+                    shell.rename_notebook(name);
+                else {
+                    rcloud.update_notebook(node.gistname, {description: name}, false)
+                        .then(function(notebook) {
+                            editor.update_notebook_from_gist(notebook);
+                        });
+                }
+            }, function(child, name) {
+                return name + '/' + child.name;
+            });
+        };
     }
     // always select all text after last slash, or all text
     function select(el) {
@@ -6765,13 +6815,9 @@ RCloud.UI.notebook_title = (function() {
         },
         make_editable: function(node, $li, editable) {
             function get_title(node, elem) {
-                if(!node.version) {
-                    return $('.jqtree-title:not(.history)', elem);
-                } else {
-                    return $('.jqtree-title', elem);
-                }
+                return $('> div > .jqtree-title', elem);
             }
-            if(last_editable_ && (!node || last_editable_ !== node))
+            if(last_editable_ && (!node || node.gistname && last_editable_ !== node))
                 ui_utils.editable(get_title(last_editable_, last_editable_.element), 'destroy');
             if(node) {
                 var opts = editable_opts;
@@ -6781,13 +6827,20 @@ RCloud.UI.notebook_title = (function() {
                         validate: function(name) { return true; }
                     });
                 }
+                else if(!node.gistname) {
+                    opts = $.extend({}, editable_opts, {
+                        change: rename_notebook_folder(node),
+                        validate: function(name) { return true; }
+                    });
+                }
                 ui_utils.editable(get_title(node, $li),
                                   $.extend({allow_edit: editable,
                                             inactive_text: node.name,
                                             active_text: node.version ? node.name : node.full_name},
                                            opts));
             }
-            last_editable_ = node;
+            if(node && node.gistname)
+                last_editable_ = node;
         }
     };
     return result;

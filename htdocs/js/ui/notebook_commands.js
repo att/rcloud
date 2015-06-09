@@ -133,6 +133,34 @@ RCloud.UI.notebook_commands = (function() {
                         });
                         return remove;
                     }
+                },
+                fork_folder: {
+                    section: 'appear',
+                    sort: 1000,
+                    condition0: function(node) {
+                        return node.full_name && !node.gistname;
+                    },
+                    create: function(node) {
+                        var fork = ui_utils.fa_button('icon-code-fork', 'fork', 'fork', icon_style_, true);
+                        var is_mine = node.user === editor.username();
+                        var orig_name = node.full_name, folder_name = editor.find_next_copy_name(orig_name);
+                        var orig_name_regex = new RegExp('^' + orig_name);
+                        fork.click(function(e) {
+                            editor.for_each_notebook(node, null, function(node) {
+                                var promise_fork;
+                                if(is_mine)
+                                    promise_fork = shell.fork_my_notebook(node.gistname, null, false, function(desc) {
+                                        return desc.replace(orig_name_regex, folder_name);
+                                    });
+                                else
+                                    promise_fork = rcloud.fork_notebook(node.gistname);
+                                return promise_fork.then(function(notebook) {
+                                    return editor.star_and_public(notebook, false, false);
+                                });
+                            });
+                        });
+                        return fork;
+                    }
                 }
             });
             return this;
@@ -195,6 +223,8 @@ RCloud.UI.notebook_commands = (function() {
             do_always();
             $li.find('*:not(ul)').hover(
                 function() {
+                    if(node.children && node.children.length && !node.is_open)
+                        return; // only appear on open folders
                     if(!appeared)
                         do_appear();
                     var notebook_info = editor.get_notebook_info(node.gistname);
