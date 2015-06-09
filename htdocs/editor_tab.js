@@ -881,10 +881,8 @@ var editor = function () {
             var ftree;
             if(anode)
                 ftree = duplicate_tree_data(anode, transpose_notebook('friends'));
-            else {
-                debugger;
-                // note: check what this case is really for
-                var mine = user === username_; // yes it is possible I'm not my own friend
+            else { // this is a first-time load case
+                var mine = user === username_;
                 ftree = {
                     label: mine ? "My Notebooks" : someone_elses(user),
                     id: node_id('friends', user),
