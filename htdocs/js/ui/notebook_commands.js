@@ -149,7 +149,7 @@ RCloud.UI.notebook_commands = (function() {
                             editor.for_each_notebook(node, null, function(node) {
                                 var promise_fork;
                                 if(is_mine)
-                                    promise_fork = shell.fork_my_notebook(node.gistname, null, function(desc) {
+                                    promise_fork = shell.fork_my_notebook(node.gistname, null, false, function(desc) {
                                         return desc.replace(orig_name_regex, folder_name);
                                     });
                                 else

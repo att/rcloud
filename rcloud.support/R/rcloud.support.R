@@ -432,9 +432,9 @@ stitch.search.result <- function(splitted, type,k) {
          default = paste0(k,'line_no',splitted[k],sep='|-|'))
 }
 
-rcloud.create.notebook <- function(content) {
+rcloud.create.notebook <- function(content, is.current = TRUE) {
   res <- create.gist(content, ctx = .rcloud.get.gist.context())
-  if (res$ok) {
+  if (res$ok && is.current) {
     .session$current.notebook <- res
     rcloud.reset.session()
   }

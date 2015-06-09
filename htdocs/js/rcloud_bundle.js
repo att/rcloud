@@ -542,10 +542,12 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.search = rcloud_ocaps.searchAsync; // may be null
 
-        rcloud.create_notebook = function(content) {
+        rcloud.create_notebook = function(content, is_current) {
+            if(is_current === undefined)
+                is_current = true;
             return rcloud_github_handler(
                 "rcloud.create.notebook",
-                rcloud_ocaps.create_notebookAsync(content))
+                rcloud_ocaps.create_notebookAsync(content, is_current))
             .then(function(result) {
                 rcloud_ocaps.load_notebook_computeAsync(result.id);
                 return result;
@@ -6620,7 +6622,7 @@ RCloud.UI.notebook_commands = (function() {
                             editor.for_each_notebook(node, null, function(node) {
                                 var promise_fork;
                                 if(is_mine)
-                                    promise_fork = shell.fork_my_notebook(node.gistname, null, function(desc) {
+                                    promise_fork = shell.fork_my_notebook(node.gistname, null, false, function(desc) {
                                         return desc.replace(orig_name_regex, folder_name);
                                     });
                                 else

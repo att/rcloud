@@ -117,7 +117,7 @@ var shell = (function() {
             });
         }, rename_notebook: function(desc) {
             return notebook_controller_.rename_notebook(desc);
-        }, fork_my_notebook: function(gistname, version, transform_description) {
+        }, fork_my_notebook: function(gistname, version, open_it, transform_description) {
             // hack: copy without history as a first pass, because github forbids forking oneself
             return rcloud.get_notebook(gistname, version)
                 .then(function(notebook) {
@@ -128,7 +128,9 @@ var shell = (function() {
                                   };
                     notebook = Notebook.sanitize(notebook);
                     notebook.description = transform_description(notebook.description);
-                    return notebook_controller_.create_notebook(notebook)
+                    var promise_create = open_it ? notebook_controller_.create_notebook(notebook) :
+                            rcloud.create_notebook(notebook, false);
+                    return promise_create
                         .then(function(result) {
                             result.fork_of = fork_of;
                             return rcloud.set_notebook_property(result.id, 'fork_of', fork_of)
@@ -142,7 +144,7 @@ var shell = (function() {
             return do_load(function() {
                 var promise_fork;
                 if(is_mine) {
-                    promise_fork = that.fork_my_notebook(gistname, version, editor.find_next_copy_name);
+                    promise_fork = that.fork_my_notebook(gistname, version, true, editor.find_next_copy_name);
                 }
                 else promise_fork = notebook_controller_
                     .fork_notebook(gistname, version)
