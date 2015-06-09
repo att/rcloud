@@ -6615,22 +6615,10 @@ RCloud.UI.notebook_commands = (function() {
                     },
                     create: function(node) {
                         var fork = ui_utils.fa_button('icon-code-fork', 'fork', 'fork', icon_style_, true);
-                        var is_mine = node.user === editor.username();
                         var orig_name = node.full_name, folder_name = editor.find_next_copy_name(orig_name);
                         var orig_name_regex = new RegExp('^' + orig_name);
                         fork.click(function(e) {
-                            editor.for_each_notebook(node, null, function(node) {
-                                var promise_fork;
-                                if(is_mine)
-                                    promise_fork = shell.fork_my_notebook(node.gistname, null, false, function(desc) {
-                                        return desc.replace(orig_name_regex, folder_name);
-                                    });
-                                else
-                                    promise_fork = rcloud.fork_notebook(node.gistname);
-                                return promise_fork.then(function(notebook) {
-                                    return editor.star_and_public(notebook, false, false);
-                                });
-                            });
+                            editor.fork_folder(node, orig_name_regex, folder_name);
                         });
                         return fork;
                     }
@@ -6745,6 +6733,12 @@ RCloud.UI.notebook_title = (function() {
             });
         };
     }
+    function fork_rename_folder(node) {
+        return function(name) {
+            var match = new RegExp('^' + node.full_name);
+            editor.fork_folder(node, match, name);
+        };
+    }
     // always select all text after last slash, or all text
     function select(el) {
         if(el.childNodes.length !== 1 || el.firstChild.nodeType != el.TEXT_NODE)
@@ -6830,6 +6824,7 @@ RCloud.UI.notebook_title = (function() {
                 else if(!node.gistname) {
                     opts = $.extend({}, editable_opts, {
                         change: rename_notebook_folder(node),
+                        ctrl_cmd: fork_rename_folder(node),
                         validate: function(name) { return true; }
                     });
                 }

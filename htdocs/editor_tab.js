@@ -1286,6 +1286,23 @@ var editor = function () {
                     return this.star_and_public(notebook, true, !!version);
                 });
         },
+        fork_folder: function(node, match, replace) {
+            var that = this;
+            var is_mine = node.user === that.username();
+            editor.for_each_notebook(node, null, function(node) {
+                var promise_fork;
+                if(is_mine)
+                    promise_fork = shell.fork_my_notebook(node.gistname, null, false, function(desc) {
+                        return desc.replace(match, replace);
+                    });
+                else
+                    promise_fork = rcloud.fork_notebook(node.gistname);
+                return promise_fork.then(function(notebook) {
+                    return editor.star_and_public(notebook, false, false);
+                });
+            });
+            return this;
+        },
         revert_notebook: function(is_mine, gistname, version) {
             if(!is_mine)
                 return Promise.reject(new Error("attempted to revert notebook not mine"));

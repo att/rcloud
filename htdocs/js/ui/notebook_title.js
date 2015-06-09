@@ -30,6 +30,12 @@ RCloud.UI.notebook_title = (function() {
             });
         };
     }
+    function fork_rename_folder(node) {
+        return function(name) {
+            var match = new RegExp('^' + node.full_name);
+            editor.fork_folder(node, match, name);
+        };
+    }
     // always select all text after last slash, or all text
     function select(el) {
         if(el.childNodes.length !== 1 || el.firstChild.nodeType != el.TEXT_NODE)
@@ -115,6 +121,7 @@ RCloud.UI.notebook_title = (function() {
                 else if(!node.gistname) {
                     opts = $.extend({}, editable_opts, {
                         change: rename_notebook_folder(node),
+                        ctrl_cmd: fork_rename_folder(node),
                         validate: function(name) { return true; }
                     });
                 }
