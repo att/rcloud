@@ -2,16 +2,21 @@ requirejs_config_obj = {
     "baseUrl": "/lib/js",
     waitSeconds: 30,
     paths: {
+        "angular": "angular",
         "jquery": "jquery-2.1.1",
         "rcloud_bundle": "../../js/rcloud_bundle",
         "ace": "../ace_bundle",
         editor_tab: "../../editor_tab",
-        shell_tab: "../../shell_tab"//,
-        // "angular-selectize": "angular-selectize"
+        shell_tab: "../../shell_tab",
+        "angular-selectize": "angular-selectize",
+        "selectize": "selectize"
     },
     "shim": {
-
-        // "angular-selectize": ["angular", "selectize"],
+        'angular': {
+            exports: "angular",
+            'deps': ['jquery']
+        },
+        "angular-selectize": ["angular", "selectize"],
         "tree.jquery": ["jquery"],
         "jquery-ui": ["jquery"],
         laconic: ["jquery"],

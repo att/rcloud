@@ -22,6 +22,9 @@
 	} else {
 		root.Sifter = factory();
 	}
+
+	root.Sifter = factory();
+
 }(this, function() {
 
 	/**
@@ -472,6 +475,8 @@
 	} else {
 		root.MicroPlugin = factory();
 	}
+	root.MicroPlugin = factory();
+	
 }(this, function() {
 	var MicroPlugin = {};
 
@@ -611,6 +616,9 @@
 	} else {
 		root.Selectize = factory(root.jQuery, root.Sifter, root.MicroPlugin);
 	}
+
+	root.Selectize = factory(root.jQuery, root.Sifter, root.MicroPlugin);
+
 }(this, function($, Sifter, MicroPlugin) {
 	'use strict';
 

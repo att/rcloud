@@ -344,7 +344,10 @@ td {
     padding-right: 10px;
 }
 
+.selectize-input{
+    min-height: 100px!important;
 
+}
 
 
 /**

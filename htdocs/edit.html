@@ -32,14 +32,8 @@
 
     -->
 
-
-
-
     <script src="/lib/js/require-common.js"></script>
     <script type="text/javascript" data-main="/lib/js/require-edit.js" src="/lib/js/require.js"></script>
-    <script type="text/javascript" src='lib/js/selectize.js'></script>
-    <script type="text/javascript" src='lib/js/angular.js'></script>
-    <script type="text/javascript" src='lib/js/angular-selectize.js'></script>
   </head>
 <body style="overflow:hidden">
 <div class="navbar navbar-inverse navbar-fixed-top">
@@ -245,8 +239,6 @@
 </script>
 
 
-
-
 <script type="text/html" id="notebook-protection-modal">
 
   <div class="modal-body" id='protection-app'ng-controller='NotebookProtectionController'>
@@ -264,102 +256,70 @@
             <div class="tab-content">
                 <div class="tab-pane active inner-tab" id="notebook-tab">
 
-                    /*notebook name*/
                     <div class="row sec">
-                        Notebook: {{welcomeMessage}}
+                        Notebook: {{notebookFullName}}
                     </div>
-
      
                     <div class="row sec">
-                        <form>
-                            <label>
-                              <input type="radio" ng-model="color.name" value="red">
-                              Public
-                            </label>
+                    
+                        <label for="redRadio">Public:</label>
+                        <input id="redRadio" type="radio" ng-model="belongsToGroup" ng-value="false" /><br />
 
-                            <label>
-                              <input type="radio" ng-model="color.name" ng-value="specialValue">
-                              Private
-                            </label>
-                        </form>
+                        <label for="greenRadio">Private:</label>
+                        <input id="greenRadio" type="radio" ng-model="belongsToGroup" ng-value="true" /><br />
+
                     </div>
-
-
-
-            
 
                     <div class="row sec">
 
-                      <span>Assign to Group</span>
+                      <span>Assign to Group</span></br>
                       
-                      <select>
-                          <option value="Group 1">
-                              Group 1
-                          </option>
+                      <select ng-model="filterCondition.operator"
+                          ng-disabled="!belongsToGroup">
 
-                          <option value="Group 2">
-                              Group 2
-                          </option>
-
-                          <option value="Group 3">
-                              Group 3
-                          </option>
-
-                          <option value="Group 4">
-                              Group 4
-                          </option>
+                          <option ng-selected="{{group[1] == filterCondition.operator}}" 
+                          ng-repeat="group in allUsersGroups" 
+                          value="{{group[0]}}">{{group[1]}}</option>
                       </select>
+
                   </div>
 
                     
                 </div> 
 
                 <div class="tab-pane inner-tab" id="group-tab">
-                    <div class="row sec">
-                        Group Name: Group 1 <span class=
-                        "label label-info">Edit</span>
-                    </div>
 
                     <div class="row sec">
-                        Group <select>
-                            <option value="Group 1">
-                                Group 1
-                            </option>
-
-                            <option value="Group 2">
-                                Group 2
-                            </option>
-
-                            <option value="Group 3">
-                                Group 3
-                            </option>
-
-                            <option value="Group 4">
-                                Group 4
-                            </option>
+                      <div class='col-md-6'>
+                        <select ng-model="filterCondition.operator">
+                          <option ng-selected="{{operator.value == filterCondition.operator}}" 
+                          ng-repeat="operator in operators" 
+                          value="{{operator.value}}">{{operator.displayName}}</option>
                         </select>
+                      </div>
+
+                      <div class='col-md-6'>
+                        <span class="label label-info" ng-click="renameGroup()">Rename Group</span></br></br>
+                        <span class="label label-danger" ng-click="deleteGroup()">Delete Group</span>
+                      </div>
+
+
                     </div>
 
                     <div class="row sec">
                         <div class="form-group">
-                            <label for="comment">Admins:</label> <span class=
-                            "label label-info">Edit</span> 
+                            <label for="comment">Admins:</label> <span class="label label-info">Edit</span> 
                            
                             <selectize options='myOptions' config="myConfig" ng-model="myModel"></selectize>
 
-
-                            <button ng-click='getFinalModel()'>get model data</button>
-
-                            <div class='pill-holder'></div>
                         </div>
                     </div>
 
                     <div class="row sec">
                         <div class="form-group">
-                            <label for="comment">Members:</label> <span class=
-                            "label label-info">Edit</span>
+                            <label for="comment">Members:</label> <span class="label label-info">Edit</span>
 
-                            <div class='pill-holder'></div>
+                            <selectize options='myOptions' config="myConfig" ng-model="myModel"></selectize>
                         </div>
                     </div>
                 </div>
@@ -425,7 +385,6 @@
 <script type="text/javascript"
         src="/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
-
 
 <script type="text/javascript">MathJax && MathJax.Hub.Config({tex2jax: {processEscapes: true,
   processEnvironments: false, inlineMath: [ ['\\(','\\)'] ],

@@ -1,10 +1,14 @@
-define([], function(){
+define(['angular'], function(angular){
 
    'use strict';
 
    return angular.module('myapp.services', [])
 
    .service('GroupsService', function() {
+
+        this.setCurrentUser = function(user){
+
+        }
 
         this.getNotebookGroup = function(id) {
              return rcloud.protection.get_notebook_cryptgroup(id)   
@@ -26,6 +30,12 @@ define([], function(){
         this.addGroupUser = function(groupid, user, is_admin){
             return rcloud.protection.add_cryptgroup_user(groupid, user, is_admin);
         }
+
+        this.getUsersGroups = function(user){
+            return rcloud.protection.get_user_cryptgroups(user);
+        }
+
+  
          
     });
 

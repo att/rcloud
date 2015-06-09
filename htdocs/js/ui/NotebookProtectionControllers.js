@@ -1,42 +1,10 @@
-// 'use strict';
-
-// define([
-// 	'angular',
-
-// ], function(angular) {
-// 	angular.module('myapp.services', [])
-
-// 	// .config(['$routeProvider', function($routeProvider) {
-// 	// 	$routeProvider.when('/view2', {
-// 	// 		templateUrl: 'view2/view2.html',
-// 	// 		controller: 'View2Ctrl'
-// 	// 	});
-// 	// }])
-// 	// We can load the controller only when needed from an external file
-// 	.controller('View2Ctrl', ['$scope', '$injector', function($scope, $injector) {
-// 		require(['view2/ctrl2'], function(ctrl2) {
-// 			// injector method takes an array of modules as the first argument
-// 			// if you want your controller to be able to use components from
-// 			// any of your other modules, make sure you include it together with 'ng'
-// 			// Furthermore we need to pass on the $scope as it's unique to this controller
-// 			$injector.invoke(ctrl2, this, {'$scope': $scope});
-// 		});
-// 	}]);
-// });
 
 
-
-// // define([], function(controllers){
-// //     // window.TheApp.controller('NotebookProtectionController', function($scope, $routeParams){
-// //     //      $scope.welcomeMessage = "testId";
-// //     // });
-// // });
-
-
-
-define([], function(){
+define(['angular'], function(angular){
 
    'use strict';
+
+   console.log("selectize ready????");
 
    return angular.module('myapp.controllers', ['myapp.services', 'selectize'])
 
@@ -44,11 +12,140 @@ define([], function(){
 
    	$scope.welcomeMessage = 'hello, angular is working';
 
-   	$scope.myModel = [];
+   	//user stuff
+   	$scope.userLogin;
+	$scope.userId;
+    
+    //notebood stuff
+    $scope.notebookFullName;
+    $scope.notebookGistName;
+    $scope.notebookId;
+
+
+    //selectize stuff
+    $scope.myModel = ['anatoliy', 'gordon', 'simon'];
 	$scope.myConfig = { openOnFocus: false }
 	$scope.myOptions = ['anatoliy', 'gordon', 'simon', 'jim', 'eliot', 'lidiya', 'peter', 'nikita', 'arseni', 'tawan', 'vlad', 'joel', 'wally', 'petey'];
 
-	//alert('controlelr working');
+
+	//
+	$scope.belongsToGroup = false;
+
+
+	//groups stuff
+	$scope.currentGroupName = '';
+	$scope.allUsersGroups = [];
+
+	// $scope.operators = [{
+	//        value: 'group1',
+	//        displayName: 'group1'
+	//    }, {
+	//        value: 'group2',
+	//        displayName: 'group2'
+	//    }, {
+	//        value: 'group3',
+	//        displayName: 'group3'
+	//    }, {
+	//        value: 'group4',
+	//        displayName: 'group4'
+	//    }, {
+	//        value: 'group5',
+	//        displayName: 'group5'
+	//    }]
+
+	
+
+	$scope.filterCondition = {
+        operator: 'anatoliy123'
+    }
+
+
+
+    $scope.renameGroup = function(){
+    	var newGroup = prompt("Enter new group name", "");
+    }
+
+
+    $scope.deleteGroup = function(){
+    	var r = confirm("Are you sure you want to delete this group?");
+    }
+
+
+
+	$scope.applyCurrentData = function(){
+
+		$scope.$evalAsync(function(){
+
+			$scope.userId = RCloud.UI.notebook_protection.userId;
+		    $scope.userLogin = RCloud.UI.notebook_protection.userLogin;
+
+		    //notebood stuff
+		    $scope.notebookFullName = RCloud.UI.notebook_protection.notebookFullName;
+		    $scope.notebookGistName = RCloud.UI.notebook_protection.notebookGistName;
+		    $scope.notebookId = RCloud.UI.notebook_protection.notebookId;
+		    $scope.belongsToGroup = RCloud.UI.notebook_protection.belongsToGroup;
+		    
+		    if(RCloud.UI.notebook_protection.belongsToGroup)
+		    	$scope.currentGroupName = RCloud.UI.notebook_protection.currentGroupName;
+
+		});
+	}
+
+
+	$scope.getUsersGroups = function(){
+
+		console.log('getting groups for '+$scope.userLogin);
+		GroupsService.getUsersGroups($scope.userLogin)
+		.then(function(data){
+
+			var finalArray = [];
+			//var massagedData = $scope.generateGroups(data);
+			var keys = _.keys(data);
+			var vals = _.values(data);
+
+			for(var i = 0; i < vals.length; i ++){
+				var val = vals[i];
+			
+				if( _.isArray(val) ){
+
+					var groupArray = [];
+					groupArray.push(keys[i]); //push the group id
+					groupArray.push(val[0]);  //group name
+					groupArray.push(val[1]);  //is group admin
+
+					finalArray.push(groupArray);
+				}
+			}
+
+			$scope.$evalAsync(function(){
+				$scope.allUsersGroups = finalArray;
+			});
+
+			//console.log(massagedData);
+			console.log(finalArray);
+		})
+		.catch(function(){
+			console.log('error getting users groups');
+		});
+	};
+
+
+
+
+	//apply angular bindings
+	$scope.applyCurrentData();
+
+	//get user's groups
+	_.delay(function(){
+		$scope.getUsersGroups();
+	}, 100);       
+
+
+
+	$scope.getCurrentGroups = function(){
+
+	};
+
 
 
 	$scope.getFinalModel = function(){
@@ -58,41 +155,6 @@ define([], function(){
 	}
 
 
-  //  		$scope.welcomeMessage = 'hello buddy';
-  //       //alert("index ok");
-
-  //       $scope.groupId;
-
-
-  //       rcloud.get_users()
-		// .then(function(data){
-
-		// 	console.log('-----------');  
-		// 	console.dir(data);
-		// });
-
-
-
-		/*GroupsService.createGroup('groupName22')
-        .then(function(data){
-            $scope.groupId = data;
-
-            console.log('group created '+data);
-            alert('group created');
-
-            // return GroupsService.setNotebookGroup($scope.notebookId, groupId)
-            // .then(function(data){
-
-            //     var a = 'aa';
-            //     alert('group created and this notebook added to group');
-            // })
-
-
-
-        })
-        .catch(function(e){
-	        alert(e);
-	    })*/
    }]);
 
 });

@@ -3139,6 +3139,12 @@ Notebook.create_controller = function(model)
             }
             model.user(notebook.user.login);
             model.update_files(notebook.files);
+
+            //
+            RCloud.UI.notebook_protection.userLogin = notebook.user.login;
+            RCloud.UI.notebook_protection.userId = notebook.user.id;
+
+
             if(asset_controller)
                 asset_controller.select();
             else
@@ -8324,9 +8330,27 @@ RCloud.UI.notebook_protection = (function() {
     this.appInited = false;
     this.theApp = null;
 
+
+    //set from outside
+    this.userId;
+    this.userLogin;
+
+    //notebood stuff
+    this.notebookFullName;
+    this.notebookGistName;
+    this.notebookId;
+
+    //group stuff
+    this.belongsToGroup;
+    this.currentGroupName;
+
+
+
+
+
     return {
 
-        initWithData: function(data){
+        initWithData: function(){
 
           if(!this.appInited){
 
@@ -8335,8 +8359,10 @@ RCloud.UI.notebook_protection = (function() {
             //this.passedData = data;
 
             require([
+                'angular',
                 './../../js/NotebookProtectionApp',
-              ], function( app) {
+                'angular-selectize'
+              ], function(angular, app, selectize) {
                   'use strict';
                   //var $html = angular.element(document.getElementsByTagName('html')[0]);  
                   angular.element(document).ready(function() {   
@@ -8353,6 +8379,7 @@ RCloud.UI.notebook_protection = (function() {
 
           }
           else{
+
             return;
           }
 
@@ -8427,14 +8454,7 @@ RCloud.UI.notebook_protection = (function() {
 
 
 
-                          rcloud.get_users()
-                          .then(function(data){
-
-                            console.log('-----------');  
-                            console.dir(data);
-                          })
-
-
+                          
 
                           $scope.createGroup = function(){
                             $scope.createNewGroup( $scope.newGroupName);

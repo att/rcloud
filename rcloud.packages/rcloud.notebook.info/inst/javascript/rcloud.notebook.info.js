@@ -72,7 +72,28 @@
                                 info_popover_ = $(thisIcon);
 
 
+
+
                                 $('.group-link').click(function(){
+
+                                    //set 
+                                    RCloud.UI.notebook_protection.notebookFullName = node.full_name;
+                                    RCloud.UI.notebook_protection.notebookGistName = node.gistname;
+                                    RCloud.UI.notebook_protection.notebookId = node.id;
+
+                                    //groups
+
+                                    if(!cryptogroup[0] && !cryptogroup[1]){
+                                        RCloud.UI.notebook_protection.belongsToGroup = false;
+                                        console.log('does not belong');
+                                    }
+                                    else{
+                                        RCloud.UI.notebook_protection.belongsToGroup = true
+                                        RCloud.UI.notebook_protection.currentGroupName = cryptogroup[1];
+                                        console.log('does belong');
+                                    }
+
+                                    //show modal
                                     RCloud.UI.notebook_protection.initWithData(node);
                                     //RCloud.UI.notebook_protection.showOverlay();
 
