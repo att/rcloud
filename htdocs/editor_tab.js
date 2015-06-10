@@ -413,6 +413,14 @@ var editor = function () {
             rcloud.stars.get_my_starred_notebooks()
         ])
             .spread(function(user_notebook_set, my_stars_array) {
+
+                rcloud.get_users().
+                then(function(data){
+                    window.allTheUsers = data;
+                });
+
+
+                // window.allBooks = user_notebook_set;
                 my_stars_array = r_vector(my_stars_array);
                 var all_notebooks = [];
                 each_r_list(user_notebook_set, function(username) {

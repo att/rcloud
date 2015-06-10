@@ -1,4 +1,6 @@
 RCloud.UI.init = function() {
+
+
     $("#fork-notebook").click(function() {
         var is_mine = shell.notebook.controller.is_mine();
         var gistname = shell.gistname();

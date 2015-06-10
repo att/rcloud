@@ -8,7 +8,7 @@ rcloud.set.notebook.cryptgroup <- function(notebookid, groupid) { # or NULL to d
   if(!.session$username %in% names(users))
     stop(paste0(.session$username, " is not a member of protection group ", groupid))
   if(!notebook.is.mine(notebookid))
-    stop("can't set protection group of someone else's notebook")
+    stop(paste0("can't set protection group of someone else's notebook for user ", .session$username))
   rcs.set(rcs.key('.notebook', notebookid, 'cryptgroup'), groupid)
 }
 

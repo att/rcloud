@@ -18,13 +18,18 @@ RCloud.UI.notebook_protection = (function() {
     this.belongsToGroup;
     this.currentGroupName;
 
+    this.tipEl;//tooltip element to update
+
+
+
+    
 
 
 
 
     return {
 
-        initWithData: function(){
+        init: function(){
 
           if(!this.appInited){
 
@@ -54,6 +59,11 @@ RCloud.UI.notebook_protection = (function() {
           }
           else{
 
+            //need to re-digest all the 
+            $(document).trigger('notebook_protection_reset');
+            console.log('notebook_protection_reset triggered');
+
+            $('#notebook-protection-dialog').modal({keyboard: false});
             return;
           }
 
@@ -220,24 +230,22 @@ RCloud.UI.notebook_protection = (function() {
             var body = $('<div class="container"></div>');
             body.append(RCloud.UI.panel_loader.load_snippet('notebook-protection-modal'));
 
-            var cancel = $('<span class="btn btn-cancel">Cancel</span>')
-                .on('click', function() { $(dialog).modal('hide'); });
-          
-            var footer = $('<div class="modal-footer"></div>')
-                    .append(cancel);
+            
             var header = $(['<div class="modal-header">',
                             '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>',
                             '<h3>Set Notebook Permissions</h3>',
                             '</div>'].join(''));
-            var dialog = $('<div id="import-notebook-file-dialog" class="modal fade"></div>')
+            var dialog = $('<div id="notebook-protection-dialog" class="modal fade"></div>')
                     .append($('<div class="modal-dialog"></div>')
                             .append($('<div class="modal-content"></div>')
-                                    .append(header).append(body).append(footer)));
+                                    .append(header).append(body)));
             $("body").append(dialog);
-            dialog.modal({keyboard: true});
+            dialog.modal({keyboard: false});
             
         }
     };
+
+   
 
 
         // /* create angular app here */

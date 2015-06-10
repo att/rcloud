@@ -241,91 +241,100 @@
 
 <script type="text/html" id="notebook-protection-modal">
 
-  <div class="modal-body" id='protection-app'ng-controller='NotebookProtectionController'>
-        <div>
-            <!-- Nav tabs -->
-            <ul class="nav nav-tabs">
-                <li class="active">
-                    <a data-toggle="tab" href="#notebook-tab">Notebook</a>
-                </li>
-                <li>
-                    <a data-toggle="tab" href="#group-tab">Group</a>
-                </li>
-            </ul>
+  <div class="modal-body" id='protection-app' ng-controller='NotebookProtectionController'>
+    <div>
+      <!-- Nav tabs -->
+      <ul class="nav nav-tabs">
+        <li class="active"><a ng-click="setTab(1)" data-toggle="tab" href="#notebook-tab">Notebook</a></li>
 
-            <div class="tab-content">
-                <div class="tab-pane active inner-tab" id="notebook-tab">
+        <li><a ng-click="setTab(2)" data-toggle="tab" href="#group-tab">Group</a></li>
+      </ul>
 
-                    <div class="row sec">
-                        Notebook: {{notebookFullName}}
-                    </div>
-     
-                    <div class="row sec">
-                    
-                        <label for="redRadio">Public:</label>
-                        <input id="redRadio" type="radio" ng-model="belongsToGroup" ng-value="false" /><br />
+      <!-- tab content -->
+      <div class="tab-content">
 
-                        <label for="greenRadio">Private:</label>
-                        <input id="greenRadio" type="radio" ng-model="belongsToGroup" ng-value="true" /><br />
+        <!-- first tab -->
+        <div class="tab-pane active inner-tab" id="notebook-tab">
+          <div class="row sec">
+            Notebook: {{notebookFullName}}
+          </div>
 
-                    </div>
+          <div class="row sec">
+            <label for="redRadio">Public:</label> <input id="redRadio" type="radio"
+            ng-model="belongsToGroup" ng-value="false" />&nbsp;&nbsp;&nbsp;
+            <label for="greenRadio">Private:</label> <input id="greenRadio" type="radio"
+            ng-model="belongsToGroup" ng-value="true" /><br />
+          </div>
 
-                    <div class="row sec">
+          <div class="row sec">
+            <span>Assign to Group</span><br />
+           
+            <select ng-model="selectedGroup1" ng-disabled="!belongsToGroup" ng-options="group.name for group in allUsersGroups">
+            </select>
 
-                      <span>Assign to Group</span></br>
-                      
-                      <select ng-model="filterCondition.operator"
-                          ng-disabled="!belongsToGroup">
-
-                          <option ng-selected="{{group[1] == filterCondition.operator}}" 
-                          ng-repeat="group in allUsersGroups" 
-                          value="{{group[0]}}">{{group[1]}}</option>
-                      </select>
-
-                  </div>
-
-                    
-                </div> 
-
-                <div class="tab-pane inner-tab" id="group-tab">
-
-                    <div class="row sec">
-                      <div class='col-md-6'>
-                        <select ng-model="filterCondition.operator">
-                          <option ng-selected="{{operator.value == filterCondition.operator}}" 
-                          ng-repeat="operator in operators" 
-                          value="{{operator.value}}">{{operator.displayName}}</option>
-                        </select>
-                      </div>
-
-                      <div class='col-md-6'>
-                        <span class="label label-info" ng-click="renameGroup()">Rename Group</span></br></br>
-                        <span class="label label-danger" ng-click="deleteGroup()">Delete Group</span>
-                      </div>
+          </div>
 
 
-                    </div>
+          
 
-                    <div class="row sec">
-                        <div class="form-group">
-                            <label for="comment">Admins:</label> <span class="label label-info">Edit</span> 
-                           
-                            <selectize options='myOptions' config="myConfig" ng-model="myModel"></selectize>
-
-                        </div>
-                    </div>
-
-                    <div class="row sec">
-                        <div class="form-group">
-                            <label for="comment">Members:</label> <span class="label label-info">Edit</span>
-
-                            <selectize options='myOptions' config="myConfig" ng-model="myModel"></selectize>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
+        <!-- end first tab -->
+
+        <!-- second tab -->
+        <div class="tab-pane inner-tab" id="group-tab">
+
+          <div class="row sec">
+            <div class='col-md-6'>
+              <select ng-model="selectedGroup2" 
+                      ng-options="group.name for group in allUsersGroups"
+                      ng-change="anotherGroupSelected()" >
+              </select>
+              
+              <button ng-click='startWatching()'>start watching</button>
+              <button ng-click='stopWatching()'>stop watching</button>
+            </div>
+
+            
+
+            <div class='col-md-6'>
+              <span class="label label-info" ng-click="createGroup()">Create
+              Group</span><br /><br />
+              <span class="label label-info" ng-click="renameGroup()">Rename
+              Group</span><br /><br />
+              <span class="label label-danger" ng-click="deleteGroup()">Delete
+              Group</span>
+            </div>
+          </div>
+
+          <div class="row sec">
+            <div class="form-group">
+              <label for="comment">Admins:</label> <span class="label label-info">Edit</span>
+
+              <selectize options='allUsers' config="myConfig" ng-model="groupAdmins"></selectize>
+
+            </div>
+          </div>
+
+          <div class="row sec">
+            <div class="form-group">
+              <label for="comment">Members:</label> <span class="label label-info">Edit</span>
+              <selectize options='allUsers' config="myConfig" ng-model="groupMembers"></selectize>
+            </div>
+          </div>
+
+
+        </div>
+        <!-- second tab -->
+
+        <div class="modal-footer">
+          <span class="btn btn-cancel" ng-click='cancel()'>Cancel</span>
+          <span class="btn btn-save btn-default" ng-click='save()'>Save</span>
+        </div>
+        
+      </div>
+      <!-- end tab content -->
     </div>
+  </div>  
 
 </script>
 

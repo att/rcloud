@@ -29,10 +29,10 @@
                             e.stopPropagation();
                             var thisIcon = this;
                             var info_content = '';
-                            if(info_popover_) {
-                                info_popover_.popover('destroy');
-                                info_popover_ = null;
-                            }
+                            // if(info_popover_) {
+                            //     info_popover_.popover('destroy');
+                            //     info_popover_ = null;
+                            // }
 
 
                             Promise.all( [rcloud.protection.get_notebook_cryptgroup(node.gistname), 
@@ -42,14 +42,13 @@
                                 if(typeof(list) === 'string')
                                     list = [list];
 
-                                var group_message;
+                                var group_message = '<div class="info-category"><b>Group:</b></div>';
                                 if(!cryptogroup[0] && !cryptogroup[1]){
-                                    group_message = '<div class="group-link">no group</div>'
+                                    group_message += '<div class="group-link"><a href="#">no group</a></div>'
                                 }
                                 else{
-                                    group_message = '<div class="group-link">'+cryptogroup[1]+'</div>'
+                                    group_message += '<div class="group-link"><a href="#">'+cryptogroup[1]+'</a></div>'
                                 }
- 
                                     
 
                                 var starrer_list = '<div class="info-category"><b>Starred by:</b></div>';
@@ -80,6 +79,8 @@
                                     RCloud.UI.notebook_protection.notebookFullName = node.full_name;
                                     RCloud.UI.notebook_protection.notebookGistName = node.gistname;
                                     RCloud.UI.notebook_protection.notebookId = node.id;
+                                    RCloud.UI.notebook_protection.tipEl = $(thisIcon).closest('.group-link');
+                                    //console.dir(RCloud.UI.notebook_protection.tipEl);
 
                                     //groups
 
@@ -94,7 +95,7 @@
                                     }
 
                                     //show modal
-                                    RCloud.UI.notebook_protection.initWithData(node);
+                                    RCloud.UI.notebook_protection.init();
                                     //RCloud.UI.notebook_protection.showOverlay();
 
                             
