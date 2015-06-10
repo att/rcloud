@@ -325,6 +325,14 @@ update.solr <- function(notebook, starcount){
   }
 }
 
+delete.solr.notebook <-function(id) {
+  url <- getConf("solr.url")
+  if (is.null(url)) stop("solr is not enabled")
+  solr.url <- paste0(url,"/update?stream.body=<delete><query>id:",id,"</query></delete>&commit=true")
+  solr.res <- getURL(solr.url, .encoding = 'utf-8', .mapUnicode=FALSE)
+  return(solr.res)
+}
+
 rcloud.search <-function(query, sortby, orderby, start, pagesize) {
   url <- getConf("solr.url")
   if (is.null(url)) stop("solr is not enabled")
@@ -495,8 +503,16 @@ rcloud.is.notebook.visible <- function(id) {
   visibility
 }
 
-rcloud.set.notebook.visibility <- function(id, value)
+rcloud.set.notebook.visibility <- function(id, value) {
   rcloud.set.notebook.property(id, "visible", value != 0);
+  if(value){
+     nb <- rcloud.get.notebook(id)
+     star.count <- rcloud.notebook.star.count(id)
+     update.solr(nb, star.count)
+  } else {
+     delete.solr.notebook(id)
+  }
+}
 
 rcloud.port.notebooks <- function(url, books, prefix) {
   foreign.ctx <- create.github.context(url)
@@ -664,8 +680,10 @@ rcloud.config.get.recent.notebooks <- function() {
 rcloud.config.set.recent.notebook <- function(id, date)
   rcs.set(usr.key(user=.session$username, notebook="system", "config", "recent", id), date)
 
-rcloud.config.clear.recent.notebook <- function(id)
+rcloud.config.clear.recent.notebook <- function(id) {
   rcs.rm(usr.key(user=.session$username, notebook="system", "config", "recent", id))
+  delete.solr.notebook(id)
+}
 
 rcloud.config.get.user.option <- function(key) {
   if(length(key)>1) {
