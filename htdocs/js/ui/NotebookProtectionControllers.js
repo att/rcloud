@@ -103,6 +103,7 @@ define(['angular'], function(angular){
 						obj.name = (val[0]);  //group name
 						obj.isAdmin = (val[1]);  //group is-admin
 
+						if(obj.isAdmin) //only add if admin
 						finalArray.push(obj);
 					}
 				}
@@ -145,7 +146,6 @@ define(['angular'], function(angular){
 			_.delay(function(){
 				//$scope.getAllUsers();
 			}, 100)
-
 		}
 
 
@@ -189,12 +189,12 @@ define(['angular'], function(angular){
 					})
 				}
 			}
-			/*else{
+			else{
 
 				var conf = confirm("Are you sure you want to make your notebook public?");
 				if(conf){
 					console.log('notebook id is '+$scope.notebookGistName);
-					GroupsService.setNotebookGroup($scope.notebookGistName, $scope.filterCondition.operator )
+					GroupsService.setNotebookGroup($scope.notebookGistName, null )
 					.then(function(data){
 						console.log('data is '+data);
 					})
@@ -202,7 +202,7 @@ define(['angular'], function(angular){
 						console.log(e)
 					})
 				}
-			}*/
+			}
 		}
 
 		
@@ -398,8 +398,8 @@ define(['angular'], function(angular){
 				$scope.$evalAsync(function(){
 
 					$scope.groupAdmins = adminsArray;
-					//$scope.groupMembers = membersArray;
-					$scope.groupMembers = ['fourthark','gordonwoodhull']; //for testing's sake
+					$scope.groupMembers = membersArray;
+					//$scope.groupMembers = ['fourthark','gordonwoodhull']; //for testing's sake
 				});
 
 				//using defer to make sure the above evalAsync has had time to comple
@@ -408,7 +408,7 @@ define(['angular'], function(angular){
 					//save the original values
 					$scope.originalAdmins = adminsArray.slice(0);//$scope.groupAdmins.slice(0);
 					// $scope.originalMembers = $scope.groupMembers.slice(0);
-					$scope.originalMembers = ['fourthark','gordonwoodhull'];
+					$scope.originalMembers = membersArray.slice(0);//['fourthark','gordonwoodhull'];
 
 					$scope.startWatchingGroups();
 
@@ -429,13 +429,11 @@ define(['angular'], function(angular){
 
 		$scope.saveGroupTab = function(){
 
-			//compare original members array and its current state
-
-
 			//compare original admins array and its current state
 			var removedAdmins = _.difference($scope.originalAdmins, $scope.groupAdmins);
 			var addedAdmins = _.difference($scope.groupAdmins, $scope.originalAdmins);
 
+			//compare original members array and its current state
 			var removedMembers = _.difference($scope.originalMembers, $scope.groupMembers);
 			var addedMembers = _.difference($scope.groupMembers, $scope.originalMembers);
 
@@ -478,7 +476,53 @@ define(['angular'], function(angular){
 				}
 
 				var pr = confirm(outputMessage);
-					
+
+				if(pr){
+
+					//push the data
+					var allPromises = [];
+
+					if(removedAdmins.length){
+						for(var q = 0; q < removedAdmins.length; q++){
+							//create a promise for each action
+							allPromises.push( GroupsService.removeGroupUser($scope.selectedGroup2.id, removedAdmins[q]));
+						}
+					}
+
+					if(addedAdmins.length){
+						for(var w = 0; w < addedAdmins.length; w++){
+							//create a promise for each action
+							allPromises.push( GroupsService.addGroupUser($scope.selectedGroup2.id, addedAdmins[w], true));
+						}
+					}
+
+					if(removedMembers.length){
+						for(var e = 0; e < removedMembers.length; e++){
+							//create a promise for each action
+							allPromises.push( GroupsService.removeGroupUser($scope.selectedGroup2.id, removedMembers[e]));
+						}
+					}
+
+					if(addedMembers.length){
+						for(var r = 0; r < addedMembers.length; r++){
+							//create a promise for each action
+							//var prom = ;
+							allPromises.push( GroupsService.addGroupUser($scope.selectedGroup2.id, addedMembers[r], false) );
+						}
+					}
+
+					Promise.all(allPromises)
+					.then(function(){
+						console.log('pushing member data succeeded');
+					})
+					.catch(function(){
+						console.log('pushing member data failed');
+						$scope.populateGroupMembers();	
+					});
+
+
+					//console.dir(allPromises);
+				}
 			}
 		}
 		     
@@ -500,6 +544,8 @@ define(['angular'], function(angular){
 
 			if(index === 2){
 				_.delay(function(){
+
+					//$scope.selectedGroup2 =
 					$scope.populateGroupMembers();	
 				}, 40);
 			}
@@ -524,7 +570,7 @@ define(['angular'], function(angular){
 			else{
 				$scope.saveGroupTab();
 			}
-			console.log('current tab is '+$scope.currentTab);
+			//console.log('current tab is '+$scope.currentTab);
 
 		}
 

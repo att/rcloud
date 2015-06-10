@@ -43,8 +43,13 @@ define(['angular'], function(angular){
             return rcloud.protection.set_notebook_cryptgroup(notebookid, groupid); 
         };
 
+
         this.addGroupUser = function(groupid, user, is_admin){
             return rcloud.protection.add_cryptgroup_user(groupid, user, is_admin);
+        }
+
+        this.removeGroupUser = function(groupid, user){
+            return rcloud.protection.remove_cryptgroup_user(groupid, user);
         }
 
         this.getUsersGroups = function(user){
@@ -54,9 +59,9 @@ define(['angular'], function(angular){
         //this.removeUserFromGroup
 
 
-        rcloud.protection.remove_cryptgroup_user = function(groupid, user) {
-            return rcloud_ocaps.protection.remove_cryptgroup_userAsync(groupid, user);
-        };
+        // rcloud.protection.remove_cryptgroup_user = function(groupid, user) {
+        //     return rcloud_ocaps.protection.remove_cryptgroup_userAsync(groupid, user);
+        // };
 
   
          

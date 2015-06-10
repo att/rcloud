@@ -284,14 +284,12 @@
         <div class="tab-pane inner-tab" id="group-tab">
 
           <div class="row sec">
-            <div class='col-md-6'>
+            <div class='col-md-6' style='padding-left: 0px;'>
               <select ng-model="selectedGroup2" 
                       ng-options="group.name for group in allUsersGroups"
                       ng-change="anotherGroupSelected()" >
               </select>
-              
-              <button ng-click='startWatching()'>start watching</button>
-              <button ng-click='stopWatching()'>stop watching</button>
+             
             </div>
 
             
@@ -327,7 +325,7 @@
         <!-- second tab -->
 
         <div class="modal-footer">
-          <span class="btn btn-cancel" ng-click='cancel()'>Cancel</span>
+          <span class="btn btn-cancel" ng-click='cancel()'>Close</span>
           <span class="btn btn-save btn-default" ng-click='save()'>Save</span>
         </div>
         
