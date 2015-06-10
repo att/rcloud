@@ -1,8 +1,8 @@
 define([
     'angular',
-     './../../js/ui/NotebookProtectionServices',
+     './../../js/ui/notebook_protection_service',
     // './../../js/ui/NotebookProtectionDirectives',
-    './../../js/ui/NotebookProtectionControllers',
+    './../../js/ui/notebook_protection_controller',
     'selectize'
     ], function (angular) {
         'use strict';

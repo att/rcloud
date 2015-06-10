@@ -12,13 +12,13 @@ define(['angular'], function(angular){
    		///////////////////////////////
 
 	   	//user 
-	   	$scope.userLogin;
-		$scope.userId;
+	   	$scope.userLogin = '';
+		$scope.userId = '';
 	    
 	    //notebood 
-	    $scope.notebookFullName;
-	    $scope.notebookGistName;
-	    $scope.notebookId;
+	    $scope.notebookFullName = '';
+	    $scope.notebookGistName = '';
+	    $scope.notebookId = '';
 	    $scope.belongsToGroup = false;
 
 		//groups 
@@ -56,8 +56,8 @@ define(['angular'], function(angular){
 		$scope.originalMembers = [];
 
 		//way to stop watching collections
-		$scope.theWatcherAdmins;
-		$scope.theWatcherMembers;
+		$scope.theWatcherAdmins = null;
+		$scope.theWatcherMembers = null;
 
 
 		//NOTEBOOK TAB METHODS
@@ -151,19 +151,41 @@ define(['angular'], function(angular){
 
 		$scope.reset = function(){
 
-			$scope.userLogin = '';
+		   	$scope.userLogin = '';
 			$scope.userId = '';
 		    
-		    //notebood stuff
+		    //notebood 
 		    $scope.notebookFullName = '';
 		    $scope.notebookGistName = '';
-		    $scope.notebookId;
+		    $scope.notebookId = '';
+		    $scope.belongsToGroup = false;
 
-			$scope.belongsToGroup = false;
-
-			//groups stuff
+			//groups 
 			$scope.currentGroupName = '';
 			$scope.allUsersGroups = [];
+
+			//value of the select dropdown
+			$scope.selectedGroup1 = '';
+
+			//tab/state
+			$scope.currentTab = 1;
+
+			//value of the select dropdown
+			$scope.selectedGroup2 = '';
+
+			//group admins
+			$scope.groupAdmins = [];
+			//group members
+			$scope.groupMembers = [];
+
+			//checks and balances
+			$scope.originalAdmins = [];
+			$scope.originalMembers = [];
+
+			//way to stop watching collections
+			$scope.theWatcherAdmins = null;
+			$scope.theWatcherMembers = null;
+
 		}
 
 	
@@ -182,6 +204,7 @@ define(['angular'], function(angular){
 					.then(function(data){
 						console.log('data is '+data);
 						//need to update the notebook's tip to reflect the change
+						$scope.cancel();
 
 					})
 					.catch(function(e){
@@ -199,6 +222,9 @@ define(['angular'], function(angular){
 						console.log('data is '+data);
 					})
 					.catch(function(e){
+						
+						$scope.cancel();
+
 						console.log(e)
 					})
 				}
@@ -370,8 +396,11 @@ define(['angular'], function(angular){
 	    $scope.stopWatching = function(){
 
 	    	//stop watching admin and member models
-	    	$scope.theWatcherAdmins();
-	    	$scope.theWatcherMembers();
+	    	if(typeof $scope.theWatcherAdmins === 'function' ){
+	    		$scope.theWatcherAdmins();
+	    		$scope.theWatcherMembers();
+	    	}
+	    	
 	    }
 
 
@@ -514,6 +543,8 @@ define(['angular'], function(angular){
 					Promise.all(allPromises)
 					.then(function(){
 						console.log('pushing member data succeeded');
+
+						$scope.cancel();
 					})
 					.catch(function(){
 						console.log('pushing member data failed');
@@ -545,7 +576,6 @@ define(['angular'], function(angular){
 			if(index === 2){
 				_.delay(function(){
 
-					//$scope.selectedGroup2 =
 					$scope.populateGroupMembers();	
 				}, 40);
 			}
@@ -557,7 +587,15 @@ define(['angular'], function(angular){
 
 		$scope.cancel = function(){
 
+			//hide the dialog
 			$("#notebook-protection-dialog").modal('hide');
+
+			//reset to show the first tab
+			_.delay(function(){
+				$('.nav-tabs #tab1 a').click();
+			}, 200)
+			
+
 			$scope.reset();
 		}
 
