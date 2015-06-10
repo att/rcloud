@@ -259,7 +259,7 @@ function create_cell_html_view(language, cell_model) {
             bindKey: 'Return',
             exec: function(ace_widget, args, request) {
                 var input = ace_widget.getValue();
-                result.add_result('code', prompt_text_ + input + '\n');
+                result.add_result('code', _.unescape(prompt_text_) + input + '\n');
                 if(input_kont_)
                     input_kont_(null, input);
                 input_div_.hide();
@@ -592,7 +592,7 @@ function create_cell_html_view(language, cell_model) {
                 result_div_.empty();
                 has_result_ = true;
             }
-            prompt_text_ = prompt;
+            prompt_text_ = _.escape(prompt).replace(/\n/g,'');
             create_input_widget();
             input_widget_.setValue('');
             input_div_.show();
