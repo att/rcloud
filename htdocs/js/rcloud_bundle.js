@@ -62,7 +62,7 @@ RClient = {
                 debugger;
             }
             if (!clean) {
-                RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R");
+                RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", ui_utils.relogin_uri());
                 shutdown();
             }
         }
@@ -532,18 +532,22 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.signal_to_computeAsync(signal);
         };
 
-        rcloud.update_notebook = function(id, content) {
+        rcloud.update_notebook = function(id, content, is_current) {
+            if(is_current === undefined)
+                is_current = true;
             return rcloud_github_handler(
                 "rcloud.update.notebook",
-                rcloud_ocaps.update_notebookAsync(id, content));
+                rcloud_ocaps.update_notebookAsync(id, content, is_current));
         };
 
         rcloud.search = rcloud_ocaps.searchAsync; // may be null
 
-        rcloud.create_notebook = function(content) {
+        rcloud.create_notebook = function(content, is_current) {
+            if(is_current === undefined)
+                is_current = true;
             return rcloud_github_handler(
                 "rcloud.create.notebook",
-                rcloud_ocaps.create_notebookAsync(content))
+                rcloud_ocaps.create_notebookAsync(content, is_current))
             .then(function(result) {
                 rcloud_ocaps.load_notebook_computeAsync(result.id);
                 return result;
@@ -735,6 +739,13 @@ ui_utils.make_url = function(page, opts) {
     return url;
 };
 
+ui_utils.relogin_uri = function() {
+    return window.location.protocol +
+        '//' + window.location.host +
+        '/login.R?redirect=' +
+        encodeURIComponent(window.location.pathname + window.location.search);
+};
+
 ui_utils.disconnection_error = function(msg, label) {
     var result = $("<div class='alert alert-danger'></div>");
     result.append($("<span></span>").text(msg));
@@ -742,11 +753,7 @@ ui_utils.disconnection_error = function(msg, label) {
     var button = $("<button type='button' class='close'>" + label + "</button>");
     result.append(button);
     button.click(function() {
-        window.location =
-            (window.location.protocol +
-            '//' + window.location.host +
-            '/login.R?redirect=' +
-            encodeURIComponent(window.location.pathname + window.location.search));
+        window.location = ui_utils.relogin_uri();
     });
     return result;
 };
@@ -1067,22 +1074,22 @@ ui_utils.customize_ace_gutter = function(widget, line_text_function)
         var breakpoints = this.session.$breakpoints;
         var decorations = this.session.$decorations;
         var firstLineNumber = this.session.$firstLineNumber;
-        var lastLineNumber = 0;
-        for(; i <= lastRow; ++i)
+        var maxLineLength = 0;
+        for(; i <= lastRow; ++i) {
+            var line = line_text_function(i);
             html.push(
                 "<div class='ace_gutter-cell ",
                 "' style='height:", this.session.getRowLength(0) * config.lineHeight, "px;'>",
-                line_text_function(i),
+                line,
                 "</div>"
             );
+            maxLineLength = Math.max(maxLineLength, line.length);
+        }
 
         this.element = dom.setInnerHtml(this.element, html.join(""));
         this.element.style.height = config.minHeight + "px";
 
-        if (this.session.$useWrapMode)
-            lastLineNumber = this.session.getLength();
-
-        var gutterWidth = ("" + lastLineNumber).length * config.characterWidth;
+        var gutterWidth = maxLineLength * config.characterWidth;
         var padding = this.$padding || this.$computePadding();
         gutterWidth += padding.left + padding.right;
         if (gutterWidth !== this.gutterWidth && !isNaN(gutterWidth)) {
@@ -1708,9 +1715,6 @@ Notebook.Asset.create_model = function(content, filename)
         change_object: function(obj) {
             obj = obj || {};
             obj.filename = obj.filename || this.filename();
-            // ugly hack because server doesn't understand if you send content=null for binary asset
-            if(obj.erase && Notebook.is_binary_content(this.content()))
-                obj.filename += '.b64';
             return base_change_object.call(this, obj);
         }
     });
@@ -1990,7 +1994,7 @@ function create_cell_html_view(language, cell_model) {
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
-            result.state_changed('ready');
+            result.state_changed(running_state_ === 'waiting' ? 'unknown' : 'ready');
             cell_model.parent_model.on_dirty();
         });
         update_language();
@@ -2009,7 +2013,7 @@ function create_cell_html_view(language, cell_model) {
             bindKey: 'Return',
             exec: function(ace_widget, args, request) {
                 var input = ace_widget.getValue();
-                result.add_result('code', prompt_text_ + input + '\n');
+                result.add_result('code', _.unescape(prompt_text_) + input + '\n');
                 if(input_kont_)
                     input_kont_(null, input);
                 input_div_.hide();
@@ -2135,24 +2139,26 @@ function create_cell_html_view(language, cell_model) {
             var control = left_controls_.controls['run_state'];
             switch(state) {
             case 'ready':
-                if(running_state_ != 'waiting')
-                    control.icon('icon-circle-blank').color('#777');
+                control.icon('icon-circle-blank').color('#777').title('content has not been run');
                 break;
             case 'waiting':
-                control.icon('icon-arrow-right').color('blue');
+                control.icon('icon-arrow-right').color('blue').title('cell is enqueued and waiting to run');
                 break;
             case 'cancelled':
-                control.icon('icon-asterisk').color('#e06a06');
+                control.icon('icon-asterisk').color('#e06a06').title('execution was cancelled before this cell could run');
                 break;
             case 'running':
-                control.icon('icon-spinner icon-spin').color('blue');
+                control.icon('icon-spinner icon-spin').color('blue').title('cell is currently running');
                 has_result_ = false;
                 break;
             case 'complete':
-                control.icon('icon-circle').color('#72B668');
+                control.icon('icon-circle').color('#72B668').title('cell successfully ran');
                 break;
             case 'error':
-                control.icon('icon-exclamation').color('crimson');
+                control.icon('icon-exclamation').color('crimson').title('cell ran but had an error');
+                break;
+            case 'unknown':
+                control.icon('icon-question').color('purple').title('output may or may not reflect current content');
                 break;
             }
             running_state_ = state;
@@ -2340,7 +2346,7 @@ function create_cell_html_view(language, cell_model) {
                 result_div_.empty();
                 has_result_ = true;
             }
-            prompt_text_ = prompt;
+            prompt_text_ = _.escape(prompt).replace(/\n/g,'');
             create_input_widget();
             input_widget_.setValue('');
             input_div_.show();
@@ -2552,7 +2558,7 @@ Notebook.Cell.create_controller = function(cell_model)
                 view.end_output(error);
             });
         },
-        get_input: function(type, prompt, k) {
+        get_input: function(type, prompt, dummy_context, k) {
             // assume only one view has get_input
             var view = _.find(cell_model.views, function(v) { return v.get_input; });
             if(!view)
@@ -3194,21 +3200,6 @@ Notebook.create_controller = function(model)
         return changes;
     }
 
-    function after_update(promise) {
-        return promise.then(function(notebook) {
-            if('error' in notebook)
-                throw notebook;
-            current_gist_ = notebook;
-            model.update_files(notebook.files);
-            return notebook;
-        })
-            .catch(function(e) {
-                // this should not ever happen but there is no choice but to reload if it does
-                if(/non-existent/.test(e.message))
-                    editor.fatal_reload(e.message);
-                throw e;
-            });
-    }
     function update_notebook(changes, gistname, more) {
         function add_more_changes(gist) {
             if (_.isUndefined(more))
@@ -3251,7 +3242,20 @@ Notebook.create_controller = function(model)
             return {files: files};
         }
         var gist = add_more_changes(changes_to_gist(changes));
-        return after_update(rcloud.update_notebook(gistname, gist));
+        return rcloud.update_notebook(gistname, gist)
+            .then(function(notebook) {
+                if('error' in notebook)
+                    throw notebook;
+                current_gist_ = notebook;
+                model.update_files(notebook.files);
+                return notebook;
+            })
+            .catch(function(e) {
+                // this should not ever happen but there is no choice but to reload if it does
+                if(/non-existent/.test(e.message))
+                    editor.fatal_reload(e.message);
+                throw e;
+            });
     }
 
     function apply_changes_and_load(changes, gistname) {
@@ -3296,23 +3300,13 @@ Notebook.create_controller = function(model)
         },
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);
-            if(Notebook.is_binary_content(content)) {
-                return this.save().then(function() {
-                    return after_update(rcloud.notebook_upload(content, filename))
-                        .then(default_callback())
-                        .then(function(notebook) {
-                            // set content again because server may have determined it's text
-                            cch.model.content(notebook.files[filename].content);
-                            return [notebook, cch.controller];
-                        });
+            return update_notebook(refresh_buffers().concat(cch.changes))
+                .then(default_callback())
+                .then(function(notebook) {
+                    // set content again because server may have determined it's text
+                    cch.model.content(notebook.files[filename].content);
+                    return [notebook, cch.controller];
                 });
-            } else {
-                return update_notebook(refresh_buffers().concat(cch.changes))
-                    .then(default_callback())
-                    .then(function(notebook) {
-                        return [notebook, cch.controller];
-                    });
-            }
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
@@ -3488,14 +3482,13 @@ Notebook.create_controller = function(model)
                 .then(default_callback());
         },
         update_asset: function(asset_model) {
-            if(Notebook.is_binary_content(asset_model.content())) {
-                return this.save().then(default_callback()).then(function() {
-                    return rcloud.notebook_upload(asset_model.content(), asset_model.filename());
-                });
-            } else {
-                return update_notebook(refresh_buffers().concat(model.update_asset(asset_model)))
-                    .then(default_callback());
-            }
+            return update_notebook(refresh_buffers().concat(model.update_asset(asset_model)))
+                .then(function(notebook) {
+                    // set content again because server may have determined it's text
+                    asset_model.content(notebook.files[asset_model.filename()].content);
+                    return notebook;
+                })
+                .then(default_callback());
         },
         rename_notebook: function(desc) {
             return update_notebook(refresh_buffers(), null, {description: desc})
@@ -3792,9 +3785,6 @@ function on_connect_anonymous_disallowed(ocaps) {
 }
 
 function rclient_promise(allow_anonymous) {
-    var params = '';
-    if(location.href.indexOf("?") > 0)
-        params = location.href.substr(location.href.indexOf("?")) ;
     return new Promise(function(resolve, reject) {
         rclient = RClient.create({
             debug: false,
@@ -3822,7 +3812,7 @@ function rclient_promise(allow_anonymous) {
         if(window.rclient)
             rclient.close();
         if (error.message === "Authentication required") {
-            RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R" + params);
+            RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", ui_utils.relogin_uri());
         } else {
             RCloud.UI.fatal_dialog(could_not_initialize_error(error), "Logout", "/logout.R");
         }
@@ -4016,7 +4006,7 @@ RCloud.language = (function() {
             options.files,
             function(file) {
                 if(file.size > 750000)
-                    throw new Error('Maximum asset size is 750KB');
+                    return Promise.reject(new Error('File ' + file.name + ' rejected: maximum asset size is 750KB'));
                 return text_or_binary_reader()(file)
                     .then(function(content) {
                         if(_.isString(content) && Notebook.empty_for_github(content))
@@ -4292,6 +4282,10 @@ RCloud.UI.cell_commands = (function() {
                 },
                 color: function(color) {
                     result.get().find('i').css('color', color);
+                    return this;
+                },
+                title: function(title) {
+                    result.get().find('i').attr('title', title);
                     return this;
                 }
             });
@@ -4950,7 +4944,7 @@ RCloud.UI.command_prompt = (function() {
         ]);
         widget.commands.removeCommands(['find', 'replace']);
         ui_utils.customize_ace_gutter(widget, function(i) {
-            return i===0 ? '&gt;' : '';
+            return i===0 ? '&gt;' : '+';
         });
 
         return {
@@ -6622,6 +6616,22 @@ RCloud.UI.notebook_commands = (function() {
                         });
                         return remove;
                     }
+                },
+                fork_folder: {
+                    section: 'appear',
+                    sort: 1000,
+                    condition0: function(node) {
+                        return node.full_name && !node.gistname;
+                    },
+                    create: function(node) {
+                        var fork = ui_utils.fa_button('icon-code-fork', 'fork', 'fork', icon_style_, true);
+                        var orig_name = node.full_name, folder_name = editor.find_next_copy_name(orig_name);
+                        var orig_name_regex = new RegExp('^' + orig_name);
+                        fork.click(function(e) {
+                            editor.fork_folder(node, orig_name_regex, folder_name);
+                        });
+                        return fork;
+                    }
                 }
             });
             return this;
@@ -6684,6 +6694,8 @@ RCloud.UI.notebook_commands = (function() {
             do_always();
             $li.find('*:not(ul)').hover(
                 function() {
+                    if(node.children && node.children.length && !node.is_open)
+                        return; // only appear on open folders
                     if(!appeared)
                         do_appear();
                     var notebook_info = editor.get_notebook_info(node.gistname);
@@ -6714,6 +6726,28 @@ RCloud.UI.notebook_title = (function() {
             .then(function() {
                 result.set(name);
             });
+    }
+    function rename_notebook_folder(node) {
+        return function(name) {
+            editor.for_each_notebook(node, name, function(node, name) {
+                if(node.gistname === shell.gistname())
+                    shell.rename_notebook(name);
+                else {
+                    rcloud.update_notebook(node.gistname, {description: name}, false)
+                        .then(function(notebook) {
+                            editor.update_notebook_from_gist(notebook);
+                        });
+                }
+            }, function(child, name) {
+                return name + '/' + child.name;
+            });
+        };
+    }
+    function fork_rename_folder(node) {
+        return function(name) {
+            var match = new RegExp('^' + node.full_name);
+            editor.fork_folder(node, match, name);
+        };
     }
     // always select all text after last slash, or all text
     function select(el) {
@@ -6785,13 +6819,9 @@ RCloud.UI.notebook_title = (function() {
         },
         make_editable: function(node, $li, editable) {
             function get_title(node, elem) {
-                if(!node.version) {
-                    return $('.jqtree-title:not(.history)', elem);
-                } else {
-                    return $('.jqtree-title', elem);
-                }
+                return $('> div > .jqtree-title', elem);
             }
-            if(last_editable_ && (!node || last_editable_ !== node))
+            if(last_editable_ && (!node || node.gistname && last_editable_ !== node))
                 ui_utils.editable(get_title(last_editable_, last_editable_.element), 'destroy');
             if(node) {
                 var opts = editable_opts;
@@ -6801,13 +6831,21 @@ RCloud.UI.notebook_title = (function() {
                         validate: function(name) { return true; }
                     });
                 }
+                else if(!node.gistname) {
+                    opts = $.extend({}, editable_opts, {
+                        change: rename_notebook_folder(node),
+                        ctrl_cmd: fork_rename_folder(node),
+                        validate: function(name) { return true; }
+                    });
+                }
                 ui_utils.editable(get_title(node, $li),
                                   $.extend({allow_edit: editable,
                                             inactive_text: node.name,
                                             active_text: node.version ? node.name : node.full_name},
                                            opts));
             }
-            last_editable_ = node;
+            if(node && node.gistname)
+                last_editable_ = node;
         }
     };
     return result;
@@ -7438,9 +7476,10 @@ RCloud.UI.scratchpad = (function() {
                 null;
         }, content_updated: function() {
             var changed = false;
-            if(!binary_mode_) {
+            changed = this.current_model.content();
+            binary_mode_ = Notebook.is_binary_content(changed);
+            if(changed && !binary_mode_) {
                 var range = this.widget.getSelection().getRange();
-                changed = this.current_model.content();
                 this.change_content(changed);
                 this.widget.getSelection().setSelectionRange(range);
             }
@@ -8034,14 +8073,20 @@ RCloud.UI.settings_frame = (function() {
                 'addons': that.text_input_vector({
                     sort: 10000,
                     needs_reload: true,
-                    needs_reload: true,
                     label: "Enable Extensions"
                 }),
                 'skip-addons': that.text_input_vector({
                     sort: 11000,
                     needs_reload: true,
-                    needs_reload: true,
                     label: "Disable Extensions"
+                }),
+                'new-notebook-prefix': that.text_input({
+                    sort: 12000,
+                    label: "New Notebook Prefix",
+                    default_value: editor.new_notebook_prefix(),
+                    set: function(val) {
+                        editor.new_notebook_prefix(val);
+                    }
                 })
             });
         },

@@ -25,6 +25,13 @@ ui_utils.make_url = function(page, opts) {
     return url;
 };
 
+ui_utils.relogin_uri = function() {
+    return window.location.protocol +
+        '//' + window.location.host +
+        '/login.R?redirect=' +
+        encodeURIComponent(window.location.pathname + window.location.search);
+};
+
 ui_utils.disconnection_error = function(msg, label) {
     var result = $("<div class='alert alert-danger'></div>");
     result.append($("<span></span>").text(msg));
@@ -32,11 +39,7 @@ ui_utils.disconnection_error = function(msg, label) {
     var button = $("<button type='button' class='close'>" + label + "</button>");
     result.append(button);
     button.click(function() {
-        window.location =
-            (window.location.protocol +
-            '//' + window.location.host +
-            '/login.R?redirect=' +
-            encodeURIComponent(window.location.pathname + window.location.search));
+        window.location = ui_utils.relogin_uri();
     });
     return result;
 };
@@ -357,22 +360,22 @@ ui_utils.customize_ace_gutter = function(widget, line_text_function)
         var breakpoints = this.session.$breakpoints;
         var decorations = this.session.$decorations;
         var firstLineNumber = this.session.$firstLineNumber;
-        var lastLineNumber = 0;
-        for(; i <= lastRow; ++i)
+        var maxLineLength = 0;
+        for(; i <= lastRow; ++i) {
+            var line = line_text_function(i);
             html.push(
                 "<div class='ace_gutter-cell ",
                 "' style='height:", this.session.getRowLength(0) * config.lineHeight, "px;'>",
-                line_text_function(i),
+                line,
                 "</div>"
             );
+            maxLineLength = Math.max(maxLineLength, line.length);
+        }
 
         this.element = dom.setInnerHtml(this.element, html.join(""));
         this.element.style.height = config.minHeight + "px";
 
-        if (this.session.$useWrapMode)
-            lastLineNumber = this.session.getLength();
-
-        var gutterWidth = ("" + lastLineNumber).length * config.characterWidth;
+        var gutterWidth = maxLineLength * config.characterWidth;
         var padding = this.$padding || this.$computePadding();
         gutterWidth += padding.left + padding.right;
         if (gutterWidth !== this.gutterWidth && !isNaN(gutterWidth)) {

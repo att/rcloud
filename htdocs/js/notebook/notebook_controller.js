@@ -144,21 +144,6 @@ Notebook.create_controller = function(model)
         return changes;
     }
 
-    function after_update(promise) {
-        return promise.then(function(notebook) {
-            if('error' in notebook)
-                throw notebook;
-            current_gist_ = notebook;
-            model.update_files(notebook.files);
-            return notebook;
-        })
-            .catch(function(e) {
-                // this should not ever happen but there is no choice but to reload if it does
-                if(/non-existent/.test(e.message))
-                    editor.fatal_reload(e.message);
-                throw e;
-            });
-    }
     function update_notebook(changes, gistname, more) {
         function add_more_changes(gist) {
             if (_.isUndefined(more))
@@ -201,7 +186,20 @@ Notebook.create_controller = function(model)
             return {files: files};
         }
         var gist = add_more_changes(changes_to_gist(changes));
-        return after_update(rcloud.update_notebook(gistname, gist));
+        return rcloud.update_notebook(gistname, gist)
+            .then(function(notebook) {
+                if('error' in notebook)
+                    throw notebook;
+                current_gist_ = notebook;
+                model.update_files(notebook.files);
+                return notebook;
+            })
+            .catch(function(e) {
+                // this should not ever happen but there is no choice but to reload if it does
+                if(/non-existent/.test(e.message))
+                    editor.fatal_reload(e.message);
+                throw e;
+            });
     }
 
     function apply_changes_and_load(changes, gistname) {
@@ -246,23 +244,13 @@ Notebook.create_controller = function(model)
         },
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);
-            if(Notebook.is_binary_content(content)) {
-                return this.save().then(function() {
-                    return after_update(rcloud.notebook_upload(content, filename))
-                        .then(default_callback())
-                        .then(function(notebook) {
-                            // set content again because server may have determined it's text
-                            cch.model.content(notebook.files[filename].content);
-                            return [notebook, cch.controller];
-                        });
+            return update_notebook(refresh_buffers().concat(cch.changes))
+                .then(default_callback())
+                .then(function(notebook) {
+                    // set content again because server may have determined it's text
+                    cch.model.content(notebook.files[filename].content);
+                    return [notebook, cch.controller];
                 });
-            } else {
-                return update_notebook(refresh_buffers().concat(cch.changes))
-                    .then(default_callback())
-                    .then(function(notebook) {
-                        return [notebook, cch.controller];
-                    });
-            }
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
@@ -438,14 +426,13 @@ Notebook.create_controller = function(model)
                 .then(default_callback());
         },
         update_asset: function(asset_model) {
-            if(Notebook.is_binary_content(asset_model.content())) {
-                return this.save().then(default_callback()).then(function() {
-                    return rcloud.notebook_upload(asset_model.content(), asset_model.filename());
-                });
-            } else {
-                return update_notebook(refresh_buffers().concat(model.update_asset(asset_model)))
-                    .then(default_callback());
-            }
+            return update_notebook(refresh_buffers().concat(model.update_asset(asset_model)))
+                .then(function(notebook) {
+                    // set content again because server may have determined it's text
+                    asset_model.content(notebook.files[asset_model.filename()].content);
+                    return notebook;
+                })
+                .then(default_callback());
         },
         rename_notebook: function(desc) {
             return update_notebook(refresh_buffers(), null, {description: desc})

@@ -108,6 +108,10 @@ RCloud.UI.cell_commands = (function() {
                 color: function(color) {
                     result.get().find('i').css('color', color);
                     return this;
+                },
+                title: function(title) {
+                    result.get().find('i').attr('title', title);
+                    return this;
                 }
             });
             result.get().attr('class', 'state-icon left-indicator');

@@ -51,17 +51,18 @@ rcloud.augment.notebook <- function(res) {
         if(!is.null(tag))
           res$content$history[[i]]$tag <- tag
       }
+    res$augmented <- TRUE
   }
   res
 }
-rcloud.unauthenticated.load.notebook <- function(id, version = NULL) {
+rcloud.unauthenticated.load.notebook <- function(id, version = NULL, source = NULL) {
   if (!rcloud.is.notebook.published(id))
     stop("Notebook does not exist or has not been published")
-  rcloud.load.notebook(id, version)
+  rcloud.load.notebook(id, version, source)
 }
 
-rcloud.load.notebook <- function(id, version = NULL) {
-  res <- rcloud.get.notebook(id, version)
+rcloud.load.notebook <- function(id, version = NULL, source = NULL) {
+  res <- rcloud.get.notebook(id, version, source)
   ulog("RCloud rcloud.load.notebook(",id,",",version,", user=", .session$username,"): ", if(res$ok) "OK" else "FAILED")
   if (res$ok) {
     .session$current.notebook <- res
@@ -121,16 +122,11 @@ rcloud.unauthenticated.get.notebook <- function(id, version = NULL) {
   rcloud.get.notebook(id, version)
 }
 
-rcloud.get.notebook <- function(id, version = NULL) .rcloud.get.notebook(id, version)
+rcloud.get.notebook <- function(id, version = NULL, source = NULL) .rcloud.get.notebook(id, version, source = source)
 
-.rcloud.get.notebook <- function(id, version = NULL, raw=FALSE) {
-  res <- if (!is.null(stash <- .session$deployment.stash)) {
-    if (is.null(version))
-      version <- rcs.get(stash.key(stash, id, "HEAD", type="tag"))
-    res <- rcs.get(stash.key(stash, id, version))
-    if (is.null(res$ok)) res <- list(ok=FALSE)
-    res
-  } else get.gist(id, version, ctx = .session$gist.context)
+.rcloud.get.notebook <- function(id, version = NULL, source = NULL, raw=FALSE) {
+  if (is.null(source)) source <- rcloud.get.notebook.source(id)
+  res <- get.gist(id, version, ctx = .rcloud.get.gist.context(source))
   if (rcloud.debug.level() > 1L) {
     if(res$ok) {
       cat("==== GOT GIST ====\n")
@@ -274,56 +270,15 @@ rcloud.unauthenticated.notebook.by.name <- function(name, user=.session$username
   if (vec) candidates[pub] else candidates[pub,,drop=FALSE]
 }
 
-## encrypt is optional and can be a function raw->raw which will be called
-## on the raw contents before it is saved. If used, it should
-## also create a "metadata" attribute such that the contents
-## can be later decrypted according to the metadata.
-rcloud.upload.to.notebook <- function(file, name, encrypt) {
-  if (is.null(rcloud.session.notebook()))
-    stop("Notebook must be loaded")
-  id <- rcloud.session.notebook.id()
-  ulog("RCloud rcloud.upload.to.notebook(id=", id, ", name=", name, ")")
+## this should go away antirely *and* be removed from OCAPs
+rcloud.upload.to.notebook <- function(file, name) if (is.raw(file)) rcloud.upload.asset(name, file) else rcloud.upload.asset(name, file=file)
 
-  if (is.character(file)) {
-      sz <- file.info(file)$size
-      if (is.null(sz) || any(is.na(sz))) stop("cannot find `", file, "'")
-      file <- readBin(file, raw(), sz)
-  }
+rcloud.update.notebook <- function(id, content, is.current = TRUE) {
+    content <- .gist.binary.process.outgoing(id, content)
 
-  if (!missing(encrypt)) {
-      if (!is.function(encrypt)) stop("encrypt must be a function")
-      file <- encrypt(file)
-  }
-
-  files <- list()
-  content <- if (length(grep("\\.b64$", name))) { # forced b64
-      ## in this case we have to make sure we delete any TXT version
-      files <- list(x=NULL)
-      names(files) <- gsub("\\.b64$", "", name)
-      .binary.to.b64(file)
-  } else if (is.null(attr(file, "metadata")) && ## the contents may not have metadata for text storage
-             checkUTF8(file, quiet=TRUE, min.char=7L)) { ## and has to be valid UTF-8, otherwise we use b64
-      rawToChar(file)
-  } else { # auto-convert to .b64
-      ## in this case we have to make sure we delete any TXT version
-      files <- list(x=NULL)
-      names(files) <- name
-      name <- paste0(name, ".b64")
-      .binary.to.b64(file)
-  }
-
-  files[[name]] <- list(content=content)
-  content <- list(files = files)
-  res <- rcloud.update.notebook(id, content)
-  .session$current.notebook <- res
-  res
-}
-
-rcloud.update.notebook <- function(id, content) {
-    content <- .gist.binary.process.outgoing(content)
-
-    res <- modify.gist(id, content, ctx = .session$gist.context)
-    .session$current.notebook <- res
+    res <- modify.gist(id, content, ctx = .rcloud.get.gist.context())
+    if(is.current)
+      .session$current.notebook <- res
     if (nzConf("solr.url")) {
         star.count <- rcloud.notebook.star.count(id)
         mcparallel(update.solr(res, star.count), detached=TRUE)
@@ -477,9 +432,9 @@ stitch.search.result <- function(splitted, type,k) {
          default = paste0(k,'line_no',splitted[k],sep='|-|'))
 }
 
-rcloud.create.notebook <- function(content) {
-  res <- create.gist(content, ctx = .session$gist.context)
-  if (res$ok) {
+rcloud.create.notebook <- function(content, is.current = TRUE) {
+  res <- create.gist(content, ctx = .rcloud.get.gist.context())
+  if (res$ok && is.current) {
     .session$current.notebook <- res
     rcloud.reset.session()
   }
@@ -490,10 +445,27 @@ rcloud.rename.notebook <- function(id, new.name) {
   ulog("RCloud rcloud.rename.notebook(", id, ", ", toJSON(new.name), ")")
   modify.gist(id,
               list(description=new.name),
-              ctx = .session$gist.context)
+              ctx = .rcloud.get.gist.context())
 }
 
-rcloud.fork.notebook <- function(id) fork.gist(id, ctx = .session$gist.context)
+rcloud.fork.notebook <- function(id, source = NULL) {
+    if (is.null(source)) source <- rcloud.get.notebook.source(id)
+    src.ctx <- .rcloud.get.gist.context(source)
+    dst.ctx <- .rcloud.get.gist.context()
+    if (!identical(src.ctx, dst.ctx)) { ## is this a cross-source fork?
+        src.nb <- rcloud.get.notebook(id, source = source)
+        if (!isTRUE(src.nb$ok)) stop("failed to retrieve source notebook")
+        new.nb <- rcloud.create.notebook(src.nb$content)
+        if (!isTRUE(new.nb$ok)) stop("failed to create new notebook")
+        rcloud.set.notebook.property(new.nb$content$id, "fork_of",
+                                     new.nb$fork_of <-
+                                     list(owner=src.nb$content$owner,
+                                          description=src.nb$content$description,
+                                          id=src.nb.new$content$id))
+        new.nb
+    } else ## src=dst, regular fork
+        fork.gist(id, ctx = src.ctx)
+}
 
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
   ## also note that we are looking deep in the config space - this shold be really much easier ...
@@ -771,10 +743,11 @@ rcloud.purl.source <- function(contents)
   result
 }
 
-rcloud.get.git.user <- function(id) {
-  res <- get.user(id, ctx = .session$gist.context)
-  if (res$ok)
-    res$content
-  else
-    list()
+rcloud.get.git.user <- function(id, source = NULL) {
+    if (is.null(source)) source <- rcloud.get.notebook.source(id)
+    res <- get.user(id, ctx = .rcloud.get.gist.context())
+    if (res$ok)
+        res$content
+    else
+        list()
 }

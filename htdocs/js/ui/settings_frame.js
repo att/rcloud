@@ -170,14 +170,20 @@ RCloud.UI.settings_frame = (function() {
                 'addons': that.text_input_vector({
                     sort: 10000,
                     needs_reload: true,
-                    needs_reload: true,
                     label: "Enable Extensions"
                 }),
                 'skip-addons': that.text_input_vector({
                     sort: 11000,
                     needs_reload: true,
-                    needs_reload: true,
                     label: "Disable Extensions"
+                }),
+                'new-notebook-prefix': that.text_input({
+                    sort: 12000,
+                    label: "New Notebook Prefix",
+                    default_value: editor.new_notebook_prefix(),
+                    set: function(val) {
+                        editor.new_notebook_prefix(val);
+                    }
                 })
             });
         },

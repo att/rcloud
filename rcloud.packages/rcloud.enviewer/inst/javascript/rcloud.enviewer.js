@@ -104,7 +104,7 @@ return {
                 shell.notebook.model.execution_watchers.push({
                     run_cell: function() {
                         var state = enviewer_state();
-                        if(state.do_refresh)
+                        if(state && state.do_refresh)
                             state.ocaps.refresh();
                     }
                 });
