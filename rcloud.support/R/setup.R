@@ -266,7 +266,7 @@ start.rcloud.common <- function(...) {
   ## This is a bit of a hack (errr.. I mean a serious hack)
   ## we fake out R to think that Rhttpd is running and hijack the browser
   ## to pass all requests into the client
-  local({
+  if (is.function(tools:::httpdPort)) tools:::httpdPort(1L) else local({ ## R before 3.2.0 needs a hack
     env <- environment(tools:::startDynamicHelp)
     unlockBinding("httpdPort", env)
     assign("httpdPort", 1L, env)
