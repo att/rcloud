@@ -1048,7 +1048,7 @@ var editor = function () {
             username_ = rcloud.username();
             var promise = load_everything().then(function() {
                 if(opts.notebook) { // notebook specified in url
-                    return that.load_notebook(opts.notebook, opts.version)
+                    return that.load_notebook(opts.notebook, opts.version, opts.source)
                         .catch(function(xep) {
                             var message = "Could not open notebook " + opts.notebook;
                             if(opts.version)
