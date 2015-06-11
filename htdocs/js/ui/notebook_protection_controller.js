@@ -103,7 +103,7 @@ define(['angular'], function(angular){
 						obj.name = (val[0]);  //group name
 						obj.isAdmin = (val[1]);  //group is-admin
 
-						if(obj.isAdmin) //only add if admin
+						//if(obj.isAdmin) //only add if admin
 						finalArray.push(obj);
 					}
 				}
@@ -510,7 +510,7 @@ define(['angular'], function(angular){
 			//removed and added members
 
 			if(!removedAdmins.length && !addedAdmins.length && !removedMembers.length && !addedMembers.length ){
-				outputMessage += 'nothing has changed, so why are you saving this?';
+				outputMessage += 'nothing has changed';
 				alert(outputMessage);
 			}
 			else{
