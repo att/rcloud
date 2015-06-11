@@ -4,16 +4,17 @@ rcloud.get.notebook.cryptgroup <- function(notebookid) { # : pair(groupid, group
 }
 
 rcloud.set.notebook.cryptgroup <- function(notebookid, groupid) { # or NULL to decrypt/make public
-  users <- rcloud.get.cryptgroup.users(groupid)
-  if(!.session$username %in% names(users))
-    stop(paste0(.session$username, " is not a member of protection group ", groupid))
   if(!notebook.is.mine(notebookid))
     stop(paste0("can't set protection group of someone else's notebook for user ", .session$username))
   key <- rcs.key('.notebook', notebookid, 'cryptgroup')
   if(is.null(groupid))
     rcs.rm(key)
-  else
+  else {
+    users <- rcloud.get.cryptgroup.users(groupid)
+    if(!.session$username %in% names(users))
+      stop(paste0(.session$username, " is not a member of protection group ", groupid))
     rcs.set(key, groupid)
+  }
 }
 
 rcloud.get.cryptgroup.users <- function(groupid) { # : list(user -> is.admin)
