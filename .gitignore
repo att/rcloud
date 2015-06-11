@@ -21,3 +21,4 @@ packages/*.tar.gz
 rcloud.packages/*.tar.gz
 REVISION
 run
+packages/src
