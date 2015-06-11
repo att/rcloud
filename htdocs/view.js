@@ -6,6 +6,7 @@ function main() {
     }
 
     shell.is_view_mode(true);
+    RCloud.UI.session_pane.init(); // really should be error logger which detects if there is a pane
     RCloud.UI.init();
     RCloud.session.init(true).then(function() {
         return Promise.all([
