@@ -35,8 +35,8 @@
                             // }
 
 
-                            Promise.all( [rcloud.protection.get_notebook_cryptgroup(node.gistname), 
-                                        rcloud.stars.get_notebook_starrer_list(node.gistname)])
+                            Promise.all( [window.rcloud.protection.get_notebook_cryptgroup(node.gistname), 
+                                        window.rcloud.stars.get_notebook_starrer_list(node.gistname)])
                             .spread(function(cryptogroup, list) {
 
                                 if(typeof(list) === 'string')
