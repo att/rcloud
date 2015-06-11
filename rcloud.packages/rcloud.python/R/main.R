@@ -39,21 +39,20 @@ rcloud.exec.pythonsubmit <- function(cmd, rcloud.session)
   }
   tryCatch({  # We submit the command to the kernel and try to catch immediate problems here
       rcloud.session$python.runner$submit_cell(cmd)
-      return(1)
+      NULL
   }, error=function(e) {
-    msg <- e$`message`
-    self.oobSend(list("html.out", msg))
-    return(0)
+    structure(list(error=e$message), class="parse-error")
   })
 }
 
 rcloud.exec.python <- function(cmd, rcloud.session)
 {
-  if (rcloud.exec.pythonsubmit(cmd, rcloud.session) == 0)
-     return  # Something went wrong on submission, so assume end of cell
+  res <- rcloud.exec.pythonsubmit(cmd, rcloud.session)
+  if(!is.null(res))
+     return(res)  # Something went wrong on submission, so assume end of cell
   mime_order <- c("html", "png", "jpeg", "text") # richest representation to poorest [order is debatable!]
   to.chunk <- function(chunk) {
-    # Handler to convert a chunk of response from Python engine to html to send via oob     
+    # Handler to convert a chunk of response from Python engine to html to send via oob
     found_mimes = names(chunk)
     # Pick first format one in mime_order: hard-coded list; no SVG, no latex/mathjax
     t = mime_order[mime_order %in% found_mimes][1] # First match in mime_order
@@ -69,19 +68,22 @@ rcloud.exec.python <- function(cmd, rcloud.session)
       tryCatch({  # We submit the command to the kernel and try to catch immediate problems here
           outval <- rcloud.session$python.runner$poll_for_msgs()
       }, error=function(e) {
-          msg <- e$`message`
+          # i don't think this gets hit anymore
+          msg <- e$message
           self.oobSend(list("html.out", msg))
           return()
       })
       outval <- as.list(outval)
       outType <- outval$output_type
-      if (outType %in% c("IDLE", "NoOp", "EMPTY")) next() 
+      if (outType %in% c("IDLE", "NoOp", "EMPTY")) next()
       if (outType %in% c("END_CELL")) return()
       res <- to.chunk(outval)
       if ( (res[1] == "text") && (outType == "CONSOLE") ) {
           self.oobSend(list("console.out", res[2]))
       } else {
           self.oobSend(list("html.out", res[2]))
+          if(outType %in% c("pyerr"))
+            return(structure(list(error="Python evaluation error"), class='cell-eval-error'))
       }
   }
 }
