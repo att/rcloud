@@ -41,7 +41,10 @@ rcloud.exec.pythonsubmit <- function(cmd, rcloud.session)
       rcloud.session$python.runner$submit_cell(cmd)
       NULL
   }, error=function(e) {
-    structure(list(error=e$message), class="parse-error")
+    if(grepl('None must be a string', e$message)) # special case the empty string
+      "(no input)"
+    else
+      structure(list(error=e$message), class="parse-error")
   })
 }
 
