@@ -6665,11 +6665,19 @@ RCloud.UI.notebook_commands = (function() {
             var $right = $(right);
             var predicate = condition_pred(node);
 
+            function no_clickpast(div) {
+                // do not interpret missed click as open notebook
+                div.on('mousedown mouseup click', function(e) {
+                    e.stopPropagation();
+                });
+            }
+
             function do_always() {
                 // commands for the right column, always shown
                 var always_commands = always_commands_.filter(predicate);
                 if(always_commands.length) {
                     var always = $($.el.span({'class': 'notebook-commands-right'}));
+                    no_clickpast(always);
                     add_commands(node, always, always_commands);
                     $right.append(always);
                 }
@@ -6677,11 +6685,11 @@ RCloud.UI.notebook_commands = (function() {
 
             // decorate the notebook commands lazily, on hover
             function do_appear() {
-
                 // commands that appear
                 var appear_commands = appear_commands_.filter(predicate);
                 if(appear_commands.length) {
                     var appear = $($.el.span({'class': 'notebook-commands appear'}));
+                    no_clickpast(appear);
                     add_commands(node, appear, appear_commands);
                     $right.append(appear);
                     $right.find('.notebook-date').toggleClass('disappear', true);
