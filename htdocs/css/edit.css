@@ -450,6 +450,7 @@ ul.jqtree-tree .jqtree-title.private {
     position: relative;
     display: inline-block;
     width: 30px;
+    cursor: default;
 }
 
 .notebook-commands {
@@ -464,6 +465,7 @@ ul.jqtree-tree .jqtree-title.private {
 
 .notebook-commands.appear {
     float: right;
+    cursor: default;
 }
 
 .notebook-commands .fontawesome-button {
