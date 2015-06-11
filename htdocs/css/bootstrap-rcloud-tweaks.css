@@ -350,6 +350,11 @@ td {
 }
 
 
+.group-actions{
+  cursor: pointer;
+}
+
+
 /**
  * selectize.default.css (v0.11.2) - Default Theme
  * Copyright (c) 2013 Brian Reavis & contributors

@@ -39,10 +39,6 @@ define(['angular'], function(angular){
             return rcloud.protection.create_cryptgroup(groupName);
         }
          
-        this.setNotebookGroup = function(notebookid, groupid) {
-            return rcloud.protection.set_notebook_cryptgroup(notebookid, groupid); 
-        };
-
 
         this.addGroupUser = function(groupid, user, is_admin){
             return rcloud.protection.add_cryptgroup_user(groupid, user, is_admin);

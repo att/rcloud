@@ -37,7 +37,7 @@ define(['angular'], function(angular){
    		///////////////////////////////
 
    		//ref to global var storing all users
-		$scope.allUsers = window.allTheUsers;
+		$scope.allUsers = editor.allTheUsers;
 
 		//selectize config
 		$scope.myConfig = { openOnFocus: false }
@@ -108,7 +108,7 @@ define(['angular'], function(angular){
 					}
 				}
 
-				var theIndex;
+				var theIndex = 0; //defaults to 9
 				for(var i = 0; i < finalArray.length; i ++){
 					if(finalArray[i].name === $scope.currentGroupName ){
 						theIndex = i;
@@ -116,8 +116,8 @@ define(['angular'], function(angular){
 				}
 
 				$scope.$evalAsync(function(){
-					$scope.allUsersGroups = finalArray;
-					$scope.selectedGroup1 = finalArray[theIndex];
+					$scope.allUsersGroups = finalArray; //[] for testing
+					$scope.selectedGroup1 = finalArray[theIndex];//defaults to 0
 
 					$scope.selectedGroup2 = finalArray[theIndex];//finalArray[0];
 
@@ -219,11 +219,11 @@ define(['angular'], function(angular){
 					console.log('notebook id is '+$scope.notebookGistName);
 					GroupsService.setNotebookGroup($scope.notebookGistName, null )
 					.then(function(data){
-						console.log('data is '+data);
+                        $scope.cancel();
 					})
 					.catch(function(e){
+
 						
-						$scope.cancel();
 
 						console.log(e)
 					})
@@ -251,7 +251,28 @@ define(['angular'], function(angular){
                     		name:pr,
                     		isAdmin:true
                     	});
+
+
                     });
+
+                    $scope.$evalAsync(function(){
+                        var ind = $scope.getIndexOfGroupName(pr);
+                        $scope.selectedGroup2 = $scope.allUsersGroups[ind];
+
+                        _.delay(function(){
+                            $scope.populateGroupMembers();
+                        })
+                        
+                        //set the select
+
+                    });
+
+                    // _.defer(function(){
+                    //     var ind = $scope.getIndexOfGroupName(pr)
+                    //     //set the select
+                    //     $scope.selectedGroup2 = $scope.allUsersGroups[ind];
+                    //     //$scope.selectedGroup2[ind]
+                    // })
                     console.log('group created '+data);
                 })
                 .catch(function(e){
@@ -260,6 +281,24 @@ define(['angular'], function(angular){
 	            
 			}
 	    }
+
+        $scope.getIndexOfGroupName = function(groupName){
+
+
+            for(var i = 0; i < $scope.allUsersGroups.length; i ++){
+                var theName = $scope.allUsersGroups[i].name;
+                if(theName == groupName){
+
+                    return i;
+
+                }
+                
+            }
+
+            return -1;
+        }
+
+
 
 	    $scope.renameGroup = function(){
 	    	var pr = prompt("Enter new group name", $scope.selectedGroup2.name);
