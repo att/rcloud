@@ -972,7 +972,7 @@ var editor = function () {
                 // it's weird that a notebook exists in two trees but only one is selected (#220)
                 // just select - and this enables editability
                 if(event.node.gistname === current_.notebook &&
-                    event.node.version == current_.version && event.node.version === null) // nulliness ok here
+                    event.node.version == current_.version && event.node.version == null) // deliberately null-vague here
                     select_node(event.node);
                 else
                     result.open_notebook(event.node.gistname, event.node.version || null, event.node.root, false);
