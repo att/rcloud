@@ -201,7 +201,6 @@ RCloud.create = function(rcloud_ocaps) {
             ["load_notebook_compute"],
             ["call_notebook"],
             ["install_notebook_stylesheets"],
-            ["tag_notebook_version"],
             ["get_version_by_tag"],
             ["get_tag_by_version"],
             ["get_users"],
@@ -286,10 +285,6 @@ RCloud.create = function(rcloud_ocaps) {
                 .spread(function(_, notebook) {
                     return notebook;
                 });
-        };
-
-        rcloud.tag_notebook_version = function(gist_id,version,tag_name) {
-            return rcloud_ocaps.tag_notebook_versionAsync(gist_id,version,tag_name);
         };
 
         rcloud.get_version_by_tag = function(gist_id,tag) {
@@ -473,6 +468,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["authenticated_cell_eval"],
             ["session_markdown_eval"],
             ["notebook_upload"],
+            ["tag_notebook_version"],
             ["file_upload","upload_path"],
             ["file_upload","create"],
             ["file_upload","write"],
@@ -596,6 +592,10 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_github_handler(
                 "rcloud.upload.to.notebook",
                 rcloud_ocaps.notebook_uploadAsync(file, name));
+        };
+
+        rcloud.tag_notebook_version = function(gist_id,version,tag_name) {
+            return rcloud_ocaps.tag_notebook_versionAsync(gist_id,version,tag_name);
         };
 
         rcloud.post_comment = function(id, content) {
