@@ -56,6 +56,7 @@
                                 });
 
                                 $('.group-link', thisPopover).click(function(){
+                                    $(thisIcon).popover("destroy");
 
                                     //set 
                                     RCloud.UI.notebook_protection.notebookFullName = node.full_name;
