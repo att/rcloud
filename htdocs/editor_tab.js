@@ -1162,7 +1162,7 @@ var editor = function () {
                 });
         },
         validate_name: function(newname) {
-            return newname && !Notebook.empty_for_github(newname); // not null and not empty or just whitespace
+            return newname && !_.some(newname.split('/'), Notebook.empty_for_github); // not null and no part of path is whitespace
         },
         rename_notebook: function(desc) {
             return shell.rename_notebook(desc);
