@@ -23,10 +23,12 @@ define(['angular'], function(angular){
 
 		//groups 
 		$scope.currentGroupName = '';
-		$scope.allUsersGroups = [];
+
+		$scope.allUserGroups = [];
+        $scope.allAdminGroups = [];
 
 		//value of the select dropdown
-		$scope.selectedGroup1 = '';
+		$scope.selectedGroup1 = null;
 
 		//tab/state
 		$scope.currentTab = 1;
@@ -38,12 +40,13 @@ define(['angular'], function(angular){
 
    		//ref to global var storing all users
 		$scope.allUsers = editor.allTheUsers;
+        $scope.allAdminUsers = [];
 
 		//selectize config
 		$scope.myConfig = { openOnFocus: false }
 
 		//value of the select dropdown
-		$scope.selectedGroup2 = '';
+		$scope.selectedGroup2 = null;
 
 		//group admins
 		$scope.groupAdmins = [];
@@ -90,7 +93,10 @@ define(['angular'], function(angular){
 			GroupsService.getUsersGroups($scope.userLogin)
 			.then(function(data){
 
-				var finalArray = [];
+				var finalArrayAll = [];
+                var finalArrayAdmins = [];
+
+
 				//var massagedData = $scope.generateGroups(data);
 				var keys = _.keys(data);
 				var vals = _.values(data);
@@ -103,26 +109,72 @@ define(['angular'], function(angular){
 						obj.name = (val[0]);  //group name
 						obj.isAdmin = (val[1]);  //group is-admin
 
-						//if(obj.isAdmin) //only add if admin
-						finalArray.push(obj);
+						if(obj.isAdmin){
+                            finalArrayAdmins.push(obj);
+                        }
+                        finalArrayAll.push(obj);
 					}
 				}
 
-				var theIndex = 0; //defaults to 9
-				for(var i = 0; i < finalArray.length; i ++){
-					if(finalArray[i].name === $scope.currentGroupName ){
-						theIndex = i;
-					}
-				}
+				
 
 				$scope.$evalAsync(function(){
-					$scope.allUsersGroups = finalArray; //[] for testing
-					$scope.selectedGroup1 = finalArray[theIndex];//defaults to 0
 
-					$scope.selectedGroup2 = finalArray[theIndex];//finalArray[0];
+
+					$scope.allUserGroups = finalArrayAll; //[] for testing
+                    $scope.allAdminGroups = finalArrayAdmins; 
+
+                    //$scope.resetSelects();
+
+					//$scope.selectedGroup1 = finalArray[theIndex];//defaults to 0
+
+					//$scope.selectedGroup2 = finalArray[theIndex];//finalArray[0];
 
 					//console.log('final array'+finalArray);
 				});
+
+                _.defer(function(){
+
+                    $scope.$evalAsync(function(){
+
+                        if($scope.allUserGroups.length && $scope.allAdminGroups.length) {
+
+                            //if you have a selected a group for notebook
+                            if($scope.currentGroupName !== '') {
+
+
+                                var bla = 'aaaa';
+
+                                var theIndex = 0; //defaults to 0
+                                for(var i = 0; i < $scope.allUserGroups.length; i ++){
+                                    if($scope.allUserGroups[i].name === $scope.currentGroupName ){
+                                        theIndex = i;
+                                    }
+                                }
+                                //select that group in groups tab
+                                $scope.selectedGroup1 = $scope.allUserGroups[theIndex];
+
+
+                                var theIndex2 = 0; //defaults to 0
+                                for(var b = 0; b < $scope.allUserGroups.length; b ++){
+                                    if($scope.allAdminGroups[b].name === $scope.currentGroupName ){
+                                        theIndex2 = b;
+                                    }
+                                }
+
+                                $scope.selectedGroup2 = $scope.allAdminGroups[theIndex2];
+
+                            }
+                            else{
+                                //select first item
+                                $scope.selectedGroup2 = finalArrayAdmins[0];
+                                $scope.selectedGroup1 = finalArrayAll[0];
+
+                            }
+                        }
+                    });
+
+                });
 
 				//console.log(massagedData);
 				//console.log(finalArray);
@@ -133,10 +185,21 @@ define(['angular'], function(angular){
 		};
 
 
+
+        $scope.resetSelects = function(){
+
+        }
+
+
 		$scope.init = function(){
 
 			//apply angular bindings
 			$scope.applyCurrentData();
+
+            $('.nav-tabs li').removeClass('active');
+            $('.nav-tabs #tab1').addClass('active');
+
+            $('.nav-tabs #tab1 a').click();
 
 			//get current user's groups
 			_.delay(function(){
@@ -162,16 +225,16 @@ define(['angular'], function(angular){
 
 			//groups 
 			$scope.currentGroupName = '';
-			$scope.allUsersGroups = [];
+			$scope.allUserGroups = [];
 
 			//value of the select dropdown
-			$scope.selectedGroup1 = '';
+			$scope.selectedGroup1 = null;
 
 			//tab/state
 			$scope.currentTab = 1;
 
 			//value of the select dropdown
-			$scope.selectedGroup2 = '';
+			$scope.selectedGroup2 = null;
 
 			//group admins
 			$scope.groupAdmins = [];
@@ -197,7 +260,7 @@ define(['angular'], function(angular){
 			//if making private of moving to another group
 			if($scope.belongsToGroup){
 
-				var conf = confirm("Are you sure you want to move your notebook to this group?");
+				var conf = confirm("Are you sure you want to move your notebook to group "+$scope.selectedGroup1.name +"?");
 				if(conf){
 					console.log('notebook id is '+$scope.notebookGistName);
 					GroupsService.setNotebookGroup($scope.notebookGistName, $scope.selectedGroup1.id )
@@ -214,7 +277,7 @@ define(['angular'], function(angular){
 			}
 			else{
 
-				var conf = confirm("Are you sure you want to make your notebook public?");
+				var conf = confirm("Are you sure you want to make your notebook public? \n this might make this notebook no longer accessible");
 				if(conf){
 					console.log('notebook id is '+$scope.notebookGistName);
 					GroupsService.setNotebookGroup($scope.notebookGistName, null )
@@ -246,18 +309,36 @@ define(['angular'], function(angular){
 
                     $scope.$evalAsync(function(){
 
-                    	$scope.allUsersGroups.push({
+                    	$scope.allUserGroups.push({
                     		id:data,
                     		name:pr,
                     		isAdmin:true
                     	});
 
-
+                        $scope.allAdminGroups.push({
+                            id:data,
+                            name:pr,
+                            isAdmin:true
+                        });
                     });
 
                     $scope.$evalAsync(function(){
-                        var ind = $scope.getIndexOfGroupName(pr);
-                        $scope.selectedGroup2 = $scope.allUsersGroups[ind];
+                        //var ind = $scope.getIndexOfGroupName(pr);
+
+                        //set select to the last item in the array
+                        $scope.selectedGroup2 = $scope.allAdminGroups[ $scope.allAdminGroups.length - 1 ]; 
+
+                        if(!$scope.selectedGroup1){
+                            $scope.selectedGroup1 = $scope.allUserGroups[0];
+                        }
+                        else{
+                            var currValue = $scope.selectedGroup2;
+
+                            for(var i = 0; i < scope.selectedGroup2.length; i ++){
+
+                            }
+                        }
+                        
 
                         _.delay(function(){
                             $scope.populateGroupMembers();
@@ -270,10 +351,10 @@ define(['angular'], function(angular){
                     // _.defer(function(){
                     //     var ind = $scope.getIndexOfGroupName(pr)
                     //     //set the select
-                    //     $scope.selectedGroup2 = $scope.allUsersGroups[ind];
+                    //     $scope.selectedGroup2 = $scope.allUserGroups[ind];
                     //     //$scope.selectedGroup2[ind]
                     // })
-                    console.log('group created '+data);
+                    console.log('group created and selected '+data);
                 })
                 .catch(function(e){
                     alert(e);
@@ -285,8 +366,8 @@ define(['angular'], function(angular){
         $scope.getIndexOfGroupName = function(groupName){
 
 
-            for(var i = 0; i < $scope.allUsersGroups.length; i ++){
-                var theName = $scope.allUsersGroups[i].name;
+            for(var i = 0; i < $scope.allUserGroups.length; i ++){
+                var theName = $scope.allUserGroups[i].name;
                 if(theName == groupName){
 
                     return i;
@@ -315,8 +396,8 @@ define(['angular'], function(angular){
 	                    //groupId = data;
 
 	                    var theIndex;
-						for(var i = 0; i < $scope.allUsersGroups.length; i ++){
-							if($scope.allUsersGroups[i].id === $scope.selectedGroup2.id ){
+						for(var i = 0; i < $scope.allUserGroups.length; i ++){
+							if($scope.allUserGroups[i].id === $scope.selectedGroup2.id ){
 								theIndex = i;
 								console.log('at index '+i);
 							}
@@ -324,7 +405,7 @@ define(['angular'], function(angular){
 
 	                    $scope.$evalAsync(function(){
 
-	                    	$scope.allUsersGroups[theIndex].name = pr;
+	                    	$scope.allUserGroups[theIndex].name = pr;
 	                    });
 
 	                    //console.log('group changed '+data);
@@ -340,25 +421,53 @@ define(['angular'], function(angular){
 	    }
 
 	    $scope.deleteGroup = function(){
-	    	var r = confirm('Are you sure you want to delete'+$scope.selectedGroup2.name+'?');
+
+            if(!$scope.selectedGroup2){
+                return;
+            }
+	    	var r = confirm('Are you sure you want to delete '+$scope.selectedGroup2.name+'?');
 	    	if(r === true){
+                console.log('deleting group '+$scope.selectedGroup2.name);
 	    		GroupsService.deleteGroup($scope.selectedGroup2.id)
 	    		.then(function(data){
-	    			console.log('deleted '+data);
+	    			
 
-	    			var theIndex;
-					for(var i = 0; i < $scope.allUsersGroups.length; i ++){
-						if($scope.allUsersGroups[i].id === $scope.selectedGroup2.id ){
-							theIndex = i;
+	    			var theIndex1 = -1;
+					for(var i = 0; i < $scope.allUserGroups.length; i ++){
+						if($scope.allUserGroups[i].id === $scope.selectedGroup2.id ){
+							theIndex1 = i;
 							//console.log('at index '+i);
 						}
 					}
 
+                    var theIndex2 = -1;
+                    for(var a = 0; a < $scope.allAdminGroups.length; a ++){
+                        if($scope.allAdminGroups[a].id === $scope.selectedGroup2.id ) {
+                            theIndex2 = a;
+                            //console.log('at index '+i);
+                        }
+                    }
+
                     $scope.$evalAsync(function(){
                     	//remove that item from array
-                    	$scope.allUsersGroups.splice([theIndex], 1);
+                    	$scope.allUserGroups.splice([theIndex1], 1);
+                        $scope.allAdminGroups.splice([theIndex2], 1);
                     	//reset the select
-                    	$scope.selectedGroup2 = $scope.allUsersGroups[0];
+                    });
+
+
+                     _.defer(function(){
+
+                        $scope.$evalAsync(function(){
+
+                            if($scope.allAdminGroups.length)
+                                $scope.selectedGroup2 = $scope.allAdminGroups[0];
+
+                            if($scope.allUserGroups.length)
+                                $scope.selectedGroup1 = $scope.allUserGroups[0];
+
+
+                        });
                     });
 	    		})
 	    		.catch(function(e){
@@ -445,6 +554,9 @@ define(['angular'], function(angular){
 
 	    $scope.populateGroupMembers = function(){		
 
+            if(!$scope.selectedGroup2)
+                return;
+
 			GroupsService.getAllUsersinGroup($scope.selectedGroup2.id)
 			.then(function(data){
 
@@ -510,8 +622,10 @@ define(['angular'], function(angular){
 			//removed and added members
 
 			if(!removedAdmins.length && !addedAdmins.length && !removedMembers.length && !addedMembers.length ){
-				outputMessage += 'nothing has changed';
-				alert(outputMessage);
+				//outputMessage += 'nothing has changed';
+                $scope.cancel();
+                return;
+				//alert(outputMessage);
 			}
 			else{
 				outputMessage += 'Please confirm the following changes:\n\n';
