@@ -299,6 +299,57 @@ define(['angular'], function(angular){
 		//GROUP TAB METHODS
 		/////////////////////////////////////////
 
+
+        $scope.populateGroupMembers = function(){       
+
+            if(!$scope.selectedGroup2)
+                return;
+
+            GroupsService.getAllUsersinGroup($scope.selectedGroup2.id)
+            .then(function(data){
+
+                var adminsArray = [];
+                var membersArray = [];
+
+                for(var item in data){
+                    if(item !== 'r_attributes' && item !== 'r_type'){
+
+                        if(data[item] === true)
+                            adminsArray.push(item);
+                        else
+                            membersArray.push(item);
+                    }
+                }
+
+                console.log('just grabed memebers info for group '+$scope.selectedGroup2.name);
+
+                $scope.$evalAsync(function(){
+
+                    $scope.groupAdmins = adminsArray;
+                    $scope.groupMembers = membersArray;
+                    //$scope.groupMembers = ['fourthark','gordonwoodhull']; //for testing's sake
+                });
+
+                //using defer to make sure the above evalAsync has had time to comple
+                //_.defer(function(){
+
+                    //save the original values
+                    $scope.originalAdmins = adminsArray.slice(0);//$scope.groupAdmins.slice(0);
+                    // $scope.originalMembers = $scope.groupMembers.slice(0);
+                    $scope.originalMembers = membersArray.slice(0);//['fourthark','gordonwoodhull'];
+
+                    $scope.startWatchingGroups();
+
+                //})
+
+            })
+            .catch(function(e){
+                console.log(e);
+            })
+        }
+
+        
+
 	    $scope.createGroup = function(){
 	    	var pr = prompt("Enter new group name", "");
 
@@ -332,17 +383,17 @@ define(['angular'], function(angular){
                             $scope.selectedGroup1 = $scope.allUserGroups[0];
                         }
                         else{
-                            var currValue = $scope.selectedGroup2;
+                            // var currValue = $scope.selectedGroup2;
 
-                            for(var i = 0; i < scope.selectedGroup2.length; i ++){
+                            // for(var i = 0; i < scope.selectedGroup2.length; i ++){
 
-                            }
+                            // }
                         }
                         
 
-                        _.delay(function(){
-                            $scope.populateGroupMembers();
-                        })
+                        // _.delay(function(){
+                        //     $scope.populateGroupMembers();
+                        // })
                         
                         //set the select
 
@@ -355,10 +406,19 @@ define(['angular'], function(angular){
                     //     //$scope.selectedGroup2[ind]
                     // })
                     console.log('group created and selected '+data);
+
+                    _.defer(function(){
+                        $scope.populateGroupMembers();
+                    });
+
+
                 })
                 .catch(function(e){
                     alert(e);
-                })
+                });
+
+
+
 	            
 			}
 	    }
@@ -552,53 +612,7 @@ define(['angular'], function(angular){
 	    }
 
 
-	    $scope.populateGroupMembers = function(){		
-
-            if(!$scope.selectedGroup2)
-                return;
-
-			GroupsService.getAllUsersinGroup($scope.selectedGroup2.id)
-			.then(function(data){
-
-				var adminsArray = [];
-				var membersArray = [];
-
-				for(var item in data){
-					if(item !== 'r_attributes' && item !== 'r_type'){
-
-						if(data[item] === true)
-							adminsArray.push(item);
-						else
-							membersArray.push(item);
-					}
-				}
-
-				console.log('just grabed memebers info for group '+$scope.selectedGroup2.name);
-
-				$scope.$evalAsync(function(){
-
-					$scope.groupAdmins = adminsArray;
-					$scope.groupMembers = membersArray;
-					//$scope.groupMembers = ['fourthark','gordonwoodhull']; //for testing's sake
-				});
-
-				//using defer to make sure the above evalAsync has had time to comple
-				//_.defer(function(){
-
-					//save the original values
-					$scope.originalAdmins = adminsArray.slice(0);//$scope.groupAdmins.slice(0);
-					// $scope.originalMembers = $scope.groupMembers.slice(0);
-					$scope.originalMembers = membersArray.slice(0);//['fourthark','gordonwoodhull'];
-
-					$scope.startWatchingGroups();
-
-				//})
-
-			})
-			.catch(function(e){
-				console.log(e);
-			})
-		}
+	    
 
 
 		$scope.anotherGroupSelected = function(){
