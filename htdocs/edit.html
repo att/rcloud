@@ -260,18 +260,25 @@
           </div>
 
           <div class="row sec">
-            <label for="redRadio">Public:</label> <input id="redRadio" type="radio"
-            ng-model="belongsToGroup" ng-value="false" />&nbsp;&nbsp;&nbsp;
-            <label for="greenRadio">Private:</label> <input id="greenRadio" type="radio"
-            ng-model="belongsToGroup" ng-value="true" /><br />
+            <label for="redRadio">Public:</label> 
+            <input id="redRadio" type="radio" ng-model="belongsToGroup" ng-value="false" />&nbsp;&nbsp;&nbsp;
+            <label for="greenRadio">Private:</label> 
+            <input id="greenRadio" type="radio" ng-disabled="!allUsersGroups.length" ng-model="belongsToGroup" ng-value="true" /><br />
           </div>
 
-          <div class="row sec">
+          <div class="row sec" ng-show="allUsersGroups.length">
             <span>Assign to Group</span><br />
            
-            <select ng-model="selectedGroup1" ng-disabled="!belongsToGroup" ng-options="group.name for group in allUsersGroups">
+            <select ng-model="selectedGroup1" 
+                    ng-disabled="!belongsToGroup" 
+                    ng-options="group.name for group in allUsersGroups">
             </select>
 
+          </div>
+
+
+          <div class="row sec" ng-hide="allUsersGroups.length">
+            <span>you are not a member of any groups, you can create one in "Group" dialog</span>
           </div>
 
 
@@ -284,38 +291,40 @@
         <div class="tab-pane inner-tab" id="group-tab">
 
           <div class="row sec">
-            <div class='col-md-6' style='padding-left: 0px;'>
-              <select ng-model="selectedGroup2" 
-                      ng-options="group.name for group in allUsersGroups"
+
+            <div class='col-md-6' style='padding-left: 0px;' ng-show="allUsersGroups.length" >
+              <span>Select group</span><br />
+              <select ng-model="selectedGroup2"
+                      ng-options="group.name for group in allUsersGroups | filter:{ isAdmin : true }"
                       ng-change="anotherGroupSelected()" >
               </select>
-             
+
             </div>
 
-            
+            <div class='col-md-6' style='padding-left: 0px;' ng-hide="allUsersGroups.length" >
+              <span>There are no groups, please create one.</span><br />
+            </div>
 
             <div class='col-md-6'>
-              <span class="label label-info" ng-click="createGroup()">Create
+              <span class="label label-info group-actions" ng-click="createGroup()">Create
               Group</span><br /><br />
-              <span class="label label-info" ng-click="renameGroup()">Rename
+              <span class="label label-info group-actions" ng-click="renameGroup()">Rename
               Group</span><br /><br />
-              <span class="label label-danger" ng-click="deleteGroup()">Delete
+              <span class="label label-danger group-actions" ng-click="deleteGroup()">Delete
               Group</span>
             </div>
           </div>
 
           <div class="row sec">
             <div class="form-group">
-              <label for="comment">Admins:</label> <span class="label label-info">Edit</span>
-
+              <label for="comment">Admins:</label> 
               <selectize options='allUsers' config="myConfig" ng-model="groupAdmins"></selectize>
-
             </div>
           </div>
 
           <div class="row sec">
             <div class="form-group">
-              <label for="comment">Members:</label> <span class="label label-info">Edit</span>
+              <label for="comment">Members:</label> 
               <selectize options='allUsers' config="myConfig" ng-model="groupMembers"></selectize>
             </div>
           </div>
@@ -325,7 +334,7 @@
         <!-- second tab -->
 
         <div class="modal-footer">
-          <span class="btn btn-cancel" ng-click='cancel()'>Close</span>
+          <span class="btn btn-cancel" ng-click='cancel()'>Cancel</span>
           <span class="btn btn-save btn-default" ng-click='save()'>Save</span>
         </div>
         

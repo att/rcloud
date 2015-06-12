@@ -1,20 +1,4 @@
 ((function() {
-    var info_popover_ = null; // current opened information popover
-
-    function remove_all_popovers() {
-        // nicer methods don't work,
-        // because the parent gets recreated every time the notebook
-        // tree refreshes
-        $('div.popover.notebook-info').remove();
-    }
-
-    //for hiding information popover on click outside
-    $('body').on('click', function(e) {
-        if($(e.target).data('toggle') !== 'popover' &&
-           $(e.target).parents('.popover.in').length === 0) {
-            remove_all_popovers();
-        }
-    });
     return {
         init: function(k) {
             RCloud.UI.notebook_commands.add({
@@ -29,11 +13,6 @@
                             e.stopPropagation();
                             var thisIcon = this;
                             var info_content = '';
-                            // if(info_popover_) {
-                            //     info_popover_.popover('destroy');
-                            //     info_popover_ = null;
-                            // }
-
 
                             Promise.all( [window.rcloud.protection.get_notebook_cryptgroup(node.gistname), 
                                         window.rcloud.stars.get_notebook_starrer_list(node.gistname)])
@@ -42,20 +21,20 @@
                                 if(typeof(list) === 'string')
                                     list = [list];
 
+                                var close_button = '<span class="pop-close" style="cursor: pointer; float:right;">x</span>';
                                 var group_message = '<div class="info-category"><b>Group:</b></div>';
                                 if(!cryptogroup[0] && !cryptogroup[1]){
-                                    group_message += '<div class="group-link"><a href="#">no group</a></div>'
+                                    group_message += '<div class="group-link info-item"><a href="#">no group</a></div>'
                                 }
                                 else{
-                                    group_message += '<div class="group-link"><a href="#">'+cryptogroup[1]+'</a></div>'
+                                    group_message += '<div class="group-link info-item"><a href="#">'+cryptogroup[1]+'</a></div>'
                                 }
-                                    
 
                                 var starrer_list = '<div class="info-category"><b>Starred by:</b></div>';
                                 list.forEach(function (v) {
                                     starrer_list = starrer_list + '<div class="info-item">' + v + '</div>';
                                 });
-                                info_content = group_message + info_content + starrer_list;
+                                info_content = close_button + group_message + info_content + starrer_list;
                                 $(thisIcon).popover({
                                     title: node.name,
                                     html: true,
@@ -67,13 +46,17 @@
                                 });
                                 $(thisIcon).popover('show');
                                 var thisPopover = $(thisIcon).popover().data()['bs.popover'].$tip[0];
-                                $(thisPopover).addClass('popover-offset notebook-info');
-                                info_popover_ = $(thisIcon);
+                                thisPopover = $(thisPopover);
+                                thisPopover.addClass('popover-offset notebook-info');
+                                
 
 
+                                $('.pop-close', thisPopover).click(function() {
+                                    $(thisIcon).popover("destroy");
+                                });
 
-
-                                $('.group-link').click(function(){
+                                $('.group-link', thisPopover).click(function(){
+                                    $(thisIcon).popover("destroy");
 
                                     //set 
                                     RCloud.UI.notebook_protection.notebookFullName = node.full_name;
