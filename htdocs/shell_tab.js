@@ -119,7 +119,7 @@ var shell = (function() {
             return notebook_controller_.rename_notebook(desc);
         }, fork_my_notebook: function(gistname, version, open_it, transform_description) {
             // hack: copy without history as a first pass, because github forbids forking oneself
-            return rcloud.get_notebook(gistname, version)
+            return rcloud.get_notebook(gistname, version, null, true)
                 .then(function(notebook) {
                     // this smells
                     var fork_of = {owner: {login: notebook.user.login},

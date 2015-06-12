@@ -164,10 +164,12 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.get_conf_valuesAsync(key);
         };
 
-        rcloud.get_notebook = function(id, version) {
+        rcloud.get_notebook = function(id, version, source, raw) {
+            if(source===undefined) source = null;
+            if(raw===undefined) raw = false;
             return rcloud_github_handler(
                 "rcloud.get.notebook " + id,
-                rcloud_ocaps.get_notebookAsync(id, version));
+                rcloud_ocaps.get_notebookAsync(id, version, source, raw));
         };
 
         rcloud.load_notebook = function(id, version) {

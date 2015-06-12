@@ -89,7 +89,7 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
         if (any(bin)) {
             if (is.list(notebook))
                 notebook <- notebook$content$id
-            nb <- .rcloud.get.notebook(notebook, raw=TRUE)
+            nb <- rcloud.get.notebook(notebook, raw=TRUE)
             if (!isTRUE(nb$ok)) nb <- NULL
             # ulog(" -- existing: ", paste(names(nb$content$files), collapse=", "))
             bin.f <- content$files[bin]
@@ -112,7 +112,7 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
             if (is.list(notebook))
                 notebook <- notebook$content$id
             if (is.null(nb)) { ## don't re-fetch it if we already did so above
-                nb <- .rcloud.get.notebook(notebook, raw=TRUE)
+                nb <- rcloud.get.notebook(notebook, raw=TRUE)
                 if (!isTRUE(nb$ok)) nb <- NULL
                 # ulog(" -- existing: ", paste(names(nb$content$files), collapse=", "))
             }
