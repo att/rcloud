@@ -124,33 +124,6 @@ define(['angular'], function(angular){
 					$scope.allUserGroups = finalArrayAll; //[] for testing
                     $scope.allAdminGroups = finalArrayAdmins; 
 
-
-                    if(finalArrayAll.length && finalArrayAdmins.length){
-
-                        //if you selected a group for notebook
-                        if($scope.selectedGroup1){
-
-                            // var theIndex = 0; //defaults to 0
-                            // for(var i = 0; i < finalArray.length; i ++){
-                            //     if(finalArray[i].name === $scope.currentGroupName ){
-                            //         theIndex = i;
-                            //     }
-                            // }
-                            // //select that group in groups tab
-                            // $scope.selectedGroup2 = finalArrayAdmins[]
-
-                        }
-                        else{
-                            //select first item
-                            $scope.selectedGroup2 = finalArrayAdmins[0];
-                            $scope.selectedGroup1 = finalArrayAll[0];
-
-                        }
-
-
-                        
-                    }
-
                     //$scope.resetSelects();
 
 					//$scope.selectedGroup1 = finalArray[theIndex];//defaults to 0
@@ -159,6 +132,49 @@ define(['angular'], function(angular){
 
 					//console.log('final array'+finalArray);
 				});
+
+                _.defer(function(){
+
+                    $scope.$evalAsync(function(){
+
+                        if($scope.allUserGroups.length && $scope.allAdminGroups.length) {
+
+                            //if you have a selected a group for notebook
+                            if($scope.currentGroupName !== '') {
+
+
+                                var bla = 'aaaa';
+
+                                var theIndex = 0; //defaults to 0
+                                for(var i = 0; i < $scope.allUserGroups.length; i ++){
+                                    if($scope.allUserGroups[i].name === $scope.currentGroupName ){
+                                        theIndex = i;
+                                    }
+                                }
+                                //select that group in groups tab
+                                $scope.selectedGroup1 = $scope.allUserGroups[theIndex];
+
+
+                                var theIndex2 = 0; //defaults to 0
+                                for(var b = 0; b < $scope.allUserGroups.length; b ++){
+                                    if($scope.allAdminGroups[b].name === $scope.currentGroupName ){
+                                        theIndex2 = b;
+                                    }
+                                }
+
+                                $scope.selectedGroup2 = $scope.allAdminGroups[theIndex2];
+
+                            }
+                            else{
+                                //select first item
+                                $scope.selectedGroup2 = finalArrayAdmins[0];
+                                $scope.selectedGroup1 = finalArrayAll[0];
+
+                            }
+                        }
+                    });
+
+                });
 
 				//console.log(massagedData);
 				//console.log(finalArray);
@@ -212,13 +228,13 @@ define(['angular'], function(angular){
 			$scope.allUserGroups = [];
 
 			//value of the select dropdown
-			$scope.selectedGroup1 = '';
+			$scope.selectedGroup1 = null;
 
 			//tab/state
 			$scope.currentTab = 1;
 
 			//value of the select dropdown
-			$scope.selectedGroup2 = '';
+			$scope.selectedGroup2 = null;
 
 			//group admins
 			$scope.groupAdmins = [];
@@ -314,6 +330,13 @@ define(['angular'], function(angular){
 
                         if(!$scope.selectedGroup1){
                             $scope.selectedGroup1 = $scope.allUserGroups[0];
+                        }
+                        else{
+                            var currValue = $scope.selectedGroup2;
+
+                            for(var i = 0; i < scope.selectedGroup2.length; i ++){
+
+                            }
                         }
                         
 
