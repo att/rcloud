@@ -122,9 +122,7 @@ rcloud.unauthenticated.get.notebook <- function(id, version = NULL) {
   rcloud.get.notebook(id, version)
 }
 
-rcloud.get.notebook <- function(id, version = NULL, source = NULL) .rcloud.get.notebook(id, version, source = source)
-
-.rcloud.get.notebook <- function(id, version = NULL, source = NULL, raw=FALSE) {
+rcloud.get.notebook <- function(id, version = NULL, source = NULL, raw=FALSE) {
   if (is.null(source)) source <- rcloud.get.notebook.source(id)
   res <- get.gist(id, version, ctx = .rcloud.get.gist.context(source))
   if (rcloud.debug.level() > 1L) {
