@@ -1,6 +1,10 @@
 ((function() {
     return {
+
+
+
         init: function(k) {
+
             RCloud.UI.notebook_commands.add({
                 notebook_info: {
                     section: 'appear',
