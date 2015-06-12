@@ -436,7 +436,7 @@ rcloud.create.notebook <- function(content, is.current = TRUE) {
     .session$current.notebook <- res
     rcloud.reset.session()
   }
-  res
+  rcloud.augment.notebook(res)
 }
 
 rcloud.rename.notebook <- function(id, new.name) {
