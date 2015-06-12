@@ -31,6 +31,8 @@ function main() {
             promise = promise.then(function() {
                 $(".navbar").hide();
                 $("body").css("padding-top", "0");
+                $("<style type = 'text/css'>.cell-status { display: none; } .code-div pre { padding: 0; } </style>")
+                    .appendTo('head');
                 rcloud.api.disable_echo();
             });
         }

@@ -37,7 +37,7 @@ var editor = function () {
         invalid_notebooks_ = {},
         current_ = null, // current notebook and version
         show_terse_dates_ = false, // show terse date option for the user
-        new_notebook_prefix_ = "Notebook";
+        new_notebook_prefix_ = "Notebook ";
 
     // view
     var $tree_ = null,
@@ -119,7 +119,13 @@ var editor = function () {
         return ret;
     }
 
-    var trnexp = /^(.*) ([0-9]+)$/;
+    var trnexp = /(\d+)$/;
+    function split_number(name) {
+        var res = trnexp.exec(name);
+        if(!res)
+            return null;
+        return [name.slice(0, res.index), res[1]];
+    }
 
     function compare_nodes(a, b) {
         var so = a.sort_order-b.sort_order;
@@ -127,9 +133,9 @@ var editor = function () {
         else {
             var alab = a.name || a.label, blab = b.name || b.label;
             // cut trailing numbers and sort separately
-            var amatch = trnexp.exec(alab), bmatch = trnexp.exec(blab);
-            if(amatch && bmatch && amatch[1] == bmatch[1]) {
-                var an = +amatch[2], bn = +bmatch[2];
+            var amatch = split_number(alab), bmatch = split_number(blab);
+            if(amatch && bmatch && amatch[0] == bmatch[0]) {
+                var an = +amatch[1], bn = +bmatch[1];
                 return an - bn;
             }
             var lc = alab.localeCompare(blab);
@@ -163,9 +169,9 @@ var editor = function () {
         if(!map[description])
             return description;
         var match, base, n;
-        if((match = trnexp.exec(description))) {
-            base = match[1];
-            n = +match[2];
+        if((match = split_number(description))) {
+            base = match[0];
+            n = +match[1];
         }
         else {
             base = description;
@@ -173,7 +179,7 @@ var editor = function () {
         }
         var copy_name;
         do
-            copy_name = base + " " + (++n);
+            copy_name = base + (++n);
         while(map[copy_name]);
         return copy_name;
     }
@@ -1147,14 +1153,14 @@ var editor = function () {
         },
         new_notebook_prefix: function(_) {
             if(arguments.length) {
-                new_notebook_prefix_ = _.replace(/ *$/, '');
+                new_notebook_prefix_ = _;
                 return this;
             }
             else return new_notebook_prefix_;
         },
         new_notebook: function() {
             var that = this;
-            return Promise.cast(find_next_copy_name(username_, new_notebook_prefix_ + " 1"))
+            return Promise.cast(find_next_copy_name(username_, new_notebook_prefix_ + '1'))
                 .then(shell.new_notebook.bind(shell))
                 .then(function(notebook) {
                     set_visibility(notebook.id, true);

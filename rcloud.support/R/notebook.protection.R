@@ -83,6 +83,6 @@ rcloud.delete.cryptgroup <- function(groupid) {
   users <- rcloud.get.cryptgroup.users(groupid)
   users <- names(users)
   users <- append(users[users!=.session$username], .session$username)
-  lapply(names(users), function(user) rcloud.remove.cryptgroup.user(groupid, user));
+  lapply(users, function(user) rcloud.remove.cryptgroup.user(groupid, user));
   rcs.rm(rcs.key('.cryptgroup', groupid, 'name'))
 }

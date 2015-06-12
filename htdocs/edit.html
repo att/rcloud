@@ -87,6 +87,9 @@
               <button class="btn btn-default-ext" type="submit" style="border-bottom-right-radius: 3;border-top-right-radius: 3">
                 <i class="icon-search"></i>
               </button>
+              <a href="http://lucene.apache.org/core/3_5_0/queryparsersyntax.html" target="_blank" class="btn btn-info" role="button">
+                <i class="icon-question"></i>
+              </a>
                <!--Sort By :-->
               <select id="sort-by" class="form-control-ext"  data-target="#sort-by" style="width: 65px;">
                 <option value="starcount" selected>Stars</option>
@@ -241,7 +244,7 @@
 
 <script type="text/html" id="notebook-protection-modal">
 
-  <div class="modal-body" id='protection-app' ng-controller='NotebookProtectionController'>
+  <div class="modal-body" id='protection-app' ng-controller='NotebookProtectionController' ng-cloak>
     <div>
       <!-- Nav tabs -->
       <ul class="nav nav-tabs">
@@ -263,22 +266,22 @@
             <label for="redRadio">Public:</label> 
             <input id="redRadio" type="radio" ng-model="belongsToGroup" ng-value="false" />&nbsp;&nbsp;&nbsp;
             <label for="greenRadio">Private:</label> 
-            <input id="greenRadio" type="radio" ng-disabled="!allUsersGroups.length" ng-model="belongsToGroup" ng-value="true" /><br />
+            <input id="greenRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="belongsToGroup" ng-value="true" /><br />
           </div>
 
-          <div class="row sec" ng-show="allUsersGroups.length">
+          <div class="row sec" ng-show="allUserGroups.length">
             <span>Assign to Group</span><br />
            
             <select ng-model="selectedGroup1" 
                     ng-disabled="!belongsToGroup" 
-                    ng-options="group.name for group in allUsersGroups">
+                    ng-options="group.name for group in allUserGroups">
             </select>
 
           </div>
 
 
-          <div class="row sec" ng-hide="allUsersGroups.length">
-            <span>you are not a member of any groups, you can create one in "Group" dialog</span>
+          <div class="row sec" ng-hide="allUserGroups.length">
+            <span>you are not a member of any groups, but you can create one in the<a href="#"> "Group"</a> dialog</span>
           </div>
 
 
@@ -292,16 +295,16 @@
 
           <div class="row sec">
 
-            <div class='col-md-6' style='padding-left: 0px;' ng-show="allUsersGroups.length" >
+            <div class='col-md-6' style='padding-left: 0px;' ng-show="allAdminGroups.length" >
               <span>Select group</span><br />
               <select ng-model="selectedGroup2"
-                      ng-options="group.name for group in allUsersGroups | filter:{ isAdmin : true }"
+                      ng-options="group.name for group in allAdminGroups"
                       ng-change="anotherGroupSelected()" >
               </select>
 
             </div>
 
-            <div class='col-md-6' style='padding-left: 0px;' ng-hide="allUsersGroups.length" >
+            <div class='col-md-6' style='padding-left: 0px;' ng-hide="allAdminGroups.length" >
               <span>There are no groups, please create one.</span><br />
             </div>
 
@@ -310,7 +313,7 @@
               Group</span><br /><br />
               <span class="label label-info group-actions" ng-click="renameGroup()">Rename
               Group</span><br /><br />
-              <span class="label label-danger group-actions" ng-click="deleteGroup()">Delete
+              <span ng-hide="true" class="label label-danger group-actions" ng-click="deleteGroup()">Delete
               Group</span>
             </div>
           </div>
@@ -335,7 +338,7 @@
 
         <div class="modal-footer">
           <span class="btn btn-cancel" ng-click='cancel()'>Cancel</span>
-          <span class="btn btn-save btn-default" ng-click='save()'>Save</span>
+          <span class="btn btn-save btn-default" ng-click='save()'>OK</span>
         </div>
         
       </div>
