@@ -2,6 +2,7 @@ var shell = (function() {
 
     var version_ = null,
         gistname_ = null,
+        source_ = null,
         notebook_user_ = null,
         github_url_ = null,
         gist_url_ = null,
@@ -13,6 +14,7 @@ var shell = (function() {
     function on_new(notebook) {
         gistname_ = notebook.id;
         version_ = null;
+        source_ = null;
         return on_load(notebook);
     }
 
@@ -41,12 +43,13 @@ var shell = (function() {
         return RCloud.UI.with_progress(function() {
             return RCloud.session.reset()
                 .then(f)
-                .spread(function(notebook, gistname, version) {
+                .spread(function(notebook, gistname, version, source) {
                     if (!_.isUndefined(notebook.error)) {
                         throw notebook.error;
                     }
                     gistname_ = gistname;
                     version_ = version;
+                    source_ = source;
                     $(".rcloud-user-defined-css").remove();
                     return rcloud.install_notebook_stylesheets()
                         .return(notebook);
@@ -74,6 +77,9 @@ var shell = (function() {
         version: function() {
             return version_;
         },
+        source: function() {
+            return source_;
+        },
         init: function() {
             rcloud.get_conf_value("github.base.url").then(function(url) { github_url_ = url; });
             rcloud.get_conf_value("github.gist.url").then(function(url) { gist_url_ = url; });
@@ -98,12 +104,12 @@ var shell = (function() {
         }, split_cell: function(cell_model, point1, point2) {
             return notebook_controller_.split_cell(cell_model, point1, point2);
         },
-        load_notebook: function(gistname, version) {
+        load_notebook: function(gistname, version, source) {
             notebook_controller_.save();
             return do_load(function() {
-                return [notebook_controller_.load_notebook(gistname, version),
-                        gistname, version];
-            }, gistname, version);
+                return [notebook_controller_.load_notebook(gistname, version, source),
+                        gistname, version, source];
+            }, gistname, version, source);
         }, save_notebook: function() {
             notebook_controller_.save();
         }, new_notebook: function(desc) {
@@ -173,6 +179,8 @@ var shell = (function() {
                     });
             });
         }, github_url: function() {
+            if(source_)
+                throw new Error("don't know how to construct github url for source (" + source_ + ") yet!");
             var url;
             if(gist_url_) {
                 url = gist_url_;

@@ -22,7 +22,7 @@ RCloud.UI.notebook_title = (function() {
                 else {
                     rcloud.update_notebook(node.gistname, {description: name}, false)
                         .then(function(notebook) {
-                            editor.update_notebook_from_gist(notebook);
+                            editor.update_notebook_from_gist(null, notebook);
                         });
                 }
             }, function(child, name) {

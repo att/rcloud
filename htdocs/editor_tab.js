@@ -84,10 +84,10 @@ var editor = function () {
         return rcloud.set_notebook_visibility(gistname, visible);
     }
 
-    function add_notebook_info(user, gistname, entry) {
+    function update_notebook_info(gistname, entry, do_add) {
         notebook_info_[gistname] = entry;
         var p = rcloud.set_notebook_info(gistname, entry);
-        if(user === username_)
+        if(do_add)
             p = p.then(function() { rcloud.config.add_notebook(gistname); });
         return p;
     }
@@ -98,14 +98,15 @@ var editor = function () {
             Promise.resolve();
     }
 
-    function update_notebook_model(user, gistname, description, time) {
+    function update_notebook_model(gistname, source, user, description, time) {
         var entry = get_notebook_info(gistname);
 
+        entry.source = source;
         entry.username = user;
         entry.description = description;
         entry.last_commit = time;
 
-        add_notebook_info(user, gistname, entry);
+        update_notebook_info(gistname, entry, user === username_);
         return entry; // note: let go of promise
     }
 
@@ -876,7 +877,7 @@ var editor = function () {
         update_notebook_view(user, gistname, get_notebook_info(gistname), selroot);
     }
 
-    function update_notebook_from_gist(result, history, selroot) {
+    function update_notebook_from_gist(source, result, history, selroot) {
         var user = result.user.login, gistname = result.id;
         // we only receive history here if we're at HEAD, so use that if we get
         // it.  otherwise use the remembered history if any.  otherwise
@@ -884,7 +885,7 @@ var editor = function () {
         if(history)
             histories_[gistname] = history;
 
-        var entry = update_notebook_model(user, gistname,
+        var entry = update_notebook_model(gistname, source, user,
                                           result.description,
                                           result.updated_at || result.history[0].committed_at);
 
@@ -1134,11 +1135,12 @@ var editor = function () {
         find_next_copy_name: function(name) {
             return find_next_copy_name(username_, name);
         },
-        load_notebook: function(gistname, version, selroot, push_history) {
+        load_notebook: function(gistname, version, source, selroot, push_history) {
             var that = this;
             selroot = selroot || true;
             return shell.load_notebook(gistname, version)
                 .then(this.load_callback({version: version,
+                                          source: source,
                                           selroot: selroot,
                                           push_history: push_history}));
         },
@@ -1197,8 +1199,8 @@ var editor = function () {
                     return Promise.all(promises);
                 });
         },
-        update_notebook_from_gist: function(notebook) {
-            update_notebook_from_gist(notebook, notebook.history, false);
+        update_notebook_from_gist: function(source, notebook) {
+            update_notebook_from_gist(source, notebook, notebook.history, false);
         },
         for_each_notebook: function(node, data, leaff, combinef) {
             var that = this;
@@ -1218,6 +1220,7 @@ var editor = function () {
             // else if opts has notebook, use notebook id & user
             // else use current notebook & user
             opts = opts || {};
+            var source = opts.source || current_. null;
             var gistname = opts.gistname ||
                     opts.notebook&&opts.notebook.id ||
                     current_.notebook;
@@ -1247,7 +1250,7 @@ var editor = function () {
                                 is_change: opts.is_change || false,
                                 selroot: 'interests'})(opts.notebook);
                         else
-                            update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
+                            update_notebook_from_gist(source, opts.notebook, opts.notebook.history, opts.selroot);
                     }
                     else {
                         update_notebook_view(user, gistname, entry, opts.selroot);
@@ -1370,7 +1373,7 @@ var editor = function () {
                 promises.push(RCloud.UI.share_button.update_link());
 
                 document.title = result.description + " - RCloud";
-                promises.push(update_url({notebook: result.id, version: options.version, tag:tag}));
+                promises.push(update_url({notebook: result.id, version: options.version, source: options.source, tag:tag}));
 
                 var history;
                 // when loading an old version you get truncated history
@@ -1384,7 +1387,7 @@ var editor = function () {
                                : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
                                    num_stars_[result.id] = count;
                                })).then(function() {
-                                   update_notebook_from_gist(result, history, options.selroot);
+                                   update_notebook_from_gist(options.source, result, history, options.selroot);
                                }));
 
                 promises.push(RCloud.UI.comments_frame.display_comments());

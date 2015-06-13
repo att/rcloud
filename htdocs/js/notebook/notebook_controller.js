@@ -51,8 +51,8 @@ Notebook.create_controller = function(model)
         return {controller: cell_controller, changes: model.insert_cell(cell_model, id)};
     }
 
-    function on_load(version, notebook) {
-        var is_read_only = version !== null || notebook.user.login !== rcloud.username() || shell.is_view_mode();
+    function on_load(version, notebook, source) {
+        var is_read_only = version !== null || source !== null || notebook.user.login !== rcloud.username() || shell.is_view_mode();
         current_gist_ = notebook;
         model.read_only(is_read_only);
         if (!_.isUndefined(notebook.files)) {
@@ -387,18 +387,18 @@ Notebook.create_controller = function(model)
             // should make this happen automatically.
             RCloud.UI.scratchpad.clear();
         },
-        load_notebook: function(gistname, version) {
-            return rcloud.load_notebook(gistname, version || null)
+        load_notebook: function(gistname, version, source) {
+            return rcloud.load_notebook(gistname, version || null, source || null)
                 .catch(function(xep) {
                     xep.from_load = true;
                     throw xep;
                 })
-                .then(_.bind(on_load, this, version));
+                .then(_.bind(on_load, this, version, source));
         },
         create_notebook: function(content) {
             var that = this;
             return rcloud.create_notebook(content)
-                .then(_.bind(on_load,this,null));
+                .then(_.bind(on_load, this, null, null));
         },
         revert_notebook: function(gistname, version) {
             model.read_only(false); // so that update_notebook doesn't throw
