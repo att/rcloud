@@ -433,6 +433,10 @@ ul.jqtree-tree .jqtree-title.private {
     color: #aaa;
 }
 
+ul.jqtree-tree .jqtree-title.foreign {
+    color: #66bb44;
+}
+
 .notebook-date {
 }
 

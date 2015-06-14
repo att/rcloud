@@ -85,7 +85,9 @@ var editor = function () {
     }
 
     function add_notebook_info(user, gistname, entry) {
-        notebook_info_[gistname] = entry;
+        if(!notebook_info_[gistname])
+            notebook_info_[gistname] = {};
+        _.extend(notebook_info_[gistname], entry);
         var p = rcloud.set_notebook_info(gistname, entry);
         if(user === username_)
             p = p.then(function() { rcloud.config.add_notebook(gistname); });
@@ -238,6 +240,7 @@ var editor = function () {
                 user: username,
                 root: root,
                 visible: attrs.visible,
+                source: attrs.source,
                 last_commit: attrs.last_commit ? new Date(attrs.last_commit) : 'none',
                 id: node_id(root, username, name),
                 sort_order: ordering.NOTEBOOK,
@@ -359,7 +362,7 @@ var editor = function () {
         return function(datum) {
             if(datum.delay_children)
                 load_children(datum);
-            var d2 = _.pick(datum, "label", "name", "full_name", "gistname", "user", "visible", "last_commit", "sort_order");
+            var d2 = _.pick(datum, "label", "name", "full_name", "gistname", "user", "visible", "source", "last_commit", "sort_order");
             d2.id = datum.id.replace("/alls/", '/'+destroot+'/');
             d2.root = destroot;
             return d2;
@@ -468,7 +471,7 @@ var editor = function () {
                     if(!entry)
                         console.log("notebook metadata for " + book + " is missing.");
                     else
-                        console.log("notebook metadata for " + book + " has invalid entries: " + JSON.stringify(_.pick(entry, "username","description","last_commit","visible")));
+                        console.log("notebook metadata for " + book + " has invalid entries: " + JSON.stringify(_.pick(entry, "username","description","last_commit","visible","source")));
                 }
             })
             .catch(rclient.post_rejection);
@@ -769,6 +772,7 @@ var editor = function () {
                     label: entry.description,
                     last_commit: new Date(entry.last_commit),
                     sort_order: ordering.NOTEBOOK,
+                    source: entry.source,
                     visible: entry.visible};
 
         // always show the same number of history nodes as before
@@ -950,8 +954,12 @@ var editor = function () {
         var element = $li.find('.jqtree-element'),
             title = element.find('.jqtree-title');
         title.css('color', node.color);
-        if(node.gistname && !node.visible)
-            title.addClass('private');
+        if(node.gistname) {
+            if(node.source)
+                title.addClass('foreign');
+            else if(!node.visible)
+                title.addClass('private');
+        }
         if(node.version || node.id === 'showmore')
             title.addClass('history');
         var date;
@@ -1054,7 +1062,7 @@ var editor = function () {
             username_ = rcloud.username();
             var promise = load_everything().then(function() {
                 if(opts.notebook) { // notebook specified in url
-                    return that.load_notebook(opts.notebook, opts.version)
+                    return that.load_notebook(opts.notebook, opts.version, opts.source)
                         .catch(function(xep) {
                             var message = "Could not open notebook " + opts.notebook;
                             if(opts.version)
@@ -1134,13 +1142,22 @@ var editor = function () {
         find_next_copy_name: function(name) {
             return find_next_copy_name(username_, name);
         },
-        load_notebook: function(gistname, version, selroot, push_history) {
+        load_notebook: function(gistname, version, source, selroot, push_history) {
             var that = this;
+            var before;
+            if(source && !notebook_info_[gistname]) {
+                notebook_info_[gistname] = {source: source};
+                before = rcloud.set_notebook_property(gistname, "source", source);
+            }
+            else
+                before = Promise.resolve(undefined);
             selroot = selroot || true;
-            return shell.load_notebook(gistname, version)
-                .then(this.load_callback({version: version,
-                                          selroot: selroot,
-                                          push_history: push_history}));
+            return before.then(function() {
+                return shell.load_notebook(gistname, version)
+                    .then(that.load_callback({version: version,
+                                              selroot: selroot,
+                                              push_history: push_history}));
+            });
         },
         open_notebook: function(gistname, version, selroot, new_window) {
             // really just load_notebook except possibly in a new window
@@ -1149,7 +1166,7 @@ var editor = function () {
                 window.open(url, "_blank");
             }
             else
-                this.load_notebook(gistname, version, selroot);
+                this.load_notebook(gistname, version, null, selroot);
         },
         new_notebook_prefix: function(_) {
             if(arguments.length) {

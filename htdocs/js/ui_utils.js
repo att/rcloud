@@ -14,6 +14,8 @@ ui_utils.make_url = function(page, opts) {
     else {
         if(opts.notebook) {
             url += '?notebook=' + opts.notebook;
+            if(opts.source)
+                url += '&source=' + opts.source;
             if(opts.tag)
                 url += '&tag=' + opts.tag;
             else if(opts.version)
