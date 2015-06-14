@@ -548,6 +548,9 @@ ul.jqtree-tree .jqtree-title.foreign {
     padding: 0;
     padding-top: 1ex;
 }
+.search-result-heading.foreign {
+  color: #66bb44;
+}
 .search-result-modified-date {
     margin-left: 1ex;
 }

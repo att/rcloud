@@ -7704,6 +7704,7 @@ return {
                             star_count = d[i].starcount;
                         }
                         var notebook_id = d[i].id;
+                        var notebook_source = d[i].source;
                         var image_string = "<i class=\"icon-star search-star\"><sub>" + star_count + "</sub></i>";
                         d[i].parts = JSON.parse(d[i].parts);
                         var parts_table = "";
@@ -7751,7 +7752,7 @@ return {
                             }
                         }
                         var togid = i + "more";
-                        var url = ui_utils.make_url('edit.html', {notebook: notebook_id});
+                        var url = ui_utils.make_url('edit.html', {notebook: notebook_id, source: notebook_source});
                         if(parts_table !== "") {
                             if(nooflines > 10) {
                                 parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div>" +
@@ -7760,8 +7761,9 @@ return {
                                 parts_table = "<div><div id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div></div>";
                             }
                         }
+                        var search_result_class = 'search-result-heading' + (notebook_source ? ' foreign' : '');
                         search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" +
-                            "<a id=\"open_" + i + "\" href=\'"+url+"'\" data-gistname='" + notebook_id + "' class='search-result-heading'>" +
+                            "<a id=\"open_" + i + "\" href=\'"+url+"'\" data-gistname='" + notebook_id + "' class='" + search_result_class + "'>" +
                             d[i].user + " / " + d[i].notebook + "</a>" +
                             image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
                         if(parts_table !== "")
