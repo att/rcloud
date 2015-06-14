@@ -386,6 +386,8 @@ function create_cell_html_view(language, cell_model) {
         },
         state_changed: function(state) {
             var control = left_controls_.controls['run_state'];
+            if(running_state_==="unknown" && state==="running")
+                state = "unknown-running";
             switch(state) {
             case 'ready':
                 control.icon('icon-circle-blank').color('#777').title('content has not been run');
@@ -395,6 +397,10 @@ function create_cell_html_view(language, cell_model) {
                 break;
             case 'cancelled':
                 control.icon('icon-asterisk').color('#e06a06').title('execution was cancelled before this cell could run');
+                break;
+            case 'unknown-running':
+                control.icon('icon-question icon-spin').color('blue').title('cell is currently running');
+                has_result_ = false;
                 break;
             case 'running':
                 control.icon('icon-spinner icon-spin').color('blue').title('cell is currently running');
@@ -475,7 +481,7 @@ function create_cell_html_view(language, cell_model) {
                 result_div_.empty();
                 has_result_ = true;
             }
-            this.state_changed(error ? 'error' : 'complete');
+            this.state_changed(error ? 'error' : running_state_==='unknown-running' ? 'ready' : 'complete');
             current_result_ = current_error_ = null;
         },
         clear_result: clear_result,
