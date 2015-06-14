@@ -209,6 +209,21 @@ function create_cell_html_view(language, cell_model) {
         };
     }
 
+    function cell_changed() {
+        var new_state;
+        switch(running_state_) {
+        case 'waiting':
+            new_state = 'unknown';
+            break;
+        case 'running':
+            new_state = 'unknown-running';
+            break;
+        default:
+            new_state = 'ready';
+        }
+        result.state_changed(new_state);
+    }
+
     function create_edit_widget() {
         if(ace_widget_) return;
 
@@ -240,7 +255,7 @@ function create_cell_html_view(language, cell_model) {
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
-            result.state_changed(running_state_ === 'waiting' ? 'unknown' : 'ready');
+            cell_changed();
             cell_model.parent_model.on_dirty();
         });
         update_language();
@@ -382,7 +397,7 @@ function create_cell_html_view(language, cell_model) {
         id_updated: update_div_id,
         language_updated: function() {
             update_language();
-            result.state_changed(running_state_ === 'waiting' ? 'unknown' : 'ready');
+            cell_changed();
         },
         state_changed: function(state) {
             var control = left_controls_.controls['run_state'];
