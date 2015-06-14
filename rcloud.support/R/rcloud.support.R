@@ -323,7 +323,7 @@ update.solr <- function(notebook, starcount){
   }
 }
 
-rcloud.search <-function(query, sortby, orderby, start, pagesize) {
+rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
   url <- getConf("solr.url")
   if (is.null(url)) stop("solr is not enabled")
 

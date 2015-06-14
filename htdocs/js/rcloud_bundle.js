@@ -7554,6 +7554,9 @@ function sortby() {
 function orderby() {
     return $("#order-by option:selected").val();
 }
+function all_sources() {
+    return $("#all-sources").is(':checked');
+}
 
 function order_from_sort() {
     var orderby;
@@ -7582,6 +7585,10 @@ return {
                 searchproc();
                 return false;
             });
+            $("#all-sources").change(function(e) {
+                var val = all_sources();
+                rcloud.config.set_user_option("search-all-sources", val);
+            });
             $("#sort-by").change(function() {
                 rcloud.config.set_user_option('search-sort-by', sortby());
                 order_from_sort();
@@ -7607,8 +7614,10 @@ return {
         };
     },
     load: function() {
-        return rcloud.config.get_user_option(['search-results-per-page', 'search-sort-by', 'search-order-by'])
+        return rcloud.config.get_user_option(['search-all-sources', 'search-results-per-page',
+                                              'search-sort-by', 'search-order-by'])
             .then(function(opts) {
+                $('#all-sources').prop('checked', opts['search-all-sources']);
                 if(opts['search-results-per-page']) page_size_ = opts['search-results-per-page'];
                 if(!opts['search-sort-by']) opts['search-sort-by'] = 'starcount'; // always init once
                 $('#sort-by').val(opts['search-sort-by']);
@@ -7819,7 +7828,7 @@ return {
         }
         query = encodeURIComponent(query);
         RCloud.UI.with_progress(function() {
-            return rcloud.search(query, sortby, orderby, start, page_size_)
+            return rcloud.search(query, all_sources(), sortby, orderby, start, page_size_)
                 .then(function(v) {
                     create_list_of_search_results(v);
                 });
