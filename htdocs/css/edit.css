@@ -510,6 +510,11 @@ ul.jqtree-tree .jqtree-title.foreign {
     display: none;
     height: 8px;
     margin-bottom: 8px;
+    margin-top: 0px;
+}
+
+#search-summary h4 {
+    margin-top: 0px;
 }
 
 #search-results-row {

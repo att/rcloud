@@ -87,9 +87,6 @@
               <button class="btn btn-default-ext" type="submit" style="border-bottom-right-radius: 3;border-top-right-radius: 3">
                 <i class="icon-search"></i>
               </button>
-              <a href="http://lucene.apache.org/core/3_5_0/queryparsersyntax.html" target="_blank" class="btn btn-info" role="button">
-                <i class="icon-question"></i>
-              </a>
               <!--Sort By :-->
               <select id="sort-by" class="form-control-ext"  data-target="#sort-by" style="width: 65px;">
                 <option value="starcount" selected>Stars</option>
@@ -104,10 +101,14 @@
               </select>
             </div>
           </div>
-              <!-- All Lakes :-->
-              <div class="checkbox">
-                <label><input type="checkbox" id="all-sources" checked="false">All Lakes</label>
-              </div>
+        <!-- All Lakes :-->
+        <span class="checkbox" style="display:inline-block; margin-top: 4px">
+          <label><input type="checkbox" id="all-sources" checked="false">All Lakes</label>
+        </span>
+        <a href="http://lucene.apache.org/core/3_5_0/queryparsersyntax.html" target="_blank" style="float:right; margin-top: 4px">
+          Lucene search syntax
+        </a>
+
         </form>
         <div id="search-summary"></div>
       </div>
