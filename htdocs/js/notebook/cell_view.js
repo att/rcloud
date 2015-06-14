@@ -168,11 +168,6 @@ function create_cell_html_view(language, cell_model) {
         else div.off('mousedown.rcloud-cell mouseup.rcloud-cell');
     }
 
-    function display_status(status) {
-        result_div_.html('<div class="non-result">' + status + '</div>');
-        has_result_ = false;
-    };
-
     // postprocessing the dom is slow, so only do this when we have a break
     var result_updated = _.debounce(function() {
         Notebook.Cell.postprocessors.entries('all').forEach(function(post) {
@@ -183,6 +178,7 @@ function create_cell_html_view(language, cell_model) {
     function clear_result() {
         result_div_.empty();
         has_result_ = false;
+        cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', false);
     }
 
     // start trying to refactor out this repetitive nonsense
@@ -443,6 +439,7 @@ function create_cell_html_view(language, cell_model) {
                     result.hide_source(true);
                 has_result_ = true;
             }
+            this.toggle_results(true); // always show when updating
             switch(type) {
             case 'selection':
             case 'deferred_result':
@@ -612,6 +609,13 @@ function create_cell_html_view(language, cell_model) {
                 source_div_.hide();
             else
                 source_div_.show();
+        },
+        toggle_results: function(val) {
+            if(val===undefined)
+                val = result_div_.is(':hidden');
+            cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', val);
+            if(val) result_div_.show();
+            else result_div_.hide();
         },
         get_input: function(type, prompt, k) {
             if(!has_result_) {
