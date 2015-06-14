@@ -2138,7 +2138,10 @@ function create_cell_html_view(language, cell_model) {
             return ace_widget_;
         },
         id_updated: update_div_id,
-        language_updated: update_language,
+        language_updated: function() {
+            update_language();
+            result.state_changed(running_state_ === 'waiting' ? 'unknown' : 'ready');
+        },
         state_changed: function(state) {
             var control = left_controls_.controls['run_state'];
             switch(state) {
