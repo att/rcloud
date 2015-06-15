@@ -149,7 +149,8 @@ RCloud.UI.image_manager = (function() {
                     }
                 });
                 img_.click(function(e) {
-                    points.push([e.clientX, e.clientY]);
+                    var offset = $(this).offset();
+                    points.push([e.pageX - offset.left, e.pageY-offset.top]);
                 });
             }
         };
