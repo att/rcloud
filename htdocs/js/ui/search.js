@@ -54,10 +54,15 @@ return {
                 searchproc();
                 return false;
             });
-            $("#all-sources").change(function(e) {
-                var val = all_sources();
-                rcloud.config.set_user_option("search-all-sources", val);
-            });
+            if(!editor.gist_sources() || !editor.gist_sources().length) {
+                $('#all-sources').parent().hide();
+            }
+            else {
+                $("#all-sources").change(function(e) {
+                    var val = all_sources();
+                    rcloud.config.set_user_option("search-all-sources", val);
+                });
+            }
             $("#sort-by").change(function() {
                 rcloud.config.set_user_option('search-sort-by', sortby());
                 order_from_sort();

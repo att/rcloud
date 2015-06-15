@@ -1107,6 +1107,9 @@ var editor = function () {
         username: function() {
             return username_;
         },
+        gist_sources: function() {
+            return gist_sources_;
+        },
         num_stars: function(gistname) {
             return num_stars_[gistname] || 0;
         },
