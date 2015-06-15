@@ -35,13 +35,16 @@ var editor = function () {
         my_friends_ = {}, // people whose notebooks i've starred
         featured_ = [], // featured users - samples, intros, etc
         invalid_notebooks_ = {},
-        current_ = null, // current notebook and version
-        show_terse_dates_ = false, // show terse date option for the user
-        new_notebook_prefix_ = "Notebook ";
+        current_ = null; // current notebook and version
 
     // view
     var $tree_ = null,
         star_notebook_button_ = null;
+
+    // configuration stuff
+    var gist_sources_ = null, // valid gist sources on server
+        show_terse_dates_ = false, // show terse date option for the user
+        new_notebook_prefix_ = "Notebook ";
 
     // work around oddities of rserve.js
     function each_r_list(list, f) {
@@ -429,12 +432,12 @@ var editor = function () {
                 return allUsers
             })
             .then(rcloud.config.all_notebooks_multiple_users),
-            rcloud.stars.get_my_starred_notebooks()
+            rcloud.stars.get_my_starred_notebooks(),
+            rcloud.get_gist_sources()
         ])
-            .spread(function(user_notebook_set, my_stars_array) {
-
-                // window.allBooks = user_notebook_set;
+            .spread(function(user_notebook_set, my_stars_array, gist_sources) {
                 my_stars_array = r_vector(my_stars_array);
+                gist_sources_ = gist_sources;
                 var all_notebooks = [];
                 each_r_list(user_notebook_set, function(username) {
                     all_notebooks = all_notebooks.concat(r_vector(user_notebook_set[username]));
@@ -1145,12 +1148,16 @@ var editor = function () {
         load_notebook: function(gistname, version, source, selroot, push_history) {
             var that = this;
             var before;
-            if(source && !notebook_info_[gistname]) {
-                notebook_info_[gistname] = {source: source};
-                before = rcloud.set_notebook_property(gistname, "source", source);
+            if(source) {
+                if(gist_sources_.indexOf(source)<0)
+                    RCloud.UI.session_pane.append_text("Invalid gist source '" + source + "': ignored.");
+                else if(!notebook_info_[gistname]) {
+                    notebook_info_[gistname] = {source: source};
+                    before = rcloud.set_notebook_property(gistname, "source", source);
+                }
+                // silently ignore valid source if notebook already known
             }
-            else
-                before = Promise.resolve(undefined);
+            before = before || Promise.resolve(undefined);
             selroot = selroot || true;
             return before.then(function() {
                 return shell.load_notebook(gistname, version)

@@ -108,6 +108,7 @@ unauthenticated.ocaps <- function(mode, compute)
       prefix_uuid = compute$prefix_uuid,
       get_conf_value = make.oc(rcloud.get.conf.value),
       get_conf_values = make.oc(rcloud.get.conf.values),
+      get_gist_sources = make.oc(rcloud.get.gist.sources),
       get_notebook = make.oc(rcloud.unauthenticated.get.notebook),
       load_notebook = make.oc(rcloud.unauthenticated.load.notebook),
       load_notebook_compute = compute$load_notebook,
