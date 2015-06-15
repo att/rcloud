@@ -361,6 +361,15 @@ rect.frame {
     padding-left: .2em;
 }
 
+.fontawesome-button i.icon-border.borderable {
+    border-color: lightskyblue;
+    padding: 2px;
+}
+
+.fontawesome-button i.borderable {
+    padding: 3px;
+}
+
 .navbar .btn-link {
     color: #ddd;
     font-size: 120%;
