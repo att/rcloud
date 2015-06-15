@@ -1,11 +1,91 @@
 ## RCloud 1.4 (under development)
 ### Features
-* Navbar menus are customizable (#1313)
+* Protected notebooks. You can encrypt your notebooks and make them readable
+ only by you or only by a select group of users. Protected notebooks will not
+ be seen in the search results (although pre-encrypted versions of the content
+ may be).
+
+ View or modify the protection of a notebook through the notebook info command
+ in the notebook tree. If you own the notebook, the protection will be a link
+ which open the Notebook Protection dialog. From here you can assign the
+ notebook to any group you are a member of, or make it private only to
+ yourself. The second tab of the Notebook Protection dialog allows you to
+ create groups, rename groups, and assign other users as administrators and
+ members of the groups you administrate.
+* View notebooks on other RCloud instances. The configuration file now allows
+ configuring multiple git/github-based notebook stores with `gist.source`
+ names. Specifying that name in the URL with `&source=name` loads the notebook
+ from the other instance. Search has an option to search "All Lakes", i.e. all
+ sources. For this release, all notebooks get displayed in the same tree;
+ notebooks which are "foreign" get displayed in green and are read-only.
+* Stop execution of cells. Clicking the stop buttion in the navbar now sends an
+ interrupt to the R process and terminates execution (when possible).
+* Binary assets: you can now upload binary files to notebooks. The content is
+ automatically detected and transparently encoded and decoded using base-64
+ encoding. Where possible, the asset is displayed in its native format
+ in the asset panel. Assets are currently limited to 750KB. (#683)
+* Navbar menus [are
+ customizable](https://github.com/att/rcloud/wiki/RCloud-UI-Extensions#navbar-menus),
+ e.g. to display help or other resources in the area around the Advanced
+ menu. (#1313)
+
+### Improvements
+* toggle results for each cell, helpful when results are long and it's hard to
+ find the next cell (#1487)
+* hide all view.html ui elements, including cell status elements, on `&quiet=1`
+ (#1449)
+* Rename and fork folders of notebooks. Clicking on a notebook folder the first
+ time opens the folder, and the Fork command becomes available. Clicking on the
+ name a second time starts editing of that name (and any higher levels of the
+ folder name). When editing a folder name, you can press ctrl/cmd-enter to fork
+ that folder under the new name. (#1149 / #1394)
+* New cell states to make enqueued execution clearer: if you change a cell
+ when it is enqueued to be run, its state will turn to "unknown" (purple
+ question mark) indicating that the result may not match the code in the
+ cell. When it is running, it will display a spinning question mark. And when
+ it has finished running, it will return to the "ready" state (empty circle)
+ instead of the "complete" state, indicating it still needs to be run for the
+ current code to be reflected in the output and state. (#1474 / #1456 / #1445 /
+ #1436)
+* New Notebook Prefix setting allows changing the prefix for new notebook
+ names, e.g. to put new notebooks in a folder to keep the top level less
+ cluttered. The default remains "Notebook ". (#885)
+* multi-line command input is indicated with `+` as in command-line R. (#620)
+* workspace panel is not updated if it is collapsed
+* highlighting and syntax checking for html (#1387)
+* ctrl-A and ctrl-E go to the beginning and end of actual line, not the wrapped
+ line (on Mac) (#1417)
+
+### Bug Fixes
+* multiple password prompts executed seqentially could hang RCloud (#371)
+* do not allow empty notebook path parts (#1491 / #1492)
+* Python errors are now detected by the notebook, displaying the proper status
+ and cancelling further cell execution. (#1433)
+* empty Python cells could case RCloud to hang (#1403)
+* restores error messages (like notebook not published) in view mode (#1424)
+* tagged versions of notebooks were not available in view mode (#1369)
+* fixes special html characters (such as `Press <enter> to continue`) in text
+ input prompt. (#1383)
+* fixes broken help with R 3.2.0 (#1482)
+* fixes cases where forked notebooks within folders ended up with the same name
+ as the original. (#1277)
+* fixes cases where the text input prompt was truncated in view mode (#1453)
+* redirects through the login page return to the same page that was
+ requested. (If a custom login page is used, it should take `?redirect=` as a
+ query parameter, and POST the same value to login.R when submitting the
+ username and password.) (#1419 / #1282)
+* various connectivity problems were fixed, caused by fragmentation of messages
+ from the client to the server
+* equations are properly displayed in RMarkdown cells (#1377)
+* clicking to edit a cell which is scrolled hits the intended line (#1358)
+* fix oversized left margin for markdown (#1401)
 
 ### Plugins
 #### Workspace viewer
 * the dimensions of data frames are now shown in the overview
-* functions arguments are shown without the preceding function keyword to save space
+* functions arguments are shown without the preceding function keyword to save
+  space
+
 
 ## RCloud 1.3.4
 * Catches errors in Workspace viewer when an object errors in str()
