@@ -8158,6 +8158,12 @@ RCloud.UI.settings_frame = (function() {
                     default_value: editor.new_notebook_prefix(),
                     set: function(val) {
                         editor.new_notebook_prefix(val);
+                    },
+                    parse: function(val) {
+                        // no monkey business: do not allow any empty parts in path, except the last one
+                        return val.split('/')
+                            .filter(function(x, i, a) { return i==a.length-1 || !Notebook.empty_for_github(x); })
+                            .join('/');
                     }
                 })
             });
