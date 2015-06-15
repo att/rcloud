@@ -5839,19 +5839,28 @@ RCloud.UI.image_manager = (function() {
             },
             locate: function(k) {
                 var points = [];
-                div_.attr('tabindex', 1);
+                div_.attr('tabindex', 1).css('cursor', 'crosshair');
                 div_.focus().keydown(function(e) {
                     if(e.keyCode === $.ui.keyCode.ESCAPE) {
                         div_.off('keydown').blur();
                         img_.off('click');
-                        div_.attr('tabindex', null);
+                        div_.attr('tabindex', null).removeAttr('style');
                         console.log(points);
                         k(null, points);
                     }
                 });
                 img_.click(function(e) {
+                    // sadly, there seems to be a lot of disagreement about the correct
+                    // way to get image-relative coordinates. may need adjusting!
+                    // http://stackoverflow.com/a/14045047/676195
                     var offset = $(this).offset();
-                    points.push([e.pageX - offset.left, e.pageY-offset.top]);
+                    var offset_t = $(this).offset().top - $(window).scrollTop();
+                    var offset_l = $(this).offset().left - $(window).scrollLeft();
+
+                    var x = Math.round( (e.clientX - offset_l) );
+                    var y = Math.round( (e.clientY - offset_t) );
+
+                    points.push([x, y]);
                 });
             }
         };
