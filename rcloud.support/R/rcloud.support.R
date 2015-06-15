@@ -702,8 +702,12 @@ rcloud.get.notebook.info <- function(id, single=TRUE) {
 rcloud.get.multiple.notebook.infos <- function(ids)
     rcloud.get.notebook.info(ids, FALSE)
 
+# notebook properties settable by non-owners
+.anyone.settable = c('source', 'username', 'description', 'last_commit');
+
 rcloud.set.notebook.info <- function(id, info) {
   base <- usr.key(user=".notebook", notebook=id)
+  rcs.set(rcs.key(base, "source"), info$source)
   rcs.set(rcs.key(base, "username"), info$username)
   rcs.set(rcs.key(base, "description"), info$description)
   rcs.set(rcs.key(base, "last_commit"), info$last_commit)
@@ -716,7 +720,7 @@ rcloud.get.notebook.property <- function(id, key)
   rcs.get(usr.key(user=".notebook", notebook=id, key))
 
 rcloud.set.notebook.property <- function(id, key, value)
-  if(notebook.is.mine(id)) {
+  if(key %in% .anyone.settable || notebook.is.mine(id)) {
     rcs.set(usr.key(user=".notebook", notebook=id, key), value)
     TRUE
   } else FALSE
