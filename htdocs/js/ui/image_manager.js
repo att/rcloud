@@ -135,14 +135,33 @@ RCloud.UI.image_manager = (function() {
             update: function(url, dims) {
                 img_.attr('src', url);
                 update_dims(dims);
+            },
+            locate: function(k) {
+                var points = [];
+                div_.attr('tabindex', 1);
+                div_.focus().keydown(function(e) {
+                    if(e.keyCode === $.ui.keyCode.ESCAPE) {
+                        div_.off('keydown').blur();
+                        img_.off('click');
+                        div_.attr('tabindex', null);
+                        console.log(points);
+                        k(null, points);
+                    }
+                });
+                img_.click(function(e) {
+                    points.push([e.clientX, e.clientY]);
+                });
             }
         };
         return result;
     }
+    function image_id(device, page) {
+        return device + "-" + page;
+    }
     var result = {
         update: function(url, dims, device, page) {
-            var id = device + "-" + page;
             var image;
+            var id = image_id(device, page);
             if(images_[id]) {
                 image = images_[id];
                 image.update(url, dims);
@@ -152,6 +171,13 @@ RCloud.UI.image_manager = (function() {
                 images_[id] = image;
             }
             return image;
+        },
+        locate: function(device, page, k) {
+            var id = image_id(device, page);
+            if(images_[id]) {
+                var image = images_[id];
+                image.locate(k);
+            }
         },
         formats: formats_
     };
