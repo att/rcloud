@@ -89,7 +89,7 @@ define(['angular'], function(angular){
 
 		$scope.getUsersGroups = function(){
 
-			console.log('getting groups for '+$scope.userLogin);
+			RCloud.UI.notebook_protection_logger.log('getting groups for '+$scope.userLogin);
 			GroupsService.getUsersGroups($scope.userLogin)
 			.then(function(data){
 
@@ -180,7 +180,7 @@ define(['angular'], function(angular){
 				//console.log(finalArray);
 			})
 			.catch(function(e){
-				console.log('error getting users groups'+e);
+				RCloud.UI.notebook_protection_logger.warn('error getting users groups'+e);
 			});
 		};
 
@@ -262,7 +262,7 @@ define(['angular'], function(angular){
 
 				var conf = confirm("Are you sure you want to move your notebook to group "+$scope.selectedGroup1.name +"?");
 				if(conf){
-					console.log('notebook id is '+$scope.notebookGistName);
+					RCloud.UI.notebook_protection_logger.log('notebook id is '+$scope.notebookGistName);
 					GroupsService.setNotebookGroup($scope.notebookGistName, $scope.selectedGroup1.id )
 					.then(function(data){
 						console.log('data is '+data);
@@ -271,7 +271,7 @@ define(['angular'], function(angular){
 
 					})
 					.catch(function(e){
-						console.log(e)
+						RCloud.UI.notebook_protection_logger.warn(e)
 					})
 				}
 			}
@@ -279,7 +279,7 @@ define(['angular'], function(angular){
 
 				var conf = confirm("Are you sure you want to make your notebook public? \n this might make this notebook no longer accessible");
 				if(conf){
-					console.log('notebook id is '+$scope.notebookGistName);
+					RCloud.UI.notebook_protection_logger.log('notebook id is '+$scope.notebookGistName);
 					GroupsService.setNotebookGroup($scope.notebookGistName, null )
 					.then(function(data){
                         $scope.cancel();
@@ -288,7 +288,7 @@ define(['angular'], function(angular){
 
 						
 
-						console.log(e)
+						RCloud.UI.notebook_protection_logger.warn(e)
 					})
 				}
 			}
@@ -321,7 +321,7 @@ define(['angular'], function(angular){
                     }
                 }
 
-                console.log('just grabed memebers info for group '+$scope.selectedGroup2.name);
+                RCloud.UI.notebook_protection_logger.log('just grabed memebers info for group '+$scope.selectedGroup2.name);
 
                 $scope.$evalAsync(function(){
 
@@ -344,11 +344,12 @@ define(['angular'], function(angular){
 
             })
             .catch(function(e){
-                console.log(e);
+                RCloud.UI.notebook_protection_logger.warn(e);
             })
         }
 
-        
+
+
 
 	    $scope.createGroup = function(){
 	    	var pr = prompt("Enter new group name", "");
@@ -405,7 +406,7 @@ define(['angular'], function(angular){
                     //     $scope.selectedGroup2 = $scope.allUserGroups[ind];
                     //     //$scope.selectedGroup2[ind]
                     // })
-                    console.log('group created and selected '+data);
+                    RCloud.UI.notebook_protection_logger.log('group created and selected '+data);
 
                     _.defer(function(){
                         $scope.populateGroupMembers();
@@ -414,7 +415,7 @@ define(['angular'], function(angular){
 
                 })
                 .catch(function(e){
-                    alert(e);
+                    RCloud.UI.notebook_protection_logger.warn(e);
                 });
 
 
@@ -473,7 +474,7 @@ define(['angular'], function(angular){
 
 	                })
 	                .catch(function(e){
-	                    alert(e);
+	                    RCloud.UI.notebook_protection_logger.warn(e);
 	                })
 
 				}  
@@ -531,7 +532,7 @@ define(['angular'], function(angular){
                     });
 	    		})
 	    		.catch(function(e){
-                    alert(e);
+                    console.log(e);
                 })
 	    	}
 	    }
@@ -561,7 +562,7 @@ define(['angular'], function(angular){
 
 	    			var duplicates = _.intersection($scope.groupAdmins, $scope.groupMembers);
 	    			if(duplicates.length){
-	    				console.log('removing '+duplicates+' from members and moving it to admins');
+	    				RCloud.UI.notebook_protection_logger.warn('removing '+duplicates+' from members and moving it to admins');
 	    				//remove 
 	    				var dupIndex = $scope.groupMembers.indexOf(duplicates[0]);
 	    				$scope.groupMembers.splice(dupIndex, 1);
@@ -584,7 +585,7 @@ define(['angular'], function(angular){
 
 	    			var duplicates = _.intersection($scope.groupMembers, $scope.groupAdmins);
 	    			if(duplicates.length){
-	    				console.log('removing '+duplicates+' from admins and moving it to members');
+	    				RCloud.UI.notebook_protection_logger.warn('removing '+duplicates+' from admins and moving it to members');
 	    				//remove 
 	    				var dupIndex = $scope.groupAdmins.indexOf(duplicates[0]);
 	    				$scope.groupAdmins.splice(dupIndex, 1);
@@ -785,3 +786,6 @@ define(['angular'], function(angular){
    	}]);
 
 });
+
+
+
