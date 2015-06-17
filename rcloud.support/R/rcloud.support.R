@@ -122,9 +122,7 @@ rcloud.unauthenticated.get.notebook <- function(id, version = NULL) {
   rcloud.get.notebook(id, version)
 }
 
-rcloud.get.notebook <- function(id, version = NULL, source = NULL) .rcloud.get.notebook(id, version, source = source)
-
-.rcloud.get.notebook <- function(id, version = NULL, source = NULL, raw=FALSE) {
+rcloud.get.notebook <- function(id, version = NULL, source = NULL, raw=FALSE) {
   if (is.null(source)) source <- rcloud.get.notebook.source(id)
   res <- get.gist(id, version, ctx = .rcloud.get.gist.context(source))
   if (rcloud.debug.level() > 1L) {
@@ -325,7 +323,7 @@ update.solr <- function(notebook, starcount){
   }
 }
 
-rcloud.search <-function(query, sortby, orderby, start, pagesize) {
+rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
   url <- getConf("solr.url")
   if (is.null(url)) stop("solr is not enabled")
 
@@ -438,7 +436,7 @@ rcloud.create.notebook <- function(content, is.current = TRUE) {
     .session$current.notebook <- res
     rcloud.reset.session()
   }
-  res
+  rcloud.augment.notebook(res)
 }
 
 rcloud.rename.notebook <- function(id, new.name) {
@@ -689,7 +687,7 @@ rcloud.config.get.alluser.option <- function(key)
 # single just changes the format for querying a single notebook (essentially acting as [[1]])
 rcloud.get.notebook.info <- function(id, single=TRUE) {
   base <- usr.key(user=".notebook", notebook=id)
-  fields <- c("username", "description", "last_commit", "visible")
+  fields <- c("source", "username", "description", "last_commit", "visible")
   keys <- rcs.key(rep(base, each=length(fields)), fields)
   results <- rcs.get(keys, list=TRUE)
   if (length(id) == 1L && single) {
@@ -704,8 +702,12 @@ rcloud.get.notebook.info <- function(id, single=TRUE) {
 rcloud.get.multiple.notebook.infos <- function(ids)
     rcloud.get.notebook.info(ids, FALSE)
 
+# notebook properties settable by non-owners
+.anyone.settable = c('source', 'username', 'description', 'last_commit');
+
 rcloud.set.notebook.info <- function(id, info) {
   base <- usr.key(user=".notebook", notebook=id)
+  rcs.set(rcs.key(base, "source"), info$source)
   rcs.set(rcs.key(base, "username"), info$username)
   rcs.set(rcs.key(base, "description"), info$description)
   rcs.set(rcs.key(base, "last_commit"), info$last_commit)
@@ -718,7 +720,7 @@ rcloud.get.notebook.property <- function(id, key)
   rcs.get(usr.key(user=".notebook", notebook=id, key))
 
 rcloud.set.notebook.property <- function(id, key, value)
-  if(notebook.is.mine(id)) {
+  if(key %in% .anyone.settable || notebook.is.mine(id)) {
     rcs.set(usr.key(user=".notebook", notebook=id, key), value)
     TRUE
   } else FALSE

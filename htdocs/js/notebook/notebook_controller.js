@@ -52,7 +52,13 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(version, notebook) {
-        var is_read_only = version !== null || notebook.user.login !== rcloud.username() || shell.is_view_mode();
+        // the git backend should determine readonly but that's another huge refactor
+        // and it would require multiple usernames, which would be a rather huge change
+        var ninf = editor.get_notebook_info(notebook.id);
+        var is_read_only = ninf && ninf.source ||
+                version !== null ||
+                notebook.user.login !== rcloud.username() ||
+                shell.is_view_mode();
         current_gist_ = notebook;
         model.read_only(is_read_only);
         if (!_.isUndefined(notebook.files)) {

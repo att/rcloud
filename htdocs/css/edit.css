@@ -405,6 +405,15 @@ rect.frame {
     padding-left: .2em;
 }
 
+.fontawesome-button i.icon-border.borderable {
+    border-color: lightskyblue;
+    padding: 2px;
+}
+
+.fontawesome-button i.borderable {
+    padding: 3px;
+}
+
 .navbar .btn-link {
     color: #ddd;
     font-size: 120%;
@@ -475,6 +484,10 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
 
 ul.jqtree-tree .jqtree-title.private {
     color: #aaa;
+}
+
+ul.jqtree-tree .jqtree-title.foreign {
+    color: #66bb44;
 }
 
 .notebook-date {
@@ -550,6 +563,11 @@ ul.jqtree-tree .jqtree-title.private {
     display: none;
     height: 8px;
     margin-bottom: 8px;
+    margin-top: 0px;
+}
+
+#search-summary h4 {
+    margin-top: 0px;
 }
 
 #search-results-row {
@@ -582,6 +600,9 @@ ul.jqtree-tree .jqtree-title.private {
     margin-right: 1em;
     padding: 0;
     padding-top: 1ex;
+}
+.search-result-heading.foreign {
+  color: #66bb44;
 }
 .search-result-modified-date {
     margin-left: 1ex;
@@ -1237,28 +1258,12 @@ pre > .vt100 {
 }
 
 .checkbox {
-    padding-left: 2px;
-    margin-top: 0px;
     margin-bottom: 2px;
+    padding-left: 16px;
 }
-/* switching off default bootstrap input type checkbox*/
-input[type=checkbox] {
-    display: none;
-}
-input[type=checkbox] + span:before {
-    font-family: "FontAwesome";
-    width: 1.2em;
-    display:inline-block;
-}
-input[type=checkbox] + span:before {
-    content: "\f096";
-}
-input[type=checkbox]:checked + span:before {
-    content: "\f046";
-}
-input[type=checkbox].inverse + span:before {
-    content: "\f0c8";
-}
-input[type=checkbox].inverse:checked + span:before {
-    content: "\f14a";
+
+.checkbox input[type="checkbox"] {
+    margin-top: 2px;
+    margin-right: 2px;
+    margin-left: -15px;
 }

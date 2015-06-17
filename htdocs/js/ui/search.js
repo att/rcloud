@@ -23,6 +23,9 @@ function sortby() {
 function orderby() {
     return $("#order-by option:selected").val();
 }
+function all_sources() {
+    return $("#all-sources").is(':checked');
+}
 
 function order_from_sort() {
     var orderby;
@@ -51,6 +54,15 @@ return {
                 searchproc();
                 return false;
             });
+            if(!editor.gist_sources() || !editor.gist_sources().length) {
+                $('#all-sources').parent().hide();
+            }
+            else {
+                $("#all-sources").change(function(e) {
+                    var val = all_sources();
+                    rcloud.config.set_user_option("search-all-sources", val);
+                });
+            }
             $("#sort-by").change(function() {
                 rcloud.config.set_user_option('search-sort-by', sortby());
                 order_from_sort();
@@ -76,8 +88,10 @@ return {
         };
     },
     load: function() {
-        return rcloud.config.get_user_option(['search-results-per-page', 'search-sort-by', 'search-order-by'])
+        return rcloud.config.get_user_option(['search-all-sources', 'search-results-per-page',
+                                              'search-sort-by', 'search-order-by'])
             .then(function(opts) {
+                $('#all-sources').prop('checked', opts['search-all-sources']);
                 if(opts['search-results-per-page']) page_size_ = opts['search-results-per-page'];
                 if(!opts['search-sort-by']) opts['search-sort-by'] = 'starcount'; // always init once
                 $('#sort-by').val(opts['search-sort-by']);
@@ -164,6 +178,7 @@ return {
                             star_count = d[i].starcount;
                         }
                         var notebook_id = d[i].id;
+                        var notebook_source = d[i].source;
                         var image_string = "<i class=\"icon-star search-star\"><sub>" + star_count + "</sub></i>";
                         d[i].parts = JSON.parse(d[i].parts);
                         var parts_table = "";
@@ -211,7 +226,7 @@ return {
                             }
                         }
                         var togid = i + "more";
-                        var url = ui_utils.make_url('edit.html', {notebook: notebook_id});
+                        var url = ui_utils.make_url('edit.html', {notebook: notebook_id, source: notebook_source});
                         if(parts_table !== "") {
                             if(nooflines > 10) {
                                 parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div>" +
@@ -220,8 +235,9 @@ return {
                                 parts_table = "<div><div id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div></div>";
                             }
                         }
+                        var search_result_class = 'search-result-heading' + (notebook_source ? ' foreign' : '');
                         search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" +
-                            "<a id=\"open_" + i + "\" href=\'"+url+"'\" data-gistname='" + notebook_id + "' class='search-result-heading'>" +
+                            "<a id=\"open_" + i + "\" href=\'"+url+"'\" data-gistname='" + notebook_id + "' class='" + search_result_class + "'>" +
                             d[i].user + " / " + d[i].notebook + "</a>" +
                             image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
                         if(parts_table !== "")
@@ -288,7 +304,7 @@ return {
         }
         query = encodeURIComponent(query);
         RCloud.UI.with_progress(function() {
-            return rcloud.search(query, sortby, orderby, start, page_size_)
+            return rcloud.search(query, all_sources(), sortby, orderby, start, page_size_)
                 .then(function(v) {
                     create_list_of_search_results(v);
                 });

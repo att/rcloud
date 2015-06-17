@@ -168,11 +168,6 @@ function create_cell_html_view(language, cell_model) {
         else div.off('mousedown.rcloud-cell mouseup.rcloud-cell');
     }
 
-    function display_status(status) {
-        result_div_.html('<div class="non-result">' + status + '</div>');
-        has_result_ = false;
-    };
-
     // postprocessing the dom is slow, so only do this when we have a break
     var result_updated = _.debounce(function() {
         Notebook.Cell.postprocessors.entries('all').forEach(function(post) {
@@ -183,6 +178,7 @@ function create_cell_html_view(language, cell_model) {
     function clear_result() {
         result_div_.empty();
         has_result_ = false;
+        cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', false);
     }
 
     // start trying to refactor out this repetitive nonsense
@@ -207,6 +203,21 @@ function create_cell_html_view(language, cell_model) {
             session: session,
             document: document
         };
+    }
+
+    function cell_changed() {
+        var new_state;
+        switch(running_state_) {
+        case 'waiting':
+            new_state = 'unknown';
+            break;
+        case 'running':
+            new_state = 'unknown-running';
+            break;
+        default:
+            new_state = 'ready';
+        }
+        result.state_changed(new_state);
     }
 
     function create_edit_widget() {
@@ -240,7 +251,7 @@ function create_cell_html_view(language, cell_model) {
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
-            result.state_changed(running_state_ === 'waiting' ? 'unknown' : 'ready');
+            cell_changed();
             cell_model.parent_model.on_dirty();
         });
         update_language();
@@ -380,9 +391,14 @@ function create_cell_html_view(language, cell_model) {
             return ace_widget_;
         },
         id_updated: update_div_id,
-        language_updated: update_language,
+        language_updated: function() {
+            update_language();
+            cell_changed();
+        },
         state_changed: function(state) {
             var control = left_controls_.controls['run_state'];
+            if(running_state_==="unknown" && state==="running")
+                state = "unknown-running";
             switch(state) {
             case 'ready':
                 control.icon('icon-circle-blank').color('#777').title('content has not been run');
@@ -392,6 +408,10 @@ function create_cell_html_view(language, cell_model) {
                 break;
             case 'cancelled':
                 control.icon('icon-asterisk').color('#e06a06').title('execution was cancelled before this cell could run');
+                break;
+            case 'unknown-running':
+                control.icon('icon-question icon-spin').color('blue').title('cell is currently running');
+                has_result_ = false;
                 break;
             case 'running':
                 control.icon('icon-spinner icon-spin').color('blue').title('cell is currently running');
@@ -419,6 +439,7 @@ function create_cell_html_view(language, cell_model) {
                     result.hide_source(true);
                 has_result_ = true;
             }
+            this.toggle_results(true); // always show when updating
             switch(type) {
             case 'selection':
             case 'deferred_result':
@@ -472,7 +493,7 @@ function create_cell_html_view(language, cell_model) {
                 result_div_.empty();
                 has_result_ = true;
             }
-            this.state_changed(error ? 'error' : 'complete');
+            this.state_changed(error ? 'error' : running_state_==='unknown-running' ? 'ready' : 'complete');
             current_result_ = current_error_ = null;
         },
         clear_result: clear_result,
@@ -515,6 +536,7 @@ function create_cell_html_view(language, cell_model) {
                 return;
             }
             if(edit_mode) {
+                cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', true);
                 if(RCloud.language.is_a_markdown(language))
                     this.hide_source(false);
                 code_div_.hide();
@@ -569,6 +591,7 @@ function create_cell_html_view(language, cell_model) {
                 }
             }
             else {
+                cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', false);
                 var new_content = update_model();
                 if(new_content!==null) // if any change (including removing the content)
                     cell_model.parent_model.controller.update_cell(cell_model);
@@ -586,6 +609,13 @@ function create_cell_html_view(language, cell_model) {
                 source_div_.hide();
             else
                 source_div_.show();
+        },
+        toggle_results: function(val) {
+            if(val===undefined)
+                val = result_div_.is(':hidden');
+            cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', val);
+            if(val) result_div_.show();
+            else result_div_.hide();
         },
         get_input: function(type, prompt, k) {
             if(!has_result_) {

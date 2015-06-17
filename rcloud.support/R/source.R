@@ -10,3 +10,5 @@ rcloud.get.notebook.source <- function(id)
         .session$gist.contexts[[source]]
     }
 
+rcloud.get.gist.sources <- function()
+  names(.session$gist.contexts)
