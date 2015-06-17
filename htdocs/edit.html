@@ -216,7 +216,8 @@
 
     <div id="command-prompt" style="float: left; width:100%;
             height: 50px; background:#FFFFFF; border:1px solid
-            #DDDDDD"></div>
+            #DDDDDD">
+    </div>
   </div>
 </script>
 
@@ -246,65 +247,49 @@
       <!-- Nav tabs -->
       <ul class="nav nav-tabs">
         <li id='tab1' class="active"><a ng-click="setTab(1)" data-toggle="tab" href="#notebook-tab" >Notebook</a></li>
-
         <li id='tab2'><a ng-click="setTab(2)" data-toggle="tab" href="#group-tab">Group</a></li>
       </ul>
-
       <!-- tab content -->
       <div class="tab-content">
-
         <!-- first tab -->
         <div class="tab-pane active inner-tab" id="notebook-tab">
           <div class="row sec">
             Notebook: {{notebookFullName}}
           </div>
-
           <div class="row sec">
             <label for="redRadio">Public:</label> 
             <input id="redRadio" type="radio" ng-model="belongsToGroup" ng-value="false" />&nbsp;&nbsp;&nbsp;
-            <label for="greenRadio">Private:</label> 
-            <input id="greenRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="belongsToGroup" ng-value="true" /><br />
+            <label for="greenRadio">Group:</label> 
+            <input id="greenRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="belongsToGroup" ng-value="true" />&nbsp;&nbsp;&nbsp;
+            <label for="yellowRadio">Private:</label> 
+            <input id="yellowRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="belongsToGroup" ng-value="fal" /><br />
+            
           </div>
-
           <div class="row sec" ng-show="allUserGroups.length">
             <span>Assign to Group</span><br />
-           
             <select ng-model="selectedGroup1" 
                     ng-disabled="!belongsToGroup" 
                     ng-options="group.name for group in allUserGroups">
             </select>
-
           </div>
-
-
           <div class="row sec" ng-hide="allUserGroups.length">
             <span>you are not a member of any groups, but you can create one in the<a href="#"> "Group"</a> dialog</span>
           </div>
-
-
-          
-
         </div>
         <!-- end first tab -->
-
         <!-- second tab -->
         <div class="tab-pane inner-tab" id="group-tab">
-
           <div class="row sec">
-
             <div class='col-md-6' style='padding-left: 0px;' ng-show="allAdminGroups.length" >
               <span>Select group</span><br />
               <select ng-model="selectedGroup2"
                       ng-options="group.name for group in allAdminGroups"
                       ng-change="anotherGroupSelected()" >
               </select>
-
             </div>
-
             <div class='col-md-6' style='padding-left: 0px;' ng-hide="allAdminGroups.length" >
               <span>There are no groups, please create one.</span><br />
             </div>
-
             <div class='col-md-6'>
               <span class="label label-info group-actions" ng-click="createGroup()">Create
               Group</span><br /><br />
@@ -314,35 +299,32 @@
               Group</span>
             </div>
           </div>
-
           <div class="row sec">
             <div class="form-group">
               <label for="comment">Admins:</label> 
               <selectize options='allUsers' config="myConfig" ng-model="groupAdmins"></selectize>
             </div>
           </div>
-
           <div class="row sec">
             <div class="form-group">
               <label for="comment">Members:</label> 
               <selectize options='allUsers' config="myConfig" ng-model="groupMembers"></selectize>
             </div>
           </div>
-
-
         </div>
         <!-- second tab -->
-
         <div class="modal-footer">
+
+          <div class='logging-panel green'> 
+            <span>You have tried to do this and athat and this and that and this and that and this and that! bakakakakakka fhdskhfksh fdksh kghsdkjghskjhgksdjhgksdhgk jsdhgk hsdkghsdk ghsdkjgh skdhg ksjhgk sjdhgkdshg </span>
+          </div>
           <span class="btn btn-cancel" ng-click='cancel()'>Cancel</span>
           <span class="btn btn-save btn-default" ng-click='save()'>OK</span>
         </div>
-        
       </div>
       <!-- end tab content -->
     </div>
   </div>  
-
 </script>
 
 
