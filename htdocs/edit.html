@@ -254,7 +254,7 @@
     <div>
       <!-- Nav tabs -->
       <ul class="nav nav-tabs">
-        <li id='tab1' class="active"><a ng-click="setTab(1)" data-toggle="tab" href="#notebook-tab" >Notebook</a></li>
+        <li id='tab1'><a ng-click="setTab(1)" data-toggle="tab" href="#notebook-tab" >Notebook</a></li>
         <li id='tab2'><a ng-click="setTab(2)" data-toggle="tab" href="#group-tab">Group</a></li>
       </ul>
       <!-- tab content -->
@@ -270,7 +270,7 @@
             <label for="greenRadio">Group:</label> 
             <input id="greenRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="belongsToGroup" ng-value="true" />&nbsp;&nbsp;&nbsp;
             <label for="yellowRadio">Private:</label> 
-            <input id="yellowRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="belongsToGroup" ng-value="fal" /><br />
+            <input id="yellowRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="belongsToGroup" ng-value="false" /><br />
             
           </div>
           <div class="row sec" ng-show="allUserGroups.length">
@@ -334,8 +334,6 @@
     </div>
   </div>  
 </script>
-
-
 
 <div class="container nopad" id="main-div">
   <div class="row">

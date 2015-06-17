@@ -26,7 +26,7 @@
                             Promise.all( [window.rcloud.protection.get_notebook_cryptgroup(node.gistname), 
                                         window.rcloud.stars.get_notebook_starrer_list(node.gistname)])
                             .spread(function(cryptogroup, list) {
-                                
+
                                 info_content =  buildPopover();
                                 function buildPopover(){
                                     if(typeof(list) === 'string')
@@ -102,8 +102,12 @@
                                         console.log('does belong');
                                     }
 
-                                    //show modal
-                                    RCloud.UI.notebook_protection.init();
+                                    //show modal with both notebook and group views
+                                    
+                                    RCloud.UI.notebook_protection.init('both-tabs-enabled');
+                                    //RCloud.UI.notebook_protection.setState('both-tabs-enabled')
+
+                                    //RCloud.UI.notebook_protection.show();
                                     //RCloud.UI.notebook_protection.showOverlay();
                                 });
 

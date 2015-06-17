@@ -4177,6 +4177,15 @@ RCloud.UI.advanced_menu = (function() {
                             shell.open_from_github(result);
                     }
                 },
+                manage_groups: { // just here temporarily for refactoring
+                    sort: 7000,
+                    text: "Manage Groups",
+
+                    modes: ['view', 'edit'],
+                    action: function(value) {
+                        RCloud.UI.notebook_protection.init('group-tab-enabled');
+                    }
+                },
                 show_source: { // just here temporarily for refactoring
                     sort: 9000,
                     text: "Show Source",
@@ -8523,43 +8532,122 @@ RCloud.UI.notebook_protection = (function() {
 
     this.tipEl;//tooltip element to update
 
+    this.onlyShowGroupView;
+
+    this.appScope = null;
+
 
     return {
 
-        init: function(){
+        init: function(state) {
 
           if(!this.appInited){
 
             this.appInited = true;
             this.buildDom();
-            //this.passedData = data;
-
+            var that = this;
+          
             require([
                 'angular',
                 './../../js/ui/notebook_protection_app',
                 'angular-selectize'
               ], function(angular, app, selectize) {
                   'use strict';
+
                   //var $html = angular.element(document.getElementsByTagName('html')[0]);  
                   angular.element(document).ready(function() {   
 
-                      setTimeout(function(){
-
+                      _.delay(function(){
                         angular.bootstrap($('#protection-app')[0], ['NotebookProtectionApp']);
                         angular.resumeBootstrap();
+                      }, 100); 
 
-                      }, 100);             
-                  });
+                      _.delay(function(){
+                        appScope = angular.element(document.getElementById("protection-app")).scope();
+
+                        that.setAppState(state);
+                        $('#notebook-protection-dialog').modal({keyboard: false});
+
+                      }, 200);             
+                  });   
             });
-
           }
           else{
 
-            //need to re-digest all the 
-            $(document).trigger('notebook_protection_reset');
-            console.log('notebook_protection_reset triggered');
-
+            this.setAppState(state);
             $('#notebook-protection-dialog').modal({keyboard: false});
+          }
+
+        },
+
+        setAppState: function(state) {
+
+          if(state === 'both-tabs-enabled') {
+
+            //restores both tabs to working condition
+            $('#protection-app #tab2')
+              .removeClass('active');
+
+            $('#protection-app #tab1')
+              .removeClass('disabled')
+              .addClass('active');
+
+            $('#protection-app #tab1 a').attr('href', '#notebook-tab');
+            $('#protection-app #tab1 a').attr('data-toggle', 'tab');
+
+            $('#protection-app #tab1 a').tab('show');
+
+
+            appScope.initBoth();
+
+            // $('a[data-toggle="tab"]').on('click', function(){
+            //   return true;
+            // });
+
+          }
+          else if(state === 'group-tab-enabled') {
+
+            //makes it so the first tab is not clickable
+            $('#protection-app #tab1')
+              .removeClass('active')
+              .addClass('disabled');
+
+            $('#protection-app #tab1 a').attr('href', '#');
+            $('#protection-app #tab1 a').removeAttr('data-toggle');
+
+            $('#protection-app #tab2 a').tab('show');
+            //$('#protection-app #tab1 a').data
+
+            appScope.initGroups();
+
+            // $('a[data-toggle="tab"]').on('click', function(){
+            //   if ($(this).parent('li').hasClass('disabled')) {
+            //     return false;
+            //   };
+            // });
+
+
+          }
+        },
+
+        show: function(justGroupView){
+
+          this.showOnlyGroupView = justGroupView;
+
+          if(!this.appInited){
+
+            
+            //this.passedData = data;
+
+            
+          }
+          else{
+
+            //need to re-digest all 
+            $(document).trigger('notebook_protection_reset');
+            //console.log('notebook_protection_reset triggered');
+
+            
             return;
           }
 
@@ -8581,7 +8669,6 @@ RCloud.UI.notebook_protection = (function() {
                             .append($('<div class="modal-content"></div>')
                                     .append(header).append(body)));
             $("body").append(dialog);
-            dialog.modal({keyboard: false});
             
         }
     };
