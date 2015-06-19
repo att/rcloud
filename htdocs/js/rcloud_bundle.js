@@ -1941,7 +1941,8 @@ function create_cell_html_view(language, cell_model) {
     function clear_result() {
         result_div_.empty();
         has_result_ = false;
-        cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', false);
+        if(cell_controls_)
+            cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', false);
     }
 
     // start trying to refactor out this repetitive nonsense
@@ -2299,7 +2300,8 @@ function create_cell_html_view(language, cell_model) {
                 return;
             }
             if(edit_mode) {
-                cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', true);
+                if(cell_controls_)
+                    cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', true);
                 if(RCloud.language.is_a_markdown(language))
                     this.hide_source(false);
                 code_div_.hide();
@@ -2354,7 +2356,8 @@ function create_cell_html_view(language, cell_model) {
                 }
             }
             else {
-                cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', false);
+                if(cell_controls_)
+                    cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', false);
                 var new_content = update_model();
                 if(new_content!==null) // if any change (including removing the content)
                     cell_model.parent_model.controller.update_cell(cell_model);
@@ -2376,7 +2379,8 @@ function create_cell_html_view(language, cell_model) {
         toggle_results: function(val) {
             if(val===undefined)
                 val = result_div_.is(':hidden');
-            cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', val);
+            if(cell_controls_)
+                cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', val);
             if(val) result_div_.show();
             else result_div_.hide();
         },
@@ -7581,7 +7585,7 @@ RCloud.UI.search = (function() {
 var page_size_ = 10;
 var search_err_msg = ["<p style=\"color:black;margin:0;\">The search engine in RCloud uses Lucene for advanced search features." ,
     "It appears you may have used one of the special characters in Lucene syntax incorrectly. " ,
-    "Please see this <a target=\"_blank\" href=\"http://lucene.apache.org/core/3_5_0/queryparsersyntax.html\">link</a> to learn about Lucene syntax. " ,
+    "Please see this <a target=\"_blank\" href=\"http://lucene.apache.org/core/4_10_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Terms\">link</a> to learn about Lucene syntax. " ,
     "</p><p style=\"color:black;margin:0;\">Or, if you mean to search for the character itself, escape it using a backslash, e.g. \"foo\\:\"</p>"];
 
 function go_to_page(page_num,incr_by){

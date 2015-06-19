@@ -178,7 +178,8 @@ function create_cell_html_view(language, cell_model) {
     function clear_result() {
         result_div_.empty();
         has_result_ = false;
-        cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', false);
+        if(cell_controls_)
+            cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', false);
     }
 
     // start trying to refactor out this repetitive nonsense
@@ -536,7 +537,8 @@ function create_cell_html_view(language, cell_model) {
                 return;
             }
             if(edit_mode) {
-                cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', true);
+                if(cell_controls_)
+                    cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', true);
                 if(RCloud.language.is_a_markdown(language))
                     this.hide_source(false);
                 code_div_.hide();
@@ -591,7 +593,8 @@ function create_cell_html_view(language, cell_model) {
                 }
             }
             else {
-                cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', false);
+                if(cell_controls_)
+                    cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', false);
                 var new_content = update_model();
                 if(new_content!==null) // if any change (including removing the content)
                     cell_model.parent_model.controller.update_cell(cell_model);
@@ -613,7 +616,8 @@ function create_cell_html_view(language, cell_model) {
         toggle_results: function(val) {
             if(val===undefined)
                 val = result_div_.is(':hidden');
-            cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', val);
+            if(cell_controls_)
+                cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', val);
             if(val) result_div_.show();
             else result_div_.hide();
         },
