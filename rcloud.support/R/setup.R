@@ -340,10 +340,10 @@ start.rcloud.common <- function(...) {
     if (!is.character(lang.str))
       lang.str <- "rcloud.r"
     for (lang in gsub("^\\s+|\\s+$", "", strsplit(lang.str, ",")[[1]])) {
-      d <- getNamespace(lang)[["rcloud.language.support"]]
+      d <- suppressMessages(suppressWarnings(getNamespace(lang)[["rcloud.language.support"]]))
       if (!is.function(d) && !is.primitive(d))
         stop(paste("Could not find a function or primitive named rcloud.language.support in package '",lang,"'",sep=''))
-      d <- d()
+      d <- suppressMessages(suppressWarnings(d()))
       if (!is.list(d))
         stop(paste("result of calling rcloud.language.support for package '",lang,"' must be a list", sep=''))
       if (is.null(d$language) || !is.character(d$language) || length(d$language) != 1)
@@ -355,7 +355,7 @@ start.rcloud.common <- function(...) {
       if (!is.function(d$teardown) && !is.primitive(d$teardown))
         stop(paste("'teardown' field of list returned by rcloud.language.support for package '", lang, "' must be either a function or a primitive", sep=''))
       lang.list[[d$language]] <- d
-      lang.list[[d$language]]$setup(.session)
+      suppressMessages(suppressWarnings(lang.list[[d$language]]$setup(.session)))
       file.ext.list[d$extension] <- d$language
     }
   }

@@ -130,7 +130,7 @@ rcloud.reset.session <- function() {
     user.addons <- rcloud.config.get.user.option("addons")
     user.skip.addons <- rcloud.config.get.user.option("skip-addons");
     addons <- setdiff(c(all.addons, user.addons), user.skip.addons)
-    for (x in addons) suppressWarnings(suppressMessages(require(x, character.only=TRUE)))
+    for (x in addons) suppressWarnings(suppressMessages(require(x, character.only=TRUE, quietly=TRUE, warn.conflicts=FALSE)))
   }
 
   ## close all devices
