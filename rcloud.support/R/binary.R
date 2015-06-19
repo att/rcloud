@@ -81,7 +81,7 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
                 content$files[ci] <- lapply(content$files[ci],
                                             function(o) { o$content <- rawToChar(o$content); Encoding(o$content) <- "UTF-8"; o })
                 ## adjust the list of binary
-                bin <- bin[-which(conv)]
+                bin[ci] <- FALSE
             }
         }
 
