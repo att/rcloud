@@ -24,18 +24,29 @@ rcloud.get.gist.part <- function(partname, version) {
 }
 
 rcloud.session.cell.eval <- function(context.id, partname, language, version, silent) {
-  ulog("RCloud rcloud.session.cell.eval(", partname, ",", language,")")
-  self.oobSend(list("start.cell.output", context.id))
-  command <- rcloud.get.gist.part(partname, version)
-  res <- if (!is.null(.session$languages[[language]]))
-    .session$languages[[language]]$run.cell(command, silent, .session)
-  else if (language == "Markdown") {
-    session.markdown.eval(command, language, FALSE)
-  } else if (language == "Text") {
-    command
-  }
-  else warning("Language ", language, " is unknown; cell ", partname, " ignored.");
-  res
+  ulog("RCloud rcloud.session.cell.eval(", partname, ",", language,",",context.id,")")
+  o <- Rserve.eval({
+      ## FIXME: it should not be necessary ..
+      Rserve.context(context.id)
+      ## FIXME: do we still need this?
+      .rc.oobSend("start.cell.output")
+      command <- rcloud.get.gist.part(partname, version)
+      res <- if (!is.null(.session$languages[[language]]))
+          .session$languages[[language]]$run.cell(command, silent, .session)
+      else if (language == "Markdown") {
+          session.markdown.eval(command, language, FALSE)
+      } else if (language == "Text") {
+          command
+      }
+      else warning("Language ", language, " is unknown; cell ", partname, " ignored.")
+      res
+  }, parent.frame(), last.value=TRUE, context=context.id)
+  if (inherits(o, "Rserve-eval-error")) {
+      class(o) <- "cell-eval-error"
+      o$traceback <- unlist(o$traceback)
+      ## ulog("CELL-EVAL-ERROR: ", paste(capture.output(str(o)), collapse='\n'))
+      o
+  } else o
 }
 
 rcloud.unauthenticated.session.cell.eval <- function(context.id, partname, language, version, silent) {
@@ -64,7 +75,7 @@ session.markdown.eval <- function(command, language, silent) {
     # FIXME better error handling
     val <- paste("<pre>", val[1], "</pre>", sep="")
   }
-  self.oobSend(list("html.out", val))
+  .rc.oobSend("html.out", val)
 }
 
 ## we don't expose this because it can only be used by the control process

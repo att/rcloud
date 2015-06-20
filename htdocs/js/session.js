@@ -1,6 +1,6 @@
 (function() {
 
-function append_session_info(text) {
+function append_session_info(ctx, text) {
     RCloud.UI.session_pane.append_text(text);
 }
 
@@ -41,11 +41,15 @@ RCloud.end_cell_output = function(context_id, error) {
 
 function forward_to_context(type, has_continuation) {
     return function() {
+        // FIXME: someone with JS knowledge optimize this - it's ugly, but then args are not an array ...
+        var args = Array.prototype.slice.call(arguments);
+        var ctx = args.shift();
         var context = output_contexts_[curr_context_id_];
+        console.log("forward_to_context, ctx="+ctx+", type="+type+", old.ctx="+context);
         if(curr_context_id_ && context && context[type])
-            context[type].apply(context, arguments);
+            context[type].apply(context, args);
         else {
-            append_session_info.apply(null, arguments);
+            append_session_info.apply(null, args);
             if(has_continuation)
                 arguments[arguments.length-1]("context does not support input", null);
         }
@@ -54,14 +58,14 @@ function forward_to_context(type, has_continuation) {
 
 // FIXME this needs to go away as well.
 var oob_sends = {
-    "browsePath": function(v) {
+    "browsePath": function(ctx, v) {
         var url=" "+ window.location.protocol + "//" + window.location.host + v+" ";
         RCloud.UI.help_frame.display_href(url);
     },
-    "browseURL": function(v) {
+    "browseURL": function(ctx, v) {
         window.open(v, "_blank");
     },
-    "pager": function(files, header, title) {
+    "pager": function(ctx, files, header, title) {
         var html = "<h2>" + title + "</h2>\n";
         for(var i=0; i<files.length; ++i) {
             if(_.isArray(header) && header[i])
@@ -70,7 +74,7 @@ var oob_sends = {
         }
         RCloud.UI.help_frame.display_content(html);
     },
-    "editor": function(what, content, name) {
+    "editor": function(ctx, what, content, name) {
         // what is an object to edit, content is file content to edit
         // FIXME: do somethign with it - eventually this
         // should be a modal thing - for now we should at least
@@ -87,6 +91,7 @@ var oob_sends = {
     "stderr": append_session_info,
     // NOTE: "idle": ... can be used to handle idle pings from Rserve if we care ..
     "start.cell.output": function(context) {
+        console.log("start.cell.output, ctx="+context);
         curr_context_id_ = context;
         if(output_contexts_[context] && output_contexts_[context].start)
             output_contexts_[context].start();

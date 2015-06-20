@@ -288,9 +288,9 @@ start.rcloud.common <- function(...) {
   options(help_type="html")
   options(browser = function(url, ...) {
     if(grepl("^http://127.0.0.1:", url))
-      self.oobSend(list("browsePath", gsub("^http://[^/]+", "", url)))
+      .rc.oobSend("browsePath", gsub("^http://[^/]+", "", url))
     else
-      self.oobSend(list("browseURL", url))
+      .rc.oobSend("browseURL", url)
   })
 
   ## while at it, pass other requests as OOB, too
@@ -300,12 +300,12 @@ start.rcloud.common <- function(...) {
       if (isTRUE(delete.file)) unlink(fn)
       paste(c, collapse='\n')
     })
-    self.oobSend(list("pager", content, header, title))
+    .rc.oobSend("pager", content, header, title)
   })
   options(editor = function(what, file, name) {
     ## FIXME: this should be oobMessage()
     if (nzchar(file)) file <- paste(readLines(file), collapse="\n")
-    self.oobSend(list("editor", what, file, name))
+    .rc.oobSend("editor", what, file, name)
   })
 
   ## and some options that may be of interest

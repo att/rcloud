@@ -9,6 +9,8 @@
     } else o
 }
 
+.rc.oobSend <- function(kind, ...) self.oobSend(list(kind, Rserve.context(), ...))
+
 make.oc <- function(fun, name=deparse(substitute(fun))) {
   f <- function(...) .eval(quote(fun(...)))
   Rserve:::ocap(f, name)
@@ -224,7 +226,9 @@ authenticated.ocaps <- function(mode)
         close = make.oc(rcloud.upload.close.file),
         upload_path = make.oc(rcloud.upload.path)
         ),
-      notebook_upload = make.oc(rcloud.upload.to.notebook),
+      ### FIXME: remove from ocaps - we should not be using this anymore,
+      ### it has been replaced by update_notebook
+      notebook_upload = make.oc(.rcloud.upload.to.notebook),
 
       # security: request new token
       replace_token = make.oc(replace.token),
