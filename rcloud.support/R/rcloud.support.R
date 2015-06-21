@@ -326,10 +326,12 @@ update.solr <- function(notebook, starcount){
 rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
   url <- getConf("solr.url")
   if (is.null(url)) stop("solr is not enabled")
-
   ## FIXME: shouldn't we URL-encode the query?!?
   q <- gsub("%20","+",query)
-  solr.url <- paste0(url,"/select?q=",q,"&start=",start,"&rows=",pagesize,"&wt=json&indent=true&fl=description,id,user,updated_at,starcount&hl=true&hl.preserveMulti=true&hl.fl=content,comments&hl.fragsize=0&hl.maxAnalyzedChars=-1&sort=",sortby,"+",orderby)
+  solr.query <- paste0("/select?q=",q,"&start=",start,"&rows=",pagesize,"&wt=json&indent=true&fl=description,id,user,updated_at,starcount&hl=true&hl.preserveMulti=true&hl.fl=content,comments&hl.fragsize=0&hl.maxAnalyzedChars=-1&sort=",sortby,"+",orderby)
+
+  query <- function(solr.url,source='') {
+  solr.url <- paste0(solr.url, solr.query)
   solr.res <- getURL(solr.url, .encoding = 'utf-8', .mapUnicode=FALSE)
   solr.res <- fromJSON(solr.res)
   response.docs <- solr.res$response$docs
@@ -411,13 +413,21 @@ rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
         updated.at <- response.docs[[i]]$updated_at
         user <- response.docs[[i]]$user
         parts <- response.high[[i]]$content
-        json[i] <- toJSON(c('QTime'=time,'notebook'=notebook,'id'=id,'starcount'=starcount,'updated_at'=updated.at,'user'=user,'numFound'=count,'pagesize'=pagesize,'parts'=parts))
+        json[i] <- toJSON(c(QTime=time,notebook=notebook,id=id,starcount=starcount,updated_at=updated.at,user=user,numFound=count,pagesize=pagesize,parts=parts,source=source))
       }
       return(json)
     } else
     return(solr.res$response$docs)
   } else
   return(c("error",solr.res$error$msg))
+  }
+
+  if (isTRUE(all_sources)) {
+      main <- query(url)
+      l <- lapply(.session$gist.sources.conf, function(src)
+                  if ("solr.url" %in% names(src)) query(src['solr.url'], src['gist.source']) else character(0))
+      unlist(c(list(main), l))
+  } else query(url)
 }
 
 stitch.search.result <- function(splitted, type,k) {
