@@ -50,6 +50,8 @@ rcloud.create.cryptgroup <- function(groupname) { # : groupid; current user is a
   if(groupname %in% groupnames)
     stop(paste0("protection group name ", groupname, " already exists"))
   groupid <- generate.uuid()
+  if (!isTRUE(session.server.create.group("rcloud", .session$token, groupid)[1L] == "OK"))
+      stop("unable to register a new group (possibly your authentication expired?)")
   rcs.set(rcs.key('.cryptgroup', groupid, 'name'), groupname)
   rcs.set(rcs.key('.cryptgroup', groupid, 'users', .session$username), TRUE)
   rcs.set(rcs.key(.session$username, 'system', 'cryptgroups', groupid), TRUE)
@@ -58,24 +60,34 @@ rcloud.create.cryptgroup <- function(groupname) { # : groupid; current user is a
 
 rcloud.set.cryptgroup.name <- function(groupid, groupname) { # must be unique
   if(!is.cryptgroup.admin(groupid, .session$username))
-    stop(paste0("user ", .session$username, " is not an admin for group ", groupid));
+    stop(paste0("user ", .session$username, " is not an admin for group ", groupid))
   rcs.set(rcs.key('.cryptgroup', groupid, 'name'), groupname)
 }
 
 # we might want a combined api for these to minimize roundtrips
 rcloud.add.cryptgroup.user <- function(groupid, user, is.admin) {
   if(!is.cryptgroup.admin(groupid, .session$username))
-    stop(paste0("user ", .session$username, " is not an admin for group ", groupid));
+    stop(paste0("user ", .session$username, " is not an admin for group ", groupid))
+  is.admin <- rep(as.logical(is.admin), length.out=length(user))
+  admins <- user[is.admin]
+  members <- user[!is.admin]
+  session.server.modify.group("rcloud", .session$token, groupid, new.admins=admins, new.members=members)
+  if (length(user) > 1) is.admin <- as.list(is.admin)
   rcs.set(rcs.key('.cryptgroup', groupid, 'users', user), is.admin)
   rcs.set(rcs.key(user, 'system', 'cryptgroups', groupid), is.admin)
 }
 
 rcloud.remove.cryptgroup.user <- function(groupid, user) {
   if(!is.cryptgroup.admin(groupid, .session$username))
-    stop(paste0("user ", .session$username, " is not an admin for group ", groupid));
-  # check for last admin?
-  rcs.rm(rcs.key('.cryptgroup', groupid, 'users', user))
-  rcs.rm(rcs.key(user, 'system', 'cryptgroups', groupid))
+    stop(paste0("user ", .session$username, " is not an admin for group ", groupid))
+  myself <- !is.na(match(user, .session$username))
+  if (any(myself)) warning("you cannot remove yourself as an admin")
+  session.server.modify.group("rcloud", .session$token, groupid, remove=user)
+  user <- user[!myself]
+  if (length(user)) {
+      rcs.rm(rcs.key('.cryptgroup', groupid, 'users', user))
+      rcs.rm(rcs.key(user, 'system', 'cryptgroups', groupid))
+  }
 }
 
 rcloud.delete.cryptgroup <- function(groupid) {
@@ -84,7 +96,8 @@ rcloud.delete.cryptgroup <- function(groupid) {
   # remove all users from group, current user last (so they're still admin ;)
   users <- rcloud.get.cryptgroup.users(groupid)
   users <- names(users)
-  users <- append(users[users!=.session$username], .session$username)
-  lapply(users, function(user) rcloud.remove.cryptgroup.user(groupid, user));
+  ## the admin cannot remove him/herself
+  users <- users[users != .session$username]
+  rcloud.remove.cryptgroup.user(groupid, users)
   rcs.rm(rcs.key('.cryptgroup', groupid, 'name'))
 }
