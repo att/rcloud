@@ -1,22 +1,30 @@
 rcloud.get.notebook.cryptgroup <- function(notebookid) { # : pair(groupid, groupname)
-  groupid <- rcs.get(rcs.key('.notebook', notebookid, 'cryptgroup'))
-  list(groupid, rcs.get(rcs.key('.cryptgroup', groupid, 'name')))
+    groupid <- rcs.get(rcs.key('.notebook', notebookid, 'cryptgroup'))
+    if (is.null(groupid)) NULL else list(id=groupid, name=rcs.get(rcs.key('.cryptgroup', groupid, 'name')))
 }
 
 rcloud.set.notebook.cryptgroup <- function(notebookid, groupid) { # or NULL to decrypt/make public
-  if(!notebook.is.mine(notebookid))
-    stop(paste0("can't set protection group of someone else's notebook for user ", .session$username))
-  key <- rcs.key('.notebook', notebookid, 'cryptgroup')
-  if(is.null(groupid))
-    rcs.rm(key)
-  else {
-    if(groupid != "private") {
-      users <- rcloud.get.cryptgroup.users(groupid)
-      if(!.session$username %in% names(users))
-        stop(paste0(.session$username, " is not a member of protection group ", groupid))
+    if(!notebook.is.mine(notebookid))
+        stop(paste0("can't set protection group of someone else's notebook for user ", .session$username))
+    key <- rcs.key('.notebook', notebookid, 'cryptgroup')
+    if(is.null(groupid)) {
+        nb <- rcloud.get.notebook(notebookid)
+        if (!isTRUE(nb$ok))
+            stop("cannot retrieve notebook content")
+        l <- nb$content$files
+        ## create all assets, but remove the encrypted version
+        l[[.encryped.content.filename]] = list(content=NULL)
+        rcloud.update.notebook(notebookid, list(files=l))
+        rcs.rm(key)
+    } else {
+        rcs.set(key, groupid)
+        ## this is a neat trick: since the encyption is transparent,
+        ## issuing an empty update request *after* setting the group id
+        ## will simply re-save the content in encrypted form
+        ## And the corresponding fetch will work since it
+        ## ignores the RCS setting
+        rcloud.update.notebook(notebookid, list())
     }
-    rcs.set(key, groupid)
-  }
 }
 
 rcloud.get.cryptgroup.users <- function(groupid) { # : list(user -> is.admin)

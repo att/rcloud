@@ -29,7 +29,7 @@ rcloud.augment.notebook <- function(res) {
 
     ## convert any binary contents stored in .b64 files
     res$content <- .gist.binary.process.incoming(res$content)
-    
+
     hist <- res$content$history
     versions <- lapply(hist, function(h) { h$version })
     version2tag <- rcs.get(rcloud.support:::rcs.key('.notebook', notebook$id, 'version2tag', versions), list=TRUE)
@@ -38,7 +38,7 @@ rcloud.augment.notebook <- function(res) {
 
     if(length(res$content$files))
       res$content$files <- lapply(res$content$files, function(o) {
-        file.ext <- tail(strsplit(o$filename, '\\.')[[1]], n=1)
+        file.ext <- if (is.null(o$filename)) "" else tail(strsplit(o$filename, '\\.')[[1]], n=1)
         if (file.ext %in% names(.session$file.extensions))
           o$language <- .session$file.extensions[[file.ext]]
         o
@@ -272,12 +272,55 @@ rcloud.unauthenticated.notebook.by.name <- function(name, user=.session$username
 .rcloud.upload.to.notebook <- function(content, name) rcloud.upload.asset(name, content)
 
 rcloud.update.notebook <- function(id, content, is.current = TRUE) {
+    ## FIXME: this is more of an optimization - if ther is no group in RCS
+    ## we don't need to fetch the notebook content, however, the group
+    ## info in RCS is irrelevant for the actual access since it is
+    ## governed by the encrypted content
+    group <- rcloud.get.notebook.cryptgroup(id)
+
+    ## there is one special case: if the notebook is encrypted and this is a request
+    ## for partial update, we have to compute the new encrypted content by merging
+    ## the request. This is only the case if the request doesn't involve direct
+    ## manipulation of the encrypted content *and* the notebook is encrypted
+    if (!is.null(group) && is.null(content$files[[.encryped.content.filename]])) {
+        old <- rcloud.get.notebook(id)
+        l <- old$content$files
+        # ulog("rcloud.update.notebook: encrypted, merging ", paste(names(l),collapse=",")," with ", paste(names(content$files),collapse=","))
+        for (i in seq_along(content$files)) {
+            fn <- names(content$files)[i]
+            ct <- content$files[[i]]
+            l[[fn]] <- if (is.null(ct$content)) NULL else {
+                ## we have to do whatever augmentation GitHub does since it no longer is handled by it ...
+                ## at the very minimum we need the filename since some parts may rely on it
+                ##
+                ## FIXME: should we move such things into .gist.binary.process.outgoing?
+                ## we can do things that we cannot do here such as `size` ...
+                if (is.null(ct$filename)) ct$filename <- fn
+                ct
+            }
+        }
+        if(group$id != "private") {
+            users <- rcloud.get.cryptgroup.users(group$id)
+            if(!.session$username %in% names(users))
+                stop(paste0(.session$username, " is not a member of protection group ", group$id))
+            ## take the content and encrypt it
+            enc <- .encrypt.by.group(list(files=l), group$id)
+            ## update contains just the encrypted piece
+            ## if this is a conversion, remove the unencrypted pieces
+            content <- if (!isTRUE(old$is.encrypted)) .zlist(names(old$content$files)) else list()
+            content[[.encryped.content.filename]] <- list(content=encode.b64(enc))
+            content <- list(files=content)
+        } else {
+            ## FIXME: user-only encryption
+        }
+    }
     content <- .gist.binary.process.outgoing(id, content)
 
     res <- modify.gist(id, content, ctx = .rcloud.get.gist.context())
     if(is.current)
       .session$current.notebook <- res
-    if (nzConf("solr.url")) {
+
+    if (nzConf("solr.url") && is.null(group)) { # don't index private/encrypted notebooks
         star.count <- rcloud.notebook.star.count(id)
         mcparallel(update.solr(res, star.count), detached=TRUE)
     }
