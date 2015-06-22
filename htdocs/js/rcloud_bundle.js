@@ -3710,9 +3710,8 @@ RCloud.end_cell_output = function(context_id, error) {
 
 function forward_to_context(type, has_continuation) {
     return function() {
-        // FIXME: someone with JS knowledge optimize this - it's ugly, but then args are not an array ...
-        var args = Array.prototype.slice.call(arguments);
-        var ctx = args.shift();
+        var ctx = arguments[0];
+        var args = Array.prototype.slice.call(arguments, 1);
         var context = output_contexts_[curr_context_id_];
         console.log("forward_to_context, ctx="+ctx+", type="+type+", old.ctx="+context);
         if(curr_context_id_ && context && context[type])
