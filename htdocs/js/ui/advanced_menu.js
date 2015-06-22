@@ -34,7 +34,7 @@ RCloud.UI.advanced_menu = (function() {
                             shell.open_from_github(result);
                     }
                 },
-                manage_groups: { // just here temporarily for refactoring
+                manage_groups: {
                     sort: 7000,
                     text: "Manage Groups",
 
@@ -43,7 +43,7 @@ RCloud.UI.advanced_menu = (function() {
                         RCloud.UI.notebook_protection.init('group-tab-enabled');
                     }
                 },
-                show_source: { // just here temporarily for refactoring
+                show_source: {
                     sort: 9000,
                     text: "Show Source",
                     checkbox: true,

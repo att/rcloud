@@ -4177,7 +4177,7 @@ RCloud.UI.advanced_menu = (function() {
                             shell.open_from_github(result);
                     }
                 },
-                manage_groups: { // just here temporarily for refactoring
+                manage_groups: {
                     sort: 7000,
                     text: "Manage Groups",
 
@@ -4186,7 +4186,7 @@ RCloud.UI.advanced_menu = (function() {
                         RCloud.UI.notebook_protection.init('group-tab-enabled');
                     }
                 },
-                show_source: { // just here temporarily for refactoring
+                show_source: {
                     sort: 9000,
                     text: "Show Source",
                     checkbox: true,
@@ -8471,14 +8471,14 @@ RCloud.UI.upload_frame = {
 };
 
 RCloud.UI.notebook_protection_logger = {
-    
+
     timeout: 0,
 
     log: function(val){
         var that = this;
         $('.logging-panel').removeClass('red');
         $('.logging-panel').removeClass('white');
-        $('.logging-panel').addClass('green')
+        $('.logging-panel').addClass('green');
         $('.logging-panel span').text(val);
 
         window.clearTimeout(this.timeout);
@@ -8494,9 +8494,9 @@ RCloud.UI.notebook_protection_logger = {
 
     warn: function(val){
         var that = this;
-        $('.logging-panel').removeClass('green')
+        $('.logging-panel').removeClass('green');
         $('.logging-panel').removeClass('white');
-        $('.logging-panel').addClass('red')
+        $('.logging-panel').addClass('red');
         $('.logging-panel span').text(val);
 
 
@@ -8515,8 +8515,8 @@ RCloud.UI.notebook_protection = (function() {
     //set from outside
     this.defaultCryptogroup = null;
     this.defaultNotebook = null;
-    this.userId;
-    this.userLogin;
+    this.userId = null;
+    this.userLogin = null;
 
     this.appScope = null;
     this.appInited = false;
@@ -8530,7 +8530,7 @@ RCloud.UI.notebook_protection = (function() {
             this.appInited = true;
             this.buildDom();
             var that = this;
-          
+
             require([
                 'angular',
                 './../../js/ui/notebook_protection_app',
@@ -8538,21 +8538,21 @@ RCloud.UI.notebook_protection = (function() {
               ], function(angular, app, selectize) {
                   'use strict';
 
-                  //var $html = angular.element(document.getElementsByTagName('html')[0]);  
-                  angular.element(document).ready(function() {   
-                      _.delay(function(){
+                  //var $html = angular.element(document.getElementsByTagName('html')[0]);
+                  angular.element(document).ready(function() {
+                      _.delay(function() {
                         angular.bootstrap($('#protection-app')[0], ['NotebookProtectionApp']);
                         angular.resumeBootstrap();
-                      }, 100); 
-                      _.delay(function(){
+                      }, 100);
+                      _.delay(function() {
                         that.appScope = angular.element(document.getElementById("protection-app")).scope();
                         that.launch(state);
                         $('#notebook-protection-dialog').modal({keyboard: false});
-                      }, 200);             
-                  });   
+                      }, 200);
+                  });
             });
           }
-          else{
+          else {
             this.launch(state);
             $('#notebook-protection-dialog').modal({keyboard: false});
           }
@@ -8573,11 +8573,11 @@ RCloud.UI.notebook_protection = (function() {
               .attr('href', '#notebook-tab')
               .attr('data-toggle', 'tab');
 
-            $('#protection-app #tab2 a') 
+            $('#protection-app #tab2 a')
               .tab('show');
-            $('#protection-app #tab1 a') 
+            $('#protection-app #tab1 a')
               .tab('show');
- 
+
             this.appScope.initBoth();
           }
           else if(state === 'group-tab-enabled') {
@@ -8613,11 +8613,10 @@ RCloud.UI.notebook_protection = (function() {
             .append($('<div class="modal-content"></div>')
             .append(header).append(body)));
           $("body").append(dialog);
-            
-        }, 
+
+        },
 
         close: function() {
-          //console.log('sdsdsds');
           this.appScope.cancel();
         }
     };
