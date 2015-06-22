@@ -472,7 +472,8 @@ define(['angular'], function(angular){
         $scope.setTab = function(index) {
             $scope.currentTab = index;
             if(index ===1){
-                $scope.stopWatching()
+                if(!$('#protection-app #tab1').hasClass('disabled'))
+                    $scope.stopWatching()
             }
             if(index === 2){
                 _.delay(function(){
