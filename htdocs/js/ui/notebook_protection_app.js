@@ -11,5 +11,5 @@ define([
             'myapp.services',
             // 'myapp.directives',
             'myapp.controllers'
-        ]);     
+        ]);
 });

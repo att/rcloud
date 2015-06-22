@@ -3669,7 +3669,7 @@ Notebook.sanitize = function(notebook) {
 
 (function() {
 
-function append_session_info(text) {
+function append_session_info(ctx, text) {
     RCloud.UI.session_pane.append_text(text);
 }
 
@@ -3710,11 +3710,15 @@ RCloud.end_cell_output = function(context_id, error) {
 
 function forward_to_context(type, has_continuation) {
     return function() {
+        // FIXME: someone with JS knowledge optimize this - it's ugly, but then args are not an array ...
+        var args = Array.prototype.slice.call(arguments);
+        var ctx = args.shift();
         var context = output_contexts_[curr_context_id_];
+        console.log("forward_to_context, ctx="+ctx+", type="+type+", old.ctx="+context);
         if(curr_context_id_ && context && context[type])
-            context[type].apply(context, arguments);
+            context[type].apply(context, args);
         else {
-            append_session_info.apply(null, arguments);
+            append_session_info.apply(null, args);
             if(has_continuation)
                 arguments[arguments.length-1]("context does not support input", null);
         }
@@ -3723,14 +3727,14 @@ function forward_to_context(type, has_continuation) {
 
 // FIXME this needs to go away as well.
 var oob_sends = {
-    "browsePath": function(v) {
+    "browsePath": function(ctx, v) {
         var url=" "+ window.location.protocol + "//" + window.location.host + v+" ";
         RCloud.UI.help_frame.display_href(url);
     },
-    "browseURL": function(v) {
+    "browseURL": function(ctx, v) {
         window.open(v, "_blank");
     },
-    "pager": function(files, header, title) {
+    "pager": function(ctx, files, header, title) {
         var html = "<h2>" + title + "</h2>\n";
         for(var i=0; i<files.length; ++i) {
             if(_.isArray(header) && header[i])
@@ -3739,7 +3743,7 @@ var oob_sends = {
         }
         RCloud.UI.help_frame.display_content(html);
     },
-    "editor": function(what, content, name) {
+    "editor": function(ctx, what, content, name) {
         // what is an object to edit, content is file content to edit
         // FIXME: do somethign with it - eventually this
         // should be a modal thing - for now we should at least
@@ -3756,6 +3760,7 @@ var oob_sends = {
     "stderr": append_session_info,
     // NOTE: "idle": ... can be used to handle idle pings from Rserve if we care ..
     "start.cell.output": function(context) {
+        console.log("start.cell.output, ctx="+context);
         curr_context_id_ = context;
         if(output_contexts_[context] && output_contexts_[context].start)
             output_contexts_[context].start();
@@ -4181,7 +4186,16 @@ RCloud.UI.advanced_menu = (function() {
                             shell.open_from_github(result);
                     }
                 },
-                show_source: { // just here temporarily for refactoring
+                manage_groups: {
+                    sort: 7000,
+                    text: "Manage Groups",
+
+                    modes: ['view', 'edit'],
+                    action: function(value) {
+                        RCloud.UI.notebook_protection.init('group-tab-enabled');
+                    }
+                },
+                show_source: {
                     sort: 9000,
                     text: "Show Source",
                     checkbox: true,
@@ -8465,38 +8479,66 @@ RCloud.UI.upload_frame = {
     }
 };
 
+RCloud.UI.notebook_protection_logger = {
+
+    timeout: 0,
+
+    log: function(val){
+        var that = this;
+        $('.logging-panel').removeClass('red');
+        $('.logging-panel').removeClass('white');
+        $('.logging-panel').addClass('green');
+        $('.logging-panel span').text(val);
+
+        window.clearTimeout(this.timeout);
+        this.timeout = setTimeout(function() {
+            $('.logging-panel').removeClass('red')
+                    .removeClass('green')
+                    .addClass('white');
+            $('.logging-panel span').html('&nbsp;');
+
+        },  2000);
+
+    },
+
+    warn: function(val){
+        var that = this;
+        $('.logging-panel').removeClass('green');
+        $('.logging-panel').removeClass('white');
+        $('.logging-panel').addClass('red');
+        $('.logging-panel span').text(val);
+
+
+        window.clearTimeout(this.timeout);
+        this.timeout = setTimeout(function() {
+            $('.logging-panel').removeClass('red')
+                    .removeClass('green')
+                    .addClass('white');
+            $('.logging-panel span').html('&nbsp;');
+
+        },  2000);
+    }
+}
 RCloud.UI.notebook_protection = (function() {
 
-    this.passedData = null;
-    this.appInited = false;
-    this.theApp = null;
-
-
     //set from outside
-    this.userId;
-    this.userLogin;
+    this.defaultCryptogroup = null;
+    this.defaultNotebook = null;
+    this.userId = null;
+    this.userLogin = null;
 
-    //notebood stuff
-    this.notebookFullName;
-    this.notebookGistName;
-    this.notebookId;
-
-    //group stuff
-    this.belongsToGroup;
-    this.currentGroupName;
-
-    this.tipEl;//tooltip element to update
-
+    this.appScope = null;
+    this.appInited = false;
 
     return {
 
-        init: function(){
+        init: function(state) {
 
-          if(!this.appInited){
+          if(!this.appInited) {
 
             this.appInited = true;
             this.buildDom();
-            //this.passedData = data;
+            var that = this;
 
             require([
                 'angular',
@@ -8504,52 +8546,88 @@ RCloud.UI.notebook_protection = (function() {
                 'angular-selectize'
               ], function(angular, app, selectize) {
                   'use strict';
-                  //var $html = angular.element(document.getElementsByTagName('html')[0]);  
-                  angular.element(document).ready(function() {   
 
-                      setTimeout(function(){
-
+                  //var $html = angular.element(document.getElementsByTagName('html')[0]);
+                  angular.element(document).ready(function() {
+                      _.delay(function() {
                         angular.bootstrap($('#protection-app')[0], ['NotebookProtectionApp']);
                         angular.resumeBootstrap();
-
-                      }, 100);             
+                      }, 100);
+                      _.delay(function() {
+                        that.appScope = angular.element(document.getElementById("protection-app")).scope();
+                        that.launch(state);
+                        $('#notebook-protection-dialog').modal({keyboard: false});
+                      }, 200);
                   });
             });
-
           }
-          else{
-
-            //need to re-digest all the 
-            $(document).trigger('notebook_protection_reset');
-            console.log('notebook_protection_reset triggered');
-
+          else {
+            this.launch(state);
             $('#notebook-protection-dialog').modal({keyboard: false});
-            return;
           }
+        },
+
+        launch: function(state) {
+
+          if(state === 'both-tabs-enabled') {
+            //restores both tabs to working condition
+            $('#protection-app #tab2')
+              .removeClass('active');
+
+            $('#protection-app #tab1')
+              .removeClass('disabled')
+              .addClass('active');
+
+            $('#protection-app #tab1 a')
+              .attr('href', '#notebook-tab')
+              .attr('data-toggle', 'tab');
+
+            $('#protection-app #tab2 a')
+              .tab('show');
+            $('#protection-app #tab1 a')
+              .tab('show');
+
+            this.appScope.initBoth();
+          }
+          else if(state === 'group-tab-enabled') {
+            //makes it so the first tab is not clickable
+            $('#protection-app #tab1')
+              .removeClass('active')
+              .addClass('disabled');
+
+            $('#protection-app #tab1 a')
+              .attr('href', '#')
+              .removeAttr('data-toggle');
+
+            $('#protection-app #tab2 a')
+              .tab('show');
+
+
+
+            this.appScope.initGroups();
+          }
+        },
+
+        buildDom: function() {
+
+          var body = $('<div class="container"></div>');
+          body.append(RCloud.UI.panel_loader.load_snippet('notebook-protection-modal'));
+
+          var header = $(['<div class="modal-header">',
+                          '<button type="button" class="close" onClick="(RCloud.UI.notebook_protection.close.bind(RCloud.UI.notebook_protection))()" aria-hidden="true">&times;</button>',
+                          '<h3>Notebook Permissions / Group Management</h3>',
+                          '</div>'].join(''));
+          var dialog = $('<div id="notebook-protection-dialog" class="modal fade"></div>')
+            .append($('<div class="modal-dialog"></div>')
+            .append($('<div class="modal-content"></div>')
+            .append(header).append(body)));
+          $("body").append(dialog);
 
         },
 
-
-        buildDom: function(){
-
-            var body = $('<div class="container"></div>');
-            body.append(RCloud.UI.panel_loader.load_snippet('notebook-protection-modal'));
-
-            
-            var header = $(['<div class="modal-header">',
-                            '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>',
-                            '<h3>Set Notebook Permissions</h3>',
-                            '</div>'].join(''));
-            var dialog = $('<div id="notebook-protection-dialog" class="modal fade"></div>')
-                    .append($('<div class="modal-dialog"></div>')
-                            .append($('<div class="modal-content"></div>')
-                                    .append(header).append(body)));
-            $("body").append(dialog);
-            dialog.modal({keyboard: false});
-            
+        close: function() {
+          this.appScope.cancel();
         }
     };
 
-
-    
 })();
