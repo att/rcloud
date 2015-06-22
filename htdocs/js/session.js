@@ -4,7 +4,7 @@ function append_session_info(ctx, text) {
     RCloud.UI.session_pane.append_text(text);
 }
 
-function handle_img(msg, url, dims, device, page) {
+function handle_img(msg, ctx, url, dims, device, page) {
     console.log("handle_img ", msg, " device ", device, " page ", page, " url ", url);
     if(!url)
         return;
@@ -12,14 +12,14 @@ function handle_img(msg, url, dims, device, page) {
     // the image from whatever cell it was in, simply by wrapping the plot in
     // a jquery object, and jquery selection.append removes it from previous parent
     var image = RCloud.UI.image_manager.update(url, dims, device, page);
-    if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_].html_out)
-        output_contexts_[curr_context_id_].selection_out(image.div());
+    if(ctx && output_contexts_[ctx] && output_contexts_[ctx].html_out)
+        output_contexts_[ctx].selection_out(image.div());
     else
         append_session_info(image.div());
 }
 
 var output_contexts_ = {};
-var curr_context_id_ = null, next_context_id_ = 17;
+var next_context_id_ = 17;
 
 RCloud.register_output_context = function(callbacks) {
     output_contexts_[next_context_id_] = callbacks;
@@ -31,21 +31,18 @@ RCloud.unregister_output_context = function(context_id) {
 };
 
 RCloud.end_cell_output = function(context_id, error) {
-    if(context_id != curr_context_id_)
-        console.log("unmatched context_id id: curr " + curr_context_id_ + ", end.cell.output " + context_id);
     if(output_contexts_[context_id] && output_contexts_[context_id].end)
         output_contexts_[context_id].end(error);
     RCloud.unregister_output_context(context_id);
-    curr_context_id_ = null;
 };
 
 function forward_to_context(type, has_continuation) {
     return function() {
         var ctx = arguments[0];
         var args = Array.prototype.slice.call(arguments, 1);
-        var context = output_contexts_[curr_context_id_];
+        var context = output_contexts_[ctx];
         console.log("forward_to_context, ctx="+ctx+", type="+type+", old.ctx="+context);
-        if(curr_context_id_ && context && context[type])
+        if(context && context[type])
             context[type].apply(context, args);
         else {
             append_session_info.apply(null, args);
