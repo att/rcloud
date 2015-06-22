@@ -28,7 +28,7 @@ rcloud.language.support <- function()
       # FIXME better error handling
       val <- paste("<pre>", val[1], "</pre>", sep="")
     }
-    self.oobSend(list("html.out", val))
+    rcloud.html.out(val)
   }
   complete <- function(text, pos) {
     # from rcompgen.completion
