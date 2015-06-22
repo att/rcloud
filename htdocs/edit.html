@@ -276,7 +276,7 @@
           <div class="row sec" ng-show="allUserGroups.length">
             <span>Assign to Group</span><br />
             <select ng-model="selectedUserGroup" 
-                    ng-disabled="sharedStatus === 'public'" 
+                    ng-disabled="sharedStatus !== 'group'" 
                     ng-options="group.name for group in allUserGroups"
                     ng-change="anotherUserGroupSelected()">
             </select>
@@ -325,7 +325,7 @@
         <div class="modal-footer">
 
           <div class='logging-panel green'> 
-            <span>You have tried to do this and athat and this and that and this and that and this and that! bakakakakakka fhdskhfksh fdksh kghsdkjghskjhgksdjhgksdhgk jsdhgk hsdkghsdk ghsdkjgh skdhg ksjhgk sjdhgkdshg </span>
+            <span></span>
           </div>
           <span class="btn btn-cancel" ng-click='cancel()'>Cancel</span>
           <span class="btn btn-save btn-default" ng-click='save()'>OK</span>

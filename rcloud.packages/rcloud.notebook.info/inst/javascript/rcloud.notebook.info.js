@@ -35,11 +35,15 @@
 
                                     var close_button = '<span class="pop-close" style="cursor: pointer; float:right;">x</span>';
                                     var group_message = '<div class="info-category"><b>Group:</b></div>';
-                                    if(!cryptogroup[0] && !cryptogroup[1]){
-                                        group_message += '<div class="group-link info-item"><a href="#">no group</a></div>'
+
+                                    if(cryptogroup[0] === 'private'){
+                                        group_message += '<div class="group-link info-item"><a href="#">private</a></div>'
+                                    }
+                                    else if(cryptogroup[0] !== null && cryptogroup[1] !== null){
+                                        group_message += '<div class="group-link info-item"><a href="#">'+cryptogroup[1]+'</a></div>'
                                     }
                                     else{
-                                        group_message += '<div class="group-link info-item"><a href="#">'+cryptogroup[1]+'</a></div>'
+                                        group_message += '<div class="group-link info-item"><a href="#">no group</a></div>'
                                     }
                                     var starrer_list = '<div class="info-category"><b>Starred by:</b></div>';
                                     list.forEach(function (v) {

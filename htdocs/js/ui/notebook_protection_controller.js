@@ -16,7 +16,6 @@ define(['angular'], function(angular){
         $scope.userId = RCloud.UI.notebook_protection.userId;
         $scope.userLogin = RCloud.UI.notebook_protection.userLogin;
         
-
         $scope.sharedStatus = ''; 
         $scope.initialSharedStatus = '';
         $scope.initialGroupId = '';
@@ -25,7 +24,6 @@ define(['angular'], function(angular){
         $scope.myConfig = { openOnFocus: false };
 
         $scope.currentTab = null;
-
 
         $scope.selectedUserGroup = null;
         $scope.selectedAdminGroup = null;
@@ -36,7 +34,6 @@ define(['angular'], function(angular){
         $scope.groupMembers = [];
         $scope.originalAdmins = [];
         $scope.originalMembers = [];
-
 
         $scope.initBoth = function() {
 
@@ -68,10 +65,10 @@ define(['angular'], function(angular){
                 }, 50);
                 //return 
             })
-            // .then(function(){
-            //     $scope.anotherAdminGroupSelected();
-            //     console.log('done');
-            // });
+            .then(function(){
+                $scope.anotherAdminGroupSelected();
+                console.log('done');
+            });
         };
 
         //NOTEBOOK TAB METHODS
@@ -99,24 +96,31 @@ define(['angular'], function(angular){
                 $scope.$evalAsync(function() {
 
                     $scope.currentTab = 1;
+                    var moduleRef = RCloud.UI.notebook_protection;
 
-                    $scope.currentNotebook = RCloud.UI.notebook_protection.defaultNotebook;
-                    $scope.currentCryptogroup = RCloud.UI.notebook_protection.defaultCryptogroup;
 
-                    $scope.notebookFullName = RCloud.UI.notebook_protection.defaultNotebook.full_name;
-                    $scope.notebookGistName = RCloud.UI.notebook_protection.defaultNotebook.gistname;
-                    $scope.notebookId = RCloud.UI.notebook_protection.defaultNotebook.id;
+                    $scope.currentNotebook = moduleRef.defaultNotebook;
+                    $scope.currentCryptogroup = moduleRef.defaultCryptogroup;
 
-                    if(RCloud.UI.notebook_protection.defaultCryptogroup[0] && RCloud.UI.notebook_protection.defaultCryptogroup[1]) {
+                    $scope.notebookFullName = moduleRef.defaultNotebook.full_name;
+                    $scope.notebookGistName = moduleRef.defaultNotebook.gistname;
+                    $scope.notebookId = moduleRef.defaultNotebook.id;
+
+                    if(moduleRef.defaultCryptogroup[0] !== null && moduleRef.defaultCryptogroup[1] !== null) {
                        $scope.sharedStatus = 'group';
                        $scope.initialSharedStatus = 'group';
-                       $scope.initialGroupId = RCloud.UI.notebook_protection.defaultCryptogroup[0];
+                       $scope.initialGroupId = moduleRef.defaultCryptogroup[0];
                     }
-                    else if(!RCloud.UI.notebook_protection.defaultCryptogroup[0] && !RCloud.UI.notebook_protection.defaultCryptogroup[1]) {
+                    else if(moduleRef.defaultCryptogroup[0] === 'private' && moduleRef.defaultCryptogroup[1] == null){
+                        $scope.sharedStatus = 'private';
+                        $scope.initialSharedStatus = 'private';
+                    }
+                    else if(moduleRef.defaultCryptogroup[0] === null && !moduleRef.defaultCryptogroup[1] === null) {
                         $scope.sharedStatus = 'public';
                         $scope.initialSharedStatus = 'public';
                     }
 
+                
                     //timeout to ensure evalAsync has finished
                     $timeout(function() {
                         resolve();
@@ -127,9 +131,10 @@ define(['angular'], function(angular){
 
         $scope.saveNotebookTab = function() {
 
+            //status has not changed
             if($scope.sharedStatus === $scope.initialSharedStatus) {
-                //nothing has changed
-                if($scope.initialGroupId !== $scope.selectedUserGroup.id){
+                
+                if($scope.initialGroupId !== '' && $scope.initialGroupId !== $scope.selectedUserGroup.id){
                     console.log('id changed');
                     (function(){
                         var conf = confirm("Are you sure you want to move notebook "+$scope.notebookFullName+" to group "+$scope.selectedUserGroup.name +"?");
@@ -176,20 +181,36 @@ define(['angular'], function(angular){
                 }
                 else if($scope.sharedStatus === 'public') {
 
-                    var conf = confirm("Are you sure you want to make notebook "+$scope.notebookFullName+" public? \nThis might make it no longer be accessible");
-                    if(conf){
-                        console.log('notebook id is '+$scope.notebookGistName);
-                        GroupsService.setNotebookGroup($scope.notebookGistName, null )
-                        .then(function(data){
-                            $scope.cancel();
-                        })
-                        .catch(function(e){
-                            console.warn(e)
-                        })
-                    }
+                    (function(){
+                        var conf = confirm("Are you sure you want to make notebook "+$scope.notebookFullName+" public? \nThis might make it no longer be accessible");
+                        if(conf){
+                            console.log('notebook id is '+$scope.notebookGistName);
+                            GroupsService.setNotebookGroup($scope.notebookGistName, null )
+                            .then(function(data){
+                                $scope.cancel();
+                            })
+                            .catch(function(e){
+                                console.warn(e)
+                            })
+                        }
+                    })()
+                    
                 }
                 else if($scope.sharedStatus === 'private') {
                     //private logic goes here
+                    (function(){
+                        var conf = confirm("Are you sure you want to make notebook "+$scope.notebookFullName+" truly private?");
+                        if(conf){
+                            console.log('notebook id is '+$scope.notebookGistName);
+                            GroupsService.setNotebookGroup($scope.notebookGistName, 'private' )
+                            .then(function(data){
+                                $scope.cancel();
+                            })
+                            .catch(function(e){
+                                console.warn(e)
+                            })
+                        }
+                    })()
                 }
             } 
         }
@@ -262,33 +283,10 @@ define(['angular'], function(angular){
                             if(indexUsers !== -1)
                                 $scope.allUserGroups[indexUsers].name = pr;
                         });
-
-                        //replace
-
-                        //$scope.setFirstSelectoToId
-                        //groupId = data;
-
-                        // var theIndex;
-                        // for(var i = 0; i < $scope.allUserGroups.length; i ++){
-                        //     if($scope.allUserGroups[i].id === $scope.selectedGroup2.id ){
-                        //         theIndex = i;
-                        //         console.log('at index '+i);
-                        //     }
-                        // }
-
-                        // $scope.$evalAsync(function(){
-
-                        //     $scope.allUserGroups[theIndex].name = pr;
-                        // });
-
-                        //console.log('group changed '+data);
-                        //alert('group created');
-
                     })
                     .catch(function(e){
                         console.warn(e);
                     })
-
                 }  
             }
         }
@@ -330,19 +328,15 @@ define(['angular'], function(angular){
 
                     $scope.groupAdmins = adminsArray;
                     $scope.groupMembers = membersArray;
-                    //$scope.groupMembers = ['fourthark','gordonwoodhull']; //for testing's sake
                 });
 
                 $scope.originalAdmins = adminsArray.slice(0);//$scope.groupAdmins.slice(0);
-                // $scope.originalMembers = $scope.groupMembers.slice(0);
                 $scope.originalMembers = membersArray.slice(0);//['fourthark','gordonwoodhull'];
-
             })
             .catch(function(e){
                 console.warn(e);
             })
         }
-
 
         $scope.anotherAdminGroupSelected = function() {
             $scope.populateGroupMembers();
@@ -359,7 +353,7 @@ define(['angular'], function(angular){
             // _.delay(function(){
             //     $('.nav-tabs #tab1 a').click();
             // }, 200)
-            //$scope.reset();
+            $scope.reset();
         }
 
 
@@ -389,6 +383,28 @@ define(['angular'], function(angular){
         }
 
         $scope.reset = function(){
+            $scope.currentNotebook = null;
+            $scope.currentCryptogroup = null;
+            $scope.notebookFullName = null;
+            $scope.notebookGistName = null;
+            $scope.notebookId = null;
+
+
+            $scope.sharedStatus = ''; 
+            $scope.initialSharedStatus = '';
+            $scope.initialGroupId = '';
+
+            $scope.currentTab = null;
+
+            $scope.selectedUserGroup = null;
+            $scope.selectedAdminGroup = null;
+
+            $scope.allUserGroups = [];
+            $scope.allAdminGroups = []; 
+            $scope.groupAdmins = [];
+            $scope.groupMembers = [];
+            $scope.originalAdmins = [];
+            $scope.originalMembers = [];
 
         };
 
@@ -401,7 +417,7 @@ define(['angular'], function(angular){
         $scope.setFirstSelectoToId = function(id) {
             return $q(function(resolve, reject) {
 
-                if(id === null){
+                if(id === null || id === 'private'){
                     $scope.$evalAsync(function() {
                         $scope.selectedUserGroup = $scope.allUserGroups[0];
                     });
