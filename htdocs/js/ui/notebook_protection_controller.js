@@ -5,7 +5,7 @@ define(['angular'], function(angular){
    'use strict';
 
    return angular.module('myapp.controllers', ['myapp.services', 'selectize'])
-   .controller('NotebookProtectionController', ['$scope' , 'GroupsService', '$q', '$timeout', function ($scope, GroupsService, $q, $timeout){
+   .controller('NotebookProtectionController', ['$scope' , 'GroupsService', '$q', '$timeout', function ($scope, GroupsService, $q, $timeout) {
 
         $scope.currentNotebook = null;
         $scope.currentCryptogroup = null;
@@ -39,6 +39,8 @@ define(['angular'], function(angular){
         $scope.theWatcherAdmins = null;
         $scope.theWatcherMembers = null;
 
+        //init
+        ////////////////////////////////////////////
         $scope.initBoth = function() {
 
             $scope.evalData()
@@ -52,17 +54,15 @@ define(['angular'], function(angular){
                 return $scope.setSecondSelectoToId($scope.currentCryptogroup[0]);
             })
             .then(function(){
-
                 console.log('done');
             });
-        }
+        };
 
         $scope.initGroups = function() {
 
             $scope.$evalAsync(function() {
                 $scope.currentTab = 2;
             });
-
             $scope.getGroups()
             .then(function() {
                 if($scope.allAdminGroups.length)
@@ -71,9 +71,8 @@ define(['angular'], function(angular){
                 _.delay(function() {
                     $scope.anotherAdminGroupSelected();
                 }, 50);
-                //return 
             })
-            .then(function(){
+            .then(function() {
                 $scope.anotherAdminGroupSelected();
                 $scope.startWatchingGroups();
                 console.log('done');
@@ -213,7 +212,8 @@ define(['angular'], function(angular){
             } 
         };
 
-        //Groups
+        //GROUPS
+        ////////////////////////////////////////////
         $scope.createGroup = function() {
             var pr = prompt("Enter new group name", "");
             if (pr != null) {
@@ -312,7 +312,7 @@ define(['angular'], function(angular){
         };
 
         //Admins and Memebers areas
-        ///////////////////////////
+        ////////////////////////////////////////////
         $scope.startWatchingGroups = function() {
             console.log("starting watching groups");
             var count1 = 0;
@@ -451,7 +451,6 @@ define(['angular'], function(angular){
 
         //Global Save and Cancel
         ////////////////////////////////////////////
-
         $scope.cancel = function() {
             $("#notebook-protection-dialog").modal('hide');
             $scope.stopWatching();
@@ -469,7 +468,8 @@ define(['angular'], function(angular){
         };
 
         //UTILS
-         $scope.setTab = function(index) {
+        ////////////////////////////////////////////
+        $scope.setTab = function(index) {
             $scope.currentTab = index;
             if(index ===1){
                 $scope.stopWatching()
@@ -520,7 +520,6 @@ define(['angular'], function(angular){
         };
 
         $scope.anotherUserGroupSelected = function() {
-
             $scope.setSecondSelectoToId( $scope.selectedUserGroup[0]);
         };
 
@@ -566,7 +565,6 @@ define(['angular'], function(angular){
                     }, 50);
                     return;
                 }
-
                 var index = -1;
                 for(var i = 0; i < $scope.allAdminGroups.length; i ++ ) {
                     if($scope.allAdminGroups[i].id === id){
@@ -590,7 +588,7 @@ define(['angular'], function(angular){
                 keys = _.keys(data),
                 vals = _.values(data);
             //convert received objects to flat array
-            for(var i = 0; i < vals.length; i ++){
+            for(var i = 0; i < vals.length; i ++) {
                 var val = vals[i];
                 if( _.isArray(val) ){
                     var obj = {};
@@ -609,7 +607,6 @@ define(['angular'], function(angular){
         };
 
     }]);
-
 });
 
 
