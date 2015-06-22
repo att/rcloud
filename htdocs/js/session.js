@@ -89,12 +89,6 @@ var oob_sends = {
     "stdout": append_session_info,
     "stderr": append_session_info,
     // NOTE: "idle": ... can be used to handle idle pings from Rserve if we care ..
-    "start.cell.output": function(context) {
-        console.log("start.cell.output, ctx="+context);
-        curr_context_id_ = context;
-        if(output_contexts_[context] && output_contexts_[context].start)
-            output_contexts_[context].start();
-    },
     "html.out": forward_to_context('html_out'),
     "deferred.result": forward_to_context('deferred_result')
 };
