@@ -307,7 +307,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
             enc <- .encrypt.by.group(list(files=l), group$id)
             ## update contains just the encrypted piece
             ## if this is a conversion, remove the unencrypted pieces
-            content <- if (!isTRUE(old$is.encrypted)) .zlist(names(old$content$files)) else list()
+            content <- if (!isTRUE(old$content$is.encrypted)) .zlist(names(old$content$files)) else list()
             content[[.encryped.content.filename]] <- list(content=encode.b64(enc))
             content <- list(files=content)
         } else {
@@ -501,11 +501,20 @@ rcloud.rename.notebook <- function(id, new.name) {
 
 rcloud.fork.notebook <- function(id, source = NULL) {
     if (is.null(source)) source <- rcloud.get.notebook.source(id)
+    group <- rcloud.get.notebook.cryptgroup(id)
     src.ctx <- .rcloud.get.gist.context(source)
     dst.ctx <- .rcloud.get.gist.context()
     if (!identical(src.ctx, dst.ctx)) { ## is this a cross-source fork?
+        ## NOTE: forking encrypted notebooks across sources will only work as long as the sources
+        ## share SKS, otherwise SKS won't have the key to decrypt it.
         src.nb <- rcloud.get.notebook(id, source = source)
         if (!isTRUE(src.nb$ok)) stop("failed to retrieve source notebook")
+
+        ## For encrypted ones we intentionally fetch the source both in decrypted
+        ## and encrypted form - the former will fail if you don't have a the key so
+        ## it acts as a safe-guard, and the latter is really what we need
+        if (!is.null(group))
+            src.nb <- rcloud.get.notebook(id, source = source, raw = TRUE)
         new.nb <- rcloud.create.notebook(src.nb$content)
         if (!isTRUE(new.nb$ok)) stop("failed to create new notebook")
         rcloud.set.notebook.property(new.nb$content$id, "fork_of",
@@ -513,9 +522,13 @@ rcloud.fork.notebook <- function(id, source = NULL) {
                                      list(owner=src.nb$content$owner,
                                           description=src.nb$content$description,
                                           id=src.nb.new$content$id))
-        new.nb
     } else ## src=dst, regular fork
-        fork.gist(id, ctx = src.ctx)
+        new.nb <- fork.gist(id, ctx = src.ctx)
+
+    ## inform the UI as well
+    if (!is.null(group))
+        rcloud.set.notebook.cryptgroup(new.nb$content$id, group$id, FALSE)
+    new.nb
 }
 
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
