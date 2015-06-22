@@ -10,6 +10,7 @@
     <link rel="stylesheet" type="text/css" href="/css/edit.css"/>
     <link rel="stylesheet" type="text/css" href="/css/dc.css"/>
     <link rel="stylesheet" type="text/css" href="/css/nonselect.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/selectize.css"/>
 
     <!-- 
 
@@ -274,7 +275,7 @@
             
           </div>
           <div class="row sec" ng-show="allUserGroups.length">
-            <span>Assign to Group</span><br />
+            <span>Assign to Group</span>&nbsp;&nbsp;&nbsp;
             <select ng-model="selectedUserGroup" 
                     ng-disabled="sharedStatus !== 'group'" 
                     ng-options="group.name for group in allUserGroups"
@@ -290,7 +291,7 @@
         <div class="tab-pane inner-tab" id="group-tab">
           <div class="row sec">
             <div class='col-md-6' style='padding-left: 0px;' ng-show="allAdminGroups.length" >
-              <span>Select group</span><br />
+              <span>Select group:</span>&nbsp;&nbsp;&nbsp;
               <select ng-model="selectedAdminGroup"
                       ng-options="group.name for group in allAdminGroups"
                       ng-change="anotherAdminGroupSelected()" >

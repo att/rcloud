@@ -94,7 +94,7 @@ RCloud.UI.notebook_protection = (function() {
 
           var header = $(['<div class="modal-header">',
                           '<button type="button" class="close" onClick="(RCloud.UI.notebook_protection.close.bind(RCloud.UI.notebook_protection))()" aria-hidden="true">&times;</button>',
-                          '<h3>Set Notebook Permissions</h3>',
+                          '<h3>Notebook Permissions / Group Management</h3>',
                           '</div>'].join(''));
           var dialog = $('<div id="notebook-protection-dialog" class="modal fade"></div>')
             .append($('<div class="modal-dialog"></div>')
