@@ -431,6 +431,8 @@ function create_cell_html_view(language, cell_model) {
             running_state_ = state;
             return this;
         },
+        start_output: function() {
+        },
         add_result: function(type, r) {
             if(!has_result_) {
                 result_div_.empty(); // clear previous output

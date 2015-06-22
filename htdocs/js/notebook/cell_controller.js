@@ -11,6 +11,7 @@ Notebook.Cell.create_controller = function(cell_model)
                 var resulter = appender('code');
                 execution_context_ =
                     {
+                        start: this.start_output.bind(this),
                         end: this.end_output.bind(this),
                         // these should convey the meaning e.g. through color:
                         out: resulter, err: appender('error'), msg: resulter,
@@ -41,6 +42,11 @@ Notebook.Cell.create_controller = function(cell_model)
         clear_result: function() {
             cell_model.notify_views(function(view) {
                 view.clear_result();
+            });
+        },
+        start_output: function() {
+            cell_model.notify_views(function(view) {
+                view.start_output();
             });
         },
         append_result: function(type, msg) {

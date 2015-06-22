@@ -26,8 +26,10 @@ rcloud.get.gist.part <- function(partname, version) {
 rcloud.session.cell.eval <- function(context.id, partname, language, version, silent) {
   ulog("RCloud rcloud.session.cell.eval(", partname, ",", language,",",context.id,")")
   o <- Rserve.eval({
-      ## which running cell should output go to?
+      ## FIXME: it should not be necessary ..
       Rserve.context(context.id)
+      ## FIXME: do we still need this?
+      .rc.oobSend("start.cell.output")
       command <- rcloud.get.gist.part(partname, version)
       res <- if (!is.null(.session$languages[[language]]))
           .session$languages[[language]]$run.cell(command, silent, .session)
