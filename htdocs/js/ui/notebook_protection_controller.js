@@ -556,7 +556,7 @@ define(['angular'], function(angular){
         $scope.setSecondSelectoToId = function(id) {
             return $q(function(resolve, reject) {
 
-                if(id === null){
+                if(id === null || id === 'private'){
                     $scope.$evalAsync(function() {
                         $scope.selectedAdminGroup = $scope.allAdminGroups[0];
                     });
