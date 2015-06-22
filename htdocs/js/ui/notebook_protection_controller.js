@@ -115,7 +115,7 @@ define(['angular'], function(angular){
                         $scope.sharedStatus = 'private';
                         $scope.initialSharedStatus = 'private';
                     }
-                    else if(moduleRef.defaultCryptogroup[0] === null && !moduleRef.defaultCryptogroup[1] === null) {
+                    else if(moduleRef.defaultCryptogroup[0] === null && moduleRef.defaultCryptogroup[1] === null) {
                         $scope.sharedStatus = 'public';
                         $scope.initialSharedStatus = 'public';
                     }
@@ -244,8 +244,8 @@ define(['angular'], function(angular){
 
                         // //set select to the last item in the array
                         $scope.selectedAdminGroup = $scope.allAdminGroups[ $scope.allAdminGroups.length - 1 ]; 
-                        if(!$scope.selectedGroup1){
-                            $scope.selectedGroup1 = $scope.allUserGroups[0];
+                        if(!$scope.selectedUserGroup){
+                            $scope.selectedUserGroup = $scope.allUserGroups[0];
                         }
                         else{
                         }
@@ -383,6 +383,8 @@ define(['angular'], function(angular){
         }
 
         $scope.reset = function(){
+
+            console.log('reset called');
             $scope.currentNotebook = null;
             $scope.currentCryptogroup = null;
             $scope.notebookFullName = null;

@@ -8605,7 +8605,7 @@ RCloud.UI.notebook_protection = (function() {
           body.append(RCloud.UI.panel_loader.load_snippet('notebook-protection-modal'));
 
           var header = $(['<div class="modal-header">',
-                          '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>',
+                          '<button type="button" class="close" onClick="(RCloud.UI.notebook_protection.close.bind(RCloud.UI.notebook_protection))()" aria-hidden="true">&times;</button>',
                           '<h3>Set Notebook Permissions</h3>',
                           '</div>'].join(''));
           var dialog = $('<div id="notebook-protection-dialog" class="modal fade"></div>')
@@ -8614,6 +8614,11 @@ RCloud.UI.notebook_protection = (function() {
             .append(header).append(body)));
           $("body").append(dialog);
             
+        }, 
+
+        close: function() {
+          console.log('sdsdsds');
+          this.appScope.cancel();
         }
     };
 
