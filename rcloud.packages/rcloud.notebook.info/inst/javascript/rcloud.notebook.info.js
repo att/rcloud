@@ -23,6 +23,7 @@
                                  popupOpen = false;
                             })
 
+
                             Promise.all( [window.rcloud.protection.get_notebook_cryptgroup(node.gistname), 
                                         window.rcloud.stars.get_notebook_starrer_list(node.gistname)])
                             .spread(function(cryptogroup, list) {
@@ -45,8 +46,7 @@
                                         starrer_list = starrer_list + '<div class="info-item">' + v + '</div>';
                                     });
                                     return group_message + info_content + starrer_list;
-                                }
-
+                                };
 
                                 $('html').off('mouseup');
                                 $('html').on('mouseup', function(e) {
@@ -84,35 +84,13 @@
 
                                 $('.group-link', thisPopover).click(function(){
                                     $(thisIcon).popover("destroy");
-                                    //set 
-                                    RCloud.UI.notebook_protection.notebookFullName = node.full_name;
-                                    RCloud.UI.notebook_protection.notebookGistName = node.gistname;
-                                    RCloud.UI.notebook_protection.notebookId = node.id;
-                                    RCloud.UI.notebook_protection.tipEl = $(thisIcon).closest('.group-link');
-                                    //console.dir(RCloud.UI.notebook_protection.tipEl);
-                                    //groups
 
-                                    if(!cryptogroup[0] && !cryptogroup[1]){
-                                        RCloud.UI.notebook_protection.belongsToGroup = false;
-                                        console.log('does not belong');
-                                    }
-                                    else{
-                                        RCloud.UI.notebook_protection.belongsToGroup = true
-                                        RCloud.UI.notebook_protection.currentGroupName = cryptogroup[1];
-                                        console.log('does belong');
-                                    }
-
-                                    //show modal with both notebook and group views
-                                    
+                                    RCloud.UI.notebook_protection.defaultNotebook = node;
+                                    RCloud.UI.notebook_protection.defaultCryptogroup = cryptogroup;
                                     RCloud.UI.notebook_protection.init('both-tabs-enabled');
-                                    //RCloud.UI.notebook_protection.setState('both-tabs-enabled')
-
-                                    //RCloud.UI.notebook_protection.show();
-                                    //RCloud.UI.notebook_protection.showOverlay();
-                                });
-
-                            });
-                        });
+                                })
+                            })
+                        })
                         return info;
                     }
                 }
@@ -120,4 +98,4 @@
             k();
         }
     };
-})()) /*jshint -W033 */ // no semi; this is an expression not a statement
+})()); /*jshint -W033 */ // no semi; this is an expression not a statement

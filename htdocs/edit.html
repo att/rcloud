@@ -266,18 +266,19 @@
           </div>
           <div class="row sec">
             <label for="redRadio">Public:</label> 
-            <input id="redRadio" type="radio" ng-model="belongsToGroup" ng-value="false" />&nbsp;&nbsp;&nbsp;
+            <input id="redRadio" type="radio" ng-model="sharedStatus" value="public" />&nbsp;&nbsp;&nbsp;
             <label for="greenRadio">Group:</label> 
-            <input id="greenRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="belongsToGroup" ng-value="true" />&nbsp;&nbsp;&nbsp;
+            <input id="greenRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="sharedStatus" value="group" />&nbsp;&nbsp;&nbsp;
             <label for="yellowRadio">Private:</label> 
-            <input id="yellowRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="belongsToGroup" ng-value="false" /><br />
+            <input id="yellowRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="sharedStatus" value="private" /><br />
             
           </div>
           <div class="row sec" ng-show="allUserGroups.length">
             <span>Assign to Group</span><br />
-            <select ng-model="selectedGroup1" 
-                    ng-disabled="!belongsToGroup" 
-                    ng-options="group.name for group in allUserGroups">
+            <select ng-model="selectedUserGroup" 
+                    ng-disabled="sharedStatus === 'public'" 
+                    ng-options="group.name for group in allUserGroups"
+                    ng-change="anotherUserGroupSelected()">
             </select>
           </div>
           <div class="row sec" ng-hide="allUserGroups.length">
@@ -290,9 +291,9 @@
           <div class="row sec">
             <div class='col-md-6' style='padding-left: 0px;' ng-show="allAdminGroups.length" >
               <span>Select group</span><br />
-              <select ng-model="selectedGroup2"
+              <select ng-model="selectedAdminGroup"
                       ng-options="group.name for group in allAdminGroups"
-                      ng-change="anotherGroupSelected()" >
+                      ng-change="anotherAdminGroupSelected()" >
               </select>
             </div>
             <div class='col-md-6' style='padding-left: 0px;' ng-hide="allAdminGroups.length" >

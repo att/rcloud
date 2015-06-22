@@ -3867,8 +3867,8 @@ textarea.input-group-sm > .input-group-btn > .btn {
 }
 
 .nav-tabs > li.active > a,
-.nav-tabs > li.active > a:hover,
-.nav-tabs > li.active > a:focus {
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a {
   color: #555555;
   cursor: default;
   background-color: #ffffff;
