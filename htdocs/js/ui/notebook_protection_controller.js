@@ -35,6 +35,10 @@ define(['angular'], function(angular){
         $scope.originalAdmins = [];
         $scope.originalMembers = [];
 
+        //way to stop watching collections
+        $scope.theWatcherAdmins = null;
+        $scope.theWatcherMembers = null;
+
         $scope.initBoth = function() {
 
             $scope.evalData()
@@ -55,6 +59,10 @@ define(['angular'], function(angular){
 
         $scope.initGroups = function() {
 
+            $scope.$evalAsync(function() {
+                $scope.currentTab = 2;
+            });
+
             $scope.getGroups()
             .then(function() {
                 if($scope.allAdminGroups.length)
@@ -67,6 +75,7 @@ define(['angular'], function(angular){
             })
             .then(function(){
                 $scope.anotherAdminGroupSelected();
+                $scope.startWatchingGroups();
                 console.log('done');
             });
         };
@@ -94,14 +103,10 @@ define(['angular'], function(angular){
         $scope.evalData = function() {
             return $q(function(resolve, reject) {
                 $scope.$evalAsync(function() {
-
                     $scope.currentTab = 1;
                     var moduleRef = RCloud.UI.notebook_protection;
-
-
                     $scope.currentNotebook = moduleRef.defaultNotebook;
                     $scope.currentCryptogroup = moduleRef.defaultCryptogroup;
-
                     $scope.notebookFullName = moduleRef.defaultNotebook.full_name;
                     $scope.notebookGistName = moduleRef.defaultNotebook.gistname;
                     $scope.notebookId = moduleRef.defaultNotebook.id;
@@ -111,7 +116,7 @@ define(['angular'], function(angular){
                        $scope.initialSharedStatus = 'group';
                        $scope.initialGroupId = moduleRef.defaultCryptogroup[0];
                     }
-                    else if(moduleRef.defaultCryptogroup[0] === 'private' && moduleRef.defaultCryptogroup[1] == null){
+                    else if(moduleRef.defaultCryptogroup[0] === 'private' && moduleRef.defaultCryptogroup[1] == null) {
                         $scope.sharedStatus = 'private';
                         $scope.initialSharedStatus = 'private';
                     }
@@ -119,8 +124,6 @@ define(['angular'], function(angular){
                         $scope.sharedStatus = 'public';
                         $scope.initialSharedStatus = 'public';
                     }
-
-                
                     //timeout to ensure evalAsync has finished
                     $timeout(function() {
                         resolve();
@@ -130,10 +133,8 @@ define(['angular'], function(angular){
         };
 
         $scope.saveNotebookTab = function() {
-
             //status has not changed
-            if($scope.sharedStatus === $scope.initialSharedStatus) {
-                
+            if($scope.sharedStatus === $scope.initialSharedStatus) { 
                 if($scope.initialGroupId !== '' && $scope.initialGroupId !== $scope.selectedUserGroup.id){
                     console.log('id changed');
                     (function(){
@@ -162,7 +163,6 @@ define(['angular'], function(angular){
             else {
                 //if making private of moving to another group
                 if($scope.sharedStatus === 'group') {
-
                     (function(){
                         var conf = confirm("Are you sure you want to move notebook "+$scope.notebookFullName+" to group "+$scope.selectedUserGroup.name +"?");
                         if(conf){
@@ -180,7 +180,6 @@ define(['angular'], function(angular){
                     })();
                 }
                 else if($scope.sharedStatus === 'public') {
-
                     (function(){
                         var conf = confirm("Are you sure you want to make notebook "+$scope.notebookFullName+" public? \nThis might make it no longer be accessible");
                         if(conf){
@@ -193,8 +192,7 @@ define(['angular'], function(angular){
                                 console.warn(e)
                             })
                         }
-                    })()
-                    
+                    })();
                 }
                 else if($scope.sharedStatus === 'private') {
                     //private logic goes here
@@ -210,45 +208,36 @@ define(['angular'], function(angular){
                                 console.warn(e)
                             })
                         }
-                    })()
+                    })();
                 }
             } 
-        }
-
-
+        };
 
         //Groups
-
         $scope.createGroup = function() {
             var pr = prompt("Enter new group name", "");
             if (pr != null) {
                 GroupsService.createGroup(pr)
-                .then(function(data){
-
-                    $scope.$evalAsync(function(){
-
+                .then(function(data) {
+                    $scope.$evalAsync(function() {
                         $scope.allUserGroups.push({
                             id:data,
                             name:pr,
                             isAdmin:true
                         });
-
                         $scope.allAdminGroups.push({
                             id:data,
                             name:pr,
                             isAdmin:true
                         });
                     });
-
                     $scope.$evalAsync(function() {
-
                         // //set select to the last item in the array
                         $scope.selectedAdminGroup = $scope.allAdminGroups[ $scope.allAdminGroups.length - 1 ]; 
                         if(!$scope.selectedUserGroup){
                             $scope.selectedUserGroup = $scope.allUserGroups[0];
                         }
-                        else{
-                        }
+                        else{}
                     });
                     console.log('group created and selected '+data);
                     _.defer(function() {
@@ -261,19 +250,15 @@ define(['angular'], function(angular){
             }
         };
 
-
         $scope.renameGroup = function() {
             var pr = prompt("Rename group "+$scope.selectedAdminGroup.name , $scope.selectedAdminGroup.name);
-
             if(pr != null) {
                 var r = confirm('Are you sure you want to rename group "'+$scope.selectedAdminGroup.name+' to "'+pr+'"?');
                 if(r === true){
                     var prevGroupId = $scope.selectedAdminGroup.id;
                     GroupsService.changeGroupName($scope.selectedAdminGroup.id ,pr)
                     .then(function(data){
-
                         console.log('renamed group');
-
                         var indexAdmins = $scope.getIndexOfNameFromGroup($scope.selectedAdminGroup.name, $scope.allAdminGroups);
                         var indexUsers = $scope.getIndexOfNameFromGroup($scope.selectedAdminGroup.name, $scope.allUserGroups);
 
@@ -286,33 +271,19 @@ define(['angular'], function(angular){
                     })
                     .catch(function(e){
                         console.warn(e);
-                    })
+                    });
                 }  
             }
-        }
+        };
 
-
-        $scope.getIndexOfNameFromGroup = function(name, groupArray) {
-            for(var i = 0; i < groupArray.length; i ++) {
-                if( groupArray[i].name === name){
-                    return i;
-                    break;
-                }
-            }
-            return -1;
-        }
-
-        $scope.populateGroupMembers = function(){       
-
+        $scope.populateGroupMembers = function() {       
             if(!$scope.selectedAdminGroup)
                 return;
 
             GroupsService.getAllUsersinGroup($scope.selectedAdminGroup.id)
             .then(function(data){
-
                 var adminsArray = [];
                 var membersArray = [];
-
                 for(var item in data){
                     if(item !== 'r_attributes' && item !== 'r_type'){
                         if(data[item] === true)
@@ -321,76 +292,205 @@ define(['angular'], function(angular){
                             membersArray.push(item);
                     } 
                 }
-
                 console.log('just grabed memebers info for group '+$scope.selectedAdminGroup.name);
-
                 $scope.$evalAsync(function(){
 
                     $scope.groupAdmins = adminsArray;
                     $scope.groupMembers = membersArray;
                 });
-
                 $scope.originalAdmins = adminsArray.slice(0);//$scope.groupAdmins.slice(0);
                 $scope.originalMembers = membersArray.slice(0);//['fourthark','gordonwoodhull'];
+
             })
             .catch(function(e){
                 console.warn(e);
             })
-        }
+        };
 
         $scope.anotherAdminGroupSelected = function() {
             $scope.populateGroupMembers();
-        }
+        };
 
+        //Admins and Memebers areas
+        ///////////////////////////
+        $scope.startWatchingGroups = function() {
+            console.log("starting watching groups");
+            var count1 = 0;
+            var count2 = 0;
+            $scope.theWatcherAdmins = $scope.$watch('groupAdmins', function (val) {
+                if(count1 === 0){
+                    count1 ++;
+                    return
+                }
+                else{
+                    count1 ++;
+                    //logic here
+                    console.log('groupAdmins changed '+val);
+                    //console.log('groupAdmins is '+$scope.groupAdmins);
+                    var duplicates = _.intersection($scope.groupAdmins, $scope.groupMembers);
+                    if(duplicates.length){
+                        RCloud.UI.notebook_protection_logger.warn('removing '+duplicates+' from members and moving it to admins');
+                        //remove 
+                        var dupIndex = $scope.groupMembers.indexOf(duplicates[0]);
+                        $scope.groupMembers.splice(dupIndex, 1);
+                    }
+                }
+            });
 
+            $scope.theWatcherMembers = $scope.$watch('groupMembers', function (val) {
+                if(count2 === 0){
+                    count2 ++;
+                    return
+                }
+                else{
+                    count2 ++;
+                    //logic here
+                    console.log('groupMembers changed '+val);
+                    var duplicates = _.intersection($scope.groupMembers, $scope.groupAdmins);
+                    if(duplicates.length){
+                        RCloud.UI.notebook_protection_logger.warn('removing '+duplicates+' from admins and moving it to members');
+                        //remove 
+                        var dupIndex = $scope.groupAdmins.indexOf(duplicates[0]);
+                        $scope.groupAdmins.splice(dupIndex, 1);
+                    }
+                }
+            });
+        };
+
+        $scope.stopWatching = function() {
+            console.log("stopping watching groups");
+            //stop watching admin and member models
+            if(typeof $scope.theWatcherAdmins === 'function' ) {
+                $scope.theWatcherAdmins();
+                $scope.theWatcherMembers();
+            }   
+        };
+
+        $scope.saveGroupTab = function() {
+            //compare original admins array and its current state
+            var removedAdmins = _.difference($scope.originalAdmins, $scope.groupAdmins);
+            var addedAdmins = _.difference($scope.groupAdmins, $scope.originalAdmins);
+            //compare original members array and its current state
+            var removedMembers = _.difference($scope.originalMembers, $scope.groupMembers);
+            var addedMembers = _.difference($scope.groupMembers, $scope.originalMembers);
+            var outputMessage = '';
+            //removed and added members
+            if(!removedAdmins.length && !addedAdmins.length && !removedMembers.length && !addedMembers.length ) {
+                $scope.cancel();
+                return;
+            }
+            else{
+                outputMessage += 'Please confirm the following changes:\n\n';
+                if(removedAdmins.length) {
+                    outputMessage += 'you removed admins \n';
+                    for(var i = 0; i < removedAdmins.length; i ++) {
+                        outputMessage += '   - '+removedAdmins[i]+'\n';
+                    }
+                }
+                if(addedAdmins.length) {
+                    outputMessage += 'you added admins \n';
+                    for(var a = 0; a < addedAdmins.length; a ++) {
+                        outputMessage += '   - '+addedAdmins[a]+'\n';
+                    }
+                }
+                if(removedMembers.length) {
+                    outputMessage += 'you removed members \n';
+                    for(var b = 0; b < removedMembers.length; b ++) {
+                        outputMessage += '   - '+removedMembers[b]+'\n';
+                    }
+                }
+                if(addedMembers.length) {
+                    outputMessage += 'you added members \n';
+                    for(var v = 0; v < addedMembers.length; v ++) {
+                        outputMessage += '   - '+addedMembers[v]+'\n';
+                    }
+                }
+
+                var pr = confirm(outputMessage);
+                if(pr){
+                    //push the data
+                    var allPromises = [];
+                    if(removedAdmins.length) {
+                        for(var q = 0; q < removedAdmins.length; q++) {
+                            //create a promise for each action
+                            allPromises.push( GroupsService.removeGroupUser($scope.selectedAdminGroup.id, removedAdmins[q]));
+                        }
+                    }
+                    if(addedAdmins.length) {
+                        for(var w = 0; w < addedAdmins.length; w++) {
+                            //create a promise for each action
+                            allPromises.push( GroupsService.addGroupUser($scope.selectedAdminGroup.id, addedAdmins[w], true));
+                        }
+                    }
+                    if(removedMembers.length) {
+                        for(var e = 0; e < removedMembers.length; e++) {
+                            //create a promise for each action
+                            allPromises.push( GroupsService.removeGroupUser($scope.selectedAdminGroup.id, removedMembers[e]));
+                        }
+                    }
+                    if(addedMembers.length) {
+                        for(var r = 0; r < addedMembers.length; r++) {
+                            //create a promise for each action
+                            //var prom = ;
+                            allPromises.push( GroupsService.addGroupUser($scope.selectedAdminGroup.id, addedMembers[r], false) );
+                        }
+                    }
+
+                    Promise.all(allPromises)
+                    .then(function(){
+                        console.log('pushing member data succeeded');
+                        $scope.cancel();
+                    })
+                    .catch(function(){
+                        console.log('pushing member data failed');
+                        $scope.populateGroupMembers();  
+                    });
+                }
+            }
+        };
 
         //Global Save and Cancel
         ////////////////////////////////////////////
 
         $scope.cancel = function() {
             $("#notebook-protection-dialog").modal('hide');
-            //reset to show the first tab
-            // _.delay(function(){
-            //     $('.nav-tabs #tab1 a').click();
-            // }, 200)
+            $scope.stopWatching();
             $scope.reset();
-        }
-
+        };
 
         $scope.save = function() {
-            if($scope.currentTab === 1){
+            if($scope.currentTab === 1) {
                 $scope.saveNotebookTab();
             }
-            else{
+            else if($scope.currentTab === 2) { 
                 $scope.saveGroupTab();
             }
             //console.log('current tab is '+$scope.currentTab);
-        }
-
-
+        };
 
         //UTILS
-
-         $scope.setTab = function(index){
+         $scope.setTab = function(index) {
             $scope.currentTab = index;
+            if(index ===1){
+                $scope.stopWatching()
+            }
             if(index === 2){
                 _.delay(function(){
                     if($scope.selectedAdminGroup) {
                         $scope.populateGroupMembers();  
+                        $scope.startWatchingGroups();
                     }
                 }, 40);
             }
-        }
+        };
 
-        $scope.reset = function(){
-
+        $scope.reset = function() {
             console.log('reset called');
             $scope.currentNotebook = null;
             $scope.currentCryptogroup = null;
             $scope.notebookFullName = null;
             $scope.notebookGistName = null;
             $scope.notebookId = null;
-
 
             $scope.sharedStatus = ''; 
             $scope.initialSharedStatus = '';
@@ -407,15 +507,23 @@ define(['angular'], function(angular){
             $scope.groupMembers = [];
             $scope.originalAdmins = [];
             $scope.originalMembers = [];
-
         };
 
+        $scope.getIndexOfNameFromGroup = function(name, groupArray) {
+            for(var i = 0; i < groupArray.length; i ++) {
+                if( groupArray[i].name === name){
+                    return i;
+                    break;
+                }
+            }
+            return -1;
+        };
 
         $scope.anotherUserGroupSelected = function() {
 
             $scope.setSecondSelectoToId( $scope.selectedUserGroup[0]);
+        };
 
-        }
         $scope.setFirstSelectoToId = function(id) {
             return $q(function(resolve, reject) {
 
@@ -445,7 +553,6 @@ define(['angular'], function(angular){
                 }, 50);
             });
         };
-
 
         $scope.setSecondSelectoToId = function(id) {
             return $q(function(resolve, reject) {
@@ -499,7 +606,7 @@ define(['angular'], function(angular){
                 all: finalArrayAll,
                 admins: finalArrayAdmins
             }
-        }
+        };
 
     }]);
 

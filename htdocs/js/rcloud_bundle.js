@@ -8617,7 +8617,7 @@ RCloud.UI.notebook_protection = (function() {
         }, 
 
         close: function() {
-          console.log('sdsdsds');
+          //console.log('sdsdsds');
           this.appScope.cancel();
         }
     };
