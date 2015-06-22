@@ -38,9 +38,35 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
    if (length(mstr)) paste0(mstr, "\n", b64) else b64
 }
 
+.encryped.content.filename <- "encrypted.notebook.content.bin.b64"
+
 .gist.binary.process.incoming <- function(content) {
     # ulog(".gist.binary.process.incoming: ", paste(capture.output(str(content)),collapse='\n'))
     if (!length(content$files)) return(content)
+
+    ## decrypt encrypted content
+    if (.encryped.content.filename %in% names(content$files)) {
+        ec <- .b64.to.binary.file(content$files[[.encryped.content.filename]])$content
+        meta <- attr(ec, "metadata")
+        # ulog(".gist.binary.process.incoming: encrypted content (",paste(names(meta),collapse=","),")")
+        if (is.null(meta$cipher) || is.null(meta$sha1) || is.null(meta$key.type))
+            stop("Notebook contains incomplete encrypted content (missing required metadata)")
+        if (meta$key.type == "group-hash") {
+            key <- session.server.group.hash("rcloud", .session$token, meta$group, meta$salt)
+            if (nchar(key) < 64) stop("unable to access key for an encrypted notebook")
+            key <- .Call(hex2raw, key)
+            enc.content <- rcloud.decrypt(ec, key)
+        } else if (meta$key.type == "user-key") {
+            enc.content <- rcloud.decrypt(ec)
+        } else
+            stop("Unsupported encryption type: ", meta$key.type)
+        ## we have to keep everything but the files
+        content$files <- enc.content$files
+        content$is.encrypted <- TRUE
+
+        ## NOTE: we return right here, because encrypted notebooks don't need b64 encoding of the payload
+        return(content)
+    }
 
     ## convert any binary contents stored in .b64 files
     fn <- names(content$files)
@@ -63,6 +89,20 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
     l
 }
 
+.encrypt.by.group <- function(content, groupid) {
+    salt <- generate.uuid()
+    key <- session.server.group.hash("rcloud", .session$token, groupid, salt)
+    if (nchar(key) < 64) stop("unable to use group key - likely access denied")
+    key <- .Call(hex2raw, key)
+    enc <- rcloud.encrypt(content, key)
+    meta <- attr(enc, "metadata")
+    meta$salt <- salt
+    meta$group <- groupid
+    meta$key.type <- "group-hash"
+    attr(enc, "metadata") <- meta
+    enc
+}
+
 ## called before issuing a modification request on a gist
 .gist.binary.process.outgoing <- function(notebook, content, autoconvert=TRUE) {
     # ulog(".gist.binary.process.outgoing: ", paste(capture.output(str(content)),collapse='\n'))
@@ -71,6 +111,9 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
     if (length(content$files)) {
         # ulog("UPDATE: ",paste(names(content$files),"->",c("MOD","DEL")[1L+as.integer(sapply(content$files, function(o) is.null(o$content)))],"/",c("TXT","BIN")[1L+sapply(content$files, function(o) is.list(o) && is.raw(o$content))], collapse=", "))
         nb <- NULL
+
+        ## is this a direct update of an an encryped notebook? If so, don't do anything
+        if (!is.null(content$files[[.encryped.content.filename]])) return(content)
 
         bin <- sapply(content$files, function(o) is.list(o) && is.raw(o$content))
         if (any(bin) && autoconvert) {
