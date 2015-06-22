@@ -57,7 +57,10 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
             key <- .Call(hex2raw, key)
             enc.content <- rcloud.decrypt(ec, key)
         } else if (meta$key.type == "user-key") {
-            enc.content <- rcloud.decrypt(ec)
+            salt <- as.character(meta$salt)
+            if (length(salt) < 1) salt <- ""
+            key <- .salted.usr.key(salt[1])
+            enc.content <- rcloud.decrypt(ec, key)
         } else
             stop("Unsupported encryption type: ", meta$key.type)
         ## we have to keep everything but the files
@@ -89,16 +92,27 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
     l
 }
 
+.salted.usr.key <- function(salt, key=get.user.key())
+    PKI::PKI.digest(c(charToRaw(salt),as.raw(10),get.user.key()), "SHA256")
+
 .encrypt.by.group <- function(content, groupid) {
     salt <- generate.uuid()
-    key <- session.server.group.hash("rcloud", .session$token, groupid, salt)
-    if (nchar(key) < 64) stop("unable to use group key - likely access denied")
-    key <- .Call(hex2raw, key)
+    key <- if (groupid == "private") {
+        .salted.usr.key(salt)
+    } else {
+        key <- session.server.group.hash("rcloud", .session$token, groupid, salt)
+        if (nchar(key) < 64) stop("unable to use group key - likely access denied")
+        .Call(hex2raw, key)
+    }
     enc <- rcloud.encrypt(content, key)
     meta <- attr(enc, "metadata")
     meta$salt <- salt
-    meta$group <- groupid
-    meta$key.type <- "group-hash"
+    if (groupid == "private") {
+        meta$key.type <- "user-key"
+    } else {
+        meta$group <- groupid
+        meta$key.type <- "group-hash"
+    }
     attr(enc, "metadata") <- meta
     enc
 }
