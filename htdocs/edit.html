@@ -12,7 +12,7 @@
     <link rel="stylesheet" type="text/css" href="/css/nonselect.css"/>
     <link rel="stylesheet" type="text/css" href="/css/selectize.css"/>
 
-    <!-- 
+    <!--
 
     jquery,                             http://jquery.com
     jquery-ui,                          http://jqueryui.com
@@ -263,21 +263,17 @@
         <!-- first tab -->
         <div class="tab-pane active inner-tab" id="notebook-tab">
           <div class="row sec">
-            Notebook: {{notebookFullName}}
+            {{notebookFullName}}
           </div>
           <div class="row sec">
-            <label for="redRadio">Public:</label> 
-            <input id="redRadio" type="radio" ng-model="sharedStatus" value="public" />&nbsp;&nbsp;&nbsp;
-            <label for="greenRadio">Group:</label> 
-            <input id="greenRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="sharedStatus" value="group" />&nbsp;&nbsp;&nbsp;
-            <label for="yellowRadio">Private:</label> 
-            <input id="yellowRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="sharedStatus" value="private" /><br />
-            
+            <input id="redRadio" type="radio" ng-model="sharedStatus" value="public" />&nbsp;&nbsp;<label for="redRadio">Public</label>&nbsp;&nbsp;&nbsp;
+            <input id="yellowRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="sharedStatus" value="private" />&nbsp;&nbsp;<label for="yellowRadio">Private</label>&nbsp;&nbsp;&nbsp;
+            <input id="greenRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="sharedStatus" value="group" />&nbsp;&nbsp;<label for="greenRadio">Group</label><br />
           </div>
           <div class="row sec" ng-show="allUserGroups.length">
             <span>Assign to Group</span>&nbsp;&nbsp;&nbsp;
-            <select ng-model="selectedUserGroup" 
-                    ng-disabled="sharedStatus !== 'group'" 
+            <select ng-model="selectedUserGroup"
+                    ng-disabled="sharedStatus !== 'group'"
                     ng-options="group.name for group in allUserGroups"
                     ng-change="anotherUserGroupSelected()">
             </select>
@@ -311,13 +307,13 @@
           </div>
           <div class="row sec">
             <div class="form-group">
-              <label for="comment">Admins:</label> 
+              <label for="comment">Admins:</label>
               <selectize options='allUsers' config="myConfig" ng-model="groupAdmins"></selectize>
             </div>
           </div>
           <div class="row sec">
             <div class="form-group">
-              <label for="comment">Members:</label> 
+              <label for="comment">Members:</label>
               <selectize options='allUsers' config="myConfig" ng-model="groupMembers"></selectize>
             </div>
           </div>
@@ -325,7 +321,7 @@
         <!-- second tab -->
         <div class="modal-footer">
 
-          <div class='logging-panel green'> 
+          <div class='logging-panel green'>
             <span></span>
           </div>
           <span class="btn btn-cancel" ng-click='cancel()'>Cancel</span>
@@ -334,7 +330,7 @@
       </div>
       <!-- end tab content -->
     </div>
-  </div>  
+  </div>
 </script>
 
 <div class="container nopad" id="main-div">
@@ -365,7 +361,7 @@
       </div>
     </div>
     <div class="col-md-1 col-sm-1 no-padding" style="height:100%; min-height: 0" id="right-column">
-      <div id="right-tabs">         
+      <div id="right-tabs">
         <div class="tab-div">
           <div class="panel-group" id="accordion-right">
             <!-- filled in by RCloud.UI.load_panels -->
