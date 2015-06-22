@@ -73,7 +73,7 @@ rcloud.exec.python <- function(cmd, rcloud.session)
       }, error=function(e) {
           # i don't think this gets hit anymore
           msg <- e$message
-          self.oobSend(list("html.out", msg))
+          rcloud.html.out(msg)
           return()
       })
       outval <- as.list(outval)
@@ -82,9 +82,9 @@ rcloud.exec.python <- function(cmd, rcloud.session)
       if (outType %in% c("END_CELL")) return()
       res <- to.chunk(outval)
       if ( (res[1] == "text") && (outType == "CONSOLE") ) {
-          self.oobSend(list("console.out", res[2]))
+          rcloud.out(res[2])
       } else {
-          self.oobSend(list("html.out", res[2]))
+          rcloud.html.out(res[2])
           if(outType %in% c("pyerr"))
             return(structure(list(error="Python evaluation error"), class='cell-eval-error'))
       }
