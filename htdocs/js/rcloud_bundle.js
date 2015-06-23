@@ -24,7 +24,7 @@ RClient = {
                         on_error("Login failed. Shutting down!");
                     }
                     else if(RCloud.is_exception(ocaps)) {
-                        on_error(ocaps[0]);
+                        on_error(ocaps);
                     }
                     else {
                         result.running = true;
@@ -3850,7 +3850,8 @@ function rclient_promise(allow_anonymous) {
         if (error.message === "Authentication required") {
             RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", ui_utils.relogin_uri());
         } else {
-            RCloud.UI.fatal_dialog(could_not_initialize_error(error), "Logout", "/logout.R");
+            var msg = error.message || error.error || error;
+            RCloud.UI.fatal_dialog(could_not_initialize_error(msg), "Logout", "/logout.R");
         }
         throw error;
     }).then(function() {
@@ -7633,15 +7634,19 @@ return {
                 searchproc();
                 return false;
             });
-            if(!editor.gist_sources() || !editor.gist_sources().length) {
-                $('#all-sources').parent().hide();
-            }
-            else {
-                $("#all-sources").change(function(e) {
-                    var val = all_sources();
-                    rcloud.config.set_user_option("search-all-sources", val);
-                });
-            }
+            rcloud.get_gist_sources().then(function(sources) {
+                // annoying to load this over again just to get a number, but
+                // there's no obvious place to store this
+                if(sources.length<2) {
+                    $('#all-sources').parent().hide();
+                }
+                else {
+                    $("#all-sources").change(function(e) {
+                        var val = all_sources();
+                        rcloud.config.set_user_option("search-all-sources", val);
+                    });
+                }
+            });
             $("#sort-by").change(function() {
                 rcloud.config.set_user_option('search-sort-by', sortby());
                 order_from_sort();
