@@ -154,7 +154,7 @@ define(['angular'], function(angular) {
 
                             })
                             .catch(function(e){
-                                console.warn(e);
+                                RCloud.UI.notebook_protection_logger.warn(arguments[0].toString().split('\n')[0].replace(/^.*: /,''));
                             });
                         }
                     })();
@@ -179,7 +179,7 @@ define(['angular'], function(angular) {
                                 $scope.cancel();
                             })
                             .catch(function(e){
-                                console.warn(e)
+                                RCloud.UI.notebook_protection_logger.warn(arguments[0].toString().split('\n')[0].replace(/^.*: /,''))
                             });
                         }
                     })();
@@ -194,7 +194,7 @@ define(['angular'], function(angular) {
                                 $scope.cancel();
                             })
                             .catch(function(e){
-                                console.warn(e);
+                                RCloud.UI.notebook_protection_logger.warn(arguments[0].toString().split('\n')[0].replace(/^.*: /,''));
                             });
                         }
                     })();
@@ -210,7 +210,7 @@ define(['angular'], function(angular) {
                                 $scope.cancel();
                             })
                             .catch(function(e) {
-                                console.warn(e);
+                                RCloud.UI.notebook_protection_logger.warn(arguments[0].toString().split('\n')[0].replace(/^.*: /,''));
                             });
                         }
                     })();
@@ -250,7 +250,7 @@ define(['angular'], function(angular) {
                     });
                 })
                 .catch(function(e) {
-                    console.warn(e);
+                    RCloud.UI.notebook_protection_logger.warn(arguments[0].toString().split('\n')[0].replace(/^.*: /,''));
                 });
             }
         };
@@ -275,7 +275,7 @@ define(['angular'], function(angular) {
                         });
                     })
                     .catch(function(e) {
-                        console.warn(e);
+                        RCloud.UI.notebook_protection_logger.warn(arguments[0].toString().split('\n')[0].replace(/^.*: /,''));
                     });
                 }
             }
@@ -308,7 +308,7 @@ define(['angular'], function(angular) {
 
             })
             .catch(function(e) {
-                console.warn(e);
+                RCloud.UI.notebook_protection_logger.warn(arguments[0].toString().split('\n')[0].replace(/^.*: /,''));
             });
         };
 
@@ -446,8 +446,8 @@ define(['angular'], function(angular) {
                         console.log('pushing member data succeeded');
                         $scope.cancel();
                     })
-                    .catch(function() {
-                        console.log('pushing member data failed');
+                    .catch(function(e) {
+                        RCloud.UI.notebook_protection_logger.warn(arguments[0].toString().split('\n')[0].replace(/^.*: /,''));
                         $scope.populateGroupMembers();
                     });
                 }
