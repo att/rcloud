@@ -1398,7 +1398,14 @@ var editor = function () {
                 promises.push(RCloud.UI.share_button.update_link());
 
                 document.title = result.description + " - RCloud";
-                promises.push(update_url({notebook: result.id, version: options.version, source: options.source, tag:tag}));
+                promises.push((options.source ? Promise.resolve(undefined)
+                               : rcloud.get_notebook_property(result.id, 'source').then(function(source) {
+                                   if(!notebook_info_[result.id])
+                                       notebook_info_[result.id] = {};
+                                   options.source = notebook_info_[result.id].source = source;
+                               })).then(function() {
+                                   return update_url({notebook: result.id, version: options.version, source: options.source, tag:tag});
+                               }));
 
                 var history;
                 // when loading an old version you get truncated history
