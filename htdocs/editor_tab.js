@@ -429,7 +429,7 @@ var editor = function () {
             .then(function(allUsers){
                 //save them to global here
                 editor.allTheUsers = allUsers;
-                return allUsers
+                return allUsers;
             })
             .then(rcloud.config.all_notebooks_multiple_users),
             rcloud.stars.get_my_starred_notebooks(),
