@@ -48,10 +48,16 @@ define(['angular'], function(angular) {
                 return $scope.getGroups();
             })
             .then(function() {
-                return $scope.setFirstSelectoToId($scope.currentCryptogroup[0]);
+                if($scope.currentCryptogroup)
+                    return $scope.setFirstSelectoToId($scope.currentCryptogroup.id);
+                else
+                    return $scope.setFirstSelectoToId(null);
             })
             .then(function() {
-                return $scope.setSecondSelectoToId($scope.currentCryptogroup[0]);
+                if($scope.currentCryptogroup)
+                    return $scope.setSecondSelectoToId($scope.currentCryptogroup.id);
+                else
+                    return $scope.setSecondSelectoToId(null);
             })
             .then(function() {
                 console.log('done');
@@ -110,18 +116,18 @@ define(['angular'], function(angular) {
                     $scope.notebookGistName = moduleRef.defaultNotebook.gistname;
                     $scope.notebookId = moduleRef.defaultNotebook.id;
 
-                    if(moduleRef.defaultCryptogroup[0] !== null && moduleRef.defaultCryptogroup[1] !== null) {
-                       $scope.sharedStatus = 'group';
-                       $scope.initialSharedStatus = 'group';
-                       $scope.initialGroupId = moduleRef.defaultCryptogroup[0];
-                    }
-                    else if(moduleRef.defaultCryptogroup[0] === 'private' && moduleRef.defaultCryptogroup[1] == null) {
-                        $scope.sharedStatus = 'private';
-                        $scope.initialSharedStatus = 'private';
-                    }
-                    else if(moduleRef.defaultCryptogroup[0] === null && moduleRef.defaultCryptogroup[1] === null) {
+                    if(moduleRef.defaultCryptogroup === null){
                         $scope.sharedStatus = 'public';
                         $scope.initialSharedStatus = 'public';
+                    }
+                    else if(moduleRef.defaultCryptogroup.id !== null && moduleRef.defaultCryptogroup.name !== null) {
+                       $scope.sharedStatus = 'group';
+                       $scope.initialSharedStatus = 'group';
+                       $scope.initialGroupId = moduleRef.defaultCryptogroup.id;
+                    }
+                    else if(moduleRef.defaultCryptogroup.id === 'private' && moduleRef.defaultCryptogroup.name == null) {
+                        $scope.sharedStatus = 'private';
+                        $scope.initialSharedStatus = 'private';
                     }
                     //timeout to ensure evalAsync has finished
                     $timeout(function() {
@@ -465,6 +471,10 @@ define(['angular'], function(angular) {
             }
             //console.log('current tab is '+$scope.currentTab);
         };
+
+
+
+
 
         //UTILS
         ////////////////////////////////////////////
