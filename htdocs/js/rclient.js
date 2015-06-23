@@ -24,7 +24,7 @@ RClient = {
                         on_error("Login failed. Shutting down!");
                     }
                     else if(RCloud.is_exception(ocaps)) {
-                        on_error(ocaps[0]);
+                        on_error(ocaps);
                     }
                     else {
                         result.running = true;
