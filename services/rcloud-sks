@@ -1,7 +1,11 @@
 #!/bin/sh
 
 : ${JAVA=/usr/bin/java}
-cd /data/rcloud/services/SessionKeyServer
+if [ -z "$ROOT" ]; then
+    echo Defaulting ROOT to /data/rcloud
+    ROOT=/data/rcloud
+fi
+cd $ROOT/services/SessionKeyServer
 
 if [ ! -e key.db ]; then
    mkdir key.db
