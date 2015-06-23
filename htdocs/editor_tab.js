@@ -984,7 +984,7 @@ var editor = function () {
             result.show_history(event.node.parent, false);
         else if(event.node.gistname) {
             if(event.click_event.metaKey || event.click_event.ctrlKey)
-                result.open_notebook(event.node.gistname, event.node.version, true, true);
+                result.open_notebook(event.node.gistname, event.node.version, event.node.source, true, true);
             else {
                 // it's weird that a notebook exists in two trees but only one is selected (#220)
                 // just select - and this enables editability
@@ -992,7 +992,7 @@ var editor = function () {
                     event.node.version == current_.version && event.node.version == null) // deliberately null-vague here
                     select_node(event.node);
                 else
-                    result.open_notebook(event.node.gistname, event.node.version || null, event.node.root, false);
+                    result.open_notebook(event.node.gistname, event.node.version || null, event.node.source, event.node.root, false);
             }
         }
         else {
@@ -1169,14 +1169,14 @@ var editor = function () {
                                               push_history: push_history}));
             });
         },
-        open_notebook: function(gistname, version, selroot, new_window) {
+        open_notebook: function(gistname, version, source, selroot, new_window) {
             // really just load_notebook except possibly in a new window
             if(new_window) {
-                var url = ui_utils.make_url('edit.html', {notebook: gistname, version: version});
+                var url = ui_utils.make_url('edit.html', {notebook: gistname, version: version, source: source});
                 window.open(url, "_blank");
             }
             else
-                this.load_notebook(gistname, version, null, selroot);
+                this.load_notebook(gistname, version, source, null, selroot);
         },
         new_notebook_prefix: function(_) {
             if(arguments.length) {

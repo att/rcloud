@@ -182,7 +182,7 @@ return {
                             star_count = d[i].starcount;
                         }
                         var notebook_id = d[i].id;
-                        var notebook_source = d[i]['source.gist.source'];
+                        var notebook_source = d[i].source;
                         var image_string = "<i class=\"icon-star search-star\"><sub>" + star_count + "</sub></i>";
                         d[i].parts = JSON.parse(d[i].parts);
                         var parts_table = "";
@@ -241,7 +241,7 @@ return {
                         }
                         var search_result_class = 'search-result-heading' + (notebook_source ? ' foreign' : '');
                         search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" +
-                            "<a id=\"open_" + i + "\" href=\'"+url+"'\" data-gistname='" + notebook_id + "' class='" + search_result_class + "'>" +
+                            "<a id=\"open_" + i + "\" href=\'" + url +"'\" data-gistname='" + notebook_id + "' data-gistsource='" + notebook_source + "' class='" + search_result_class + "'>" +
                             d[i].user + " / " + d[i].notebook + "</a>" +
                             image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
                         if(parts_table !== "")
@@ -293,8 +293,8 @@ return {
                 $('#search-results').html(search_results);
                 $("#search-results .search-result-heading").click(function(e) {
                     e.preventDefault();
-                    var gistname = $(this).attr("data-gistname");
-                    editor.open_notebook(gistname, null, null, e.metaKey || e.ctrlKey);
+                    var gistname = $(this).attr("data-gistname"), gistsource = $(this).attr("data-gistsource");
+                    editor.open_notebook(gistname, null, gistsource, null, e.metaKey || e.ctrlKey);
                     return false;
                 });
             }
