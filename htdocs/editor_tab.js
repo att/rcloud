@@ -1165,6 +1165,7 @@ var editor = function () {
             return before.then(function() {
                 return shell.load_notebook(gistname, version)
                     .then(that.load_callback({version: version,
+                                              source: source,
                                               selroot: selroot,
                                               push_history: push_history}));
             });
@@ -1397,7 +1398,7 @@ var editor = function () {
                 promises.push(RCloud.UI.share_button.update_link());
 
                 document.title = result.description + " - RCloud";
-                promises.push(update_url({notebook: result.id, version: options.version, tag:tag}));
+                promises.push(update_url({notebook: result.id, version: options.version, source: options.source, tag:tag}));
 
                 var history;
                 // when loading an old version you get truncated history
