@@ -429,7 +429,7 @@ var editor = function () {
             .then(function(allUsers){
                 //save them to global here
                 editor.allTheUsers = allUsers;
-                return allUsers
+                return allUsers;
             })
             .then(rcloud.config.all_notebooks_multiple_users),
             rcloud.stars.get_my_starred_notebooks(),
@@ -984,7 +984,7 @@ var editor = function () {
             result.show_history(event.node.parent, false);
         else if(event.node.gistname) {
             if(event.click_event.metaKey || event.click_event.ctrlKey)
-                result.open_notebook(event.node.gistname, event.node.version, true, true);
+                result.open_notebook(event.node.gistname, event.node.version, event.node.source, true, true);
             else {
                 // it's weird that a notebook exists in two trees but only one is selected (#220)
                 // just select - and this enables editability
@@ -992,7 +992,7 @@ var editor = function () {
                     event.node.version == current_.version && event.node.version == null) // deliberately null-vague here
                     select_node(event.node);
                 else
-                    result.open_notebook(event.node.gistname, event.node.version || null, event.node.root, false);
+                    result.open_notebook(event.node.gistname, event.node.version || null, event.node.source, event.node.root, false);
             }
         }
         else {
@@ -1152,7 +1152,9 @@ var editor = function () {
             var that = this;
             var before;
             if(source) {
-                if(gist_sources_.indexOf(source)<0)
+                if(source==='default')
+                    source = null; // drop it
+                else if(gist_sources_.indexOf(source)<0)
                     RCloud.UI.session_pane.append_text("Invalid gist source '" + source + "': ignored.");
                 else if(!notebook_info_[gistname]) {
                     notebook_info_[gistname] = {source: source};
@@ -1165,18 +1167,19 @@ var editor = function () {
             return before.then(function() {
                 return shell.load_notebook(gistname, version)
                     .then(that.load_callback({version: version,
+                                              source: source,
                                               selroot: selroot,
                                               push_history: push_history}));
             });
         },
-        open_notebook: function(gistname, version, selroot, new_window) {
+        open_notebook: function(gistname, version, source, selroot, new_window) {
             // really just load_notebook except possibly in a new window
             if(new_window) {
-                var url = ui_utils.make_url('edit.html', {notebook: gistname, version: version});
+                var url = ui_utils.make_url('edit.html', {notebook: gistname, version: version, source: source});
                 window.open(url, "_blank");
             }
             else
-                this.load_notebook(gistname, version, null, selroot);
+                this.load_notebook(gistname, version, source, null, selroot);
         },
         new_notebook_prefix: function(_) {
             if(arguments.length) {
@@ -1397,7 +1400,14 @@ var editor = function () {
                 promises.push(RCloud.UI.share_button.update_link());
 
                 document.title = result.description + " - RCloud";
-                promises.push(update_url({notebook: result.id, version: options.version, tag:tag}));
+                promises.push((options.source ? Promise.resolve(undefined)
+                               : rcloud.get_notebook_property(result.id, 'source').then(function(source) {
+                                   if(!notebook_info_[result.id])
+                                       notebook_info_[result.id] = {};
+                                   options.source = notebook_info_[result.id].source = source;
+                               })).then(function() {
+                                   return update_url({notebook: result.id, version: options.version, source: options.source, tag:tag});
+                               }));
 
                 var history;
                 // when loading an old version you get truncated history

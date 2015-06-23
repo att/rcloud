@@ -457,7 +457,7 @@ rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
         updated.at <- response.docs[[i]]$updated_at
         user <- response.docs[[i]]$user
         parts <- response.high[[i]]$content
-        json[i] <- toJSON(c(QTime=time,notebook=notebook,id=id,starcount=starcount,updated_at=updated.at,user=user,numFound=count,pagesize=pagesize,parts=parts,source=source))
+        json[i] <- toJSON(c(QTime=time,notebook=notebook,id=id,starcount=starcount,updated_at=updated.at,user=user,numFound=count,pagesize=pagesize,parts=parts,source=as.vector(source)))
       }
       return(json)
     } else

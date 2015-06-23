@@ -17,7 +17,8 @@
  names. Specifying that name in the URL with `&source=name` loads the notebook
  from the other instance. Search has an option to search "All Lakes", i.e. all
  sources. For this release, all notebooks get displayed in the same tree;
- notebooks which are "foreign" get displayed in green and are read-only.
+ notebooks which are "foreign" get displayed in green and are read-only. You can
+ fork and star notebooks from other instances; however, you can't comment on them.
 * Stop execution of cells. Clicking the stop buttion in the navbar now sends an
  interrupt to the R process and terminates execution (when possible).
 * Binary assets: you can now upload binary files to notebooks. The content is

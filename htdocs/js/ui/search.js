@@ -54,15 +54,19 @@ return {
                 searchproc();
                 return false;
             });
-            if(!editor.gist_sources() || !editor.gist_sources().length) {
-                $('#all-sources').parent().hide();
-            }
-            else {
-                $("#all-sources").change(function(e) {
-                    var val = all_sources();
-                    rcloud.config.set_user_option("search-all-sources", val);
-                });
-            }
+            rcloud.get_gist_sources().then(function(sources) {
+                // annoying to load this over again just to get a number, but
+                // there's no obvious place to store this
+                if(sources.length<2) {
+                    $('#all-sources').parent().hide();
+                }
+                else {
+                    $("#all-sources").change(function(e) {
+                        var val = all_sources();
+                        rcloud.config.set_user_option("search-all-sources", val);
+                    });
+                }
+            });
             $("#sort-by").change(function() {
                 rcloud.config.set_user_option('search-sort-by', sortby());
                 order_from_sort();
@@ -237,7 +241,7 @@ return {
                         }
                         var search_result_class = 'search-result-heading' + (notebook_source ? ' foreign' : '');
                         search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" +
-                            "<a id=\"open_" + i + "\" href=\'"+url+"'\" data-gistname='" + notebook_id + "' class='" + search_result_class + "'>" +
+                            "<a id=\"open_" + i + "\" href=\'" + url +"'\" data-gistname='" + notebook_id + "' data-gistsource='" + notebook_source + "' class='" + search_result_class + "'>" +
                             d[i].user + " / " + d[i].notebook + "</a>" +
                             image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
                         if(parts_table !== "")
@@ -289,8 +293,8 @@ return {
                 $('#search-results').html(search_results);
                 $("#search-results .search-result-heading").click(function(e) {
                     e.preventDefault();
-                    var gistname = $(this).attr("data-gistname");
-                    editor.open_notebook(gistname, null, null, e.metaKey || e.ctrlKey);
+                    var gistname = $(this).attr("data-gistname"), gistsource = $(this).attr("data-gistsource");
+                    editor.open_notebook(gistname, null, gistsource, null, e.metaKey || e.ctrlKey);
                     return false;
                 });
             }
