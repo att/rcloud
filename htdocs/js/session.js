@@ -189,7 +189,8 @@ function rclient_promise(allow_anonymous) {
         if (error.message === "Authentication required") {
             RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", ui_utils.relogin_uri());
         } else {
-            RCloud.UI.fatal_dialog(could_not_initialize_error(error), "Logout", "/logout.R");
+            var msg = error.message || error.error || error;
+            RCloud.UI.fatal_dialog(could_not_initialize_error(msg), "Logout", "/logout.R");
         }
         throw error;
     }).then(function() {
