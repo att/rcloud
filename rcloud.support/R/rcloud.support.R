@@ -190,13 +190,14 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE
       e <- args
     } else {
       e <- new.env(parent=.GlobalEnv)
-      if (is.list(args) && length(args)) for (i in names(args)) if (nzchar(i)) e[[i]] <- args[[i]]
+      if (is.list(args) && length(args)) for (arg in names(args)) if (nzchar(arg)) e[[arg]] <- args[[arg]]
     }
     ## sort
     for (o in p[match(sort.int(i), i)]) {
       if (grepl("^part.*\\.R$", o$filename)) { ## R code
         expr <- parse(text=o$content)
         result <- eval(expr, e)
+        rcloud.support:::.post.eval()
       } else if (grepl("^part.*\\.md", o$filename)) { ## markdown
         ## FIXME: we ignore markdown for now ...
       }
