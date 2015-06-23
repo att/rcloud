@@ -288,9 +288,9 @@ start.rcloud.common <- function(...) {
   options(help_type="html")
   options(browser = function(url, ...) {
     if(grepl("^http://127.0.0.1:", url))
-      self.oobSend(list("browsePath", gsub("^http://[^/]+", "", url)))
+      .rc.oobSend("browsePath", gsub("^http://[^/]+", "", url))
     else
-      self.oobSend(list("browseURL", url))
+      .rc.oobSend("browseURL", url)
   })
 
   ## while at it, pass other requests as OOB, too
@@ -300,12 +300,12 @@ start.rcloud.common <- function(...) {
       if (isTRUE(delete.file)) unlink(fn)
       paste(c, collapse='\n')
     })
-    self.oobSend(list("pager", content, header, title))
+    .rc.oobSend("pager", content, header, title)
   })
   options(editor = function(what, file, name) {
     ## FIXME: this should be oobMessage()
     if (nzchar(file)) file <- paste(readLines(file), collapse="\n")
-    self.oobSend(list("editor", what, file, name))
+    .rc.oobSend("editor", what, file, name)
   })
 
   ## and some options that may be of interest
@@ -340,10 +340,10 @@ start.rcloud.common <- function(...) {
     if (!is.character(lang.str))
       lang.str <- "rcloud.r"
     for (lang in gsub("^\\s+|\\s+$", "", strsplit(lang.str, ",")[[1]])) {
-      d <- getNamespace(lang)[["rcloud.language.support"]]
+      d <- suppressMessages(suppressWarnings(getNamespace(lang)[["rcloud.language.support"]]))
       if (!is.function(d) && !is.primitive(d))
         stop(paste("Could not find a function or primitive named rcloud.language.support in package '",lang,"'",sep=''))
-      d <- d()
+      d <- suppressMessages(suppressWarnings(d()))
       if (!is.list(d))
         stop(paste("result of calling rcloud.language.support for package '",lang,"' must be a list", sep=''))
       if (is.null(d$language) || !is.character(d$language) || length(d$language) != 1)
@@ -355,7 +355,7 @@ start.rcloud.common <- function(...) {
       if (!is.function(d$teardown) && !is.primitive(d$teardown))
         stop(paste("'teardown' field of list returned by rcloud.language.support for package '", lang, "' must be either a function or a primitive", sep=''))
       lang.list[[d$language]] <- d
-      lang.list[[d$language]]$setup(.session)
+      suppressMessages(suppressWarnings(lang.list[[d$language]]$setup(.session)))
       file.ext.list[d$extension] <- d$language
     }
   }
@@ -424,6 +424,9 @@ start.rcloud.gist <- function(username="", token="", ...) {
   ## set.gist.context to override it and steal credentials,
   ## but then we may have to remove it from gists entirely.
   .session$gist.context <- create.gist.backend(username=username, token=token, ...)
+
+  if (is.read.only(.session$gist.context))
+      stop("the gist back-end in the main section cannot be read-only - check whether you have all necessary settings in rcloud.conf")
 
   .session$gist.contexts <- list(default=.session$gist.context)
   ## FIXME: what about backend-specific tokens?

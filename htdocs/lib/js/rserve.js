@@ -449,7 +449,7 @@ function read(m)
         read_raw: function(attributes, length) {
             var l2 = this.read_int();
             var s = this.read_stream(length-4);
-            var a = s.make(Uint8Array).subarray(0, l2).buffer;
+            var a = new Uint8Array(s.make(Uint8Array).subarray(0, l2)).buffer;
             return [Rserve.Robj.raw(a, attributes), length];
         },
 

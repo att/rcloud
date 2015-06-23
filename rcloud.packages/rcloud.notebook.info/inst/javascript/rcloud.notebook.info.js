@@ -35,11 +35,11 @@
                                     var close_button = '<span class="pop-close" style="cursor: pointer; float:right;">x</span>';
                                     var group_message = '<div class="info-category"><b>Group:</b></div>';
 
-                                    if(cryptogroup[0] === 'private'){
+                                    if(cryptogroup && cryptogroup.name === 'private'){
                                         group_message += '<div class="group-link info-item"><a href="#">private</a></div>'
                                     }
-                                    else if(cryptogroup[0] !== null && cryptogroup[1] !== null){
-                                        group_message += '<div class="group-link info-item"><a href="#">'+cryptogroup[1]+'</a></div>'
+                                    else if(cryptogroup) {
+                                        group_message += '<div class="group-link info-item"><a href="#">'+cryptogroup.name+'</a></div>'
                                     }
                                     else{
                                         group_message += '<div class="group-link info-item"><a href="#">no group</a></div>'

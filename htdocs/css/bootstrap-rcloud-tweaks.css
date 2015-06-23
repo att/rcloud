@@ -309,23 +309,22 @@ td {
 
 
 
-.inner-tab{
+.inner-tab {
       padding: 30px;
 }
 
-.sec{
+.sec {
     margin-bottom: 20px;
 }
 
-.pill-holder{
+.pill-holder {
     width: 100%;
     min-height: 30px;
     border: 1px solid gray;
     padding: 10px;
 }
 
-.pill-item{
-
+.pill-item {
     background-color: rgb(221, 221, 221);
     max-width: 100px;
     display: inline-block;
@@ -336,24 +335,33 @@ td {
     padding-right: 10px;
 }
 
-.selectize-input{
+.selectize-input {
     min-height: 100px!important;
 }
 .selectize-control.multi .selectize-input [data-value] {
     border-radius: 11px!important;
 }
 
-.group-actions{
+.group-actions {
   cursor: pointer;
 }
 
-#protection-app select{
+#protection-app select {
   min-width: 78px!important;
   font-size: 15px!important;
 }
 
-.modal-header{
+.modal-header {
     padding-left: 35px!important;
     padding-right: 35px!important;
 }
 
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a {
+  color: #555555;
+  cursor: default;
+  background-color: #ffffff;
+  border: 1px solid #dddddd;
+  border-bottom-color: transparent;
+}

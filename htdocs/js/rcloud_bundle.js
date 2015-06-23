@@ -1941,7 +1941,8 @@ function create_cell_html_view(language, cell_model) {
     function clear_result() {
         result_div_.empty();
         has_result_ = false;
-        cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', false);
+        if(cell_controls_)
+            cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', false);
     }
 
     // start trying to refactor out this repetitive nonsense
@@ -2193,8 +2194,6 @@ function create_cell_html_view(language, cell_model) {
             running_state_ = state;
             return this;
         },
-        start_output: function() {
-        },
         add_result: function(type, r) {
             if(!has_result_) {
                 result_div_.empty(); // clear previous output
@@ -2299,7 +2298,8 @@ function create_cell_html_view(language, cell_model) {
                 return;
             }
             if(edit_mode) {
-                cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', true);
+                if(cell_controls_)
+                    cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', true);
                 if(RCloud.language.is_a_markdown(language))
                     this.hide_source(false);
                 code_div_.hide();
@@ -2354,7 +2354,8 @@ function create_cell_html_view(language, cell_model) {
                 }
             }
             else {
-                cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', false);
+                if(cell_controls_)
+                    cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', false);
                 var new_content = update_model();
                 if(new_content!==null) // if any change (including removing the content)
                     cell_model.parent_model.controller.update_cell(cell_model);
@@ -2376,7 +2377,8 @@ function create_cell_html_view(language, cell_model) {
         toggle_results: function(val) {
             if(val===undefined)
                 val = result_div_.is(':hidden');
-            cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', val);
+            if(cell_controls_)
+                cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', val);
             if(val) result_div_.show();
             else result_div_.hide();
         },
@@ -2547,7 +2549,6 @@ Notebook.Cell.create_controller = function(cell_model)
                 var resulter = appender('code');
                 execution_context_ =
                     {
-                        start: this.start_output.bind(this),
                         end: this.end_output.bind(this),
                         // these should convey the meaning e.g. through color:
                         out: resulter, err: appender('error'), msg: resulter,
@@ -2578,11 +2579,6 @@ Notebook.Cell.create_controller = function(cell_model)
         clear_result: function() {
             cell_model.notify_views(function(view) {
                 view.clear_result();
-            });
-        },
-        start_output: function() {
-            cell_model.notify_views(function(view) {
-                view.start_output();
             });
         },
         append_result: function(type, msg) {
@@ -3665,11 +3661,11 @@ Notebook.sanitize = function(notebook) {
 
 (function() {
 
-function append_session_info(text) {
+function append_session_info(ctx, text) {
     RCloud.UI.session_pane.append_text(text);
 }
 
-function handle_img(msg, url, dims, device, page) {
+function handle_img(msg, ctx, url, dims, device, page) {
     console.log("handle_img ", msg, " device ", device, " page ", page, " url ", url);
     if(!url)
         return;
@@ -3677,14 +3673,14 @@ function handle_img(msg, url, dims, device, page) {
     // the image from whatever cell it was in, simply by wrapping the plot in
     // a jquery object, and jquery selection.append removes it from previous parent
     var image = RCloud.UI.image_manager.update(url, dims, device, page);
-    if(curr_context_id_ && output_contexts_[curr_context_id_] && output_contexts_[curr_context_id_].html_out)
-        output_contexts_[curr_context_id_].selection_out(image.div());
+    if(ctx && output_contexts_[ctx] && output_contexts_[ctx].html_out)
+        output_contexts_[ctx].selection_out(image.div());
     else
         append_session_info(image.div());
 }
 
 var output_contexts_ = {};
-var curr_context_id_ = null, next_context_id_ = 17;
+var next_context_id_ = 17;
 
 RCloud.register_output_context = function(callbacks) {
     output_contexts_[next_context_id_] = callbacks;
@@ -3696,21 +3692,21 @@ RCloud.unregister_output_context = function(context_id) {
 };
 
 RCloud.end_cell_output = function(context_id, error) {
-    if(context_id != curr_context_id_)
-        console.log("unmatched context_id id: curr " + curr_context_id_ + ", end.cell.output " + context_id);
     if(output_contexts_[context_id] && output_contexts_[context_id].end)
         output_contexts_[context_id].end(error);
     RCloud.unregister_output_context(context_id);
-    curr_context_id_ = null;
 };
 
 function forward_to_context(type, has_continuation) {
     return function() {
-        var context = output_contexts_[curr_context_id_];
-        if(curr_context_id_ && context && context[type])
-            context[type].apply(context, arguments);
+        var ctx = arguments[0];
+        var args = Array.prototype.slice.call(arguments, 1);
+        var context = output_contexts_[ctx];
+        console.log("forward_to_context, ctx="+ctx+", type="+type+", old.ctx="+context);
+        if(context && context[type])
+            context[type].apply(context, args);
         else {
-            append_session_info.apply(null, arguments);
+            append_session_info.apply(null, args);
             if(has_continuation)
                 arguments[arguments.length-1]("context does not support input", null);
         }
@@ -3719,14 +3715,14 @@ function forward_to_context(type, has_continuation) {
 
 // FIXME this needs to go away as well.
 var oob_sends = {
-    "browsePath": function(v) {
+    "browsePath": function(ctx, v) {
         var url=" "+ window.location.protocol + "//" + window.location.host + v+" ";
         RCloud.UI.help_frame.display_href(url);
     },
-    "browseURL": function(v) {
+    "browseURL": function(ctx, v) {
         window.open(v, "_blank");
     },
-    "pager": function(files, header, title) {
+    "pager": function(ctx, files, header, title) {
         var html = "<h2>" + title + "</h2>\n";
         for(var i=0; i<files.length; ++i) {
             if(_.isArray(header) && header[i])
@@ -3735,7 +3731,7 @@ var oob_sends = {
         }
         RCloud.UI.help_frame.display_content(html);
     },
-    "editor": function(what, content, name) {
+    "editor": function(ctx, what, content, name) {
         // what is an object to edit, content is file content to edit
         // FIXME: do somethign with it - eventually this
         // should be a modal thing - for now we should at least
@@ -3751,11 +3747,6 @@ var oob_sends = {
     "stdout": append_session_info,
     "stderr": append_session_info,
     // NOTE: "idle": ... can be used to handle idle pings from Rserve if we care ..
-    "start.cell.output": function(context) {
-        curr_context_id_ = context;
-        if(output_contexts_[context] && output_contexts_[context].start)
-            output_contexts_[context].start();
-    },
     "html.out": forward_to_context('html_out'),
     "deferred.result": forward_to_context('deferred_result')
 };
@@ -4177,7 +4168,7 @@ RCloud.UI.advanced_menu = (function() {
                             shell.open_from_github(result);
                     }
                 },
-                manage_groups: { // just here temporarily for refactoring
+                manage_groups: {
                     sort: 7000,
                     text: "Manage Groups",
 
@@ -4186,7 +4177,7 @@ RCloud.UI.advanced_menu = (function() {
                         RCloud.UI.notebook_protection.init('group-tab-enabled');
                     }
                 },
-                show_source: { // just here temporarily for refactoring
+                show_source: {
                     sort: 9000,
                     text: "Show Source",
                     checkbox: true,
@@ -7590,7 +7581,7 @@ RCloud.UI.search = (function() {
 var page_size_ = 10;
 var search_err_msg = ["<p style=\"color:black;margin:0;\">The search engine in RCloud uses Lucene for advanced search features." ,
     "It appears you may have used one of the special characters in Lucene syntax incorrectly. " ,
-    "Please see this <a target=\"_blank\" href=\"http://lucene.apache.org/core/3_5_0/queryparsersyntax.html\">link</a> to learn about Lucene syntax. " ,
+    "Please see this <a target=\"_blank\" href=\"http://lucene.apache.org/core/4_10_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Terms\">link</a> to learn about Lucene syntax. " ,
     "</p><p style=\"color:black;margin:0;\">Or, if you mean to search for the character itself, escape it using a backslash, e.g. \"foo\\:\"</p>"];
 
 function go_to_page(page_num,incr_by){
@@ -8471,14 +8462,14 @@ RCloud.UI.upload_frame = {
 };
 
 RCloud.UI.notebook_protection_logger = {
-    
+
     timeout: 0,
 
     log: function(val){
         var that = this;
         $('.logging-panel').removeClass('red');
         $('.logging-panel').removeClass('white');
-        $('.logging-panel').addClass('green')
+        $('.logging-panel').addClass('green');
         $('.logging-panel span').text(val);
 
         window.clearTimeout(this.timeout);
@@ -8494,9 +8485,9 @@ RCloud.UI.notebook_protection_logger = {
 
     warn: function(val){
         var that = this;
-        $('.logging-panel').removeClass('green')
+        $('.logging-panel').removeClass('green');
         $('.logging-panel').removeClass('white');
-        $('.logging-panel').addClass('red')
+        $('.logging-panel').addClass('red');
         $('.logging-panel span').text(val);
 
 
@@ -8515,8 +8506,8 @@ RCloud.UI.notebook_protection = (function() {
     //set from outside
     this.defaultCryptogroup = null;
     this.defaultNotebook = null;
-    this.userId;
-    this.userLogin;
+    this.userId = null;
+    this.userLogin = null;
 
     this.appScope = null;
     this.appInited = false;
@@ -8530,7 +8521,7 @@ RCloud.UI.notebook_protection = (function() {
             this.appInited = true;
             this.buildDom();
             var that = this;
-          
+
             require([
                 'angular',
                 './../../js/ui/notebook_protection_app',
@@ -8538,21 +8529,21 @@ RCloud.UI.notebook_protection = (function() {
               ], function(angular, app, selectize) {
                   'use strict';
 
-                  //var $html = angular.element(document.getElementsByTagName('html')[0]);  
-                  angular.element(document).ready(function() {   
-                      _.delay(function(){
+                  //var $html = angular.element(document.getElementsByTagName('html')[0]);
+                  angular.element(document).ready(function() {
+                      _.delay(function() {
                         angular.bootstrap($('#protection-app')[0], ['NotebookProtectionApp']);
                         angular.resumeBootstrap();
-                      }, 100); 
-                      _.delay(function(){
+                      }, 100);
+                      _.delay(function() {
                         that.appScope = angular.element(document.getElementById("protection-app")).scope();
                         that.launch(state);
                         $('#notebook-protection-dialog').modal({keyboard: false});
-                      }, 200);             
-                  });   
+                      }, 200);
+                  });
             });
           }
-          else{
+          else {
             this.launch(state);
             $('#notebook-protection-dialog').modal({keyboard: false});
           }
@@ -8573,11 +8564,11 @@ RCloud.UI.notebook_protection = (function() {
               .attr('href', '#notebook-tab')
               .attr('data-toggle', 'tab');
 
-            $('#protection-app #tab2 a') 
+            $('#protection-app #tab2 a')
               .tab('show');
-            $('#protection-app #tab1 a') 
+            $('#protection-app #tab1 a')
               .tab('show');
- 
+
             this.appScope.initBoth();
           }
           else if(state === 'group-tab-enabled') {
@@ -8613,11 +8604,10 @@ RCloud.UI.notebook_protection = (function() {
             .append($('<div class="modal-content"></div>')
             .append(header).append(body)));
           $("body").append(dialog);
-            
-        }, 
+
+        },
 
         close: function() {
-          //console.log('sdsdsds');
           this.appScope.cancel();
         }
     };
