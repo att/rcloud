@@ -35,7 +35,7 @@
                                     var close_button = '<span class="pop-close" style="cursor: pointer; float:right;">x</span>';
                                     var group_message = '<div class="info-category"><b>Group:</b></div>';
 
-                                    if(cryptogroup && cryptogroup.name === 'private')
+                                    if(cryptogroup && cryptogroup.id === 'private' && cryptogroup.name === null)
                                         group_message += '<div class="group-link info-item"><a href="#">private</a></div>'
                                     else if(cryptogroup) 
                                         group_message += '<div class="group-link info-item"><a href="#">'+cryptogroup.name+'</a></div>'
