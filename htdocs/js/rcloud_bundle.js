@@ -8484,7 +8484,7 @@ RCloud.UI.notebook_protection_logger = {
                     .addClass('white');
             $('.logging-panel span').html('&nbsp;');
 
-        },  2000);
+        },  10000);
 
     },
 
@@ -8503,7 +8503,7 @@ RCloud.UI.notebook_protection_logger = {
                     .addClass('white');
             $('.logging-panel span').html('&nbsp;');
 
-        },  2000);
+        },  10000);
     }
 }
 RCloud.UI.notebook_protection = (function() {
