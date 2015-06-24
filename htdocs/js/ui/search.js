@@ -239,7 +239,7 @@ return {
                                 parts_table = "<div><div id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div></div>";
                             }
                         }
-                        var search_result_class = 'search-result-heading' + (notebook_source ? ' foreign' : '');
+                        var search_result_class = 'search-result-heading' + (notebook_source ? ' foreign-notebook' : '');
                         search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" +
                             "<a id=\"open_" + i + "\" href=\'" + url +"'\" data-gistname='" + notebook_id + "' data-gistsource='" + notebook_source + "' class='" + search_result_class + "'>" +
                             d[i].user + " / " + d[i].notebook + "</a>" +

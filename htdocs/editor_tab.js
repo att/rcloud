@@ -959,9 +959,9 @@ var editor = function () {
         title.css('color', node.color);
         if(node.gistname) {
             if(node.source)
-                title.addClass('foreign');
+                title.addClass('foreign-notebook');
             else if(!node.visible)
-                title.addClass('private');
+                title.addClass('hidden-notebook');
         }
         if(node.version || node.id === 'showmore')
             title.addClass('history');
@@ -1315,7 +1315,7 @@ var editor = function () {
         set_terse_dates: function(val) {
             show_terse_dates_ = val;
         },
-        star_and_public: function(notebook, make_current, is_change) {
+        star_and_show: function(notebook, make_current, is_change) {
             return this.star_notebook(true, {notebook: notebook,
                                              make_current: make_current,
                                              is_change: is_change,
@@ -1330,7 +1330,7 @@ var editor = function () {
             return shell.fork_notebook(is_mine, gistname, version)
                 .bind(this)
                 .then(function(notebook) {
-                    return this.star_and_public(notebook, true, !!version);
+                    return this.star_and_show(notebook, true, !!version);
                 });
         },
         fork_folder: function(node, match, replace) {
@@ -1345,7 +1345,7 @@ var editor = function () {
                 else
                     promise_fork = rcloud.fork_notebook(node.gistname);
                 return promise_fork.then(function(notebook) {
-                    return editor.star_and_public(notebook, false, false);
+                    return editor.star_and_show(notebook, false, false);
                 });
             });
             return this;

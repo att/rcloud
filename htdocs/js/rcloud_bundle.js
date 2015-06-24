@@ -6618,27 +6618,27 @@ RCloud.UI.notebook_commands = (function() {
                         return history;
                     }
                 },
-                private_public: {
+                visibility: {
                     section: 'appear',
                     sort: 3000,
                     condition1: function(node) {
                         return node.user === editor.username();
                     },
                     create: function(node) {
-                        var make_private = ui_utils.fa_button('icon-eye-close', 'make private', 'private', icon_style_, true),
-                            make_public = ui_utils.fa_button('icon-eye-open', 'make public', 'public', icon_style_, true);
+                        var make_hidden = ui_utils.fa_button('icon-eye-close', 'hide notebook', 'hidden-notebook', icon_style_, true),
+                            make_shown = ui_utils.fa_button('icon-eye-open', 'show notebook', 'shown-notebook', icon_style_, true);
                         if(node.visible)
-                            make_public.hide();
+                            make_shown.hide();
                         else
-                            make_private.hide();
-                        make_private.click(function() {
+                            make_hidden.hide();
+                        make_hidden.click(function() {
                             ui_utils.fake_hover(node);
                             if(node.user !== editor.username())
                                 throw new Error("attempt to set visibility on notebook not mine");
                             else
                                 editor.set_notebook_visibility(node.gistname, false);
                         });
-                        make_public.click(function() {
+                        make_shown.click(function() {
                             ui_utils.fake_hover(node);
                             if(node.user !== editor.username())
                                 throw new Error("attempt to set visibility on notebook not mine");
@@ -6646,7 +6646,7 @@ RCloud.UI.notebook_commands = (function() {
                                 editor.set_notebook_visibility(node.gistname, true);
                             return false;
                         });
-                        return make_private.add(make_public);
+                        return make_hidden.add(make_shown);
                     }
                 },
                 remove: {
@@ -7819,7 +7819,7 @@ return {
                                 parts_table = "<div><div id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div></div>";
                             }
                         }
-                        var search_result_class = 'search-result-heading' + (notebook_source ? ' foreign' : '');
+                        var search_result_class = 'search-result-heading' + (notebook_source ? ' foreign-notebook' : '');
                         search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" +
                             "<a id=\"open_" + i + "\" href=\'" + url +"'\" data-gistname='" + notebook_id + "' data-gistsource='" + notebook_source + "' class='" + search_result_class + "'>" +
                             d[i].user + " / " + d[i].notebook + "</a>" +

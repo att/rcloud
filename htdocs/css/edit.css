@@ -482,11 +482,11 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
 .jqtree-title {
 }
 
-ul.jqtree-tree .jqtree-title.private {
+ul.jqtree-tree .jqtree-title.hidden-notebook {
     color: #aaa;
 }
 
-ul.jqtree-tree .jqtree-title.foreign {
+ul.jqtree-tree .jqtree-title.foreign-notebook {
     color: #66bb44;
 }
 
