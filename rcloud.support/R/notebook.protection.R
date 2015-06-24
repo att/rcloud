@@ -26,7 +26,7 @@ rcloud.set.notebook.cryptgroup <- function(notebookid, groupid, modify=TRUE) { #
             ## will simply re-save the content in encrypted form
             ## And the corresponding fetch will work since it
             ## ignores the RCS setting
-            rcloud.update.notebook(notebookid, list())
+            rcloud.update.notebook(notebookid, list(files=list()))
         }
     }
 }

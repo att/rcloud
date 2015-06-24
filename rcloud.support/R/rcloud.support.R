@@ -279,14 +279,16 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     ## governed by the encrypted content
     group <- rcloud.get.notebook.cryptgroup(id)
 
-    ## there is one special case: if the notebook is encrypted and this is a request
-    ## for partial update, we have to compute the new encrypted content by merging
+    ## there is one special case: if the notebook is encrypted and this is a request for a
+    ## partial update of the files, we have to compute the new encrypted content by merging
     ## the request. This is only the case if the request doesn't involve direct
     ## manipulation of the encrypted content *and* the notebook is encrypted
-    if (!is.null(group) && is.null(content$files[[.encryped.content.filename]])) {
+    if (!is.null(content$files) && !is.null(group) &&
+        is.null(content$files[[.encryped.content.filename]])) {
+        ## NB: we support files=list() as a way to say that the notebook needs re-encryption
         old <- rcloud.get.notebook(id)
         l <- old$content$files
-        # ulog("rcloud.update.notebook: encrypted, merging ", paste(names(l),collapse=",")," with ", paste(names(content$files),collapse=","))
+        ## ulog("rcloud.update.notebook: encrypted, merging ", paste(names(l),collapse=",")," with ", paste(names(content$files),collapse=","))
         for (i in seq_along(content$files)) {
             fn <- names(content$files)[i]
             ct <- content$files[[i]]
@@ -304,16 +306,14 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
             users <- rcloud.get.cryptgroup.users(group$id)
             if(!.session$username %in% names(users))
                 stop(paste0(.session$username, " is not a member of protection group ", group$id))
-            ## take the content and encrypt it
-            enc <- .encrypt.by.group(list(files=l), group$id)
-            ## update contains just the encrypted piece
-            ## if this is a conversion, remove the unencrypted pieces
-            content <- if (!isTRUE(old$content$is.encrypted)) .zlist(names(old$content$files)) else list()
-            content[[.encryped.content.filename]] <- list(content=encode.b64(enc))
-            content <- list(files=content)
-        } else {
-            ## FIXME: user-only encryption
         }
+        ## take the content and encrypt it
+        enc <- .encrypt.by.group(list(files=l), group$id)
+        ## update contains just the encrypted piece
+        ## if this is a conversion, remove the unencrypted pieces
+        cfiles <- if (!isTRUE(old$content$is.encrypted)) .zlist(names(old$content$files)) else list()
+        cfiles[[.encryped.content.filename]] <- list(content=encode.b64(enc))
+        content$files <- cfiles
     }
     content <- .gist.binary.process.outgoing(id, content)
 
