@@ -1154,9 +1154,10 @@ var editor = function () {
             if(source) {
                 if(source==='default')
                     source = null; // drop it
-                else if(gist_sources_.indexOf(source)<0)
+                else if(gist_sources_.indexOf(source)<0) {
                     RCloud.UI.session_pane.append_text("Invalid gist source '" + source + "': ignored.");
-                else if(!notebook_info_[gistname]) {
+                    source = null;
+                } else if(!notebook_info_[gistname]) {
                     notebook_info_[gistname] = {source: source};
                     before = rcloud.set_notebook_property(gistname, "source", source);
                 }
