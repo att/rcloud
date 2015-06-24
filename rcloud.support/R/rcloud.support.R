@@ -510,6 +510,8 @@ rcloud.fork.notebook <- function(id, source = NULL) {
         ## share SKS, otherwise SKS won't have the key to decrypt it.
         src.nb <- rcloud.get.notebook(id, source = source)
         if (!isTRUE(src.nb$ok)) stop("failed to retrieve source notebook")
+        owner <- src.nb$content$owner
+        if (is.null(owner)) owner <- src.nb$content$user
 
         ## For encrypted ones we intentionally fetch the source both in decrypted
         ## and encrypted form - the former will fail if you don't have a the key so
@@ -520,9 +522,9 @@ rcloud.fork.notebook <- function(id, source = NULL) {
         if (!isTRUE(new.nb$ok)) stop("failed to create new notebook")
         rcloud.set.notebook.property(new.nb$content$id, "fork_of",
                                      new.nb$fork_of <-
-                                     list(owner=src.nb$content$owner,
+                                     list(owner=owner,
                                           description=src.nb$content$description,
-                                          id=src.nb.new$content$id))
+                                          id=src.nb$content$id))
     } else ## src=dst, regular fork
         new.nb <- fork.gist(id, ctx = src.ctx)
 
