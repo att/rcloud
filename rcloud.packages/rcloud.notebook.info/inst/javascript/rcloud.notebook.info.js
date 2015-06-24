@@ -36,17 +36,24 @@
                                     var group_message = '<div class="info-category"><b>Group:</b></div>';
 
                                     if(cryptogroup && cryptogroup.id === 'private' && cryptogroup.name === null)
-                                        group_message += '<div class="group-link info-item"><a href="#">private</a></div>'
+                                        group_message += wrapGroupType('private');
                                     else if(cryptogroup) 
-                                        group_message += '<div class="group-link info-item"><a href="#">'+cryptogroup.name+'</a></div>'
+                                        group_message += wrapGroupType(cryptogroup.name);
                                     else
-                                        group_message += '<div class="group-link info-item"><a href="#">no group</a></div>'
+                                        group_message += wrapGroupType('no group');
                 
                                     var starrer_list = '<div class="info-category"><b>Starred by:</b></div>';
                                     list.forEach(function (v) {
                                         starrer_list = starrer_list + '<div class="info-item">' + v + '</div>';
                                     });
                                     return group_message + info_content + starrer_list;
+                                };
+
+                                function wrapGroupType(name) {
+                                    if(node.user === RCloud.UI.notebook_protection.userLogin)
+                                        return '<div class="group-link info-item"><a href="#">'+name+'</a></div>';
+                                    else
+                                        return '<div class="group-link info-item">'+name+'</div>';    
                                 };
 
                                 $('html').off('mouseup');
@@ -79,7 +86,6 @@
 
                                 $('.group-link', thisPopover).click(function(e){
                                     $(thisIcon).popover("destroy");
-
                                     //if the user of this notebook is the same as current user?
                                     if(node.user === RCloud.UI.notebook_protection.userLogin){
                                         RCloud.UI.notebook_protection.defaultNotebook = node;
