@@ -9,11 +9,11 @@ rcloud.language.support <- function()
 
     format <- default_output_format(input.rmd)$name
     if(format == "html_document")
-      format = "html_fragment"
+      format = html_fragment(pandoc_args = "--mathjax")
     else
       format = "all"
 
-    rmarkdown::render(input.rmd, html_fragment(pandoc_args = "--mathjax"), quiet = TRUE)
+    rmarkdown::render(input.rmd, format, quiet = TRUE)
 
     readChar(output.html, file.info(output.html)$size)
   }
