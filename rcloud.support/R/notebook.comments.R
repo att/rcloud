@@ -1,10 +1,10 @@
-rcloud.get.comments <- function(id)
-{
-  res <- get.gist.comments(id, ctx = .session$gist.context)
-  if (res$ok)
-    toJSON(res$content)
-  else
-    list()
+rcloud.get.comments <- function(id, source = NULL) {
+    if (is.null(source)) source <- rcloud.get.notebook.source(id)
+    res <- get.gist.comments(id, ctx = .rcloud.get.gist.context(source))
+    if (res$ok)
+        toJSON(res$content)
+    else
+        list()
 }
 
 .solr.post.comment <- function(id, content, comment.id) {
@@ -27,7 +27,7 @@ rcloud.get.comments <- function(id)
 
 rcloud.post.comment <- function(id, content)
 {
-  res <- create.gist.comment(id, content, ctx = .session$gist.context)
+  res <- create.gist.comment(id, content, ctx = .rcloud.get.gist.context())
   rcloud.comments.email(id, content, ' posted a new')
   if (nzConf("solr.url")) mcparallel(.solr.post.comment(id, content, res$content$id), detached=TRUE)
   res
@@ -48,7 +48,7 @@ rcloud.post.comment <- function(id, content)
 
 rcloud.modify.comment <- function(id, cid, content)
 {
-  res <- modify.gist.comment(id,cid,content, ctx = .session$gist.context)
+  res <- modify.gist.comment(id,cid,content, ctx = .rcloud.get.gist.context())
   rcloud.comments.email(id, content, ' modified an old')
   mcparallel(.solr.modify.comment(id, content, cid), detached=TRUE)
   res$ok
@@ -70,7 +70,7 @@ rcloud.modify.comment <- function(id, cid, content)
 rcloud.delete.comment <- function(id,cid)
 {
   mcparallel(.solr.delete.comment(id, cid), detached=TRUE)
-  res <- delete.gist.comment(id,cid, ctx = .session$gist.context)
+  res <- delete.gist.comment(id,cid, ctx = .rcloud.get.gist.context())
   res$ok
 }
 
