@@ -427,7 +427,7 @@ start.rcloud.gist <- function(username="", token="", ...) {
   ## but then we may have to remove it from gists entirely.
   .session$gist.context <- create.gist.backend(username=username, token=token, ...)
 
-  if (is.read.only(.session$gist.context) && !isTRUE(.session$mode %in% "script"))
+  if (is.read.only(.session$gist.context) && isTRUE(nzchar(username)) && !isTRUE(.session$mode %in% "script"))
       stop("the gist back-end in the main section cannot be read-only - check whether you have all necessary settings in rcloud.conf")
 
   .session$gist.contexts <- list(default=.session$gist.context)

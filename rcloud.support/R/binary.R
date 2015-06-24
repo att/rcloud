@@ -56,17 +56,19 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
             if (nchar(key) < 64) stop("unable to access key for an encrypted notebook")
             key <- .Call(hex2raw, key)
             enc.content <- rcloud.decrypt(ec, key)
+            content$groupid <- meta$group
         } else if (meta$key.type == "user-key") {
             salt <- as.character(meta$salt)
             if (length(salt) < 1) salt <- ""
             key <- .salted.usr.key(salt[1])
             enc.content <- rcloud.decrypt(ec, key)
+            content$groupid <- "private" ## for compatibility
         } else
             stop("Unsupported encryption type: ", meta$key.type)
         ## we have to keep everything but the files
         content$files <- enc.content$files
         content$is.encrypted <- TRUE
-
+        content$key.type <- meta$key.type
         ## NOTE: we return right here, because encrypted notebooks don't need b64 encoding of the payload
         return(content)
     }
