@@ -35,15 +35,13 @@
                                     var close_button = '<span class="pop-close" style="cursor: pointer; float:right;">x</span>';
                                     var group_message = '<div class="info-category"><b>Group:</b></div>';
 
-                                    if(cryptogroup && cryptogroup.name === 'private'){
+                                    if(cryptogroup && cryptogroup.name === 'private')
                                         group_message += '<div class="group-link info-item"><a href="#">private</a></div>'
-                                    }
-                                    else if(cryptogroup) {
+                                    else if(cryptogroup) 
                                         group_message += '<div class="group-link info-item"><a href="#">'+cryptogroup.name+'</a></div>'
-                                    }
-                                    else{
+                                    else
                                         group_message += '<div class="group-link info-item"><a href="#">no group</a></div>'
-                                    }
+                
                                     var starrer_list = '<div class="info-category"><b>Starred by:</b></div>';
                                     list.forEach(function (v) {
                                         starrer_list = starrer_list + '<div class="info-item">' + v + '</div>';
@@ -53,12 +51,8 @@
 
                                 $('html').off('mouseup');
                                 $('html').on('mouseup', function(e) {
-                                    if(!$(e.target).closest('.popover').length) {
-                                        // $('.popover').each(function(){
-                                        //     $(this).popover('destroy');
-                                        // });
+                                    if(!$(e.target).closest('.popover').length)
                                         $(document).trigger('destroy_all_popovers');
-                                    }
                                 });
 
                                 if(!popupOpen){
@@ -83,11 +77,15 @@
                                     $(document).trigger('destroy_all_popovers');
                                 }
 
-                                $('.group-link', thisPopover).click(function(){
+                                $('.group-link', thisPopover).click(function(e){
                                     $(thisIcon).popover("destroy");
-                                    RCloud.UI.notebook_protection.defaultNotebook = node;
-                                    RCloud.UI.notebook_protection.defaultCryptogroup = cryptogroup;
-                                    RCloud.UI.notebook_protection.init('both-tabs-enabled');
+
+                                    //if the user of this notebook is the same as current user?
+                                    if(node.user === RCloud.UI.notebook_protection.userLogin){
+                                        RCloud.UI.notebook_protection.defaultNotebook = node;
+                                        RCloud.UI.notebook_protection.defaultCryptogroup = cryptogroup;
+                                        RCloud.UI.notebook_protection.init('both-tabs-enabled');
+                                    } 
                                 })
                             })
                         })

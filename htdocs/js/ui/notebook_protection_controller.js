@@ -12,7 +12,6 @@ define(['angular'], function(angular) {
         $scope.notebookFullName = null;
         $scope.notebookGistName = null;
         $scope.notebookId = null;
-
         $scope.userId = RCloud.UI.notebook_protection.userId;
         $scope.userLogin = RCloud.UI.notebook_protection.userLogin;
 
@@ -239,7 +238,7 @@ define(['angular'], function(angular) {
                     });
                     $scope.$evalAsync(function() {
                         // //set select to the last item in the array
-                        $scope.selectedAdminGroup = $scope.allAdminGroups[ $scope.allAdminGroups.length - 1 ];
+                        $scope.selectedAdminGroup = $scope.allAdminGroups[$scope.allAdminGroups.length - 1];
                         if(!$scope.selectedUserGroup) {
                             $scope.selectedUserGroup = $scope.allUserGroups[0];
                         }
