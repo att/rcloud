@@ -553,7 +553,7 @@ define(['angular'], function(angular) {
                     return;
                 }
 
-                var index = -1;
+                var index = 0;
                 for(var i = 0; i < $scope.allUserGroups.length; i ++ ) {
                     if($scope.allUserGroups[i].id === id) {
                         index =  i;
@@ -582,7 +582,7 @@ define(['angular'], function(angular) {
                     }, 50);
                     return;
                 }
-                var index = -1;
+                var index = 0;
                 for(var i = 0; i < $scope.allAdminGroups.length; i ++ ) {
                     if($scope.allAdminGroups[i].id === id) {
                         index =  i;
