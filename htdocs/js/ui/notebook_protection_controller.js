@@ -67,7 +67,7 @@ define(['angular'], function(angular) {
                     return $scope.setSecondSelectoToId(null);
             })
             .then(function() {
-                console.log('done');
+                //console.log('done');
             });
         };
 
@@ -88,7 +88,7 @@ define(['angular'], function(angular) {
             .then(function() {
                 $scope.anotherAdminGroupSelected();
                 $scope.startWatchingGroups();
-                console.log('done');
+                //console.log('done');
             });
         };
 
@@ -106,6 +106,7 @@ define(['angular'], function(angular) {
 
                     //timeout to ensure evalAsync has finished
                     $timeout(function() {
+                        logger.clear();
                         resolve();
                     }, 50);
                 });
@@ -148,7 +149,7 @@ define(['angular'], function(angular) {
             //status has not changed
             if($scope.sharedStatus === $scope.initialSharedStatus) {
                 if($scope.initialGroupId !== '' && $scope.initialGroupId !== $scope.selectedUserGroup.id) {
-                    console.log('id changed');
+                    //console.log('id changed');
                     (function(){
                         var conf = confirm("Are you sure you want to move notebook "+$scope.notebookFullName+" to group "+$scope.selectedUserGroup.name +"?");
                         if(conf){
@@ -158,7 +159,6 @@ define(['angular'], function(angular) {
                                 console.log('data is '+data);
                                 //need to update the notebook's tip to reflect the change
                                 $scope.cancel();
-
                             })
                             .catch(function(e){
                                 logger.warn(extract_error(e));
@@ -167,7 +167,7 @@ define(['angular'], function(angular) {
                     })();
                 }
                 else {
-                    console.log('id didnt change');
+                    //console.log('id didnt change');
                     $scope.cancel();
                 }
                 return;
@@ -178,12 +178,11 @@ define(['angular'], function(angular) {
                     (function() {
                         var conf = confirm("Are you sure you want to move notebook "+$scope.notebookFullName+" to group "+$scope.selectedUserGroup.name +"?");
                         if(conf) {
-                            console.log('notebook id is '+$scope.notebookGistName);
+                            //console.log('notebook id is '+$scope.notebookGistName);
                             GroupsService.setNotebookGroup($scope.notebookGistName, $scope.selectedUserGroup.id )
                             .then(function(data){
-                                console.log('data is '+data);
-                                //need to update the notebook's tip to reflect the change
-                                $scope.cancel();
+                                //console.log('data is '+data);
+                                logger.clear();
                             })
                             .catch(function(e){
                                 logger.warn(extract_error(e));
@@ -195,10 +194,11 @@ define(['angular'], function(angular) {
                     (function() {
                         var conf = confirm("Are you sure you want to make notebook "+$scope.notebookFullName+" public? \nThis might make it no longer be accessible");
                         if(conf) {
-                            console.log('notebook id is '+$scope.notebookGistName);
+                            //console.log('notebook id is '+$scope.notebookGistName);
                             GroupsService.setNotebookGroup($scope.notebookGistName, null )
                             .then(function(data){
                                 $scope.cancel();
+                                logger.clear();
                             })
                             .catch(function(e){
                                 logger.warn(extract_error(e));
@@ -211,10 +211,11 @@ define(['angular'], function(angular) {
                     (function() {
                         var conf = confirm("Are you sure you want to make notebook "+$scope.notebookFullName+" truly private?");
                         if(conf) {
-                            console.log('notebook id is '+$scope.notebookGistName);
+                            //console.log('notebook id is '+$scope.notebookGistName);
                             GroupsService.setNotebookGroup($scope.notebookGistName, 'private' )
                             .then(function(data) {
                                 $scope.cancel();
+                                logger.clear();
                             })
                             .catch(function(e) {
                                 logger.warn(extract_error(e));
@@ -230,11 +231,10 @@ define(['angular'], function(angular) {
         $scope.createGroup = function() {
             var pr = prompt("Enter new group name", "");
             if (pr != null) {
-
                 if(pr === 'private' || pr === 'no group') {
                     logger.warn(pr+ ' is a reserved name, please pick another');
                     return;
-                };
+                }
                 GroupsService.createGroup(pr)
                 .then(function(data) {
                     $scope.$evalAsync(function() {
@@ -256,9 +256,10 @@ define(['angular'], function(angular) {
                             $scope.selectedUserGroup = $scope.allUserGroups[0];
                         }
                     });
-                    console.log('group created and selected '+data);
+                    //console.log('group created and selected '+data);
                     _.defer(function() {
                         $scope.populateGroupMembers();
+                        logger.clear();
                     });
                 })
                 .catch(function(e) {
@@ -275,22 +276,22 @@ define(['angular'], function(angular) {
                     var prevGroupId = $scope.selectedAdminGroup.id;
                     GroupsService.changeGroupName($scope.selectedAdminGroup.id ,pr)
                     .then(function(data) {
-                        console.log('renamed group');
+                        //console.log('renamed group');
                         var indexAdmins = $scope.getIndexOfNameFromGroup($scope.selectedAdminGroup.name, $scope.allAdminGroups);
                         var indexUsers = $scope.getIndexOfNameFromGroup($scope.selectedAdminGroup.name, $scope.allUserGroups);
-
                         $scope.$evalAsync(function() {
                             if(indexAdmins !== -1)
                                 $scope.allAdminGroups[indexAdmins].name = pr;
                             if(indexUsers !== -1)
                                 $scope.allUserGroups[indexUsers].name = pr;
                         });
+                        logger.clear();
                     })
                     .catch(function(e) {
                         logger.warn(extract_error(e));
                     });
-                };
-            };
+                }
+            }
         };
 
         $scope.populateGroupMembers = function() {
@@ -307,9 +308,9 @@ define(['angular'], function(angular) {
                             adminsArray.push(item);
                         else
                             membersArray.push(item);
-                    };
+                    }
                 }
-                console.log('just grabed memebers info for group '+$scope.selectedAdminGroup.name);
+                //console.log('just grabed memebers info for group '+$scope.selectedAdminGroup.name);
                 $scope.$evalAsync(function() {
 
                     $scope.groupAdmins = adminsArray;
@@ -317,7 +318,7 @@ define(['angular'], function(angular) {
                 });
                 $scope.originalAdmins = adminsArray.slice(0);//$scope.groupAdmins.slice(0);
                 $scope.originalMembers = membersArray.slice(0);//['fourthark','gordonwoodhull'];
-
+                //logger.clear();
             })
             .catch(function(e) {
                 logger.warn(extract_error(e));
@@ -331,7 +332,7 @@ define(['angular'], function(angular) {
         //Admins and Memebers areas
         ////////////////////////////////////////////
         $scope.startWatchingGroups = function() {
-            console.log("starting watching groups");
+            //console.log("starting watching groups");
             var count1 = 0;
             var count2 = 0;
             $scope.theWatcherAdmins = $scope.$watch('groupAdmins', function (val) {
@@ -342,7 +343,7 @@ define(['angular'], function(angular) {
                 else {
                     count1 ++;
                     //logic here
-                    console.log('groupAdmins changed '+val);
+                    //console.log('groupAdmins changed '+val);
                     //console.log('groupAdmins is '+$scope.groupAdmins);
                     var duplicates = _.intersection($scope.groupAdmins, $scope.groupMembers);
                     if(duplicates.length) {
@@ -362,7 +363,7 @@ define(['angular'], function(angular) {
                 else {
                     count2 ++;
                     //logic here
-                    console.log('groupMembers changed '+val);
+                    //console.log('groupMembers changed '+val);
                     var duplicates = _.intersection($scope.groupMembers, $scope.groupAdmins);
                     if(duplicates.length) {
                         logger.warn('removing '+duplicates+' from admins and moving it to members');
@@ -375,7 +376,7 @@ define(['angular'], function(angular) {
         };
 
         $scope.stopWatching = function() {
-            console.log("stopping watching groups");
+            //console.log("stopping watching groups");
             //stop watching admin and member models
             if(typeof $scope.theWatcherAdmins === 'function' ) {
                 $scope.theWatcherAdmins();
@@ -455,7 +456,7 @@ define(['angular'], function(angular) {
 
                     Promise.all(allPromises)
                     .then(function() {
-                        console.log('pushing member data succeeded');
+                        //console.log('pushing member data succeeded');
                         $scope.cancel();
                     })
                     .catch(function(e) {
@@ -471,6 +472,7 @@ define(['angular'], function(angular) {
         $scope.cancel = function() {
             $("#notebook-protection-dialog").modal('hide');
             $scope.stopWatching();
+            logger.clear();
             $scope.reset();
         };
 
@@ -481,7 +483,6 @@ define(['angular'], function(angular) {
             else if($scope.currentTab === 2) {
                 $scope.saveGroupTab();
             }
-            //console.log('current tab is '+$scope.currentTab);
         };
 
         //UTILS
@@ -503,7 +504,7 @@ define(['angular'], function(angular) {
         };
 
         $scope.reset = function() {
-            console.log('reset called');
+            //console.log('reset called');
             $scope.currentNotebook = null;
             $scope.currentCryptogroup = null;
             $scope.notebookFullName = null;

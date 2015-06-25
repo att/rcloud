@@ -1,11 +1,11 @@
 RCloud.UI.notebook_protection_logger = {
-
     timeout: 0,
     log: function(val) {
         var that = this;
-        $('.logging-panel').removeClass('red');
-        $('.logging-panel').removeClass('white');
-        $('.logging-panel').addClass('green');
+        $('.logging-panel').removeClass('red')
+            .removeClass('white')
+            .addClass('green');
+
         $('.logging-panel span').text(val);
 
         window.clearTimeout(this.timeout);
@@ -18,9 +18,9 @@ RCloud.UI.notebook_protection_logger = {
     },
     warn: function(val) {
         var that = this;
-        $('.logging-panel').removeClass('green');
-        $('.logging-panel').removeClass('white');
-        $('.logging-panel').addClass('red');
+        $('.logging-panel').removeClass('green')
+            .removeClass('white')
+            .addClass('red');
         $('.logging-panel span').text(val);
 
         window.clearTimeout(this.timeout);
@@ -30,5 +30,11 @@ RCloud.UI.notebook_protection_logger = {
                     .addClass('white');
             $('.logging-panel span').html('&nbsp;');
         }, 3000);
+    }, 
+    clear: function(){
+        $('.logging-panel').removeClass('red')
+                    .removeClass('green')
+                    .addClass('white');
+        $('.logging-panel span').html('&nbsp;');
     }
 };
