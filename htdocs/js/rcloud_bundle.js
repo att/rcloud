@@ -4167,8 +4167,7 @@ RCloud.UI.advanced_menu = (function() {
                 manage_groups: {
                     sort: 7000,
                     text: "Manage Groups",
-
-                    modes: ['view', 'edit'],
+                    modes: ['edit'],
                     action: function(value) {
                         RCloud.UI.notebook_protection.init('group-tab-enabled');
                     }
