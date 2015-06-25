@@ -151,12 +151,12 @@ define(['angular'], function(angular) {
                 if($scope.initialGroupId !== '' && $scope.initialGroupId !== $scope.selectedUserGroup.id) {
                     //console.log('id changed');
                     (function(){
-                        var conf = confirm("Are you sure you want to move notebook "+$scope.notebookFullName+" to group "+$scope.selectedUserGroup.name +"?");
+                        var conf = confirm("Are you sure you want to move notebook "+$scope.notebookFullName+" to group "+$scope.selectedUserGroup.name +"?\nThis might make it no longer accessible by everyone.");
                         if(conf){
                             console.log('notebook id is '+$scope.notebookGistName);
                             GroupsService.setNotebookGroup($scope.notebookGistName, $scope.selectedUserGroup.id )
                             .then(function(data){
-                                console.log('data is '+data);
+                                //console.log('data is '+data);
                                 //need to update the notebook's tip to reflect the change
                                 $scope.cancel();
                             })
@@ -176,7 +176,7 @@ define(['angular'], function(angular) {
                 //if making private of moving to another group
                 if($scope.sharedStatus === 'group') {
                     (function() {
-                        var conf = confirm("Are you sure you want to move notebook "+$scope.notebookFullName+" to group "+$scope.selectedUserGroup.name +"?");
+                        var conf = confirm("Are you sure you want to move notebook "+$scope.notebookFullName+" to group "+$scope.selectedUserGroup.name +"?\nThis might make it no longer accessible by everyone.");
                         if(conf) {
                             //console.log('notebook id is '+$scope.notebookGistName);
                             GroupsService.setNotebookGroup($scope.notebookGistName, $scope.selectedUserGroup.id )
@@ -192,13 +192,12 @@ define(['angular'], function(angular) {
                 }
                 else if($scope.sharedStatus === 'public') {
                     (function() {
-                        var conf = confirm("Are you sure you want to make notebook "+$scope.notebookFullName+" public? \nThis might make it no longer be accessible");
+                        var conf = confirm("Are you sure you want to make notebook "+$scope.notebookFullName+" public? \nThis will make it accessible by everyone.");
                         if(conf) {
                             //console.log('notebook id is '+$scope.notebookGistName);
                             GroupsService.setNotebookGroup($scope.notebookGistName, null )
                             .then(function(data){
                                 $scope.cancel();
-                                logger.clear();
                             })
                             .catch(function(e){
                                 logger.warn(extract_error(e));
@@ -215,7 +214,6 @@ define(['angular'], function(angular) {
                             GroupsService.setNotebookGroup($scope.notebookGistName, 'private' )
                             .then(function(data) {
                                 $scope.cancel();
-                                logger.clear();
                             })
                             .catch(function(e) {
                                 logger.warn(extract_error(e));
@@ -232,7 +230,7 @@ define(['angular'], function(angular) {
             var pr = prompt("Enter new group name", "");
             if (pr != null) {
                 if(pr === 'private' || pr === 'no group') {
-                    logger.warn(pr+ ' is a reserved name, please pick another');
+                    logger.warn(pr+ ' is a reserved name, please pick a different one.');
                     return;
                 }
                 GroupsService.createGroup(pr)
