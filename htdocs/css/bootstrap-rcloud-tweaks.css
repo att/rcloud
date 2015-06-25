@@ -348,6 +348,7 @@ td {
 
 #protection-app select {
   min-width: 78px!important;
+  max-width: 150px!important;
   font-size: 15px!important;
 }
 

@@ -96,11 +96,6 @@ Notebook.create_controller = function(model)
             model.user(notebook.user.login);
             model.update_files(notebook.files);
 
-            //
-            RCloud.UI.notebook_protection.userLogin = notebook.user.login;
-            RCloud.UI.notebook_protection.userId = notebook.user.id;
-
-
             if(asset_controller)
                 asset_controller.select();
             else

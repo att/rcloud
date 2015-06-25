@@ -24,7 +24,7 @@ run <- function(url, query, body, headers)
     query$.cookies <- cookies
     query$.body <- body
     query$.url <- url
-    c <- RSclient::RS.connect()
+    c <- RSclient::RS.connect("/data/rcloud/run/qap",0L)
     oc.init <- attr(c, "capabilities")
     et <- paste0("Unable to authenticate - please <a href=\"/login.R?redirect=",URLencode(url, TRUE),"\">login to RCloud</a> first")
     ## authenticate
