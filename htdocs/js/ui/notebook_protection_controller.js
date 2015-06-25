@@ -9,9 +9,12 @@ define(['angular'], function(angular) {
         return /.*: +(.*)R trace/.exec(s)[1];
     }
 
+    var logger = RCloud.UI.notebook_protection_logger;
+    var moduleRef = RCloud.UI.notebook_protection;
 
-   return angular.module('myapp.controllers', ['myapp.services', 'selectize'])
-   .controller('NotebookProtectionController', ['$scope' , 'GroupsService', '$q', '$timeout', function ($scope, GroupsService, $q, $timeout) {
+
+    return angular.module('myapp.controllers', ['myapp.services', 'selectize'])
+    .controller('NotebookProtectionController', ['$scope' , 'GroupsService', '$q', '$timeout', function ($scope, GroupsService, $q, $timeout) {
 
         $scope.currentNotebook = null;
         $scope.currentCryptogroup = null;
@@ -113,7 +116,7 @@ define(['angular'], function(angular) {
             return $q(function(resolve, reject) {
                 $scope.$evalAsync(function() {
                     $scope.currentTab = 1;
-                    var moduleRef = RCloud.UI.notebook_protection;
+                
                     $scope.currentNotebook = moduleRef.defaultNotebook;
                     $scope.currentCryptogroup = moduleRef.defaultCryptogroup;
                     $scope.notebookFullName = moduleRef.defaultNotebook.full_name;
@@ -158,7 +161,7 @@ define(['angular'], function(angular) {
 
                             })
                             .catch(function(e){
-                                RCloud.UI.notebook_protection_logger.warn(extract_error(e));
+                                logger.warn(extract_error(e));
                             });
                         }
                     })();
@@ -183,7 +186,7 @@ define(['angular'], function(angular) {
                                 $scope.cancel();
                             })
                             .catch(function(e){
-                                RCloud.UI.notebook_protection_logger.warn(extract_error(e));
+                                logger.warn(extract_error(e));
                             });
                         }
                     })();
@@ -198,7 +201,7 @@ define(['angular'], function(angular) {
                                 $scope.cancel();
                             })
                             .catch(function(e){
-                                RCloud.UI.notebook_protection_logger.warn(extract_error(e));
+                                logger.warn(extract_error(e));
                             });
                         }
                     })();
@@ -214,7 +217,7 @@ define(['angular'], function(angular) {
                                 $scope.cancel();
                             })
                             .catch(function(e) {
-                                RCloud.UI.notebook_protection_logger.warn(extract_error(e));
+                                logger.warn(extract_error(e));
                             });
                         }
                     })();
@@ -227,6 +230,11 @@ define(['angular'], function(angular) {
         $scope.createGroup = function() {
             var pr = prompt("Enter new group name", "");
             if (pr != null) {
+
+                if(pr === 'private' || pr === 'no group') {
+                    logger.warn(pr+ ' is a reserved name, please pick another');
+                    return;
+                };
                 GroupsService.createGroup(pr)
                 .then(function(data) {
                     $scope.$evalAsync(function() {
@@ -254,9 +262,9 @@ define(['angular'], function(angular) {
                     });
                 })
                 .catch(function(e) {
-                    RCloud.UI.notebook_protection_logger.warn(extract_error(e));
+                    logger.warn(extract_error(e));
                 });
-            }
+            };
         };
 
         $scope.renameGroup = function() {
@@ -279,10 +287,10 @@ define(['angular'], function(angular) {
                         });
                     })
                     .catch(function(e) {
-                        RCloud.UI.notebook_protection_logger.warn(extract_error(e));
+                        logger.warn(extract_error(e));
                     });
-                }
-            }
+                };
+            };
         };
 
         $scope.populateGroupMembers = function() {
@@ -299,7 +307,7 @@ define(['angular'], function(angular) {
                             adminsArray.push(item);
                         else
                             membersArray.push(item);
-                    }
+                    };
                 }
                 console.log('just grabed memebers info for group '+$scope.selectedAdminGroup.name);
                 $scope.$evalAsync(function() {
@@ -312,7 +320,7 @@ define(['angular'], function(angular) {
 
             })
             .catch(function(e) {
-                RCloud.UI.notebook_protection_logger.warn(extract_error(e));
+                logger.warn(extract_error(e));
             });
         };
 
@@ -338,7 +346,7 @@ define(['angular'], function(angular) {
                     //console.log('groupAdmins is '+$scope.groupAdmins);
                     var duplicates = _.intersection($scope.groupAdmins, $scope.groupMembers);
                     if(duplicates.length) {
-                        RCloud.UI.notebook_protection_logger.warn('removing '+duplicates+' from members and moving it to admins');
+                        logger.warn('removing '+duplicates+' from members and moving it to admins');
                         //remove
                         var dupIndex = $scope.groupMembers.indexOf(duplicates[0]);
                         $scope.groupMembers.splice(dupIndex, 1);
@@ -357,7 +365,7 @@ define(['angular'], function(angular) {
                     console.log('groupMembers changed '+val);
                     var duplicates = _.intersection($scope.groupMembers, $scope.groupAdmins);
                     if(duplicates.length) {
-                        RCloud.UI.notebook_protection_logger.warn('removing '+duplicates+' from admins and moving it to members');
+                        logger.warn('removing '+duplicates+' from admins and moving it to members');
                         //remove
                         var dupIndex = $scope.groupAdmins.indexOf(duplicates[0]);
                         $scope.groupAdmins.splice(dupIndex, 1);
@@ -451,7 +459,7 @@ define(['angular'], function(angular) {
                         $scope.cancel();
                     })
                     .catch(function(e) {
-                        RCloud.UI.notebook_protection_logger.warn(extract_error(e));
+                        logger.warn(extract_error(e));
                         $scope.populateGroupMembers();
                     });
                 }
