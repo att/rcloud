@@ -20,7 +20,7 @@ rcloud.language.support <- function()
 
   ev <- function(command, silent, rcloud.session) {
     .session <- rcloud.session
-    if (command == "") command <- " "
+    if (is.null(command) || command == "") command <- " "
 
     val <- try(rmarkdown.markdownToHTML(text=paste(knit(text=command, envir=.GlobalEnv), collapse="\n"),
                               fragment=TRUE), silent=TRUE)

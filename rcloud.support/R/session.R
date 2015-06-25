@@ -66,7 +66,7 @@ session.markdown.eval <- function(command, language, silent) {
     opts_chunk$set(dpi=72*.session$device.pixel.ratio)
   opts_chunk$set(dev="CairoPNG", tidy=FALSE)
 
-  if (command == "") command <- " "
+  if (is.null(command) || command == "") command <- " "
   val <- try(markdownToHTML(text=paste(knit(text=command, envir=.GlobalEnv), collapse="\n"),
                             fragment=TRUE), silent=TRUE)
   if (inherits(val, "try-error")) {
