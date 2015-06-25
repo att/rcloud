@@ -98,7 +98,7 @@ rcloud.remove.cryptgroup.user <- function(groupid, user) {
   if(!is.cryptgroup.admin(groupid, .session$username))
     stop(paste0("user ", .session$username, " is not an admin for group ", groupid))
   myself <- !is.na(match(user, .session$username))
-  if (any(myself)) warning("you cannot remove yourself as an admin")
+  if (any(myself)) stop("you cannot remove yourself as an admin")
   session.server.modify.group("rcloud", .session$token, groupid, remove=user)
   user <- user[!myself]
   if (length(user)) {
