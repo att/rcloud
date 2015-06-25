@@ -29,6 +29,7 @@ rcloud.set.notebook.cryptgroup <- function(notebookid, groupid, modify=TRUE) { #
             rcloud.update.notebook(notebookid, list(files=list()))
         }
     }
+    invisible(TRUE)
 }
 
 rcloud.get.cryptgroup.users <- function(groupid) { # : list(user -> is.admin)
@@ -79,6 +80,7 @@ rcloud.set.cryptgroup.name <- function(groupid, groupname) { # must be unique
   if(!is.cryptgroup.admin(groupid, .session$username))
     stop(paste0("user ", .session$username, " is not an admin for group ", groupid))
   rcs.set(rcs.key('.cryptgroup', groupid, 'name'), groupname)
+  invisible(groupid)
 }
 
 # we might want a combined api for these to minimize roundtrips
@@ -92,6 +94,7 @@ rcloud.add.cryptgroup.user <- function(groupid, user, is.admin) {
   if (length(user) > 1) is.admin <- as.list(is.admin)
   rcs.set(rcs.key('.cryptgroup', groupid, 'users', user), is.admin)
   rcs.set(rcs.key(user, 'system', 'cryptgroups', groupid), is.admin)
+  invisible(TRUE)
 }
 
 rcloud.remove.cryptgroup.user <- function(groupid, user) {
@@ -105,6 +108,7 @@ rcloud.remove.cryptgroup.user <- function(groupid, user) {
       rcs.rm(rcs.key('.cryptgroup', groupid, 'users', user))
       rcs.rm(rcs.key(user, 'system', 'cryptgroups', groupid))
   }
+  invisible(TRUE)
 }
 
 rcloud.delete.cryptgroup <- function(groupid) {
@@ -117,4 +121,5 @@ rcloud.delete.cryptgroup <- function(groupid) {
   users <- users[users != .session$username]
   rcloud.remove.cryptgroup.user(groupid, users)
   rcs.rm(rcs.key('.cryptgroup', groupid, 'name'))
+  invisible(TRUE)
 }
