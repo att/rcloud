@@ -18,6 +18,18 @@ rcloud.get.conf.values <- function(pattern) {
   lapply(matched, getConf)
 }
 
+.guess.language <- function(fn) {
+    if (!length(grep(".",fn,TRUE))) return("unknown")
+    ext <- gsub(".*\\.","",fn)
+    ## just my guess ... no idea what GH actually uses ...
+    .langs <- c(js="JavaScript", R="R", S="R", Rd="Rdoc", md="Markdown",
+                c="C", C="C++", cc="C++", cxx="C++", java="Java",
+                tex="TeX", Rmd="RMarkdown", sh="Shell", py="Python",
+                css="CSS", html="HTML", svg="SVG")
+    m <- match(ext, names(.langs))
+    if (is.na(m)) "unknown" else .langs[[m]]
+}
+
 # any attributes we want to add onto what github gives us
 # and re-code payload where needed
 rcloud.augment.notebook <- function(res) {
@@ -299,6 +311,12 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
                 ## FIXME: should we move such things into .gist.binary.process.outgoing?
                 ## we can do things that we cannot do here such as `size` ...
                 if (is.null(ct$filename)) ct$filename <- fn
+                if (is.null(ct$language)) ct$language <- .guess.language(fn)
+                ## also auto-detect text content
+                if (is.raw(ct$content) && checkUTF8(ct$content, quiet=TRUE, min.char=7L)) {
+                    ct$content <- rawToChar(ct$content)
+                    Encoding(ct$content) <- "UTF-8"
+                }
                 ct
             }
         }
