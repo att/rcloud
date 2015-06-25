@@ -129,7 +129,7 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
         nb <- NULL
 
         ## is this a direct update of an an encryped notebook? If so, don't do anything
-        if (!is.null(content$files[[.encryped.content.filename]])) return(content)
+        if (!is.null(content$files[[.encryped.content.filename]]$content)) return(content)
 
         bin <- sapply(content$files, function(o) is.list(o) && is.raw(o$content))
         if (any(bin) && autoconvert) {
