@@ -4,6 +4,12 @@ define(['angular'], function(angular) {
 
    'use strict';
 
+    function extract_error(err) {
+        var s = err.toString().replace(/\n/g, '');
+        return /.*: +(.*)R trace/.exec(s)[1];
+    }
+
+
    return angular.module('myapp.controllers', ['myapp.services', 'selectize'])
    .controller('NotebookProtectionController', ['$scope' , 'GroupsService', '$q', '$timeout', function ($scope, GroupsService, $q, $timeout) {
 
@@ -153,7 +159,7 @@ define(['angular'], function(angular) {
 
                             })
                             .catch(function(e){
-                                RCloud.UI.notebook_protection_logger.warn(arguments[0].toString().split('\n')[0].replace(/^.*: /,''));
+                                RCloud.UI.notebook_protection_logger.warn(extract_error(e));
                             });
                         }
                     })();
@@ -178,7 +184,7 @@ define(['angular'], function(angular) {
                                 $scope.cancel();
                             })
                             .catch(function(e){
-                                RCloud.UI.notebook_protection_logger.warn(arguments[0].toString().split('\n')[0].replace(/^.*: /,''))
+                                RCloud.UI.notebook_protection_logger.warn(extract_error(e));
                             });
                         }
                     })();
@@ -193,7 +199,7 @@ define(['angular'], function(angular) {
                                 $scope.cancel();
                             })
                             .catch(function(e){
-                                RCloud.UI.notebook_protection_logger.warn(arguments[0].toString().split('\n')[0].replace(/^.*: /,''));
+                                RCloud.UI.notebook_protection_logger.warn(extract_error(e));
                             });
                         }
                     })();
@@ -209,7 +215,7 @@ define(['angular'], function(angular) {
                                 $scope.cancel();
                             })
                             .catch(function(e) {
-                                RCloud.UI.notebook_protection_logger.warn(arguments[0].toString().split('\n')[0].replace(/^.*: /,''));
+                                RCloud.UI.notebook_protection_logger.warn(extract_error(e));
                             });
                         }
                     })();
@@ -249,7 +255,7 @@ define(['angular'], function(angular) {
                     });
                 })
                 .catch(function(e) {
-                    RCloud.UI.notebook_protection_logger.warn(arguments[0].toString().split('\n')[0].replace(/^.*: /,''));
+                    RCloud.UI.notebook_protection_logger.warn(extract_error(e));
                 });
             }
         };
@@ -274,7 +280,7 @@ define(['angular'], function(angular) {
                         });
                     })
                     .catch(function(e) {
-                        RCloud.UI.notebook_protection_logger.warn(arguments[0].toString().split('\n')[0].replace(/^.*: /,''));
+                        RCloud.UI.notebook_protection_logger.warn(extract_error(e));
                     });
                 }
             }
@@ -307,7 +313,7 @@ define(['angular'], function(angular) {
 
             })
             .catch(function(e) {
-                RCloud.UI.notebook_protection_logger.warn(arguments[0].toString().split('\n')[0].replace(/^.*: /,''));
+                RCloud.UI.notebook_protection_logger.warn(extract_error(e));
             });
         };
 
@@ -446,7 +452,7 @@ define(['angular'], function(angular) {
                         $scope.cancel();
                     })
                     .catch(function(e) {
-                        RCloud.UI.notebook_protection_logger.warn(arguments[0].toString().split('\n')[0].replace(/^.*: /,''));
+                        RCloud.UI.notebook_protection_logger.warn(extract_error(e));
                         $scope.populateGroupMembers();
                     });
                 }
