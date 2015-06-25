@@ -18,17 +18,17 @@
                             var thisIcon = this;
                             var info_content = '';
 
-                            $(document).on('destroy_all_popovers', function(){
+                            $(document).on('destroy_all_popovers', function() {
                                  $(info).popover('destroy');
                                  popupOpen = false;
-                            })
+                            });
                             
-                            Promise.all( [window.rcloud.protection.get_notebook_cryptgroup(node.gistname), 
+                            Promise.all([window.rcloud.protection.get_notebook_cryptgroup(node.gistname), 
                                         window.rcloud.stars.get_notebook_starrer_list(node.gistname)])
                             .spread(function(cryptogroup, list) {
 
                                 info_content =  buildPopover();
-                                function buildPopover(){
+                                function buildPopover() {
                                     if(typeof(list) === 'string')
                                         list = [list];
 
@@ -50,7 +50,7 @@
                                 };
 
                                 function wrapGroupType(name) {
-                                    if(node.user === RCloud.UI.notebook_protection.userLogin)
+                                    if(node.user === editor.username())
                                         return '<div class="group-link info-item"><a href="#">'+name+'</a></div>';
                                     else
                                         return '<div class="group-link info-item">'+name+'</div>';    
@@ -62,7 +62,7 @@
                                         $(document).trigger('destroy_all_popovers');
                                 });
 
-                                if(!popupOpen){
+                                if(!popupOpen) {
                                     $(document).trigger('destroy_all_popovers');
                                     $(info).popover({
                                         title: node.name,
@@ -80,19 +80,19 @@
                                     thisPopover.addClass('popover-offset notebook-info');
                                     popupOpen = true;
                                 }
-                                else{
+                                else {
                                     $(document).trigger('destroy_all_popovers');
                                 }
 
-                                $('.group-link', thisPopover).click(function(e){
+                                $('.group-link', thisPopover).click(function(e) {
                                     $(thisIcon).popover("destroy");
                                     //if the user of this notebook is the same as current user?
-                                    if(node.user === RCloud.UI.notebook_protection.userLogin){
+                                    if(node.user === editor.username()) {
                                         RCloud.UI.notebook_protection.defaultNotebook = node;
                                         RCloud.UI.notebook_protection.defaultCryptogroup = cryptogroup;
                                         RCloud.UI.notebook_protection.init('both-tabs-enabled');
                                     } 
-                                })
+                                });
                             })
                         })
                         return info;

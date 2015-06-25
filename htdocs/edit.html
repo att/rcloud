@@ -308,13 +308,13 @@
           <div class="row sec">
             <div class="form-group">
               <label for="comment">Admins:</label>
-              <selectize options='allUsers' config="myConfig" ng-model="groupAdmins"></selectize>
+              <selectize ng-disabled='!allAdminGroups.length' options='allUsers' config="myConfig" ng-model="groupAdmins"></selectize>
             </div>
           </div>
           <div class="row sec">
             <div class="form-group">
               <label for="comment">Members:</label>
-              <selectize options='allUsers' config="myConfig" ng-model="groupMembers"></selectize>
+              <selectize ng-disabled='!allAdminGroups.length' options='allUsers' config="myConfig" ng-model="groupMembers"></selectize>
             </div>
           </div>
         </div>

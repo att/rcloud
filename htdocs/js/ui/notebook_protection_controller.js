@@ -18,8 +18,7 @@ define(['angular'], function(angular) {
         $scope.notebookFullName = null;
         $scope.notebookGistName = null;
         $scope.notebookId = null;
-        $scope.userId = RCloud.UI.notebook_protection.userId;
-        $scope.userLogin = RCloud.UI.notebook_protection.userLogin;
+        $scope.userName = editor.username();
 
         $scope.sharedStatus = '';
         $scope.initialSharedStatus = '';
@@ -94,7 +93,7 @@ define(['angular'], function(angular) {
         /////////////////////////////////////////
         $scope.getGroups = function() {
             return $q(function(resolve, reject) {
-                GroupsService.getUsersGroups($scope.userLogin)
+                GroupsService.getUsersGroups($scope.userName)
                 .then(function(data) {
 
                     $scope.$evalAsync(function() {
@@ -476,10 +475,6 @@ define(['angular'], function(angular) {
             }
             //console.log('current tab is '+$scope.currentTab);
         };
-
-
-
-
 
         //UTILS
         ////////////////////////////////////////////
