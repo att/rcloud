@@ -1007,12 +1007,14 @@ var editor = function () {
         var n = event.node;
         if(n.delay_children)
             load_children(n);
-        if(event.node.full_name && event.node.user === username_)
+        // notebook folder name only editable when open
+        if(event.node.full_name && event.node.user === username_ && !event.node.gistname)
             RCloud.UI.notebook_title.make_editable(event.node, event.node.element, true);
         $('#collapse-notebook-tree').trigger('size-changed');
     }
     function tree_close(event) {
-        if(event.node.full_name)
+        // notebook folder name only editable when open
+        if(event.node.full_name && !event.node.gistname)
             RCloud.UI.notebook_title.make_editable(event.node, event.node.element, false);
     }
     var NOTEBOOK_LOAD_FAILS = 5;
