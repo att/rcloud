@@ -2593,7 +2593,7 @@ Notebook.Cell.create_controller = function(cell_model)
                 view.end_output(error);
             });
         },
-        get_input: function(type, prompt, dummy_context, k) {
+        get_input: function(type, prompt, k) {
             // assume only one view has get_input
             var view = _.find(cell_model.views, function(v) { return v.get_input; });
             if(!view)
