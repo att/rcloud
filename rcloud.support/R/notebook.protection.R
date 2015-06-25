@@ -56,11 +56,15 @@ is.cryptgroup.admin <- function(groupid, user) {
   users[[.session$username]]
 }
 
-rcloud.create.cryptgroup <- function(groupname) { # : groupid; current user is admin
+.check.cryptgroup.name <- function(groupname) {
   keys <- rcs.list(rcs.key('.cryptgroup', '*', 'name'))
   groupnames <- if(length(keys)) rcs.get(keys, list=TRUE) else list()
   if(groupname %in% groupnames)
     stop(paste0("protection group name ", groupname, " already exists"))
+}
+
+rcloud.create.cryptgroup <- function(groupname) { # : groupid; current user is admin
+  .check.cryptgroup.name(groupname)
   groupid <- generate.uuid()
   if (!isTRUE(session.server.create.group("rcloud", .session$token, groupid)[1L] == "OK"))
       stop("unable to register a new group (possibly your authentication expired?)")
@@ -71,6 +75,7 @@ rcloud.create.cryptgroup <- function(groupname) { # : groupid; current user is a
 }
 
 rcloud.set.cryptgroup.name <- function(groupid, groupname) { # must be unique
+  .check.cryptgroup.name(groupname)
   if(!is.cryptgroup.admin(groupid, .session$username))
     stop(paste0("user ", .session$username, " is not an admin for group ", groupid))
   rcs.set(rcs.key('.cryptgroup', groupid, 'name'), groupname)
