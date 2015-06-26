@@ -534,8 +534,10 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.protection.get_notebook_cryptgroup = function(notebookid) {
             return rcloud_ocaps.protection.get_notebook_cryptgroupAsync(notebookid);
         };
-        rcloud.protection.set_notebook_cryptgroup = function(notebookid, groupid) {
-            return rcloud_ocaps.protection.set_notebook_cryptgroupAsync(notebookid, groupid);
+        rcloud.protection.set_notebook_cryptgroup = function(notebookid, groupid, modify) {
+            if(modify === undefined)
+                modify = true;
+            return rcloud_ocaps.protection.set_notebook_cryptgroupAsync(notebookid, groupid, modify);
         };
         rcloud.protection.get_cryptgroup_users = function(groupid) {
             return rcloud_ocaps.protection.get_cryptgroup_usersAsync(groupid);

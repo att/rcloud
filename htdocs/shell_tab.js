@@ -119,8 +119,8 @@ var shell = (function() {
             return notebook_controller_.rename_notebook(desc);
         }, fork_my_notebook: function(gistname, version, open_it, transform_description) {
             // hack: copy without history as a first pass, because github forbids forking oneself
-            return rcloud.get_notebook(gistname, version, null, true)
-                .then(function(notebook) {
+            return Promise.all([rcloud.get_notebook(gistname, version, null, true), rcloud.protection.get_notebook_cryptgroup(gistname)])
+                .spread(function(notebook, cryptgroup) {
                     // this smells
                     var fork_of = {owner: {login: notebook.user.login},
                                    description: notebook.description,
@@ -134,6 +134,11 @@ var shell = (function() {
                         .then(function(result) {
                             result.fork_of = fork_of;
                             return rcloud.set_notebook_property(result.id, 'fork_of', fork_of)
+                                .then(function() {
+                                    return cryptgroup ?
+                                        rcloud.protection.set_notebook_cryptgroup(result.id, cryptgroup.id, false) :
+                                        undefined;
+                                })
                                 .return(result);
                         });
                 });
