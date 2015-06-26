@@ -104,7 +104,7 @@ configure.rcloud <- function (mode=c("startup", "script")) {
     rc.c <- rc.all[1,]
     rc.c <- rc.c[!is.na(rc.c)]
     rc.gsrc <- .dcf.sections.with(rc.all, "gist.source")
-    for (n in names(rc.c)) setConf(gsub("[ \t]", ".", tolower(n)), as.vector(rc.c[n]))
+    for (n in names(rc.c)) setConf(gsub("[ \t]", ".", tolower(n)), gsub("${ROOT}", getConf("root"), as.vector(rc.c[n]), fixed=TRUE))
   }
   .session$gist.sources.conf <- rc.gsrc
   ulog(paste(capture.output(str(rc.gsrc)), collapse='\n'))
