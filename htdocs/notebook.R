@@ -16,7 +16,7 @@ cookies <- function(headers) {
 run <- function(url, query, body, headers)
 {
   cookies <- cookies(headers)
-  et <- "Unable to connect"
+  et <- "Unable to connect to R back-end"
   tryCatch({
     if (is.null(path.info)) stop("incomplete path - must contain some notebook designation")
     pex <- strsplit(path.info, "/+")[[1L]]
@@ -24,8 +24,9 @@ run <- function(url, query, body, headers)
     query$.cookies <- cookies
     query$.body <- body
     query$.url <- url
-    c <- RSclient::RS.connect("/data/rcloud/run/qap",0L)
+    c <- if (is.null(rcloud.config("rserve.socket"))) RSclient::RS.connect() else RSclient::RS.connect(rcloud.config("rserve.socket"), 0L)
     oc.init <- attr(c, "capabilities")
+    if (is.null(oc.init)) stop("Unexpected response from Rserve (no iniital capability provided)")
     et <- paste0("Unable to authenticate - please <a href=\"/login.R?redirect=",URLencode(url, TRUE),"\">login to RCloud</a> first")
     ## authenticate
     caps <- RSclient::RS.eval.qap(c, as.call(list(oc.init, c(cookies$token, cookies$execToken), "call")))
