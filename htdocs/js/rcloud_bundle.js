@@ -8489,7 +8489,7 @@ RCloud.UI.notebook_protection_logger = {
                     .removeClass('green')
                     .addClass('white');
             $('.logging-panel span').html('&nbsp;');
-        }, 3000);
+        }, 13000);
     }, 
     clear: function(){
         $('.logging-panel').removeClass('red')

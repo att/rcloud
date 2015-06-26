@@ -345,7 +345,7 @@ define(['angular'], function(angular) {
                     //console.log('groupAdmins is '+$scope.groupAdmins);
                     var duplicates = _.intersection($scope.groupAdmins, $scope.groupMembers);
                     if(duplicates.length) {
-                        logger.warn('removing '+duplicates+' from members and moving it to admins');
+                        logger.log('removing '+duplicates+' from members and moving to admins');
                         //remove
                         var dupIndex = $scope.groupMembers.indexOf(duplicates[0]);
                         $scope.groupMembers.splice(dupIndex, 1);
@@ -364,7 +364,7 @@ define(['angular'], function(angular) {
                     //console.log('groupMembers changed '+val);
                     var duplicates = _.intersection($scope.groupMembers, $scope.groupAdmins);
                     if(duplicates.length) {
-                        logger.warn('removing '+duplicates+' from admins and moving it to members');
+                        logger.log('removing '+duplicates+' from admins and moving to members');
                         //remove
                         var dupIndex = $scope.groupAdmins.indexOf(duplicates[0]);
                         $scope.groupAdmins.splice(dupIndex, 1);
@@ -486,18 +486,23 @@ define(['angular'], function(angular) {
         //UTILS
         ////////////////////////////////////////////
         $scope.setTab = function(index) {
-            $scope.currentTab = index;
             if(index ===1){
-                if(!$('#protection-app #tab1').hasClass('disabled'))
-                    $scope.stopWatching()
+                if($scope.currentTab !== 1) {
+                    $scope.currentTab = index;
+                    if(!$('#protection-app #tab1').hasClass('disabled'));
+                        $scope.stopWatching()
+                }
             }
             if(index === 2) {
-                _.delay(function() {
-                    if($scope.selectedAdminGroup) {
-                        $scope.populateGroupMembers();
-                        $scope.startWatchingGroups();
-                    }
-                }, 40);
+                if($scope.currentTab !== 2){
+                    $scope.currentTab = index;
+                    _.delay(function() {
+                        if($scope.selectedAdminGroup) {
+                            $scope.populateGroupMembers();
+                            $scope.startWatchingGroups();
+                        }
+                    }, 40);
+                }
             }
         };
 

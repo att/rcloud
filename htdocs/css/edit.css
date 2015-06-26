@@ -55,11 +55,13 @@
 
 
 #protection-app .logging-panel span{
-    display: block;
-    text-align: left;
-    text-transform: lowercase;
-    padding: 12px;
-
+  display: block;
+  text-align: left;
+  text-transform: lowercase;
+  /* padding: 5px; */
+  /* padding-top: 5px; */
+  /* padding-bottom: 5px; */
+  padding: 5px 10px 3px 10px;
 }
 
 #protection-app .logging-panel.red{
