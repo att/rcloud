@@ -167,11 +167,21 @@ return {
                 var search_results = "";
                 var star_count;
                 var qtime = 0;
-                var numfound = 0;
+                var numfound = 0, numpaged = 0, numSources = 1;
+                var src_counts = {};
                 if(d[0] != undefined) {
-                    numfound = d[0].numFound;
+                    numpaged = numfound = parseInt(d[0].numFound);
+                    // in addition, check that we didn't several parallel sources and adjust accordingly
+                    _.each(d, function(o) { src_counts[o.source] = parseInt(o.numFound); });
+                    var numTotal = _.reduce(src_counts, function(memo, num){ return memo + num; }, 0);
+                    var maxNumFound = _.max(src_counts);
+                    numSources = Object.keys(src_counts).length;
+                    if (numSources > 1) {
+                        numfound = numTotal;
+                        numpaged = maxNumFound;
+                    }
                 }
-                var noofpages =  Math.ceil(numfound/page_size_);
+                var noofpages =  Math.ceil(numpaged/page_size_);
                 //iterating for all the notebooks got in the result/response
                 for(i = 0; i < len; i++) {
                     try {
@@ -254,7 +264,7 @@ return {
                 if(!pgclick) {
                     $('#paging').html("");
                     $("#search-results-pagination").show();
-                    if((parseInt(numfound) - parseInt(page_size_)) > 0) {
+                    if((parseInt(numpaged) - parseInt(page_size_)) > 0) {
                         var number_of_pages = noofpages;
                         $('#current_page').val(0);
                         if (numfound != 0) {
@@ -275,17 +285,21 @@ return {
                 qry = qry.replace(/>/g,'&gt;');
                 if(numfound === 0) {
                     summary("No Results Found");
-                } else if(parseInt(numfound) < page_size_){
+                } else if(parseInt(numpaged) < page_size_){
                     summary(numfound +" Results Found", 'darkgreen');
                 } else {
                     var search_summary = numfound +" Results Found, showing ";
-                    if(numfound-start === 1) {
-                        search_summary += (start+1);
-                    } else if((numfound - noofrows) > 0) {
-                        search_summary += (start+1)+" - "+noofrows;
-                    } else {
-                        search_summary += (start+1)+" - "+numfound;
-                    }
+		    if (numSources > 1) { // for multi-sources it gets complicated, just show the page
+			search_summary += "page "+ Math.round(start/page_size_ + 1);
+		    } else {
+			if(numfound-start === 1) {
+			    search_summary += (start+1);
+			} else if((numfound - noofrows) > 0) {
+			    search_summary += (start+1)+" - "+noofrows;
+			} else {
+			    search_summary += (start+1)+" - "+numfound;
+			}
+		    }
                     summary(search_summary, 'darkgreen');
                 }
                 $("#search-results-row").css('display', 'table-row');
