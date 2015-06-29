@@ -1,6 +1,6 @@
 ---
 title: RCloud 1.3 GUI Documentation
-layout: default
+layout: doc
 ---
 
 <a name="TOP"></a>
