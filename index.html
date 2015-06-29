@@ -8,7 +8,29 @@
   </head>
   <body>
     <div class="container">
-	
+    <!-- Static navbar -->
+		<nav class="navbar navbar-default">
+			<div class="container-fluid">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="index.html">RCloud</a>
+				</div>
+				<div id="navbar" class="navbar-collapse collapse">
+					<ul class="nav navbar-nav">
+						<li class="active"><a href="index.html">Home</a></li>
+						<li><a href="#screencasts">Screencasts</a></li>
+						<li><a href="#aboutus">About Us</a></li>
+						<li><a href="#documentation">Documentation</a></li>
+					</ul>
+				</div><!--/.nav-collapse -->
+			</div><!--/.container-fluid -->
+		</nav>
+
       <h1>RCloud, an HTML5 frontend for collaborative data analysis in R</h1>
       <p>
 	RCloud is an environment for collaboratively creating and sharing data
@@ -35,6 +57,7 @@
 	</li>
       </ul>
 
+			<a name="screencasts"></a>
       <h2>Screencasts</h2>
 
       <div class="row">
@@ -92,11 +115,13 @@
   }
 </script>
 
+			<a name="aboutus"></a>
       <h2>About us</h2>
       <p>RCloud is <a href="http://github.com/att/rcloud">open-source software</a> developed primarily by <a href="http://urbanek.info/">Simon Urbanek</a> and <a href="http://gordon.woodhull.com/">Gordon
 	  Woodhull</a> of
 	<a href="http://www.research.att.com">AT&amp;T Research</a>, and <a href="http://cscheid.net">Carlos Scheidegger</a>.</p>
       
+			<a name="documentation"></a>
 		<h2>RCloud Documentation</h2>
       <p>
 			<a href="http://att.github.io/rcloud/doc/1.3/whatsnew/doc.html">What's New in RCloud 1.3</a><br />
