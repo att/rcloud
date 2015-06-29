@@ -1067,14 +1067,7 @@ var editor = function () {
             username_ = rcloud.username();
             var promise = load_everything().then(function() {
                 if(opts.notebook) { // notebook specified in url
-                    return that.load_notebook(opts.notebook, opts.version, opts.source)
-                        .catch(function(xep) {
-                            var message = "Could not open notebook " + opts.notebook;
-                            if(opts.version)
-                                message += " (version " + opts.version + ")";
-                            RCloud.UI.fatal_dialog(message, "Continue", ui_utils.make_url('edit.html'));
-                            throw xep;
-                        });
+                    return that.load_notebook(opts.notebook, opts.version, opts.source, true, false, ui_utils.make_url('edit.html'));
                 } else if(!opts.new_notebook && current_.notebook) {
                     return that.load_notebook(current_.notebook, current_.version)
                         .catch(function(xep) {
@@ -1150,7 +1143,7 @@ var editor = function () {
         find_next_copy_name: function(name) {
             return find_next_copy_name(username_, name);
         },
-        load_notebook: function(gistname, version, source, selroot, push_history) {
+        load_notebook: function(gistname, version, source, selroot, push_history, fail_url) {
             var that = this;
             var before;
             if(source) {
@@ -1172,7 +1165,35 @@ var editor = function () {
                     .then(that.load_callback({version: version,
                                               source: source,
                                               selroot: selroot,
-                                              push_history: push_history}));
+                                              push_history: push_history}))
+                    .catch(function(xep) {
+                        var message = "Could not open notebook " + gistname;
+                        if(version)
+                            message += " (version " + version + ")";
+                        var msg2 = xep.toString().replace(/\n/g, '');
+                        var load_err = /Error: load_notebook: (.*)R trace/.exec(msg2);
+                        if(load_err)
+                            msg2 = load_err[1];
+                        var improve_msg_promise;
+                        if(/unable to access key/.test(msg2))
+                            improve_msg_promise = rcloud.protection.get_notebook_cryptgroup(gistname).then(function(cryptgroup) {
+                                if(cryptgroup) {
+                                    if(cryptgroup.id === 'private')
+                                        message += "\nNotebook is private and you are not the owner";
+                                    else if(cryptgroup.name)
+                                        message += "\nNotebook belongs to protection group '" + cryptgroup.name + "' and you are not a member";
+                                }
+                                else message += '\n' + msg2;
+                            });
+                        else {
+                            message += '\n' + msg2;
+                            improve_msg_promise = Promise.resolve(undefined);
+                        }
+                        improve_msg_promise.then(function() {
+                            RCloud.UI.fatal_dialog(message, "Continue", fail_url);
+                        });
+                        throw xep;
+                    });
             });
         },
         open_notebook: function(gistname, version, source, selroot, new_window) {
