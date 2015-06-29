@@ -222,9 +222,9 @@ Note that it is currently not possible to insert a prompt cell above an existing
 Markdown cells are where you enter and edit blocks of multi-line R markdown. Markdown is a plain-text formatting syntax used to create simple formatted documents. In order to differentiate your R code from text, surround your code with the following:
 
 <pre>
-&#96;&#96;&#96;{r}
+```{r}
 # R code goes here
-&#96;&#96;&#96;
+```
 </pre>
 
 [Top](#TOP)
@@ -268,10 +268,10 @@ items itself:
 
 ## And here's our hello world R program
 
-&#96;&#96;&#96;{r}
+```{r}
 print ("hello, world!", quote = FALSE)
 print ("some more text")
-&#96;&#96;&#96;
+```
 </pre>
 
 [Top](#TOP)
@@ -518,7 +518,7 @@ This is the simplest method. This will create a link that will allow someone to 
 ##### notebook.R
 
 This option is intended for [FastRweb](http://rforge.net/FastRWeb/) notebooks. Loading the URL (from anywhere, including other notebooks, a perl script, etc.) executes a notebook "behind the scenes" by opening a one-time R session, running the defined "function" within, shutting down the R session, and finally, returning the result.  FastRweb notebooks MUST have a function named 
-“function()” defined, as this what notebook.R tries to execute upon instantiation. Output from notebook.R can be anything. Text, binary data, whatever, as this information will ultimately be processed by whatever mechanism that called notebook.R.
+`function()` defined, as this what notebook.R tries to execute upon instantiation. Output from notebook.R can be anything. Text, binary data, whatever, as this information will ultimately be processed by whatever mechanism that called notebook.R.
 
 notebook.R allows trailing paths to be processed by the notebook code if they start with /.self/. The subsequent path portion is passed to the run function as the .path.info argument. This allows notebooks to handle a "full tree" argument to the notebook on top of a single notebook URL.
 
@@ -530,7 +530,7 @@ See the [notebook.R URLs](#notebookrurls) section of the documentation for more 
 
 <a name="mini.html"></a>
 ##### mini.html
-Unlike notebook.R, mini.html URLs open an R session via a Websocket and keep it open.  Mini.html notebooks MUST have a function named “rcw.result()“ defined, as that is what mini.html tries to execute upon instantiation. Because the R session is kept open, users or processes can interact with the R session while the websocket is kept open.
+Unlike notebook.R, mini.html URLs open an R session via a Websocket and keep it open.  Mini.html notebooks MUST have a function named `rcw.result()` defined, as that is what mini.html tries to execute upon instantiation. Because the R session is kept open, users or processes can interact with the R session while the websocket is kept open.
 
 [Top](#TOP)
 

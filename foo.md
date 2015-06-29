@@ -1,4 +1,5 @@
 ---
+title: foo
 ---
 
 # FOO
