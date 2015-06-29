@@ -179,7 +179,7 @@ var editor = function () {
             n = +match[1];
         }
         else {
-            base = description;
+            base = description + ' ';
             n = 1;
         }
         var copy_name;
