@@ -1,5 +1,6 @@
 ---
 title: RCloud 1.3 Documentation
+layout: default
 ---
 
 <a name="TOP"></a>
