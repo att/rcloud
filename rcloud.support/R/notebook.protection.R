@@ -19,7 +19,6 @@ rcloud.set.notebook.cryptgroup <- function(notebookid, groupid, modify=TRUE) { #
         }
         rcs.rm(key)
     } else {
-        rcs.set(key, groupid)
         if (modify) {
             ## this is a neat trick: since the encyption is transparent,
             ## issuing an empty update request *after* setting the group id
@@ -28,6 +27,7 @@ rcloud.set.notebook.cryptgroup <- function(notebookid, groupid, modify=TRUE) { #
             ## ignores the RCS setting
             rcloud.update.notebook(notebookid, list(files=list()))
         }
+        rcs.set(key, groupid)
     }
     invisible(TRUE)
 }
