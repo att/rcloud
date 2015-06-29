@@ -57,6 +57,7 @@ return {
             rcloud.get_gist_sources().then(function(sources) {
                 // annoying to load this over again just to get a number, but
                 // there's no obvious place to store this
+                if(_.isString(sources)) sources = [sources];
                 if(sources.length<2) {
                     $('#all-sources').parent().hide();
                 }
