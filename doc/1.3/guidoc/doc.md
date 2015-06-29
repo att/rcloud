@@ -2,6 +2,17 @@
 title: RCloud 1.3 Documentation
 ---
 
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>RCloud, an HTML5 frontend for collaborative data analysis in R</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet" media="screen">
+
+  </head>
+  <body>
+    <div class="container">
+
 <a name="TOP"></a>
 
 Created: 2015-02-14 Updated: 2015-06-29
@@ -983,3 +994,7 @@ rcloud.shinyApp(
 To learn more about how to use Shiny in RCloud, please see the rcloud.shiny example notebooks under RCloud Sample Notebooks in the Notebooks panel and the [official Shiny documentation](http://shiny.rstudio.com/).
 
 [Top](#TOP)
+
+</div>
+</body>
+</html>
