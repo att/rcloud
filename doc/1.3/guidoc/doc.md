@@ -1,4 +1,5 @@
 ---
+title: RCloud 1.3 GUI Documentation
 layout: default
 ---
 
