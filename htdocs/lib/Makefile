@@ -1,6 +1,6 @@
 JS_COMPILER = ./node_modules/uglify-js/bin/uglifyjs
 
-all: ace_bundle.js ace_bundle.min.js dependencies_bundle.js dependencies_bundle.min.js
+all: ace_bundle.js ace_bundle.js.gz ace_bundle.min.js dependencies_bundle.js dependencies_bundle.js.gz dependencies_bundle.min.js
 
 ace_bundle.js:	\
 	js/ace/_begin.js \
@@ -24,6 +24,8 @@ ace_bundle.js:	\
 	js/ace/mode-sh.js \
 	js/ace/_end.js
 
+ace_bundle.js.gz: ace_bundle.js
+	gzip -c -9 $^ > $@
 
 # requirejs must go before anything else
 dependencies_bundle.js: \
@@ -43,6 +45,9 @@ dependencies_bundle.js: \
 	js/underscore.js \
 	js/rserve.js \
 	js/tree.jquery.js
+
+dependencies_bundle.js.gz: dependencies_bundle.js
+	gzip -c -9 $^ > $@
 
 ace_bundle.min.js: ace_bundle.js Makefile
 	@rm -f $@
