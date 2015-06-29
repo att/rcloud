@@ -84,7 +84,7 @@ configure.rcloud <- function (mode=c("startup", "script")) {
   setwd(pathConf("tmp.dir"))
 
   ## if you have multiple servers it's good to know which machine this is
-  setConf("host", tolower(system("hostname -f", TRUE)))
+  setConf("host", tolower(system("hostname -f 2>/dev/null", TRUE)))
   cat("Starting Rserve on", getConf("host"),"\n")
 
   ## load configuration --- I'm not sure if DCF is a good idea - we may change this ...
