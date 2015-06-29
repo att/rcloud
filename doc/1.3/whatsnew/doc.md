@@ -1,3 +1,7 @@
+---
+title: RCloud 1.3 What's New!
+---
+
 2015-02-14
 
 # Table of Contents

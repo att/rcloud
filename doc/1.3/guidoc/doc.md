@@ -1,6 +1,10 @@
+---
+title: RCloud 1.3 Documentation
+---
+
 <a name="TOP"></a>
 
-2015-02-14
+Created: 2015-02-14 Updated: 2015-06-29
 
 # Table of Contents
 
@@ -286,7 +290,7 @@ Full documentation of markdown syntax is available [here](http://daringfireball.
 <a name="editingandviewingresults"></a>
 #### Editing and Viewing Results
 
-If you find a typo or would like to otherwise edit your R code, click the ![EDIT](http://ipsoweb2.research.att.com/~darkstar/rcloud_tut_img_0.9/editmarkdown.png) icon. You can also click on any code portions of the output to enter edit mode.
+If you find a typo or would like to otherwise edit your R code, click the ![EDIT](img/editmarkdown.png) icon. You can also click on any code portions of the output to enter edit mode.
 
 [Top](#TOP)
 
@@ -302,17 +306,17 @@ To insert a markdown cell above, click the ![INSERT1](img/addcell.png) icon. To 
 
 The run-state of each cell is displayed via an icon in between the gutter and cell name:
 
-![opencircle](http://ipsoweb2.research.att.com/~darkstar/rcloud_whatsnew_1_3/opencircle.png): Cell has not been run
+![opencircle](img/opencircle.png): Cell has not been run
 
-![bluearrow](http://ipsoweb2.research.att.com/~darkstar/rcloud_whatsnew_1_3/bluearrow.png): Cell is scheduled to be run
+![bluearrow](img/bluearrow.png): Cell is scheduled to be run
 
-![runningcircle](http://ipsoweb2.research.att.com/~darkstar/rcloud_whatsnew_1_3/runningcircle.png): Cell is running
+![runningcircle](img/runningcircle.png): Cell is running
 
-![greencircle](http://ipsoweb2.research.att.com/~darkstar/rcloud_whatsnew_1_3/greencircle.png): Cell has run successfully
+![greencircle](img/greencircle.png): Cell has run successfully
 
-![exclaim](http://ipsoweb2.research.att.com/~darkstar/rcloud_whatsnew_1_3/exclaim.png): Cell ran but had errors
+![exclaim](img/exclaim.png): Cell ran but had errors
 
-![splatcircle](http://ipsoweb2.research.att.com/~darkstar/rcloud_whatsnew_1_3/splatcircle.png): Cell's run was cancelled
+![splatcircle](img/splatcircle.png): Cell's run was cancelled
 
 [Top](#TOP)
 
@@ -323,7 +327,7 @@ When you run a notebook, you can prevent scheduled cells from running by pressin
 
 ![nonpreemptivestop](img/stop.png)
 
-Note that this will not interrupt currently running cells. (![runningcircle](http://ipsoweb2.research.att.com/~darkstar/rcloud_whatsnew_1_3/runningcircle.png)). It will only prevent scheduled cells from running.
+Note that this will not interrupt currently running cells. (![runningcircle](img/runningcircle.png)). It will only prevent scheduled cells from running.
 
 [Top](#top)
 
@@ -377,7 +381,7 @@ RCloud will automatically choose a title for your new notebook, Notebook N, wher
 <a name="runninganotebook"></a>
 ### Running a Notebook
 
-To run all the cells in your notebook, click the ![HEADER_PLAY](http://ipsoweb2.research.att.com/~darkstar/rcloud_tut_img_0.9/header_play.png) icon in the header bar.
+To run all the cells in your notebook, click the ![HEADER_PLAY](img/header_play.png) icon in the header bar.
 
 RCloud notebooks are executed asynchronously. RCloud will show individual cell results as the results are ready to display.
 
@@ -780,7 +784,7 @@ You can enable and disable extensions using the "Enable Extensions" and "Disable
 
 Enter a list of extensions, comma delimited, and press enter. You will then have to reload the page. 
 
-![settings](http://ipsoweb2.research.att.com/~darkstar/rcloud_whatsnew_1_3/settings.png)
+![settings](img/settings.png)
 
 [Top](#TOP)
 
