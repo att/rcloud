@@ -1,6 +1,9 @@
 ---
 title: RCloud 1.3 What's New!
+layout: doc
 ---
+
+# {{page.title}}
 
 2015-02-14
 
