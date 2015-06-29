@@ -115,7 +115,7 @@ RCloud.UI.settings_frame = (function() {
                             cancel();
                     });
                     $(input).blur(function() {
-                        cancel();
+                        commit();
                     });
                     return div;
                 },

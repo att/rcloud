@@ -58,6 +58,8 @@
  line (on Mac) (#1417)
 
 ### Bug Fixes
+* leaving a text field setting commits the change. (ESC still cancels, and Enter
+  also commits.) #1523
 * multiple password prompts executed seqentially could hang RCloud (#371)
 * do not allow empty notebook path parts (#1491 / #1492)
 * Python errors are now detected by the notebook, displaying the proper status
