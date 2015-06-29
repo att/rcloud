@@ -7,7 +7,7 @@ define(['angular'], function(angular) {
     function extract_error(err) {
         console.log(err);
         var s = err.toString().replace(/\n/g, '');
-        return /.*: +(.*)R trace/.exec(s)[1];
+        return /(.*)R trace/.exec(s)[1];
     }
 
     var logger = RCloud.UI.notebook_protection_logger;
