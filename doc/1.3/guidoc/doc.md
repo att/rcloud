@@ -77,6 +77,7 @@ Created: 2015-02-14 Updated: 2015-06-29
 1. [RStudio Shiny Support](#rstudioshinysupport)
 
 <a name="gettingstarted"></a>
+
 # 1. Getting Started
 
 RCloud supports Chrome, Chromium (the open-source version of Chrome), and Firefox web browsers, so you'll need to download the latest version of any of these to get started.
@@ -88,6 +89,7 @@ Finally, every installation's networking architecture will be different. Please 
 [Top](#TOP)
 
 <a name="partsofthegui"></a>
+
 # 2. Parts of the GUI
 
 ![Parts of the GUI](img/GUI_Parts.png)
@@ -95,9 +97,11 @@ Finally, every installation's networking architecture will be different. Please 
 [Top](#TOP)
 
 <a name="guinavigation"></a>
+
 ### Navigating the GUI
 
 <a name="openingandclosingpanels"></a>
+
 #### Opening and Closing Panels
 
 Clicking on the title of a panel opens and closes (and resizes in some cases) RCloud panels, such as Notebooks and Search. 
@@ -105,6 +109,7 @@ Clicking on the title of a panel opens and closes (and resizes in some cases) RC
 [Top](#TOP)
 
 <a name="openingandclosingallpanels"></a>
+
 #### Opening and Closing All Panels
 
 When all RCloud panels are minimized in a column, a "+" sign will appear, as shown here.
@@ -118,6 +123,7 @@ Clicking the "+" sign will restore all panels in the column to their previous si
 [Top](#TOP)
 
 <a name="changingpanelwidth"></a>
+
 #### Changing Panel Width
 
 To change the width of a panel, hover your mouse over the the edge that touches the cells in the middle. When it changes into a double arrow, click and drag left and right to resize.
@@ -125,6 +131,7 @@ To change the width of a panel, hover your mouse over the the edge that touches 
 [Top](#TOP)
 
 <a name="theheaderbar"></a>
+
 # 3. The Header Bar
 
 Here is the RCloud header bar:
@@ -165,6 +172,7 @@ Click the Advanced tab to access more features:
 [Top](#TOP)
 
 <a name="cells"></a>
+
 # 4. Cells
 
 There are two types of cells in RCloud, both used for inserting code. The first is the **prompt** cell, which allows you to interact with RCloud in more-or-less command-line fashion. Prompt cells are useful for quick, interactive sessions.
@@ -182,6 +190,7 @@ We'll get to the difference between Markdown and RMarkdown cells in a moment.
 [Top](#TOP)
 
 <a name="rpromptcells"></a>
+
 ### Prompt Cells
 
 ![PROMPT CELL](img/promptcell.png)
@@ -210,6 +219,7 @@ Note that it is currently not possible to insert a prompt cell above an existing
 [Top](#TOP)
 
 <a name="Markdowncells"></a>
+
 ### Markdown Cells
 
 ![MARKDOWNCELL](img/markdowncell.png)
@@ -217,6 +227,7 @@ Note that it is currently not possible to insert a prompt cell above an existing
 [Top](#TOP)
 
 <a name="addingrcode"></a>
+
 #### Adding Code
 
 Markdown cells are where you enter and edit blocks of multi-line R markdown. Markdown is a plain-text formatting syntax used to create simple formatted documents. In order to differentiate your R code from text, surround your code with the following:
@@ -230,11 +241,13 @@ Markdown cells are where you enter and edit blocks of multi-line R markdown. Mar
 [Top](#TOP)
 
 <a name="markdown"></a>
+
 #### Markdown
 
 Here's some sample markdown, suitable for cutting and pasting into a markdown cell:
 
 <pre>
+
 # Markdown Basics
 
 This is plain text. Empty lines are interpreted as new paragraphs. Single newlines
@@ -277,6 +290,7 @@ print ("some more text")
 [Top](#TOP)
 
 <a name="runningyourcode"></a>
+
 #### Running your code
 
 When you're done editing in a markdown cell, click the ![RUN](img/runmarkdown.png) icon to the right of the cell. Here is the result:
@@ -288,6 +302,7 @@ Full documentation of markdown syntax is available [here](http://daringfireball.
 [Top](#TOP)
 
 <a name="editingandviewingresults"></a>
+
 #### Editing and Viewing Results
 
 If you find a typo or would like to otherwise edit your R code, click the ![EDIT](img/editmarkdown.png) icon. You can also click on any code portions of the output to enter edit mode.
@@ -295,6 +310,7 @@ If you find a typo or would like to otherwise edit your R code, click the ![EDIT
 [Top](#TOP)
 
 <a name="addinganddeletingMarkdowncells"></a>
+
 #### Adding and Deleting Markdown Cells
 
 To insert a markdown cell above, click the ![INSERT1](img/addcell.png) icon. To insert a markdown cell below, click the ![INSERT2](img/addcellbelow.png) icon. To delete a markdown cell altogether, click the ![DELETE](img/deletecell.png) icon.
@@ -302,6 +318,7 @@ To insert a markdown cell above, click the ![INSERT1](img/addcell.png) icon. To 
 [Top](#TOP)
 
 <a name="cellrunstateindicator"></a>
+
 #### Cell Run-State Indicator
 
 The run-state of each cell is displayed via an icon in between the gutter and cell name:
@@ -321,6 +338,7 @@ The run-state of each cell is displayed via an icon in between the gutter and ce
 [Top](#TOP)
 
 <a name="stoppingcellexecution"></a>
+
 ## Stopping Cell Execution
 
 When you run a notebook, you can prevent scheduled cells from running by pressing the stop button, located in the header at the top of the screen:
@@ -332,6 +350,7 @@ Note that this will not interrupt currently running cells. (![runningcircle](img
 [Top](#top)
 
 <a name="rearrangingcells"></a>
+
 ## Rearranging Cells
 
 To rearrange your cells, click and drag the blank status area above the cell or the ![INSERT1](img/dragcell.png) icon to the left of the cell.
@@ -339,6 +358,7 @@ To rearrange your cells, click and drag the blank status area above the cell or 
 [Top](#TOP)
 
 <a name="joiningcells"></a>
+
 ## Joining Cells
 
 To join cells of the same flavor, click the join icon at the right of the cell. This will combine the contents of the cell with the cell immediately above it.
@@ -346,6 +366,7 @@ To join cells of the same flavor, click the join icon at the right of the cell. 
 ![JOIN](img/join.png)
 
 <a name="markdownvsrmarkdowncells"></a>
+
 ## Markdown vs RMarkdown Cells
 
 Behind the scenes, RCloud uses several different R packages to render output. Markdown cells use the [markdown](http://cran.r-project.org/web/packages/markdown/index.html) and [knitr](http://yihui.name/knitr/) packages directly for output. RMarkdown cells, on the other hand, use [rmarkdown](http://rmarkdown.rstudio.com/) (a.k.a. R Markdown v2).
@@ -355,6 +376,7 @@ Currently RMarkdown support should be considered experimental.
 [Top](#TOP)
 
 <a name="notebooks"></a>
+
 # 5. Notebooks
 
 RCloud notebooks are simply collections of prompt and markdown cells, comments, and assets, which we'll get to later. Everything in your public notebooks is searchable by every other user of the system. This encourages reuse and makes learning how to use the hundreds of available R packages easier.
@@ -368,6 +390,7 @@ To load a notebook into the current session, click on the name. After it loads, 
 [Top](#TOP)
 
 <a name="creatinganotebook"></a>
+
 ### Creating a Notebook
 
 To create a new, blank notebook, click the + sign at the right of the Notebooks panel header area:
@@ -379,6 +402,7 @@ RCloud will automatically choose a title for your new notebook, Notebook N, wher
 [Top](#TOP)
 
 <a name="runninganotebook"></a>
+
 ### Running a Notebook
 
 To run all the cells in your notebook, click the ![HEADER_PLAY](img/header_play.png) icon in the header bar.
@@ -388,6 +412,7 @@ RCloud notebooks are executed asynchronously. RCloud will show individual cell r
 [Top](#TOP)
 
 <a name="longrunningnotebooks"></a>
+
 ### Long-Running Notebooks
 
 Notebooks that run longer than a few seconds will cause the browser screen to dim and a please-wait message to be displayed.
@@ -397,6 +422,7 @@ Currently, RCloud has no explicit mechanism to stop a long-running notebook. If 
 [Top](#TOP)
 
 <a name="forkingcopyinganotebook"></a>
+
 ### Forking (Copying) a Notebook
 
 To copy another user's notebook, first navigate to it in the left sidebar and then click to load it into your current session. Now, you're running another user's public notebook in your own session. This is sufficient for running reports or performing other read-only activities. If you want to edit the notebook, you'll need to make your own copy, or, "fork" it.
@@ -412,6 +438,7 @@ The fork icon is always available, which means you can fork your own notebooks. 
 [Top](#TOP)
 
 <a name="savingyourwork"></a>
+
 ### Saving Your Work
 
 There are two mechanisms by which your work is saved in RCloud. 
@@ -419,6 +446,7 @@ There are two mechanisms by which your work is saved in RCloud.
 [Top](#TOP)
 
 <a name="manualsaving"></a>
+
 #### Manual Saving
 
 You can save your notebook at any time by clicking the ![HEADER_SAVE](img/header_save.png) icon in the header bar.
@@ -426,6 +454,7 @@ You can save your notebook at any time by clicking the ![HEADER_SAVE](img/header
 [Top](#TOP)
 
 <a name="versioning"></a>
+
 #### Versioning
 
 RCloud keeps track of your notebook versions automatically and frequently. Every time you save, create, or run a markdown or prompt cell, the newest version of your notebook is saved. To browse the versions of your notebook, which are stored chronologically with the latest version on top, hover over the name of your notebook in the left sidebar and click the clock icon:
@@ -437,6 +466,7 @@ To change they way dates and times are displayed next to your notebook versions,
 [Top](#TOP)
 
 <a name="versiontagging" />
+
 ##### Version Tagging
 
 To "tag" a notebook version, click twice on a version name to edit it in place.
@@ -454,6 +484,7 @@ This is useful when you want to share a version of a notebook but plan to contin
 [Top](#TOP)
 
 <a name="revert"></a>
+
 ##### Reverting to a Previous Version
 
 Should you decide that a previous version of your notebook is the "best" version, you can make that version the current version by loading the desired previous version of the notebook and clicking the revert icon.
@@ -463,6 +494,7 @@ Should you decide that a previous version of your notebook is the "best" version
 [Top](#TOP)
 
 <a name="publicandprivatenotebooks"></a>
+
 ### Public and Private Notebooks
 
 By default, all RCloud notebooks are public and therefore visible to all RCloud users. If you'd like to toggle the public/private flag on a notebook, hover over the name of your notebook on the left sidebar and click the eye icon. Note that private notebook titles are grayed out for owners and invisible to other users.
@@ -470,18 +502,23 @@ By default, all RCloud notebooks are public and therefore visible to all RCloud 
 [Top](#TOP)
 
 <a name="toggleprivate"></a>
+
 #### Toggle Private
+
 Clicking the ![PRIVATENOTEBOOK](img/privatenotebook.png) icon will make your notebook private.
 
 [Top](#TOP)
 
 <a name="togglepublic"></a>
+
 #### Toggle Public
+
 Clicking the ![PUBLICNOTEBOOK](img/publicnotebook.png) icon will make your notebook public.
 
 [Top](#TOP)
 
 <a name="deletingnotebooks"></a>
+
 ### Deleting Notebooks
 
 To delete a notebook, hover over the name of your notebook in the left sidebar and click the ![DELETENOTEBOOK](img/deletenotebook.png) icon.
@@ -495,6 +532,7 @@ Click OK and the notebook will disappear from the left sidebar and the last-view
 [Top](#TOP)
 
 <a name="sharingyournotebooks"></a>
+
 #### Sharing Your Notebooks
 
 There are several ways you can share your notebooks with colleagues. When you click on the downward arrow next to the share icon in the header bar ![HEADER_SHARE](img/header_share.png), a popup menu will appear:
@@ -508,6 +546,7 @@ Note that if you have a tagged version of your notebook currently loaded, where 
 [Top](#TOP)
 
 <a name="view.html"></a>
+
 ##### view.html
 
 This is the simplest method. This will create a link that will allow someone to see the notebook code and execute the notebook within the RCloud IDE. Users who do not own the notebook will see the play ![HEADER_PLAY](img/header_play.png) and share ![HEADER_EDIT](img/header_edit.png) icons in the header. Clicking the play icon will execute all cells in the notebook. Clicking the edit icon will return to the normal header, allowing a user to fork the notebook, etc.
@@ -515,6 +554,7 @@ This is the simplest method. This will create a link that will allow someone to 
 [Top](#TOP)
 
 <a name="notebook.R"></a>
+
 ##### notebook.R
 
 This option is intended for [FastRweb](http://rforge.net/FastRWeb/) notebooks. Loading the URL (from anywhere, including other notebooks, a perl script, etc.) executes a notebook "behind the scenes" by opening a one-time R session, running the defined "function" within, shutting down the R session, and finally, returning the result.  FastRweb notebooks MUST have a function named 
@@ -529,12 +569,15 @@ See the [notebook.R URLs](#notebookrurls) section of the documentation for more 
 [Top](#TOP)
 
 <a name="mini.html"></a>
+
 ##### mini.html
+
 Unlike notebook.R, mini.html URLs open an R session via a Websocket and keep it open.  Mini.html notebooks MUST have a function named `rcw.result()` defined, as that is what mini.html tries to execute upon instantiation. Because the R session is kept open, users or processes can interact with the R session while the websocket is kept open.
 
 [Top](#TOP)
 
 <a name="shiny.html"></a>
+
 ##### shiny.html
 
 RCloud supports the [RStudio Shiny web application framework](#http://shiny.rstudio.com/). To share [Shiny-enabled notebooks](#rstudioshinysupport), select this option. 
@@ -542,6 +585,7 @@ RCloud supports the [RStudio Shiny web application framework](#http://shiny.rstu
 [Top](#TOP)
 
 <a name="whostarredmynotebook"></a>
+
 #### Who Starred my Notebook?
 
 To find out which users starred your notebook, click the notebook information icon:
@@ -551,6 +595,7 @@ To find out which users starred your notebook, click the notebook information ic
 [Top](#TOP)
 
 <a name="savingplots"></a>
+
 ##### Saving Plots
 
 Hover the mouse over a plot created in an R cell to make the disk icon appear in the upper right corner (see 1), which contains a list of available image formats.  A widget at the lower-right corner can be used to resize the image (see 2).
@@ -562,6 +607,7 @@ Note that you can only save plots created in R cells.
 [Top](#TOP)
 
 <a name="findreplace"></a>
+
 ##### Find and Find Replace
 
 To find text within your notebook, type Ctrl-F (Win/Linux) or Cmd-F (Mac) to open a find dialog at the top of your notebook:
@@ -574,12 +620,15 @@ To find and replace text within your notebook, type Ctrl-H (Win/Linux) or Cmd-Op
 
 [Top](#TOP)
 <a name="dataaccess"></a>
+
 # 6. Data Access
 
 [Top](#TOP)
 
 <a name="fileupload"></a>
+
 #### File Upload
+
 There many ways to use your own data in RCloud. Please see the example notebooks under RCloud Sample Notebooks for some examples. Here, we'll take a closer look at the simplest method: uploading a flat file. Open the File Upload panel on the right sidebar by clicking on the heading. Then, select "Choose File" and browse to a local file, in this case "distrib.csv."
 
 ![FILE UPLOAD 1](img/fileupload1.png)
@@ -595,6 +644,7 @@ The first line of R code loads the contents of the CSV file into an object calle
 [Top](#TOP)
 
 <a name="uploadtonotebook"></a>
+
 ####Upload to Notebook
 
 The **Upload to Notebook** checkbox changes the way File Upload works. Rather than uploading your file to your home directory, RCloud will store the file inside your notebook as an "asset." To view notebook assets, click on the assets bar on the right sidebar. Please see the [Notebook Assets](#notebookassets) section for more information.
@@ -602,6 +652,7 @@ The **Upload to Notebook** checkbox changes the way File Upload works. Rather th
 [Top](#TOP)
 
 <a name="notebookassets"></a>
+
 #7. Notebook Assets
 
 Notebooks can contain "assets," which are files that can be used within your notebooks or simply for keeping track of unused code (as in the the case of scratch.R, which is a text file where you can keep bits of code while working on your notebook).
@@ -613,6 +664,7 @@ Notebooks can contain "assets," which are files that can be used within your not
 <a name="dataasanasset"></a>
 
 ## Data as an Asset
+
 For example, from the previous example, lets create an asset called distrib.csv that contains the following data:
 
 <pre>
@@ -630,6 +682,7 @@ Now, this data is accessible in your R code:
 [Top](#TOP)
 
 <a name="uploadingasset"></a>
+
 ## Uploading Assets
 
 In addition to manually entering asset text, you can also drag and drop files into the Assets panel to upload them:
@@ -639,6 +692,7 @@ In addition to manually entering asset text, you can also drag and drop files in
 [Top](#TOP)
 
 <a name="usingcss"></a>
+
 ## Using CSS
 
 Assets can contain Cascading Style Sheet (CSS) formatting information. This changes the way information is presented when your notebook is executed. For example, here is a bit of CSS that defines a paragraph style:
@@ -667,6 +721,7 @@ Note that you must reload your notebook to apply the CSS.
 [Top](#TOP)
 
 <a name="jsmode"></a>
+
 ## JavaScript Mode
 
 Assets can also contain JavaScript. When editing JavaScript (files must have the .js extension), RCloud automatically uses a JavaScript editing mode, which has built-in syntax checking.
@@ -676,6 +731,7 @@ Assets can also contain JavaScript. When editing JavaScript (files must have the
 [Top](#TOP)
 
 <a name="assetrename"></a>
+
 ## Renaming Assets
 
 To rename an asset, simply click on the file name on the asset's tab.
@@ -685,6 +741,7 @@ To rename an asset, simply click on the file name on the asset's tab.
 [Top](#TOP)
 
 <a name="notebookrurls"></a>
+
 # 8. notebook.R URLs
 
 It's possible to construct a URL for a notebook asset by selecting Open in GitHub in the Advanced menu, locating your asset and right-clicking the "View Raw" icon, which looks like <> next to your asset. The URLs look like this:
@@ -721,6 +778,7 @@ Please see [the following](https://github.com/att/rcloud/blob/develop/NEWS.md#rc
 [Top](#TOP)
 
 <a name="search"></a>
+
 # 9. Search
 
 To conduct a global text search in all public RCloud notebooks, simply open up the search panel by clicking on Search on the left sidebar. Here are the results for a search on "markdown." RCloud searches code, comments, notebook names, assets, everything.
@@ -746,6 +804,7 @@ Search results are paginated. Click on any page number below the results or use 
 [Top](#TOP)
 
 <a name="complexsearches"></a>
+
 ## Complex Searches
 
 RCloud supports Lucene's feature-rich query parser syntax for more complex searches. Features include wildcard, fuzzy, and proximity searches, boolean operators, grouping, and much more.
@@ -755,6 +814,7 @@ Please see the [official query parser syntax documentation](http://lucene.apache
 [Top](#TOP)
 
 <a name="settings"></a>
+
 # 10. Settings
 
 Various aspects of your RCloud session can be changed here.
@@ -764,6 +824,7 @@ Various aspects of your RCloud session can be changed here.
 [Top](#TOP)
 
 <a name="showcommandprompt"></a>
+
 ## Show Command Prompt
 
 This setting toggles the appearance of the default prompt cell that appears at the bottom of the currently loaded notebook.
@@ -771,11 +832,13 @@ This setting toggles the appearance of the default prompt cell that appears at t
 [Top](#TOP)
 
 <a name="showterseversiondates"></a>
+
 ## Show Terse Version Dates
 
 This controls how RCloud displays dates when viewing notebook versions. When selected, RCloud will display dates and times only when they're different from the version before it.
 
 <a name="extensions"></a>
+
 ## Extensions
 
 Power users can extend RCloud's user interface with global and per-user extensions. Although this functionality is outside the scope of this document, more information is available [here](https://github.com/att/rcloud/wiki/RCloud-UI-Extensions).
@@ -789,6 +852,7 @@ Enter a list of extensions, comma delimited, and press enter. You will then have
 [Top](#TOP)
 
 <a name="subscribetocomments"></a>
+
 ## Subscribe to Comments
 
 When checked, RCloud will send an email whenever someone leaves a [comment](#comments) about your notebook.
@@ -796,6 +860,7 @@ When checked, RCloud will send an email whenever someone leaves a [comment](#com
 [Top](#TOP)
 
 <a name="comments"></a>
+
 # 11. Comments
 
 Anyone can leave comments about anyone's notebooks in the Comments panel in the right sidebar, as demonstrated below:
@@ -809,6 +874,7 @@ To submit a comment, simply input your text in the text area and click the comme
 [Top](#TOP)
 
 <a name="editingcomments"></a>
+
 ## Editing Comments
 
 To edit a comment, click on the comment text to make changes. Then click Ctrl- or Cmd-Enter to update the comment.
@@ -818,6 +884,7 @@ To edit a comment, click on the comment text to make changes. Then click Ctrl- o
 [Top](#TOP)
 
 <a name="deletingcomments"></a>
+
 ## Deleting Comments
 
 To delete a comment, hover your mouse over the comment. Click the X next to the comment to delete it.
@@ -827,6 +894,7 @@ To delete a comment, hover your mouse over the comment. Click the X next to the 
 [Top](#TOP)
 
 <a name="help"></a>
+
 # 12. Help
 
 It's often difficult to remember arguments to functions and what they mean, so RCloud has an inline help feature. In a new prompt cell, type a question mark immediately followed by an R function name and then press Enter/Return to execute the cell:
@@ -844,6 +912,7 @@ Alternatively, you can enter a function name in the text box at the top of the p
 [Top](#TOP)
 
 <a name="workspace"></a>
+
 # 13. Workspace
 
 In the course of working with your notebook, variables are defined and assigned. Often, it is convenient to know the value of a variable without issuing a command to display it. The Workspace panel displays every variable you've defined along with its value.
@@ -855,6 +924,7 @@ In the case of dataframe variables, a link is displayed, which, when clicked, wi
 [Top](#TOP)
 
 <a name="dataframe"></a>
+
 # 14. Dataframe
 
 ![DATAFRAME](img/dataframe.png)
@@ -868,6 +938,7 @@ View(a[1:10,])
 [Top](#TOP)
 
 <a name="session"></a>
+
 # 15. Session
 
 The session panel displays critical system information when available, such as session timeouts. The panel will automatically open when messages are available.
@@ -879,15 +950,17 @@ Click the ![SESSION_CLOSE](img/session_close.png) icon to dismiss a session noti
 [Top](#TOP)
 
 <a name="rstudioshinysupport"></a>
+
 # 16. RStudio Shiny Support
+
 RCloud contains preliminary support for the [RStudio Shiny web application framework](http://shiny.rstudio.com) via the rcloud.shiny package. rcloud.shiny emulates a network connection to run Shiny on an RCloud server and client instead of a Shiny server. Basic functionality is supported. Shiny extensions are not yet supported.
 
 Although comprehensive documentation of rcloud.shiny is beyond the scope of this document, the implementation is simple enough to get many users already familiar with Shiny started.
 
 <pre>
+
 # Include rcloud.shiny library
 library(rcloud.shiny)
-
 # Include all the libraries from ui.R and server.R
 library(datasets)
 
