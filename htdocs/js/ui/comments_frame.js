@@ -1,4 +1,5 @@
 RCloud.UI.comments_frame = (function() {
+    var is_foreign_ = false;
     function rebuild_comments(comments) {
         try {
             comments = JSON.parse(comments);
@@ -8,7 +9,7 @@ RCloud.UI.comments_frame = (function() {
         }
         var username = rcloud.username();
         var editable = function(d) {
-            return d.user.login === username;
+            return d.user.login === username && !is_foreign_;
         };
         d3.select("#comment-count").text(String(comments.length));
         // no update logic, clearing/rebuilding is easier
@@ -108,6 +109,16 @@ RCloud.UI.comments_frame = (function() {
                 });
                 return undefined;
             });
+        },
+        set_foreign: function(is_foreign) {
+            if(is_foreign) {
+                $('#comment-entry').hide();
+                $('#comments-not-allowed').show();
+            } else {
+                $('#comment-entry').show();
+                $('#comments-not-allowed').hide();
+            }
+            is_foreign_ = is_foreign;
         },
         display_comments: function() {
             return rcloud.get_all_comments(shell.gistname())

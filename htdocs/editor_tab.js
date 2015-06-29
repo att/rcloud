@@ -1391,7 +1391,6 @@ var editor = function () {
                  selroot: null,
                  push_history: true}, opts);
             return function(result) {
-                var promises = []; // fetch and setup various ui "in parallel"
                 current_ = {notebook: result.id, version: options.version};
                 var tag;
                 var find_version = _.find(result.history, function(x) { return x.version === options.version; });
@@ -1400,39 +1399,41 @@ var editor = function () {
                 rcloud.config.set_current_notebook(current_);
                 rcloud.config.set_recent_notebook(result.id, (new Date()).toString());
 
-                promises.push(RCloud.UI.share_button.update_link());
+                // need to know if foreign before we can do many other things
+                (options.source ? Promise.resolve(undefined)
+                 : rcloud.get_notebook_property(result.id, 'source').then(function(source) {
+                     if(!notebook_info_[result.id])
+                         notebook_info_[result.id] = {};
+                     options.source = notebook_info_[result.id].source = source;
+                 })).then(function() {
+                     var promises = []; // fetch and setup various ui "in parallel"
+                     promises.push(RCloud.UI.share_button.update_link());
+                     document.title = result.description + " - RCloud";
+                     promises.push(update_url({notebook: result.id, version: options.version, source: options.source, tag:tag}));
 
-                document.title = result.description + " - RCloud";
-                promises.push((options.source ? Promise.resolve(undefined)
-                               : rcloud.get_notebook_property(result.id, 'source').then(function(source) {
-                                   if(!notebook_info_[result.id])
-                                       notebook_info_[result.id] = {};
-                                   options.source = notebook_info_[result.id].source = source;
-                               })).then(function() {
-                                   return update_url({notebook: result.id, version: options.version, source: options.source, tag:tag});
-                               }));
+                     var history;
+                     // when loading an old version you get truncated history
+                     // we don't want that, even if it means an extra fetch
+                     if(options.version)
+                         history = null;
+                     else
+                         history = result.history;
 
-                var history;
-                // when loading an old version you get truncated history
-                // we don't want that, even if it means an extra fetch
-                if(options.version)
-                    history = null;
-                else
-                    history = result.history;
+                     promises.push((_.has(num_stars_, result.id) ? Promise.resolve(undefined)
+                                    : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
+                                        num_stars_[result.id] = count;
+                                    })).then(function() {
+                                        update_notebook_from_gist(result, history, options.selroot);
+                                    }));
 
-                promises.push((_.has(num_stars_, result.id) ? Promise.resolve(undefined)
-                               : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
-                                   num_stars_[result.id] = count;
-                               })).then(function() {
-                                   update_notebook_from_gist(result, history, options.selroot);
-                               }));
-
-                promises.push(RCloud.UI.comments_frame.display_comments());
-                promises.push(rcloud.is_notebook_published(result.id).then(function(p) {
-                    RCloud.UI.advanced_menu.check('publish_notebook', p);
-                    RCloud.UI.advanced_menu.enable('publish_notebook', result.user.login === username_);
-                }));
-                return Promise.all(promises).return(result);
+                     RCloud.UI.comments_frame.set_foreign(!!options.source);
+                     promises.push(RCloud.UI.comments_frame.display_comments());
+                     promises.push(rcloud.is_notebook_published(result.id).then(function(p) {
+                         RCloud.UI.advanced_menu.check('publish_notebook', p);
+                         RCloud.UI.advanced_menu.enable('publish_notebook', result.user.login === username_);
+                     }));
+                     return Promise.all(promises).return(result);
+                 });
             };
         }
     };
