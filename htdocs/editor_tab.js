@@ -1421,12 +1421,13 @@ var editor = function () {
                 rcloud.config.set_recent_notebook(result.id, (new Date()).toString());
 
                 // need to know if foreign before we can do many other things
-                (options.source ? Promise.resolve(undefined)
-                 : rcloud.get_notebook_property(result.id, 'source').then(function(source) {
-                     if(!notebook_info_[result.id])
-                         notebook_info_[result.id] = {};
-                     options.source = notebook_info_[result.id].source = source;
-                 })).then(function() {
+                var promise_source = options.source ? Promise.resolve(undefined)
+                        : rcloud.get_notebook_property(result.id, 'source').then(function(source) {
+                            if(!notebook_info_[result.id])
+                                notebook_info_[result.id] = {};
+                            options.source = notebook_info_[result.id].source = source;
+                        });
+                return promise_source.then(function() {
                      var promises = []; // fetch and setup various ui "in parallel"
                      promises.push(RCloud.UI.share_button.update_link());
                      document.title = result.description + " - RCloud";
