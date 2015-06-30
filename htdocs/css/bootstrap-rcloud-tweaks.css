@@ -143,10 +143,6 @@ div.panel-heading:hover {
     cursor: text;
 }
 
-.r-result-div pre code {
-    padding: 0;
-}
-
 .r-result-div .non-result {
     font-style: italic;
 }

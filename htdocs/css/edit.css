@@ -882,22 +882,6 @@ a.footer-dropdown-toggle {
 /* Fix some of the ugliness caused by the interaction between Bootstrap and
    Rmarkdown */
 
-div.r-result-div h1,
-div.r-result-div h2,
-div.r-result-div h3,
-div.r-result-div h4,
-div.r-result-div h5 {
-    margin-top: 0;
-    padding-top: 12px;
-    padding-right: 16px;
-    padding-left: 16px;
-}
-
-div.r-result-div p {
-    margin-left: 16px;
-    margin-right: 16px;
-};
-
 pre {
     max-width: 100%;
 }

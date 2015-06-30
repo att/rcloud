@@ -58,6 +58,7 @@
  line (on Mac) (#1417)
 
 ### Bug Fixes
+* improve markdown formatting #1502
 * leaving a text field setting commits the change. (ESC still cancels, and Enter
   also commits.) #1523
 * multiple password prompts executed seqentially could hang RCloud (#371)
