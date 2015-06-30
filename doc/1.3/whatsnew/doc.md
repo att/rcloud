@@ -1,13 +1,13 @@
 ---
-title: RCloud 1.3 What's New!
-layout: doc
+title: RCloud&#58; 1.3 What's New!
+layout: default
 ---
 
 # {{page.title}}
 
 2015-02-14
 
-# Table of Contents
+## Table of Contents
 
 1. [Functional Enhancements](#functional)
   * [Efficient Loading](#efficientloading)
@@ -49,7 +49,7 @@ layout: doc
 
 <a name="functional" />
 
-# Functional Enhancements
+## Functional Enhancements
 
 <a name="efficientloading" />
 
@@ -117,7 +117,7 @@ When displaying R stack traces, RCloud uses line breaks.
 
 <a name="gui" />
 
-# GUI Enhancement
+## GUI Enhancement
 
 <a name="cleanerinterface" />
 
@@ -355,7 +355,7 @@ Clicking into an edit cell sets the cursor position to the clicked location.
 
 <a name="tech" />
 
-# Technical Enhancements and Notes
+## Technical Enhancements and Notes
 
 <a name="extensionstorclouduserinterface" />
 
@@ -391,7 +391,7 @@ redis database number and password can be set.
 
 <a name="bugfixes" />
 
-# Bug Fixes
+## Bug Fixes
 
 * Unauthenticated login functionality with view.html, shiny.html, notebook.R is working correctly.
 * `fork_of` is not missing.

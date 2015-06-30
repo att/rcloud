@@ -1,44 +1,9 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>RCloud: An HTML5 frontend for collaborative data analysis in R</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
+---
+title: RCloud&#58; An HTML5 frontend for collaborative data analysis in R
+layout: default
+---
 
-  </head>
-  <body>
-    <div class="container">
-    <!-- Static navbar -->
-		<nav class="navbar navbar-default">
-			<div class="container-fluid">
-				<div class="navbar-header">
-					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-						<span class="sr-only">Toggle navigation</span>
-						<span class="icon-bar"></span>
-						<span class="icon-bar"></span>
-						<span class="icon-bar"></span>
-					</button>
-					<a class="navbar-brand" href="index.html">RCloud</a>
-				</div>
-				<div id="navbar" class="navbar-collapse collapse">
-					<ul class="nav navbar-nav">
-						<li class="active"><a href="index.html">Home</a></li>
-						<li><a href="#screencasts">Screencasts</a></li>
-						<li><a href="#aboutus">About Us</a></li>
-						<li class="dropdown">
-							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Documentation<span class="caret"></span></a>
-							<ul class="dropdown-menu">
-								<li><a href="http://att.github.io/rcloud/doc/1.3/whatsnew/doc.html">What's New</a></li>
-								<li><a href="http://att.github.io/rcloud/doc/1.3/guidoc/doc.html">Current Documentation</a></li>
-							</ul>
-						</li>
-						<li><a target="_blank" href="http://github.com/att/rcloud">GitHub</a></li>
-					</ul>
-				</div><!--/.nav-collapse -->
-			</div><!--/.container-fluid -->
-		</nav>
-
-      <h1>RCloud, an HTML5 frontend for collaborative data analysis in R</h1>
+<h1>{{page.title}}</h1>
       <p>
 	RCloud is an environment for collaboratively creating and sharing data
 	analysis scripts in R. Much like <a href="http://www.sagemath.org/">Sage</a>,
@@ -64,78 +29,10 @@
 	</li>
       </ul>
 
-			<a name="screencasts"></a>
-      <h2>Screencasts</h2>
+			<p>Here's a screenshot:</p>
 
-      <div class="row">
-	<div class="col-sm-10 col-md-5">
-	  <div class="caption">
-	    <h3>Hello, World</h3>
-	  </div>
-	  <div style="width: 100%" id="ytplayer-1"></div>
-	</div>
-	<div class="col-sm-10 col-md-5">
-	  <div class="caption">
-	    <h3>Markdown</h3>
-	  </div>
-	  <div style="width: 100%" id="ytplayer-2"></div>
-	</div>
-      </div>
+			<a href="/screenshot.png"><img width="640px" border="0" src="/screenshot.png" /></a>
 
-      <div class="row">
-	<div class="col-sm-10 col-md-5">
-	  <div class="caption">
-	    <h3>History Support</h3>
-	  </div>
-	  <div style="width: 100%" id="ytplayer-3"></div>
-	</div>
-	<div class="col-sm-10 col-md-5">
-	  <div class="caption">
-	    <h3>Sharing</h3>
-	  </div>
-	  <div style="width: 100%" id="ytplayer-4"></div>
-	</div>
-      </div>
-
-
-<script>
-  // Load the IFrame Player API code asynchronously.
-  var tag = document.createElement('script');
-  tag.src = "https://www.youtube.com/player_api";
-  var firstScriptTag = document.getElementsByTagName('script')[0];
-  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-  // Replace the 'ytplayer' element with an <iframe> and
-  // YouTube player after the API code downloads.
-  var screencasts = [ 'LM-i0Xy9zxc',
-                      'Jwgp7ksmw2A',
-                      'RreBaW0lSOg',
-                      '1UkFQ0mcCUE',
-     ];
-  function onYouTubePlayerAPIReady() {
-    for (var i=0; i<screencasts.length; ++i) {
-      var p = new YT.Player('ytplayer-' + (i+1), {
-        height: '300',
-        videoId: screencasts[i]
-      });
-    }
-  }
-</script>
-
-			<a name="aboutus"></a>
-      <h2>About us</h2>
-      <p>RCloud is <a href="http://github.com/att/rcloud">open-source software</a> developed primarily by <a href="http://urbanek.info/">Simon Urbanek</a> and <a href="http://gordon.woodhull.com/">Gordon
-	  Woodhull</a> of
-	<a href="http://www.research.att.com">AT&amp;T Research</a>, and <a href="http://cscheid.net">Carlos Scheidegger</a>.</p>
-			<p>
-			RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a>.
-			</p>
-
-    </div>
-    
-    <!--a href="http://github.com/att/rcloud"><img style="position: absolute; top: 0; left: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_left_red_aa0000.png" alt="Fork me on GitHub"></a-->
-
-    <script src="js/jquery.js"></script>
-    <script src="js/bootstrap.min.js"></script>
-  </body>
-</html>
+			<p>&nbsp;</p>
+			<p>&nbsp;</p>
+			<p>You might also want to take a look at <a href="/screencasts.html">these RCloud screencasts</a>.</p>

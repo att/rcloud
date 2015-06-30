@@ -1,6 +1,6 @@
 ---
-title: RCloud 1.3 GUI Documentation
-layout: doc
+title: RCloud&#58; 1.3 GUI Documentation
+layout: default
 ---
 
 <a name="TOP"></a>
@@ -9,7 +9,7 @@ layout: doc
 
 Created: 2015-02-14 Updated: 2015-06-29
 
-# Table of Contents
+## Table of Contents
 
 1. [Getting Started](#gettingstarted)
 1. [Parts of the GUI](#partsofthegui)
@@ -81,7 +81,7 @@ Created: 2015-02-14 Updated: 2015-06-29
 
 <a name="gettingstarted"></a>
 
-# 1. Getting Started
+## 1. Getting Started
 
 RCloud supports Chrome, Chromium (the open-source version of Chrome), and Firefox web browsers, so you'll need to download the latest version of any of these to get started.
 
@@ -93,7 +93,7 @@ Finally, every installation's networking architecture will be different. Please 
 
 <a name="partsofthegui"></a>
 
-# 2. Parts of the GUI
+## 2. Parts of the GUI
 
 ![Parts of the GUI](img/GUI_Parts.png)
 
@@ -135,7 +135,7 @@ To change the width of a panel, hover your mouse over the the edge that touches 
 
 <a name="theheaderbar"></a>
 
-# 3. The Header Bar
+## 3. The Header Bar
 
 Here is the RCloud header bar:
 
@@ -176,7 +176,7 @@ Click the Advanced tab to access more features:
 
 <a name="cells"></a>
 
-# 4. Cells
+## 4. Cells
 
 There are two types of cells in RCloud, both used for inserting code. The first is the **prompt** cell, which allows you to interact with RCloud in more-or-less command-line fashion. Prompt cells are useful for quick, interactive sessions.
 
@@ -237,7 +237,7 @@ Markdown cells are where you enter and edit blocks of multi-line R markdown. Mar
 
 <pre>
 ```{r}
-# R code goes here
+## R code goes here
 ```
 </pre>
 
@@ -251,7 +251,7 @@ Here's some sample markdown, suitable for cutting and pasting into a markdown ce
 
 <pre>
 
-# Markdown Basics
+## Markdown Basics
 
 This is plain text. Empty lines are interpreted as new paragraphs. Single newlines
 are ignored by the markdown renderer.
@@ -380,7 +380,7 @@ Currently RMarkdown support should be considered experimental.
 
 <a name="notebooks"></a>
 
-# 5. Notebooks
+## 5. Notebooks
 
 RCloud notebooks are simply collections of prompt and markdown cells, comments, and assets, which we'll get to later. Everything in your public notebooks is searchable by every other user of the system. This encourages reuse and makes learning how to use the hundreds of available R packages easier.
 
@@ -624,7 +624,7 @@ To find and replace text within your notebook, type Ctrl-H (Win/Linux) or Cmd-Op
 [Top](#TOP)
 <a name="dataaccess"></a>
 
-# 6. Data Access
+## 6. Data Access
 
 [Top](#TOP)
 
@@ -745,7 +745,7 @@ To rename an asset, simply click on the file name on the asset's tab.
 
 <a name="notebookrurls"></a>
 
-# 8. notebook.R URLs
+## 8. notebook.R URLs
 
 It's possible to construct a URL for a notebook asset by selecting Open in GitHub in the Advanced menu, locating your asset and right-clicking the "View Raw" icon, which looks like <> next to your asset. The URLs look like this:
 
@@ -782,7 +782,7 @@ Please see [the following](https://github.com/att/rcloud/blob/develop/NEWS.md#rc
 
 <a name="search"></a>
 
-# 9. Search
+## 9. Search
 
 To conduct a global text search in all public RCloud notebooks, simply open up the search panel by clicking on Search on the left sidebar. Here are the results for a search on "markdown." RCloud searches code, comments, notebook names, assets, everything.
 
@@ -818,7 +818,7 @@ Please see the [official query parser syntax documentation](http://lucene.apache
 
 <a name="settings"></a>
 
-# 10. Settings
+## 10. Settings
 
 Various aspects of your RCloud session can be changed here.
 
@@ -864,7 +864,7 @@ When checked, RCloud will send an email whenever someone leaves a [comment](#com
 
 <a name="comments"></a>
 
-# 11. Comments
+## 11. Comments
 
 Anyone can leave comments about anyone's notebooks in the Comments panel in the right sidebar, as demonstrated below:
 
@@ -898,7 +898,7 @@ To delete a comment, hover your mouse over the comment. Click the X next to the 
 
 <a name="help"></a>
 
-# 12. Help
+## 12. Help
 
 It's often difficult to remember arguments to functions and what they mean, so RCloud has an inline help feature. In a new prompt cell, type a question mark immediately followed by an R function name and then press Enter/Return to execute the cell:
 
@@ -916,7 +916,7 @@ Alternatively, you can enter a function name in the text box at the top of the p
 
 <a name="workspace"></a>
 
-# 13. Workspace
+## 13. Workspace
 
 In the course of working with your notebook, variables are defined and assigned. Often, it is convenient to know the value of a variable without issuing a command to display it. The Workspace panel displays every variable you've defined along with its value.
 
@@ -928,7 +928,7 @@ In the case of dataframe variables, a link is displayed, which, when clicked, wi
 
 <a name="dataframe"></a>
 
-# 14. Dataframe
+## 14. Dataframe
 
 ![DATAFRAME](img/dataframe.png)
 
@@ -942,7 +942,7 @@ View(a[1:10,])
 
 <a name="session"></a>
 
-# 15. Session
+## 15. Session
 
 The session panel displays critical system information when available, such as session timeouts. The panel will automatically open when messages are available.
 
@@ -954,7 +954,7 @@ Click the ![SESSION_CLOSE](img/session_close.png) icon to dismiss a session noti
 
 <a name="rstudioshinysupport"></a>
 
-# 16. RStudio Shiny Support
+## 16. RStudio Shiny Support
 
 RCloud contains preliminary support for the [RStudio Shiny web application framework](http://shiny.rstudio.com) via the rcloud.shiny package. rcloud.shiny emulates a network connection to run Shiny on an RCloud server and client instead of a Shiny server. Basic functionality is supported. Shiny extensions are not yet supported.
 

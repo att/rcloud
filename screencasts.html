@@ -1,0 +1,60 @@
+---
+title: RCloud&#58; Screencasts
+layout: default
+---
+	<h2>{{page.title}}</h2>
+
+      <div class="row">
+	<div class="col-sm-10 col-md-5">
+	  <div class="caption">
+	    <h3>Hello, World</h3>
+	  </div>
+	  <div style="width: 100%" id="ytplayer-1"></div>
+	</div>
+	<div class="col-sm-10 col-md-5">
+	  <div class="caption">
+	    <h3>Markdown</h3>
+	  </div>
+	  <div style="width: 100%" id="ytplayer-2"></div>
+	</div>
+      </div>
+
+      <div class="row">
+	<div class="col-sm-10 col-md-5">
+	  <div class="caption">
+	    <h3>History Support</h3>
+	  </div>
+	  <div style="width: 100%" id="ytplayer-3"></div>
+	</div>
+	<div class="col-sm-10 col-md-5">
+	  <div class="caption">
+	    <h3>Sharing</h3>
+	  </div>
+	  <div style="width: 100%" id="ytplayer-4"></div>
+	</div>
+      </div>
+
+
+<script>
+  // Load the IFrame Player API code asynchronously.
+  var tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/player_api";
+  var firstScriptTag = document.getElementsByTagName('script')[0];
+  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+  // Replace the 'ytplayer' element with an <iframe> and
+  // YouTube player after the API code downloads.
+  var screencasts = [ 'LM-i0Xy9zxc',
+                      'Jwgp7ksmw2A',
+                      'RreBaW0lSOg',
+                      '1UkFQ0mcCUE',
+     ];
+  function onYouTubePlayerAPIReady() {
+    for (var i=0; i<screencasts.length; ++i) {
+      var p = new YT.Player('ytplayer-' + (i+1), {
+        height: '300',
+        videoId: screencasts[i]
+      });
+    }
+  }
+</script>
