@@ -1849,10 +1849,6 @@ function create_cell_html_view(language, cell_model) {
     };
 
     function set_background_class(div) {
-        /*
-        var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
-        ace_div.css({ 'background-color': edit_color });
-         */
         var md = RCloud.language.is_a_markdown(language);
         div.toggleClass(md ? 'edit-markdown' : 'edit-code', true);
         div.toggleClass(md ? 'edit-code' : 'edit-markdown', false);
