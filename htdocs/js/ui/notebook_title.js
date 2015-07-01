@@ -121,7 +121,7 @@ RCloud.UI.notebook_title = (function() {
                 else if(!node.gistname) {
                     opts = $.extend({}, editable_opts, {
                         change: rename_notebook_folder(node),
-                        ctrl_cmd: fork_rename_folder(node),
+                        ctrl_cmd: null,
                         validate: function(name) { return true; }
                     });
                 }
