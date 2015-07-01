@@ -19,6 +19,7 @@ rcloud.set.notebook.cryptgroup <- function(notebookid, groupid, modify=TRUE) { #
         }
         rcs.rm(key)
     } else {
+        prev <- rcs.get(key)
         rcs.set(key, groupid)
         if (modify) {
             ## this is a neat trick: since the encyption is transparent,
@@ -26,7 +27,10 @@ rcloud.set.notebook.cryptgroup <- function(notebookid, groupid, modify=TRUE) { #
             ## will simply re-save the content in encrypted form
             ## And the corresponding fetch will work since it
             ## ignores the RCS setting
-            rcloud.update.notebook(notebookid, list(files=list()))
+            tryCatch(rcloud.update.notebook(notebookid, list(files=list())),
+                     error=function(e) {
+                         if (is.null(prev)) rcs.rm(key) else rcs.set(key, prev)
+                         stop(e) })
         }
     }
     invisible(TRUE)
