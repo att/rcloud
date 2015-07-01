@@ -336,14 +336,16 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     content <- .gist.binary.process.outgoing(id, content)
 
     res <- modify.gist(id, content, ctx = .rcloud.get.gist.context())
+    aug.res <- rcloud.augment.notebook(res)
+
     if(is.current)
-      .session$current.notebook <- res
+      .session$current.notebook <- aug.res
 
     if (nzConf("solr.url") && is.null(group)) { # don't index private/encrypted notebooks
         star.count <- rcloud.notebook.star.count(id)
         mcparallel(update.solr(res, star.count), detached=TRUE)
     }
-    rcloud.augment.notebook(res)
+    aug.res
 }
 
 update.solr <- function(notebook, starcount){
