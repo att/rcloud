@@ -51,6 +51,9 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
         # ulog(".gist.binary.process.incoming: encrypted content (",paste(names(meta),collapse=","),")")
         if (is.null(meta$cipher) || is.null(meta$sha1) || is.null(meta$key.type))
             stop("Notebook contains incomplete encrypted content (missing required metadata)")
+        if (!rcloud.has.notebook.protection())
+            stop("Tried to open encrypted notebook and this instance does not support notebook protection")
+
         if (meta$key.type == "group-hash") {
             key <- session.server.group.hash("rcloud", .session$token, meta$group, meta$salt)
             if (!isTRUE(nchar(key) >= 64)) stop("unable to access key for an encrypted notebook")

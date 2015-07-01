@@ -24,8 +24,9 @@
                             });
                             
                             Promise.all([window.rcloud.protection.get_notebook_cryptgroup(node.gistname), 
-                                        window.rcloud.stars.get_notebook_starrer_list(node.gistname)])
-                            .spread(function(cryptogroup, list) {
+                                         window.rcloud.stars.get_notebook_starrer_list(node.gistname),
+                                         window.rcloud.protection.has_notebook_protection()])
+                            .spread(function(cryptogroup, list, has_prot) {
 
                                 info_content =  buildPopover();
                                 function buildPopover() {
@@ -50,7 +51,7 @@
                                 };
 
                                 function wrapGroupType(name) {
-                                    if(node.user === editor.username())
+                                    if(node.user === editor.username() && has_prot)
                                         return '<div class="group-link info-item"><a href="#">'+name+'</a></div>';
                                     else
                                         return '<div class="group-link info-item">'+name+'</div>';    

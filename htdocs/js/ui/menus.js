@@ -134,6 +134,9 @@ RCloud.UI.menus = (function() {
             extension_.remove(key);
             return this;
         },
+        get: function(key) {
+            return extension_.get(key);
+        },
         create_menu: function(item) {
             var ret = $.el.li({class: 'dropdown'},
                               $.el.a({href: '#', class: 'dropdown-toggle', 'data-toggle': 'dropdown'},

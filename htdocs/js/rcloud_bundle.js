@@ -496,6 +496,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["protection", "add_cryptgroup_user"],
             ["protection", "remove_cryptgroup_user"],
             ["protection", "delete_cryptgroup"],
+            ["protection", "has_notebook_protection"],
             ["api","disable_warnings"],
             ["api","enable_echo"],
             ["api","disable_warnings"],
@@ -665,6 +666,9 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.protection.delete_cryptgroup = function(groupid) {
             return rcloud_ocaps.protection.delete_cryptgroupAsync(groupid);
+        };
+        rcloud.protection.has_notebook_protection = function() {
+            return rcloud_ocaps.protection.has_notebook_protectionAsync();
         };
 
         // stars
@@ -4162,14 +4166,6 @@ RCloud.UI.advanced_menu = (function() {
                             shell.open_from_github(result);
                     }
                 },
-                manage_groups: {
-                    sort: 7000,
-                    text: "Manage Groups",
-                    modes: ['edit'],
-                    action: function(value) {
-                        RCloud.UI.notebook_protection.init('group-tab-enabled');
-                    }
-                },
                 show_source: {
                     sort: 9000,
                     text: "Show Source",
@@ -6269,7 +6265,22 @@ RCloud.UI.load_options = function() {
                     }
                 })
             });
-        return RCloud.UI.panel_loader.load().then(function() {
+        return Promise.all([rcloud.protection.has_notebook_protection(),
+                            RCloud.UI.panel_loader.load()])
+                    .spread(function(has_prot, _) {
+            if(has_prot) {
+                var advanced_menu = RCloud.UI.menus.get('advanced_menu');
+                advanced_menu.menu.add({
+                    manage_groups: {
+                        sort: 7000,
+                        text: "Manage Groups",
+                        modes: ['edit'],
+                        action: function(value) {
+                            RCloud.UI.notebook_protection.init('group-tab-enabled');
+                        }
+                    }
+                });
+            }
             RCloud.UI.left_panel.init();
             RCloud.UI.middle_column.init();
             RCloud.UI.right_panel.init();
@@ -6421,6 +6432,9 @@ RCloud.UI.menus = (function() {
         remove: function(key) {
             extension_.remove(key);
             return this;
+        },
+        get: function(key) {
+            return extension_.get(key);
         },
         create_menu: function(item) {
             var ret = $.el.li({class: 'dropdown'},

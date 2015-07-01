@@ -243,7 +243,8 @@ authenticated.ocaps <- function(mode)
         set_cryptgroup_name = make.oc(rcloud.set.cryptgroup.name),
         add_cryptgroup_user = make.oc(rcloud.add.cryptgroup.user),
         remove_cryptgroup_user = make.oc(rcloud.remove.cryptgroup.user),
-        delete_cryptgroup = make.oc(rcloud.delete.cryptgroup)
+        delete_cryptgroup = make.oc(rcloud.delete.cryptgroup),
+        has_notebook_protection = make.oc(rcloud.has.notebook.protection)
         ),
 
       # commenting ocaps

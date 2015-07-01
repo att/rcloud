@@ -390,6 +390,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["protection", "add_cryptgroup_user"],
             ["protection", "remove_cryptgroup_user"],
             ["protection", "delete_cryptgroup"],
+            ["protection", "has_notebook_protection"],
             ["api","disable_warnings"],
             ["api","enable_echo"],
             ["api","disable_warnings"],
@@ -559,6 +560,9 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.protection.delete_cryptgroup = function(groupid) {
             return rcloud_ocaps.protection.delete_cryptgroupAsync(groupid);
+        };
+        rcloud.protection.has_notebook_protection = function() {
+            return rcloud_ocaps.protection.has_notebook_protectionAsync();
         };
 
         // stars

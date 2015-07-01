@@ -34,14 +34,6 @@ RCloud.UI.advanced_menu = (function() {
                             shell.open_from_github(result);
                     }
                 },
-                manage_groups: {
-                    sort: 7000,
-                    text: "Manage Groups",
-                    modes: ['edit'],
-                    action: function(value) {
-                        RCloud.UI.notebook_protection.init('group-tab-enabled');
-                    }
-                },
                 show_source: {
                     sort: 9000,
                     text: "Show Source",
