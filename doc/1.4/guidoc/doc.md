@@ -7,7 +7,8 @@ layout: default
 
 # {{page.title}}
 
-Created: 2015-07-03
+Created: 2015-07-03. RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
+
 
 ## Table of Contents
 
