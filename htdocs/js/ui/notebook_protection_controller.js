@@ -183,7 +183,7 @@ define(['angular'], function(angular) {
                             GroupsService.setNotebookGroup($scope.notebookGistName, $scope.selectedUserGroup.id )
                             .then(function(data){
                                 //console.log('data is '+data);
-                                logger.clear();
+                                $scope.cancel();
                             })
                             .catch(function(e){
                                 logger.warn(extract_error(e));
