@@ -147,7 +147,7 @@ define(['angular'], function(angular) {
         };
 
         $scope.saveNotebookTab = function() {
-            //status has not changed
+            //status type has not changed, but maybe the group changed
             if($scope.sharedStatus === $scope.initialSharedStatus) {
                 if($scope.initialGroupId !== '' && $scope.initialGroupId !== $scope.selectedUserGroup.id) {
                     //console.log('id changed');
@@ -158,7 +158,6 @@ define(['angular'], function(angular) {
                             GroupsService.setNotebookGroup($scope.notebookGistName, $scope.selectedUserGroup.id )
                             .then(function(data){
                                 //console.log('data is '+data);
-                                //need to update the notebook's tip to reflect the change
                                 $scope.cancel();
                             })
                             .catch(function(e){
@@ -168,7 +167,6 @@ define(['angular'], function(angular) {
                     })();
                 }
                 else {
-                    //console.log('id didnt change');
                     $scope.cancel();
                 }
                 return;

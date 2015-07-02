@@ -86,9 +86,11 @@
                                 }
 
                                 $('.group-link', thisPopover).click(function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
                                     $(thisIcon).popover("destroy");
-                                    //if the user of this notebook is the same as current user?
-                                    if(node.user === editor.username()) {
+                                    //if the user of this notebook is the same as current user
+                                    if(node.user === editor.username() && has_prot) {
                                         RCloud.UI.notebook_protection.defaultNotebook = node;
                                         RCloud.UI.notebook_protection.defaultCryptogroup = cryptogroup;
                                         RCloud.UI.notebook_protection.init('both-tabs-enabled');
