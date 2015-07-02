@@ -41,7 +41,7 @@
                                     else if(cryptogroup) 
                                         group_message += wrapGroupType(cryptogroup.name);
                                     else
-                                        group_message += wrapGroupType('no group');
+                                        group_message += wrapGroupType('public');
                 
                                     var starrer_list = '<div class="info-category"><b>Starred by:</b></div>';
                                     list.forEach(function (v) {
