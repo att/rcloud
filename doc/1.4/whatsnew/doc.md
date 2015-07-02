@@ -130,7 +130,7 @@ Use `&quiet=1` in view.html notebook URLs to hide all UI elements, including cel
 
 ### Cell States
 
-If you change a cell after it is enqueued to run, the state of the cell will turn into a purple question mark:
+If you change a cell in a notebook _after_ initiating a notebook run, the state of the cell will turn into a purple question mark:
 
 ![cellstatequestion1](img/cellstatequestion1.png)
 

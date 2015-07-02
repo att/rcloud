@@ -334,15 +334,15 @@ To insert a markdown cell above, click the ![INSERT1](img/addcell.png) icon. To 
 
 The run-state of each cell is displayed via an icon in between the gutter and cell name:
 
-![opencircle](img/opencircle.png): The cell has not been run. This could also mean that the cell ran successfully, but the output isn't synced with the code in the cell because the code was modified after execution was initiated.
+![opencircle](img/opencircle.png): The cell has not been run. This could also mean that the cell ran successfully, but the output may not be consistent with the code in the cell because the code was modified after RCloud initiated a run of your notebook.
 
 ![bluearrow](img/bluearrow.png): The cell is queued to be run.
 
-![runningquestion1](img/cellstatequestion1.png): The cell is queued to be run, but the code was modified after execution was initiated.
+![runningquestion1](img/cellstatequestion1.png): RCloud initiated a run of your notebook, but a cell's code was modified after execution was initiated.
 
 ![runningcircle](img/runningcircle.png): The cell is running.
 
-![runningquestion2](img/cellstatequestion2.png): The cell is running, but the code was modified after notebook execution was initiated.
+![runningquestion2](img/cellstatequestion2.png): The cell is running, but because the code was modified after notebook execution was initiated, the output may not be consistent with the code.
 
 ![greencircle](img/greencircle.png): The cell ran successfully.
 
