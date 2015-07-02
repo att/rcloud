@@ -7,7 +7,7 @@ layout: default
 
 # {{page.title}}
 
-Created: 2015-06-30
+Created: 2015-07-03
 
 ## Table of Contents
 
@@ -41,12 +41,14 @@ Created: 2015-06-30
         * [Versioning](#versioning)
             * [Version Tagging](#versiontagging)
             * [Reverting to a Previous Version](#revert)
-    * [Public and Private Notebooks](#publicandprivatenotebooks)
-        * [Toggle Private](#toggleprivate)
-        * [Toggle Public](#togglepublic)
+    * [Hidden Notebooks](#hiddennotebooks)
+        * [Toggle Hidden](#togglehidden)
+        * [Toggle Show](#toggleshow)
+    * [Protecting Your Notebooks](#protectingyournotebooks)
     * [Deleting Notebooks](#deletingnotebooks)
     * [Sharing Your Notebooks](#sharingyournotebooks)
         * [view.html](#view.html)
+            * [Hiding UI Elements](#hidinguielements)
         * [notebook.R](#notebook.R)
         * [mini.html](#mini.html)
         * [shiny.html](#shiny.html)
@@ -59,17 +61,22 @@ Created: 2015-06-30
 1. [Notebook Assets](#notebookassets)
     * [Data as an Asset](#dataasanasset)
     * [Uploading Assets](#uploadingasset)
-    * [Cascading Style Sheets](#usingcss)
+    * [Asset Links](#assetlinks)
+    * [Cascading Style Sheets (CSS)](#usingcss)
     * [JavaScript](#jsmode)
+    * [HTML](#htmlmode)
     * [Renaming Assets](#assetrename)
+    * [Binary Assets](#binaryassets)
+    * [Asset Size](#assetsize)
 1. [notebook.R URLs](#notebookrurls)
 1. [Search](#search)
     * [Complex Searches](#complexsearches)
 1. [Settings](#settings)
     * [Show Command Prompt](#showcommandprompt)
     * [Show Terse Version Dates](#showterseversiondates)
-    * [Subscribe to Comments](#subscribetocomments)
+    * [Show Cell Numbers](#showcellnumbers)
     * [Extensions](#extensions)
+    * [New Notebook Prefixes](#newnotebookprefixes)
 1. [Comments](#comments)
     * [Editing Comments](#editingcomments)
     * [Deleting Comments](#deletingcomments)
@@ -326,17 +333,23 @@ To insert a markdown cell above, click the ![INSERT1](img/addcell.png) icon. To 
 
 The run-state of each cell is displayed via an icon in between the gutter and cell name:
 
-![opencircle](img/opencircle.png): Cell has not been run
+![opencircle](img/opencircle.png): The cell has not been run.
 
-![bluearrow](img/bluearrow.png): Cell is scheduled to be run
+![bluearrow](img/bluearrow.png): The cell is queued to be run.
 
-![runningcircle](img/runningcircle.png): Cell is running
+![runningquestion1](img/scheduldedquestion.png): The cell is queued to be run, but the code was modified after execution was initiated.
 
-![greencircle](img/greencircle.png): Cell has run successfully
+![runningcircle](img/runningcircle.png): The cell is running.
 
-![exclaim](img/exclaim.png): Cell ran but had errors
+![runningquestion2](img/runningquestion.png): The cell is running, but the code was modified after execution was initiated.
 
-![splatcircle](img/splatcircle.png): Cell's run was cancelled
+![greencircle](img/greencircle.png): The cell ran successfully.
+
+![ready](img/ready.png): The cell ran successfully, but the output isn't synced with the code in the cell (i.e. the code was modified after execution was initiated).
+
+![exclaim](img/exclaim.png): The cell ran but had errors.
+
+![splatcircle](img/splatcircle.png): The cell's run was cancelled.
 
 [Top](#TOP)
 
@@ -344,11 +357,11 @@ The run-state of each cell is displayed via an icon in between the gutter and ce
 
 ## Stopping Cell Execution
 
-When you run a notebook, you can prevent scheduled cells from running by pressing the stop button, located in the header at the top of the screen:
+When you run a notebook, you can stop running cells and prevent queued cells from running by pressing the stop button, located in the header at the top of the screen:
 
 ![nonpreemptivestop](img/stop.png)
 
-Note that this will not interrupt currently running cells. (![runningcircle](img/runningcircle.png)). It will only prevent scheduled cells from running.
+This ends an interrupt to the R process and terminates execution if possible.
 
 [Top](#top)
 
@@ -402,7 +415,10 @@ To create a new, blank notebook, click the + sign at the right of the Notebooks 
 
 RCloud will automatically choose a title for your new notebook, Notebook N, where N is the next available number among your notebooks. To give your notebook a more meaningful title, click on the [title in the header bar](#notebooktitle).
 
+To change the default name of new notebooks, see the [New Notebook Prefixes](#newnotebookprefixes) sub-section of the Settings section.
+
 [Top](#TOP)
+
 
 <a name="runninganotebook"></a>
 
@@ -496,27 +512,57 @@ Should you decide that a previous version of your notebook is the "best" version
 
 [Top](#TOP)
 
-<a name="publicandprivatenotebooks"></a>
+<a name="hiddennotebooks"></a>
 
-### Public and Private Notebooks
+### Hidden Notebooks
 
-By default, all RCloud notebooks are public and therefore visible to all RCloud users. If you'd like to toggle the public/private flag on a notebook, hover over the name of your notebook on the left sidebar and click the eye icon. Note that private notebook titles are grayed out for owners and invisible to other users.
+By default, all RCloud notebooks are visible to all RCloud users. If you'd like to toggle the Show/Hide flag on a notebook, hover over the name of your notebook on the left sidebar and click the eye icon. Note that hidden notebook titles are grayed out for owners and invisible to other users.
 
-[Top](#TOP)
-
-<a name="toggleprivate"></a>
-
-#### Toggle Private
-
-Clicking the ![PRIVATENOTEBOOK](img/privatenotebook.png) icon will make your notebook private.
+Hidden notebooks are only invisible within the RCloud interface. Hidden notebooks are still visible within the gists stored in your GitHub instance.
 
 [Top](#TOP)
 
-<a name="togglepublic"></a>
+<a name="togglehidden"></a>
 
-#### Toggle Public
+#### Toggle Hidden
 
-Clicking the ![PUBLICNOTEBOOK](img/publicnotebook.png) icon will make your notebook public.
+Clicking the ![PRIVATENOTEBOOK](img/privatenotebook.png) icon will hide your notebook from other RCloud users.
+
+[Top](#TOP)
+
+<a name="toggleshow"></a>
+
+#### Toggle Show
+
+Clicking the ![PUBLICNOTEBOOK](img/publicnotebook.png) icon will make your notebook readable by other RCloud users.
+
+[Top](#TOP)
+
+<a name="protectingyournotebooks"></a>
+
+### Protecting Your Notebooks
+
+Protected notebooks are readable only by the owner and (optionally) a select group of users and will not show up in search results (although previously unprotected versions might).
+
+View or modify notebook protection by clicking the notebook "info" button next to the notebook name in the notebooks tree:
+
+![notebookinfo](img/notebookinfo.png)
+
+If you own the notebook, click the "no group" link (or a group name if one exists):
+
+![protectiondialog](img/nogroup.png)
+
+This opens the notebook protection dialog:
+
+![protectiondialog](img/notebookperms.png)
+
+Here, you can assign the notebook to any group you are a member of or make it entirely private (readable only by you).
+
+Use the second tab of the protection dialog to create/rename groups and/or assign other users as administrators/members of groups you administrate.
+
+![protectiondialog2](img/groupman.png)
+
+Note that, unlike a hidden notebook, protected notebooks are not readable by anyone without permission, even within your GitHub instance.
 
 [Top](#TOP)
 
@@ -553,6 +599,12 @@ Note that if you have a tagged version of your notebook currently loaded, where 
 ##### view.html
 
 This is the simplest method. This will create a link that will allow someone to see the notebook code and execute the notebook within the RCloud IDE. Users who do not own the notebook will see the play ![HEADER_PLAY](img/header_play.png) and share ![HEADER_EDIT](img/header_edit.png) icons in the header. Clicking the play icon will execute all cells in the notebook. Clicking the edit icon will return to the normal header, allowing a user to fork the notebook, etc.
+
+<a name="hidinguielements"></a>
+
+###### Hiding UI Elements
+
+To hide _all_ UI elements, add `&quiet=1` to the URL. Note that this works only with view.html.
 
 [Top](#TOP)
 
@@ -694,9 +746,35 @@ In addition to manually entering asset text, you can also drag and drop files in
 
 [Top](#TOP)
 
+<a name="assetlinks"></a>
+
+## Assets Links
+
+RCloud automatically generates asset links and displays them in the lower left-hand corner of the Assets panel. To copy the URL, right-click on it.
+
+![ASSETLINK](img/assetlink.png)
+
+[Top](#TOP)
+
+<a name="binaryassets"></a>
+
+## Binary Assets
+
+Assets can be binary (e.g. an image). RCloud auto-detects the content format and transparently encodes and decodes using base-64 encoding. When possible, the content is displayed in its native format in the asset panel.
+
+[Top](#TOP)
+
+<a name="assetsize"></a>
+
+## Asset Size
+
+Assets are limited to 750KB each.
+
+[Top](#TOP)
+
 <a name="usingcss"></a>
 
-## Using CSS
+## Cascading Style Sheets (CSS)
 
 Assets can contain Cascading Style Sheet (CSS) formatting information. This changes the way information is presented when your notebook is executed. For example, here is a bit of CSS that defines a paragraph style:
 
@@ -730,6 +808,16 @@ Note that you must reload your notebook to apply the CSS.
 Assets can also contain JavaScript. When editing JavaScript (files must have the .js extension), RCloud automatically uses a JavaScript editing mode, which has built-in syntax checking.
 
 ![JSMODE](img/jsmode.png)
+
+[Top](#TOP)
+
+<a name="htmlmode"></a>
+
+## HTML Mode
+
+When editing HTML (files must have the .html or .htm extension), RCloud automatically uses an HTML editing mode, which has built-in syntax checking and tag completion.
+
+![HTMLMODE](img/htmlmode.png)
 
 [Top](#TOP)
 
@@ -840,6 +928,16 @@ This setting toggles the appearance of the default prompt cell that appears at t
 
 This controls how RCloud displays dates when viewing notebook versions. When selected, RCloud will display dates and times only when they're different from the version before it.
 
+[Top](#TOP)
+
+<a name="showcellnumbers"></a>
+
+## Show Cell Numbers
+
+Toggles "Cell 1," "Cell 2," etc. in the cells panel.
+
+[Top](#TOP)
+
 <a name="extensions"></a>
 
 ## Extensions
@@ -850,15 +948,17 @@ You can enable and disable extensions using the "Enable Extensions" and "Disable
 
 Enter a list of extensions, comma delimited, and press enter. You will then have to reload the page. 
 
-![settings](img/settings.png)
-
 [Top](#TOP)
 
-<a name="subscribetocomments"></a>
+<a name="newnotebookprefixes"></a>
 
-## Subscribe to Comments
+### New Notebook Prefixes
 
-When checked, RCloud will send an email whenever someone leaves a [comment](#comments) about your notebook.
+Use the New Notebook Prefix setting to change how RCloud names [new notebooks](#creatinganotebook). 
+
+Suppose you were working on a project, Foo. You might choose "Foo " for your new notebook prefix. New notebooks would be named "Foo 1," "Foo 2," and so on.
+
+You could also include a folder. RCloud would then place new notebooks within that folder in the notebook tree. For example, you may choose to make "Foo/Notebook " your new notebook prefix name. RCloud would create new notebooks "Foo/Notebook 1," "Foo/Notebook 2," and so on.
 
 [Top](#TOP)
 

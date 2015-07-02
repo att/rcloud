@@ -1,5 +1,5 @@
 ---
-title: RCloud&#58; 1.4 What's New!
+title: RCloud&#58; 1.4 What's New
 layout: default
 ---
 
@@ -7,7 +7,7 @@ layout: default
 
 # {{page.title}}
 
-2015-06-30
+Created: 2015-07-03
 
 ## Table of Contents
 
@@ -21,7 +21,6 @@ layout: default
 1. [GUI Enhancements](#gui)
   * [Toggle Results](#toggleresults)
   * [Hiding UI Elements](#hideuielements)
-  * [Folders](#folders)
   * [Cell States](#cellstates)
   * [Multi-Line Command Input](#multilinecommandinput)
   * [HTML Syntax](#htmlsyntax)
@@ -41,21 +40,25 @@ layout: default
 
 ### Protected Notebooks
 
-Protected notebooks are viewable only by the owner and (optionally) a select group of users and will not show up in search results (although previously unprotected versions might).
+Protected notebooks are readable only by the owner and (optionally) a select group of users and will not show up in search results (although previously unprotected versions might).
 
 View or modify notebook protection by clicking the notebook "info" button next to the notebook name in the notebooks tree:
 
 ![notebookinfo](img/notebookinfo.png)
 
-If you own the notebook, click the link to open the notebook protection dialog.
+If you own the notebook, click the "no group" link (or a group name if one exists):
 
-![protectiondialog](img/protectiondialog.png)
+![protectiondialog](img/nogroup.png)
 
-Here, you can assign the notebook to any group you are a member of or make it entirely private (viewable only by you).
+This opens the notebook protection dialog:
+
+![protectiondialog](img/notebookperms.png)
+
+Here, you can assign the notebook to any group you are a member of or make it entirely private (readable only by you).
 
 Use the second tab of the protection dialog to create/rename groups and/or assign other users as administrators/members of groups you administrate.
 
-![protectiondialog2](img/protectiondialog2.png)
+![protectiondialog2](img/groupman.png)
 
 [Top](#top)
 
@@ -65,7 +68,7 @@ Use the second tab of the protection dialog to create/rename groups and/or assig
 
 View notebooks stored on other git/GitHub-based RCloud instances by configuring RCloud with multiple `gist.source` names. Specifying a name in a notebook URL (`&source=name`) loads the notebook from another instance. Search has an option to search all sources.
 
-In this release, all notebooks are displayed in the same notebook tree. Non-local notebooks are displayed in green and are read-only. You can, however, fork and star non-local notebooks. Commenting, however, is disabled for non-local notebooks.
+In this release, all notebooks are displayed in the same notebook tree. Non-local notebooks are displayed in green and are read-only. You can, however, fork and star non-local notebooks. Commenting is disabled for non-local notebooks.
 
 [Top](#top)
 
@@ -74,6 +77,8 @@ In this release, all notebooks are displayed in the same notebook tree. Non-loca
 ### Cell Execution
 
 Clicking the stop button in the header bar sends an interrupt to the R process and terminates execution if possible.
+
+![stop](img/stop.png)
 
 [Top](#top)
 
@@ -117,17 +122,7 @@ When cell output is long and it's difficult to find the next cell, you can toggl
 
 ### Hiding UI Elements
 
-Use `&quiet=1` in notebook URLs to hide all UI elements, including cell-status.
-
-[Top](#top)
-
-<a name="folders" />
-
-### Folders
-
-To rename notebook folders, click once on a notebook folder to open it. Click on the name a second time to edit the name of any folder in the string.
-
-To fork a notebook folder, click once on a notebook folder to open it and display the fork command. Press Ctrl/Cmd-Enter to fork a notebook folder while editing the name.
+Use `&quiet=1` in view.html notebook URLs to hide all UI elements, including cell-status.
 
 [Top](#top)
 
@@ -156,6 +151,8 @@ This indicates that the cell needs to run again for the modified code and displa
 ### Multi-Line Command Input
 
 Multi-line command input is indicated with a `+` to emulate command-line R.
+
+![multilinecommandinput](img/multiline.png)
 
 [Top](#top)
 
