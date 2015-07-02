@@ -122,7 +122,9 @@ RCloud.UI.notebook_title = (function() {
                     opts = $.extend({}, editable_opts, {
                         change: rename_notebook_folder(node),
                         ctrl_cmd: null,
-                        validate: function(name) { return true; }
+                        validate: function(text) {
+                            return !Notebook.empty_for_github(text);
+                        }
                     });
                 }
                 ui_utils.editable(get_title(node, $li),
