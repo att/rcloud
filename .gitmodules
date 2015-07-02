@@ -1,6 +1,0 @@
-[submodule "htdocs/lib/js/rserve-js"]
-	path = htdocs/lib/js/rserve-js
-	url = ssh://git@github.com/cscheid/rserve-js.git
-[submodule "htdocs/lib/js/lux"]
-	path = htdocs/lib/js/lux
-	url = ssh://git@github.com/cscheid/lux.git
