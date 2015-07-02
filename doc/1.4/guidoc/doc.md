@@ -334,19 +334,17 @@ To insert a markdown cell above, click the ![INSERT1](img/addcell.png) icon. To 
 
 The run-state of each cell is displayed via an icon in between the gutter and cell name:
 
-![opencircle](img/opencircle.png): The cell has not been run.
+![opencircle](img/opencircle.png): The cell has not been run. This could also mean that the cell ran successfully, but the output isn't synced with the code in the cell because the code was modified after execution was initiated.
 
 ![bluearrow](img/bluearrow.png): The cell is queued to be run.
 
-![runningquestion1](img/scheduldedquestion.png): The cell is queued to be run, but the code was modified after execution was initiated.
+![runningquestion1](img/cellstatequestion1.png): The cell is queued to be run, but the code was modified after execution was initiated.
 
 ![runningcircle](img/runningcircle.png): The cell is running.
 
-![runningquestion2](img/runningquestion.png): The cell is running, but the code was modified after execution was initiated.
+![runningquestion2](img/cellstatequestion2.png): The cell is running, but the code was modified after notebook execution was initiated.
 
 ![greencircle](img/greencircle.png): The cell ran successfully.
-
-![ready](img/ready.png): The cell ran successfully, but the output isn't synced with the code in the cell (i.e. the code was modified after execution was initiated).
 
 ![exclaim](img/exclaim.png): The cell ran but had errors.
 

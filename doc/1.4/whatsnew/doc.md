@@ -130,7 +130,7 @@ Use `&quiet=1` in view.html notebook URLs to hide all UI elements, including cel
 
 ### Cell States
 
-If you change a cell when it is enqueued to run, the state of the cell will turn into a purple question mark:
+If you change a cell after it is enqueued to run, the state of the cell will turn into a purple question mark:
 
 ![cellstatequestion1](img/cellstatequestion1.png)
 
@@ -138,9 +138,9 @@ This indicates that the result after running may not be in sync with the newly m
 
 ![cellstatequestion2](img/cellstatequestion2.png)
 
-After the cell runs, the status will change to the "ready" state instead of the complete state:
+After the cell runs, the status will change to the "ready" state instead of the complete state (a solid green circle):
 
-![cellstateready](img/cellstateready.png)
+![cellstateready](img/opencircle.png)
 
 This indicates that the cell needs to run again for the modified code and displayed results to sync.
 
