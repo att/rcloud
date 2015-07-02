@@ -1296,7 +1296,7 @@ var editor = function () {
                         change_folder_friendness(user);
                     if(opts.notebook) {
                         if(opts.make_current)
-                            that.load_callback({
+                            return that.load_callback({
                                 version: opts.version,
                                 is_change: opts.is_change || false,
                                 selroot: 'interests'})(opts.notebook);
@@ -1306,6 +1306,7 @@ var editor = function () {
                     else {
                         update_notebook_view(user, gistname, entry, opts.selroot);
                     }
+                    return Promise.resolve(opts.notebook);
                 });
             } else {
                 return rcloud.stars.unstar_notebook(gistname).then(function(count) {
