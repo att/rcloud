@@ -2144,9 +2144,11 @@ function create_cell_html_view(language, cell_model) {
         content_updated: function() {
             assign_code();
             if(ace_widget_) {
+                var st = ace_session_.getScrollTop();
                 var range = ace_widget_.getSelection().getRange();
                 var changed = change_content_(cell_model.content());
                 ace_widget_.getSelection().setSelectionRange(range);
+                ace_session_.setScrollTop(st);
             }
             return changed;
         },
