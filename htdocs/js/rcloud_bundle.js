@@ -7160,6 +7160,11 @@ function set_curtain() {
     if (_.isUndefined(progress_dialog)) {
         progress_dialog = $('<div id="progress-dialog" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-body">Please wait...</div></div></div>');
         $("body").append(progress_dialog);
+        // allow manual reset by ESC or clicking away
+        progress_dialog.on('hide.bs.modal', function() {
+            progress_counter = 0;
+            clear_cursor();
+        });
     }
     progress_dialog.modal({keyboard: true});
 }
@@ -7174,12 +7179,15 @@ function clear_curtain() {
 function set_cursor() {
     _.delay(function() {
         document.body.style.cursor = "wait";
+        console.log('wait cursor');
+
     }, 0);
 }
 
 function clear_cursor() {
     _.delay(function() {
         document.body.style.cursor = '';
+        console.log('clear cursor');
     }, 0);
 }
 

@@ -12,6 +12,11 @@ function set_curtain() {
     if (_.isUndefined(progress_dialog)) {
         progress_dialog = $('<div id="progress-dialog" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-body">Please wait...</div></div></div>');
         $("body").append(progress_dialog);
+        // allow manual reset by ESC or clicking away
+        progress_dialog.on('hide.bs.modal', function() {
+            progress_counter = 0;
+            clear_cursor();
+        });
     }
     progress_dialog.modal({keyboard: true});
 }
