@@ -1356,6 +1356,27 @@ ui_utils.is_a_mac = function() {
         return isMac;
     };
 }();
+RCloud.utils = {};
+
+// Ways to execute promise in sequence, with each started after the last completes
+RCloud.utils.promise_for = function(condition, action, value) {
+    if(!condition(value))
+        return value;
+    return action(value).then(RCloud.utils.promise_for.bind(null, condition, action));
+};
+
+// like Promise.each but each promise is not *started* until the last one completes
+RCloud.utils.promise_sequence = function(collection, operator) {
+    return RCloud.utils.promise_for(
+        function(i) {
+            return i < collection.length;
+        },
+        function(i) {
+            return operator(collection[i]).return(++i);
+        },
+        0);
+};
+
 /*
  RCloud.extension is the root of all extension mechanisms in RCloud.
 
@@ -3995,24 +4016,6 @@ RCloud.language = (function() {
         });
     }
 
-    function promise_for(condition, action, value) {
-        if(!condition(value))
-            return value;
-        return action(value).then(promise_for.bind(null, condition, action));
-    }
-
-    // like Promise.each but each promise is not *started* until the last one completes
-    function promise_sequence(collection, operator) {
-        return promise_for(
-            function(i) {
-                return i < collection.length;
-            },
-            function(i) {
-                return operator(collection[i]).return(++i);
-            },
-            0);
-    }
-
     RCloud.upload_assets = function(options, react) {
         react = react || {};
         options = upload_opts(options);
@@ -4038,7 +4041,7 @@ RCloud.language = (function() {
                 controller.select();
             });
         }
-        return promise_sequence(
+        return RCloud.utils.promise_sequence(
             options.files,
             function(file) {
                 if(file.size > 750000)
@@ -4125,7 +4128,7 @@ RCloud.language = (function() {
                 /*FIXME add logged in user */
                 return upload_ocaps.upload_pathAsync()
                     .then(function(path) {
-                        return promise_sequence(options.files, upload_file.bind(null, path));
+                        return RCloud.utils.promise_sequence(options.files, upload_file.bind(null, path));
                     });
             }
         }
