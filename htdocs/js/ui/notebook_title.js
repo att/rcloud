@@ -9,7 +9,7 @@ RCloud.UI.notebook_title = (function() {
         };
     }
     function rename_current_notebook(name) {
-        editor.rename_notebook(name)
+        return editor.rename_notebook(name)
             .then(function() {
                 result.set(name);
             });
@@ -46,14 +46,17 @@ RCloud.UI.notebook_title = (function() {
         range.setEnd(el.firstChild, text.length);
         return range;
     }
-    var fork_and_rename = function(forked_gist_name) {
+    var fork_and_rename = function(forked_gist_name, is_change) {
         var is_mine = shell.notebook.controller.is_mine();
         var gistname = shell.gistname();
         var version = shell.version();
         editor.fork_notebook(is_mine, gistname, version)
-            .then(function rename(v){
-                    rename_current_notebook(forked_gist_name);
-                });
+            .then(function(v) {
+                if(is_change)
+                    return rename_current_notebook(forked_gist_name);
+                else // if no change, allow default numbering to work
+                    return undefined;
+            });
     };
     var editable_opts = {
         change: rename_current_notebook,

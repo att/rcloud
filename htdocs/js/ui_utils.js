@@ -517,7 +517,7 @@ ui_utils.editable = function(elem$, command) {
                             options().__active = false;
                             elem$.off('blur.editable'); // don't cancel!
                             elem$.blur();
-                            f(txt);
+                            f(txt, txt!=options().active_text);
                             return true;
                         } else {
                             return false; // don't let CR through!
