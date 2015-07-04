@@ -1,6 +1,6 @@
 JS_COMPILER = ./node_modules/uglify-js/bin/uglifyjs
 
-all: ace_bundle.js ace_bundle.js.gz ace_bundle.min.js dependencies_bundle.js dependencies_bundle.js.gz dependencies_bundle.min.js
+all: ace_bundle.js ace_bundle.js.gz ace_bundle.min.js
 
 ace_bundle.js:	\
 	js/ace/_begin.js \
@@ -27,28 +27,6 @@ ace_bundle.js:	\
 ace_bundle.js.gz: ace_bundle.js
 	gzip -c -9 $^ > $@
 
-# requirejs must go before anything else
-dependencies_bundle.js: \
-	js/require.js \
-	js/bluebird.js \
-	js/colorbrewer.js \
-	js/d3.js \
-	js/dataframe.js \
-	js/dcplot.js \
-	js/hl.min.js \
-	js/jquery-2.1.1.js \
-	js/bootstrap.js \
-	js/jquery-ui.js \
-	js/jquery.cookies.2.2.0.js \
-	js/jquery.scrollto.js \
-	js/laconic.js \
-	js/underscore.js \
-	js/rserve.js \
-	js/tree.jquery.js
-
-dependencies_bundle.js.gz: dependencies_bundle.js
-	gzip -c -9 $^ > $@
-
 ace_bundle.min.js: ace_bundle.js Makefile
 	@rm -f $@
 	$(JS_COMPILER) < $< > $@
@@ -63,20 +41,5 @@ ifeq ($(CHECK),1)
 endif
 	chmod -w $@
 
-dependencies_bundle.min.js: dependencies_bundle.js Makefile
-	@rm -f $@
-	$(JS_COMPILER) < $< > $@
-	chmod -w $@
-	echo Note: dependencies_bundle is obsolete and unused!
-
-dependencies_bundle.js: Makefile
-	echo $^
-	@rm -f $@
-	cat $(filter %.js,$^) > $@
-ifeq ($(CHECK),1) 
-	jshint $(filter %.js,$(filter-out lib/%.js,$(filter-out %/_begin.js,$(filter-out %/_end.js, $^))))
-endif
-	chmod -w $@
-
 clean:
-	rm -f ace_bundle.js ace_bundle.min.js dependencies_bundle.js dependencies_bundle.min.js
+	rm -f ace_bundle.js ace_bundle.min.js
