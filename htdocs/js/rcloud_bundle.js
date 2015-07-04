@@ -7179,15 +7179,12 @@ function clear_curtain() {
 function set_cursor() {
     _.delay(function() {
         document.body.style.cursor = "wait";
-        console.log('wait cursor');
-
     }, 0);
 }
 
 function clear_cursor() {
     _.delay(function() {
         document.body.style.cursor = '';
-        console.log('clear cursor');
     }, 0);
 }
 
