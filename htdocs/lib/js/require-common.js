@@ -2,21 +2,13 @@ requirejs_config_obj = {
     "baseUrl": "/lib/js",
     waitSeconds: 30,
     paths: {
-        "angular": "angular",
         "jquery": "jquery-2.1.1",
         "rcloud_bundle": "../../js/rcloud_bundle",
         "ace": "../ace_bundle",
         editor_tab: "../../editor_tab",
-        shell_tab: "../../shell_tab",
-        "angular-selectize": "angular-selectize",
-        "selectize": "selectize"
+        shell_tab: "../../shell_tab"
     },
     "shim": {
-        'angular': {
-            exports: "angular",
-            'deps': ['jquery']
-        },
-        "angular-selectize": ["angular", "selectize"],
         "tree.jquery": ["jquery"],
         "jquery-ui": ["jquery"],
         laconic: ["jquery"],
@@ -47,9 +39,6 @@ var common_deps = [
 ];
 
 function start_require(deps) {
-
-    // defer angular initialization
-    window.name = "NG_DEFER_BOOTSTRAP!";
 
     deps: ['./bootstrap'];
     require(deps,
