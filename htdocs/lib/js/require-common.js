@@ -39,8 +39,6 @@ var common_deps = [
 ];
 
 function start_require(deps) {
-
-    deps: ['./bootstrap'];
     require(deps,
             function(Promise, _, d3, sha256) {
                 window.Promise = Promise;
