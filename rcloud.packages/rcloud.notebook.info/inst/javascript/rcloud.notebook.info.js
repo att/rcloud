@@ -67,7 +67,7 @@
 
                                 $('html').off('mouseup');
                                 $('html').on('mouseup', function(e) {
-                                    //if(!$(e.target).closest('.popover').length)
+                                    if(!$(e.target).closest('.popover').length)
                                         $(document).trigger('destroy_all_popovers');
                                 });
 
