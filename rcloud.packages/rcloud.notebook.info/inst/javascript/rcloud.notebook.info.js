@@ -11,6 +11,14 @@
                         var info = ui_utils.fa_button('icon-info-sign', 'notebook info', 'info',
                                                     RCloud.UI.notebook_commands.icon_style(), false);
                         var popupOpen = false;
+                        //hacky but will do for now
+                        if(!window.allPopovers){
+                            window.allPopovers = [];
+                            window.allPopovers.push(info);
+                        }
+                        else{
+                            window.allPopovers.push(info);
+                        }
 
                         info.click(function(e) {
                             e.preventDefault();
