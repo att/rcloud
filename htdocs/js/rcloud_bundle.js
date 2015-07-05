@@ -1244,7 +1244,7 @@ ui_utils.editable = function(elem$, command) {
                             options().__active = false;
                             elem$.off('blur.editable'); // don't cancel!
                             elem$.blur();
-                            f(txt);
+                            f(txt, txt!=options().active_text);
                             return true;
                         } else {
                             return false; // don't let CR through!
@@ -1356,6 +1356,27 @@ ui_utils.is_a_mac = function() {
         return isMac;
     };
 }();
+RCloud.utils = {};
+
+// Ways to execute promise in sequence, with each started after the last completes
+RCloud.utils.promise_for = function(condition, action, value) {
+    if(!condition(value))
+        return value;
+    return action(value).then(RCloud.utils.promise_for.bind(null, condition, action));
+};
+
+// like Promise.each but each promise is not *started* until the last one completes
+RCloud.utils.promise_sequence = function(collection, operator) {
+    return RCloud.utils.promise_for(
+        function(i) {
+            return i < collection.length;
+        },
+        function(i) {
+            return operator(collection[i]).return(++i);
+        },
+        0);
+};
+
 /*
  RCloud.extension is the root of all extension mechanisms in RCloud.
 
@@ -2144,9 +2165,11 @@ function create_cell_html_view(language, cell_model) {
         content_updated: function() {
             assign_code();
             if(ace_widget_) {
+                var st = ace_session_.getScrollTop();
                 var range = ace_widget_.getSelection().getRange();
                 var changed = change_content_(cell_model.content());
                 ace_widget_.getSelection().setSelectionRange(range);
+                ace_session_.setScrollTop(st);
             }
             return changed;
         },
@@ -3993,24 +4016,6 @@ RCloud.language = (function() {
         });
     }
 
-    function promise_for(condition, action, value) {
-        if(!condition(value))
-            return value;
-        return action(value).then(promise_for.bind(null, condition, action));
-    }
-
-    // like Promise.each but each promise is not *started* until the last one completes
-    function promise_sequence(collection, operator) {
-        return promise_for(
-            function(i) {
-                return i < collection.length;
-            },
-            function(i) {
-                return operator(collection[i]).return(++i);
-            },
-            0);
-    }
-
     RCloud.upload_assets = function(options, react) {
         react = react || {};
         options = upload_opts(options);
@@ -4036,7 +4041,7 @@ RCloud.language = (function() {
                 controller.select();
             });
         }
-        return promise_sequence(
+        return RCloud.utils.promise_sequence(
             options.files,
             function(file) {
                 if(file.size > 750000)
@@ -4123,7 +4128,7 @@ RCloud.language = (function() {
                 /*FIXME add logged in user */
                 return upload_ocaps.upload_pathAsync()
                     .then(function(path) {
-                        return promise_sequence(options.files, upload_file.bind(null, path));
+                        return RCloud.utils.promise_sequence(options.files, upload_file.bind(null, path));
                     });
             }
         }
@@ -6791,7 +6796,7 @@ RCloud.UI.notebook_title = (function() {
         };
     }
     function rename_current_notebook(name) {
-        editor.rename_notebook(name)
+        return editor.rename_notebook(name)
             .then(function() {
                 result.set(name);
             });
@@ -6828,14 +6833,17 @@ RCloud.UI.notebook_title = (function() {
         range.setEnd(el.firstChild, text.length);
         return range;
     }
-    var fork_and_rename = function(forked_gist_name) {
+    var fork_and_rename = function(forked_gist_name, is_change) {
         var is_mine = shell.notebook.controller.is_mine();
         var gistname = shell.gistname();
         var version = shell.version();
         editor.fork_notebook(is_mine, gistname, version)
-            .then(function rename(v){
-                    rename_current_notebook(forked_gist_name);
-                });
+            .then(function(v) {
+                if(is_change)
+                    return rename_current_notebook(forked_gist_name);
+                else // if no change, allow default numbering to work
+                    return undefined;
+            });
     };
     var editable_opts = {
         change: rename_current_notebook,
@@ -7160,6 +7168,11 @@ function set_curtain() {
     if (_.isUndefined(progress_dialog)) {
         progress_dialog = $('<div id="progress-dialog" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-body">Please wait...</div></div></div>');
         $("body").append(progress_dialog);
+        // allow manual reset by ESC or clicking away
+        progress_dialog.on('hide.bs.modal', function() {
+            progress_counter = 0;
+            clear_cursor();
+        });
     }
     progress_dialog.modal({keyboard: true});
 }

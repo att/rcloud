@@ -266,6 +266,10 @@ define(['angular'], function(angular) {
         };
 
         $scope.renameGroup = function() {
+
+            if(!$scope.selectedAdminGroup || !$scope.allAdminGroups.length)
+                return;
+
             var pr = prompt("Rename group "+$scope.selectedAdminGroup.name , $scope.selectedAdminGroup.name);
             if(pr != null) {
                 var r = confirm('Are you sure you want to rename group "'+$scope.selectedAdminGroup.name+' to "'+pr+'"?');
@@ -423,35 +427,33 @@ define(['angular'], function(angular) {
 
                 var pr = confirm(outputMessage);
                 if(pr) {
-                    //push the data
-                    var allPromises = [];
-                    if(removedAdmins.length) {
-                        for(var q = 0; q < removedAdmins.length; q++) {
-                            //create a promise for each action
-                            allPromises.push( GroupsService.removeGroupUser($scope.selectedAdminGroup.id, removedAdmins[q]));
-                        }
-                    }
-                    if(addedAdmins.length) {
-                        for(var w = 0; w < addedAdmins.length; w++) {
-                            //create a promise for each action
-                            allPromises.push( GroupsService.addGroupUser($scope.selectedAdminGroup.id, addedAdmins[w], true));
-                        }
-                    }
-                    if(removedMembers.length) {
-                        for(var e = 0; e < removedMembers.length; e++) {
-                            //create a promise for each action
-                            allPromises.push( GroupsService.removeGroupUser($scope.selectedAdminGroup.id, removedMembers[e]));
-                        }
-                    }
-                    if(addedMembers.length) {
-                        for(var r = 0; r < addedMembers.length; r++) {
-                            //create a promise for each action
-                            //var prom = ;
-                            allPromises.push( GroupsService.addGroupUser($scope.selectedAdminGroup.id, addedMembers[r], false) );
-                        }
-                    }
+                    // push functions that will make the changes and return promises
+                    var operations = [];
+                    removedAdmins.forEach(function(name) {
+                        operations.push(function() {
+                            return GroupsService.removeGroupUser($scope.selectedAdminGroup.id, name);
+                        });
+                    });
+                    addedAdmins.forEach(function(name) {
+                        operations.push(function() {
+                                return GroupsService.addGroupUser($scope.selectedAdminGroup.id, name, true);
+                        });
+                    });
+                    removedMembers.forEach(function(name) {
+                        operations.push(function() {
+                            return GroupsService.removeGroupUser($scope.selectedAdminGroup.id, name);
+                        });
+                    });
+                    addedMembers.forEach(function(name) {
+                        operations.push(function() {
+                            return GroupsService.addGroupUser($scope.selectedAdminGroup.id, name, false);
+                        });
+                    });
 
-                    Promise.all(allPromises)
+                    // run in sequence so we fail on the first one and don't continue
+                    RCloud.utils.promise_sequence(operations, function(f) {
+                        return f();
+                    })
                     .then(function() {
                         //console.log('pushing member data succeeded');
                         $scope.cancel();
@@ -578,9 +580,11 @@ define(['angular'], function(angular) {
             return $q(function(resolve, reject) {
 
                 if(id === null || id === 'private') {
-                    $scope.$evalAsync(function() {
-                        $scope.selectedAdminGroup = $scope.allAdminGroups[0];
-                    });
+                    if($scope.allAdminGroups.length) {
+                        $scope.$evalAsync(function() {
+                            $scope.selectedAdminGroup = $scope.allAdminGroups[0];
+                        });
+                    }
                     $timeout(function() {
                         resolve();
                     }, 50);

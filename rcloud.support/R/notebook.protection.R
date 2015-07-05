@@ -1,4 +1,4 @@
-rcloud.get.notebook.cryptgroup <- function(notebookid) { # : pair(groupid, groupname)
+rcloud.get.notebook.cryptgroup <- function(notebookid) { # : list(id, name)
     groupid <- rcs.get(rcs.key('.notebook', notebookid, 'cryptgroup'))
     if (is.null(groupid)) NULL else list(id=groupid, name=rcs.get(rcs.key('.cryptgroup', groupid, 'name')))
 }

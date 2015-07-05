@@ -1348,7 +1348,8 @@ var editor = function () {
                 .bind(this)
                 .then(function(gistname) {
                     return this.set_notebook_visibility(gistname, true);
-                });
+                })
+                .return(notebook);
         },
         fork_notebook: function(is_mine, gistname, version) {
             return shell.fork_notebook(is_mine, gistname, version)
