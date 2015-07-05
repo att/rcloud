@@ -6638,6 +6638,10 @@ RCloud.UI.notebook_commands = (function() {
                         if(disable)
                             history.addClass('button-disabled');
                         history.click(function() {
+                            //hacky but will do for now
+                            $(window.allPopovers).each(function(i, e){
+                                $(this).popover('destroy');
+                            });
                             ui_utils.fake_hover(node);
                             if(!disable) {
                                 editor.show_history(node, true);
