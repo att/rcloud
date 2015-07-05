@@ -56,6 +56,7 @@ oc.init <- function(...) { ## this is the payload of the OCinit message
 }
 
 compute.ocaps <- function(mode, authenticated) {
+    if (isTRUE(.session$separate.compute)) .Call(Rserve:::Rserve_forward_stdio)
     caps <- list(
         setup_js_installer = make.oc(rcloud.setup.js.installer),
         install_notebook_stylesheets = make.oc(rcloud.install.notebook.stylesheets),
