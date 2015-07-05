@@ -629,3 +629,12 @@ ui_utils.is_a_mac = function() {
         return isMac;
     };
 }();
+
+ui_utils.kill_popovers = function() {
+    if(window.allPopovers) {
+        $(window.allPopovers).each(function(i, e) {
+            $(this).popover('destroy');
+        });
+        window.allPopovers.length = 0;
+    }
+};
