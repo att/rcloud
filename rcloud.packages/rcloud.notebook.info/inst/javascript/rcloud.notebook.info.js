@@ -1,6 +1,6 @@
 ((function() {
     return {
-
+        //console.log('launching the module');
         init: function(k) {
 
             RCloud.UI.notebook_commands.add({
@@ -11,14 +11,6 @@
                         var info = ui_utils.fa_button('icon-info-sign', 'notebook info', 'info',
                                                     RCloud.UI.notebook_commands.icon_style(), false);
                         var popupOpen = false;
-                        //hacky but will do for now
-                        if(!window.allPopovers){
-                            window.allPopovers = [];
-                            window.allPopovers.push(info);
-                        }
-                        else{
-                            window.allPopovers.push(info);
-                        }
 
                         info.click(function(e) {
                             e.preventDefault();
@@ -84,6 +76,15 @@
                                     });
 
                                     $(info).popover('show');
+                                    //hacky but will do for now
+                                    if(!window.allPopovers) {
+                                        window.allPopovers = [];
+                                        window.allPopovers.push(info);
+                                    }
+                                    else{
+                                        window.allPopovers.push(info);
+                                    }
+
                                     var thisPopover = $(info).popover().data()['bs.popover'].$tip[0];
                                     thisPopover = $(thisPopover);
                                     thisPopover.addClass('popover-offset notebook-info');
