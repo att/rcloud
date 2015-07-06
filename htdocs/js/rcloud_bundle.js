@@ -176,7 +176,7 @@ RCloud.create = function(rcloud_ocaps) {
             } else {
                 var message;
                 if(result.content && result.content.message)
-                    message = result.content.message;
+                    message = result.content.message + ' (' + result.code + ')';
                 else
                     message = "error code " + result.code;
                 throw new Error(command + ': ' + message);
@@ -1356,6 +1356,15 @@ ui_utils.is_a_mac = function() {
         return isMac;
     };
 }();
+
+ui_utils.kill_popovers = function() {
+    if(window.allPopovers) {
+        $(window.allPopovers).each(function(i, e) {
+            $(this).popover('destroy');
+        });
+        window.allPopovers.length = 0;
+    }
+};
 RCloud.utils = {};
 
 // Ways to execute promise in sequence, with each started after the last completes
@@ -6615,6 +6624,7 @@ RCloud.UI.notebook_commands = (function() {
                         star_unstar.click(function(e) {
                             e.preventDefault();
                             e.stopPropagation(); // whatever you do, don't let this event percolate
+                            ui_utils.kill_popovers();
                             var new_state = !state;
                             editor.star_notebook(new_state, {gistname: node.gistname, user: node.user});
                         });
@@ -6639,9 +6649,7 @@ RCloud.UI.notebook_commands = (function() {
                             history.addClass('button-disabled');
                         history.click(function() {
                             //hacky but will do for now
-                            $(window.allPopovers).each(function(i, e){
-                                $(this).popover('destroy');
-                            });
+                            ui_utils.kill_popovers();
                             ui_utils.fake_hover(node);
                             if(!disable) {
                                 editor.show_history(node, true);
