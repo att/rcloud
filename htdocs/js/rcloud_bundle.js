@@ -1369,6 +1369,12 @@ ui_utils.kill_popovers = function() {
         window.allPopovers.length = 0;
     }
 };
+
+ui_utils.hide_selectize_dropdown = function() {
+    $('.selectize-dropdown').hide();
+    $('.selectize-input').removeClass('focus input-active dropdown-active');
+    $('div.selectize-input > input').blur();
+};
 RCloud.utils = {};
 
 // Ways to execute promise in sequence, with each started after the last completes

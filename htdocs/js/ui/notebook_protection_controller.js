@@ -29,7 +29,7 @@ define(['angular'], function(angular) {
         $scope.initialGroupId = '';
 
         $scope.allUsers = editor.allTheUsers;
-        $scope.myConfig = { openOnFocus: false };
+        $scope.myConfig = { openOnFocus: false, closeAfterSelect: true };
 
         $scope.currentTab = null;
 
@@ -266,10 +266,8 @@ define(['angular'], function(angular) {
         };
 
         $scope.renameGroup = function() {
-
             if(!$scope.selectedAdminGroup || !$scope.allAdminGroups.length)
                 return;
-
             var pr = prompt("Rename group "+$scope.selectedAdminGroup.name , $scope.selectedAdminGroup.name);
             if(pr != null) {
                 var r = confirm('Are you sure you want to rename group "'+$scope.selectedAdminGroup.name+' to "'+pr+'"?');
@@ -353,6 +351,7 @@ define(['angular'], function(angular) {
                         var dupIndex = $scope.groupMembers.indexOf(duplicates[0]);
                         $scope.groupMembers.splice(dupIndex, 1);
                     }
+                    ui_utils.hide_selectize_dropdown();
                 }
             });
 
@@ -372,6 +371,7 @@ define(['angular'], function(angular) {
                         var dupIndex = $scope.groupAdmins.indexOf(duplicates[0]);
                         $scope.groupAdmins.splice(dupIndex, 1);
                     }
+                    ui_utils.hide_selectize_dropdown();
                 }
             });
         };
