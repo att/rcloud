@@ -2009,9 +2009,11 @@ function create_cell_html_view(language, cell_model) {
         var new_state;
         switch(running_state_) {
         case 'waiting':
+        case 'unknown':
             new_state = 'unknown';
             break;
         case 'running':
+        case 'unknown-running':
             new_state = 'unknown-running';
             break;
         default:
