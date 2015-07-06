@@ -293,6 +293,10 @@ RCloud.create = function(rcloud_ocaps) {
                     return notebook;
                 });
         };
+        rcloud.refresh_compute_notebook = function(id) {
+            return rcloud_github_handler("rcloud.load.notebook.compute (refresh) " + id,
+                                         rcloud_ocaps.load_notebook_computeAsync(id, null));
+        };
 
         rcloud.get_version_by_tag = function(gist_id,tag) {
             return rcloud_ocaps.get_version_by_tagAsync(gist_id,tag);
@@ -3146,6 +3150,7 @@ Notebook.create_controller = function(model)
                         window.clearTimeout(save_timer_);
                         save_timer_ = null;
                     }
+                    rcloud.refresh_compute_notebook(notebook.id);
                     return editor_callback(notebook);
                 };
             }
