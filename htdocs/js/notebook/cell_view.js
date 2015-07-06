@@ -84,10 +84,6 @@ function create_cell_html_view(language, cell_model) {
     };
 
     function set_background_class(div) {
-        /*
-        var edit_color = RCloud.language.is_a_markdown(language) ? edit_colors_.markdown  : edit_colors_.code;
-        ace_div.css({ 'background-color': edit_color });
-         */
         var md = RCloud.language.is_a_markdown(language);
         div.toggleClass(md ? 'edit-markdown' : 'edit-code', true);
         div.toggleClass(md ? 'edit-code' : 'edit-markdown', false);
@@ -168,11 +164,6 @@ function create_cell_html_view(language, cell_model) {
         else div.off('mousedown.rcloud-cell mouseup.rcloud-cell');
     }
 
-    function display_status(status) {
-        result_div_.html('<div class="non-result">' + status + '</div>');
-        has_result_ = false;
-    };
-
     // postprocessing the dom is slow, so only do this when we have a break
     var result_updated = _.debounce(function() {
         Notebook.Cell.postprocessors.entries('all').forEach(function(post) {
@@ -183,6 +174,8 @@ function create_cell_html_view(language, cell_model) {
     function clear_result() {
         result_div_.empty();
         has_result_ = false;
+        if(cell_controls_)
+            cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', false);
     }
 
     // start trying to refactor out this repetitive nonsense
@@ -207,6 +200,23 @@ function create_cell_html_view(language, cell_model) {
             session: session,
             document: document
         };
+    }
+
+    function cell_changed() {
+        var new_state;
+        switch(running_state_) {
+        case 'waiting':
+        case 'unknown':
+            new_state = 'unknown';
+            break;
+        case 'running':
+        case 'unknown-running':
+            new_state = 'unknown-running';
+            break;
+        default:
+            new_state = 'ready';
+        }
+        result.state_changed(new_state);
     }
 
     function create_edit_widget() {
@@ -240,7 +250,7 @@ function create_cell_html_view(language, cell_model) {
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
-            result.state_changed('ready');
+            cell_changed();
             cell_model.parent_model.on_dirty();
         });
         update_language();
@@ -259,7 +269,7 @@ function create_cell_html_view(language, cell_model) {
             bindKey: 'Return',
             exec: function(ace_widget, args, request) {
                 var input = ace_widget.getValue();
-                result.add_result('code', prompt_text_ + input + '\n');
+                result.add_result('code', _.unescape(prompt_text_) + input + '\n');
                 if(input_kont_)
                     input_kont_(null, input);
                 input_div_.hide();
@@ -367,9 +377,11 @@ function create_cell_html_view(language, cell_model) {
         content_updated: function() {
             assign_code();
             if(ace_widget_) {
+                var st = ace_session_.getScrollTop();
                 var range = ace_widget_.getSelection().getRange();
                 var changed = change_content_(cell_model.content());
                 ace_widget_.getSelection().setSelectionRange(range);
+                ace_session_.setScrollTop(st);
             }
             return changed;
         },
@@ -380,35 +392,44 @@ function create_cell_html_view(language, cell_model) {
             return ace_widget_;
         },
         id_updated: update_div_id,
-        language_updated: update_language,
+        language_updated: function() {
+            update_language();
+            cell_changed();
+        },
         state_changed: function(state) {
             var control = left_controls_.controls['run_state'];
+            if(running_state_==="unknown" && state==="running")
+                state = "unknown-running";
             switch(state) {
             case 'ready':
-                if(running_state_ != 'waiting')
-                    control.icon('icon-circle-blank').color('#777');
+                control.icon('icon-circle-blank').color('#777').title('content has not been run');
                 break;
             case 'waiting':
-                control.icon('icon-arrow-right').color('blue');
+                control.icon('icon-arrow-right').color('blue').title('cell is enqueued and waiting to run');
                 break;
             case 'cancelled':
-                control.icon('icon-asterisk').color('#e06a06');
+                control.icon('icon-asterisk').color('#e06a06').title('execution was cancelled before this cell could run');
+                break;
+            case 'unknown-running':
+                control.icon('icon-question icon-spin').color('blue').title('cell is currently running');
+                has_result_ = false;
                 break;
             case 'running':
-                control.icon('icon-spinner icon-spin').color('blue');
+                control.icon('icon-spinner icon-spin').color('blue').title('cell is currently running');
                 has_result_ = false;
                 break;
             case 'complete':
-                control.icon('icon-circle').color('#72B668');
+                control.icon('icon-circle').color('#72B668').title('cell successfully ran');
                 break;
             case 'error':
-                control.icon('icon-exclamation').color('crimson');
+                control.icon('icon-exclamation').color('crimson').title('cell ran but had an error');
+                break;
+            case 'unknown':
+                control.icon('icon-question').color('purple').title('output may or may not reflect current content');
                 break;
             }
             running_state_ = state;
             return this;
-        },
-        start_output: function() {
         },
         add_result: function(type, r) {
             if(!has_result_) {
@@ -417,6 +438,7 @@ function create_cell_html_view(language, cell_model) {
                     result.hide_source(true);
                 has_result_ = true;
             }
+            this.toggle_results(true); // always show when updating
             switch(type) {
             case 'selection':
             case 'deferred_result':
@@ -470,7 +492,7 @@ function create_cell_html_view(language, cell_model) {
                 result_div_.empty();
                 has_result_ = true;
             }
-            this.state_changed(error ? 'error' : 'complete');
+            this.state_changed(error ? 'error' : running_state_==='unknown-running' ? 'ready' : 'complete');
             current_result_ = current_error_ = null;
         },
         clear_result: clear_result,
@@ -493,15 +515,10 @@ function create_cell_html_view(language, cell_model) {
         //////////////////////////////////////////////////////////////////////
 
         execute_cell: function() {
-            var new_content = update_model();
-            var promise;
-            if(new_content!==null) // if any change (including removing the content)
-                promise = cell_model.parent_model.controller.update_cell(cell_model);
-            else
-                promise = Promise.resolve(undefined);
-            promise.then(function() {
-                cell_model.controller.enqueue_execution_snapshot();
-            });
+            return cell_model.parent_model.controller.save()
+                .then(function() {
+                    cell_model.controller.enqueue_execution_snapshot();
+                });
         },
         toggle_edit: function() {
             return this.edit_source(!edit_mode_);
@@ -513,6 +530,8 @@ function create_cell_html_view(language, cell_model) {
                 return;
             }
             if(edit_mode) {
+                if(cell_controls_)
+                    cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', true);
                 if(RCloud.language.is_a_markdown(language))
                     this.hide_source(false);
                 code_div_.hide();
@@ -555,7 +574,8 @@ function create_cell_html_view(language, cell_model) {
                 ace_widget_.resize(); // again?!?
                 ace_widget_.focus();
                 if(event) {
-                    var screenPos = ace_widget_.renderer.pixelToScreenCoordinates(event.pageX, event.pageY);
+                    var scrollTopOffset = ace_widget_.getSession().getScrollTop();
+                    var screenPos = ace_widget_.renderer.pixelToScreenCoordinates(event.pageX, event.pageY - scrollTopOffset);
                     var docPos = ace_session_.screenToDocumentPosition(Math.abs(screenPos.row), Math.abs(screenPos.column));
 
 
@@ -566,6 +586,8 @@ function create_cell_html_view(language, cell_model) {
                 }
             }
             else {
+                if(cell_controls_)
+                    cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', false);
                 var new_content = update_model();
                 if(new_content!==null) // if any change (including removing the content)
                     cell_model.parent_model.controller.update_cell(cell_model);
@@ -584,12 +606,20 @@ function create_cell_html_view(language, cell_model) {
             else
                 source_div_.show();
         },
+        toggle_results: function(val) {
+            if(val===undefined)
+                val = result_div_.is(':hidden');
+            if(cell_controls_)
+                cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', val);
+            if(val) result_div_.show();
+            else result_div_.hide();
+        },
         get_input: function(type, prompt, k) {
             if(!has_result_) {
                 result_div_.empty();
                 has_result_ = true;
             }
-            prompt_text_ = prompt;
+            prompt_text_ = _.escape(prompt).replace(/\n/g,'');
             create_input_widget();
             input_widget_.setValue('');
             input_div_.show();

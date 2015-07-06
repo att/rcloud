@@ -40,12 +40,16 @@ rcloud.install.js.module <- function(module.name, module.content, force=FALSE)
 
 rcloud.install.css <- function(urls)
 {
+  if (is.null(.rcloud.javascript.session$install.css))
+    return(NULL)
   t <- .rcloud.javascript.session$install.css(urls)
   NULL
 }
 
 rcloud.clear.css <- function(notebook)
 {
+  if (is.null(.rcloud.javascript.session$clear.css))
+    return(NULL)
   .rcloud.javascript.session$clear.css(notebook)
   NULL
 }

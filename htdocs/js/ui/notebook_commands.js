@@ -48,6 +48,7 @@ RCloud.UI.notebook_commands = (function() {
                         star_unstar.click(function(e) {
                             e.preventDefault();
                             e.stopPropagation(); // whatever you do, don't let this event percolate
+                            ui_utils.kill_popovers();
                             var new_state = !state;
                             editor.star_notebook(new_state, {gistname: node.gistname, user: node.user});
                         });
@@ -71,6 +72,8 @@ RCloud.UI.notebook_commands = (function() {
                         if(disable)
                             history.addClass('button-disabled');
                         history.click(function() {
+                            //hacky but will do for now
+                            ui_utils.kill_popovers();
                             ui_utils.fake_hover(node);
                             if(!disable) {
                                 editor.show_history(node, true);
@@ -80,27 +83,27 @@ RCloud.UI.notebook_commands = (function() {
                         return history;
                     }
                 },
-                private_public: {
+                visibility: {
                     section: 'appear',
                     sort: 3000,
                     condition1: function(node) {
                         return node.user === editor.username();
                     },
                     create: function(node) {
-                        var make_private = ui_utils.fa_button('icon-eye-close', 'make private', 'private', icon_style_, true),
-                            make_public = ui_utils.fa_button('icon-eye-open', 'make public', 'public', icon_style_, true);
+                        var make_hidden = ui_utils.fa_button('icon-eye-close', 'hide notebook', 'hidden-notebook', icon_style_, true),
+                            make_shown = ui_utils.fa_button('icon-eye-open', 'show notebook', 'shown-notebook', icon_style_, true);
                         if(node.visible)
-                            make_public.hide();
+                            make_shown.hide();
                         else
-                            make_private.hide();
-                        make_private.click(function() {
+                            make_hidden.hide();
+                        make_hidden.click(function() {
                             ui_utils.fake_hover(node);
                             if(node.user !== editor.username())
                                 throw new Error("attempt to set visibility on notebook not mine");
                             else
                                 editor.set_notebook_visibility(node.gistname, false);
                         });
-                        make_public.click(function() {
+                        make_shown.click(function() {
                             ui_utils.fake_hover(node);
                             if(node.user !== editor.username())
                                 throw new Error("attempt to set visibility on notebook not mine");
@@ -108,7 +111,7 @@ RCloud.UI.notebook_commands = (function() {
                                 editor.set_notebook_visibility(node.gistname, true);
                             return false;
                         });
-                        return make_private.add(make_public);
+                        return make_hidden.add(make_shown);
                     }
                 },
                 remove: {
@@ -166,11 +169,19 @@ RCloud.UI.notebook_commands = (function() {
             var $right = $(right);
             var predicate = condition_pred(node);
 
+            function no_clickpast(div) {
+                // do not interpret missed click as open notebook
+                div.on('mousedown mouseup click', function(e) {
+                    e.stopPropagation();
+                });
+            }
+
             function do_always() {
                 // commands for the right column, always shown
                 var always_commands = always_commands_.filter(predicate);
                 if(always_commands.length) {
                     var always = $($.el.span({'class': 'notebook-commands-right'}));
+                    no_clickpast(always);
                     add_commands(node, always, always_commands);
                     $right.append(always);
                 }
@@ -178,11 +189,11 @@ RCloud.UI.notebook_commands = (function() {
 
             // decorate the notebook commands lazily, on hover
             function do_appear() {
-
                 // commands that appear
                 var appear_commands = appear_commands_.filter(predicate);
                 if(appear_commands.length) {
                     var appear = $($.el.span({'class': 'notebook-commands appear'}));
+                    no_clickpast(appear);
                     add_commands(node, appear, appear_commands);
                     $right.append(appear);
                     $right.find('.notebook-date').toggleClass('disappear', true);

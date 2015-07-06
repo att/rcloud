@@ -143,10 +143,6 @@ div.panel-heading:hover {
     cursor: text;
 }
 
-.r-result-div pre code {
-    padding: 0;
-}
-
 .r-result-div .non-result {
     font-style: italic;
 }
@@ -305,4 +301,64 @@ td {
 
 .ace_start.find-highlight {
     position: absolute;
+}
+
+
+
+.inner-tab {
+      padding: 30px;
+}
+
+.sec {
+    margin-bottom: 20px;
+}
+
+.pill-holder {
+    width: 100%;
+    min-height: 30px;
+    border: 1px solid gray;
+    padding: 10px;
+}
+
+.pill-item {
+    background-color: rgb(221, 221, 221);
+    max-width: 100px;
+    display: inline-block;
+    border-radius: 5px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.selectize-input {
+    min-height: 100px!important;
+}
+.selectize-control.multi .selectize-input [data-value] {
+    border-radius: 11px!important;
+}
+
+.group-actions {
+  cursor: pointer;
+}
+
+#protection-app select {
+  min-width: 78px!important;
+  max-width: 150px!important;
+  font-size: 15px!important;
+}
+
+.modal-header {
+    padding-left: 35px!important;
+    padding-right: 35px!important;
+}
+
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a {
+  color: #555555;
+  cursor: default;
+  background-color: #ffffff;
+  border: 1px solid #dddddd;
+  border-bottom-color: transparent;
 }

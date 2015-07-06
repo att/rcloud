@@ -24,7 +24,7 @@ RClient = {
                         on_error("Login failed. Shutting down!");
                     }
                     else if(RCloud.is_exception(ocaps)) {
-                        on_error(ocaps[0]);
+                        on_error(ocaps);
                     }
                     else {
                         result.running = true;
@@ -62,7 +62,7 @@ RClient = {
                 debugger;
             }
             if (!clean) {
-                RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", "/login.R");
+                RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", ui_utils.relogin_uri());
                 shutdown();
             }
         }

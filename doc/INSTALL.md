@@ -8,7 +8,12 @@ RCloud requires R 3.1.0 or higher and several R packages. If you want to compile
     sudo apt-get install gcc g++ gfortran libcairo-dev libreadline-dev libxt-dev libjpeg-dev \
     libicu-dev libssl-dev libcurl4-openssl-dev subversion git automake make libtool \
     libtiff-dev gettext redis-server rsync
-    
+
+    ## to install R from the CRAN PPA (Note: stock R in the distro is too old!)
+    sudo add-apt-repository ppa:marutter/rrutter
+    sudo apt-get update
+    sudo apt-get install r-base-dev
+
     ## RedHat/CentOS 6+
     yum install gcc-gfortran gcc-c++ cairo-devel readline-devel libXt-devel libjpeg-devel \
     libicu-devel boost-devel openssl-devel libcurl-devel subversion git automake redis
@@ -60,7 +65,7 @@ to match the application URL, and the path must be `login_successful.R`).
 Then, you need to create a file under your configuration root
 (typically that's `/conf`) called `rcloud.conf` (see `rcloud.conf.samp`
 in the distribution of an example starting point and
-[the rcloud.conf WiKi page for full details](https://github.com/cscheid/rcloud/wiki/rcloud.conf)).
+[the rcloud.conf WiKi page for full details](https://github.com/att/rcloud/wiki/rcloud.conf)).
 If you're using github.com, then your file will look like this:
 
     github.client.id: your.20.character.client.id

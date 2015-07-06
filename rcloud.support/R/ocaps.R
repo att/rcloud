@@ -1,5 +1,5 @@
-.eval <- function(o, result=TRUE, where=parent.frame()) {
-    o <- Rserve.eval(o, where, last.value=result)
+.eval <- function(o, result=TRUE, where=parent.frame(), context="OCAP-call") {
+    o <- Rserve.eval(o, where, last.value=result, context=context)
     ## ulog("OCAP-EVAL: ", paste(capture.output(str(o)), collapse='\n'))
     if (inherits(o, "Rserve-eval-error")) {
         class(o) <- "OCAP-eval-error"
@@ -8,6 +8,8 @@
         o
     } else o
 }
+
+.rc.oobSend <- function(kind, ...) self.oobSend(list(kind, Rserve.context(), ...))
 
 make.oc <- function(fun, name=deparse(substitute(fun))) {
   f <- function(...) .eval(quote(fun(...)))
@@ -54,6 +56,7 @@ oc.init <- function(...) { ## this is the payload of the OCinit message
 }
 
 compute.ocaps <- function(mode, authenticated) {
+    if (isTRUE(.session$separate.compute)) .Call(Rserve:::Rserve_forward_stdio)
     caps <- list(
         setup_js_installer = make.oc(rcloud.setup.js.installer),
         install_notebook_stylesheets = make.oc(rcloud.install.notebook.stylesheets),
@@ -107,12 +110,16 @@ unauthenticated.ocaps <- function(mode, compute)
       has_compute_separation = make.oc(rcloud.has.compute.separation),
       prefix_uuid = compute$prefix_uuid,
       get_conf_value = make.oc(rcloud.get.conf.value),
+      get_conf_values = make.oc(rcloud.get.conf.values),
+      get_gist_sources = make.oc(rcloud.get.gist.sources),
       get_notebook = make.oc(rcloud.unauthenticated.get.notebook),
       load_notebook = make.oc(rcloud.unauthenticated.load.notebook),
       load_notebook_compute = compute$load_notebook,
       call_notebook = compute$unauthenticated_call_notebook,
       call_fastrweb_notebook = compute$unauthenticated_call_fastrweb_notebook,
       notebook_by_name = make.oc(rcloud.unauthenticated.notebook.by.name),
+      get_version_by_tag = make.oc(rcloud.get.version.by.tag),
+      get_tag_by_version = make.oc(rcloud.get.tag.by.version),
       install_notebook_stylesheets = compute$install_notebook_stylesheets,
       is_notebook_published = make.oc(rcloud.is.notebook.published),
       is_notebook_visible = make.oc(rcloud.is.notebook.visible),
@@ -197,8 +204,6 @@ authenticated.ocaps <- function(mode)
       create_notebook = make.oc(rcloud.create.notebook),
       rename_notebook = make.oc(rcloud.rename.notebook),
       tag_notebook_version = make.oc(rcloud.tag.notebook.version),
-      get_version_by_tag = make.oc(rcloud.get.version.by.tag),
-      get_tag_by_version = make.oc(rcloud.get.tag.by.version),
       publish_notebook = make.oc(rcloud.publish.notebook),
       unpublish_notebook = make.oc(rcloud.unpublish.notebook),
       set_notebook_visibility = make.oc(rcloud.set.notebook.visibility),
@@ -222,10 +227,26 @@ authenticated.ocaps <- function(mode)
         close = make.oc(rcloud.upload.close.file),
         upload_path = make.oc(rcloud.upload.path)
         ),
-      notebook_upload = make.oc(rcloud.upload.to.notebook),
+      ### FIXME: remove from ocaps - we should not be using this anymore,
+      ### it has been replaced by update_notebook
+      notebook_upload = make.oc(.rcloud.upload.to.notebook),
 
       # security: request new token
       replace_token = make.oc(replace.token),
+
+      # notebook protection
+      protection = list(
+        get_notebook_cryptgroup = make.oc(rcloud.get.notebook.cryptgroup),
+        set_notebook_cryptgroup = make.oc(rcloud.set.notebook.cryptgroup),
+        get_cryptgroup_users = make.oc(rcloud.get.cryptgroup.users),
+        get_user_cryptgroups = make.oc(rcloud.get.user.cryptgroups),
+        create_cryptgroup = make.oc(rcloud.create.cryptgroup),
+        set_cryptgroup_name = make.oc(rcloud.set.cryptgroup.name),
+        add_cryptgroup_user = make.oc(rcloud.add.cryptgroup.user),
+        remove_cryptgroup_user = make.oc(rcloud.remove.cryptgroup.user),
+        delete_cryptgroup = make.oc(rcloud.delete.cryptgroup),
+        has_notebook_protection = make.oc(rcloud.has.notebook.protection)
+        ),
 
       # commenting ocaps
       comments = list(

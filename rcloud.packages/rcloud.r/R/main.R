@@ -1,5 +1,5 @@
-.eval <- function(o, result=TRUE, where=parent.frame()) {
-    o <- Rserve.eval(o, where, last.value=result)
+.eval <- function(o, result=TRUE, where=parent.frame(), context="cell-eval") {
+    o <- Rserve.eval(o, where, last.value=result, context=context)
     # ulog("CELL EVAL: ", paste(capture.output(str(o)), collapse='\n'))
     if (inherits(o, "Rserve-eval-error")) {
         class(o) <- "cell-eval-error"
@@ -18,7 +18,7 @@ rcloud.language.support <- function()
     # .session$device.pixel.ratio
     exp <- tryCatch(parse(text=command), error=function(o) structure(list(error=o$message), class="parse-error"))
     # ulog(".EXP: ", paste(capture.output(str(exp)), collapse='\n'))
-    res <- if (!inherits(exp, "parse-error")) .eval(exp, FALSE, .GlobalEnv) else exp
+    res <- if (!inherits(exp, "parse-error")) .eval(exp, FALSE, .GlobalEnv, context=NULL) else exp
     ## R hides PrintWarnings() so this is the only way to get them out
     .Internal(printDeferredWarnings())
     ## FIXME: in principle this should move from rcloud.support to rcloud.R

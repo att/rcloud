@@ -28,6 +28,8 @@ RCloud home, you would run
 
     cd /data/rcloud/services
     git clone https://github.com/s-u/SessionKeyServer.git
+    cd SessionKeyServer
+    make
 
 To start the server, run `/data/rcloud/services/rcloud-sks`.
 

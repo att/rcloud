@@ -11,17 +11,17 @@ rcloud.get.asset <- function(name, notebook=rcloud.session.notebook(), version=N
     if (!isTRUE(res$ok)) stop("cannot get notebook `",notebook[1],"'")
     notebook <- res
   }
+  if (is.null(notebook$augmented))
+      notebook <- rcloud.augment.notebook(notebook) ## NOTE: cached rcloud.session.notebook() may be *raw* so we have to augment
   asset <- notebook$content$files[[name]]$content
   if (is.null(asset)) { ## re-try for binary assets with .b64 extension
-    asset <- notebook$content$files[[paste0(name, ".b64")]]$content
-    if (is.null(asset)) {
-      if (!quiet)
-        stop("cannot find asset `",name,"'")
-      return(NULL)
-    }
-    asset <- base64decode(asset)
-  } else if (length(grep("\\.b64$",name))) ## we got .b64 name explicitly so jsut decode it
-    asset <- base64decode(asset)
+      asset <- notebook$content$files[[paste0(name, ".b64")]]$content
+      if (is.null(asset)) {
+          if (!quiet)
+              stop("cannot find asset `",name,"'")
+          return(NULL)
+      }
+  }
 
   if (as.file) {
     ad <- tempfile(paste0(notebook$content$id, '-assets'))
@@ -53,3 +53,22 @@ rcloud.execute.asset <- function(name, ..., notebook=rcloud.session.notebook(), 
   pars <- if (length(l)) paste(c('', sapply(l, shQuote)), collapse=" ") else ""
   system(paste(driver, shQuote(asset), pars), TRUE, wait=wait)
 }
+
+rcloud.upload.asset <- function(name, content, notebook=rcloud.session.notebook(), binary=is.raw(content), file) {
+    if (!missing(content) && !missing(file)) stop("content and file are mutually exclusive")
+    if (!missing(file)) {
+        file <- path.expand(file)
+        f <- file.info(file)
+        if (is.na(f$size)) stop("file `", file, "' is not accessible")
+        if (f$isdir) stop("cannot upload a directory")
+        tryCatch(content <- readBin(file, raw(), f$size), warning=function(e) stop(e$message))
+    }
+    if (is.list(notebook))
+        notebook <- notebook$content$id
+    l <- list(list(content=content))
+    names(l) <- name
+    invisible(rcloud.update.notebook(notebook, list(files=l)))
+}
+
+rcloud.delete.asset <- function(name, notebook=rcloud.session.notebook())
+    rcloud.upload.asset(name, NULL, notebook)

@@ -115,7 +115,7 @@ RCloud.UI.settings_frame = (function() {
                             cancel();
                     });
                     $(input).blur(function() {
-                        cancel();
+                        commit();
                     });
                     return div;
                 },
@@ -170,14 +170,26 @@ RCloud.UI.settings_frame = (function() {
                 'addons': that.text_input_vector({
                     sort: 10000,
                     needs_reload: true,
-                    needs_reload: true,
                     label: "Enable Extensions"
                 }),
                 'skip-addons': that.text_input_vector({
                     sort: 11000,
                     needs_reload: true,
-                    needs_reload: true,
                     label: "Disable Extensions"
+                }),
+                'new-notebook-prefix': that.text_input({
+                    sort: 12000,
+                    label: "New Notebook Prefix",
+                    default_value: editor.new_notebook_prefix(),
+                    set: function(val) {
+                        editor.new_notebook_prefix(val);
+                    },
+                    parse: function(val) {
+                        // no monkey business: do not allow any empty parts in path, except the last one
+                        return val.split('/')
+                            .filter(function(x, i, a) { return i==a.length-1 || !Notebook.empty_for_github(x); })
+                            .join('/');
+                    }
                 })
             });
         },

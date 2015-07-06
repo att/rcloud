@@ -14,6 +14,8 @@ ui_utils.make_url = function(page, opts) {
     else {
         if(opts.notebook) {
             url += '?notebook=' + opts.notebook;
+            if(opts.source)
+                url += '&source=' + opts.source;
             if(opts.tag)
                 url += '&tag=' + opts.tag;
             else if(opts.version)
@@ -25,6 +27,13 @@ ui_utils.make_url = function(page, opts) {
     return url;
 };
 
+ui_utils.relogin_uri = function() {
+    return window.location.protocol +
+        '//' + window.location.host +
+        '/login.R?redirect=' +
+        encodeURIComponent(window.location.pathname + window.location.search);
+};
+
 ui_utils.disconnection_error = function(msg, label) {
     var result = $("<div class='alert alert-danger'></div>");
     result.append($("<span></span>").text(msg));
@@ -32,11 +41,7 @@ ui_utils.disconnection_error = function(msg, label) {
     var button = $("<button type='button' class='close'>" + label + "</button>");
     result.append(button);
     button.click(function() {
-        window.location =
-            (window.location.protocol +
-            '//' + window.location.host +
-            '/login.R?redirect=' +
-            encodeURIComponent(window.location.pathname + window.location.search));
+        window.location = ui_utils.relogin_uri();
     });
     return result;
 };
@@ -156,7 +161,8 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                 mac: "Command-L"
             },
             exec: function() { return false; }
-        }, {
+        }, 
+        {
             name: 'execute-selection-or-line',
             bindKey: {
                 win: 'Ctrl-Return',
@@ -182,8 +188,49 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                         shell.scroll_to_end();
                     });
             }
+        },
+
+        {
+            name: 'cursor at beginning of line',
+            bindKey: {
+          
+                mac: 'Ctrl-A',
+                sender: 'editor'
+            },
+            exec: function(widget, args, request) {
+                if (widget.getOption("readOnly"))
+                    return;
+                //row of the cursor on current line
+                var row = widget.getCursorPosition().row;
+                //move to the beginning of that line
+                widget.navigateTo(row, 0);
+                //make sure it appears at beginning of text
+                widget.navigateLineStart();
+            }
+        } ,
+        {
+            name: 'cursor at end of line',
+            bindKey: {
+       
+                mac: 'Ctrl-E',
+                sender: 'editor'
+            },
+            exec: function(widget, args, request) {
+                //row of the cursor on current line
+                var row = widget.getCursorPosition().row;
+                //last column of the cursor on current line
+                var lastCol = ui_utils.last_col(widget, row);
+                //move to the end of that line
+                widget.navigateTo(row, lastCol);
+            }
         }
     ]);
+};
+
+
+ui_utils.last_col = function(widget, row) {
+    var doc = widget.getSession().getDocument();
+    return doc.getLine(row).length;
 };
 
 ui_utils.character_offset_of_pos = function(widget, pos) {
@@ -315,22 +362,22 @@ ui_utils.customize_ace_gutter = function(widget, line_text_function)
         var breakpoints = this.session.$breakpoints;
         var decorations = this.session.$decorations;
         var firstLineNumber = this.session.$firstLineNumber;
-        var lastLineNumber = 0;
-        for(; i <= lastRow; ++i)
+        var maxLineLength = 0;
+        for(; i <= lastRow; ++i) {
+            var line = line_text_function(i);
             html.push(
                 "<div class='ace_gutter-cell ",
                 "' style='height:", this.session.getRowLength(0) * config.lineHeight, "px;'>",
-                line_text_function(i),
+                line,
                 "</div>"
             );
+            maxLineLength = Math.max(maxLineLength, line.length);
+        }
 
         this.element = dom.setInnerHtml(this.element, html.join(""));
         this.element.style.height = config.minHeight + "px";
 
-        if (this.session.$useWrapMode)
-            lastLineNumber = this.session.getLength();
-
-        var gutterWidth = ("" + lastLineNumber).length * config.characterWidth;
+        var gutterWidth = maxLineLength * config.characterWidth;
         var padding = this.$padding || this.$computePadding();
         gutterWidth += padding.left + padding.right;
         if (gutterWidth !== this.gutterWidth && !isNaN(gutterWidth)) {
@@ -470,7 +517,7 @@ ui_utils.editable = function(elem$, command) {
                             options().__active = false;
                             elem$.off('blur.editable'); // don't cancel!
                             elem$.blur();
-                            f(txt);
+                            f(txt, txt!=options().active_text);
                             return true;
                         } else {
                             return false; // don't let CR through!
@@ -582,3 +629,18 @@ ui_utils.is_a_mac = function() {
         return isMac;
     };
 }();
+
+ui_utils.kill_popovers = function() {
+    if(window.allPopovers) {
+        $(window.allPopovers).each(function(i, e) {
+            $(this).popover('destroy');
+        });
+        window.allPopovers.length = 0;
+    }
+};
+
+ui_utils.hide_selectize_dropdown = function() {
+    $('.selectize-dropdown').hide();
+    $('.selectize-input').removeClass('focus input-active dropdown-active');
+    $('div.selectize-input > input').blur();
+};

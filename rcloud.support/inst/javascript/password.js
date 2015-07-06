@@ -40,7 +40,7 @@
                 .on('shown.bs.modal', function() {
                     password.focus().select();
                 })
-                .on('hide.bs.modal', function() {
+                .on('hidden.bs.modal', function() {
                     k(result);
                 });
 

@@ -108,6 +108,10 @@ RCloud.UI.cell_commands = (function() {
                 color: function(color) {
                     result.get().find('i').css('color', color);
                     return this;
+                },
+                title: function(title) {
+                    result.get().find('i').attr('title', title);
+                    return this;
                 }
             });
             result.get().attr('class', 'state-icon left-indicator');
@@ -183,7 +187,7 @@ RCloud.UI.cell_commands = (function() {
                 run: {
                     area: 'cell',
                     sort: 2000,
-                    create: function(cell_model,cell_view) {
+                    create: function(cell_model, cell_view) {
                         return that.create_button("icon-play", "run", function() {
                             cell_view.execute_cell();
                         });
@@ -194,8 +198,17 @@ RCloud.UI.cell_commands = (function() {
                     sort: 3000,
                     enable_flags: ['modify'],
                     create: function(cell_model, cell_view) {
-                        return that.create_button("icon-edit", "toggle edit", function() {
+                        return that.create_button("icon-edit borderable", "toggle edit mode", function() {
                             cell_view.toggle_edit();
+                        });
+                    }
+                },
+                results: {
+                    area: 'cell',
+                    sort: 3500,
+                    create: function(cell_model, cell_view) {
+                        return that.create_button("icon-picture borderable", "show/hide results", function() {
+                            cell_view.toggle_results();
                         });
                     }
                 },

@@ -21,6 +21,7 @@ Notebook.create_controller = function(model)
                         window.clearTimeout(save_timer_);
                         save_timer_ = null;
                     }
+                    rcloud.refresh_compute_notebook(notebook.id);
                     return editor_callback(notebook);
                 };
             }
@@ -40,7 +41,8 @@ Notebook.create_controller = function(model)
         var asset_controller = Notebook.Asset.create_controller(asset_model);
         asset_model.controller = asset_controller;
         return {controller: asset_controller,
-                changes: model.append_asset(asset_model, filename)};
+                changes: model.append_asset(asset_model, filename),
+                model: asset_model};
     }
 
     function insert_cell_helper(content, type, id) {
@@ -51,7 +53,13 @@ Notebook.create_controller = function(model)
     }
 
     function on_load(version, notebook) {
-        var is_read_only = version !== null || notebook.user.login !== rcloud.username() || shell.is_view_mode();
+        // the git backend should determine readonly but that's another huge refactor
+        // and it would require multiple usernames, which would be a rather huge change
+        var ninf = editor.get_notebook_info(notebook.id);
+        var is_read_only = ninf && ninf.source ||
+                version !== null ||
+                notebook.user.login !== rcloud.username() ||
+                shell.is_view_mode();
         current_gist_ = notebook;
         model.read_only(is_read_only);
         if (!_.isUndefined(notebook.files)) {
@@ -88,6 +96,7 @@ Notebook.create_controller = function(model)
             }
             model.user(notebook.user.login);
             model.update_files(notebook.files);
+
             if(asset_controller)
                 asset_controller.select();
             else
@@ -240,6 +249,8 @@ Notebook.create_controller = function(model)
             return update_notebook(refresh_buffers().concat(cch.changes))
                 .then(default_callback())
                 .then(function(notebook) {
+                    // set content again because server may have determined it's text
+                    cch.model.content(notebook.files[filename].content);
                     return [notebook, cch.controller];
                 });
         },
@@ -418,6 +429,11 @@ Notebook.create_controller = function(model)
         },
         update_asset: function(asset_model) {
             return update_notebook(refresh_buffers().concat(model.update_asset(asset_model)))
+                .then(function(notebook) {
+                    // set content again because server may have determined it's text
+                    asset_model.content(notebook.files[asset_model.filename()].content);
+                    return notebook;
+                })
                 .then(default_callback());
         },
         rename_notebook: function(desc) {
@@ -442,7 +458,7 @@ Notebook.create_controller = function(model)
                         throw 'stop';
                     } else if (r.r_attributes['class'] === 'cell-eval-error') {
                         // available: error=message, traceback=vector of calls, expression=index of the expression that failed
-                        var tb = r['traceback'] || '';
+                        var tb = r.traceback || '';
                         if (tb.join) tb = tb.join("\n");
                         var trace = tb ? 'trace:\n'+tb : true;
                         RCloud.end_cell_output(context_id, trace);
