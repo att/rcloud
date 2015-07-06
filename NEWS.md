@@ -1,4 +1,4 @@
-## RCloud 1.4 (under development)
+## RCloud 1.4
 ### Features
 * Protected notebooks. You can encrypt your notebooks and make them readable
  only by you or only by a select group of users. Protected notebooks will not
