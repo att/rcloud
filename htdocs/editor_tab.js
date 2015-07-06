@@ -1174,18 +1174,22 @@ var editor = function () {
                         var load_err = /Error: load_notebook: (.*)R trace/.exec(msg2);
                         if(load_err)
                             msg2 = load_err[1];
-                        var improve_msg_promise;
+                        var improve_msg_promise, errtype;
                         if(/unable to access key/.test(msg2))
+                            errtype = 'access';
+                        else if(/checksum mismatch/.test(msg2))
+                            errtype = 'checksum';
+                        if(errtype) {
                             improve_msg_promise = rcloud.protection.get_notebook_cryptgroup(gistname).then(function(cryptgroup) {
                                 if(cryptgroup) {
                                     if(cryptgroup.id === 'private')
-                                        message += "\nNotebook is private and you are not the owner";
+                                        message += "\nThe notebook is private and you are not the owner";
                                     else if(cryptgroup.name)
-                                        message += "\nNotebook belongs to protection group '" + cryptgroup.name + "' and you are not a member";
+                                        message += "\nThe notebook belongs to protection group '" + cryptgroup.name + "' and you are not a member";
                                 }
                                 else message += '\n' + msg2;
                             });
-                        else {
+                        } else {
                             message += '\n' + msg2;
                             improve_msg_promise = Promise.resolve(undefined);
                         }
