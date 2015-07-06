@@ -31,6 +31,12 @@
  menu. (#1313)
 
 ### Improvements
+* running a cell causes the whole notebook to save, e.g. you don't need to
+  explicitly save an asset before running the cell that uses it (#1597)
+* rcloud.shiny and rcloud.dcplot are independent packages which can be
+  versioned/updated separately. any style sheet customization of rcloud.dcplot
+  should be loaded manually using `rcloud.install.css` after rcloud.dcplot is
+  loaded, instead of relying on the automatic "rcloud-*.css" hook. (#1371)
 * toggle results for each cell, helpful when results are long and it's hard to
  find the next cell (#1487)
 * hide all view.html ui elements, including cell status elements, on `&quiet=1`
@@ -56,6 +62,11 @@
  line (on Mac) (#1417)
 
 ### Bug Fixes
+* autosave was causing long cells to scroll (#1386)
+* forking a notebook by renaming and pressing ctrl-enter, but not changing the
+  name, should default to incrementing the number (#1548)
+* fixed another edge case of message fragmentation where messages of exactly
+  the wrong length would cause R-JavaScript connection to break
 * improve markdown formatting #1502
 * leaving a text field setting commits the change. (ESC still cancels, and Enter
   also commits.) #1523
