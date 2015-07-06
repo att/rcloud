@@ -21,6 +21,7 @@ Notebook.create_controller = function(model)
                         window.clearTimeout(save_timer_);
                         save_timer_ = null;
                     }
+                    rcloud.refresh_compute_notebook(notebook.id);
                     return editor_callback(notebook);
                 };
             }

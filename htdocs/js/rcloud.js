@@ -70,7 +70,7 @@ RCloud.create = function(rcloud_ocaps) {
             } else {
                 var message;
                 if(result.content && result.content.message)
-                    message = result.content.message;
+                    message = result.content.message + ' (' + result.code + ')';
                 else
                     message = "error code " + result.code;
                 throw new Error(command + ': ' + message);
@@ -186,6 +186,10 @@ RCloud.create = function(rcloud_ocaps) {
                 .spread(function(_, notebook) {
                     return notebook;
                 });
+        };
+        rcloud.refresh_compute_notebook = function(id) {
+            return rcloud_github_handler("rcloud.load.notebook.compute (refresh) " + id,
+                                         rcloud_ocaps.load_notebook_computeAsync(id, null));
         };
 
         rcloud.get_version_by_tag = function(gist_id,tag) {

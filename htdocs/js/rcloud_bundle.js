@@ -176,7 +176,7 @@ RCloud.create = function(rcloud_ocaps) {
             } else {
                 var message;
                 if(result.content && result.content.message)
-                    message = result.content.message;
+                    message = result.content.message + ' (' + result.code + ')';
                 else
                     message = "error code " + result.code;
                 throw new Error(command + ': ' + message);
@@ -292,6 +292,10 @@ RCloud.create = function(rcloud_ocaps) {
                 .spread(function(_, notebook) {
                     return notebook;
                 });
+        };
+        rcloud.refresh_compute_notebook = function(id) {
+            return rcloud_github_handler("rcloud.load.notebook.compute (refresh) " + id,
+                                         rcloud_ocaps.load_notebook_computeAsync(id, null));
         };
 
         rcloud.get_version_by_tag = function(gist_id,tag) {
@@ -1365,6 +1369,7 @@ ui_utils.kill_popovers = function() {
         window.allPopovers.length = 0;
     }
 };
+<<<<<<< HEAD
 
 
 ui_utils.hide_selectize_dropdown = function() {
@@ -1372,6 +1377,8 @@ ui_utils.hide_selectize_dropdown = function() {
     $('.selectize-input').removeClass('focus input-active dropdown-active');
     $('div.selectize-input > input').blur();
 }
+=======
+>>>>>>> f797b1b3f6e2459f477147d4b392db825a9be7b3
 RCloud.utils = {};
 
 // Ways to execute promise in sequence, with each started after the last completes
@@ -2012,9 +2019,11 @@ function create_cell_html_view(language, cell_model) {
         var new_state;
         switch(running_state_) {
         case 'waiting':
+        case 'unknown':
             new_state = 'unknown';
             break;
         case 'running':
+        case 'unknown-running':
             new_state = 'unknown-running';
             break;
         default:
@@ -2319,15 +2328,10 @@ function create_cell_html_view(language, cell_model) {
         //////////////////////////////////////////////////////////////////////
 
         execute_cell: function() {
-            var new_content = update_model();
-            var promise;
-            if(new_content!==null) // if any change (including removing the content)
-                promise = cell_model.parent_model.controller.update_cell(cell_model);
-            else
-                promise = Promise.resolve(undefined);
-            promise.then(function() {
-                cell_model.controller.enqueue_execution_snapshot();
-            });
+            return cell_model.parent_model.controller.save()
+                .then(function() {
+                    cell_model.controller.enqueue_execution_snapshot();
+                });
         },
         toggle_edit: function() {
             return this.edit_source(!edit_mode_);
@@ -3153,6 +3157,7 @@ Notebook.create_controller = function(model)
                         window.clearTimeout(save_timer_);
                         save_timer_ = null;
                     }
+                    rcloud.refresh_compute_notebook(notebook.id);
                     return editor_callback(notebook);
                 };
             }

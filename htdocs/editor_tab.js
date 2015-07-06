@@ -1132,6 +1132,7 @@ var editor = function () {
                 data: data,
                 onCreateLi: on_create_tree_li,
                 selectable: true,
+                useContextMenu: false,
                 keyboardSupport: false
             });
             $tree_.bind('tree.click', tree_click);
