@@ -1167,9 +1167,9 @@ var editor = function () {
                                               selroot: selroot,
                                               push_history: push_history}))
                     .catch(function(xep) {
-                        var message = "Could not open notebook " + gistname;
+                        var msg1 = "Could not open notebook " + gistname;
                         if(version)
-                            message += " (version " + version + ")";
+                            msg1 += " (version " + version + ")";
                         var msg2 = xep.toString().replace(/\n/g, '');
                         var load_err = /Error: load_notebook: (.*)R trace/.exec(msg2);
                         if(load_err)
@@ -1183,17 +1183,24 @@ var editor = function () {
                             improve_msg_promise = rcloud.protection.get_notebook_cryptgroup(gistname).then(function(cryptgroup) {
                                 if(cryptgroup) {
                                     if(cryptgroup.id === 'private')
-                                        message += "\nThe notebook is private and you are not the owner";
-                                    else if(cryptgroup.name)
-                                        message += "\nThe notebook belongs to protection group '" + cryptgroup.name + "' and you are not a member";
+                                        return msg1 + "\nThe notebook is private and you are not the owner";
+                                    else if(cryptgroup.name) {
+                                        return rcloud.protection.get_cryptgroup_users(cryptgroup.id).then(function(users) {
+                                            return msg1 + "\nThe notebook belongs to protection group '" + cryptgroup.name + "' and you are not a member\n" +
+                                                "Group administrators are: " + _.pairs(_.omit(users, 'r_type', 'r_attributes')).filter(function(usad) {
+                                                    return usad[1];
+                                                }).map(function(usad) {
+                                                    return usad[0];
+                                                }).join(', ');
+                                        });
+                                    }
                                 }
-                                else message += '\n' + msg2;
+                                return msg1 + '\n' + msg2;
                             });
                         } else {
-                            message += '\n' + msg2;
-                            improve_msg_promise = Promise.resolve(undefined);
+                            improve_msg_promise = Promise.resolve(msg1 + '\n' + msg2);
                         }
-                        improve_msg_promise.then(function() {
+                        improve_msg_promise.then(function(message) {
                             RCloud.UI.fatal_dialog(message, "Continue", fail_url);
                         });
                         throw xep;
