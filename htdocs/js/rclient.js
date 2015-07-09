@@ -14,7 +14,7 @@ RClient = {
 
             // the rcloud ocap-0 performs the login authentication dance
             // success is indicated by the rest of the capabilities being sent
-            var session_mode = (opts.mode) ? opts.mode : "IDE";
+            var session_mode = (opts.mode) ? opts.mode : "client";
             rserve.ocap([token, execToken], session_mode, function(err, ocaps) {
                 if(err)
                     on_error(err[0], err[1]);
