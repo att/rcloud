@@ -163,6 +163,7 @@ function rclient_promise(allow_anonymous) {
     return new Promise(function(resolve, reject) {
         rclient = RClient.create({
             debug: false,
+            mode: "IDE",
             host:  location.href.replace(/^http/,"ws").replace(/#.*$/,""),
             on_connect: function (ocaps) {
                 resolve(ocaps);
