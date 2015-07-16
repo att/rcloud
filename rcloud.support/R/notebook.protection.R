@@ -133,4 +133,4 @@ rcloud.delete.cryptgroup <- function(groupid) {
 # could be supported other ways, or disabled through another key
 rcloud.has.notebook.protection <- function()
   !is.null(rcloud.support:::getConf('session.server')) &&
-  !is.null(rcloud.support:::getConf('enable.notebook.protection'))
+  is.null(rcloud.support:::getConf('disable.notebook.protection'))
