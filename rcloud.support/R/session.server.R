@@ -35,7 +35,7 @@ session.server.modify.group <- function(realm, token, group, new.members, new.ad
                                             action)), "\n", TRUE)[[1]]
 }
 
-session.server.group.hash <- function(realm, token, group, salt="")
+session.server.group.hash <- function(realm, token, group, salt="") 
     strsplit(.session.server.request(paste0("/group_hash?token=", URIencode(token), "&realm=", URIencode(realm), "&group=", URIencode(group), "&salt=", URIencode(salt))), "\n", TRUE)[[1]]
 
 session.server.generate.key <- function(realm, token)
@@ -46,5 +46,8 @@ session.server.version <- function()
 
 ## FIXME: better error handling (server down etc.)
 ## simple GET requests at this point
-.session.server.request <- function(request)
+.session.server.request <- function(request) {
+    if(is.null(getConf("session.server")))
+      stop("can't perform this action without a session.server configured in rcloud.conf")
     RCurl::getURL(paste0(getConf("session.server"), request))
+}

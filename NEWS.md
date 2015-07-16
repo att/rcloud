@@ -1,3 +1,16 @@
+## RCloud 1.4.2
+* Further improvements to the flag disabling protected notebooks. (The
+ feature does not seem to be entirely stable). If `rcloud.conf` contains
+ an entry `disable.notebook.protection` (with any value), existing encrypted
+ notebooks can still be opened, but the UI is disabled and the protection
+ status of notebooks can't be changed. (#1580)
+
+## RCloud 1.4.1
+### Bug fixes
+* An API change in `RClient.create` was not backward compatible, breaking
+ notebooks which embed the JavaScript that connects to the RCloud server
+ (#1598)
+
 ## RCloud 1.4
 ### Features
 * Protected notebooks. You can encrypt your notebooks and make them readable
