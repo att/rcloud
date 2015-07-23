@@ -51,7 +51,7 @@ else
             else
                 echo "**Phantomjs is not installed properly**"
                 sudo rm /usr/local/bin/phantomjs
-				sudo rm /usr/local/share/phantomjs
+		sudo rm /usr/local/share/phantomjs
             fi
         else
             echo "0"
@@ -59,13 +59,14 @@ else
             tar -xvjf phantomjs-1.9.8-linux-x86_64.tar.bz2
             sudo ln -s `pwd`/phantomjs-1.9.8-linux-x86_64 /usr/local/share/phantomjs
             sudo ln -s /usr/local/share/phantomjs/bin/phantomjs /usr/local/bin/phantomjs
+            v1=$(phantomjs --version)
             if [ $v1 = 1.9.8 ]
             then
                 echo "***Phantomjs is installed successfully***"
             else
                 echo "**Phantomjs is not installed properly**"
                 sudo rm /usr/local/bin/phantomjs
-				sudo rm /usr/local/share/phantomjs
+		sudo rm /usr/local/share/phantomjs
             fi
        fi
     fi
@@ -91,7 +92,7 @@ else
             else
                 echo "**Slimerjs is not installed properly**"
                 sudo rm /usr/local/bin/slimerjs
-				sudo rm /usr/local/share/slimerjs
+		sudo rm /usr/local/share/slimerjs
             fi
        else
             echo "0"
@@ -101,13 +102,13 @@ else
             sudo ln -s /usr/local/share/slimerjs/slimerjs /usr/local/bin/slimerjs
             v2=$(slimerjs --version)
             tmp=$(echo $v2 | cut -c 18-22)
-            if [ $tmp = 0.9.6];
+            if [ $tmp = 0.9.6 ];
             then
                 echo "***Slimerjs is installed successfully***"
             else
                 echo "**Slimerjs is not installed properly**"
                 sudo rm /usr/local/bin/slimerjs
-				sudo rm /usr/local/share/slimerjs
+		sudo rm /usr/local/share/slimerjs
             fi
         fi
     fi
