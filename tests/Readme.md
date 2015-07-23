@@ -16,11 +16,11 @@
 * This script will expect the desired path of the directory where the dependancies will be installed. (e.g "/home/user/directory_name") 
 
 ## Execution of the automation scripts
-- **RCloud must started to execute the automation scripts**
-- Below is the command used for execution of the automation test scripts:
+- **RCloud must started before executing the automation scripts**
+- Below is the command used for execution of the automation test scripts: ( Assuming that RCloud is installed in `/data/rcloud` )
 
 ```sh
-	$ cd data/rcloud/test
+	$ cd data/rcloud/tests
 ```
 - With UI
 
