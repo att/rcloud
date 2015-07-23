@@ -11,7 +11,7 @@
 * command to execute the installation script: 
 
 ```sh
-	$ sudo bash data/rcloud/test/Automation_Dependency_Install.sh
+	$ sudo bash data/rcloud/tests/Automation_Dependency_Install.sh
 ```  
 * This script will expect the desired path of the directory where the dependancies will be installed. (e.g "/home/user/directory_name") 
 
