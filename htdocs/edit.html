@@ -74,6 +74,14 @@
   </div>
 </script>
 
+<script type="text/html" id="recent-notebooks-dropdown">
+  <div class="dropdown recent-notebooks-dropdown">
+    <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Recent  <span class="caret"></span></button>
+    <ul class="dropdown-menu recent-notebooks-list">
+    </ul>
+  </div>
+</script>
+
 <script type="text/html" id="search-snippet">
   <div class="panel-body" style="padding-bottom: 0;padding-top:3px">
     <div id="search-wrapper" class="widget-vsize"> <!-- only for sizing -->
@@ -315,6 +323,11 @@
             <div class="form-group">
               <label for="comment">Members:</label>
               <selectize ng-disabled='!allAdminGroups.length' options='allUsers' config="myConfig" ng-model="groupMembers"></selectize>
+            </div>
+          </div>
+
+          <div class="row sec">
+            <div class='group-changes-panel'>
             </div>
           </div>
         </div>

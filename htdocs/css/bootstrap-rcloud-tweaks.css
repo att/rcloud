@@ -362,3 +362,21 @@ td {
   border: 1px solid #dddddd;
   border-bottom-color: transparent;
 }
+
+/*recent notebooks*/
+
+.recent-notebooks-dropdown {
+    position: absolute;
+    right: 39px;
+    top: 7px;
+}
+
+.recent-notebooks-dropdown button {
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+    background-color: gainsboro;
+}
+
+

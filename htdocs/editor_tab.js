@@ -36,6 +36,7 @@ var editor = function () {
         featured_ = [], // featured users - samples, intros, etc
         invalid_notebooks_ = {},
         current_ = null; // current notebook and version
+        recent_notebooks = {};
 
     // view
     var $tree_ = null,
@@ -744,6 +745,7 @@ var editor = function () {
         }
         else
             return rcloud.load_notebook(node.gistname, null).then(function(notebook) {
+                console.log('hey');
                 histories_[node.gistname] = notebook.history;
                 if(whither==='sha')
                     nshow = show_sha(histories_[node.gistname], where);
@@ -1065,9 +1067,10 @@ var editor = function () {
         init: function(opts) {
             var that = this;
             username_ = rcloud.username();
+            console.log('in result init'); 
             var promise = load_everything().then(function() {
                 if(opts.notebook) { // notebook specified in url
-                    return that.load_notebook(opts.notebook, opts.version, opts.source, true, false, ui_utils.make_url('edit.html'));
+                    //return that.load_notebook(opts.notebook, opts.version, opts.source, true, false, ui_utils.make_url('edit.html'));
                 } else if(!opts.new_notebook && current_.notebook) {
                     return that.load_notebook(current_.notebook, current_.version)
                         .catch(function(xep) {
@@ -1081,6 +1084,12 @@ var editor = function () {
                 else
                     return that.new_notebook();
             });
+
+            //add the recent notebooks dropdown
+            $('.panel-heading:first')
+                .append( RCloud.UI.panel_loader.load_snippet('recent-notebooks-dropdown'));
+            $('.dropdown-toggle').dropdown();
+
             $('#new-notebook').click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1145,6 +1154,7 @@ var editor = function () {
             return find_next_copy_name(username_, name);
         },
         load_notebook: function(gistname, version, source, selroot, push_history, fail_url) {
+            console.log('load notebook function called');
             var that = this;
             var before;
             if(source) {
@@ -1432,7 +1442,58 @@ var editor = function () {
                 if(find_version)
                     tag = find_version.tag;
                 rcloud.config.set_current_notebook(current_);
-                rcloud.config.set_recent_notebook(result.id, (new Date()).toString());
+                rcloud.config.set_recent_notebook(result.id, (new Date()).toString())
+                .then(function(){
+                    return rcloud.config.get_recent_notebooks()
+                })
+                .then(function(data){
+                    recent_notebooks = data;
+                    $(document).trigger('populateRecentNotebooks', data);
+                });
+
+                $(document).on('populateRecentNotebooks', function() {
+
+                    var sorted = _.chain(recent_notebooks)
+                        .pairs()
+                        .filter(function(kv) { return kv[0] != 'r_attributes' && kv[0] != 'r_type'; })
+                        .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
+                        .sortBy(function(kv) { return kv[1]; })
+                        .value();
+
+                    $('.recent-notebooks-list').empty();
+                    console.dir(sorted);
+
+                    for(var i = 0; i < sorted.length; i ++) {
+                        
+                        var li = $('<li></li>');
+                        li.appendTo($('.recent-notebooks-list'));
+
+                        var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');
+                        anchor.addClass('ui-all')
+                            .text(get_notebook_info(sorted[i][0]).description)
+                            .appendTo(li);
+                            
+                        anchor.click(function(e) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            var gist = $(e.currentTarget).data('gist');
+                            console.log(gist);
+
+                            rcloud.load_notebook(gist, null, null, true, false, ui_utils.make_url('edit.html'))
+                            .then(function(notebook) {
+                                //histories_[gist] = notebook.history;
+                                // if(whither==='sha')
+                                //     nshow = show_sha(histories_[gist], where);
+                                // process_history(nshow);
+                                // return node;
+                            });
+                        });
+                    }
+
+                    // $(recent_notebooks).each(function(i) {
+                    //     console.log(i);
+                    // });
+                });
 
                 // need to know if foreign before we can do many other things
                 var promise_source = options.source ? Promise.resolve(undefined)

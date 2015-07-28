@@ -371,9 +371,65 @@ define(['angular'], function(angular) {
                         var dupIndex = $scope.groupAdmins.indexOf(duplicates[0]);
                         $scope.groupAdmins.splice(dupIndex, 1);
                     }
+                    $scope.updateListOfChanges();
                     ui_utils.hide_selectize_dropdown();
                 }
             });
+        };
+
+        $scope.updateListOfChanges = function() {
+            $('.group-changes-panel').html($scope.getCurrentChanges());
+        };
+
+        $scope.getCurrentChanges = function() {
+            var removedAdmins = _.difference($scope.originalAdmins, $scope.groupAdmins);
+            var addedAdmins = _.difference($scope.groupAdmins, $scope.originalAdmins);
+            //compare original members array and its current state
+            var removedMembers = _.difference($scope.originalMembers, $scope.groupMembers);
+            var addedMembers = _.difference($scope.groupMembers, $scope.originalMembers);
+
+            var allMembers = [removedAdmins, addedAdmins, removedMembers, addedMembers];
+            var outputMessage = '';
+
+            if(!removedAdmins.length && !addedAdmins.length && !removedMembers.length && !addedMembers.length ) {
+                return ''
+            }
+            else {
+                outputMessage = ' ';
+                if(removedAdmins.length) {
+                    outputMessage += 'You removed admins ';
+                    for(var i = 0; i < removedAdmins.length; i ++) {
+                        outputMessage += removedAdmins[i] + $scope.getSeparator(i, removedAdmins);
+                    }
+                }
+                if(addedAdmins.length) {
+                    outputMessage += 'You added admins ';
+                    for(var a = 0; a < addedAdmins.length; a ++) {
+                        outputMessage += addedAdmins[a] + $scope.getSeparator(a, addedAdmins);
+                    }
+                }
+                if(removedMembers.length) {
+                    outputMessage += 'You removed members ';
+                    for(var b = 0; b < removedMembers.length; b ++) {
+                        outputMessage += removedMembers[b] + $scope.getSeparator(b, removedMembers);
+                    }
+                }
+                if(addedMembers.length) {
+                    outputMessage += 'You added members ';
+                    for(var v = 0; v < addedMembers.length; v ++) {
+                        outputMessage += addedMembers[v] + $scope.getSeparator(v, addedMembers);
+                    }
+                }
+            }
+            return outputMessage;
+        };
+
+
+        $scope.getSeparator = function(index, array) {
+            if(index === array.length -1){
+                return '.';
+            }
+            return ', '
         };
 
         $scope.stopWatching = function() {
