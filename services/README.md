@@ -33,6 +33,12 @@ RCloud home, you would run
 
 To start the server, run `/data/rcloud/services/rcloud-sks`.
 
+If you run RCloud from a different directory, you can use the ROOT
+environment variable to point to it. For example, you can switch to
+the root directory and run
+
+    ROOT=`pwd` services/rcloud-sks &
+
 
 ### Automatic startup
 
