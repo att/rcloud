@@ -69,7 +69,8 @@ compute.ocaps <- function(mode, authenticated) {
         prefix_uuid = make.oc(rcloud.prefix.uuid),
         load_notebook = if (authenticated) make.oc(rcloud.load.notebook.compute) else make.oc(rcloud.unauthenticated.load.notebook.compute),
         render_plot = make.oc(rcloud.render.plot),
-        render_formats = make.oc(rcloud.available.render.formats)
+        render_formats = make.oc(rcloud.available.render.formats),
+        help = make.oc(rcloud.help)
         )
     if (authenticated) c(caps, list(
         compute_init = make.oc(rcloud.compute.init),
@@ -124,7 +125,7 @@ unauthenticated.ocaps <- function(mode, compute)
       is_notebook_published = make.oc(rcloud.is.notebook.published),
       is_notebook_visible = make.oc(rcloud.is.notebook.visible),
       signal_to_compute = make.oc(.signal.to.compute),
-      help = make.oc(rcloud.help),
+      help = compute$help,
 
       get_users = make.oc(rcloud.get.users),
 
