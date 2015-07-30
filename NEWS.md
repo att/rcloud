@@ -1,6 +1,167 @@
+## RCloud 1.4.2
+### Improvement
+* Since the protected notebooks feature does not seem to be entirely stable,
+ especially in interaction with large notebooks and assets, we have introduced
+ a flag in `rcloud.conf` disabling the feature. If `rcloud.conf` contains
+ the key `disable.notebook.protection` (with any value), existing encrypted
+ notebooks can still be opened, but the UI is disabled and the protection
+ status of notebooks can't be changed. (#1580)
+
+## RCloud 1.4.1
+### Bug fix
+* An API change in `RClient.create` was not backward compatible, breaking
+ notebooks which embed the JavaScript that connects to the RCloud server
+ (#1598)
+
+## RCloud 1.4
+### Features
+* Protected notebooks. You can encrypt your notebooks and make them readable
+ only by you or only by a select group of users. Protected notebooks will not
+ be seen in the search results (although pre-encrypted versions of the content
+ may be).
+
+ View or modify the protection of a notebook through the notebook info command
+ in the notebook tree. If you own the notebook, the protection will be a link
+ which open the Notebook Protection dialog. From here you can assign the
+ notebook to any group you are a member of, or make it private only to
+ yourself. The second tab of the Notebook Protection dialog allows you to
+ create groups, rename groups, and assign other users as administrators and
+ members of the groups you administrate.
+* View notebooks on other RCloud instances. The configuration file now allows
+ configuring multiple git/github-based notebook stores with `gist.source`
+ names. Specifying that name in the URL with `&source=name` loads the notebook
+ from the other instance. Search has an option to search "All Lakes", i.e. all
+ sources. For this release, all notebooks get displayed in the same tree;
+ notebooks which are "foreign" get displayed in green and are read-only. You can
+ fork and star notebooks from other instances; however, you can't comment on them.
+* Stop execution of cells. Clicking the stop buttion in the navbar now sends an
+ interrupt to the R process and terminates execution (when possible).
+* Binary assets: you can now upload binary files to notebooks. The content is
+ automatically detected and transparently encoded and decoded using base-64
+ encoding. Where possible, the asset is displayed in its native format
+ in the asset panel. Assets are currently limited to 750KB. (#683)
+* Navbar menus [are
+ customizable](https://github.com/att/rcloud/wiki/RCloud-UI-Extensions#navbar-menus),
+ e.g. to display help or other resources in the area around the Advanced
+ menu. (#1313)
+
+### Improvements
+* running a cell causes the whole notebook to save, e.g. you don't need to
+  explicitly save an asset before running the cell that uses it (#1597)
+* rcloud.shiny and rcloud.dcplot are independent packages which can be
+  versioned/updated separately. any style sheet customization of rcloud.dcplot
+  should be loaded manually using `rcloud.install.css` after rcloud.dcplot is
+  loaded, instead of relying on the automatic "rcloud-*.css" hook. (#1371)
+* toggle results for each cell, helpful when results are long and it's hard to
+ find the next cell (#1487)
+* hide all view.html ui elements, including cell status elements, on `&quiet=1`
+ (#1449)
+* Rename folders of notebooks. Clicking on a notebook folder the first time
+ opens the folder. Clicking on the name a second time starts editing of that
+ name (and any higher levels of the folder name). (#1393)
+* New cell states to make enqueued execution clearer: if you change a cell
+ when it is enqueued to be run, its state will turn to "unknown" (purple
+ question mark) indicating that the result may not match the code in the
+ cell. When it is running, it will display a spinning question mark. And when
+ it has finished running, it will return to the "ready" state (empty circle)
+ instead of the "complete" state, indicating it still needs to be run for the
+ current code to be reflected in the output and state. (#1474 / #1456 / #1445 /
+ #1436)
+* New Notebook Prefix setting allows changing the prefix for new notebook
+ names, e.g. to put new notebooks in a folder to keep the top level less
+ cluttered. The default remains "Notebook ". (#885)
+* multi-line command input is indicated with `+` as in command-line R. (#620)
+* workspace panel is not updated if it is collapsed
+* highlighting and syntax checking for html (#1387)
+* ctrl-A and ctrl-E go to the beginning and end of actual line, not the wrapped
+ line (on Mac) (#1417)
+
+### Bug Fixes
+* autosave was causing long cells to scroll (#1386)
+* forking a notebook by renaming and pressing ctrl-enter, but not changing the
+  name, should default to incrementing the number (#1548)
+* fixed another edge case of message fragmentation where messages of exactly
+  the wrong length would cause R-JavaScript connection to break
+* improve markdown formatting #1502
+* leaving a text field setting commits the change. (ESC still cancels, and Enter
+  also commits.) #1523
+* multiple password prompts executed seqentially could hang RCloud (#371)
+* do not allow empty notebook path parts (#1491 / #1492)
+* Python errors are now detected by the notebook, displaying the proper status
+ and cancelling further cell execution. (#1433)
+* empty Python cells could case RCloud to hang (#1403)
+* restores error messages (like notebook not published) in view mode (#1424)
+* tagged versions of notebooks were not available in view mode (#1369)
+* fixes special html characters (such as `Press <enter> to continue`) in text
+ input prompt. (#1383)
+* fixes broken help with R 3.2.0 (#1482)
+* fixes cases where forked notebooks within folders ended up with the same name
+ as the original. (#1277)
+* fixes cases where the text input prompt was truncated in view mode (#1453)
+* redirects through the login page return to the same page that was
+ requested. (If a custom login page is used, it should take `?redirect=` as a
+ query parameter, and POST the same value to login.R when submitting the
+ username and password.) (#1419 / #1282)
+* various connectivity problems were fixed, caused by fragmentation of messages
+ from the client to the server
+* equations are properly displayed in RMarkdown cells (#1377)
+* clicking to edit a cell which is scrolled hits the intended line (#1358)
+* fix oversized left margin for markdown (#1401)
+
+### Plugins
+#### Workspace viewer
+* the dimensions of data frames are now shown in the overview
+* functions arguments are shown without the preceding function keyword to save
+  space
+
+
+## RCloud 1.3.4
+* Catches errors in Workspace viewer when an object errors in str()
+
+* Fixed an error when Cairo device is used outside of the RCloudDevice context.
+  (#1427)
+* Prefer the file extensions defined in RCloud language extensions over what
+  GitHub infers, because sometimes it gets the language wrong. (#1412)
+
+## RCloud 1.3.3
+* Do not load rcloud language and ui extensions when doing a notebook.R call.
+
+* Added `http.static.nocache` configuration entry governing the use of no-cache
+  headers for statically served content. The default is now `no`, which means
+  the browser is allowed to cache static content.  RCloud 1.3 through 1.3.2 used
+  `yes` which can cause unnecessary load on the servers if there are no changes
+  to the static content.
+
+* Fixes a bug where line breaks were missing from content copied from inactive
+  cells (#1389)
+
+* Fixes a bug where only the first line is copied when copying cells in Firefox
+  (#1413)
+
+## RCloud 1.3.2
+* Some reserved characters were not getting uri-encoded, resulting in passwords
+  failing.
+
 ## RCloud 1.3.1
 
 ### Features
+* Cell Run State Indicator.  Status messages such as "Cancelled!" and "Waiting"
+  are no longer displayed in the result area.  Instead, an indicator resides in
+  the bar above each cell:
+
+  * Open circle means the cell has not been run.
+  * Blue arrow means the cell is enqueued to run
+  * Blue spinner means the cell is running
+  * Green light means the cell ran and succeeded.
+  * Red explamation point means the cell had an error
+  * Orange splat means the cell run was cancelled
+
+  This also helps with confusion with whether a cell has run when it doesn't
+  produce output. (#1207, #1264)
+
+* Non-preemptive stop. Although you still can't cancel a long-running cell,
+  you can stop any later cells from running, by pressing the Stop button.
+
 * Options to enable and disable extensions per user. The Settings pane
   has "Enable Extension" and "Disable Extensions", which set the user
   options `addons` and `skip-addons`, respectively. On starting the session,
@@ -9,6 +170,43 @@
 ### Improvements
 * "Subscribe to Comments" option is not shown if this feature is not
   configured on the server. (#1347)
+
+* Editable cells are always (lightly) colored (#1322)
+
+* Simplified, more correct workspace value printing
+
+* When plots are too wide for the middle column, they scroll horizontally. (#1239)
+
+* Settings that require a page reload tell you so when you make the change.
+
+* Customizable logo for view.html
+
+* Use line breaks when printing R stack traces (#1360)
+
+* Controls in status area slightly greyer to distract from code less.
+
+* Option to turn cell numbering off (#1213)
+
+### Bug Fixes
+* Patch to fix unauthenticated logins with view.html, shiny.html, notebook.R
+
+* Patch for missing fork_of
+
+* Hide subscribe to comments option if server not configured (#1347)
+
+* Fix a case where backspace still would go back a page with some elements focused
+
+* Fix a case where clicking on the last non-readonly notebook would edit the title (#1357)
+
+* Fix bug where cell would overlap next cell or command prompt would appear on top
+  of cell (#1352, #1354)
+
+* Fix cases where extensions could cause non-GUI applictions to break
+
+* Fix bug where asset would still be shown if current asset is deleted (#1343)
+
+* Restore previous size and do not report (harmless) error when plot is resized too
+  small (#1337)
 
 
 ## RCloud 1.3

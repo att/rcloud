@@ -6,10 +6,22 @@ function main() {
     }
 
     shell.is_view_mode(true);
+    RCloud.UI.session_pane.init(); // really should be error logger which detects if there is a pane
     RCloud.UI.init();
     RCloud.session.init(true, ['gui']).then(function() {
+        return Promise.all([
+            RCloud.UI.navbar.load(),
+            (rcloud.config ?
+             rcloud.config.get_user_option('show-cell-numbers') :
+             Promise.resolve(true)).then(function(whether) {
+                 if(whether === null) whether = true;
+                 return shell.notebook.controller.show_cell_numbers(whether);
+             })
+        ]);
+    }).then(function() {
         shell.init();
-        RCloud.UI.advanced_menu.load();
+        RCloud.UI.advanced_menu.init();
+        RCloud.UI.menus.load();
         var notebook = getURLParameter("notebook"),
             version = getURLParameter("version"),
             quiet = getURLParameter("quiet");
@@ -19,6 +31,8 @@ function main() {
             promise = promise.then(function() {
                 $(".navbar").hide();
                 $("body").css("padding-top", "0");
+                $("<style type = 'text/css'>.cell-status { display: none; } .code-div pre { padding: 0; } </style>")
+                    .appendTo('head');
                 rcloud.api.disable_echo();
             });
         }

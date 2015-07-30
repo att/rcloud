@@ -9,10 +9,32 @@ RCloud.UI.notebook_title = (function() {
         };
     }
     function rename_current_notebook(name) {
-        editor.rename_notebook(name)
+        return editor.rename_notebook(name)
             .then(function() {
                 result.set(name);
             });
+    }
+    function rename_notebook_folder(node) {
+        return function(name) {
+            editor.for_each_notebook(node, name, function(node, name) {
+                if(node.gistname === shell.gistname())
+                    shell.rename_notebook(name);
+                else {
+                    rcloud.update_notebook(node.gistname, {description: name}, false)
+                        .then(function(notebook) {
+                            editor.update_notebook_from_gist(notebook);
+                        });
+                }
+            }, function(child, name) {
+                return name + '/' + child.name;
+            });
+        };
+    }
+    function fork_rename_folder(node) {
+        return function(name) {
+            var match = new RegExp('^' + node.full_name);
+            editor.fork_folder(node, match, name);
+        };
     }
     // always select all text after last slash, or all text
     function select(el) {
@@ -24,14 +46,17 @@ RCloud.UI.notebook_title = (function() {
         range.setEnd(el.firstChild, text.length);
         return range;
     }
-    var fork_and_rename = function(forked_gist_name) {
+    var fork_and_rename = function(forked_gist_name, is_change) {
         var is_mine = shell.notebook.controller.is_mine();
         var gistname = shell.gistname();
         var version = shell.version();
         editor.fork_notebook(is_mine, gistname, version)
-            .then(function rename(v){
-                    rename_current_notebook(forked_gist_name);
-                });
+            .then(function(v) {
+                if(is_change)
+                    return rename_current_notebook(forked_gist_name);
+                else // if no change, allow default numbering to work
+                    return undefined;
+            });
     };
     var editable_opts = {
         change: rename_current_notebook,
@@ -84,13 +109,9 @@ RCloud.UI.notebook_title = (function() {
         },
         make_editable: function(node, $li, editable) {
             function get_title(node, elem) {
-                if(!node.version) {
-                    return $('.jqtree-title:not(.history)', elem);
-                } else {
-                    return $('.jqtree-title', elem);
-                }
+                return $('> div > .jqtree-title', elem);
             }
-            if(last_editable_ && (!node || last_editable_ !== node))
+            if(last_editable_ && (!node || node.gistname && last_editable_ !== node))
                 ui_utils.editable(get_title(last_editable_, last_editable_.element), 'destroy');
             if(node) {
                 var opts = editable_opts;
@@ -100,13 +121,23 @@ RCloud.UI.notebook_title = (function() {
                         validate: function(name) { return true; }
                     });
                 }
+                else if(!node.gistname) {
+                    opts = $.extend({}, editable_opts, {
+                        change: rename_notebook_folder(node),
+                        ctrl_cmd: null,
+                        validate: function(text) {
+                            return !Notebook.empty_for_github(text);
+                        }
+                    });
+                }
                 ui_utils.editable(get_title(node, $li),
                                   $.extend({allow_edit: editable,
                                             inactive_text: node.name,
                                             active_text: node.version ? node.name : node.full_name},
                                            opts));
             }
-            last_editable_ = node;
+            if(node && node.gistname)
+                last_editable_ = node;
         }
     };
     return result;

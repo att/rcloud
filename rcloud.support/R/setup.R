@@ -14,6 +14,8 @@
 configure.rcloud <- function (mode=c("startup", "script")) {
   mode <- match.arg(mode)
 
+  if (is.null(.session$mode)) .session$mode <- mode
+
   ## If we're running in startup mode, suicide on error!
   if (mode == "startup")
     options(error=function(...) {
@@ -82,17 +84,30 @@ configure.rcloud <- function (mode=c("startup", "script")) {
   setwd(pathConf("tmp.dir"))
 
   ## if you have multiple servers it's good to know which machine this is
-  setConf("host", tolower(system("hostname -f", TRUE)))
+  setConf("host", tolower(system("hostname -f 2>/dev/null", TRUE)))
   cat("Starting Rserve on", getConf("host"),"\n")
 
   ## load configuration --- I'm not sure if DCF is a good idea - we may change this ...
   ## ideally, all of the above should be superceded by the configuration file
   rc.cf <- pathConf("configuration.root", "rcloud.conf")
+  rc.gsrc <- list()
   if (isTRUE(file.exists(rc.cf))) {
+    .dcf.sections.with <- function(d, sec) {
+      if (!sec %in% colnames(d)) return(list())
+      w <- which(!is.na(d[,sec]))
+      l <- lapply(w, function(o) { e <- d[o,]; e <- e[!is.na(e)]; names(e) <- gsub("[ \t]", ".", tolower(names(e))); e })
+      names(l) <- d[w,sec]
+      l
+    }
     cat("Loading RCloud configuration file...\n")
-    rc.c <- read.dcf(rc.cf)[1,]
-    for (n in names(rc.c)) setConf(gsub("[ \t]", ".", tolower(n)), as.vector(rc.c[n]))
+    rc.all <- read.dcf(rc.cf)
+    rc.c <- rc.all[1,]
+    rc.c <- rc.c[!is.na(rc.c)]
+    rc.gsrc <- .dcf.sections.with(rc.all, "gist.source")
+    for (n in names(rc.c)) setConf(gsub("[ \t]", ".", tolower(n)), gsub("${ROOT}", getConf("root"), as.vector(rc.c[n]), fixed=TRUE))
   }
+  .session$gist.sources.conf <- rc.gsrc
+  ulog(paste(capture.output(str(rc.gsrc)), collapse='\n'))
 
   ## use public github by default (FIXME: this should go away when set in the githubgist package)
   if (!nzConf("github.base.url")) setConf("github.base.url", "https://github.com/")
@@ -263,11 +278,10 @@ rcloud.info <- function(name) if (missing(name)) .info$rcloud.info else .info$rc
 .info <- new.env(emptyenv())
 
 start.rcloud.common <- function(...) {
-
   ## This is a bit of a hack (errr.. I mean a serious hack)
   ## we fake out R to think that Rhttpd is running and hijack the browser
   ## to pass all requests into the client
-  local({
+  if (is.function(tools:::httpdPort)) tools:::httpdPort(1L) else local({ ## R before 3.2.0 needs a hack
     env <- environment(tools:::startDynamicHelp)
     unlockBinding("httpdPort", env)
     assign("httpdPort", 1L, env)
@@ -276,9 +290,9 @@ start.rcloud.common <- function(...) {
   options(help_type="html")
   options(browser = function(url, ...) {
     if(grepl("^http://127.0.0.1:", url))
-      self.oobSend(list("browsePath", gsub("^http://[^/]+", "", url)))
+      .rc.oobSend("browsePath", gsub("^http://[^/]+", "", url))
     else
-      self.oobSend(list("browseURL", url))
+      .rc.oobSend("browseURL", url)
   })
 
   ## while at it, pass other requests as OOB, too
@@ -288,12 +302,12 @@ start.rcloud.common <- function(...) {
       if (isTRUE(delete.file)) unlink(fn)
       paste(c, collapse='\n')
     })
-    self.oobSend(list("pager", content, header, title))
+    .rc.oobSend("pager", content, header, title)
   })
   options(editor = function(what, file, name) {
     ## FIXME: this should be oobMessage()
     if (nzchar(file)) file <- paste(readLines(file), collapse="\n")
-    self.oobSend(list("editor", what, file, name))
+    .rc.oobSend("editor", what, file, name)
   })
 
   ## and some options that may be of interest
@@ -322,45 +336,54 @@ start.rcloud.common <- function(...) {
 
   ## set up the languages which will be supported by this session
   lang.list <- NULL
-  lang.str <- getConf("rcloud.languages")
-  if (!is.character(lang.str))
-    lang.str <- "rcloud.r"
-  for (lang in gsub("^\\s+|\\s+$", "", strsplit(lang.str, ",")[[1]])) {
-    d <- getNamespace(lang)[["rcloud.language.support"]]
-    if (!is.function(d) && !is.primitive(d))
-      stop(paste("Could not find a function or primitive named rcloud.language.support in package '",lang,"'",sep=''))
-    d <- d()
-    if (!is.list(d))
-      stop(paste("result of calling rcloud.language.support for package '",lang,"' must be a list", sep=''))
-    if (is.null(d$language) || !is.character(d$language) || length(d$language) != 1)
-      stop(paste("'language' field of list returned by rcloud.language.support for package '", lang, "' must be a length-1 character", sep=''))
-    if (!is.function(d$run.cell) && !is.primitive(d$run.cell))
-      stop(paste("'run.cell' field of list returned by rcloud.language.support for package '", lang, "' must be either a function or a primitive", sep=''))
-    if (!is.function(d$setup) && !is.primitive(d$setup))
-      stop(paste("'setup' field of list returned by rcloud.language.support for package '", lang, "' must be either a function or a primitive", sep=''))
-    if (!is.function(d$teardown) && !is.primitive(d$teardown))
-      stop(paste("'teardown' field of list returned by rcloud.language.support for package '", lang, "' must be either a function or a primitive", sep=''))
-    lang.list[[d$language]] <- d
-    lang.list[[d$language]]$setup(.session)
+  file.ext.list <- NULL
+  if (!identical(.session$mode, "call")) {
+    lang.str <- getConf("rcloud.languages")
+    if (!is.character(lang.str))
+      lang.str <- "rcloud.r"
+    for (lang in gsub("^\\s+|\\s+$", "", strsplit(lang.str, ",")[[1]])) {
+      d <- suppressMessages(suppressWarnings(getNamespace(lang)[["rcloud.language.support"]]))
+      if (!is.function(d) && !is.primitive(d))
+        stop(paste("Could not find a function or primitive named rcloud.language.support in package '",lang,"'",sep=''))
+      d <- suppressMessages(suppressWarnings(d()))
+      if (!is.list(d))
+        stop(paste("result of calling rcloud.language.support for package '",lang,"' must be a list", sep=''))
+      if (is.null(d$language) || !is.character(d$language) || length(d$language) != 1)
+        stop(paste("'language' field of list returned by rcloud.language.support for package '", lang, "' must be a length-1 character", sep=''))
+      if (!is.function(d$run.cell) && !is.primitive(d$run.cell))
+        stop(paste("'run.cell' field of list returned by rcloud.language.support for package '", lang, "' must be either a function or a primitive", sep=''))
+      if (!is.function(d$setup) && !is.primitive(d$setup))
+        stop(paste("'setup' field of list returned by rcloud.language.support for package '", lang, "' must be either a function or a primitive", sep=''))
+      if (!is.function(d$teardown) && !is.primitive(d$teardown))
+        stop(paste("'teardown' field of list returned by rcloud.language.support for package '", lang, "' must be either a function or a primitive", sep=''))
+      lang.list[[d$language]] <- d
+      suppressMessages(suppressWarnings(lang.list[[d$language]]$setup(.session)))
+      file.ext.list[d$extension] <- d$language
+    }
   }
   .session$languages <- lang.list
+  .session$file.extensions <- file.ext.list
 
   ## any last-minute overrides akin to Rprofile
   if (validFileConf("configuration.root", "rcloud.profile"))
       source(pathConf("configuration.root", "rcloud.profile"))
 
-  ## wipe sensitive configuration options
+  ## wipe sensitive configuration options -- does gc()!
   .wipe.secrets()
-
-  ## pre-emptive GC to start clean
-  gc()
 
   ulog("RCloud start.rcloud.common() complete, user='", .session$username, "'")
 
   TRUE
 }
 
-create.gist.backend <- function(username="", token="", ...) {
+create.gist.backend <- function(username="", token="", source=NULL, ...) {
+  ## to simplify things we just pick the config from the source
+  getConf <- if (is.null(source)) getConf else {
+    my.conf <- .session$gist.sources.conf[[source]]
+    if (is.null(my.conf)) stop("gist source `", source, "' is not configured in this instance")
+    function(o) { if (o %in% names(my.conf)) my.conf[[o]] else NULL }
+  }
+
   if (is.null(gb <- getConf("gist.backend"))) {
     ## FIXME: for compatibility only
     gb <- "githubgist"
@@ -373,7 +396,7 @@ create.gist.backend <- function(username="", token="", ...) {
   l <- list()
   if (is.function(gbns$config.options)) {
     ## this is a bit ugly - we do ${ROOT} substitution regardless of the scope and we don't substitute anything else ...
-    l <- lapply(names(gbns$config.options()), function(o) { x <- getConf(o); if (!is.null(x)) gsub("${ROOT}", getConf("root"), x, fixed=TRUE) else x })
+    l <- lapply(names(gbns$config.options()), function(o) { x <- getConf(o); if (!is.null(x)) gsub("${ROOT}", rcloud.support:::getConf("root"), x, fixed=TRUE) else x })
     names(l) <- names(gbns$config.options())
     l0 <- sapply(l, is.null)
     req <- sapply(gbns$config.options(), isTRUE)
@@ -387,6 +410,7 @@ create.gist.backend <- function(username="", token="", ...) {
     cat("create.gist.ctx call:\n")
     str(l)
   }
+  ulog("INFO: create gist context for source `", source, "' with ", paste0(names(l), "=", as.character(l), collapse=', '))
   gist::set.gist.context(do.call(gbns$create.gist.context, l))
 }
 
@@ -402,6 +426,16 @@ start.rcloud.gist <- function(username="", token="", ...) {
   ## set.gist.context to override it and steal credentials,
   ## but then we may have to remove it from gists entirely.
   .session$gist.context <- create.gist.backend(username=username, token=token, ...)
+
+  if (is.read.only(.session$gist.context) && isTRUE(nzchar(username)) && !isTRUE(.session$mode %in% "script"))
+      stop("the gist back-end in the main section cannot be read-only - check whether you have all necessary settings in rcloud.conf")
+
+  .session$gist.contexts <- list(default=.session$gist.context)
+  ## FIXME: what about backend-specific tokens?
+  ## create any additional sources defined in the config
+  if (length(.session$gist.sources.conf))
+    for (src in names(.session$gist.sources.conf))
+      .session$gist.contexts[[src]] <- create.gist.backend(username=username, token=token, source=src, ...)
 
   if (is.function(getOption("RCloud.session.auth")))
     getOption("RCloud.session.auth")(username=username, ...)

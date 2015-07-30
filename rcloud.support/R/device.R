@@ -11,7 +11,7 @@ RCloudDevice <- function(width, height, dpi=100, ..., type='inline') {
     did <- generate.token()
     .session$RCloudDevice[[dev]] <- list(serial=-1L, page=0L, id=did, pages=list(), dim=c(width, height), dpi=dpi)
     Cairo.onSave(dev, .onSave)
-    self.oobSend(list("dev.new", did, type, c(width, height)))
+    .rc.oobSend("dev.new", did, type, c(width, height))
     class(dev) <- c("RCloudDevice", class(dev))
     invisible(dev)
 }
@@ -25,11 +25,11 @@ RCloudDevice <- function(width, height, dpi=100, ..., type='inline') {
         page <- .session$RCloudDevice[[dev]]$page + 1L
     else ## last known page - record it
         .session$RCloudDevice[[dev]]$page <- page
-    self.oobSend(list(cmd, payload, rev(dim(img)), did, page))
+    .rc.oobSend(cmd, payload, rev(dim(img)), did, page)
     if (!is.null(payload))
         .session$RCloudDevice[[dev]]$pages[[page]] <- Cairo.snapshot(dev, NA)
     if (dev != dev.cur()) {
-        self.oobSend(list("dev.close", did))
+        .rc.oobSend("dev.close", did)
         .session$RCloudDevice[[dev]]$serial <- NULL
     } else .session$RCloudDevice[[dev]]$serial <- Cairo.serial()
     TRUE
@@ -76,11 +76,12 @@ RCloudDevice <- function(width, height, dpi=100, ..., type='inline') {
     if (.Device == "Cairo") {
         dev <- dev.cur()
         sn <- Cairo.serial()
-        if (sn != .session$RCloudDevice[[dev]]$serial) {
+        ## NOTE: if Cairo was used outside of RCloud (and thus this is not aan RCloudDevice) then
+        ## RCloudDevice[[dev]] won't have serial so ignore
+        if (isTRUE(sn != .session$RCloudDevice[[dev]]$serial)) {
             .session$RCloudDevice[[dev]]$serial <- sn
             .onSave(dev, NA, "img.url.update")
         }
     }
     flush.console()
 }
-

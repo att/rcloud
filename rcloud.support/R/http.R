@@ -70,6 +70,7 @@
           if (!is.function(env[["run"]])) stop("script does not contain a run() function")
           ## run the run() function but like .httpd
           res <- env[["run"]](url, query, body, headers)
+          ## we have to add no-cache since the result is dynamic
           tryCatch({ ## if anything goes wrong, just leave the result alone ...
               if (is.list(res) && length(res) > 0) {
                   if (length(res) > 2 && length(res[[3]]) && !identical(res[[3]], "")) { ## has headers
@@ -101,6 +102,8 @@
                 ct <- names(ctl)[i]
                 break
             }
-        list(r, ct, "Cache-control: no-cache")
+        ## if http.static.nocache is true/yes then flag even static content as no-cache
+        if (nzConf("http.static.nocache") && length(grep("(yes|true)", getConf("http.static.nocache"), TRUE)))
+            list(r, ct, "Cache-control: no-cache") else list(r, ct)
     }
 }

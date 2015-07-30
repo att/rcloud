@@ -6,20 +6,17 @@ rcloud.enviewer.view.dataframe <- function(expr)
   View(get(expr, .GlobalEnv))
 
 ## -- how to handle each group --
-rcloud.enviewer.display.dataframe <- function(x)
-  structure(list(command="view", object=x), class="data")
+rcloud.enviewer.display.dataframe <- function(x, val)
+  structure(list(command="view", object=x, text=paste0("data.frame [",paste(dim(val), collapse=', '),"]")), class="data")
 
 rcloud.enviewer.display.value <- function(val) {
     type <- class(val)
-    str <- capture.output(str(val))
-    if (length(str) > 1) {
-        if (length(str) > 3) { ## try something smaller ... if possible
-            if (is.list(val) && !is.null(names(val))) {
-                str <- paste0("List with names ", paste(capture.output(str(names(val))), collapse=' '))
-            } else ## truncate
-                str <- c(str[1:3], "...")
-        }
-    }
+    ## there are broken packages like XML that can error out on str() so just display the class in that case
+    str <- tryCatch(capture.output(str(val)), error=function(e) paste(class(val), collapse='/'))
+    if (is.list(val) && !is.null(names(val)))
+      str[1] <- paste0("List with names ", paste(capture.output(str(names(val))), collapse=' '))
+    if (length(str) > 3)
+      str <- c(str[1:3], "...")
     ## also limit the length since deparsing langs can be reaaaaaly long
     if (any(too.long <- (nchar(str) > 100)))
         str[too.long] <- paste(substr(str[too.long], 1, 100), "...")
@@ -28,14 +25,14 @@ rcloud.enviewer.display.value <- function(val) {
 }
 
 rcloud.enviewer.display.function <- function(f)
-    structure(list(type="function", value=deparse(args(f))[1]), class="functions")
+    structure(list(type="function", value=gsub("^function ","",deparse(args(f))[1])), class="functions")
 
 ## retrieve objects and format them
 rcloud.enviewer.build <- function(vars, env) {
     ret <- lapply(vars, function(x) {
         val <- get(x, envir=env)
         if (is.data.frame(val)) {
-            rcloud.enviewer.display.dataframe(x)
+            rcloud.enviewer.display.dataframe(x, val)
         } else if (is.function(val)) {
             rcloud.enviewer.display.function(val)
         } else

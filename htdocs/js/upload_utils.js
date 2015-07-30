@@ -12,35 +12,20 @@
         return opts;
     }
 
-    function text_reader() {
+    function text_or_binary_reader() {
         return Promise.promisify(function(file, callback) {
             var fr = new FileReader();
+            var bytes_read = 0;
+
             fr.onload = function(e) {
+                // send across as ArrayBuffer/raw vector. server will decide if it's string or binary content
                 callback(null, fr.result);
             };
             fr.onerror = function(e) {
                 callback(fr.error, null);
             };
-            fr.readAsText(file);
+            fr.readAsArrayBuffer(file.slice(0, file.size));
         });
-    }
-
-    function promise_for(condition, action, value) {
-        if(!condition(value))
-            return value;
-        return action(value).then(promise_for.bind(null, condition, action));
-    }
-
-    // like Promise.each but each promise is not *started* until the last one completes
-    function promise_sequence(collection, operator) {
-        return promise_for(
-            function(i) {
-                return i < collection.length;
-            },
-            function(i) {
-                return operator(collection[i]).return(++i);
-            },
-            0);
     }
 
     RCloud.upload_assets = function(options, react) {
@@ -68,12 +53,14 @@
                 controller.select();
             });
         }
-        return promise_sequence(
+        return RCloud.utils.promise_sequence(
             options.files,
             function(file) {
-                return text_reader()(file) // (we don't know how to deal with binary anyway)
+                if(file.size > 750000)
+                    return Promise.reject(new Error('File ' + file.name + ' rejected: maximum asset size is 750KB'));
+                return text_or_binary_reader()(file)
                     .then(function(content) {
-                        if(Notebook.empty_for_github(content))
+                        if(_.isString(content) && Notebook.empty_for_github(content))
                             throw new Error("empty");
                         return upload_asset(file.name, content);
                     });
@@ -153,7 +140,7 @@
                 /*FIXME add logged in user */
                 return upload_ocaps.upload_pathAsync()
                     .then(function(path) {
-                        return promise_sequence(options.files, upload_file.bind(null, path));
+                        return RCloud.utils.promise_sequence(options.files, upload_file.bind(null, path));
                     });
             }
         }

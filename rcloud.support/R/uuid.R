@@ -19,5 +19,6 @@ print.deferred_result <- function(x, ...) {
     ## knitr processing where we cannot use OOB but have to
     ## use a string result
     if (any(sapply(sys.calls(), function(o) identical(o[[1]], quote(knit))))) return(cat(unclass(x), "\n", sep=''))
-    flush.console(); self.oobSend(list("deferred.result",unclass(x)))
+    flush.console()
+    .rc.oobSend("deferred.result",unclass(x))
 }

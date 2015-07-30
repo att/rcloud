@@ -2,7 +2,7 @@ RCloud.UI.search = (function() {
 var page_size_ = 10;
 var search_err_msg = ["<p style=\"color:black;margin:0;\">The search engine in RCloud uses Lucene for advanced search features." ,
     "It appears you may have used one of the special characters in Lucene syntax incorrectly. " ,
-    "Please see this <a target=\"_blank\" href=\"http://lucene.apache.org/core/3_5_0/queryparsersyntax.html\">link</a> to learn about Lucene syntax. " ,
+    "Please see this <a target=\"_blank\" href=\"http://lucene.apache.org/core/4_10_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Terms\">link</a> to learn about Lucene syntax. " ,
     "</p><p style=\"color:black;margin:0;\">Or, if you mean to search for the character itself, escape it using a backslash, e.g. \"foo\\:\"</p>"];
 
 function go_to_page(page_num,incr_by){
@@ -22,6 +22,9 @@ function sortby() {
 }
 function orderby() {
     return $("#order-by option:selected").val();
+}
+function all_sources() {
+    return $("#all-sources").is(':checked');
 }
 
 function order_from_sort() {
@@ -51,6 +54,20 @@ return {
                 searchproc();
                 return false;
             });
+            rcloud.get_gist_sources().then(function(sources) {
+                // annoying to load this over again just to get a number, but
+                // there's no obvious place to store this
+                if(_.isString(sources)) sources = [sources];
+                if(sources.length<2) {
+                    $('#all-sources').parent().hide();
+                }
+                else {
+                    $("#all-sources").change(function(e) {
+                        var val = all_sources();
+                        rcloud.config.set_user_option("search-all-sources", val);
+                    });
+                }
+            });
             $("#sort-by").change(function() {
                 rcloud.config.set_user_option('search-sort-by', sortby());
                 order_from_sort();
@@ -76,8 +93,10 @@ return {
         };
     },
     load: function() {
-        return rcloud.config.get_user_option(['search-results-per-page', 'search-sort-by', 'search-order-by'])
+        return rcloud.config.get_user_option(['search-all-sources', 'search-results-per-page',
+                                              'search-sort-by', 'search-order-by'])
             .then(function(opts) {
+                $('#all-sources').prop('checked', opts['search-all-sources']);
                 if(opts['search-results-per-page']) page_size_ = opts['search-results-per-page'];
                 if(!opts['search-sort-by']) opts['search-sort-by'] = 'starcount'; // always init once
                 $('#sort-by').val(opts['search-sort-by']);
@@ -90,7 +109,7 @@ return {
     panel_sizer: function(el) {
         var padding = RCloud.UI.collapsible_column.default_padder(el);
         var height = 24 + $('#search-summary').height() + $('#search-results').height() + $('#search-results-pagination').height();
-        height += 30; // there is only so deep you can dig
+        height += 40; // there is only so deep you can dig
         return {height: height, padding: padding};
     },
     toggle: function(id,togid) {
@@ -149,11 +168,21 @@ return {
                 var search_results = "";
                 var star_count;
                 var qtime = 0;
-                var numfound = 0;
+                var numfound = 0, numpaged = 0, numSources = 1;
+                var src_counts = {};
                 if(d[0] != undefined) {
-                    numfound = d[0].numFound;
+                    numpaged = numfound = parseInt(d[0].numFound);
+                    // in addition, check that we didn't several parallel sources and adjust accordingly
+                    _.each(d, function(o) { src_counts[o.source] = parseInt(o.numFound); });
+                    var numTotal = _.reduce(src_counts, function(memo, num){ return memo + num; }, 0);
+                    var maxNumFound = _.max(src_counts);
+                    numSources = Object.keys(src_counts).length;
+                    if (numSources > 1) {
+                        numfound = numTotal;
+                        numpaged = maxNumFound;
+                    }
                 }
-                var noofpages =  Math.ceil(numfound/page_size_);
+                var noofpages =  Math.ceil(numpaged/page_size_);
                 //iterating for all the notebooks got in the result/response
                 for(i = 0; i < len; i++) {
                     try {
@@ -164,6 +193,7 @@ return {
                             star_count = d[i].starcount;
                         }
                         var notebook_id = d[i].id;
+                        var notebook_source = d[i].source;
                         var image_string = "<i class=\"icon-star search-star\"><sub>" + star_count + "</sub></i>";
                         d[i].parts = JSON.parse(d[i].parts);
                         var parts_table = "";
@@ -211,7 +241,7 @@ return {
                             }
                         }
                         var togid = i + "more";
-                        var url = ui_utils.make_url('edit.html', {notebook: notebook_id});
+                        var url = ui_utils.make_url('edit.html', {notebook: notebook_id, source: notebook_source});
                         if(parts_table !== "") {
                             if(nooflines > 10) {
                                 parts_table = "<div><div style=\"height:150px;overflow: hidden;\" id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div>" +
@@ -220,8 +250,9 @@ return {
                                 parts_table = "<div><div id='"+i+"'><table style='width: 100%'>" + parts_table + "</table></div></div>";
                             }
                         }
+                        var search_result_class = 'search-result-heading' + (notebook_source ? ' foreign-notebook' : '');
                         search_results += "<table class='search-result-item' width=100%><tr><td width=10%>" +
-                            "<a id=\"open_" + i + "\" href=\'"+url+"'\" data-gistname='" + notebook_id + "' class='search-result-heading'>" +
+                            "<a id=\"open_" + i + "\" href=\'" + url +"'\" data-gistname='" + notebook_id + "' data-gistsource='" + notebook_source + "' class='" + search_result_class + "'>" +
                             d[i].user + " / " + d[i].notebook + "</a>" +
                             image_string + "<br/><span class='search-result-modified-date'>modified at <i>" + d[i].updated_at + "</i></span></td></tr>";
                         if(parts_table !== "")
@@ -234,7 +265,7 @@ return {
                 if(!pgclick) {
                     $('#paging').html("");
                     $("#search-results-pagination").show();
-                    if((parseInt(numfound) - parseInt(page_size_)) > 0) {
+                    if((parseInt(numpaged) - parseInt(page_size_)) > 0) {
                         var number_of_pages = noofpages;
                         $('#current_page').val(0);
                         if (numfound != 0) {
@@ -255,17 +286,21 @@ return {
                 qry = qry.replace(/>/g,'&gt;');
                 if(numfound === 0) {
                     summary("No Results Found");
-                } else if(parseInt(numfound) < page_size_){
+                } else if(parseInt(numpaged) < page_size_){
                     summary(numfound +" Results Found", 'darkgreen');
                 } else {
                     var search_summary = numfound +" Results Found, showing ";
-                    if(numfound-start === 1) {
-                        search_summary += (start+1);
-                    } else if((numfound - noofrows) > 0) {
-                        search_summary += (start+1)+" - "+noofrows;
-                    } else {
-                        search_summary += (start+1)+" - "+numfound;
-                    }
+		    if (numSources > 1) { // for multi-sources it gets complicated, just show the page
+			search_summary += "page "+ Math.round(start/page_size_ + 1);
+		    } else {
+			if(numfound-start === 1) {
+			    search_summary += (start+1);
+			} else if((numfound - noofrows) > 0) {
+			    search_summary += (start+1)+" - "+noofrows;
+			} else {
+			    search_summary += (start+1)+" - "+numfound;
+			}
+		    }
                     summary(search_summary, 'darkgreen');
                 }
                 $("#search-results-row").css('display', 'table-row');
@@ -273,8 +308,8 @@ return {
                 $('#search-results').html(search_results);
                 $("#search-results .search-result-heading").click(function(e) {
                     e.preventDefault();
-                    var gistname = $(this).attr("data-gistname");
-                    editor.open_notebook(gistname, null, null, e.metaKey || e.ctrlKey);
+                    var gistname = $(this).attr("data-gistname"), gistsource = $(this).attr("data-gistsource");
+                    editor.open_notebook(gistname, null, gistsource, null, e.metaKey || e.ctrlKey);
                     return false;
                 });
             }
@@ -288,7 +323,7 @@ return {
         }
         query = encodeURIComponent(query);
         RCloud.UI.with_progress(function() {
-            return rcloud.search(query, sortby, orderby, start, page_size_)
+            return rcloud.search(query, all_sources(), sortby, orderby, start, page_size_)
                 .then(function(v) {
                     create_list_of_search_results(v);
                 });

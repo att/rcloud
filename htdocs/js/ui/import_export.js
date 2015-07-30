@@ -82,7 +82,7 @@ RCloud.UI.import_export = (function() {
                     text: "Export Notebook to File",
                     modes: ['edit'],
                     action: function() {
-                        return rcloud.get_notebook(shell.gistname(), shell.version()).then(function(notebook) {
+                        return rcloud.get_notebook(shell.gistname(), shell.version(), null, true).then(function(notebook) {
                             notebook = Notebook.sanitize(notebook);
                             var gisttext = JSON.stringify(notebook);
                             download_as_file(notebook.description + ".gist", gisttext, 'text/json');

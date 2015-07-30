@@ -44,6 +44,52 @@
 }
 /*     End */
 
+
+
+#protection-app .logging-panel{
+    width: 100%;
+    min-height: 30px;
+    margin-bottom: 20px;
+    background-color:  white;
+}
+
+
+#protection-app .logging-panel span{
+  display: block;
+  text-align: left;
+  text-transform: lowercase;
+  /* padding: 5px; */
+  /* padding-top: 5px; */
+  /* padding-bottom: 5px; */
+  padding: 5px 10px 3px 10px;
+}
+
+#protection-app .logging-panel.red{
+    transition: all 0.5s ease;
+    background-color:  rgb(250, 224, 224);
+}
+
+#protection-app .logging-panel.green{
+    transition: all 0.5s ease;
+    background-color:  rgb(234, 250, 224);
+}
+
+#protection-app .logging-panel.white{
+    transition: all 0.5s ease;
+    background-color:  #ffffff;
+}
+
+#protection-app .modal-footer {
+    padding: 0;
+    margin-top: 0;
+}
+
+
+
+#protection-app #group-tab{
+    padding-bottom: 0;
+}
+
 body {
     font-family: Helvetica Neue, Verdana, Helvetica, Arial, sans-serif;
     padding-top: 51px; /* exact same height as navbar */
@@ -238,6 +284,10 @@ rect.frame {
     padding: 0;
 }
 
+.state-icon {
+    cursor: default; /* override status area */
+}
+
 .cell-status .cell-control-bar.flipped {
     top: 0;
     bottom: auto;
@@ -245,13 +295,28 @@ rect.frame {
 }
 
 .notebook-cell .cell-controls-above {
-    color: #555;
+    color: #777;
     position: absolute;
     right: -0.1em;
     top: -0.5em;
     z-index: 5;
 }
 
+.active.edit-markdown {
+    background-color: #F7EEE4;
+}
+
+.active.edit-code {
+    background-color: #E8F1FA;
+}
+
+.inactive.edit-markdown {
+    background-color: #f5f1ec;
+}
+
+.inactive.edit-code {
+    background-color: #eef3f7;
+}
 
 .fontawesome-button {
     margin: 0.25em;
@@ -342,6 +407,15 @@ rect.frame {
     padding-left: .2em;
 }
 
+.fontawesome-button i.icon-border.borderable {
+    border-color: lightskyblue;
+    padding: 2px;
+}
+
+.fontawesome-button i.borderable {
+    padding: 3px;
+}
+
 .navbar .btn-link {
     color: #ddd;
     font-size: 120%;
@@ -410,8 +484,12 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
 .jqtree-title {
 }
 
-ul.jqtree-tree .jqtree-title.private {
+ul.jqtree-tree .jqtree-title.hidden-notebook {
     color: #aaa;
+}
+
+ul.jqtree-tree .jqtree-title.foreign-notebook {
+    color: #66bb44;
 }
 
 .notebook-date {
@@ -431,6 +509,7 @@ ul.jqtree-tree .jqtree-title.private {
     position: relative;
     display: inline-block;
     width: 30px;
+    cursor: default;
 }
 
 .notebook-commands {
@@ -445,6 +524,7 @@ ul.jqtree-tree .jqtree-title.private {
 
 .notebook-commands.appear {
     float: right;
+    cursor: default;
 }
 
 .notebook-commands .fontawesome-button {
@@ -455,9 +535,9 @@ ul.jqtree-tree .jqtree-title.private {
     display: none !important;
 }
 
-.popover-offset{
+/*.popover-offset{
      left : 24.2% !important;
- }
+ }*/
 /******************************************************************************/
 
 #search-wrapper {
@@ -485,6 +565,11 @@ ul.jqtree-tree .jqtree-title.private {
     display: none;
     height: 8px;
     margin-bottom: 8px;
+    margin-top: 0px;
+}
+
+#search-summary h4 {
+    margin-top: 0px;
 }
 
 #search-results-row {
@@ -517,6 +602,9 @@ ul.jqtree-tree .jqtree-title.private {
     margin-right: 1em;
     padding: 0;
     padding-top: 1ex;
+}
+.search-result-heading.foreign-notebook {
+  color: #66bb44;
 }
 .search-result-modified-date {
     margin-left: 1ex;
@@ -794,28 +882,8 @@ a.footer-dropdown-toggle {
 /* Fix some of the ugliness caused by the interaction between Bootstrap and
    Rmarkdown */
 
-div.r-result-div h1,
-div.r-result-div h2,
-div.r-result-div h3,
-div.r-result-div h4,
-div.r-result-div h5 {
-    margin-top: 0;
-    padding-top: 12px;
-    padding-right: 16px;
-    padding-left: 16px;
-}
-
-div.r-result-div p {
-    margin-left: 16px;
-    margin-right: 16px;
-};
-
 pre {
     max-width: 100%;
-}
-
-.cell-number {
-    padding-left: 4px;
 }
 
 .ace_gutter {
@@ -1148,45 +1216,40 @@ pre > .vt100 {
     border-radius: 3px;
 }
 
-.text label {
+#settings-body-wrapper {
+    position: relative;
+}
+
+.settings-input label {
     font-weight: normal;
 }
 
-.text input {
+.settings-input input {
     width: 180px;
     height: 20px;
 }
 
-.text label span {
+.settings-input label span {
     display: inline-block;
     width: 120px;
     padding-right: 5px;
     vertical-align: middle;
 }
 
+.settings-reload-msg {
+    position: absolute;
+    right: 5px;
+    bottom: 3px;
+    color: #d33224;
+}
+
 .checkbox {
-    padding-left: 2px;
-    margin-top: 0px;
     margin-bottom: 2px;
+    padding-left: 16px;
 }
-/* switching off default bootstrap input type checkbox*/
-input[type=checkbox] {
-    display: none;
-}
-input[type=checkbox] + span:before {
-    font-family: "FontAwesome";
-    width: 1.2em;
-    display:inline-block;
-}
-input[type=checkbox] + span:before {
-    content: "\f096";
-}
-input[type=checkbox]:checked + span:before {
-    content: "\f046";
-}
-input[type=checkbox].inverse + span:before {
-    content: "\f0c8";
-}
-input[type=checkbox].inverse:checked + span:before {
-    content: "\f14a";
+
+.checkbox input[type="checkbox"] {
+    margin-top: 2px;
+    margin-right: 2px;
+    margin-left: -15px;
 }

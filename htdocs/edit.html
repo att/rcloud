@@ -8,10 +8,10 @@
     <link rel="stylesheet" type="text/css" href="/css/rmarkdown.css"/>
     <link rel="stylesheet" type="text/css" href="/css/bootstrap-rcloud-tweaks.css"/>
     <link rel="stylesheet" type="text/css" href="/css/edit.css"/>
-    <link rel="stylesheet" type="text/css" href="/css/dc.css"/>
     <link rel="stylesheet" type="text/css" href="/css/nonselect.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/selectize.css"/>
 
-    <!-- 
+    <!--
 
     jquery,                             http://jquery.com
     jquery-ui,                          http://jqueryui.com
@@ -19,9 +19,7 @@
     tree.jquery.js,                     http://mbraak.github.com/jqTree/
     underscore.js,                      http://underscorejs.org
     d3 (and its colorbrewer colormaps), http://d3js.org
-    crossfilter,                        http://square.github.com/crossfilter/
-    dc.js,                              http://nickqizhu.github.com/dc.js/
-    facet,                              http://cscheid.github.com/facet
+    lux,                              http://cscheid.github.com/lux
     twitter's bootstrap                 http://twitter.github.com/bootstrap/
        bootstrap-transition
        bootstrap-collapse
@@ -63,14 +61,7 @@
           <li><a href="#" id="readonly-notebook" style="display:none;">(read-only)</a></li>
           <li><a href="#"><span id="loading"><img id="loading-animation" src="/img/processing.gif" style="height: 20px;width:20px;margin:0"></img></span></a></li>
         </ul>
-        <ul class="nav navbar-nav navbar-right">
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Advanced <b class="caret"></b></a>
-            <ul class="dropdown-menu" id="advanced-menu"></ul>
-          </li>
-          <li class="divider-vertical"></li>
-          <li><a href="/logout.R" id="rcloud-logout">Logout</a></li>
-        </ul>
+        <ul id="rcloud-navbar-menu" class="nav navbar-nav navbar-right"></ul>
       </div>
     <!--/div-->
   </div>
@@ -94,7 +85,7 @@
               <button class="btn btn-default-ext" type="submit" style="border-bottom-right-radius: 3;border-top-right-radius: 3">
                 <i class="icon-search"></i>
               </button>
-               <!--Sort By :-->
+              <!--Sort By :-->
               <select id="sort-by" class="form-control-ext"  data-target="#sort-by" style="width: 65px;">
                 <option value="starcount" selected>Stars</option>
                 <option value="user">User</option>
@@ -108,6 +99,14 @@
               </select>
             </div>
           </div>
+        <!-- All Lakes :-->
+        <span class="checkbox" style="display:inline-block; margin-top: 4px">
+          <label><input type="checkbox" id="all-sources" checked="false">All Lakes</label>
+        </span>
+        <a href="http://lucene.apache.org/core/4_10_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Terms" target="_blank" style="float:right; margin-top: 4px">
+          Lucene search syntax
+        </a>
+
         </form>
         <div id="search-summary"></div>
       </div>
@@ -154,8 +153,9 @@
       </div>
       <div id="scratchpad-editor-wrapper">
         <div id="scratchpad-editor" class="widget-vsize">
-          <a id="asset-link" target="_blank" href="#">link</a>
         </div>
+        <div id="scratchpad-binary"></div>
+        <a id="asset-link" target="_blank" href="#">link</a>
       </div>
     </div>
   </div>
@@ -167,7 +167,7 @@
       <div id="file-upload-wrapper">
         <div id="file-upload-controls" class="btn-group-sm">
           <input type="file" id="file" style="display: inline;" multiple></input>
-          <span class="checkbox" style="display: inline-block; padding-top: 6px;">
+          <span class="checkbox" style="display: inline-block;">
             <label>
               <input type="checkbox" id="upload-to-notebook"/>
               <span>Upload to notebook</span>
@@ -202,6 +202,9 @@
             <i class="icon-comment"></i>
           </button>
         </div>
+        <div id="comments-not-allowed" style="display: none">
+          <p><em>Cannot comment on notebooks in other lakes.</em></p>
+        </div>
       </div>
     </div>
   </div>
@@ -221,8 +224,9 @@
     </div>
 
     <div id="command-prompt" style="float: left; width:100%;
-                                    height: 50px; background:#FFFFFF; border:1px solid
-                                    #DDDDDD"></div>
+            height: 50px; background:#FFFFFF; border:1px solid
+            #DDDDDD">
+    </div>
   </div>
 </script>
 
@@ -241,6 +245,91 @@
       <polygon points="0,0 20,0 20,20" style="fill:#222;stroke:none"/>
     </svg>
     <a id="right-pane-collapser"><i class="icon-minus" style="font-size:0.8em; color:#999; position:absolute; right:2px; top:1px; cursor:pointer"></i> </a>
+  </div>
+</script>
+
+
+<script type="text/html" id="notebook-protection-modal">
+
+  <div class="modal-body" id='protection-app' ng-controller='NotebookProtectionController' ng-cloak>
+    <div>
+      <!-- Nav tabs -->
+      <ul class="nav nav-tabs">
+        <li id='tab1'><a ng-click="setTab(1)" data-toggle="tab" href="#notebook-tab" >Notebook</a></li>
+        <li id='tab2'><a ng-click="setTab(2)" data-toggle="tab" href="#group-tab">Group</a></li>
+      </ul>
+      <!-- tab content -->
+      <div class="tab-content">
+        <!-- first tab -->
+        <div class="tab-pane active inner-tab" id="notebook-tab">
+          <div class="row sec">
+            {{notebookFullName}}
+          </div>
+          <div class="row sec">
+            <input id="redRadio" type="radio" ng-model="sharedStatus" value="public" />&nbsp;&nbsp;<label for="redRadio">Public</label>&nbsp;&nbsp;&nbsp;
+            <input id="yellowRadio" type="radio" ng-model="sharedStatus" value="private" />&nbsp;&nbsp;<label for="yellowRadio">Private</label>&nbsp;&nbsp;&nbsp;
+            <input id="greenRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="sharedStatus" value="group" />&nbsp;&nbsp;<label for="greenRadio">Group</label><br />
+          </div>
+          <div class="row sec" ng-show="allUserGroups.length">
+            <span>Assign to Group</span>&nbsp;&nbsp;&nbsp;
+            <select ng-model="selectedUserGroup"
+                    ng-disabled="sharedStatus !== 'group'"
+                    ng-options="group.name for group in allUserGroups"
+                    ng-change="anotherUserGroupSelected()">
+            </select>
+          </div>
+          <div class="row sec" ng-hide="allUserGroups.length">
+            <span>you are not a member of any groups, but you can create one in the<a href="#"> "Group"</a> dialog</span>
+          </div>
+        </div>
+        <!-- end first tab -->
+        <!-- second tab -->
+        <div class="tab-pane inner-tab" id="group-tab">
+          <div class="row sec">
+            <div class='col-md-6' style='padding-left: 0px;' ng-show="allAdminGroups.length" >
+              <span>Select group:</span></br>
+              <select ng-model="selectedAdminGroup"
+                      ng-options="group.name for group in allAdminGroups"
+                      ng-change="anotherAdminGroupSelected()" >
+              </select>
+            </div>
+            <div class='col-md-6' style='padding-left: 0px;' ng-hide="allAdminGroups.length" >
+              <span>You are not an administrator of any groups; please create one.</span><br />
+            </div>
+            <div class='col-md-6'>
+              <span class="label label-info group-actions" ng-click="createGroup()">Create
+              Group</span><br /><br />
+              <span class="label label-info group-actions" ng-click="renameGroup()">Rename
+              Group</span><br /><br />
+              <span ng-hide="true" class="label label-danger group-actions" ng-click="deleteGroup()">Delete
+              Group</span>
+            </div>
+          </div>
+          <div class="row sec">
+            <div class="form-group">
+              <label for="comment">Admins:</label>
+              <selectize ng-disabled='!allAdminGroups.length' options='allUsers' config="myConfig" ng-model="groupAdmins"></selectize>
+            </div>
+          </div>
+          <div class="row sec">
+            <div class="form-group">
+              <label for="comment">Members:</label>
+              <selectize ng-disabled='!allAdminGroups.length' options='allUsers' config="myConfig" ng-model="groupMembers"></selectize>
+            </div>
+          </div>
+        </div>
+        <!-- second tab -->
+        <div class="modal-footer">
+
+          <div class='logging-panel green'>
+            <span></span>
+          </div>
+          <span class="btn btn-cancel" ng-click='cancel()'>Cancel</span>
+          <span class="btn btn-save btn-default" ng-click='save()'>OK</span>
+        </div>
+      </div>
+      <!-- end tab content -->
+    </div>
   </div>
 </script>
 
@@ -298,6 +387,7 @@
 <script type="text/javascript"
         src="/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
+
 <script type="text/javascript">MathJax && MathJax.Hub.Config({tex2jax: {processEscapes: true,
   processEnvironments: false, inlineMath: [ ['\\(','\\)'] ],
   displayMath: [ ['\\[','\\]'] ] },
