@@ -6,3 +6,4 @@ Maintainer: Gordon Woodhull <gordon@research.att.com>
 Description: rcloud.enviewer displays the current workspace environment live in RCloud
 Depends: rcloud.support
 License: MIT
+RCloud-Extension: edit

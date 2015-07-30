@@ -6,7 +6,7 @@ function main() {
     }
 
     RCloud.UI.init();
-    RCloud.session.init().then(function() {
+    RCloud.session.init(false, ['edit', 'gui']).then(function() {
         var opts = {};
         return RCloud.UI.load_options().then(function() {
             if (location.search.length > 0) {

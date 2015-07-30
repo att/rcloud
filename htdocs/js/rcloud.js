@@ -139,12 +139,16 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.version_infoAsync.apply(null, arguments);
         };
 
-        rcloud.anonymous_session_init = function() {
-            return rcloud_ocaps.anonymous_session_initAsync();
+        rcloud.set_session_type = function(session_type) {
+            return rcloud_ocaps.set_session_typeAsync(session_type);
         };
 
-        rcloud.anonymous_compute_init = function() {
-            return rcloud_ocaps.anonymous_compute_initAsync();
+        rcloud.anonymous_session_init = function(session_type) {
+            return rcloud_ocaps.anonymous_session_initAsync(session_type);
+        };
+
+        rcloud.anonymous_compute_init = function(session_type) {
+            return rcloud_ocaps.anonymous_compute_initAsync(session_type);
         };
 
         rcloud.init_client_side_data = function() {
@@ -422,12 +426,12 @@ RCloud.create = function(rcloud_ocaps) {
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
-        rcloud.session_init = function(username, token) {
-            return rcloud_ocaps.session_initAsync(username, token);
+        rcloud.session_init = function(session_type, username, token) {
+            return rcloud_ocaps.session_initAsync(session_type, username, token);
         };
 
-        rcloud.compute_init = function(username, token) {
-            return rcloud_ocaps.compute_initAsync(username, token);
+        rcloud.compute_init = function(session_type, username, token) {
+            return rcloud_ocaps.compute_initAsync(session_type, username, token);
         };
 
         rcloud.signal_to_compute = function(signal) {

@@ -7,3 +7,4 @@ Description: rcloud.viewer implements View by putting a table into an RCloud sid
 Depends: rcloud.support
 NOTE: --- packages that are not on CRAN/RForge.net *must* be in Suggests! ---
 License: MIT
+RCloud-Extension: edit
