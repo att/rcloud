@@ -642,5 +642,5 @@ ui_utils.kill_popovers = function() {
 ui_utils.hide_selectize_dropdown = function() {
     $('.selectize-dropdown').hide();
     $('.selectize-input').removeClass('focus input-active dropdown-active');
-    $('div.selectize-input > input').blur();
+    //$('div.selectize-input > input').blur();
 };
