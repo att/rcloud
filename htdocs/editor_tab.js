@@ -1070,7 +1070,7 @@ var editor = function () {
             console.log('in result init'); 
             var promise = load_everything().then(function() {
                 if(opts.notebook) { // notebook specified in url
-                    //return that.load_notebook(opts.notebook, opts.version, opts.source, true, false, ui_utils.make_url('edit.html'));
+                    return that.load_notebook(opts.notebook, opts.version, opts.source, true, false, ui_utils.make_url('edit.html'));
                 } else if(!opts.new_notebook && current_.notebook) {
                     return that.load_notebook(current_.notebook, current_.version)
                         .catch(function(xep) {
