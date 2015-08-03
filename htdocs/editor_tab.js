@@ -1086,9 +1086,9 @@ var editor = function () {
             });
 
             //add the recent notebooks dropdown
-            $('.panel-heading:first')
-                .append( RCloud.UI.panel_loader.load_snippet('recent-notebooks-dropdown'));
-            $('.dropdown-toggle').dropdown();
+            //$('.panel-heading:first')
+            //    .append( RCloud.UI.panel_loader.load_snippet('recent-notebooks-dropdown'));
+            //$('.dropdown-toggle').dropdown();
 
             $('#new-notebook').click(function(e) {
                 e.preventDefault();
