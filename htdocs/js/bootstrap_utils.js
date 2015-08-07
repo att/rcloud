@@ -1,5 +1,6 @@
 var bootstrap_utils = {};
 
+
 bootstrap_utils.alert = function(opts)
 {
     opts = _.defaults(opts || {}, {
