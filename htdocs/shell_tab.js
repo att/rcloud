@@ -3,8 +3,8 @@ var shell = (function() {
     var version_ = null,
         gistname_ = null,
         notebook_user_ = null,
-        github_url_ = null,
-        gist_url_ = null,
+        github_urls_ = {},
+        gist_urls_ = {},
         notebook_model_ = Notebook.create_model(),
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
         notebook_controller_ = Notebook.create_controller(notebook_model_),
@@ -75,8 +75,21 @@ var shell = (function() {
             return version_;
         },
         init: function() {
-            rcloud.get_conf_value("github.base.url").then(function(url) { github_url_ = url; });
-            rcloud.get_conf_value("github.gist.url").then(function(url) { gist_url_ = url; });
+            rcloud.get_gist_sources().then(function(sources) {
+                // de-rserve-ify
+                if(_.isString(sources))
+                    sources = [sources];
+                else
+                    sources = _.without(sources, 'r_type', 'r_attributes');
+                sources.forEach(function(source) {
+                    rcloud.get_conf_value('github.base.url', source).then(function(url) {
+                        if(url) github_urls_[source] = url;
+                    });
+                    rcloud.get_conf_value('github.gist.url', source).then(function(url) {
+                        if(url) gist_urls_[source] = url;
+                    });
+                });
+            });
         },
         is_view_mode: function(val) {
             if(val !== undefined) {
@@ -179,12 +192,14 @@ var shell = (function() {
             });
         }, github_url: function() {
             var url;
-            if(gist_url_) {
-                url = gist_url_;
+            var source = editor.get_notebook_info(gistname_).source || 'default';
+            if(gist_urls_[source]) {
+                url = gist_urls_[source];
                 url += notebook_user_ + '/';
             }
-            else
-                url = github_url_ + 'gist/';
+            else if(github_urls_[source])
+                url = github_urls_[source] + 'gist/';
+            else return null;
             url += gistname_;
             if(version_)
                 url += '/' + version_;
@@ -195,7 +210,7 @@ var shell = (function() {
             }
             var ponents;
             if(notebook_or_url.indexOf('://') > 0) {
-                var prefix = gist_url_ || github_url_;
+                var prefix = gist_urls_['default'] || github_urls_['default'];
                 if(notebook_or_url.substring(0, prefix.length) !== prefix) {
                     alert("Sorry, importing from foreign GitHub instances not supported yet!");
                     return;
@@ -203,7 +218,7 @@ var shell = (function() {
                 ponents = notebook_or_url.substring(prefix.length).split('/');
                 if(!ponents[0])
                     ponents.splice(0,1); // prefix may not have trailing '/'
-                if(gist_url_) {
+                if(gist_urls_['default']) {
                     // new format URL
                     // [{username}/]{gistid}/{version}
                     // there's an ambiguity between usernames and gist IDs

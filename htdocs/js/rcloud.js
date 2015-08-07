@@ -157,8 +157,8 @@ RCloud.create = function(rcloud_ocaps) {
                 });
         };
 
-        rcloud.get_conf_value = function(key) {
-            return rcloud_ocaps.get_conf_valueAsync(key);
+        rcloud.get_conf_value = function(key, source) {
+            return rcloud_ocaps.get_conf_valueAsync(key, source);
         };
 
         rcloud.get_conf_values = function(key) {

@@ -263,8 +263,8 @@ RCloud.create = function(rcloud_ocaps) {
                 });
         };
 
-        rcloud.get_conf_value = function(key) {
-            return rcloud_ocaps.get_conf_valueAsync(key);
+        rcloud.get_conf_value = function(key, source) {
+            return rcloud_ocaps.get_conf_valueAsync(key, source);
         };
 
         rcloud.get_conf_values = function(key) {
@@ -1373,6 +1373,8 @@ ui_utils.kill_popovers = function() {
 ui_utils.hide_selectize_dropdown = function() {
     $('.selectize-dropdown').hide();
     $('.selectize-input').removeClass('focus input-active dropdown-active');
+
+    
     //$('div.selectize-input > input').blur();
 };
 RCloud.utils = {};
@@ -4176,7 +4178,11 @@ RCloud.UI.advanced_menu = (function() {
                     text: "Open in GitHub",
                     modes: ['view', 'edit'],
                     action: function() {
-                        window.open(shell.github_url(), "_blank");
+                        var url = shell.github_url();
+                        if(!url)
+                            alert('Sorry, Open in GitHub is not supported for this notebook source.');
+                        else
+                            window.open(url, "_blank");
                     }
                 },
                 open_from_github: {
