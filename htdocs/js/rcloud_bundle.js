@@ -6720,10 +6720,8 @@ RCloud.UI.notebook_commands = (function() {
                                 e.stopPropagation();
                                 e.preventDefault();
                                 editor.remove_notebook(node.user, node.gistname);
-                                return false;
-                            } else {
-                                return false;
                             }
+                            return false;
                         });
                         return remove;
                     }
@@ -6742,6 +6740,31 @@ RCloud.UI.notebook_commands = (function() {
                             editor.fork_folder(node, orig_name_regex, folder_name);
                         });
                         return fork;
+                    }
+                },
+                remove_folder: {
+                    section: 'appear',
+                    sort: 2000,
+                    condition0: function(node) {
+                        return node.full_name && !node.gistname && node.user === editor.username();
+                    },
+                    create: function(node) {
+                        var remove_folder = ui_utils.fa_button('icon-remove', 'remove folder', 'remove', icon_style_, true);
+                        var notebook_names = [];
+                        remove_folder.click(function(e) {
+                            editor.for_each_notebook(node, null, function(node) {
+                                notebook_names.push(node.full_name);
+                            });
+                            var yn = confirm("Do you want to remove ALL the following notebooks?\n" + notebook_names.join('\n'));
+                            if(yn) {
+                                var promises = [];
+                                editor.for_each_notebook(node, null, function(node) {
+                                    promises.push(editor.remove_notebook(node.user, node.gistname));
+                                });
+                            };
+                            return false;
+                        });
+                        return remove_folder;
                     }
                 }
             });
