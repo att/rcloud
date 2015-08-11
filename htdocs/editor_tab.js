@@ -1383,6 +1383,7 @@ var editor = function () {
         fork_folder: function(node, match, replace) {
             var that = this;
             var is_mine = node.user === that.username();
+            var promises = [];
             editor.for_each_notebook(node, null, function(node) {
                 var promise_fork;
                 if(is_mine)
@@ -1391,9 +1392,31 @@ var editor = function () {
                     });
                 else
                     promise_fork = rcloud.fork_notebook(node.gistname);
-                return promise_fork.then(function(notebook) {
-                    return editor.star_and_show(notebook, false, false);
-                });
+                promises.push(promise_fork.then(function(notebook) {
+                    if(notebook_info_[notebook.id])
+                        return notebook.description;
+                    else
+                        return editor.star_and_show(notebook, false, false);
+                }));
+            });
+            Promise.all(promises).then(function(results) {
+                var already = [], forked = [];
+                for(var i = 0; i < results.length; ++i) {
+                    if(_.isString(results[i]))
+                        already.push(results[i]);
+                    else
+                        forked.push(results[i].description);
+                }
+                if(already.length) {
+                    var lines = ["You already had the following " + already.length + " notebooks:"]
+                            .concat(already,
+                                    "GitHub wouldn't let me fork them again.",
+                                    "Fork your own copies if you really need more.");
+                    if(promises.length > already.length)
+                        lines = lines.concat("", "You forked " + forked.length + " notebooks.", forked);
+
+                    alert(lines.join('\n'));
+                }
             });
             return this;
         },
