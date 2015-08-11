@@ -124,7 +124,7 @@ RCloud.UI.notebook_title = (function() {
                 else if(!node.gistname) {
                     opts = $.extend({}, editable_opts, {
                         change: rename_notebook_folder(node),
-                        ctrl_cmd: null,
+                        ctrl_cmd: fork_rename_folder(node),
                         validate: function(text) {
                             return !Notebook.empty_for_github(text);
                         }

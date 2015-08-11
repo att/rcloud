@@ -136,6 +136,22 @@ RCloud.UI.notebook_commands = (function() {
                         });
                         return remove;
                     }
+                },
+                fork_folder: {
+                    section: 'appear',
+                    sort: 1000,
+                    condition0: function(node) {
+                        return node.full_name && !node.gistname;
+                    },
+                    create: function(node) {
+                        var fork = ui_utils.fa_button('icon-code-fork', 'fork', 'fork', icon_style_, true);
+                        var orig_name = node.full_name, folder_name = editor.find_next_copy_name(orig_name);
+                        var orig_name_regex = new RegExp('^' + orig_name);
+                        fork.click(function(e) {
+                            editor.fork_folder(node, orig_name_regex, folder_name);
+                        });
+                        return fork;
+                    }
                 }
             });
             return this;

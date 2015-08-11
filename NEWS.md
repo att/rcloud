@@ -56,9 +56,11 @@
  find the next cell (#1487)
 * hide all view.html ui elements, including cell status elements, on `&quiet=1`
  (#1449)
-* Rename folders of notebooks. Clicking on a notebook folder the first time
- opens the folder. Clicking on the name a second time starts editing of that
- name (and any higher levels of the folder name). (#1393)
+* Rename and fork folders of notebooks. Clicking on a notebook folder the first
+ time opens the folder, and the Fork command becomes available. Clicking on the
+ name a second time starts editing of that name (and any higher levels of the
+ folder name). When editing a folder name, you can press ctrl/cmd-enter to fork
+ that folder under the new name. (#1149 / #1394)
 * New cell states to make enqueued execution clearer: if you change a cell
  when it is enqueued to be run, its state will turn to "unknown" (purple
  question mark) indicating that the result may not match the code in the
