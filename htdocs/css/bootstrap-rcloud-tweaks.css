@@ -380,3 +380,17 @@ td {
 }
 
 
+/* never collapse the navbar, from http://www.bootply.com/118426
+ */
+
+.navbar-nav {
+    margin:0;
+}
+.navbar-nav>li {
+    float:none;
+    display:inline-block;
+}
+.navbar-nav>li>a {
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
