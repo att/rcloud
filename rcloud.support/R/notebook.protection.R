@@ -4,6 +4,7 @@ rcloud.get.notebook.cryptgroup <- function(notebookid) { # : list(id, name)
 }
 
 rcloud.set.notebook.cryptgroup <- function(notebookid, groupid, modify=TRUE) { # or NULL to decrypt/make public
+    ulog("rcloud.set.notebook.cryptgroup: ", notebookid, " to ", groupid, " (modify=", modify, ")")
     if(!notebook.is.mine(notebookid))
         stop(paste0("can't set protection group of someone else's notebook for user ", .session$username))
     key <- rcs.key('.notebook', notebookid, 'cryptgroup')
@@ -27,8 +28,10 @@ rcloud.set.notebook.cryptgroup <- function(notebookid, groupid, modify=TRUE) { #
             ## will simply re-save the content in encrypted form
             ## And the corresponding fetch will work since it
             ## ignores the RCS setting
-            tryCatch(rcloud.update.notebook(notebookid, list(files=list())),
+            tryCatch(isTRUE((res <- rcloud.update.notebook(notebookid, list(files=list())))$ok) ||
+                     stop("Gist update error in rcloud.update.notebook on behalf of rcloud.set.notebook.cryptgroup: ", paste(unlist(res$content), collapse=', ')),
                      error=function(e) {
+                         ulog("rcloud.update.notebook failed in rcloud.set.notebook.cryptgroup with: ", paste(as.character(e), collapse=" "))
                          if (is.null(prev)) rcs.rm(key) else rcs.set(key, prev)
                          stop(e) })
         }
