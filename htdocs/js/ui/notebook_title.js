@@ -78,9 +78,9 @@ RCloud.UI.notebook_title = (function() {
             function sum_li_width(sel) {
                 return d3.sum($(sel).map(function(_, el) { return $(el).width(); }));
             }
-            var menu_width = sum_li_width('#rcloud-navbar-menu li');
+            var header_plus_menu = $('#rcloud-navbar-header').width() + sum_li_width('#rcloud-navbar-menu li');
             title.text(text);
-            while(text.length>10 && window.innerWidth < menu_width + sum_li_width('#rcloud-navbar-main') + 150) {
+            while(text.length>10 && window.innerWidth < header_plus_menu + sum_li_width('#rcloud-navbar-main') + 5) {
                 var slash = text.search('/');
                 if(slash >= 0) {
                     ellipt_start = true;
