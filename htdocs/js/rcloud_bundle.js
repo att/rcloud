@@ -6255,6 +6255,11 @@ RCloud.UI.init = function() {
         $(this).scrollLeft(0);
     });
 
+    // re-truncate notebook title on window resize
+    $(window).resize(function(e) {
+        shell.refresh_notebook_title();
+    });
+
     // key handlers
     document.addEventListener("keydown", function(e) {
         // if we have a save button (e.g. not view mode), prevent browser's default
@@ -6928,8 +6933,12 @@ RCloud.UI.notebook_title = (function() {
             var active_text = text;
             var ellipt_start = false, ellipt_end = false;
             var title = $('#notebook-title');
+            function sum_li_width(sel) {
+                return d3.sum($(sel).map(function(_, el) { return $(el).width(); }));
+            }
+            var menu_width = sum_li_width('#rcloud-navbar-menu li');
             title.text(text);
-            while(window.innerWidth - title.width() < 650) {
+            while(text.length>10 && window.innerWidth < menu_width + sum_li_width('#rcloud-navbar-main') + 150) {
                 var slash = text.search('/');
                 if(slash >= 0) {
                     ellipt_start = true;
@@ -6937,7 +6946,7 @@ RCloud.UI.notebook_title = (function() {
                 }
                 else {
                     ellipt_end = true;
-                    text = text.substr(0, text.length - 2);
+                    text = text.substr(0, text.length - 5);
                 }
                 title.text((ellipt_start ? '.../' : '') +
                            text +

@@ -114,6 +114,11 @@ RCloud.UI.init = function() {
         $(this).scrollLeft(0);
     });
 
+    // re-truncate notebook title on window resize
+    $(window).resize(function(e) {
+        shell.refresh_notebook_title();
+    });
+
     // key handlers
     document.addEventListener("keydown", function(e) {
         // if we have a save button (e.g. not view mode), prevent browser's default

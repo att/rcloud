@@ -91,6 +91,9 @@ var shell = (function() {
                 });
             });
         },
+        refresh_notebook_title: function() {
+            RCloud.UI.notebook_title.set(notebook_controller_.current_gist().description);
+        },
         is_view_mode: function(val) {
             if(val !== undefined) {
                 view_mode_ = !!val;
