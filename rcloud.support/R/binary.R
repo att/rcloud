@@ -90,7 +90,7 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
 }
 
 .zlist <- function(names) {
-    l <- rep(list(list(content=NULL)), length(names))
+    l <- rep(list(NULL), length(names))
     names(l) <- names
     l
 }
