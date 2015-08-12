@@ -56,7 +56,11 @@ oc.init <- function(...) { ## this is the payload of the OCinit message
 }
 
 compute.ocaps <- function(mode, authenticated) {
-    if (isTRUE(.session$separate.compute)) .Call(Rserve:::Rserve_forward_stdio)
+    if (isTRUE(.session$separate.compute)) {
+        .Call(Rserve:::Rserve_forward_stdio)
+        ## second part of the CURL+SSL bug work-around
+        RCurl:::curlGlobalInit()
+    }
     caps <- list(
         setup_js_installer = make.oc(rcloud.setup.js.installer),
         install_notebook_stylesheets = make.oc(rcloud.install.notebook.stylesheets),
@@ -87,7 +91,11 @@ compute.ocaps <- function(mode, authenticated) {
     cs.modes <- if (nzConf("compute.separation.modes")) strsplit(getConf("compute.separation.modes"), "[, ]+")[[1]] else character()
     if (mode %in% cs.modes) { ## use fork only in modes that require it
         .session$separate.compute <- TRUE
-        .Call(Rserve:::Rserve_fork_compute, bquote(rcloud.support:::compute.ocaps(.(mode), .(authenticated))))
+        ## this is a work-around for a bug in CURL+SSL which break on fork()
+        gc()
+        RCurl:::curlGlobalCleanup()
+        res <- .Call(Rserve:::Rserve_fork_compute, bquote(rcloud.support:::compute.ocaps(.(mode), .(authenticated))))
+        RCurl:::curlGlobalInit()
     } else {
         .session$separate.compute <- FALSE
         rcloud.support:::compute.ocaps(mode, authenticated)
