@@ -6244,11 +6244,16 @@ RCloud.UI.init = function() {
         sel.selectAllChildren(div[0]);
     });
 
-    // prevent unwanted document scrolling e.g. by dragging
-    $(document).on('scroll', function() {
-        $(this).scrollLeft(0);
-        $(this).scrollTop(0);
-    });
+
+    // prevent unwanted document scrolling e.g. by 
+    if(!shell.is_view_mode()) {
+        $(document).on('scroll', function() {
+
+            $(this).scrollLeft(0);
+            $(this).scrollTop(0);
+        });
+    };
+    
 
     // prevent left-right scrolling of notebook area
     $('#rcloud-cellarea').on('scroll', function() {

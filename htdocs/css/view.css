@@ -1,5 +1,6 @@
 body {
     font-family: Helvetica Neue, Verdana, Helvetica, Arial, sans-serif;
+    background-color: #e5e5e5;
 }
 
 .internals-float {
@@ -249,8 +250,6 @@ pre {
 
 #input-div { visibility: hidden; }
 
-#main-div { background-color: #e5e5e5; }
-
 p img {
     display: block;
     margin: auto;
@@ -258,7 +257,5 @@ p img {
 
 #rcloud-cellarea {
     width: 100%;
-    height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
+    height: auto;
 }
