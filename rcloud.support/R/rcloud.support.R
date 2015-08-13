@@ -688,6 +688,7 @@ rcloud.star.notebook <- function(notebook)
     rcs.set(star.key(notebook), TRUE)
     rcs.incr(star.count.key(notebook))
   }
+  else rcloud.notebook.star.count(notebook)
 }
 
 rcloud.unstar.notebook <- function(notebook)
@@ -696,6 +697,7 @@ rcloud.unstar.notebook <- function(notebook)
     rcs.rm(star.key(notebook))
     rcs.decr(star.count.key(notebook))
   }
+  else rcloud.notebook.star.count(notebook)
 }
 
 rcloud.get.my.starred.notebooks <- function()

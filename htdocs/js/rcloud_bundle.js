@@ -6260,6 +6260,11 @@ RCloud.UI.init = function() {
         $(this).scrollLeft(0);
     });
 
+    // re-truncate notebook title on window resize
+    $(window).resize(function(e) {
+        shell.refresh_notebook_title();
+    });
+
     // key handlers
     document.addEventListener("keydown", function(e) {
         // if we have a save button (e.g. not view mode), prevent browser's default
@@ -6725,12 +6730,51 @@ RCloud.UI.notebook_commands = (function() {
                                 e.stopPropagation();
                                 e.preventDefault();
                                 editor.remove_notebook(node.user, node.gistname);
-                                return false;
-                            } else {
-                                return false;
                             }
+                            return false;
                         });
                         return remove;
+                    }
+                },
+                fork_folder: {
+                    section: 'appear',
+                    sort: 1000,
+                    condition0: function(node) {
+                        return node.full_name && !node.gistname;
+                    },
+                    create: function(node) {
+                        var fork = ui_utils.fa_button('icon-code-fork', 'fork', 'fork', icon_style_, true);
+                        var orig_name = node.full_name, folder_name = editor.find_next_copy_name(orig_name);
+                        var orig_name_regex = new RegExp('^' + orig_name);
+                        fork.click(function(e) {
+                            editor.fork_folder(node, orig_name_regex, folder_name);
+                        });
+                        return fork;
+                    }
+                },
+                remove_folder: {
+                    section: 'appear',
+                    sort: 2000,
+                    condition0: function(node) {
+                        return node.full_name && !node.gistname && node.user === editor.username();
+                    },
+                    create: function(node) {
+                        var remove_folder = ui_utils.fa_button('icon-remove', 'remove folder', 'remove', icon_style_, true);
+                        var notebook_names = [];
+                        remove_folder.click(function(e) {
+                            editor.for_each_notebook(node, null, function(node) {
+                                notebook_names.push(node.full_name);
+                            });
+                            var yn = confirm("Do you want to remove ALL the following notebooks?\n" + notebook_names.join('\n'));
+                            if(yn) {
+                                var promises = [];
+                                editor.for_each_notebook(node, null, function(node) {
+                                    promises.push(editor.remove_notebook(node.user, node.gistname));
+                                });
+                            };
+                            return false;
+                        });
+                        return remove_folder;
                     }
                 }
             });
@@ -6894,8 +6938,12 @@ RCloud.UI.notebook_title = (function() {
             var active_text = text;
             var ellipt_start = false, ellipt_end = false;
             var title = $('#notebook-title');
+            function sum_li_width(sel) {
+                return d3.sum($(sel).map(function(_, el) { return $(el).width(); }));
+            }
+            var header_plus_menu = $('#rcloud-navbar-header').width() + sum_li_width('#rcloud-navbar-menu li') + 50;
             title.text(text);
-            while(window.innerWidth - title.width() < 650) {
+            while(text.length>10 && window.innerWidth < header_plus_menu + sum_li_width('#rcloud-navbar-main')) {
                 var slash = text.search('/');
                 if(slash >= 0) {
                     ellipt_start = true;
@@ -6903,7 +6951,7 @@ RCloud.UI.notebook_title = (function() {
                 }
                 else {
                     ellipt_end = true;
-                    text = text.substr(0, text.length - 2);
+                    text = text.substr(0, text.length - 5);
                 }
                 title.text((ellipt_start ? '.../' : '') +
                            text +
@@ -6943,7 +6991,7 @@ RCloud.UI.notebook_title = (function() {
                 else if(!node.gistname) {
                     opts = $.extend({}, editable_opts, {
                         change: rename_notebook_folder(node),
-                        ctrl_cmd: null,
+                        ctrl_cmd: fork_rename_folder(node),
                         validate: function(text) {
                             return !Notebook.empty_for_github(text);
                         }

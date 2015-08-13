@@ -1,3 +1,10 @@
+## RCloud 1.4.3
+### Features
+* Fork and remove folders. Fork and remove commands appear next to folders -
+you can fork anyone's folder of notebooks, and you can remove an entire
+folder of your own notebooks. When editing a folder name, you can press
+ctrl/cmd-enter to fork that folder under the new name. (#1149 / #716)
+
 ## RCloud 1.4.2
 ### Improvement
 * Since the protected notebooks feature does not seem to be entirely stable,
