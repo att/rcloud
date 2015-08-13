@@ -96,6 +96,7 @@ compute.ocaps <- function(mode, authenticated) {
         RCurl:::curlGlobalCleanup()
         res <- .Call(Rserve:::Rserve_fork_compute, bquote(rcloud.support:::compute.ocaps(.(mode), .(authenticated))))
         RCurl:::curlGlobalInit()
+        res
     } else {
         .session$separate.compute <- FALSE
         rcloud.support:::compute.ocaps(mode, authenticated)
