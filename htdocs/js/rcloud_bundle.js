@@ -3787,7 +3787,12 @@ var oob_sends = {
     "stderr": append_session_info,
     // NOTE: "idle": ... can be used to handle idle pings from Rserve if we care ..
     "html.out": forward_to_context('html_out'),
-    "deferred.result": forward_to_context('deferred_result')
+    "deferred.result": forward_to_context('deferred_result'),
+    compute_terminated: function() {
+        RCloud.UI.fatal_dialog("Your compute session died. Reload the notebook and start a new session?", "Reload", function() {
+            editor.load_notebook(shell.gistname(), shell.version());
+        });
+    }
 };
 
 var on_data = function(v) {
@@ -5370,7 +5375,7 @@ RCloud.UI.configure_readonly = function() {
 var fatal_dialog_;
 var message_;
 
-RCloud.UI.fatal_dialog = function(message, label, href) { // no href -> just close
+RCloud.UI.fatal_dialog = function(message, label, href_or_function) { // no href -> just close
     $('#loading-animation').hide();
     if (_.isUndefined(fatal_dialog_)) {
         var default_button = $("<button type='submit' class='btn btn-primary' style='float:right'>" + label + "</span>"),
@@ -5379,13 +5384,17 @@ RCloud.UI.fatal_dialog = function(message, label, href) { // no href -> just clo
                 .append('<h1>Aw, shucks</h1>');
         message_ = $('<p style="white-space: pre-wrap">' + message + '</p>');
         body.append(message_, default_button);
-        if(href)
+        if(href_or_function)
             body.append(ignore_button);
         body.append('<div style="clear: both;"></div>');
         default_button.click(function(e) {
             e.preventDefault();
-            if(href)
-                window.location = href;
+            if(_.isString(href_or_function))
+                window.location = href_or_function;
+            else if(_.isFunction(href_or_function)) {
+                fatal_dialog_.modal("hide");
+                href_or_function();
+            }
             else
                 fatal_dialog_.modal("hide");
         });
