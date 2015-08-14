@@ -1067,7 +1067,7 @@ var editor = function () {
         init: function(opts) {
             var that = this;
             username_ = rcloud.username();
-            console.log('in result init'); 
+            //console.log('in result init');
             var promise = load_everything().then(function() {
                 if(opts.notebook) { // notebook specified in url
                     return that.load_notebook(opts.notebook, opts.version, opts.source, true, false, ui_utils.make_url('edit.html'));
@@ -1154,7 +1154,7 @@ var editor = function () {
             return find_next_copy_name(username_, name);
         },
         load_notebook: function(gistname, version, source, selroot, push_history, fail_url) {
-            console.log('load notebook function called');
+            //console.log('load notebook function called');
             var that = this;
             var before;
             if(source) {
@@ -1467,7 +1467,7 @@ var editor = function () {
                 rcloud.config.set_current_notebook(current_);
                 rcloud.config.set_recent_notebook(result.id, (new Date()).toString())
                 .then(function(){
-                    return rcloud.config.get_recent_notebooks()
+                    return rcloud.config.get_recent_notebooks();
                 })
                 .then(function(data){
                     recent_notebooks = data;
@@ -1484,10 +1484,9 @@ var editor = function () {
                         .value();
 
                     $('.recent-notebooks-list').empty();
-                    console.dir(sorted);
+                    //console.dir(sorted);
 
                     for(var i = 0; i < sorted.length; i ++) {
-                        
                         var li = $('<li></li>');
                         li.appendTo($('.recent-notebooks-list'));
 
@@ -1495,12 +1494,12 @@ var editor = function () {
                         anchor.addClass('ui-all')
                             .text(get_notebook_info(sorted[i][0]).description)
                             .appendTo(li);
-                            
+
                         anchor.click(function(e) {
                             e.stopPropagation();
                             e.preventDefault();
                             var gist = $(e.currentTarget).data('gist');
-                            console.log(gist);
+                            //console.log(gist);
 
                             rcloud.load_notebook(gist, null, null, true, false, ui_utils.make_url('edit.html'))
                             .then(function(notebook) {
