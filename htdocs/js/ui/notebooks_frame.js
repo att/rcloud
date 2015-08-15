@@ -5,12 +5,7 @@ RCloud.UI.notebooks_frame = {
         return RCloud.UI.panel_loader.load_snippet('notebooks-snippet');
     },
     heading_content: function() {
-        var new_notebook_button = $.el.span({style: 'float: right; position: relative'},
-                                            $.el.a({'class':'header-button',
-                                                    'id': 'new-notebook',
-                                                    'href': '#',
-                                                    'style': 'display:none'},
-                                                   $.el.span($.el.i({'class': 'icon-plus'}))));
+        var new_notebook_button = RCloud.UI.panel_loader.load_snippet('new-notebook-tmp');
         return new_notebook_button;
     },
     heading_content_selector: function() {

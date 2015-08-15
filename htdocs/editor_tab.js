@@ -1065,9 +1065,9 @@ var editor = function () {
 
     var result = {
         init: function(opts) {
+            console.log('init called - should be once');
             var that = this;
             username_ = rcloud.username();
-            console.log('in result init'); 
             var promise = load_everything().then(function() {
                 if(opts.notebook) { // notebook specified in url
                     return that.load_notebook(opts.notebook, opts.version, opts.source, true, false, ui_utils.make_url('edit.html'));
@@ -1085,10 +1085,16 @@ var editor = function () {
                     return that.new_notebook();
             });
 
-            //add the recent notebooks dropdown
-            //$('.panel-heading:first')
-            //    .append( RCloud.UI.panel_loader.load_snippet('recent-notebooks-dropdown'));
-            //$('.dropdown-toggle').dropdown();
+            // $('.panel-heading:first')
+            //     .append( RCloud.UI.panel_loader.load_snippet('recent-notebooks-dropdown'));
+            // console.log('recent button added');
+
+            $('.dropdown-toggle.recent-btn').dropdown();
+
+            $('.recent-btn').click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            });
 
             $('#new-notebook').click(function(e) {
                 e.preventDefault();
@@ -1451,6 +1457,55 @@ var editor = function () {
                     $tree_.tree('openNode', node);
                 });
         },
+
+        update_recent_notebooks: function(data){
+            console.log('populating latest notebooks');
+
+            var sorted = _.chain(data)
+                .pairs()
+                .filter(function(kv) { return kv[0] != 'r_attributes' && kv[0] != 'r_type'; })
+                .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
+                .sortBy(function(kv) { return kv[1]; })
+                .value();
+
+            $('.recent-notebooks-list a').each(function() {
+                $(this).off('click');
+                console.log('removing click listener');
+            });
+
+            $('.recent-notebooks-list').empty();
+            console.dir(sorted);
+
+            for(var i = 0; i < sorted.length; i ++) {
+                
+                var li = $('<li></li>');
+                li.appendTo($('.recent-notebooks-list'));
+
+                var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');
+                anchor.addClass('ui-all')
+                    .text(get_notebook_info(sorted[i][0]).description)
+                    .appendTo(li);
+                    
+                anchor.click(function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    var gist = $(e.currentTarget).data('gist');
+                    console.log(gist);
+                    $('.dropdown-toggle.recent-btn').dropdown("toggle");
+                    shell.load_notebook(gist, null, null, true, false, ui_utils.make_url('edit.html'))
+                    .then(function(notebook) {
+                        console.log('recent notebook loaded');
+                        //histories_[gist] = notebook.history;
+                        // if(whither==='sha')
+                        //     nshow = show_sha(histories_[gist], where);
+                        // process_history(nshow);
+                        // return node;
+                    });
+                });
+            }
+
+        },
+
         load_callback: function(opts) {
             var that = this;
             var options = $.extend(
@@ -1471,51 +1526,7 @@ var editor = function () {
                 })
                 .then(function(data){
                     recent_notebooks = data;
-                    $(document).trigger('populateRecentNotebooks', data);
-                });
-
-                $(document).on('populateRecentNotebooks', function() {
-
-                    var sorted = _.chain(recent_notebooks)
-                        .pairs()
-                        .filter(function(kv) { return kv[0] != 'r_attributes' && kv[0] != 'r_type'; })
-                        .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
-                        .sortBy(function(kv) { return kv[1]; })
-                        .value();
-
-                    $('.recent-notebooks-list').empty();
-                    console.dir(sorted);
-
-                    for(var i = 0; i < sorted.length; i ++) {
-                        
-                        var li = $('<li></li>');
-                        li.appendTo($('.recent-notebooks-list'));
-
-                        var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');
-                        anchor.addClass('ui-all')
-                            .text(get_notebook_info(sorted[i][0]).description)
-                            .appendTo(li);
-                            
-                        anchor.click(function(e) {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            var gist = $(e.currentTarget).data('gist');
-                            console.log(gist);
-
-                            rcloud.load_notebook(gist, null, null, true, false, ui_utils.make_url('edit.html'))
-                            .then(function(notebook) {
-                                //histories_[gist] = notebook.history;
-                                // if(whither==='sha')
-                                //     nshow = show_sha(histories_[gist], where);
-                                // process_history(nshow);
-                                // return node;
-                            });
-                        });
-                    }
-
-                    // $(recent_notebooks).each(function(i) {
-                    //     console.log(i);
-                    // });
+                    that.update_recent_notebooks(data);
                 });
 
                 // need to know if foreign before we can do many other things

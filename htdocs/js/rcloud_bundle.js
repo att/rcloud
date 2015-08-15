@@ -4771,8 +4771,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         hide: function(persist, skip_calc) {
             collapsibles().each(function() {
                 var heading_sel = $(this).data('heading-content-selector');
-                if(heading_sel)
+                if(heading_sel) {
                     heading_sel.hide();
+                }
+
+                $('.recent-notebooks-dropdown').hide();
             });
             // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
             $(sel_accordion + " > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
@@ -4798,6 +4801,9 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             this.resize(skip_calc);
             if(persist && rcloud.config)
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), false);
+
+            console.log('recent '+$('.recent-notebooks-dropdown').length);
+            $('.recent-notebooks-dropdown').show();
         },
         calcwidth: function() {
             if(collapsed_)
@@ -6244,17 +6250,14 @@ RCloud.UI.init = function() {
         sel.selectAllChildren(div[0]);
     });
 
-
     // prevent unwanted document scrolling e.g. by 
     if(!shell.is_view_mode()) {
         $(document).on('scroll', function() {
-
             $(this).scrollLeft(0);
             $(this).scrollTop(0);
         });
     };
     
-
     // prevent left-right scrolling of notebook area
     $('#rcloud-cellarea').on('scroll', function() {
         $(this).scrollLeft(0);
@@ -7016,12 +7019,7 @@ RCloud.UI.notebooks_frame = {
         return RCloud.UI.panel_loader.load_snippet('notebooks-snippet');
     },
     heading_content: function() {
-        var new_notebook_button = $.el.span({style: 'float: right; position: relative'},
-                                            $.el.a({'class':'header-button',
-                                                    'id': 'new-notebook',
-                                                    'href': '#',
-                                                    'style': 'display:none'},
-                                                   $.el.span($.el.i({'class': 'icon-plus'}))));
+        var new_notebook_button = RCloud.UI.panel_loader.load_snippet('new-notebook-tmp');
         return new_notebook_button;
     },
     heading_content_selector: function() {
