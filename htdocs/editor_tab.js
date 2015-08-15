@@ -1064,7 +1064,6 @@ var editor = function () {
 
     var result = {
         init: function(opts) {
-            console.log('init called - should be once');
             var that = this;
             username_ = rcloud.username();
             var promise = load_everything().then(function() {
@@ -1155,7 +1154,7 @@ var editor = function () {
             return find_next_copy_name(username_, name);
         },
         load_notebook: function(gistname, version, source, selroot, push_history, fail_url) {
-            console.log('load notebook function called');
+            //console.log('load notebook function called');
             var that = this;
             var before;
             if(source) {
@@ -1454,10 +1453,6 @@ var editor = function () {
         },
 
         update_recent_notebooks: function(data) {
-
-            console.log('populating latest notebooks');
-            console.dir(data);
-
             var sorted = _.chain(data)
                 .pairs()
                 .filter(function(kv) { return kv[0] != 'r_attributes' && kv[0] != 'r_type'; })
@@ -1490,11 +1485,9 @@ var editor = function () {
                     result.open_notebook(gist);
                 });
             }
-
         },
 
         load_callback: function(opts) {
-            console.log('SOMETHING JUST LOADED');
             var that = this;
             var options = $.extend(
                 {version: null,
@@ -1510,7 +1503,7 @@ var editor = function () {
                 rcloud.config.set_current_notebook(current_);
                 rcloud.config.set_recent_notebook(result.id, (new Date()).toString())
                 .then(function(){
-                    return rcloud.config.get_recent_notebooks()
+                    return rcloud.config.get_recent_notebooks();
                 })
                 .then(function(data){
                     that.update_recent_notebooks(data);

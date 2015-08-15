@@ -5,6 +5,27 @@ you can fork anyone's folder of notebooks, and you can remove an entire
 folder of your own notebooks. When editing a folder name, you can press
 ctrl/cmd-enter to fork that folder under the new name. (#1149 / #716)
 
+### Improvements
+* Navbar in view mode scrolls away, leaving more room for content (#700)
+* RCloud detects when the compute process dies, and asks if you to reload the
+notebook (#1601)
+
+### Bug fixes
+* When assets are large, or the total size of a notebook is large, GitHub
+could truncate them and require another request to get the content. This
+could cause protected notebooks to become inaccessible, and also caused notebooks
+to open with apparently blank assets/cells. githubgist now automatically loads
+the content. (#1496, #1578)
+* RCloud terminates the compute process when the control process dies, so that
+resources are released. (#1605)
+* Long notebook names could cause navbar layout problems, obscuring part of
+the notebook. (Now the title truncates in response to window resizes, and does
+not get tall until the windows is less than about 850-950 pixels wide.) (#972)
+* Settings panel was showing "Reload to see changes" when text fields were
+clicked on but not changed (#1611)
+* Help search box was not taking loaded packages into account with compute
+separation. (#1604)
+
 ## RCloud 1.4.2
 ### Improvement
 * Since the protected notebooks feature does not seem to be entirely stable,

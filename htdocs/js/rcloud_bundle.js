@@ -1937,7 +1937,6 @@ function create_cell_html_view(language, cell_model) {
     inner_div.append(source_div_);
 
     function click_to_edit(div, whether) {
-        whether &= !am_read_only_;
         if(whether) {
             set_background_class(code_div_.find('pre'));
             div.toggleClass('inactive', true);
@@ -1953,7 +1952,10 @@ function create_cell_html_view(language, cell_model) {
                         var p1 = { x: e.pageX, y: e.pageY },
                             d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
                         if (d < 4) {
-                            result.edit_source(true, e);
+                            if(RCloud.language.is_a_markdown(language) && am_read_only_)
+                                result.hide_source(false);
+                            else
+                                result.edit_source(true, e);
                             div.mouseleave();
                         }
                     }
@@ -2165,7 +2167,7 @@ function create_cell_html_view(language, cell_model) {
         // yuk
         code_div_.find('.rcloud-line-number .hljs-number').css('color', 'black');
         if(am_read_only_ !== 'unknown')
-            click_to_edit(code_div_.find('pre'), !am_read_only_);
+            click_to_edit(code_div_.find('pre'), true);
         set_background_class(code_div_.find('pre'));
     }
     assign_code();
@@ -3787,7 +3789,12 @@ var oob_sends = {
     "stderr": append_session_info,
     // NOTE: "idle": ... can be used to handle idle pings from Rserve if we care ..
     "html.out": forward_to_context('html_out'),
-    "deferred.result": forward_to_context('deferred_result')
+    "deferred.result": forward_to_context('deferred_result'),
+    compute_terminated: function() {
+        RCloud.UI.fatal_dialog("Your compute session died. Reload the notebook and start a new session?", "Reload", function() {
+            editor.load_notebook(shell.gistname(), shell.version());
+        });
+    }
 };
 
 var on_data = function(v) {
@@ -5371,7 +5378,7 @@ RCloud.UI.configure_readonly = function() {
 var fatal_dialog_;
 var message_;
 
-RCloud.UI.fatal_dialog = function(message, label, href) { // no href -> just close
+RCloud.UI.fatal_dialog = function(message, label, href_or_function) { // no href -> just close
     $('#loading-animation').hide();
     if (_.isUndefined(fatal_dialog_)) {
         var default_button = $("<button type='submit' class='btn btn-primary' style='float:right'>" + label + "</span>"),
@@ -5380,13 +5387,17 @@ RCloud.UI.fatal_dialog = function(message, label, href) { // no href -> just clo
                 .append('<h1>Aw, shucks</h1>');
         message_ = $('<p style="white-space: pre-wrap">' + message + '</p>');
         body.append(message_, default_button);
-        if(href)
+        if(href_or_function)
             body.append(ignore_button);
         body.append('<div style="clear: both;"></div>');
         default_button.click(function(e) {
             e.preventDefault();
-            if(href)
-                window.location = href;
+            if(_.isString(href_or_function))
+                window.location = href_or_function;
+            else if(_.isFunction(href_or_function)) {
+                fatal_dialog_.modal("hide");
+                href_or_function();
+            }
             else
                 fatal_dialog_.modal("hide");
         });
@@ -5395,7 +5406,7 @@ RCloud.UI.fatal_dialog = function(message, label, href) { // no href -> just clo
         });
         fatal_dialog_ = $('<div id="fatal-dialog" class="modal fade" />')
             .append($('<div class="modal-dialog" />')
-                    .append($('<div class="modal-content" />')
+                    .append($('<div class="modal-content" style="background-color: #f2dede" />')
                             .append($('<div class="modal-body" />')
                                     .append(body))));
         $("body").append(fatal_dialog_);

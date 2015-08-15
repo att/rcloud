@@ -87,7 +87,12 @@ var oob_sends = {
     "stderr": append_session_info,
     // NOTE: "idle": ... can be used to handle idle pings from Rserve if we care ..
     "html.out": forward_to_context('html_out'),
-    "deferred.result": forward_to_context('deferred_result')
+    "deferred.result": forward_to_context('deferred_result'),
+    compute_terminated: function() {
+        RCloud.UI.fatal_dialog("Your compute session died. Reload the notebook and start a new session?", "Reload", function() {
+            editor.load_notebook(shell.gistname(), shell.version());
+        });
+    }
 };
 
 var on_data = function(v) {
