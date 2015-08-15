@@ -36,7 +36,6 @@ var editor = function () {
         featured_ = [], // featured users - samples, intros, etc
         invalid_notebooks_ = {},
         current_ = null; // current notebook and version
-        recent_notebooks = {};
 
     // view
     var $tree_ = null,
@@ -1085,10 +1084,6 @@ var editor = function () {
                     return that.new_notebook();
             });
 
-            // $('.panel-heading:first')
-            //     .append( RCloud.UI.panel_loader.load_snippet('recent-notebooks-dropdown'));
-            // console.log('recent button added');
-
             $('.dropdown-toggle.recent-btn').dropdown();
 
             $('.recent-btn').click(function(e) {
@@ -1458,23 +1453,23 @@ var editor = function () {
                 });
         },
 
-        update_recent_notebooks: function(data){
+        update_recent_notebooks: function(data) {
+
             console.log('populating latest notebooks');
+            console.dir(data);
 
             var sorted = _.chain(data)
                 .pairs()
                 .filter(function(kv) { return kv[0] != 'r_attributes' && kv[0] != 'r_type'; })
                 .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
-                .sortBy(function(kv) { return kv[1]; })
+                .sortBy(function(kv) { return kv[1] * -1 })
                 .value();
 
             $('.recent-notebooks-list a').each(function() {
                 $(this).off('click');
-                console.log('removing click listener');
             });
 
             $('.recent-notebooks-list').empty();
-            console.dir(sorted);
 
             for(var i = 0; i < sorted.length; i ++) {
                 
@@ -1492,21 +1487,14 @@ var editor = function () {
                     var gist = $(e.currentTarget).data('gist');
                     console.log(gist);
                     $('.dropdown-toggle.recent-btn').dropdown("toggle");
-                    shell.load_notebook(gist, null, null, true, false, ui_utils.make_url('edit.html'))
-                    .then(function(notebook) {
-                        console.log('recent notebook loaded');
-                        //histories_[gist] = notebook.history;
-                        // if(whither==='sha')
-                        //     nshow = show_sha(histories_[gist], where);
-                        // process_history(nshow);
-                        // return node;
-                    });
+                    result.open_notebook(gist);
                 });
             }
 
         },
 
         load_callback: function(opts) {
+            console.log('SOMETHING JUST LOADED');
             var that = this;
             var options = $.extend(
                 {version: null,
@@ -1525,7 +1513,6 @@ var editor = function () {
                     return rcloud.config.get_recent_notebooks()
                 })
                 .then(function(data){
-                    recent_notebooks = data;
                     that.update_recent_notebooks(data);
                 });
 
@@ -1563,6 +1550,8 @@ var editor = function () {
                          RCloud.UI.advanced_menu.check('publish_notebook', p);
                          RCloud.UI.advanced_menu.enable('publish_notebook', result.user.login === username_);
                      }));
+
+
                      return Promise.all(promises).return(result);
                  });
             };

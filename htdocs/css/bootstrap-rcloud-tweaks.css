@@ -366,11 +366,14 @@ td {
 
 /*recent notebooks*/
 
+#notebooks-panel-inner {
+    position:relative;
+}
+
 div.dropdown.recent-notebooks-dropdown {
     position: absolute;
-    right: 39px;
-    top: 7px;
-    display: none;
+    right: 29px;
+    top: -2px;
 }
 
 .recent-notebooks-dropdown button {
@@ -403,10 +406,18 @@ div.dropdown.recent-notebooks-dropdown {
 
 
 ul.recent-notebooks-list {
-    max-width: 200px;
+    left: -96px;
+    top: 23px;
+    font-size: 12px;
 }
+
+ul.recent-notebooks-list li {
+    width: 120px;
+}
+
 ul.recent-notebooks-list li a {
-    width: 100%;
+    padding-top: 0;
+    height: 20px;
     display: inline-block;
     overflow: hidden;
     white-space: nowrap;

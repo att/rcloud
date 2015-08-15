@@ -214,8 +214,6 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 if(heading_sel) {
                     heading_sel.hide();
                 }
-
-                $('.recent-notebooks-dropdown').hide();
             });
             // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
             $(sel_accordion + " > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
@@ -241,9 +239,6 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             this.resize(skip_calc);
             if(persist && rcloud.config)
                 rcloud.config.set_user_option(sel_to_opt(sel_accordion), false);
-
-            console.log('recent '+$('.recent-notebooks-dropdown').length);
-            $('.recent-notebooks-dropdown').show();
         },
         calcwidth: function() {
             if(collapsed_)
