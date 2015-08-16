@@ -1486,8 +1486,6 @@ var editor = function () {
                     result.open_notebook(gist);
                 });
             }
-
-            function truncate
         },
 
         load_callback: function(opts) {
