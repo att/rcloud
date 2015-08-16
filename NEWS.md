@@ -9,6 +9,8 @@ ctrl/cmd-enter to fork that folder under the new name. (#1149 / #716)
 * Navbar in view mode scrolls away, leaving more room for content (#700)
 * RCloud detects when the compute process dies, and asks if you to reload the
 notebook (#1601)
+* Clicking on any code within the markdown output causes the code to be shown
+(#1607)
 
 ### Bug fixes
 * When assets are large, or the total size of a notebook is large, GitHub
