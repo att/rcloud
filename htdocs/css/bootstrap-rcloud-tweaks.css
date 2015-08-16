@@ -406,17 +406,19 @@ div.dropdown.recent-notebooks-dropdown {
 
 
 ul.recent-notebooks-list {
-    left: -96px;
+    left: -56px;
     top: 23px;
     font-size: 12px;
+    min-width: 120px!important;
 }
 
 ul.recent-notebooks-list li {
-    width: 120px;
+    max-width: 160px;
 }
 
 ul.recent-notebooks-list li a {
     padding-top: 0;
+    max-width: 160px;
     height: 20px;
     display: inline-block;
     overflow: hidden;

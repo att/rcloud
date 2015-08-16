@@ -1460,6 +1460,8 @@ var editor = function () {
                 .sortBy(function(kv) { return kv[1] * -1 })
                 .value();
 
+            sorted.shift();//remove the first item
+
             $('.recent-notebooks-list a').each(function() {
                 $(this).off('click');
             });
@@ -1467,7 +1469,7 @@ var editor = function () {
             $('.recent-notebooks-list').empty();
 
             for(var i = 0; i < sorted.length; i ++) {
-                
+
                 var li = $('<li></li>');
                 li.appendTo($('.recent-notebooks-list'));
 
@@ -1475,16 +1477,17 @@ var editor = function () {
                 anchor.addClass('ui-all')
                     .text(get_notebook_info(sorted[i][0]).description)
                     .appendTo(li);
-                    
+
                 anchor.click(function(e) {
                     e.stopPropagation();
                     e.preventDefault();
                     var gist = $(e.currentTarget).data('gist');
-                    console.log(gist);
                     $('.dropdown-toggle.recent-btn').dropdown("toggle");
                     result.open_notebook(gist);
                 });
             }
+
+            function truncate
         },
 
         load_callback: function(opts) {
