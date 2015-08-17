@@ -603,7 +603,7 @@ rcloud.port.notebooks <- function(url, books, prefix) {
       gist <- getg$content
       newgist <- list(description = paste(prefix, gist$description, sep=""),
                       files = gist$files);
-      rcloud.create.notebook(newgist)
+      rcloud.create.notebook(newgist, FALSE)
     }
     else getg
   }, books)
