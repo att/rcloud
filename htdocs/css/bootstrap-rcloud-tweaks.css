@@ -373,17 +373,13 @@ td {
 div.dropdown.recent-notebooks-dropdown {
     position: absolute;
     right: 29px;
-    top: -2px;
+    top: -1px;
 }
 
-.recent-notebooks-dropdown button {
-    padding-left: 6px;
-    padding-right: 6px;
-    padding-top: 1px;
-    padding-bottom: 1px;
-    background-color: gainsboro;
+div.dropdown.recent-notebooks-dropdown a.recent-btn{
+    color: white;
+    text-decoration: none;
 }
-
 
 /* never collapse the navbar, from http://www.bootply.com/118426
  */
@@ -401,7 +397,7 @@ div.dropdown.recent-notebooks-dropdown {
 }
 
 .edit-code.inactive .hljs {
-    
+    /*word-break: break-all;*/
 }
 
 
@@ -423,5 +419,5 @@ ul.recent-notebooks-list li a {
     display: inline-block;
     overflow: hidden;
     white-space: nowrap;
-    text-overflow: ellipsis;
+
 }
