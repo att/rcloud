@@ -135,7 +135,7 @@ RCloud.UI.import_export = (function() {
                             function do_import() {
                                 if(notebook) {
                                     notebook.description = notebook_desc_content.val();
-                                    rcloud.create_notebook(notebook).then(function(notebook) {
+                                    rcloud.create_notebook(notebook, false).then(function(notebook) {
                                         editor.star_notebook(true, {notebook: notebook}).then(function() {
                                             editor.set_notebook_visibility(notebook.id, true);
                                         });
