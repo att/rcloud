@@ -49,7 +49,7 @@ fork.gist.githubcontext <- function(...) .fix.truncated(github::fork.gist(...))
 
 modify.gist.githubcontext <- function(...) .fix.truncated(github::modify.gist(...))
 
-create.gist.githubcontext <- github::create.gist
+create.gist.githubcontext <- function(...) .fix.truncated(github::create.gist(...))
 
 delete.gist.githubcontext <- github::delete.gist
 
