@@ -20,7 +20,7 @@ RCloud.UI.panel_loader = (function() {
                                    'href': '#' + collapse_id},
                                   icon, '\u00a0', title_span);
 
-        var heading_content = opts.panel.heading_content ? op ts.panel.heading_content() : null;
+        var heading_content = opts.panel.heading_content ? opts.panel.heading_content() : null;
         var heading;
         if(opts.side==='left') {
             heading = $.el.div(heading_attrs,

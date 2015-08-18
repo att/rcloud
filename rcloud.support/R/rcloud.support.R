@@ -130,8 +130,9 @@ rcloud.tag.notebook.version <- function(gist_id, version, tag_name) {
 
 rcloud.install.notebook.stylesheets <- function() {
   n <- rcloud.session.notebook()$content
-  urls <- sapply(grep('^rcloud-.*\\.css$', names(n$files)), function(v) {
-    n$files[[v]]$raw_url
+  nn <- names(n$files)
+  urls <- sapply(nn[grep('^rcloud-.*\\.css$', nn)], function(v) {
+    paste0("/notebook.R/", n$id, "/", v)
   })
   rcloud.install.css(urls)
 }
@@ -602,7 +603,7 @@ rcloud.port.notebooks <- function(url, books, prefix) {
       gist <- getg$content
       newgist <- list(description = paste(prefix, gist$description, sep=""),
                       files = gist$files);
-      rcloud.create.notebook(newgist)
+      rcloud.create.notebook(newgist, FALSE)
     }
     else getg
   }, books)
