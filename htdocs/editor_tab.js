@@ -1461,6 +1461,7 @@ var editor = function () {
                 .value();
 
             sorted.shift();//remove the first item
+            sorted = sorted.slice(0, 10); //limit to 15 entries
 
             $('.recent-notebooks-list a').each(function() {
                 $(this).off('click');
@@ -1472,10 +1473,13 @@ var editor = function () {
 
                 var li = $('<li></li>');
                 li.appendTo($('.recent-notebooks-list'));
-
+                var currentNotebook = get_notebook_info(sorted[i][0]);
                 var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');
+                var desc = truncateNotebookPath(currentNotebook.description, 40);
+      
                 anchor.addClass('ui-all')
-                    .text(get_notebook_info(sorted[i][0]).description)
+                    .append($('<span class="username">'+currentNotebook.username+'</span>'))
+                    .append($('<span class="description">'+desc+'</span>'))
                     .appendTo(li);
 
                 anchor.click(function(e) {
@@ -1484,7 +1488,65 @@ var editor = function () {
                     var gist = $(e.currentTarget).data('gist');
                     $('.dropdown-toggle.recent-btn').dropdown("toggle");
                     result.open_notebook(gist);
+
                 });
+            }
+
+            function truncateNotebookPath(txt, chars) {
+
+                var foldersReplaced = 0;
+                var folders = txt.split('/');
+                var foldersLength = folders.length -1;
+                var text = txt;
+                var folderStringLength = 3; // ../
+                var trimReplacements = false;
+
+                return doTrim();
+            
+                function doTrim() {
+                    if( text.length > chars ) {
+                        //if folders
+                        if( folders.length >  2) {
+                            //replace each dir with ../
+                            if(foldersLength - foldersReplaced >1 && !trimReplacements){
+                                foldersReplaced ++;
+                                folders.shift();
+                                var fldrs = '';
+                                for(var a = 0; a < foldersReplaced; a ++) {
+                                    fldrs += '../'
+                                }
+                                text = fldrs + folders.join('/');
+                                return doTrim();
+                            }
+                            //folder replacements exhausted, drop the first replacement and try
+                            else if(trimReplacements) {
+                                trimReplacements = true;
+                                text = text.slice(3);
+                                foldersReplaced --;
+                                var timeToTrimFolders;
+                                return doTrim();
+                            }
+                            else {
+                                console.log('in else');
+                            }
+                        }
+                        //if no folders
+                        else if(folders.length === 2){
+                            text = text.substring(0, text.length - 6);
+                            text += '...';
+                            return doTrim(); 
+                        }
+                        else{
+                            text = text.substring(0, text.length - 6);
+                            text += '...';
+                            return doTrim(); 
+                        }
+                    }
+                    else {
+                        console.log('returning text '+text)
+                        return text;
+                    }
+                }
             }
         },
 

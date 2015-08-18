@@ -9,7 +9,7 @@ RCloud.UI.panel_loader = (function() {
     function add_panel(opts) {
         var parent_id = 'accordion-' + opts.side;
         var collapse_id = collapse_name(opts.name);
-        var heading_attrs = {'class': 'panel-heading',
+        var heading_attrs = {'class': 'panel-heading clearfix',
                                 'data-toggle': 'collapse',
                                 'data-parent': '#' + parent_id, // note: left was broken '#accordion'
                                 'data-target': '#' + collapse_id};
@@ -20,7 +20,7 @@ RCloud.UI.panel_loader = (function() {
                                    'href': '#' + collapse_id},
                                   icon, '\u00a0', title_span);
 
-        var heading_content = opts.panel.heading_content ? opts.panel.heading_content() : null;
+        var heading_content = opts.panel.heading_content ? op ts.panel.heading_content() : null;
         var heading;
         if(opts.side==='left') {
             heading = $.el.div(heading_attrs,

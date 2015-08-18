@@ -41,6 +41,7 @@ code {
 
 .panel-group .panel {
     border-radius: 0;
+    overflow: initial;
 }
 
 .container.nopad {
@@ -364,23 +365,6 @@ td {
   border-bottom-color: transparent;
 }
 
-/*recent notebooks*/
-
-#notebooks-panel-inner {
-    position:relative;
-}
-
-div.dropdown.recent-notebooks-dropdown {
-    position: absolute;
-    right: 29px;
-    top: -1px;
-}
-
-div.dropdown.recent-notebooks-dropdown a.recent-btn{
-    color: white;
-    text-decoration: none;
-}
-
 /* never collapse the navbar, from http://www.bootply.com/118426
  */
 
@@ -401,23 +385,62 @@ div.dropdown.recent-notebooks-dropdown a.recent-btn{
 }
 
 
+/*recent notebooks*/
+
+#notebooks-panel-inner {
+    position:relative;
+}
+
+.dropdown.recent-notebooks-dropdown {
+    position: absolute;
+    right: 29px;
+    top: -1px;
+}
+
+.dropdown.recent-notebooks-dropdown a.recent-btn{
+    color: #f1f1e5;
+    text-decoration: none;
+    padding: 5px;
+}
+
 ul.recent-notebooks-list {
-    left: -56px;
-    top: 23px;
+    left: 0;
+    top: 25px;
     font-size: 12px;
-    min-width: 120px!important;
+    max-width: 330px;
 }
 
 ul.recent-notebooks-list li {
-    max-width: 160px;
+    max-width: 330px;
+}
+
+ul.recent-notebooks-list li a.username:hover {
+    color: white!important;
+}
+
+ul.recent-notebooks-list li a .username {
+    color: #7D7D7D;
+    display: inline-block;
+    max-width: 80px;
+    text-overflow: ellipsis;
+    overflow: hidden;   
+}
+
+ul.recent-notebooks-list li a .description {
+    margin-left: 6px;
+    display: inline-block;
+    max-width: 235px;
+    overflow: hidden;
 }
 
 ul.recent-notebooks-list li a {
     padding-top: 0;
-    max-width: 160px;
+    padding-left: 5px;
+    padding-right: 5px;
     height: 20px;
     display: inline-block;
     overflow: hidden;
     white-space: nowrap;
+    width: 100%;
 
 }
