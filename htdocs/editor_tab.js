@@ -1461,7 +1461,7 @@ var editor = function () {
                 .value();
 
             sorted.shift();//remove the first item
-            sorted = sorted.slice(0, 10); //limit to 15 entries
+            sorted = sorted.slice(0, 20); //limit to 15 entries
 
             $('.recent-notebooks-list a').each(function() {
                 $(this).off('click');
@@ -1476,7 +1476,7 @@ var editor = function () {
                 var currentNotebook = get_notebook_info(sorted[i][0]);
                 var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');
                 var desc = truncateNotebookPath(currentNotebook.description, 40);
-      
+
                 anchor.addClass('ui-all')
                     .append($('<span class="username">'+currentNotebook.username+'</span>'))
                     .append($('<span class="description">'+desc+'</span>'))

@@ -444,3 +444,7 @@ ul.recent-notebooks-list li a {
     width: 100%;
 
 }
+
+.jqtree-element .jqtree-title.jqtree_common {
+    word-break: break-all;
+}
