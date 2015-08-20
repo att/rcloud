@@ -1474,7 +1474,7 @@ var editor = function () {
                 var li = $('<li></li>');
                 li.appendTo($('.recent-notebooks-list'));
                 var currentNotebook = get_notebook_info(sorted[i][0]);
-                var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');
+                var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');  
                 var desc = truncateNotebookPath(currentNotebook.description, 40);
 
                 anchor.addClass('ui-all')
@@ -1494,7 +1494,7 @@ var editor = function () {
 
             function truncateNotebookPath(txt, chars) {
 
-                if(typeof txt === 'undefined' || txt.length === 0 ){
+                if(!txt || typeof txt === 'undefined' || txt.length === 0 ){
                     return 'something went wrong';
                 }
 
