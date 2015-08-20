@@ -194,6 +194,41 @@ var shell = (function() {
                         return [notebook, notebook.id, null];
                     });
             });
+        }, improve_load_error: function(xep, gistname, version) {
+            var msg1 = "Could not open notebook " + gistname;
+            if(version)
+                msg1 += " (version " + version + ")";
+            var msg2 = xep.toString().replace(/\n/g, '');
+            var load_err = /Error: load_notebook: (.*)R trace/.exec(msg2);
+            if(load_err)
+                msg2 = load_err[1];
+            var improve_msg_promise, errtype;
+            if(/unable to access key/.test(msg2))
+                errtype = 'access';
+            else if(/checksum mismatch/.test(msg2))
+                errtype = 'checksum';
+            if(errtype) {
+                improve_msg_promise = rcloud.protection.get_notebook_cryptgroup(gistname).then(function(cryptgroup) {
+                    if(cryptgroup) {
+                        if(cryptgroup.id === 'private')
+                            return msg1 + "\nThe notebook is private and you are not the owner";
+                        else if(cryptgroup.name) {
+                            return rcloud.protection.get_cryptgroup_users(cryptgroup.id).then(function(users) {
+                                return msg1 + "\nThe notebook belongs to protection group '" + cryptgroup.name + "' and you are not a member\n" +
+                                    "Group administrators are: " + _.pairs(_.omit(users, 'r_type', 'r_attributes')).filter(function(usad) {
+                                        return usad[1];
+                                    }).map(function(usad) {
+                                        return usad[0];
+                                    }).join(', ');
+                            });
+                        }
+                    }
+                    return msg1 + '\n' + msg2;
+                });
+            } else {
+                improve_msg_promise = Promise.resolve(msg1 + '\n' + msg2);
+            }
+            return improve_msg_promise;
         }, github_url: function() {
             var url;
             var source = editor.get_notebook_info(gistname_).source || 'default';

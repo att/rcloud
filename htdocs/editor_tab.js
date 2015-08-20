@@ -1178,43 +1178,10 @@ var editor = function () {
                                               selroot: selroot,
                                               push_history: push_history}))
                     .catch(function(xep) {
-                        var msg1 = "Could not open notebook " + gistname;
-                        if(version)
-                            msg1 += " (version " + version + ")";
-                        var msg2 = xep.toString().replace(/\n/g, '');
-                        var load_err = /Error: load_notebook: (.*)R trace/.exec(msg2);
-                        if(load_err)
-                            msg2 = load_err[1];
-                        var improve_msg_promise, errtype;
-                        if(/unable to access key/.test(msg2))
-                            errtype = 'access';
-                        else if(/checksum mismatch/.test(msg2))
-                            errtype = 'checksum';
-                        if(errtype) {
-                            improve_msg_promise = rcloud.protection.get_notebook_cryptgroup(gistname).then(function(cryptgroup) {
-                                if(cryptgroup) {
-                                    if(cryptgroup.id === 'private')
-                                        return msg1 + "\nThe notebook is private and you are not the owner";
-                                    else if(cryptgroup.name) {
-                                        return rcloud.protection.get_cryptgroup_users(cryptgroup.id).then(function(users) {
-                                            return msg1 + "\nThe notebook belongs to protection group '" + cryptgroup.name + "' and you are not a member\n" +
-                                                "Group administrators are: " + _.pairs(_.omit(users, 'r_type', 'r_attributes')).filter(function(usad) {
-                                                    return usad[1];
-                                                }).map(function(usad) {
-                                                    return usad[0];
-                                                }).join(', ');
-                                        });
-                                    }
-                                }
-                                return msg1 + '\n' + msg2;
-                            });
-                        } else {
-                            improve_msg_promise = Promise.resolve(msg1 + '\n' + msg2);
-                        }
-                        improve_msg_promise.then(function(message) {
+                        return shell.improve_load_error(xep, gistname, version).then(function(message) {
                             RCloud.UI.fatal_dialog(message, "Continue", fail_url);
+                            throw xep;
                         });
-                        throw xep;
                     });
             });
         },
@@ -1453,6 +1420,9 @@ var editor = function () {
         },
 
         update_recent_notebooks: function(data) {
+
+            return;
+            
             var sorted = _.chain(data)
                 .pairs()
                 .filter(function(kv) { return kv[0] != 'r_attributes' && kv[0] != 'r_type'; })
@@ -1461,6 +1431,7 @@ var editor = function () {
                 .value();
 
             sorted.shift();//remove the first item
+            sorted = sorted.slice(0, 20); //limit to 15 entries
 
             $('.recent-notebooks-list a').each(function() {
                 $(this).off('click');
@@ -1472,10 +1443,13 @@ var editor = function () {
 
                 var li = $('<li></li>');
                 li.appendTo($('.recent-notebooks-list'));
+                var currentNotebook = get_notebook_info(sorted[i][0]);
+                var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');  
+                var desc = truncateNotebookPath(currentNotebook.description, 40);
 
-                var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');
                 anchor.addClass('ui-all')
-                    .text(get_notebook_info(sorted[i][0]).description)
+                    .append($('<span class="username">'+currentNotebook.username+'</span>'))
+                    .append($('<span class="description">'+desc+'</span>'))
                     .appendTo(li);
 
                 anchor.click(function(e) {
@@ -1484,7 +1458,69 @@ var editor = function () {
                     var gist = $(e.currentTarget).data('gist');
                     $('.dropdown-toggle.recent-btn').dropdown("toggle");
                     result.open_notebook(gist);
+
                 });
+            }
+
+            function truncateNotebookPath(txt, chars) {
+
+                if(!txt || typeof txt === 'undefined' || txt.length === 0 ){
+                    return 'something went wrong';
+                }
+
+                var foldersReplaced = 0;
+                var folders = txt.split('/');
+                var foldersLength = folders.length -1;
+                var text = txt;
+                var folderStringLength = 3; // ../
+                var trimReplacements = false;
+
+                return doTrim();
+            
+                function doTrim() {
+                    if( text.length > chars ) {
+                        //if folders
+                        if( folders.length >  2) {
+                            //replace each dir with ../
+                            if(foldersLength - foldersReplaced >1 && !trimReplacements){
+                                foldersReplaced ++;
+                                folders.shift();
+                                var fldrs = '';
+                                for(var a = 0; a < foldersReplaced; a ++) {
+                                    fldrs += '../'
+                                }
+                                text = fldrs + folders.join('/');
+                                return doTrim();
+                            }
+                            //folder replacements exhausted, drop the first replacement and try
+                            else if(trimReplacements) {
+                                trimReplacements = true;
+                                text = text.slice(3);
+                                foldersReplaced --;
+                                var timeToTrimFolders;
+                                return doTrim();
+                            }
+                            else {
+                                console.log('in else');
+                            }
+                        }
+                        //if no folders
+                        else if(folders.length === 2){
+                            text = text.substring(0, text.length - 6);
+                            text += '...';
+                            return doTrim(); 
+                        }
+                        else{
+                            text = text.substring(0, text.length - 6);
+                            text += '...';
+                            return doTrim(); 
+                        }
+                    }
+                    else {
+                        //console.log('returning text '+text)
+                        return text;
+                    }
+                }
             }
         },
 
