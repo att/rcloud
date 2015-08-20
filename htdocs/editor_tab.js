@@ -1420,6 +1420,9 @@ var editor = function () {
         },
 
         update_recent_notebooks: function(data) {
+
+            return;
+            
             var sorted = _.chain(data)
                 .pairs()
                 .filter(function(kv) { return kv[0] != 'r_attributes' && kv[0] != 'r_type'; })
@@ -1441,7 +1444,7 @@ var editor = function () {
                 var li = $('<li></li>');
                 li.appendTo($('.recent-notebooks-list'));
                 var currentNotebook = get_notebook_info(sorted[i][0]);
-                var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');
+                var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');  
                 var desc = truncateNotebookPath(currentNotebook.description, 40);
 
                 anchor.addClass('ui-all')
@@ -1460,6 +1463,10 @@ var editor = function () {
             }
 
             function truncateNotebookPath(txt, chars) {
+
+                if(!txt || typeof txt === 'undefined' || txt.length === 0 ){
+                    return 'something went wrong';
+                }
 
                 var foldersReplaced = 0;
                 var folders = txt.split('/');
@@ -1510,7 +1517,7 @@ var editor = function () {
                         }
                     }
                     else {
-                        console.log('returning text '+text)
+                        //console.log('returning text '+text)
                         return text;
                     }
                 }
