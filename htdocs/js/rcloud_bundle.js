@@ -7003,7 +7003,7 @@ RCloud.UI.notebook_title = (function() {
                         change: rename_notebook_folder(node),
                         ctrl_cmd: fork_rename_folder(node),
                         validate: function(text) {
-                            return !Notebook.empty_for_github(text);
+                            return editor.validate_name(text);
                         }
                     });
                 }
