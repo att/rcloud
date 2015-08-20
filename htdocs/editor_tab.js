@@ -1494,6 +1494,10 @@ var editor = function () {
 
             function truncateNotebookPath(txt, chars) {
 
+                if(typeof txt === 'undefined' || txt.length === 0 ){
+                    return 'something went wrong';
+                }
+
                 var foldersReplaced = 0;
                 var folders = txt.split('/');
                 var foldersLength = folders.length -1;
@@ -1543,7 +1547,7 @@ var editor = function () {
                         }
                     }
                     else {
-                        console.log('returning text '+text)
+                        //console.log('returning text '+text)
                         return text;
                     }
                 }
