@@ -126,7 +126,6 @@ function create_cell_html_view(language, cell_model) {
     inner_div.append(source_div_);
 
     function click_to_edit(div, whether) {
-        whether &= !am_read_only_;
         if(whether) {
             set_background_class(code_div_.find('pre'));
             div.toggleClass('inactive', true);
@@ -142,7 +141,10 @@ function create_cell_html_view(language, cell_model) {
                         var p1 = { x: e.pageX, y: e.pageY },
                             d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
                         if (d < 4) {
-                            result.edit_source(true, e);
+                            if(RCloud.language.is_a_markdown(language) && am_read_only_)
+                                result.hide_source(false);
+                            else
+                                result.edit_source(true, e);
                             div.mouseleave();
                         }
                     }
@@ -354,7 +356,7 @@ function create_cell_html_view(language, cell_model) {
         // yuk
         code_div_.find('.rcloud-line-number .hljs-number').css('color', 'black');
         if(am_read_only_ !== 'unknown')
-            click_to_edit(code_div_.find('pre'), !am_read_only_);
+            click_to_edit(code_div_.find('pre'), true);
         set_background_class(code_div_.find('pre'));
     }
     assign_code();

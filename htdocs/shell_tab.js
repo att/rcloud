@@ -3,8 +3,8 @@ var shell = (function() {
     var version_ = null,
         gistname_ = null,
         notebook_user_ = null,
-        github_url_ = null,
-        gist_url_ = null,
+        github_urls_ = {},
+        gist_urls_ = {},
         notebook_model_ = Notebook.create_model(),
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
         notebook_controller_ = Notebook.create_controller(notebook_model_),
@@ -75,8 +75,25 @@ var shell = (function() {
             return version_;
         },
         init: function() {
-            rcloud.get_conf_value("github.base.url").then(function(url) { github_url_ = url; });
-            rcloud.get_conf_value("github.gist.url").then(function(url) { gist_url_ = url; });
+            rcloud.get_gist_sources().then(function(sources) {
+                // de-rserve-ify
+                if(_.isString(sources))
+                    sources = [sources];
+                else
+                    sources = _.without(sources, 'r_type', 'r_attributes');
+                sources.forEach(function(source) {
+                    rcloud.get_conf_value('github.base.url', source).then(function(url) {
+                        if(url) github_urls_[source] = url;
+                    });
+                    rcloud.get_conf_value('github.gist.url', source).then(function(url) {
+                        if(url) gist_urls_[source] = url;
+                    });
+                });
+            });
+        },
+        refresh_notebook_title: function() {
+            if(notebook_controller_.current_gist())
+                RCloud.UI.notebook_title.set(notebook_controller_.current_gist().description);
         },
         is_view_mode: function(val) {
             if(val !== undefined) {
@@ -177,14 +194,51 @@ var shell = (function() {
                         return [notebook, notebook.id, null];
                     });
             });
+        }, improve_load_error: function(xep, gistname, version) {
+            var msg1 = "Could not open notebook " + gistname;
+            if(version)
+                msg1 += " (version " + version + ")";
+            var msg2 = xep.toString().replace(/\n/g, '');
+            var load_err = /Error: load_notebook: (.*)R trace/.exec(msg2);
+            if(load_err)
+                msg2 = load_err[1];
+            var improve_msg_promise, errtype;
+            if(/unable to access key/.test(msg2))
+                errtype = 'access';
+            else if(/checksum mismatch/.test(msg2))
+                errtype = 'checksum';
+            if(errtype) {
+                improve_msg_promise = rcloud.protection.get_notebook_cryptgroup(gistname).then(function(cryptgroup) {
+                    if(cryptgroup) {
+                        if(cryptgroup.id === 'private')
+                            return msg1 + "\nThe notebook is private and you are not the owner";
+                        else if(cryptgroup.name) {
+                            return rcloud.protection.get_cryptgroup_users(cryptgroup.id).then(function(users) {
+                                return msg1 + "\nThe notebook belongs to protection group '" + cryptgroup.name + "' and you are not a member\n" +
+                                    "Group administrators are: " + _.pairs(_.omit(users, 'r_type', 'r_attributes')).filter(function(usad) {
+                                        return usad[1];
+                                    }).map(function(usad) {
+                                        return usad[0];
+                                    }).join(', ');
+                            });
+                        }
+                    }
+                    return msg1 + '\n' + msg2;
+                });
+            } else {
+                improve_msg_promise = Promise.resolve(msg1 + '\n' + msg2);
+            }
+            return improve_msg_promise;
         }, github_url: function() {
             var url;
-            if(gist_url_) {
-                url = gist_url_;
+            var source = editor.get_notebook_info(gistname_).source || 'default';
+            if(gist_urls_[source]) {
+                url = gist_urls_[source];
                 url += notebook_user_ + '/';
             }
-            else
-                url = github_url_ + 'gist/';
+            else if(github_urls_[source])
+                url = github_urls_[source] + 'gist/';
+            else return null;
             url += gistname_;
             if(version_)
                 url += '/' + version_;
@@ -195,7 +249,7 @@ var shell = (function() {
             }
             var ponents;
             if(notebook_or_url.indexOf('://') > 0) {
-                var prefix = gist_url_ || github_url_;
+                var prefix = gist_urls_['default'] || github_urls_['default'];
                 if(notebook_or_url.substring(0, prefix.length) !== prefix) {
                     alert("Sorry, importing from foreign GitHub instances not supported yet!");
                     return;
@@ -203,7 +257,7 @@ var shell = (function() {
                 ponents = notebook_or_url.substring(prefix.length).split('/');
                 if(!ponents[0])
                     ponents.splice(0,1); // prefix may not have trailing '/'
-                if(gist_url_) {
+                if(gist_urls_['default']) {
                     // new format URL
                     // [{username}/]{gistid}/{version}
                     // there's an ambiguity between usernames and gist IDs

@@ -75,8 +75,12 @@ RCloud.UI.notebook_title = (function() {
             var active_text = text;
             var ellipt_start = false, ellipt_end = false;
             var title = $('#notebook-title');
+            function sum_li_width(sel) {
+                return d3.sum($(sel).map(function(_, el) { return $(el).width(); }));
+            }
+            var header_plus_menu = $('#rcloud-navbar-header').width() + sum_li_width('#rcloud-navbar-menu li') + 50;
             title.text(text);
-            while(window.innerWidth - title.width() < 650) {
+            while(text.length>10 && window.innerWidth < header_plus_menu + sum_li_width('#rcloud-navbar-main')) {
                 var slash = text.search('/');
                 if(slash >= 0) {
                     ellipt_start = true;
@@ -84,7 +88,7 @@ RCloud.UI.notebook_title = (function() {
                 }
                 else {
                     ellipt_end = true;
-                    text = text.substr(0, text.length - 2);
+                    text = text.substr(0, text.length - 5);
                 }
                 title.text((ellipt_start ? '.../' : '') +
                            text +
@@ -124,9 +128,9 @@ RCloud.UI.notebook_title = (function() {
                 else if(!node.gistname) {
                     opts = $.extend({}, editable_opts, {
                         change: rename_notebook_folder(node),
-                        ctrl_cmd: null,
+                        ctrl_cmd: fork_rename_folder(node),
                         validate: function(text) {
-                            return !Notebook.empty_for_github(text);
+                            return editor.validate_name(text);
                         }
                     });
                 }

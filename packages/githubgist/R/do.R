@@ -32,17 +32,26 @@ access.token.githubcontext <- function(query, ctx) {
 
 context.info.githubcontext <- function(ctx) list(username=ctx$user$login)
 
-get.gist.githubcontext <- github::get.gist
+## we have to post-process the result from Github, because it may contain
+## truncated content which has to be fetched directly
+.fix.truncated <- function(res) {
+    if (isTRUE(res$ok) && length(res$content$files)) {
+        for (i in seq_along(res$content$files))
+            if (isTRUE(res$content$files[[i]]$truncated))
+                res$content$files[[i]]$content <- getURL(res$content$files[[i]]$raw_url)
+    }
+    res
+}
 
-fork.gist.githubcontext <- github::fork.gist
+get.gist.githubcontext <- function(...) .fix.truncated(github::get.gist(...))
 
-modify.gist.githubcontext <- github::modify.gist
+fork.gist.githubcontext <- function(...) .fix.truncated(github::fork.gist(...))
 
-create.gist.githubcontext <- github::create.gist
+modify.gist.githubcontext <- function(...) .fix.truncated(github::modify.gist(...))
+
+create.gist.githubcontext <- function(...) .fix.truncated(github::create.gist(...))
 
 delete.gist.githubcontext <- github::delete.gist
-
-modify.gist.githubcontext <- github::modify.gist
 
 create.gist.comment.githubcontext <- github::create.gist.comment
 

@@ -134,7 +134,7 @@ rcloud.reset.session <- function() {
   ## use the global workspace as the parent to avoid long lookups across irrelevant namespaces
   .session$knitr.env <- new.env(parent=.GlobalEnv)
   ## load all-user and per-user rcloud add-ons
-  if (!identical(.session$mode, "call")) {
+  if (!(identical(.session$mode, "call") || identical(.session$mode, "client"))) {
     all.addons <- rcloud.config.get.alluser.option("addons")
     user.addons <- rcloud.config.get.user.option("addons")
     user.skip.addons <- rcloud.config.get.user.option("skip-addons");

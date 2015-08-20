@@ -187,6 +187,8 @@ configure.rcloud <- function (mode=c("startup", "script")) {
   if (nzConf("curl.cainfo")) {
     cainfo <- pathConf("curl.cainfo", anchor=getConf("configuration.root"))
     httr::set_config(httr::config(cainfo = cainfo))
+    if (is.null(getOption("RCurlOptions")))
+        options(RCurlOptions = list(cainfo="/data/rcloud/conf/verisign.crt"))
   }
 
   setConf("instanceID", generate.uuid())

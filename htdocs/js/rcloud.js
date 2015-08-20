@@ -157,8 +157,8 @@ RCloud.create = function(rcloud_ocaps) {
                 });
         };
 
-        rcloud.get_conf_value = function(key) {
-            return rcloud_ocaps.get_conf_valueAsync(key);
+        rcloud.get_conf_value = function(key, source) {
+            return rcloud_ocaps.get_conf_valueAsync(key, source);
         };
 
         rcloud.get_conf_values = function(key) {
@@ -449,11 +449,12 @@ RCloud.create = function(rcloud_ocaps) {
                 is_current = true;
             return rcloud_github_handler(
                 "rcloud.create.notebook",
-                rcloud_ocaps.create_notebookAsync(content, is_current))
-            .then(function(result) {
-                rcloud_ocaps.load_notebook_computeAsync(result.id);
-                return result;
-            });
+              rcloud_ocaps.create_notebookAsync(content, is_current))
+                .then(function(result) {
+                    if(is_current)
+                        rcloud_ocaps.load_notebook_computeAsync(result.id);
+                    return result;
+                });
         };
         rcloud.fork_notebook = function(id) {
             return rcloud_github_handler(

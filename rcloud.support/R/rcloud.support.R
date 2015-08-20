@@ -2,10 +2,18 @@
 # rcloud_status stuff goes here
 
 # FIXME what's the relationship between this and rcloud.config in conf.R?
-rcloud.get.conf.value <- function(key) {
+rcloud.get.conf.value <- function(key, source = NULL) {
   Allowed <- c('host', 'exec.token.renewal.time', 'github.base.url', 'github.api.url', 'github.gist.url', 'solr.page.size', 'smtp.server', 'email.from')
-  if(key %in% Allowed)
-    getConf(key)
+  if(key %in% Allowed) {
+    if(is.null(source) || source=='default')
+      getConf(key)
+    else {
+      if(key %in% names(.session$gist.sources.conf[[source]]))
+        .session$gist.sources.conf[[source]][[key]]
+      else
+        NULL
+    }
+  }
   else
     NULL
 }
@@ -122,8 +130,9 @@ rcloud.tag.notebook.version <- function(gist_id, version, tag_name) {
 
 rcloud.install.notebook.stylesheets <- function() {
   n <- rcloud.session.notebook()$content
-  urls <- sapply(grep('^rcloud-.*\\.css$', names(n$files)), function(v) {
-    n$files[[v]]$raw_url
+  nn <- names(n$files)
+  urls <- sapply(nn[grep('^rcloud-.*\\.css$', nn)], function(v) {
+    paste0("/notebook.R/", n$id, "/", v)
   })
   rcloud.install.css(urls)
 }
@@ -594,7 +603,7 @@ rcloud.port.notebooks <- function(url, books, prefix) {
       gist <- getg$content
       newgist <- list(description = paste(prefix, gist$description, sep=""),
                       files = gist$files);
-      rcloud.create.notebook(newgist)
+      rcloud.create.notebook(newgist, FALSE)
     }
     else getg
   }, books)
@@ -680,6 +689,7 @@ rcloud.star.notebook <- function(notebook)
     rcs.set(star.key(notebook), TRUE)
     rcs.incr(star.count.key(notebook))
   }
+  else rcloud.notebook.star.count(notebook)
 }
 
 rcloud.unstar.notebook <- function(notebook)
@@ -688,6 +698,7 @@ rcloud.unstar.notebook <- function(notebook)
     rcs.rm(star.key(notebook))
     rcs.decr(star.count.key(notebook))
   }
+  else rcloud.notebook.star.count(notebook)
 }
 
 rcloud.get.my.starred.notebooks <- function()

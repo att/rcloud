@@ -744,6 +744,7 @@ var editor = function () {
         }
         else
             return rcloud.load_notebook(node.gistname, null).then(function(notebook) {
+                console.log('hey');
                 histories_[node.gistname] = notebook.history;
                 if(whither==='sha')
                     nshow = show_sha(histories_[node.gistname], where);
@@ -1081,6 +1082,14 @@ var editor = function () {
                 else
                     return that.new_notebook();
             });
+
+            $('.dropdown-toggle.recent-btn').dropdown();
+
+            $('.recent-btn').click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
             $('#new-notebook').click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1145,6 +1154,7 @@ var editor = function () {
             return find_next_copy_name(username_, name);
         },
         load_notebook: function(gistname, version, source, selroot, push_history, fail_url) {
+            //console.log('load notebook function called');
             var that = this;
             var before;
             if(source) {
@@ -1168,43 +1178,10 @@ var editor = function () {
                                               selroot: selroot,
                                               push_history: push_history}))
                     .catch(function(xep) {
-                        var msg1 = "Could not open notebook " + gistname;
-                        if(version)
-                            msg1 += " (version " + version + ")";
-                        var msg2 = xep.toString().replace(/\n/g, '');
-                        var load_err = /Error: load_notebook: (.*)R trace/.exec(msg2);
-                        if(load_err)
-                            msg2 = load_err[1];
-                        var improve_msg_promise, errtype;
-                        if(/unable to access key/.test(msg2))
-                            errtype = 'access';
-                        else if(/checksum mismatch/.test(msg2))
-                            errtype = 'checksum';
-                        if(errtype) {
-                            improve_msg_promise = rcloud.protection.get_notebook_cryptgroup(gistname).then(function(cryptgroup) {
-                                if(cryptgroup) {
-                                    if(cryptgroup.id === 'private')
-                                        return msg1 + "\nThe notebook is private and you are not the owner";
-                                    else if(cryptgroup.name) {
-                                        return rcloud.protection.get_cryptgroup_users(cryptgroup.id).then(function(users) {
-                                            return msg1 + "\nThe notebook belongs to protection group '" + cryptgroup.name + "' and you are not a member\n" +
-                                                "Group administrators are: " + _.pairs(_.omit(users, 'r_type', 'r_attributes')).filter(function(usad) {
-                                                    return usad[1];
-                                                }).map(function(usad) {
-                                                    return usad[0];
-                                                }).join(', ');
-                                        });
-                                    }
-                                }
-                                return msg1 + '\n' + msg2;
-                            });
-                        } else {
-                            improve_msg_promise = Promise.resolve(msg1 + '\n' + msg2);
-                        }
-                        improve_msg_promise.then(function(message) {
+                        return shell.improve_load_error(xep, gistname, version).then(function(message) {
                             RCloud.UI.fatal_dialog(message, "Continue", fail_url);
+                            throw xep;
                         });
-                        throw xep;
                     });
             });
         },
@@ -1373,6 +1350,7 @@ var editor = function () {
         fork_folder: function(node, match, replace) {
             var that = this;
             var is_mine = node.user === that.username();
+            var promises = [];
             editor.for_each_notebook(node, null, function(node) {
                 var promise_fork;
                 if(is_mine)
@@ -1381,9 +1359,31 @@ var editor = function () {
                     });
                 else
                     promise_fork = rcloud.fork_notebook(node.gistname);
-                return promise_fork.then(function(notebook) {
-                    return editor.star_and_show(notebook, false, false);
-                });
+                promises.push(promise_fork.then(function(notebook) {
+                    if(notebook_info_[notebook.id])
+                        return notebook.description;
+                    else
+                        return editor.star_and_show(notebook, false, false);
+                }));
+            });
+            Promise.all(promises).then(function(results) {
+                var already = [], forked = [];
+                for(var i = 0; i < results.length; ++i) {
+                    if(_.isString(results[i]))
+                        already.push(results[i]);
+                    else
+                        forked.push(results[i].description);
+                }
+                if(already.length) {
+                    var lines = ["You already had the following " + already.length + " notebooks:"]
+                            .concat(already,
+                                    "GitHub wouldn't let me fork them again.",
+                                    "Fork your own copies if you really need more.");
+                    if(promises.length > already.length)
+                        lines = lines.concat("", "You forked " + forked.length + " notebooks.", forked);
+
+                    alert(lines.join('\n'));
+                }
             });
             return this;
         },
@@ -1418,6 +1418,112 @@ var editor = function () {
                     $tree_.tree('openNode', node);
                 });
         },
+
+        update_recent_notebooks: function(data) {
+
+            return;
+            
+            var sorted = _.chain(data)
+                .pairs()
+                .filter(function(kv) { return kv[0] != 'r_attributes' && kv[0] != 'r_type'; })
+                .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
+                .sortBy(function(kv) { return kv[1] * -1 })
+                .value();
+
+            sorted.shift();//remove the first item
+            sorted = sorted.slice(0, 20); //limit to 15 entries
+
+            $('.recent-notebooks-list a').each(function() {
+                $(this).off('click');
+            });
+
+            $('.recent-notebooks-list').empty();
+
+            for(var i = 0; i < sorted.length; i ++) {
+
+                var li = $('<li></li>');
+                li.appendTo($('.recent-notebooks-list'));
+                var currentNotebook = get_notebook_info(sorted[i][0]);
+                var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');  
+                var desc = truncateNotebookPath(currentNotebook.description, 40);
+
+                anchor.addClass('ui-all')
+                    .append($('<span class="username">'+currentNotebook.username+'</span>'))
+                    .append($('<span class="description">'+desc+'</span>'))
+                    .appendTo(li);
+
+                anchor.click(function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    var gist = $(e.currentTarget).data('gist');
+                    $('.dropdown-toggle.recent-btn').dropdown("toggle");
+                    result.open_notebook(gist);
+
+                });
+            }
+
+            function truncateNotebookPath(txt, chars) {
+
+                if(!txt || typeof txt === 'undefined' || txt.length === 0 ){
+                    return 'something went wrong';
+                }
+
+                var foldersReplaced = 0;
+                var folders = txt.split('/');
+                var foldersLength = folders.length -1;
+                var text = txt;
+                var folderStringLength = 3; // ../
+                var trimReplacements = false;
+
+                return doTrim();
+            
+                function doTrim() {
+                    if( text.length > chars ) {
+                        //if folders
+                        if( folders.length >  2) {
+                            //replace each dir with ../
+                            if(foldersLength - foldersReplaced >1 && !trimReplacements){
+                                foldersReplaced ++;
+                                folders.shift();
+                                var fldrs = '';
+                                for(var a = 0; a < foldersReplaced; a ++) {
+                                    fldrs += '../'
+                                }
+                                text = fldrs + folders.join('/');
+                                return doTrim();
+                            }
+                            //folder replacements exhausted, drop the first replacement and try
+                            else if(trimReplacements) {
+                                trimReplacements = true;
+                                text = text.slice(3);
+                                foldersReplaced --;
+                                var timeToTrimFolders;
+                                return doTrim();
+                            }
+                            else {
+                                console.log('in else');
+                            }
+                        }
+                        //if no folders
+                        else if(folders.length === 2){
+                            text = text.substring(0, text.length - 6);
+                            text += '...';
+                            return doTrim(); 
+                        }
+                        else{
+                            text = text.substring(0, text.length - 6);
+                            text += '...';
+                            return doTrim(); 
+                        }
+                    }
+                    else {
+                        //console.log('returning text '+text)
+                        return text;
+                    }
+                }
+            }
+        },
+
         load_callback: function(opts) {
             var that = this;
             var options = $.extend(
@@ -1432,7 +1538,13 @@ var editor = function () {
                 if(find_version)
                     tag = find_version.tag;
                 rcloud.config.set_current_notebook(current_);
-                rcloud.config.set_recent_notebook(result.id, (new Date()).toString());
+                rcloud.config.set_recent_notebook(result.id, (new Date()).toString())
+                .then(function(){
+                    return rcloud.config.get_recent_notebooks();
+                })
+                .then(function(data){
+                    that.update_recent_notebooks(data);
+                });
 
                 // need to know if foreign before we can do many other things
                 var promise_source = options.source ? Promise.resolve(undefined)
@@ -1468,6 +1580,8 @@ var editor = function () {
                          RCloud.UI.advanced_menu.check('publish_notebook', p);
                          RCloud.UI.advanced_menu.enable('publish_notebook', result.user.login === username_);
                      }));
+
+
                      return Promise.all(promises).return(result);
                  });
             };

@@ -351,7 +351,8 @@ define(['angular'], function(angular) {
                         var dupIndex = $scope.groupMembers.indexOf(duplicates[0]);
                         $scope.groupMembers.splice(dupIndex, 1);
                     }
-                    ui_utils.hide_selectize_dropdown();
+                    $scope.updateListOfChanges();
+                    //ui_utils.hide_selectize_dropdown();
                 }
             });
 
@@ -371,9 +372,65 @@ define(['angular'], function(angular) {
                         var dupIndex = $scope.groupAdmins.indexOf(duplicates[0]);
                         $scope.groupAdmins.splice(dupIndex, 1);
                     }
-                    ui_utils.hide_selectize_dropdown();
+                    $scope.updateListOfChanges();
+                    //ui_utils.hide_selectize_dropdown();
                 }
             });
+        };
+
+        $scope.updateListOfChanges = function() {
+            $('.group-changes-panel').html($scope.getCurrentChanges());
+        };
+
+        $scope.getCurrentChanges = function() {
+            var removedAdmins = _.difference($scope.originalAdmins, $scope.groupAdmins);
+            var addedAdmins = _.difference($scope.groupAdmins, $scope.originalAdmins);
+            //compare original members array and its current state
+            var removedMembers = _.difference($scope.originalMembers, $scope.groupMembers);
+            var addedMembers = _.difference($scope.groupMembers, $scope.originalMembers);
+
+            var allMembers = [removedAdmins, addedAdmins, removedMembers, addedMembers];
+            var outputMessage = '';
+
+            if(!removedAdmins.length && !addedAdmins.length && !removedMembers.length && !addedMembers.length ) {
+                return ''
+            }
+            else {
+                outputMessage = ' ';
+                if(removedAdmins.length) {
+                    outputMessage += 'You removed admins ';
+                    for(var i = 0; i < removedAdmins.length; i ++) {
+                        outputMessage += removedAdmins[i] + $scope.getSeparator(i, removedAdmins);
+                    }
+                }
+                if(addedAdmins.length) {
+                    outputMessage += 'You added admins ';
+                    for(var a = 0; a < addedAdmins.length; a ++) {
+                        outputMessage += addedAdmins[a] + $scope.getSeparator(a, addedAdmins);
+                    }
+                }
+                if(removedMembers.length) {
+                    outputMessage += 'You removed members ';
+                    for(var b = 0; b < removedMembers.length; b ++) {
+                        outputMessage += removedMembers[b] + $scope.getSeparator(b, removedMembers);
+                    }
+                }
+                if(addedMembers.length) {
+                    outputMessage += 'You added members ';
+                    for(var v = 0; v < addedMembers.length; v ++) {
+                        outputMessage += addedMembers[v] + $scope.getSeparator(v, addedMembers);
+                    }
+                }
+            }
+            return outputMessage;
+        };
+
+
+        $scope.getSeparator = function(index, array) {
+            if(index === array.length -1){
+                return '. ';
+            }
+            return ', '
         };
 
         $scope.stopWatching = function() {
@@ -399,70 +456,42 @@ define(['angular'], function(angular) {
                 return;
             }
             else {
-                outputMessage += 'Please confirm the following changes:\n\n';
-                if(removedAdmins.length) {
-                    outputMessage += 'you removed admins \n';
-                    for(var i = 0; i < removedAdmins.length; i ++) {
-                        outputMessage += '   - '+removedAdmins[i]+'\n';
-                    }
-                }
-                if(addedAdmins.length) {
-                    outputMessage += 'you added admins \n';
-                    for(var a = 0; a < addedAdmins.length; a ++) {
-                        outputMessage += '   - '+addedAdmins[a]+'\n';
-                    }
-                }
-                if(removedMembers.length) {
-                    outputMessage += 'you removed members \n';
-                    for(var b = 0; b < removedMembers.length; b ++) {
-                        outputMessage += '   - '+removedMembers[b]+'\n';
-                    }
-                }
-                if(addedMembers.length) {
-                    outputMessage += 'you added members \n';
-                    for(var v = 0; v < addedMembers.length; v ++) {
-                        outputMessage += '   - '+addedMembers[v]+'\n';
-                    }
-                }
+       
+                // push functions that will make the changes and return promises
+                var operations = [];
+                removedAdmins.forEach(function(name) {
+                    operations.push(function() {
+                        return GroupsService.removeGroupUser($scope.selectedAdminGroup.id, name);
+                    });
+                });
+                addedAdmins.forEach(function(name) {
+                    operations.push(function() {
+                            return GroupsService.addGroupUser($scope.selectedAdminGroup.id, name, true);
+                    });
+                });
+                removedMembers.forEach(function(name) {
+                    operations.push(function() {
+                        return GroupsService.removeGroupUser($scope.selectedAdminGroup.id, name);
+                    });
+                });
+                addedMembers.forEach(function(name) {
+                    operations.push(function() {
+                        return GroupsService.addGroupUser($scope.selectedAdminGroup.id, name, false);
+                    });
+                });
 
-                var pr = confirm(outputMessage);
-                if(pr) {
-                    // push functions that will make the changes and return promises
-                    var operations = [];
-                    removedAdmins.forEach(function(name) {
-                        operations.push(function() {
-                            return GroupsService.removeGroupUser($scope.selectedAdminGroup.id, name);
-                        });
-                    });
-                    addedAdmins.forEach(function(name) {
-                        operations.push(function() {
-                                return GroupsService.addGroupUser($scope.selectedAdminGroup.id, name, true);
-                        });
-                    });
-                    removedMembers.forEach(function(name) {
-                        operations.push(function() {
-                            return GroupsService.removeGroupUser($scope.selectedAdminGroup.id, name);
-                        });
-                    });
-                    addedMembers.forEach(function(name) {
-                        operations.push(function() {
-                            return GroupsService.addGroupUser($scope.selectedAdminGroup.id, name, false);
-                        });
-                    });
-
-                    // run in sequence so we fail on the first one and don't continue
-                    RCloud.utils.promise_sequence(operations, function(f) {
-                        return f();
-                    })
-                    .then(function() {
-                        //console.log('pushing member data succeeded');
-                        $scope.cancel();
-                    })
-                    .catch(function(e) {
-                        logger.warn(extract_error(e));
-                        $scope.populateGroupMembers();
-                    });
-                }
+                // run in sequence so we fail on the first one and don't continue
+                RCloud.utils.promise_sequence(operations, function(f) {
+                    return f();
+                })
+                .then(function() {
+                    //console.log('pushing member data succeeded');
+                    $scope.cancel();
+                })
+                .catch(function(e) {
+                    logger.warn(extract_error(e));
+                    $scope.populateGroupMembers();
+                });
             }
         };
 

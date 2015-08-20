@@ -1,12 +1,54 @@
+## RCloud 1.4.3
+### Features
+* Fork and remove folders. Fork and remove commands appear next to folders -
+you can fork anyone's folder of notebooks, and you can remove an entire
+folder of your own notebooks. When editing a folder name, you can press
+ctrl/cmd-enter to fork that folder under the new name. (#1149 / #716)
+
+### Improvements
+* Navbar in view mode scrolls away, leaving more room for content (#700)
+* RCloud detects when the compute process dies, and asks if you to reload the
+notebook (#1601)
+* Clicking on any code within the markdown output causes the code to be shown
+(partial fix for #1607)
+* Manage groups dialog shows the actions that will be performed.
+
+### Bug fixes
+* When assets are large, or the total size of a notebook is large, GitHub
+could truncate them and require another request to get the content. This
+could cause protected notebooks to become inaccessible, and also caused notebooks
+to open with apparently blank assets/cells. githubgist now automatically loads
+the content. (#1496, #1578, #1631)
+* Compute session could get disconnected from its notebook content, causing
+cell execution to have no effect, when forking or importing another notebook
+(#1602, #1632)
+* RCloud terminates the compute process when the control process dies, so that
+resources are released. (#1605)
+* Automatically-loaded stylesheets rcloud-*.css were not getting loaded due
+to wrong MIME type (#1628)
+* Long notebook names could cause navbar layout problems, obscuring part of
+the notebook. (Now the title truncates in response to window resizes, and does
+not get tall until the windows is less than about 850-950 pixels wide.) (#972)
+* Settings panel was showing "Reload to see changes" when text fields were
+clicked on but not changed (#1611)
+* Help search box was not taking loaded packages into account with compute
+separation. (#1604)
+* Display the relevant error message (instead of a catch-all) when loading a
+notebook fails in view mode. (#1638)
+* On inaccessible notebook in URL, wait for dialog to close before loading
+another notebook. (#1647)
+
 ## RCloud 1.4.2
-* Further improvements to the flag disabling protected notebooks. (The
- feature does not seem to be entirely stable). If `rcloud.conf` contains
- an entry `disable.notebook.protection` (with any value), existing encrypted
+### Improvement
+* Since the protected notebooks feature does not seem to be entirely stable,
+ especially in interaction with large notebooks and assets, we have introduced
+ a flag in `rcloud.conf` disabling the feature. If `rcloud.conf` contains
+ the key `disable.notebook.protection` (with any value), existing encrypted
  notebooks can still be opened, but the UI is disabled and the protection
  status of notebooks can't be changed. (#1580)
 
 ## RCloud 1.4.1
-### Bug fixes
+### Bug fix
 * An API change in `RClient.create` was not backward compatible, breaking
  notebooks which embed the JavaScript that connects to the RCloud server
  (#1598)
