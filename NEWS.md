@@ -1,3 +1,11 @@
+## RCloud (unreleased)
+
+### Bug fixes
+* In case a gist back-end token became invalid the login would fail with
+  an error instead of re-authenticating. Note that this is a rare case where
+  the cookie contains a valid RCloud token, but the back-end no longer
+  honors the underying stored token.
+
 ## RCloud 1.4.3
 ### Features
 * Fork and remove folders. Fork and remove commands appear next to folders -
