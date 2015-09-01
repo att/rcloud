@@ -137,15 +137,13 @@ RCloud.UI.image_manager = (function() {
                 update_dims(dims);
             },
             locate: function(k) {
-                var points = [];
                 div_.attr('tabindex', 1).css('cursor', 'crosshair');
                 div_.focus().keydown(function(e) {
                     if(e.keyCode === $.ui.keyCode.ESCAPE) {
                         div_.off('keydown').blur();
                         img_.off('click');
                         div_.attr('tabindex', null).removeAttr('style');
-                        console.log(points);
-                        k(null, points);
+                        k(null, null);
                     }
                 });
                 img_.click(function(e) {
@@ -159,7 +157,11 @@ RCloud.UI.image_manager = (function() {
                     var x = Math.round( (e.clientX - offset_l) );
                     var y = Math.round( (e.clientY - offset_t) );
 
-                    points.push([x, y]);
+                    div_.off('keydown').blur();
+                    img_.off('click');
+                    div_.attr('tabindex', null).removeAttr('style');
+
+                    k(null, [x, y])
                 });
             }
         };
@@ -187,7 +189,7 @@ RCloud.UI.image_manager = (function() {
             if(images_[id]) {
                 var image = images_[id];
                 image.locate(k);
-            }
+            } else k("ERROR: cannot find image corresponding to the locator"); // FIXME: is this the right way to return an error?
         },
         formats: formats_
     };
