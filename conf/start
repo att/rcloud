@@ -47,4 +47,9 @@ if [ ! -d "$ROOT/run" ]; then
     mkdir "$ROOT/run"
 fi
 
-"$RBIN" --slave --no-restore --vanilla --file="$ROOT/conf/run_rcloud.R" --args "$ROOT/conf/rserve.conf"
+if grep -i '^rserve.socket:' "$ROOT/conf/rcloud.conf" >/dev/null 2>&1; then
+    echo "NOTE: starting proxified version of RCloud"
+    "$RBIN" --slave --no-restore --vanilla --file="$ROOT/conf/run_rcloud.R" --args "$ROOT/conf/rserve-proxified.conf"
+else
+    "$RBIN" --slave --no-restore --vanilla --file="$ROOT/conf/run_rcloud.R" --args "$ROOT/conf/rserve.conf"
+fi

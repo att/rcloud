@@ -1,4 +1,67 @@
-## RCloud 1.4 (under development)
+## RCloud (unreleased)
+
+### Bug fixes
+* In case a gist back-end token became invalid the login would fail with
+  an error instead of re-authenticating. Note that this is a rare case where
+  the cookie contains a valid RCloud token, but the back-end no longer
+  honors the underying stored token.
+
+## RCloud 1.4.3
+### Features
+* Fork and remove folders. Fork and remove commands appear next to folders -
+you can fork anyone's folder of notebooks, and you can remove an entire
+folder of your own notebooks. When editing a folder name, you can press
+ctrl/cmd-enter to fork that folder under the new name. (#1149 / #716)
+
+### Improvements
+* Navbar in view mode scrolls away, leaving more room for content (#700)
+* RCloud detects when the compute process dies, and asks if you to reload the
+notebook (#1601)
+* Clicking on any code within the markdown output causes the code to be shown
+(partial fix for #1607)
+* Manage groups dialog shows the actions that will be performed.
+
+### Bug fixes
+* When assets are large, or the total size of a notebook is large, GitHub
+could truncate them and require another request to get the content. This
+could cause protected notebooks to become inaccessible, and also caused notebooks
+to open with apparently blank assets/cells. githubgist now automatically loads
+the content. (#1496, #1578, #1631)
+* Compute session could get disconnected from its notebook content, causing
+cell execution to have no effect, when forking or importing another notebook
+(#1602, #1632)
+* RCloud terminates the compute process when the control process dies, so that
+resources are released. (#1605)
+* Automatically-loaded stylesheets rcloud-*.css were not getting loaded due
+to wrong MIME type (#1628)
+* Long notebook names could cause navbar layout problems, obscuring part of
+the notebook. (Now the title truncates in response to window resizes, and does
+not get tall until the windows is less than about 850-950 pixels wide.) (#972)
+* Settings panel was showing "Reload to see changes" when text fields were
+clicked on but not changed (#1611)
+* Help search box was not taking loaded packages into account with compute
+separation. (#1604)
+* Display the relevant error message (instead of a catch-all) when loading a
+notebook fails in view mode. (#1638)
+* On inaccessible notebook in URL, wait for dialog to close before loading
+another notebook. (#1647)
+
+## RCloud 1.4.2
+### Improvement
+* Since the protected notebooks feature does not seem to be entirely stable,
+ especially in interaction with large notebooks and assets, we have introduced
+ a flag in `rcloud.conf` disabling the feature. If `rcloud.conf` contains
+ the key `disable.notebook.protection` (with any value), existing encrypted
+ notebooks can still be opened, but the UI is disabled and the protection
+ status of notebooks can't be changed. (#1580)
+
+## RCloud 1.4.1
+### Bug fix
+* An API change in `RClient.create` was not backward compatible, breaking
+ notebooks which embed the JavaScript that connects to the RCloud server
+ (#1598)
+
+## RCloud 1.4
 ### Features
 * Protected notebooks. You can encrypt your notebooks and make them readable
  only by you or only by a select group of users. Protected notebooks will not
@@ -17,7 +80,8 @@
  names. Specifying that name in the URL with `&source=name` loads the notebook
  from the other instance. Search has an option to search "All Lakes", i.e. all
  sources. For this release, all notebooks get displayed in the same tree;
- notebooks which are "foreign" get displayed in green and are read-only.
+ notebooks which are "foreign" get displayed in green and are read-only. You can
+ fork and star notebooks from other instances; however, you can't comment on them.
 * Stop execution of cells. Clicking the stop buttion in the navbar now sends an
  interrupt to the R process and terminates execution (when possible).
 * Binary assets: you can now upload binary files to notebooks. The content is
@@ -30,15 +94,19 @@
  menu. (#1313)
 
 ### Improvements
+* running a cell causes the whole notebook to save, e.g. you don't need to
+  explicitly save an asset before running the cell that uses it (#1597)
+* rcloud.shiny and rcloud.dcplot are independent packages which can be
+  versioned/updated separately. any style sheet customization of rcloud.dcplot
+  should be loaded manually using `rcloud.install.css` after rcloud.dcplot is
+  loaded, instead of relying on the automatic "rcloud-*.css" hook. (#1371)
 * toggle results for each cell, helpful when results are long and it's hard to
  find the next cell (#1487)
 * hide all view.html ui elements, including cell status elements, on `&quiet=1`
  (#1449)
-* Rename and fork folders of notebooks. Clicking on a notebook folder the first
- time opens the folder, and the Fork command becomes available. Clicking on the
- name a second time starts editing of that name (and any higher levels of the
- folder name). When editing a folder name, you can press ctrl/cmd-enter to fork
- that folder under the new name. (#1149 / #1394)
+* Rename folders of notebooks. Clicking on a notebook folder the first time
+ opens the folder. Clicking on the name a second time starts editing of that
+ name (and any higher levels of the folder name). (#1393)
 * New cell states to make enqueued execution clearer: if you change a cell
  when it is enqueued to be run, its state will turn to "unknown" (purple
  question mark) indicating that the result may not match the code in the
@@ -57,6 +125,14 @@
  line (on Mac) (#1417)
 
 ### Bug Fixes
+* autosave was causing long cells to scroll (#1386)
+* forking a notebook by renaming and pressing ctrl-enter, but not changing the
+  name, should default to incrementing the number (#1548)
+* fixed another edge case of message fragmentation where messages of exactly
+  the wrong length would cause R-JavaScript connection to break
+* improve markdown formatting #1502
+* leaving a text field setting commits the change. (ESC still cancels, and Enter
+  also commits.) #1523
 * multiple password prompts executed seqentially could hang RCloud (#371)
 * do not allow empty notebook path parts (#1491 / #1492)
 * Python errors are now detected by the notebook, displaying the proper status

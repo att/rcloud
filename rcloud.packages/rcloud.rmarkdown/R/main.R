@@ -9,18 +9,18 @@ rcloud.language.support <- function()
 
     format <- default_output_format(input.rmd)$name
     if(format == "html_document")
-      format = "html_fragment"
+      format = html_fragment(pandoc_args = "--mathjax")
     else
       format = "all"
 
-    rmarkdown::render(input.rmd, html_fragment(pandoc_args = "--mathjax"), quiet = TRUE)
+    rmarkdown::render(input.rmd, format, quiet = TRUE)
 
     readChar(output.html, file.info(output.html)$size)
   }
 
   ev <- function(command, silent, rcloud.session) {
     .session <- rcloud.session
-    if (command == "") command <- " "
+    if (is.null(command) || command == "") command <- " "
 
     val <- try(rmarkdown.markdownToHTML(text=paste(knit(text=command, envir=.GlobalEnv), collapse="\n"),
                               fragment=TRUE), silent=TRUE)
@@ -28,7 +28,7 @@ rcloud.language.support <- function()
       # FIXME better error handling
       val <- paste("<pre>", val[1], "</pre>", sep="")
     }
-    self.oobSend(list("html.out", val))
+    rcloud.html.out(val)
   }
   complete <- function(text, pos) {
     # from rcompgen.completion

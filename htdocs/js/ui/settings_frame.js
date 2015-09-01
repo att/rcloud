@@ -96,6 +96,8 @@ RCloud.UI.settings_frame = (function() {
                     var div = $($.el.div({class: 'settings-input'}, label));
                     function commit() {
                         var val = $(input).val();
+                        if(val === div.data('original-value'))
+                            return;
                         val = opts.parse(val);
                         on_change(val);
                         if(opts.needs_reload)
@@ -115,7 +117,7 @@ RCloud.UI.settings_frame = (function() {
                             cancel();
                     });
                     $(input).blur(function() {
-                        cancel();
+                        commit();
                     });
                     return div;
                 },

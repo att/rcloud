@@ -1,7 +1,7 @@
 .onLoad <- function(libname, pkgname) {
   tryCatch({
     e <- environment(.onLoad)
-    e$caps <- rcloud.support::rcloud.install.js.module("rcould.web.module",
+    e$caps <- rcloud.support::rcloud.install.js.module("rcloud.web.module",
 "({
 appendDiv: function(div, content, k) {
   if (_.isFunction(content)) content = content();

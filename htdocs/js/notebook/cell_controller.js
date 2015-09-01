@@ -11,7 +11,6 @@ Notebook.Cell.create_controller = function(cell_model)
                 var resulter = appender('code');
                 execution_context_ =
                     {
-                        start: this.start_output.bind(this),
                         end: this.end_output.bind(this),
                         // these should convey the meaning e.g. through color:
                         out: resulter, err: appender('error'), msg: resulter,
@@ -44,11 +43,6 @@ Notebook.Cell.create_controller = function(cell_model)
                 view.clear_result();
             });
         },
-        start_output: function() {
-            cell_model.notify_views(function(view) {
-                view.start_output();
-            });
-        },
         append_result: function(type, msg) {
             cell_model.notify_views(function(view) {
                 view.add_result(type, msg);
@@ -61,7 +55,7 @@ Notebook.Cell.create_controller = function(cell_model)
                 view.end_output(error);
             });
         },
-        get_input: function(type, prompt, dummy_context, k) {
+        get_input: function(type, prompt, k) {
             // assume only one view has get_input
             var view = _.find(cell_model.views, function(v) { return v.get_input; });
             if(!view)

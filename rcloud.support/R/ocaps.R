@@ -9,6 +9,8 @@
     } else o
 }
 
+.rc.oobSend <- function(kind, ...) self.oobSend(list(kind, Rserve.context(), ...))
+
 make.oc <- function(fun, name=deparse(substitute(fun))) {
   f <- function(...) .eval(quote(fun(...)))
   Rserve:::ocap(f, name)
@@ -54,6 +56,11 @@ oc.init <- function(...) { ## this is the payload of the OCinit message
 }
 
 compute.ocaps <- function(mode, authenticated) {
+    if (isTRUE(.session$separate.compute)) {
+        .Call(Rserve:::Rserve_forward_stdio)
+        ## second part of the CURL+SSL bug work-around
+        RCurl:::curlGlobalInit()
+    }
     caps <- list(
         setup_js_installer = make.oc(rcloud.setup.js.installer),
         install_notebook_stylesheets = make.oc(rcloud.install.notebook.stylesheets),
@@ -66,7 +73,8 @@ compute.ocaps <- function(mode, authenticated) {
         prefix_uuid = make.oc(rcloud.prefix.uuid),
         load_notebook = if (authenticated) make.oc(rcloud.load.notebook.compute) else make.oc(rcloud.unauthenticated.load.notebook.compute),
         render_plot = make.oc(rcloud.render.plot),
-        render_formats = make.oc(rcloud.available.render.formats)
+        render_formats = make.oc(rcloud.available.render.formats),
+        help = make.oc(rcloud.help)
         )
     if (authenticated) c(caps, list(
         compute_init = make.oc(rcloud.compute.init),
@@ -83,7 +91,12 @@ compute.ocaps <- function(mode, authenticated) {
     cs.modes <- if (nzConf("compute.separation.modes")) strsplit(getConf("compute.separation.modes"), "[, ]+")[[1]] else character()
     if (mode %in% cs.modes) { ## use fork only in modes that require it
         .session$separate.compute <- TRUE
-        .Call(Rserve:::Rserve_fork_compute, bquote(rcloud.support:::compute.ocaps(.(mode), .(authenticated))))
+        ## this is a work-around for a bug in CURL+SSL which break on fork()
+        gc()
+        RCurl:::curlGlobalCleanup()
+        res <- .Call(Rserve:::Rserve_fork_compute, bquote(rcloud.support:::compute.ocaps(.(mode), .(authenticated))))
+        RCurl:::curlGlobalInit()
+        res
     } else {
         .session$separate.compute <- FALSE
         rcloud.support:::compute.ocaps(mode, authenticated)
@@ -121,7 +134,7 @@ unauthenticated.ocaps <- function(mode, compute)
       is_notebook_published = make.oc(rcloud.is.notebook.published),
       is_notebook_visible = make.oc(rcloud.is.notebook.visible),
       signal_to_compute = make.oc(.signal.to.compute),
-      help = make.oc(rcloud.help),
+      help = compute$help,
 
       get_users = make.oc(rcloud.get.users),
 
@@ -224,7 +237,9 @@ authenticated.ocaps <- function(mode)
         close = make.oc(rcloud.upload.close.file),
         upload_path = make.oc(rcloud.upload.path)
         ),
-      notebook_upload = make.oc(rcloud.upload.to.notebook),
+      ### FIXME: remove from ocaps - we should not be using this anymore,
+      ### it has been replaced by update_notebook
+      notebook_upload = make.oc(.rcloud.upload.to.notebook),
 
       # security: request new token
       replace_token = make.oc(replace.token),
@@ -239,7 +254,8 @@ authenticated.ocaps <- function(mode)
         set_cryptgroup_name = make.oc(rcloud.set.cryptgroup.name),
         add_cryptgroup_user = make.oc(rcloud.add.cryptgroup.user),
         remove_cryptgroup_user = make.oc(rcloud.remove.cryptgroup.user),
-        delete_cryptgroup = make.oc(rcloud.delete.cryptgroup)
+        delete_cryptgroup = make.oc(rcloud.delete.cryptgroup),
+        has_notebook_protection = make.oc(rcloud.has.notebook.protection)
         ),
 
       # commenting ocaps

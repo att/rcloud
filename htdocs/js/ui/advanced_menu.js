@@ -21,7 +21,11 @@ RCloud.UI.advanced_menu = (function() {
                     text: "Open in GitHub",
                     modes: ['view', 'edit'],
                     action: function() {
-                        window.open(shell.github_url(), "_blank");
+                        var url = shell.github_url();
+                        if(!url)
+                            alert('Sorry, Open in GitHub is not supported for this notebook source.');
+                        else
+                            window.open(url, "_blank");
                     }
                 },
                 open_from_github: {
@@ -34,7 +38,7 @@ RCloud.UI.advanced_menu = (function() {
                             shell.open_from_github(result);
                     }
                 },
-                show_source: { // just here temporarily for refactoring
+                show_source: {
                     sort: 9000,
                     text: "Show Source",
                     checkbox: true,

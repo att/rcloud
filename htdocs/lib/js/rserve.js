@@ -449,7 +449,7 @@ function read(m)
         read_raw: function(attributes, length) {
             var l2 = this.read_int();
             var s = this.read_stream(length-4);
-            var a = s.make(Uint8Array).subarray(0, l2).buffer;
+            var a = new Uint8Array(s.make(Uint8Array).subarray(0, l2)).buffer;
             return [Rserve.Robj.raw(a, attributes), length];
         },
 
@@ -612,10 +612,11 @@ function parse(msg)
         return result;
     }
 
-    if(length > msg.byteLength) {
+    var full_msg_length = length + 16; // header length + data length
+    if(full_msg_length > msg.byteLength) {
         incomplete_.push(msg);
         incomplete_header_ = header;
-        msg_bytes_ = length + 16; // header length + data length
+        msg_bytes_ = full_msg_length;
         remaining_ = msg_bytes_ - msg.byteLength;
         result.header = header;
         result.ok = true;

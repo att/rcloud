@@ -8,12 +8,12 @@ rcloud.out <- function(expr, terminate="\n") {
   if (v$visible) print(v$value)
   on.exit()
   sink()
-  self.oobSend(list("console.out", paste0(paste(as.character(rval), collapse="\n"), terminate)))
+  .rc.oobSend("console.out", paste0(paste(as.character(rval), collapse="\n"), terminate))
   invisible(v$value)
 }
 
 rcloud.html.out <- function(..., sep="") {
     flush.console()
-    self.oobSend(list("html.out", x <- paste(..., sep=sep, collapse="\n")))
+    .rc.oobSend("html.out", x <- paste(..., sep=sep, collapse="\n"))
     invisible(x)
 }

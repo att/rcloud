@@ -1,8 +1,6 @@
 ((function() {
     return {
-
-
-
+        //console.log('launching the module');
         init: function(k) {
 
             RCloud.UI.notebook_commands.add({
@@ -11,85 +9,104 @@
                     sort: 1000,
                     create: function(node) {
                         var info = ui_utils.fa_button('icon-info-sign', 'notebook info', 'info',
-                                                      RCloud.UI.notebook_commands.icon_style(), false);
+                                                    RCloud.UI.notebook_commands.icon_style(), false);
+                        var popupOpen = false;
+
                         info.click(function(e) {
                             e.preventDefault();
                             e.stopPropagation();
                             var thisIcon = this;
                             var info_content = '';
 
-                            Promise.all( [window.rcloud.protection.get_notebook_cryptgroup(node.gistname), 
-                                        window.rcloud.stars.get_notebook_starrer_list(node.gistname)])
-                            .spread(function(cryptogroup, list) {
+                            $(document).on('destroy_all_popovers', function() {
+                                 $(info).popover('destroy');
+                                 popupOpen = false;
+                            });
+                            
+                            Promise.all([window.rcloud.protection.get_notebook_cryptgroup(node.gistname), 
+                                         window.rcloud.stars.get_notebook_starrer_list(node.gistname),
+                                         window.rcloud.protection.has_notebook_protection()])
+                            .spread(function(cryptogroup, list, has_prot) {
 
-                                if(typeof(list) === 'string')
-                                    list = [list];
+                                info_content =  buildPopover();
+                                function buildPopover() {
+                                    if(typeof(list) === 'string')
+                                        list = [list];
 
-                                var close_button = '<span class="pop-close" style="cursor: pointer; float:right;">x</span>';
-                                var group_message = '<div class="info-category"><b>Group:</b></div>';
-                                if(!cryptogroup[0] && !cryptogroup[1]){
-                                    group_message += '<div class="group-link info-item"><a href="#">no group</a></div>'
-                                }
-                                else{
-                                    group_message += '<div class="group-link info-item"><a href="#">'+cryptogroup[1]+'</a></div>'
-                                }
+                                    var close_button = '<span class="pop-close" style="cursor: pointer; float:right;">x</span>';
+                                    var group_message = '<div class="info-category"><b>Group:</b></div>';
 
-                                var starrer_list = '<div class="info-category"><b>Starred by:</b></div>';
-                                list.forEach(function (v) {
-                                    starrer_list = starrer_list + '<div class="info-item">' + v + '</div>';
+                                    if(cryptogroup && cryptogroup.id === 'private' && cryptogroup.name === null)
+                                        group_message += wrapGroupType('private');
+                                    else if(cryptogroup) 
+                                        group_message += wrapGroupType(cryptogroup.name);
+                                    else
+                                        group_message += wrapGroupType('public');
+                
+                                    var starrer_list = '<div class="info-category"><b>Starred by:</b></div>';
+                                    list.forEach(function (v) {
+                                        starrer_list = starrer_list + '<div class="info-item">' + v + '</div>';
+                                    });
+                                    return group_message + info_content + starrer_list;
+                                };
+
+                                function wrapGroupType(name) {
+                                    if(node.user === editor.username() && has_prot)
+                                        return '<div class="group-link info-item"><a href="#">'+name+'</a></div>';
+                                    else
+                                        return '<div class="group-link info-item">'+name+'</div>';    
+                                };
+
+                                $('html').off('mouseup');
+                                $('html').on('mouseup', function(e) {
+                                    if(!$(e.target).closest('.popover').length)
+                                        $(document).trigger('destroy_all_popovers');
                                 });
-                                info_content = close_button + group_message + info_content + starrer_list;
-                                $(thisIcon).popover({
-                                    title: node.name,
-                                    html: true,
-                                    content: info_content,
-                                    container: 'body',
-                                    placement: 'right',
-                                    animate: false,
-                                    delay: {hide: 0}
-                                });
-                                $(thisIcon).popover('show');
-                                var thisPopover = $(thisIcon).popover().data()['bs.popover'].$tip[0];
-                                thisPopover = $(thisPopover);
-                                thisPopover.addClass('popover-offset notebook-info');
-                                
 
+                                if(!popupOpen) {
+                                    $(document).trigger('destroy_all_popovers');
+                                    $(info).popover({
+                                        title: node.name,
+                                        html: true,
+                                        content: info_content,
+                                        container: 'body',
+                                        placement: 'right',
+                                        animate: false,
+                                        delay: {hide: 0}
+                                    });
 
-                                $('.pop-close', thisPopover).click(function() {
-                                    $(thisIcon).popover("destroy");
-                                });
-
-                                $('.group-link', thisPopover).click(function(){
-                                    $(thisIcon).popover("destroy");
-
-                                    //set 
-                                    RCloud.UI.notebook_protection.notebookFullName = node.full_name;
-                                    RCloud.UI.notebook_protection.notebookGistName = node.gistname;
-                                    RCloud.UI.notebook_protection.notebookId = node.id;
-                                    RCloud.UI.notebook_protection.tipEl = $(thisIcon).closest('.group-link');
-                                    //console.dir(RCloud.UI.notebook_protection.tipEl);
-
-                                    //groups
-
-                                    if(!cryptogroup[0] && !cryptogroup[1]){
-                                        RCloud.UI.notebook_protection.belongsToGroup = false;
-                                        console.log('does not belong');
+                                    $(info).popover('show');
+                                    //hacky but will do for now
+                                    if(!window.allPopovers) {
+                                        window.allPopovers = [];
+                                        window.allPopovers.push(info);
                                     }
                                     else{
-                                        RCloud.UI.notebook_protection.belongsToGroup = true
-                                        RCloud.UI.notebook_protection.currentGroupName = cryptogroup[1];
-                                        console.log('does belong');
+                                        window.allPopovers.push(info);
                                     }
 
-                                    //show modal
-                                    RCloud.UI.notebook_protection.init();
-                                    //RCloud.UI.notebook_protection.showOverlay();
+                                    var thisPopover = $(info).popover().data()['bs.popover'].$tip[0];
+                                    thisPopover = $(thisPopover);
+                                    thisPopover.addClass('popover-offset notebook-info');
+                                    popupOpen = true;
+                                }
+                                else {
+                                    $(document).trigger('destroy_all_popovers');
+                                }
 
-                            
+                                $('.group-link', thisPopover).click(function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    $(thisIcon).popover("destroy");
+                                    //if the user of this notebook is the same as current user
+                                    if(node.user === editor.username() && has_prot) {
+                                        RCloud.UI.notebook_protection.defaultNotebook = node;
+                                        RCloud.UI.notebook_protection.defaultCryptogroup = cryptogroup;
+                                        RCloud.UI.notebook_protection.init('both-tabs-enabled');
+                                    } 
                                 });
-
-                            });
-                        });
+                            })
+                        })
                         return info;
                     }
                 }
@@ -97,4 +114,4 @@
             k();
         }
     };
-})()) /*jshint -W033 */ // no semi; this is an expression not a statement
+})()); /*jshint -W033 */ // no semi; this is an expression not a statement

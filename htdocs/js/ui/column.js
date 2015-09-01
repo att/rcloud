@@ -211,8 +211,9 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
         hide: function(persist, skip_calc) {
             collapsibles().each(function() {
                 var heading_sel = $(this).data('heading-content-selector');
-                if(heading_sel)
+                if(heading_sel) {
                     heading_sel.hide();
+                }
             });
             // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
             $(sel_accordion + " > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');

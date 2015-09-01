@@ -24,18 +24,27 @@ rcloud.get.gist.part <- function(partname, version) {
 }
 
 rcloud.session.cell.eval <- function(context.id, partname, language, version, silent) {
-  ulog("RCloud rcloud.session.cell.eval(", partname, ",", language,")")
-  self.oobSend(list("start.cell.output", context.id))
-  command <- rcloud.get.gist.part(partname, version)
-  res <- if (!is.null(.session$languages[[language]]))
-    .session$languages[[language]]$run.cell(command, silent, .session)
-  else if (language == "Markdown") {
-    session.markdown.eval(command, language, FALSE)
-  } else if (language == "Text") {
-    command
-  }
-  else warning("Language ", language, " is unknown; cell ", partname, " ignored.");
-  res
+  ulog("RCloud rcloud.session.cell.eval(", partname, ",", language,",",context.id,")")
+  o <- Rserve.eval({
+      ## track which running cell output should go to
+      Rserve.context(context.id)
+      command <- rcloud.get.gist.part(partname, version)
+      res <- if (!is.null(.session$languages[[language]]))
+          .session$languages[[language]]$run.cell(command, silent, .session)
+      else if (language == "Markdown") {
+          session.markdown.eval(command, language, FALSE)
+      } else if (language == "Text") {
+          command
+      }
+      else warning("Language ", language, " is unknown; cell ", partname, " ignored.")
+      res
+  }, parent.frame(), last.value=TRUE, context=context.id)
+  if (inherits(o, "Rserve-eval-error")) {
+      class(o) <- "cell-eval-error"
+      o$traceback <- unlist(o$traceback)
+      ## ulog("CELL-EVAL-ERROR: ", paste(capture.output(str(o)), collapse='\n'))
+      o
+  } else o
 }
 
 rcloud.unauthenticated.session.cell.eval <- function(context.id, partname, language, version, silent) {
@@ -57,14 +66,14 @@ session.markdown.eval <- function(command, language, silent) {
     opts_chunk$set(dpi=72*.session$device.pixel.ratio)
   opts_chunk$set(dev="CairoPNG", tidy=FALSE)
 
-  if (command == "") command <- " "
+  if (is.null(command) || command == "") command <- " "
   val <- try(markdownToHTML(text=paste(knit(text=command, envir=.GlobalEnv), collapse="\n"),
                             fragment=TRUE), silent=TRUE)
   if (inherits(val, "try-error")) {
     # FIXME better error handling
     val <- paste("<pre>", val[1], "</pre>", sep="")
   }
-  self.oobSend(list("html.out", val))
+  .rc.oobSend("html.out", val)
 }
 
 ## we don't expose this because it can only be used by the control process
@@ -125,12 +134,12 @@ rcloud.reset.session <- function() {
   ## use the global workspace as the parent to avoid long lookups across irrelevant namespaces
   .session$knitr.env <- new.env(parent=.GlobalEnv)
   ## load all-user and per-user rcloud add-ons
-  if (!identical(.session$mode, "call")) {
+  if (!(identical(.session$mode, "call") || identical(.session$mode, "client"))) {
     all.addons <- rcloud.config.get.alluser.option("addons")
     user.addons <- rcloud.config.get.user.option("addons")
     user.skip.addons <- rcloud.config.get.user.option("skip-addons");
     addons <- setdiff(c(all.addons, user.addons), user.skip.addons)
-    for (x in addons) suppressWarnings(suppressMessages(require(x, character.only=TRUE)))
+    for (x in addons) suppressWarnings(suppressMessages(require(x, character.only=TRUE, quietly=TRUE, warn.conflicts=FALSE)))
   }
 
   ## close all devices

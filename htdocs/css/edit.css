@@ -44,6 +44,52 @@
 }
 /*     End */
 
+
+
+#protection-app .logging-panel{
+    width: 100%;
+    min-height: 30px;
+    margin-bottom: 20px;
+    background-color:  white;
+}
+
+
+#protection-app .logging-panel span{
+  display: block;
+  text-align: left;
+  text-transform: lowercase;
+  /* padding: 5px; */
+  /* padding-top: 5px; */
+  /* padding-bottom: 5px; */
+  padding: 5px 10px 3px 10px;
+}
+
+#protection-app .logging-panel.red{
+    transition: all 0.5s ease;
+    background-color:  rgb(250, 224, 224);
+}
+
+#protection-app .logging-panel.green{
+    transition: all 0.5s ease;
+    background-color:  rgb(234, 250, 224);
+}
+
+#protection-app .logging-panel.white{
+    transition: all 0.5s ease;
+    background-color:  #ffffff;
+}
+
+#protection-app .modal-footer {
+    padding: 0;
+    margin-top: 0;
+}
+
+
+
+#protection-app #group-tab{
+    padding-bottom: 0;
+}
+
 body {
     font-family: Helvetica Neue, Verdana, Helvetica, Arial, sans-serif;
     padding-top: 51px; /* exact same height as navbar */
@@ -438,11 +484,11 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
 .jqtree-title {
 }
 
-ul.jqtree-tree .jqtree-title.private {
+ul.jqtree-tree .jqtree-title.hidden-notebook {
     color: #aaa;
 }
 
-ul.jqtree-tree .jqtree-title.foreign {
+ul.jqtree-tree .jqtree-title.foreign-notebook {
     color: #66bb44;
 }
 
@@ -489,9 +535,9 @@ ul.jqtree-tree .jqtree-title.foreign {
     display: none !important;
 }
 
-.popover-offset{
+/*.popover-offset{
      left : 24.2% !important;
- }
+ }*/
 /******************************************************************************/
 
 #search-wrapper {
@@ -557,7 +603,7 @@ ul.jqtree-tree .jqtree-title.foreign {
     padding: 0;
     padding-top: 1ex;
 }
-.search-result-heading.foreign {
+.search-result-heading.foreign-notebook {
   color: #66bb44;
 }
 .search-result-modified-date {
@@ -835,22 +881,6 @@ a.footer-dropdown-toggle {
 /******************************************************************************/
 /* Fix some of the ugliness caused by the interaction between Bootstrap and
    Rmarkdown */
-
-div.r-result-div h1,
-div.r-result-div h2,
-div.r-result-div h3,
-div.r-result-div h4,
-div.r-result-div h5 {
-    margin-top: 0;
-    padding-top: 12px;
-    padding-right: 16px;
-    padding-left: 16px;
-}
-
-div.r-result-div p {
-    margin-left: 16px;
-    margin-right: 16px;
-};
 
 pre {
     max-width: 100%;

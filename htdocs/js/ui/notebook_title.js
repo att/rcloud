@@ -9,7 +9,7 @@ RCloud.UI.notebook_title = (function() {
         };
     }
     function rename_current_notebook(name) {
-        editor.rename_notebook(name)
+        return editor.rename_notebook(name)
             .then(function() {
                 result.set(name);
             });
@@ -46,14 +46,17 @@ RCloud.UI.notebook_title = (function() {
         range.setEnd(el.firstChild, text.length);
         return range;
     }
-    var fork_and_rename = function(forked_gist_name) {
+    var fork_and_rename = function(forked_gist_name, is_change) {
         var is_mine = shell.notebook.controller.is_mine();
         var gistname = shell.gistname();
         var version = shell.version();
         editor.fork_notebook(is_mine, gistname, version)
-            .then(function rename(v){
-                    rename_current_notebook(forked_gist_name);
-                });
+            .then(function(v) {
+                if(is_change)
+                    return rename_current_notebook(forked_gist_name);
+                else // if no change, allow default numbering to work
+                    return undefined;
+            });
     };
     var editable_opts = {
         change: rename_current_notebook,
@@ -72,8 +75,12 @@ RCloud.UI.notebook_title = (function() {
             var active_text = text;
             var ellipt_start = false, ellipt_end = false;
             var title = $('#notebook-title');
+            function sum_li_width(sel) {
+                return d3.sum($(sel).map(function(_, el) { return $(el).width(); }));
+            }
+            var header_plus_menu = $('#rcloud-navbar-header').width() + sum_li_width('#rcloud-navbar-menu li') + 50;
             title.text(text);
-            while(window.innerWidth - title.width() < 650) {
+            while(text.length>10 && window.innerWidth < header_plus_menu + sum_li_width('#rcloud-navbar-main')) {
                 var slash = text.search('/');
                 if(slash >= 0) {
                     ellipt_start = true;
@@ -81,7 +88,7 @@ RCloud.UI.notebook_title = (function() {
                 }
                 else {
                     ellipt_end = true;
-                    text = text.substr(0, text.length - 2);
+                    text = text.substr(0, text.length - 5);
                 }
                 title.text((ellipt_start ? '.../' : '') +
                            text +
@@ -122,7 +129,9 @@ RCloud.UI.notebook_title = (function() {
                     opts = $.extend({}, editable_opts, {
                         change: rename_notebook_folder(node),
                         ctrl_cmd: fork_rename_folder(node),
-                        validate: function(name) { return true; }
+                        validate: function(text) {
+                            return editor.validate_name(text);
+                        }
                     });
                 }
                 ui_utils.editable(get_title(node, $li),

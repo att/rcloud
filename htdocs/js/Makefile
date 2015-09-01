@@ -1,11 +1,12 @@
 JS_COMPILER = ./node_modules/uglify-js/bin/uglifyjs
 
-all: rcloud_bundle.js rcloud_bundle.min.js
+all: rcloud_bundle.js rcloud_bundle.min.js rcloud_bundle.js.gz rcloud_bundle.min.js.gz
 
 rcloud_bundle.js: \
 	rclient.js \
 	rcloud.js \
 	ui_utils.js \
+        utils.js \
         extension.js \
 	bootstrap_utils.js \
 	notebook/_notebook_begin.js \
@@ -61,7 +62,8 @@ rcloud_bundle.js: \
 	ui/share_button.js \
 	ui/upload.js \
 	ui/upload_frame.js \
-	ui/notebook_protection.js
+	ui/notebook_protection_logger.js \
+	ui/notebook_protection.js 
 
 rcloud_bundle.min.js: rcloud_bundle.js Makefile
 	@rm -f $@
@@ -76,6 +78,12 @@ ifeq ($(CHECK),1)
 	jshint $(filter %.js,$(filter-out lib/%.js,$(filter-out %/_begin.js,$(filter-out %/_end.js, $^))))
 endif
 	chmod -w $@
+
+rcloud_bundle.min.js.gz: rcloud_bundle.min.js
+	gzip -c -9 $^ > $@
+
+rcloud_bundle.js.gz: rcloud_bundle.js
+	gzip -c -9 $^ > $@
 
 clean:
 	rm -f rcloud_bundle.js rcloud_bundle.min.js

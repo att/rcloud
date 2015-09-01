@@ -1,9 +1,10 @@
-config.options <- function() list(github.api.url="https://api.github.com/", github.base.url="https://github.com/", github.client.id=TRUE, github.client.secret=TRUE)
+config.options <- function() list(github.api.url="https://api.github.com/", github.base.url="https://github.com/", github.client.id=NULL, github.client.secret=NULL)
 
 create.gist.context <- function(username, token, github.api.url, github.client.id, github.client.secret, github.base.url, ...) {
-  if (is.character(token) && !isTRUE(nzchar(token))) token <- NULL ## github requires token to be NULL if not used
+  if ((is.character(token) && !isTRUE(nzchar(token))) || is.null(github.client.secret) || is.null(github.client.id)) token <- NULL ## github requires token to be NULL if not used
   ctx <- github::create.github.context(api_url=github.api.url, client_id=github.client.id, client_secret=github.client.secret, access_token=token)
   ctx$github.base.url=github.base.url
+  ctx$read.only <- is.null(token)
   ctx
 }
 
@@ -31,17 +32,26 @@ access.token.githubcontext <- function(query, ctx) {
 
 context.info.githubcontext <- function(ctx) list(username=ctx$user$login)
 
-get.gist.githubcontext <- github::get.gist
+## we have to post-process the result from Github, because it may contain
+## truncated content which has to be fetched directly
+.fix.truncated <- function(res) {
+    if (isTRUE(res$ok) && length(res$content$files)) {
+        for (i in seq_along(res$content$files))
+            if (isTRUE(res$content$files[[i]]$truncated))
+                res$content$files[[i]]$content <- getURL(res$content$files[[i]]$raw_url)
+    }
+    res
+}
 
-fork.gist.githubcontext <- github::fork.gist
+get.gist.githubcontext <- function(...) .fix.truncated(github::get.gist(...))
 
-modify.gist.githubcontext <- github::modify.gist
+fork.gist.githubcontext <- function(...) .fix.truncated(github::fork.gist(...))
 
-create.gist.githubcontext <- github::create.gist
+modify.gist.githubcontext <- function(...) .fix.truncated(github::modify.gist(...))
+
+create.gist.githubcontext <- function(...) .fix.truncated(github::create.gist(...))
 
 delete.gist.githubcontext <- github::delete.gist
-
-modify.gist.githubcontext <- github::modify.gist
 
 create.gist.comment.githubcontext <- github::create.gist.comment
 

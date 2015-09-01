@@ -70,7 +70,7 @@ RCloud.create = function(rcloud_ocaps) {
             } else {
                 var message;
                 if(result.content && result.content.message)
-                    message = result.content.message;
+                    message = result.content.message + ' (' + result.code + ')';
                 else
                     message = "error code " + result.code;
                 throw new Error(command + ': ' + message);
@@ -157,8 +157,8 @@ RCloud.create = function(rcloud_ocaps) {
                 });
         };
 
-        rcloud.get_conf_value = function(key) {
-            return rcloud_ocaps.get_conf_valueAsync(key);
+        rcloud.get_conf_value = function(key, source) {
+            return rcloud_ocaps.get_conf_valueAsync(key, source);
         };
 
         rcloud.get_conf_values = function(key) {
@@ -186,6 +186,10 @@ RCloud.create = function(rcloud_ocaps) {
                 .spread(function(_, notebook) {
                     return notebook;
                 });
+        };
+        rcloud.refresh_compute_notebook = function(id) {
+            return rcloud_github_handler("rcloud.load.notebook.compute (refresh) " + id,
+                                         rcloud_ocaps.load_notebook_computeAsync(id, null));
         };
 
         rcloud.get_version_by_tag = function(gist_id,tag) {
@@ -390,6 +394,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["protection", "add_cryptgroup_user"],
             ["protection", "remove_cryptgroup_user"],
             ["protection", "delete_cryptgroup"],
+            ["protection", "has_notebook_protection"],
             ["api","disable_warnings"],
             ["api","enable_echo"],
             ["api","disable_warnings"],
@@ -444,11 +449,12 @@ RCloud.create = function(rcloud_ocaps) {
                 is_current = true;
             return rcloud_github_handler(
                 "rcloud.create.notebook",
-                rcloud_ocaps.create_notebookAsync(content, is_current))
-            .then(function(result) {
-                rcloud_ocaps.load_notebook_computeAsync(result.id);
-                return result;
-            });
+              rcloud_ocaps.create_notebookAsync(content, is_current))
+                .then(function(result) {
+                    if(is_current)
+                        rcloud_ocaps.load_notebook_computeAsync(result.id);
+                    return result;
+                });
         };
         rcloud.fork_notebook = function(id) {
             return rcloud_github_handler(
@@ -534,8 +540,10 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.protection.get_notebook_cryptgroup = function(notebookid) {
             return rcloud_ocaps.protection.get_notebook_cryptgroupAsync(notebookid);
         };
-        rcloud.protection.set_notebook_cryptgroup = function(notebookid, groupid) {
-            return rcloud_ocaps.protection.set_notebook_cryptgroupAsync(notebookid, groupid);
+        rcloud.protection.set_notebook_cryptgroup = function(notebookid, groupid, modify) {
+            if(modify === undefined)
+                modify = true;
+            return rcloud_ocaps.protection.set_notebook_cryptgroupAsync(notebookid, groupid, modify);
         };
         rcloud.protection.get_cryptgroup_users = function(groupid) {
             return rcloud_ocaps.protection.get_cryptgroup_usersAsync(groupid);
@@ -557,6 +565,9 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.protection.delete_cryptgroup = function(groupid) {
             return rcloud_ocaps.protection.delete_cryptgroupAsync(groupid);
+        };
+        rcloud.protection.has_notebook_protection = function() {
+            return rcloud_ocaps.protection.has_notebook_protectionAsync();
         };
 
         // stars

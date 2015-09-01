@@ -8,10 +8,10 @@
     <link rel="stylesheet" type="text/css" href="/css/rmarkdown.css"/>
     <link rel="stylesheet" type="text/css" href="/css/bootstrap-rcloud-tweaks.css"/>
     <link rel="stylesheet" type="text/css" href="/css/edit.css"/>
-    <link rel="stylesheet" type="text/css" href="/css/dc.css"/>
     <link rel="stylesheet" type="text/css" href="/css/nonselect.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/selectize.css"/>
 
-    <!-- 
+    <!--
 
     jquery,                             http://jquery.com
     jquery-ui,                          http://jqueryui.com
@@ -19,9 +19,7 @@
     tree.jquery.js,                     http://mbraak.github.com/jqTree/
     underscore.js,                      http://underscorejs.org
     d3 (and its colorbrewer colormaps), http://d3js.org
-    crossfilter,                        http://square.github.com/crossfilter/
-    dc.js,                              http://nickqizhu.github.com/dc.js/
-    facet,                              http://cscheid.github.com/facet
+    lux,                              http://cscheid.github.com/lux
     twitter's bootstrap                 http://twitter.github.com/bootstrap/
        bootstrap-transition
        bootstrap-collapse
@@ -76,6 +74,22 @@
   </div>
 </script>
 
+<script type="text/html" id="notebooks-panel-tmp">
+  <span style="float: right; position: relative" id="notebooks-panel-inner">
+    <a class="header-button" id="new-notebook" href="#" style="">
+      <span><i class="icon-plus"></i>
+      </span>
+    </a>
+    <div class="dropdown recent-notebooks-dropdown">
+      <a href="#" class="dropdown-toggle recent-btn" data-toggle="dropdown">Recent</a>
+      <ul class="dropdown-menu recent-notebooks-list">
+      </ul>
+    </div>
+  </span>
+</script>
+
+
+
 <script type="text/html" id="search-snippet">
   <div class="panel-body" style="padding-bottom: 0;padding-top:3px">
     <div id="search-wrapper" class="widget-vsize"> <!-- only for sizing -->
@@ -105,7 +119,7 @@
         <span class="checkbox" style="display:inline-block; margin-top: 4px">
           <label><input type="checkbox" id="all-sources" checked="false">All Lakes</label>
         </span>
-        <a href="http://lucene.apache.org/core/3_5_0/queryparsersyntax.html" target="_blank" style="float:right; margin-top: 4px">
+        <a href="http://lucene.apache.org/core/4_10_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Terms" target="_blank" style="float:right; margin-top: 4px">
           Lucene search syntax
         </a>
 
@@ -169,7 +183,7 @@
       <div id="file-upload-wrapper">
         <div id="file-upload-controls" class="btn-group-sm">
           <input type="file" id="file" style="display: inline;" multiple></input>
-          <span class="checkbox" style="display: inline-block; padding-top: 6px;">
+          <span class="checkbox" style="display: inline-block;">
             <label>
               <input type="checkbox" id="upload-to-notebook"/>
               <span>Upload to notebook</span>
@@ -193,7 +207,7 @@
   </div>
 </script>
 
-<script type="text/html", id="comments-snippet">
+<script type="text/html" id="comments-snippet">
   <div class="panel-body">
     <div id="comments-wrapper">
       <div id="comments-qux" class="widget-vsize">
@@ -203,6 +217,9 @@
           <button id="comment-submit" class="btn btn-default-ext" type="submit" style="width: 33px; vertical-align: top;">
             <i class="icon-comment"></i>
           </button>
+        </div>
+        <div id="comments-not-allowed" style="display: none">
+          <p><em>Cannot comment on notebooks in other lakes.</em></p>
         </div>
       </div>
     </div>
@@ -224,7 +241,8 @@
 
     <div id="command-prompt" style="float: left; width:100%;
             height: 50px; background:#FFFFFF; border:1px solid
-            #DDDDDD"></div>
+            #DDDDDD">
+    </div>
   </div>
 </script>
 
@@ -253,66 +271,47 @@
     <div>
       <!-- Nav tabs -->
       <ul class="nav nav-tabs">
-        <li id='tab1' class="active"><a ng-click="setTab(1)" data-toggle="tab" href="#notebook-tab" >Notebook</a></li>
-
+        <li id='tab1'><a ng-click="setTab(1)" data-toggle="tab" href="#notebook-tab" >Notebook</a></li>
         <li id='tab2'><a ng-click="setTab(2)" data-toggle="tab" href="#group-tab">Group</a></li>
       </ul>
-
       <!-- tab content -->
       <div class="tab-content">
-
         <!-- first tab -->
         <div class="tab-pane active inner-tab" id="notebook-tab">
           <div class="row sec">
-            Notebook: {{notebookFullName}}
+            {{notebookFullName}}
           </div>
-
           <div class="row sec">
-            <label for="redRadio">Public:</label> 
-            <input id="redRadio" type="radio" ng-model="belongsToGroup" ng-value="false" />&nbsp;&nbsp;&nbsp;
-            <label for="greenRadio">Private:</label> 
-            <input id="greenRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="belongsToGroup" ng-value="true" /><br />
+            <input id="redRadio" type="radio" ng-model="sharedStatus" value="public" />&nbsp;&nbsp;<label for="redRadio">Public</label>&nbsp;&nbsp;&nbsp;
+            <input id="yellowRadio" type="radio" ng-model="sharedStatus" value="private" />&nbsp;&nbsp;<label for="yellowRadio">Private</label>&nbsp;&nbsp;&nbsp;
+            <input id="greenRadio" type="radio" ng-disabled="!allUserGroups.length" ng-model="sharedStatus" value="group" />&nbsp;&nbsp;<label for="greenRadio">Group</label><br />
           </div>
-
           <div class="row sec" ng-show="allUserGroups.length">
-            <span>Assign to Group</span><br />
-           
-            <select ng-model="selectedGroup1" 
-                    ng-disabled="!belongsToGroup" 
-                    ng-options="group.name for group in allUserGroups">
+            <span>Assign to Group</span>&nbsp;&nbsp;&nbsp;
+            <select ng-model="selectedUserGroup"
+                    ng-disabled="sharedStatus !== 'group'"
+                    ng-options="group.name for group in allUserGroups"
+                    ng-change="anotherUserGroupSelected()">
             </select>
-
           </div>
-
-
           <div class="row sec" ng-hide="allUserGroups.length">
             <span>you are not a member of any groups, but you can create one in the<a href="#"> "Group"</a> dialog</span>
           </div>
-
-
-          
-
         </div>
         <!-- end first tab -->
-
         <!-- second tab -->
         <div class="tab-pane inner-tab" id="group-tab">
-
           <div class="row sec">
-
             <div class='col-md-6' style='padding-left: 0px;' ng-show="allAdminGroups.length" >
-              <span>Select group</span><br />
-              <select ng-model="selectedGroup2"
+              <span>Select group:</span></br>
+              <select ng-model="selectedAdminGroup"
                       ng-options="group.name for group in allAdminGroups"
-                      ng-change="anotherGroupSelected()" >
+                      ng-change="anotherAdminGroupSelected()" >
               </select>
-
             </div>
-
             <div class='col-md-6' style='padding-left: 0px;' ng-hide="allAdminGroups.length" >
-              <span>There are no groups, please create one.</span><br />
+              <span>You are not an administrator of any groups; please create one.</span><br />
             </div>
-
             <div class='col-md-6'>
               <span class="label label-info group-actions" ng-click="createGroup()">Create
               Group</span><br /><br />
@@ -322,38 +321,38 @@
               Group</span>
             </div>
           </div>
-
           <div class="row sec">
             <div class="form-group">
-              <label for="comment">Admins:</label> 
-              <selectize options='allUsers' config="myConfig" ng-model="groupAdmins"></selectize>
+              <label for="comment">Admins:</label>
+              <selectize ng-disabled='!allAdminGroups.length' options='allUsers' config="myConfig" ng-model="groupAdmins"></selectize>
+            </div>
+          </div>
+          <div class="row sec">
+            <div class="form-group">
+              <label for="comment">Members:</label>
+              <selectize ng-disabled='!allAdminGroups.length' options='allUsers' config="myConfig" ng-model="groupMembers"></selectize>
             </div>
           </div>
 
           <div class="row sec">
-            <div class="form-group">
-              <label for="comment">Members:</label> 
-              <selectize options='allUsers' config="myConfig" ng-model="groupMembers"></selectize>
+            <div class='group-changes-panel'>
             </div>
           </div>
-
-
         </div>
         <!-- second tab -->
-
         <div class="modal-footer">
+
+          <div class='logging-panel green'>
+            <span></span>
+          </div>
           <span class="btn btn-cancel" ng-click='cancel()'>Cancel</span>
           <span class="btn btn-save btn-default" ng-click='save()'>OK</span>
         </div>
-        
       </div>
       <!-- end tab content -->
     </div>
-  </div>  
-
+  </div>
 </script>
-
-
 
 <div class="container nopad" id="main-div">
   <div class="row">
@@ -383,7 +382,7 @@
       </div>
     </div>
     <div class="col-md-1 col-sm-1 no-padding" style="height:100%; min-height: 0" id="right-column">
-      <div id="right-tabs">         
+      <div id="right-tabs">
         <div class="tab-div">
           <div class="panel-group" id="accordion-right">
             <!-- filled in by RCloud.UI.load_panels -->
