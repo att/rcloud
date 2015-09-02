@@ -1,5 +1,12 @@
 ## RCloud (unreleased)
 
+### Features
+* RCloudDevice now supports `locator()` and thus the usual point+click
+  R tools like `identify()`. An active locator is identified by a blue border
+  of the plot and a crosshair cursor. To add points left-click on the plot,
+  to end/abort a locator request use the `<ESC>` key. Note this is only
+  avaliable in R cells (other cells like Markdown don't use RCloudDevice).
+
 ### Bug fixes
 * In case a gist back-end token became invalid the login would fail with
   an error instead of re-authenticating. Note that this is a rare case where
