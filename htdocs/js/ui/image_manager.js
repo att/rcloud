@@ -135,14 +135,45 @@ RCloud.UI.image_manager = (function() {
             update: function(url, dims) {
                 img_.attr('src', url);
                 update_dims(dims);
+            },
+            locate: function(k) {
+                div_.attr('tabindex', 1).css('cursor', 'crosshair');
+                div_.focus().keydown(function(e) {
+                    if(e.keyCode === $.ui.keyCode.ESCAPE) {
+                        div_.off('keydown').blur();
+                        img_.off('click');
+                        div_.attr('tabindex', null).removeAttr('style');
+                        k(null, null);
+                    }
+                });
+                img_.click(function(e) {
+                    // sadly, there seems to be a lot of disagreement about the correct
+                    // way to get image-relative coordinates. may need adjusting!
+                    // http://stackoverflow.com/a/14045047/676195
+                    var offset = $(this).offset();
+                    var offset_t = $(this).offset().top - $(window).scrollTop();
+                    var offset_l = $(this).offset().left - $(window).scrollLeft();
+
+                    var x = Math.round( (e.clientX - offset_l) );
+                    var y = Math.round( (e.clientY - offset_t) );
+
+                    div_.off('keydown').blur();
+                    img_.off('click');
+                    div_.attr('tabindex', null).removeAttr('style');
+
+                    k(null, [x, y])
+                });
             }
         };
         return result;
     }
+    function image_id(device, page) {
+        return device + "-" + page;
+    }
     var result = {
         update: function(url, dims, device, page) {
-            var id = device + "-" + page;
             var image;
+            var id = image_id(device, page);
             if(images_[id]) {
                 image = images_[id];
                 image.update(url, dims);
@@ -152,6 +183,13 @@ RCloud.UI.image_manager = (function() {
                 images_[id] = image;
             }
             return image;
+        },
+        locate: function(device, page, k) {
+            var id = image_id(device, page);
+            if(images_[id]) {
+                var image = images_[id];
+                image.locate(k);
+            } else k("ERROR: cannot find image corresponding to the locator"); // FIXME: is this the right way to return an error?
         },
         formats: formats_
     };
