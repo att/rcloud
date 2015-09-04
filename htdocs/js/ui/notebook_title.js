@@ -7,6 +7,7 @@ RCloud.UI.notebook_title = (function() {
                     return editor.show_history(node.parent, {update: true});
                 });
         };
+        
     }
     function rename_current_notebook(name) {
         return editor.rename_notebook(name)
