@@ -1421,8 +1421,6 @@ var editor = function () {
 
         update_recent_notebooks: function(data) {
 
-            return;
-            
             var sorted = _.chain(data)
                 .pairs()
                 .filter(function(kv) { return kv[0] != 'r_attributes' && kv[0] != 'r_type'; })
