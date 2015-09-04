@@ -48,7 +48,10 @@ run <- function(url, query, body, headers)
   }
   if (is.null(redirect))
     redirect <- '/edit.html'
-  ctx <- create.gist.backend(as.character(cookies$user), as.character(cookies$token))
+  ## create.gist.backend may fail if a token is present but is not valid
+  ## in that case we have to re-try with no token to force re-authentication
+  ctx <- tryCatch(create.gist.backend(as.character(cookies$user), as.character(cookies$token)),
+                  error=function(e) create.gist.backend(as.character(cookies$user), NULL))
   url <- gist::auth.url(redirect, ctx=ctx)
   if (is.null(url)) {
     ## module signals that it doesn't use authentication
