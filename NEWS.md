@@ -7,6 +7,12 @@
   to end/abort a locator request use the `<ESC>` key. Note this is only
   avaliable in R cells (other cells like Markdown don't use RCloudDevice).
 
+* Basic support for shell cells is now included. Note that each cell is
+  a separate shell, so environment variables cannot be passed across
+  shell cells. However, environment variables set in R will be inherited
+  by the shell so R cells can be used to define them.
+
+
 ### Bug fixes
 * In case a gist back-end token became invalid the login would fail with
   an error instead of re-authenticating. Note that this is a rare case where
