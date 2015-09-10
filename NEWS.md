@@ -19,6 +19,10 @@
   the cookie contains a valid RCloud token, but the back-end no longer
   honors the underying stored token.
 
+* Large assets stopped working after a GitHub Enterprise update since
+  it introduced re-directed raw links which was not supported. (#1658)
+
+
 ## RCloud 1.4.3
 ### Features
 * Fork and remove folders. Fork and remove commands appear next to folders -
