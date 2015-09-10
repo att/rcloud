@@ -5,12 +5,14 @@
 rcloud.language.support <- function()
 {
     ev <- function(command, silent, rcloud.session) {
-        .session <- rcloud.session
-        f <- tempfile("script", fileext=".sh")
+        f <- tempfile("script-", fileext=".sh")
         on.exit(try(unlink(f), silent=TRUE))
         writeLines(command, f)
         ## FIXME: how can we make the shell configurable?
-        invisible(.Call(shexec, "/bin/bash", f))
+        res <- .Call(shexec, "/bin/bash", f)
+        ## turn non-0 exit into an error so it stops
+        ## notebook execution - just like Makefiles
+        if (res) structure(list(error=paste("Shell terminated with exit code",res)), class="cell-eval-error") else invisible(res)
     }
     
     complete <- function(text, pos, rcloud.session) {
