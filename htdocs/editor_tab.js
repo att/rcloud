@@ -1154,7 +1154,7 @@ var editor = function () {
             return find_next_copy_name(username_, name);
         },
         load_notebook: function(gistname, version, source, selroot, push_history, fail_url) {
-            //console.log('load notebook function called');
+            version = version || null;
             var that = this;
             var before;
             if(source) {

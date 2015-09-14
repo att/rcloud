@@ -1,4 +1,4 @@
-## RCloud (unreleased)
+## RCloud 1.5 (unreleased)
 
 ### Features
 * RCloudDevice now supports `locator()` and thus the usual point+click
@@ -11,6 +11,8 @@
   a separate shell, so environment variables cannot be passed across
   shell cells. However, environment variables set in R will be inherited
   by the shell so R cells can be used to define them.
+
+* Recent notebooks menu provides access to recently opened notebooks.
 
 
 ### Bug fixes
