@@ -1,5 +1,3 @@
-
-
 define(['angular'], function(angular) {
 
    'use strict';
@@ -118,7 +116,7 @@ define(['angular'], function(angular) {
             return $q(function(resolve, reject) {
                 $scope.$evalAsync(function() {
                     $scope.currentTab = 1;
-                
+
                     $scope.currentNotebook = moduleRef.defaultNotebook;
                     $scope.currentCryptogroup = moduleRef.defaultCryptogroup;
                     $scope.notebookFullName = moduleRef.defaultNotebook.full_name;
@@ -154,7 +152,7 @@ define(['angular'], function(angular) {
                     (function(){
                         var conf = confirm("Are you sure you want to move notebook "+$scope.notebookFullName+" to group "+$scope.selectedUserGroup.name +"?\nThis might make it no longer accessible by everyone.");
                         if(conf){
-                            console.log('notebook id is '+$scope.notebookGistName);
+                            //console.log('notebook id is '+$scope.notebookGistName);
                             GroupsService.setNotebookGroup($scope.notebookGistName, $scope.selectedUserGroup.id )
                             .then(function(data){
                                 //console.log('data is '+data);
@@ -262,7 +260,7 @@ define(['angular'], function(angular) {
                 .catch(function(e) {
                     logger.warn(extract_error(e));
                 });
-            };
+            }
         };
 
         $scope.renameGroup = function() {
@@ -393,7 +391,7 @@ define(['angular'], function(angular) {
             var outputMessage = '';
 
             if(!removedAdmins.length && !addedAdmins.length && !removedMembers.length && !addedMembers.length ) {
-                return ''
+                return '';
             }
             else {
                 outputMessage = ' ';
@@ -430,7 +428,7 @@ define(['angular'], function(angular) {
             if(index === array.length -1){
                 return '. ';
             }
-            return ', '
+            return ', ';
         };
 
         $scope.stopWatching = function() {
@@ -456,7 +454,6 @@ define(['angular'], function(angular) {
                 return;
             }
             else {
-       
                 // push functions that will make the changes and return promises
                 var operations = [];
                 removedAdmins.forEach(function(name) {
@@ -520,7 +517,7 @@ define(['angular'], function(angular) {
                 if($scope.currentTab !== 1) {
                     $scope.currentTab = index;
                     if(!$('#protection-app #tab1').hasClass('disabled'));
-                        $scope.stopWatching()
+                    $scope.stopWatching();
                 }
             }
             if(index === 2) {
@@ -565,7 +562,6 @@ define(['angular'], function(angular) {
             for(var i = 0; i < groupArray.length; i ++) {
                 if( groupArray[i].name === name) {
                     return i;
-                    break;
                 }
             }
             return -1;

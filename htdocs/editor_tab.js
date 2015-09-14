@@ -744,7 +744,6 @@ var editor = function () {
         }
         else
             return rcloud.load_notebook(node.gistname, null).then(function(notebook) {
-                console.log('hey');
                 histories_[node.gistname] = notebook.history;
                 if(whither==='sha')
                     nshow = show_sha(histories_[node.gistname], where);
@@ -989,11 +988,13 @@ var editor = function () {
             else {
                 // it's weird that a notebook exists in two trees but only one is selected (#220)
                 // just select - and this enables editability
+                /*jshint eqnull:true */
                 if(event.node.gistname === current_.notebook &&
                     event.node.version == current_.version && event.node.version == null) // deliberately null-vague here
                     select_node(event.node);
                 else
                     result.open_notebook(event.node.gistname, event.node.version || null, event.node.source, event.node.root, false);
+                /*jshint eqnull:false */
             }
         }
         else {
@@ -1420,12 +1421,11 @@ var editor = function () {
         },
 
         update_recent_notebooks: function(data) {
-
             var sorted = _.chain(data)
                 .pairs()
                 .filter(function(kv) { return kv[0] != 'r_attributes' && kv[0] != 'r_type'; })
                 .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
-                .sortBy(function(kv) { return kv[1] * -1 })
+                .sortBy(function(kv) { return kv[1] * -1; })
                 .value();
 
             sorted.shift();//remove the first item
@@ -1437,12 +1437,19 @@ var editor = function () {
 
             $('.recent-notebooks-list').empty();
 
+            // premature optimization? define function outside loop to make jshint happy
+            var click_recent = function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                var gist = $(e.currentTarget).data('gist');
+                $('.dropdown-toggle.recent-btn').dropdown("toggle");
+                result.open_notebook(gist);
+            };
             for(var i = 0; i < sorted.length; i ++) {
-
                 var li = $('<li></li>');
                 li.appendTo($('.recent-notebooks-list'));
                 var currentNotebook = get_notebook_info(sorted[i][0]);
-                var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');  
+                var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');
                 var desc = truncateNotebookPath(currentNotebook.description, 40);
 
                 anchor.addClass('ui-all')
@@ -1450,18 +1457,10 @@ var editor = function () {
                     .append($('<span class="description">'+desc+'</span>'))
                     .appendTo(li);
 
-                anchor.click(function(e) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    var gist = $(e.currentTarget).data('gist');
-                    $('.dropdown-toggle.recent-btn').dropdown("toggle");
-                    result.open_notebook(gist);
-
-                });
+                anchor.click(click_recent);
             }
 
             function truncateNotebookPath(txt, chars) {
-
                 if(!txt || typeof txt === 'undefined' || txt.length === 0 ){
                     return 'something went wrong';
                 }
@@ -1474,18 +1473,18 @@ var editor = function () {
                 var trimReplacements = false;
 
                 return doTrim();
-            
+
                 function doTrim() {
-                    if( text.length > chars ) {
+                    if(text.length > chars) {
                         //if folders
-                        if( folders.length >  2) {
+                        if(folders.length > 2) {
                             //replace each dir with ../
                             if(foldersLength - foldersReplaced >1 && !trimReplacements){
                                 foldersReplaced ++;
                                 folders.shift();
                                 var fldrs = '';
                                 for(var a = 0; a < foldersReplaced; a ++) {
-                                    fldrs += '../'
+                                    fldrs += '../';
                                 }
                                 text = fldrs + folders.join('/');
                                 return doTrim();
@@ -1498,26 +1497,20 @@ var editor = function () {
                                 var timeToTrimFolders;
                                 return doTrim();
                             }
-                            else {
-                                console.log('in else');
-                            }
                         }
                         //if no folders
                         else if(folders.length === 2){
                             text = text.substring(0, text.length - 6);
                             text += '...';
-                            return doTrim(); 
+                            return doTrim();
                         }
                         else{
                             text = text.substring(0, text.length - 6);
                             text += '...';
-                            return doTrim(); 
+                            return doTrim();
                         }
                     }
-                    else {
-                        //console.log('returning text '+text)
-                        return text;
-                    }
+                    return text;
                 }
             }
         },
