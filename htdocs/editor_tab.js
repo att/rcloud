@@ -1423,7 +1423,9 @@ var editor = function () {
         update_recent_notebooks: function(data) {
             var sorted = _.chain(data)
                 .pairs()
-                .filter(function(kv) { return kv[0] != 'r_attributes' && kv[0] != 'r_type'; })
+                .filter(function(kv) { 
+                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !!kv && typeof kv[0] !== 'undefined'; 
+                })
                 .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
                 .sortBy(function(kv) { return kv[1] * -1; })
                 .value();
@@ -1469,7 +1471,7 @@ var editor = function () {
                 var folders = txt.split('/');
                 var foldersLength = folders.length -1;
                 var text = txt;
-                var folderStringLength = 3; // ../
+                var folderStringLength = 3; //
                 var trimReplacements = false;
 
                 return doTrim();
