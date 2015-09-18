@@ -250,8 +250,8 @@ td {
     padding-bottom: 2px;
 }
 
-.popover-content .info-item {
-    padding-left: 1ex;
+.popover-content .info-item a {
+    word-wrap: break-word;
 }
 
 #find-dialog .btn {
@@ -442,7 +442,6 @@ ul.recent-notebooks-list li a {
     overflow: hidden;
     white-space: nowrap;
     width: 100%;
-
 }
 
 .jqtree-element .jqtree-title.jqtree_common {
