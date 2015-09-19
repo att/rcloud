@@ -498,7 +498,12 @@ define(['angular'], function(angular) {
             $("#notebook-protection-dialog").modal('hide');
             $scope.stopWatching();
             logger.clear();
-            $scope.reset();
+            $timeout(function() {
+                 $scope.$evalAsync(function() {
+                    $scope.reset();
+                });
+            }, 500)
+            
         };
 
         $scope.save = function() {
