@@ -17,3 +17,12 @@ rcloud.html.out <- function(..., sep="") {
     .rc.oobSend("html.out", x <- paste(..., sep=sep, collapse="\n"))
     invisible(x)
 }
+
+# returns an ID which should be passed to Rserve.context
+rcloud.output.context <- function(selector) {
+  if (is.null(.session$.output.context.cap))
+    .session$.output.context.cap <- rcloud.install.js.module("rcloud.output.context",
+                                                             paste(readLines(system.file("javascript", "create_output_context.js", package="rcloud.support")), collapse='\n'))
+  .session$.output.context.cap$create_context(selector)
+}
+
