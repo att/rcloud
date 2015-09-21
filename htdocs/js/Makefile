@@ -51,6 +51,7 @@ rcloud_bundle.js: \
         ui/notebook_commands.js \
 	ui/notebook_title.js \
 	ui/notebooks_frame.js \
+        ui/output_context.js \
 	ui/panel_loader.js \
 	ui/progress.js \
 	ui/right_panel.js \

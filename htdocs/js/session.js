@@ -252,7 +252,9 @@ RCloud.session = {
     }, init: function(allow_anonymous) {
         this.first_session_ = true;
         return rclient_promise(allow_anonymous);
-    }
+    },
+    on_data: on_data,
+    on_oob_message: on_message
 };
 
 })();
