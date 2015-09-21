@@ -452,3 +452,8 @@ ul.recent-notebooks-list li a {
 #settings-body-wrapper.panel-body {
     padding-right: 0;
 }
+
+
+#dataframe .viewer-body-wrapper {
+    word-break: break-all;
+}
