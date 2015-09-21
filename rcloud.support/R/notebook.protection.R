@@ -13,10 +13,16 @@ rcloud.set.notebook.cryptgroup <- function(notebookid, groupid, modify=TRUE) { #
             nb <- rcloud.get.notebook(notebookid)
             if (!isTRUE(nb$ok))
                 stop("cannot retrieve notebook content")
-            l <- nb$content$files
+            ## we want to keep only filename and content fields
+            l <- lapply(nb$content$files, function(o) if(length(names(o))) o[names(o) %in%
+                 c("filename", "content")] else o)
             ## create all assets, but remove the encrypted version
-            l[[.encryped.content.filename]] = list(content=NULL)
-            rcloud.update.notebook(notebookid, list(files=l))
+            l[.encryped.content.filename] <- list(NULL)
+            tryCatch(isTRUE((res <- rcloud.update.notebook(notebookid, list(files=l)))$ok) ||
+                     stop("Gist update error in rcloud.update.notebook on behalf of rcloud.set.notebook.cryptgroup: ", paste(unlist(res$content), collapse=', ')),
+                     error=function(e) {
+                         ulog("rcloud.update.notebook failed in rcloud.set.notebook.cryptgroup(make public) with: ", paste(as.character(e), collapse=" "))
+                         stop(e) })
         }
         rcs.rm(key)
     } else {
