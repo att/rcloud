@@ -1424,14 +1424,16 @@ var editor = function () {
             var sorted = _.chain(data)
                 .pairs()
                 .filter(function(kv) { 
-                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !!kv && typeof kv[0] !== 'undefined'; 
+                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(get_notebook_info(kv[0])) ; 
                 })
                 .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
                 .sortBy(function(kv) { return kv[1] * -1; })
                 .value();
 
             sorted.shift();//remove the first item
-            sorted = sorted.slice(0, 20); //limit to 15 entries
+            sorted = sorted.slice(0, 20); //limit to 20 entries
+
+            
 
             $('.recent-notebooks-list a').each(function() {
                 $(this).off('click');
