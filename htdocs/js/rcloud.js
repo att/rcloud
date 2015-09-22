@@ -254,6 +254,8 @@ RCloud.create = function(rcloud_ocaps) {
             install_css: function(urls, k) {
                 if (_.isString(urls))
                     urls = [urls];
+                else if(!_.isArray(urls)) // not sure why c() is becoming {r_type: 'vector'...}
+                    urls = [];
                 _.each(urls, function(url) {
                     $("head").append($('<link type="text/css" rel="stylesheet" class="rcloud-user-defined-css" href="' +
                                        url + '"/>'));
