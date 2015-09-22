@@ -1433,8 +1433,6 @@ var editor = function () {
             sorted.shift();//remove the first item
             sorted = sorted.slice(0, 20); //limit to 20 entries
 
-            
-
             $('.recent-notebooks-list a').each(function() {
                 $(this).off('click');
             });

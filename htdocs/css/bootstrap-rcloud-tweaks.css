@@ -394,7 +394,7 @@ td {
 .dropdown.recent-notebooks-dropdown {
     position: absolute;
     right: 29px;
-    top: -1px;
+    top: 0;
 }
 
 .dropdown.recent-notebooks-dropdown a.recent-btn{
@@ -419,7 +419,6 @@ ul.recent-notebooks-list li a.username:hover {
 }
 
 ul.recent-notebooks-list li a .username {
-    color: #7D7D7D;
     display: inline-block;
     max-width: 80px;
     text-overflow: ellipsis;
