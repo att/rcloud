@@ -924,6 +924,8 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
 
         {
             name: 'cursor at beginning of line',
+            ctrlACount : 0,
+            lastRow: -1,
             bindKey: {
           
                 mac: 'Ctrl-A',
@@ -934,10 +936,34 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                     return;
                 //row of the cursor on current line
                 var row = widget.getCursorPosition().row;
-                //move to the beginning of that line
-                widget.navigateTo(row, 0);
-                //make sure it appears at beginning of text
-                widget.navigateLineStart();
+                
+
+                console.log( widget.getCursorPosition() );
+
+                //if on a new line
+                if( this.lastRow !== row) {
+
+                    this.ctrlACount = 1;
+                    widget.navigateLineStart();
+                    this.lastRow = row;
+                    
+
+                }
+                else {
+
+                    if(this.ctrlACount === 0) {
+                        //make sure it appears at beginning of text
+                        widget.navigateLineStart();
+                        this.ctrlACount ++;
+                    }
+                    else if(this.ctrlACount === 1 ) {
+                        //move to the beginning of that line
+                        widget.navigateTo(row, 0);
+                        this.ctrlACount = 0;
+                    }
+                    this.lastRow = row;
+
+                }
             }
         } ,
         {
