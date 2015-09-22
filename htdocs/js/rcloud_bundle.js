@@ -360,6 +360,8 @@ RCloud.create = function(rcloud_ocaps) {
             install_css: function(urls, k) {
                 if (_.isString(urls))
                     urls = [urls];
+                else if(!_.isArray(urls)) // not sure why c() is becoming {r_type: 'vector'...}
+                    urls = [];
                 _.each(urls, function(url) {
                     $("head").append($('<link type="text/css" rel="stylesheet" class="rcloud-user-defined-css" href="' +
                                        url + '"/>'));
@@ -936,21 +938,13 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                     return;
                 //row of the cursor on current line
                 var row = widget.getCursorPosition().row;
-                
-
-                console.log( widget.getCursorPosition() );
-
                 //if on a new line
                 if( this.lastRow !== row) {
-
                     this.ctrlACount = 1;
                     widget.navigateLineStart();
                     this.lastRow = row;
-                    
-
                 }
                 else {
-
                     if(this.ctrlACount === 0) {
                         //make sure it appears at beginning of text
                         widget.navigateLineStart();
@@ -962,7 +956,6 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                         this.ctrlACount = 0;
                     }
                     this.lastRow = row;
-
                 }
             }
         } ,
