@@ -35,7 +35,7 @@ casper.test.begin("Log Back In -> user is logged-in to the Github account", 7, f
 
     casper.viewport(1366, 768).then(function () {
         console.log('Logging out of RCloud. User is still signed into Github');
-        this.click({ type : 'xpath' , path : '/html/body/div[2]/div/div[2]/ul[2]/li[3]/a'});
+        this.click('#rcloud-navbar-menu > li:nth-child(5) > a:nth-child(1)');
         this.wait(7000);
     });
 

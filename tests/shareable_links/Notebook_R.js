@@ -7,13 +7,12 @@
 //Begin Tests
 
 casper.test.begin("notebook.R test", 7, function suite(test) {
-
     var x = require('casper').selectXPath;
     var github_username = casper.cli.options.username;
     var github_password = casper.cli.options.password;
     var rcloud_url = casper.cli.options.url;
     var functions = require(fs.absolute('basicfunctions'));
-    var notebookid="bb1b0e85029695ce0a5f";// the notebook id for 'Notebook.R' notebook
+    var notebookid="c3d97ea6ef0200bd0cf3";// the notebook id for 'Notebook.R' notebook
 
     casper.start(rcloud_url, function () {
         casper.page.injectJs('jquery-1.10.2.js');
@@ -71,7 +70,7 @@ casper.test.begin("notebook.R test", 7, function suite(test) {
 		   this.wait(7000);
 		   this.test.assertUrlMatch(/notebook.R/, 'Verified notebook.R URL');
 		   this.then(function(){
-				this.test.assertExists('.decoded','Required element found hence "Notebook.R" opened successfully');
+				this.test.assertExists({type:'css',path:'body > form:nth-child(1)'},'Required element found hence "Notebook.R" opened successfully');
 				this.wait(2000);
             });
        });

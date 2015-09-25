@@ -6,7 +6,7 @@
 
 //Begin Tests
 
-casper.test.begin("Notebook belonging to the same user is opened in Github", 6, function suite(test) {
+casper.test.begin("Notebook belonging to the same user is opened in Github", 5, function suite(test) {
 
     var x = require('casper').selectXPath;
     var github_username = casper.cli.options.username;
@@ -41,14 +41,7 @@ casper.test.begin("Notebook belonging to the same user is opened in Github", 6, 
 
         this.waitForSelector({type: 'css', path: '#open_in_github'}, function () {
             console.log("Link for opening notebook in github found. Clicking on it");
-
             if (this.click({type: 'css', path: '#open_in_github'})) {
-
-                this.wait(7000);
-                this.viewport(1366, 768).waitForPopup(/gist.github.com/, function () {
-                    this.test.assertEquals(this.popups.length, 1);
-
-                });
                 this.wait(11000);
                 this.viewport(1366, 768).withPopup(/gist.github.com/, function () {
                     this.wait(4000);
@@ -56,7 +49,7 @@ casper.test.begin("Notebook belonging to the same user is opened in Github", 6, 
                     this.test.assertUrlMatch(/gist.github.com*/, 'Notebook opened in github');
                     //verifying that the gist opened belongs to local user
                     this.wait(8000);
-                    var gist_user = this.fetchText({type: 'css', path: '.author > span:nth-child(1) > a:nth-child(1)'});
+                    var gist_user = this.fetchText({type: 'css', path: '.url > span:nth-child(1)'});
                     this.echo("Gist owner is " + gist_user);
                     this.test.assertEquals(gist_user, github_username, 'verified that the gist belongs to the local user');
                 });

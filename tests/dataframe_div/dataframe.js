@@ -1,11 +1,11 @@
 /*
-Auther : Tejas (tc_33.1.1)
-Description: This is a casperjs automated test script for showing that ,Under the data frame div, present in the right-side panel, if a 
-* data frame is created, then it is shown in the data section in the data frame div
-*/
+ Auther : Tejas (tc_33.1.1.js)
+ Description: This is a casperjs automated test script for showing that ,Under the data frame div, present in the right-side panel, if a
+              data frame is created, then it is shown in the data section in the data frame div
+ */
 
 //begin test
-casper.test.begin("Display the variable value in dataframe div", 6, function suite(test) {
+casper.test.begin("Display the variable value in dataframe div", 5, function suite(test) {
 
     var x = require('casper').selectXPath;
     var github_username = casper.cli.options.username;
@@ -13,9 +13,8 @@ casper.test.begin("Display the variable value in dataframe div", 6, function sui
     var rcloud_url = casper.cli.options.url;
     var functions = require(fs.absolute('basicfunctions'));
     var notebookid;//to get the notebook id
-	var input1="x = c(2, 3, 5);n = c('aa', 'bb', 'cc');b = c(TRUE, FALSE, TRUE);df = data.frame(x, n, b);print(df)"; // code1
-	var input2="x = c(2, 3, 5);n = c('aa', 'bb', 'cc');b = c(FALSE, FALSE, TRUE);df = data.frame(y, n, b);print(df)"; // code2
-    
+    var input1 = "x = c(2, 3, 5);n = c('aa', 'bb', 'cc');b = c(TRUE, FALSE, TRUE);df = data.frame(x, n, b);print(df)"; // code1
+
     casper.start(rcloud_url, function () {
         casper.page.injectJs('jquery-1.10.2.js');
     });
@@ -33,41 +32,39 @@ casper.test.begin("Display the variable value in dataframe div", 6, function sui
         functions.validation(casper);
         this.wait(4000);
     });
-	
-	//Creating new notebook
-	functions.create_notebook(casper);
-	
-	//Creating a new cell
-	functions.addnewcell(casper);
-	
-	//Add contents to the created cell and execute it
-	functions.addcontentstocell(casper, input1);
-	
-	//Opening workspace div
-	casper.then(function  () {
-		if (this.visible({type: 'xpath', path: '//*[@id="enviewer-body-wrapper"]'})){
-			console.log('workspace div is open');
-			}
-			else{
-			var y = casper.evaluate(function () {
+
+    //Creating new notebook
+    functions.create_notebook(casper);
+
+    //Creating a new cell
+    functions.addnewcell(casper);
+
+    //Add contents to the created cell and execute it
+    functions.addcontentstocell(casper, input1);
+
+    //Opening workspace div
+    casper.then(function () {
+        if (this.visible('#enviewer-body-wrapper')) {
+            console.log('workspace div is open');
+        }
+        else {
+            var y = casper.evaluate(function () {
                 $('#accordion-right .icon-sun').click();
-			});	
-			console.log("workspace div was not opened hence clicking on it");
-			}
-	});
-	
-	//check data frame contents in dataframe div
-	casper.then(function(){
-		this.wait(15000);
-		var z = casper.evaluate(function () {
-			$('#enviewer-body>table>tr>td>a').click();//clicking dataframe link
-			this.echo('clicking on dataframe');
-			});
-		this.wait(8000);
-		this.test.assertSelectorHasText({ type: 'xpath', path: "/html/body/div[3]/div/div[3]/div[1]/div/div/div[3]/div[2]/div/div/div/table"},"TRUE","Dataframe contents are displayed");
-	});
-	
-	casper.run(function () {
+            });
+            console.log("workspace div was not opened hence clicking on it");
+        }
+    });
+
+    //check data frame contents in dataframe div
+    casper.then(function () {
+        var z = casper.evaluate(function () {
+            $('#enviewer-body>table>tr>td>a').click();//clicking dataframe link
+            this.echo('clicking on dataframe');
+        });        
+        this.exists('#viewer-body', 'Dataframe contents are displayed' )
+    });
+
+    casper.run(function () {
         test.done();
     });
 });

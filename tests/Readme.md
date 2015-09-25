@@ -1,26 +1,23 @@
 # Automation Guide
 
 ## Installation of dependancies
-* Following are the dependancies required to execute the automation scripts:
-    * CasperJS
-    * SlimerJS
-    * PhantomJS
-    
-
-* The above mentioned dependancies can be installed using the installation script provided with the package (**Automation_Dependency_Install.sh**) 
-* command to execute the installation script: 
-
-```sh
-	$ sudo bash data/rcloud/tests/Automation_Dependency_Install.sh
-```  
-* This script will expect the desired path of the directory where the dependancies will be installed. (e.g "/home/user/directory_name") 
+* For installation of the dependancies refer following links. Choose appropriate package depending on system specifications (MacOS X or Linux):
+	- [PhantomJS] (https://bitbucket.org/ariya/phantomjs/downloads)
+	- [SlimerJS] (https://slimerjs.org/download.html)
+	- [CasperJS] (http://docs.casperjs.org/en/latest/installation.html)
+* Instructions for installation of SlimerJS and PhantomJS on Linux
+  - Download the 'tar.gz' files for SlimerJS and PhantomJS
+  - Extract the respective 'tar.gz' files
+  - Create Symbolic links for SlimerJS and PhantomJS respectively
+  - Confirm the installed version 
+  
 
 ## Execution of the automation scripts
-- **RCloud must started before executing the automation scripts**
-- Below is the command used for execution of the automation test scripts: ( Assuming that RCloud is installed in `/data/rcloud` )
+- **RCloud must started to execute the automation scripts**
+- Below is the command used for execution of the automation test scripts ( assuming RCloud is present at location '/data/rcloud' ):
 
 ```sh
-	$ cd data/rcloud/tests
+	$ cd data/rcloud/test
 ```
 - With UI
 
