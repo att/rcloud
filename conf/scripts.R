@@ -9,11 +9,14 @@ rcloud.support:::configure.rcloud("startup")
     Rserve:::ocap(call.script, "call.script")
 }
 
+# R's URLdecode is broken - it's neither vectorized nor does it convert + so we have to work around that
+URIdecode <- function(o) sapply(o, function(o) URLdecode(gsub("+", " ", o, fixed=TRUE)))
+
 URIparse <- function(o) {
     if (is.raw(o)) o <- rawToChar(o)
     body <- strsplit(o, "&", TRUE)[[1]]
     vals <- gsub("[^=]+=", "", body)
-    if (length(vals)) vals <- sapply(vals, URLdecode)
+    if (length(vals)) vals <- URIdecode(vals)
     keys <- gsub("=.*$", "", body)
     names(vals) <- keys
     vals    
