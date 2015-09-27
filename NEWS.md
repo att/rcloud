@@ -1,4 +1,4 @@
-## RCloud 1.5 (unreleased)
+## RCloud 1.5
 
 ### Features
 * RCloudDevice now supports `locator()` and thus the usual point+click
