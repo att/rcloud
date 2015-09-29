@@ -130,6 +130,35 @@ rcloud.anonymous.session.init <- function(...) {
     }
 }
 
+## -- maintain RCS keys associated with a session so it can be identified
+.close.session <- function() {
+    if (!is.null(.session$sessionID)) {
+        key <- usr.key("session", .session$sessionID, "info", notebook="system")
+        rcs.rm(key)
+        ulog("INFO: RCloud.session: close (", .session$sessionID, "/", .session$info$uname, "/", .session$info$pid, ")")
+    }
+}
+
+.open.session <- function() {
+    .session$sessionID <- generate.uuid()
+    url <- if (nzConf("r.script.url")) getConf("r.script.url") else paste0("http://", getConf("host"), ":8080/")
+    ui <- unixtools::user.info()
+    .session$info <- list(id=.session$sessionID, host=getConf("host"), script.url=url, pid=Sys.getpid(), uname=ui$name, uid=ui$uid, gid=ui$gid, user=.session$username, mode=.session$mode)
+    key <- usr.key("session", .session$sessionID, "info", notebook="system")
+    rcs.set(key, .session$info)
+    ulog("INFO: RCloud.session: open (", .session$sessionID, "/", .session$info$uname, "/", .session$info$pid, ")")
+
+    if (is.null(.GlobalEnv$.Rserve.done)) .GlobalEnv$.Rserve.done <- .session.on.exit
+}
+
+.session.on.exit <- function() {
+    .close.session()
+    ulog("INFO: RCloud.session: clean exit (", .session$sessionID, "/", .session$info$uname, "/", .session$info$pid, ")")
+}
+
+rcloud.session.info <- function(id=.session$sessionID)
+    rcs.get(usr.key("session", id, "info", notebook="system"))
+
 rcloud.reset.session <- function() {
   ## use the global workspace as the parent to avoid long lookups across irrelevant namespaces
   .session$knitr.env <- new.env(parent=.GlobalEnv)
@@ -148,6 +177,9 @@ rcloud.reset.session <- function() {
 
   ## make sure the default device is back to the RCloudDevice
   options(device="RCloudDevice")
+
+  .close.session()
+  .open.session()
 
   NULL
 }
