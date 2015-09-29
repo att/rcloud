@@ -143,7 +143,7 @@ rcloud.anonymous.session.init <- function(...) {
     .session$sessionID <- generate.uuid()
     url <- if (nzConf("r.script.url")) getConf("r.script.url") else paste0("http://", getConf("host"), ":8080/")
     ui <- unixtools::user.info()
-    .session$info <- list(id=.session$sessionID, host=getConf("host"), script.url=url, pid=Sys.getpid(), uname=ui$name, uid=ui$uid, gid=ui$gid, user=.session$username, mode=.session$mode)
+    .session$info <- list(id=.session$sessionID, host=getConf("host"), script.url=url, pid=Sys.getpid(), uname=ui$name, uid=ui$uid, gid=ui$gid, user=.session$username, mode=.session$mode, start=Sys.time())
     key <- usr.key("session", .session$sessionID, "info", notebook="system")
     rcs.set(key, .session$info)
     ulog("INFO: RCloud.session: open (", .session$sessionID, "/", .session$info$uname, "/", .session$info$pid, ")")
