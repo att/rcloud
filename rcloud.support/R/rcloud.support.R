@@ -853,3 +853,5 @@ rcloud.get.git.user <- function(id, source = NULL) {
     else
         list()
 }
+
+rcloud.home <- function(..., user=if (is.null(.session$exec.usr)) "" else .session$exec.usr) pathConf("rcloud.user.home", user, ...)

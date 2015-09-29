@@ -1,3 +1,5 @@
+## RCloud 1.6
+
 ## RCloud 1.5
 
 ### Features
@@ -13,6 +15,10 @@
   by the shell so R cells can be used to define them.
 
 * Recent notebooks menu provides access to recently opened notebooks.
+
+* The root of RCloud homes is now configurable using `rcloud.user.home`
+  configuration directive in `rcloud.conf`. The function `rcloud.home()`
+  should be used to retrieve paths in user's RCloud home directory.
 
 
 ### Bug fixes
