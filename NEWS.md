@@ -1,5 +1,3 @@
-## RCloud 1.6
-
 ## RCloud 1.5
 
 ### Features
