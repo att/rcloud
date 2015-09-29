@@ -1,4 +1,9 @@
-## RCloud 1.5 (unreleased)
+## RCloud 1.6 (unreleased)
+* Added support for sessions - the information about a session can be
+  retrieved using `rcloud.session.info()`
+
+
+## RCloud 1.5
 
 ### Features
 * RCloudDevice now supports `locator()` and thus the usual point+click
