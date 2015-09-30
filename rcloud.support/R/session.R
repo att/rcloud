@@ -156,8 +156,8 @@ rcloud.anonymous.session.init <- function(...) {
     ulog("INFO: RCloud.session: clean exit (", .session$sessionID, "/", .session$info$uname, "/", .session$info$pid, ")")
 }
 
-rcloud.session.info <- function(id=.session$sessionID)
-    rcs.get(usr.key("session", id, "info", notebook="system"))
+rcloud.session.info <- function(id=.session$sessionID, user=.session$username)
+    rcs.get(usr.key("session", id, "info", notebook="system", user=user))
 
 rcloud.reset.session <- function() {
   ## use the global workspace as the parent to avoid long lookups across irrelevant namespaces
