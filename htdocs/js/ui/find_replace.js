@@ -206,6 +206,8 @@ RCloud.UI.find_replace = (function() {
         });
     }
     function highlight_all() {
+        if(shell.is_view_mode())
+            shell.notebook.controller.show_r_source();
         matches_ = [];
         shell.notebook.model.cells.forEach(function(cell, n) {
             var matches = highlight_cell(cell);
