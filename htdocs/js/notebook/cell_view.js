@@ -128,7 +128,8 @@ function create_cell_html_view(language, cell_model) {
     function click_to_edit(div, whether) {
         if(whether) {
             set_background_class(code_div_.find('pre'));
-            div.toggleClass('inactive', true);
+            if(am_read_only_===false)
+                div.toggleClass('inactive', true);
             // distinguish between a click and a drag
             // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
             div.on({
@@ -141,7 +142,7 @@ function create_cell_html_view(language, cell_model) {
                         var p1 = { x: e.pageX, y: e.pageY },
                             d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
                         if (d < 4) {
-                            if(RCloud.language.is_a_markdown(language) && am_read_only_)
+                            if(am_read_only_)
                                 result.hide_source(false);
                             else
                                 result.edit_source(true, e);

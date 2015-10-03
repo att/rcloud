@@ -73,6 +73,8 @@ is.cryptgroup.admin <- function(groupid, user) {
 .check.cryptgroup.name <- function(groupname) {
   if(nchar(groupname) > 80)
     stop("protection group name must be less than 80 characters")
+  if(length(grep('^[[:space:]]*$', '    '))!=0)
+    stop("protection group name must not be empty or consist only of spaces")
   keys <- rcs.list(rcs.key('.cryptgroup', '*', 'name'))
   groupnames <- if(length(keys)) rcs.get(keys, list=TRUE) else list()
   if(groupname %in% groupnames)

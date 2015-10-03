@@ -1,6 +1,6 @@
 .setup.su <- function(exec.usr) {
   ## change ownership of the working directory (session home) and rc-specific user home
-  dir.create(rc.user.home <- pathConf("data.root", "home", exec.usr), FALSE, TRUE, "0700")
+  dir.create(rc.user.home <- pathConf("rcloud.user.home", exec.usr), FALSE, TRUE, "0700")
   dir.create(td <- paste(tempdir(), exec.usr, sep='-'), FALSE, TRUE, "0700")
   unixtools::chown(c(getwd(), rc.user.home, td), exec.usr, NULL)
   Sys.chmod(getwd(), "0700") ## also change mode of the Rserve connection directory
@@ -44,6 +44,7 @@ RC.authenticate <- function(v, check.only=FALSE)
   if (user == FALSE) return(FALSE)
   ## but if we have a github user whitelist, check against that as well.
   .session$user <- user
+
   if (!hasConf("github.user.whitelist")) return(TRUE)
   userlist <- gsub("^\\s+","",gsub("\\s+$","",unlist(strsplit(getConf("github.user.whitelist"), ','))))
   user %in% userlist
