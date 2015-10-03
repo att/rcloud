@@ -1959,7 +1959,8 @@ function create_cell_html_view(language, cell_model) {
     function click_to_edit(div, whether) {
         if(whether) {
             set_background_class(code_div_.find('pre'));
-            div.toggleClass('inactive', true);
+            if(am_read_only_===false)
+                div.toggleClass('inactive', true);
             // distinguish between a click and a drag
             // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
             div.on({
@@ -1972,7 +1973,7 @@ function create_cell_html_view(language, cell_model) {
                         var p1 = { x: e.pageX, y: e.pageY },
                             d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
                         if (d < 4) {
-                            if(RCloud.language.is_a_markdown(language) && am_read_only_)
+                            if(am_read_only_)
                                 result.hide_source(false);
                             else
                                 result.edit_source(true, e);
@@ -4623,6 +4624,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     var collapsed_ = false;
     var result = RCloud.UI.column(sel_column);
     var parent_init = result.init.bind(result);
+    var parent_colwidth = result.colwidth.bind(result);
     function collapsibles() {
         return $(sel_accordion + " > .panel > div.panel-collapse:not(.out)");
     }
@@ -4706,6 +4708,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                     else
                         that.show(save_setting);
                 });
+        },
+        colwidth: function(val) {
+            val = parent_colwidth(val);
+            collapsibles().trigger('panel-resize');
+            return val;
         },
         collapse: function(target, whether, persist) {
             if(persist === undefined)
@@ -5647,6 +5654,8 @@ RCloud.UI.find_replace = (function() {
         });
     }
     function highlight_all() {
+        if(shell.is_view_mode())
+            shell.notebook.controller.show_r_source();
         matches_ = [];
         shell.notebook.model.cells.forEach(function(cell, n) {
             var matches = highlight_cell(cell);
@@ -6304,24 +6313,27 @@ RCloud.UI.init = function() {
            !$(arguments[0].target).closest($("#output")).size())
             return;
         var sel = window.getSelection();
-        var div = $('<pre class="offscreen"></pre>');
-        $('body').append(div);
+        var offscreen = $('<pre class="offscreen"></pre>');
+        $('body').append(offscreen);
         for(var i=0; i < sel.rangeCount; ++i) {
             var range = sel.getRangeAt(i);
-            div.append(range.cloneContents());
+            offscreen.append(range.cloneContents());
         }
-        div.find('.nonselectable').remove();
-        sel.selectAllChildren(div[0]);
+        offscreen.find('.nonselectable').remove();
+        sel.selectAllChildren(offscreen[0]);
+        window.setTimeout(function() {
+            offscreen.remove();
+        }, 1000);
     });
 
-    // prevent unwanted document scrolling e.g. by 
+    // prevent unwanted document scrolling e.g. by dragging
     if(!shell.is_view_mode()) {
         $(document).on('scroll', function() {
             $(this).scrollLeft(0);
             $(this).scrollTop(0);
         });
     };
-    
+
     // prevent left-right scrolling of notebook area
     $('#rcloud-cellarea').on('scroll', function() {
         $(this).scrollLeft(0);
@@ -8301,7 +8313,7 @@ RCloud.UI.settings_frame = (function() {
         text_input_vector: function(opts) {
             opts = _.extend({
                 parse: function(val) {
-                    return val.split(/, */).filter(function(x) { return !!x; });
+                    return val.trim().split(/, */).filter(function(x) { return !!x; });
                 },
                 format: function(val) {
                     // might be devectorized by rserve.js
