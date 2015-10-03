@@ -93,24 +93,27 @@ RCloud.UI.init = function() {
            !$(arguments[0].target).closest($("#output")).size())
             return;
         var sel = window.getSelection();
-        var div = $('<pre class="offscreen"></pre>');
-        $('body').append(div);
+        var offscreen = $('<pre class="offscreen"></pre>');
+        $('body').append(offscreen);
         for(var i=0; i < sel.rangeCount; ++i) {
             var range = sel.getRangeAt(i);
-            div.append(range.cloneContents());
+            offscreen.append(range.cloneContents());
         }
-        div.find('.nonselectable').remove();
-        sel.selectAllChildren(div[0]);
+        offscreen.find('.nonselectable').remove();
+        sel.selectAllChildren(offscreen[0]);
+        window.setTimeout(function() {
+            offscreen.remove();
+        }, 1000);
     });
 
-    // prevent unwanted document scrolling e.g. by 
+    // prevent unwanted document scrolling e.g. by dragging
     if(!shell.is_view_mode()) {
         $(document).on('scroll', function() {
             $(this).scrollLeft(0);
             $(this).scrollTop(0);
         });
     };
-    
+
     // prevent left-right scrolling of notebook area
     $('#rcloud-cellarea').on('scroll', function() {
         $(this).scrollLeft(0);

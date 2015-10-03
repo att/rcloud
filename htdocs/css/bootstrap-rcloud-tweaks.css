@@ -175,7 +175,7 @@ div.panel-heading:hover {
     top: 0;
 }
 
-div.offscreen {
+pre.offscreen {
     position: absolute;
     right: -100000;
 }
