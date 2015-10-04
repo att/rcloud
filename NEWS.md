@@ -10,7 +10,8 @@
 * Basic support for shell cells is now included. Note that each cell is
   a separate shell, so environment variables cannot be passed across
   shell cells. However, environment variables set in R will be inherited
-  by the shell so R cells can be used to define them.
+  by the shell so R cells can be used to define them. Scripts are executed
+  using bash.
 
 * Recent notebooks menu provides access to recently opened notebooks.
 
@@ -36,6 +37,35 @@
 * Large assets stopped working after a GitHub Enterprise update since
   it introduced re-directed raw links which was not supported. (#1658)
 
+* Conversion of encrypted notebooks with binary assets to public was failing
+  on public GitHub. (#1665)
+
+* The asset panel wasn't getting immediately resized when the column was
+  resized (#1623)
+
+* Second ctrl-A wasn't going to the absolute beginning of the line (on Mac).
+  (#1625)
+
+* Empty and blank group names were accepted. (#1689)
+
+* Find and replace was making read-only notebooks appear writeable, even in
+  view mode. (#1672, #1681)
+
+* RCloud was making erroneous requests for `/vector` and `/[object%20Object]`,
+  causing 404 errors. (#1663)
+
+* Long names were escaping the notebook info popover. (#1593, #1637)
+
+* Misplacement of settings panel scrollbar. (#1634)
+
+* Spaces were retained at end of Disable and Enable Extensions options, causing
+  silent failure. (#1693)
+
+* Odd message on closing the Manage Groups dialog. (#1641)
+
+* Bad line breaks in types in Workspace panel. (#1642)
+
+* Clipboard copy was adding the text to the end of the page in view mode. (#1648)
 
 ## RCloud 1.4.3
 ### Features
