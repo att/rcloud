@@ -14,9 +14,17 @@
 
 * Recent notebooks menu provides access to recently opened notebooks.
 
+
+### Improvements
+
 * The root of RCloud homes is now configurable using `rcloud.user.home`
   configuration directive in `rcloud.conf`. The function `rcloud.home()`
   should be used to retrieve paths in user's RCloud home directory.
+
+* The list of all-user extensions is now controlled by a simple rcloud.conf
+  key, `rcloud.alluser.addons`, instead of by an RCS key populated from
+  `rcs.system.config.addons`. This allows multiple RCloud instances to
+  use the same RCS instance with different settings. (#1666)
 
 
 ### Bug fixes
