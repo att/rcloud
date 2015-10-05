@@ -1162,7 +1162,7 @@ var editor = function () {
                 if(source==='default')
                     source = null; // drop it
                 else if(gist_sources_.indexOf(source)<0) {
-                    before = Promise.reject(new Error("Invalid gist source '" + source));
+                    before = Promise.reject(new Error("Invalid gist source '" + source + "'"));
                 } else if(!notebook_info_[gistname]) {
                     notebook_info_[gistname] = {source: source};
                     before = rcloud.set_notebook_property(gistname, "source", source);
