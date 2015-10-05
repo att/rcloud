@@ -57,6 +57,8 @@
 * RCloud was making erroneous requests for `/vector` and `/[object%20Object]`,
   causing 404 errors. (#1663)
 
+* Foreign notebooks could not be Opened in GitHub from view mode (#1697)
+
 * Long names were escaping the notebook info popover. (#1593, #1637)
 
 * Misplacement of settings panel scrollbar. (#1634)
