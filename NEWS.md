@@ -27,6 +27,9 @@
   `rcs.system.config.addons`. This allows multiple RCloud instances to
   use the same RCS instance with different settings. (#1666)
 
+* Proper "aw shucks" error message for bad notebook source. (#1699)
+
+
 
 ### Bug fixes
 * In case a gist back-end token became invalid the login would fail with

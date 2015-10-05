@@ -1162,8 +1162,7 @@ var editor = function () {
                 if(source==='default')
                     source = null; // drop it
                 else if(gist_sources_.indexOf(source)<0) {
-                    RCloud.UI.session_pane.append_text("Invalid gist source '" + source + "': ignored.");
-                    source = null;
+                    before = Promise.reject(new Error("Invalid gist source '" + source));
                 } else if(!notebook_info_[gistname]) {
                     notebook_info_[gistname] = {source: source};
                     before = rcloud.set_notebook_property(gistname, "source", source);
@@ -1177,14 +1176,14 @@ var editor = function () {
                     .then(that.load_callback({version: version,
                                               source: source,
                                               selroot: selroot,
-                                              push_history: push_history}))
-                    .catch(function(xep) {
-                        return shell.improve_load_error(xep, gistname, version).then(function(message) {
-                            RCloud.UI.fatal_dialog(message, "Continue", fail_url);
-                            throw xep;
-                        });
+                                              push_history: push_history}));
+            })
+                .catch(function(xep) {
+                    return shell.improve_load_error(xep, gistname, version).then(function(message) {
+                        RCloud.UI.fatal_dialog(message, "Continue", fail_url);
+                        throw xep;
                     });
-            });
+                });
         },
         open_notebook: function(gistname, version, source, selroot, new_window) {
             // really just load_notebook except possibly in a new window
