@@ -384,7 +384,9 @@ define(['angular'], function(angular) {
             var removedAdmins = _.difference($scope.originalAdmins, $scope.groupAdmins);
             var addedAdmins = _.difference($scope.groupAdmins, $scope.originalAdmins);
             //compare original members array and its current state
-            var removedMembers = _.difference($scope.originalMembers, $scope.groupMembers);
+            var removedMembersTemp = _.difference($scope.originalMembers, $scope.groupMembers);
+            ///  filter the removeMembers to not contain any of the addedAdmins.
+            var removedMembers = _.difference(removedMembersTemp, addedAdmins);
             var addedMembers = _.difference($scope.groupMembers, $scope.originalMembers);
 
             var allMembers = [removedAdmins, addedAdmins, removedMembers, addedMembers];
