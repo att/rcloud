@@ -4,7 +4,8 @@ Notebook.create_controller = function(model)
         dirty_ = false,
         save_button_ = null,
         save_timer_ = null,
-        save_timeout_ = 30000; // 30s
+        save_timeout_ = 30000, // 30s
+        lastScrollPosition = 0;
 
     // only create the callbacks once, but delay creating them until the editor
     // is initialized
@@ -226,8 +227,11 @@ Notebook.create_controller = function(model)
         if(save_timer_)
             window.clearTimeout(save_timer_);
         save_timer_ = window.setTimeout(function() {
+            lastScrollPosition = $('#rcloud-cellarea').scrollTop();
             result.save();
-            save_timer_ = null;
+            _.delay(function() {
+                $('#rcloud-cellarea').scrollTop(lastScrollPosition);
+            }, 100);
         }, save_timeout_);
     }
 
