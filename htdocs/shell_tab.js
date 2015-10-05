@@ -230,19 +230,22 @@ var shell = (function() {
             }
             return improve_msg_promise;
         }, github_url: function() {
-            var url;
-            var source = editor.get_notebook_info(gistname_).source || 'default';
-            if(gist_urls_[source]) {
-                url = gist_urls_[source];
-                url += notebook_user_ + '/';
-            }
-            else if(github_urls_[source])
-                url = github_urls_[source] + 'gist/';
-            else return null;
-            url += gistname_;
-            if(version_)
-                url += '/' + version_;
-            return url;
+            // we can't use editor's notebook cache if in view mode, so load asynchronously
+            return rcloud.get_notebook_info(gistname_).then(function(info) {
+                var url;
+                var source = info.source || 'default';
+                if(gist_urls_[source]) {
+                    url = gist_urls_[source];
+                    url += notebook_user_ + '/';
+                }
+                else if(github_urls_[source])
+                    url = github_urls_[source] + 'gist/';
+                else return null;
+                url += gistname_;
+                if(version_)
+                    url += '/' + version_;
+                return url;
+            });
         }, open_from_github: function(notebook_or_url) {
             function isHex(str) {
                 return str.match(/^[a-f0-9]*$/i) !== null;
