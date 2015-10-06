@@ -409,25 +409,25 @@ define(['angular'], function(angular) {
                 if(res.removedAdmins.length) {
                     outputMessage += 'You removed admins ';
                     for(var i = 0; i < res.removedAdmins.length; i ++) {
-                        outputMessage += res.removedAdmins[i] + $scope.getSeparator(i, removedAdmins);
+                        outputMessage += res.removedAdmins[i] + $scope.getSeparator(i, res.removedAdmins);
                     }
                 }
                 if(res.addedAdmins.length) {
                     outputMessage += 'You added admins ';
                     for(var a = 0; a < res.addedAdmins.length; a ++) {
-                        outputMessage += res.addedAdmins[a] + $scope.getSeparator(a, addedAdmins);
+                        outputMessage += res.addedAdmins[a] + $scope.getSeparator(a, res.addedAdmins);
                     }
                 }
                 if(res.removedMembers.length) {
                     outputMessage += 'You removed members ';
                     for(var b = 0; b < res.removedMembers.length; b ++) {
-                        outputMessage += res.removedMembers[b] + $scope.getSeparator(b, removedMembers);
+                        outputMessage += res.removedMembers[b] + $scope.getSeparator(b, res.removedMembers);
                     }
                 }
                 if(res.addedMembers.length) {
                     outputMessage += 'You added members ';
                     for(var v = 0; v < res.addedMembers.length; v ++) {
-                        outputMessage += addedMembers[v] + $scope.getSeparator(v, addedMembers);
+                        outputMessage += res.addedMembers[v] + $scope.getSeparator(v, res.addedMembers);
                     }
                 }
             }
