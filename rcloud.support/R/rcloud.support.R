@@ -305,7 +305,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     ## the request. This is only the case if the request doesn't involve direct
     ## manipulation of the encrypted content *and* the notebook is encrypted
     if (!is.null(content$files) && !is.null(group) &&
-        is.null(content$files[[.encryped.content.filename]])) {
+        !.encryped.content.filename %in% names(content$files)) {
         ## NB: we support files=list() as a way to say that the notebook needs re-encryption
         old <- rcloud.get.notebook(id)
         l <- old$content$files
@@ -853,3 +853,5 @@ rcloud.get.git.user <- function(id, source = NULL) {
     else
         list()
 }
+
+rcloud.home <- function(..., user=if (is.null(.session$exec.usr)) "" else .session$exec.usr) pathConf("rcloud.user.home", user, ...)

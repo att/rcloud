@@ -29,5 +29,4 @@ rcloud.upload.close.file <- function()
   .rcloud.upload.state$file <- NULL
 }
 
-# FIXME we need a better place for this.
-rcloud.upload.path <- function() Sys.getenv("HOME")
+rcloud.upload.path <- function() rcloud.home()

@@ -109,6 +109,15 @@ configure.rcloud <- function (mode=c("startup", "script")) {
   .session$gist.sources.conf <- rc.gsrc
   ulog(paste(capture.output(str(rc.gsrc)), collapse='\n'))
 
+  if (!nzConf("rcloud.user.home"))
+    setConf("rcloud.user.home", pathConf("data.root", "home"))
+
+  ## without exec.auth make sure the rcloud.home exists since it's not
+  ## handled by the user switching code in that case
+  if (!nzConf("exec.auth") && !file.exists(rcloud.home()))
+      tryCatch(dir.create(rcloud.home(), FALSE, TRUE, "0700"),
+               error=function(e) ulog("WARNING: unable to create rcloud.home ", rcloud.home()))
+
   ## use public github by default (FIXME: this should go away when set in the githubgist package)
   if (!nzConf("github.base.url")) setConf("github.base.url", "https://github.com/")
   if (!nzConf("github.api.url")) setConf("github.api.url", "https://api.github.com/")

@@ -36,6 +36,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     var collapsed_ = false;
     var result = RCloud.UI.column(sel_column);
     var parent_init = result.init.bind(result);
+    var parent_colwidth = result.colwidth.bind(result);
     function collapsibles() {
         return $(sel_accordion + " > .panel > div.panel-collapse:not(.out)");
     }
@@ -119,6 +120,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                     else
                         that.show(save_setting);
                 });
+        },
+        colwidth: function(val) {
+            val = parent_colwidth(val);
+            collapsibles().trigger('panel-resize');
+            return val;
         },
         collapse: function(target, whether, persist) {
             if(persist === undefined)

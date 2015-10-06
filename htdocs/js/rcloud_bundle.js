@@ -360,6 +360,8 @@ RCloud.create = function(rcloud_ocaps) {
             install_css: function(urls, k) {
                 if (_.isString(urls))
                     urls = [urls];
+                else if(!_.isArray(urls)) // not sure why c() is becoming {r_type: 'vector'...}
+                    urls = [];
                 _.each(urls, function(url) {
                     $("head").append($('<link type="text/css" rel="stylesheet" class="rcloud-user-defined-css" href="' +
                                        url + '"/>'));
@@ -924,6 +926,8 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
 
         {
             name: 'cursor at beginning of line',
+            ctrlACount : 0,
+            lastRow: -1,
             bindKey: {
           
                 mac: 'Ctrl-A',
@@ -934,10 +938,25 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                     return;
                 //row of the cursor on current line
                 var row = widget.getCursorPosition().row;
-                //move to the beginning of that line
-                widget.navigateTo(row, 0);
-                //make sure it appears at beginning of text
-                widget.navigateLineStart();
+                //if on a new line
+                if( this.lastRow !== row) {
+                    this.ctrlACount = 1;
+                    widget.navigateLineStart();
+                    this.lastRow = row;
+                }
+                else {
+                    if(this.ctrlACount === 0) {
+                        //make sure it appears at beginning of text
+                        widget.navigateLineStart();
+                        this.ctrlACount ++;
+                    }
+                    else if(this.ctrlACount === 1 ) {
+                        //move to the beginning of that line
+                        widget.navigateTo(row, 0);
+                        this.ctrlACount = 0;
+                    }
+                    this.lastRow = row;
+                }
             }
         } ,
         {
@@ -1940,7 +1959,8 @@ function create_cell_html_view(language, cell_model) {
     function click_to_edit(div, whether) {
         if(whether) {
             set_background_class(code_div_.find('pre'));
-            div.toggleClass('inactive', true);
+            if(am_read_only_===false)
+                div.toggleClass('inactive', true);
             // distinguish between a click and a drag
             // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
             div.on({
@@ -1953,7 +1973,7 @@ function create_cell_html_view(language, cell_model) {
                         var p1 = { x: e.pageX, y: e.pageY },
                             d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
                         if (d < 4) {
-                            if(RCloud.language.is_a_markdown(language) && am_read_only_)
+                            if(am_read_only_)
                                 result.hide_source(false);
                             else
                                 result.edit_source(true, e);
@@ -3141,7 +3161,8 @@ Notebook.create_controller = function(model)
         dirty_ = false,
         save_button_ = null,
         save_timer_ = null,
-        save_timeout_ = 30000; // 30s
+        save_timeout_ = 30000,
+        lastScrollPosition = 0; // 30s
 
     // only create the callbacks once, but delay creating them until the editor
     // is initialized
@@ -3363,7 +3384,11 @@ Notebook.create_controller = function(model)
         if(save_timer_)
             window.clearTimeout(save_timer_);
         save_timer_ = window.setTimeout(function() {
+            lastScrollPosition = $('#rcloud-cellarea').scrollTop();
             result.save();
+            _.delay(function() {
+                $('#rcloud-cellarea').scrollTop(lastScrollPosition);
+            }, 100);
             save_timer_ = null;
         }, save_timeout_);
     }
@@ -4188,11 +4213,12 @@ RCloud.UI.advanced_menu = (function() {
                     text: "Open in GitHub",
                     modes: ['view', 'edit'],
                     action: function() {
-                        var url = shell.github_url();
-                        if(!url)
-                            alert('Sorry, Open in GitHub is not supported for this notebook source.');
-                        else
-                            window.open(url, "_blank");
+                        shell.github_url().then(function(url) {
+                            if(!url)
+                                alert('Sorry, Open in GitHub is not supported for this notebook source.');
+                            else
+                                window.open(url, "_blank");
+                        });
                     }
                 },
                 open_from_github: {
@@ -4606,6 +4632,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     var collapsed_ = false;
     var result = RCloud.UI.column(sel_column);
     var parent_init = result.init.bind(result);
+    var parent_colwidth = result.colwidth.bind(result);
     function collapsibles() {
         return $(sel_accordion + " > .panel > div.panel-collapse:not(.out)");
     }
@@ -4689,6 +4716,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                     else
                         that.show(save_setting);
                 });
+        },
+        colwidth: function(val) {
+            val = parent_colwidth(val);
+            collapsibles().trigger('panel-resize');
+            return val;
         },
         collapse: function(target, whether, persist) {
             if(persist === undefined)
@@ -5630,6 +5662,8 @@ RCloud.UI.find_replace = (function() {
         });
     }
     function highlight_all() {
+        if(shell.is_view_mode())
+            shell.notebook.controller.show_r_source();
         matches_ = [];
         shell.notebook.model.cells.forEach(function(cell, n) {
             var matches = highlight_cell(cell);
@@ -6287,24 +6321,27 @@ RCloud.UI.init = function() {
            !$(arguments[0].target).closest($("#output")).size())
             return;
         var sel = window.getSelection();
-        var div = $('<pre class="offscreen"></pre>');
-        $('body').append(div);
+        var offscreen = $('<pre class="offscreen"></pre>');
+        $('body').append(offscreen);
         for(var i=0; i < sel.rangeCount; ++i) {
             var range = sel.getRangeAt(i);
-            div.append(range.cloneContents());
+            offscreen.append(range.cloneContents());
         }
-        div.find('.nonselectable').remove();
-        sel.selectAllChildren(div[0]);
+        offscreen.find('.nonselectable').remove();
+        sel.selectAllChildren(offscreen[0]);
+        window.setTimeout(function() {
+            offscreen.remove();
+        }, 1000);
     });
 
-    // prevent unwanted document scrolling e.g. by 
+    // prevent unwanted document scrolling e.g. by dragging
     if(!shell.is_view_mode()) {
         $(document).on('scroll', function() {
             $(this).scrollLeft(0);
             $(this).scrollTop(0);
         });
     };
-    
+
     // prevent left-right scrolling of notebook area
     $('#rcloud-cellarea').on('scroll', function() {
         $(this).scrollLeft(0);
@@ -8330,7 +8367,7 @@ RCloud.UI.settings_frame = (function() {
         text_input_vector: function(opts) {
             opts = _.extend({
                 parse: function(val) {
-                    return val.split(/, */).filter(function(x) { return !!x; });
+                    return val.trim().split(/, */).filter(function(x) { return !!x; });
                 },
                 format: function(val) {
                     // might be devectorized by rserve.js
