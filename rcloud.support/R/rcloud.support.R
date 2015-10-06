@@ -224,7 +224,7 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE
       if (grepl("^part.*\\.R$", o$filename)) { ## R code
         expr <- parse(text=o$content)
         result <- eval(expr, e)
-        rcloud.support:::.post.eval()
+        rcloud.flush.plot()
       } else if (grepl("^part.*\\.md", o$filename)) { ## markdown
         ## FIXME: we ignore markdown for now ...
       }

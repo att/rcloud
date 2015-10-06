@@ -23,6 +23,7 @@ RCloudDevice <- function(width, height, dpi=100, ..., type='inline') {
 ## locator
 .locator <- function(dev, ...) {
     if (is.null(dinfo <- .session$RCloudDevice[[dev]])) stop("non-existing RCloud device, aborting")
+    rcloud.flush.plot()
     res <- .session$.locator.cap$locate(dinfo$id, dinfo$page + 1L)
     if (length(res) == 2L) as.numeric(res) else res
 }
@@ -36,6 +37,11 @@ RCloudDevice <- function(width, height, dpi=100, ..., type='inline') {
         page <- .session$RCloudDevice[[dev]]$page + 1L
     else ## last known page - record it
         .session$RCloudDevice[[dev]]$page <- page
+
+    ## FIXME: we get page=0L in some odd situations -- we treat it as 1L (sine
+    ## it would break our bookkeeping otherwise), but we should check when that
+    ## happens and what it means ...
+    if (page < 1L) page <- 1L
     .rc.oobSend(cmd, payload, rev(dim(img)), did, page)
     if (!is.null(payload))
         .session$RCloudDevice[[dev]]$pages[[page]] <- Cairo.snapshot(dev, NA)
@@ -81,7 +87,7 @@ RCloudDevice <- function(width, height, dpi=100, ..., type='inline') {
 }
 
 ## this function needs to be called after eval() to check if the device is dirty
-.post.eval <- function() {
+rcloud.flush.plot <- function() {
     ## check if the device is dirty such that we need to post an update
     ## FIXME: do we need to check all active Cairo devices?
     if (.Device == "Cairo") {
