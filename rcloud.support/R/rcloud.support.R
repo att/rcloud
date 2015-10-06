@@ -81,12 +81,13 @@ rcloud.unauthenticated.load.notebook <- function(id, version = NULL, source = NU
   rcloud.load.notebook(id, version, source)
 }
 
-rcloud.load.notebook <- function(id, version = NULL, source = NULL) {
+rcloud.load.notebook <- function(id, version = NULL, source = NULL, reset = TRUE) {
   res <- rcloud.get.notebook(id, version, source)
   ulog("RCloud rcloud.load.notebook(",id,",",version,", user=", .session$username,"): ", if(res$ok) "OK" else "FAILED")
   if (res$ok) {
     .session$current.notebook <- res
-    rcloud.reset.session()
+    if(reset)
+       rcloud.reset.session()
   }
   res
 }
@@ -224,7 +225,7 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE
       if (grepl("^part.*\\.R$", o$filename)) { ## R code
         expr <- parse(text=o$content)
         result <- eval(expr, e)
-        rcloud.support:::.post.eval()
+        rcloud.flush.plot()
       } else if (grepl("^part.*\\.md", o$filename)) { ## markdown
         ## FIXME: we ignore markdown for now ...
       }

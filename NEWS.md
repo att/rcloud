@@ -20,6 +20,12 @@
 
 * Recent notebooks menu provides access to recently opened notebooks.
 
+* New function `rcloud.flush.plot()` allows explicit finalization of
+  a plot -- this is in particular useful in loops where RCloud cannot
+  detect automatically that a plot has been finalized and plot output
+  is combined with other output. It is called automatically between
+  cells.
+
 
 ### Improvements
 
@@ -76,6 +82,8 @@
 * Bad line breaks in types in Workspace panel. (#1642)
 
 * Clipboard copy was adding the text to the end of the page in view mode. (#1648)
+
+* Locator and `rcloud.html.out` flush plots first thing when invoked. (#1691)
 
 ## RCloud 1.4.3
 ### Features
