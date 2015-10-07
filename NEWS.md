@@ -62,6 +62,9 @@
 
 * Empty and blank group names were accepted. (#1689)
 
+* Promoting a protection group user from member to admin caused the user
+  to lose all membership. (#1696)
+
 * Find and replace was making read-only notebooks appear writeable, even in
   view mode. (#1672, #1681)
 
