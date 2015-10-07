@@ -452,7 +452,6 @@ ul.recent-notebooks-list li a {
     padding-right: 0;
 }
 
-
 #dataframe .viewer-body-wrapper {
     word-break: break-all;
 }
@@ -460,6 +459,7 @@ ul.recent-notebooks-list li a {
 #scratchpad-binary {
     position: relative;
     height: 100%;
+    width: 100%;
     overflow: hidden;
 }
 
