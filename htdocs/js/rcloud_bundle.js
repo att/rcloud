@@ -2150,9 +2150,14 @@ function create_cell_html_view(language, cell_model) {
         function(code) {
             // add abso-relative line number spans at the beginning of each line
             var line = 1;
-            code = code.replace(/^/gm, function() {
-                return '<span class="rcloud-line-number-position nonselectable">&#x200b;<span class="rcloud-line-number">' + line++ + '</span></span>';
-            });
+            code = code.split('\n').map(function(s) {
+                return ['<span class="rcloud-line-number-position nonselectable">',
+                        '&#x200b;',
+                        '<span class="rcloud-line-number">',
+                        line++,
+                        '</span></span>',s].join('');
+            }).join('\n');
+
             code += '&nbsp;'; // make sure last line is shown even if it is just a tag
             return code;
         },
