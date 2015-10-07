@@ -456,3 +456,13 @@ ul.recent-notebooks-list li a {
 #dataframe .viewer-body-wrapper {
     word-break: break-all;
 }
+
+#scratchpad-binary {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+}
+
+#scratchpad-binary object {
+    position: absolute;
+}
