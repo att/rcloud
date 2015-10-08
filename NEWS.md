@@ -68,6 +68,8 @@
 
 * Foreign notebooks could not be Opened in GitHub from view mode (#1697)
 
+* Large images were overlapping other panes in the Asset Viewer (#1660)
+
 * Long names were escaping the notebook info popover. (#1593, #1637)
 
 * Misplacement of settings panel scrollbar. (#1634)
