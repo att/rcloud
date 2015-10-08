@@ -1700,6 +1700,9 @@ Notebook.Asset.create_html_view = function(asset_model)
     filename_span.click(function() {
         if(!asset_model.active())
             asset_model.controller.select();
+        
+        $('#scratchpad-binary object').css('position', 'static')
+                .css('position', 'absolute');
     });
     remove.click(function() {
         asset_model.controller.remove();
