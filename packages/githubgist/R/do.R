@@ -38,7 +38,7 @@ context.info.githubcontext <- function(ctx) list(username=ctx$user$login)
     if (isTRUE(res$ok) && length(res$content$files)) {
         for (i in seq_along(res$content$files))
             if (isTRUE(res$content$files[[i]]$truncated))
-                res$content$files[[i]]$content <- getURL(res$content$files[[i]]$raw_url)
+                res$content$files[[i]]$content <- content(GET(res$content$files[[i]]$raw_url))
     }
     res
 }

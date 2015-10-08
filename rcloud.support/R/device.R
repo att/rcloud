@@ -6,7 +6,11 @@ RCloudDevice <- function(width, height, dpi=100, ..., type='inline') {
     ## FIXME: what about retina? currently it's bad mess - we should have more sane units for width/height
     if (is.null(width)) width <- 510
     if (is.null(height)) height <- 510
-    dev <- Cairo(width, height, type='raster', bg='white', dpi=dpi, ...)
+    ## FIXME: we should have a unified way to register JS that is core, not ad-hoc like this ...
+    if (is.null(.session$.locator.cap))
+        .session$.locator.cap <- rcloud.install.js.module("rcloud.locator",
+                                                          paste(readLines(system.file("javascript", "locator.js", package="rcloud.support")), collapse='\n'))
+    dev <- Cairo(width, height, type='raster', bg='white', dpi=dpi, locator=.locator, ...)
     if (is.null(.session$RCloudDevice)) .session$RCloudDevice <- list()
     did <- generate.token()
     .session$RCloudDevice[[dev]] <- list(serial=-1L, page=0L, id=did, pages=list(), dim=c(width, height), dpi=dpi)
@@ -14,6 +18,14 @@ RCloudDevice <- function(width, height, dpi=100, ..., type='inline') {
     .rc.oobSend("dev.new", did, type, c(width, height))
     class(dev) <- c("RCloudDevice", class(dev))
     invisible(dev)
+}
+
+## locator
+.locator <- function(dev, ...) {
+    if (is.null(dinfo <- .session$RCloudDevice[[dev]])) stop("non-existing RCloud device, aborting")
+    rcloud.flush.plot()
+    res <- .session$.locator.cap$locate(dinfo$id, dinfo$page + 1L)
+    if (length(res) == 2L) as.numeric(res) else res
 }
 
 ## notify client that a plot has been finalized
@@ -25,6 +37,11 @@ RCloudDevice <- function(width, height, dpi=100, ..., type='inline') {
         page <- .session$RCloudDevice[[dev]]$page + 1L
     else ## last known page - record it
         .session$RCloudDevice[[dev]]$page <- page
+
+    ## FIXME: we get page=0L in some odd situations -- we treat it as 1L (sine
+    ## it would break our bookkeeping otherwise), but we should check when that
+    ## happens and what it means ...
+    if (page < 1L) page <- 1L
     .rc.oobSend(cmd, payload, rev(dim(img)), did, page)
     if (!is.null(payload))
         .session$RCloudDevice[[dev]]$pages[[page]] <- Cairo.snapshot(dev, NA)
@@ -70,7 +87,7 @@ RCloudDevice <- function(width, height, dpi=100, ..., type='inline') {
 }
 
 ## this function needs to be called after eval() to check if the device is dirty
-.post.eval <- function() {
+rcloud.flush.plot <- function() {
     ## check if the device is dirty such that we need to post an update
     ## FIXME: do we need to check all active Cairo devices?
     if (.Device == "Cairo") {

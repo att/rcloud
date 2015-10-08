@@ -189,7 +189,7 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.refresh_compute_notebook = function(id) {
             return rcloud_github_handler("rcloud.load.notebook.compute (refresh) " + id,
-                                         rcloud_ocaps.load_notebook_computeAsync(id, null));
+                                         rcloud_ocaps.load_notebook_computeAsync(id, null, null, false));
         };
 
         rcloud.get_version_by_tag = function(gist_id,tag) {
@@ -254,6 +254,8 @@ RCloud.create = function(rcloud_ocaps) {
             install_css: function(urls, k) {
                 if (_.isString(urls))
                     urls = [urls];
+                else if(!_.isArray(urls)) // not sure why c() is becoming {r_type: 'vector'...}
+                    urls = [];
                 _.each(urls, function(url) {
                     $("head").append($('<link type="text/css" rel="stylesheet" class="rcloud-user-defined-css" href="' +
                                        url + '"/>'));

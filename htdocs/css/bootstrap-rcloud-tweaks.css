@@ -175,7 +175,7 @@ div.panel-heading:hover {
     top: 0;
 }
 
-div.offscreen {
+pre.offscreen {
     position: absolute;
     right: -100000;
 }
@@ -250,8 +250,8 @@ td {
     padding-bottom: 2px;
 }
 
-.popover-content .info-item {
-    padding-left: 1ex;
+.popover-content .info-item a {
+    word-wrap: break-word;
 }
 
 #find-dialog .btn {
@@ -394,7 +394,7 @@ td {
 .dropdown.recent-notebooks-dropdown {
     position: absolute;
     right: 29px;
-    top: -1px;
+    top: 0;
 }
 
 .dropdown.recent-notebooks-dropdown a.recent-btn{
@@ -419,7 +419,6 @@ ul.recent-notebooks-list li a.username:hover {
 }
 
 ul.recent-notebooks-list li a .username {
-    color: #7D7D7D;
     display: inline-block;
     max-width: 80px;
     text-overflow: ellipsis;
@@ -442,9 +441,28 @@ ul.recent-notebooks-list li a {
     overflow: hidden;
     white-space: nowrap;
     width: 100%;
-
 }
 
 .jqtree-element .jqtree-title.jqtree_common {
     word-break: break-all;
+}
+
+
+#settings-body-wrapper.panel-body {
+    padding-right: 0;
+}
+
+#dataframe .viewer-body-wrapper {
+    word-break: break-all;
+}
+
+#scratchpad-binary {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+#scratchpad-binary object {
+    position: absolute;
 }

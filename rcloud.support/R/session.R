@@ -135,7 +135,8 @@ rcloud.reset.session <- function() {
   .session$knitr.env <- new.env(parent=.GlobalEnv)
   ## load all-user and per-user rcloud add-ons
   if (!(identical(.session$mode, "call") || identical(.session$mode, "client"))) {
-    all.addons <- rcloud.config.get.alluser.option("addons")
+    addons <- getConf("rcloud.alluser.addons")
+    all.addons <- if(is.null(addons)) NULL else strsplit(addons, ' *, *')[[1]]
     user.addons <- rcloud.config.get.user.option("addons")
     user.skip.addons <- rcloud.config.get.user.option("skip-addons");
     addons <- setdiff(c(all.addons, user.addons), user.skip.addons)

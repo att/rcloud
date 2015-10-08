@@ -1,3 +1,4 @@
 import(github)
+importFrom(httr, GET, content)
 exportPattern(".*githubcontext$")
 export(create.github.context)

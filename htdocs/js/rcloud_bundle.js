@@ -295,7 +295,7 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.refresh_compute_notebook = function(id) {
             return rcloud_github_handler("rcloud.load.notebook.compute (refresh) " + id,
-                                         rcloud_ocaps.load_notebook_computeAsync(id, null));
+                                         rcloud_ocaps.load_notebook_computeAsync(id, null, null, false));
         };
 
         rcloud.get_version_by_tag = function(gist_id,tag) {
@@ -360,6 +360,8 @@ RCloud.create = function(rcloud_ocaps) {
             install_css: function(urls, k) {
                 if (_.isString(urls))
                     urls = [urls];
+                else if(!_.isArray(urls)) // not sure why c() is becoming {r_type: 'vector'...}
+                    urls = [];
                 _.each(urls, function(url) {
                     $("head").append($('<link type="text/css" rel="stylesheet" class="rcloud-user-defined-css" href="' +
                                        url + '"/>'));
@@ -924,6 +926,8 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
 
         {
             name: 'cursor at beginning of line',
+            ctrlACount : 0,
+            lastRow: -1,
             bindKey: {
           
                 mac: 'Ctrl-A',
@@ -934,10 +938,25 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                     return;
                 //row of the cursor on current line
                 var row = widget.getCursorPosition().row;
-                //move to the beginning of that line
-                widget.navigateTo(row, 0);
-                //make sure it appears at beginning of text
-                widget.navigateLineStart();
+                //if on a new line
+                if( this.lastRow !== row) {
+                    this.ctrlACount = 1;
+                    widget.navigateLineStart();
+                    this.lastRow = row;
+                }
+                else {
+                    if(this.ctrlACount === 0) {
+                        //make sure it appears at beginning of text
+                        widget.navigateLineStart();
+                        this.ctrlACount ++;
+                    }
+                    else if(this.ctrlACount === 1 ) {
+                        //move to the beginning of that line
+                        widget.navigateTo(row, 0);
+                        this.ctrlACount = 0;
+                    }
+                    this.lastRow = row;
+                }
             }
         } ,
         {
@@ -1681,6 +1700,9 @@ Notebook.Asset.create_html_view = function(asset_model)
     filename_span.click(function() {
         if(!asset_model.active())
             asset_model.controller.select();
+        //ugly fix, but desperate times call for desperate measures.
+        $('#scratchpad-binary object').css('position', 'static')
+                .css('position', 'absolute');
     });
     remove.click(function() {
         asset_model.controller.remove();
@@ -1940,7 +1962,8 @@ function create_cell_html_view(language, cell_model) {
     function click_to_edit(div, whether) {
         if(whether) {
             set_background_class(code_div_.find('pre'));
-            div.toggleClass('inactive', true);
+            if(am_read_only_===false)
+                div.toggleClass('inactive', true);
             // distinguish between a click and a drag
             // http://stackoverflow.com/questions/4127118/can-you-detect-dragging-in-jquery
             div.on({
@@ -1953,7 +1976,7 @@ function create_cell_html_view(language, cell_model) {
                         var p1 = { x: e.pageX, y: e.pageY },
                             d = Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
                         if (d < 4) {
-                            if(RCloud.language.is_a_markdown(language) && am_read_only_)
+                            if(am_read_only_)
                                 result.hide_source(false);
                             else
                                 result.edit_source(true, e);
@@ -2130,9 +2153,14 @@ function create_cell_html_view(language, cell_model) {
         function(code) {
             // add abso-relative line number spans at the beginning of each line
             var line = 1;
-            code = code.replace(/^/gm, function() {
-                return '<span class="rcloud-line-number-position nonselectable">&#x200b;<span class="rcloud-line-number">' + line++ + '</span></span>';
-            });
+            code = code.split('\n').map(function(s) {
+                return ['<span class="rcloud-line-number-position nonselectable">',
+                        '&#x200b;',
+                        '<span class="rcloud-line-number">',
+                        line++,
+                        '</span></span>',s].join('');
+            }).join('\n');
+
             code += '&nbsp;'; // make sure last line is shown even if it is just a tag
             return code;
         },
@@ -4186,11 +4214,12 @@ RCloud.UI.advanced_menu = (function() {
                     text: "Open in GitHub",
                     modes: ['view', 'edit'],
                     action: function() {
-                        var url = shell.github_url();
-                        if(!url)
-                            alert('Sorry, Open in GitHub is not supported for this notebook source.');
-                        else
-                            window.open(url, "_blank");
+                        shell.github_url().then(function(url) {
+                            if(!url)
+                                alert('Sorry, Open in GitHub is not supported for this notebook source.');
+                            else
+                                window.open(url, "_blank");
+                        });
                     }
                 },
                 open_from_github: {
@@ -4604,6 +4633,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     var collapsed_ = false;
     var result = RCloud.UI.column(sel_column);
     var parent_init = result.init.bind(result);
+    var parent_colwidth = result.colwidth.bind(result);
     function collapsibles() {
         return $(sel_accordion + " > .panel > div.panel-collapse:not(.out)");
     }
@@ -4687,6 +4717,11 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                     else
                         that.show(save_setting);
                 });
+        },
+        colwidth: function(val) {
+            val = parent_colwidth(val);
+            collapsibles().trigger('panel-resize');
+            return val;
         },
         collapse: function(target, whether, persist) {
             if(persist === undefined)
@@ -5628,6 +5663,8 @@ RCloud.UI.find_replace = (function() {
         });
     }
     function highlight_all() {
+        if(shell.is_view_mode())
+            shell.notebook.controller.show_r_source();
         matches_ = [];
         shell.notebook.model.cells.forEach(function(cell, n) {
             var matches = highlight_cell(cell);
@@ -5885,14 +5922,45 @@ RCloud.UI.image_manager = (function() {
             update: function(url, dims) {
                 img_.attr('src', url);
                 update_dims(dims);
+            },
+            locate: function(k) {
+                div_.attr('tabindex', 1).css('cursor', 'crosshair');
+                div_.focus().keydown(function(e) {
+                    if(e.keyCode === $.ui.keyCode.ESCAPE) {
+                        div_.off('keydown').blur();
+                        img_.off('click');
+                        div_.attr('tabindex', null).removeAttr('style');
+                        k(null, null);
+                    }
+                });
+                img_.click(function(e) {
+                    // sadly, there seems to be a lot of disagreement about the correct
+                    // way to get image-relative coordinates. may need adjusting!
+                    // http://stackoverflow.com/a/14045047/676195
+                    var offset = $(this).offset();
+                    var offset_t = $(this).offset().top - $(window).scrollTop();
+                    var offset_l = $(this).offset().left - $(window).scrollLeft();
+
+                    var x = Math.round( (e.clientX - offset_l) );
+                    var y = Math.round( (e.clientY - offset_t) );
+
+                    div_.off('keydown').blur();
+                    img_.off('click');
+                    div_.attr('tabindex', null).removeAttr('style');
+
+                    k(null, [x, y])
+                });
             }
         };
         return result;
     }
+    function image_id(device, page) {
+        return device + "-" + page;
+    }
     var result = {
         update: function(url, dims, device, page) {
-            var id = device + "-" + page;
             var image;
+            var id = image_id(device, page);
             if(images_[id]) {
                 image = images_[id];
                 image.update(url, dims);
@@ -5902,6 +5970,13 @@ RCloud.UI.image_manager = (function() {
                 images_[id] = image;
             }
             return image;
+        },
+        locate: function(device, page, k) {
+            var id = image_id(device, page);
+            if(images_[id]) {
+                var image = images_[id];
+                image.locate(k);
+            } else k("ERROR: cannot find image corresponding to the locator"); // FIXME: is this the right way to return an error?
         },
         formats: formats_
     };
@@ -6247,24 +6322,27 @@ RCloud.UI.init = function() {
            !$(arguments[0].target).closest($("#output")).size())
             return;
         var sel = window.getSelection();
-        var div = $('<pre class="offscreen"></pre>');
-        $('body').append(div);
+        var offscreen = $('<pre class="offscreen"></pre>');
+        $('body').append(offscreen);
         for(var i=0; i < sel.rangeCount; ++i) {
             var range = sel.getRangeAt(i);
-            div.append(range.cloneContents());
+            offscreen.append(range.cloneContents());
         }
-        div.find('.nonselectable').remove();
-        sel.selectAllChildren(div[0]);
+        offscreen.find('.nonselectable').remove();
+        sel.selectAllChildren(offscreen[0]);
+        window.setTimeout(function() {
+            offscreen.remove();
+        }, 1000);
     });
 
-    // prevent unwanted document scrolling e.g. by 
+    // prevent unwanted document scrolling e.g. by dragging
     if(!shell.is_view_mode()) {
         $(document).on('scroll', function() {
             $(this).scrollLeft(0);
             $(this).scrollTop(0);
         });
     };
-    
+
     // prevent left-right scrolling of notebook area
     $('#rcloud-cellarea').on('scroll', function() {
         $(this).scrollLeft(0);
@@ -6880,6 +6958,7 @@ RCloud.UI.notebook_title = (function() {
                     return editor.show_history(node.parent, {update: true});
                 });
         };
+        
     }
     function rename_current_notebook(name) {
         return editor.rename_notebook(name)
@@ -8243,7 +8322,7 @@ RCloud.UI.settings_frame = (function() {
         text_input_vector: function(opts) {
             opts = _.extend({
                 parse: function(val) {
-                    return val.split(/, */).filter(function(x) { return !!x; });
+                    return val.trim().split(/, */).filter(function(x) { return !!x; });
                 },
                 format: function(val) {
                     // might be devectorized by rserve.js

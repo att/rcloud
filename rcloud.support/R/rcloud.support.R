@@ -81,12 +81,13 @@ rcloud.unauthenticated.load.notebook <- function(id, version = NULL, source = NU
   rcloud.load.notebook(id, version, source)
 }
 
-rcloud.load.notebook <- function(id, version = NULL, source = NULL) {
+rcloud.load.notebook <- function(id, version = NULL, source = NULL, reset = TRUE) {
   res <- rcloud.get.notebook(id, version, source)
   ulog("RCloud rcloud.load.notebook(",id,",",version,", user=", .session$username,"): ", if(res$ok) "OK" else "FAILED")
   if (res$ok) {
     .session$current.notebook <- res
-    rcloud.reset.session()
+    if(reset)
+       rcloud.reset.session()
   }
   res
 }
@@ -224,7 +225,7 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE
       if (grepl("^part.*\\.R$", o$filename)) { ## R code
         expr <- parse(text=o$content)
         result <- eval(expr, e)
-        rcloud.support:::.post.eval()
+        rcloud.flush.plot()
       } else if (grepl("^part.*\\.md", o$filename)) { ## markdown
         ## FIXME: we ignore markdown for now ...
       }
@@ -305,7 +306,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     ## the request. This is only the case if the request doesn't involve direct
     ## manipulation of the encrypted content *and* the notebook is encrypted
     if (!is.null(content$files) && !is.null(group) &&
-        is.null(content$files[[.encryped.content.filename]])) {
+        !.encryped.content.filename %in% names(content$files)) {
         ## NB: we support files=list() as a way to say that the notebook needs re-encryption
         old <- rcloud.get.notebook(id)
         l <- old$content$files
@@ -853,3 +854,5 @@ rcloud.get.git.user <- function(id, source = NULL) {
     else
         list()
 }
+
+rcloud.home <- function(..., user=if (is.null(.session$exec.usr)) "" else .session$exec.usr) pathConf("rcloud.user.home", user, ...)

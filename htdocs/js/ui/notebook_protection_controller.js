@@ -1,5 +1,3 @@
-
-
 define(['angular'], function(angular) {
 
    'use strict';
@@ -118,7 +116,7 @@ define(['angular'], function(angular) {
             return $q(function(resolve, reject) {
                 $scope.$evalAsync(function() {
                     $scope.currentTab = 1;
-                
+
                     $scope.currentNotebook = moduleRef.defaultNotebook;
                     $scope.currentCryptogroup = moduleRef.defaultCryptogroup;
                     $scope.notebookFullName = moduleRef.defaultNotebook.full_name;
@@ -154,7 +152,7 @@ define(['angular'], function(angular) {
                     (function(){
                         var conf = confirm("Are you sure you want to move notebook "+$scope.notebookFullName+" to group "+$scope.selectedUserGroup.name +"?\nThis might make it no longer accessible by everyone.");
                         if(conf){
-                            console.log('notebook id is '+$scope.notebookGistName);
+                            //console.log('notebook id is '+$scope.notebookGistName);
                             GroupsService.setNotebookGroup($scope.notebookGistName, $scope.selectedUserGroup.id )
                             .then(function(data){
                                 //console.log('data is '+data);
@@ -262,7 +260,7 @@ define(['angular'], function(angular) {
                 .catch(function(e) {
                     logger.warn(extract_error(e));
                 });
-            };
+            }
         };
 
         $scope.renameGroup = function() {
@@ -382,43 +380,54 @@ define(['angular'], function(angular) {
             $('.group-changes-panel').html($scope.getCurrentChanges());
         };
 
+        $scope.getMembersDifference = function() {
+            var removedAdmins = _.difference($scope.originalAdmins, $scope.groupAdmins),
+                addedAdmins = _.difference($scope.groupAdmins, $scope.originalAdmins),
+                //compare original members array and its current state
+                removedMembersTemp = _.difference($scope.originalMembers, $scope.groupMembers),
+                ///  filter the removeMembers to not contain any of the addedAdmins.
+                removedMembers = _.difference(removedMembersTemp, addedAdmins),
+                addedMembers = _.difference($scope.groupMembers, $scope.originalMembers);
+
+            return {
+                removedAdmins: removedAdmins,
+                addedAdmins: addedAdmins,
+                removedMembers: removedMembers,
+                addedMembers: addedMembers
+             }    
+        };
+
         $scope.getCurrentChanges = function() {
-            var removedAdmins = _.difference($scope.originalAdmins, $scope.groupAdmins);
-            var addedAdmins = _.difference($scope.groupAdmins, $scope.originalAdmins);
-            //compare original members array and its current state
-            var removedMembers = _.difference($scope.originalMembers, $scope.groupMembers);
-            var addedMembers = _.difference($scope.groupMembers, $scope.originalMembers);
+            var outputMessage = '',
+                res = $scope.getMembersDifference();
 
-            var allMembers = [removedAdmins, addedAdmins, removedMembers, addedMembers];
-            var outputMessage = '';
-
-            if(!removedAdmins.length && !addedAdmins.length && !removedMembers.length && !addedMembers.length ) {
-                return ''
+            if(!res.removedAdmins.length && !res.addedAdmins.length && !res.removedMembers.length && !res.addedMembers.length ) {
+                return '';
             }
             else {
                 outputMessage = ' ';
-                if(removedAdmins.length) {
+                if(res.removedAdmins.length) {
                     outputMessage += 'You removed admins ';
-                    for(var i = 0; i < removedAdmins.length; i ++) {
-                        outputMessage += removedAdmins[i] + $scope.getSeparator(i, removedAdmins);
+                    for(var i = 0; i < res.removedAdmins.length; i ++) {
+                        outputMessage += res.removedAdmins[i] + $scope.getSeparator(i, res.removedAdmins);
                     }
                 }
-                if(addedAdmins.length) {
+                if(res.addedAdmins.length) {
                     outputMessage += 'You added admins ';
-                    for(var a = 0; a < addedAdmins.length; a ++) {
-                        outputMessage += addedAdmins[a] + $scope.getSeparator(a, addedAdmins);
+                    for(var a = 0; a < res.addedAdmins.length; a ++) {
+                        outputMessage += res.addedAdmins[a] + $scope.getSeparator(a, res.addedAdmins);
                     }
                 }
-                if(removedMembers.length) {
+                if(res.removedMembers.length) {
                     outputMessage += 'You removed members ';
-                    for(var b = 0; b < removedMembers.length; b ++) {
-                        outputMessage += removedMembers[b] + $scope.getSeparator(b, removedMembers);
+                    for(var b = 0; b < res.removedMembers.length; b ++) {
+                        outputMessage += res.removedMembers[b] + $scope.getSeparator(b, res.removedMembers);
                     }
                 }
-                if(addedMembers.length) {
+                if(res.addedMembers.length) {
                     outputMessage += 'You added members ';
-                    for(var v = 0; v < addedMembers.length; v ++) {
-                        outputMessage += addedMembers[v] + $scope.getSeparator(v, addedMembers);
+                    for(var v = 0; v < res.addedMembers.length; v ++) {
+                        outputMessage += res.addedMembers[v] + $scope.getSeparator(v, res.addedMembers);
                     }
                 }
             }
@@ -430,7 +439,7 @@ define(['angular'], function(angular) {
             if(index === array.length -1){
                 return '. ';
             }
-            return ', '
+            return ', ';
         };
 
         $scope.stopWatching = function() {
@@ -443,38 +452,32 @@ define(['angular'], function(angular) {
         };
 
         $scope.saveGroupTab = function() {
-            //compare original admins array and its current state
-            var removedAdmins = _.difference($scope.originalAdmins, $scope.groupAdmins);
-            var addedAdmins = _.difference($scope.groupAdmins, $scope.originalAdmins);
-            //compare original members array and its current state
-            var removedMembers = _.difference($scope.originalMembers, $scope.groupMembers);
-            var addedMembers = _.difference($scope.groupMembers, $scope.originalMembers);
-            var outputMessage = '';
+
+            var res = $scope.getMembersDifference();
             //removed and added members
-            if(!removedAdmins.length && !addedAdmins.length && !removedMembers.length && !addedMembers.length ) {
+            if(!res.removedAdmins.length && !res.addedAdmins.length && !res.removedMembers.length && !res.addedMembers.length ) {
                 $scope.cancel();
                 return;
             }
             else {
-       
                 // push functions that will make the changes and return promises
                 var operations = [];
-                removedAdmins.forEach(function(name) {
+                res.removedAdmins.forEach(function(name) {
                     operations.push(function() {
                         return GroupsService.removeGroupUser($scope.selectedAdminGroup.id, name);
                     });
                 });
-                addedAdmins.forEach(function(name) {
+                res.addedAdmins.forEach(function(name) {
                     operations.push(function() {
                             return GroupsService.addGroupUser($scope.selectedAdminGroup.id, name, true);
                     });
                 });
-                removedMembers.forEach(function(name) {
+                res.removedMembers.forEach(function(name) {
                     operations.push(function() {
                         return GroupsService.removeGroupUser($scope.selectedAdminGroup.id, name);
                     });
                 });
-                addedMembers.forEach(function(name) {
+                res.addedMembers.forEach(function(name) {
                     operations.push(function() {
                         return GroupsService.addGroupUser($scope.selectedAdminGroup.id, name, false);
                     });
@@ -501,7 +504,12 @@ define(['angular'], function(angular) {
             $("#notebook-protection-dialog").modal('hide');
             $scope.stopWatching();
             logger.clear();
-            $scope.reset();
+            $timeout(function() {
+                 $scope.$evalAsync(function() {
+                    $scope.reset();
+                });
+            }, 500)
+            
         };
 
         $scope.save = function() {
@@ -520,7 +528,7 @@ define(['angular'], function(angular) {
                 if($scope.currentTab !== 1) {
                     $scope.currentTab = index;
                     if(!$('#protection-app #tab1').hasClass('disabled'));
-                        $scope.stopWatching()
+                    $scope.stopWatching();
                 }
             }
             if(index === 2) {
@@ -565,7 +573,6 @@ define(['angular'], function(angular) {
             for(var i = 0; i < groupArray.length; i ++) {
                 if( groupArray[i].name === name) {
                     return i;
-                    break;
                 }
             }
             return -1;
