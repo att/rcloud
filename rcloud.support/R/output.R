@@ -13,7 +13,7 @@ rcloud.out <- function(expr, terminate="\n") {
 }
 
 rcloud.html.out <- function(..., sep="") {
-    flush.console()
+    rcloud.flush.plot()
     .rc.oobSend("html.out", x <- paste(..., sep=sep, collapse="\n"))
     invisible(x)
 }

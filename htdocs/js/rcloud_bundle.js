@@ -295,7 +295,7 @@ RCloud.create = function(rcloud_ocaps) {
         };
         rcloud.refresh_compute_notebook = function(id) {
             return rcloud_github_handler("rcloud.load.notebook.compute (refresh) " + id,
-                                         rcloud_ocaps.load_notebook_computeAsync(id, null));
+                                         rcloud_ocaps.load_notebook_computeAsync(id, null, null, false));
         };
 
         rcloud.get_version_by_tag = function(gist_id,tag) {
@@ -1700,6 +1700,9 @@ Notebook.Asset.create_html_view = function(asset_model)
     filename_span.click(function() {
         if(!asset_model.active())
             asset_model.controller.select();
+        //ugly fix, but desperate times call for desperate measures.
+        $('#scratchpad-binary object').css('position', 'static')
+                .css('position', 'absolute');
     });
     remove.click(function() {
         asset_model.controller.remove();
@@ -2150,9 +2153,14 @@ function create_cell_html_view(language, cell_model) {
         function(code) {
             // add abso-relative line number spans at the beginning of each line
             var line = 1;
-            code = code.replace(/^/gm, function() {
-                return '<span class="rcloud-line-number-position nonselectable">&#x200b;<span class="rcloud-line-number">' + line++ + '</span></span>';
-            });
+            code = code.split('\n').map(function(s) {
+                return ['<span class="rcloud-line-number-position nonselectable">',
+                        '&#x200b;',
+                        '<span class="rcloud-line-number">',
+                        line++,
+                        '</span></span>',s].join('');
+            }).join('\n');
+
             code += '&nbsp;'; // make sure last line is shown even if it is just a tag
             return code;
         },
@@ -3161,8 +3169,7 @@ Notebook.create_controller = function(model)
         dirty_ = false,
         save_button_ = null,
         save_timer_ = null,
-        save_timeout_ = 30000,
-        lastScrollPosition = 0; // 30s
+        save_timeout_ = 30000; // 30s
 
     // only create the callbacks once, but delay creating them until the editor
     // is initialized
@@ -3384,11 +3391,7 @@ Notebook.create_controller = function(model)
         if(save_timer_)
             window.clearTimeout(save_timer_);
         save_timer_ = window.setTimeout(function() {
-            lastScrollPosition = $('#rcloud-cellarea').scrollTop();
             result.save();
-            _.delay(function() {
-                $('#rcloud-cellarea').scrollTop(lastScrollPosition);
-            }, 100);
             save_timer_ = null;
         }, save_timeout_);
     }

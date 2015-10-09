@@ -20,6 +20,12 @@
 
 * Recent notebooks menu provides access to recently opened notebooks.
 
+* New function `rcloud.flush.plot()` allows explicit finalization of
+  a plot -- this is in particular useful in loops where RCloud cannot
+  detect automatically that a plot has been finalized and plot output
+  is combined with other output. It is called automatically between
+  cells.
+
 
 ### Improvements
 
@@ -56,6 +62,9 @@
 
 * Empty and blank group names were accepted. (#1689)
 
+* Promoting a protection group user from member to admin caused the user
+  to lose all membership. (#1696)
+
 * Find and replace was making read-only notebooks appear writeable, even in
   view mode. (#1672, #1681)
 
@@ -63,6 +72,8 @@
   causing 404 errors. (#1663)
 
 * Foreign notebooks could not be Opened in GitHub from view mode (#1697)
+
+* Large images were overlapping other panes in the Asset Viewer (#1660)
 
 * Long names were escaping the notebook info popover. (#1593, #1637)
 
@@ -76,6 +87,8 @@
 * Bad line breaks in types in Workspace panel. (#1642)
 
 * Clipboard copy was adding the text to the end of the page in view mode. (#1648)
+
+* Locator and `rcloud.html.out` flush plots first thing when invoked. (#1691)
 
 ## RCloud 1.4.3
 ### Features
