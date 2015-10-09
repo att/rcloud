@@ -20,7 +20,7 @@ run <- function(url, query, body, headers)
 
   ## redirect is either in the query or body, but we have to also guard against nonsensical values
   redirect <- query["redirect"]
-  if (is.null(redirect)) redirect <- body["redirect"]
+  if (! "redirect" %in% names(query)) redirect <- body["redirect"]
   if (is.character(redirect) && !nzchar(redirect)) redirect <- NULL
   if (!is.null(redirect) && isTRUE(any(is.na(redirect)))) redirect <- NULL
 
