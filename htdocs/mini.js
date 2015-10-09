@@ -51,7 +51,10 @@ function main() {
                 });
             });
             return true;
-        }, on_error: function(msg, status_code) {
+        },
+        on_data: RCloud.session.on_data,
+        on_oob_message: RCloud.session.on_oob_message,
+        on_error: function(msg, status_code) {
             // debugger;
             if (msg == 'Login failed. Shutting down!') {
                 window.location =
