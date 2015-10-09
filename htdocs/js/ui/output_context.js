@@ -41,6 +41,9 @@ RCloud.UI.output_context = (function() {
             var context = create_context(selector);
             var context_id = RCloud.register_output_context(context);
             return context_id;
+        },
+        close: function(id) {
+            RCloud.unregister_output_context(id);
         }
     };
 })();
