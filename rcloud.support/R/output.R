@@ -26,3 +26,10 @@ rcloud.output.context <- function(selector) {
   .session$.output.context.cap$create_context(selector)
 }
 
+rcloud.close.context <- function(context.id) {
+  if (is.null(.session$.output.context.cap))
+    .session$.output.context.cap <- rcloud.install.js.module("rcloud.output.context",
+                                                             paste(readLines(system.file("javascript", "create_output_context.js", package="rcloud.support")), collapse='\n'))
+  # todo: if(Rserve.context()==context.id) ???
+  .session$.output.context.cap$close_context(context.id)
+}
