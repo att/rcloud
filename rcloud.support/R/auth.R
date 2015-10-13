@@ -62,7 +62,7 @@ RC.auth.anonymous <- function(v=NULL, check.only=FALSE) {
     check.token(exec.token, paste0("auth/",getConf("exec.auth")), "rcloud.exec") else FALSE
   if (exec.usr == FALSE) { ## truly anonymous execution
     if (nzConf("exec.anon.user")) { ## anonymous user specified, so we allow access as we switch
-      if (!check.only) .setup.su(getConf("exec.anon.user"))
+      if (!check.only) .setup.su(.session$exec.usr <- getConf("exec.anon.user"))
       TRUE
     } else FALSE ## if there is no exec.anon.user then we fail since we cannot allow anonymous as root
   } else { ## valid execution token - switch users if needed
