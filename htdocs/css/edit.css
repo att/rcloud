@@ -1253,3 +1253,105 @@ pre > .vt100 {
     margin-right: 2px;
     margin-left: -15px;
 }
+
+.grid {
+    visibility: hidden;
+}
+
+.grid-item {
+    color: black;
+    padding: 1px;
+    padding-top: 10px;
+    border-radius: 5px;
+    border: 1px solid #CCCCCC;
+}
+
+.grid-item a {
+    text-decoration: none;
+    color: black;
+}
+
+.grid-item h1{
+    font-size: 17px;
+    margin: 0;
+}
+
+.grid-item h2 {
+    font-size: 11px;
+    margin: 0;
+}
+
+.grid-item .header {
+
+}
+
+.grid-item .header h2 {
+    margin-top: 2px;
+}
+
+.grid-item .image-holder {
+    margin-top: 13px;
+    margin-bottom: 10px;
+    min-height: 200px;
+    background-image: url('img/graph2.png');
+}
+
+@media (min-width: 1100px) {
+
+    .grid-item { 
+        width: 23%;
+        margin: 10px;
+    }
+}
+
+@media (min-width: 800px) and (max-width: 1100px) {
+
+    .grid-item { 
+      width: 30%; 
+      margin: 1%;
+    }
+}
+
+@media (min-width: 400px) and (max-width: 800px) {
+
+    .grid-item { 
+      width: 48%; 
+      margin: 1%;
+    }
+}
+
+@media (min-width: 100px) and (max-width: 400px) {
+
+    .grid-item { 
+      width: 100%;
+    }
+}
+
+@media (min-width: 800px) and (max-width: 1100px) {
+
+    .grid-item { 
+      width: 30%; 
+      margin: 1%;
+    }
+}
+
+@media (min-width: 400px) and (max-width: 800px) {
+
+    .grid-item { 
+      width: 48%;
+      margin: 1%;
+    }
+}
+
+@media (min-width: 100px) and (max-width: 400px) {
+    .grid-item { 
+      width: 100%;
+    }
+}
+
+#discoveryLoader {
+    position: absolute;
+    left: 50%;
+    top: 200px;
+    margin-left: -52px;
+}

@@ -31,6 +31,7 @@
 
     -->
 
+
     <script src="/lib/js/require-common.js"></script>
     <script type="text/javascript" data-main="/lib/js/require-edit.js" src="/lib/js/require.js"></script>
   </head>
@@ -265,6 +266,39 @@
   </div>
 </script>
 
+<script type="text/html" id="discovery-page-modal">
+  <div class="modal-body" id='discovery-app' ng-controller='DiscoveryPageController' ng-cloak>
+    <div style='position:relative'>
+      <div id='discoveryLoader'>Loading Notebooks...</div>
+      <div class="row">
+        <div class="col-sm-4">  
+        </div>
+        <div class="col-sm-8">
+          <div class="col-sm-4">
+            <div class="input-group">
+              <span class="input-group-addon" id="basic-addon1">@</span>
+              <input type="text" class="form-control" placeholder="Username" aria-describedby="basic-addon1">
+            </div>
+          </div>
+          <div class="col-sm-8">
+            <div class="btn-group" role="group" aria-label="...">
+              <button type="button" class="btn btn-default">Latest</button>
+              <button type="button" class="btn btn-default">Most Popular</button>
+              <button type="button" class="btn btn-default">Stars</button>
+              <button type="button" class="btn btn-default">Personalized</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+          <div class="grid">
+            <thumbnail ng-click="thumbClicked($index)" ng-repeat="notebook in recentNotebooks" >
+            </thumbnail>
+          </div>
+      </div>
+    </div>
+  </div>
+</script>
 
 <script type="text/html" id="notebook-protection-modal">
 

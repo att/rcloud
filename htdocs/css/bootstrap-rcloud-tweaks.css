@@ -384,7 +384,6 @@ td {
     /*word-break: break-all;*/
 }
 
-
 /*recent notebooks*/
 
 #notebooks-panel-inner {
@@ -447,7 +446,6 @@ ul.recent-notebooks-list li a {
     word-break: break-all;
 }
 
-
 #settings-body-wrapper.panel-body {
     padding-right: 0;
 }
@@ -465,4 +463,9 @@ ul.recent-notebooks-list li a {
 
 #scratchpad-binary object {
     position: absolute;
+}
+
+body .modal-dialog.full {
+    width: 100%;
+    max-height: 100%;
 }

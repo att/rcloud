@@ -64,7 +64,8 @@ rcloud_bundle.js: \
 	ui/upload.js \
 	ui/upload_frame.js \
 	ui/notebook_protection_logger.js \
-	ui/notebook_protection.js 
+	ui/notebook_protection.js \
+	ui/discovery_page.js
 
 rcloud_bundle.min.js: rcloud_bundle.js Makefile
 	@rm -f $@

@@ -1,0 +1,17 @@
+
+<div  class="grid-item">
+	<a ng-href="edit.html?notebook={{notebook.id}}">
+		<div class='header col-md-12'>
+			<h1>{{notebook.description}}</h1>
+			<h2>modified {{notebook.last_commit}} by {{notebook.username}} </h2>
+		</div>
+
+		<div class="image-holder col-md-12">
+			<img ng-src="{{getThumbUrl(notebook.id)}}" class="img-responsive" alt="Responsive image">
+		</div>
+	</a>
+</div>
+
+
+
+
