@@ -1274,12 +1274,19 @@ pre > .vt100 {
     -webkit-transition: transform 0.3s, background-color 0.4s, ease-in-out;
     -moz-transition: transform 0.3s, background-color 0.4s, ease-in-out;
     -o-transition: transform 0.3s, background-color 0.4s, ease-in-out;
-    transition: transform 0.3s, background-color 0.4s, ease-in-out;
+    transition: transform 0.3s, background-color 0.4s, box-shadow: 0.6s ease-in-out;
+
+    -webkit-box-shadow: none;
+    -moz-box-shadow:    none;
+    box-shadow:         none;
 }
 
 .grid-item:hover {
     transform: translateY(10px);
     background-color: #F1F1F1;
+    -webkit-box-shadow: 3px 3px 16px 0px rgba(50, 50, 50, 0.75);
+    -moz-box-shadow:    3px 3px 16px 0px rgba(50, 50, 50, 0.75);
+    box-shadow:         3px 3px 16px 0px rgba(50, 50, 50, 0.75);
 }
 
 .grid-item a {
