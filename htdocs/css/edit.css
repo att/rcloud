@@ -1256,6 +1256,10 @@ pre > .vt100 {
 
 .grid {
     visibility: hidden;
+    transform-style: preserve-3d;
+    perspective: 300px;
+    perspective-origin: 50% 50%;
+   
 }
 
 .grid-item {
@@ -1264,6 +1268,18 @@ pre > .vt100 {
     padding-top: 10px;
     border-radius: 5px;
     border: 1px solid #CCCCCC;
+    background-color: #FFFFFF;
+
+    transform: translateY(0);
+    -webkit-transition: transform 0.3s, background-color 0.4s, ease-in-out;
+    -moz-transition: transform 0.3s, background-color 0.4s, ease-in-out;
+    -o-transition: transform 0.3s, background-color 0.4s, ease-in-out;
+    transition: transform 0.3s, background-color 0.4s, ease-in-out;
+}
+
+.grid-item:hover {
+    transform: translateY(10px);
+    background-color: #F1F1F1;
 }
 
 .grid-item a {
@@ -1301,15 +1317,15 @@ pre > .vt100 {
 
     .grid-item { 
         width: 23%;
-        margin: 10px;
+        margin: 1%;
     }
 }
 
 @media (min-width: 800px) and (max-width: 1100px) {
 
     .grid-item { 
-      width: 30%; 
-      margin: 1%;
+      width: 32%; 
+      margin: 2%;
     }
 }
 

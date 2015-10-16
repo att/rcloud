@@ -8929,7 +8929,8 @@ RCloud.UI.discovery_page = (function() {
 
           var header = $(['<div class="modal-header">',
                         '<button type="button" class="close" aria-hidden="true">&times;</button>',
-                        '<h3>DISCOVERY PAGE</h3>',
+                        '<img src="/img/logo_rcloud.png" width="132" height="30" style="margin-top: -10px">'+
+                        '<h3 style="display: inline-block;margin-left: 22px;">DISCOVERY PAGE</h3>',
                         '</div>'].join(''));
           var dialog = $('<div id="discovery-page-dialog" class="modal fade"></div>')
             .append($('<div class="modal-dialog full"></div>')
@@ -8937,31 +8938,7 @@ RCloud.UI.discovery_page = (function() {
             .append(header).append(body)));
           $("body").append(dialog);
 
-          //var body = $('<div class="the-container"></div>');
-          //body.append();
-
-          // var header = $(['<div class="modal-header">',
-          //                 '<button type="button" class="close" onClick="(RCloud.UI.notebook_protection.close.bind(RCloud.UI.notebook_protection))()" aria-hidden="true">&times;</button>',
-          //                 '<h3>Notebook Permissions / Group Management</h3>',
-          //                 '</div>'].join(''));
-          // var dialog = $('<div id="notebook-protection-dialog" class="modal fade"></div>')
-          //   .append($('<div class="modal-dialog"></div>')
-          //   .append($('<div class="modal-content"></div>')
-          //   .append(header).append(body)));
-
-          //$("body").append(RCloud.UI.panel_loader.load_snippet('discovery-page-modal'));
-
-
-          // $("body").append($("<div id='theDiv'>THIS IS SOME TEXT<h1>yep yep yep</h1></div>") )
-
-        }
-
-        
+        }        
     };
 
 })();
-
-
-
-
-//DiscoveryPageApp
