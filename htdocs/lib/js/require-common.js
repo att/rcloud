@@ -39,13 +39,18 @@ var common_deps = [
 ];
 
 function start_require(deps) {
-    require(deps,
-            function(Promise, _, d3, sha256) {
-                window.Promise = Promise;
-                window._ = _;
-                window.d3 = d3;
-                window.sha256 = sha256;
-                main();
+    try {
+        require(deps,
+                function(Promise, _, d3, sha256) {
+                    window.Promise = Promise;
+                    window._ = _;
+                    window.d3 = d3;
+                    window.sha256 = sha256;
+                    main();
 
-            });
+                });
+    }
+    catch(xep) {
+        RCloud.UI.fatal_dialog("Sorry, the page timed out.", "Reload", window.location.href);
+    }
 }
