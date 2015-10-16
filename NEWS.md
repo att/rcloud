@@ -3,6 +3,19 @@
   retrieved using `rcloud.session.info()`
 
 
+## RCloud 1.5.1
+
+### Bugfixes
+
+* Anonymous users had no RCloud home even if `exec.anon.user` is,
+   specified which caused issues (among other things) with file upload
+   (#1709)
+
+* Redirects through the login page did not work in proxified setup,
+  most notably re-authentication on links containing a notebook ID would
+  lose the notebook reference by the time the user was authenticated (#1419).
+
+
 ## RCloud 1.5
 
 ### Features
