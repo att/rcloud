@@ -16,7 +16,7 @@ define(['angular'], function(angular) {
                     // now we can do specific stuff:
 
                     // if(this.naturalHeight > this.naturalWidth){
-                    //     this.className = "vertical";
+                         //this.css('backgk') = "vertical";
                     // }
                 });
 

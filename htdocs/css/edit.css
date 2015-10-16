@@ -1292,8 +1292,9 @@ pre > .vt100 {
 .grid-item .image-holder {
     margin-top: 13px;
     margin-bottom: 10px;
-    min-height: 200px;
-    background-image: url('img/graph2.png');
+    min-height: 222px;
+/*    background-image: url('/img/graph2.png');
+    background-size: cover;*/
 }
 
 @media (min-width: 1100px) {
@@ -1354,4 +1355,16 @@ pre > .vt100 {
     left: 50%;
     top: 200px;
     margin-left: -52px;
+}
+
+.grid-item .star-holder {
+    position: absolute;
+    top: -11px;
+    right: 0;
+}
+
+.grid-item .star-holder button {
+    color: black;
+    font-size: 18px;
+    text-decoration: none;
 }

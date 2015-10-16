@@ -1,13 +1,22 @@
 
 <div  class="grid-item">
 	<a ng-href="edit.html?notebook={{notebook.id}}">
-		<div class='header col-md-12'>
-			<h1>{{notebook.description}}</h1>
-			<h2>modified {{notebook.last_commit}} by {{notebook.username}} </h2>
-		</div>
 
-		<div class="image-holder col-md-12">
-			<img ng-src="{{getThumbUrl(notebook.id)}}" class="img-responsive" alt="Responsive image">
+		<div class="row" style="position:relative">
+			<div class='header col-sm-10'>
+				<h1>{{notebook.description}}</h1>
+				<h2>{{notebook.last_commit}} by {{notebook.username}} </h2>
+			</div>
+			<div class="star-holder">
+				<button id="star-notebook" title="Add to Interests" type="button" class="btn btn-link navbar-btn" style="padding-left: 3px"><i class="icon-star"></i><sub><span id="curr-star-count">1</span></sub></button>
+				
+			</div>
+		</div>
+		
+		<div class="row">
+			<div class="image-holder col-sm-12">
+				<img ng-src="{{getThumbUrl(notebook.id)}}" class="img-responsive" alt="Responsive image">
+			</div>
 		</div>
 	</a>
 </div>
