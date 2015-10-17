@@ -7,7 +7,7 @@ define(['angular'], function(angular) {
     .directive("thumbnail", function(){
         return {
             restrict: "E",
-            replace:false,
+            replace: true,
             templateUrl: "grid-item.html",
             link: function(scope, iElement, iAttrs, controller){
                 // console.log($vid);

@@ -1270,23 +1270,23 @@ pre > .vt100 {
     border: 1px solid #CCCCCC;
     background-color: #FFFFFF;
 
-    transform: translateY(0);
-    -webkit-transition: transform 0.3s, background-color 0.4s, ease-in-out;
-    -moz-transition: transform 0.3s, background-color 0.4s, ease-in-out;
-    -o-transition: transform 0.3s, background-color 0.4s, ease-in-out;
-    transition: transform 0.3s, background-color 0.4s, box-shadow: 0.6s ease-in-out;
+    transition-property: margin-top, background-color, box-shadow;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-in-out;
 
     -webkit-box-shadow: none;
     -moz-box-shadow:    none;
     box-shadow:         none;
+    margin-top: 0;
 }
 
 .grid-item:hover {
-    transform: translateY(10px);
+    /*transform: translateY(10px);*/
     background-color: #F1F1F1;
     -webkit-box-shadow: 3px 3px 16px 0px rgba(50, 50, 50, 0.75);
     -moz-box-shadow:    3px 3px 16px 0px rgba(50, 50, 50, 0.75);
     box-shadow:         3px 3px 16px 0px rgba(50, 50, 50, 0.75);
+    margin-top: 20px;
 }
 
 .grid-item a {
@@ -1331,33 +1331,11 @@ pre > .vt100 {
 @media (min-width: 800px) and (max-width: 1100px) {
 
     .grid-item { 
-      width: 32%; 
-      margin: 2%;
+        width: 30%;
+        margin: 1.666%;
     }
 }
 
-@media (min-width: 400px) and (max-width: 800px) {
-
-    .grid-item { 
-      width: 48%; 
-      margin: 1%;
-    }
-}
-
-@media (min-width: 100px) and (max-width: 400px) {
-
-    .grid-item { 
-      width: 100%;
-    }
-}
-
-@media (min-width: 800px) and (max-width: 1100px) {
-
-    .grid-item { 
-      width: 30%; 
-      margin: 1%;
-    }
-}
 
 @media (min-width: 400px) and (max-width: 800px) {
 
