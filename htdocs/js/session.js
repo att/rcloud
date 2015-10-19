@@ -50,7 +50,7 @@ RCloud.end_cell_output = function(context_id, error) {
 
 function forward_to_context(type, has_continuation) {
     return function() {
-        var res = invoke_context_callback.apply(null, [type].concat(arguments));
+        var res = invoke_context_callback.apply(null, [type].concat(Array.prototype.slice.call(arguments, 0)));
         if(!res && has_continuation)
             arguments[arguments.length-1]("context does not support input", null);
     };
