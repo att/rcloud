@@ -1257,7 +1257,7 @@ pre > .vt100 {
 .grid {
     visibility: hidden;
     transform-style: preserve-3d;
-    perspective: 300px;
+    perspective: 1000px;
     perspective-origin: 50% 50%;
    
 }
@@ -1270,7 +1270,7 @@ pre > .vt100 {
     border: 1px solid #CCCCCC;
     background-color: #FFFFFF;
 
-    transition-property: margin-top, background-color, box-shadow;
+    transition-property: transform, margin-top, background-color, box-shadow;
     transition-duration: 0.3s;
     transition-timing-function: ease-in-out;
 
@@ -1286,7 +1286,8 @@ pre > .vt100 {
     -webkit-box-shadow: 3px 3px 16px 0px rgba(50, 50, 50, 0.75);
     -moz-box-shadow:    3px 3px 16px 0px rgba(50, 50, 50, 0.75);
     box-shadow:         3px 3px 16px 0px rgba(50, 50, 50, 0.75);
-    margin-top: 20px;
+    /*margin-top: 20px;*/
+    transform: translateZ(12px);
 }
 
 .grid-item a {
@@ -1368,4 +1369,9 @@ pre > .vt100 {
     color: black;
     font-size: 18px;
     text-decoration: none;
+}
+
+
+#discovery-page-dialog .container {
+    background-image: url('/img/bkg_blue1.jpg');
 }
