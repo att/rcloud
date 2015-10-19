@@ -3839,6 +3839,11 @@ var oob_messages = {
     "console.in": forward_to_context('in', true)
 };
 
+function selection_out(ctx, sel) {
+    if(ctx && output_contexts_[ctx] && output_contexts_[ctx].html_out)
+        output_contexts_[ctx].selection_out(sel);
+}
+
 var on_message = function(v, k) {
     v = v.value.json();
     console.log("OOB message arrived: ['"+v[0]+"']" + (oob_messages[v[0]]?'':' (unhandled)'));
@@ -3985,7 +3990,8 @@ RCloud.session = {
         return rclient_promise(allow_anonymous);
     },
     on_data: on_data,
-    on_oob_message: on_message
+    on_oob_message: on_message,
+    selection_out: selection_out
 };
 
 })();
