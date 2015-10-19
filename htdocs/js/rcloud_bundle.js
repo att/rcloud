@@ -3732,7 +3732,23 @@ Notebook.sanitize = function(notebook) {
 (function() {
 
 function append_session_info(ctx, text) {
+    // usually a punt because ctx is bad
     RCloud.UI.session_pane.append_text(text);
+}
+
+function invoke_context_callback(type /*, ... */) {
+    var ctx = arguments[1];
+    var args = Array.prototype.slice.call(arguments, 2);
+    var context = output_contexts_[ctx];
+    console.log("forward_to_context, ctx="+ctx+", type="+type+", old.ctx="+context);
+    if(context && context[type]) {
+        context[type].apply(context, args);
+        return true;
+    }
+    else {
+        append_session_info(ctx, args[0]);
+        return false;
+    }
 }
 
 function handle_img(msg, ctx, url, dims, device, page) {
@@ -3743,10 +3759,7 @@ function handle_img(msg, ctx, url, dims, device, page) {
     // the image from whatever cell it was in, simply by wrapping the plot in
     // a jquery object, and jquery selection.append removes it from previous parent
     var image = RCloud.UI.image_manager.update(url, dims, device, page);
-    if(ctx && output_contexts_[ctx] && output_contexts_[ctx].html_out)
-        output_contexts_[ctx].selection_out(image.div());
-    else
-        append_session_info(image.div());
+    invoke_context_callback('selection_out', ctx, image.div());
 }
 
 var output_contexts_ = {};
@@ -3762,24 +3775,15 @@ RCloud.unregister_output_context = function(context_id) {
 };
 
 RCloud.end_cell_output = function(context_id, error) {
-    if(output_contexts_[context_id] && output_contexts_[context_id].end)
-        output_contexts_[context_id].end(error);
+    invoke_context_callback('end', context_id, error);
     RCloud.unregister_output_context(context_id);
 };
 
 function forward_to_context(type, has_continuation) {
     return function() {
-        var ctx = arguments[0];
-        var args = Array.prototype.slice.call(arguments, 1);
-        var context = output_contexts_[ctx];
-        console.log("forward_to_context, ctx="+ctx+", type="+type+", old.ctx="+context);
-        if(context && context[type])
-            context[type].apply(context, args);
-        else {
-            append_session_info.apply(null, args);
-            if(has_continuation)
-                arguments[arguments.length-1]("context does not support input", null);
-        }
+        var res = invoke_context_callback.apply(null, [type].concat(Array.prototype.slice.call(arguments, 0)));
+        if(!res && has_continuation)
+            arguments[arguments.length-1]("context does not support input", null);
     };
 }
 
@@ -3806,7 +3810,7 @@ var oob_sends = {
         // FIXME: do somethign with it - eventually this
         // should be a modal thing - for now we should at least
         // show the content ...
-        append_session_info("what: "+ what + "\ncontents:" + content + "\nname: "+name+"\n");
+        append_session_info('editor', "what: "+ what + "\ncontents:" + content + "\nname: "+name+"\n");
     },
     "console.out": forward_to_context('out'),
     "console.msg": forward_to_context('msg'),
@@ -3826,7 +3830,7 @@ var oob_sends = {
     }
 };
 
-var on_data = function(v) {
+function on_data(v) {
     v = v.value.json();
     // FIXME: this is a temporary debugging to see all OOB calls irrespective of handlers
     console.log("OOB send arrived: ['"+v[0]+"']" + (oob_sends[v[0]]?'':' (unhandled)'));
@@ -3839,12 +3843,7 @@ var oob_messages = {
     "console.in": forward_to_context('in', true)
 };
 
-function selection_out(ctx, sel) {
-    if(ctx && output_contexts_[ctx] && output_contexts_[ctx].html_out)
-        output_contexts_[ctx].selection_out(sel);
-}
-
-var on_message = function(v, k) {
+function on_message(v, k) {
     v = v.value.json();
     console.log("OOB message arrived: ['"+v[0]+"']" + (oob_messages[v[0]]?'':' (unhandled)'));
     if(oob_messages[v[0]]) {
@@ -3991,7 +3990,7 @@ RCloud.session = {
     },
     on_data: on_data,
     on_oob_message: on_message,
-    selection_out: selection_out
+    invoke_context_callback: invoke_context_callback
 };
 
 })();
