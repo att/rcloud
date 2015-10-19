@@ -5,6 +5,21 @@ function append_session_info(ctx, text) {
     RCloud.UI.session_pane.append_text(text);
 }
 
+function invoke_context_callback(type /*, ... */) {
+    var ctx = arguments[1];
+    var args = Array.prototype.slice.call(arguments, 2);
+    var context = output_contexts_[ctx];
+    console.log("forward_to_context, ctx="+ctx+", type="+type+", old.ctx="+context);
+    if(context && context[type]) {
+        context[type].apply(context, args);
+        return true;
+    }
+    else {
+        append_session_info(ctx, args[0]);
+        return false;
+    }
+}
+
 function handle_img(msg, ctx, url, dims, device, page) {
     console.log("handle_img ", msg, " device ", device, " page ", page, " url ", url);
     if(!url)
@@ -13,10 +28,7 @@ function handle_img(msg, ctx, url, dims, device, page) {
     // the image from whatever cell it was in, simply by wrapping the plot in
     // a jquery object, and jquery selection.append removes it from previous parent
     var image = RCloud.UI.image_manager.update(url, dims, device, page);
-    if(ctx && output_contexts_[ctx] && output_contexts_[ctx].selection_out)
-        output_contexts_[ctx].selection_out(image.div());
-    else
-        append_session_info(ctx, image.div());
+    invoke_context_callback('selection_out', ctx, image.div());
 }
 
 var output_contexts_ = {};
@@ -32,24 +44,15 @@ RCloud.unregister_output_context = function(context_id) {
 };
 
 RCloud.end_cell_output = function(context_id, error) {
-    if(output_contexts_[context_id] && output_contexts_[context_id].end)
-        output_contexts_[context_id].end(error);
+    invoke_context_callback('end', context_id, error);
     RCloud.unregister_output_context(context_id);
 };
 
 function forward_to_context(type, has_continuation) {
     return function() {
-        var ctx = arguments[0];
-        var args = Array.prototype.slice.call(arguments, 1);
-        var context = output_contexts_[ctx];
-        console.log("forward_to_context, ctx="+ctx+", type="+type+", old.ctx="+context);
-        if(context && context[type])
-            context[type].apply(context, args);
-        else {
-            append_session_info(ctx, args.join(','));
-            if(has_continuation)
-                arguments[arguments.length-1]("context does not support input", null);
-        }
+        var res = invoke_context_callback.apply(null, [type].concat(arguments));
+        if(!res && has_continuation)
+            arguments[arguments.length-1]("context does not support input", null);
     };
 }
 
@@ -108,11 +111,6 @@ function on_data(v) {
 var oob_messages = {
     "console.in": forward_to_context('in', true)
 };
-
-function selection_out(ctx, sel) {
-    if(ctx && output_contexts_[ctx] && output_contexts_[ctx].html_out)
-        output_contexts_[ctx].selection_out(sel);
-}
 
 function on_message(v, k) {
     v = v.value.json();
@@ -261,7 +259,7 @@ RCloud.session = {
     },
     on_data: on_data,
     on_oob_message: on_message,
-    selection_out: selection_out
+    invoke_context_callback: invoke_context_callback
 };
 
 })();
