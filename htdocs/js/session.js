@@ -1,6 +1,7 @@
 (function() {
 
 function append_session_info(ctx, text) {
+    // usually a punt because ctx is bad
     RCloud.UI.session_pane.append_text(text);
 }
 
@@ -12,10 +13,10 @@ function handle_img(msg, ctx, url, dims, device, page) {
     // the image from whatever cell it was in, simply by wrapping the plot in
     // a jquery object, and jquery selection.append removes it from previous parent
     var image = RCloud.UI.image_manager.update(url, dims, device, page);
-    if(ctx && output_contexts_[ctx] && output_contexts_[ctx].html_out)
+    if(ctx && output_contexts_[ctx] && output_contexts_[ctx].selection_out)
         output_contexts_[ctx].selection_out(image.div());
     else
-        append_session_info(image.div());
+        append_session_info(ctx, image.div());
 }
 
 var output_contexts_ = {};
@@ -45,7 +46,7 @@ function forward_to_context(type, has_continuation) {
         if(context && context[type])
             context[type].apply(context, args);
         else {
-            append_session_info.apply(null, args);
+            append_session_info(ctx, args.join(','));
             if(has_continuation)
                 arguments[arguments.length-1]("context does not support input", null);
         }
@@ -75,7 +76,7 @@ var oob_sends = {
         // FIXME: do somethign with it - eventually this
         // should be a modal thing - for now we should at least
         // show the content ...
-        append_session_info("what: "+ what + "\ncontents:" + content + "\nname: "+name+"\n");
+        append_session_info('editor', "what: "+ what + "\ncontents:" + content + "\nname: "+name+"\n");
     },
     "console.out": forward_to_context('out'),
     "console.msg": forward_to_context('msg'),
@@ -95,7 +96,7 @@ var oob_sends = {
     }
 };
 
-var on_data = function(v) {
+function on_data(v) {
     v = v.value.json();
     // FIXME: this is a temporary debugging to see all OOB calls irrespective of handlers
     console.log("OOB send arrived: ['"+v[0]+"']" + (oob_sends[v[0]]?'':' (unhandled)'));
@@ -113,7 +114,7 @@ function selection_out(ctx, sel) {
         output_contexts_[ctx].selection_out(sel);
 }
 
-var on_message = function(v, k) {
+function on_message(v, k) {
     v = v.value.json();
     console.log("OOB message arrived: ['"+v[0]+"']" + (oob_messages[v[0]]?'':' (unhandled)'));
     if(oob_messages[v[0]]) {
