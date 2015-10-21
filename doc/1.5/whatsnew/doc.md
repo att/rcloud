@@ -49,11 +49,11 @@ Please see [1.5 Current GUI Documentation](/rcloud/doc/1.5/guidoc/doc.html) for 
 
 ### Locator
 
-`locator()` is supported, enabling point+click R tools such as `identify()`. When the locator is active, RCloud adds a blue border around a plot and changes the cursor to a crosshair:
+The standard R [`locator()` command](https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/locator.html) is supported, enabling point+click R tools such as `identify()`. When the locator is active, RCloud adds a blue border around a plot and changes the cursor to a crosshair:
 
 ![locator](img/locator.png)
 
-To add points, left-click on the plot. To end/abort a locator request, press the &lt;ESC&gt; key. Once you have selected your locations, RCloud displays them below the plot:
+To add points, left-click on the plot. To end/abort a locator request, press the &lt;ESC&gt; key. Once you have selected your locations, `locator()` returns the points clicked:
 
 ![locator](img/locator_res.png)
 

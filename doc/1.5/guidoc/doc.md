@@ -418,11 +418,11 @@ Note that you can only save plots created in R cells.
 
 ### Locators
 
-RCloud supports the `locator()` function. When the locator is active, RCloud adds a blue border around the plot and changes the cursor to a crosshair:
+RCloud supports the standard R [`locator()` function](https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/locator.html). When the locator is active, RCloud adds a blue border around the plot and changes the cursor to a crosshair:
 
 <a href="img/locator.png"><img class="trunc" src="img/locator.png" /></a>
 
-To add points, left-click anywhere on the plot. To end or abort a locator request, press the &lt;ESC&gt; key. Once you have selected your locations, RCloud displays them below the plot:
+To add points, left-click anywhere on the plot. To end or abort a locator request, press the &lt;ESC&gt; key. Once you have selected your locations, `locator()` returns the points clicked:
 
 <a href="img/locator_res.png"><img class="trunc" src="img/locator_res.png" /></a>
 
