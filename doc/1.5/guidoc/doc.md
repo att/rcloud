@@ -714,7 +714,7 @@ To find and replace text within your notebook, type Ctrl-H (Win/Linux) or Cmd-Op
 
 ### Recent Notebooks
 
-Access recent notebooks via the Recent link in the Notebooks titlebar:
+Access your recently opened notebooks via the Recent link in the Notebooks titlebar:
 
 ![recent](img/recent.png)
 

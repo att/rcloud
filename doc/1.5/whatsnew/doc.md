@@ -65,7 +65,7 @@ This functionality is only available in R cells.
 
 ### Recent Notebooks
 
-Access recent notebooks via the Recent link in the Notebooks titlebar:
+Access your recently opened notebooks via the Recent link in the Notebooks titlebar:
 
 ![recent](img/recent.png)
 
