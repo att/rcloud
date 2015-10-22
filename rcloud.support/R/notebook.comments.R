@@ -8,21 +8,18 @@ rcloud.get.comments <- function(id, source = NULL) {
 }
 
 .solr.post.comment <- function(id, content, comment.id) {
-  url <- getConf("solr.url")
+  
   ## query ID to see if it has existing comments
-  solr.url <- URLencode(paste0(url, "/select?q=id:",id,"&start=0&rows=1000&wt=json&sort=starcount desc"))
-  solr.res <- fromJSON(getURL(solr.url,.encoding = 'utf-8',.mapUnicode=FALSE))
+  query <- paste0("q=id:",id,"&start=0&rows=1000&wt=json&sort=starcount desc")
+  solr.res <- .solr.get(URLencode(query))
   comment.content <- fromJSON(content)
   
   ## pick set/add depending on the exsitng content
   method <- if(is.null(solr.res$response$docs[[1]]$comments)) "set" else "add"
 
   ## send the update request
-  curlTemplate <- paste0(url,"/update/json?commit=true")
   metadata <- paste0('{"id":"', id, '","comments":{"', method, '":"', paste(comment.id,':::',comment.content,':::',.session$username), '"}}')
-  postForm(curlTemplate, .opts = list(
-                           postfields = paste0("[",metadata,"]"),
-                           httpheader = c('Content-Type' = 'application/json',Accept = 'application/json')))
+ .solr.post(metadata)
 }
 
 rcloud.post.comment <- function(id, content)
@@ -35,15 +32,12 @@ rcloud.post.comment <- function(id, content)
 
 .solr.modify.comment <- function(id, content, cid) {
   url <- getConf("solr.url")
-  solr.url <- URLencode(paste0(url, "/select?q=id:",id,"&start=0&rows=1000&fl=comments&wt=json"))
-  solr.res <- fromJSON(getURL(solr.url,.encoding = 'utf-8',.mapUnicode=FALSE))
+  query <- paste0("q=id:",id,"&start=0&rows=1000&fl=comments&wt=json")
+  solr.res <- .solr.get(URLencode(query))
   index <- grep(cid, solr.res$response$docs[[1]]$comments)
   solr.res$response$docs[[1]]$comments[[index]] <- paste(cid, fromJSON(content)$body, sep=' : ')
-  curlTemplate <- paste0(url,"/update/json?commit=true")
   metadata <- paste0('{"id":"',id,'","comments":{"set":[\"',paste(solr.res$response$docs[[1]]$comments, collapse="\",\""),'\"]}}')
-  postForm(curlTemplate, .opts = list(
-                           postfields = paste0("[",metadata,"]"),
-                           httpheader = c('Content-Type' = 'application/json',Accept = 'application/json')))
+  .solr.post(metadata)
 }
 
 rcloud.modify.comment <- function(id, cid, content)
@@ -56,15 +50,12 @@ rcloud.modify.comment <- function(id, cid, content)
 
 .solr.delete.comment <- function(id, cid) {
   url <- getConf("solr.url")
-  solr.url <- URLencode(paste0(url, "/select?q=id:",id,"&start=0&rows=1000&fl=comments&wt=json"))
-  solr.res <- fromJSON(getURL(solr.url,.encoding = 'utf-8',.mapUnicode=FALSE))
+  query <- paste0("q=id:",id,"&start=0&rows=1000&fl=comments&wt=json")
+  solr.res <- .solr.get(URLencode(query))
   index <- grep(cid, solr.res$response$docs[[1]]$comments)
   solr.res$response$docs[[1]]$comments <- solr.res$response$docs[[1]]$comments[-index]
-  curlTemplate <- paste0(url,"/update/json?commit=true")
   metadata <- paste0('{"id":"',id,'","comments":{"set":[\"',paste(solr.res$response$docs[[1]]$comments, collapse="\",\""),'\"]}}')
-  postForm(curlTemplate, .opts = list(
-                           postfields = paste0("[",metadata,"]"),
-                           httpheader = c('Content-Type' = 'application/json',Accept = 'application/json')))
+  .solr.post(metadata)
 }
 
 rcloud.delete.comment <- function(id,cid)
