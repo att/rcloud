@@ -40,10 +40,9 @@ Notebook.Cell.postprocessors.add({
 
                     f(function(err, future) {
                         var data;
-                        if (RCloud.is_exception(future)) {
-                            data = RCloud.exception_message(future);
+                        if (err) {
                             $(that).replaceWith(function() {
-                                return ui_utils.string_error(data);
+                                return ui_utils.string_error(err[0]);
                             });
                         } else {
                             data = future();
@@ -100,13 +99,26 @@ Notebook.Cell.preprocessors.add({
             var deferred_result_uuid_, deferred_regexp_, deferred_replacement_;
             function make_deferred_regexp() {
                 deferred_result_uuid_ = rcloud.deferred_knitr_uuid;
-                deferred_regexp_ = new RegExp(deferred_result_uuid_ + '\\|[@a-zA-Z_0-9.]*', 'g');
+                deferred_regexp_ = new RegExp(deferred_result_uuid_ + '\\|[\\+a-zA-Z_0-9.]*', 'g');
                 deferred_replacement_ = '<span class="deferred-result">$&</span>';
             }
             return function(r) {
                 if(!deferred_result_uuid_ != rcloud.deferred_knitr_uuid)
                     make_deferred_regexp();
-                return r.replace(deferred_regexp_, deferred_replacement_);
+                // manually replace all, and replace any `+` within matches with `@`
+                var x = deferred_regexp_.exec(r);
+                if(x) {
+                    var parts = [], s=0;
+                    while(x) {
+                        parts.push(r.substring(s, x.index));
+                        parts.push(deferred_replacement_.replace('$&', r.substr(x.index, x[0].length).replace('+', '@')));
+                        s = x.index + x[0].length;
+                        x = deferred_regexp_.exec(r);
+                    }
+                    parts.push(r.substring(s));
+                    r = parts.join('');
+                }
+                return r;
             };
         })()
     }
