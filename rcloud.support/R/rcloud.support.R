@@ -339,7 +339,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
         enc <- .encrypt.by.group(list(files=l), group$id)
         ## update contains just the encrypted piece
         ## if this is a conversion, remove the unencrypted pieces
-        cfiles <- if (!isTRUE(old$content$is.encrypted)) .zlist(names(old$content$files)) else list()
+        cfiles <- if (!isTRUE(old$content$is.encrypted)) .zlist(names(rcloud.get.notebook(id, raw=TRUE)$content$files)) else list()
         cfiles[[.encryped.content.filename]] <- list(content=encode.b64(enc))
         content$files <- cfiles
     }
