@@ -14,11 +14,16 @@ rcloud.prefix.uuid <- function()
   if (is.null(.session$result.prefix.uuid)) .session$result.prefix.uuid <- generate.uuid() else .session$result.prefix.uuid
 
 print.deferred_result <- function(x, ...) {
-    ## this is a horribe, horrible hack - we try to detect
-    ## if "knit" is anywhere on the call stack to detect
-    ## knitr processing where we cannot use OOB but have to
-    ## use a string result
-    if (any(sapply(sys.calls(), function(o) identical(o[[1]], quote(knit))))) return(cat(unclass(x), "\n", sep=''))
-    flush.console()
-    .rc.oobSend("deferred.result",unclass(x))
+  ## this is a horrible, horrible hack - we try to detect
+  ## if "knit" is anywhere on the call stack to detect
+  ## knitr processing where we cannot use OOB but have to
+  ## use a string result
+  if (any(sapply(sys.calls(), function(o) identical(o[[1]], quote(knit))))) {
+    # Pandoc apparently thinks anything with `@` is an email address
+    # so temporarily replace with `+` (and replace back on client before invoking)
+    x <- gsub('@', '+', unclass(x), fixed = TRUE)
+    return(cat(x, "\n", sep=''))
+  }
+  flush.console()
+  .rc.oobSend("deferred.result",unclass(x))
 }
