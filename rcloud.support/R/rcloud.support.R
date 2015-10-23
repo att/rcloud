@@ -515,12 +515,13 @@ stitch.search.result <- function(splitted, type,k) {
 }
 
 rcloud.create.notebook <- function(content, is.current = TRUE) {
-  res <- create.gist(content, ctx = .rcloud.get.gist.context())
-  if (res$ok && is.current) {
-    .session$current.notebook <- res
-    rcloud.reset.session()
-  }
-  rcloud.augment.notebook(res)
+    content <- .gist.binary.process.outgoing(NULL, content)
+    res <- create.gist(content, ctx = .rcloud.get.gist.context())
+    if (res$ok && is.current) {
+        .session$current.notebook <- res
+        rcloud.reset.session()
+    }
+    rcloud.augment.notebook(res)
 }
 
 rcloud.rename.notebook <- function(id, new.name) {
