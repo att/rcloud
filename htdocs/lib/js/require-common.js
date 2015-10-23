@@ -39,6 +39,17 @@ var common_deps = [
 ];
 
 function start_require(deps) {
+    requirejs.onError = function (err) {
+        if (err.requireType === 'timeout') {
+            var	lines =	err.toString().split('\n');
+            lines = lines.slice(0, lines.length-1); // don't include link to confusing requirejs docs
+            RCloud.UI.fatal_dialog(["Sorry, the page timed out."].concat(lines).join('\n'), "Reload", window.location.href);
+        }
+        else {
+            throw err;
+        }
+    };
+
     require(deps,
             function(Promise, _, d3, sha256) {
                 window.Promise = Promise;
@@ -46,6 +57,5 @@ function start_require(deps) {
                 window.d3 = d3;
                 window.sha256 = sha256;
                 main();
-
-            });
+	    });
 }
