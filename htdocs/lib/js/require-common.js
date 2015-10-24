@@ -32,7 +32,7 @@ var common_deps = [
     // soon-to-be-amdized
     "jquery",
     // other
-    "hl.min", "jDataView", "jquery.cookies.2.2.0",
+    "hl.min", "jquery.cookies.2.2.0",
     "jquery.bootpag", "jquery.scrollto", "laconic", "jquery-ui",
     "bootstrap", "peg-0.6.2.min",
     "rserve", "tree.jquery", "FileSaver"
