@@ -44,7 +44,7 @@ function main() {
                 notebook = result[0];
             });
         }
-        var tag = getURLParameter("tag");   
+        var tag = getURLParameter("tag");
         if(!version && tag) {
             promise = promise.then(function() {
                 return rcloud.get_version_by_tag(notebook, tag)
@@ -54,6 +54,13 @@ function main() {
             });
         };
 
+        editor.load_everything()
+        .then(function(){
+            RCloud.UI.discovery_page.init();
+        });
+
+
+        return;
         promise = promise.then(function() {
             return shell.load_notebook(notebook, version).then(
                 function(result) {

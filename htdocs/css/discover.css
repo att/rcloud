@@ -1,0 +1,121 @@
+.grid {
+    visibility: hidden;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    perspective-origin: 50% 50%;
+   
+}
+
+.grid-item {
+    color: black;
+    padding: 1px;
+    padding-top: 10px;
+    border-radius: 5px;
+    border: 1px solid #CCCCCC;
+    background-color: #FFFFFF;
+
+    transition-property: margin-top, background-color, box-shadow;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-in-out;
+
+    -webkit-box-shadow: none;
+    -moz-box-shadow:    none;
+    box-shadow:         none;
+    margin-top: 0;
+}
+
+.grid-item:hover {
+    /*transform: translateY(10px);*/
+    background-color: #F1F1F1;
+    -webkit-box-shadow: 3px 3px 16px 0px rgba(50, 50, 50, 0.75);
+    -moz-box-shadow:    3px 3px 16px 0px rgba(50, 50, 50, 0.75);
+    box-shadow:         3px 3px 16px 0px rgba(50, 50, 50, 0.75);
+    margin-top: 20px;
+   /* transform: translateZ(12px);*/
+}
+
+.grid-item a {
+    text-decoration: none;
+    color: black;
+}
+
+.grid-item h1{
+    font-size: 17px;
+    margin: 0;
+}
+
+.grid-item h2 {
+    font-size: 11px;
+    margin: 0;
+}
+
+.grid-item .header {
+
+}
+
+.grid-item .header h2 {
+    margin-top: 2px;
+}
+
+.grid-item .image-holder {
+    margin-top: 13px;
+    margin-bottom: 10px;
+    min-height: 222px;
+/*    background-image: url('/img/graph2.png');
+    background-size: cover;*/
+}
+
+@media (min-width: 1100px) {
+
+    .grid-item { 
+        width: 23%;
+        margin: 1%;
+    }
+}
+
+@media (min-width: 800px) and (max-width: 1100px) {
+
+    .grid-item { 
+        width: 30%;
+        margin: 1.666%;
+    }
+}
+
+
+@media (min-width: 400px) and (max-width: 800px) {
+
+    .grid-item { 
+      width: 48%;
+      margin: 1%;
+    }
+}
+
+@media (min-width: 100px) and (max-width: 400px) {
+    .grid-item { 
+      width: 100%;
+    }
+}
+
+#discoveryLoader {
+    position: absolute;
+    left: 50%;
+    top: 200px;
+    margin-left: -52px;
+}
+
+.grid-item .star-holder {
+    position: absolute;
+    top: -11px;
+    right: 0;
+}
+
+.grid-item .star-holder button {
+    color: black;
+    font-size: 18px;
+    text-decoration: none;
+}
+
+
+#discovery-page-dialog .container {
+    /*background-image: url('/img/bkg_blue1.jpg');*/
+}

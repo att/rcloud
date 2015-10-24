@@ -2,6 +2,8 @@ define(['angular'], function(angular) {
 
    'use strict';
 
+   console.log('in the controller');
+
 
     return angular.module('myapp.discovery', [])
     .directive("thumbnail", function(){

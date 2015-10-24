@@ -5,7 +5,6 @@ RCloud.UI.discovery_page = (function() {
         init: function(state) {
 
             var that = this;
-
             this.buildDom();
 
             require([
@@ -14,9 +13,12 @@ RCloud.UI.discovery_page = (function() {
                 './../../lib/js/imagesloaded',
                 './../../lib/js/isotope.pkgd.min'
 
+                //, app, imagesLoaded, Isotope
               ], function(angular, app, imagesLoaded, Isotope) {
                   'use strict';
 
+                  console.log('good');
+    
                   //console.log('imagesLoaded is '+imagesLoaded);
                   window.imagesLoaded = imagesLoaded;
                   window.Isotope = Isotope;
@@ -27,16 +29,17 @@ RCloud.UI.discovery_page = (function() {
 
                   //var $html = angular.element(document.getElementsByTagName('html')[0]);
                   angular.element(document).ready(function() {
-                      _.delay(function() {
-                        angular.bootstrap($('#discovery-app')[0], ['DiscoveryPageApp']);
-                        angular.resumeBootstrap();
-                      }, 100);
 
-                      _.delay(function() {
-      
-                        $('#discovery-page-dialog').modal({keyboard: false});
-                      }, 200);
-       
+                    _.delay(function() {
+                      angular.bootstrap($('#discovery-app')[0], ['DiscoveryPageApp']);
+                      angular.resumeBootstrap();
+                    }, 100);
+
+                    _.delay(function() {
+
+                      $('#discovery-page-dialog').modal({keyboard: false});
+                    }, 200);
+     
                   });
 
             });
