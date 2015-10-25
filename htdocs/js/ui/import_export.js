@@ -90,14 +90,6 @@ RCloud.UI.import_export = (function() {
                         });
                     }
                 },
-                show_discovery_page: {
-                    sort: 10000,
-                    text: "Show Discovery Page",
-                    modes: ['edit'],
-                    action: function() {
-                        return RCloud.UI.discovery_page.init();
-                    }
-                },
                 import_notebook_gist: {
                     sort: 6000,
                     text: "Import Notebook from File",
