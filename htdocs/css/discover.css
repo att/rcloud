@@ -1,3 +1,8 @@
+#main-div {
+    margin-top: 50px;
+}
+
+
 .grid {
     visibility: hidden;
     transform-style: preserve-3d;
@@ -60,7 +65,7 @@
 .grid-item .image-holder {
     margin-top: 13px;
     margin-bottom: 10px;
-    min-height: 222px;
+    min-height: 100px;
 /*    background-image: url('/img/graph2.png');
     background-size: cover;*/
 }

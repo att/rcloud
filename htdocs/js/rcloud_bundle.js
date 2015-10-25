@@ -8933,7 +8933,7 @@ RCloud.UI.discovery_page = (function() {
 
                     _.delay(function() {
 
-                      $('#discovery-page-dialog').modal({keyboard: false});
+                      //$('#discovery-page-dialog').modal({keyboard: false});
                     }, 200);
      
                   });
@@ -8944,19 +8944,21 @@ RCloud.UI.discovery_page = (function() {
 
         buildDom: function() {
 
-          var body = $('<div class="container"></div>');
-            body.append(RCloud.UI.panel_loader.load_snippet('discovery-page-modal'));
+          // var body = $('<div class="container"></div>');
+          //   body.append();
 
-          var header = $(['<div class="modal-header">',
-                        '<button type="button" class="close" aria-hidden="true">&times;</button>',
-                        '<img src="/img/logo_rcloud.png" width="132" height="30" style="margin-top: -10px">'+
-                        '<h3 style="display: inline-block;margin-left: 22px;">DISCOVERY PAGE</h3>',
-                        '</div>'].join(''));
-          var dialog = $('<div id="discovery-page-dialog" class="modal fade"></div>')
-            .append($('<div class="modal-dialog full"></div>')
-            .append($('<div class="modal-content"></div>')
-            .append(header).append(body)));
-          $("body").append(dialog);
+          // var header = $(['<div class="modal-header">',
+          //               '<button type="button" class="close" aria-hidden="true">&times;</button>',
+          //               '<img src="/img/logo_rcloud.png" width="132" height="30" style="margin-top: -10px">'+
+          //               '<h3 style="display: inline-block;margin-left: 22px;">DISCOVERY PAGE</h3>',
+          //               '</div>'].join(''));
+          // var dialog = $('<div id="discovery-page-dialog" class="modal fade"></div>')
+          //   .append($('<div class="modal-dialog full"></div>')
+          //   .append($('<div class="modal-content"></div>')
+          //   .append(header).append(body)));
+
+            
+          $("#main-div").append(RCloud.UI.panel_loader.load_snippet('discovery-page-modal'));
 
         }        
     };
