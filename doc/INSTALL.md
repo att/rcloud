@@ -95,8 +95,8 @@ If your computer doesn't resolve its hostname to what you will be using,
 
     host: 127.0.0.1
 
-Then go to `http://127.0.0.1:8080/login.html`, click login, and authorize
-access to your account through github.
+Then go to `http://127.0.0.1:8080/login.R` and authorize access to your
+account through github.
 
 
 ## Installing from a distribution tar ball
