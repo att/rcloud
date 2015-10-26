@@ -58,25 +58,6 @@ function main() {
         .then(function(){
             RCloud.UI.discovery_page.init();
         });
-
-
-        return;
-        promise = promise.then(function() {
-            return shell.load_notebook(notebook, version).then(
-                function(result) {
-                    document.title = result.description + " - RCloud";
-                }
-            );
-        }).then(function() {
-            if (Number(quiet)) {
-                $("#output > pre").first().hide();
-            }
-            rcloud.install_notebook_stylesheets().then(function() {
-                shell.notebook.controller.run_all().then(function() {
-                    shell.notebook.controller.hide_r_source();
-                });
-            });
-        });
         return promise;
     }).catch(function(err) {
         console.log(err.stack);
