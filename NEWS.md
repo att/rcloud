@@ -3,13 +3,25 @@
 
 ### Bugfixes
 
+* Converting a notebook to encrypted would fail if the notebook contained
+  binary assets (#1616)
+
+* Forking a foreign notebook (from a different gist source) with a binary
+  asset would fail (#1606)
+
 * Anonymous users had no RCloud home even if `exec.anon.user` is,
-   specified which caused issues (among other things) with file upload
-   (#1709)
+  specified which caused issues (among other things) with file upload
+  (#1709)
 
 * Redirects through the login page did not work in proxified setup,
   most notably re-authentication on links containing a notebook ID would
   lose the notebook reference by the time the user was authenticated (#1419).
+
+* Markdown and RMarkdown containing deferred results were formatted as
+  mangled mailto: links under compute separation (#1676 / #1725)
+
+* If loading any assets for the RCloud page timed out, no message was
+  displayed (#1710)
 
 
 ## RCloud 1.5
