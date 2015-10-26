@@ -2,9 +2,9 @@ define([
     'angular',
     './../../js/ui/discovery_page_controller.js'
     ], function (angular) {
-        'use strict';
+    'use strict';
 
-        return angular.module('DiscoveryPageApp', [
-            'myapp.discovery'
-        ]);
+    return angular.module('DiscoveryPageApp', [
+        'myapp.discovery'
+    ]);
 });

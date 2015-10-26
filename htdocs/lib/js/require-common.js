@@ -6,7 +6,10 @@ requirejs_config_obj = {
         "rcloud_bundle": "../../js/rcloud_bundle",
         "ace": "../ace_bundle",
         editor_tab: "../../editor_tab",
-        shell_tab: "../../shell_tab"
+        shell_tab: "../../shell_tab",
+        "angular": "angular",
+        "angular-selectize": "angular-selectize",
+        "selectize": "selectize"
     },
     "shim": {
         "tree.jquery": ["jquery"],

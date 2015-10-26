@@ -266,25 +266,7 @@
   </div>
 </script>
 
-<script type="text/html" id="discovery-page-modal">
-  <div class="modal-body" id='discovery-app' ng-controller='DiscoveryPageController' ng-cloak>
-    <div style='position:relative'>
-      <div id='discoveryLoader' style="margin-bottom: 13px;">Loading Notebooks...</div>
-      <div class="row" style="margin-bottom: 10px;">
-          <div class="btn-group pull-right" role="group" aria-label="..." style="margin-right: 16px;">
-            <button type="button" class="btn btn-default active">Latest</button>
-            <button type="button" class="btn btn-default">Most Stars</button>
-          </div>
-      </div>
-      <div class="row">
-          <div class="grid">
-            <thumbnail ng-click="thumbClicked($index)" ng-repeat="notebook in recentNotebooks" >
-            </thumbnail>
-          </div>
-      </div>
-    </div>
-  </div>
-</script>
+
 
 <script type="text/html" id="notebook-protection-modal">
 

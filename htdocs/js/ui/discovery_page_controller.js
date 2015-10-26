@@ -2,7 +2,6 @@ define(['angular'], function(angular) {
 
    'use strict';
 
-
     return angular.module('myapp.discovery', [])
     .directive("thumbnail", function(){
         return {
@@ -12,6 +11,8 @@ define(['angular'], function(angular) {
             link: function(scope, iElement, iAttrs, controller){
                 // console.log($vid);
                  iElement.bind("load" , function(e){ 
+
+                    console.log('on load happend');
                     // success, "onload" catched
                     // now we can do specific stuff:
 

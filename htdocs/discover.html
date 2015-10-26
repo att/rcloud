@@ -1,0 +1,61 @@
+<html>
+  <head>
+    <title>RCloud</title>
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.png" />
+    <link rel="stylesheet" type="text/css" href="/css/custom-theme/jquery-ui-1.8.18.custom.css" />
+    <link rel="stylesheet" type="text/css" href="/css/font-awesome.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/jqtree.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/rmarkdown.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/bootstrap-rcloud-tweaks.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/discover.css"/>
+
+    <script src="/lib/js/require-common.js"></script>
+    <script type="text/javascript" data-main="/lib/js/require-discover.js" src="/lib/js/require.js"></script>
+
+    <!-- <script type="text/javascript" src="/lib/dependencies_bundle.js" charset="utf-8"></script> -->
+    <!-- <script type="text/javascript">MathJax = undefined;</script> -->
+    <!-- <script type="text/javascript" src="/js/rcloud_bundle.js"></script> -->
+    <!-- <script type="text/javascript" src="/view.js"></script> -->
+  </head>
+  <body>
+    <script type="text/html" id="discovery-page-modal">
+      <div id='discovery-app' ng-controller='DiscoveryPageController' ng-cloak>
+        <div style='position:relative'>
+          <div id='discoveryLoader' style="margin-bottom: 13px;">Loading Notebooks...</div>
+          <div class="row" style="margin-bottom: 10px;">
+              <div class="btn-group pull-right" role="group" aria-label="..." style="margin-right: 16px;">
+                <button type="button" class="btn btn-default active">Latest</button>
+                <button type="button" class="btn btn-default">Most Stars</button>
+              </div>
+          </div>
+          <div class="row">
+              <div class="grid">
+                <thumbnail ng-click="thumbClicked($index)" ng-repeat="notebook in recentNotebooks" >
+                </thumbnail>
+              </div>
+          </div>
+        </div>
+      </div>
+    </script>
+
+    <div class="navbar navbar-inverse ">
+      <div>
+   
+      </div>
+    </div>
+
+    <div class="container" id="main-div">
+      
+    </div>
+
+    <script type="text/javascript"
+            src="/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script type="text/javascript">MathJax && MathJax.Hub.Config({tex2jax: {processEscapes: true,
+      processEnvironments: false, inlineMath: [ ['\\(','\\)'] ],
+      displayMath: [ ['\\[','\\]'] ] },
+      "HTML-CSS": { minScaleAdjust: 125 } });
+    </script>
+  </body>
+</html>

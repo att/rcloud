@@ -44,7 +44,7 @@ function main() {
                 notebook = result[0];
             });
         }
-        var tag = getURLParameter("tag");   
+        var tag = getURLParameter("tag");
         if(!version && tag) {
             promise = promise.then(function() {
                 return rcloud.get_version_by_tag(notebook, tag)
@@ -54,21 +54,9 @@ function main() {
             });
         };
 
-        promise = promise.then(function() {
-            return shell.load_notebook(notebook, version).then(
-                function(result) {
-                    document.title = result.description + " - RCloud";
-                }
-            );
-        }).then(function() {
-            if (Number(quiet)) {
-                $("#output > pre").first().hide();
-            }
-            rcloud.install_notebook_stylesheets().then(function() {
-                shell.notebook.controller.run_all().then(function() {
-                    shell.notebook.controller.hide_r_source();
-                });
-            });
+        editor.load_everything()
+        .then(function(){
+            RCloud.UI.discovery_page.init();
         });
         return promise;
     }).catch(function(err) {
