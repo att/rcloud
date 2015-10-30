@@ -32,13 +32,30 @@ var common_deps = [
     // soon-to-be-amdized
     "jquery",
     // other
-    "hl.min", "jDataView", "jquery.cookies.2.2.0",
+    "hl.min", "jquery.cookies.2.2.0",
     "jquery.bootpag", "jquery.scrollto", "laconic", "jquery-ui",
     "bootstrap", "peg-0.6.2.min",
     "rserve", "tree.jquery", "FileSaver"
 ];
 
 function start_require(deps) {
+    requirejs.onError = function (err) {
+        if (err.requireType === 'timeout') {
+            var	lines =	err.toString().split('\n');
+            lines = lines.slice(0, lines.length-1); // don't include link to confusing requirejs docs
+            if(window.RCloud)
+                RCloud.UI.fatal_dialog(["Sorry, the page timed out."].concat(lines).join('\n'), "Reload", window.location.href);
+            else {
+                lines.unshift('Ooops, please reload');
+                var main = document.getElementById('main-div');
+                main.innerHTML = '<pre>' + lines.join('\n') + '</pre>';
+            }
+        }
+        else {
+            throw err;
+        }
+    };
+
     require(deps,
             function(Promise, _, d3, sha256) {
                 window.Promise = Promise;
@@ -46,6 +63,5 @@ function start_require(deps) {
                 window.d3 = d3;
                 window.sha256 = sha256;
                 main();
-
-            });
+	    });
 }
