@@ -121,6 +121,7 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
 }
 
 ## called before issuing a modification request on a gist
+## NB: notebook can be NULL if this is a new content in rcloud.create.notebook()
 .gist.binary.process.outgoing <- function(notebook, content, autoconvert=TRUE) {
     # ulog(".gist.binary.process.outgoing: ", paste(capture.output(str(content)),collapse='\n'))
 
@@ -149,7 +150,7 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
         if (any(bin)) {
             if (is.list(notebook))
                 notebook <- notebook$content$id
-            nb <- rcloud.get.notebook(notebook, raw=TRUE)
+            nb <- if (is.null(notebook)) NULL else rcloud.get.notebook(notebook, raw=TRUE)
             if (!isTRUE(nb$ok)) nb <- NULL
             # ulog(" -- existing: ", paste(names(nb$content$files), collapse=", "))
             bin.f <- content$files[bin]
