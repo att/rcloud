@@ -773,6 +773,11 @@ rcloud.config.all.notebooks.multiple.users <- function(users) {
   result
 }
 
+rcloud.config.all.users.all.notebooks <- function() {
+  users <- rcloud.get.users()
+  list(users = users, notebooks = rcloud.config.all.notebooks.multiple.users(users))
+}
+
 rcloud.config.add.notebook <- function(id)
   rcs.set(usr.key(user=.session$username, notebook="system", "config", "notebooks", id), TRUE)
 

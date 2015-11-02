@@ -425,17 +425,13 @@ var editor = function () {
 
     function load_everything() {
         return Promise.all([
-            rcloud.get_users()
-            .then(function(allUsers){
-                //save them to global here
-                editor.allTheUsers = allUsers;
-                return allUsers;
-            })
-            .then(rcloud.config.all_notebooks_multiple_users),
+            rcloud.config.all_users_all_notebooks(),
             rcloud.stars.get_my_starred_notebooks(),
             rcloud.get_gist_sources()
         ])
-            .spread(function(user_notebook_set, my_stars_array, gist_sources) {
+            .spread(function(users_and_notebooks, my_stars_array, gist_sources) {
+                editor.allTheUsers = users_and_notebooks.users;
+                var user_notebook_set = users_and_notebooks.notebooks;
                 my_stars_array = r_vector(my_stars_array);
                 gist_sources_ = gist_sources;
                 var all_notebooks = [];
