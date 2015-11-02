@@ -773,9 +773,11 @@ rcloud.config.all.notebooks.multiple.users <- function(users) {
   result
 }
 
-rcloud.config.all.users.all.notebooks <- function() {
+rcloud.config.all.users.all.notebooks.infos <- function() {
   users <- rcloud.get.users()
-  list(users = users, notebooks = rcloud.config.all.notebooks.multiple.users(users))
+  notebooks <- rcloud.config.all.notebooks.multiple.users(users)
+  infos <- rcloud.get.multiple.notebook.infos(unlist(notebooks))
+  list(users = users, notebooks = notebooks, infos = infos)
 }
 
 rcloud.config.add.notebook <- function(id)

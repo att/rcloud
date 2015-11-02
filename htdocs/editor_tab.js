@@ -425,27 +425,24 @@ var editor = function () {
 
     function load_everything() {
         return Promise.all([
-            rcloud.config.all_users_all_notebooks(),
+            rcloud.config.all_users_all_notebooks_infos(),
             rcloud.stars.get_my_starred_notebooks(),
             rcloud.get_gist_sources()
         ])
             .spread(function(users_and_notebooks, my_stars_array, gist_sources) {
                 editor.allTheUsers = users_and_notebooks.users;
                 var user_notebook_set = users_and_notebooks.notebooks;
+                var notebook_entries = users_and_notebooks.infos;
                 my_stars_array = r_vector(my_stars_array);
                 gist_sources_ = gist_sources;
-                var all_notebooks = [];
-                each_r_list(user_notebook_set, function(username) {
-                    all_notebooks = all_notebooks.concat(r_vector(user_notebook_set[username]));
-                });
-                all_notebooks = all_notebooks.concat(my_stars_array);
-                all_notebooks = _.uniq(all_notebooks.sort(), true);
+                var all_notebooks = my_stars_array; // incorrect for star counts
                 var root_data = [];
                 return Promise.all([rcloud.config.get_current_notebook(),
                                     rcloud.stars.get_multiple_notebook_star_counts(all_notebooks),
                                     rcloud.get_multiple_notebook_infos(all_notebooks),
                                     rcloud.config.get_alluser_option('featured_users')])
-                    .spread(function(current, counts, notebook_entries, featured) {
+                    .spread(function(current, counts, star_entries, featured) {
+                        _.extend(notebook_entries, star_entries);
                         current_ = current;
                         num_stars_ = counts;
                         notebook_info_ = notebook_entries;
