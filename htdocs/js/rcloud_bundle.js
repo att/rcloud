@@ -509,7 +509,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["api","enable_echo"],
             ["config", "all_notebooks"],
             ["config", "all_notebooks_multiple_users"],
-            ["config", "all_users_all_notebooks_infos_stars"],
+            ["config", "get_all_notebook_info"],
             ["config", "add_notebook"],
             ["config", "remove_notebook"],
             ["config", "get_current_notebook"],
@@ -694,7 +694,7 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.config = {
             all_notebooks: rcloud_ocaps.config.all_notebooksAsync,
             all_notebooks_multiple_users: rcloud_ocaps.config.all_notebooks_multiple_usersAsync,
-            all_users_all_notebooks_infos_stars: rcloud_ocaps.config.all_users_all_notebooks_infos_starsAsync,
+            get_all_notebook_info: rcloud_ocaps.config.get_all_notebook_infoAsync,
             add_notebook: rcloud_ocaps.config.add_notebookAsync,
             remove_notebook: rcloud_ocaps.config.remove_notebookAsync,
             get_current_notebook: rcloud_ocaps.config.get_current_notebookAsync,
@@ -2014,7 +2014,7 @@ function create_cell_html_view(language, cell_model) {
         result_div_.empty();
         has_result_ = false;
         if(cell_controls_)
-            cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', false);
+            results_button_border(false);
     }
 
     // start trying to refactor out this repetitive nonsense
@@ -2134,6 +2134,12 @@ function create_cell_html_view(language, cell_model) {
     }
     function highlight_classes(kind) {
         return 'find-highlight' + ' ' + kind;
+    }
+    function edit_button_border(whether) {
+        cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', whether);
+    }
+    function results_button_border(whether) {
+        cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', whether);
     }
 
     // should be a code preprocessor extension, but i've run out of time
@@ -2350,6 +2356,8 @@ function create_cell_html_view(language, cell_model) {
             });
             click_to_edit(code_div_.find('pre'), !readonly);
             cell_status_.toggleClass('readonly', readonly);
+            if(readonly)
+                edit_button_border($(source_div_).is(":visible"));
         },
         set_show_cell_numbers: function(whether) {
             left_controls_.set_flag('cell-numbers', whether);
@@ -2375,7 +2383,7 @@ function create_cell_html_view(language, cell_model) {
             }
             if(edit_mode) {
                 if(cell_controls_)
-                    cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', true);
+                    edit_button_border(true);
                 if(RCloud.language.is_a_markdown(language))
                     this.hide_source(false);
                 code_div_.hide();
@@ -2431,7 +2439,7 @@ function create_cell_html_view(language, cell_model) {
             }
             else {
                 if(cell_controls_)
-                    cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', false);
+                    edit_button_border(false);
                 var new_content = update_model();
                 if(new_content!==null) // if any change (including removing the content)
                     cell_model.parent_model.controller.update_cell(cell_model);
@@ -2444,17 +2452,24 @@ function create_cell_html_view(language, cell_model) {
             edit_mode_ = edit_mode;
             this.change_highlights(highlights_); // restore highlights
         },
+        toggle_source: function() {
+            this.hide_source($(source_div_).is(":visible"));
+        },
         hide_source: function(whether) {
-            if(whether)
+            if(whether) {
                 source_div_.hide();
-            else
+                edit_button_border(false);
+            }
+            else {
                 source_div_.show();
+                edit_button_border(true);
+            }
         },
         toggle_results: function(val) {
             if(val===undefined)
                 val = result_div_.is(':hidden');
             if(cell_controls_)
-                cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', val);
+                results_button_border(val);
             if(val) result_div_.show();
             else result_div_.hide();
         },
@@ -4492,10 +4507,12 @@ RCloud.UI.cell_commands = (function() {
                 edit: {
                     area: 'cell',
                     sort: 3000,
-                    enable_flags: ['modify'],
                     create: function(cell_model, cell_view) {
                         return that.create_button("icon-edit borderable", "toggle edit mode", function() {
-                            cell_view.toggle_edit();
+                            if(cell_model.parent_model.read_only())
+                                cell_view.toggle_source();
+                            else
+                                cell_view.toggle_edit();
                         });
                     }
                 },
