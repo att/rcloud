@@ -425,7 +425,7 @@ var editor = function () {
 
     function load_everything() {
         return Promise.all([
-            rcloud.config.all_users_all_notebooks_infos_stars(),
+            rcloud.config.get_all_notebook_info(),
             rcloud.stars.get_my_starred_notebooks(),
             rcloud.get_gist_sources()
         ])

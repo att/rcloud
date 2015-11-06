@@ -773,7 +773,7 @@ rcloud.config.all.notebooks.multiple.users <- function(users) {
   result
 }
 
-rcloud.config.all.users.all.notebooks.infos.stars <- function() {
+rcloud.config.get.all.notebook.info <- function() {
   users <- rcloud.get.users()
   notebooks <- rcloud.config.all.notebooks.multiple.users(users)
   ids <- unlist(notebooks)

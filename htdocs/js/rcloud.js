@@ -403,7 +403,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["api","enable_echo"],
             ["config", "all_notebooks"],
             ["config", "all_notebooks_multiple_users"],
-            ["config", "all_users_all_notebooks_infos_stars"],
+            ["config", "get_all_notebook_info"],
             ["config", "add_notebook"],
             ["config", "remove_notebook"],
             ["config", "get_current_notebook"],
@@ -588,7 +588,7 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.config = {
             all_notebooks: rcloud_ocaps.config.all_notebooksAsync,
             all_notebooks_multiple_users: rcloud_ocaps.config.all_notebooks_multiple_usersAsync,
-            all_users_all_notebooks_infos_stars: rcloud_ocaps.config.all_users_all_notebooks_infos_starsAsync,
+            get_all_notebook_info: rcloud_ocaps.config.get_all_notebook_infoAsync,
             add_notebook: rcloud_ocaps.config.add_notebookAsync,
             remove_notebook: rcloud_ocaps.config.remove_notebookAsync,
             get_current_notebook: rcloud_ocaps.config.get_current_notebookAsync,
