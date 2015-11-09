@@ -300,10 +300,12 @@ function create_cell_html_view(language, cell_model) {
         return 'find-highlight' + ' ' + kind;
     }
     function edit_button_border(whether) {
-        cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', whether);
+        if(cell_controls_)
+            cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', whether);
     }
     function results_button_border(whether) {
-        cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', whether);
+        if(cell_controls_)
+            cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', whether);
     }
 
     // should be a code preprocessor extension, but i've run out of time
