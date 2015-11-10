@@ -15,12 +15,14 @@ requirejs.config({
     }
 });
 
-
+ 
+// defer angular initialization
+window.name = "NG_DEFER_BOOTSTRAP!";
 
 var deps = common_deps;
 
 deps.push(
-    // rcloud's view.js and bundle
+    // rcloud's view.js and window.name = "NG_DEFER_BOOTSTRAP!"; bundle
     "../../discover", "rcloud_bundle",
 
     // rcloud's other files
