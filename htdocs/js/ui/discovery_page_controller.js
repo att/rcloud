@@ -10,15 +10,8 @@ define(['angular'], function(angular) {
             templateUrl: "grid-item.html",
             link: function(scope, iElement, iAttrs, controller){
                 // console.log($vid);
-                 iElement.bind("load" , function(e){ 
-
-                    console.log('on load happend');
-                    // success, "onload" catched
-                    // now we can do specific stuff:
-
-                    // if(this.naturalHeight > this.naturalWidth){
-                         //this.css('backgk') = "vertical";
-                    // }
+                iElement.find('img').bind("error" , function(e){ 
+                    $(this).attr('src', './img/missing.png');
                 });
 
             }
@@ -70,7 +63,6 @@ define(['angular'], function(angular) {
 
                         _.delay(function() {
                             new Masonry( '.grid', {
-            
                               itemSelector: '.grid-item'      
                             });
                         }, 200);
@@ -83,8 +75,6 @@ define(['angular'], function(angular) {
 
                 }, 300);
             
-                console.log('-----------------');
-                console.dir($scope.recentNotebooks);
             })
         };
 
@@ -98,71 +88,6 @@ define(['angular'], function(angular) {
 
         init();
 
-        $scope.init = function(){
-            //alert("init this ");
-
-            return;
-
-            $scope.currentModel = [];
-            rcloud.config.get_recent_notebooks()
-            .then(function(data){
-                console.log('00000000');
-                console.dir(data);
-            })
-
-            var $grid = $('#discovery-app .grid');
-            var temp  = $(RCloud.UI.panel_loader.load_snippet('grid-item'));
-            //temp.remove();
-
-            var imgArray = ['map.png', 'map2.png', 'graph.png', 'graph2.png', 'graph3.png'];
-
-            for(var i = 0; i < 100; i ++) {
-
-                var height = 300 + (Math.random() * 200);
-                var item = temp.clone()
-                    .css({
-                        // height: height,
-                        backgroundColor: getRandomColor
-                    });
-                var header = item.find('.header');
-                var img = item.find('img');
-                img.attr('src', 'img/'+getRandomImage())
-                $grid.append(item)
-            }
-
-            imagesLoaded( $grid[0], function() {
-                //alert('')
-                // images are ready
-
-                _.delay(function() {
-                    new Isotope( '.grid', {
-                      columnWidth: 200,
-                      itemSelector: '.grid-item'      
-                    });
-                }, 400);
-            
-                // $grid.isotope({
-                //   columnWidth: 200,
-                //   itemSelector: '.grid-item'      
-                // });
-            } );
-
-
-            function getRandomImage() {
-                var max = imgArray.length;
-                var randColor = Math.floor( (Math.random() * max) );
-                return imgArray[randColor];
-            }
-
-            function getRandomColor() {
-                var letters = '0123456789ABCDEF'.split('');
-                var color = '#';
-                for (var i = 0; i < 6; i++ ) {
-                  color += letters[Math.floor(Math.random() * 16)];
-                }
-                return 'white';
-            }
-        }
 
     }]);
 });
