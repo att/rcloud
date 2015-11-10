@@ -773,6 +773,16 @@ rcloud.config.all.notebooks.multiple.users <- function(users) {
   result
 }
 
+rcloud.config.get.all.notebook.info <- function() {
+  users <- rcloud.get.users()
+  notebooks <- rcloud.config.all.notebooks.multiple.users(users)
+  ids <- unlist(notebooks)
+  infos <- rcloud.get.multiple.notebook.infos(ids)
+  infos2 <- mapply(function(n) { n[is.na(names(n))] <- NULL; as.list(n) }, infos, SIMPLIFY=FALSE)
+  stars <- rcloud.multiple.notebook.star.counts(ids)
+  list(users = users, notebooks = notebooks, infos = infos2, stars = stars)
+}
+
 rcloud.config.add.notebook <- function(id)
   rcs.set(usr.key(user=.session$username, notebook="system", "config", "notebooks", id), TRUE)
 

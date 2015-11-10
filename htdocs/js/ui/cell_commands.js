@@ -196,10 +196,12 @@ RCloud.UI.cell_commands = (function() {
                 edit: {
                     area: 'cell',
                     sort: 3000,
-                    enable_flags: ['modify'],
                     create: function(cell_model, cell_view) {
                         return that.create_button("icon-edit borderable", "toggle edit mode", function() {
-                            cell_view.toggle_edit();
+                            if(cell_model.parent_model.read_only())
+                                cell_view.toggle_source();
+                            else
+                                cell_view.toggle_edit();
                         });
                     }
                 },
