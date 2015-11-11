@@ -113,6 +113,18 @@ RCloud.UI.menus = (function() {
                 sections: RCloud.UI.menu.mode_sections()
             });
             this.add({
+                discover_divider: {
+                    sort: 7000,
+                    type: 'divider',
+                    modes: ['edit']
+                },
+                discover: {
+                    sort: 8000,
+                    type: 'link',
+                    href: '/discover.html',
+                    text: 'Discover',
+                    modes: ['edit']
+                },
                 logout_divider: {
                     sort: 10000,
                     type: 'divider',

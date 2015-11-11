@@ -6579,6 +6579,18 @@ RCloud.UI.menus = (function() {
                 sections: RCloud.UI.menu.mode_sections()
             });
             this.add({
+                discover_divider: {
+                    sort: 7000,
+                    type: 'divider',
+                    modes: ['edit']
+                },
+                discover: {
+                    sort: 8000,
+                    type: 'link',
+                    href: '/discover.html',
+                    text: 'Discover',
+                    modes: ['edit']
+                },
                 logout_divider: {
                     sort: 10000,
                     type: 'divider',
@@ -8926,8 +8938,6 @@ RCloud.UI.discovery_page = (function() {
               ], function(angular, app, imagesLoaded, Isotope, Masonry) {
                   'use strict';
 
-                  //debugger;
-
                   window.imagesLoaded = imagesLoaded;
                   window.Isotope = Isotope;
                   window.Masonry = Masonry;
@@ -8936,24 +8946,12 @@ RCloud.UI.discovery_page = (function() {
                     console.log('images loaded')
                   });
 
-
-                  //var $html = angular.element(document.getElementsByTagName('html')[0]);
                   angular.element(document).ready(function() {
 
                     _.delay(function() {
                       angular.bootstrap($('#discovery-app')[0], ['DiscoveryPageApp']);
                       angular.resumeBootstrap();
                     }, 100);
-
-                    _.delay(function() {
-                      // Replace source
-                      $('img').error(function(){
-                        //alert('error has happened');
-                        $(this).attr('src', './img/missing.png');
-                      });
-
-                    }, 150);
-
                   });
             });
         },
