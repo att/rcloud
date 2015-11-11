@@ -69,7 +69,17 @@
     background-size: cover;*/
 }
 
-@media (min-width: 1100px) {
+@media (min-width: 1650px) {
+
+    .grid-item { 
+        width: 18%;
+        margin: 1%;
+    }
+}
+
+
+
+@media (min-width: 1100px) and (max-width: 1650px)  {
 
     .grid-item { 
         width: 23%;
