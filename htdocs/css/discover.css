@@ -2,6 +2,13 @@
     margin-top: 50px;
 }
 
+
+.logo-holder{
+    margin-left: 30px;
+    margin-top: 8px;
+}
+
+
 .grid {
     visibility: hidden;
     transform-style: preserve-3d;
