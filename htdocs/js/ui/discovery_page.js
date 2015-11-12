@@ -11,36 +11,26 @@ RCloud.UI.discovery_page = (function() {
                 'angular',
                 './../../js/ui/discovery_page_app',
                 './../../lib/js/imagesloaded',
-                './../../lib/js/isotope.pkgd.min'
+                './../../lib/js/isotope.pkgd.min',
+                './../../lib/js/masonry.pkgd.min'
 
-              ], function(angular, app, imagesLoaded, Isotope) {
+              ], function(angular, app, imagesLoaded, Isotope, Masonry) {
                   'use strict';
 
                   window.imagesLoaded = imagesLoaded;
                   window.Isotope = Isotope;
+                  window.Masonry = Masonry;
 
                   imagesLoaded( document.body, function() {
                     console.log('images loaded')
                   });
 
-
-                  //var $html = angular.element(document.getElementsByTagName('html')[0]);
                   angular.element(document).ready(function() {
 
                     _.delay(function() {
                       angular.bootstrap($('#discovery-app')[0], ['DiscoveryPageApp']);
                       angular.resumeBootstrap();
                     }, 100);
-
-                    _.delay(function() {
-                      // Replace source
-                      $('img').error(function(){
-                        //alert('error has happened');
-                        $(this).attr('src', './img/missing.png');
-                      });
-
-                    }, 150);
-
                   });
             });
         },

@@ -69,15 +69,15 @@ define(['angular'], function(angular) {
                         console.log('ALWAYS - all images have been loaded');
 
                         _.delay(function() {
-                            new Isotope( '.grid', {
-                              columnWidth: 200,
+                            new Masonry( '.grid', {
+            
                               itemSelector: '.grid-item'      
                             });
                         }, 200);
 
                         _.delay(function() {
-                            $('.grid').css('visibility', 'visible');
-                            $('#discoveryLoader').css('display', 'none');
+                            $('.grid').css('visibility', 'visible');  
+                            $('#discoveryLoader').css('display', 'none');  
                         }, 400)
                     });
 
