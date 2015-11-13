@@ -8932,14 +8932,12 @@ RCloud.UI.discovery_page = (function() {
                 'angular',
                 './../../js/ui/discovery_page_app',
                 './../../lib/js/imagesloaded',
-                './../../lib/js/isotope.pkgd.min',
                 './../../lib/js/masonry.pkgd.min'
 
-              ], function(angular, app, imagesLoaded, Isotope, Masonry) {
+              ], function(angular, app, imagesLoaded, Masonry) {
                   'use strict';
 
                   window.imagesLoaded = imagesLoaded;
-                  window.Isotope = Isotope;
                   window.Masonry = Masonry;
 
                   imagesLoaded( document.body, function() {
