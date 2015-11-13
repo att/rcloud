@@ -112,7 +112,7 @@
 }
 
 
-@media (min-width: 400px) and (max-width: 800px) {
+@media (min-width: 540px) and (max-width: 800px) {
 
     .grid-item { 
       width: 48%;
@@ -120,9 +120,22 @@
     }
 }
 
-@media (min-width: 100px) and (max-width: 400px) {
+@media (min-width: 100px) and (max-width: 540px) {
     .grid-item { 
       width: 100%;
+      border: none;
+    }
+
+    .grid-item:hover {
+        /*transform: translateY(10px);*/
+        background-color: #FFFFFF;
+        -webkit-box-shadow: none;
+        -moz-box-shadow:    none;
+        box-shadow:         none;
+        margin-top: 0;
+
+
+       /* transform: translateZ(12px);*/
     }
 }
 
