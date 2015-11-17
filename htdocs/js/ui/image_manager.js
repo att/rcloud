@@ -191,6 +191,18 @@ RCloud.UI.image_manager = (function() {
                 image.locate(k);
             } else k("ERROR: cannot find image corresponding to the locator"); // FIXME: is this the right way to return an error?
         },
+        load_available_formats: function() {
+            return rcloud.plots.get_formats().then(function(formats) {
+                formats = _.without(formats, 'r_attributes', 'r_type');
+                var i = 1000;
+                var im_formats = {};
+                formats.forEach(function(format) {
+                    im_formats[format] = { sort: i };
+                    i += 1000;
+                });
+                RCloud.UI.image_manager.formats.add(im_formats);
+            });
+        },
         formats: formats_
     };
     return result;
