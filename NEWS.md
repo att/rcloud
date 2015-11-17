@@ -1,6 +1,18 @@
 ## RCloud 1.6 (unreleased)
+
+### Features
+
 * Added support for sessions - the information about a session can be
   retrieved using `rcloud.session.info()`
+
+* Output contexts can be created using `rcloud.output.context` for creating
+  cell-like output in a mini-html notebook. This allows simple output of
+  plots to a notebook with a custom layout, while supporting the resizing
+  and plot export UI of a notebook cell. (#1669)
+
+### Bugfixes
+* Ctrl/Cmd-clicking on the New Notebook button should open a new tab with
+  a new notebook (#1733)
 
 
 ## RCloud 1.5.1
