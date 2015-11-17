@@ -110,12 +110,12 @@ RCloud.UI.image_manager = (function() {
             var image_commands = $('<span class="live-plot-commands"></div>');
             image_commands.append(save_button());
             image_commands.hide();
-            $image.add(image_commands).hover(function() {
+            container.hover(function() {
                 image_commands.show();
             }, function() {
                 image_commands.hide();
             });
-            image_div_.append(image_commands);
+            container.append(image_commands);
             $image.css({width: '100%', height: '100%'});
             update_dims(dims);
 
