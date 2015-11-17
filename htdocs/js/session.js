@@ -217,16 +217,7 @@ function rclient_promise(allow_anonymous) {
         rcloud.api.set_url(window.location.href);
         return rcloud.languages.get_list().then(function(lang_list) {
             RCloud.language._set_available_languages(_.omit(lang_list, 'r_type', 'r_attributes'));
-        }).then(rcloud.plots.get_formats).then(function(formats) {
-            formats = _.without(formats, 'r_attributes', 'r_type');
-            var i = 1000;
-            var im_formats = {};
-            formats.forEach(function(format) {
-                im_formats[format] = { sort: i };
-                i += 1000;
-            });
-            RCloud.UI.image_manager.formats.add(im_formats);
-        }).then(function() {
+        }).then(RCloud.UI.image_manager.load_available_formats).then(function() {
             return rcloud.init_client_side_data();
         });
     });
