@@ -3966,35 +3966,27 @@ function rclient_promise(allow_anonymous) {
         }
         throw error;
     }).then(function() {
-        rcloud.get_conf_value('exec.token.renewal.time').then(function(timeout) {
-            if(timeout) {
-                timeout = timeout * 1000; // from sec to ms
-                var replacer = function() {
-                    rcloud.replace_token($.cookies.get('execToken'), 'rcloud.exec').then(function(new_token) {
-                        $.cookies.set('execToken', new_token);
-                        setTimeout(replacer, timeout);
-                    });
-                };
-                setTimeout(replacer, timeout);
-            }
-        });
-    }).then(function() {
-        rcloud.display.set_device_pixel_ratio();
-        rcloud.api.set_url(window.location.href);
-        return rcloud.languages.get_list().then(function(lang_list) {
-            RCloud.language._set_available_languages(_.omit(lang_list, 'r_type', 'r_attributes'));
-        }).then(rcloud.plots.get_formats).then(function(formats) {
-            formats = _.without(formats, 'r_attributes', 'r_type');
-            var i = 1000;
-            var im_formats = {};
-            formats.forEach(function(format) {
-                im_formats[format] = { sort: i };
-                i += 1000;
-            });
-            RCloud.UI.image_manager.formats.add(im_formats);
-        }).then(function() {
-            return rcloud.init_client_side_data();
-        });
+        return Promise.all([
+            rcloud.get_conf_value('exec.token.renewal.time').then(function(timeout) {
+                if(timeout) {
+                    timeout = timeout * 1000; // from sec to ms
+                    var replacer = function() {
+                        rcloud.replace_token($.cookies.get('execToken'), 'rcloud.exec').then(function(new_token) {
+                            $.cookies.set('execToken', new_token);
+                            setTimeout(replacer, timeout);
+                        });
+                    };
+                    setTimeout(replacer, timeout);
+                }
+            }),
+            rcloud.display.set_device_pixel_ratio(),
+            rcloud.api.set_url(window.location.href),
+            rcloud.languages.get_list().then(function(lang_list) {
+                RCloud.language._set_available_languages(_.omit(lang_list, 'r_type', 'r_attributes'));
+            }),
+            RCloud.UI.image_manager.load_available_formats(),
+            rcloud.init_client_side_data()
+        ]);
     });
 }
 
@@ -5937,12 +5929,12 @@ RCloud.UI.image_manager = (function() {
             var image_commands = $('<span class="live-plot-commands"></div>');
             image_commands.append(save_button());
             image_commands.hide();
-            $image.add(image_commands).hover(function() {
+            container.hover(function() {
                 image_commands.show();
             }, function() {
                 image_commands.hide();
             });
-            image_div_.append(image_commands);
+            container.append(image_commands);
             $image.css({width: '100%', height: '100%'});
             update_dims(dims);
 
@@ -6017,6 +6009,18 @@ RCloud.UI.image_manager = (function() {
                 var image = images_[id];
                 image.locate(k);
             } else k("ERROR: cannot find image corresponding to the locator"); // FIXME: is this the right way to return an error?
+        },
+        load_available_formats: function() {
+            return rcloud.plots.get_formats().then(function(formats) {
+                formats = _.without(formats, 'r_attributes', 'r_type');
+                var i = 1000;
+                var im_formats = {};
+                formats.forEach(function(format) {
+                    im_formats[format] = { sort: i };
+                    i += 1000;
+                });
+                RCloud.UI.image_manager.formats.add(im_formats);
+            });
         },
         formats: formats_
     };

@@ -28,7 +28,7 @@ function main() {
                 rclient.post_response(hello);
             });
 
-            // resolve(rcloud.init_client_side_data()); // what was this for?!?
+            promise = promise.then(RCloud.UI.image_manager.load_available_formats);
 
             var notebook = getURLParameter("notebook"),
                 version = getURLParameter("version");

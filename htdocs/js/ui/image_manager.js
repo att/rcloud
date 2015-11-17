@@ -110,12 +110,12 @@ RCloud.UI.image_manager = (function() {
             var image_commands = $('<span class="live-plot-commands"></div>');
             image_commands.append(save_button());
             image_commands.hide();
-            $image.add(image_commands).hover(function() {
+            container.hover(function() {
                 image_commands.show();
             }, function() {
                 image_commands.hide();
             });
-            image_div_.append(image_commands);
+            container.append(image_commands);
             $image.css({width: '100%', height: '100%'});
             update_dims(dims);
 
@@ -190,6 +190,18 @@ RCloud.UI.image_manager = (function() {
                 var image = images_[id];
                 image.locate(k);
             } else k("ERROR: cannot find image corresponding to the locator"); // FIXME: is this the right way to return an error?
+        },
+        load_available_formats: function() {
+            return rcloud.plots.get_formats().then(function(formats) {
+                formats = _.without(formats, 'r_attributes', 'r_type');
+                var i = 1000;
+                var im_formats = {};
+                formats.forEach(function(format) {
+                    im_formats[format] = { sort: i };
+                    i += 1000;
+                });
+                RCloud.UI.image_manager.formats.add(im_formats);
+            });
         },
         formats: formats_
     };
