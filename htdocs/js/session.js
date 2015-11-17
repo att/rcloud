@@ -204,26 +204,27 @@ function rclient_promise(allow_anonymous) {
         }
         throw error;
     }).then(function() {
-        rcloud.get_conf_value('exec.token.renewal.time').then(function(timeout) {
-            if(timeout) {
-                timeout = timeout * 1000; // from sec to ms
-                var replacer = function() {
-                    rcloud.replace_token($.cookies.get('execToken'), 'rcloud.exec').then(function(new_token) {
-                        $.cookies.set('execToken', new_token);
-                        setTimeout(replacer, timeout);
-                    });
-                };
-                setTimeout(replacer, timeout);
-            }
-        });
-    }).then(function() {
-        rcloud.display.set_device_pixel_ratio();
-        rcloud.api.set_url(window.location.href);
-        return rcloud.languages.get_list().then(function(lang_list) {
-            RCloud.language._set_available_languages(_.omit(lang_list, 'r_type', 'r_attributes'));
-        }).then(RCloud.UI.image_manager.load_available_formats).then(function() {
-            return rcloud.init_client_side_data();
-        });
+        return Promise.all([
+            rcloud.get_conf_value('exec.token.renewal.time').then(function(timeout) {
+                if(timeout) {
+                    timeout = timeout * 1000; // from sec to ms
+                    var replacer = function() {
+                        rcloud.replace_token($.cookies.get('execToken'), 'rcloud.exec').then(function(new_token) {
+                            $.cookies.set('execToken', new_token);
+                            setTimeout(replacer, timeout);
+                        });
+                    };
+                    setTimeout(replacer, timeout);
+                }
+            }),
+            rcloud.display.set_device_pixel_ratio(),
+            rcloud.api.set_url(window.location.href),
+            rcloud.languages.get_list().then(function(lang_list) {
+                RCloud.language._set_available_languages(_.omit(lang_list, 'r_type', 'r_attributes'));
+            }),
+            RCloud.UI.image_manager.load_available_formats(),
+            rcloud.init_client_side_data()
+        ]);
     });
 }
 
