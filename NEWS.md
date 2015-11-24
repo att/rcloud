@@ -10,6 +10,13 @@
   plots to a notebook with a custom layout, while supporting the resizing
   and plot export UI of a notebook cell. (#1669)
 
+* Support `exec.auth: as-local` configuration option which uses
+  current unix user (i.e., the user running the RCloud server) without
+  authentication as the notebook user. It is intended for single-user
+  local installations with gist back-ends that don't provide OAUTH
+  authentications (such as gitgist).
+
+
 ### Bugfixes
 * Ctrl/Cmd-clicking on the New Notebook button should open a new tab with
   a new notebook (#1733)
