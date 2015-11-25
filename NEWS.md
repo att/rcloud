@@ -16,6 +16,13 @@
   local installations with gist back-ends that don't provide OAUTH
   authentications (such as gitgist).
 
+* Add support for serving files from user libraries via
+  `shared.R/<user>/<package>`. This allows users to develop packages
+  that use `shared.R` in their own library until it is ready to be
+  released globally. Note that users are still responsible for setting
+  the permissions on the library path - the default permissions are to
+  not allow others (including the web server) access to user libraries.
+
 
 ### Bugfixes
 * Ctrl/Cmd-clicking on the New Notebook button should open a new tab with
