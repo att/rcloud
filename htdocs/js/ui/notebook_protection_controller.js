@@ -11,10 +11,11 @@ define(['angular'], function(angular) {
     var logger = RCloud.UI.notebook_protection_logger;
     var moduleRef = RCloud.UI.notebook_protection;
 
-
+    //define module and controller
     return angular.module('myapp.controllers', ['myapp.services', 'selectize'])
     .controller('NotebookProtectionController', ['$scope' , 'GroupsService', '$q', '$timeout', function ($scope, GroupsService, $q, $timeout) {
 
+        //used to store state
         $scope.currentNotebook = null;
         $scope.currentCryptogroup = null;
         $scope.notebookFullName = null;
@@ -48,7 +49,7 @@ define(['angular'], function(angular) {
         //init
         ////////////////////////////////////////////
         $scope.initBoth = function() {
-
+            //general logic
             $scope.evalData()
             .then(function() {
                 return $scope.getGroups();
@@ -116,13 +117,14 @@ define(['angular'], function(angular) {
             return $q(function(resolve, reject) {
                 $scope.$evalAsync(function() {
                     $scope.currentTab = 1;
-
+                    //move vars from parent module to this app's scope
                     $scope.currentNotebook = moduleRef.defaultNotebook;
                     $scope.currentCryptogroup = moduleRef.defaultCryptogroup;
                     $scope.notebookFullName = moduleRef.defaultNotebook.full_name;
                     $scope.notebookGistName = moduleRef.defaultNotebook.gistname;
                     $scope.notebookId = moduleRef.defaultNotebook.id;
 
+                    //figure out protection status - public, group or private
                     if(moduleRef.defaultCryptogroup === null){
                         $scope.sharedStatus = 'public';
                         $scope.initialSharedStatus = 'public';
@@ -138,6 +140,7 @@ define(['angular'], function(angular) {
                     }
                     //timeout to ensure evalAsync has finished
                     $timeout(function() {
+                        //promisified via $q
                         resolve();
                     }, 50);
                 });
@@ -172,6 +175,7 @@ define(['angular'], function(angular) {
             else {
                 //if making private of moving to another group
                 if($scope.sharedStatus === 'group') {
+                    //group logic
                     (function() {
                         var conf = confirm("Are you sure you want to move notebook "+$scope.notebookFullName+" to group "+$scope.selectedUserGroup.name +"?\nThis might make it no longer accessible by everyone.");
                         if(conf) {
@@ -188,6 +192,7 @@ define(['angular'], function(angular) {
                     })();
                 }
                 else if($scope.sharedStatus === 'public') {
+                    //public logic goes here
                     (function() {
                         var conf = confirm("Are you sure you want to make notebook "+$scope.notebookFullName+" public? \nThis will make it accessible by everyone.");
                         if(conf) {
@@ -224,15 +229,19 @@ define(['angular'], function(angular) {
         //GROUPS
         ////////////////////////////////////////////
         $scope.createGroup = function() {
+            //invoke prompt
             var pr = prompt("Enter new group name", "");
             if (pr != null) {
+                //check for reserved names
                 if(pr === 'private' || pr === 'no group') {
                     logger.warn(pr+ ' is a reserved name, please pick a different one.');
                     return;
                 }
+                //create group 
                 GroupsService.createGroup(pr)
                 .then(function(data) {
                     $scope.$evalAsync(function() {
+                        //add to current arrays that store all and admin groups
                         $scope.allUserGroups.push({
                             id:data,
                             name:pr,
@@ -253,6 +262,7 @@ define(['angular'], function(angular) {
                     });
                     //console.log('group created and selected '+data);
                     _.defer(function() {
+                        //
                         $scope.populateGroupMembers();
                         logger.clear();
                     });
@@ -266,14 +276,17 @@ define(['angular'], function(angular) {
         $scope.renameGroup = function() {
             if(!$scope.selectedAdminGroup || !$scope.allAdminGroups.length)
                 return;
+            //prompt
             var pr = prompt("Rename group "+$scope.selectedAdminGroup.name , $scope.selectedAdminGroup.name);
             if(pr != null) {
                 var r = confirm('Are you sure you want to rename group "'+$scope.selectedAdminGroup.name+' to "'+pr+'"?');
                 if(r === true) {
+                    //call changeGroupName on BE with ID and new name
                     var prevGroupId = $scope.selectedAdminGroup.id;
                     GroupsService.changeGroupName($scope.selectedAdminGroup.id ,pr)
                     .then(function(data) {
                         //console.log('renamed group');
+                        //swap the names in admins and users arrays locally
                         var indexAdmins = $scope.getIndexOfNameFromGroup($scope.selectedAdminGroup.name, $scope.allAdminGroups);
                         var indexUsers = $scope.getIndexOfNameFromGroup($scope.selectedAdminGroup.name, $scope.allUserGroups);
                         $scope.$evalAsync(function() {
@@ -294,13 +307,15 @@ define(['angular'], function(angular) {
         $scope.populateGroupMembers = function() {
             if(!$scope.selectedAdminGroup)
                 return;
-
+            //get all users for current group
             GroupsService.getAllUsersinGroup($scope.selectedAdminGroup.id)
             .then(function(data) {
                 var adminsArray = [];
                 var membersArray = [];
+                //clean it up
                 for(var item in data) {
                     if(item !== 'r_attributes' && item !== 'r_type') {
+                        //splitting in admins and members
                         if(data[item] === true)
                             adminsArray.push(item);
                         else
@@ -309,7 +324,7 @@ define(['angular'], function(angular) {
                 }
                 //console.log('just grabed memebers info for group '+$scope.selectedAdminGroup.name);
                 $scope.$evalAsync(function() {
-
+                    //set them to $scope via async
                     $scope.groupAdmins = adminsArray;
                     $scope.groupMembers = membersArray;
                 });
@@ -332,6 +347,9 @@ define(['angular'], function(angular) {
             //console.log("starting watching groups");
             var count1 = 0;
             var count2 = 0;
+            //there was a bug in selectize that made watchers fire early,
+            //that was the reason for the count check. 
+            //TODO use new version of selectize with fixed issue
             $scope.theWatcherAdmins = $scope.$watch('groupAdmins', function (val) {
                 if(count1 === 0) {
                     count1 ++;
@@ -339,11 +357,10 @@ define(['angular'], function(angular) {
                 }
                 else {
                     count1 ++;
-                    //logic here
-                    //console.log('groupAdmins changed '+val);
-                    //console.log('groupAdmins is '+$scope.groupAdmins);
+                    //find the duplicates
                     var duplicates = _.intersection($scope.groupAdmins, $scope.groupMembers);
                     if(duplicates.length) {
+                        //log them out
                         logger.log('removing '+duplicates+' from members and moving to admins');
                         //remove
                         var dupIndex = $scope.groupMembers.indexOf(duplicates[0]);
@@ -361,10 +378,10 @@ define(['angular'], function(angular) {
                 }
                 else {
                     count2 ++;
-                    //logic here
-                    //console.log('groupMembers changed '+val);
+                    //find the duplicates
                     var duplicates = _.intersection($scope.groupMembers, $scope.groupAdmins);
                     if(duplicates.length) {
+                        //log them out
                         logger.log('removing '+duplicates+' from admins and moving to members');
                         //remove
                         var dupIndex = $scope.groupAdmins.indexOf(duplicates[0]);
@@ -380,12 +397,15 @@ define(['angular'], function(angular) {
             $('.group-changes-panel').html($scope.getCurrentChanges());
         };
 
+        //gets you the difference in last state of user's permissions and current UI state
         $scope.getMembersDifference = function() {
             var removedAdmins = _.difference($scope.originalAdmins, $scope.groupAdmins),
                 addedAdmins = _.difference($scope.groupAdmins, $scope.originalAdmins),
                 //compare original members array and its current state
+
                 removedMembersTemp = _.difference($scope.originalMembers, $scope.groupMembers),
                 ///  filter the removeMembers to not contain any of the addedAdmins.
+
                 removedMembers = _.difference(removedMembersTemp, addedAdmins),
                 addedMembers = _.difference($scope.groupMembers, $scope.originalMembers);
 
@@ -546,6 +566,7 @@ define(['angular'], function(angular) {
 
         $scope.reset = function() {
             //console.log('reset called');
+            //make sure all the vars are nulled
             $scope.currentNotebook = null;
             $scope.currentCryptogroup = null;
             $scope.notebookFullName = null;
@@ -641,6 +662,7 @@ define(['angular'], function(angular) {
                     resolve();
                 }, 50);
             });
+
         };
 
         $scope.parseGroups = function(data) {

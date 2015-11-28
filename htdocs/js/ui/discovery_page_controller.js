@@ -2,14 +2,18 @@ define(['angular'], function(angular) {
 
    'use strict';
 
+   //define module
     return angular.module('myapp.discovery', [])
-    .directive("thumbnail", function(){
+    /// <thumbnail/> directive
+    .directive("thumbnail", function(){ 
+
         return {
             restrict: "E",
             replace: true,
             templateUrl: "grid-item.html",
             link: function(scope, iElement, iAttrs, controller){
-                // console.log($vid);
+                ///once the element is created, listen for error on img load
+                //and replace with default img
                 iElement.find('img').bind("error" , function(e){ 
                     $(this).attr('src', './img/missing.png');
                 });
@@ -17,12 +21,13 @@ define(['angular'], function(angular) {
             }
         }
     })
-    .controller('DiscoveryPageController', ['$scope', '$q', '$timeout', function ($scope, $q, $timeout) {
-
+    //define controller
+    .controller('DiscoveryPageController', ['$scope', '$q', '$timeout', function ($scope, $q, $timeout) { 
+        //used in html with ng-repeat notebook in recentNotebooks
         $scope.recentNotebooks = [];
 
         function init() {
-
+            //rcloud should be available, so
             //get the recent notebooks
             rcloud.config.get_recent_notebooks()
             .then(function(data){
@@ -35,15 +40,14 @@ define(['angular'], function(angular) {
                 .sortBy(function(kv) { return kv[1] * -1; })
                 .value();
 
+                //store in a temporary array
                 var recentTemp = [];
                 //sorted.shift();//remove the first item
                 sorted = sorted.slice(0, 20); //limit to 20 entries
 
-
                 for(var i = 0; i < sorted.length; i ++) {
 
                     var currItem = sorted[i];
-      
                     var currentNotebook = editor.get_notebook_info(sorted[i][0]);
                   
                     var data = {
@@ -64,16 +68,17 @@ define(['angular'], function(angular) {
 
                 _.delay(function() {
 
+                    //listen to images loaded
                     var imgLoad = imagesLoaded( $('.grid')[0] );
                     imgLoad.on( 'always', function( instance ) {
                         console.log('ALWAYS - all images have been loaded');
-
+                        //run masonry on grid
                         _.delay(function() {
                             new Masonry( '.grid', {
                               itemSelector: '.grid-item'      
                             });
                         }, 200);
-
+                        //reveal page and hide loader
                         _.delay(function() {
                             $('.grid').css('visibility', 'visible');  
                             $('#discovery-app').css('visibility', 'visible'); 
