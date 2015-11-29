@@ -35,6 +35,7 @@ define(['angular'], function(angular) {
                 .sortBy(function(kv) { return kv[1] * -1; })
                 .value();
 
+                var recentTemp = [];
                 //sorted.shift();//remove the first item
                 sorted = sorted.slice(0, 20); //limit to 20 entries
 
@@ -52,8 +53,14 @@ define(['angular'], function(angular) {
                         last_commit: new Date(currentNotebook.last_commit).toDateString(),
                         username: currentNotebook.username
                     };
-                    $scope.recentNotebooks.push(data);                   
+                    recentTemp.push(data)
+                    //$scope.recentNotebooks.push(data);                   
                 }
+
+                //so have to $apply just once
+                $scope.$evalAsync(function() {
+                    $scope.recentNotebooks = recentTemp;
+                });
 
                 _.delay(function() {
 
@@ -69,7 +76,8 @@ define(['angular'], function(angular) {
 
                         _.delay(function() {
                             $('.grid').css('visibility', 'visible');  
-                            $('#discoveryLoader').css('display', 'none');  
+                            $('#discovery-app').css('visibility', 'visible'); 
+                            $('.loader-icon').css('display', 'none');  
                         }, 400)
                     });
 

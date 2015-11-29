@@ -56,6 +56,7 @@ function main() {
 
         editor.load_everything()
         .then(function(){
+
             RCloud.UI.discovery_page.init();
         });
         return promise;

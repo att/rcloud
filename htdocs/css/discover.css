@@ -2,6 +2,19 @@
     margin-top: 50px;
 }
 
+#discovery-app {
+    visibility: hidden;
+}
+
+.loader-icon{
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 31px;
+    height: 31px;
+    margin: 0 auto;
+}
+
 
 .logo-holder{
     margin-left: 30px;

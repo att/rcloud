@@ -8940,10 +8940,6 @@ RCloud.UI.discovery_page = (function() {
                   window.imagesLoaded = imagesLoaded;
                   window.Masonry = Masonry;
 
-                  imagesLoaded( document.body, function() {
-                    console.log('images loaded')
-                  });
-
                   angular.element(document).ready(function() {
 
                     _.delay(function() {

@@ -23,7 +23,7 @@
     <script type="text/html" id="discovery-page-modal">
       <div id='discovery-app' ng-controller='DiscoveryPageController' ng-cloak>
         <div style='position:relative'>
-          <div id='discoveryLoader' style="margin-bottom: 13px;">Loading Notebooks...</div>
+   
           <div class="row" style="margin-bottom: 10px;">
               <div class="btn-group pull-right" role="group" aria-label="..." style="margin-right: 16px;">
                 <button type="button" class="btn btn-default active">Latest</button>
@@ -46,8 +46,11 @@
       </div>
     </div>
 
+    <div class="loader-icon">
+      <img src="img/ajax-loader.gif">
+    </div>
     <div class="container" id="main-div"></div>
-
+    
     <script type="text/javascript"
             src="/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
     </script>
