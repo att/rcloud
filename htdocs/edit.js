@@ -15,7 +15,7 @@ function main() {
                 opts.notebook = getURLParameter("notebook");
                 opts.version = getURLParameter("version");
                 if (opts.notebook === null && getURLParameter("new_notebook"))
-                    opts = {new_notebook: true};
+                    opts.new_notebook = true;
                 var source = getURLParameter("source");
                 if(source) {
                     if(opts.notebook)

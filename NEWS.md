@@ -1,6 +1,32 @@
 ## RCloud 1.6 (unreleased)
+
+### Features
+
 * Added support for sessions - the information about a session can be
   retrieved using `rcloud.session.info()`
+
+* Output contexts can be created using `rcloud.output.context` for creating
+  cell-like output in a mini-html notebook. This allows simple output of
+  plots to a notebook with a custom layout, while supporting the resizing
+  and plot export UI of a notebook cell. (#1669)
+
+* Support `exec.auth: as-local` configuration option which uses
+  current unix user (i.e., the user running the RCloud server) without
+  authentication as the notebook user. It is intended for single-user
+  local installations with gist back-ends that don't provide OAUTH
+  authentications (such as gitgist).
+
+* Add support for serving files from user libraries via
+  `shared.R/<user>/<package>`. This allows users to develop packages
+  that use `shared.R` in their own library until it is ready to be
+  released globally. Note that users are still responsible for setting
+  the permissions on the library path - the default permissions are to
+  not allow others (including the web server) access to user libraries.
+
+
+### Bugfixes
+* Ctrl/Cmd-clicking on the New Notebook button should open a new tab with
+  a new notebook (#1733)
 
 
 ## RCloud 1.5.1

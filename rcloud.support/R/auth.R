@@ -30,7 +30,7 @@ RC.authenticate <- function(v, check.only=FALSE)
   v <- as.list(v)
   if (length(v) < 1 || is.null(v[[1]])) return(FALSE)
   ## is execution authentication enabled?
-  if (nzConf("exec.auth")) {
+  if (nzConf("exec.auth") && !isTRUE(getConf("exec.auth") == "as-local")) {
     ## FIXME: should we allow anonymous execution and logged-in github? We don't support that now...
     if (length(v) < 2 || is.null(v[[2]])) return(FALSE)
     exec.usr <- check.token(v[[2]], paste0("auth/",getConf("exec.auth")), "rcloud.exec")

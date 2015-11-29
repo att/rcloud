@@ -164,6 +164,11 @@ div.panel-heading:hover {
     background-color: white;
 }
 
+.live-plot {
+    position: relative;
+    overflow: visible;
+}
+
 .live-plot-scroller {
     width: 100%;
     overflow-x: auto;

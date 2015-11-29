@@ -24,7 +24,9 @@ run <- function(url, query, body, headers)
   if (is.character(redirect) && !nzchar(redirect)) redirect <- NULL
   if (!is.null(redirect) && isTRUE(any(is.na(redirect)))) redirect <- NULL
 
-  if (!is.null(getConf("exec.auth"))) {
+  if (isTRUE(getConf("exec.auth") == "as-local")) { ## special case where RCloud is run in single-user mode, create token for the unix user
+    usr <- unixtools::user.info()$name
+  } else  if (!is.null(getConf("exec.auth"))) {
     ret <- rcloud.support:::getConf("welcome.page")
     if (is.null(ret)) ret <- '/welcome.html'
     if (!is.null(redirect)) ret <- paste0(ret, "?redirect=", encode(redirect))
