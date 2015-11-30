@@ -2,9 +2,7 @@ define(['angular'], function(angular) {
 
    'use strict';
 
-   //define module
     return angular.module('myapp.discovery', [])
-    /// <thumbnail/> directive
     .directive("thumbnail", function(){
 
         return {
@@ -21,7 +19,6 @@ define(['angular'], function(angular) {
             }
         };
     })
-    //define controller
     .controller('DiscoveryPageController', ['$scope', '$q', '$timeout', function ($scope, $q, $timeout) {
         //used in html with ng-repeat notebook in recentNotebooks
         $scope.recentNotebooks = [];
@@ -55,7 +52,8 @@ define(['angular'], function(angular) {
                         time: currItem[1],
                         description: currentNotebook.description,
                         last_commit: new Date(currentNotebook.last_commit).toDateString(),
-                        username: currentNotebook.username
+                        username: currentNotebook.username,
+                        num_stars: editor.num_stars(sorted[i][0])
                     };
                     recentTemp.push(d);
                     //$scope.recentNotebooks.push(data);
