@@ -8805,7 +8805,7 @@ RCloud.UI.notebook_protection_logger = {
                     .addClass('white');
             $('.logging-panel span').html('&nbsp;');
         }, 20000);
-    }, 
+    },
     clear: function(){
         $('.logging-panel').removeClass('red')
                     .removeClass('green')
@@ -8895,7 +8895,7 @@ RCloud.UI.notebook_protection = (function() {
 
             $('#protection-app #tab2 a')
               .tab('show');
-              
+
             this.appScope.initGroups();
           }
         },
@@ -8956,7 +8956,7 @@ RCloud.UI.discovery_page = (function() {
 
         buildDom: function() {
           $("#main-div").append(RCloud.UI.panel_loader.load_snippet('discovery-page-modal'));
-        }        
+        }
     };
 
 })();

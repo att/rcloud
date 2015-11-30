@@ -30,7 +30,7 @@ RCloud.UI.notebook_protection_logger = {
                     .addClass('white');
             $('.logging-panel span').html('&nbsp;');
         }, 20000);
-    }, 
+    },
     clear: function(){
         $('.logging-panel').removeClass('red')
                     .removeClass('green')

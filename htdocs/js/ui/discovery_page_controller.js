@@ -5,7 +5,7 @@ define(['angular'], function(angular) {
    //define module
     return angular.module('myapp.discovery', [])
     /// <thumbnail/> directive
-    .directive("thumbnail", function(){ 
+    .directive("thumbnail", function(){
 
         return {
             restrict: "E",
@@ -14,15 +14,15 @@ define(['angular'], function(angular) {
             link: function(scope, iElement, iAttrs, controller){
                 ///once the element is created, listen for error on img load
                 //and replace with default img
-                iElement.find('img').bind("error" , function(e){ 
+                iElement.find('img').bind("error" , function(e){
                     $(this).attr('src', './img/missing.png');
                 });
 
             }
-        }
+        };
     })
     //define controller
-    .controller('DiscoveryPageController', ['$scope', '$q', '$timeout', function ($scope, $q, $timeout) { 
+    .controller('DiscoveryPageController', ['$scope', '$q', '$timeout', function ($scope, $q, $timeout) {
         //used in html with ng-repeat notebook in recentNotebooks
         $scope.recentNotebooks = [];
 
@@ -33,8 +33,8 @@ define(['angular'], function(angular) {
             .then(function(data){
                 var sorted = _.chain(data)
                 .pairs()
-                .filter(function(kv) { 
-                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(editor.get_notebook_info(kv[0])) ; 
+                .filter(function(kv) {
+                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(editor.get_notebook_info(kv[0])) ;
                 })
                 .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
                 .sortBy(function(kv) { return kv[1] * -1; })
@@ -49,16 +49,16 @@ define(['angular'], function(angular) {
 
                     var currItem = sorted[i];
                     var currentNotebook = editor.get_notebook_info(sorted[i][0]);
-                  
-                    var data = {
+
+                    var d = {
                         id: currItem[0],
                         time: currItem[1],
                         description: currentNotebook.description,
                         last_commit: new Date(currentNotebook.last_commit).toDateString(),
                         username: currentNotebook.username
                     };
-                    recentTemp.push(data)
-                    //$scope.recentNotebooks.push(data);                   
+                    recentTemp.push(d);
+                    //$scope.recentNotebooks.push(data);
                 }
 
                 //so have to $apply just once
@@ -75,29 +75,29 @@ define(['angular'], function(angular) {
                         //run masonry on grid
                         _.delay(function() {
                             new Masonry( '.grid', {
-                              itemSelector: '.grid-item'      
+                              itemSelector: '.grid-item'
                             });
                         }, 200);
                         //reveal page and hide loader
                         _.delay(function() {
-                            $('.grid').css('visibility', 'visible');  
-                            $('#discovery-app').css('visibility', 'visible'); 
-                            $('.loader-icon').css('display', 'none');  
-                        }, 400)
+                            $('.grid').css('visibility', 'visible');
+                            $('#discovery-app').css('visibility', 'visible');
+                            $('.loader-icon').css('display', 'none');
+                        }, 400);
                     });
 
                 }, 300);
-            
-            })
+
+            });
         };
 
         $scope.getThumbUrl = function(id) {
             return "/notebook.R/"+id+"/thumb.png";
-        }
+        };
 
         $scope.thumbClicked = function() {
             console.log('clicked');
-        }
+        };
 
         init();
 

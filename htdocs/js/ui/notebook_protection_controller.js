@@ -237,7 +237,7 @@ define(['angular'], function(angular) {
                     logger.warn(pr+ ' is a reserved name, please pick a different one.');
                     return;
                 }
-                //create group 
+                //create group
                 GroupsService.createGroup(pr)
                 .then(function(data) {
                     $scope.$evalAsync(function() {
@@ -348,7 +348,7 @@ define(['angular'], function(angular) {
             var count1 = 0;
             var count2 = 0;
             //there was a bug in selectize that made watchers fire early,
-            //that was the reason for the count check. 
+            //that was the reason for the count check.
             //TODO use new version of selectize with fixed issue
             $scope.theWatcherAdmins = $scope.$watch('groupAdmins', function (val) {
                 if(count1 === 0) {
@@ -414,7 +414,7 @@ define(['angular'], function(angular) {
                 addedAdmins: addedAdmins,
                 removedMembers: removedMembers,
                 addedMembers: addedMembers
-             }    
+            };
         };
 
         $scope.getCurrentChanges = function() {
@@ -528,8 +528,8 @@ define(['angular'], function(angular) {
                  $scope.$evalAsync(function() {
                     $scope.reset();
                 });
-            }, 500)
-            
+            }, 500);
+
         };
 
         $scope.save = function() {

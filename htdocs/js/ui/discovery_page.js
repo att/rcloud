@@ -31,7 +31,7 @@ RCloud.UI.discovery_page = (function() {
 
         buildDom: function() {
           $("#main-div").append(RCloud.UI.panel_loader.load_snippet('discovery-page-modal'));
-        }        
+        }
     };
 
 })();
