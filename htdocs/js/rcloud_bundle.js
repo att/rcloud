@@ -1492,9 +1492,11 @@ RCloud.extension = (function() {
                 create: function(name, _) {
                     var ret = {};
                     var args = Array.prototype.slice.call(arguments, 1);
-                    this.entries(name).forEach(function(entry) {
-                        ret[entry.key] = entry.create.apply(entry, args);
-                    });
+                    var entries = this.entries(name);
+                    if(entries)
+                        this.entries(name).forEach(function(entry) {
+                            ret[entry.key] = entry.create.apply(entry, args);
+                        });
                     return ret;
                 },
                 sections: sections_
@@ -6713,15 +6715,8 @@ RCloud.UI.navbar = (function() {
                     }
                 }
             });
-            this.add({
-                rcloud: {
-                    area: 'header',
-                    sort: 1000,
-                    create: function() {
-                        return '<a class="navbar-brand" href="#">RCloud</a>';
-                    }
-                }
-            });
+            var header = $('#rcloud-navbar-header');
+            header.empty().append('<a class="navbar-brand" href="#">RCloud</a>');
         },
         add: function(commands) {
             if(extension_)
@@ -6735,9 +6730,10 @@ RCloud.UI.navbar = (function() {
         },
         load: function() {
             if(extension_) {
-                var items = extension_.create('header');
+                var items = _.values(extension_.create('header')); // what about order?
                 var header = $('#rcloud-navbar-header');
-                header.append.apply(header, _.values(items));
+                if(items.length)
+                    header.empty().append.apply(header, items);
             }
         }
     };
