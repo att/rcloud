@@ -70,9 +70,11 @@ RCloud.extension = (function() {
                 create: function(name, _) {
                     var ret = {};
                     var args = Array.prototype.slice.call(arguments, 1);
-                    this.entries(name).forEach(function(entry) {
-                        ret[entry.key] = entry.create.apply(entry, args);
-                    });
+                    var entries = this.entries(name);
+                    if(entries)
+                        this.entries(name).forEach(function(entry) {
+                            ret[entry.key] = entry.create.apply(entry, args);
+                        });
                     return ret;
                 },
                 sections: sections_
