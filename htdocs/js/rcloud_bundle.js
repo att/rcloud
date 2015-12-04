@@ -5922,21 +5922,22 @@ RCloud.UI.image_manager = (function() {
         }
 
         function add_controls($image) {
-            var container = $('<div class="live-plot"></div>');
+            var container = $('<div class="live-plot-container"></div>');
+            var plot = $('<div class="live-plot"></div>');
             scroller_div_ = $('<div class="live-plot-scroller"></div>');
             image_div_ =  $('<div></div>');
-            container.append(scroller_div_);
+            plot.append(scroller_div_);
             scroller_div_.append(image_div_, $('<br/>'));
             image_div_.append($image);
             var image_commands = $('<span class="live-plot-commands"></div>');
             image_commands.append(save_button());
             image_commands.hide();
-            container.hover(function() {
+            plot.hover(function() {
                 image_commands.show();
             }, function() {
                 image_commands.hide();
             });
-            container.append(image_commands);
+            plot.append(image_commands);
             $image.css({width: '100%', height: '100%'});
             update_dims(dims);
 
@@ -5944,6 +5945,7 @@ RCloud.UI.image_manager = (function() {
                 autoHide: true,
                 stop: resize_stop
             });
+            container.append(plot);
             return container;
         }
         img_ = img_tag();
@@ -5982,7 +5984,7 @@ RCloud.UI.image_manager = (function() {
                     img_.off('click');
                     div_.attr('tabindex', null).removeAttr('style');
 
-                    k(null, [x, y])
+                    k(null, [x, y]);
                 });
             }
         };
