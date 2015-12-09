@@ -5859,11 +5859,11 @@ RCloud.UI.image_manager = (function() {
     function create_image(id, url, dims, device, page) {
         var div_, img_, image_div_, scroller_div_, dims_;
         function img_tag() {
-            var attrs = [];
-            attrs.push("id='" + id + "'");
-
-            attrs.push("src='" + url + "'");
-            return $("<img " + attrs.join(' ') + ">\n");
+            var attrs = {
+                id: id,
+                src: url
+            };
+            return $($.el.img(attrs));
         }
         function save_as(fmt) {
             var options = {type: fmt};
