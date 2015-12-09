@@ -931,7 +931,6 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
             ctrlACount : 0,
             lastRow: -1,
             bindKey: {
-          
                 mac: 'Ctrl-A',
                 sender: 'editor'
             },
@@ -964,7 +963,6 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
         {
             name: 'cursor at end of line',
             bindKey: {
-       
                 mac: 'Ctrl-E',
                 sender: 'editor'
             },
@@ -1035,7 +1033,8 @@ ui_utils.ignore_programmatic_changes = function(widget, listener) {
     });
     return function(value) {
         listen = false;
-        var res = widget.setValue(value);
+        var oldValue = widget.getValue();
+        var res = (value !== oldValue) ? widget.setValue(value) : null;
         listen = true;
         return res;
     };
@@ -3201,9 +3200,7 @@ Notebook.create_controller = function(model)
     var current_gist_,
         dirty_ = false,
         save_button_ = null,
-        save_timer_ = null,
-        save_timeout_ = 30000; // 30s
-
+        save_timer_ = null;
     // only create the callbacks once, but delay creating them until the editor
     // is initialized
     var default_callback = function() {
@@ -3423,10 +3420,12 @@ Notebook.create_controller = function(model)
         }
         if(save_timer_)
             window.clearTimeout(save_timer_);
-        save_timer_ = window.setTimeout(function() {
-            result.save();
-            save_timer_ = null;
-        }, save_timeout_);
+        var save_timeout = shell.autosave_timeout();
+        if(save_timeout > 0)
+            save_timer_ = window.setTimeout(function() {
+                result.save();
+                save_timer_ = null;
+            }, save_timeout);
     }
 
     model.dishers.push({on_dirty: on_dirty});
