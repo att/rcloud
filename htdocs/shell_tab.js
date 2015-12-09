@@ -8,7 +8,8 @@ var shell = (function() {
         notebook_model_ = Notebook.create_model(),
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
         notebook_controller_ = Notebook.create_controller(notebook_model_),
-        view_mode_ = false;
+        view_mode_ = false,
+        autosave_timeout_ = 30000;
 
     function on_new(notebook) {
         gistname_ = notebook.id;
@@ -89,6 +90,11 @@ var shell = (function() {
                         if(url) gist_urls_[source] = url;
                     });
                 });
+                rcloud.config.get_user_option('autosave-timeout')
+                    .then(function(TO) {
+                        if(TO !== null)
+                            autosave_timeout_ = +TO * 1000;
+                    });
             });
         },
         refresh_notebook_title: function() {
@@ -101,6 +107,9 @@ var shell = (function() {
                 return this;
             }
             return view_mode_;
+        },
+        autosave_timeout: function() {
+            return autosave_timeout_;
         },
         scroll_to_end: scroll_to_end,
         new_cell: function(content, language, execute) {
