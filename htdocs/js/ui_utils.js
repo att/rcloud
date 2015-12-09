@@ -195,7 +195,6 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
             ctrlACount : 0,
             lastRow: -1,
             bindKey: {
-          
                 mac: 'Ctrl-A',
                 sender: 'editor'
             },
@@ -228,7 +227,6 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
         {
             name: 'cursor at end of line',
             bindKey: {
-       
                 mac: 'Ctrl-E',
                 sender: 'editor'
             },
@@ -299,7 +297,8 @@ ui_utils.ignore_programmatic_changes = function(widget, listener) {
     });
     return function(value) {
         listen = false;
-        var res = widget.setValue(value);
+        var oldValue = widget.getValue();
+        var res = (value !== oldValue) ? widget.setValue(value) : null;
         listen = true;
         return res;
     };
