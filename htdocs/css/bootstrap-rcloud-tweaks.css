@@ -114,8 +114,19 @@ div.panel-heading:hover {
     padding-top: 1px;
 }
 
+.linux .code-div pre code {
+    line-height: 1.1;
+    padding-top: 1px;
+    font-size: 11px;
+}
+
 .win.gecko .code-div pre code {
     line-height: 1.167;
+}
+
+.linux.gecko .code-div pre code {
+    padding-top: 0px;
+    line-height: 1.18;
 }
 
 .code-div .rcloud-gutter {
