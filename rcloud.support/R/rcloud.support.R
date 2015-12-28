@@ -778,9 +778,8 @@ rcloud.config.get.all.notebook.info <- function() {
   notebooks <- rcloud.config.all.notebooks.multiple.users(users)
   ids <- unlist(notebooks)
   infos <- rcloud.get.multiple.notebook.infos(ids)
-  infos2 <- mapply(function(n) { n[is.na(names(n))] <- NULL; as.list(n) }, infos, SIMPLIFY=FALSE)
   stars <- rcloud.multiple.notebook.star.counts(ids)
-  list(users = users, notebooks = notebooks, infos = infos2, stars = stars)
+  list(users = users, notebooks = notebooks, infos = infos, stars = stars)
 }
 
 rcloud.config.add.notebook <- function(id)
@@ -846,8 +845,14 @@ rcloud.get.notebook.info <- function(id, single=TRUE) {
       names(results) <- fields
       results
   } else {
-      if (!length(id)) lapply(fields, function(o) character()) else
-      lapply(split(results, rep(id, each=length(fields))), function(o) { names(o) = fields; o })
+      if (!length(id)) lapply(fields, function(o) character()) else {
+         ## results are indiviudal keys - we have to convert that into
+	 ## a list of attibutes
+	 i0 <- seq_along(fields) - 1L
+	 l <- lapply(seq_along(id), function(i) { o <- results[i + i0]; names(o) <- fields; o })
+	 names(l) <- id
+         l
+      }
   }
 }
 
