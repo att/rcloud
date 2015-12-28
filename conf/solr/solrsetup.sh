@@ -32,7 +32,10 @@ cd "$DEST"
 DEST="`pwd`"
 
 VER=4.5.1
-curl -L -O http://archive.apache.org/dist/lucene/solr/$VER/solr-$VER.tgz
+#curl -L -O http://archive.apache.org/dist/lucene/solr/$VER/solr-$VER.tgz
+## Apache servers are *extremely* slow (<3Mbit!), so use our server instead
+curl -L -O http://r.research.att.com/solr/solr-$VER.tgz
+
 tar fxz solr-$VER.tgz
 if [ ! -e "solr-$VER" ]; then
     echo "ERROR: failed to extract solr-$VER"
@@ -51,7 +54,7 @@ cd solr/example/
 echo "starting Apache Solr or default port - 8983 ... "  
 nohup java -jar start.jar > solr.out 2>&1 & 
 # wait for Solr to boot up 
-sleep 10 
+sleep 14
 
 # Create a collection for the RCloud Notebooks 
 INSTANCEDIR="$DEST/solr/example/solr/rcloudnotebooks"
