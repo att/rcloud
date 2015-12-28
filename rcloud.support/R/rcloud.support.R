@@ -848,8 +848,8 @@ rcloud.get.notebook.info <- function(id, single=TRUE) {
       if (!length(id)) lapply(fields, function(o) character()) else {
          ## results are indiviudal keys - we have to convert that into
 	 ## a list of attibutes
-	 i0 <- seq_along(fields) - 1L
-	 l <- lapply(seq_along(id), function(i) { o <- results[i + i0]; names(o) <- fields; o })
+	 i0 <- seq_along(fields)
+	 l <- lapply((seq_along(id) - 1L) * length(fields), function(i) { o <- results[i + i0]; names(o) <- fields; o })
 	 names(l) <- id
          l
       }
