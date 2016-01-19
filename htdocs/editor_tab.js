@@ -423,28 +423,34 @@ var editor = function () {
         delete n.delay_children;
     }
 
+    function load_basics() {
+        return Promise.all([
+            rcloud.config.get_current_notebook(),
+            rcloud.get_gist_sources()
+        ]).spread(function(current, gist_sources) {
+            current_ = current;
+            gist_sources_ = gist_sources;
+        });
+    }
+
     function load_everything() {
         return Promise.all([
             rcloud.config.get_all_notebook_info(),
             rcloud.stars.get_my_starred_notebooks(),
-            rcloud.get_gist_sources()
         ])
-            .spread(function(users_and_notebooks, my_stars_array, gist_sources) {
+            .spread(function(users_and_notebooks, my_stars_array) {
                 editor.allTheUsers = users_and_notebooks.users;
                 var user_notebook_set = users_and_notebooks.notebooks;
                 var notebook_entries = users_and_notebooks.infos;
                 var counts = users_and_notebooks.stars;
                 my_stars_array = r_vector(my_stars_array);
-                gist_sources_ = gist_sources;
                 var root_data = [];
-                return Promise.all([rcloud.config.get_current_notebook(),
-                                    rcloud.stars.get_multiple_notebook_star_counts(my_stars_array),
+                return Promise.all([rcloud.stars.get_multiple_notebook_star_counts(my_stars_array),
                                     rcloud.get_multiple_notebook_infos(my_stars_array),
                                     rcloud.config.get_alluser_option('featured_users')])
-                    .spread(function(current, my_stars, my_infos, featured) {
+                    .spread(function(my_stars, my_infos, featured) {
                         _.extend(counts, my_stars);
                         _.extend(notebook_entries, my_infos);
-                        current_ = current;
                         num_stars_ = counts;
                         notebook_info_ = notebook_entries;
                         featured_ = featured || [];
@@ -1061,22 +1067,42 @@ var editor = function () {
         init: function(opts) {
             var that = this;
             username_ = rcloud.username();
-            var promise;
+
+            var promise = load_basics(), before_tree = null;
             if(opts.notebook) { // notebook specified in url
-                promise = that.load_notebook(opts.notebook, opts.version, opts.source, true, false, ui_utils.make_url('edit.html'));
-            } else if(!opts.new_notebook && current_.notebook) {
-                promise = that.load_notebook(current_.notebook, current_.version)
-                    .catch(function(xep) {
-                        // if loading fails for a reason that is not actually a loading problem
-                        // then don't keep trying.
-                        if(xep.from_load)
-                            open_last_loadable();
-                        else throw xep;
+                promise = promise.return(false);
+                before_tree = function() {
+                    return that.load_notebook(opts.notebook, opts.version, opts.source, true, false, ui_utils.make_url('edit.html'), true);
+                };
+            } else {
+                // FIXME: this get_current_notebook is redundant with load_everything()
+                // but it would be tricky to pull it out of there
+                promise = opts.new_notebook ?
+                    promise.return(true) :
+                    promise.then(function() {
+                        return !current_.notebook;
                     });
+                before_tree = function() {
+                    return that.load_notebook(current_.notebook, current_.version)
+                        .catch(function(xep) {
+                            // if loading fails for a reason that is not actually a loading problem
+                            // then don't keep trying.
+                            if(xep.from_load)
+                                open_last_loadable();
+                            else throw xep;
+                        });
+                };
             }
-            else
-                promise = that.new_notebook();
-            promise = promise.then(load_everything);
+            promise = promise.then(function(do_new) {
+                if(do_new)
+                    return load_everything().then(that.new_notebook.bind(that));
+                else
+                    return before_tree().then(function(rh) {
+                        return load_everything().then(function() {
+                            return that.update_notebook_tree(rh[0], rh[1], true);
+                        });
+                    });
+            });
 
             $('.dropdown-toggle.recent-btn').dropdown();
 
@@ -1150,7 +1176,7 @@ var editor = function () {
         },
 
         load_everything: load_everything,
-        load_notebook: function(gistname, version, source, selroot, push_history, fail_url) {
+        load_notebook: function(gistname, version, source, selroot, push_history, fail_url, skip_update) {
             version = version || null;
             var that = this;
             var before;
@@ -1172,7 +1198,8 @@ var editor = function () {
                     .then(that.load_callback({version: version,
                                               source: source,
                                               selroot: selroot,
-                                              push_history: push_history}));
+                                              push_history: push_history,
+                                              skip_update: skip_update}));
             })
                 .catch(function(xep) {
                     return shell.improve_load_error(xep, gistname, version).then(function(message) {
@@ -1418,8 +1445,8 @@ var editor = function () {
         update_recent_notebooks: function(data) {
             var sorted = _.chain(data)
                 .pairs()
-                .filter(function(kv) { 
-                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(get_notebook_info(kv[0])) ; 
+                .filter(function(kv) {
+                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(get_notebook_info(kv[0]));
                 })
                 .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
                 .sortBy(function(kv) { return kv[1] * -1; })
@@ -1512,14 +1539,28 @@ var editor = function () {
             }
         },
 
+        update_notebook_tree: function(result, history, selroot) {
+            var update_promise = _.has(num_stars_, result.id) ?
+                    Promise.resolve(undefined) :
+                    rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
+                        num_stars_[result.id] = count;
+                    });
+            update_promise = update_promise.then(function() {
+                update_notebook_from_gist(result, history, selroot);
+            });
+            return update_promise;
+        },
+
         load_callback: function(opts) {
             var that = this;
-            var options = $.extend(
-                {version: null,
-                 is_change: false,
-                 selroot: null,
-                 push_history: true}, opts);
-            return function(result) {
+            var options = $.extend({
+                version: null,
+                is_change: false,
+                selroot: null,
+                push_history: true,
+                skip_update: false
+            }, opts);
+            var cb = function(result) {
                 current_ = {notebook: result.id, version: options.version};
                 var tag;
                 var find_version = _.find(result.history, function(x) { return x.version === options.version; });
@@ -1555,16 +1596,6 @@ var editor = function () {
                     else
                         history = result.history;
 
-                    var update_promise = _.has(num_stars_, result.id) ?
-                            Promise.resolve(undefined) :
-                            rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
-                                num_stars_[result.id] = count;
-                            });
-                    update_promise = update_promise.then(function() {
-                        update_notebook_from_gist(result, history, options.selroot);
-                    });
-                    promises.push(update_promise);
-
                     RCloud.UI.comments_frame.set_foreign(!!options.source);
                     promises.push(RCloud.UI.comments_frame.display_comments());
                     promises.push(rcloud.is_notebook_published(result.id).then(function(p) {
@@ -1572,7 +1603,14 @@ var editor = function () {
                         RCloud.UI.advanced_menu.enable('publish_notebook', result.user.login === username_);
                     }));
 
-                    return Promise.all(promises).return(result);
+                    return Promise.all(promises).return([result, history]);
+                });
+            };
+            if(options.skip_update)
+                return cb;
+            else return function(result) {
+                return cb(result).spread(function(result, history) {
+                    return that.update_notebook_tree(result, history, options.selroot);
                 });
             };
         }
