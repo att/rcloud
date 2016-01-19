@@ -1061,22 +1061,25 @@ var editor = function () {
         init: function(opts) {
             var that = this;
             username_ = rcloud.username();
-            var promise = load_everything().then(function() {
-                if(opts.notebook) { // notebook specified in url
-                    return that.load_notebook(opts.notebook, opts.version, opts.source, true, false, ui_utils.make_url('edit.html'));
-                } else if(!opts.new_notebook && current_.notebook) {
-                    return that.load_notebook(current_.notebook, current_.version)
-                        .catch(function(xep) {
-                            // if loading fails for a reason that is not actually a loading problem
-                            // then don't keep trying.
-                            if(xep.from_load)
-                                open_last_loadable();
-                            else throw xep;
-                        });
-                }
-                else
-                    return that.new_notebook();
-            });
+            var promise = Promise.all([
+                load_everything(),
+                function() {
+                    if(opts.notebook) { // notebook specified in url
+                        return that.load_notebook(opts.notebook, opts.version, opts.source, true, false, ui_utils.make_url('edit.html'));
+                    } else if(!opts.new_notebook && current_.notebook) {
+                        return that.load_notebook(current_.notebook, current_.version)
+                            .catch(function(xep) {
+                                // if loading fails for a reason that is not actually a loading problem
+                                // then don't keep trying.
+                                if(xep.from_load)
+                                    open_last_loadable();
+                                else throw xep;
+                            });
+                    }
+                    else
+                        return that.new_notebook();
+                }()
+            ]);
 
             $('.dropdown-toggle.recent-btn').dropdown();
 
