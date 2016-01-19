@@ -1542,36 +1542,36 @@ var editor = function () {
                             options.source = notebook_info_[result.id].source = source;
                         });
                 return promise_source.then(function() {
-                     var promises = []; // fetch and setup various ui "in parallel"
-                     promises.push(RCloud.UI.share_button.update_link());
-                     document.title = result.description + " - RCloud";
-                     promises.push(update_url({notebook: result.id, version: options.version, source: options.source, tag:tag}));
+                    var promises = []; // fetch and setup various ui "in parallel"
+                    promises.push(RCloud.UI.share_button.update_link());
+                    document.title = result.description + " - RCloud";
+                    promises.push(update_url({notebook: result.id, version: options.version, source: options.source, tag:tag}));
 
-                     var history;
-                     // when loading an old version you get truncated history
-                     // we don't want that, even if it means an extra fetch
-                     if(options.version)
-                         history = null;
-                     else
-                         history = result.history;
+                    var history;
+                    // when loading an old version you get truncated history
+                    // we don't want that, even if it means an extra fetch
+                    if(options.version)
+                        history = null;
+                    else
+                        history = result.history;
 
-                     promises.push((_.has(num_stars_, result.id) ? Promise.resolve(undefined)
-                                    : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
-                                        num_stars_[result.id] = count;
-                                    })).then(function() {
-                                        update_notebook_from_gist(result, history, options.selroot);
-                                    }));
+                    promises.push((_.has(num_stars_, result.id) ? Promise.resolve(undefined)
+                                   : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
+                                       num_stars_[result.id] = count;
+                                   })).then(function() {
+                                       update_notebook_from_gist(result, history, options.selroot);
+                                   }));
 
-                     RCloud.UI.comments_frame.set_foreign(!!options.source);
-                     promises.push(RCloud.UI.comments_frame.display_comments());
-                     promises.push(rcloud.is_notebook_published(result.id).then(function(p) {
-                         RCloud.UI.advanced_menu.check('publish_notebook', p);
-                         RCloud.UI.advanced_menu.enable('publish_notebook', result.user.login === username_);
-                     }));
+                    RCloud.UI.comments_frame.set_foreign(!!options.source);
+                    promises.push(RCloud.UI.comments_frame.display_comments());
+                    promises.push(rcloud.is_notebook_published(result.id).then(function(p) {
+                        RCloud.UI.advanced_menu.check('publish_notebook', p);
+                        RCloud.UI.advanced_menu.enable('publish_notebook', result.user.login === username_);
+                    }));
 
 
-                     return Promise.all(promises).return(result);
-                 });
+                    return Promise.all(promises).return(result);
+                });
             };
         }
     };
