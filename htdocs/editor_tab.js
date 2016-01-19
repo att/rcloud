@@ -1555,12 +1555,15 @@ var editor = function () {
                     else
                         history = result.history;
 
-                    promises.push((_.has(num_stars_, result.id) ? Promise.resolve(undefined)
-                                   : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
-                                       num_stars_[result.id] = count;
-                                   })).then(function() {
-                                       update_notebook_from_gist(result, history, options.selroot);
-                                   }));
+                    var update_promise = _.has(num_stars_, result.id) ?
+                            Promise.resolve(undefined) :
+                            rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
+                                num_stars_[result.id] = count;
+                            });
+                    update_promise = update_promise.then(function() {
+                        update_notebook_from_gist(result, history, options.selroot);
+                    });
+                    promises.push(update_promise);
 
                     RCloud.UI.comments_frame.set_foreign(!!options.source);
                     promises.push(RCloud.UI.comments_frame.display_comments());
@@ -1568,7 +1571,6 @@ var editor = function () {
                         RCloud.UI.advanced_menu.check('publish_notebook', p);
                         RCloud.UI.advanced_menu.enable('publish_notebook', result.user.login === username_);
                     }));
-
 
                     return Promise.all(promises).return(result);
                 });
