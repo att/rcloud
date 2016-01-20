@@ -6402,16 +6402,20 @@ RCloud.UI.init = function() {
 
     // key handlers
     document.addEventListener("keydown", function(e) {
+
+        // ctrl/cmd + keycode
+        var isCmdOrCtrlAndKeyCode = function(keycode) {
+            return e.keyCode === keycode && (e.ctrlKey || e.metaKey);
+        }
+
         // if we have a save button (e.g. not view mode), prevent browser's default
         // ctrl/cmd+s and save notebook
-        if(saveb.size()) {
-            if (e.keyCode == 83 && (e.ctrlKey || e.metaKey)) { // ctrl/cmd-S
+        if(saveb.length && isCmdOrCtrlAndKeyCode(83)) { // ctrl/cmd-S
                 e.preventDefault();
                 shell.save_notebook();
-            }
         }
         // select all ctrl/cmd-a
-        if(e.keyCode == 65 && (e.ctrlKey || e.metaKey)) {
+        if(isCmdOrCtrlAndKeyCode(65)) {
             e.preventDefault();
             var selection = window.getSelection();
             selection.removeAllRanges();
@@ -6419,6 +6423,14 @@ RCloud.UI.init = function() {
             range.selectNode(document.getElementById('output'));
             range.setStartAfter($('.response')[0]);
             selection.addRange(range);
+        }
+        // undo
+        if(isCmdOrCtrlAndKeyCode(90)) {
+            editor.step_history_undo();
+        }
+        // redo
+        if(isCmdOrCtrlAndKeyCode(89)) {
+            editor.step_history_redo();
         }
     });
 };

@@ -764,6 +764,15 @@ var editor = function () {
             RCloud.UI.notebook_title.make_editable(null);
     }
 
+    function get_selected_node() {
+        return $tree_.tree('getSelectedNode');
+    }
+
+    function select_history_node(node) {
+        select_node(node);
+        $(node.element).find('.jqtree-element:eq(0)').trigger('click');
+    }
+
     function update_tree_entry(root, user, gistname, entry, create) {
         var data = {user: user,
                     label: entry.description,
@@ -1414,7 +1423,47 @@ var editor = function () {
                     $tree_.tree('openNode', node);
                 });
         },
+        step_history_undo: function() {
 
+            var selected_node = get_selected_node(),
+                node_to_select;
+
+            // this is a versioned node, so only versioned siblings:
+            if(selected_node && selected_node.hasOwnProperty('version')) {
+                var next_sibling = selected_node.getNextSibling();
+                
+                if(next_sibling) {
+                    node_to_select = next_sibling;
+                }
+            } else {
+                if(selected_node.children.length) {
+                    node_to_select = selected_node.children[0];
+                }
+            }
+
+            if(node_to_select) {
+                select_history_node(node_to_select);
+            }
+        },
+        step_history_redo: function() {
+            
+            var selected_node = get_selected_node(),
+                node_to_select;
+
+            if(selected_node && selected_node.hasOwnProperty('version')) {
+                var previous_sibling = selected_node.getPreviousSibling();
+
+                if(previous_sibling) {
+                    node_to_select = previous_sibling;
+                } else {
+                    node_to_select = selected_node.parent;
+                }
+
+                if(node_to_select) {
+                    select_history_node(node_to_select);
+                }
+            }
+        },
         update_recent_notebooks: function(data) {
             var sorted = _.chain(data)
                 .pairs()
