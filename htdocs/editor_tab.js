@@ -1427,24 +1427,25 @@ var editor = function () {
         },
         step_history_undo: function() {
 
-            var selected_node = get_selected_node(),
-                node_to_select;
+            var selected_node = get_selected_node();
 
             // this is a versioned node, so only versioned siblings:
             if(selected_node && selected_node.hasOwnProperty('version')) {
                 var next_sibling = selected_node.getNextSibling();
                 
                 if(next_sibling) {
-                    node_to_select = next_sibling;
+                    select_history_node(next_sibling);
                 }
             } else {
                 if(selected_node.children.length) {
-                    node_to_select = selected_node.children[0];
+                    select_history_node(selected_node.children[0]);
+                } else {
+                    this.show_history(selected_node, true).then(function() {
+                        if(selected_node.children.length) {
+                            select_history_node(selected_node.children[0]);
+                        }       
+                    });
                 }
-            }
-
-            if(node_to_select) {
-                select_history_node(node_to_select);
             }
         },
         step_history_redo: function() {
