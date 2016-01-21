@@ -1,0 +1,20 @@
+#left-column, 
+.cell-status-left 
+.grab-affordance, 
+.cell-status-left .state-icon, 
+.cell-control-bar, 
+.cell-controls-above, 
+.grab-affordance, 
+#prompt-area, 
+#right-column {
+	display: none!important;
+}
+
+#main-div {
+	position: static;
+}
+
+
+#middle-column {
+	border: 10px solid black!important;
+}
