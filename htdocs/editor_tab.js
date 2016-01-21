@@ -1411,7 +1411,7 @@ var editor = function () {
                 }
                 if(opts.toggle) whither = 'hide';
             }
-            update_history_nodes(node, whither, null)
+            return update_history_nodes(node, whither, null)
                 .then(function(node) {
                     var history_len = 0;
                     if(histories_[node.gistname]) {
@@ -1421,6 +1421,8 @@ var editor = function () {
                         $(".history i",$(node.element)).addClass("button-disabled");
                     }
                     $tree_.tree('openNode', node);
+
+                    return Promise.resolve();
                 });
         },
         step_history_undo: function() {
