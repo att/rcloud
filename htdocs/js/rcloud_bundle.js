@@ -6411,8 +6411,8 @@ RCloud.UI.init = function() {
         // if we have a save button (e.g. not view mode), prevent browser's default
         // ctrl/cmd+s and save notebook
         if(saveb.length && isCmdOrCtrlAndKeyCode(83)) { // ctrl/cmd-S
-                e.preventDefault();
-                shell.save_notebook();
+            e.preventDefault();
+            shell.save_notebook();
         }
         // select all ctrl/cmd-a
         if(isCmdOrCtrlAndKeyCode(65)) {
@@ -6426,10 +6426,12 @@ RCloud.UI.init = function() {
         }
         // undo
         if(isCmdOrCtrlAndKeyCode(90)) {
+            e.preventDefault();
             editor.step_history_undo();
         }
         // redo
-        if(isCmdOrCtrlAndKeyCode(89)) {
+        if((!ui_utils.is_a_mac() && isCmdOrCtrlAndKeyCode(89)) || (ui_utils.is_a_mac() && e.keyCode == 89 && e.metaKey && e.altKey)) {
+            e.preventDefault();
             editor.step_history_redo();
         }
     });

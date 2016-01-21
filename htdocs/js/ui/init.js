@@ -154,7 +154,7 @@ RCloud.UI.init = function() {
             editor.step_history_undo();
         }
         // redo
-        if(isCmdOrCtrlAndKeyCode(89)) {
+        if((!ui_utils.is_a_mac() && isCmdOrCtrlAndKeyCode(89)) || (ui_utils.is_a_mac() && e.keyCode == 89 && e.metaKey && e.altKey)) {
             e.preventDefault();
             editor.step_history_redo();
         }
