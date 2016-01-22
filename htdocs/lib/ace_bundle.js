@@ -17801,6 +17801,7 @@ define("ace/mode/r", function(require, exports, module)
          }
          return false;
       };
+      this.lineCommentStart = ["#"];
    }).call(Mode.prototype);
    exports.Mode = Mode;
 });
