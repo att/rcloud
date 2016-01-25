@@ -1075,15 +1075,13 @@ var editor = function () {
                     return that.load_notebook(opts.notebook, opts.version, opts.source, true, false, ui_utils.make_url('edit.html'), true);
                 };
             } else {
-                // FIXME: this get_current_notebook is redundant with load_everything()
-                // but it would be tricky to pull it out of there
                 promise = opts.new_notebook ?
                     promise.return(true) :
                     promise.then(function() {
                         return !current_.notebook;
                     });
                 before_tree = function() {
-                    return that.load_notebook(current_.notebook, current_.version)
+                    return that.load_notebook(current_.notebook, current_.version, null, true, false, undefined, true)
                         .catch(function(xep) {
                             // if loading fails for a reason that is not actually a loading problem
                             // then don't keep trying.
