@@ -126,11 +126,11 @@ RCloud.UI.init = function() {
 
     // key handlers
     document.addEventListener("keydown", function(e) {
-
-        // ctrl/cmd + keycode
+        // usually we get away with handling ctrl- and cmd- the same
+        // occasionally we have to special-case the mac and windows/linux keys
         var isCmdOrCtrlAndKeyCode = function(keycode) {
             return e.keyCode === keycode && (e.ctrlKey || e.metaKey);
-        }
+        };
 
         // if we have a save button (e.g. not view mode), prevent browser's default
         // ctrl/cmd+s and save notebook
@@ -154,14 +154,9 @@ RCloud.UI.init = function() {
             editor.step_history_undo();
         }
         // redo
-        if((!ui_utils.is_a_mac() && isCmdOrCtrlAndKeyCode(89)) || (ui_utils.is_a_mac() && e.keyCode == 89 && e.metaKey && e.altKey)) {
+        if((!ui_utils.is_a_mac() && isCmdOrCtrlAndKeyCode(89)) || (ui_utils.is_a_mac() && e.keyCode == 90 && e.metaKey && e.shiftKey)) {
             e.preventDefault();
             editor.step_history_redo();
-        }
-
-        if(isCmdOrCtrlAndKeyCode(73)) {
-            e.preventDefault();
-            editor.output_history_debug();
         }
     });
 };

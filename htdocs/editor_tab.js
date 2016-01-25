@@ -1083,7 +1083,7 @@ var editor = function () {
             // no version at latest:
             var current_index = current_.version === null ? 0 : this.get_current_notebook_history_index();
 
-            if(current_index === this.get_current_notebook_histories().length - 1) { 
+            if(current_index === this.get_current_notebook_histories().length - 1) {
                 return undefined;   // already at first
             } else {
                 return this.get_history_by_index(current_index + 1).version;
@@ -1441,7 +1441,7 @@ var editor = function () {
             if(node.children.length) {
                 if(!node.is_open) {
                     $tree_.tree('openNode', node);
-                    return;
+                    return Promise.resolve(undefined);
                 }
                 if(opts.toggle) whither = 'hide';
             }
@@ -1455,29 +1455,27 @@ var editor = function () {
                         $(".history i",$(node.element)).addClass("button-disabled");
                     }
                     $tree_.tree('openNode', node);
-
-                    return Promise.resolve();
                 });
         },
         step_history_undo: function() {
             var previous_version = history_manager.get_previous();
 
             if(!_.isUndefined(previous_version)) {
-                this.load_notebook(current_.notebook, previous_version);    
+                this.load_notebook(current_.notebook, previous_version);
             }
         },
         step_history_redo: function() {
             var next_version = history_manager.get_next();
 
             if(!_.isUndefined(next_version)) {
-                this.load_notebook(current_.notebook, next_version);     
+                this.load_notebook(current_.notebook, next_version);
             }
         },
         update_recent_notebooks: function(data) {
             var sorted = _.chain(data)
                 .pairs()
-                .filter(function(kv) { 
-                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(get_notebook_info(kv[0])) ; 
+                .filter(function(kv) {
+                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(get_notebook_info(kv[0])) ;
                 })
                 .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
                 .sortBy(function(kv) { return kv[1] * -1; })
