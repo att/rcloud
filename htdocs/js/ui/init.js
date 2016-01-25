@@ -158,5 +158,10 @@ RCloud.UI.init = function() {
             e.preventDefault();
             editor.step_history_redo();
         }
+
+        if(isCmdOrCtrlAndKeyCode(73)) {
+            e.preventDefault();
+            editor.output_history_debug();
+        }
     });
 };

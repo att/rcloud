@@ -983,6 +983,7 @@ var editor = function () {
     }
 
     function tree_click(event) {
+
         if(event.node.id === 'showmore')
             result.show_history(event.node.parent, false);
         else if(event.node.gistname) {
@@ -1065,6 +1066,39 @@ var editor = function () {
                 return res;
             });
     }
+
+    var history_manager = {
+        get_current_notebook_histories : function() {
+            return histories_[current_.notebook];
+        },
+        get_current_notebook_history_index : function() {
+            return find_index(this.get_current_notebook_histories(), function(h) {
+                return h.version === current_.version;
+            });
+        },
+        get_history_by_index : function(index) {
+            return histories_[current_.notebook][index];
+        },
+        get_previous : function() {
+            // no version at latest:
+            var current_index = current_.version === null ? 0 : this.get_current_notebook_history_index();
+
+            if(current_index === this.get_current_notebook_histories().length - 1) { 
+                return undefined;   // already at first
+            } else {
+                return this.get_history_by_index(current_index + 1).version;
+            }
+        },
+        get_next : function() {
+            var current_index = this.get_current_notebook_history_index();
+
+            if(current_index === 0) {
+                return undefined;
+            } else {
+                return current_index - 1 === 0 ? null : this.get_history_by_index(current_index - 1).version;
+            }
+        }
+    };
 
     var result = {
         init: function(opts) {
@@ -1426,45 +1460,17 @@ var editor = function () {
                 });
         },
         step_history_undo: function() {
+            var previous_version = history_manager.get_previous();
 
-            var selected_node = get_selected_node();
-
-            // this is a versioned node, so only versioned siblings:
-            if(selected_node && selected_node.hasOwnProperty('version')) {
-                var next_sibling = selected_node.getNextSibling();
-                
-                if(next_sibling) {
-                    select_history_node(next_sibling);
-                }
-            } else {
-                if(selected_node.children.length) {
-                    select_history_node(selected_node.children[0]);
-                } else {
-                    this.show_history(selected_node, true).then(function() {
-                        if(selected_node.children.length) {
-                            select_history_node(selected_node.children[0]);
-                        }       
-                    });
-                }
+            if(!_.isUndefined(previous_version)) {
+                this.load_notebook(current_.notebook, previous_version);    
             }
         },
         step_history_redo: function() {
-            
-            var selected_node = get_selected_node(),
-                node_to_select;
+            var next_version = history_manager.get_next();
 
-            if(selected_node && selected_node.hasOwnProperty('version')) {
-                var previous_sibling = selected_node.getPreviousSibling();
-
-                if(previous_sibling) {
-                    node_to_select = previous_sibling;
-                } else {
-                    node_to_select = selected_node.parent;
-                }
-
-                if(node_to_select) {
-                    select_history_node(node_to_select);
-                }
+            if(!_.isUndefined(next_version)) {
+                this.load_notebook(current_.notebook, next_version);     
             }
         },
         update_recent_notebooks: function(data) {
