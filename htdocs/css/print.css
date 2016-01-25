@@ -1,3 +1,8 @@
+* {
+	overflow: visible!important;
+}
+
+.navbar,
 #left-column, 
 .cell-status-left 
 .grab-affordance, 
@@ -6,15 +11,42 @@
 .cell-controls-above, 
 .grab-affordance, 
 #prompt-area, 
-#right-column {
-	display: none!important;
+#right-column,
+#command-prompt,
+.ui-resizable-handle,
+.live-plot-commands {
+	display: none;
 }
 
 #main-div {
 	position: static;
 }
 
-
 #middle-column {
-	border: 10px solid black!important;
+	width: 100%;
+	display: inline;
+}
+
+#rcloud-cellarea, .ace-scroller {
+	overflow: visible;
+}
+
+.notebook-cell {
+	page-break-inside: avoid;
+	margin-bottom: 15px;
+}
+
+.cell-control {
+	font-size: 15px;
+}
+
+.cell-status {
+	padding-bottom: 5px;
+	margin-bottom: 5px;
+	border-bottom: 1px solid #444;
+	margin-left: -5px;
+}
+
+img, .ui-resizable {
+	max-width: 100%!important;
 }
