@@ -764,6 +764,15 @@ var editor = function () {
             RCloud.UI.notebook_title.make_editable(null);
     }
 
+    function get_selected_node() {
+        return $tree_.tree('getSelectedNode');
+    }
+
+    function select_history_node(node) {
+        select_node(node);
+        $(node.element).find('.jqtree-element:eq(0)').trigger('click');
+    }
+
     function update_tree_entry(root, user, gistname, entry, create) {
         var data = {user: user,
                     label: entry.description,
@@ -974,6 +983,7 @@ var editor = function () {
     }
 
     function tree_click(event) {
+
         if(event.node.id === 'showmore')
             result.show_history(event.node.parent, false);
         else if(event.node.gistname) {
@@ -1056,6 +1066,39 @@ var editor = function () {
                 return res;
             });
     }
+
+    var history_manager = {
+        get_current_notebook_histories : function() {
+            return histories_[current_.notebook];
+        },
+        get_current_notebook_history_index : function() {
+            return find_index(this.get_current_notebook_histories(), function(h) {
+                return h.version === current_.version;
+            });
+        },
+        get_history_by_index : function(index) {
+            return histories_[current_.notebook][index];
+        },
+        get_previous : function() {
+            // no version at latest:
+            var current_index = current_.version === null ? 0 : this.get_current_notebook_history_index();
+
+            if(current_index === this.get_current_notebook_histories().length - 1) {
+                return undefined;   // already at first
+            } else {
+                return this.get_history_by_index(current_index + 1).version;
+            }
+        },
+        get_next : function() {
+            var current_index = this.get_current_notebook_history_index();
+
+            if(current_index === 0) {
+                return undefined;
+            } else {
+                return current_index - 1 === 0 ? null : this.get_history_by_index(current_index - 1).version;
+            }
+        }
+    };
 
     var result = {
         init: function(opts) {
@@ -1398,11 +1441,11 @@ var editor = function () {
             if(node.children.length) {
                 if(!node.is_open) {
                     $tree_.tree('openNode', node);
-                    return;
+                    return Promise.resolve(undefined);
                 }
                 if(opts.toggle) whither = 'hide';
             }
-            update_history_nodes(node, whither, null)
+            return update_history_nodes(node, whither, null)
                 .then(function(node) {
                     var history_len = 0;
                     if(histories_[node.gistname]) {
@@ -1414,12 +1457,25 @@ var editor = function () {
                     $tree_.tree('openNode', node);
                 });
         },
+        step_history_undo: function() {
+            var previous_version = history_manager.get_previous();
 
+            if(!_.isUndefined(previous_version)) {
+                this.load_notebook(current_.notebook, previous_version);
+            }
+        },
+        step_history_redo: function() {
+            var next_version = history_manager.get_next();
+
+            if(!_.isUndefined(next_version)) {
+                this.load_notebook(current_.notebook, next_version);
+            }
+        },
         update_recent_notebooks: function(data) {
             var sorted = _.chain(data)
                 .pairs()
-                .filter(function(kv) { 
-                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(get_notebook_info(kv[0])) ; 
+                .filter(function(kv) {
+                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(get_notebook_info(kv[0])) ;
                 })
                 .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
                 .sortBy(function(kv) { return kv[1] * -1; })
