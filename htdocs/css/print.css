@@ -37,10 +37,6 @@
 
 }
 
-.notebook-cell > div {
-
-}
-
 .cell-control {
 	font-size: 15px;
 }
@@ -50,10 +46,6 @@
 	margin-bottom: 5px;
 	border-bottom: 1px solid #444;
 	margin-left: -5px;
-}
-
-.source-div {
-
 }
 
 	.code-div {
