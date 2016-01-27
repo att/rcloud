@@ -266,14 +266,14 @@ RCloud.UI.find_replace = (function() {
         init: function() {
             document.addEventListener("keydown", function(e) {
                 var action;
-                if (ui_utils.is_a_mac() && e.keyCode == 70 && e.metaKey) { // cmd-F
+                if (ui_utils.is_a_mac() && e.keyCode == 70 && e.metaKey) { // cmd-F / cmd-opt-F
                     if(e.shiftKey)
                         return; // don't capture Full Screen
                     action = e.altKey ? 'replace' : 'find';
                 }
-                else if(!ui_utils.is_a_mac() && e.keyCode == 70 && e.ctrlKey)
+                else if(!ui_utils.is_a_mac() && e.keyCode == 70 && e.ctrlKey) // ctrl-F
                     action = 'find';
-                else if(!ui_utils.is_a_mac() && e.keyCode == 72 && e.ctrlKey)
+                else if(!ui_utils.is_a_mac() && e.keyCode == 72 && e.ctrlKey) // ctrl-H
                     action = 'replace';
                 if(action) {
                     // do not allow replace in view mode or read-only
