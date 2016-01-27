@@ -1072,9 +1072,11 @@ var editor = function () {
             return histories_[current_.notebook];
         },
         get_current_notebook_history_index : function() {
-            return find_index(this.get_current_notebook_histories(), function(h) {
-                return h.version === current_.version;
-            });
+            return current_.version === null ? 
+                0 :
+                find_index(this.get_current_notebook_histories(), function(h) {
+                    return h.version === current_.version;
+                });
         },
         get_history_by_index : function(index) {
             return histories_[current_.notebook][index];
