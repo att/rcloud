@@ -149,7 +149,7 @@ RCloud.UI.init = function() {
             selection.addRange(range);
         }
         // undo
-        if(isCmdOrCtrlAndKeyCode(90)) {
+        if(isCmdOrCtrlAndKeyCode(90) && !e.shiftKey && !e.altKey) {
             e.preventDefault();
             editor.step_history_undo();
         }
