@@ -24,9 +24,25 @@
   not allow others (including the web server) access to user libraries.
 
 
+### Improvements
+
+* Stylesheets for reasonable styling of print/PDF output (#1783)
+
+* Undo and redo shortcuts (ctrl/cmd-Z and ctrl-Y/cmd-shift-Z) move forward and
+  backward in history. You still need to hit the Revert button to commit the
+  change. Currently these shortcuts only function when the cells, assets, and
+  command prompt are not in focus.
+
+
 ### Bugfixes
-* Ctrl/Cmd-clicking on the New Notebook button should open a new tab with
-  a new notebook (#1733)
+
+* Ctrl/Cmd-clicking on the New Notebook button should open a new tab with a
+  new notebook (#1733)
+
+* Improved matching of code formatting to match look when inactive and in edit
+  mode on Windows and Linux - not perfect but closer (#1266)
+
+* Autosave should not scroll assets/notebook/cells (#1622 / #1626 / #1686)
 
 
 ## RCloud 1.5.1
