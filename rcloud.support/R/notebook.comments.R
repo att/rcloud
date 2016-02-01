@@ -10,8 +10,8 @@ rcloud.get.comments <- function(id, source = NULL) {
 .solr.post.comment <- function(id, content, comment.id) {
   
   ## query ID to see if it has existing comments
-  query <- paste0("q=id:",id,"&start=0&rows=1000&wt=json&sort=starcount desc")
-  solr.res <- .solr.get(URLencode(query))
+  query <- list(q=paste0("id:",id),start=0,rows=1000)
+  solr.res <- .solr.get(query=query)
   comment.content <- fromJSON(content)
   
   ## pick set/add depending on the exsitng content
@@ -19,7 +19,7 @@ rcloud.get.comments <- function(id, source = NULL) {
 
   ## send the update request
   metadata <- paste0('{"id":"', id, '","comments":{"', method, '":"', paste(comment.id,':::',comment.content,':::',.session$username), '"}}')
- .solr.post(metadata)
+ .solr.post(data=metadata)
 }
 
 rcloud.post.comment <- function(id, content)
@@ -31,13 +31,12 @@ rcloud.post.comment <- function(id, content)
 }
 
 .solr.modify.comment <- function(id, content, cid) {
-  url <- getConf("solr.url")
-  query <- paste0("q=id:",id,"&start=0&rows=1000&fl=comments&wt=json")
-  solr.res <- .solr.get(URLencode(query))
+  query <- list(q=paste0("id:",id),start=0,rows=1000)
+  solr.res <- .solr.get(query=query)
   index <- grep(cid, solr.res$response$docs[[1]]$comments)
   solr.res$response$docs[[1]]$comments[[index]] <- paste(cid, fromJSON(content)$body, sep=' : ')
   metadata <- paste0('{"id":"',id,'","comments":{"set":[\"',paste(solr.res$response$docs[[1]]$comments, collapse="\",\""),'\"]}}')
-  .solr.post(metadata)
+  .solr.post(data=metadata)
 }
 
 rcloud.modify.comment <- function(id, cid, content)
@@ -49,13 +48,12 @@ rcloud.modify.comment <- function(id, cid, content)
 }
 
 .solr.delete.comment <- function(id, cid) {
-  url <- getConf("solr.url")
-  query <- paste0("q=id:",id,"&start=0&rows=1000&fl=comments&wt=json")
-  solr.res <- .solr.get(URLencode(query))
+  query <- list(q=paste0("id:",id),start=0,rows=1000)
+  solr.res <- .solr.get(query=query)
   index <- grep(cid, solr.res$response$docs[[1]]$comments)
   solr.res$response$docs[[1]]$comments <- solr.res$response$docs[[1]]$comments[-index]
   metadata <- paste0('{"id":"',id,'","comments":{"set":[\"',paste(solr.res$response$docs[[1]]$comments, collapse="\",\""),'\"]}}')
-  .solr.post(metadata)
+  .solr.post(data=metadata)
 }
 
 rcloud.delete.comment <- function(id,cid)
