@@ -373,8 +373,6 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
   solr.get.url$query <- query
   # https://cwiki.apache.org/confluence/display/solr/Response+Writers
   solr.get.url$query$wt<-"json"
-  # DELETE ME
-  print(build_url(solr.get.url))
   solr.res <- httr::GET(build_url(solr.get.url),content_type_json(),accept_json(),authenticate(solr.auth.user,solr.auth.pwd))
   solr.res <- fromJSON(content(solr.res, "parsed"))
   return(solr.res)
@@ -423,12 +421,8 @@ rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
   solr.query <- list(q=query,start=start,rows=pagesize,indent="true",hl="true",hl.preserveMulti="true",hl.fragsize=0,hl.maxAnalyzedChars=-1
     ,fl="description,id,user,updated_at,starcount",hl.fl="content,comments",sort=paste(sortby,orderby))
   query <- function(solr.url,source='',solr.auth.user=NA,solr.auth.pwd=NA) {
-      #solr.res <- httr::GET(build_url(solr.get.url),accept_json(),add_headers("auth-key"=as.character(solr.authkey)))
       solr.res <- .solr.get(solr.url=solr.url,query=solr.query,solr.auth.user=as.character(solr.auth.user),solr.auth.pwd=as.character(solr.auth.pwd))
       if (!is.null(solr.res$error)) stop(paste0(solr.res$error$code,": ",solr.res$error$msg))
-      #return(solr.res)
-      #solr.res <- fromJSON(content(solr.res, "parsed")) 
-      print ("Check 2")
       response.docs <- solr.res$response$docs
       count <- solr.res$response$numFound
       rows <- solr.res$params$rows
