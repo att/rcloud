@@ -361,7 +361,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
 # Some intelligent parsing account for basics like /solr/notebook and /solr/notebook/ is essentially the same thing
 # Using httr::parse_url
 
-.solr.post <- function(solr.url=getConf("solr.url"),data,solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd")) {
+.solr.post <- function(data,solr.url=getConf("solr.url"),solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd")) {
   solr.post.url <- httr::parse_url(solr.url)
   solr.post.url$path <- paste(solr.post.url$path,"update?commit=true",sep="/")
   if(is.null(solr.auth.user)){
@@ -371,7 +371,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
   }
 }
 
-.solr.get <- function(solr.url=getConf("solr.url"),query,solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd")){
+.solr.get <- function(query,solr.url=getConf("solr.url"),solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd")){
   solr.get.url <- httr::parse_url(solr.url)
   solr.get.url$path <- paste(solr.get.url$path,"select",sep="/")
   solr.get.url$query <- query
