@@ -364,7 +364,11 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
 .solr.post <- function(solr.url=getConf("solr.url"),data,solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd")) {
   solr.post.url <- httr::parse_url(solr.url)
   solr.post.url$path <- paste(solr.post.url$path,"update?commit=true",sep="/")
+  if(is.null(solr.auth.user)){
+    httr::POST(build_url(solr.post.url) , body = paste("[",data,"]",sep=''),content_type_json(),accept_json())
+    } else {
   httr::POST(build_url(solr.post.url) , body = paste("[",data,"]",sep=''),content_type_json(),accept_json() , authenticate(solr.auth.user,solr.auth.pwd))
+  }
 }
 
 .solr.get <- function(solr.url=getConf("solr.url"),query,solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd")){
@@ -373,7 +377,11 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
   solr.get.url$query <- query
   # https://cwiki.apache.org/confluence/display/solr/Response+Writers
   solr.get.url$query$wt<-"json"
+  if(is.null(solr.auth.user)){
+  solr.res <- httr::GET(build_url(solr.get.url),content_type_json(),accept_json())
+  }else{
   solr.res <- httr::GET(build_url(solr.get.url),content_type_json(),accept_json(),authenticate(solr.auth.user,solr.auth.pwd))
+}
   solr.res <- fromJSON(content(solr.res, "parsed"))
   return(solr.res)
 } 
@@ -420,8 +428,8 @@ rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
   ## FIXME: shouldn't we URL-encode the query?!?
   solr.query <- list(q=query,start=start,rows=pagesize,indent="true",hl="true",hl.preserveMulti="true",hl.fragsize=0,hl.maxAnalyzedChars=-1
     ,fl="description,id,user,updated_at,starcount",hl.fl="content,comments",sort=paste(sortby,orderby))
-  query <- function(solr.url,source='',solr.auth.user=NA,solr.auth.pwd=NA) {
-      solr.res <- .solr.get(solr.url=solr.url,query=solr.query,solr.auth.user=as.character(solr.auth.user),solr.auth.pwd=as.character(solr.auth.pwd))
+  query <- function(solr.url,source='',solr.auth.user=NULL,solr.auth.pwd=NULL) {
+      solr.res <- .solr.get(solr.url=solr.url,query=solr.query,solr.auth.user=solr.auth.user,solr.auth.pwd=solr.auth.pwd)
       if (!is.null(solr.res$error)) stop(paste0(solr.res$error$code,": ",solr.res$error$msg))
       response.docs <- solr.res$response$docs
       count <- solr.res$response$numFound
@@ -510,16 +518,14 @@ rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
                                       } else
                                       return(c("error",solr.res$error$msg))
                                     }
-                                    solr.auth.user=getConf("solr.auth.user")
-                                    solr.auth.pwd=getConf("solr.auth.pwd")
                                     if (isTRUE(all_sources)) {
-                                      main <- query(url,solr.auth.user=solr.auth.user,solr.auth.pwd=solr.auth.pwd)
+                                      main <- query(url,solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd"))
                                       l <- lapply(.session$gist.sources.conf, function(src)
                                        if ("solr.url" %in% names(src)) query(src['solr.url'], src['gist.source'],src['solr.auth.user'],src['solr.auth.pwd']) 
                                        else character(0))
                                       unlist(c(list(main), l))
                                     } 
-                                    else query(url,solr.auth.user=solr.auth.user,solr.auth.pwd=solr.auth.pwd)
+                                    else query(url,solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd"))
                                   }
 
                                   stitch.search.result <- function(splitted, type,k) {
