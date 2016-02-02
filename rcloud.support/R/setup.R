@@ -469,5 +469,5 @@ start.rcloud.anonymously <- function(...)
 .wipe.secrets <- function() {
     ## Redis is already dealt with since we scrub it right when we use it,
     ## but gist back-ends are separate
-    scrubConf(c("github.client.secret", "github.client.id"))
+    scrubConf(c("github.client.secret", "github.client.id","solr.auth.user","solr.auth.pwd"))
 }
