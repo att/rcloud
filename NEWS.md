@@ -2,14 +2,6 @@
 
 ### Features
 
-* Added support for sessions - the information about a session can be
-  retrieved using `rcloud.session.info()`
-
-* Output contexts can be created using `rcloud.output.context` for creating
-  cell-like output in a mini-html notebook. This allows simple output of
-  plots to a notebook with a custom layout, while supporting the resizing
-  and plot export UI of a notebook cell. (#1669)
-
 * Support `exec.auth: as-local` configuration option which uses
   current unix user (i.e., the user running the RCloud server) without
   authentication as the notebook user. It is intended for single-user
@@ -43,6 +35,17 @@
   mode on Windows and Linux - not perfect but closer (#1266)
 
 * Autosave should not scroll assets/notebook/cells (#1622 / #1626 / #1686)
+
+
+## RCloud 1.5.2
+
+* Added support for sessions - the information about a session can be
+  retrieved using `rcloud.session.info()`
+
+* Output contexts can be created using `rcloud.output.context` for creating
+  cell-like output in a mini-html notebook. This allows simple output of
+  plots to a notebook with a custom layout, while supporting the resizing
+  and plot export UI of a notebook cell. (#1669)
 
 
 ## RCloud 1.5.1
