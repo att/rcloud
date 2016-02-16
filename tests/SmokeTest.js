@@ -7,7 +7,7 @@ casper.test.begin("Smoke Test case which covers basic features", 26, function su
     var functions = require(fs.absolute('basicfunctions.js'));//invoke the common functions present in basicfunctions.js
     var notebook_id = '50de72ea14b86aa176c4';//Notebook which consists all the cells like "R, Python, Markdown, Shell"
     var Notebook_name = "TEST_NOTEBOOK";// Notebook name of the importing/Load Notebook
-    var fileName = '/home/travis/build/prateek032/rcloud/tests/PHONE.csv';// File path directory
+    var fileName = '/home/travis/build/att/rcloud/tests/PHONE.csv';// File path directory
 
     //Notebook paths to check for sharable links
     var Notebook_R = 'http://127.0.0.1:8080/notebook.R/564af357b532422620a6';
@@ -18,9 +18,9 @@ casper.test.begin("Smoke Test case which covers basic features", 26, function su
     var URL, url, NB_ID, NB_ID1, URL1;
 
     //Code to display Console errors
-    // casper.on('remote.message', function (msg) {
-    //     console.log('remote message caught: ' + msg);
-    // });
+    casper.on('remote.message', function (msg) {
+        console.log('remote message caught: ' + msg);
+    });
 
     //Code to display errors
     // casper.on('page.error', function (msg, trace) {
