@@ -14,3 +14,7 @@ echo "rcloud..alluser.addons: rcloud.viewer, rcloud.enviewer, rcloud.notebook.in
 echo "rcloud.languages: rcloud.r, rcloud.python, rcloud.rmarkdown, rcloud.sh" >> conf/rcloud.conf
 echo "rcloud.menu.forum: 2000, edit, link, Forum, http://www.google.com/" >> conf/rcloud.conf
 echo "rcloud.menu.about: 3000, edit | view, link, About, http://www.nytimes.com/" >> conf/rcloud.conf
+echo "solr.host.port: 127.0.0.1:8983" >> conf/rcloud.conf
+echo "solr.collection: rcloudnotebooks" >> conf/rcloud.conf
+echo "solr.url: http://127.0.0.1:8983/solr/rcloudnotebooks" >> conf/rcloud.conf
+echo "solr.page.size: 10" >> conf/rcloud.conf
