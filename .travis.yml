@@ -7,7 +7,7 @@ env:
   global:
     secure: n0hzldKhmNCV44XbvMIWE8gqDJKAR77r7nXVW4zuSF2nwImjhOwzazf2Ye8s7KxW82aNzZ3w+Vegx0gkhTFi8tHCI1/k6+0Squr4NAPfpeT7XffDm3iLj9D8TM2rgXE4YljNn06F6q+nqf1rIS0kgl4AWFTAy/J/jIHtV7NhY4Wd3a/0haT0S46u4iVoksJTTsNxb1jv0fBt5cgdYw6wkHV6AJ9aIv22WEOXG6efZQIbZTFfh6cLOFw/n0mEWWxn6qWYuXjamUdPW/ztV/OEimwkyTVXbPW+OcGjBYojjAh869jIrOfTv1KGDmUaFFot+rhdDdpZei6pUIVBE4rYNGQkVVjb+3/nChvB/ola1XmBaza8y+feBI1fSkXsdSZ11/klpTwTdK2jBxBhbcY3frfptt7fLYV40Zy8CZkUc97nNO6xyn4la8lTU1v1Z44srwLadehlf7AM/AHZfKLcp60INaFa5J4zNx1+7iBV8B5psYinIA2ZgDZcuFlUYRZsQWr4dBbyMWzFf1r684jSniD1yZpx8Dx7kZHWaBQGHOKIyHXAaz7FNM1/ygKaoDYwdIBGKXFvCFMNXNxlBs05LchW85OUPoINdTUe7Zy1KnDhp6jR07fHb++2uX4jkwP5ltsCDFNV9nCzcafoz4KSsx30ia37660H7Mri7GX47NA=
 before_install:
-- curl -OL http://raw.github.com/prateek032/rcloud/develop/scripts/travis-tool.sh
+- curl -OL http://raw.github.com/att/rcloud/develop/scripts/travis-tool.sh
 - chmod 755 ./travis-tool.sh
 - ./travis-tool.sh bootstrap
 - ./travis-tool.sh aptget_install libxt-dev libcurl4-openssl-dev libcairo2-dev libreadline-dev
@@ -26,7 +26,7 @@ before_install:
 - sudo ln -sf `pwd`/bin/casperjs /usr/local/bin/casperjs
 - casperjs --version
 - sudo apt-get install python-dev
-- cd /home/travis/build/prateek032/rcloud
+- cd /home/travis/build/att/rcloud
 - chmod 755 ./tests/Run.sh
 - chmod 755 ./tests/Reports
 - chmod 755 ./tests/*
@@ -36,9 +36,9 @@ install:
 - ./scripts/bootstrapR.sh
 - ./scripts/build.sh
 - sudo pip install ipython==2.4.1
-- cd /home/travis/build/prateek032/rcloud/conf/solr
-- ./solrsetup.sh /home/travis/build/prateek032/rcloud/services/
-- cd /home/travis/build/prateek032/rcloud/
+- cd /home/travis/build/att/rcloud/conf/solr
+- ./solrsetup.sh /home/travis/build/att/rcloud/services/
+- cd /home/travis/build/att/rcloud/
 script:
 - ./scripts/fresh_start.sh
 - ./tests/Run.sh $TESTFOLDER

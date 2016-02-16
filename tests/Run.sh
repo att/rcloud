@@ -3,9 +3,9 @@ cd services
 git clone https://github.com/s-u/SessionKeyServer.git
 cd SessionKeyServer
 sudo make
-cd /home/travis/build/prateek032/rcloud/services
+cd /home/travis/build/att/rcloud/services
 
-sudo sed -i -e '2iROOT=/home/travis/build/prateek032/rcloud\' rcloud-sks
+sudo sed -i -e '2iROOT=/home/travis/build/att/rcloud\' rcloud-sks
 sudo sh rcloud-sks &
 
 Rscript -e 'chooseCRANmirror(ind=81)'
@@ -14,7 +14,7 @@ Rscript -e 'install.packages("rcloud.dcplot", repos="http://rforge.net")'
 Rscript -e 'install.packages("rpython2", repos="http://rforge.net")'
 Rscript -e 'install.packages("xml2", repos=c("http://RForge.net", "http://R.research.att.com"), type="source")'
 
-cd /home/travis/build/prateek032/rcloud/tests
+cd /home/travis/build/att/rcloud/tests
 #sudo apt-get install xvfb
 pwd
 echo "Executing testscripts from $1"
