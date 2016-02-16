@@ -18,9 +18,9 @@ casper.test.begin("Smoke Test case which covers basic features", 26, function su
     var URL, url, NB_ID, NB_ID1, URL1;
 
     //Code to display Console errors
-    casper.on('remote.message', function (msg) {
-        console.log('remote message caught: ' + msg);
-    });
+    // casper.on('remote.message', function (msg) {
+    //     console.log('remote message caught: ' + msg);
+    // });
 
     //Code to display errors
     // casper.on('page.error', function (msg, trace) {
