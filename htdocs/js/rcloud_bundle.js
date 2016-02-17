@@ -88,7 +88,9 @@ RClient = {
 
             post_response: function (msg) {
                 var d = $("<pre class='response'></pre>").html(msg);
-                $("#output").append(d);
+                //$(d).insertBefore("#selection-bar");//.insertBefore(d);
+
+                $('#output').append(d);
             },
 
             post_rejection: function(e) {
@@ -1941,6 +1943,16 @@ function create_cell_html_view(language, cell_model) {
         }
     }
 
+    function update_selected() {
+        if(cell_model.is_selected()) {
+            notebook_cell_div.addClass("selected");
+        } else {
+            notebook_cell_div.removeClass("selected");
+        }
+
+        notebook_cell_div.find('.cell-control input[type="checkbox"]').prop('checked', cell_model.is_selected());
+    }
+
     //////////////////////////////////////////////////////////////////////////
 
     var inner_div = $("<div></div>");
@@ -2248,6 +2260,9 @@ function create_cell_html_view(language, cell_model) {
         language_updated: function() {
             update_language();
             cell_changed();
+        },
+        selected_updated: function() {
+            update_selected();
         },
         state_changed: function(state) {
             var control = left_controls_.controls['run_state'];
@@ -2578,6 +2593,7 @@ Notebook.Cell.create_html_view = function(cell_model)
 Notebook.Cell.create_model = function(content, language)
 {
     var id_ = -1;
+    var is_selected_ = false;
     var result = Notebook.Buffer.create_model(content, language);
     var base_change_object = result.change_object;
 
@@ -2606,6 +2622,36 @@ Notebook.Cell.create_model = function(content, language)
                 language: language,
                 version: this.parent_model.controller.current_gist().history[0].version
             };
+        },
+        deselect_cell: function() {
+            is_selected_ = false;
+
+            this.notify_views(function(view) {
+                view.selected_updated();
+            });
+
+            return is_selected_;
+        },
+        select_cell: function() {
+            is_selected_ = true;
+
+            this.notify_views(function(view) {
+                view.selected_updated();
+            });
+
+            return is_selected_;  
+        },
+        toggle_cell: function() {
+            is_selected_ = !is_selected_;
+
+            this.notify_views(function(view) {
+                view.selected_updated();
+            });
+
+            return is_selected_;  
+        },
+        is_selected: function() {
+            return is_selected_;
         },
         json: function() {
             return {
@@ -3103,6 +3149,31 @@ Notebook.create_model = function()
             }
             return changes;
         },
+        remove_selected_cells: function() {
+            var that = this;
+            _.chain(this.cells)
+            .filter(function(cell) {
+                return cell.is_selected();
+            })
+            .each(function(cell) {
+                that.remove_cell(cell);
+            });
+        },
+        toggle_selected_cells: function() {
+            _.each(this.cells, function(cell) {
+                cell.toggle_cell();
+            });
+        },
+        clear_all_selection: function() {
+            _.each(this.cells, function(cell) {
+                cell.deselect_cell();
+            });
+        },
+        select_all_cells: function() {
+            _.each(this.cells, function(cell) {
+                cell.select_cell();
+            });
+        },
         move_cell: function(cell_model, before) {
             // remove doesn't change any ids, so we can just remove then add
             var pre_index = this.cells.indexOf(cell_model),
@@ -3129,6 +3200,63 @@ Notebook.create_model = function()
             cell_model.language(language);
             return [cell_model.change_object({filename: pre_name,
                                               rename: cell_model.filename()})];
+        },
+        select_cell: function(cell_model, modifiers) {
+
+            var that = this;
+
+            var clear_all = function() {
+                _.chain(that.cells)
+                .filter(function(cell) {
+                    return cell.is_selected();
+                })
+                .each(function(cell) {
+                    cell.deselect_cell();
+                }); 
+            };
+
+            var get_selected_index_range = function() {
+                var foundIndexes = [];
+
+                for(var loop = 0; loop < that.cells.length; loop++) {
+                    if(that.cells[loop].is_selected()) {
+                        foundIndexes.push(loop);
+                    }
+                }
+
+                return foundIndexes.length === 0 ? undefined : {
+                    lower: foundIndexes[0],
+                    upper: foundIndexes[foundIndexes.length - 1]
+                };
+            };
+
+            var select_range = function(lower, upper) {
+                var items = [];
+
+                for(var loop = lower; loop <= upper; loop++) {
+                    that.cells[loop].select_cell();
+                }
+            };
+
+            if(modifiers.is_toggle) {
+                cell_model.toggle_cell();
+            } else /* is_range */ {
+                var selected_index_range = get_selected_index_range();
+                var selected_index = this.cells.indexOf(cell_model);
+
+                if(_.isUndefined(selected_index_range)) {
+                    cell_model.select_cell();
+                } else {
+                    clear_all();
+                    if(selected_index > selected_index_range.upper) {
+                        select_range(selected_index_range.upper, selected_index);
+                    } else if(selected_index < selected_index_range.lower) {
+                        select_range(selected_index, selected_index_range.lower);
+                    } else {
+                        select_range(selected_index_range.lower, selected_index_range.upper);
+                    }
+                }
+            }
         },
         update_cell: function(cell_model) {
             return [cell_model.change_object()];
@@ -3473,6 +3601,18 @@ Notebook.create_controller = function(model)
             return update_notebook(changes)
                 .then(default_callback());
         },
+        remove_selected_cells: function() {
+            model.remove_selected_cells();
+        },
+        toggle_selected_cells: function() {
+            model.toggle_selected_cells();
+        },
+        clear_all_selection: function() {
+            model.clear_all_selection();
+        },
+        select_all_cells: function() {
+            model.select_all_cells();
+        },
         remove_asset: function(asset_model) {
             var changes = refresh_buffers().concat(model.remove_asset(asset_model));
             return update_notebook(changes)
@@ -3579,6 +3719,9 @@ Notebook.create_controller = function(model)
             var changes = refresh_buffers().concat(model.change_cell_language(cell_model, language));
             return update_notebook(changes)
                 .then(default_callback());
+        },
+        select_cell: function(cell_model, modifiers) {
+            var changes = refresh_buffers().concat(model.select_cell(cell_model, modifiers));
         },
         clear: function() {
             model.clear();
@@ -4388,9 +4531,14 @@ RCloud.UI.cell_commands = (function() {
                 }
             };
         },
-        create_static: function(html, wrap) {
+        create_static: function(html, wrap, action) {
             var content = $('<span><span/>').html(html);
             var span = wrap ? wrap(content) : content;
+
+            if(action) {
+                action(span);
+            }
+
             return {
                 control: span,
                 enable: function() {},
@@ -4545,16 +4693,6 @@ RCloud.UI.cell_commands = (function() {
                         });
                     }
                 },
-                remove: {
-                    area: 'cell',
-                    sort: 5000,
-                    enable_flags: ['modify'],
-                    create: function(cell_model) {
-                        return that.create_button("icon-trash", "remove", function() {
-                            cell_model.parent_model.controller.remove_cell(cell_model);
-                        });
-                    }
-                },
                 grab_affordance: {
                     area: 'left',
                     sort: 1000,
@@ -4563,6 +4701,24 @@ RCloud.UI.cell_commands = (function() {
                         var svg = "<img src='/img/grab_affordance.svg' type='image/svg+xml'></img>";
                         return that.create_static(svg, function(x) {
                             return $("<span class='grab-affordance'>").append(x);
+                        });
+                    }
+                },
+                selection: {
+                    area: 'left',
+                    sort: 1250,
+                    display_flags: ['modify'],
+                    create: function(cell_model) {
+                        var html = "<input type='checkbox'></input>";
+                        return that.create_static(html, function(x) {
+                            return $("<span class='cell-selection'>").append(x);
+                        }, function(static_content) {
+                            static_content.click(function(e) {
+                                cell_model.parent_model.controller.select_cell(cell_model, {
+                                    is_toggle: !e.shiftKey, 
+                                    is_range : e.shiftKey
+                                });
+                            });
                         });
                     }
                 },
@@ -4588,6 +4744,16 @@ RCloud.UI.cell_commands = (function() {
                     create: function(cell_model) {
                         return that.create_static(cell_model.id(), function(x) {
                             return $("<span class='left-indicator'></span>").append('cell ', x);
+                        }, function(static_content) {
+                            static_content.click(function(e) {
+                                if(e.ctrlKey || e.metaKey || e.shiftKey) {
+                                    e.preventDefault();
+                                }
+                                cell_model.parent_model.controller.select_cell(cell_model, {
+                                    is_toggle: (e.ctrlKey || e.metaKey) && !e.shiftKey,
+                                    is_range : e.shiftKey
+                                });
+                            });
                         });
                     }
                 }
@@ -6339,6 +6505,7 @@ RCloud.UI.init = function() {
     RCloud.UI.menus.init();
     RCloud.UI.advanced_menu.init();
     RCloud.UI.navbar.init();
+    RCloud.UI.selection_bar.init();
 
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
@@ -6433,6 +6600,11 @@ RCloud.UI.init = function() {
         if((!ui_utils.is_a_mac() && isCmdOrCtrlAndKeyCode(89)) || (ui_utils.is_a_mac() && e.keyCode == 90 && e.metaKey && e.shiftKey)) {
             e.preventDefault();
             editor.step_history_redo();
+        }
+        // delete 
+        if(e.keyCode === 46) {
+            e.preventDefault();
+            shell.notebook.controller.remove_selected_cells();
         }
     });
 };
@@ -7016,7 +7188,34 @@ RCloud.UI.notebook_commands = (function() {
     };
     return result;
 })();
-RCloud.UI.notebook_title = (function() {
+RCloud.UI.selection_bar = (function() {
+    var result = {
+        init: function() {
+
+            var $selection_bar = $(RCloud.UI.panel_loader.load_snippet('selection-bar-snippet'))
+                .find('.btn-default input[type="checkbox"]').click(function() {
+                    if($(this).is(':checked')) {
+                        shell.notebook.controller.select_all_cells();
+                    } else {
+                        shell.notebook.controller.clear_all_selection();
+                    }
+                })
+                .end()
+                .find('a[data-action]').click(function() {
+                    shell.notebook.controller[$(this).attr('data-action')]();
+                })
+                .end()
+                .find('#selection-bar-delete').click(function() {
+                    shell.notebook.controller.remove_selected_cells();
+                })
+                .end()
+                .show();
+
+            $('#' + $selection_bar.attr('id')).replaceWith($selection_bar);
+        }
+    };
+    return result;
+})();RCloud.UI.notebook_title = (function() {
     var last_editable_ =  null;
     function version_tagger(node) {
         return function(name) {

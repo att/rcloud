@@ -49,6 +49,7 @@ rcloud_bundle.js: \
 	ui/middle_column.js \
         ui/navbar.js \
         ui/notebook_commands.js \
+        ui/selection_bar.js \
 	ui/notebook_title.js \
 	ui/notebooks_frame.js \
         ui/output_context.js \

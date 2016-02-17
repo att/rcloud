@@ -63,6 +63,7 @@ RCloud.UI.init = function() {
     RCloud.UI.menus.init();
     RCloud.UI.advanced_menu.init();
     RCloud.UI.navbar.init();
+    RCloud.UI.selection_bar.init();
 
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
@@ -157,6 +158,11 @@ RCloud.UI.init = function() {
         if((!ui_utils.is_a_mac() && isCmdOrCtrlAndKeyCode(89)) || (ui_utils.is_a_mac() && e.keyCode == 90 && e.metaKey && e.shiftKey)) {
             e.preventDefault();
             editor.step_history_redo();
+        }
+        // delete 
+        if(e.keyCode === 46) {
+            e.preventDefault();
+            shell.notebook.controller.remove_selected_cells();
         }
     });
 };

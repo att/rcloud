@@ -276,6 +276,18 @@ Notebook.create_controller = function(model)
             return update_notebook(changes)
                 .then(default_callback());
         },
+        remove_selected_cells: function() {
+            model.remove_selected_cells();
+        },
+        toggle_selected_cells: function() {
+            model.toggle_selected_cells();
+        },
+        clear_all_selection: function() {
+            model.clear_all_selection();
+        },
+        select_all_cells: function() {
+            model.select_all_cells();
+        },
         remove_asset: function(asset_model) {
             var changes = refresh_buffers().concat(model.remove_asset(asset_model));
             return update_notebook(changes)
@@ -382,6 +394,9 @@ Notebook.create_controller = function(model)
             var changes = refresh_buffers().concat(model.change_cell_language(cell_model, language));
             return update_notebook(changes)
                 .then(default_callback());
+        },
+        select_cell: function(cell_model, modifiers) {
+            var changes = refresh_buffers().concat(model.select_cell(cell_model, modifiers));
         },
         clear: function() {
             model.clear();

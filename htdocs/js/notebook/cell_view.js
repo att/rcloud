@@ -104,6 +104,16 @@ function create_cell_html_view(language, cell_model) {
         }
     }
 
+    function update_selected() {
+        if(cell_model.is_selected()) {
+            notebook_cell_div.addClass("selected");
+        } else {
+            notebook_cell_div.removeClass("selected");
+        }
+
+        notebook_cell_div.find('.cell-control input[type="checkbox"]').prop('checked', cell_model.is_selected());
+    }
+
     //////////////////////////////////////////////////////////////////////////
 
     var inner_div = $("<div></div>");
@@ -411,6 +421,9 @@ function create_cell_html_view(language, cell_model) {
         language_updated: function() {
             update_language();
             cell_changed();
+        },
+        selected_updated: function() {
+            update_selected();
         },
         state_changed: function(state) {
             var control = left_controls_.controls['run_state'];
