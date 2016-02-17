@@ -44,12 +44,11 @@ script:
 - ./tests/Run.sh $TESTFOLDER
 on_failure:
 - ./travis-tool.sh dump_logs
-after_success: 
+after_success:
 notifications:
   email:
     recipients:
-    - prateek.naik@mu-sigma.com
-    - Sanket.Deshmukh@mu-sigma.com
+    - gordon@woodhull.com
     on_success: always
     on_failure: always
 branches:
