@@ -3,9 +3,10 @@
 }
 
 .navbar,
+#selection-bar,
 #left-column,
-.cell-status-left
- .grab-affordance,
+.cell-status-left .grab-affordance,
+.cell-status-left .cell-selection,
 .cell-status-left .state-icon,
 .cell-control-bar,
 .cell-controls-above,

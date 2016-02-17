@@ -134,6 +134,7 @@ div.panel-heading:hover {
     position: absolute;
     width: 48px;
     height: 100%;
+    cursor: pointer;
 }
 
 

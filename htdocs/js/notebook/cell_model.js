@@ -1,6 +1,7 @@
 Notebook.Cell.create_model = function(content, language)
 {
     var id_ = -1;
+    var is_selected_ = false;
     var result = Notebook.Buffer.create_model(content, language);
     var base_change_object = result.change_object;
 
@@ -29,6 +30,36 @@ Notebook.Cell.create_model = function(content, language)
                 language: language,
                 version: this.parent_model.controller.current_gist().history[0].version
             };
+        },
+        deselect_cell: function() {
+            is_selected_ = false;
+
+            this.notify_views(function(view) {
+                view.selected_updated();
+            });
+
+            return is_selected_;
+        },
+        select_cell: function() {
+            is_selected_ = true;
+
+            this.notify_views(function(view) {
+                view.selected_updated();
+            });
+
+            return is_selected_;  
+        },
+        toggle_cell: function() {
+            is_selected_ = !is_selected_;
+
+            this.notify_views(function(view) {
+                view.selected_updated();
+            });
+
+            return is_selected_;  
+        },
+        is_selected: function() {
+            return is_selected_;
         },
         json: function() {
             return {

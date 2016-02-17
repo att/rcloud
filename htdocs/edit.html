@@ -71,8 +71,6 @@
   </span>
 </script>
 
-
-
 <script type="text/html" id="search-snippet">
   <div class="panel-body" style="padding-bottom: 0;padding-top:3px">
     <div id="search-wrapper" class="widget-vsize"> <!-- only for sizing -->
@@ -136,6 +134,26 @@
       </form>
     </div>
     <div id="help-body"></div>
+  </div>
+</script>
+
+<script type="text/html" id="selection-bar-snippet">
+  <div id="selection-bar">
+    <div class="btn-group">
+      <div type="button" class="btn btn-default">
+          <input type="checkbox" />
+      </div>
+      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+        <span class="caret"></span>
+        <span class="sr-only">Toggle Dropdown</span>
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="selection-menu">
+        <li><a href="javascript:void(0)" data-action="select_all_cells">All</a></li>
+        <li><a href="javascript:void(0)" data-action="clear_all_selection">None</a></li>
+        <li><a href="javascript:void(0)" data-action="toggle_selected_cells">Toggle</a></li>
+      </ul>
+    </div>
+    <button id="selection-bar-delete" title="Delete selected cells" type="button" class="btn btn-link navbar-btn"><i class="icon-trash"></i></button>
   </div>
 </script>
 
@@ -247,8 +265,6 @@
   </div>
 </script>
 
-
-
 <script type="text/html" id="notebook-protection-modal">
 
   <div class="modal-body" id='protection-app' ng-controller='NotebookProtectionController' ng-cloak>
@@ -350,7 +366,11 @@
       </div>
     </div>
     <div class="col-md-10 col-sm-10 no-padding" id="middle-column">
+
+      <div id="selection-bar"><!-- replaced by load_snippet call --></div>
+
       <div id="rcloud-cellarea">
+
         <span id="notebook-left-resizer" class="notebook-sizer left">
           <span class="bar"></span>
         </span>
@@ -359,6 +379,7 @@
         </span>
 
         <div id="output" class="tab-div">
+        
         </div>
 
         <div id="end-of-output"></div>

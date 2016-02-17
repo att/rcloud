@@ -55,6 +55,7 @@ module.exports = function (grunt) {
             "htdocs/js/ui/middle_column.js",
             "htdocs/js/ui/navbar.js",
             "htdocs/js/ui/notebook_commands.js",
+            "htdocs/js/ui/selection_bar.js",
             "htdocs/js/ui/notebook_title.js",
             "htdocs/js/ui/notebooks_frame.js",
             "htdocs/js/ui/output_context.js",
