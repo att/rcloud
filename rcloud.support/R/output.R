@@ -24,7 +24,7 @@ rcloud.html.out <- function(..., sep="") {
 }
 
 rcloud.session.log <- function(...) {
-    .rc.oobSend("stderr", x <- paste(..., sep=sep, collapse="\n"))
+    .rc.oobSend("stderr", x <- paste(..., collapse="\n"))
     invisible(x)
 }
 
