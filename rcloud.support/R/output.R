@@ -23,6 +23,11 @@ rcloud.html.out <- function(..., sep="") {
   .session$.output.context.cap <- rcloud.install.js.module("rcloud.output.context", ocjs)
 }
 
+rcloud.session.log <- function(...) {
+    .rc.oobSend("stderr", x <- paste(..., sep=sep, collapse="\n"))
+    invisible(x)
+}
+
 # returns an ID which should be passed to Rserve.context
 rcloud.output.context <- function(selector) {
   if (is.null(.session$.output.context.cap))
