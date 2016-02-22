@@ -10,6 +10,8 @@
   plots to a notebook with a custom layout, while supporting the resizing
   and plot export UI of a notebook cell. (#1669)
 
+* Support for HTTP Basic Authentication for SOLR search. (#1794)
+
 
 ### Improvements
 
