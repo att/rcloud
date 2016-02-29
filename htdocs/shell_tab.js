@@ -90,7 +90,7 @@ var shell = (function() {
                         if(url) gist_urls_[source] = url;
                     });
                 });
-                rcloud.config.get_user_option('autosave-timeout')
+                (rcloud.config ? rcloud.config.get_user_option('autosave-timeout') : Promise.resolve(30))
                     .then(function(TO) {
                         if(TO !== null)
                             autosave_timeout_ = +TO * 1000;
