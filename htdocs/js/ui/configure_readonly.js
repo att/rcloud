@@ -21,6 +21,7 @@ RCloud.UI.configure_readonly = function() {
     }
     if(shell.notebook.model.read_only()) {
         RCloud.UI.command_prompt.readonly(true);
+        RCloud.UI.selection_bar.hide();
         readonly_notebook.show();
         $('#output').sortable('disable');
         $('#upload-to-notebook')
@@ -30,6 +31,7 @@ RCloud.UI.configure_readonly = function() {
     }
     else {
         RCloud.UI.command_prompt.readonly(false);
+        RCloud.UI.selection_bar.show();
         readonly_notebook.hide();
         $('#output').sortable('enable');
         $('#upload-to-notebook')

@@ -183,21 +183,25 @@ Notebook.create_model = function()
             .each(function(cell) {
                 that.remove_cell(cell);
             });
+            RCloud.UI.selection_bar.update(this.cells);
         },
         toggle_selected_cells: function() {
             _.each(this.cells, function(cell) {
                 cell.toggle_cell();
             });
+            RCloud.UI.selection_bar.update(this.cells);
         },
-        clear_all_selection: function() {
+        clear_all_selected_cells: function() {
             _.each(this.cells, function(cell) {
                 cell.deselect_cell();
             });
+            RCloud.UI.selection_bar.update(this.cells);
         },
         select_all_cells: function() {
             _.each(this.cells, function(cell) {
                 cell.select_cell();
             });
+            RCloud.UI.selection_bar.update(this.cells);
         },
         move_cell: function(cell_model, before) {
             // remove doesn't change any ids, so we can just remove then add
@@ -282,6 +286,8 @@ Notebook.create_model = function()
                     }
                 }
             }
+
+            RCloud.UI.selection_bar.update(this.cells);
         },
         update_cell: function(cell_model) {
             return [cell_model.change_object()];

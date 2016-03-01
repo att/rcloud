@@ -3177,21 +3177,25 @@ Notebook.create_model = function()
             .each(function(cell) {
                 that.remove_cell(cell);
             });
+            RCloud.UI.selection_bar.update(this.cells);
         },
         toggle_selected_cells: function() {
             _.each(this.cells, function(cell) {
                 cell.toggle_cell();
             });
+            RCloud.UI.selection_bar.update(this.cells);
         },
-        clear_all_selection: function() {
+        clear_all_selected_cells: function() {
             _.each(this.cells, function(cell) {
                 cell.deselect_cell();
             });
+            RCloud.UI.selection_bar.update(this.cells);
         },
         select_all_cells: function() {
             _.each(this.cells, function(cell) {
                 cell.select_cell();
             });
+            RCloud.UI.selection_bar.update(this.cells);
         },
         move_cell: function(cell_model, before) {
             // remove doesn't change any ids, so we can just remove then add
@@ -3276,6 +3280,8 @@ Notebook.create_model = function()
                     }
                 }
             }
+
+            RCloud.UI.selection_bar.update(this.cells);
         },
         update_cell: function(cell_model) {
             return [cell_model.change_object()];
@@ -3620,8 +3626,8 @@ Notebook.create_controller = function(model)
         toggle_selected_cells: function() {
             model.toggle_selected_cells();
         },
-        clear_all_selection: function() {
-            model.clear_all_selection();
+        clear_all_selected_cells: function() {
+            model.clear_all_selected_cells();
         },
         select_all_cells: function() {
             model.select_all_cells();
@@ -4771,7 +4777,7 @@ RCloud.UI.cell_commands = (function() {
                                     e.preventDefault();
                                 }
                                 cell_model.parent_model.controller.select_cell(cell_model, {
-                                    is_toggle: (e.ctrlKey || e.metaKey) && !e.shiftKey,
+                                    is_toggle: !e.shiftKey, 
                                     is_range : e.shiftKey
                                 });
                             });
@@ -5618,6 +5624,7 @@ RCloud.UI.configure_readonly = function() {
     }
     if(shell.notebook.model.read_only()) {
         RCloud.UI.command_prompt.readonly(true);
+        RCloud.UI.selection_bar.hide();
         readonly_notebook.show();
         $('#output').sortable('disable');
         $('#upload-to-notebook')
@@ -5627,6 +5634,7 @@ RCloud.UI.configure_readonly = function() {
     }
     else {
         RCloud.UI.command_prompt.readonly(false);
+        RCloud.UI.selection_bar.show();
         readonly_notebook.hide();
         $('#output').sortable('enable');
         $('#upload-to-notebook')
@@ -7433,15 +7441,28 @@ RCloud.UI.notebook_commands = (function() {
 })();
 
 RCloud.UI.selection_bar = (function() {
+
+    var $partial_indicator;
+    var $selection_checkbox;
+
+    var reset = function() {
+        $selection_checkbox.prop('checked', false);
+        $partial_indicator.hide();
+    };
+
     var result = {
         init: function() {
 
-            var $selection_bar = $(RCloud.UI.panel_loader.load_snippet('selection-bar-snippet'))
+            var $selection_bar = $(RCloud.UI.panel_loader.load_snippet('selection-bar-snippet'));
+            $partial_indicator = $selection_bar.find('.cell-selection span');
+            $selection_checkbox = $selection_bar.find('.cell-selection input[type="checkbox"]');
+
+            $selection_bar
                 .find('.btn-default input[type="checkbox"]').click(function() {
                     if($(this).is(':checked')) {
                         shell.notebook.controller.select_all_cells();
                     } else {
-                        shell.notebook.controller.clear_all_selection();
+                        shell.notebook.controller.clear_all_selected_cells();
                     }
                 })
                 .end()
@@ -7456,6 +7477,33 @@ RCloud.UI.selection_bar = (function() {
                 .show();
 
             $('#' + $selection_bar.attr('id')).replaceWith($selection_bar);
+        },  
+        update: function(cells) {
+
+            var cell_count = cells.length,
+                selected_count = _.filter(cells, function(cell) { return cell.is_selected(); }).length;
+
+            if(selected_count === 0) {
+                $selection_checkbox.prop('checked', false);
+                $partial_indicator.hide();
+            } else if(selected_count !== cell_count) {
+                $selection_checkbox.prop('checked', false);
+                $partial_indicator.show();
+            } else {
+                $selection_checkbox.prop('checked', true);
+                $partial_indicator.hide();
+            }
+        },
+        reset: function() {
+            reset()
+        },
+        hide: function() {
+            $('#selection-bar').hide();
+            reset();
+        },
+        show: function() {
+            $('#selection-bar').show();
+            reset();
         }
     };
     return result;

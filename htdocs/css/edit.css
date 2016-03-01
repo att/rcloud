@@ -332,6 +332,19 @@ rect.frame {
     text-decoration: none;
 }
 
+#selection-bar .cell-selection {
+    position: relative;
+}
+
+#selection-bar .cell-selection span {
+    position: absolute;
+    display: none;
+    top: 4px;
+    left: 17px;
+    font-weight: bold;
+    pointer-events: none;
+}
+
 #selection-bar i {
     font-size: 130%;
 }
@@ -347,7 +360,7 @@ rect.frame {
 }
 
 .notebook-cell.selected {
-    background-color: rgba(255, 255, 0, 0.3);
+    background-color: rgba(255, 255, 0, 0.4);
 }
 
 .notebook-cell.selected * {
