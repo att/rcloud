@@ -5,6 +5,8 @@ tmp
 userfiles
 node_modules
 htdocs/mathjax
+htdocs/js/*.js.gz
+htdocs/lib/*.js.gz
 services/
 data
 run
