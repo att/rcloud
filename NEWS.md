@@ -39,6 +39,8 @@
 
 ## RCloud 1.5.2
 
+### Features
+
 * Added support for sessions - the information about a session can be
   retrieved using `rcloud.session.info()`
 
@@ -47,9 +49,21 @@
   plots to a notebook with a custom layout, while supporting the resizing
   and plot export UI of a notebook cell. (#1669)
 
+* Support for HTTP Basic Authentication for SOLR search. (#1794)
+
+
+### Improvements
+
+* `rcloud.session.log` function for sending messages straight to the session
+  info pane or debugger console.
+
+
+### Bugfixes
+
+* updated `sourceURL` syntax for debugging javascript in the browser
+
 
 ## RCloud 1.5.1
-
 ### Bugfixes
 
 * Converting a notebook to encrypted would fail if the notebook contained
