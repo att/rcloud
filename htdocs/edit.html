@@ -156,8 +156,8 @@
 <script type="text/html" id="selection-bar-snippet">
   <div id="selection-bar">
     <div class="btn-group">
-      <div type="button" class="btn btn-default">
-          <input type="checkbox" />
+      <div type="button" class="btn btn-default cell-selection">
+          <input type="checkbox" /><span>&ndash;</span>
       </div>
       <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
         <span class="caret"></span>
@@ -165,7 +165,7 @@
       </button>
       <ul class="dropdown-menu" aria-labelledby="selection-menu">
         <li><a href="javascript:void(0)" data-action="select_all_cells">All</a></li>
-        <li><a href="javascript:void(0)" data-action="clear_all_selection">None</a></li>
+        <li><a href="javascript:void(0)" data-action="clear_all_selected_cells">None</a></li>
         <li><a href="javascript:void(0)" data-action="toggle_selected_cells">Toggle</a></li>
       </ul>
     </div>

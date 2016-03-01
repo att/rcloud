@@ -282,8 +282,8 @@ Notebook.create_controller = function(model)
         toggle_selected_cells: function() {
             model.toggle_selected_cells();
         },
-        clear_all_selection: function() {
-            model.clear_all_selection();
+        clear_all_selected_cells: function() {
+            model.clear_all_selected_cells();
         },
         select_all_cells: function() {
             model.select_all_cells();

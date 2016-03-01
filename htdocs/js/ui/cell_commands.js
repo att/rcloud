@@ -301,7 +301,7 @@ RCloud.UI.cell_commands = (function() {
                                     e.preventDefault();
                                 }
                                 cell_model.parent_model.controller.select_cell(cell_model, {
-                                    is_toggle: (e.ctrlKey || e.metaKey) && !e.shiftKey,
+                                    is_toggle: !e.shiftKey, 
                                     is_range : e.shiftKey
                                 });
                             });
