@@ -18,6 +18,7 @@
  >Search Elements
  */
 
+
 var casper = require("casper").create();
 
 //login to Github and RCloud
@@ -26,6 +27,7 @@ exports.login = function (casper, github_username, github_password, rcloud_url) 
         .then(function () {
             this.wait(8000);
             if (casper.getTitle().match(/GitHub/)) {
+
                 casper.viewport(1366, 768).then(function () {
                     this.test.assertTitleMatch(/GitHub/, "Github page has been loaded");
                     console.log("Login into GitHub with supplied username and password");
@@ -33,12 +35,10 @@ exports.login = function (casper, github_username, github_password, rcloud_url) 
                     this.sendKeys('#password', github_password);
                     this.click({type: 'css', path: "input.btn"});
                 });
+
                 casper.viewport(1366, 768).then(function () {
-                    if (this.getTitle().match(/GitHub/)) {
-                        this.click({
-                            type: 'css',
-                            path: 'html body.logged_in div.wrapper div.site div#site-container.context-loader-container div.setup-wrapper div.setup-main form p button.button'
-                        });
+                    if (this.getTitle().match(/Authorize RCloud/)) {
+                        this.click(".btn");
                         console.log("Github Authorization completed");
                     }
                     else {
@@ -49,6 +49,7 @@ exports.login = function (casper, github_username, github_password, rcloud_url) 
                         });
                     }
                 });
+
             }
             else {
                 casper.viewport(1024, 768).then(function () {
@@ -56,7 +57,7 @@ exports.login = function (casper, github_username, github_password, rcloud_url) 
                 });
             }
         });
-};
+}
 
 //create a new notebook
 exports.create_notebook = function (casper) {
@@ -74,16 +75,36 @@ exports.create_notebook = function (casper) {
 exports.validation = function (casper) {
     return casper
         .then(function () {
-            this.wait(10000);
-            this.test.assertExists(
-                {type: 'css', path: '.icon-share'},
-                'the element Shareable Link exists'
-            );
-            this.wait(3000);
-            this.test.assertVisible(
-                {type: 'css', path: ".icon-share"},
-                'Logout button exists'
-            );
+            this.wait(5000);
+            this.waitForSelector('.icon-share', function () {
+                this.test.assertExists('.icon-share', 'the element Shareable Link exists');
+            });
+            this.waitForSelector('#rcloud-navbar-menu > li:nth-child(7) > a:nth-child(1)', function () {
+                this.test.assertVisible("#rcloud-navbar-menu > li:nth-child(7) > a:nth-child(1)", 'Logout button exists');
+            });
+        });
+};
+
+exports.search1 = function (casper, search_Content) {
+    return casper
+        .then(function () {
+            if (this.visible('#sort-by')) {
+                console.log('Search div is already opened');
+            }
+            else {
+                var z = this.evaluate(function () {
+                    $('#accordion-left > div:nth-child(2) > div:nth-child(1)').click();
+                });
+                this.echo("Opened Search div");
+            }
+
+            this.then(function () {
+                this.sendKeys('#input-text-search', search_Content);
+                this.wait(6000);
+                this.click('#search-form > div:nth-child(1) > div:nth-child(2) > button:nth-child(1)');
+            });
+
+            this.wait(5000);
         });
 };
 
@@ -172,6 +193,7 @@ exports.delete_notebooksIstarred = function (casper) {
                     this.click('.jqtree-selected > div:nth-child(1) > span:nth-child(2) > span:nth-child(3) > span:nth-child(1) > span:nth-child(5) > i:nth-child(1)');
                 });
             });
+
         });
 };
 
@@ -217,6 +239,17 @@ exports.checkstarred = function (casper) {
         });
 };
 
+//Random number
+exports.RandomNumber = function (casper) {
+    return casper
+        .then(function () {
+            ID = this.evaluate(function () {
+                return Math.random().toString(36).substr(2, 9);
+            });
+            this.echo('Genearated random number is: ' + ID);
+        });
+};
+
 //Check whether a notebook is present in Notebooks I Starred list
 exports.notebooksIstarred = function (casper) {
     return casper
@@ -241,7 +274,6 @@ exports.notebooksIstarred = function (casper) {
                     type: 'css',
                     path: 'ul.jqtree_common:nth-child(1) > li:nth-child(1) > ul:nth-child(2) > li:nth-child(1) > ul:nth-child(2) > li:nth-child(' + i + ') '
                 });
-                this.echo(temp);
                 if (temp == title) {
                     flag = 1;
                     this.echo("Found notebook " + title + " in Notebooks I Starred list");
@@ -258,6 +290,7 @@ exports.notebooksIstarred = function (casper) {
             else {
                 this.test.assertEquals(flag, 0, "Notebook with title " + title + " is ABSENT under Notebooks I Starred list with star count = " + starcount);
             }
+
         });
 };
 
@@ -265,6 +298,7 @@ exports.notebooksIstarred = function (casper) {
 exports.peopleIstarred = function (casper) {
     return casper
         .then(function () {
+
             var counter2 = 0;//count the number of notebooks
             var title = this.fetchText({type: 'css', path: '#notebook-title'});
             do
@@ -280,10 +314,12 @@ exports.peopleIstarred = function (casper) {
             var flag = 0;//flag variable to test if the Notebook was found in the div
             var starcount = 0;//checking the starcount of the notebook under this div
             for (var i = 1; i <= counter2; i++) {
+                //this.wait(2000);
                 var temp = this.fetchText({
                     type: 'css',
                     path: 'ul.jqtree_common:nth-child(1) > li:nth-child(2) > ul:nth-child(2) > li:nth-child(1) > ul:nth-child(2) > li:nth-child(' + i + ') > div:nth-child(1) > span:nth-child(1)'
                 });
+                //this.echo(temp);
                 if (temp == title) {
                     flag = 1;
                     this.echo("Found notebook " + title + " in People I Starred list");
@@ -307,11 +343,13 @@ exports.peopleIstarred = function (casper) {
 exports.allnotebooks = function (casper) {
     return casper
         .then(function () {
+
             var counter3 = 0;//count the number of notebooks
             var title = this.fetchText({type: 'css', path: '#notebook-title'});
             do
             {
                 counter3 = counter3 + 1;
+                //this.wait(2000);
             } while (casper.visible({
                 type: 'css',
                 path: 'ul.jqtree_common:nth-child(1) > li:nth-child(3) > ul:nth-child(2) > li:nth-child(1) > ul:nth-child(2) > li:nth-child(' + counter3 + ') > div:nth-child(1) > span:nth-child(1)'
@@ -321,10 +359,12 @@ exports.allnotebooks = function (casper) {
             var flag = 0;//flag variable to test if the Notebook was found in the div
             var starcount = 0;//checking the starcount of the notebook under this div
             for (var i = 1; i <= counter3; i++) {
+                //this.wait(2000);
                 var temp = this.fetchText({
                     type: 'css',
                     path: 'ul.jqtree_common:nth-child(1) > li:nth-child(3) > ul:nth-child(2) > li:nth-child(1) > ul:nth-child(2) > li:nth-child(' + i + ') > div:nth-child(1) > span:nth-child(1)'
                 });
+                //this.echo(temp);
                 if (temp == title) {
                     flag = 1;
                     this.echo("Found notebook " + title + " in All notebooks list");
@@ -348,19 +388,62 @@ exports.allnotebooks = function (casper) {
 exports.comments = function (casper, comment) {
     return casper
         .then(function () {
-            if (this.visible('#comments-wrapper')) {
+            if (this.visible({type: "xpath", path: ".//*[@id='collapse-comments']/div"})) {
                 this.echo('Comment div is open');
                 this.wait(5000);
             }
             else {
                 this.echo('Comment div is not open,hence opening it');
-                this.wait(6000);
-                this.click({type: 'xpath', path: ".//*[@id='accordion-right']/div[5]/div[1]"});
-                this.wait(5000);
+                this.wait(3000);
+                var z = casper.evaluate(function () {
+                    $('#accordion-right > div:nth-child(5) > div:nth-child(1)').click();
+                });
+                this.wait(2000);
             }
             this.sendKeys('#comment-entry-body', comment);
             this.wait(3000);
             this.test.assertTruthy(this.click({type: 'css', path: '#comment-submit'}), 'comment entered successfully');
+        });
+};
+
+//Group create
+exports.create_group = function (casper) {
+    return casper
+        .then(function () {
+
+            //Random name generator to create Group name
+            casper.then(function () {
+                var GroupName = this.evaluate(function () {
+                    return Math.random().toString(36).substr(2, 3);
+                });
+                console.log('1st group name is :' + GroupName);
+            });
+            //Open manage group window
+            this.then(function () {
+                this.click("li.dropdown > a:nth-child(1)");
+                console.log('Opening advanced drop down menu');
+                this.evaluate(function () {
+                    $('#manage_groups').click();
+                });
+                this.echo('opened manage group dialog box');
+                this.wait(2000);
+            });
+
+            //Creating 1st group
+            this.then(function () {
+                console.log("Clicking on create new group")
+                this.wait(4000);
+                casper.setFilter("page.prompt", function (msg, currentValue) {
+                    if (msg === "Enter new group name") {
+                        return GroupName;
+                    }
+                });
+                this.click("span.label:nth-child(1)");
+                console.log("Create 1st group")
+                this.evaluate(function () {
+                    $('span.btn:nth-child(3)').click();
+                });
+            });
         });
 };
 
@@ -399,6 +482,7 @@ exports.search = function (casper, item, combo) {
             });
             //verify that the searched item is found in the local user's div
             casper.viewport(1366, 768).then(function () {
+                //this.echo("Combo= "+combo);
                 var flag = 0;//to check if searched item has been found
                 for (var i = 1; i <= counter; i++) {
                     this.wait(5000);
@@ -416,3 +500,4 @@ exports.search = function (casper, item, combo) {
             });//function closes
         });
 };
+

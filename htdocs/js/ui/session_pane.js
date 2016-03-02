@@ -45,8 +45,10 @@ RCloud.UI.session_pane = {
     },
     append_text: function(msg) {
         // FIXME: dropped here from session.js, could be integrated better
-        if(!$('#session-info').length)
-            return; // workaround for view mode
+        if(!$('#session-info').length) {
+            console.log(['session log; ', msg].join(''));
+             return; // workaround for view mode
+        }
         // one hacky way is to maintain a <pre> that we fill as we go
         // note that R will happily spit out incomplete lines so it's
         // not trivial to maintain each output in some separate structure

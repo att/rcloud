@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-RCloud requires R 3.1.0 or higher and several R packages. If you want to compile R and all necessary packages from sources these are the necessary dependnecies:
+RCloud requires R 3.1.0 or higher and several R packages. If you want to compile R and all necessary packages from sources these are the necessary dependencies:
 
     ## Ubuntu 14.04
     sudo apt-get install gcc g++ gfortran libcairo-dev libreadline-dev libxt-dev libjpeg-dev \

@@ -1,50 +1,56 @@
-# Sample .travis.yml for R projects.
-#
-# See README.md for instructions, or for more configuration options,
-# see the wiki:
-#   https://github.com/craigcitro/r-travis/wiki
-
 addons:
-  firefox: "25.0" # should this be "29.0"?
-
+  firefox: '25.0'
 language: c
-
 env:
+  matrix:
+  - TESTFOLDER=SmokeTest.js
   global:
-    - secure: "C7zEyV7lCS5zkap31MRIbOnBF5pqH+aK47gT/TA22QsWaP4hOfB49OrcqQeO0EkIGEMIro6oQS4XNxi4Tk6vMen56BUgqcwbPB+UAdbdNNOVVnk0KVTsud/UAOiq0qh0kGgwjtqv0dlEyRU/DCtCRzLb05O3uDt3SWT52Ab9Des="
-    - secure: "Tc3U7opldL2TTPtjKO7FmIg2Xxlth/HJ1FUIWRzCMQdvi3eo9Uk9dHGJWA4me+fO0gyJ7OuSg5eSwFNsm9GvqKk53ZqzNdjLoxGyau0oPVfDz1VgYyhcWpR5WocZCl6ouhYja9OzfOs/EiwOv1qoTUDCQ51O17HNF4u8zzbqivI="
-  - SLIMERJSLAUNCHER=$(which firefox) DISPLAY=:99.0 PATH=$TRAVIS_BUILD_DIR/slimerjs:$PATH
-
+    secure: n0hzldKhmNCV44XbvMIWE8gqDJKAR77r7nXVW4zuSF2nwImjhOwzazf2Ye8s7KxW82aNzZ3w+Vegx0gkhTFi8tHCI1/k6+0Squr4NAPfpeT7XffDm3iLj9D8TM2rgXE4YljNn06F6q+nqf1rIS0kgl4AWFTAy/J/jIHtV7NhY4Wd3a/0haT0S46u4iVoksJTTsNxb1jv0fBt5cgdYw6wkHV6AJ9aIv22WEOXG6efZQIbZTFfh6cLOFw/n0mEWWxn6qWYuXjamUdPW/ztV/OEimwkyTVXbPW+OcGjBYojjAh869jIrOfTv1KGDmUaFFot+rhdDdpZei6pUIVBE4rYNGQkVVjb+3/nChvB/ola1XmBaza8y+feBI1fSkXsdSZ11/klpTwTdK2jBxBhbcY3frfptt7fLYV40Zy8CZkUc97nNO6xyn4la8lTU1v1Z44srwLadehlf7AM/AHZfKLcp60INaFa5J4zNx1+7iBV8B5psYinIA2ZgDZcuFlUYRZsQWr4dBbyMWzFf1r684jSniD1yZpx8Dx7kZHWaBQGHOKIyHXAaz7FNM1/ygKaoDYwdIBGKXFvCFMNXNxlBs05LchW85OUPoINdTUe7Zy1KnDhp6jR07fHb++2uX4jkwP5ltsCDFNV9nCzcafoz4KSsx30ia37660H7Mri7GX47NA=
 before_install:
-  - curl -OL http://raw.github.com/att/rcloud/develop/scripts/travis-tool.sh
-  - chmod 755 ./travis-tool.sh
-  - ./travis-tool.sh bootstrap
-  - ./travis-tool.sh aptget_install libxt-dev libcurl4-openssl-dev libcairo2-dev libreadline-dev git redis-server
-  - sudo service redis-server restart
-  - "sh -e /etc/init.d/xvfb start"
-  - "echo 'Installing Slimer'"
-  - "wget http://download.slimerjs.org/v0.9/0.9.1/slimerjs-0.9.1.zip"
-  - "unzip slimerjs-0.9.1.zip"
-  - "mv slimerjs-0.9.1 ./slimerjs"
-
+- curl -OL http://raw.github.com/att/rcloud/develop/scripts/travis-tool.sh
+- chmod 755 ./travis-tool.sh
+- ./travis-tool.sh bootstrap
+- ./travis-tool.sh aptget_install libxt-dev libcurl4-openssl-dev libcairo2-dev libreadline-dev
+  git redis-server
+- sudo service redis-server restart
+- sh -e /etc/init.d/xvfb start
+- echo 'Installing Slimer'
+- wget http://download.slimerjs.org/releases/0.9.6/slimerjs-0.9.6-linux-x86_64.tar.bz2
+- tar -xvjf slimerjs-0.9.6-linux-x86_64.tar.bz2
+- sudo ln -s `pwd`/slimerjs-0.9.6 /usr/local/share/slimerjs
+- sudo ln -s /usr/local/share/slimerjs/slimerjs /usr/local/bin/slimerjs
+- slimerjs --version
+- echo 'Installing Casper'
+- git clone https://github.com/n1k0/casperjs.git
+- cd casperjs
+- sudo ln -sf `pwd`/bin/casperjs /usr/local/bin/casperjs
+- casperjs --version
+- sudo apt-get install python-dev
+- cd /home/travis/build/att/rcloud
+- chmod 755 ./tests/Run.sh
+- chmod 755 ./tests/Reports
+- chmod 755 ./tests/*
 install:
-  - ./travis-tool.sh install_deps
-  - ./travis-tool.sh setup_rcloud_config
-
+- ./travis-tool.sh install_deps
+- ./travis-tool.sh setup_rcloud_config
+- ./scripts/bootstrapR.sh
+- ./scripts/build.sh
+- sudo pip install ipython==2.4.1
+- cd /home/travis/build/att/rcloud/conf/solr
+- ./solrsetup.sh /home/travis/build/att/rcloud/services/
+- cd /home/travis/build/att/rcloud/
 script:
-  - ./travis-tool.sh start_rcloud
-  - ./travis-tool.sh run_tests
-
+- ./scripts/fresh_start.sh
+- ./tests/Run.sh $TESTFOLDER
 on_failure:
-  - ./travis-tool.sh dump_logs
-  - cat /home/travis/build/cscheid/rgithub/github.Rcheck/00install.out
-
+- ./travis-tool.sh dump_logs
+after_success:
 notifications:
   email:
-    on_success: change
-    on_failure: change
-
-# whitelist
+    recipients:
+    - gordon@woodhull.com
+    on_success: always
+    on_failure: always
 branches:
   only:
-    - develop
+  - develop
