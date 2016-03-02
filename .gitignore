@@ -8,8 +8,6 @@ js/node_modules
 htdocs/lib/node_modules
 htdocs/js/node_modules
 htdocs/mathjax
-htdocs/js/*.js.gz
-htdocs/lib/*.js.gz
 services/
 data
 run
