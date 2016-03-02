@@ -7494,9 +7494,6 @@ RCloud.UI.selection_bar = (function() {
                 $partial_indicator.hide();
             }
         },
-        reset: function() {
-            reset()
-        },
         hide: function() {
             $('#selection-bar').hide();
             reset();
