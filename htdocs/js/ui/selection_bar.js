@@ -16,7 +16,8 @@ RCloud.UI.selection_bar = (function() {
             $selection_checkbox = $selection_bar.find('.cell-selection input[type="checkbox"]');
 
             $selection_bar
-                .find('.btn-default input[type="checkbox"]').click(function() {
+                .find('.btn-default input[type="checkbox"]').click(function(e) {
+                    e.stopPropagation();
                     if($(this).is(':checked')) {
                         shell.notebook.controller.select_all_cells();
                     } else {
@@ -34,6 +35,10 @@ RCloud.UI.selection_bar = (function() {
                 .end()
                 .show();
 
+            $selection_bar.find('div[type="button"].cell-selection').click(function(e) {
+                $(this).find('input').trigger('click');
+            });
+            
             $('#' + $selection_bar.attr('id')).replaceWith($selection_bar);
         },  
         update: function(cells) {
