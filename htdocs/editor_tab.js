@@ -832,7 +832,7 @@ var editor = function () {
                 p.then(open_and_select);
         }
         if(gistname === current_.notebook) {
-            var starn = RCloud.UI.navbar.get('star_notebook');
+            var starn = RCloud.UI.navbar.control('star_notebook');
             if(starn) {
                 starn.set_fill(i_starred);
                 starn.set_count(result.num_stars(gistname));
@@ -1142,7 +1142,7 @@ var editor = function () {
                     that.new_notebook();
             });
             var snf = result.star_notebook;
-            RCloud.UI.navbar.get('star_notebook').set_star_unstar(snf.bind(this, true), snf.bind(this, false));
+            RCloud.UI.navbar.control('star_notebook').set_star_unstar(snf.bind(this, true), snf.bind(this, false));
             return promise;
         },
         // partial access to state, for add-ons.  (should be explicit model)

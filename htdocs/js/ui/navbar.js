@@ -1,5 +1,5 @@
 RCloud.UI.navbar = (function() {
-    var extension_;
+    var extension_, controls_;
     var result = {
         init: function() {
             // display brand now (won't wait for load/session)
@@ -16,13 +16,13 @@ RCloud.UI.navbar = (function() {
                 }
             });
             this.add({
-                shareable_link: function() {
-                    var share_link_;
-                    return {
-                        area: 'commands',
-                        sort: 1000,
-                        create: function() {
-                            return $.el.span(share_link_ = $.el.a({
+                shareable_link: {
+                    area: 'commands',
+                    sort: 1000,
+                    create: function() {
+                        var share_link_, view_types_;
+                        return {
+                            control: $.el.span(share_link_ = $.el.a({
                                 href: '#',
                                 id: 'share-link',
                                 title: 'Shareable Link',
@@ -37,117 +37,125 @@ RCloud.UI.navbar = (function() {
                                 class: 'dropdown-toggle',
                                 'data-toggle': 'dropdown',
                                 id: 'view-mode'
-                            }, $.el.b({class: 'caret'})), $.el.ul({
+                            }, $.el.b({class: 'caret'})), view_types_ = $.el.ul({
                                 class: 'dropdown-menu view-menu',
                                 id: 'view-type'
-                            })));
-                        },
-                        set_url: function(url) {
-                            if(share_link_)
-                                $(share_link_).attr('href', url);
-                            return this;
-                        },
-                        set_view_types: function(items) {
-                            $('#view-type').append($(items.map(function(item) {
-                                var a = $.el.a({href: '#'}, item.title);
-                                $(a).click(item.handler);
-                                return $.el.li(a);
-                            })));
-                        }
-                    };
-                }(),
-                star_notebook: function() {
-                    var star_, unstar_, icon_, count_;
-                    return {
-                        area: 'commands',
-                        sort: 2000,
-                        create: function() {
-                            var button = $.el.button({
-                                id: 'star-notebook',
-                                title: 'Add to Interests',
-                                type: 'button',
-                                class: 'btn btn-link navbar-btn',
-                                style: 'padding-left: 3px'
-                            }, $.el.i({
-                                class: 'icon-star-empty'
-                            }), $.el.sub(count_ = $.el.span({
-                                id: 'curr-star-count'
-                            })));
-                            icon_ = ui_utils.twostate_icon($(button),
-                                                           function() { star_(); },
-                                                           function() { unstar_(); },
-                                                           'icon-star', 'icon-star-empty');
-                            return button;
-                        },
-                        set_star_unstar: function(star, unstar) {
-                            star_ = star;
-                            unstar_ = unstar;
-                            return this;
-                        },
-                        set_fill: function(filled) {
-                            icon_.set_state(filled);
-                            return this;
-                        },
-                        set_count: function(count) {
-                            $(count_).text(count);
-                            return this;
-                        }
-                    };
-                }(),
+                            }))),
+                            set_url: function(url) {
+                                if(share_link_)
+                                    $(share_link_).attr('href', url);
+                                return this;
+                            },
+                            set_view_types: function(items) {
+                                $(view_types_).append($(items.map(function(item) {
+                                    var a = $.el.a({href: '#'}, item.title);
+                                    $(a).click(item.handler);
+                                    return $.el.li(a);
+                                })));
+                            }
+                        };
+                    }
+                },
+                star_notebook: {
+                    area: 'commands',
+                    sort: 2000,
+                    create: function() {
+                        var star_, unstar_, icon_, count_;
+                        var button = $.el.button({
+                            id: 'star-notebook',
+                            title: 'Add to Interests',
+                            type: 'button',
+                            class: 'btn btn-link navbar-btn',
+                            style: 'padding-left: 3px'
+                        }, $.el.i({
+                            class: 'icon-star-empty'
+                        }), $.el.sub(count_ = $.el.span({
+                            id: 'curr-star-count'
+                        })));
+                        icon_ = ui_utils.twostate_icon($(button),
+                                                       function() { star_(); },
+                                                       function() { unstar_(); },
+                                                       'icon-star', 'icon-star-empty');
+                        return {
+                            control: button,
+                            set_star_unstar: function(star, unstar) {
+                                star_ = star;
+                                unstar_ = unstar;
+                                return this;
+                            },
+                            set_fill: function(filled) {
+                                icon_.set_state(filled);
+                                return this;
+                            },
+                            set_count: function(count) {
+                                $(count_).text(count);
+                                return this;
+                            }
+                        };
+                    }
+                },
                 fork_notebook: {
                     area: 'commands',
                     sort: 3000,
                     create: function() {
-                        return $.el.button({
-                            id: 'fork-notebook',
-                            title: 'Fork',
-                            type: 'button',
-                            class: 'btn btn-link navbar-btn'
-                        }, $.el.i({
-                            class: 'icon-code-fork'
-                        }));
+                        return {
+                            control: $.el.button({
+                                id: 'fork-notebook',
+                                title: 'Fork',
+                                type: 'button',
+                                class: 'btn btn-link navbar-btn'
+                            }, $.el.i({
+                                class: 'icon-code-fork'
+                            }))
+                        };
                     }
                 },
                 save_notebook: {
                     area: 'commands',
                     sort: 4000,
                     create: function() {
-                        return $.el.button({
-                            id: 'save-notebook',
-                            title: 'Save',
-                            type: 'button',
-                            class: 'btn btn-link navbar-btn'
-                        }, $.el.i({
-                            class: 'icon-save'
-                        }));
+                        return {
+                            control: $.el.button({
+                                id: 'save-notebook',
+                                title: 'Save',
+                                type: 'button',
+                                class: 'btn btn-link navbar-btn'
+                            }, $.el.i({
+                                class: 'icon-save'
+                            }))
+                        };
                     }
                 },
                 revert_notebook: {
                     area: 'commands',
                     sort: 5000,
                     create: function() {
-                        return $.el.button({
-                            id: 'revert-notebook',
-                            title: 'Revert',
-                            type: 'button',
-                            class: 'btn btn-link navbar-btn'
-                        }, $.el.i({
-                            class: 'icon-undo'
-                        }));
+                        return {
+                            control: $.el.button({
+                                id: 'revert-notebook',
+                                title: 'Revert',
+                                type: 'button',
+                                class: 'btn btn-link navbar-btn'
+                            }, $.el.i({
+                                class: 'icon-undo'
+                            }))
+                        };
                     }
                 },
                 run_notebook: {
                     area: 'commands',
                     sort: 6000,
                     create: function() {
-                        return $.el.span($.el.span({
-                            class: 'button-highlight'
-                        }), $.el.button({
-                            id: 'run-notebook',
-                            title: 'Run All',
-                            type: 'button',
-                            class: 'btn btn-link navbar-btn'
-                        }, $.el.i({class: 'icon-play'})));
+                        return {
+                            control: $.el.span($.el.span({
+                                class: 'button-highlight'
+                            }), $.el.button({
+                                id: 'run-notebook',
+                                title: 'Run All',
+                                type: 'button',
+                                class: 'btn btn-link navbar-btn'
+                            }, $.el.i({class: 'icon-play'})))
+                        };
                     }
                 }
             });
@@ -171,14 +179,18 @@ RCloud.UI.navbar = (function() {
                 var header = $('#rcloud-navbar-header');
                 if(brands.length)
                     header.empty().append.apply(header, brands);
-                var commands = extension_.create('commands').array;
+                var commands = extension_.create('commands');
                 var main = $('#rcloud-navbar-main');
-                if(commands.length)
-                    main.prepend.apply(main, commands.map(function(button) {
-                        return $.el.li(button);
+                if(commands.array.length)
+                    main.prepend.apply(main, commands.array.map(function(button) {
+                        return $.el.li(button.control);
                     }));
             }
+        control: function(command_name) {
+            return controls_ ? controls_[command_name] : null;
+        },
         }
     };
     return result;
 })();
+                controls_ = commands.map;
