@@ -359,14 +359,6 @@ rect.frame {
     margin-top: -1px;
 }
 
-.notebook-cell.selected {
-    background-color: rgba(255, 255, 0, 0.4);
-}
-
-.notebook-cell.selected * {
-    background-color: transparent!important;
-}
-
 .active.edit-markdown {
     background-color: #F7EEE4;
 }
