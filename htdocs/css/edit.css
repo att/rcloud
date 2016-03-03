@@ -341,8 +341,8 @@ rect.frame {
 #selection-bar .cell-selection span {
     position: absolute;
     display: none;
-    top: 4px;
-    left: 17px;
+    top: 0px;
+    left: 11px;
     font-weight: bold;
     pointer-events: none;
 }
