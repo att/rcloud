@@ -25,11 +25,11 @@ If you have already R installed you may need only a subset of the above.
 Check out the RCloud repository to a place that will be your RCloud root directory. For illustration purposes we will use `/data/rcloud` as the root, but it can be any other directory.
 
     cd /data
-    
+
     ## check out RCloud from GitHub
     git clone https://github.com/att/rcloud.git
     cd rcloud
-    
+
     ## install all dependent R packages
     sh scripts/bootstrapR.sh
 
@@ -102,7 +102,7 @@ account through github.
 ## Installing from a distribution tar ball
 
 If you don't have internat access on the target machine, it is possible to install RCloud from a distribution
-tar ball which has all dependent packages included. The process is essentially identical to the above, only that you don't use `git` to check out the sources, but unpack the tar ball instead. 
+tar ball which has all dependent packages included. The process is essentially identical to the above, only that you don't use `git` to check out the sources, but unpack the tar ball instead.
 
 Make sure R 3.1.0 or higher is installed. Download the distribution tar
 ball, change to the directory where you want to install it,
@@ -125,11 +125,10 @@ If you're just running RCloud, skip this session. If you're going to
 be hacking the code, you'll need to install a recent version of
 [node.js](http://nodejs.org). Then, in your shell:
 
-    $ cd rcloud/htdocs/js
 	$ npm install
 
-This will install the node.js dependencies necessary to create the
-minified javascript files used in Rcloud.
+This will install the node.js dependencies necessary to concatenate and
+minify the javascript files used in RCloud.
 
 ### Starting rcloud
 
