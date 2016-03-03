@@ -56,23 +56,44 @@ RCloud.UI.navbar = (function() {
                         }
                     };
                 }(),
-                star_notebook: {
-                    area: 'commands',
-                    sort: 2000,
-                    create: function() {
-                        return $.el.button({
-                            id: 'star-notebook',
-                            title: 'Add to Interests',
-                            type: 'button',
-                            class: 'btn btn-link navbar-btn',
-                            style: 'padding-left: 3px'
-                        }, $.el.i({
-                            class: 'icon-star-empty'
-                        }), $.el.sub($.el.span({
-                            id: 'curr-star-count'
-                        })));
-                    }
-                },
+                star_notebook: function() {
+                    var star_, unstar_, icon_, count_;
+                    return {
+                        area: 'commands',
+                        sort: 2000,
+                        create: function() {
+                            var button = $.el.button({
+                                id: 'star-notebook',
+                                title: 'Add to Interests',
+                                type: 'button',
+                                class: 'btn btn-link navbar-btn',
+                                style: 'padding-left: 3px'
+                            }, $.el.i({
+                                class: 'icon-star-empty'
+                            }), $.el.sub(count_ = $.el.span({
+                                id: 'curr-star-count'
+                            })));
+                            icon_ = ui_utils.twostate_icon($(button),
+                                                           function() { star_(); },
+                                                           function() { unstar_(); },
+                                                           'icon-star', 'icon-star-empty');
+                            return button;
+                        },
+                        set_star_unstar: function(star, unstar) {
+                            star_ = star;
+                            unstar_ = unstar;
+                            return this;
+                        },
+                        set_fill: function(filled) {
+                            icon_.set_state(filled);
+                            return this;
+                        },
+                        set_count: function(count) {
+                            $(count_).text(count);
+                            return this;
+                        }
+                    };
+                }(),
                 fork_notebook: {
                     area: 'commands',
                     sort: 3000,
