@@ -128,11 +128,11 @@ RCloud.UI.navbar = (function() {
         },
         load: function() {
             if(extension_) {
-                var brands = _.values(extension_.create('header'));
+                var brands = extension_.create('header').array;
                 var header = $('#rcloud-navbar-header');
                 if(brands.length)
                     header.empty().append.apply(header, brands);
-                var commands = _.values(extension_.create('commands'));
+                var commands = extension_.create('commands').array;
                 var main = $('#rcloud-navbar-main');
                 if(commands.length)
                     main.prepend.apply(main, commands.map(function(button) {

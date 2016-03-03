@@ -68,14 +68,14 @@ RCloud.extension = (function() {
                     return sections_[name].entries;
                 },
                 create: function(name, _) {
-                    var ret = {};
+                    var map = {}, array = [];
                     var args = Array.prototype.slice.call(arguments, 1);
                     var entries = this.entries(name);
                     if(entries)
                         entries.forEach(function(entry) {
-                            ret[entry.key] = entry.create.apply(entry, args);
+                            array.push(map[entry.key] = entry.create.apply(entry, args));
                         });
-                    return ret;
+                    return {map: map, array: array};
                 },
                 sections: sections_
             };
