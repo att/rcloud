@@ -185,7 +185,7 @@ Notebook.create_model = function()
             });
             RCloud.UI.selection_bar.update(this.cells);
         },
-        toggle_selected_cells: function() {
+        invert_selected_cells: function() {
             _.each(this.cells, function(cell) {
                 cell.toggle_cell();
             });
