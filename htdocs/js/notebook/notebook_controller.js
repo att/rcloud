@@ -279,8 +279,8 @@ Notebook.create_controller = function(model)
         remove_selected_cells: function() {
             model.remove_selected_cells();
         },
-        toggle_selected_cells: function() {
-            model.toggle_selected_cells();
+        invert_selected_cells: function() {
+            model.invert_selected_cells();
         },
         clear_all_selected_cells: function() {
             model.clear_all_selected_cells();
