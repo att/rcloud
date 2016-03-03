@@ -16,31 +16,46 @@ RCloud.UI.navbar = (function() {
                 }
             });
             this.add({
-                shareable_link: {
-                    area: 'commands',
-                    sort: 1000,
-                    create: function() {
-                        return $.el.span($.el.a({
-                            href: '#',
-                            id: 'share-link',
-                            title: 'Shareable Link',
-                            class: 'btn btn-link navbar-btn',
-                            style: 'text-decoration:none; padding-right: 0px',
-                            target: '_blank'
-                        }, $.el.i({class: 'icon-share'})), $.el.span({
-                            class: 'dropdown',
-                            style: 'position: relative; margin-left: -2px; padding-right: 12px'
-                        }, $.el.a({
-                            href: '#',
-                            class: 'dropdown-toggle',
-                            'data-toggle': 'dropdown',
-                            id: 'view-mode'
-                        }, $.el.b({class: 'caret'})), $.el.ul({
-                            class: 'dropdown-menu view-menu',
-                            id: 'view-type'
-                        })));
-                    }
-                },
+                shareable_link: function() {
+                    var share_link_;
+                    return {
+                        area: 'commands',
+                        sort: 1000,
+                        create: function() {
+                            return $.el.span(share_link_ = $.el.a({
+                                href: '#',
+                                id: 'share-link',
+                                title: 'Shareable Link',
+                                class: 'btn btn-link navbar-btn',
+                                style: 'text-decoration:none; padding-right: 0px',
+                                target: '_blank'
+                            }, $.el.i({class: 'icon-share'})), $.el.span({
+                                class: 'dropdown',
+                                style: 'position: relative; margin-left: -2px; padding-right: 12px'
+                            }, $.el.a({
+                                href: '#',
+                                class: 'dropdown-toggle',
+                                'data-toggle': 'dropdown',
+                                id: 'view-mode'
+                            }, $.el.b({class: 'caret'})), $.el.ul({
+                                class: 'dropdown-menu view-menu',
+                                id: 'view-type'
+                            })));
+                        },
+                        set_url: function(url) {
+                            if(share_link_)
+                                $(share_link_).attr('href', url);
+                            return this;
+                        },
+                        set_view_types: function(items) {
+                            $('#view-type').append($(items.map(function(item) {
+                                var a = $.el.a({href: '#'}, item.title);
+                                $(a).click(item.handler);
+                                return $.el.li(a);
+                            })));
+                        }
+                    };
+                }(),
                 star_notebook: {
                     area: 'commands',
                     sort: 2000,
@@ -125,6 +140,9 @@ RCloud.UI.navbar = (function() {
             if(extension_)
                 extension_.remove(command_name);
             return this;
+        },
+        get: function(command_name) {
+            return extension_ ? extension_.get(command_name) : null;
         },
         load: function() {
             if(extension_) {
