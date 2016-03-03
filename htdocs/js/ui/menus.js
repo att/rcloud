@@ -169,7 +169,7 @@ RCloud.UI.menus = (function() {
         load: function(mode) {
             var that = this;
             var where = $('#rcloud-navbar-menu');
-            rcloud.get_conf_values('^rcloud\\.menu\\..*').then(function(menus) {
+            return rcloud.get_conf_values('^rcloud\\.menu\\..*').then(function(menus) {
                 // fun option-parsing crap
                 menus = _.omit(menus, 'r_type', 'r_attributes');
                 var add = {};
