@@ -1,16 +1,17 @@
 RCloud.UI.share_button = (function() {
-    var view_types_ = {};
+    var extension_;
     var default_item_ = null;
     function set_page(title) {
-        title = (title && view_types_[title]) ? title : default_item_;
+        title = (title && extension_.get(title)) ? title : default_item_;
+        var view_type = extension_.get(title);
         if(!title)
             return Promise.reject(new Error('share button view types set up wrong'));
-        var page = view_types_[title].page;
+        var page = view_type.page;
         $("#view-type li a").css("font-weight", function() {
             return $(this).text() === title ? "bold" : "normal";
         });
         var opts = {notebook: shell.gistname(),
-                    do_path: view_types_[title].do_path,
+                    do_path: view_type.do_path,
                     version: shell.version()};
         if(!opts.version) {
             $("#share-link").attr("href", ui_utils.make_url(page, opts));
@@ -26,6 +27,20 @@ RCloud.UI.share_button = (function() {
 
     return {
         init: function() {
+            extension_ = RCloud.extension.create({
+                defaults: {
+                    create: function() {
+                        var that = this;
+                        return {
+                            title: that.key,
+                            handler: function() {
+                                rcloud.set_notebook_property(shell.gistname(), "view-type", that.key);
+                                set_page(that.key);
+                            }
+                        };
+                    }
+                }
+            });
             this.add({
                 'view.html': {
                     sort: 1000,
@@ -48,26 +63,20 @@ RCloud.UI.share_button = (function() {
             return this;
         },
         add: function(view_types) {
-            for(var vt in view_types) {
-                view_types_[vt] = _.extend({title: vt}, view_types[vt]);
-            }
+            if(extension_)
+                extension_.add(view_types);
             return this;
         },
         remove: function(view_type) {
-            delete view_types_[view_type];
+            if(extension_)
+                extension_.remove(command_name);
+            return this;
         },
         load: function() {
             var that = this;
-            var items = _.values(view_types_).sort(function(a, b) { return a.sort - b.sort; });
+            var items = extension_.create('all').array;
             default_item_ = items.length ? items[0].title : null;
-            $('#view-type').append($(items.map(function(item) {
-                var a = $.el.a({href: '#'}, item.title);
-                $(a).click(function() {
-                    rcloud.set_notebook_property(shell.gistname(), "view-type", item.title);
-                    set_page(item.title);
-                });
-                return $.el.li(a);
-            })));
+            RCloud.UI.navbar.get('shareable_link').set_view_types(items);
             return this;
         },
         update_link: function() {
