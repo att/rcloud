@@ -41,8 +41,8 @@ RCloud.UI.selection_bar = (function() {
             var cell_count = cells.length,
                 selected_count = _.filter(cells, function(cell) { return cell.is_selected(); }).length;
 
-                $selection_checkbox.prop('checked', selected_count === cell_count);
-                $partial_indicator[selected_count !== cell_count && selected_count !== 0 ? 'show' : 'hide']();                
+            $selection_checkbox.prop('checked', selected_count === cell_count);
+            $partial_indicator[selected_count !== cell_count && selected_count !== 0 ? 'show' : 'hide']();                
           
         },
         hide: function() {
