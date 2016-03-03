@@ -101,7 +101,7 @@ account through github.
 
 ## Installing from a distribution tar ball
 
-If you don't have internat access on the target machine, it is possible to install RCloud from a distribution
+If you don't have internet access on the target machine, it is possible to install RCloud from a distribution
 tar ball which has all dependent packages included. The process is essentially identical to the above, only that you don't use `git` to check out the sources, but unpack the tar ball instead. 
 
 Make sure R 3.1.0 or higher is installed. Download the distribution tar
