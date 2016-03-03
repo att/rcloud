@@ -1,6 +1,50 @@
 RCloud.UI.navbar = (function() {
     var extension_, controls_;
     var result = {
+        create_button: function(id, title, icon) {
+            var button = $.el.button({
+                id: id,
+                title: title,
+                type: 'button',
+                class: 'btn btn-link navbar-btn'
+            }, $.el.i({
+                class: icon
+            }));
+            return {
+                control: button,
+                click: function(handler) {
+                    $(button).click(handler);
+                    return this;
+                },
+                disable: function() {
+                    ui_utils.disable_bs_button(button);
+                    return this;
+                },
+                enable: function() {
+                    ui_utils.enable_bs_button(button);
+                    return this;
+                },
+                display: function(title, icon) {
+                    $(button).find('i').removeClass().addClass(icon);
+                    $(button).attr('title', title);
+                    return this;
+                }
+            };
+
+        },
+        create_highlight_button: function(id, title, icon) {
+            var result = this.create_button(id, title, icon);
+            result.control = $.el.span($.el.span({
+                class: 'button-highlight'
+            }), result.control);
+            result.highlight = function(whether) {
+                $(result.control)
+                    .find('.button-highlight')
+                    .animate({opacity: whether ? 1 : 0}, 250);
+                return this;
+            };
+            return result;
+        },
         init: function() {
             // display brand now (won't wait for load/session)
             var header = $('#rcloud-navbar-header');
@@ -98,64 +142,28 @@ RCloud.UI.navbar = (function() {
                     area: 'commands',
                     sort: 3000,
                     create: function() {
-                        return {
-                            control: $.el.button({
-                                id: 'fork-notebook',
-                                title: 'Fork',
-                                type: 'button',
-                                class: 'btn btn-link navbar-btn'
-                            }, $.el.i({
-                                class: 'icon-code-fork'
-                            }))
-                        };
+                        return RCloud.UI.navbar.create_button('fork-notebook', 'Fork', 'icon-code-fork');
                     }
                 },
                 save_notebook: {
                     area: 'commands',
                     sort: 4000,
                     create: function() {
-                        return {
-                            control: $.el.button({
-                                id: 'save-notebook',
-                                title: 'Save',
-                                type: 'button',
-                                class: 'btn btn-link navbar-btn'
-                            }, $.el.i({
-                                class: 'icon-save'
-                            }))
-                        };
+                        return RCloud.UI.navbar.create_button('save-notebook', 'Save', 'icon-save');
                     }
                 },
                 revert_notebook: {
                     area: 'commands',
                     sort: 5000,
                     create: function() {
-                        return {
-                            control: $.el.button({
-                                id: 'revert-notebook',
-                                title: 'Revert',
-                                type: 'button',
-                                class: 'btn btn-link navbar-btn'
-                            }, $.el.i({
-                                class: 'icon-undo'
-                            }))
-                        };
+                        return RCloud.UI.navbar.create_button('revert-notebook', 'Revert', 'icon-undo');
                     }
                 },
                 run_notebook: {
                     area: 'commands',
                     sort: 6000,
                     create: function() {
-                        return {
-                            control: $.el.span($.el.span({
-                                class: 'button-highlight'
-                            }), $.el.button({
-                                id: 'run-notebook',
-                                title: 'Run All',
-                                type: 'button',
-                                class: 'btn btn-link navbar-btn'
-                            }, $.el.i({class: 'icon-play'})))
-                        };
+                        return RCloud.UI.navbar.create_highlight_button('run-notebook', 'Run All', 'icon-play');
                     }
                 }
             });
@@ -173,6 +181,9 @@ RCloud.UI.navbar = (function() {
         get: function(command_name) {
             return extension_ ? extension_.get(command_name) : null;
         },
+        control: function(command_name) {
+            return controls_ ? controls_[command_name] : null;
+        },
         load: function() {
             if(extension_) {
                 var brands = extension_.create('header').array;
@@ -185,12 +196,10 @@ RCloud.UI.navbar = (function() {
                     main.prepend.apply(main, commands.array.map(function(button) {
                         return $.el.li(button.control);
                     }));
+                controls_ = commands.map;
             }
-        control: function(command_name) {
-            return controls_ ? controls_[command_name] : null;
-        },
+            return Promise.resolve(undefined);
         }
     };
     return result;
 })();
-                controls_ = commands.map;
