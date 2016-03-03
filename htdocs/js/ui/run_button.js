@@ -1,30 +1,28 @@
 RCloud.UI.run_button = (function() {
-    var run_button_ = $("#run-notebook"),
-        running_ = false,
+    var running_ = false,
         stopping_ = false,
         queue_ = [],
         cancels_ = [];
 
-    function display(icon, title) {
-        $('i', run_button_).removeClass().addClass(icon);
-        run_button_.attr('title', title);
+    function display(title, icon) {
+        RCloud.UI.navbar.control('run_notebook').display(title, icon);
     }
     function highlight(whether) {
-        run_button_.parent().find('.button-highlight').animate({opacity: whether ? 1 : 0}, 250);
+        RCloud.UI.navbar.control('run_notebook').highlight(whether);
     }
 
     function start_queue() {
         if(queue_.length === 0) {
             stopping_ = false;
             running_ = false;
-            display('icon-play', 'Run All');
+            display('Run All', 'icon-play');
             highlight(false);
             return Promise.resolve(undefined);
         }
         else {
             running_ = true;
             var first = queue_.shift();
-            display('icon-stop', 'Stop');
+            display('Stop', 'icon-stop');
             highlight(true);
             return first().then(function() {
                 if(stopping_) {
@@ -39,18 +37,20 @@ RCloud.UI.run_button = (function() {
     return {
         init: function() {
             var that = this;
-            run_button_.click(function() {
+            RCloud.session.listeners.push({
+                on_reset: function() {
+                    that.on_stopped();
+                }
+            });
+        },
+        load: function() {
+            var that = this;
+            RCloud.UI.navbar.control('run_notebook').click(function() {
                 if(running_) {
                     that.stop();
                 }
                 else
                     shell.run_notebook();
-            });
-
-            RCloud.session.listeners.push({
-                on_reset: function() {
-                    that.on_stopped();
-                }
             });
         },
         stop: function() {
@@ -64,7 +64,7 @@ RCloud.UI.run_button = (function() {
             queue_ = [];
             cancels_ = [];
             running_ = false;
-            display('icon-play', 'Run All');
+            display('Run All', 'icon-play');
             highlight(false);
         },
         enqueue: function(f, cancel) {

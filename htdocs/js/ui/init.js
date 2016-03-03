@@ -18,7 +18,6 @@ RCloud.UI.init = function() {
     saveb.click(function() {
         shell.save_notebook();
     });
-    shell.notebook.controller.save_button(saveb);
 
     RCloud.UI.run_button.init();
 

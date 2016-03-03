@@ -36,7 +36,7 @@ RCloud.UI.load_options = function() {
 
                 $(".panel-collapse").collapse({toggle: false});
 
-                return Promise.all([RCloud.UI.navbar.load(),
+                return Promise.all([RCloud.UI.navbar.load().then(RCloud.UI.run_button.load),
                                     RCloud.UI.menus.load(),
                                     RCloud.UI.share_button.load(),
                                     RCloud.UI.left_panel.load_options(),
