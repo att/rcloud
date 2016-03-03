@@ -307,16 +307,16 @@ rect.frame {
     font-size: 100%;
     padding: 5px;
     color: rgb(221, 221, 221);
-    height: 37px;
+    /*height: 37px;*/
     display: none;
 }
 
 #selection-bar .btn {
-    height: 27px;
+    height: 19px;
 }
 
 #selection-bar .btn input[type="checkbox"] {
-    margin: 0 2px;
+    /*margin: 0 2px;*/
 }
 
 #selection-bar #selection-menu {
@@ -326,6 +326,7 @@ rect.frame {
 #selection-bar > button {
     margin: 0;
     color: #ddd;
+    padding: 0;
 }
 
 #selection-bar > button:hover i {
@@ -334,6 +335,7 @@ rect.frame {
 
 #selection-bar .cell-selection {
     position: relative;
+    padding: 3px 8px;
 }
 
 #selection-bar .cell-selection span {
@@ -354,9 +356,7 @@ rect.frame {
 }
 
 .cell-selection input[type="checkbox"] {
-    vertical-align: middle;
-    margin-top: -2px;
-    margin-left: 4px;
+    margin-top: -1px;
 }
 
 .notebook-cell.selected {
