@@ -7,7 +7,7 @@ RCloud.UI.cell_commands = (function() {
             command.control.addClass('cell-control');
         });
         var flags_ = {};
-        div.append.apply(div, commands_.array);
+        div.append.apply(div, _.pluck(commands_.array, 'control'));
         return {
             controls: commands_.map,
             set_flag: function(flag, value) {
