@@ -1,9 +1,0 @@
-{
-  "name": "duh",
-  "version": "0.0.1",
-  "description": "don't look here",
-  "keywords": [ "this", "is", "not", "a", "real", "file" ],
-  "dependencies": {
-    "uglify-js": "2.2.4"
-  }
-}
