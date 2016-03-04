@@ -104,6 +104,7 @@ RClient = {
         return result;
     }
 };
+
 RCloud = {};
 
 // FIXME: what is considered an execption - and API error or also cell eval error? We can tell them apart now ...
@@ -734,6 +735,7 @@ RCloud.create = function(rcloud_ocaps) {
 
     return rcloud;
 };
+
 var ui_utils = {};
 
 ui_utils.make_url = function(page, opts) {
@@ -1398,6 +1400,7 @@ ui_utils.hide_selectize_dropdown = function() {
     
     //$('div.selectize-input > input').blur();
 };
+
 RCloud.utils = {};
 
 // Ways to execute promise in sequence, with each started after the last completes
@@ -1418,6 +1421,7 @@ RCloud.utils.promise_sequence = function(collection, operator) {
         },
         0);
 };
+
 
 /*
  RCloud.extension is the root of all extension mechanisms in RCloud.
@@ -1504,6 +1508,7 @@ RCloud.extension = (function() {
     };
 })();
 
+
 var bootstrap_utils = {};
 
 bootstrap_utils.alert = function(opts)
@@ -1529,15 +1534,20 @@ bootstrap_utils.button = function(opts)
     if (opts['class']) a.addClass(opts['class']);
     return a;
 };
+
 Notebook = {};
 
 //////////////////////////////////////////////////////////////////////////////
 //
 // roughly a MVC-kinda-thing per cell, plus a MVC for all the cells
 // 
+
 Notebook.Buffer = {};
+
 Notebook.Cell = {};
+
 Notebook.Asset = {};
+
 Notebook.Buffer.create_model = function(content, language) {
     // by default, consider this a new cell
     var checkpoint_ = "";
@@ -1645,6 +1655,7 @@ Notebook.Buffer.create_model = function(content, language) {
     };
     return result;
 };
+
 Notebook.Asset.create_html_view = function(asset_model)
 {
     var filename_div = $("<li></li>");
@@ -1748,6 +1759,7 @@ Notebook.Asset.create_html_view = function(asset_model)
     };
     return result;
 };
+
 Notebook.Asset.create_model = function(content, filename)
 {
     var cursor_position_;
@@ -1803,6 +1815,7 @@ Notebook.Asset.create_model = function(content, filename)
     });
     return result;
 };
+
 Notebook.Asset.create_controller = function(asset_model)
 {
     var result = {
@@ -1835,6 +1848,7 @@ Notebook.Asset.create_controller = function(asset_model)
     };
     return result;
 };
+
 (function() {
 
 function ensure_image_has_hash(img)
@@ -2575,6 +2589,7 @@ Notebook.Cell.create_html_view = function(cell_model)
     return create_cell_html_view(cell_model.language(), cell_model);
 };
 })();
+
 Notebook.Cell.create_model = function(content, language)
 {
     var id_ = -1;
@@ -2630,6 +2645,7 @@ Notebook.Cell.create_model = function(content, language)
     });
     return result;
 };
+
 Notebook.Cell.create_controller = function(cell_model)
 {
     var execution_context_ = null;
@@ -2707,6 +2723,7 @@ Notebook.Cell.create_controller = function(cell_model)
 
     return result;
 };
+
 Notebook.Cell.preprocessors = RCloud.extension.create();
 Notebook.Cell.postprocessors = RCloud.extension.create();
 
@@ -2833,6 +2850,7 @@ Notebook.Cell.preprocessors.add({
     }
 });
 
+
 Notebook.create_html_view = function(model, root_div)
 {
     var show_cell_numbers_;
@@ -2927,6 +2945,7 @@ Notebook.create_html_view = function(model, root_div)
     model.views.push(result);
     return result;
 };
+
 // these functions in loops are okay
 /*jshint -W083 */
 Notebook.create_model = function()
@@ -3195,6 +3214,7 @@ Notebook.create_model = function()
         }
     };
 };
+
 Notebook.create_controller = function(model)
 {
     var current_gist_,
@@ -3704,6 +3724,7 @@ Notebook.create_controller = function(model)
     model.controller = result;
     return result;
 };
+
 Notebook.hide_r_source = function(selection)
 {
     if (selection)
@@ -3725,6 +3746,7 @@ Notebook.show_r_source = function(selection)
 Notebook.is_binary_content = function(content) {
     return !_.isUndefined(content.byteLength) && !_.isUndefined(content.slice);
 };
+
 Notebook.part_name = function(id, language) {
     // yuk
     if(_.isString(id))
@@ -3752,6 +3774,7 @@ Notebook.sanitize = function(notebook) {
         files[fn] = _.pick(files[fn], 'content');
     return notebook;
 };
+
 
 
 (function() {
@@ -4011,6 +4034,7 @@ RCloud.session = {
 };
 
 })();
+
 RCloud.language = (function() {
     // the keys of the language map come from GitHub's language detection
     // infrastructure which we don't control. (this is likely a bad thing)
@@ -4066,6 +4090,7 @@ RCloud.language = (function() {
     };
 
 })();
+
 (function() {
     function upload_opts(opts) {
         if(_.isBoolean(opts) || _.isUndefined(opts))
@@ -4214,7 +4239,9 @@ RCloud.language = (function() {
         }
     };
 })();
+
 RCloud.UI = {};
+
 RCloud.UI.advanced_menu = (function() {
     var menu_;
     var result = {
@@ -4296,6 +4323,7 @@ RCloud.UI.advanced_menu = (function() {
     };
     return result;
 })();
+
 
 RCloud.UI.cell_commands = (function() {
     var extension_;
@@ -4621,6 +4649,7 @@ RCloud.UI.cell_commands = (function() {
     };
     return result;
 })();
+
 RCloud.UI.column = function(sel_column) {
     var colwidth_;
     function classes(cw) {
@@ -4900,6 +4929,7 @@ RCloud.UI.collapsible_column.default_sizer = function(el) {
         padding = RCloud.UI.collapsible_column.default_padder(el);
     return {height: height, padding: padding};
 };
+
 //////////////////////////////////////////////////////////////////////////
 // resize left and right panels by dragging on the divider
 
@@ -4953,6 +4983,7 @@ RCloud.UI.column_sizer = {
         });
     }
 };
+
 
 RCloud.UI.command_prompt = (function() {
     var show_prompt_ = false, // start hidden so it won't flash if user has it turned off
@@ -5244,6 +5275,7 @@ RCloud.UI.command_prompt = (function() {
     };
     return result;
 })();
+
 RCloud.UI.comments_frame = (function() {
     var is_foreign_ = false;
     function rebuild_comments(comments) {
@@ -5396,6 +5428,7 @@ RCloud.UI.comments_frame = (function() {
     return result;
 })();
 
+
 /*
  * Adjusts the UI depending on whether notebook is read-only
  */
@@ -5436,6 +5469,7 @@ RCloud.UI.configure_readonly = function() {
         RCloud.UI.scratchpad.set_readonly(false);
     }
 };
+
 (function() {
 
 var fatal_dialog_;
@@ -5482,6 +5516,7 @@ RCloud.UI.fatal_dialog = function(message, label, href_or_function) { // no href
 };
 
 })();
+
 RCloud.UI.find_replace = (function() {
     var find_dialog_ = null, regex_,
         find_desc_, find_input_, replace_desc_, replace_input_, replace_stuff_,
@@ -5771,6 +5806,7 @@ RCloud.UI.find_replace = (function() {
     };
     return result;
 })();
+
 RCloud.UI.help_frame = {
     body: function() {
         return RCloud.UI.panel_loader.load_snippet('help-snippet');
@@ -5812,6 +5848,7 @@ RCloud.UI.help_frame = {
         this.show();
     }
 };
+
 (function() {
 
 // from https://github.com/ebidel/filer.js/blob/master/src/filer.js
@@ -6025,6 +6062,7 @@ RCloud.UI.image_manager = (function() {
 })();
 
 })();
+
 RCloud.UI.import_export = (function() {
     function download_as_file(filename, content, mimetype) {
         var file = new Blob([content], {type: mimetype});
@@ -6268,6 +6306,7 @@ RCloud.UI.import_export = (function() {
         }
     };
 })();
+
 RCloud.UI.init = function() {
 
     RCloud.UI.run_button.init();
@@ -6406,9 +6445,11 @@ RCloud.UI.init = function() {
         }
     });
 };
+
 RCloud.UI.left_panel =
     RCloud.UI.collapsible_column("#left-column",
                                  "#accordion-left", "#left-pane-collapser");
+
 RCloud.UI.load_options = function() {
     return rcloud.get_conf_value('smtp.server').then(function(has_mail) {
         // this extra round trip is not ideal.  the load order still needs
@@ -6455,6 +6496,7 @@ RCloud.UI.load_options = function() {
                                   });
     });
 };
+
 RCloud.UI.menu = (function() {
     var mode_sections_, ui_mode_;
     return {
@@ -6674,6 +6716,7 @@ RCloud.UI.menus = (function() {
 })();
 
 
+
 RCloud.UI.middle_column = (function() {
     var result = RCloud.UI.column("#middle-column");
 
@@ -6686,6 +6729,7 @@ RCloud.UI.middle_column = (function() {
     });
     return result;
 }());
+
 RCloud.UI.navbar = (function() {
     var extension_, controls_;
     var result = {
@@ -6952,6 +6996,7 @@ RCloud.UI.navbar = (function() {
     };
     return result;
 })();
+
 RCloud.UI.notebook_commands = (function() {
     var icon_style_ = {'line-height': '90%'};
     var star_style_ = _.extend({'font-size': '80%'}, icon_style_);
@@ -7214,6 +7259,7 @@ RCloud.UI.notebook_commands = (function() {
     };
     return result;
 })();
+
 RCloud.UI.notebook_title = (function() {
     var last_editable_ =  null;
     function version_tagger(node) {
@@ -7363,6 +7409,7 @@ RCloud.UI.notebook_title = (function() {
     };
     return result;
 })();
+
 // eventually more of editor_tab might land here.  for now, just
 // initialization for loadable panel
 RCloud.UI.notebooks_frame = {
@@ -7377,6 +7424,7 @@ RCloud.UI.notebooks_frame = {
         return $('#notebooks-panel-inner');
     }
 };
+
 RCloud.UI.output_context = (function() {
     function create_context(selector) {
         var sel = $(selector);
@@ -7426,6 +7474,7 @@ RCloud.UI.output_context = (function() {
         }
     };
 })();
+
 RCloud.UI.panel_loader = (function() {
     var extension_;
     var panels_ = {};
@@ -7632,6 +7681,7 @@ RCloud.UI.panel_loader = (function() {
     };
 })();
 
+
 (function() {
 
 var progress_dialog;
@@ -7722,9 +7772,11 @@ RCloud.UI.allow_progress_modal = function() {
 };
 
 })();
+
 RCloud.UI.right_panel =
     RCloud.UI.collapsible_column("#right-column",
                                  "#accordion-right", "#right-pane-collapser");
+
 RCloud.UI.run_button = (function() {
     var running_ = false,
         stopping_ = false,
@@ -7815,6 +7867,7 @@ RCloud.UI.run_button = (function() {
         }
     };
 })();
+
 RCloud.UI.scratchpad = (function() {
     var binary_mode_; // not editing
     // this function probably belongs elsewhere
@@ -8073,6 +8126,7 @@ RCloud.UI.scratchpad = (function() {
         }
     };
 })();
+
 RCloud.UI.search = (function() {
 var page_size_ = 10;
 var search_err_msg = ["<p style=\"color:black;margin:0;\">The search engine in RCloud uses Lucene for advanced search features." ,
@@ -8407,6 +8461,7 @@ return {
 };
 })();
 
+
 RCloud.UI.session_pane = {
     error_dest_: null,
     allow_clear: true,
@@ -8500,6 +8555,7 @@ RCloud.UI.session_pane = {
         this.post_error(msg, undefined, true);
     }
 };
+
 RCloud.UI.settings_frame = (function() {
     // options to fetch from server, with callbacks for what to do once we get them
     var options_ = {};
@@ -8738,6 +8794,7 @@ RCloud.UI.settings_frame = (function() {
     return result;
 })();
 
+
 RCloud.UI.share_button = (function() {
     var extension_;
     var default_item_ = null;
@@ -8825,6 +8882,7 @@ RCloud.UI.share_button = (function() {
         }
     };
 })();
+
 RCloud.UI.upload_with_alerts = (function() {
     function upload_ui_opts(opts) {
         if(_.isBoolean(opts))
@@ -8960,6 +9018,7 @@ RCloud.UI.upload_with_alerts = (function() {
 
     return upload_files;
 })();
+
 RCloud.UI.upload_frame = {
     body: function() {
         return RCloud.UI.panel_loader.load_snippet('file-upload-snippet');
@@ -8988,6 +9047,7 @@ RCloud.UI.upload_frame = {
         return {height: height, padding: padding};
     }
 };
+
 
 RCloud.UI.notebook_protection_logger = {
     timeout: 0,
@@ -9029,6 +9089,7 @@ RCloud.UI.notebook_protection_logger = {
         $('.logging-panel span').html('&nbsp;');
     }
 };
+
 RCloud.UI.notebook_protection = (function() {
 
     //set from outside
@@ -9139,6 +9200,7 @@ RCloud.UI.notebook_protection = (function() {
     };
 
 })();
+
 RCloud.UI.discovery_page = (function() {
 
     return {
@@ -9176,3 +9238,5 @@ RCloud.UI.discovery_page = (function() {
     };
 
 })();
+
+//# sourceMappingURL=rcloud_bundle.js.map
