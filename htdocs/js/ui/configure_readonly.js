@@ -16,8 +16,8 @@ RCloud.UI.configure_readonly = function() {
         }
     }
     else {
-        revertb.hide();
-        saveb.hide();
+        revertb && revertb.hide();
+        saveb && saveb.hide();
     }
     if(shell.notebook.model.read_only()) {
         RCloud.UI.command_prompt.readonly(true);
