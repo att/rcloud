@@ -197,6 +197,17 @@ Notebook.create_model = function()
             });
             RCloud.UI.selection_bar.update(this.cells);
         },
+        crop_cells: function() {
+            var that = this;
+            _.chain(this.cells)
+            .filter(function(cell) {
+                return !cell.is_selected();
+            })
+            .each(function(cell) {
+                that.remove_cell(cell);
+            });
+            RCloud.UI.selection_bar.update(this.cells);
+        },
         select_all_cells: function() {
             _.each(this.cells, function(cell) {
                 cell.select_cell();

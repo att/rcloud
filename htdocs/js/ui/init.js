@@ -159,10 +159,20 @@ RCloud.UI.init = function() {
             e.preventDefault();
             editor.step_history_redo();
         }
-        // delete 
+        // delete selected cells:
         if(e.keyCode === 46) {
             e.preventDefault();
             shell.notebook.controller.remove_selected_cells();
         }
+        // invert cells' selected status:
+        if(isCmdOrCtrlAndKeyCode(73) && e.shiftKey) {
+            e.preventDefault();
+            shell.notebook.controller.invert_selected_cells();
+        }
+        // crop 
+        if(isCmdOrCtrlAndKeyCode(75)) {
+            e.preventDefault();
+            shell.notebook.controller.crop_cells();
+        }        
     });
 };
