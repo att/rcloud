@@ -44,7 +44,7 @@ fi
 
 # build JS (if available)
 if [ -d ./node_modules ]; then
-    grunt
+    node_modules/grunt-cli/bin/grunt
 fi
 
 # check if we need to worry about mathjax
