@@ -57,13 +57,24 @@ RCloud.UI.navbar = (function() {
             // display brand now (won't wait for load/session)
             var header = $('#rcloud-navbar-header');
             header.empty().append('<a class="navbar-brand" href="#">RCloud</a>');
+            var cmd_filter = RCloud.extension.filter_field('area', 'commands'),
+                view_filter = RCloud.UI.menu.filter_mode('view'),
+                edit_filter = RCloud.UI.menu.filter_mode('edit');
+
             extension_ = RCloud.extension.create({
                 sections: {
                     header: {
                         filter: RCloud.extension.filter_field('area', 'header')
                     },
-                    commands: {
-                        filter: RCloud.extension.filter_field('area', 'commands')
+                    view_commands: {
+                        filter: function(entry) {
+                            return cmd_filter(entry) && view_filter(entry);
+                        }
+                    },
+                    edit_commands: {
+                        filter: function(entry) {
+                            return cmd_filter(entry) && edit_filter(entry);
+                        }
                     }
                 }
             });
@@ -71,6 +82,7 @@ RCloud.UI.navbar = (function() {
                 shareable_link: {
                     area: 'commands',
                     sort: 1000,
+                    modes: ['edit'],
                     create: function() {
                         var share_link_, view_types_;
                         return {
@@ -111,6 +123,7 @@ RCloud.UI.navbar = (function() {
                 star_notebook: {
                     area: 'commands',
                     sort: 2000,
+                    modes: ['edit'],
                     create: function() {
                         var star_, unstar_, icon_, count_;
                         var button = $.el.button({
@@ -149,6 +162,7 @@ RCloud.UI.navbar = (function() {
                 fork_notebook: {
                     area: 'commands',
                     sort: 3000,
+                    modes: ['edit'],
                     create: function() {
                         var control = RCloud.UI.navbar.create_button('fork-notebook', 'Fork', 'icon-code-fork');
                         $(control.control).click(function() {
@@ -163,6 +177,7 @@ RCloud.UI.navbar = (function() {
                 save_notebook: {
                     area: 'commands',
                     sort: 4000,
+                    modes: ['edit'],
                     create: function() {
                         var control = RCloud.UI.navbar.create_button('save-notebook', 'Save', 'icon-save');
                         $(control.control).click(function() {
@@ -175,6 +190,7 @@ RCloud.UI.navbar = (function() {
                 revert_notebook: {
                     area: 'commands',
                     sort: 5000,
+                    modes: ['edit'],
                     create: function() {
                         var control = RCloud.UI.navbar.create_button('revert-notebook', 'Revert', 'icon-undo');
                         $(control.control).click(function() {
@@ -189,6 +205,7 @@ RCloud.UI.navbar = (function() {
                 run_notebook: {
                     area: 'commands',
                     sort: 6000,
+                    modes: ['edit', 'view'],
                     create: function() {
                         var control = RCloud.UI.navbar.create_highlight_button('run-notebook', 'Run All', 'icon-play');
                         $(control.control).click(function() {
@@ -221,7 +238,8 @@ RCloud.UI.navbar = (function() {
                 var header = $('#rcloud-navbar-header');
                 if(brands.length)
                     header.empty().append.apply(header, brands);
-                var commands = extension_.create('commands');
+                var commands_section = RCloud.UI.menu.ui_mode() + '_commands';
+                var commands = extension_.create(commands_section);
                 var main = $('#rcloud-navbar-main');
                 if(commands.array.length)
                     main.prepend.apply(main, commands.array.map(function(button) {
