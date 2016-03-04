@@ -2,7 +2,6 @@ Notebook.create_controller = function(model)
 {
     var current_gist_,
         dirty_ = false,
-        save_button_ = null,
         save_timer_ = null;
     // only create the callbacks once, but delay creating them until the editor
     // is initialized
@@ -12,8 +11,8 @@ Notebook.create_controller = function(model)
             if(!cb_) {
                 var editor_callback = editor.load_callback({is_change: true, selroot: true});
                 cb_ = function(notebook) {
-                    if(save_button_)
-                        ui_utils.disable_bs_button(save_button_);
+                    var saveb = RCloud.UI.navbar.control('save_notebook');
+                    saveb && saveb.disable();
                     dirty_ = false;
                     if(save_timer_) {
                         window.clearTimeout(save_timer_);
@@ -217,8 +216,8 @@ Notebook.create_controller = function(model)
 
     function on_dirty() {
         if(!dirty_) {
-            if(save_button_)
-                ui_utils.enable_bs_button(save_button_);
+            var saveb = RCloud.UI.navbar.control('save_notebook');
+            saveb && saveb.enable();
             dirty_ = true;
         }
         if(save_timer_)
@@ -237,12 +236,6 @@ Notebook.create_controller = function(model)
         current_gist: function() {
             // are there reasons we shouldn't be exposing this?
             return current_gist_;
-        },
-        save_button: function(save_button) {
-            if(arguments.length) {
-                save_button_ = save_button;
-            }
-            return save_button_;
         },
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);

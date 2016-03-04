@@ -21,7 +21,7 @@ RCloud.extension = (function() {
         },
         create: function(options) {
             options = options || {};
-            var entries_ = {};
+            var items_ = {};
             var sections_ = {};
             var defaults_ = options.defaults ? options.defaults : {};
 
@@ -33,7 +33,7 @@ RCloud.extension = (function() {
 
             function recompute_sections() {
                 for(key in sections_) {
-                    sections_[key].entries = _.filter(entries_, function(entry) {
+                    sections_[key].entries = _.filter(items_, function(entry) {
                         if(entry.disable)
                             return false;
                         return sections_[key].filter ? sections_[key].filter(entry) : true;
@@ -45,37 +45,37 @@ RCloud.extension = (function() {
             return {
                 add: function(entries) {
                     for(var key in entries)
-                        entries_[key] = _.extend(_.extend({key: key}, defaults_), entries[key]);
+                        items_[key] = _.extend(_.extend({key: key}, defaults_), entries[key]);
                     recompute_sections();
                     return this;
                 },
                 remove: function(name) {
-                    delete entries_[name];
+                    delete items_[name];
                     recompute_sections();
                     return this;
                 },
                 disable: function(name, disable) {
-                    if(entries_[name]) {
-                        entries_[name].disable = disable;
+                    if(items_[name]) {
+                        items_[name].disable = disable;
                         recompute_sections();
                     }
                     return this;
                 },
                 get: function(name) {
-                    return entries_[name];
+                    return items_[name];
                 },
                 entries: function(name) {
                     return sections_[name].entries;
                 },
                 create: function(name, _) {
-                    var ret = {};
+                    var map = {}, array = [];
                     var args = Array.prototype.slice.call(arguments, 1);
                     var entries = this.entries(name);
                     if(entries)
-                        this.entries(name).forEach(function(entry) {
-                            ret[entry.key] = entry.create.apply(entry, args);
+                        entries.forEach(function(entry) {
+                            array.push(map[entry.key] = entry.create.apply(entry, args));
                         });
-                    return ret;
+                    return {map: map, array: array};
                 },
                 sections: sections_
             };

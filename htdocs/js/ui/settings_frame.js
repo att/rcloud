@@ -220,7 +220,7 @@ RCloud.UI.settings_frame = (function() {
             var option_keys = _.keys(options_);
             if(option_keys.length === 1)
                 option_keys.push("foo"); // evade rcloud scalarizing
-            rcloud.config.get_user_option(option_keys)
+            return rcloud.config.get_user_option(option_keys)
                 .then(function(settings) {
                     for(var key in settings) {
                         if(key==="foo" || key==='r_attributes' || key==='r_type')

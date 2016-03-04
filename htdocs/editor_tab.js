@@ -38,8 +38,7 @@ var editor = function () {
         current_ = null; // current notebook and version
 
     // view
-    var $tree_ = null,
-        star_notebook_button_ = null;
+    var $tree_ = null;
 
     // configuration stuff
     var gist_sources_ = null, // valid gist sources on server
@@ -833,9 +832,11 @@ var editor = function () {
                 p.then(open_and_select);
         }
         if(gistname === current_.notebook) {
-            if(!_.isUndefined(star_notebook_button_) && !_.isNull(star_notebook_button_))
-                star_notebook_button_.set_state(i_starred);
-            $('#curr-star-count').text(result.num_stars(gistname));
+            var starn = RCloud.UI.navbar.control('star_notebook');
+            if(starn) {
+                starn.set_fill(i_starred);
+                starn.set_count(result.num_stars(gistname));
+            }
         }
         if(my_friends_[user]) {
             p = update_tree_entry('friends', user, gistname, entry, true);
@@ -1141,10 +1142,7 @@ var editor = function () {
                     that.new_notebook();
             });
             var snf = result.star_notebook;
-            star_notebook_button_ =
-                ui_utils.twostate_icon($("#star-notebook"),
-                                       snf.bind(this, true), snf.bind(this, false),
-                                       'icon-star', 'icon-star-empty');
+            RCloud.UI.navbar.control('star_notebook').set_star_unstar(snf.bind(this, true), snf.bind(this, false));
             return promise;
         },
         // partial access to state, for add-ons.  (should be explicit model)

@@ -3,13 +3,13 @@ RCloud.UI.cell_commands = (function() {
 
     function create_command_set(area, div, cell_model, cell_view) {
         var commands_ = extension_.create(area, cell_model, cell_view);
-        _.each(commands_, function(command) {
+        commands_.array.forEach(function(command) {
             command.control.addClass('cell-control');
         });
         var flags_ = {};
-        div.append.apply(div, _.pluck(commands_, 'control'));
+        div.append.apply(div, _.pluck(commands_.array, 'control'));
         return {
-            controls: commands_,
+            controls: commands_.map,
             set_flag: function(flag, value) {
                 var checkf = function(f) {
                     var reverse;
@@ -24,13 +24,13 @@ RCloud.UI.cell_commands = (function() {
                 flags_[flag] = value;
                 extension_.entries(area).forEach(function(cmd) {
                     if(!_.every(cmd.enable_flags, checkf))
-                        commands_[cmd.key].disable();
+                        commands_.map[cmd.key].disable();
                     else
-                        commands_[cmd.key].enable();
+                        commands_.map[cmd.key].enable();
                     if(!_.every(cmd.display_flags, checkf))
-                        commands_[cmd.key].control.hide();
+                        commands_.map[cmd.key].control.hide();
                     else
-                        commands_[cmd.key].control.show();
+                        commands_.map[cmd.key].control.show();
                 });
             }
         };
