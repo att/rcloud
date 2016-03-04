@@ -43,6 +43,7 @@ rcloud_bundle.js: \
         ui/image_manager.js \
         ui/import_export.js \
 	ui/init.js \
+	ui/shortcut_manager.js \
 	ui/left_panel.js \
 	ui/load_options.js \
         ui/menus.js \
