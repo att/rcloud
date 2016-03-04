@@ -7,12 +7,12 @@ RCloud.UI.configure_readonly = function() {
         saveb = RCloud.UI.navbar.control('save_notebook');
     if(shell.notebook.controller.is_mine()) {
         if(shell.notebook.model.read_only()) {
-            revertb.show();
-            saveb.hide();
+            revertb && revertb.show();
+            saveb && saveb.hide();
         }
         else {
-            revertb.hide();
-            saveb.show();
+            revertb && revertb.hide();
+            saveb && saveb.show();
         }
     }
     else {
@@ -22,7 +22,6 @@ RCloud.UI.configure_readonly = function() {
     if(shell.notebook.model.read_only()) {
         RCloud.UI.command_prompt.readonly(true);
         readonly_notebook.show();
-        saveb.hide();
         $('#output').sortable('disable');
         $('#upload-to-notebook')
             .prop('checked', false)
@@ -32,7 +31,6 @@ RCloud.UI.configure_readonly = function() {
     else {
         RCloud.UI.command_prompt.readonly(false);
         readonly_notebook.hide();
-        saveb.show();
         $('#output').sortable('enable');
         $('#upload-to-notebook')
             .prop('checked', false)
