@@ -1,6 +1,8 @@
 addons:
   firefox: '25.0'
 language: c
+node_js:
+  - '0.12'
 env:
   matrix:
   - TESTFOLDER=SmokeTest.js
