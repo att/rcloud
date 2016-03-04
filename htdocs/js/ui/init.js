@@ -61,10 +61,6 @@ RCloud.UI.init = function() {
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
-    $("#edit-notebook").click(function() {
-        window.location = "edit.html?notebook=" + shell.gistname();
-    });
-
     ui_utils.prevent_backspace($(document));
 
     $(document).on('copy', function(e) {

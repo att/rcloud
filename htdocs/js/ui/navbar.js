@@ -202,6 +202,18 @@ RCloud.UI.navbar = (function() {
                         return control;
                     }
                 },
+                edit_notebook: {
+                    area: 'commands',
+                    sort: 1000,
+                    modes: ['view'],
+                    create: function() {
+                        var control = RCloud.UI.navbar.create_button('edit-notebook', 'Edit Notebook', 'icon-edit');
+                        $(control.control).click(function() {
+                            window.location = "edit.html?notebook=" + shell.gistname();
+                        });
+                        return control;
+                    }
+                },
                 run_notebook: {
                     area: 'commands',
                     sort: 6000,
