@@ -9,19 +9,27 @@ RCloud.UI.navbar = (function() {
                 class: 'btn btn-link navbar-btn'
             }, $.el.i({
                 class: icon
-            }));
+            })), $button = $(button);
             return {
                 control: button,
                 click: function(handler) {
                     $(button).click(handler);
                     return this;
                 },
+                hide: function() {
+                    $button.hide();
+                    return this;
+                },
+                show: function() {
+                    $button.show();
+                    return this;
+                },
                 disable: function() {
-                    ui_utils.disable_bs_button(button);
+                    ui_utils.disable_bs_button($button);
                     return this;
                 },
                 enable: function() {
-                    ui_utils.enable_bs_button(button);
+                    ui_utils.enable_bs_button($button);
                     return this;
                 },
                 display: function(title, icon) {
@@ -149,7 +157,12 @@ RCloud.UI.navbar = (function() {
                     area: 'commands',
                     sort: 4000,
                     create: function() {
-                        return RCloud.UI.navbar.create_button('save-notebook', 'Save', 'icon-save');
+                        var control = RCloud.UI.navbar.create_button('save-notebook', 'Save', 'icon-save');
+                        $(control.control).click(function() {
+                            shell.save_notebook();
+                        });
+                        control.disable();
+                        return control;
                     }
                 },
                 revert_notebook: {

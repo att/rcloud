@@ -3,23 +3,26 @@
  */
 RCloud.UI.configure_readonly = function() {
     var readonly_notebook = $("#readonly-notebook");
+    var revertb = RCloud.UI.navbar.control('revert_notebook'),
+        saveb = RCloud.UI.navbar.control('save_notebook');
     if(shell.notebook.controller.is_mine()) {
         if(shell.notebook.model.read_only()) {
-            $('#revert-notebook').show();
-            $('#save-notebook').hide();
+            revertb.show();
+            saveb.hide();
         }
         else {
-            $('#revert-notebook').hide();
-            $('#save-notebook').show();
+            revertb.hide();
+            saveb.show();
         }
     }
     else {
-        $('#revert-notebook,#save-notebook').hide();
+        revertb.hide();
+        saveb.hide();
     }
     if(shell.notebook.model.read_only()) {
         RCloud.UI.command_prompt.readonly(true);
         readonly_notebook.show();
-        $('#save-notebook').hide();
+        saveb.hide();
         $('#output').sortable('disable');
         $('#upload-to-notebook')
             .prop('checked', false)
@@ -29,7 +32,7 @@ RCloud.UI.configure_readonly = function() {
     else {
         RCloud.UI.command_prompt.readonly(false);
         readonly_notebook.hide();
-        $('#save-notebook').show();
+        saveb.show();
         $('#output').sortable('enable');
         $('#upload-to-notebook')
             .prop('checked', false)

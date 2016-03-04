@@ -14,11 +14,6 @@ RCloud.UI.init = function() {
         editor.revert_notebook(is_mine, gistname, version);
     });
 
-    var saveb = $("#save-notebook");
-    saveb.click(function() {
-        shell.save_notebook();
-    });
-
     RCloud.UI.run_button.init();
 
     //////////////////////////////////////////////////////////////////////////
@@ -133,7 +128,7 @@ RCloud.UI.init = function() {
 
         // if we have a save button (e.g. not view mode), prevent browser's default
         // ctrl/cmd+s and save notebook
-        if(saveb.length && isCmdOrCtrlAndKeyCode(83)) { // ctrl/cmd-S
+        if(RCloud.UI.navbar.get('save_notebook') && isCmdOrCtrlAndKeyCode(83)) { // ctrl/cmd-S
             e.preventDefault();
             shell.save_notebook();
         }
