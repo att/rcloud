@@ -82,9 +82,14 @@ RCloud.UI.cell_commands = (function() {
                 }
             };
         },
-        create_static: function(html, wrap) {
+        create_static: function(html, wrap, action) {
             var content = $('<span><span/>').html(html);
             var span = wrap ? wrap(content) : content;
+
+            if(action) {
+                action(span);
+            }
+
             return {
                 control: span,
                 enable: function() {},
@@ -239,16 +244,6 @@ RCloud.UI.cell_commands = (function() {
                         });
                     }
                 },
-                remove: {
-                    area: 'cell',
-                    sort: 5000,
-                    enable_flags: ['modify'],
-                    create: function(cell_model) {
-                        return that.create_button("icon-trash", "remove", function() {
-                            cell_model.parent_model.controller.remove_cell(cell_model);
-                        });
-                    }
-                },
                 grab_affordance: {
                     area: 'left',
                     sort: 1000,
@@ -257,6 +252,24 @@ RCloud.UI.cell_commands = (function() {
                         var svg = "<img src='/img/grab_affordance.svg' type='image/svg+xml'></img>";
                         return that.create_static(svg, function(x) {
                             return $("<span class='grab-affordance'>").append(x);
+                        });
+                    }
+                },
+                selection: {
+                    area: 'left',
+                    sort: 1250,
+                    display_flags: ['modify'],
+                    create: function(cell_model) {
+                        var html = "<input type='checkbox'></input>";
+                        return that.create_static(html, function(x) {
+                            return $("<span class='cell-selection'>").append(x);
+                        }, function(static_content) {
+                            static_content.click(function(e) {
+                                cell_model.parent_model.controller.select_cell(cell_model, {
+                                    is_toggle: !e.shiftKey, 
+                                    is_range : e.shiftKey
+                                });
+                            });
                         });
                     }
                 },
@@ -282,6 +295,16 @@ RCloud.UI.cell_commands = (function() {
                     create: function(cell_model) {
                         return that.create_static(cell_model.id(), function(x) {
                             return $("<span class='left-indicator'></span>").append('cell ', x);
+                        }, function(static_content) {
+                            static_content.click(function(e) {
+                                if(e.ctrlKey || e.metaKey || e.shiftKey) {
+                                    e.preventDefault();
+                                }
+                                cell_model.parent_model.controller.select_cell(cell_model, {
+                                    is_toggle: !e.shiftKey, 
+                                    is_range : e.shiftKey
+                                });
+                            });
                         });
                     }
                 }

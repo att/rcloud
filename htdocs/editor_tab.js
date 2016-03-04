@@ -1212,6 +1212,7 @@ var editor = function () {
             }
             before = before || Promise.resolve(undefined);
             selroot = selroot || true;
+
             return before.then(function() {
                 return shell.load_notebook(gistname, version)
                     .then(that.load_callback({version: version,

@@ -174,6 +174,46 @@ Notebook.create_model = function()
             }
             return changes;
         },
+        remove_selected_cells: function() {
+            var that = this;
+            _.chain(this.cells)
+            .filter(function(cell) {
+                return cell.is_selected();
+            })
+            .each(function(cell) {
+                that.remove_cell(cell);
+            });
+            RCloud.UI.selection_bar.update(this.cells);
+        },
+        invert_selected_cells: function() {
+            _.each(this.cells, function(cell) {
+                cell.toggle_cell();
+            });
+            RCloud.UI.selection_bar.update(this.cells);
+        },
+        clear_all_selected_cells: function() {
+            _.each(this.cells, function(cell) {
+                cell.deselect_cell();
+            });
+            RCloud.UI.selection_bar.update(this.cells);
+        },
+        crop_cells: function() {
+            var that = this;
+            _.chain(this.cells)
+            .filter(function(cell) {
+                return !cell.is_selected();
+            })
+            .each(function(cell) {
+                that.remove_cell(cell);
+            });
+            RCloud.UI.selection_bar.update(this.cells);
+        },
+        select_all_cells: function() {
+            _.each(this.cells, function(cell) {
+                cell.select_cell();
+            });
+            RCloud.UI.selection_bar.update(this.cells);
+        },
         move_cell: function(cell_model, before) {
             // remove doesn't change any ids, so we can just remove then add
             var pre_index = this.cells.indexOf(cell_model),
@@ -200,6 +240,65 @@ Notebook.create_model = function()
             cell_model.language(language);
             return [cell_model.change_object({filename: pre_name,
                                               rename: cell_model.filename()})];
+        },
+        select_cell: function(cell_model, modifiers) {
+
+            var that = this;
+
+            var clear_all = function() {
+                _.chain(that.cells)
+                .filter(function(cell) {
+                    return cell.is_selected();
+                })
+                .each(function(cell) {
+                    cell.deselect_cell();
+                }); 
+            };
+
+            var get_selected_index_range = function() {
+                var foundIndexes = [];
+
+                for(var loop = 0; loop < that.cells.length; loop++) {
+                    if(that.cells[loop].is_selected()) {
+                        foundIndexes.push(loop);
+                    }
+                }
+
+                return foundIndexes.length === 0 ? undefined : {
+                    lower: foundIndexes[0],
+                    upper: foundIndexes[foundIndexes.length - 1]
+                };
+            };
+
+            var select_range = function(lower, upper) {
+                var items = [];
+
+                for(var loop = lower; loop <= upper; loop++) {
+                    that.cells[loop].select_cell();
+                }
+            };
+
+            if(modifiers.is_toggle) {
+                cell_model.toggle_cell();
+            } else /* is_range */ {
+                var selected_index_range = get_selected_index_range();
+                var selected_index = this.cells.indexOf(cell_model);
+
+                if(_.isUndefined(selected_index_range)) {
+                    cell_model.select_cell();
+                } else {
+                    clear_all();
+                    if(selected_index > selected_index_range.upper) {
+                        select_range(selected_index_range.upper, selected_index);
+                    } else if(selected_index < selected_index_range.lower) {
+                        select_range(selected_index, selected_index_range.lower);
+                    } else {
+                        select_range(selected_index_range.lower, selected_index_range.upper);
+                    }
+                }
+            }
+
+            RCloud.UI.selection_bar.update(this.cells);
         },
         update_cell: function(cell_model) {
             return [cell_model.change_object()];

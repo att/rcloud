@@ -63,6 +63,7 @@ RCloud.UI.init = function() {
     RCloud.UI.menus.init();
     RCloud.UI.advanced_menu.init();
     RCloud.UI.navbar.init();
+    RCloud.UI.selection_bar.init();
 
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
@@ -158,5 +159,20 @@ RCloud.UI.init = function() {
             e.preventDefault();
             editor.step_history_redo();
         }
+        // delete selected cells:
+        if(e.keyCode === 46) {
+            e.preventDefault();
+            shell.notebook.controller.remove_selected_cells();
+        }
+        // invert cells' selected status:
+        if(isCmdOrCtrlAndKeyCode(73) && e.shiftKey) {
+            e.preventDefault();
+            shell.notebook.controller.invert_selected_cells();
+        }
+        // crop 
+        if(isCmdOrCtrlAndKeyCode(75)) {
+            e.preventDefault();
+            shell.notebook.controller.crop_cells();
+        }        
     });
 };

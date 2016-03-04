@@ -134,8 +134,12 @@ div.panel-heading:hover {
     position: absolute;
     width: 48px;
     height: 100%;
+    cursor: pointer;
 }
 
+.notebook-cell.selected .code-div .rcloud-gutter {
+    background-color: #ffc;
+}
 
 .rcloud-line-number-position {
     position: relative;
@@ -246,6 +250,10 @@ pre.offscreen {
     height: 25px;
     background-color: #f5f5f5;
     color: #777;
+}
+
+.notebook-cell.selected .cell-status {
+    background-color: #ffc;
 }
 
 .cell-status-left {

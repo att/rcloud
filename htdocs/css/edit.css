@@ -302,6 +302,63 @@ rect.frame {
     z-index: 5;
 }
 
+#selection-bar {
+    background: #e0e0e0;
+    font-size: 100%;
+    padding: 5px;
+    color: rgb(221, 221, 221);
+    display: none;
+    margin: 3px;
+}
+
+#selection-bar .btn {
+    height: 19px;
+}
+
+#selection-bar .btn input[type="checkbox"] {
+    /*margin: 0 2px;*/
+}
+
+#selection-bar #selection-menu {
+    padding-left: 14px;
+}
+
+#selection-bar > button {
+    margin: 0;
+    color: #454545;
+    padding: 0;
+}
+
+#selection-bar > button:hover i {
+    text-decoration: none;
+}
+
+#selection-bar .cell-selection {
+    position: relative;
+    padding: 3px 8px;
+}
+
+#selection-bar .cell-selection span {
+    position: absolute;
+    display: none;
+    top: 0px;
+    left: 11px;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+#selection-bar i {
+    font-size: 130%;
+}
+
+#selection-bar .dropdown-menu {
+    font-size: 100%;
+}
+
+.cell-selection input[type="checkbox"] {
+    margin-top: -1px;
+}
+
 .active.edit-markdown {
     background-color: #F7EEE4;
 }
@@ -918,7 +975,7 @@ pre {
 
 #rcloud-cellarea {
     width: 100%;
-    height: 100%;
+    height: calc(100% - 37px);
     overflow-y: auto;
     overflow-x: hidden;
 }

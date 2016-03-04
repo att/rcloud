@@ -88,7 +88,9 @@ RClient = {
 
             post_response: function (msg) {
                 var d = $("<pre class='response'></pre>").html(msg);
-                $("#output").append(d);
+                //$(d).insertBefore("#selection-bar");//.insertBefore(d);
+
+                $('#output').append(d);
             },
 
             post_rejection: function(e) {
