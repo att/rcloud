@@ -43,15 +43,11 @@ RCloud.UI.run_button = (function() {
                 }
             });
         },
-        load: function() {
-            var that = this;
-            RCloud.UI.navbar.control('run_notebook').click(function() {
-                if(running_) {
-                    that.stop();
-                }
-                else
-                    shell.run_notebook();
-            });
+        run: function() {
+            if(running_)
+                that.stop();
+            else
+                shell.run_notebook();
         },
         stop: function() {
             if(rcloud.has_compute_separation)

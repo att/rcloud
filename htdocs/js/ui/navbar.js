@@ -150,7 +150,14 @@ RCloud.UI.navbar = (function() {
                     area: 'commands',
                     sort: 3000,
                     create: function() {
-                        return RCloud.UI.navbar.create_button('fork-notebook', 'Fork', 'icon-code-fork');
+                        var control = RCloud.UI.navbar.create_button('fork-notebook', 'Fork', 'icon-code-fork');
+                        $(control.control).click(function() {
+                            var is_mine = shell.notebook.controller.is_mine();
+                            var gistname = shell.gistname();
+                            var version = shell.version();
+                            editor.fork_notebook(is_mine, gistname, version);
+                        });
+                        return control;
                     }
                 },
                 save_notebook: {
@@ -169,14 +176,25 @@ RCloud.UI.navbar = (function() {
                     area: 'commands',
                     sort: 5000,
                     create: function() {
-                        return RCloud.UI.navbar.create_button('revert-notebook', 'Revert', 'icon-undo');
+                        var control = RCloud.UI.navbar.create_button('revert-notebook', 'Revert', 'icon-undo');
+                        $(control.control).click(function() {
+                            var is_mine = shell.notebook.controller.is_mine();
+                            var gistname = shell.gistname();
+                            var version = shell.version();
+                            editor.revert_notebook(is_mine, gistname, version);
+                        });
+                        return control;
                     }
                 },
                 run_notebook: {
                     area: 'commands',
                     sort: 6000,
                     create: function() {
-                        return RCloud.UI.navbar.create_highlight_button('run-notebook', 'Run All', 'icon-play');
+                        var control = RCloud.UI.navbar.create_highlight_button('run-notebook', 'Run All', 'icon-play');
+                        $(control.control).click(function() {
+                            RCloud.UI.run_button.run();
+                        });
+                        return control;
                     }
                 }
             });

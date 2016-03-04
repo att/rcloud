@@ -1,19 +1,5 @@
 RCloud.UI.init = function() {
 
-
-    $("#fork-notebook").click(function() {
-        var is_mine = shell.notebook.controller.is_mine();
-        var gistname = shell.gistname();
-        var version = shell.version();
-        editor.fork_notebook(is_mine, gistname, version);
-    });
-    $("#revert-notebook").click(function() {
-        var is_mine = shell.notebook.controller.is_mine();
-        var gistname = shell.gistname();
-        var version = shell.version();
-        editor.revert_notebook(is_mine, gistname, version);
-    });
-
     RCloud.UI.run_button.init();
 
     //////////////////////////////////////////////////////////////////////////
