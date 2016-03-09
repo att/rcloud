@@ -57,6 +57,7 @@ RCloud.UI.shortcut_manager = (function() {
             var items = [{
                 category: 'Ace Editor',
                 id: 'ace_do_something_or_another',
+                bindings: ['^'],
                 description: 'This will completely refactor your code and make it amazing'
             }];
 
@@ -85,6 +86,14 @@ RCloud.UI.shortcut_manager = (function() {
             shortcuts_changed = false;
             return shortcuts_;
         },
+        get_registered_shortcuts_by_category: function() {
+            shortcuts_changed = false;
+            var grouped = _.chain(shortcuts_).groupBy('category').value();
+
+            return _.map(grouped, function(item, key) {
+                return { category: key, shortcuts: item }
+            });
+        }
     };
 
     return result;
