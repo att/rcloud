@@ -30,6 +30,7 @@ rcloud_bundle.js: \
 	language.js \
 	upload_utils.js \
 	ui/_begin.js \
+		ui/shortcut_manager.js \
         ui/advanced_menu.js \
         ui/cell_commands.js \
 	ui/column.js \
@@ -39,11 +40,11 @@ rcloud_bundle.js: \
 	ui/configure_readonly.js \
 	ui/fatal_dialog.js \
         ui/find_replace.js \
+    ui/shortcut_dialog.js \
 	ui/help_frame.js \
         ui/image_manager.js \
         ui/import_export.js \
 	ui/init.js \
-	ui/shortcut_manager.js \
 	ui/left_panel.js \
 	ui/load_options.js \
         ui/menus.js \

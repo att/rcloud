@@ -23,7 +23,7 @@ requirejs_config_obj = {
         "shell_tab": ["rcloud_bundle", "editor_tab"],
         "editor_tab": ["rcloud_bundle", "laconic", "tree.jquery"],
         "rserve": ["underscore"],
-        "rcloud_bundle": ["ace", "jquery.cookies.2.2.0", "jquery.bootpag", "jquery.scrollto", "jquery-ui", "hl.min", "bootstrap"
+        "rcloud_bundle": ["ace", "jquery.cookies.2.2.0", "jquery.bootpag", "jquery.scrollto", "jquery-ui", "hl.min", "bootstrap", "mousetrap.min"
                           // ,"jquery.whiny" // enable/disable jquery.whiny here
                          ]
     }
@@ -39,7 +39,8 @@ var common_deps = [
     "jquery.bootpag", "jquery.scrollto", "laconic", "jquery-ui",
     "bootstrap", "peg-0.6.2.min",
     "rserve", "tree.jquery", "FileSaver",
-    "css_browser_selector"
+    "css_browser_selector",
+    "mousetrap.min"
 ];
 
 function start_require(deps) {

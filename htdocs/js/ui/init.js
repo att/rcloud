@@ -80,6 +80,9 @@ RCloud.UI.init = function() {
     // adds to advanced menu
     RCloud.UI.import_export.init();
 
+    // keyboard shortcuts:
+    RCloud.UI.shortcut_manager.init();
+
     //////////////////////////////////////////////////////////////////////////
     // view mode things
     $("#edit-notebook").click(function() {
@@ -125,23 +128,19 @@ RCloud.UI.init = function() {
         shell.refresh_notebook_title();
     });
 
-    // key handlers
-    document.addEventListener("keydown", function(e) {
-        // usually we get away with handling ctrl- and cmd- the same
-        // occasionally we have to special-case the mac and windows/linux keys
-        var isCmdOrCtrlAndKeyCode = function(keycode) {
-            return e.keyCode === keycode && (e.ctrlKey || e.metaKey);
-        };
-
-        // if we have a save button (e.g. not view mode), prevent browser's default
-        // ctrl/cmd+s and save notebook
-        if(saveb.length && isCmdOrCtrlAndKeyCode(83)) { // ctrl/cmd-S
-            e.preventDefault();
-            shell.save_notebook();
-        }
-        // select all ctrl/cmd-a
-        if(isCmdOrCtrlAndKeyCode(65)) {
-            e.preventDefault();
+    // notebook management:
+    RCloud.UI.shortcut_manager.add([{
+        category: 'Notebook Management', 
+        id: 'notebook_cell',
+        description: 'Saves the current notebook',
+        bindings: ['mod+s'],
+        action: function() { if(saveb.length) { shell.save_notebook(); } }
+    }, {
+        category: 'Notebook Management', 
+        id: 'select_all',
+        description: 'Saves the current notebook',
+        bindings: ['mod+a'],
+        action: function() { 
             var selection = window.getSelection();
             selection.removeAllRanges();
             var range = new Range();
@@ -149,30 +148,48 @@ RCloud.UI.init = function() {
             range.setStartAfter($('.response')[0]);
             selection.addRange(range);
         }
-        // undo
-        if(isCmdOrCtrlAndKeyCode(90) && !e.shiftKey && !e.altKey) {
-            e.preventDefault();
-            editor.step_history_undo();
-        }
-        // redo
-        if((!ui_utils.is_a_mac() && isCmdOrCtrlAndKeyCode(89)) || (ui_utils.is_a_mac() && e.keyCode == 90 && e.metaKey && e.shiftKey)) {
-            e.preventDefault();
-            editor.step_history_redo();
-        }
-        // delete selected cells:
-        if(e.keyCode === 46) {
-            e.preventDefault();
-            shell.notebook.controller.remove_selected_cells();
-        }
-        // invert cells' selected status:
-        if(isCmdOrCtrlAndKeyCode(73) && e.shiftKey) {
-            e.preventDefault();
-            shell.notebook.controller.invert_selected_cells();
-        }
-        // crop 
-        if(isCmdOrCtrlAndKeyCode(75)) {
-            e.preventDefault();
-            shell.notebook.controller.crop_cells();
-        }        
-    });
+    }, {
+        category: 'Notebook Management', 
+        id: 'history_undo',
+        description: 'Steps back through the notebook\'s history',
+        bindings: ['z'],
+        action: function() { editor.step_history_undo(); }
+    }, {
+        category: 'Notebook Management', 
+        id: 'history_redo',
+        description: 'Steps forwards through the notebook\'s history',
+        bindings: ['ctrl+y', 'cmd+shift+y'],
+        action: function() { editor.step_history_undo(); }
+    }]);
+
+    // cell management:
+    RCloud.UI.shortcut_manager.add([{
+        category: 'Cell Management', 
+        id: 'remove_cells', 
+        description: 'Removes selected cells',
+        bindings: ['del'],
+        action: function() { shell.notebook.controller.remove_selected_cells(); } 
+    }, {
+        category: 'Cell Management', 
+        id: 'invert_cells', 
+        description: 'Invert selected cells', 
+        bindings: ['mod+shift+i'], 
+        action: function() { shell.notebook.controller.invert_selected_cells(); } 
+    }, {
+        category: 'Cell Management', 
+        id: 'crop_cells', 
+        description: 'Crop cells', 
+        bindings: ['mod+k'], 
+        action: function() { shell.notebook.controller.crop_cells(); } 
+    }]);
+
+    // general:
+    RCloud.UI.shortcut_manager.add([{
+        category: 'General',
+        id: 'show_help',
+        description: 'Show shortcuts help',
+        bindings: ['?'],
+        action: function() { RCloud.UI.shortcut_dialog.show(); } 
+    }]);
+
 };
