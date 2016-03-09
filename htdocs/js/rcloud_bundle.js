@@ -3179,7 +3179,7 @@ Notebook.create_model = function()
             });
             RCloud.UI.selection_bar.update(this.cells);
         },
-        toggle_selected_cells: function() {
+        invert_selected_cells: function() {
             _.each(this.cells, function(cell) {
                 cell.toggle_cell();
             });
@@ -3188,6 +3188,17 @@ Notebook.create_model = function()
         clear_all_selected_cells: function() {
             _.each(this.cells, function(cell) {
                 cell.deselect_cell();
+            });
+            RCloud.UI.selection_bar.update(this.cells);
+        },
+        crop_cells: function() {
+            var that = this;
+            _.chain(this.cells)
+            .filter(function(cell) {
+                return !cell.is_selected();
+            })
+            .each(function(cell) {
+                that.remove_cell(cell);
             });
             RCloud.UI.selection_bar.update(this.cells);
         },
@@ -3623,11 +3634,14 @@ Notebook.create_controller = function(model)
         remove_selected_cells: function() {
             model.remove_selected_cells();
         },
-        toggle_selected_cells: function() {
-            model.toggle_selected_cells();
+        invert_selected_cells: function() {
+            model.invert_selected_cells();
         },
         clear_all_selected_cells: function() {
             model.clear_all_selected_cells();
+        },
+        crop_cells: function() {
+            model.crop_cells();
         },
         select_all_cells: function() {
             model.select_all_cells();
@@ -6618,11 +6632,21 @@ RCloud.UI.init = function() {
             e.preventDefault();
             editor.step_history_redo();
         }
-        // delete 
+        // delete selected cells:
         if(e.keyCode === 46) {
             e.preventDefault();
             shell.notebook.controller.remove_selected_cells();
         }
+        // invert cells' selected status:
+        if(isCmdOrCtrlAndKeyCode(73) && e.shiftKey) {
+            e.preventDefault();
+            shell.notebook.controller.invert_selected_cells();
+        }
+        // crop 
+        if(isCmdOrCtrlAndKeyCode(75)) {
+            e.preventDefault();
+            shell.notebook.controller.crop_cells();
+        }        
     });
 };
 
@@ -7458,7 +7482,8 @@ RCloud.UI.selection_bar = (function() {
             $selection_checkbox = $selection_bar.find('.cell-selection input[type="checkbox"]');
 
             $selection_bar
-                .find('.btn-default input[type="checkbox"]').click(function() {
+                .find('.btn-default input[type="checkbox"]').click(function(e) {
+                    e.stopPropagation();
                     if($(this).is(':checked')) {
                         shell.notebook.controller.select_all_cells();
                     } else {
@@ -7476,6 +7501,10 @@ RCloud.UI.selection_bar = (function() {
                 .end()
                 .show();
 
+            $selection_bar.find('div[type="button"].cell-selection').click(function(e) {
+                $(this).find('input').trigger('click');
+            });
+            
             $('#' + $selection_bar.attr('id')).replaceWith($selection_bar);
         },  
         update: function(cells) {
@@ -7483,16 +7512,9 @@ RCloud.UI.selection_bar = (function() {
             var cell_count = cells.length,
                 selected_count = _.filter(cells, function(cell) { return cell.is_selected(); }).length;
 
-            if(selected_count === 0) {
-                $selection_checkbox.prop('checked', false);
-                $partial_indicator.hide();
-            } else if(selected_count !== cell_count) {
-                $selection_checkbox.prop('checked', false);
-                $partial_indicator.show();
-            } else {
-                $selection_checkbox.prop('checked', true);
-                $partial_indicator.hide();
-            }
+            $selection_checkbox.prop('checked', selected_count === cell_count);
+            $partial_indicator[selected_count !== cell_count && selected_count !== 0 ? 'show' : 'hide']();                
+          
         },
         hide: function() {
             $('#selection-bar').hide();
