@@ -454,6 +454,12 @@ rect.frame {
     padding-bottom: 2.5em; /* must be .footer height + 2 * .footer.padding */
 }
 
+#middle-column { 
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
 .icon-check,
 .icon-check-empty,
 #cog {
@@ -975,7 +981,7 @@ pre {
 
 #rcloud-cellarea {
     width: 100%;
-    height: calc(100% - 37px);
+    height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
 }
