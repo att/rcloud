@@ -12,6 +12,7 @@ Rscript -e 'chooseCRANmirror(ind=81)'
 Rscript -e 'install.packages("XML", repos=c("http://RForge.net", "http://R.research.att.com"), type="source")'
 Rscript -e 'install.packages("rcloud.dcplot", repos="http://rforge.net")'
 Rscript -e 'install.packages("rpython2", repos="http://rforge.net")'
+Rscript -e 'install.packages("xml2", repos=c("http://RForge.net", "http://R.research.att.com"), type="source")'
 
 cd /home/travis/build/att/rcloud/tests
 #sudo apt-get install xvfb
