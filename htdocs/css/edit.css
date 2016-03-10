@@ -308,7 +308,7 @@ rect.frame {
     padding: 5px;
     color: rgb(221, 221, 221);
     display: none;
-    margin: 3px;
+    margin-bottom: 1px;
 }
 
 #selection-bar .btn {
