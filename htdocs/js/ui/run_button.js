@@ -45,7 +45,7 @@ RCloud.UI.run_button = (function() {
         },
         run: function() {
             if(running_)
-                that.stop();
+                this.stop();
             else
                 shell.run_notebook();
         },
