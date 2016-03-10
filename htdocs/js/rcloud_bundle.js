@@ -3169,15 +3169,19 @@ Notebook.create_model = function()
             return changes;
         },
         remove_selected_cells: function() {
-            var that = this;
+            var that = this, changes = [];
+
             _.chain(this.cells)
             .filter(function(cell) {
                 return cell.is_selected();
             })
             .each(function(cell) {
-                that.remove_cell(cell);
+                changes = changes.concat(that.remove_cell(cell));
             });
+
             RCloud.UI.selection_bar.update(this.cells);
+
+            return changes;
         },
         invert_selected_cells: function() {
             _.each(this.cells, function(cell) {
@@ -3192,15 +3196,17 @@ Notebook.create_model = function()
             RCloud.UI.selection_bar.update(this.cells);
         },
         crop_cells: function() {
-            var that = this;
+            var that = this, changes = [];
             _.chain(this.cells)
             .filter(function(cell) {
                 return !cell.is_selected();
             })
             .each(function(cell) {
-                that.remove_cell(cell);
+                changes = changes.concat(that.remove_cell(cell));
             });
             RCloud.UI.selection_bar.update(this.cells);
+
+            return changes;
         },
         select_all_cells: function() {
             _.each(this.cells, function(cell) {
@@ -3632,7 +3638,10 @@ Notebook.create_controller = function(model)
                 .then(default_callback());
         },
         remove_selected_cells: function() {
-            model.remove_selected_cells();
+            var changes = refresh_buffers().concat(model.remove_selected_cells());
+            RCloud.UI.command_prompt.focus();
+            return update_notebook(changes)
+                .then(default_callback());
         },
         invert_selected_cells: function() {
             model.invert_selected_cells();
@@ -3641,7 +3650,10 @@ Notebook.create_controller = function(model)
             model.clear_all_selected_cells();
         },
         crop_cells: function() {
-            model.crop_cells();
+            var changes = refresh_buffers().concat(model.crop_cells());
+            RCloud.UI.command_prompt.focus();
+            return update_notebook(changes)
+                .then(default_callback());
         },
         select_all_cells: function() {
             model.select_all_cells();
@@ -7498,8 +7510,7 @@ RCloud.UI.selection_bar = (function() {
                 .find('#selection-bar-delete').click(function() {
                     shell.notebook.controller.remove_selected_cells();
                 })
-                .end()
-                .show();
+                .end();
 
             $selection_bar.find('div[type="button"].cell-selection').click(function(e) {
                 $(this).find('input').trigger('click');
@@ -7527,6 +7538,7 @@ RCloud.UI.selection_bar = (function() {
     };
     return result;
 })();
+
 RCloud.UI.notebook_title = (function() {
     var last_editable_ =  null;
     function version_tagger(node) {
@@ -8091,7 +8103,7 @@ RCloud.UI.run_button = (function() {
         },
         run: function() {
             if(running_)
-                that.stop();
+                this.stop();
             else
                 shell.run_notebook();
         },
