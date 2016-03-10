@@ -32,8 +32,7 @@ RCloud.UI.selection_bar = (function() {
                 .find('#selection-bar-delete').click(function() {
                     shell.notebook.controller.remove_selected_cells();
                 })
-                .end()
-                .show();
+                .end();
 
             $selection_bar.find('div[type="button"].cell-selection').click(function(e) {
                 $(this).find('input').trigger('click');
