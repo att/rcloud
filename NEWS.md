@@ -2,6 +2,13 @@
 
 ### Features
 
+* Multiple cell selection. There is a checkbox on each cell, and a new
+  selection bar at the top of the notebook. The selection bar allows select
+  all or none, and inverting the selection. Click the trashcan (now on the
+  selection bar) or press delete to delete the selected cells; press
+  ctrl/cmd-K to "crop" or keep only the selected cells; ctrl/cmd-shift-I to
+  invert the selection. (#658)
+
 * Support `exec.auth: as-local` configuration option which uses
   current unix user (i.e., the user running the RCloud server) without
   authentication as the notebook user. It is intended for single-user
