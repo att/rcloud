@@ -32,7 +32,7 @@ RCloud.UI.shortcut_dialog = (function() {
                     content_ += '<h3>' + group.category + '</h3>';
 
                     _.each(group.shortcuts, function(shortcut) {
-                        content_ += '<p>' + shortcut.bindings.join(', ') + ' -> ' + shortcut.description + '</p>';
+                        content_ += '<p class="shortcut-item"><span class="shortcut">' + shortcut.bindings.join(', ') + '</span>  ' + shortcut.description + '</p>';
                     });
                 });
 

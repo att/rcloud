@@ -1311,4 +1311,14 @@ pre > .vt100 {
     margin-left: -15px;
 }
 
+.shortcut-item {
+    margin: 10px 0;
+}
 
+.shortcut {
+    font-family: monospace;
+    padding: 5px 8px;
+    border-radius: 5px;
+    background: #666;
+    color: white;
+}
