@@ -270,7 +270,10 @@ Notebook.create_controller = function(model)
                 .then(default_callback());
         },
         remove_selected_cells: function() {
-            model.remove_selected_cells();
+            var changes = refresh_buffers().concat(model.remove_selected_cells());
+            RCloud.UI.command_prompt.focus();
+            return update_notebook(changes)
+                .then(default_callback());
         },
         invert_selected_cells: function() {
             model.invert_selected_cells();
@@ -279,7 +282,10 @@ Notebook.create_controller = function(model)
             model.clear_all_selected_cells();
         },
         crop_cells: function() {
-            model.crop_cells();
+            var changes = refresh_buffers().concat(model.crop_cells());
+            RCloud.UI.command_prompt.focus();
+            return update_notebook(changes)
+                .then(default_callback());
         },
         select_all_cells: function() {
             model.select_all_cells();

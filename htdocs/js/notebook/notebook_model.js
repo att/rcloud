@@ -175,15 +175,19 @@ Notebook.create_model = function()
             return changes;
         },
         remove_selected_cells: function() {
-            var that = this;
+            var that = this, changes = [];
+
             _.chain(this.cells)
             .filter(function(cell) {
                 return cell.is_selected();
             })
             .each(function(cell) {
-                that.remove_cell(cell);
+                changes = changes.concat(that.remove_cell(cell));
             });
+
             RCloud.UI.selection_bar.update(this.cells);
+
+            return changes;
         },
         invert_selected_cells: function() {
             _.each(this.cells, function(cell) {
@@ -198,15 +202,17 @@ Notebook.create_model = function()
             RCloud.UI.selection_bar.update(this.cells);
         },
         crop_cells: function() {
-            var that = this;
+            var that = this, changes = [];
             _.chain(this.cells)
             .filter(function(cell) {
                 return !cell.is_selected();
             })
             .each(function(cell) {
-                that.remove_cell(cell);
+                changes = changes.concat(that.remove_cell(cell));
             });
             RCloud.UI.selection_bar.update(this.cells);
+
+            return changes;
         },
         select_all_cells: function() {
             _.each(this.cells, function(cell) {
