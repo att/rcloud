@@ -513,22 +513,6 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
         });
     });
 
-    //Open Shiny
-    casper.then(function () {
-        test.comment('⌚️  Opening Shiny.HTML as anonymous user ...');
-        this.viewport(1024, 768).thenOpen(Shiny, function () {
-            this.wait(10000);
-            console.log('Checking Shiny.html');
-            this.wait(10000);
-            this.waitForSelector('body > div > div:nth-child(1) > div > h1', function () {
-                console.log('Content is visible');
-                this.test.assertVisible("body > div > div:nth-child(1) > div > h1", "Confirmed that User is able to open Shiny Notebook");
-            }, function () {
-                console.log("Shiny.html page could not be loaded")
-            }, 15000);
-        });
-    });
-
     //Open View
     casper.viewport(1024, 768).thenOpen(View, function () {
         test.comment('⌚️  Opening View.HTML as anonymous user ...');
