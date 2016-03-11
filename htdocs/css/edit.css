@@ -308,7 +308,7 @@ rect.frame {
     padding: 5px;
     color: rgb(221, 221, 221);
     display: none;
-    margin: 3px;
+    margin-bottom: 1px;
 }
 
 #selection-bar .btn {
@@ -452,6 +452,12 @@ rect.frame {
     top: 51px; left: 0px; right: 0px; bottom: 0px;
     overflow: hidden;
     padding-bottom: 2.5em; /* must be .footer height + 2 * .footer.padding */
+}
+
+#middle-column { 
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .icon-check,

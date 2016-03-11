@@ -32,8 +32,12 @@ RCloud.UI.selection_bar = (function() {
                 .find('#selection-bar-delete').click(function() {
                     shell.notebook.controller.remove_selected_cells();
                 })
+<<<<<<< HEAD
                 .end()
                 .show();
+=======
+                .end();
+>>>>>>> 0cbdffe8f88a85acc2c7500a40c65c5b77d123e8
 
             $selection_bar.find('div[type="button"].cell-selection').click(function(e) {
                 $(this).find('input').trigger('click');
@@ -60,4 +64,8 @@ RCloud.UI.selection_bar = (function() {
         }
     };
     return result;
+<<<<<<< HEAD
 })();
+=======
+})();
+>>>>>>> 0cbdffe8f88a85acc2c7500a40c65c5b77d123e8

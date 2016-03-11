@@ -1,6 +1,8 @@
 addons:
-  firefox: '25.0'
+  firefox: '44.0'
 language: c
+node_js:
+  - '0.12'
 env:
   matrix:
   - TESTFOLDER=SmokeTest.js
@@ -36,6 +38,7 @@ install:
 - ./scripts/bootstrapR.sh
 - ./scripts/build.sh
 - sudo pip install ipython==2.4.1
+- sudo pip install pyzmq
 - cd /home/travis/build/att/rcloud/conf/solr
 - ./solrsetup.sh /home/travis/build/att/rcloud/services/
 - cd /home/travis/build/att/rcloud/
