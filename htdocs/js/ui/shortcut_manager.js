@@ -1,7 +1,8 @@
 RCloud.UI.shortcut_manager = (function() {
 
-    var extension_, shortcuts_ = [];
-    var shortcuts_changed = false;
+    var extension_, 
+        shortcuts_ = [],
+        shortcuts_changed = false;
 
     function convert_extension(shortcuts) {
         var shortcuts_to_add, obj = {};
@@ -12,37 +13,95 @@ RCloud.UI.shortcut_manager = (function() {
             shortcuts_to_add = shortcuts;
         }
 
+        // if this is not a mac, filter out the command items:
         _.each(shortcuts_to_add, function(shortcut) {
 
             var can_add = true;
 
-            if(!_.isUndefined(shortcut.bindings) && !_.isUndefined(shortcut.action)) {
+            var shortcut_to_add = _.defaults(shortcut, {
+                category: 'General'
+            });
 
-                // verify that the shortcut doesn't already exist:
+            // if this is not a mac, filter out the 'command' options:
+            if(!ui_utils.is_a_mac()) {
+                shortcut.keys = _.reject(shortcut.keys, function(keys) {
+                    return _.contains(keys, 'command');
+                });
+            } else {
+                // this is a mac; if this shortcut has a command AND a ctrl, remove the ctrl
+                if(_.contains(shortcut.keys, 'command') && _.contains(shortcut.keys, 'ctrl')) {
+                    shortcut.keys = _.reject(shortcut.keys, function(keys) {
+                        return _.contains(keys, 'ctrl');
+                    });
+                }
+            }
+
+            // if this is a shortcut that needs to be added:
+            if(!_.isUndefined(shortcut.keys) && shortcut.keys.length) {
+
+                shortcut_to_add.key_bindings = [];
+
+                // construct the key bindings:
+                for (var i = 0; i < shortcut.keys.length; i++) {
+                    
+                    // ensure consistent order across definitions:
+                    var keys = _
+                        .chain(shortcut.keys[i])
+                        .map(function(element) { return element.toLowerCase(); })
+                        .sortBy(function(element){  
+                          var rank = {
+                              "command": 1,
+                              "ctrl": 2,
+                              "shift": 3
+                          };
+                          return rank[element];
+                      }).value();
+
+                    // so that they can be compared:
+                    shortcut_to_add.key_bindings.push(keys.join('+'));
+                }
+
+                // with existing shortcuts:
                 for(var loop = 0; loop < shortcuts_.length; loop++) {
-                    if(_.intersection(shortcuts_[loop].bindings, shortcut.bindings).length > 0) {
-                        console.warn('Keyboard shortcut "' + shortcut.description + '" cannot be registered since it will clash with existing "' + 
-                            shortcuts_[loop].description + '" shortcut.');
+                    if(_.intersection(shortcuts_.key_bindings, shortcut_to_add.key_bindings).length > 0) {
+                        console.warn('Keyboard shortcut "' + shortcut_to_add.description + '" cannot be registered since it will clash with an existing shortcut.');
                         can_add = false;
                         break;
                     }
                 }
 
-                shortcut.create = function() { 
-                    window.Mousetrap(document.querySelector('body')).bind(shortcut.bindings.length === 1 ? shortcut.bindings[0] : shortcut.bindings, function(e) { 
-                        e.preventDefault(); 
-                        shortcut.action();
-                    });
-                };
-            } else {
-                shortcut.create = function() {};    // this is a shortcut that has been created through other means and is used solely for documentation
-            }
+                if(can_add) {
 
-            if(can_add) {
-                shortcuts_.push(shortcut);
-            }
+                    // update any 'command' entries to the '⌘' key:
+                    /*
+                    _.each(shortcut_to_add.keys, function(keys){
+                        for(var keyLoop = 0; keyLoop < keys.length; keyLoop++) {
+                            if(keys[keyLoop] === 'command') {
+                                keys[keyLoop] = '&#8984;';
+                            }
+                        }
+                    });*/
 
-            obj[shortcut.id] = shortcut;
+                    if(_.isUndefined(shortcut.action)){
+                        shortcut_to_add.create = function() {};
+                    }
+                    else {
+                        shortcut_to_add.create = function() { 
+                            _.each(shortcut_to_add.key_bindings, function(binding) {
+                                window.Mousetrap(document.querySelector('body')).bind(binding, function(e) { 
+                                    e.preventDefault(); 
+                                    shortcut.action();
+                                });
+                            });
+                        }
+                    }
+                }
+
+                if(can_add) {
+                    shortcuts_.push(shortcut_to_add);
+                    obj[shortcut.id] = shortcut_to_add;
+                }
+            }
         });
 
         return obj;
@@ -55,10 +114,7 @@ RCloud.UI.shortcut_manager = (function() {
             });
 
             var items = [{
-                category: 'Ace Editor',
-                id: 'ace_do_something_or_another',
-                bindings: ['^'],
-                description: 'This will completely refactor your code and make it amazing'
+                
             }];
 
             this.add(items);
@@ -88,9 +144,8 @@ RCloud.UI.shortcut_manager = (function() {
         },
         get_registered_shortcuts_by_category: function() {
             shortcuts_changed = false;
-            var grouped = _.chain(shortcuts_).groupBy('category').value();
 
-            return _.map(grouped, function(item, key) {
+            return _.map(_.chain(shortcuts_).groupBy('category').value(), function(item, key) {
                 return { category: key, shortcuts: item }
             });
         }
