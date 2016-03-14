@@ -13,7 +13,6 @@ RCloud.UI.shortcut_manager = (function() {
             shortcuts_to_add = shortcuts;
         }
 
-        // if this is not a mac, filter out the command items:
         _.each(shortcuts_to_add, function(shortcut) {
 
             var can_add = true;
@@ -138,15 +137,16 @@ RCloud.UI.shortcut_manager = (function() {
         shortcuts_changed: function() {
             return shortcuts_changed;
         },
-        get_registered_shortcuts: function() {
-            shortcuts_changed = false;
-            return shortcuts_;
-        },
-        get_registered_shortcuts_by_category: function() {
+        get_registered_shortcuts_by_category: function(sort_items) {
             shortcuts_changed = false;
 
-            return _.map(_.chain(shortcuts_).groupBy('category').value(), function(item, key) {
+            var rank = _.map(sort_items, (function(item, index) { return { key: item, value: index + 1 }}));
+            rank = _.object(_.pluck(rank, 'key'), _.pluck(rank, 'value'));   
+  
+            return _.sortBy(_.map(_.chain(shortcuts_).groupBy('category').value(), function(item, key) {
                 return { category: key, shortcuts: item }
+            }), function(group) {
+                return rank[group.category];
             });
         }
     };

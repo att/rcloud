@@ -23,7 +23,10 @@ RCloud.UI.shortcut_dialog = (function() {
             } 
 
             if(!content_ || RCloud.UI.shortcut_manager.shortcuts_changed()) {
-                shortcuts_by_category_ = RCloud.UI.shortcut_manager.get_registered_shortcuts_by_category();
+                shortcuts_by_category_ = RCloud.UI.shortcut_manager.get_registered_shortcuts_by_category([
+                    'General',
+                    'Notebook Management',
+                    'Cell Management']);
 
                 content_ = '';
 
