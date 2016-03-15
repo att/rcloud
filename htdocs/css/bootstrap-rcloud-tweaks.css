@@ -259,6 +259,7 @@ pre.offscreen {
 .cell-status-left {
     position: absolute;
     bottom: 2px;
+    left: 5px;
 }
 
 .left-indicator {

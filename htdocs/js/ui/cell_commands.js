@@ -244,17 +244,6 @@ RCloud.UI.cell_commands = (function() {
                         });
                     }
                 },
-                grab_affordance: {
-                    area: 'left',
-                    sort: 1000,
-                    display_flags: ['modify'],
-                    create: function(cell_model) {
-                        var svg = "<img src='/img/grab_affordance.svg' type='image/svg+xml'></img>";
-                        return that.create_static(svg, function(x) {
-                            return $("<span class='grab-affordance'>").append(x);
-                        });
-                    }
-                },
                 selection: {
                     area: 'left',
                     sort: 1250,
