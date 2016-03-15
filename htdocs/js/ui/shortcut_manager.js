@@ -5,6 +5,7 @@ RCloud.UI.shortcut_manager = (function() {
 
     function convert_extension(shortcuts) {
         var shortcuts_to_add, obj = {};
+        var existing_shortcuts = extension_.sections.all.entries;
 
         if(!_.isArray(shortcuts)) {
             shortcuts_to_add = [shortcuts];
@@ -60,10 +61,8 @@ RCloud.UI.shortcut_manager = (function() {
                 }
 
                 // with existing shortcuts:
-                var existing_shortcuts = extension_.sections.all.entries;
-
                 for(var loop = 0; loop < existing_shortcuts.length; loop++) {
-                    if(_.intersection(existing_shortcuts.key_bindings, shortcut_to_add.key_bindings).length > 0) {
+                    if(_.intersection(existing_shortcuts[loop].key_bindings, shortcut_to_add.key_bindings).length > 0) {
                         console.warn('Keyboard shortcut "' + shortcut_to_add.description + '" cannot be registered since it will clash with an existing shortcut.');
                         can_add = false;
                         break;
@@ -99,6 +98,9 @@ RCloud.UI.shortcut_manager = (function() {
 
                 if(can_add) {
                     obj[shortcut.id] = shortcut_to_add;
+
+                    // add to the existing shortcuts so that it can be compared:
+                    existing_shortcuts.push(shortcut_to_add);
                 }
             }
         });
