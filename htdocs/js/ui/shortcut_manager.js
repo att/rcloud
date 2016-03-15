@@ -1,7 +1,6 @@
 RCloud.UI.shortcut_manager = (function() {
 
     var extension_, 
-        shortcuts_ = [],
         shortcuts_changed = false;
 
     function convert_extension(shortcuts) {
@@ -61,8 +60,14 @@ RCloud.UI.shortcut_manager = (function() {
                 }
 
                 // with existing shortcuts:
-                for(var loop = 0; loop < shortcuts_.length; loop++) {
-                    if(_.intersection(shortcuts_.key_bindings, shortcut_to_add.key_bindings).length > 0) {
+                var existing_shortcuts = extension_.sections.all.entries;
+
+                if(!existing_shortcuts) {
+                    existing_shortcuts = [];
+                }
+
+                for(var loop = 0; loop < existing_shortcuts.length; loop++) {
+                    if(_.intersection(existing_shortcuts.key_bindings, shortcut_to_add.key_bindings).length > 0) {
                         console.warn('Keyboard shortcut "' + shortcut_to_add.description + '" cannot be registered since it will clash with an existing shortcut.');
                         can_add = false;
                         break;
@@ -97,7 +102,6 @@ RCloud.UI.shortcut_manager = (function() {
                 }
 
                 if(can_add) {
-                    shortcuts_.push(shortcut_to_add);
                     obj[shortcut.id] = shortcut_to_add;
                 }
             }
@@ -112,14 +116,9 @@ RCloud.UI.shortcut_manager = (function() {
 
             });
 
-            var items = [{
-                
-            }];
-
-            this.add(items);
+            this.add([]);
 
             return this;
-
         },
         add: function(s) {
             if(extension_) {
@@ -140,10 +139,12 @@ RCloud.UI.shortcut_manager = (function() {
         get_registered_shortcuts_by_category: function(sort_items) {
             shortcuts_changed = false;
 
+            console.log();
+
             var rank = _.map(sort_items, (function(item, index) { return { key: item, value: index + 1 }}));
             rank = _.object(_.pluck(rank, 'key'), _.pluck(rank, 'value'));   
   
-            return _.sortBy(_.map(_.chain(shortcuts_).groupBy('category').value(), function(item, key) {
+            return _.sortBy(_.map(_.chain(extension_.sections.all.entries).groupBy('category').value(), function(item, key) {
                 return { category: key, shortcuts: item }
             }), function(group) {
                 return rank[group.category];
