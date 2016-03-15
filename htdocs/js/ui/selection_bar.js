@@ -53,8 +53,6 @@ RCloud.UI.selection_bar = (function() {
 
             $selection_checkbox.prop('checked', selected_count === cell_count && cell_count != 0);
             $partial_indicator[selected_count !== cell_count && selected_count !== 0 ? 'show' : 'hide']();        
-
-            selection_bar_utils.set_enabled_state(cell)         
         },
         hide: function() {
             $('#selection-bar').hide();
