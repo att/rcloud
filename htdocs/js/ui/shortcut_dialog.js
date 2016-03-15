@@ -15,7 +15,7 @@ RCloud.UI.shortcut_dialog = (function() {
                                     .append($('<div class="modal-header" style="padding-left:20px!important;padding-right:20px!important" />')
                                         .append($('<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>'))
                                         .append($('<h4 class="modal-title" style="font-size: 20px">Keyboard shortcuts</h4>')))
-                                    .append($('<div class="modal-body" style="padding-top: 0; max-height:calc(100vh - 220px); overflow-y: auto;" />'))
+                                    .append($('<div class="modal-body" style="padding-top: 0; max-height:calc(100vh - 120px); overflow-y: auto;" />'))
                                     /*.append($('<div class="modal-footer" />')
                                         .append($('<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>')))*/));
                                        
