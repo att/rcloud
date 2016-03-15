@@ -44,6 +44,9 @@ Notebook.create_model = function()
                 });
             return changes;
         },
+        cell_count: function() {
+            return this.cells.length;
+        },
         append_cell: function(cell_model, id, skip_event) {
             cell_model.parent_model = this;
             cell_model.renew_content();

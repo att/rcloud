@@ -247,6 +247,9 @@ Notebook.create_controller = function(model)
                     return [notebook, cch.controller];
                 });
         },
+        cell_count: function() {
+            return model.cell_count();
+        },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
             return update_notebook(refresh_buffers().concat(cch.changes))
