@@ -38,22 +38,18 @@ RCloud.UI.shortcut_dialog = (function() {
 
                     _.each(group.shortcuts, function(shortcut) {
 
-                        content_ += '<tr>';
-                        content_ += '<td>';
-
                         var keys_markup = []; 
-
                         _.each(shortcut.keys, function(keys) {
                             keys_markup.push('<kbd>' + keys.join(' ') + '</kbd>');
                         });
 
+                        content_ += '<tr>';
+                        content_ += '<td>';
                         content_ += keys_markup.join(' / ');
                         content_ += '</td>';
-
                         content_ += '<td>';
                         content_ += shortcut.description;
                         content_ += '</td>';
-
                         content_ += '</tr>';
                     });
 
