@@ -191,17 +191,4 @@ RCloud.UI.init = function() {
         action: function() { RCloud.UI.shortcut_dialog.show(); } 
     }]);
 
-
-    RCloud.UI.shortcut_manager.add([{
-        category: 'General',
-        id: 'show_helpjoiojij',
-        description: 'Show shortcuts help oijiojioj',
-        keys: [
-            ['?']
-        ],
-        action: function() { RCloud.UI.shortcut_dialog.show(); } 
-    }]);
-
-
-
 };
