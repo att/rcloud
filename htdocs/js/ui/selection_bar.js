@@ -18,6 +18,12 @@ RCloud.UI.selection_bar = (function() {
             $selection_bar
                 .find('.btn-default input[type="checkbox"]').click(function(e) {
                     e.stopPropagation();
+
+                    if(!shell.notebook.controller.cell_count()) {
+                        e.preventDefault();
+                        return;
+                    }
+
                     if($(this).is(':checked')) {
                         shell.notebook.controller.select_all_cells();
                     } else {
@@ -46,8 +52,9 @@ RCloud.UI.selection_bar = (function() {
                 selected_count = _.filter(cells, function(cell) { return cell.is_selected(); }).length;
 
             $selection_checkbox.prop('checked', selected_count === cell_count && cell_count != 0);
-            $partial_indicator[selected_count !== cell_count && selected_count !== 0 ? 'show' : 'hide']();                
-          
+            $partial_indicator[selected_count !== cell_count && selected_count !== 0 ? 'show' : 'hide']();        
+
+            selection_bar_utils.set_enabled_state(cell)         
         },
         hide: function() {
             $('#selection-bar').hide();
