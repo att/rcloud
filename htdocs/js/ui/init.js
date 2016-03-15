@@ -113,11 +113,11 @@ RCloud.UI.init = function() {
             ['command', 's'],
             ['ctrl', 's']
         ],
-        action: function() { if(saveb.length) { shell.save_notebook(); } }
+        action: function() { if(RCloud.UI.navbar.get('save_notebook')) { shell.save_notebook(); } }
     }, {
         category: 'Notebook Management', 
         id: 'select_all',
-        description: 'Saves the current notebook',
+        description: 'Select all',
         keys: [
             ['command', 'a'],
             ['ctrl', 'a']
@@ -190,5 +190,18 @@ RCloud.UI.init = function() {
         ],
         action: function() { RCloud.UI.shortcut_dialog.show(); } 
     }]);
+
+
+    RCloud.UI.shortcut_manager.add([{
+        category: 'General',
+        id: 'show_helpjoiojij',
+        description: 'Show shortcuts help oijiojioj',
+        keys: [
+            ['?']
+        ],
+        action: function() { RCloud.UI.shortcut_dialog.show(); } 
+    }]);
+
+
 
 };
