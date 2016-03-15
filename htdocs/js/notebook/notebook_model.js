@@ -289,6 +289,9 @@ Notebook.create_model = function()
 
             if(modifiers.is_toggle) {
                 cell_model.toggle_cell();
+            } else if(modifiers.is_exclusive) {
+                clear_all();
+                cell_model.toggle_cell();
             } else /* is_range */ {
                 var selected_index_range = get_selected_index_range();
                 var selected_index = this.cells.indexOf(cell_model);
