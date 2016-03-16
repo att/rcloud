@@ -5,7 +5,9 @@ RCloud.UI.discovery_page = (function() {
                 './../../lib/js/imagesloaded',
                 './../../lib/js/masonry.pkgd.min'
               ], function(imagesLoaded, Masonry) {
+
                   'use strict';
+
                   window.imagesLoaded = imagesLoaded;
                   window.Masonry = Masonry;
 
@@ -22,7 +24,7 @@ RCloud.UI.discovery_page = (function() {
 
                       //store in a temporary array
                       var recentTemp = [];
-                      //sorted.shift();//remove the first item
+
                       sorted = sorted.slice(0, 20); //limit to 20 entries
 
                       for(var i = 0; i < sorted.length; i ++) {
@@ -63,34 +65,10 @@ RCloud.UI.discovery_page = (function() {
                           $('.loader-icon').css('display', 'none');
                         })
                         .progress(function(imgLoad, image) {
-                          //console.log('imgLoad: ', imgLoad);
-                          //console.log('image is loaded: ', image.isLoaded);
-
                           if(!image.isLoaded) {
                             $(image.img).attr('src', './img/missing.png');  
                           }
-
-                          
                         });
-
-
-
-
-                    //  $('.grid img').each(function(i, el) {
-                    //    $(el).attr('src', $(el).attr('data-src'));
-                    //  });
-
-
-
-
-
-
-                      // image error:
-                     // $('body').on('error', '.img-responsive', function(){
-                     //   $(this).attr('src', './img/missing.png');
-                     // });
-                      
-
                   });
             });
         }
