@@ -36,17 +36,11 @@
               </div>
           </div>
           <div class="row">
-              <div class="grid">
-              <!--
-                <thumbnail ng-click="thumbClicked($index)" ng-repeat="notebook in recentNotebooks" >
-                </thumbnail>
-                -->
-              </div>
+              <div class="grid"></div>
           </div>
         </div>
       </div>
     </div>
-
 
     <!-- -->
 
@@ -68,15 +62,13 @@
           </div>
           <div class="row">
             <div class="image-holder col-sm-12">
-              <img data-src="<%=notebook.image_url%>" class="img-responsive" alt="Responsive image">
+              <img src="<%=notebook.image_url%>" class="img-responsive" alt="Responsive image">
             </div>
           </div>
         </a>
       </div>
       <% }); %>
     </script>
-
-
 
     <!-- -->
 

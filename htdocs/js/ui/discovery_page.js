@@ -41,11 +41,16 @@ RCloud.UI.discovery_page = (function() {
                           };
                           recentTemp.push(d);
                       }
-                      
 
-                      //console.log(recentTemp);
+                      // image error:
+                      $('body').on('error', '.img-responsive', function(){
+                        console.log('error img');
+                        $(this).attr('src', './img/missing.png');
+                      });
 
-
+                      $('body').on('load', 'img', function() {
+                        console.log('testy testy...');
+                      });
 
                       // Grab the HTML out of our template tag and pre-compile it.
                       _.templateSettings.variable = 'notebooks';
@@ -54,53 +59,22 @@ RCloud.UI.discovery_page = (function() {
                           $("#item_template").html()
                       );
 
-                      $('.grid').html(template(recentTemp));
 
+                      
+                      $('.grid').imagesLoaded()
+                        .always(function() {
 
-
-
-                     // _.delay(function() {
-
-
-setTimeout(function() {
-
-
-$('.grid img').each(function(index, el) {
-  $(el).attr('src', $(el).attr('data-src'));
-});
-
-
-                          //listen to images loaded
-                          var imgLoad = imagesLoaded( $('.grid')[0] );
-
-                          imgLoad.on( 'always', function( instance ) {
-                              console.log('ALWAYS - all images have been loaded');
-                              //run masonry on grid
-                             // _.delay(function() {
-                                  new Masonry( '.grid', {
-                                    itemSelector: '.grid-item'
-                                  });
-                              //}, 200);
-                              //reveal page and hide loader
-                              //_.delay(function() {
-                                  $('.grid').css('visibility', 'visible');
-                                  $('#discovery-app').css('visibility', 'visible');
-                                  $('.loader-icon').css('display', 'none');
-                             // }, 400);
+                          new Masonry( '.grid', {
+                            itemSelector: '.grid-item'
                           });
 
-                 //     }, 300);
+                          $('.grid').css('visibility', 'visible');
+                          $('#discovery-app').css('visibility', 'visible');
+                          $('.loader-icon').css('display', 'none');
+                        })
 
-}, 300);
-
-
-
+                      $('.grid').html(template(recentTemp));
                   });
-
-
-
-
-
             });
         }
     };
