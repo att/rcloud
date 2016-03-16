@@ -35,9 +35,6 @@ RCloud.UI.discovery_page = (function() {
                       })
                       .value();
 
-                      // Grab the HTML out of our template tag and pre-compile it.
-                      //_.templateSettings.variable = 'notebooks';
-
                       var template = _.template(
                           $("#item_template").html()
                       );
@@ -54,6 +51,7 @@ RCloud.UI.discovery_page = (function() {
                           $('.grid').css('visibility', 'visible');
                           $('#discovery-app').css('visibility', 'visible');
                           $('.loader-icon').css('display', 'none');
+                          
                         })
                         .progress(function(imgLoad, image) {
                           if(!image.isLoaded) {
