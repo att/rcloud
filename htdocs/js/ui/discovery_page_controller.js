@@ -23,7 +23,7 @@ define(['angular'], function(angular) {
         //used in html with ng-repeat notebook in recentNotebooks
         $scope.recentNotebooks = [];
 
-        function init() {
+
             //rcloud should be available, so
             //get the recent notebooks
             rcloud.config.get_recent_notebooks()
@@ -87,7 +87,7 @@ define(['angular'], function(angular) {
                 }, 300);
 
             });
-        };
+
 
         $scope.getThumbUrl = function(id) {
             return "/notebook.R/"+id+"/thumb.png";
@@ -96,8 +96,6 @@ define(['angular'], function(angular) {
         $scope.thumbClicked = function() {
             console.log('clicked');
         };
-
-        init();
 
 
     }]);
