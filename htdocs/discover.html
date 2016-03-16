@@ -1,6 +1,7 @@
 <html>
   <head>
     <title>Discovery Page - RCloud</title>
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1">
     <link rel="shortcut icon" type="image/x-icon" href="favicon.png" />
     <link rel="stylesheet" type="text/css" href="/css/custom-theme/jquery-ui-1.8.18.custom.css" />
     <link rel="stylesheet" type="text/css" href="/css/font-awesome.css"/>
@@ -9,18 +10,23 @@
     <link rel="stylesheet" type="text/css" href="/css/rmarkdown.css"/>
     <link rel="stylesheet" type="text/css" href="/css/bootstrap-rcloud-tweaks.css"/>
     <link rel="stylesheet" type="text/css" href="/css/discover.css"/>
-    <meta name="viewport" content="initial-scale=1, maximum-scale=1">
-
     <script src="/lib/js/require-common.js"></script>
     <script type="text/javascript" data-main="/lib/js/require-discover.js" src="/lib/js/require.js"></script>
-
-    <!-- <script type="text/javascript" src="/lib/dependencies_bundle.js" charset="utf-8"></script> -->
-    <!-- <script type="text/javascript">MathJax = undefined;</script> -->
-    <!-- <script type="text/javascript" src="/js/rcloud_bundle.js"></script> -->
-    <!-- <script type="text/javascript" src="/view.js"></script> -->
   </head>
   <body>
-    <script type="text/html" id="discovery-page-modal">
+
+    <div class="navbar navbar-inverse ">
+      <div>
+        <div id="rcloud-navbar-header" class="navbar-header"></div>
+      </div>
+    </div>
+
+    <div class="loader-icon">
+      <img src="img/ajax-loader.gif">
+    </div>
+    
+    <div class="container" id="main-div">
+      <!-- discovery page modal -->
       <div id='discovery-app' ng-controller='DiscoveryPageController' ng-cloak>
         <div style='position:relative'>
 
@@ -38,26 +44,14 @@
           </div>
         </div>
       </div>
-    </script>
-
-    <div class="navbar navbar-inverse ">
-      <div>
-        <div id="rcloud-navbar-header" class="navbar-header"></div>
-      </div>
     </div>
 
-    <div class="loader-icon">
-      <img src="img/ajax-loader.gif">
-    </div>
-    <div class="container" id="main-div"></div>
-
-    <script type="text/javascript"
-            src="/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-    </script>
+    <script type="text/javascript" src="/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript">MathJax && MathJax.Hub.Config({tex2jax: {processEscapes: true,
       processEnvironments: false, inlineMath: [ ['\\(','\\)'] ],
       displayMath: [ ['\\[','\\]'] ] },
       "HTML-CSS": { minScaleAdjust: 125 } });
     </script>
+
   </body>
 </html>
