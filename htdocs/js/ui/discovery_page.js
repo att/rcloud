@@ -42,16 +42,6 @@ RCloud.UI.discovery_page = (function() {
                           recentTemp.push(d);
                       }
 
-                      // image error:
-                      $('body').on('error', '.img-responsive', function(){
-                        console.log('error img');
-                        $(this).attr('src', './img/missing.png');
-                      });
-
-                      $('body').on('load', 'img', function() {
-                        console.log('testy testy...');
-                      });
-
                       // Grab the HTML out of our template tag and pre-compile it.
                       _.templateSettings.variable = 'notebooks';
 
@@ -59,8 +49,8 @@ RCloud.UI.discovery_page = (function() {
                           $("#item_template").html()
                       );
 
+                      $('.grid').html(template(recentTemp));
 
-                      
                       $('.grid').imagesLoaded()
                         .always(function() {
 
@@ -72,8 +62,35 @@ RCloud.UI.discovery_page = (function() {
                           $('#discovery-app').css('visibility', 'visible');
                           $('.loader-icon').css('display', 'none');
                         })
+                        .progress(function(imgLoad, image) {
+                          //console.log('imgLoad: ', imgLoad);
+                          //console.log('image is loaded: ', image.isLoaded);
 
-                      $('.grid').html(template(recentTemp));
+                          if(!image.isLoaded) {
+                            $(image.img).attr('src', './img/missing.png');  
+                          }
+
+                          
+                        });
+
+
+
+
+                    //  $('.grid img').each(function(i, el) {
+                    //    $(el).attr('src', $(el).attr('data-src'));
+                    //  });
+
+
+
+
+
+
+                      // image error:
+                     // $('body').on('error', '.img-responsive', function(){
+                     //   $(this).attr('src', './img/missing.png');
+                     // });
+                      
+
                   });
             });
         }
