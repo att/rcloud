@@ -19,14 +19,40 @@ body.loaded {
     overflow: auto;
 }
 
-progress {
+#progress {
+    height: 180px;
     position: absolute;
     top: 50%;
+    margin-top: -90px;
+    text-align: center;
+    width: 500px;
+    margin-left: -250px;
     left: 50%;
-    margin-left: -100px;
-    margin-top: -20px;
-    height: 40px;
-    width: 200px;
+}
+
+progress {
+    height: 10px;
+    width: 390px;
+    margin: 40px auto;
+    display: block;
+    -webkit-appearance: none;
+    border: none;
+}
+
+progress::-webkit-progress-bar {
+    background: #ccc;
+    border-radius: 50px;
+    padding: 2px;
+    box-shadow: 0 1px 0px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Now the value part */
+progress::-webkit-progress-value {
+    border-radius: 50px;
+    box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.4);
+    background: #47c0ed;
+    background-size: 25px 14px, 100% 100%, 100% 100%;
+    -webkit-animation: move 5s linear 0 infinite;
 }
 
 .logo-holder{
@@ -170,16 +196,3 @@ progress {
     font-size: 18px;
     text-decoration: none;
 }
-
-/*
-body.loaded #discovery-app {
-    visibility: visible;
-}
-
-body.loaded .loader {
-    display: none;
-}
-
-body.loaded .navbar {
-    display: block;
-}*/
