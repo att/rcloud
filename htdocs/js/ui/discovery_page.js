@@ -54,7 +54,7 @@ RCloud.UI.discovery_page = (function() {
 
                           //$('body').addClass('loaded');
 
-                          $('progress').fadeOut(200, function() {
+                          $('#progress').fadeOut(200, function() {
                             $('.navbar').fadeIn(200, function() {
                               $('#discovery-app').css('visibility', 'visible');
                             });
