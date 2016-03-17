@@ -52,11 +52,12 @@ RCloud.UI.discovery_page = (function() {
                             itemSelector: '.grid-item'
                           });
 
-                          //$('body').addClass('loaded');
+                         
 
                           $('#progress').fadeOut(200, function() {
                             $('.navbar').fadeIn(200, function() {
                               $('#discovery-app').css('visibility', 'visible');
+                              $('body').addClass('loaded');
                             });
                           });
                           
