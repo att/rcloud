@@ -8,7 +8,7 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
     var notebook_id = '50de72ea14b86aa176c4';//Notebook which consists all the cells like "R, Python, Markdown, Shell"
     var Notebook_name = "TEST_NOTEBOOK";// Notebook name of the importing/Load Notebook
     var fileName = '/home/travis/build/att/rcloud/tests/PHONE.csv';// File path directory
-
+    
     //Notebook paths to check for sharable links
     var Notebook_R = 'http://127.0.0.1:8080/notebook.R/564af357b532422620a6';
     var Mini = "http://127.0.0.1:8080/mini.html?notebook=f03ca14c9963e5718527";
@@ -142,8 +142,8 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
     // Notebook reload
     casper.then(function () {
         this.then(function () {
-            var url = this.getCurrentUrl();
-            this.thenOpen(url);
+            var url2 = this.getCurrentUrl();
+            this.thenOpen(url2);
             this.wait(8000);
         });
 
@@ -173,8 +173,8 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
 
     // Notebook reload
     casper.then(function () {
-        var url = this.getCurrentUrl();
-        this.thenOpen(url);
+        var url1 = this.getCurrentUrl();
+        this.thenOpen(url1);
         this.wait(5000);
         console.log('Validation of the notebook loading by checking for elements- Shareable link and Logout option ')
         functions.validation(casper);
@@ -182,7 +182,7 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
 
     // Click on RunAll and verify the output
     casper.then(function () {
-        test.comment('⌚️  Executing cell contents (R, Shell, Markdown and Python) ...');
+        test.comment('⌚️  Executing cell contents (R, Shell and Markdown) ...');
         functions.runall(casper);
     });
 
@@ -501,8 +501,8 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
 
     casper.then(function () {
         test.comment('⌚️  Opening Mini.HTML as anonymous user ...');
-        this.viewport(1024, 768).thenOpen(Mini, function () {
-            this.wait(10000);
+        this.viewport(1024, 768).thenOpen("http://127.0.0.1:8080/mini.html?notebook=f03ca14c9963e5718527", function () {
+            this.wait(15000);
             console.log('Checking Mini.html');
             this.waitForSelector('#chartdiv0', function () {
                 console.log('Content is visible');
@@ -512,6 +512,22 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
             }, 15000);
         });
     });
+
+    // //Open Shiny
+    // casper.then(function () {
+    //     test.comment('⌚️  Opening Shiny.HTML as anonymous user ...');
+    //     this.viewport(1024, 768).thenOpen(Shiny, function () {
+    //         this.wait(10000);
+    //         console.log('Checking Shiny.html');
+    //         this.wait(10000);
+    //         this.waitForSelector('body > div > div:nth-child(1) > div > h1', function () {
+    //             console.log('Content is visible');
+    //             this.test.assertVisible("body > div > div:nth-child(1) > div > h1", "Confirmed that User is able to open Shiny Notebook");
+    //         }, function () {
+    //             console.log("Shiny.html page could not be loaded")
+    //         }, 15000);
+    //     });
+    // });
 
     //Open View
     casper.viewport(1024, 768).thenOpen(View, function () {
