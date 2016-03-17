@@ -35,6 +35,10 @@ RCloud.UI.discovery_page = (function() {
                       })
                       .value();
 
+                      $('progress').attr({
+                        max: recent_notebooks.length
+                      });
+
                       var template = _.template(
                           $("#item_template").html()
                       );
@@ -48,15 +52,26 @@ RCloud.UI.discovery_page = (function() {
                             itemSelector: '.grid-item'
                           });
 
-                          $('.grid').css('visibility', 'visible');
-                          $('#discovery-app').css('visibility', 'visible');
-                          $('.loader-icon').css('display', 'none');
+                          //$('body').addClass('loaded');
+
+                          $('progress').fadeOut(200, function() {
+                            $('.navbar').fadeIn(200, function() {
+                              $('#discovery-app').css('visibility', 'visible');
+                            });
+                          });
                           
                         })
                         .progress(function(imgLoad, image) {
                           if(!image.isLoaded) {
                             $(image.img).attr('src', './img/missing.png');  
                           }
+
+                          var new_value = +$('progress').attr('value') + 1;
+
+                          $('progress').attr({
+                            value: new_value
+                          });
+
                         });
                   });
             });

@@ -1,20 +1,33 @@
+body {
+    overflow: hidden;
+}
+
 #main-div {
-    margin-top: 50px;
+    margin-top: 30px;
 }
 
 #discovery-app {
     visibility: hidden;
 }
 
-.loader-icon{
-    position: relative;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 31px;
-    height: 31px;
-    margin: 0 auto;
+.navbar {
+    display: none;
 }
 
+body.loaded {
+    display: block;
+    overflow: auto;
+}
+
+progress {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-left: -100px;
+    margin-top: -20px;
+    height: 40px;
+    width: 200px;
+}
 
 .logo-holder{
     margin-left: 30px;
@@ -23,7 +36,6 @@
 
 
 .grid {
-    visibility: hidden;
     transform-style: preserve-3d;
     perspective: 1000px;
     perspective-origin: 50% 50%;
@@ -158,3 +170,16 @@
     font-size: 18px;
     text-decoration: none;
 }
+
+/*
+body.loaded #discovery-app {
+    visibility: visible;
+}
+
+body.loaded .loader {
+    display: none;
+}
+
+body.loaded .navbar {
+    display: block;
+}*/
