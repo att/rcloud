@@ -493,6 +493,7 @@ ul.recent-notebooks-list li a {
 
 .jqtree-element .jqtree-title.jqtree_common {
     word-break: break-all;
+    display: inline-block;
 }
 
 #settings-body-wrapper.panel-body {
