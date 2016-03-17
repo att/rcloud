@@ -99,8 +99,7 @@ progress::-webkit-progress-value {
 .grid-item h1{
     font-size: 17px;
     margin: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    word-break: break-word;
 }
 
 .grid-item h2 {
