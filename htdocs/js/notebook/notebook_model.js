@@ -26,6 +26,7 @@ Notebook.create_model = function()
         clear: function() {
             var cells_removed = this.remove_cell(null,last_id(this.cells));
             var assets_removed = this.remove_asset(null,this.assets.length);
+            RCloud.UI.selection_bar.update(this.cells);
             return cells_removed.concat(assets_removed);
         },
         get_asset: function(filename) {
@@ -65,6 +66,7 @@ Notebook.create_model = function()
                 ++id;
                 --n;
             }
+            RCloud.UI.selection_bar.update(this.cells);
             return changes;
         },
         insert_cell: function(cell_model, id, skip_event) {
@@ -105,6 +107,9 @@ Notebook.create_model = function()
                 ++x;
                 ++id;
             }
+
+            RCloud.UI.selection_bar.update(this.cells);
+
             // apply the changes backward so that we're moving each cell
             // out of the way just before putting the next one in its place
             return changes.reverse();
@@ -175,6 +180,9 @@ Notebook.create_model = function()
                 ++id;
                 --n;
             }
+
+            RCloud.UI.selection_bar.update(this.cells);
+            
             return changes;
         },
         remove_selected_cells: function() {
