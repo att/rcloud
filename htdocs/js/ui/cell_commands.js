@@ -283,18 +283,8 @@ RCloud.UI.cell_commands = (function() {
                     display_flags: ['cell-numbers'],
                     create: function(cell_model) {
                         return that.create_static(cell_model.id(), function(x) {
-                            return $("<span class='left-indicator'></span>").append('cell ', x);
+                            return $("<span class='left-indicator cell-number'></span>").append('cell ', x);
                         }, function(static_content) {
-                            static_content.click(function(e) {
-                                if(e.ctrlKey || e.metaKey || e.shiftKey) {
-                                    e.preventDefault();
-                                }
-                                cell_model.parent_model.controller.select_cell(cell_model, {
-                                    is_toggle: e.ctrlKey, 
-                                    is_range : e.shiftKey,
-                                    is_exclusive: !e.ctrlKey && !e.shiftKey
-                                });
-                            });
                         });
                     }
                 }

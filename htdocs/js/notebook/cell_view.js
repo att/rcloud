@@ -84,13 +84,16 @@ function create_cell_html_view(language, cell_model) {
                 e.preventDefault();
             }
             cell_model.parent_model.controller.select_cell(cell_model, {
-                is_toggle: e.ctrlKey, 
+                is_toggle: (ui_utils.is_a_mac() && e.metaKey) || (!ui_utils.is_mac() && e.ctrlKey), 
                 is_range : e.shiftKey,
                 is_exclusive: !e.ctrlKey && !e.shiftKey
             });
 
         }).children().click(function(e) {
-            e.stopPropagation();
+            var target = $(e.target);
+            if(!target.hasClass('cell-number')) {
+                e.stopPropagation();    
+            }
         });
     }
     notebook_cell_div.append(cell_status_);
