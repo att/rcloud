@@ -76,7 +76,6 @@ function create_cell_html_view(language, cell_model) {
         above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
         notebook_cell_div.append(cell_commands_above);
 
-        // 
         cell_status_.click(function(e) {
 
             var cell_model = $(this).closest('.notebook-cell').data('rcloud.model');
@@ -91,7 +90,7 @@ function create_cell_html_view(language, cell_model) {
             });
 
         }).children().click(function(e) {
-            return false;
+            e.stopPropagation();
         });
     }
     notebook_cell_div.append(cell_status_);
