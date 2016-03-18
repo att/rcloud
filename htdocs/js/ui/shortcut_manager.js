@@ -110,6 +110,21 @@ RCloud.UI.shortcut_manager = (function() {
 
     var result = {
         init: function() {
+
+            // based on https://craig.is/killing/mice#api.stopCallback
+            window.Mousetrap.prototype.stopCallback = function(e, element, combo) {
+
+                // if the element has the class "mousetrap" then no need to stop
+                if ((' ' + element.className + ' ').indexOf(' mousetrap ') > -1) {
+                    return false;
+                }
+
+                return (element.tagName == 'INPUT' && element.type !== 'checkbox') || 
+                       element.tagName == 'SELECT' || 
+                       element.tagName == 'TEXTAREA' || 
+                       (element.contentEditable && element.contentEditable == 'true');
+            };
+
             extension_ = RCloud.extension.create({
 
             });
