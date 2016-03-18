@@ -137,8 +137,14 @@ div.panel-heading:hover {
     cursor: pointer;
 }
 
-.notebook-cell.selected .code-div .rcloud-gutter {
+.notebook-cell.selected .code-div .rcloud-gutter,
+.notebook-cell.selected .ace_gutter-layer {
     background-color: #ffc;
+}
+
+.notebook-cell.selected .ace-chrome .ace_gutter-active-line {
+    background-color: rgba(0, 0, 0, 0.1);
+    z-index: 1;
 }
 
 .rcloud-line-number-position {
