@@ -148,7 +148,7 @@ RCloud.UI.init = function() {
             //['ctrl', 'shift', 'z'], 
             ['command', 'shift', 'z']
         ],
-        action: function() { editor.step_history_undo(); }
+        action: function() { editor.step_history_redo(); }
     }]);
 
     // cell management:
