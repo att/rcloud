@@ -1,4 +1,5 @@
 function main() {
+    
     Promise.longStackTraces();
 
     function getURLParameter(name) {
@@ -9,6 +10,7 @@ function main() {
     RCloud.UI.session_pane.init(); // really should be error logger which detects if there is a pane
     RCloud.UI.init();
     var notebook, version;
+
     RCloud.session.init(true).then(function() {
         return Promise.all([
             RCloud.UI.navbar.load(),
@@ -20,6 +22,7 @@ function main() {
              })
         ]);
     }).then(function() {
+
         shell.init();
         RCloud.UI.advanced_menu.init();
         RCloud.UI.menus.load();
@@ -29,6 +32,7 @@ function main() {
         var quiet = getURLParameter("quiet");
 
         var promise = Promise.resolve(true);
+
         if (Number(quiet)) {
             promise = promise.then(function() {
                 $(".navbar").hide();
@@ -38,6 +42,7 @@ function main() {
                 rcloud.api.disable_echo();
             });
         }
+
         if (notebook === null && getURLParameter("user")) {
             promise = promise.then(function() {
                 return rcloud.get_notebook_by_name(getURLParameter("path"), getURLParameter("user"));
@@ -45,6 +50,7 @@ function main() {
                 notebook = result[0];
             });
         }
+
         var tag = getURLParameter("tag");
         if(!version && tag) {
             promise = promise.then(function() {
@@ -55,12 +61,12 @@ function main() {
             });
         };
 
-        editor.load_everything()
-        .then(function(){
-
+        editor.load_everything().then(function(){
             RCloud.UI.discovery_page.init();
         });
+
         return promise;
+
     }).catch(function(err) {
         console.log(err.stack);
         shell.improve_load_error(err, notebook, version).then(function(msg) {

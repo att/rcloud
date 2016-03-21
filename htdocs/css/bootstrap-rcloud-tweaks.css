@@ -137,8 +137,14 @@ div.panel-heading:hover {
     cursor: pointer;
 }
 
-.notebook-cell.selected .code-div .rcloud-gutter {
+.notebook-cell.selected .code-div .rcloud-gutter,
+.notebook-cell.selected .ace_gutter-layer {
     background-color: #ffc;
+}
+
+.notebook-cell.selected .ace-chrome .ace_gutter-active-line {
+    background-color: rgba(0, 0, 0, 0.1);
+    z-index: 1;
 }
 
 .rcloud-line-number-position {
@@ -259,6 +265,7 @@ pre.offscreen {
 .cell-status-left {
     position: absolute;
     bottom: 2px;
+    left: 5px;
 }
 
 .left-indicator {
@@ -289,6 +296,7 @@ td {
 
 .popover-title {
     padding: 4px 10px;
+    word-break: break-word;
 }
 
 .popover-content {
@@ -493,6 +501,7 @@ ul.recent-notebooks-list li a {
 
 .jqtree-element .jqtree-title.jqtree_common {
     word-break: break-all;
+    display: inline-block;
 }
 
 #settings-body-wrapper.panel-body {

@@ -1,44 +1,16 @@
 <html>
   <head>
     <title>Discovery Page - RCloud</title>
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1">
     <link rel="shortcut icon" type="image/x-icon" href="favicon.png" />
-    <link rel="stylesheet" type="text/css" href="/css/custom-theme/jquery-ui-1.8.18.custom.css" />
     <link rel="stylesheet" type="text/css" href="/css/font-awesome.css"/>
-    <link rel="stylesheet" type="text/css" href="/css/jqtree.css"/>
     <link rel="stylesheet" type="text/css" href="/css/bootstrap.css"/>
-    <link rel="stylesheet" type="text/css" href="/css/rmarkdown.css"/>
     <link rel="stylesheet" type="text/css" href="/css/bootstrap-rcloud-tweaks.css"/>
     <link rel="stylesheet" type="text/css" href="/css/discover.css"/>
-    <meta name="viewport" content="initial-scale=1, maximum-scale=1">
-
     <script src="/lib/js/require-common.js"></script>
     <script type="text/javascript" data-main="/lib/js/require-discover.js" src="/lib/js/require.js"></script>
-
-    <!-- <script type="text/javascript" src="/lib/dependencies_bundle.js" charset="utf-8"></script> -->
-    <!-- <script type="text/javascript">MathJax = undefined;</script> -->
-    <!-- <script type="text/javascript" src="/js/rcloud_bundle.js"></script> -->
-    <!-- <script type="text/javascript" src="/view.js"></script> -->
   </head>
   <body>
-    <script type="text/html" id="discovery-page-modal">
-      <div id='discovery-app' ng-controller='DiscoveryPageController' ng-cloak>
-        <div style='position:relative'>
-
-          <div class="row" style="margin-bottom: 10px;">
-              <div class="btn-group pull-right" role="group" aria-label="..." style="margin-right: 16px;">
-                <button type="button" class="btn btn-default active">Latest</button>
-                <button type="button" class="btn btn-default">Most Stars</button>
-              </div>
-          </div>
-          <div class="row">
-              <div class="grid">
-                <thumbnail ng-click="thumbClicked($index)" ng-repeat="notebook in recentNotebooks" >
-                </thumbnail>
-              </div>
-          </div>
-        </div>
-      </div>
-    </script>
 
     <div class="navbar navbar-inverse ">
       <div>
@@ -46,18 +18,60 @@
       </div>
     </div>
 
-    <div class="loader-icon">
-      <img src="img/ajax-loader.gif">
+    <!-- progress bar -->
+    <div id="progress">
+      <img src="img/logo_rcloud.png" />
+      <progress value="0" max="20"></progress>  
     </div>
-    <div class="container" id="main-div"></div>
 
-    <script type="text/javascript"
-            src="/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    <div class="container" id="main-div">
+      <div id='discovery-app'>
+        <div style='position:relative'>
+          <div class="row" style="margin-bottom: 10px;">
+              <div class="btn-group pull-right" role="group" aria-label="..." style="margin-right: 16px;">
+                <button type="button" class="btn btn-default active">Latest</button>
+                <button type="button" class="btn btn-default">Most Stars</button>
+              </div>
+          </div>
+          <div class="row">
+              <div class="grid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="text/template" id="item_template">
+      <% _.each(notebooks, function(notebook) { %>
+      <div class="grid-item">
+        <a href="edit.html?notebook=<%=notebook.id%>">
+
+          <div class="row" style="position:relative">
+            <div class='header col-sm-10'>
+              <h1><%=notebook.description%></h1>
+              <h2><%=notebook.last_commit%> by <%=notebook.username%> </h2>
+            </div>
+            <div class="star-holder">
+              <button id="star-notebook" title="Add to Interests" type="button" class="btn btn-link navbar-btn" style="padding-left: 3px">
+                <i class="icon-star"></i><sub><span id="curr-star-count"><%=notebook.num_stars%></span></sub>
+              </button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="image-holder col-sm-12">
+              <img src="<%=notebook.image_url%>" class="img-responsive" alt="Responsive image">
+            </div>
+          </div>
+        </a>
+      </div>
+      <% }); %>
     </script>
+
+    <script type="text/javascript" src="/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript">MathJax && MathJax.Hub.Config({tex2jax: {processEscapes: true,
       processEnvironments: false, inlineMath: [ ['\\(','\\)'] ],
       displayMath: [ ['\\[','\\]'] ] },
       "HTML-CSS": { minScaleAdjust: 125 } });
     </script>
+
   </body>
 </html>

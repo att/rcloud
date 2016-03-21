@@ -1,7 +1,10 @@
 RCloud.UI.selection_bar = (function() {
 
-    var $partial_indicator;
-    var $selection_checkbox;
+    var $partial_indicator,
+        $selection_checkbox,
+        $dropdown_toggle,
+        $delete_button,
+        $cell_selection;
 
     var reset = function() {
         $selection_checkbox.prop('checked', false);
@@ -14,10 +17,19 @@ RCloud.UI.selection_bar = (function() {
             var $selection_bar = $(RCloud.UI.panel_loader.load_snippet('selection-bar-snippet'));
             $partial_indicator = $selection_bar.find('.cell-selection span');
             $selection_checkbox = $selection_bar.find('.cell-selection input[type="checkbox"]');
+            $dropdown_toggle = $selection_bar.find('.dropdown-toggle');
+            $delete_button = $selection_bar.find('#selection-bar-delete');
+            $cell_selection = $selection_bar.find('.cell-selection');
 
             $selection_bar
                 .find('.btn-default input[type="checkbox"]').click(function(e) {
                     e.stopPropagation();
+
+                    if(!shell.notebook.controller.cell_count()) {
+                        e.preventDefault();
+                        return;
+                    }
+
                     if($(this).is(':checked')) {
                         shell.notebook.controller.select_all_cells();
                     } else {
@@ -45,9 +57,17 @@ RCloud.UI.selection_bar = (function() {
             var cell_count = cells.length,
                 selected_count = _.filter(cells, function(cell) { return cell.is_selected(); }).length;
 
-            $selection_checkbox.prop('checked', selected_count === cell_count);
-            $partial_indicator[selected_count !== cell_count && selected_count !== 0 ? 'show' : 'hide']();                
-          
+            $selection_checkbox.prop({
+                'checked' : selected_count === cell_count && cell_count != 0,
+                'disabled' : cell_count === 0
+            });
+
+            _.each([$delete_button, $dropdown_toggle, $cell_selection], function(el) { 
+                el[cell_count ? 'removeClass' : 'addClass']('disabled');  
+            });
+
+            $partial_indicator[selected_count !== cell_count && selected_count !== 0 ? 'show' : 'hide']();     
+
         },
         hide: function() {
             $('#selection-bar').hide();

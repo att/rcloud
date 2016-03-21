@@ -306,6 +306,7 @@ rect.frame {
     background: #e0e0e0;
     font-size: 100%;
     padding: 5px;
+    padding-left: 7px; /* align check-all */
     color: rgb(221, 221, 221);
     display: none;
     margin-bottom: 1px;
