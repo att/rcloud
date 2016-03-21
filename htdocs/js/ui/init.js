@@ -106,7 +106,7 @@ RCloud.UI.init = function() {
 
     // notebook management:
     RCloud.UI.shortcut_manager.add([{
-        category: 'Notebook Management', 
+        category: 'Notebook Management',
         id: 'notebook_cell',
         description: 'Saves the current notebook',
         keys: [
@@ -115,14 +115,14 @@ RCloud.UI.init = function() {
         ],
         action: function() { if(RCloud.UI.navbar.get('save_notebook')) { shell.save_notebook(); } }
     }, {
-        category: 'Notebook Management', 
+        category: 'Notebook Management',
         id: 'select_all',
         description: 'Select all',
         keys: [
             ['command', 'a'],
             ['ctrl', 'a']
         ],
-        action: function() { 
+        action: function() {
             var selection = window.getSelection();
             selection.removeAllRanges();
             var range = new Range();
@@ -131,7 +131,7 @@ RCloud.UI.init = function() {
             selection.addRange(range);
         }
     }, {
-        category: 'Notebook Management', 
+        category: 'Notebook Management',
         id: 'history_undo',
         description: 'Steps back through the notebook\'s history',
         keys: [
@@ -140,12 +140,12 @@ RCloud.UI.init = function() {
         ],
         action: function() { editor.step_history_undo(); }
     }, {
-        category: 'Notebook Management', 
+        category: 'Notebook Management',
         id: 'history_redo',
         description: 'Steps forwards through the notebook\'s history',
         keys: [
-            ['ctrl', 'y'], 
-            //['ctrl', 'shift', 'z'], 
+            ['ctrl', 'y'],
+            //['ctrl', 'shift', 'z'],
             ['command', 'shift', 'z']
         ],
         action: function() { editor.step_history_redo(); }
@@ -153,31 +153,31 @@ RCloud.UI.init = function() {
 
     // cell management:
     RCloud.UI.shortcut_manager.add([{
-        category: 'Cell Management', 
-        id: 'remove_cells', 
+        category: 'Cell Management',
+        id: 'remove_cells',
         description: 'Removes selected cells',
         keys: [
             ['del']
         ],
-        action: function() { shell.notebook.controller.remove_selected_cells(); } 
+        action: function() { shell.notebook.controller.remove_selected_cells(); }
     }, {
-        category: 'Cell Management', 
-        id: 'invert_cells', 
-        description: 'Invert selected cells', 
+        category: 'Cell Management',
+        id: 'invert_cells',
+        description: 'Invert selected cells',
         keys: [
             ['ctrl', 'shift', 'i'],
             ['command', 'shift', 'i']
         ],
-        action: function() { shell.notebook.controller.invert_selected_cells(); } 
+        action: function() { shell.notebook.controller.invert_selected_cells(); }
     }, {
-        category: 'Cell Management', 
-        id: 'crop_cells', 
-        description: 'Crop cells', 
+        category: 'Cell Management',
+        id: 'crop_cells',
+        description: 'Crop cells',
         keys: [
             ['ctrl', 'k'],
             ['command', 'k']
         ],
-        action: function() { shell.notebook.controller.crop_cells(); } 
+        action: function() { shell.notebook.controller.crop_cells(); }
     }]);
 
     // general:
@@ -188,7 +188,7 @@ RCloud.UI.init = function() {
         keys: [
             ['?']
         ],
-        action: function() { RCloud.UI.shortcut_dialog.show(); } 
+        action: function() { RCloud.UI.shortcut_dialog.show(); }
     }]);
 
 };
