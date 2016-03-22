@@ -264,6 +264,28 @@ RCloud.UI.find_replace = (function() {
     }
     var result = {
         init: function() {
+
+            RCloud.UI.shortcut_manager.add([{
+                category: 'Notebook Management',
+                id: 'notebook_find',
+                description: 'Find text',
+                keys: [
+                    ['command', 'f'],
+                    ['ctrl', 'f']
+                ],
+                action: function() { toggle_find_replace(false); }
+            }, {
+                category: 'Notebook Management',
+                id: 'notebook_replace',
+                description: 'Replace text',
+                keys: [
+                    ['command', 'option', 'f'],
+                    ['ctrl', 'h']
+                ],
+                action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
+            }]);
+
+/*
             document.addEventListener("keydown", function(e) {
                 var action;
                 if (ui_utils.is_a_mac() && e.keyCode == 70 && e.metaKey) { // cmd-F / cmd-opt-F
@@ -283,6 +305,8 @@ RCloud.UI.find_replace = (function() {
                     toggle_find_replace(action === 'replace');
                 }
             });
+*/
+
         }
     };
     return result;
