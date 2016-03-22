@@ -157,7 +157,9 @@ RCloud.UI.init = function() {
         id: 'remove_cells',
         description: 'Removes selected cells',
         keys: [
-            ['del']
+            ['del'],
+            ['backspace'],
+            ['command', 'backspace']
         ],
         action: function() { shell.notebook.controller.remove_selected_cells(); }
     }, {
