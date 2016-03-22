@@ -639,7 +639,7 @@ ul.jqtree-tree .jqtree-title.foreign-notebook {
 
 #search-results-pagination {
     display:table-row;
-    text-align:center
+    text-align:center;
     display: none;
 }
 
