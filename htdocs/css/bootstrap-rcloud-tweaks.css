@@ -294,9 +294,13 @@ td {
     padding: 5px 15px;
 }
 
+.popover {
+    max-width: 350px;
+}
+
 .popover-title {
     padding: 4px 10px;
-    word-break: break-word;
+    word-break: break-all;
 }
 
 .popover-content {
