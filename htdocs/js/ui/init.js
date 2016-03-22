@@ -189,6 +189,14 @@ RCloud.UI.init = function() {
             ['?']
         ],
         action: function() { RCloud.UI.shortcut_dialog.show(); }
+    },{
+        category: 'General',
+        id: 'close_modal',
+        description: 'Close dialog',
+        keys: [
+            ['esc']
+        ],
+        action: function() { $('.modal').modal('hide'); }
     }]);
 
 };
