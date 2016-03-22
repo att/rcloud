@@ -45,6 +45,9 @@ RCloud.UI.init = function() {
     RCloud.UI.navbar.init();
     RCloud.UI.selection_bar.init();
 
+    // keyboard shortcuts:
+    RCloud.UI.shortcut_manager.init();
+
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
     RCloud.UI.find_replace.init();
@@ -59,9 +62,6 @@ RCloud.UI.init = function() {
 
     // adds to advanced menu
     RCloud.UI.import_export.init();
-
-    // keyboard shortcuts:
-    RCloud.UI.shortcut_manager.init();
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
