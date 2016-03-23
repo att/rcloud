@@ -4,7 +4,7 @@ list(paste0(
   <head>
     <title>RCloud</title>
     <link rel="shortcut icon" type="image/x-icon" href="favicon.png" />
-    <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="css/rcloud.css"/>
   </head>
   <body id="goodbye">
     <div class="navbar navbar-inverse navbar-fixed-top">
