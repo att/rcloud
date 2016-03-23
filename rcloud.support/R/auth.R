@@ -54,7 +54,7 @@ RC.authenticate <- function(v, check.only=FALSE)
 ## TRUE if successful
 RC.auth.anonymous <- function(v=NULL, check.only=FALSE) {
   ## FIXME: we may want to add an option to disable anonymous access even without exec.auth
-  if (!nzConf("exec.auth")) return(TRUE) ## no exec auth -> allow anonymous and nothing to do
+  if (!nzConf("exec.auth") || isTRUE(getConf("exec.auth") == "as-local")) return(TRUE) ## no exec auth -> allow anonymous and nothing to do
 
   v <- as.list(v)
   exec.token <- if (length(v) > 1L) v[[2]] else if (length(v) == 1L) v[[1]] else NULL
