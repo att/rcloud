@@ -32,6 +32,10 @@
   change. Currently these shortcuts only function when the cells, assets, and
   command prompt are not in focus.
 
+### API changes
+
+* `notebook.R` passes an additional entry `.headers` containing the request
+  headers.
 
 ### Bugfixes
 
