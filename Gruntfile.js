@@ -114,8 +114,6 @@ module.exports = function (grunt) {
                     src: '*.scss',
                     dest: './htdocs/css',
                     ext: '.css'
-
-                    //'htdocs/sass/vendor/shane.css': 'htdocs/sass/vendor/shane.scss'
                 }],
                 trace: true
             }
