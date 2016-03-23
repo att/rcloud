@@ -23,6 +23,7 @@ run <- function(url, query, body, headers)
     query <- as.list(query)
     query$.cookies <- cookies
     query$.body <- body
+    query$.headers <- headers
     query$.url <- url
     c <- if (is.null(rcloud.config("rserve.socket"))) RSclient::RS.connect() else RSclient::RS.connect(rcloud.config("rserve.socket"), 0L)
     oc.init <- attr(c, "capabilities")
