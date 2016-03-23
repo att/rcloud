@@ -128,7 +128,11 @@ be hacking the code, you'll need to install a recent version of
 	$ npm install
 
 This will install the node.js dependencies necessary to concatenate and
-minify the javascript files used in RCloud.
+minify the JavaScript files used in RCloud.
+
+[SASS](http://sass-lang.com/) is also used to manage the CSS used in RCloud. 
+You can get help installing SASS by heading over to the [installation page]
+(http://sass-lang.com/install) and following the instructions for 'command line'.
 
 ### Starting rcloud
 
