@@ -1,0 +1,76 @@
+@media print {
+
+    * {
+        overflow: visible!important;
+    }
+
+    .navbar,
+    #selection-bar,
+    #left-column,
+    .cell-status-left .grab-affordance,
+    .cell-status-left .cell-selection,
+    .cell-status-left .state-icon,
+    .cell-control-bar,
+    .cell-controls-above,
+    .grab-affordance,
+    #output > pre,
+    #prompt-area,
+    #right-column,
+    #command-prompt,
+    .ui-resizable-handle,
+    .live-plot-commands {
+        display: none!important;
+    }
+
+    #main-div {
+        position: static;
+    }
+
+    #middle-column {
+        width: 100%;
+        display: inline;
+    }
+
+    #rcloud-cellarea, .ace-scroller {
+        overflow: visible;
+    }
+
+    .notebook-cell {
+        margin-bottom: 15px;
+
+    }
+
+    .cell-control {
+        font-size: 15px;
+    }
+
+    .cell-status {
+        padding-bottom: 5px;
+        margin-bottom: 5px;
+        border-bottom: 1px solid #444;
+        margin-left: -5px;
+    }
+
+    .code-div {
+        display: inline;
+        page-break-inside: always;
+    }
+
+    pre.edit-code {
+        display: inline;
+    }
+
+    pre:not(.edit-code),
+    pre:not(.response) {
+        display: inline;
+    }
+
+    pre:not(.edit-code) code {
+        display: inline;
+    }
+
+    img, .ui-resizable {
+        max-width: 100%!important;
+    }
+
+}

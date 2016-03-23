@@ -3,6 +3,7 @@
 pids.txt
 tmp
 userfiles
+.sass-cache
 node_modules
 htdocs/mathjax
 services/
