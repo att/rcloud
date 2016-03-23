@@ -52,6 +52,7 @@ notifications:
   email:
     recipients:
     - gordon@woodhull.com
+    - prateek.naik@mu-sigma.com
     on_success: always
     on_failure: always
 branches:
