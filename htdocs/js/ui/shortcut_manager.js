@@ -152,8 +152,6 @@ RCloud.UI.shortcut_manager = (function() {
         get_registered_shortcuts_by_category: function(sort_items) {
             shortcuts_changed = false;
 
-            console.log();
-
             var rank = _.map(sort_items, (function(item, index) { return { key: item, value: index + 1 }}));
             rank = _.object(_.pluck(rank, 'key'), _.pluck(rank, 'value'));   
   
