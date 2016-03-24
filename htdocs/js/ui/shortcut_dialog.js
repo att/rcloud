@@ -22,43 +22,41 @@ RCloud.UI.shortcut_dialog = (function() {
                 $("body").append(shortcut_dialog_);
             } 
 
-            if(!content_ || RCloud.UI.shortcut_manager.shortcuts_changed()) {
-                shortcuts_by_category_ = RCloud.UI.shortcut_manager.get_registered_shortcuts_by_category([
-                    'General',
-                    'Notebook Management',
-                    'Cell Management']);
+            shortcuts_by_category_ = RCloud.UI.shortcut_manager.get_registered_shortcuts_by_category([
+                'General',
+                'Notebook Management',
+                'Cell Management']);
 
-                content_ = '';
+            content_ = '';
 
-                _.each(shortcuts_by_category_, function(group) {
+            _.each(shortcuts_by_category_, function(group) {
 
-                    content_ += '<div class="category">';
-                    content_ += '<h3>' + group.category + '</h3>';
-                    content_ += '<table>';
+                content_ += '<div class="category">';
+                content_ += '<h3>' + group.category + '</h3>';
+                content_ += '<table>';
 
-                    _.each(group.shortcuts, function(shortcut) {
+                _.each(group.shortcuts, function(shortcut) {
 
-                        var keys_markup = []; 
-                        _.each(shortcut.keys, function(keys) {
-                            keys_markup.push('<kbd>' + keys.join(' ') + '</kbd>');
-                        });
-
-                        content_ += '<tr>';
-                        content_ += '<td>';
-                        content_ += keys_markup.join(' / ');
-                        content_ += '</td>';
-                        content_ += '<td>';
-                        content_ += shortcut.description;
-                        content_ += '</td>';
-                        content_ += '</tr>';
+                    var keys_markup = []; 
+                    _.each(shortcut.keys, function(keys) {
+                        keys_markup.push('<kbd>' + keys.join(' ') + '</kbd>');
                     });
 
-                    content_ += '</table>';
-                    content_ += '</div>';
+                    content_ += '<tr>';
+                    content_ += '<td>';
+                    content_ += keys_markup.join(' / ');
+                    content_ += '</td>';
+                    content_ += '<td>';
+                    content_ += shortcut.description;
+                    content_ += '</td>';
+                    content_ += '</tr>';
                 });
 
-                $('#shortcut-dialog .modal-body').html(content_);
-            }
+                content_ += '</table>';
+                content_ += '</div>';
+            });
+
+            $('#shortcut-dialog .modal-body').html(content_);
             
             shortcut_dialog_.modal({ 
                 keyboard: false 

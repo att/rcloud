@@ -113,6 +113,7 @@ RCloud.UI.init = function() {
             ['command', 's'],
             ['ctrl', 's']
         ],
+        modes: ['writeable'],
         action: function() { if(RCloud.UI.navbar.get('save_notebook')) { shell.save_notebook(); } }
     }, {
         category: 'Notebook Management',
@@ -122,6 +123,7 @@ RCloud.UI.init = function() {
             ['command', 'a'],
             ['ctrl', 'a']
         ],
+        modes: ['writeable'],
         action: function() {
             var selection = window.getSelection();
             selection.removeAllRanges();
@@ -138,6 +140,7 @@ RCloud.UI.init = function() {
             ['command', 'z'],
             ['ctrl', 'z']
         ],
+        modes: ['writeable'],
         action: function() { editor.step_history_undo(); }
     }, {
         category: 'Notebook Management',
@@ -148,6 +151,7 @@ RCloud.UI.init = function() {
             //['ctrl', 'shift', 'z'],
             ['command', 'shift', 'z']
         ],
+        modes: ['writeable'],
         action: function() { editor.step_history_redo(); }
     }]);
 
@@ -159,6 +163,7 @@ RCloud.UI.init = function() {
         keys: [
             ['del']
         ],
+        modes: ['writeable'],
         action: function() { shell.notebook.controller.remove_selected_cells(); }
     }, {
         category: 'Cell Management',
@@ -168,6 +173,7 @@ RCloud.UI.init = function() {
             ['ctrl', 'shift', 'i'],
             ['command', 'shift', 'i']
         ],
+        modes: ['writeable'],
         action: function() { shell.notebook.controller.invert_selected_cells(); }
     }, {
         category: 'Cell Management',
@@ -177,6 +183,7 @@ RCloud.UI.init = function() {
             ['ctrl', 'k'],
             ['command', 'k']
         ],
+        modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
     }]);
 
@@ -188,6 +195,7 @@ RCloud.UI.init = function() {
         keys: [
             ['?']
         ],
+        modes: ['writeable', 'readonly'],
         action: function() { RCloud.UI.shortcut_dialog.show(); }
     }]);
 
