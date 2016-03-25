@@ -23,7 +23,15 @@ RCloud.UI.session_pane = {
                 that.clear();
             }
         });
-
+        // Link for error collapse
+        $('#show-details').click(function() {
+            $("#session-info").css('max-height', function(_, max_height) {
+                return max_height === '57px' ? 'none' : '57px';
+            })
+            $(this).html(function(_, html) {
+                return html === 'Show Details' ? 'Hide Details' : 'Show Details';
+            })
+        });
         //////////////////////////////////////////////////////////////////////
         // bluebird unhandled promise handler
         Promise.onPossiblyUnhandledRejection(function(e, promise) {
@@ -40,8 +48,10 @@ RCloud.UI.session_pane = {
         return this.error_dest_;
     },
     clear: function() {
-        if(this.allow_clear)
+        if(this.allow_clear) {
             $("#session-info").empty();
+            $('#show-details').css('display', 'none');
+        }
     },
     append_text: function(msg) {
         // FIXME: dropped here from session.js, could be integrated better
@@ -77,6 +87,7 @@ RCloud.UI.session_pane = {
             ui_utils.on_next_tick(function() {
                 ui_utils.scroll_to_after($("#session-info"));
             });
+            $('#show-details').css('display', 'block');
         }
         if(!logged)
             console.log("pre-init post_error: " + msg.text());

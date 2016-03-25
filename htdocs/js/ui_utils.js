@@ -50,7 +50,9 @@ ui_utils.string_error = function(msg) {
     var button = $("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>");
     var result = $("<div class='alert alert-danger alert-dismissable'></div>");
     // var text = $("<span></span>");
-
+    button.click(function() {
+        $('#show-details').css('display', 'none');
+    });
     result.append(button);
     var text = _.map(msg.split("\n"), function(str) {
         // poor-man replacing 4 spaces with indent
