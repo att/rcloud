@@ -267,6 +267,7 @@ authenticated.ocaps <- function(mode)
 
       config = list(
         all_notebooks = make.oc(rcloud.config.all.notebooks),
+        all_user_notebooks = make.oc(user.all.notebooks),
         all_notebooks_multiple_users = make.oc(rcloud.config.all.notebooks.multiple.users),
         get_all_notebook_info= make.oc(rcloud.config.get.all.notebook.info),
         add_notebook = make.oc(rcloud.config.add.notebook),
