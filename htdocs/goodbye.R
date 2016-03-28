@@ -4,21 +4,15 @@ list(paste0(
   <head>
     <title>RCloud</title>
     <link rel="shortcut icon" type="image/x-icon" href="favicon.png" />
-    <link rel="stylesheet" type="text/css" href="css/custom-theme/jquery-ui-1.8.18.custom.css" />
-    <link rel="stylesheet" type="text/css" href="css/font-awesome.css"/>
-    <link rel="stylesheet" type="text/css" href="css/jqtree.css"/>
-    <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
-    <link rel="stylesheet" type="text/css" href="css/rmarkdown.css"/>
-    <link rel="stylesheet" type="text/css" href="css/edit.css"/>
-    <link rel="stylesheet" type="text/css" href="css/dc.css"/>
+    <link rel="stylesheet" type="text/css" href="css/rcloud.css"/>
   </head>
-  <body>
+  <body id="goodbye">
     <div class="navbar navbar-inverse navbar-fixed-top">
       <div class="navbar-header">
-        <a class="navbar-brand" href="/login.R">RCloud - Collaborative data analysis with R</a>
+        <a class="navbar-brand" href="/login.R">RCloud</a>
       </div>
     </div>
-    <div class="container" id="main-div">
+    <div class="container" id="main-div" style="margin-top: 150px;">
       <p>You are now logged out of RCloud. <a href="/login.R">Log back in.</a></p>
       <p>However, you may still be logged into <a href="',rcloud.config('github.base.url'),'">GitHub</a>,
       use <a href="',gsub("/+$","",rcloud.config('github.base.url')),'/logout">GitHub Logout</a> to log out of there as well.

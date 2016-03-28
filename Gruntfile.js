@@ -102,7 +102,21 @@ module.exports = function (grunt) {
 
     grunt.initConfig({
         conf: config,
-
+        sass: {
+            all: {
+                options: {
+                    style: 'compressed'
+                },
+                files: [{
+                    expand: true,
+                    cwd: './htdocs/sass',
+                    src: '*.scss',
+                    dest: './htdocs/css',
+                    ext: '.css'
+                }],
+                trace: true
+            }
+        },
         concat: {
             options: {
                 process: true,
@@ -154,6 +168,6 @@ module.exports = function (grunt) {
     });
 
     // task aliases
-    grunt.registerTask('build', ['concat', 'uglify', 'compress']);
+    grunt.registerTask('build', ['sass', 'concat', 'uglify', 'compress']);
     grunt.registerTask('default', ['build']);
 };

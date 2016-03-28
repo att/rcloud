@@ -145,7 +145,6 @@ RCloud.UI.init = function() {
         description: 'Steps forwards through the notebook\'s history',
         keys: [
             ['ctrl', 'y'],
-            //['ctrl', 'shift', 'z'],
             ['command', 'shift', 'z']
         ],
         action: function() { editor.step_history_redo(); }
