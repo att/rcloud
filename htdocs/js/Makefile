@@ -46,6 +46,7 @@ rcloud_bundle.js: \
 	ui/left_panel.js \
 	ui/load_options.js \
         ui/menus.js \
+        ui/message_dialog.js \
 	ui/middle_column.js \
         ui/navbar.js \
         ui/notebook_commands.js \
@@ -64,7 +65,7 @@ rcloud_bundle.js: \
 	ui/upload.js \
 	ui/upload_frame.js \
 	ui/notebook_protection_logger.js \
-	ui/notebook_protection.js 
+	ui/notebook_protection.js
 
 rcloud_bundle.min.js: rcloud_bundle.js Makefile
 	@rm -f $@

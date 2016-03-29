@@ -485,3 +485,7 @@ ul.recent-notebooks-list li a {
     background-color: #f2dede;
 }
 
+#message-dialog .modal-content {
+    background-color: #deeff2;
+}
+

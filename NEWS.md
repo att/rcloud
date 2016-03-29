@@ -1,3 +1,11 @@
+## RCloud 1.5.3
+
+### Improvements
+
+* `rcloud.message.dialog` for system messages or whenever you want an
+  official-looking dialog to pop up and say something. (#91)
+
+
 ## RCloud 1.5.2
 
 ### Features
