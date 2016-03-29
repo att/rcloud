@@ -794,7 +794,7 @@ var editor = function () {
 
         // always show the same number of history nodes as before
         var whither = 'hide', where = null;
-        var inter_path = as_folder_hierarchy([data], skip_user_level(root) ? node_id(root, user) : node_id(root))[0];
+        var inter_path = as_folder_hierarchy([data], skip_user_level(root) ? node_id(root) : node_id(root, user))[0];
         var node = update_tree(root, user, gistname, inter_path,
                                function(node) {
                                    if(node.children.length) {
