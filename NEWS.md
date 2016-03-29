@@ -5,6 +5,14 @@
 * `rcloud.message.dialog` for system messages or whenever you want an
   official-looking dialog to pop up and say something. (#91)
 
+* The "RCloud Sample Notebooks" folder in the notebook tree now opens directly
+  on the list of notebooks, rather than showing the list of "featured users"
+  (an
+  [all-user option](https://github.com/att/rcloud/wiki/RCS#user-state-and-options)). This
+  happens if there is exactly one "featured user"; if there is more than one,
+  then the list of users is shown as before (and as in the other roots of the
+  notebook tree). (#1867)
+
 
 ## RCloud 1.5.2
 
