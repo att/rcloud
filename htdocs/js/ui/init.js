@@ -45,6 +45,9 @@ RCloud.UI.init = function() {
     RCloud.UI.navbar.init();
     RCloud.UI.selection_bar.init();
 
+    // keyboard shortcuts:
+    RCloud.UI.shortcut_manager.init();
+
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
     RCloud.UI.find_replace.init();
@@ -59,9 +62,6 @@ RCloud.UI.init = function() {
 
     // adds to advanced menu
     RCloud.UI.import_export.init();
-
-    // keyboard shortcuts:
-    RCloud.UI.shortcut_manager.init();
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
@@ -157,7 +157,9 @@ RCloud.UI.init = function() {
         id: 'remove_cells',
         description: 'Removes selected cells',
         keys: [
-            ['del']
+            ['del'],
+            ['backspace'],
+            ['command', 'backspace']
         ],
         action: function() { shell.notebook.controller.remove_selected_cells(); }
     }, {
@@ -189,6 +191,14 @@ RCloud.UI.init = function() {
             ['?']
         ],
         action: function() { RCloud.UI.shortcut_dialog.show(); }
+    },{
+        category: 'General',
+        id: 'close_modal',
+        description: 'Close dialog',
+        keys: [
+            ['esc']
+        ],
+        action: function() { $('.modal').modal('hide'); }
     }]);
 
 };
