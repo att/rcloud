@@ -1,14 +1,20 @@
 \name{rcloud.get.asset}
 \alias{rcloud.get.asset}
+\alias{rcloud.execute.asset}
 \title{
-  Access notebook assets
+  Access and execute notebook assets
 }
 \description{
   \code{rcloud.get.asset} retrieves a notebook asset
+
+  \code{rcloud.execute.asset} retrieves a notebook asset as a file and
+  executes it
 }
 \usage{
 rcloud.get.asset(name, notebook = rcloud.session.notebook(), version = NULL,
                  cached = TRUE, quiet = FALSE, as.file = FALSE)
+rcloud.execute.asset(name, ..., notebook = rcloud.session.notebook(), version = NULL,
+                 cached = TRUE, wait = TRUE)
 }
 \arguments{
   \item{name}{name of the asset}
@@ -21,15 +27,28 @@ rcloud.get.asset(name, notebook = rcloud.session.notebook(), version = NULL,
   \item{as.file}{logical, if \code{TRUE} then the asset is stored in a
     file and the result is the full path to the resulting file,
     otherwise the asset content is returned directly}
+  \item{...}{any additional arguments to pass to the interpreter
+  running the asset}
 }
 \details{
   \code{rcloud.get.asset} loads a notebook and retrieves the asset of
   the name \code{name} from the notebook.
+
+  \code{rcloud.execute.asset} first calls
+  \code{rcloud.get.asset(..., as.file=TRUE)} and then executes the
+  resulting file. If the file has a known extension the driver for the
+  file is executed with the filename instead of the file itself. For R
+  assets the file is \code{\link{source}}d instead of shell execution,
+  so it is equivalent to sourcing the file in the R session. In all
+  other cases the file is made executable and executed.
 }
 \value{
-  if \code{as.file=TRUE} then a path to the file containing the asset
-  contents, otherwise the asset itself (character vector for text
-  content, raw vector fir binary content)
+  \code{rcloud.get.asset}: if \code{as.file=TRUE} then a path to the
+  file containing the asset contents, otherwise the asset itself
+  (character vector for text content, raw vector for binary content)
+
+  \code{rcloud.execute.asset}: for R assets the evaluation result, for
+  all other assets the result of the \code{\link{system()}} call.
 }
 %\references{
 %}
