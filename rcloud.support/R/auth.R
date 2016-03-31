@@ -42,12 +42,32 @@ RC.authenticate <- function(v, check.only=FALSE)
   ## if not, just check the first token.
   user <- check.token(v[[1]])
   if (user == FALSE) return(FALSE)
-  ## but if we have a github user whitelist, check against that as well.
+
   .session$user <- user
 
-  if (!hasConf("github.user.whitelist")) return(TRUE)
-  userlist <- gsub("^\\s+","",gsub("\\s+$","",unlist(strsplit(getConf("github.user.whitelist"), ','))))
-  user %in% userlist
+  ## but if we have a github user whitelist, check against that as well.
+  if (hasConf("github.user.whitelist")) {
+      userlist <- gsub("^\\s+","",gsub("\\s+$","",unlist(strsplit(getConf("github.user.whitelist"), ','))))
+      if (!(user %in% userlist)) return(FALSE)
+  }
+
+  ## check if the config requests exec user to be based on the gist user
+  if (!nzConf("exec.auth") && nzConf("use.gist.user.home") && length(grep("yes", getConf("use.gist.user.home")))) {
+      .session$exec.usr <- user
+      ## FIXME: should we sanitize the username?
+      dir.create(rc.user.home <- pathConf("rcloud.user.home", user), FALSE, TRUE, "0700")
+      dir.create(td <- paste(tempdir(), user, sep='-'), FALSE, TRUE, "0700")
+      ## also adjust HOME and USER env vars
+      Sys.setenv(HOME=rc.user.home)
+      ## use user-specific tempdir (so we have write-permission) in this session
+      unixtools::set.tempdir(td)
+
+      ## create user-specific library so users can install private packages if they so desire ...
+      dir.create(rc.user.lib <- file.path(rc.user.home, "library"), FALSE, TRUE, "0700")
+      .libPaths(c(rc.user.lib, .libPaths()))  
+  }
+
+  TRUE
 }
 
 ## attempts to setup anonymous (non-GitHub) access. Returns FALSE if not allowed,
