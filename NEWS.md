@@ -13,6 +13,12 @@
   then the list of users is shown as before (and as in the other roots of the
   notebook tree). (#1867)
 
+* `rcloud.upload.path` gains `...` which can supply additional path components.
+
+* New configuration option `use.gist.user.home` if set to `yes` allows deployments
+  to use gist username as the executing user for purposes such as home directory
+  location. It only applies if `exec.auth` is not set.
+
 
 ## RCloud 1.5.2
 
