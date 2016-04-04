@@ -77,7 +77,7 @@
   tryCatch({
   solr.res <- RCurl::getURL(.search_construct_url(solr.get.url), .opts=opts)
   solr.res <- fromJSON(solr.res)
-  },error=function(err){rcloud.session.log(err)})
+  },error=function(err){})
   return(solr.res)
 
 } 
