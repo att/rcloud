@@ -6079,8 +6079,10 @@ RCloud.UI.shortcut_manager = (function() {
                     return _.contains(keys, 'command');
                 });
             } else {
-                // this is a mac; if this shortcut has a command AND a ctrl, remove the ctrl
-                if(_.contains(shortcut.keys, 'command') && _.contains(shortcut.keys, 'ctrl')) {
+                // and if it is a mac, filter out 'ctrl' based commands if there
+                // is also a 'command' variant:
+                var all_keys = _.flatten(shortcut.keys);
+                if(_.contains(all_keys, 'command') && _.contains(all_keys, 'ctrl')) {
                     shortcut.keys = _.reject(shortcut.keys, function(keys) {
                         return _.contains(keys, 'ctrl');
                     });
