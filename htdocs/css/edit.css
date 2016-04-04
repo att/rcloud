@@ -513,11 +513,6 @@ form input.linkbox {
   background-color: black;
 }
 
-
-#fatal-dialog .modal-content {
-    background-color: #f2dede;
-}
-
 input[type=text].form-control-ext {
     padding-left: 5px;
 }

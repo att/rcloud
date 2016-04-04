@@ -43,3 +43,11 @@ rcloud.close.context <- function(context.id) {
   # todo: if(Rserve.context()==context.id) ???
   .session$.output.context.cap$close_context(context.id)
 }
+
+rcloud.message.dialog <- function(title, msg) {
+  if (is.null(.session$.dialog.message.cap)) {
+    code <- paste(readLines(system.file("javascript", "message.dialog.js", package="rcloud.support")), collapse='\n')
+    .session$.dialog.message.cap <- rcloud.install.js.module("rcloud.message.dialog", code)
+  }
+  .session$.dialog.message.cap$message_dialog(title, msg)
+}

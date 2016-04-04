@@ -527,3 +527,12 @@ body .modal-dialog.full {
     width: 100%;
     max-height: 100%;
 }
+
+#fatal-dialog .modal-content {
+    background-color: #f2dede;
+}
+
+#message-dialog .modal-content {
+    background-color: #deeff2;
+}
+
